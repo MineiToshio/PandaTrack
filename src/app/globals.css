@@ -1,26 +1,105 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+  --background: #0b0f14;
+  --foreground: #e6edf3;
+  --surface: #111826;
+  --surface-2: #0f172a;
+  --card: #111826;
+  --popover: #111826;
+  --border: #1f2a3a;
+  --input: #1f2a3a;
+  --ring: #4f8cff;
+  --primary: #4f8cff;
+  --primary-foreground: #0b0f14;
+  --secondary: #22c55e;
+  --secondary-foreground: #0b0f14;
+  --accent: #f59e0b;
+  --accent-foreground: #0b0f14;
+  --muted: #223044;
+  --muted-foreground: #9aa5b1;
+  --destructive: #ef4444;
+  --destructive-foreground: #0b0f14;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --info: #38bdf8;
+  --link: #7aa2ff;
+  --link-hover: #9bb7ff;
+  --text-title: #f2f6fb;
+  --text-body: #d6dee6;
+  --text-muted: #9aa5b1;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-card: var(--card);
+  --color-popover: var(--popover);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-link: var(--link);
+  --color-link-hover: var(--link-hover);
+  --color-text-title: var(--text-title);
+  --color-text-body: var(--text-body);
+  --color-text-muted: var(--text-muted);
+  --font-sans: var(--font-regular);
+  --font-secondary: var(--font-secondary);
+  --font-logo: var(--font-logo);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root[data-theme="light"] {
+  color-scheme: light;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-2: #f1f5f9;
+  --card: #ffffff;
+  --popover: #ffffff;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #2563eb;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #16a34a;
+  --secondary-foreground: #ffffff;
+  --accent: #d97706;
+  --accent-foreground: #ffffff;
+  --muted: #f1f5f9;
+  --muted-foreground: #475569;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --success: #16a34a;
+  --warning: #d97706;
+  --info: #0ea5e9;
+  --link: #1d4ed8;
+  --link-hover: #1e40af;
+  --text-title: #0f172a;
+  --text-body: #1f2937;
+  --text-muted: #64748b;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-regular), ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
