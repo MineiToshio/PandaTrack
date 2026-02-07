@@ -6,20 +6,31 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "db-push": "npx prisma db push && npx prisma generate",
+    "db-reset": "npx prisma db push --force-reset",
+    "type-check": "tsc --pretty --noEmit",
     "lint": "eslint"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.3.0",
+    "@prisma/client": "^7.3.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.563.0",
     "next": "16.1.6",
+    "pg": "^8.18.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "prisma": "^7.3.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
