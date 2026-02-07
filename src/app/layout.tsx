@@ -14,9 +14,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${regularFont.variable} ${secondaryFont.variable} ${logoFont.variable} antialiased`}
-      >
+      <body className={`${regularFont.variable} ${secondaryFont.variable} ${logoFont.variable} antialiased`}>
         {children}
       </body>
     </html>

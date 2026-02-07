@@ -9,13 +9,9 @@ const NAV_ITEMS = [
 
 export default function HeaderNav() {
   return (
-    <nav aria-label="Main" className="flex items-center gap-6 font-secondary text-sm text-text-body">
+    <nav aria-label="Main" className="font-secondary text-text-body flex items-center gap-6 text-sm">
       {NAV_ITEMS.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className="transition-colors hover:text-text-title"
-        >
+        <Link key={item.href} href={item.href} className="hover:text-text-title transition-colors">
           {item.label}
         </Link>
       ))}

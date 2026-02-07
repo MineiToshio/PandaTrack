@@ -1,8 +1,4 @@
-import {
-  Open_Sans,
-  Roboto_Condensed,
-  Zilla_Slab_Highlight,
-} from "next/font/google";
+import { Open_Sans, Roboto_Condensed, Zilla_Slab_Highlight } from "next/font/google";
 
 const openSans = Open_Sans({
   weight: ["400", "500", "600", "700"],
@@ -22,8 +18,4 @@ const zilla = Zilla_Slab_Highlight({
   variable: "--font-logo",
 });
 
-export {
-  openSans as regularFont,
-  robotoCondensed as secondaryFont,
-  zilla as logoFont,
-};
+export { openSans as regularFont, robotoCondensed as secondaryFont, zilla as logoFont };

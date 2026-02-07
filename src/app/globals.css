@@ -62,8 +62,7 @@
   --font-sans: var(--font-regular);
   --font-secondary: var(--font-secondary);
   --font-logo: var(--font-logo);
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 :root[data-theme="light"] {
@@ -100,6 +99,12 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-regular), ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    var(--font-regular),
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
 }
