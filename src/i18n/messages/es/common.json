@@ -1,0 +1,11 @@
+{
+  "buttons": {
+    "getStarted": "Comenzar",
+    "learnMore": "Saber más",
+    "signIn": "Iniciar sesión",
+    "signUp": "Registrarse"
+  },
+  "loading": "Cargando...",
+  "error": "Error",
+  "success": "Éxito"
+}
