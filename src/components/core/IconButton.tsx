@@ -42,8 +42,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       onClick?.(e);
     };
 
-    const iconSizeClassName =
-      size === "lg" ? "h-6 w-6" : size === "sm" ? "h-4 w-4" : "h-5 w-5";
+    const iconSizeClassName = size === "lg" ? "h-6 w-6" : size === "sm" ? "h-4 w-4" : "h-5 w-5";
 
     return (
       <button
@@ -54,7 +53,9 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         disabled={disabled}
         {...buttonProps}
       >
-        <Icon className={cn("text-foreground group-hover/icon-button:text-foreground", iconSizeClassName, iconClassName)} />
+        <Icon
+          className={cn("text-foreground group-hover/icon-button:text-foreground", iconSizeClassName, iconClassName)}
+        />
       </button>
     );
   },

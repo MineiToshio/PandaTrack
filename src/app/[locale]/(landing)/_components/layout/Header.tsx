@@ -1,31 +1,55 @@
 "use client";
 
+import { useState } from "react";
 import Logo from "@/components/core/Logo";
-import HeaderNav from "./HeaderNav";
+import HeaderNav, { HeaderNavItem } from "./HeaderNav";
 import Link from "next/link";
 import { cn } from "@/lib/styles";
 import { buttonVariants } from "@/components/core/Button";
 import { useTranslations } from "next-intl";
 import IconButton from "@/components/core/IconButton";
 import { Menu } from "lucide-react";
+import BurgerMenu from "./BurgerMenu";
+
+const NAV_ITEMS: HeaderNavItem[] = [
+  { key: "features", href: "#features" },
+  { key: "howItWorks", href: "#how-it-works" },
+  { key: "pricing", href: "#pricing" },
+  { key: "faq", href: "#faq" },
+];
 
 export default function Header() {
   const t = useTranslations("header");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="border-border bg-background text-foreground w-full border-b">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-        <Logo />
-        <div className="hidden md:flex">
-          <HeaderNav />
+    <>
+      <header className="border-border bg-background text-foreground w-full border-b">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+          <Logo />
+          <div className="hidden md:flex">
+            <HeaderNav items={NAV_ITEMS} />
+          </div>
+          <div className="flex items-center gap-3">
+            <Link href="#get-started" className={cn(buttonVariants({ variant: "primary" }))}>
+              {t("getStarted")}
+            </Link>
+            <IconButton
+              Icon={Menu}
+              variant="outline"
+              className="md:hidden"
+              aria-label="Open menu"
+              onClick={() => setIsMenuOpen(true)}
+            />
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href="#get-started" className={cn(buttonVariants({ variant: "primary" }))}>
-            {t("getStarted")}
-          </Link>
-          <IconButton Icon={Menu} variant="outline" className="md:hidden" aria-label="Open menu" />
-        </div>
-      </div>
-    </header>
+      </header>
+      <BurgerMenu
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        items={NAV_ITEMS}
+        ctaLabel={t("getStarted")}
+      />
+    </>
   );
 }
