@@ -1,11 +1,1 @@
-{
-  "buttons": {
-    "getStarted": "Get started",
-    "learnMore": "Learn more",
-    "signIn": "Sign in",
-    "signUp": "Sign up"
-  },
-  "loading": "Loading...",
-  "error": "Error",
-  "success": "Success"
-}
+{}
