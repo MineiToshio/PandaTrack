@@ -1,0 +1,46 @@
+{
+  "header": {
+    "getStarted": "Get started",
+    "nav": {
+      "features": "Features",
+      "howItWorks": "How it works",
+      "pricing": "Pricing",
+      "faq": "FAQ"
+    }
+  },
+  "hero": {
+    "eyebrow": "Total control over your purchases",
+    "title": "PandaTrack: your command center for shopping and collectibles",
+    "subtitle": "Track stores, purchases, and shipments; keep your collection updated and save what you want on your wishlist. Everything in one place.",
+    "primaryCta": "Start organizing",
+    "secondaryCta": "View features",
+    "featuresTitle": "Everything you need at a glance",
+    "features": {
+      "stores": {
+        "title": "Store database",
+        "description": "Save stores, prices, and favorite references."
+      },
+      "purchases": {
+        "title": "Purchase tracking",
+        "description": "Keep a clear history of your acquisitions."
+      },
+      "shipments": {
+        "title": "Shipment tracking",
+        "description": "Monitor statuses, dates, and deliveries."
+      },
+      "collection": {
+        "title": "Collection management",
+        "description": "Organize, catalog, and value your collection."
+      },
+      "wishlist": {
+        "title": "Smart wishlist",
+        "description": "Never lose sight of the pieces you want."
+      }
+    },
+    "image": {
+      "title": "PandaTrack overview",
+      "description": "A featured image of the app with metrics, collections, and shipments will live here.",
+      "placeholder": "Image placeholder"
+    }
+  }
+}

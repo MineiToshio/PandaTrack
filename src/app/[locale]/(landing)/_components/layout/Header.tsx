@@ -19,7 +19,7 @@ const NAV_ITEMS: HeaderNavItem[] = [
 ];
 
 export default function Header() {
-  const t = useTranslations("header");
+  const t = useTranslations("landing.header");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (

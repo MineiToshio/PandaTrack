@@ -15,7 +15,7 @@ type HeaderNavProps = {
 };
 
 export default function HeaderNav({ items, className }: HeaderNavProps) {
-  const t = useTranslations("header.nav");
+  const t = useTranslations("landing.header.nav");
 
   return (
     <nav aria-label="Main" className={cn("font-secondary text-text-body flex items-center gap-6 text-sm", className)}>
