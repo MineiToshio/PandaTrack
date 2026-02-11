@@ -1,4 +1,4 @@
-import Header from "./_components/layout/Header";
+import Header from "./_components/Menu/Header";
 
 export default function LandingLayout({
   children,
