@@ -1,4 +1,22 @@
 {
+  "userFit": {
+    "title": "Is PandaTrack right for me?",
+    "subtitle": "If you love collecting but keeping track of your purchases has become chaos… yes, this is for you.",
+    "cards": {
+      "card1": {
+        "title": "Where did that purchase go?",
+        "description": "Bought on Instagram, paid via WhatsApp, confirmation in your inbox… and now it’s lost in chats and screenshots. If that sounds familiar, you know the stress."
+      },
+      "card2": {
+        "title": "What do I have on the way?",
+        "description": "Some orders arrive fast, others sit in “limbo” for weeks. And there you are again: “what’s the status of my order?”. Don’t worry—you’re not alone."
+      },
+      "card3": {
+        "title": "No more surprise payments",
+        "description": "Pre-order here, 20% deposit there, “the rest when it arrives”… until a payment shows up you didn’t see coming. Having it clear ahead of time feels amazing."
+      }
+    }
+  },
   "header": {
     "getStarted": "Get started",
     "nav": {

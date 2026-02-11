@@ -1,4 +1,22 @@
 {
+  "userFit": {
+    "title": "¿Es PandaTrack perfecto para mí?",
+    "subtitle": "Si coleccionar te encanta, pero el seguimiento de tus compras ya se volvió un caos… sí, esto es para ti.",
+    "cards": {
+      "card1": {
+        "title": "¿Dónde quedó esa compra?",
+        "description": "Compraste por Instagram, pagaste por WhatsApp y la confirmación llegó al correo… y ahora la compra quedó perdida entre chats y capturas. Si te pasó, ya sabes el estrés que es."
+      },
+      "card2": {
+        "title": "¿Qué tengo en camino?",
+        "description": "Algunas cosas llegan rápido y otras se quedan “en el limbo” por semanas. Y tú pensando otra vez: “¿en qué estado va mi pedido?”. Tranquilo, a muchos nos ha pasado."
+      },
+      "card3": {
+        "title": "No más pagos de improvisto",
+        "description": "Preventa por aquí, 20% por allá y “el resto cuando llegue”… hasta que aparece un pago que no tenías en el radar. Tenerlo claro con tiempo se siente increíble."
+      }
+    }
+  },
   "header": {
     "getStarted": "Comenzar",
     "nav": {
