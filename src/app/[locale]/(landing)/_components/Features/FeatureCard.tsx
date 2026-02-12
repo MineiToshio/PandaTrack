@@ -1,4 +1,6 @@
+import Heading from "@/components/core/Heading";
 import IconBox from "@/components/core/IconBox";
+import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
 import { Check } from "lucide-react";
 import type { ReactNode } from "react";
@@ -35,10 +37,21 @@ export default function FeatureCard({
       <IconBox variant="muted" accentClassName={accentClassName}>
         {icon}
       </IconBox>
-      <h3 className="text-text-title mt-4 text-lg font-semibold">
-        <span className={cn("border-b-2 pb-0.5", titleBarClassName)}>{title}</span>
-      </h3>
-      <p className="text-text-body mt-2 text-sm leading-relaxed">{description}</p>
+      <div className="mt-4 w-fit max-w-full">
+        <Heading as="h3" size="xs" className="text-text-title">
+          {title}
+        </Heading>
+        <div
+          className={cn(
+            "mt-1 h-0.5 w-10 rounded-full transition-[width] duration-300 ease-out group-hover:w-full",
+            titleBarClassName,
+          )}
+          aria-hidden
+        />
+      </div>
+      <Typography size="sm" className="text-text-body mt-2 leading-relaxed">
+        {description}
+      </Typography>
       <ul className="mt-4 space-y-2" role="list">
         {bullets.map((bullet, i) => (
           <li key={i} className="text-muted-foreground flex items-center gap-2 text-sm">

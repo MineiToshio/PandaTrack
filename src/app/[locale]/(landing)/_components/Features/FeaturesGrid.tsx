@@ -9,7 +9,7 @@ const FEATURES = [
     bullets: ["Descubre por categoría", "Reviews de la comunidad"] as [string, string],
     icon: <Store className="h-6 w-6" aria-hidden />,
     accentClassName: "text-primary",
-    titleBarClassName: "border-primary",
+    titleBarClassName: "bg-primary",
     hoverAccentClassName: "hover:border-primary/50 hover:shadow-lg hover:shadow-primary/20",
   },
   {
@@ -19,7 +19,7 @@ const FEATURES = [
     bullets: ["Items por compra", "Estados y fechas"] as [string, string],
     icon: <ShoppingBag className="h-6 w-6" aria-hidden />,
     accentClassName: "text-info",
-    titleBarClassName: "border-info",
+    titleBarClassName: "bg-info",
     hoverAccentClassName: "hover:border-info/50 hover:shadow-lg hover:shadow-info/20",
   },
   {
@@ -29,7 +29,7 @@ const FEATURES = [
     bullets: ["Depósitos y saldo", "Pagos por mes"] as [string, string],
     icon: <BadgeDollarSign className="h-6 w-6" aria-hidden />,
     accentClassName: "text-secondary",
-    titleBarClassName: "border-secondary",
+    titleBarClassName: "bg-secondary",
     hoverAccentClassName: "hover:border-secondary/50 hover:shadow-lg hover:shadow-secondary/20",
   },
   {
@@ -39,7 +39,7 @@ const FEATURES = [
     bullets: ["Múltiples envíos", "En ruta y entregado"] as [string, string],
     icon: <Truck className="h-6 w-6" aria-hidden />,
     accentClassName: "text-accent",
-    titleBarClassName: "border-accent",
+    titleBarClassName: "bg-accent",
     hoverAccentClassName: "hover:border-accent/50 hover:shadow-lg hover:shadow-accent/20",
   },
 ] as const;

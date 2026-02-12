@@ -1,5 +1,7 @@
 import Chip from "@/components/core/Chip";
+import Heading from "@/components/core/Heading";
 import IconBox from "@/components/core/IconBox";
+import Typography from "@/components/core/Typography";
 import { Bell } from "lucide-react";
 
 export default function RemindersBand() {
@@ -10,13 +12,13 @@ export default function RemindersBand() {
           <Bell className="h-6 w-6" aria-hidden />
         </IconBox>
         <div className="min-w-0 flex-1">
-          <h3 id="reminders-heading" className="text-text-title text-lg font-semibold md:text-xl">
+          <Heading as="h3" size="xs" id="reminders-heading" className="text-text-title md:text-xl">
             Recordatorios y alertas útiles
-          </h3>
-          <p className="text-text-body mt-2 text-sm leading-relaxed md:text-base">
+          </Heading>
+          <Typography size="sm" className="text-text-body mt-2 leading-relaxed md:text-base">
             Recibe recordatorios para pedir updates y no olvidar preventas largas. Define un presupuesto y recibe
             alertas cuando te estés acercando al límite.
-          </p>
+          </Typography>
           <div className="mt-4 flex flex-wrap gap-2">
             <Chip>Recordatorios</Chip>
             <Chip>Presupuesto</Chip>
