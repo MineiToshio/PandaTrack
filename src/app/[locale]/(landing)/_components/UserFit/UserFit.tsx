@@ -13,7 +13,16 @@ export default function UserFit() {
       title={t("title")}
       subtitle={t("subtitle")}
       headingId="user-fit-heading"
-      className="border-border border-b"
+      className="relative"
+      background={
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            background: "radial-gradient(ellipse 70% 50% at 50% 0%, var(--muted) 0%, transparent 55%)",
+          }}
+          aria-hidden
+        />
+      }
     >
       <div className="grid gap-6 md:grid-cols-3">
         <ProblemCard

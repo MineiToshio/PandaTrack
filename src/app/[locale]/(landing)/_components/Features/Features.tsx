@@ -10,12 +10,12 @@ export default function FeaturesSection() {
       title={t("sectionTitle")}
       subtitle={t("sectionSubtitle")}
       headingId="features-heading"
-      className="relative overflow-hidden"
+      className="relative"
       background={
         <div
-          className="pointer-events-none absolute inset-0 opacity-40"
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
           style={{
-            background: "radial-gradient(ellipse 80% 50% at 50% 0%, var(--muted) 0%, transparent 60%)",
+            background: "radial-gradient(ellipse 70% 50% at 50% 0%, var(--muted) 0%, transparent 55%)",
           }}
           aria-hidden
         />
