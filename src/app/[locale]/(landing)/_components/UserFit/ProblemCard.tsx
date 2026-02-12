@@ -1,3 +1,4 @@
+import IconBox from "@/components/core/IconBox";
 import { cn } from "@/lib/styles";
 import type { ReactNode } from "react";
 
@@ -7,9 +8,7 @@ type FeatureCardProps = {
   accentClassName: string;
   title: string;
   description: string;
-  /** Clase para el borde en hover (ej. "hover:border-primary/40") */
   hoverBorderClassName?: string;
-  /** Clase para el color del título en hover (ej. "group-hover:text-primary") */
   hoverTitleClassName?: string;
   className?: string;
 };
@@ -41,16 +40,13 @@ export default function FeatureCard({
       >
         {index}
       </span>
-      <div
-        className={cn(
-          "mb-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white",
-          "transition-shadow duration-400 ease-out",
-          "group-hover:shadow-lg group-hover:shadow-black/25",
-          accentClassName,
-        )}
+      <IconBox
+        variant="filled"
+        accentClassName={accentClassName}
+        className="mb-4 transition-shadow duration-400 ease-out group-hover:shadow-lg group-hover:shadow-black/25"
       >
         {icon}
-      </div>
+      </IconBox>
       <h3
         className={cn(
           "text-text-title mb-2 text-lg font-semibold transition-colors duration-300 ease-out",
