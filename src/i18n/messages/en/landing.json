@@ -57,6 +57,11 @@
       "faq": "FAQ"
     }
   },
+  "banner": {
+    "title": "Ready to take control of your collection?",
+    "subtitle": "Join the waitlist and be among the first to try PandaTrack. No more lost orders or surprise payments.",
+    "cta": "Join the waitlist"
+  },
   "hero": {
     "eyebrow": "Total control over your collection",
     "title": "PandaTrack: your command center for shopping and collectibles",

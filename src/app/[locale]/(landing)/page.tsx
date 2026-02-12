@@ -1,3 +1,4 @@
+import Banner from "./_components/Banner";
 import Features from "./_components/Features/Features";
 import Hero from "./_components/Hero";
 import UserFit from "./_components/UserFit/UserFit";
@@ -8,6 +9,7 @@ export default function Home() {
       <Hero />
       <UserFit />
       <Features />
+      <Banner />
     </main>
   );
 }

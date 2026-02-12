@@ -57,6 +57,11 @@
       "faq": "Preguntas frecuentes"
     }
   },
+  "banner": {
+    "title": "¿Listo para tomar el control de tu colección?",
+    "subtitle": "Únete a la lista de espera y sé de los primeros en probar PandaTrack. Sin pedidos perdidos ni pagos por sorpresa.",
+    "cta": "Unirme a la lista de espera"
+  },
   "hero": {
     "eyebrow": "Control total de tus colección",
     "title": "PandaTrack: tu centro de mando para compras y coleccionables",
