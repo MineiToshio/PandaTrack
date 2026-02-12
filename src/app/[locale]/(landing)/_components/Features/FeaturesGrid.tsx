@@ -1,6 +1,6 @@
 import FeatureCard from "./FeatureCard";
 import { useTranslations } from "next-intl";
-import { BadgeDollarSign, ShoppingBag, Store, Truck } from "lucide-react";
+import { BadgeDollarSign, Bell, ShoppingBag, Store, Truck } from "lucide-react";
 
 const FEATURES_CONFIG = [
   {
@@ -31,24 +31,54 @@ const FEATURES_CONFIG = [
     titleBarClassName: "bg-accent",
     hoverAccentClassName: "hover:border-accent/50 hover:shadow-lg hover:shadow-accent/20",
   },
+  {
+    key: "reminders",
+    icon: <Bell className="h-6 w-6" aria-hidden />,
+    accentClassName: "text-highlight",
+    titleBarClassName: "bg-highlight",
+    hoverAccentClassName: "hover:border-highlight/50 hover:shadow-lg hover:shadow-highlight/20",
+  },
 ] as const;
 
+const REMINDERS_INDEX = 4;
+
 export default function FeaturesGrid() {
-  const t = useTranslations("landing.features.cards");
+  const tCards = useTranslations("landing.features.cards");
+  const tReminders = useTranslations("landing.features.reminders");
+
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-2">
-      {FEATURES_CONFIG.map((feature, index) => (
-        <FeatureCard
-          key={feature.key}
-          icon={feature.icon}
-          title={t(`${feature.key}.title`)}
-          description={t(`${feature.key}.description`)}
-          bullets={[t(`${feature.key}.bullets.0`), t(`${feature.key}.bullets.1`)]}
-          accentClassName={feature.accentClassName}
-          titleBarClassName={feature.titleBarClassName}
-          hoverAccentClassName={feature.hoverAccentClassName}
-        />
-      ))}
+      {FEATURES_CONFIG.map((feature, index) => {
+        const isReminders = feature.key === "reminders";
+        const title = isReminders ? tReminders("heading") : tCards(`${feature.key}.title`);
+        const description = isReminders ? tReminders("description") : tCards(`${feature.key}.description`);
+        const bullets: [string, string] = isReminders
+          ? [tReminders("chips.0"), tReminders("chips.1")]
+          : [tCards(`${feature.key}.bullets.0`), tCards(`${feature.key}.bullets.1`)];
+
+        const card = (
+          <FeatureCard
+            key={feature.key}
+            icon={feature.icon}
+            title={title}
+            description={description}
+            bullets={bullets}
+            accentClassName={feature.accentClassName}
+            titleBarClassName={feature.titleBarClassName}
+            hoverAccentClassName={feature.hoverAccentClassName}
+          />
+        );
+
+        if (index === REMINDERS_INDEX) {
+          return (
+            <div key={feature.key} className="w-full lg:col-span-2 lg:flex lg:justify-center">
+              <div className="w-full lg:max-w-[calc((100%-1.5rem)/2)]">{card}</div>
+            </div>
+          );
+        }
+
+        return card;
+      })}
     </div>
   );
 }

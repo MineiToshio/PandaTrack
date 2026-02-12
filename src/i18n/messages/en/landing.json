@@ -28,10 +28,6 @@
       "heading": "Handy reminders and alerts",
       "description": "Get reminders to request updates and not forget long pre-orders. Set a budget and get alerts when you're approaching your limit.",
       "chips": ["Reminders", "Budget"]
-    },
-    "comingSoon": {
-      "heading": "What's coming next",
-      "items": ["Collection management (with photos)", "Wishlist"]
     }
   },
   "userFit": {

@@ -24,6 +24,8 @@
   --success: #22c55e;
   --warning: #f59e0b;
   --info: #38bdf8;
+  --highlight: #a78bfa;
+  --highlight-foreground: #0b0f14;
   --link: #7aa2ff;
   --link-hover: #9bb7ff;
   --text-title: #f2f6fb;
@@ -54,6 +56,8 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
   --color-link: var(--link);
   --color-link-hover: var(--link-hover);
   --color-text-title: var(--text-title);
@@ -89,6 +93,8 @@
   --success: #16a34a;
   --warning: #d97706;
   --info: #0ea5e9;
+  --highlight: #7c3aed;
+  --highlight-foreground: #ffffff;
   --link: #1d4ed8;
   --link-hover: #1e40af;
   --text-title: #0f172a;

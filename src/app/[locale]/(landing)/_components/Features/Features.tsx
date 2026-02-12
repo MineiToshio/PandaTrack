@@ -1,7 +1,5 @@
 import Section from "@/app/[locale]/(landing)/_components/Section";
-import ComingSoonBlock from "./ComingSoonBlock";
 import FeaturesGrid from "./FeaturesGrid";
-import RemindersBand from "./RemindersBand";
 import { useTranslations } from "next-intl";
 
 export default function FeaturesSection() {
@@ -24,10 +22,6 @@ export default function FeaturesSection() {
       }
     >
       <FeaturesGrid />
-      <div className="mt-10 space-y-6 md:mt-14 lg:grid lg:grid-cols-[1fr_auto] lg:items-start lg:gap-8 lg:space-y-0">
-        <RemindersBand />
-        <ComingSoonBlock />
-      </div>
     </Section>
   );
 }

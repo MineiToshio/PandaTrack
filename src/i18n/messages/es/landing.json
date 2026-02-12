@@ -28,10 +28,6 @@
       "heading": "Recordatorios y alertas útiles",
       "description": "Recibe recordatorios para pedir updates y no olvidar preventas largas. Define un presupuesto y recibe alertas cuando te estés acercando al límite.",
       "chips": ["Recordatorios", "Presupuesto"]
-    },
-    "comingSoon": {
-      "heading": "Lo que viene después",
-      "items": ["Gestión de colección (con fotos)", "Wishlist"]
     }
   },
   "userFit": {
