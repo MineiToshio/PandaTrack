@@ -1,4 +1,39 @@
 {
+  "features": {
+    "sectionTitle": "Todo tu coleccionismo, en un solo sistema",
+    "sectionSubtitle": "Descubre tiendas confiables, registra compras, controla preventas y sigue envíos—con un dashboard que te dice qué viene y qué falta pagar.",
+    "cards": {
+      "stores": {
+        "title": "Tiendas confiables",
+        "description": "Descubre tiendas según tu tipo de colección y guarda tus favoritas en un solo lugar. Revisa referencias y feedback para comprar con más seguridad.",
+        "bullets": ["Descubre por categoría", "Reviews de la comunidad"]
+      },
+      "purchases": {
+        "title": "Compras ordenadas",
+        "description": "Registra cada compra con tienda, items, fechas y notas sin complicarte. Mantén un historial limpio para saber qué compraste y cuándo.",
+        "bullets": ["Items por compra", "Estados y fechas"]
+      },
+      "preorders": {
+        "title": "Preventas sin sorpresas",
+        "description": "Lleva el control de adelantos y saldos sin perderte entre pagos parciales. Visualiza cuánto falta pagar y qué montos vienen por mes.",
+        "bullets": ["Depósitos y saldo", "Pagos por mes"]
+      },
+      "shipments": {
+        "title": "Envíos bajo control",
+        "description": "Sigue envíos aunque un pedido salga en partes o en diferentes fechas. Ve qué está en espera, qué se envió y qué fue entregado.",
+        "bullets": ["Múltiples envíos", "En ruta y entregado"]
+      }
+    },
+    "reminders": {
+      "heading": "Recordatorios y alertas útiles",
+      "description": "Recibe recordatorios para pedir updates y no olvidar preventas largas. Define un presupuesto y recibe alertas cuando te estés acercando al límite.",
+      "chips": ["Recordatorios", "Presupuesto"]
+    },
+    "comingSoon": {
+      "heading": "Lo que viene después",
+      "items": ["Gestión de colección (con fotos)", "Wishlist"]
+    }
+  },
   "userFit": {
     "title": "¿Es PandaTrack perfecto para mí?",
     "subtitle": "Si coleccionar te encanta, pero el seguimiento de tus compras ya se volvió un caos… sí, esto es para ti.",

@@ -1,11 +1,12 @@
 import Heading from "@/components/core/Heading";
 import IconBox from "@/components/core/IconBox";
 import Typography from "@/components/core/Typography";
+import { useTranslations } from "next-intl";
 import { Heart, Sparkles } from "lucide-react";
 
-const COMING_SOON_ITEMS = ["Gestión de colección (con fotos)", "Wishlist"] as const;
-
 export default function ComingSoonBlock() {
+  const t = useTranslations("landing.features.comingSoon");
+  const itemCount = 2;
   return (
     <section
       className="border-border bg-muted/30 rounded-2xl border border-dashed p-6 md:p-8"
@@ -17,15 +18,15 @@ export default function ComingSoonBlock() {
             <Sparkles className="h-5 w-5" aria-hidden />
           </IconBox>
           <Heading as="h3" size="xs" id="coming-soon-heading" className="text-text-title md:text-xl">
-            Lo que viene después
+            {t("heading")}
           </Heading>
         </div>
         <ul className="space-y-2" role="list">
-          {COMING_SOON_ITEMS.map((item, index) => (
-            <li key={index} className="text-muted-foreground flex items-center gap-2">
+          {Array.from({ length: itemCount }, (_, i) => (
+            <li key={i} className="text-muted-foreground flex items-center gap-2">
               <Heart className="h-4 w-4 shrink-0" aria-hidden />
               <Typography as="span" size="sm">
-                {item}
+                {t(`items.${i}`)}
               </Typography>
             </li>
           ))}

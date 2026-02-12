@@ -2,13 +2,15 @@ import Section from "@/app/[locale]/(landing)/_components/Section";
 import ComingSoonBlock from "./ComingSoonBlock";
 import FeaturesGrid from "./FeaturesGrid";
 import RemindersBand from "./RemindersBand";
+import { useTranslations } from "next-intl";
 
 export default function FeaturesSection() {
+  const t = useTranslations("landing.features");
   return (
     <Section
       ariaLabelledby="features-heading"
-      title="Todo tu coleccionismo, en un solo sistema"
-      subtitle="Descubre tiendas confiables, registra compras, controla preventas y sigue envíos—con un dashboard que te dice qué viene y qué falta pagar."
+      title={t("sectionTitle")}
+      subtitle={t("sectionSubtitle")}
       headingId="features-heading"
       className="relative overflow-hidden"
       background={

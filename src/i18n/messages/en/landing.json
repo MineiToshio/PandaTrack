@@ -1,4 +1,39 @@
 {
+  "features": {
+    "sectionTitle": "All your collecting, in one place",
+    "sectionSubtitle": "Find trusted stores, log purchases, manage pre-orders and track shipments—with a dashboard that shows what's due and what's left to pay.",
+    "cards": {
+      "stores": {
+        "title": "Stores you trust",
+        "description": "Find stores that match your type of collection and save your favorites in one place. Check references and feedback to buy with confidence.",
+        "bullets": ["Browse by category", "Community reviews"]
+      },
+      "purchases": {
+        "title": "Orders, all sorted",
+        "description": "Log each purchase with store, items, dates and notes without the fuss. Keep a clear history of what you bought and when.",
+        "bullets": ["Items per purchase", "Status and dates"]
+      },
+      "preorders": {
+        "title": "Pre-orders, no surprises",
+        "description": "Stay on top of deposits and balances without losing track of partial payments. See what's left to pay and what's due each month.",
+        "bullets": ["Deposits and balance", "Payments per month"]
+      },
+      "shipments": {
+        "title": "Shipments in check",
+        "description": "Track shipments even when an order ships in parts or on different dates. See what's pending, what shipped and what's delivered.",
+        "bullets": ["Multiple shipments", "In transit and delivered"]
+      }
+    },
+    "reminders": {
+      "heading": "Handy reminders and alerts",
+      "description": "Get reminders to request updates and not forget long pre-orders. Set a budget and get alerts when you're approaching your limit.",
+      "chips": ["Reminders", "Budget"]
+    },
+    "comingSoon": {
+      "heading": "What's coming next",
+      "items": ["Collection management (with photos)", "Wishlist"]
+    }
+  },
   "userFit": {
     "title": "Is PandaTrack right for me?",
     "subtitle": "If you love collecting but keeping track of your purchases has become chaos… yes, this is for you.",
