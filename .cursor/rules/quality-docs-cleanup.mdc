@@ -1,0 +1,36 @@
+---
+description: Linting, comments, documentation, and code cleanup in PandaTrack
+alwaysApply: false
+---
+
+# Quality, documentation, and cleanup – PandaTrack
+
+## Linter
+
+Address all linter warnings. When disabling a rule is necessary, add a comment explaining why.
+
+```typescript
+// Using any because the external library does not expose types
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const data: any = externalLib.getData();
+```
+
+## Comments
+
+Code should be self-explanatory. Comment **why**, not what.
+
+- Non-obvious business logic
+- Workarounds for bugs or limitations in external libraries
+- Optimizations that might seem counterintuitive
+- Regex patterns and their purpose
+- TODO comments when something is left pending: `// TODO: description`
+
+## Utilities in src/lib or src/utils
+
+For functions in `/lib` or `/utils` used across the project, add JSDoc when it helps clarify the contract (parameters, return value, edge cases). Use descriptive names that explain what the function does.
+
+## Cleanup
+
+- Remove unused code: variables, functions, and dependencies
+- Remove unused imports
+- Remove commented-out code that is no longer needed

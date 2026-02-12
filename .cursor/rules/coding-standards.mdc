@@ -1,0 +1,86 @@
+---
+description: Core coding principles, naming conventions, and fundamental practices for PandaTrack
+alwaysApply: true
+---
+
+# Coding standards – PandaTrack
+
+## Language: English only (except i18n)
+
+**All code output must be in English.** This includes:
+
+- Variable names, function names, type/interface names, and identifiers
+- Comments and documentation (JSDoc, README, inline comments)
+- Commit messages, log messages, and error messages in code
+- Test descriptions and assertion messages
+- API response messages or developer-facing strings in source code
+
+**Exception:** User-facing text that is localized (i18n) must live in translation files under `src/i18n/messages/` (e.g. `en/`, `es/`) and must not be hardcoded in components. The source keys and the content of those files may be in any language the product supports; only the **code** (identifiers, comments, commit messages, etc.) is required to be in English.
+
+## Fundamental principles
+
+- **Clarity over cleverness**: Write code that is easy to understand. Prioritize readability over micro-optimizations.
+- **Consistency**: Use the same patterns across the entire codebase.
+- **Single responsibility**: Each function, component, and module should do one thing well.
+- **Explicit over implicit**: Avoid magic values and hidden side effects. Prefer explicit configuration, types, and dependencies.
+- **Spelling and grammar**: Use correct spelling and grammar in all of the above (English).
+
+## No magic numbers or values
+
+Do not use raw numbers or strings except in trivial cases (0, 1). Use named constants or variables that provide context.
+
+```typescript
+// ❌ Avoid
+if (user.age > 18) { ... }
+
+// ✅ Do this
+const LEGAL_ADULT_AGE = 18;
+if (user.age > LEGAL_ADULT_AGE) { ... }
+```
+
+## No function drilling
+
+Do not chain function calls directly. Use intermediate variables for readability and debugging.
+
+```typescript
+// ❌ Avoid
+navigator.clipboard.writeText(filterWildcardsForCopy(answer));
+
+// ✅ Do this
+const filteredCopyText = filterWildcardsForCopy(answer);
+navigator.clipboard.writeText(filteredCopyText);
+```
+
+## Naming conventions
+
+| Element | Convention | Example |
+|--------|------------|---------|
+| Files and directories | camelCase | `userProfile.tsx`, `orderService.ts` |
+| Variables and functions | camelCase | `userName`, `fetchOrders()` |
+| Types, interfaces, classes | PascalCase | `UserProfile`, `OrderRepository` |
+| Constants | UPPER_SNAKE_CASE | `MAX_RETRY_COUNT` |
+| React components | PascalCase | `UserCard`, `DashboardLayout` |
+
+Variable names must be self-explanatory and include enough context:
+
+```typescript
+// ❌ Bad
+const x = 10;
+
+// ✅ Good
+const maxLoginAttempts = 10;
+```
+
+Group related constants in objects (e.g. in `src/lib/constants.ts`):
+
+```typescript
+export const COOKIES = {
+  profileId: "profileId",
+} as const;
+```
+
+## Git branch naming
+
+Format: `[ticket-id]-[clear-description]`. For multi-part work use `-part1`, `-part2`, etc.
+
+Examples: `PT-1-implement-landing`, `PT-2-add-auth-part1`.

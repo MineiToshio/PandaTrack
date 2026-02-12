@@ -1,0 +1,30 @@
+---
+description: Prisma data layer: centralizing queries, encapsulation, and not using Prisma directly in components
+globs: "**/prisma/**/*,**/lib/prisma*.ts"
+alwaysApply: false
+---
+
+# Prisma and data layer – PandaTrack
+
+## Prisma client
+
+The Prisma client is instantiated and exported from `src/lib/prisma.ts`. The project uses the `@prisma/adapter-pg` adapter with `pg` Pool. Do not create another PrismaClient instance elsewhere in the app.
+
+## Centralize queries
+
+All Prisma queries must live in dedicated modules (e.g. `src/prisma/[model].ts` or equivalent per domain), not scattered in components or pages.
+
+- One file per model or data domain.
+- Organize functions by responsibility (get, create, update, etc.).
+
+## Encapsulation
+
+React components and business services must not import or use `prisma` directly. They must use functions exported from the data layer (e.g. `getXByY`, `createX`, `updateX`).
+
+## Transactions
+
+For operations that must be atomic, use `prisma.$transaction`.
+
+## Typing
+
+Use Prisma-generated types for parameters and return values. Avoid manually redefining types that already come from the schema.

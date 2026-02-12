@@ -1,0 +1,41 @@
+---
+description: Tailwind usage, cn() helper, and semantic HTML in components
+globs: "**/*.tsx,**/*.css"
+alwaysApply: false
+---
+
+# Tailwind and semantic HTML – PandaTrack
+
+## cn() for class names
+
+Use the `cn()` function from `@/lib/styles` to combine and conditionally apply classes (clsx + tailwind-merge).
+
+```tsx
+import { cn } from "@/lib/styles";
+
+<div className={cn("base-classes", isActive && "active", className)} />
+```
+
+## Repeated Tailwind patterns
+
+- **Global patterns**: Define in `src/app/globals.css` with `@layer components` and `@apply` when used app-wide.
+- **Domain/route-specific patterns**: If only used in one area, use scoped CSS or reusable classes in that area’s components.
+
+## Semantic HTML
+
+Use elements that convey meaning: `<button>` for actions, `<nav>` for navigation, `<main>` for main content, `<article>`, `<section>`, `<header>`, `<footer>` as appropriate.
+
+```tsx
+// ❌ Avoid
+<div onClick={handleSubmit}>Submit</div>
+<div><div>Title</div><div>Content...</div></div>
+
+// ✅ Do this
+<button type="button" onClick={handleSubmit}>Submit</button>
+<article>
+  <h1>Title</h1>
+  <p>Content...</p>
+</article>
+```
+
+Choosing the right element improves accessibility and SEO.

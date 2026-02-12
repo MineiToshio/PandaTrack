@@ -1,0 +1,27 @@
+---
+description: All code, comments, and developer-facing text must be in English; i18n user-facing text is the only exception
+alwaysApply: true
+---
+
+# English-only code – PandaTrack
+
+All source code and code-related output in this project must be written in **English**.
+
+## Must be in English
+
+- **Identifiers**: variable names, function names, type/interface/class names, constants, enum values
+- **Comments**: inline comments, block comments, JSDoc, and any documentation in the codebase
+- **Commit messages** and **branch names** (except ticket IDs)
+- **Log messages**, **error messages**, and **developer-facing strings** in source code
+- **Test names**, **describe/it blocks**, and **assertion messages**
+- **API error messages or developer-facing response text** in code (user-facing copy goes to i18n)
+
+## Exception: i18n (user-facing text)
+
+User-visible text that is localized must **not** be hardcoded in components or server code. It must live in:
+
+- `src/i18n/messages/{locale}/` (e.g. `en/`, `es/`)
+
+The **keys** in those JSON files and the **content** of the translations may be in any language the product supports. Only the **code** (identifiers, comments, commits, logs, etc.) is required to be in English.
+
+When adding or editing UI copy, add or update the corresponding keys in the appropriate locale files; do not put user-facing strings directly in TS/TSX.

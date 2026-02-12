@@ -1,0 +1,42 @@
+---
+description: Error handling, Zod validation, and logging in PandaTrack
+alwaysApply: false
+---
+
+# Error handling, validation, and logging – PandaTrack
+
+## Handling expected errors
+
+Handle expected errors (invalid input, DB constraints) in a controlled way. Use error objects with clear messages and avoid breaking the app; when appropriate, return fallback or default values.
+
+```typescript
+const fetchItems = async (): Promise<Item[]> => {
+  try {
+    const response = await api.get("/items");
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch items:", error);
+    return [];
+  }
+};
+```
+
+## Validation with Zod
+
+Use Zod for schema validation, especially at boundaries with external or AI data. Derive TypeScript types from schemas with `z.infer<typeof schema>`.
+
+```typescript
+export const itemSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1),
+});
+export type ItemInput = z.infer<typeof itemSchema>;
+```
+
+## Logging by environment
+
+In development you may use `console.log` / `console.error` with discretion. In production, do not expose sensitive errors or internal data in logs that reach the client. If Sentry (or similar) is integrated, capture exceptions in production and rethrow when appropriate.
+
+## Security
+
+Validate input on both client and server. Do not expose sensitive environment variables in code that is sent to the client.

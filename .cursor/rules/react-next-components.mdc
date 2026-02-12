@@ -1,0 +1,87 @@
+---
+description: React and Next.js components: Server Components by default, props, events, composition, and prop drilling limit
+globs: "**/*.tsx"
+alwaysApply: false
+---
+
+# React and Next.js – PandaTrack
+
+## Server Components by default
+
+In Next.js App Router use Server Components by default. Add `"use client"` only when needed (hooks, events, state, browser APIs).
+
+## Small, focused components
+
+Keep components small with a single clear responsibility. If business logic grows, extract hooks or utilities.
+
+## Constants outside the component
+
+Declare constants and variables that do not depend on props or state outside the component.
+
+```typescript
+const DEFAULT_AVATAR_SIZE = 40;
+
+const UserAvatar = ({ user, size = DEFAULT_AVATAR_SIZE }) => {
+  // ...
+};
+```
+
+## Props order (recommended)
+
+Suggested order: native HTML attributes first, then custom props and handlers.
+
+```tsx
+<Button
+  type="submit"
+  className="primary-button"
+  disabled={isLoading}
+  customProp={value}
+  onClick={handleClick}
+>
+  Submit
+</Button>
+```
+
+## Event handler logic
+
+Extract logic into named functions instead of inline in the handler.
+
+```tsx
+// ❌ Avoid
+<button onClick={() => { setLoading(true); fetchData(); }}>Click</button>
+
+// ✅ Do this
+const handleClick = () => {
+  setLoading(true);
+  fetchData();
+};
+<button onClick={handleClick}>Click</button>
+```
+
+## Prop drilling limit (3 levels)
+
+If you need to pass props more than 3 levels deep, use React Context instead of continuing to pass props.
+
+## Composition over many props
+
+Prefer composition with subcomponents or slots over components with many props.
+
+```tsx
+// ✅ Composition approach
+<UserCard user={user}>
+  <UserCard.Avatar />
+  <UserCard.Info>
+    <UserCard.Name />
+    <UserCard.Email />
+  </UserCard.Info>
+  <UserCard.Actions>
+    <EditButton onClick={handleEdit} />
+  </UserCard.Actions>
+</UserCard>
+```
+
+## Memoization
+
+Use `useMemo` and `useCallback` only for expensive computations or functions passed to many children; not for trivial values or functions.
+
+For performance and advanced React/Next patterns (waterfalls, Suspense, RSC), follow the guides in `.agents/skills/vercel-react-best-practices/AGENTS.md` when they apply.
