@@ -81,7 +81,7 @@ export default function Hero() {
             }}
           >
             <Link
-              href="#get-started"
+              href="#waitlist"
               className={cn(
                 buttonVariants({ variant: "primary", size: "lg" }),
                 "animate-[hero-cta-glow_2.5s_ease-in-out_infinite]",
