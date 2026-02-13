@@ -30,6 +30,8 @@ alwaysApply: true
 
 Do not use raw numbers or strings except in trivial cases (0, 1). Use named constants or variables that provide context.
 
+**Exception:** This does not apply when the value is passed to a prop whose name already conveys the meaning. No need for an extra constant if the prop name makes the value self-explanatory (e.g. `viewBox="0 0 24 24"`, `width={24}`, `size={18}`).
+
 ```typescript
 // ❌ Avoid
 if (user.age > 18) { ... }
@@ -37,6 +39,15 @@ if (user.age > 18) { ... }
 // ✅ Do this
 const LEGAL_ADULT_AGE = 18;
 if (user.age > LEGAL_ADULT_AGE) { ... }
+```
+
+```typescript
+// ✅ Fine: prop name gives context; no constant needed
+<svg viewBox="0 0 24 24" width={18} height={18} />
+
+// ❌ Unnecessary: constant adds no clarity over the prop name
+const VIEWBOX = "0 0 24 24";
+<svg viewBox={VIEWBOX} />
 ```
 
 ## No function drilling

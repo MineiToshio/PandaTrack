@@ -1,0 +1,13 @@
+---
+description: Icon libraries to use in PandaTrack
+alwaysApply: true
+---
+
+# Icons – PandaTrack
+
+Use two icon sources depending on the use case:
+
+- **Lucide Icons** (`lucide-react`): General-purpose UI icons (arrows, mail, settings, layout, etc.).
+- **Simple Icons** (`simple-icons`): Brand icons only (TikTok, Instagram, GitHub, etc.). See [simple-icons](https://github.com/simple-icons/simple-icons).
+
+When rendering a Simple Icon in JSX, use the icon’s `path` inside an `<svg>` with `viewBox="0 0 24 24"` and `fill="currentColor"` so it matches text color.
