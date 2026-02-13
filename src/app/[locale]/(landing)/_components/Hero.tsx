@@ -42,7 +42,7 @@ export default function Hero() {
       <div className="relative mx-auto grid w-full max-w-6xl gap-12 px-4 py-16 md:grid-cols-[1.1fr_0.9fr] md:items-center md:px-6 md:py-24 lg:px-8">
         <div className="flex flex-col gap-6">
           <span
-            className="text-primary bg-primary/15 ring-primary/30 w-fit rounded-full px-4 py-2 text-xs font-semibold tracking-[0.2em] uppercase ring-1"
+            className="bg-primary/35 text-primary-foreground ring-primary/40 w-fit rounded-full px-4 py-2 text-xs font-semibold tracking-[0.2em] uppercase ring-1"
             style={{
               animation: `hero-fade-in-up ${ANIMATION_DURATION_MS}ms ease-out both`,
               animationDelay: "0ms",
