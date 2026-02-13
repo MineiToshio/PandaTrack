@@ -1,32 +1,36 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import Heading from "@/components/core/Heading";
-import Typography from "@/components/core/Typography";
+import type { Metadata } from "next";
+import LegalPageLayout from "../_components/LegalPageLayout";
+
+const PRIVACY_SECTION_KEYS = [
+  "whoWeAre",
+  "dataWeCollect",
+  "howWeUse",
+  "legalBasis",
+  "sharing",
+  "retention",
+  "yourRights",
+  "cookies",
+  "security",
+  "children",
+  "changes",
+  "contact",
+] as const;
 
 type PrivacyPageProps = {
   params: Promise<{ locale: string }>;
 };
 
+export async function generateMetadata({ params }: PrivacyPageProps): Promise<Metadata> {
+  const t = await getTranslations("privacy");
+  return {
+    title: t("title"),
+    description: t("intro"),
+  };
+}
+
 export default async function PrivacyPage({ params }: PrivacyPageProps) {
   const { locale } = await params;
-  const t = await getTranslations("legal");
 
-  return (
-    <main className="bg-background text-foreground min-h-screen px-4 py-16 md:px-6 md:py-24">
-      <div className="mx-auto max-w-2xl">
-        <Heading as="h1" size="md" className="text-text-title mb-4">
-          {t("privacyTitle")}
-        </Heading>
-        <Typography size="md" className="text-muted-foreground">
-          {t("comingSoon")}
-        </Typography>
-        <Link
-          href={`/${locale}`}
-          className="text-primary hover:text-link mt-6 inline-block text-sm font-medium transition-colors"
-        >
-          {t("backToHome")}
-        </Link>
-      </div>
-    </main>
-  );
+  return <LegalPageLayout namespace="privacy" sectionKeys={PRIVACY_SECTION_KEYS} locale={locale} />;
 }

@@ -17,6 +17,8 @@ export default getRequestConfig(async ({ requestLocale }) => {
       // Load messages per file structure
       common: (await import(`./messages/${locale}/common.json`)).default,
       landing: (await import(`./messages/${locale}/landing.json`)).default,
+      terms: (await import(`./messages/${locale}/terms.json`)).default,
+      privacy: (await import(`./messages/${locale}/privacy.json`)).default,
     },
   };
 });
