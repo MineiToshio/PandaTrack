@@ -39,10 +39,10 @@ export default function BurgerMenu({ isOpen, onClose, items, ctaLabel }: BurgerM
             <IconButton Icon={X} variant="outline" size="sm" aria-label="Close menu" onClick={onClose} />
           </div>
           <div className="mt-8 flex-1">
-            <HeaderNav items={items} className="flex-col items-start gap-4 text-base" />
+            <HeaderNav items={items} className="flex-col items-start gap-4 text-base" onNavigate={onClose} />
           </div>
           <Link
-            href="#get-started"
+            href="#waitlist"
             className={cn(buttonVariants({ variant: "primary", size: "md" }), "w-full")}
             onClick={onClose}
           >

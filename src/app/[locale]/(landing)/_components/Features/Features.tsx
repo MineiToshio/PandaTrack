@@ -6,6 +6,7 @@ export default function FeaturesSection() {
   const t = useTranslations("landing.features");
   return (
     <Section
+      sectionId="features"
       ariaLabelledby="features-heading"
       title={t("sectionTitle")}
       subtitle={t("sectionSubtitle")}

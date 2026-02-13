@@ -12,10 +12,9 @@ import { Menu } from "lucide-react";
 import BurgerMenu from "./BurgerMenu";
 
 const NAV_ITEMS: HeaderNavItem[] = [
+  { key: "forYou", href: "#user-fit" },
   { key: "features", href: "#features" },
-  { key: "howItWorks", href: "#how-it-works" },
-  { key: "pricing", href: "#pricing" },
-  { key: "faq", href: "#faq" },
+  { key: "faq", href: "#faqs" },
 ];
 
 export default function Header() {
@@ -24,15 +23,15 @@ export default function Header() {
 
   return (
     <>
-      <header className="border-border bg-background text-foreground w-full border-b">
+      <header className="border-border bg-background text-foreground sticky top-0 z-40 w-full border-b">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
           <Logo />
           <div className="hidden md:flex">
             <HeaderNav items={NAV_ITEMS} />
           </div>
           <div className="flex items-center gap-3">
-            <Link href="#get-started" className={cn(buttonVariants({ variant: "primary" }))}>
-              {t("getStarted")}
+            <Link href="#waitlist" className={cn(buttonVariants({ variant: "primary" }))}>
+              {t("cta")}
             </Link>
             <IconButton
               Icon={Menu}
@@ -44,12 +43,7 @@ export default function Header() {
           </div>
         </div>
       </header>
-      <BurgerMenu
-        isOpen={isMenuOpen}
-        onClose={() => setIsMenuOpen(false)}
-        items={NAV_ITEMS}
-        ctaLabel={t("getStarted")}
-      />
+      <BurgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} items={NAV_ITEMS} ctaLabel={t("cta")} />
     </>
   );
 }

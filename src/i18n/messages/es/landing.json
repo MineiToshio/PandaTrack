@@ -49,11 +49,10 @@
     }
   },
   "header": {
-    "getStarted": "Comenzar",
+    "cta": "Unirme a la lista",
     "nav": {
+      "forYou": "Para quién es",
       "features": "Características",
-      "howItWorks": "Cómo funciona",
-      "pricing": "Precios",
       "faq": "Preguntas frecuentes"
     }
   },
