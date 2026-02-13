@@ -21,7 +21,17 @@ export default function HeaderNav({ items, className, onNavigate }: HeaderNavPro
   return (
     <nav aria-label="Main" className={cn("font-secondary text-text-body flex items-center gap-6 text-sm", className)}>
       {items.map((item) => (
-        <Link key={item.href} href={item.href} className="hover:text-text-title transition-colors" onClick={onNavigate}>
+        <Link
+          key={item.href}
+          href={item.href}
+          className={cn(
+            "hover:text-text-title relative transition-colors",
+            "after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-right after:scale-x-0 after:bg-current after:content-['']",
+            "after:transition-transform after:duration-300 after:ease-out",
+            "hover:after:origin-left hover:after:scale-x-100",
+          )}
+          onClick={onNavigate}
+        >
           {t(item.key)}
         </Link>
       ))}
