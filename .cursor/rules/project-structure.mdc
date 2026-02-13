@@ -1,29 +1,191 @@
 ---
-description: PandaTrack project structure and where to place components, hooks, actions, and utilities
+description: PandaTrack project structure and where to place components, hooks, actions, utilities, queries, and types
 alwaysApply: false
 ---
 
 # Project structure – PandaTrack
 
-## Structure under `src/`
+## Overview
 
-- **`/app`**: Next.js App Router pages and routes (includes `[locale]` and i18n).
-- **`/components`**: Reusable components used across the app (e.g. `core/`: Button, Chip, Heading, etc.).
-- **`/lib`**: Shared utilities: `prisma.ts`, `styles.ts` (cn), `constants.ts`, `fonts.ts`.
-- **`/types`**: Global TypeScript definitions (e.g. `locale.ts`).
-- **`/i18n`**: Internationalization messages and configuration.
+Code is organized by **reusability** and **scope**: app-wide vs page-specific vs component-specific. Use the same patterns everywhere.
 
-## Domain / route-based organization
+---
 
-Code that is only used in one area of the app should live inside that area, not in global folders.
+## App directory (`src/app/`)
 
-In PandaTrack:
+Next.js App Router lives under **`src/app/`**.
 
-- Routes under `src/app/[locale]/(landing)/` have their components in **`_components/`** within that route (e.g. Features, Hero, Menu, Section, UserFit).
-- Route- or domain-specific hooks, actions, or utilities: use `_hooks/`, `_actions/`, `_utils/` folders within that route when they exist.
+- **Routes**: Use **`[locale]`** (or other dynamic segments) and **route groups** like **`(landing)`** to group routes without affecting the URL.
+- **Layouts**: `layout.tsx` at the segment level that applies (e.g. **`src/app/[locale]/layout.tsx`**, **`src/app/[locale]/(landing)/layout.tsx`**).
+- **Global styles**: **`src/app/globals.css`** (or import from the root layout).
+- **Pages**: `page.tsx` in the segment folder that defines the route.
 
-Rule: if a component, hook, action, or utility is only used in one specific area, place it inside that area’s folder structure, not in global `/components`, `/lib`, or `/hooks`.
+Do not put business logic or reusable code inside **`app/`** except for route-specific `_components`, `_utils`, `_actions`, `_hooks`, and `_types` as described below.
 
-## `_components` convention
+---
 
-Folders prefixed with `_` (e.g. `_components`) do not become route segments in Next.js. Use them to group code associated with a route or layout.
+## Internationalization (i18n)
+
+All i18n configuration and messages live under **`src/i18n/`**.
+
+- **Config**:
+  - **`request.ts`** – next-intl request config (e.g. `getRequestConfig`), loads messages per locale.
+  - **`routing.ts`** – locale list, default locale, and routing options (e.g. `defineRouting`).
+- **Messages**: **`src/i18n/messages/{locale}/`** – one folder per locale (e.g. `en/`, `es/`). Split messages by **namespace** in JSON files (e.g. `common.json`, `landing.json`). Load these namespaces in `request.ts` and use them in components via the chosen i18n API.
+
+User-facing copy must come from these message files; do not hardcode user-visible strings in components or server code.
+
+---
+
+## Proxy (formerly Middleware)
+
+Starting with **Next.js 16**, the previous **middleware** convention was replaced by **Proxy**. The file is **`proxy.ts`** (or **`proxy.js`**), at the **project root** or inside **`src/`** (e.g. **`src/proxy.ts`**), at the same level as **`app/`** or **`pages/`**.
+
+- Export the proxy function as **default** or as a named **`proxy`** export. It receives **`NextRequest`** and returns **`NextResponse`** (or a Promise of it). Use **`config.matcher`** to limit which paths it runs on.
+- Use it for: locale redirects (e.g. next-intl), header changes, redirects based on request data. Keep it thin—no heavy logic or slow data fetching. Do **not** use it for authentication (use Server Layout guards or Route Handlers instead).
+- Only one **`proxy.ts`** file per project; you can still split logic into other modules and import them into **`proxy.ts`**.
+
+---
+
+## Components
+
+### Core components → `src/components/core/`
+
+**Core** components are essential, simple, and highly reusable. They are used anywhere in the app.
+
+- Place all core components in **`src/components/core/`**.
+- Examples: `Input`, `Typography`, `Heading`, `Select`, `Checkbox`, `Button`, `Textarea`, `Chip`.
+
+### Module components → `src/components/modules/`
+
+**Module** components are more complex but still highly reusable and not tied to a specific page or section. They often compose several core components.
+
+- Place them in **`src/components/modules/**`.
+- Examples: `Tab`, `Modal`, `FaqAccordion`, `DataTable`.
+
+### Page-specific components → `_components` inside the page container
+
+Components that are specific to a single page or route group live next to that page.
+
+- Use a **`_components`** folder inside the route/layout that owns them (e.g. **`src/app/[locale]/(landing)/_components/`**).
+
+**Single-file component**
+
+- Put the file directly in **`_components`** (e.g. `_components/Banner.tsx`, `_components/Footer.tsx`).
+
+**Multi-file component**
+
+- Use a **folder** with the **same name** as the main component.
+- The main component file must have the **same name as the folder** (do **not** use `index.tsx`).
+- Put child components, utils, actions, or related files inside that folder.
+- Examples:
+  - **`src/app/[locale]/(landing)/_components/Menu/Menu.tsx`** (and siblings inside `Menu/`)
+  - **`src/app/[locale]/(landing)/_components/Waitlist/Waitlist.tsx`** (and siblings inside `Waitlist/`)
+
+---
+
+## Hooks
+
+- **Global hooks** (used in multiple pages or across the app): **`src/hooks/`**.
+- **Page-level hooks** (used by several components of the same page): **`_hooks/`** inside that page folder, as a sibling of **`_components`**.
+- **Component-specific hooks**: inside the component’s folder (e.g. inside **`Waitlist/`** if only used by Waitlist).
+
+---
+
+## Utilities (`src/lib/`)
+
+Shared utilities live in **`src/lib/`**. Split by **purpose**:
+
+- **Library- or service-focused**: one file per library/service. Put all functions that use that library or service in that file.
+  - Examples: `mapbox.ts`, `serpApi.ts`, `prisma.ts`.
+- **General utilities** (no external library): one file per **classification**.
+  - Examples: `constants.ts`, `fonts.ts`, `formatting.ts`, `cookies.ts`, `loggers.ts`, `styles.ts` (e.g. `cn`).
+
+Utils can be client or server functions; place them in the file that matches the classification or library above.
+
+- **Page-level utils**: **`_utils/`** next to **`_components`** in the page folder.
+- **Component-specific utils**: inside the component’s folder.
+
+---
+
+## Prisma queries
+
+- Create queries in **`src/queries/`**.
+- **One file per Prisma model**. Name the file after the model (e.g. **`src/queries/store.ts`** for the `Store` model).
+
+---
+
+## Types
+
+- **App-wide types**: **`src/types/**`.
+  - Group by domain or concern in separate files (e.g. `locale.ts`, `api.ts`).
+  - TypeScript-only helpers or type utilities can also live under **`src/types/`**.
+- **Page-level types**: **`_types/`** next to **`_components`** in the page folder.
+- **Component-specific types**: inside the component’s folder.
+
+---
+
+## Schemas (e.g. Zod)
+
+Validation schemas follow the **same scope rule** as utils and types:
+
+- **Component-specific**: inside the component’s folder (e.g. **`Waitlist/waitlistSchema.ts`**).
+- **Page-level**: **`_utils/`** or a dedicated **`_schemas/`** next to **`_components`** if shared by several components of that page.
+- **App-wide**: **`src/lib/`** (e.g. a `validation.ts` or per-domain file) or **`src/types/`** if they are mainly type/validation helpers.
+
+Prefer one schema per concern or form; co-locate with the action or component that uses it when it is not shared.
+
+---
+
+## Actions
+
+- **Global actions**: place in a suitable app-level folder (e.g. under **`src/actions/`** or next to the feature they serve), following existing project conventions.
+- **Page-level actions**: **`_actions/`** next to **`_components`** in the page folder.
+- **Component-specific actions**: inside the component’s folder.
+
+---
+
+## Page-level folders (siblings of `_components`)
+
+For a given page or route group, you can have:
+
+- **`_components/`** – page-specific components (and subfolders for multi-file components).
+- **`_utils/`** – utils used by multiple components of that page.
+- **`_actions/`** – actions used by multiple components of that page.
+- **`_hooks/`** – hooks used by multiple components of that page.
+- **`_types/`** – types used by multiple components of that page.
+- **`_schemas/`** – (optional) validation schemas shared by multiple components of that page.
+
+All of these are **siblings** at the same level (e.g. under **`src/app/[locale]/(landing)/`**).
+
+---
+
+## Promotion rule: when to move code up
+
+When something is used in **only one place**, keep it in that place (component or page).
+
+When it starts being used in **several places**:
+
+- **Component-only** → used by another component on the same page → move to **page level** (`_utils`, `_actions`, `_hooks`, `_types`, or `_components` as appropriate).
+- **Page-only** → used by another page or app-wide → move to **app level** (`src/lib/`, `src/hooks/`, `src/types/`, `src/components/core/` or `src/components/modules/`, or global actions).
+
+Always move to the **smallest scope that fits current usage** (component → page → app).
+
+---
+
+## `_` prefix and Next.js
+
+Folders prefixed with **`_`** (e.g. `_components`, `_utils`, `_hooks`) are **not** exposed as route segments by Next.js. Use them to group code that belongs to a route or layout without creating URLs.
+
+---
+
+## Project root and config
+
+At the **project root** (not under `src/`):
+
+- **`next.config.ts`** (or **`next.config.js`**) – Next.js and plugin config (e.g. next-intl plugin pointing to **`./src/i18n/request.ts`**).
+- **`proxy.ts`** – at root or under **`src/`** (see Proxy above; Next.js 16+).
+- **`.env`**, **`.env.local`** – environment variables (never commit secrets).
+- **`package.json`**, **`tsconfig.json`**, and other tooling config.
+
+Keep app and domain logic under **`src/`**; use the root only for framework and environment configuration.
