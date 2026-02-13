@@ -1,1 +1,8 @@
-{}
+{
+  "legal": {
+    "termsTitle": "Términos de servicio",
+    "privacyTitle": "Política de privacidad",
+    "comingSoon": "Esta página estará disponible pronto.",
+    "backToHome": "← Volver al inicio"
+  }
+}

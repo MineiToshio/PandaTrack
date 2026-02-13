@@ -96,5 +96,77 @@
       "description": "Aquí irá una imagen destacada de la app con métricas, colecciones y envíos.",
       "placeholder": "Placeholder de imagen"
     }
+  },
+  "faqs": {
+    "sectionTitle": "¿Preguntas? Te respondemos.",
+    "sectionSubtitle": "Todo lo que necesitas saber sobre PandaTrack y cómo puede ayudarte a tener tu colección bajo control.",
+    "items": [
+      {
+        "question": "¿Qué es PandaTrack?",
+        "answer": "PandaTrack es una app web que concentra todas tus compras de coleccionables: tiendas, pedidos, preventas, envíos y pagos. Sin rebuscar entre chats o correos."
+      },
+      {
+        "question": "¿Para quién es?",
+        "answer": "Para quienes compran en varias tiendas (Instagram, WhatsApp, webs) y quieren un solo lugar para ver qué compraron, qué viene en camino y qué falta pagar."
+      },
+      {
+        "question": "¿Por qué no usar solo el correo o una hoja?",
+        "answer": "Correos y hojas dispersan la info. PandaTrack está hecho para coleccionistas: un solo dashboard, estados claros y recordatorios para no dejar nada en el olvido."
+      },
+      {
+        "question": "¿Qué puedo seguir?",
+        "answer": "Tiendas donde compras, cada compra con ítems y fechas, preventas con adelantos y saldo pendiente, y envíos—incluso envíos parciales por pedido."
+      },
+      {
+        "question": "¿Voy a ver qué me falta pagar?",
+        "answer": "Sí. Ves saldos pendientes y pagos próximos por mes, para que los pagos de preventas no te pillen por sorpresa."
+      },
+      {
+        "question": "¿Y los envíos?",
+        "answer": "Puedes seguir varios envíos por pedido, transportista y código cuando exista, y estado: en tienda, enviado, en camino o entregado."
+      },
+      {
+        "question": "¿Hay recordatorios?",
+        "answer": "Puedes configurar recordatorios para seguir preventas largas, preparar pagos próximos y avisos cuando un envío lleve mucho sin novedades."
+      },
+      {
+        "question": "¿Puedo poner un presupuesto?",
+        "answer": "Presupuesto mensual opcional con alertas al acercarte al límite—para que coleccionar siga siendo divertido sin estrés."
+      },
+      {
+        "question": "¿Cuándo puedo usarlo?",
+        "answer": "Estamos construyendo la primera versión. Únete a la lista de espera y te avisamos en cuanto PandaTrack esté listo para probar."
+      },
+      {
+        "question": "¿Cómo me apunto a la lista?",
+        "answer": "Deja tu correo en el formulario de abajo. Solo te escribimos cuando estemos listos—sin spam, solo un aviso."
+      }
+    ]
+  },
+  "waitlist": {
+    "title": "Te falta un paso para una colección más tranquila.",
+    "subtitle": "Deja tu correo y te avisamos el día que PandaTrack esté listo. Sin spam—solo un mensaje cuando sea tu turno.",
+    "cta": "Avísame cuando esté listo",
+    "fields": {
+      "email": "Correo",
+      "emailPlaceholder": "tu@ejemplo.com",
+      "name": "Nombre",
+      "namePlaceholder": "Tu nombre",
+      "nameOptional": "Opcional",
+      "comment": "Feature o petición",
+      "commentPlaceholder": "¿Algo que te gustaría ver en PandaTrack?",
+      "commentOptional": "Opcional"
+    },
+    "success": "Estás en la lista. Te avisamos cuando PandaTrack esté listo.",
+    "error": "Algo falló. Intenta de nuevo o escríbenos por correo.",
+    "validation": {
+      "emailRequired": "El correo es obligatorio",
+      "emailInvalid": "Introduce un correo válido"
+    }
+  },
+  "footer": {
+    "copyright": "© {year} PandaTrack. Todos los derechos reservados.",
+    "terms": "Términos de servicio",
+    "privacy": "Política de privacidad"
   }
 }
