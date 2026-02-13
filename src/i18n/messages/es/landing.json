@@ -1,7 +1,7 @@
 {
   "features": {
     "sectionTitle": "Todo tu coleccionismo, en un solo sistema",
-    "sectionSubtitle": "Descubre tiendas confiables, registra compras, controla preventas y sigue envíos—con un dashboard que te dice qué viene y qué falta pagar.",
+    "sectionSubtitle": "Descubre tiendas confiables, registra compras, controla preventas y sigue envíos, con un dashboard que te dice qué viene y qué falta pagar.",
     "cards": {
       "stores": {
         "title": "Tiendas confiables",
@@ -115,7 +115,7 @@
       },
       {
         "question": "¿Qué puedo seguir?",
-        "answer": "Tiendas donde compras, cada compra con ítems y fechas, preventas con adelantos y saldo pendiente, y envíos—incluso envíos parciales por pedido."
+        "answer": "Tiendas donde compras, cada compra con ítems y fechas, preventas con adelantos y saldo pendiente, y envíos, incluso envíos parciales por pedido."
       },
       {
         "question": "¿Voy a ver qué me falta pagar?",
@@ -131,7 +131,7 @@
       },
       {
         "question": "¿Puedo poner un presupuesto?",
-        "answer": "Presupuesto mensual opcional con alertas al acercarte al límite—para que coleccionar siga siendo divertido sin estrés."
+        "answer": "Presupuesto mensual opcional con alertas al acercarte al límite, para que coleccionar siga siendo divertido sin estrés."
       },
       {
         "question": "¿Cuándo puedo usarlo?",
@@ -139,13 +139,13 @@
       },
       {
         "question": "¿Cómo me apunto a la lista?",
-        "answer": "Deja tu correo en el formulario de abajo. Solo te escribimos cuando estemos listos—sin spam, solo un aviso."
+        "answer": "Deja tu correo en el formulario de abajo. Solo te escribimos cuando estemos listos. Sin spam, solo un aviso."
       }
     ]
   },
   "waitlist": {
     "title": "Te falta un paso para una colección más tranquila.",
-    "subtitle": "Deja tu correo y te avisamos el día que PandaTrack esté listo. Sin spam—solo un mensaje cuando sea tu turno.",
+    "subtitle": "Deja tu correo y te avisamos el día que PandaTrack esté listo. Sin spam, solo un mensaje cuando sea tu turno.",
     "cta": "Avísame cuando esté listo",
     "fields": {
       "email": "Correo",

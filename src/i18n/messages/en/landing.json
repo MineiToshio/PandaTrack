@@ -1,7 +1,7 @@
 {
   "features": {
     "sectionTitle": "All your collecting, in one place",
-    "sectionSubtitle": "Find trusted stores, log purchases, manage pre-orders and track shipments—with a dashboard that shows what's due and what's left to pay.",
+    "sectionSubtitle": "Find trusted stores, log purchases, manage pre-orders and track shipments, with a dashboard that shows what's due and what's left to pay.",
     "cards": {
       "stores": {
         "title": "Stores you trust",
@@ -40,7 +40,7 @@
       },
       "card2": {
         "title": "What do I have on the way?",
-        "description": "Some orders arrive fast, others sit in “limbo” for weeks. And there you are again: “what’s the status of my order?”. Don’t worry—you’re not alone."
+        "description": "Some orders arrive fast, others sit in “limbo” for weeks. And there you are again: “what’s the status of my order?”. Don’t worry, you’re not alone."
       },
       "card3": {
         "title": "No more surprise payments",
@@ -103,7 +103,7 @@
     "items": [
       {
         "question": "What is PandaTrack?",
-        "answer": "PandaTrack is a web app that keeps all your collectible purchases in one place—stores, orders, pre-orders, shipments, and payments. No more digging through chats or inboxes."
+        "answer": "PandaTrack is a web app that keeps all your collectible purchases in one place: stores, orders, pre-orders, shipments, and payments. No more digging through chats or inboxes."
       },
       {
         "question": "Who is it for?",
@@ -115,7 +115,7 @@
       },
       {
         "question": "What can I track?",
-        "answer": "Stores you buy from, each purchase with items and dates, pre-orders with deposits and remaining balance, and shipments—including split shipments per order."
+        "answer": "Stores you buy from, each purchase with items and dates, pre-orders with deposits and remaining balance, and shipments, including split shipments per order."
       },
       {
         "question": "Will I see what I still owe?",
@@ -131,7 +131,7 @@
       },
       {
         "question": "Can I set a budget?",
-        "answer": "Optional monthly budget with alerts when you're approaching your limit—so collecting stays fun without the stress."
+        "answer": "Optional monthly budget with alerts when you're approaching your limit, so collecting stays fun without the stress."
       },
       {
         "question": "When can I use it?",
@@ -139,13 +139,13 @@
       },
       {
         "question": "How do I join the waitlist?",
-        "answer": "Drop your email in the form below. We'll only reach out when we're ready for you—no spam, just one heads-up."
+        "answer": "Drop your email in the form below. We'll only reach out when we're ready for you. No spam, just one heads-up."
       }
     ]
   },
   "waitlist": {
     "title": "You're one step away from a calmer collection.",
-    "subtitle": "Leave your email and we'll tell you the day PandaTrack is ready. No spam—just one message when it's your turn.",
+    "subtitle": "Leave your email and we'll tell you the day PandaTrack is ready. No spam, just one message when it's your turn.",
     "cta": "Notify me when it's ready",
     "fields": {
       "email": "Email",
