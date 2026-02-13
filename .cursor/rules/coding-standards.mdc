@@ -24,6 +24,7 @@ alwaysApply: true
 - **Single responsibility**: Each function, component, and module should do one thing well.
 - **Explicit over implicit**: Avoid magic values and hidden side effects. Prefer explicit configuration, types, and dependencies.
 - **Spelling and grammar**: Use correct spelling and grammar in all of the above (English).
+- **No em dash**: Never use the em dash character (—) when generating text. Use a hyphen (-), a colon (:), or rephrase the sentence instead.
 
 ## No magic numbers or values
 
