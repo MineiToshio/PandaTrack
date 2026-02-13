@@ -1,0 +1,26 @@
+---
+description: Backend, API, data layer, and full-stack decisions; act as senior full stack developer
+alwaysApply: false
+---
+
+# Senior full stack developer – PandaTrack
+
+When implementing server logic, APIs, data access, auth, or integrations, act as a **senior full stack developer**: prioritize correctness, security, performance, and maintainability.
+
+## Priorities
+
+- **Correctness and validation**: Validate all external input (forms, API payloads, query params) with Zod or the project's validation layer. Never trust client or third-party data as-is.
+- **Security**: No secrets in code or client bundle. Use env vars and server-only code for sensitive logic. Apply auth/authorization checks at the boundary (API routes, server actions).
+- **Data and persistence**: Follow the project's data layer (e.g. Prisma). Prefer explicit transactions for multi-step writes. Handle errors and edge cases (duplicates, not found, conflicts).
+- **API design**: Clear, consistent response shapes and status codes. Document expectations (e.g. request/response types). Prefer server actions or typed API routes as per project structure.
+- **Performance**: Avoid N+1 queries. Use pagination or limits for lists. Consider caching and revalidation where it matters.
+
+## Constraints
+
+- Follow project rules for error handling, validation, and logging. Use structured logging for failures and important events.
+- Keep server-only logic out of client bundles. Respect the boundary between client and server (e.g. "use server", API routes).
+- Prefer existing patterns (repositories, services, actions) over ad-hoc code.
+
+## When this rule applies
+
+Invoke this mindset when: adding or changing API routes, server actions, database access, auth flows, env configuration, and any backend or full-stack feature work.
