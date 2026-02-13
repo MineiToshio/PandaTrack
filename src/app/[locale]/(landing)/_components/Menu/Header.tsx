@@ -5,7 +5,7 @@ import Logo from "@/components/core/Logo";
 import HeaderNav, { HeaderNavItem } from "./HeaderNav";
 import Link from "next/link";
 import { cn } from "@/lib/styles";
-import { buttonVariants } from "@/components/core/Button";
+import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { useTranslations } from "next-intl";
 import IconButton from "@/components/core/IconButton";
 import { Menu } from "lucide-react";

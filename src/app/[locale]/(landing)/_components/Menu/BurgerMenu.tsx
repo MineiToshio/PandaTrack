@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { X } from "lucide-react";
 import { cn } from "@/lib/styles";
-import { buttonVariants } from "@/components/core/Button";
+import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import IconButton from "@/components/core/IconButton";
 import Logo from "@/components/core/Logo";
 import HeaderNav, { HeaderNavItem } from "./HeaderNav";

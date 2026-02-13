@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
-import Button from "@/components/core/Button";
+import Button from "@/components/core/Button/Button";
 import Heading from "@/components/core/Heading";
 import Input from "@/components/core/Input";
 import Textarea from "@/components/core/Textarea";

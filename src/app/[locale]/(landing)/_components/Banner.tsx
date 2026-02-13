@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
-import { buttonVariants } from "@/components/core/Button";
+import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn } from "@/lib/styles";
 
 const BANNER_CTA_ANIMATION = "banner-cta-subtle 3s ease-in-out infinite";
