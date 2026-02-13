@@ -165,6 +165,7 @@
   },
   "footer": {
     "copyright": "© {year} PandaTrack. Todos los derechos reservados.",
+    "madeBy": "Hecho por Panda D. Collector",
     "terms": "Términos de servicio",
     "privacy": "Política de privacidad"
   }
