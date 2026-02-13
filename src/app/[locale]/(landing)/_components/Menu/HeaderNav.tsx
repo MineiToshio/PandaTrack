@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import AnchorLink from "@/components/core/AnchorLink/AnchorLink";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/styles";
 
@@ -21,7 +21,7 @@ export default function HeaderNav({ items, className, onNavigate }: HeaderNavPro
   return (
     <nav aria-label="Main" className={cn("font-secondary text-text-body flex items-center gap-6 text-sm", className)}>
       {items.map((item) => (
-        <Link
+        <AnchorLink
           key={item.href}
           href={item.href}
           className={cn(
@@ -33,7 +33,7 @@ export default function HeaderNav({ items, className, onNavigate }: HeaderNavPro
           onClick={onNavigate}
         >
           {t(item.key)}
-        </Link>
+        </AnchorLink>
       ))}
     </nav>
   );

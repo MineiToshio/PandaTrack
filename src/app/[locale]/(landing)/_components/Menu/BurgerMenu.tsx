@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import AnchorLink from "@/components/core/AnchorLink/AnchorLink";
 import { X } from "lucide-react";
 import { cn } from "@/lib/styles";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
@@ -41,13 +41,13 @@ export default function BurgerMenu({ isOpen, onClose, items, ctaLabel }: BurgerM
           <div className="mt-8 flex-1">
             <HeaderNav items={items} className="flex-col items-start gap-4 text-base" onNavigate={onClose} />
           </div>
-          <Link
+          <AnchorLink
             href="#waitlist"
             className={cn(buttonVariants({ variant: "primary", size: "md" }), "w-full")}
             onClick={onClose}
           >
             {ctaLabel}
-          </Link>
+          </AnchorLink>
         </div>
       </aside>
     </div>

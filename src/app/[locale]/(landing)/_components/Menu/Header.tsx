@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Logo from "@/components/core/Logo";
 import HeaderNav, { HeaderNavItem } from "./HeaderNav";
-import Link from "next/link";
+import AnchorLink from "@/components/core/AnchorLink/AnchorLink";
 import { cn } from "@/lib/styles";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { useTranslations } from "next-intl";
@@ -30,9 +30,9 @@ export default function Header() {
             <HeaderNav items={NAV_ITEMS} />
           </div>
           <div className="flex items-center gap-3">
-            <Link href="#waitlist" className={cn(buttonVariants({ variant: "primary" }))}>
+            <AnchorLink href="#waitlist" className={cn(buttonVariants({ variant: "primary" }))}>
               {t("cta")}
-            </Link>
+            </AnchorLink>
             <IconButton
               Icon={Menu}
               variant="outline"

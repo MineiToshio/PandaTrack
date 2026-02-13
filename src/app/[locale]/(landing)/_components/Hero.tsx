@@ -1,4 +1,4 @@
-import Link from "next/link";
+import AnchorLink from "@/components/core/AnchorLink/AnchorLink";
 import { useTranslations } from "next-intl";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
@@ -80,7 +80,7 @@ export default function Hero() {
               animationDelay: `${STAGGER_MS * 3}ms`,
             }}
           >
-            <Link
+            <AnchorLink
               href="#waitlist"
               className={cn(
                 buttonVariants({ variant: "primary", size: "lg" }),
@@ -88,10 +88,10 @@ export default function Hero() {
               )}
             >
               {t("primaryCta")}
-            </Link>
-            <Link href="#features" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>
+            </AnchorLink>
+            <AnchorLink href="#features" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>
               {t("secondaryCta")}
-            </Link>
+            </AnchorLink>
           </div>
         </div>
 

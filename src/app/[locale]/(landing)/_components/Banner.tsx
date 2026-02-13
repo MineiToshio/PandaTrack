@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import AnchorLink from "@/components/core/AnchorLink/AnchorLink";
 import { useTranslations } from "next-intl";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
@@ -36,7 +36,7 @@ export default function Banner() {
             {t("subtitle")}
           </Typography>
           <div className="mt-8 flex justify-center">
-            <Link
+            <AnchorLink
               href="#waitlist"
               className={cn(
                 buttonVariants({ variant: "primary", size: "lg" }),
@@ -45,7 +45,7 @@ export default function Banner() {
               style={{ animation: BANNER_CTA_ANIMATION }}
             >
               {t("cta")}
-            </Link>
+            </AnchorLink>
           </div>
         </div>
       </div>
