@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
 import Button from "@/components/core/Button/Button";
 import Heading from "@/components/core/Heading";
@@ -14,6 +14,7 @@ import { waitlistSchema } from "./waitlistSchema";
 const BANNER_CTA_ANIMATION = "banner-cta-subtle 3s ease-in-out infinite";
 
 export default function Waitlist() {
+  const locale = useLocale();
   const t = useTranslations("landing.waitlist");
   const tValidation = useTranslations("landing.waitlist.validation");
   const [state, formAction, isPending] = useActionState(
@@ -102,6 +103,7 @@ export default function Waitlist() {
             </div>
           ) : (
             <form action={handleSubmit} className="mt-10 space-y-5">
+              <input type="hidden" name="locale" value={locale} />
               <div>
                 <label htmlFor="waitlist-email" className="text-text-title mb-1.5 block text-sm font-medium">
                   {t("fields.email")} <span className="text-destructive">*</span>

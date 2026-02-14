@@ -1,6 +1,7 @@
 "use server";
 
-import { createSubscriber } from "@/lib/kit";
+import { createSubscriber, tagSubscriberByLocale } from "@/lib/kit";
+import { isLocale } from "@/types/locale";
 import { waitlistSchema } from "./waitlistSchema";
 
 export type SubmitWaitlistResult =
@@ -37,9 +38,18 @@ export async function submitWaitlist(formData: FormData): Promise<SubmitWaitlist
   }
 
   const { email, name } = parsed.data;
+  const rawLocale = formData.get("locale");
+  const locale = typeof rawLocale === "string" && isLocale(rawLocale.trim()) ? rawLocale.trim() : undefined;
 
   try {
     await createSubscriber({ email, firstName: name ?? undefined });
+    if (locale) {
+      try {
+        await tagSubscriberByLocale(locale, email);
+      } catch (tagErr) {
+        console.error("Waitlist locale tag failed (subscriber was created):", tagErr);
+      }
+    }
     return { success: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
