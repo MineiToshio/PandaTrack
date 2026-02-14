@@ -98,7 +98,7 @@ export default function Waitlist() {
               role="status"
               aria-live="polite"
             >
-              <p className="text-secondary text-lg font-medium">{t("success")}</p>
+              <Typography className="text-foreground font-medium">{t("success")}</Typography>
             </div>
           ) : (
             <form action={handleSubmit} className="mt-10 space-y-5">
