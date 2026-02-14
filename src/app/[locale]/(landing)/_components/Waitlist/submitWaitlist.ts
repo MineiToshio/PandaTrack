@@ -1,5 +1,6 @@
 "use server";
 
+import { createSubscriber } from "@/lib/kit";
 import { waitlistSchema } from "./waitlistSchema";
 
 export type SubmitWaitlistResult =
@@ -35,7 +36,14 @@ export async function submitWaitlist(formData: FormData): Promise<SubmitWaitlist
     return { success: false, fieldErrors };
   }
 
-  // Option B: no persistence yet; return success. Replace with DB write when ready.
-  void parsed.data;
-  return { success: true };
+  const { email, name } = parsed.data;
+
+  try {
+    await createSubscriber({ email, firstName: name ?? undefined });
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Waitlist signup failed:", message);
+    return { success: false, error: "submitError" };
+  }
 }
