@@ -49,12 +49,82 @@ Starting with **Next.js 16**, the previous **middleware** convention was replace
 
 ## Components
 
+### Component folder structure (single-file vs multi-file)
+
+This rule applies everywhere: core components, module components, and page-specific `_components`.
+
+**Single-file component**
+
+- Put the file directly in the parent folder.
+- Do not create a component folder if it would only contain that one file (avoid `Component/Component.tsx` when there are no siblings).
+
+**Multi-file component**
+
+- Use a folder with the same name as the main component.
+- The main component file must have the same name as the folder (do not use `index.tsx`).
+- Put component-only siblings inside that folder:
+  - component-scoped helpers (hooks, utils, types, styles, tests)
+  - component-scoped subcomponents used only by the main component (like `Menu/` in the landing page)
+
+If a folder only contains one file (for example `AnchorLink/AnchorLink.tsx` and nothing else), flatten it.
+
+#### What counts as "multi-file"
+
+You should only create the component folder if there are component-scoped files that are not used outside that component, for example:
+
+- `*.utils.ts`, `*.constants.ts`
+- `*.types.ts`
+- `use*.ts` hooks
+- `*.test.ts(x)`
+- `*.styles.ts` (or other styling modules)
+
+If a helper is used by multiple components, do not keep it component-scoped. Move it to the page level (`_utils/`, `_types/`, `_hooks/`) or app level (`src/lib/`, `src/types/`, `src/hooks/`) following the existing project structure rules.
+
+#### Examples
+
+Core components (`src/components/core/`)
+
+Single-file:
+
+- `src/components/core/AnchorLink.tsx`
+- `src/components/core/Button.tsx`
+
+Multi-file:
+
+- `src/components/core/Button/Button.tsx`
+- `src/components/core/Button/types.ts`
+- `src/components/core/Button/utils.ts`
+
+Module components (`src/components/modules/`)
+
+Single-file:
+
+- `src/components/modules/FaqAccordion.tsx`
+
+Multi-file:
+
+- `src/components/modules/FaqAccordion/FaqAccordion.tsx`
+- `src/components/modules/FaqAccordion/utils.ts`
+
+Page-specific components (`_components/` next to a route or layout)
+
+Single-file:
+
+- `src/app/[locale]/(landing)/_components/Hero.tsx`
+
+Multi-file:
+
+- `src/app/[locale]/(landing)/_components/Menu/Menu.tsx`
+- `src/app/[locale]/(landing)/_components/Menu/BurgerMenu.tsx`
+- `src/app/[locale]/(landing)/_components/Menu/utils.ts`
+
 ### Core components → `src/components/core/`
 
 **Core** components are essential, simple, and highly reusable. They are used anywhere in the app.
 
 - Place all core components in **`src/components/core/`**.
 - Examples: `Input`, `Typography`, `Heading`, `Select`, `Checkbox`, `Button`, `Textarea`, `Chip`.
+- Do not put app-wide utilities in `src/components/core/`. If it is not a React component, it does not belong here.
 
 ### Module components → `src/components/modules/`
 
@@ -103,6 +173,7 @@ Shared utilities live in **`src/lib/`**. Split by **purpose**:
 
 Utils can be client or server functions; place them in the file that matches the classification or library above.
 
+- Keep generic utilities out of component folders. If a utility is reused by multiple components across the app, it should live in `src/lib/` (for example analytics helpers like `posthogTracking`).
 - **Page-level utils**: **`_utils/`** next to **`_components`** in the page folder.
 - **Component-specific utils**: inside the component’s folder.
 
