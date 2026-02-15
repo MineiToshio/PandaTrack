@@ -63,6 +63,47 @@ const filteredCopyText = filterWildcardsForCopy(answer);
 navigator.clipboard.writeText(filteredCopyText);
 ```
 
+## No inline logic in JSX event handlers
+
+JSX event props (HTML elements and React components) must not contain inline logic. Keep event props as a single function reference or a one-liner that only calls a single function. Any multi-step behavior must live in a named handler function (usually `handle*`).
+
+This makes the UI easy to scan and understand at a glance.
+
+```tsx
+// ❌ Avoid: multiple actions inside the JSX prop
+<button
+  onClick={() => {
+    posthog.capture(POSTHOG_EVENTS.LANDING.MOBILE_MENU_NAV_CLICKED, {
+      destination: "waitlist",
+      cta_type: "primary",
+    });
+    onClose();
+  }}
+/>
+
+// ✅ Prefer: named handler contains the logic
+const handleWaitlistClick = () => {
+  posthog.capture(POSTHOG_EVENTS.LANDING.MOBILE_MENU_NAV_CLICKED, {
+    destination: "waitlist",
+    cta_type: "primary",
+  });
+  onClose();
+};
+
+<button onClick={handleWaitlistClick} />
+```
+
+```tsx
+// ✅ Allowed: direct reference (best when no args needed)
+<button onClick={handleSubmit} />
+
+// ✅ Allowed: one-liner that calls a single function (for passing args)
+<button onClick={() => handleNavClick("waitlist")} />
+
+// ❌ Avoid: more than one action, even if short
+<button onClick={() => (trackClick(), onClose())} />
+```
+
 ## Naming conventions
 
 | Element | Convention | Example |
