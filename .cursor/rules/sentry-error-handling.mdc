@@ -1,0 +1,44 @@
+---
+description: Sentry capture patterns for error handling without noisy logs
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Sentry error handling - PandaTrack
+
+## When to capture
+
+- **Unexpected errors**: Capture with Sentry when an error indicates a bug, broken dependency, or unexpected state.
+- **Expected errors**: Do not capture (or capture at lower severity) for validation failures and user mistakes (Zod, missing permissions, rate limits) unless you need monitoring for abnormal spikes.
+
+## Keep code clean
+
+- **Do not sprinkle Sentry everywhere**: Prefer a small helper (or wrapper) that standardizes capture, tags, and context.
+- **Avoid double reporting**: If the error is already captured by a global boundary (Next.js error boundary, server instrumentation), do not capture it again unless you add meaningful context.
+- **One log line, not five**: If you log locally, log once with structured context and then capture to Sentry (or capture only). Keep the signal high.
+
+## What to include (high signal, low noise)
+
+- **Tags**: `feature`, `route`, `action`, `severity`.
+- **Context**: user-safe identifiers, request id / trace id, relevant inputs after redaction.
+- **Breadcrumbs**: only for important steps (API call start/end, state transitions), not every function call.
+- **No secrets / PII**: Never attach tokens, raw emails, phone numbers, or full payloads. Redact before capture.
+
+## Example (server-side capture with context)
+
+```typescript
+import * as Sentry from "@sentry/nextjs";
+
+try {
+  // ...
+} catch (error) {
+  Sentry.withScope((scope) => {
+    scope.setTag("feature", "billing");
+    scope.setTag("severity", "high");
+    scope.setContext("operation", { name: "createSubscription" });
+    Sentry.captureException(error);
+  });
+
+  throw error;
+}
+```
