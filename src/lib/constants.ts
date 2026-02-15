@@ -7,7 +7,7 @@ export const CONTACT_INFO = {
 
 export const POSTHOG_EVENTS = {
   LANDING: {
-    CTA_CLICKED: "cta_clicked",
+    HERO_CTA_CLICKED: "hero_cta_clicked",
     BANNER_CTA_CLICKED: "banner_cta_clicked",
     HEADER_CTA_CLICKED: "header_cta_clicked",
     MOBILE_MENU_OPENED: "mobile_menu_opened",

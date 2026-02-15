@@ -87,7 +87,7 @@ export default function Hero() {
                 buttonVariants({ variant: "primary", size: "lg" }),
                 "animate-[hero-cta-glow_2.5s_ease-in-out_infinite]",
               )}
-              posthogEvent={POSTHOG_EVENTS.LANDING.CTA_CLICKED}
+              posthogEvent={POSTHOG_EVENTS.LANDING.HERO_CTA_CLICKED}
               posthogProps={{ location: "hero", cta_type: "primary" }}
             >
               {t("primaryCta")}
