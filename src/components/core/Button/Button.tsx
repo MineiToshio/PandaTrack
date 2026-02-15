@@ -4,15 +4,16 @@ import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn } from "@/lib/styles";
 import { VariantProps } from "class-variance-authority";
 import { ButtonHTMLAttributes, forwardRef, useCallback, useRef, useState } from "react";
+import { getPosthogDataAttributes, PosthogTrackingProps } from "@/lib/posthogDataAttributes";
 
 const RIPPLE_DURATION_MS = 600;
 
 type Ripple = { id: number; x: number; y: number };
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof buttonVariants>;
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof buttonVariants> & PosthogTrackingProps;
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "primary", size, type = "button", onClick, ...props }, ref) => {
+  ({ className, variant = "primary", size, type = "button", onClick, posthogEvent, posthogProps, ...props }, ref) => {
     const internalRef = useRef<HTMLButtonElement>(null);
     const resolvedRef = (node: HTMLButtonElement | null) => {
       internalRef.current = node;
@@ -21,6 +22,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const [ripples, setRipples] = useState<Ripple[]>([]);
+    const posthogDataAttributes = getPosthogDataAttributes(posthogEvent, posthogProps);
 
     const handleClick = useCallback(
       (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -51,6 +53,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(buttonVariants({ variant, size }), className)}
         onClick={handleClick}
         {...props}
+        {...posthogDataAttributes}
       >
         {showRipple &&
           ripples.map(({ id, x, y }) => (

@@ -1,7 +1,4 @@
-"use client";
-
-import { useMessages } from "next-intl";
-import { useTranslations } from "next-intl";
+import { useMessages, useTranslations } from "next-intl";
 import Section from "@/app/[locale]/(landing)/_components/Section";
 import FaqAccordion, { type FaqItem } from "@/components/modules/FaqAccordion/FaqAccordion";
 

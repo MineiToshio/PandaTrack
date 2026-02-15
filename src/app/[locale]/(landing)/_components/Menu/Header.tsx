@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Logo from "@/components/core/Logo";
 import HeaderNav, { HeaderNavItem } from "./HeaderNav";
-import AnchorLink from "@/components/core/AnchorLink/AnchorLink";
+import AnchorLink from "@/components/core/AnchorLink";
 import { cn } from "@/lib/styles";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { useTranslations } from "next-intl";
@@ -11,7 +11,6 @@ import IconButton from "@/components/core/IconButton";
 import { Menu } from "lucide-react";
 import BurgerMenu from "./BurgerMenu";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import posthog from "posthog-js";
 
 const NAV_ITEMS: HeaderNavItem[] = [
   { key: "forYou", href: "#user-fit" },
@@ -35,7 +34,8 @@ export default function Header() {
             <AnchorLink
               href="#waitlist"
               className={cn(buttonVariants({ variant: "primary" }))}
-              onClick={() => posthog.capture(POSTHOG_EVENTS.LANDING.HEADER_CTA_CLICKED, { location: "header" })}
+              posthogEvent={POSTHOG_EVENTS.LANDING.HEADER_CTA_CLICKED}
+              posthogProps={{ location: "header" }}
             >
               {t("cta")}
             </AnchorLink>
@@ -44,9 +44,9 @@ export default function Header() {
               variant="outline"
               className="md:hidden"
               aria-label="Open menu"
+              data-ph-event={POSTHOG_EVENTS.LANDING.MOBILE_MENU_OPENED}
               onClick={() => {
                 setIsMenuOpen(true);
-                posthog.capture(POSTHOG_EVENTS.LANDING.MOBILE_MENU_OPENED);
               }}
             />
           </div>

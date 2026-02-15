@@ -1,6 +1,6 @@
 "use client";
 
-import AnchorLink from "@/components/core/AnchorLink/AnchorLink";
+import AnchorLink from "@/components/core/AnchorLink";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/styles";
 

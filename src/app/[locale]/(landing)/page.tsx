@@ -6,7 +6,15 @@ import Hero from "./_components/Hero";
 import UserFit from "./_components/UserFit/UserFit";
 import Waitlist from "./_components/Waitlist/Waitlist";
 
-export default function Home() {
+type HomeProps = {
+  params: Promise<{
+    locale: string;
+  }>;
+};
+
+export default async function Home({ params }: HomeProps) {
+  const { locale } = await params;
+
   return (
     <main className="bg-background text-foreground min-h-screen">
       <Hero />
@@ -15,7 +23,7 @@ export default function Home() {
       <Banner />
       <Faqs />
       <Waitlist />
-      <Footer />
+      <Footer locale={locale} />
     </main>
   );
 }

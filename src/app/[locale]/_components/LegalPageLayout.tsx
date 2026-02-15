@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { useTranslations } from "next-intl";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
@@ -17,9 +17,9 @@ function splitBodyIntoParagraphs(body: string): string[] {
   return body.split(/\n\n+/).filter((block) => block.trim().length > 0);
 }
 
-export default async function LegalPageLayout({ namespace, sectionKeys, locale }: LegalPageLayoutProps) {
-  const t = await getTranslations(namespace);
-  const tLegal = await getTranslations("common.legal");
+export default function LegalPageLayout({ namespace, sectionKeys, locale }: LegalPageLayoutProps) {
+  const t = useTranslations(namespace);
+  const tLegal = useTranslations("common.legal");
 
   return (
     <main className={cn("bg-background text-foreground min-h-screen px-4 py-12 md:px-6 md:py-16 lg:px-8")}>

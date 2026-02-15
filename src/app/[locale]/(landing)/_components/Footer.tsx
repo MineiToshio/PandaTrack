@@ -1,17 +1,17 @@
-"use client";
-
 import { Mail } from "lucide-react";
 import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { siTiktok } from "simple-icons";
 import { CONTACT_INFO, POSTHOG_EVENTS } from "@/lib/constants";
-import posthog from "posthog-js";
 
 const ICON_SIZE = 18;
 
-export default function Footer() {
+type FooterProps = {
+  locale: string;
+};
+
+export default function Footer({ locale }: FooterProps) {
   const t = useTranslations("landing.footer");
-  const locale = useLocale();
   const year = new Date().getFullYear();
   const focusVisibleClass =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md";
@@ -29,9 +29,8 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={CONTACT_INFO.email}
-              onClick={() =>
-                posthog.capture(POSTHOG_EVENTS.LANDING.SOCIAL_LINK_CLICKED, { platform: "email" })
-              }
+              data-ph-event={POSTHOG_EVENTS.LANDING.SOCIAL_LINK_CLICKED}
+              data-ph-props='{"platform":"email"}'
             >
               <Mail size={ICON_SIZE} aria-hidden />
             </a>
@@ -41,9 +40,8 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`TikTok ${CONTACT_INFO.tiktok}`}
-              onClick={() =>
-                posthog.capture(POSTHOG_EVENTS.LANDING.SOCIAL_LINK_CLICKED, { platform: "tiktok" })
-              }
+              data-ph-event={POSTHOG_EVENTS.LANDING.SOCIAL_LINK_CLICKED}
+              data-ph-props='{"platform":"tiktok"}'
             >
               <svg
                 role="img"

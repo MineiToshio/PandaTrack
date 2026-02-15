@@ -4,6 +4,7 @@ import { ButtonHTMLAttributes, MouseEvent, forwardRef } from "react";
 import { cva, VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/styles";
 import { LucideIcon } from "lucide-react";
+import { getPosthogDataAttributes, PosthogTrackingProps } from "@/lib/posthogDataAttributes";
 
 export const iconButtonVariants = cva(
   "disabled:pointer-events-none disabled:opacity-50 transition-colors cursor-pointer h-8 w-8 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
@@ -32,10 +33,26 @@ type IconButtonProps = VariantProps<typeof iconButtonVariants> & {
   Icon: LucideIcon;
   className?: string;
   iconClassName?: string;
-} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className" | "children">;
+} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className" | "children"> &
+  PosthogTrackingProps;
 
 const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ Icon, className, iconClassName, variant, size, disabled, onClick, type, ...buttonProps }, ref) => {
+  (
+    {
+      Icon,
+      className,
+      iconClassName,
+      variant,
+      size,
+      disabled,
+      onClick,
+      type,
+      posthogEvent,
+      posthogProps,
+      ...buttonProps
+    },
+    ref,
+  ) => {
     const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
       e.preventDefault();
@@ -43,6 +60,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
     };
 
     const iconSizeClassName = size === "lg" ? "h-6 w-6" : size === "sm" ? "h-4 w-4" : "h-5 w-5";
+    const posthogDataAttributes = getPosthogDataAttributes(posthogEvent, posthogProps);
 
     return (
       <button
@@ -52,6 +70,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         onClick={handleClick}
         disabled={disabled}
         {...buttonProps}
+        {...posthogDataAttributes}
       >
         <Icon
           className={cn("text-foreground group-hover/icon-button:text-foreground", iconSizeClassName, iconClassName)}

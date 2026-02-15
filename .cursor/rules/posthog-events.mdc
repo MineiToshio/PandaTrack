@@ -45,8 +45,47 @@ export const POSTHOG_EVENTS = {
 
 ## Usage
 
-- Client: `posthog.capture(POSTHOG_EVENTS.<PAGE>.<...>, properties)`
+- Preferred (clicks): add `data-ph-event` and optional `data-ph-props` to the clickable element. A global click delegate will call `posthog.capture(...)`.
+- Client (manual): `posthog.capture(POSTHOG_EVENTS.<PAGE>.<...>, properties)`
 - Server: `posthog.capture({ distinctId, event: POSTHOG_EVENTS.<PAGE>.<...>, properties })`
+
+### Global click delegate (preferred for simple clicks)
+
+For simple click tracking (CTAs, nav links, social links), prefer declarative attributes instead of inline `onClick` handlers:
+
+- `data-ph-event`: required, the event name (use `POSTHOG_EVENTS`)
+- `data-ph-props`: optional, JSON-serialized object of event properties
+
+Example (any element):
+
+```tsx
+<button
+  data-ph-event={POSTHOG_EVENTS.LANDING.CTA_CLICKED}
+  data-ph-props='{"location":"hero","cta_type":"primary"}'
+>
+  Join the waitlist
+</button>
+```
+
+Example (`AnchorLink` helper props):
+
+```tsx
+<AnchorLink
+  href="#waitlist"
+  posthogEvent={POSTHOG_EVENTS.LANDING.CTA_CLICKED}
+  posthogProps={{ location: "hero", cta_type: "primary" }}
+>
+  Join the waitlist
+</AnchorLink>
+```
+
+### When to use manual `posthog.capture(...)`
+
+Use manual capture when the event properties require runtime logic, validation, or state inspection that is not conveniently expressed as static `data-*` attributes, for example:
+
+- form submit attempts where you want to include derived properties (e.g. `has_comment`)
+- toggle events where `action` depends on current state
+- server actions (success/failure events captured on the server)
 
 ## Event properties
 

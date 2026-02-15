@@ -1,13 +1,10 @@
-"use client";
-
-import AnchorLink from "@/components/core/AnchorLink/AnchorLink";
+import AnchorLink from "@/components/core/AnchorLink";
 import { useTranslations } from "next-intl";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import posthog from "posthog-js";
 
 const BANNER_CTA_ANIMATION = "banner-cta-subtle 3s ease-in-out infinite";
 
@@ -45,7 +42,8 @@ export default function Banner() {
                 "transition-transform duration-300 ease-out hover:scale-[1.02]",
               )}
               style={{ animation: BANNER_CTA_ANIMATION }}
-              onClick={() => posthog.capture(POSTHOG_EVENTS.LANDING.BANNER_CTA_CLICKED, { location: "banner" })}
+              posthogEvent={POSTHOG_EVENTS.LANDING.BANNER_CTA_CLICKED}
+              posthogProps={{ location: "banner" }}
             >
               {t("cta")}
             </AnchorLink>

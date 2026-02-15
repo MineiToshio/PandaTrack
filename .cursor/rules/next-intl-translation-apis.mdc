@@ -1,0 +1,26 @@
+---
+description: next-intl translation API usage in PandaTrack (hooks vs server helpers)
+alwaysApply: true
+---
+
+# next-intl translation APIs - PandaTrack
+
+## Rule: use hooks in React components
+
+In React components (pages, layouts, and shared components), prefer next-intl hooks:
+
+- `useTranslations()`
+- `useLocale()`
+- `useMessages()`
+
+This keeps components synchronous and consistent with typical React patterns.
+
+## Rule: use server helpers outside React
+
+Use next-intl server helpers only in non-React code or Next.js framework functions:
+
+- `getTranslations()` for server-only utilities, helpers, and other modules outside React components
+- `getTranslations()` in Next.js functions like `generateMetadata()` (and similar non-component entry points)
+
+Avoid calling `getTranslations()` inside React components. If you are in a React component, use `useTranslations()` instead.
+
