@@ -1,6 +1,8 @@
 "use server";
 
 import { createSubscriber, tagSubscriberByLocale } from "@/lib/kit";
+import { POSTHOG_EVENTS } from "@/lib/constants";
+import { getPostHogClient } from "@/lib/posthog-server";
 import { isLocale } from "@/types/locale";
 import { waitlistSchema } from "./waitlistSchema";
 
@@ -41,6 +43,8 @@ export async function submitWaitlist(formData: FormData): Promise<SubmitWaitlist
   const rawLocale = formData.get("locale");
   const locale = typeof rawLocale === "string" && isLocale(rawLocale.trim()) ? rawLocale.trim() : undefined;
 
+  const posthog = getPostHogClient();
+
   try {
     await createSubscriber({ email, firstName: name ?? undefined });
     if (locale) {
@@ -50,10 +54,45 @@ export async function submitWaitlist(formData: FormData): Promise<SubmitWaitlist
         console.error("Waitlist locale tag failed (subscriber was created):", tagErr);
       }
     }
+
+    // Track successful waitlist signup on server
+    posthog.capture({
+      distinctId: email,
+      event: POSTHOG_EVENTS.LANDING.WAITLIST.SUCCESS,
+      properties: {
+        email,
+        has_name: !!name,
+        locale: locale ?? "unknown",
+      },
+    });
+
+    // Identify user by email
+    posthog.identify({
+      distinctId: email,
+      properties: {
+        email,
+        name: name ?? undefined,
+        locale: locale ?? undefined,
+        signed_up_at: new Date().toISOString(),
+      },
+    });
+
     return { success: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Waitlist signup failed:", message);
+
+    // Track failed waitlist signup on server
+    posthog.capture({
+      distinctId: email,
+      event: POSTHOG_EVENTS.LANDING.WAITLIST.FAILED,
+      properties: {
+        email,
+        error_message: message,
+        locale: locale ?? "unknown",
+      },
+    });
+
     return { success: false, error: "submitError" };
   }
 }

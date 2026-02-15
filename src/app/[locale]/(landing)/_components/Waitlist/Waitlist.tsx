@@ -8,6 +8,8 @@ import Input from "@/components/core/Input";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
+import { POSTHOG_EVENTS } from "@/lib/constants";
+import posthog from "posthog-js";
 import { submitWaitlist } from "./submitWaitlist";
 import { waitlistSchema } from "./waitlistSchema";
 
@@ -46,6 +48,13 @@ export default function Waitlist() {
       setClientErrors(errors);
       return;
     }
+    // Track waitlist signup submitted event
+    posthog.capture(POSTHOG_EVENTS.LANDING.WAITLIST.SUBMITTED, {
+      locale,
+      has_name: !!parsed.data.name,
+      has_comment: !!parsed.data.comment,
+    });
+
     formAction(formData);
   };
 

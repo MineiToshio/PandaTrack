@@ -7,6 +7,8 @@ import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import IconButton from "@/components/core/IconButton";
 import Logo from "@/components/core/Logo";
 import HeaderNav, { HeaderNavItem } from "./HeaderNav";
+import { POSTHOG_EVENTS } from "@/lib/constants";
+import posthog from "posthog-js";
 
 type BurgerMenuProps = {
   isOpen: boolean;
@@ -44,7 +46,13 @@ export default function BurgerMenu({ isOpen, onClose, items, ctaLabel }: BurgerM
           <AnchorLink
             href="#waitlist"
             className={cn(buttonVariants({ variant: "primary", size: "md" }), "w-full")}
-            onClick={onClose}
+            onClick={() => {
+              posthog.capture(POSTHOG_EVENTS.LANDING.MOBILE_MENU_NAV_CLICKED, {
+                destination: "waitlist",
+                cta_type: "primary",
+              });
+              onClose();
+            }}
           >
             {ctaLabel}
           </AnchorLink>

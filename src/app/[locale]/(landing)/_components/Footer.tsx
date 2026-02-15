@@ -4,7 +4,8 @@ import { Mail } from "lucide-react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { siTiktok } from "simple-icons";
-import { CONTACT_INFO } from "@/lib/constants";
+import { CONTACT_INFO, POSTHOG_EVENTS } from "@/lib/constants";
+import posthog from "posthog-js";
 
 const ICON_SIZE = 18;
 
@@ -28,6 +29,9 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={CONTACT_INFO.email}
+              onClick={() =>
+                posthog.capture(POSTHOG_EVENTS.LANDING.SOCIAL_LINK_CLICKED, { platform: "email" })
+              }
             >
               <Mail size={ICON_SIZE} aria-hidden />
             </a>
@@ -37,6 +41,9 @@ export default function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`TikTok ${CONTACT_INFO.tiktok}`}
+              onClick={() =>
+                posthog.capture(POSTHOG_EVENTS.LANDING.SOCIAL_LINK_CLICKED, { platform: "tiktok" })
+              }
             >
               <svg
                 role="img"

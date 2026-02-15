@@ -1,0 +1,55 @@
+---
+description: PostHog events: capture user interactions and centralize names in POSTHOG_EVENTS
+globs: "src/**/*.ts,src/**/*.tsx"
+alwaysApply: false
+---
+
+# PostHog events - PandaTrack
+
+## When to add events
+
+Default to adding a PostHog event for any meaningful user interaction, especially:
+
+- CTA and button clicks
+- Navigation actions (menu open/close, nav item clicks)
+- Form interactions (submit attempt, success, failure, validation failure)
+- UI toggles (accordion open/close, filters, tabs, switches)
+- Key conversion milestones and drop-off points
+
+Avoid tracking extremely noisy events (hover, every keypress) unless explicitly needed.
+
+## Centralize event names
+
+- Never hardcode PostHog event name strings inside components or server actions.
+- Every event name must live in `POSTHOG_EVENTS` in `src/lib/constants.ts`.
+
+## Grouping rules for POSTHOG_EVENTS
+
+- First level grouping is by page/surface (examples: `LANDING`, `DASHBOARD`, `SETTINGS`).
+- Second level grouping is by feature/module when helpful (examples: `WAITLIST`, `MENU`, `FAQ`).
+- Keys are `UPPER_SNAKE_CASE`. Event values are `snake_case` strings.
+
+Example:
+
+```typescript
+export const POSTHOG_EVENTS = {
+  LANDING: {
+    WAITLIST: {
+      SUBMITTED: "waitlist_submitted",
+      SUCCESS: "waitlist_success",
+      FAILED: "waitlist_failed",
+    },
+  },
+} as const;
+```
+
+## Usage
+
+- Client: `posthog.capture(POSTHOG_EVENTS.<PAGE>.<...>, properties)`
+- Server: `posthog.capture({ distinctId, event: POSTHOG_EVENTS.<PAGE>.<...>, properties })`
+
+## Event properties
+
+- Use `snake_case` property keys.
+- Prefer non-PII properties (booleans, enums, counts).
+- Include context that helps analysis: `location`, `cta_type`, `destination`, `action`, `locale`.

@@ -1,9 +1,13 @@
+"use client";
+
 import AnchorLink from "@/components/core/AnchorLink/AnchorLink";
 import { useTranslations } from "next-intl";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn } from "@/lib/styles";
+import { POSTHOG_EVENTS } from "@/lib/constants";
+import posthog from "posthog-js";
 
 const ANIMATION_DURATION_MS = 600;
 const STAGGER_MS = 80;
@@ -86,6 +90,9 @@ export default function Hero() {
                 buttonVariants({ variant: "primary", size: "lg" }),
                 "animate-[hero-cta-glow_2.5s_ease-in-out_infinite]",
               )}
+              onClick={() =>
+                posthog.capture(POSTHOG_EVENTS.LANDING.CTA_CLICKED, { location: "hero", cta_type: "primary" })
+              }
             >
               {t("primaryCta")}
             </AnchorLink>

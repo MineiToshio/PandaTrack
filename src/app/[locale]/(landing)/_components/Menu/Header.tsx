@@ -10,6 +10,8 @@ import { useTranslations } from "next-intl";
 import IconButton from "@/components/core/IconButton";
 import { Menu } from "lucide-react";
 import BurgerMenu from "./BurgerMenu";
+import { POSTHOG_EVENTS } from "@/lib/constants";
+import posthog from "posthog-js";
 
 const NAV_ITEMS: HeaderNavItem[] = [
   { key: "forYou", href: "#user-fit" },
@@ -30,7 +32,11 @@ export default function Header() {
             <HeaderNav items={NAV_ITEMS} />
           </div>
           <div className="flex items-center gap-3">
-            <AnchorLink href="#waitlist" className={cn(buttonVariants({ variant: "primary" }))}>
+            <AnchorLink
+              href="#waitlist"
+              className={cn(buttonVariants({ variant: "primary" }))}
+              onClick={() => posthog.capture(POSTHOG_EVENTS.LANDING.HEADER_CTA_CLICKED, { location: "header" })}
+            >
               {t("cta")}
             </AnchorLink>
             <IconButton
@@ -38,7 +44,10 @@ export default function Header() {
               variant="outline"
               className="md:hidden"
               aria-label="Open menu"
-              onClick={() => setIsMenuOpen(true)}
+              onClick={() => {
+                setIsMenuOpen(true);
+                posthog.capture(POSTHOG_EVENTS.LANDING.MOBILE_MENU_OPENED);
+              }}
             />
           </div>
         </div>

@@ -44,3 +44,4 @@ generated/prisma
 
 # Sentry Config File
 .env.sentry-build-plugin
+.env.local
