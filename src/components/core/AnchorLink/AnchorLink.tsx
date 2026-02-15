@@ -30,7 +30,15 @@ export default function AnchorLink({ href, className, onClick, children, ...prop
   );
 
   return (
-    <a href={href} className={cn(className)} onClick={handleClick} {...props}>
+    <a
+      href={href}
+      className={cn(
+        "focus-visible:ring-ring focus-visible:ring-offset-background rounded-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+        className,
+      )}
+      onClick={handleClick}
+      {...props}
+    >
       {children}
     </a>
   );

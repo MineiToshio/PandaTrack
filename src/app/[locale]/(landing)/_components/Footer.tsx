@@ -12,6 +12,8 @@ export default function Footer() {
   const t = useTranslations("landing.footer");
   const locale = useLocale();
   const year = new Date().getFullYear();
+  const focusVisibleClass =
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md";
 
   return (
     <footer className="bg-background text-foreground w-full px-4 py-8 md:px-6 lg:px-8">
@@ -22,7 +24,7 @@ export default function Footer() {
             <span>{t("madeBy")}</span>
             <a
               href={`mailto:${CONTACT_INFO.email}`}
-              className="hover:text-foreground inline-flex items-center gap-1.5 transition-colors"
+              className={`hover:text-foreground inline-flex items-center gap-1.5 transition-colors ${focusVisibleClass}`}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={CONTACT_INFO.email}
@@ -31,7 +33,7 @@ export default function Footer() {
             </a>
             <a
               href={CONTACT_INFO.tiktok}
-              className="hover:text-foreground inline-flex items-center gap-1.5 transition-colors"
+              className={`hover:text-foreground inline-flex items-center gap-1.5 transition-colors ${focusVisibleClass}`}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`TikTok ${CONTACT_INFO.tiktok}`}
@@ -53,13 +55,13 @@ export default function Footer() {
         <nav aria-label="Legal" className="flex gap-6">
           <Link
             href={`/${locale}/terms`}
-            className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+            className={`text-muted-foreground hover:text-foreground text-sm transition-colors ${focusVisibleClass}`}
           >
             {t("terms")}
           </Link>
           <Link
             href={`/${locale}/privacy`}
-            className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+            className={`text-muted-foreground hover:text-foreground text-sm transition-colors ${focusVisibleClass}`}
           >
             {t("privacy")}
           </Link>

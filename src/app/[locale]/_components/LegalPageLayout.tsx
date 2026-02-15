@@ -5,7 +5,7 @@ import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
 
 const LEGAL_BACK_LINK_CLASS =
-  "text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm font-medium transition-colors";
+  "text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md inline-flex items-center gap-1 text-sm font-medium transition-colors";
 
 type LegalPageLayoutProps = {
   namespace: "terms" | "privacy";

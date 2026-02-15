@@ -55,6 +55,7 @@ export default function Waitlist() {
     (fieldErrors.email?.[0] ? tValidation(fieldErrors.email[0] as "emailRequired" | "emailInvalid") : undefined);
   const showSuccess = state?.success === true;
   const showError = state?.success === false && "error" in state && state.error;
+  const emailErrorId = "waitlist-email-error";
 
   return (
     <section
@@ -98,15 +99,19 @@ export default function Waitlist() {
               className="border-border bg-card mt-10 rounded-2xl border p-8 text-center"
               role="status"
               aria-live="polite"
+              aria-atomic="true"
             >
               <Typography className="text-foreground font-medium">{t("success")}</Typography>
             </div>
           ) : (
-            <form action={handleSubmit} className="mt-10 space-y-5">
+            <form action={handleSubmit} className="mt-10 space-y-5" aria-busy={isPending}>
               <input type="hidden" name="locale" value={locale} />
               <div>
                 <label htmlFor="waitlist-email" className="text-text-title mb-1.5 block text-sm font-medium">
-                  {t("fields.email")} <span className="text-destructive">*</span>
+                  {t("fields.email")}{" "}
+                  <span className="text-destructive" aria-hidden>
+                    *
+                  </span>
                 </label>
                 <Input
                   id="waitlist-email"
@@ -116,11 +121,13 @@ export default function Waitlist() {
                   placeholder={t("fields.emailPlaceholder")}
                   required
                   error={!!emailError}
+                  aria-invalid={!!emailError}
+                  aria-describedby={emailError ? emailErrorId : undefined}
                   disabled={isPending}
                   className="w-full"
                 />
                 {emailError && (
-                  <p className="text-destructive mt-1 text-sm" role="alert">
+                  <p id={emailErrorId} className="text-destructive mt-1 text-sm" role="alert">
                     {emailError}
                   </p>
                 )}

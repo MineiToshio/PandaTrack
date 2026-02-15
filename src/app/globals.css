@@ -18,7 +18,7 @@
   --accent: #f59e0b;
   --accent-foreground: #0b0f14;
   --muted: #223044;
-  --muted-foreground: #9aa5b1;
+  --muted-foreground: #a8b3c0;
   --destructive: #ef4444;
   --destructive-foreground: #0b0f14;
   --success: #22c55e;
@@ -30,7 +30,7 @@
   --link-hover: #c4b5fd;
   --text-title: #f2f6fb;
   --text-body: #d6dee6;
-  --text-muted: #9aa5b1;
+  --text-muted: #a8b3c0;
 }
 
 @theme inline {
