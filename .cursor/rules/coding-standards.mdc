@@ -26,6 +26,32 @@ alwaysApply: true
 - **Spelling and grammar**: Use correct spelling and grammar in all of the above (English).
 - **No em dash**: Never use the em dash character (—) when generating text. Use a hyphen (-), a colon (:), or rephrase the sentence instead.
 
+## Reuse existing components and elements
+
+Prefer reusing existing building blocks so the app stays consistent and maintainable.
+
+- **Core and module components first**: Before adding raw HTML or new components, check `src/components/core/` and `src/components/modules/`. Use `Typography` for paragraph or span text, `Heading` for headings, `Button` for actions, etc., so styling and behavior stay consistent.
+- **Semantic HTML when no component fits**: If no core or module component matches the need, use the appropriate HTML element (`<p>`, `<button>`, `<nav>`, etc.) with the project’s Tailwind/semantic tokens. Do not create a one-off component when a simple element plus `className` is enough.
+- **Do not force reuse when purpose or design differs**: Reuse only when the use case and visual intent align. For example, use `Button` for primary/secondary CTAs, but a plain `<button>` or `<div>` with `role="button"` for a backdrop overlay that closes a drawer, or for custom controls that do not look or behave like app buttons.
+
+```tsx
+// ✅ Prefer: core component for body text
+<Typography size="sm" className="text-text-muted mt-3 text-center">
+  {t("image.disclaimer")}
+</Typography>
+
+// ❌ Avoid: raw <p> when Typography exists and fits
+<p className="text-text-muted mt-3 text-center text-xs">{t("image.disclaimer")}</p>
+```
+
+```tsx
+// ✅ Fine: plain element when purpose is different from core Button (e.g. overlay, custom control)
+<button type="button" aria-label="Close menu" className="inset-0 ..." onClick={onClose} />
+
+// ✅ Fine: use Button for CTAs that match its variants
+<Button variant="primary">Join the waitlist</Button>
+```
+
 ## No magic numbers or values
 
 Do not use raw numbers or strings except in trivial cases (0, 1). Use named constants or variables that provide context.
