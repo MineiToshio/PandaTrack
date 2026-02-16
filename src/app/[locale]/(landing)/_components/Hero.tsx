@@ -127,6 +127,9 @@ export default function Hero() {
               priority
             />
           </div>
+          <Typography as="p" size="2xs" className="text-text-muted mt-3 text-center">
+            {t("image.disclaimer")}
+          </Typography>
         </div>
       </div>
     </section>

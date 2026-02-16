@@ -92,6 +92,7 @@
     },
     "image": {
       "alt": "PandaTrack dashboard showing purchases, shipments, payments, and stores in one place",
+      "disclaimer": "Initial prototype. The final app may look different.",
       "title": "PandaTrack overview",
       "description": "A featured image of the app with metrics, collections, and shipments will live here.",
       "placeholder": "Image placeholder"
