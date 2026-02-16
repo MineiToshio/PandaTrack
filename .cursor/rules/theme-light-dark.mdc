@@ -1,0 +1,35 @@
+---
+description: Consider light and dark theme when designing or implementing UI and styles
+alwaysApply: true
+---
+
+# Light and dark theme – PandaTrack
+
+The app supports **light** and **dark** theme. When designing or implementing UI, components, or styles, always consider both themes.
+
+## How theme works
+
+- **Context**: `ThemeProvider` and `useTheme()` from `@/contexts/ThemeContext` expose `theme` (`"light" | "dark"`), `setTheme`, and `toggleTheme`.
+- **DOM**: The active theme is applied via `data-theme="light"` or `data-theme="dark"` on `<html>`.
+- **Styles**: Theme-specific values are defined in `src/app/globals.css` with CSS variables (`:root` for dark, `:root[data-theme="light"]` for light). Tailwind uses these via semantic tokens (e.g. `background`, `foreground`, `text-title`, `text-muted`, `border`, `primary`, `accent`).
+
+## Rules
+
+- **Use semantic color tokens**: Prefer Tailwind classes that map to theme-aware variables (e.g. `bg-background`, `text-foreground`, `text-text-muted`, `border-border`, `bg-primary`, `text-link`) instead of hardcoded hex or fixed light/dark colors.
+- **Avoid theme-blind colors**: Do not use raw colors (e.g. `#fff`, `text-white`, `bg-black`) for UI that should adapt to theme. Use the design tokens so both themes look correct.
+- **New CSS variables**: If you add new theme-dependent colors in `globals.css`, define them for both `:root` (dark) and `:root[data-theme="light"]` so both themes stay consistent.
+- **Assets and contrast**: Icons and images that depend on background (e.g. logos, illustrations) should work in both themes or use CSS that adapts (e.g. `currentColor`, theme-aware assets).
+- **Review in both themes**: When implementing or changing UI, verify appearance and contrast in light and dark theme (e.g. via the theme toggle or devtools).
+
+## Example
+
+```tsx
+// ✅ Prefer: semantic tokens work in both themes
+<div className="bg-background text-foreground border border-border">
+  <p className="text-text-body">Body</p>
+  <span className="text-text-muted">Muted</span>
+</div>
+
+// ❌ Avoid: hardcoded colors that ignore theme
+<div className="bg-white text-black border border-gray-300">
+```
