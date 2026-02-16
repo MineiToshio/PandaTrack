@@ -1,5 +1,5 @@
 ---
-description: React and Next.js components: Server Components by default, props, events, composition, and prop drilling limit
+description: React and Next.js components: Server Components by default, client boundary, reuse, props, events, composition, and prop drilling limit
 globs: "**/*.tsx"
 alwaysApply: false
 ---
@@ -8,7 +8,11 @@ alwaysApply: false
 
 ## Server Components by default
 
-In Next.js App Router use Server Components by default. Add `"use client"` only when needed (hooks, events, state, browser APIs).
+In Next.js App Router use Server Components by default. Prefer them whenever possible; add `"use client"` only when needed (hooks, events, state, browser APIs).
+
+When a part of the tree must be interactive, keep the client boundary minimal but cohesive: split so only that part is a Client Component, but group by **logical unit** (e.g. one form, one menu, one accordion). Avoid both making the whole page a Client Component and fragmenting into many tiny Client Components. Do not use "client" or "server" in file names; the boundary is identified by the `"use client"` directive in the code.
+
+Reuse existing components from `src/components/core/` and `src/components/modules/` before introducing new Client Components. For example, use the core `Button` for interactive buttons instead of creating a new Client Component per button. Create a new Client Component only when (1) no core or module component fits the need, or (2) the interactivity is a full logical block (form, menu, carousel, etc.) that deserves its own component.
 
 ## Small, focused components
 
