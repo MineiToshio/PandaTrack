@@ -91,6 +91,7 @@
       }
     },
     "image": {
+      "alt": "Dashboard de PandaTrack con compras, envíos, pagos y tiendas en un solo lugar",
       "title": "Vista general de PandaTrack",
       "description": "Aquí irá una imagen destacada de la app con métricas, colecciones y envíos.",
       "placeholder": "Placeholder de imagen"

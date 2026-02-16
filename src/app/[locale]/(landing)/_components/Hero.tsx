@@ -1,10 +1,11 @@
-import AnchorLink from "@/components/core/AnchorLink";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
+import AnchorLink from "@/components/core/AnchorLink";
+import { buttonVariants } from "@/components/core/Button/buttonVariants";
+import { POSTHOG_EVENTS } from "@/lib/constants";
+import { cn } from "@/lib/styles";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
-import { buttonVariants } from "@/components/core/Button/buttonVariants";
-import { cn } from "@/lib/styles";
-import { POSTHOG_EVENTS } from "@/lib/constants";
 
 const ANIMATION_DURATION_MS = 600;
 const STAGGER_MS = 80;
@@ -40,7 +41,7 @@ export default function Hero() {
         aria-hidden
       />
 
-      <div className="relative mx-auto grid w-full max-w-6xl gap-12 px-4 py-16 md:grid-cols-[1.1fr_0.9fr] md:items-center md:px-6 md:py-24 lg:px-8">
+      <div className="relative mx-auto grid w-full max-w-6xl gap-12 px-4 py-16 md:grid-cols-[1.2fr_0.8fr] md:items-center md:px-6 md:py-24 lg:px-8">
         <div className="flex flex-col gap-6">
           <span
             className="bg-primary/35 text-primary-foreground ring-primary/40 w-fit rounded-full px-4 py-2 text-xs font-semibold tracking-[0.2em] uppercase ring-1"
@@ -99,7 +100,7 @@ export default function Hero() {
         </div>
 
         <div
-          className="relative"
+          className="relative justify-self-center"
           style={{
             animation: `hero-fade-in-up ${ANIMATION_DURATION_MS}ms ease-out both`,
             animationDelay: `${STAGGER_MS * 2}ms`,
@@ -111,16 +112,20 @@ export default function Hero() {
             aria-hidden
           />
           <div
-            className="border-border bg-surface shadow-primary/10 relative overflow-hidden rounded-3xl border p-8 shadow-xl"
+            className="border-border bg-surface shadow-primary/10 relative w-fit overflow-hidden rounded-3xl border shadow-xl"
             style={{
               animation: "hero-float 5s ease-in-out infinite",
             }}
           >
-            <div className="bg-surface-2 border-border ring-primary/20 flex min-h-[360px] flex-col items-center justify-center gap-4 rounded-2xl border border-dashed p-8 text-center ring-1">
-              <div className="text-text-title text-xl font-semibold">{t("image.title")}</div>
-              <div className="text-text-muted max-w-sm text-sm">{t("image.description")}</div>
-              <div className="text-text-muted text-xs">{t("image.placeholder")}</div>
-            </div>
+            <Image
+              src="/images/hero.webp"
+              alt={t("image.alt")}
+              width={647}
+              height={1383}
+              className="block h-auto w-full max-w-[280px] sm:max-w-[300px] md:max-w-[340px]"
+              sizes="(max-width: 640px) 280px, (max-width: 768px) 300px, 340px"
+              priority
+            />
           </div>
         </div>
       </div>
