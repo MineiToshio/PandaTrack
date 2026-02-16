@@ -14,11 +14,11 @@ export default getRequestConfig(async ({ requestLocale }) => {
   return {
     locale,
     messages: {
-      // Load messages per file structure
-      common: (await import(`./messages/${locale}/common.json`)).default,
-      landing: (await import(`./messages/${locale}/landing.json`)).default,
-      terms: (await import(`./messages/${locale}/terms.json`)).default,
-      privacy: (await import(`./messages/${locale}/privacy.json`)).default,
+      // Load locale data per file structure
+      common: (await import(`./locales/${locale}/common.json`)).default,
+      landing: (await import(`./locales/${locale}/landing.json`)).default,
+      terms: (await import(`./locales/${locale}/terms.json`)).default,
+      privacy: (await import(`./locales/${locale}/privacy.json`)).default,
     },
   };
 });

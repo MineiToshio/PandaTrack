@@ -17,7 +17,7 @@ When writing or editing user-facing copy (landing pages, emails, CTAs, product m
 
 ## Constraints
 
-- User-facing text must live in i18n message files under `src/i18n/messages/`. Do not hardcode copy in components.
+- User-facing text and other locale-dependent content must live in locale files under `src/i18n/locales/`. Do not hardcode copy or locale-specific values in components.
 - Never use the em dash (—). Use a hyphen, colon, or rephrase.
 - Headlines and subheads should work in isolation; avoid depending on surrounding layout to convey meaning.
 

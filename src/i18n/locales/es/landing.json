@@ -91,6 +91,7 @@
       }
     },
     "image": {
+      "src": "/images/hero_es.webp",
       "alt": "Dashboard de PandaTrack con compras, envíos, pagos y tiendas en un solo lugar",
       "disclaimer": "Prototipo inicial. La app final puede variar.",
       "title": "Vista general de PandaTrack",

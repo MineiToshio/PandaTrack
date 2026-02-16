@@ -26,14 +26,14 @@ Do not put business logic or reusable code inside **`app/`** except for route-sp
 
 ## Internationalization (i18n)
 
-All i18n configuration and messages live under **`src/i18n/`**.
+All i18n configuration and locale-dependent data live under **`src/i18n/`**.
 
 - **Config**:
-  - **`request.ts`** – next-intl request config (e.g. `getRequestConfig`), loads messages per locale.
+  - **`request.ts`** – next-intl request config (e.g. `getRequestConfig`), loads locale data per locale.
   - **`routing.ts`** – locale list, default locale, and routing options (e.g. `defineRouting`).
-- **Messages**: **`src/i18n/messages/{locale}/`** – one folder per locale (e.g. `en/`, `es/`). Split messages by **namespace** in JSON files (e.g. `common.json`, `landing.json`). Load these namespaces in `request.ts` and use them in components via the chosen i18n API.
+- **Locales**: **`src/i18n/locales/{locale}/`** – one folder per locale (e.g. `en/`, `es/`). Split data by **namespace** in JSON files (e.g. `common.json`, `landing.json`). Load these namespaces in `request.ts` and use them in components via the chosen i18n API.
 
-User-facing copy must come from these message files; do not hardcode user-visible strings in components or server code.
+Everything that varies by locale (user-facing text, image or asset paths, and any other locale-specific configuration) must live in these locale files. Do not hardcode copy or locale-specific values in components or server code.
 
 ---
 

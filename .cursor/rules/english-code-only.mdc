@@ -16,12 +16,12 @@ All source code and code-related output in this project must be written in **Eng
 - **Test names**, **describe/it blocks**, and **assertion messages**
 - **API error messages or developer-facing response text** in code (user-facing copy goes to i18n)
 
-## Exception: i18n (user-facing text)
+## Exception: i18n (locale-dependent content)
 
-User-visible text that is localized must **not** be hardcoded in components or server code. It must live in:
+Content that depends on the active locale (user-visible text, asset paths, or other locale-specific values) must **not** be hardcoded in components or server code. It must live in:
 
-- `src/i18n/messages/{locale}/` (e.g. `en/`, `es/`)
+- `src/i18n/locales/{locale}/` (e.g. `en/`, `es/`)
 
-The **keys** in those JSON files and the **content** of the translations may be in any language the product supports. Only the **code** (identifiers, comments, commits, logs, etc.) is required to be in English.
+The **keys** in those JSON files and the **content** may be in any language the product supports. Only the **code** (identifiers, comments, commits, logs, etc.) is required to be in English.
 
-When adding or editing UI copy, add or update the corresponding keys in the appropriate locale files; do not put user-facing strings directly in TS/TSX.
+When adding or editing UI copy or locale-specific config (e.g. image paths), add or update the corresponding keys in the appropriate locale files; do not put them directly in TS/TSX.

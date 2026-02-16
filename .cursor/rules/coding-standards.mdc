@@ -15,7 +15,7 @@ alwaysApply: true
 - Test descriptions and assertion messages
 - API response messages or developer-facing strings in source code
 
-**Exception:** User-facing text that is localized (i18n) must live in translation files under `src/i18n/messages/` (e.g. `en/`, `es/`) and must not be hardcoded in components. The source keys and the content of those files may be in any language the product supports; only the **code** (identifiers, comments, commit messages, etc.) is required to be in English.
+**Exception:** Anything that depends on the active locale (user-facing text, asset paths, or other locale-specific configuration) must live in the locale files under `src/i18n/locales/` (e.g. `en/`, `es/`). Do not hardcode copy or locale-specific values in components. The keys and the content of those files may be in any language the product supports; only the **code** (identifiers, comments, commit messages, etc.) is required to be in English.
 
 ## Fundamental principles
 

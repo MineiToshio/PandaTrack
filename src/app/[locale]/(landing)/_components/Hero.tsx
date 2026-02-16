@@ -10,6 +10,9 @@ import Typography from "@/components/core/Typography";
 const ANIMATION_DURATION_MS = 600;
 const STAGGER_MS = 80;
 
+const HERO_IMAGE_WIDTH = 647;
+const HERO_IMAGE_HEIGHT = 1383;
+
 export default function Hero() {
   const t = useTranslations("landing.hero");
 
@@ -118,10 +121,10 @@ export default function Hero() {
             }}
           >
             <Image
-              src="/images/hero.webp"
+              src={t("image.src")}
               alt={t("image.alt")}
-              width={647}
-              height={1383}
+              width={HERO_IMAGE_WIDTH}
+              height={HERO_IMAGE_HEIGHT}
               className="block h-auto w-full max-w-[280px] sm:max-w-[300px] md:max-w-[340px]"
               sizes="(max-width: 640px) 280px, (max-width: 768px) 300px, 340px"
               priority
