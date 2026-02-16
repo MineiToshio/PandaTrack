@@ -34,6 +34,7 @@
   --eyebrow-bg: rgb(139 92 246 / 0.35);
   --eyebrow-fg: #ffffff;
   --eyebrow-ring: rgb(139 92 246 / 0.4);
+  --logo: #e6edf3;
 }
 
 @theme inline {
@@ -69,6 +70,7 @@
   --color-eyebrow-bg: var(--eyebrow-bg);
   --color-eyebrow-fg: var(--eyebrow-fg);
   --color-eyebrow-ring: var(--eyebrow-ring);
+  --color-logo: var(--logo);
   --font-sans: var(--font-regular);
   --font-secondary: var(--font-secondary);
   --font-logo: var(--font-logo);
@@ -110,6 +112,7 @@
     --eyebrow-bg: #7c3aed;
     --eyebrow-fg: #ffffff;
     --eyebrow-ring: #8b5cf6;
+    --logo: #7c3aed;
   }
 }
 
@@ -147,6 +150,7 @@
   --eyebrow-bg: #7c3aed;
   --eyebrow-fg: #ffffff;
   --eyebrow-ring: #8b5cf6;
+  --logo: #7c3aed;
 }
 
 @keyframes banner-cta-subtle {

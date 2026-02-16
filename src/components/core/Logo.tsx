@@ -6,6 +6,8 @@ type LogoProps = {
   className?: string;
 };
 
-const Logo: FC<LogoProps> = ({ className }) => <span className={cn("font-logo text-3xl", className)}>{APP_NAME}</span>;
+const Logo: FC<LogoProps> = ({ className }) => (
+  <span className={cn("font-logo text-logo text-3xl", className)}>{APP_NAME}</span>
+);
 
 export default Logo;
