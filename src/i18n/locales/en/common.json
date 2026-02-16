@@ -1,8 +1,11 @@
 {
+  "languageToggle": {
+    "en": "EN",
+    "es": "ES",
+    "ariaEn": "Switch to English",
+    "ariaEs": "Switch to Spanish"
+  },
   "legal": {
-    "termsTitle": "Terms of Service",
-    "privacyTitle": "Privacy Policy",
-    "comingSoon": "This page is coming soon.",
     "backToHome": "← Back to home"
   }
 }

@@ -10,6 +10,7 @@ import { useTranslations } from "next-intl";
 import IconButton from "@/components/core/IconButton";
 import { Menu } from "lucide-react";
 import BurgerMenu from "./BurgerMenu";
+import LanguageToggle from "./LanguageToggle";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 
 const NAV_ITEMS: HeaderNavItem[] = [
@@ -31,6 +32,7 @@ export default function Header() {
             <HeaderNav items={NAV_ITEMS} />
           </div>
           <div className="flex items-center gap-3">
+            <LanguageToggle className="hidden md:flex" />
             <AnchorLink
               href="#waitlist"
               className={cn(buttonVariants({ variant: "primary" }))}

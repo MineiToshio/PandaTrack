@@ -12,10 +12,11 @@ export type HeaderNavItem = {
 type HeaderNavProps = {
   items: HeaderNavItem[];
   className?: string;
+  itemClassName?: string;
   onNavigate?: () => void;
 };
 
-export default function HeaderNav({ items, className, onNavigate }: HeaderNavProps) {
+export default function HeaderNav({ items, className, itemClassName, onNavigate }: HeaderNavProps) {
   const t = useTranslations("landing.header.nav");
 
   return (
@@ -29,6 +30,7 @@ export default function HeaderNav({ items, className, onNavigate }: HeaderNavPro
             "after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-right after:scale-x-0 after:bg-current after:content-['']",
             "after:transition-transform after:duration-300 after:ease-out",
             "hover:after:origin-left hover:after:scale-x-100",
+            itemClassName,
           )}
           onClick={onNavigate}
         >
