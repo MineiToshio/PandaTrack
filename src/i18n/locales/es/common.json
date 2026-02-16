@@ -5,6 +5,10 @@
     "ariaEn": "Cambiar a inglés",
     "ariaEs": "Cambiar a español"
   },
+  "themeToggle": {
+    "switchToLight": "Cambiar a modo claro",
+    "switchToDark": "Cambiar a modo oscuro"
+  },
   "legal": {
     "backToHome": "← Volver al inicio"
   }

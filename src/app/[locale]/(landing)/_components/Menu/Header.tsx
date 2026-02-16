@@ -11,6 +11,7 @@ import IconButton from "@/components/core/IconButton";
 import { Menu } from "lucide-react";
 import BurgerMenu from "./BurgerMenu";
 import LanguageToggle from "./LanguageToggle";
+import ThemeToggle from "./ThemeToggle";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 
 const NAV_ITEMS: HeaderNavItem[] = [
@@ -33,6 +34,7 @@ export default function Header() {
           </div>
           <div className="flex items-center gap-3">
             <LanguageToggle className="hidden md:flex" />
+            <ThemeToggle className="hidden md:flex" />
             <AnchorLink
               href="#waitlist"
               className={cn(buttonVariants({ variant: "primary" }))}

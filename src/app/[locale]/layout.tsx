@@ -6,6 +6,7 @@ import { getMessages } from "next-intl/server";
 import type { Metadata } from "next";
 import "../globals.css";
 import { logoFont, regularFont, secondaryFont } from "@/lib/fonts";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 export const metadata: Metadata = {
   title: "PandaTrack",
@@ -35,9 +36,26 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale}>
+    <html lang={locale} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function() {
+  var key = 'theme';
+  var stored = localStorage.getItem(key);
+  if (stored === 'light' || stored === 'dark') {
+    document.documentElement.setAttribute('data-theme', stored);
+  }
+})();
+            `.trim(),
+          }}
+        />
+      </head>
       <body className={`${regularFont.variable} ${secondaryFont.variable} ${logoFont.variable} antialiased`}>
-        <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>
+          <ThemeProvider>{children}</ThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -5,6 +5,10 @@
     "ariaEn": "Switch to English",
     "ariaEs": "Switch to Spanish"
   },
+  "themeToggle": {
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode"
+  },
   "legal": {
     "backToHome": "← Back to home"
   }

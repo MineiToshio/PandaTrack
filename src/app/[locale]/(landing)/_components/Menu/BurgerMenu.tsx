@@ -8,6 +8,7 @@ import IconButton from "@/components/core/IconButton";
 import Logo from "@/components/core/Logo";
 import HeaderNav, { HeaderNavItem } from "./HeaderNav";
 import LanguageToggle from "./LanguageToggle";
+import ThemeToggle from "./ThemeToggle";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 
 type BurgerMenuProps = {
@@ -47,11 +48,10 @@ export default function BurgerMenu({ isOpen, onClose, items, ctaLabel }: BurgerM
               itemClassName="py-2"
               onNavigate={onClose}
             />
-            <LanguageToggle
-              className="mt-6 w-full justify-start gap-2 text-base [&>span]:gap-2"
-              compact
-              onNavigate={onClose}
-            />
+            <div className="mt-6 flex items-center gap-3">
+              <LanguageToggle className="justify-start gap-2 text-base [&>span]:gap-2" compact onNavigate={onClose} />
+              <ThemeToggle />
+            </div>
           </div>
           <AnchorLink
             href="#waitlist"
