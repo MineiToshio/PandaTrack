@@ -37,9 +37,9 @@ export default function UserFit() {
         <ProblemCard
           index="02"
           icon={<Truck className="h-6 w-6" strokeWidth={2} />}
-          accentClassName="bg-secondary"
-          hoverBorderClassName="hover:border-secondary/40"
-          hoverTitleClassName="group-hover:text-secondary"
+          accentClassName="bg-info"
+          hoverBorderClassName="hover:border-info/40"
+          hoverTitleClassName="group-hover:text-info"
           title={t("cards.card2.title")}
           description={t("cards.card2.description")}
         />

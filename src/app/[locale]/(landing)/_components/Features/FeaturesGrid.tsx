@@ -20,9 +20,9 @@ const FEATURES_CONFIG = [
   {
     key: "preorders",
     icon: <BadgeDollarSign className="h-6 w-6" aria-hidden />,
-    accentClassName: "text-secondary",
-    titleBarClassName: "bg-secondary",
-    hoverAccentClassName: "hover:border-secondary/50 hover:shadow-lg hover:shadow-secondary/20",
+    accentClassName: "text-success",
+    titleBarClassName: "bg-success",
+    hoverAccentClassName: "hover:border-success/50 hover:shadow-lg hover:shadow-success/20",
   },
   {
     key: "shipments",
