@@ -5,6 +5,7 @@ export const THEME_STORAGE_KEY = "theme";
 export const CONTACT_INFO = {
   email: "panda.d.collector@gmail.com",
   tiktok: "https://www.tiktok.com/@pandadcollector",
+  whatsapp: "https://whatsapp.com/channel/0029VbAil5KBVJl1UttAWe2j",
 } as const;
 
 export const POSTHOG_EVENTS = {
