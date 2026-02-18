@@ -1,5 +1,6 @@
 "use server";
 
+import { appendWaitlistToGoogleSheet } from "@/lib/GoogleAppsScript";
 import { createSubscriber, tagSubscriberByLocale } from "@/lib/kit";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { getPostHogClient } from "@/lib/posthog-server";
@@ -39,9 +40,9 @@ export async function submitWaitlist(formData: FormData): Promise<SubmitWaitlist
     return { success: false, fieldErrors };
   }
 
-  const { email, name } = parsed.data;
+  const { email, name, comment } = parsed.data;
   const rawLocale = formData.get("locale");
-  const locale = typeof rawLocale === "string" && isLocale(rawLocale.trim()) ? rawLocale.trim() : undefined;
+  const locale = typeof rawLocale === "string" && isLocale(rawLocale.trim()) ? rawLocale.trim() : "";
 
   const posthog = getPostHogClient();
 
@@ -62,7 +63,7 @@ export async function submitWaitlist(formData: FormData): Promise<SubmitWaitlist
       properties: {
         email,
         has_name: !!name,
-        locale: locale ?? "unknown",
+        locale: locale || "unknown",
       },
     });
 
@@ -72,9 +73,18 @@ export async function submitWaitlist(formData: FormData): Promise<SubmitWaitlist
       properties: {
         email,
         name: name ?? undefined,
-        locale: locale ?? undefined,
+        locale: locale || undefined,
         signed_up_at: new Date().toISOString(),
       },
+    });
+
+    const createdAt = new Date().toISOString();
+    await appendWaitlistToGoogleSheet({
+      createdAt,
+      name: name ?? "",
+      email,
+      locale: locale || "",
+      comment: comment ?? "",
     });
 
     return { success: true };
@@ -89,7 +99,7 @@ export async function submitWaitlist(formData: FormData): Promise<SubmitWaitlist
       properties: {
         email,
         error_message: message,
-        locale: locale ?? "unknown",
+        locale: locale || "unknown",
       },
     });
 
