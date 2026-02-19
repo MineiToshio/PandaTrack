@@ -19,6 +19,11 @@ type BurgerMenuProps = {
 };
 
 export default function BurgerMenu({ isOpen, onClose, items, ctaLabel }: BurgerMenuProps) {
+  const handleLogoClick = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    onClose();
+  };
+
   return (
     <div className={cn("fixed inset-0 z-50 md:hidden", isOpen ? "pointer-events-auto" : "pointer-events-none")}>
       <button
@@ -38,7 +43,14 @@ export default function BurgerMenu({ isOpen, onClose, items, ctaLabel }: BurgerM
       >
         <div className="flex h-full flex-col p-6">
           <div className="flex items-center justify-between">
-            <Logo className="text-text-title" />
+            <button
+              type="button"
+              onClick={handleLogoClick}
+              aria-label="Scroll to top"
+              className="cursor-pointer border-none bg-transparent p-0"
+            >
+              <Logo className="text-text-title" />
+            </button>
             <IconButton Icon={X} variant="outline" size="sm" aria-label="Close menu" onClick={onClose} />
           </div>
           <div className="mt-8 flex-1">

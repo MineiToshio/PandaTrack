@@ -32,11 +32,22 @@ export default function Header() {
     setIsMenuOpen(false);
   };
 
+  const handleLogoClick = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <>
       <header className="border-border bg-background text-foreground sticky top-0 z-40 w-full border-b">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-          <Logo />
+          <button
+            type="button"
+            onClick={handleLogoClick}
+            aria-label="Scroll to top"
+            className="cursor-pointer border-none bg-transparent p-0"
+          >
+            <Logo />
+          </button>
           <div className="hidden md:flex">
             <HeaderNav items={NAV_ITEMS} />
           </div>
