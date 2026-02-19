@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
+import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 
 const LEGAL_BACK_LINK_CLASS =
@@ -24,7 +25,7 @@ export default function LegalPageLayout({ namespace, sectionKeys, locale }: Lega
   return (
     <main className={cn("bg-background text-foreground min-h-screen px-4 py-12 md:px-6 md:py-16 lg:px-8")}>
       <div className="mx-auto max-w-3xl">
-        <Link href={`/${locale}`} className={LEGAL_BACK_LINK_CLASS}>
+        <Link href={`/${locale}${ROUTES.home}`} className={LEGAL_BACK_LINK_CLASS}>
           {tLegal("backToHome")}
         </Link>
 
@@ -65,7 +66,7 @@ export default function LegalPageLayout({ namespace, sectionKeys, locale }: Lega
         </div>
 
         <footer className="border-border mt-14 border-t pt-8">
-          <Link href={`/${locale}`} className={LEGAL_BACK_LINK_CLASS}>
+          <Link href={`/${locale}${ROUTES.home}`} className={LEGAL_BACK_LINK_CLASS}>
             {tLegal("backToHome")}
           </Link>
         </footer>

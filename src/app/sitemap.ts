@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { ROUTES } from "@/lib/constants";
 import { getSiteUrl } from "@/lib/seo";
 import { routing } from "@/i18n/routing";
 
@@ -15,9 +16,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     changeFrequency: "weekly" | "monthly";
     priority: number;
   }> = [
-    { path: "", changeFrequency: "weekly", priority: 1 },
-    { path: "/terms", changeFrequency: "monthly", priority: 0.5 },
-    { path: "/privacy", changeFrequency: "monthly", priority: 0.5 },
+    { path: ROUTES.home, changeFrequency: "weekly", priority: 1 },
+    { path: ROUTES.terms, changeFrequency: "monthly", priority: 0.5 },
+    { path: ROUTES.privacy, changeFrequency: "monthly", priority: 0.5 },
   ];
 
   for (const locale of locales) {

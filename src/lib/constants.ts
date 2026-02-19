@@ -2,6 +2,13 @@ export const APP_NAME = "PandaTrack";
 
 export const THEME_STORAGE_KEY = "theme";
 
+/** Path segments for app routes (no locale prefix). Use with `/${locale}${ROUTES.xyz}` for links. */
+export const ROUTES = {
+  home: "",
+  terms: "/terms",
+  privacy: "/privacy",
+} as const;
+
 export const CONTACT_INFO = {
   email: "panda.d.collector@gmail.com",
   tiktok: "https://www.tiktok.com/@pandadcollector",

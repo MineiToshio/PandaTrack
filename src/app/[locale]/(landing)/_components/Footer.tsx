@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { siTiktok, siWhatsapp } from "simple-icons";
 import Typography from "@/components/core/Typography";
-import { CONTACT_INFO, POSTHOG_EVENTS } from "@/lib/constants";
+import { CONTACT_INFO, POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 
 const ICON_SIZE = 18;
@@ -92,13 +92,13 @@ export default function Footer({ locale }: FooterProps) {
         </div>
         <nav aria-label="Legal" className="flex gap-6">
           <Link
-            href={`/${locale}/terms`}
+            href={`/${locale}${ROUTES.terms}`}
             className={cn("text-muted-foreground hover:text-foreground text-sm transition-colors", FOCUS_VISIBLE_CLASS)}
           >
             {t("terms")}
           </Link>
           <Link
-            href={`/${locale}/privacy`}
+            href={`/${locale}${ROUTES.privacy}`}
             className={cn("text-muted-foreground hover:text-foreground text-sm transition-colors", FOCUS_VISIBLE_CLASS)}
           >
             {t("privacy")}
