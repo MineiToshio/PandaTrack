@@ -1,6 +1,6 @@
-import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import LegalPageLayout from "../_components/LegalPageLayout";
+import { buildPageMetadata } from "@/lib/seo";
 
 const PRIVACY_SECTION_KEYS = [
   "whoWeAre",
@@ -22,11 +22,14 @@ type PrivacyPageProps = {
 };
 
 export async function generateMetadata({ params }: PrivacyPageProps): Promise<Metadata> {
-  const t = await getTranslations("privacy");
-  return {
-    title: t("title"),
-    description: t("intro"),
-  };
+  const { locale } = await params;
+  return buildPageMetadata({
+    locale,
+    namespace: "privacy",
+    pathSegment: "privacy",
+    titleKey: "title",
+    descriptionKey: "intro",
+  });
 }
 
 export default async function PrivacyPage({ params }: PrivacyPageProps) {

@@ -1,6 +1,6 @@
-import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import LegalPageLayout from "../_components/LegalPageLayout";
+import { buildPageMetadata } from "@/lib/seo";
 
 const TERMS_SECTION_KEYS = [
   "acceptance",
@@ -19,11 +19,14 @@ type TermsPageProps = {
 };
 
 export async function generateMetadata({ params }: TermsPageProps): Promise<Metadata> {
-  const t = await getTranslations("terms");
-  return {
-    title: t("title"),
-    description: t("intro"),
-  };
+  const { locale } = await params;
+  return buildPageMetadata({
+    locale,
+    namespace: "terms",
+    pathSegment: "terms",
+    titleKey: "title",
+    descriptionKey: "intro",
+  });
 }
 
 export default async function TermsPage({ params }: TermsPageProps) {

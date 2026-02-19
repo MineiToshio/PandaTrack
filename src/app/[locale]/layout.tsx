@@ -7,9 +7,12 @@ import type { Metadata } from "next";
 import "../globals.css";
 import { logoFont, regularFont, secondaryFont } from "@/lib/fonts";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { getSiteUrl } from "@/lib/seo";
+import { APP_NAME } from "@/lib/constants";
 
 export const metadata: Metadata = {
-  title: "PandaTrack",
+  metadataBase: new URL(getSiteUrl()),
+  title: { default: APP_NAME, template: `%s | ${APP_NAME}` },
   description: "Track your collection efficiently",
 };
 
