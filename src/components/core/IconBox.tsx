@@ -10,7 +10,7 @@ const iconBoxVariants = cva("flex shrink-0 items-center justify-center rounded-x
     },
     variant: {
       muted: "bg-muted",
-      filled: "text-white",
+      filled: "text-primary-foreground",
       soft: "",
     },
   },

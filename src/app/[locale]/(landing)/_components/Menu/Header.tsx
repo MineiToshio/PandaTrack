@@ -24,6 +24,14 @@ export default function Header() {
   const t = useTranslations("landing.header");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const handleOpenMenu = () => {
+    setIsMenuOpen(true);
+  };
+
+  const handleCloseMenu = () => {
+    setIsMenuOpen(false);
+  };
+
   return (
     <>
       <header className="border-border bg-background text-foreground sticky top-0 z-40 w-full border-b">
@@ -49,14 +57,12 @@ export default function Header() {
               className="md:hidden"
               aria-label="Open menu"
               data-ph-event={POSTHOG_EVENTS.LANDING.MOBILE_MENU_OPENED}
-              onClick={() => {
-                setIsMenuOpen(true);
-              }}
+              onClick={handleOpenMenu}
             />
           </div>
         </div>
       </header>
-      <BurgerMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} items={NAV_ITEMS} ctaLabel={t("cta")} />
+      <BurgerMenu isOpen={isMenuOpen} onClose={handleCloseMenu} items={NAV_ITEMS} ctaLabel={t("cta")} />
     </>
   );
 }

@@ -136,9 +136,9 @@ export default function Waitlist() {
                   className="w-full"
                 />
                 {emailError && (
-                  <p id={emailErrorId} className="text-destructive mt-1 text-sm" role="alert">
+                  <Typography id={emailErrorId} size="sm" className="text-destructive mt-1" role="alert">
                     {emailError}
-                  </p>
+                  </Typography>
                 )}
               </div>
               <div>
@@ -171,9 +171,9 @@ export default function Waitlist() {
                 />
               </div>
               {showError && (
-                <p className="text-destructive text-sm" role="alert">
+                <Typography size="sm" className="text-destructive" role="alert">
                   {t("error")}
-                </p>
+                </Typography>
               )}
               <div className="pt-2">
                 <Button

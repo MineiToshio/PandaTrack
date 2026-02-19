@@ -61,9 +61,7 @@ export default function BurgerMenu({ isOpen, onClose, items, ctaLabel }: BurgerM
               destination: "waitlist",
               cta_type: "primary",
             }}
-            onClick={() => {
-              onClose();
-            }}
+            onClick={onClose}
           >
             {ctaLabel}
           </AnchorLink>

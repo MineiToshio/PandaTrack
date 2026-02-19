@@ -2,7 +2,7 @@ import { cn } from "@/lib/styles";
 import { VariantProps, cva } from "class-variance-authority";
 import { HTMLAttributes, forwardRef } from "react";
 
-const headingVariants = cva("text-black font-bold leading-tight tracking-tighter", {
+const headingVariants = cva("text-foreground font-bold leading-tight tracking-tighter", {
   variants: {
     size: {
       lg: "text-5xl md:text-6xl lg:text-7xl",

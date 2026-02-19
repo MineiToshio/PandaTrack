@@ -1,4 +1,5 @@
 import IconBox from "@/components/core/IconBox";
+import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
 import type { ReactNode } from "react";
 
@@ -55,7 +56,9 @@ export default function FeatureCard({
       >
         {title}
       </h3>
-      <p className="text-text-body text-sm leading-relaxed">{description}</p>
+      <Typography size="sm" className="text-text-body leading-relaxed">
+        {description}
+      </Typography>
       <div
         className={cn(
           "mt-4 h-1 w-12 rounded-full transition-[width] duration-300 ease-out group-hover:w-full",
