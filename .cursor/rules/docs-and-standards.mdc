@@ -1,0 +1,60 @@
+---
+description: When to document in docs/, when to create new Cursor rules, and how to keep both focused
+alwaysApply: true
+---
+
+# Documentation and standards – PandaTrack
+
+When implementing new features or applying changes, follow these two practices so the project stays documented and consistent.
+
+---
+
+## 1. Document in `docs/` when it adds lasting context
+
+Use the `docs/` folder for knowledge that helps future work and onboarding, not for every small change.
+
+### Document in `docs/` when:
+
+- **New module or area**: You add a new subsystem (e.g. auth, payments, a new app section). Create or update a doc that describes structure, entry points, and how to extend it (similar to `docs/i18n.md`).
+- **Design or architecture decision**: A choice affects how other code should be written (e.g. how we call APIs, how we handle errors in a new layer). Add a short note in an existing doc or a small ADR-style section (what we decided and why).
+- **Convention or flow others must follow**: Any pattern that other developers (or the AI) should reuse (e.g. adding a new locale, adding a new page type). Document the steps and where to touch the code.
+
+### Do not push to `docs/` for:
+
+- Single function or component behavior; use **comments and JSDoc** in code (see quality-docs-cleanup rule).
+- One-off or feature-specific details that do not affect other parts of the project.
+
+### Structure in `docs/`:
+
+- **`docs/product.md`**: Product vision, roadmap, and high-level features. Update when the product direction or scope changes.
+- **`docs/i18n.md`**: i18n setup, structure, and how to add locales or namespaces. Use as the template for other “how this subsystem works” docs.
+- **New areas**: Prefer one file per topic (e.g. `docs/architecture.md`, `docs/auth.md`, `docs/modules/<name>.md`). Keep each doc focused; link between them if needed.
+
+When you add or update something in `docs/`, place it in the right file and keep the same style (short sections, code examples where useful, clear headings).
+
+---
+
+## 2. Create a new Cursor rule only when it is a recurring standard
+
+Not every instruction should become a rule. Create a new rule only when it will guide future implementations in a consistent way.
+
+### Create a new rule when all of the following are true:
+
+- **Recurring**: It is a pattern that will apply again (how we write or structure code), not a one-off feature request.
+- **Future-facing**: It describes how to do things from now on, not a single fix or single feature.
+- **Concise and actionable**: It can be written in a short, clear way (ideally under 50 lines) with concrete do/don’t or examples.
+- **No duplication**: It does not repeat or contradict an existing rule in `.cursor/rules/`. If it extends one, consider updating that rule instead of adding a new file.
+
+### Do not create a new rule when:
+
+- The instruction is about implementing a specific feature or fixing a single bug.
+- The same idea is already covered (or could be covered) in an existing rule.
+- It is a vague or one-time preference.
+
+### Before adding a rule:
+
+1. Check existing rules (e.g. `coding-standards.mdc`, `quality-docs-cleanup.mdc`, `project-structure.mdc`) to avoid overlap.
+2. If in doubt, add a short comment in code or a note in the relevant `docs/` file instead of creating a new rule.
+3. New rules live in `.cursor/rules/` as `.mdc` files, with a clear `description` in the frontmatter and focused content.
+
+This keeps the rule set small and useful so that documentation and standards stay maintainable.
