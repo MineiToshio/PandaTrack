@@ -38,6 +38,8 @@ When you add or update something in `docs/`, place it in the right file and keep
 
 Not every instruction should become a rule. Create a new rule only when it will guide future implementations in a consistent way.
 
+When the user explicitly describes a pattern they want applied across the project, consider capturing it in a Cursor rule. That does not always mean creating a new file: depending on the case, it may be better to update an existing rule (e.g. `coding-standards.mdc`, `project-structure.mdc`) to add the new convention, so the rule set stays small and consistent.
+
 ### Create a new rule when all of the following are true:
 
 - **Recurring**: It is a pattern that will apply again (how we write or structure code), not a one-off feature request.

@@ -52,6 +52,22 @@ Prefer reusing existing building blocks so the app stays consistent and maintain
 <Button variant="primary">Join the waitlist</Button>
 ```
 
+## Reusable constants for app-wide values
+
+Whenever a value is reused across the app (routes, event names, app name, shared config, etc.), define it as a constant and reference it everywhere instead of repeating literals.
+
+- **Group in an object** when you have several related values: `ROUTES`, `POSTHOG_EVENTS`, `CONTACT_INFO`, `COOKIES`. Use a **single exported constant** when the value stands alone: `APP_NAME`, `THEME_STORAGE_KEY`.
+- Keep these constants in a central place (e.g. `src/lib/constants.ts`) so they stay easy to find and update.
+
+```typescript
+// ✅ Prefer: reuse from constants
+import { ROUTES } from "@/lib/constants";
+<Link href={`/${locale}${ROUTES.terms}`} />
+
+// ❌ Avoid: repeating the same path or string in multiple files
+<Link href={`/${locale}/terms`} />
+```
+
 ## No magic numbers or values
 
 Do not use raw numbers or strings except in trivial cases (0, 1). Use named constants or variables that provide context.
