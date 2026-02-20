@@ -9,7 +9,7 @@ import posthog from "posthog-js";
 import { submitWaitlist } from "./submitWaitlist";
 import { waitlistSchema } from "./waitlistSchema";
 import WaitlistForm from "./WaitlistForm";
-import WaitlistShare from "@/app/[locale]/(landing)/_components/WaitlistShare/WaitlistShare";
+import WaitlistShare from "@/app/[locale]/(landing)/_components/Waitlist/WaitlistShare";
 
 export default function Waitlist() {
   const locale = useLocale();

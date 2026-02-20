@@ -10,7 +10,7 @@ import { cn } from "@/lib/styles";
 import { Link2, Share2 } from "lucide-react";
 import { siFacebook, siWhatsapp, siX } from "simple-icons";
 
-const SHARE_BUTTON_CLASS = "min-w-[140px] gap-2 focus-visible:ring-primary";
+const SHARE_BUTTON_CLASS = "w-full min-w-0 sm:w-auto sm:min-w-[140px] gap-2 focus-visible:ring-primary";
 
 const COPY_FEEDBACK_DURATION_MS = 2000;
 
