@@ -18,13 +18,7 @@ type WaitlistFormProps = {
   showError: boolean;
 };
 
-export default function WaitlistForm({
-  locale,
-  onSubmit,
-  isPending,
-  emailError,
-  showError,
-}: WaitlistFormProps) {
+export default function WaitlistForm({ locale, onSubmit, isPending, emailError, showError }: WaitlistFormProps) {
   const t = useTranslations("landing.waitlist");
   const tValidation = useTranslations("landing.waitlist.validation");
 

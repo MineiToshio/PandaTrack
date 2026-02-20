@@ -39,24 +39,24 @@ export default function Header() {
   return (
     <>
       <header className="border-border bg-background text-foreground sticky top-0 z-40 w-full border-b">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex w-full max-w-6xl min-w-0 items-center justify-between gap-3 px-4 py-4 sm:gap-4 sm:px-6">
           <button
             type="button"
             onClick={handleLogoClick}
             aria-label="Scroll to top"
-            className="cursor-pointer border-none bg-transparent p-0"
+            className="shrink-0 cursor-pointer border-none bg-transparent p-0"
           >
             <Logo />
           </button>
-          <div className="hidden md:flex">
+          <div className="hidden min-w-0 flex-1 justify-center lg:flex lg:gap-6">
             <HeaderNav items={NAV_ITEMS} />
           </div>
-          <div className="flex items-center gap-3">
-            <LanguageToggle className="hidden md:flex" />
-            <ThemeToggle className="hidden md:flex" />
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <LanguageToggle className="hidden lg:flex" />
+            <ThemeToggle className="hidden lg:flex" />
             <AnchorLink
               href="#waitlist"
-              className={cn(buttonVariants({ variant: "primary" }))}
+              className={cn(buttonVariants({ variant: "primary", size: "sm" }), "whitespace-nowrap sm:h-10 sm:px-4")}
               posthogEvent={POSTHOG_EVENTS.LANDING.HEADER_CTA_CLICKED}
               posthogProps={{ location: "header" }}
             >
@@ -65,7 +65,7 @@ export default function Header() {
             <IconButton
               Icon={Menu}
               variant="outline"
-              className="md:hidden"
+              className="lg:hidden"
               aria-label="Open menu"
               data-ph-event={POSTHOG_EVENTS.LANDING.MOBILE_MENU_OPENED}
               onClick={handleOpenMenu}

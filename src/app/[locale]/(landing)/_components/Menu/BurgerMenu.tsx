@@ -25,7 +25,7 @@ export default function BurgerMenu({ isOpen, onClose, items, ctaLabel }: BurgerM
   };
 
   return (
-    <div className={cn("fixed inset-0 z-50 md:hidden", isOpen ? "pointer-events-auto" : "pointer-events-none")}>
+    <div className={cn("fixed inset-0 z-50 lg:hidden", isOpen ? "pointer-events-auto" : "pointer-events-none")}>
       <button
         type="button"
         aria-label="Close menu"
@@ -37,21 +37,28 @@ export default function BurgerMenu({ isOpen, onClose, items, ctaLabel }: BurgerM
       />
       <aside
         className={cn(
-          "border-border bg-surface text-foreground absolute top-0 right-0 h-full w-80 max-w-[85vw] border-l transition-transform duration-200",
+          "border-border bg-surface text-foreground absolute top-0 right-0 flex h-full w-80 max-w-[85vw] min-w-0 flex-col border-l transition-transform duration-200",
           isOpen ? "translate-x-0" : "translate-x-full",
         )}
       >
-        <div className="flex h-full flex-col p-6">
-          <div className="flex items-center justify-between">
+        <div className="flex min-h-0 flex-1 flex-col overflow-auto p-4 sm:p-6">
+          <div className="flex min-w-0 shrink-0 items-center justify-between gap-3">
             <button
               type="button"
               onClick={handleLogoClick}
               aria-label="Scroll to top"
-              className="cursor-pointer border-none bg-transparent p-0"
+              className="min-w-0 shrink-0 cursor-pointer border-none bg-transparent p-0"
             >
               <Logo className="text-text-title" />
             </button>
-            <IconButton Icon={X} variant="outline" size="sm" aria-label="Close menu" onClick={onClose} />
+            <IconButton
+              Icon={X}
+              variant="outline"
+              size="sm"
+              aria-label="Close menu"
+              onClick={onClose}
+              className="shrink-0"
+            />
           </div>
           <div className="mt-8 flex-1">
             <HeaderNav

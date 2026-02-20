@@ -26,7 +26,7 @@ export default function HeaderNav({ items, className, itemClassName, onNavigate 
           key={item.href}
           href={item.href}
           className={cn(
-            "hover:text-text-title relative transition-colors",
+            "hover:text-text-title relative shrink-0 whitespace-nowrap transition-colors",
             "after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-right after:scale-x-0 after:bg-current after:content-['']",
             "after:transition-transform after:duration-300 after:ease-out",
             "hover:after:origin-left hover:after:scale-x-100",

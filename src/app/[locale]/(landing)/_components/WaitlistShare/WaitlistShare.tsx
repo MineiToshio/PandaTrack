@@ -18,14 +18,7 @@ const ICON_SIZE = 20;
 
 function SimpleIconSvg({ path, size = ICON_SIZE }: { path: string; size?: number }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      width={size}
-      height={size}
-      fill="currentColor"
-      className="shrink-0"
-      aria-hidden
-    >
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor" className="shrink-0" aria-hidden>
       <path d={path} />
     </svg>
   );
@@ -79,10 +72,7 @@ export default function WaitlistShare({ locale }: { locale: string }) {
 
   const shareLinkItems: Array<{ href: string; iconPath: string; labelKey: string }> = [
     {
-      href:
-        shareUrl && shareMessageWithUrl
-          ? `https://wa.me/?text=${encodeURIComponent(shareMessageWithUrl)}`
-          : "#",
+      href: shareUrl && shareMessageWithUrl ? `https://wa.me/?text=${encodeURIComponent(shareMessageWithUrl)}` : "#",
       iconPath: siWhatsapp.path,
       labelKey: "whatsapp",
     },
@@ -159,11 +149,7 @@ export default function WaitlistShare({ locale }: { locale: string }) {
           >
             <Link2 className="size-5 shrink-0" aria-hidden />
             <span>
-              {copiedFeedbackShown ? (
-                <span className="font-medium">{t("copiedFeedback")}</span>
-              ) : (
-                t("copyLinkButton")
-              )}
+              {copiedFeedbackShown ? <span className="font-medium">{t("copiedFeedback")}</span> : t("copyLinkButton")}
             </span>
           </Button>
         </div>
@@ -177,7 +163,7 @@ export default function WaitlistShare({ locale }: { locale: string }) {
               type="text"
               readOnly
               value={shareUrl}
-              className="border-border bg-background text-foreground w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="border-border bg-background text-foreground focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
               aria-label={t("copyFallbackLabel")}
               onFocus={(e) => e.target.select()}
             />

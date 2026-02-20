@@ -1,0 +1,52 @@
+---
+description: Ensure all UI works on every screen size; no overlap, overflow, or broken layout
+alwaysApply: true
+---
+
+# Responsive design – PandaTrack
+
+Every component must look correct and work well on **all device sizes**: desktops, tablets, and phones (including small and large viewports). Layout must stay fluid and readable with no overlapping, no content escaping margins, and no awkward wrapping or clipping.
+
+## Rules
+
+- **Verify at multiple breakpoints**: When implementing or changing UI, check behavior at different widths (e.g. 320px, 375px, 768px, 1024px, 1280px). Use DevTools device emulation or resize the viewport.
+- **No overlapping**: Elements must not overlap each other (e.g. logo and CTA, nav and buttons, tooltips over critical content). Use flex/grid with appropriate `flex-shrink`, `min-w-0`, and gaps so items have space.
+- **No overflow or clipping**: Content must not be cut off or extend past the viewport without intentional scroll. Avoid `overflow-hidden` on containers that can clip important content; use `min-w-0` on flex children that should shrink instead.
+- **Controlled flex behavior**: In flex layouts, give elements that must not shrink `shrink-0` (e.g. logo, primary buttons). Give elements that may shrink `min-w-0` so they can narrow without overflowing.
+- **Spacing and wrapping**: Use responsive gaps and padding (e.g. `gap-2 sm:gap-4`, `px-4 sm:px-6`) so that on small screens elements do not crowd. Prefer `whitespace-nowrap` only when one line is required; otherwise allow wrapping where it does not break the layout.
+- **Touch targets**: On mobile, keep tap targets at least 44px where possible (see also role-ui-ux-design.mdc).
+- **Dedicated mobile components when needed**: Always consider whether responsive tweaks (smaller sizes, different orientation, wrapping) are enough. When the same layout would be cramped, unclear, or require hacks (e.g. horizontal scroll, hidden content, tiny tap targets), use a **different component or pattern for small viewports** instead of forcing one layout to fit all. Example: a full header with inline nav on desktop vs a compact header plus a burger menu and slide-out drawer on mobile/tablet. Evaluate each feature at multiple breakpoints and choose "same component with responsive styles" vs "dedicated mobile/tablet component" accordingly.
+
+## Example (header-style layout)
+
+```tsx
+// ✅ Prefer: logo and actions never shrink; center can shrink; no overlap
+<div className="flex min-w-0 items-center justify-between gap-3 px-4 py-4 sm:px-6">
+  <div className="shrink-0">
+    <Logo />
+  </div>
+  <nav className="hidden min-w-0 md:flex md:flex-1 md:justify-center md:gap-6" />
+  <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+    {/* toggles, CTA, burger */}
+  </div>
+</div>
+
+// ❌ Avoid: no min-w-0 or flex-shrink, so content can overlap or clip
+<div className="flex w-full items-center justify-between px-6 py-4">
+  <Logo />
+  <HeaderNav />
+  <div className="flex items-center gap-3">...</div>
+</div>
+```
+
+When in doubt, test on a narrow viewport (e.g. 320px) and on a wide one to confirm nothing overlaps or breaks.
+
+## When to use a dedicated mobile/tablet component
+
+If one of these is true, prefer a separate component or pattern for small viewports instead of only resizing or reflowing:
+
+- The same content would need horizontal scroll, heavy truncation, or many items hidden behind "more" to fit.
+- Interaction or hierarchy would be worse on touch (e.g. hover-only nav, too many small targets in one bar).
+- The mental model is different by device (e.g. top nav bar vs drawer menu).
+
+Example in this codebase: the **header** shows full nav, language, and theme on desktop (`lg` and up), while on mobile and tablet a **burger menu** opens a dedicated drawer with nav, toggles, and CTA. Two patterns (header bar vs drawer) instead of one squeezed layout.
