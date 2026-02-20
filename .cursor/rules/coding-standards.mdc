@@ -68,6 +68,13 @@ import { ROUTES } from "@/lib/constants";
 <Link href={`/${locale}/terms`} />
 ```
 
+## Analytics (PostHog) for clickable and meaningful interactions
+
+Whenever you add or change **buttons**, **links**, **clickable elements**, or any UI that represents a meaningful user action (CTAs, share actions, nav, form submit, toggles), apply the analytics rules so those interactions can be tracked.
+
+- **Follow the PostHog rule**: See `.cursor/rules/posthog-events.mdc` for when to add events, how to name them in `POSTHOG_EVENTS`, and how to attach them (e.g. `data-ph-event`, `posthogEvent` / `posthogProps` on `Button`).
+- **Do not skip tracking** on new interactive UI: if the element is clickable or triggers a conversion-related action, add the corresponding PostHog event as part of the same change.
+
 ## Repeated components: use array + map when it stays simple
 
 When a series of components repeat with only value changes (same structure, different props or copy), define the values in an array and render with `.map()` instead of writing each instance by hand. This keeps the UI easy to extend and avoids copy-paste errors.
