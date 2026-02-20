@@ -2,18 +2,14 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
-import Button from "@/components/core/Button/Button";
 import Heading from "@/components/core/Heading";
-import Input from "@/components/core/Input";
-import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
-import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import posthog from "posthog-js";
 import { submitWaitlist } from "./submitWaitlist";
 import { waitlistSchema } from "./waitlistSchema";
-
-const BANNER_CTA_ANIMATION = "banner-cta-subtle 3s ease-in-out infinite";
+import WaitlistForm from "./WaitlistForm";
+import WaitlistShare from "@/app/[locale]/(landing)/_components/WaitlistShare/WaitlistShare";
 
 export default function Waitlist() {
   const locale = useLocale();
@@ -48,13 +44,11 @@ export default function Waitlist() {
       setClientErrors(errors);
       return;
     }
-    // Track waitlist signup submitted event
     posthog.capture(POSTHOG_EVENTS.LANDING.WAITLIST.SUBMITTED, {
       locale,
       has_name: !!parsed.data.name,
       has_comment: !!parsed.data.comment,
     });
-
     formAction(formData);
   };
 
@@ -64,7 +58,6 @@ export default function Waitlist() {
     (fieldErrors.email?.[0] ? tValidation(fieldErrors.email[0] as "emailRequired" | "emailInvalid") : undefined);
   const showSuccess = state?.success === true;
   const showError = state?.success === false && "error" in state && state.error;
-  const emailErrorId = "waitlist-email-error";
 
   return (
     <section
@@ -104,93 +97,15 @@ export default function Waitlist() {
           </header>
 
           {showSuccess ? (
-            <div
-              className="border-border bg-card mt-10 rounded-2xl border p-8 text-center"
-              role="status"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              <Typography className="text-foreground font-medium">{t("success")}</Typography>
-            </div>
+            <WaitlistShare locale={locale} />
           ) : (
-            <form action={handleSubmit} className="mt-10 space-y-5" aria-busy={isPending}>
-              <input type="hidden" name="locale" value={locale} />
-              <div>
-                <label htmlFor="waitlist-email" className="text-text-title mb-1.5 block text-sm font-medium">
-                  {t("fields.email")}{" "}
-                  <span className="text-destructive" aria-hidden>
-                    *
-                  </span>
-                </label>
-                <Input
-                  id="waitlist-email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder={t("fields.emailPlaceholder")}
-                  required
-                  error={!!emailError}
-                  aria-invalid={!!emailError}
-                  aria-describedby={emailError ? emailErrorId : undefined}
-                  disabled={isPending}
-                  className="w-full"
-                />
-                {emailError && (
-                  <Typography id={emailErrorId} size="sm" className="text-destructive mt-1" role="alert">
-                    {emailError}
-                  </Typography>
-                )}
-              </div>
-              <div>
-                <label htmlFor="waitlist-name" className="text-text-title mb-1.5 block text-sm font-medium">
-                  {t("fields.name")}{" "}
-                  <span className="text-muted-foreground text-xs font-normal">({t("fields.nameOptional")})</span>
-                </label>
-                <Input
-                  id="waitlist-name"
-                  name="name"
-                  type="text"
-                  autoComplete="name"
-                  placeholder={t("fields.namePlaceholder")}
-                  disabled={isPending}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <label htmlFor="waitlist-comment" className="text-text-title mb-1.5 block text-sm font-medium">
-                  {t("fields.comment")}{" "}
-                  <span className="text-muted-foreground text-xs font-normal">({t("fields.commentOptional")})</span>
-                </label>
-                <Textarea
-                  id="waitlist-comment"
-                  name="comment"
-                  placeholder={t("fields.commentPlaceholder")}
-                  rows={4}
-                  disabled={isPending}
-                  className="w-full resize-y"
-                />
-              </div>
-              {showError && (
-                <Typography size="sm" className="text-destructive" role="alert">
-                  {t("error")}
-                </Typography>
-              )}
-              <div className="pt-2">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  disabled={isPending}
-                  className={cn(
-                    "w-full transition-transform duration-300 ease-out hover:scale-[1.02]",
-                    "animate-[banner-cta-subtle_3s_ease-in-out_infinite]",
-                  )}
-                  style={{ animation: BANNER_CTA_ANIMATION }}
-                >
-                  {isPending ? "…" : t("cta")}
-                </Button>
-              </div>
-            </form>
+            <WaitlistForm
+              locale={locale}
+              onSubmit={handleSubmit}
+              isPending={isPending}
+              emailError={emailError}
+              showError={!!showError}
+            />
           )}
         </div>
       </div>

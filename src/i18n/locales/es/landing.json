@@ -164,6 +164,18 @@
       "commentOptional": "Opcional"
     },
     "success": "Estás en la lista. Te avisamos cuando PandaTrack esté listo.",
+    "share": {
+      "heading": "¡Listo! Ya estás en la lista.",
+      "subtext": "¿Conoces a otro coleccionista? Compárteselo y ayúdanos a lanzar más rápido.",
+      "shareMessage": "Estoy en el waitlist de PandaTrack — una app para organizar compras, envíos y preventas de coleccionismo en un solo lugar. Únete aquí:",
+      "shareButton": "Compartir",
+      "copyLinkButton": "Copiar link",
+      "copiedFeedback": "¡Copiado!",
+      "copyFallbackLabel": "Copia el enlace manualmente",
+      "whatsapp": "WhatsApp",
+      "x": "X (Twitter)",
+      "facebook": "Facebook"
+    },
     "error": "Algo falló. Intenta de nuevo o escríbenos por correo.",
     "validation": {
       "emailRequired": "El correo es obligatorio",

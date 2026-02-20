@@ -164,6 +164,18 @@
       "commentOptional": "Optional"
     },
     "success": "You're on the list. We'll be in touch when PandaTrack is ready.",
+    "share": {
+      "heading": "You're on the list.",
+      "subtext": "Know another collector? Share PandaTrack and help us launch sooner.",
+      "shareMessage": "I'm on the PandaTrack waitlist — an app to organize purchases, shipping, and pre-orders for collectibles in one place. Join here:",
+      "shareButton": "Share",
+      "copyLinkButton": "Copy link",
+      "copiedFeedback": "Copied!",
+      "copyFallbackLabel": "Copy the link manually",
+      "whatsapp": "WhatsApp",
+      "x": "X (Twitter)",
+      "facebook": "Facebook"
+    },
     "error": "Something went wrong. Please try again or email us directly.",
     "validation": {
       "emailRequired": "Email is required",

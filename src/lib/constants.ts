@@ -9,6 +9,10 @@ export const ROUTES = {
   privacy: "/privacy",
 } as const;
 
+/** Query param for referral links (e.g. waitlist share). Value used in share/copy link. */
+export const REFERRAL_QUERY_KEY = "ref";
+export const REFERRAL_VALUE_WAITLIST = "waitlist";
+
 export const CONTACT_INFO = {
   email: "panda.d.collector@gmail.com",
   tiktok: "https://www.tiktok.com/@pandadcollector",
@@ -28,6 +32,9 @@ export const POSTHOG_EVENTS = {
       SUBMITTED: "waitlist_submitted",
       SUCCESS: "waitlist_success",
       FAILED: "waitlist_failed",
+      SHARE_LINK_CLICKED: "waitlist_share_link_clicked",
+      SHARE_NATIVE_CLICKED: "waitlist_share_native_clicked",
+      SHARE_COPY_LINK_CLICKED: "waitlist_share_copy_link_clicked",
     },
   },
 } as const;
