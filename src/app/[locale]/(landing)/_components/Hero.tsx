@@ -103,7 +103,7 @@ export default function Hero() {
         </div>
 
         <div
-          className="relative justify-self-center"
+          className="relative flex flex-col items-center justify-self-center"
           style={{
             animation: `hero-fade-in-up ${ANIMATION_DURATION_MS}ms ease-out both`,
             animationDelay: `${STAGGER_MS * 2}ms`,
