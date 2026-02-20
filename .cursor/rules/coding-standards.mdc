@@ -68,6 +68,97 @@ import { ROUTES } from "@/lib/constants";
 <Link href={`/${locale}/terms`} />
 ```
 
+## Repeated components: use array + map when it stays simple
+
+When a series of components repeat with only value changes (same structure, different props or copy), define the values in an array and render with `.map()` instead of writing each instance by hand. This keeps the UI easy to extend and avoids copy-paste errors.
+
+- **Define an array** (or build it from state/props) where each item holds the varying values.
+- **Use a stable `key`** when mapping (e.g. a unique id or a field that identifies the item).
+- If some items are conditional, you can build the array conditionally (e.g. spread `...(condition ? [item] : [])`) or filter before mapping.
+
+**Exception: prefer repeating the component when the array would hurt readability.** If the array needs a lot of conditionals, inline JSX in items, or per-item logic so that the data structure is harder to follow than the UI, repeat the component in JSX instead. Clarity and ease of understanding trump DRY here.
+
+```tsx
+// ❌ Avoid: repeating the same component structure manually when the list is simple data
+<a href={whatsappHref} ...><SimpleIconSvg path={siWhatsapp.path} /><span>{t("whatsapp")}</span></a>
+<a href={xHref} ...>...</a>
+<a href={facebookHref} ...>...</a>
+
+// ✅ Prefer: array of values + map when items are uniform
+const shareLinkItems = [ { href: whatsappHref, iconPath: siWhatsapp.path, labelKey: "whatsapp" }, ... ];
+{shareLinkItems.map((item) => (
+  <a key={item.labelKey} href={item.href} ...>
+    <SimpleIconSvg path={item.iconPath} />
+    <span>{t(item.labelKey)}</span>
+  </a>
+))}
+```
+
+```tsx
+// ✅ Prefer: repeat the component when the "array" would be full of conditionals and logic
+{hasNativeShare && (
+  <Button onClick={handleNativeShare} ...>
+    <Share2 ... />
+    <span>{t("shareButton")}</span>
+  </Button>
+)}
+<Button onClick={handleCopyLink} aria-live="polite" aria-atomic ...>
+  <Link2 ... />
+  <span>{copiedFeedbackShown ? <span className="text-success">{t("copiedFeedback")}</span> : t("copyLinkButton")}</span>
+</Button>
+
+// ❌ Avoid: forcing an array that needs conditional spread, inline JSX in items, and extra types
+const shareButtonItems = [ ...(hasNativeShare ? [{ ... }] : []), { label: copiedFeedbackShown ? <span>...</span> : t("copyLinkButton"), ... } ];
+{shareButtonItems.map((item) => <Button ...>{item.icon}<span>{item.label}</span></Button>)}
+```
+
+## Multi-state or multi-view components: extract complex states
+
+When a component has several distinct states or views (e.g. loading vs content, form vs success, empty vs list), and any of those states is **complex** (non-trivial business logic, many lines of JSX, validation, or multiple sub-sections), put each complex state or view in its **own component**. The parent keeps the state and conditionally renders the right child. This improves readability and makes each piece easier to reason about and test.
+
+- **Keep the parent thin**: it should mainly handle which state is active and pass props/callbacks to the view components.
+- **Extract when it’s complex**: a few lines or a simple message can stay inline; a long form, a full success/error UI, or logic-heavy blocks should be their own component.
+- **Name by state or role**: e.g. `WaitlistForm`, `WaitlistShare`, `OrderSummary`, `EmptyState`.
+
+```tsx
+// ❌ Avoid: one big component with long inline branches
+function Waitlist() {
+  const [state, ...] = useActionState(...);
+  const showSuccess = state?.success === true;
+  return (
+    <section>
+      {showSuccess ? (
+        <div className="...">
+          <Typography>...</Typography>
+          <div className="...">
+            {/* many share buttons and logic */}
+          </div>
+        </div>
+      ) : (
+        <form className="mt-10 space-y-5">
+          {/* many fields, labels, validation, submit button */}
+        </form>
+      )}
+    </section>
+  );
+}
+
+// ✅ Prefer: parent chooses state; each view is its own component
+function Waitlist() {
+  const [state, ...] = useActionState(...);
+  const showSuccess = state?.success === true;
+  return (
+    <section>
+      {showSuccess ? (
+        <WaitlistShare locale={locale} />
+      ) : (
+        <WaitlistForm ... />
+      )}
+    </section>
+  );
+}
+```
+
 ## No magic numbers or values
 
 Do not use raw numbers or strings except in trivial cases (0, 1). Use named constants or variables that provide context.
