@@ -49,7 +49,7 @@ export default function BurgerMenu({ isOpen, onClose, items, ctaLabel }: BurgerM
               aria-label="Scroll to top"
               className="min-w-0 shrink-0 cursor-pointer border-none bg-transparent p-0"
             >
-              <Logo className="text-text-title" />
+              <Logo />
             </button>
             <IconButton
               Icon={X}
