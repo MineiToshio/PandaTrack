@@ -3,6 +3,9 @@
     "title": "PandaTrack",
     "description": "Tiendas, compras y envíos en un solo lugar. Tu centro de mando para coleccionables y compras."
   },
+  "ogEyebrow": "Para coleccionistas",
+  "ogHeadline": "Tiendas, pedidos y envíos en un solo lugar.",
+  "ogSubline": "Registra compras, sigue preventas y envíos. Sin pedidos perdidos ni pagos por sorpresa.",
   "features": {
     "sectionTitle": "Todo tu coleccionismo, en un solo sistema",
     "sectionSubtitle": "Descubre tiendas confiables, registra compras, controla preventas y sigue envíos, con un dashboard que te dice qué viene y qué falta pagar.",

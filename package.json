@@ -10,7 +10,8 @@
     "db-reset": "npx prisma db push --force-reset",
     "prettier": "prettier --config .prettierrc.json --write \"**/*.*\"",
     "type-check": "tsc --pretty --noEmit",
-    "lint": "eslint"
+    "lint": "eslint",
+    "download-og-fonts": "node scripts/download-og-fonts.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.3.0",
@@ -31,6 +32,9 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@fontsource/open-sans": "^5.2.7",
+    "@fontsource/roboto-condensed": "^5.2.8",
+    "@fontsource/zilla-slab-highlight": "^5.2.8",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.16.0",

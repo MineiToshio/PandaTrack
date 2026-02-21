@@ -3,6 +3,9 @@
     "title": "PandaTrack",
     "description": "Track stores, purchases, and shipments in one place. Your command center for collectibles and shopping."
   },
+  "ogEyebrow": "For collectors",
+  "ogHeadline": "Track stores, orders and shipments in one place.",
+  "ogSubline": "Log purchases, follow pre-orders and deliveries. No more lost track or surprise payments.",
   "features": {
     "sectionTitle": "All your collecting, in one place",
     "sectionSubtitle": "Find trusted stores, log purchases, manage pre-orders and track shipments, with a dashboard that shows what's due and what's left to pay.",
