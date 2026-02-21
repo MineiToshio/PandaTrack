@@ -15,6 +15,14 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function getEffectiveTheme(): Theme {
   if (typeof document === "undefined") return "dark";
+  if (typeof localStorage !== "undefined") {
+    try {
+      const stored = localStorage.getItem(THEME_STORAGE_KEY);
+      if (stored === "light" || stored === "dark") return stored;
+    } catch {
+      // Ignore storage errors
+    }
+  }
   const dataTheme = document.documentElement.getAttribute("data-theme");
   if (dataTheme === "light" || dataTheme === "dark") return dataTheme;
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -50,7 +58,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   useEffect(() => {
     const applyEffectiveTheme = () => {
       const next = getEffectiveTheme();
-      queueMicrotask(() => setThemeState(next));
+      applyTheme(next);
+      setThemeState(next);
     };
 
     applyEffectiveTheme();
