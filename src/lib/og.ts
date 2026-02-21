@@ -1,11 +1,13 @@
 /**
- * Loads fonts for OG image generation. ImageResponse supports ttf, otf, woff (not woff2).
- * 1) Load from node_modules/@fontsource (woff) so fonts are ready before ImageResponse runs.
- * 2) Fallback: public/fonts/ then Google.
+ * Open Graph image generation: font loading and image data for opengraph-image.tsx routes.
+ * ImageResponse (Satori) supports ttf, otf, woff (not woff2).
  */
 
 import path from "node:path";
 import fs from "node:fs/promises";
+import { getTranslations } from "next-intl/server";
+
+// --- Font loading ---
 
 /** Compatible with next/og ImageResponse FontOptions (weight must be 100-900). */
 export type OgFontDescriptor = {
@@ -61,10 +63,6 @@ function bufferToArrayBuffer(buffer: Buffer): ArrayBuffer {
   return ab;
 }
 
-/**
- * Load from node_modules/@fontsource (synchronous feel: read from disk, no network).
- * All fonts are read before returning so ImageResponse gets them ready.
- */
 async function loadFromFontsource(): Promise<OgFontDescriptor[]> {
   const cwd = process.cwd();
   const results: OgFontDescriptor[] = [];
@@ -169,3 +167,31 @@ export async function getOgLogoFont(): Promise<OgFontDescriptor | null> {
 }
 
 export const LOGO_FONT_NAME = OG_FONT_NAMES.logo;
+
+// --- Image data (copy + fonts per segment) ---
+
+export type OgImageNamespace = "landing" | "terms" | "privacy";
+
+export type OgImageData = {
+  eyebrow: string;
+  headline: string;
+  subline: string;
+  fontsLoaded: OgFontsResult["loaded"];
+  fonts: OgFontDescriptor[];
+};
+
+/**
+ * Loads OG copy (eyebrow, headline, subline) for the given locale and namespace,
+ * and the fonts needed to render the image. Use in opengraph-image.tsx route handlers.
+ */
+export async function getOgImageData(locale: string, namespace: OgImageNamespace): Promise<OgImageData> {
+  const t = await getTranslations({ locale, namespace });
+  const { fonts, loaded } = await getOgFonts();
+  return {
+    eyebrow: t("ogEyebrow"),
+    headline: t("ogHeadline"),
+    subline: t("ogSubline"),
+    fontsLoaded: loaded,
+    fonts,
+  };
+}

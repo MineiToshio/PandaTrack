@@ -3,7 +3,7 @@
  * Logo: Zilla Slab Highlight. Titles (eyebrow, headline): Roboto Condensed. Body (subline): Open Sans.
  */
 
-import { OG_FONT_NAMES } from "@/lib/ogFonts";
+import { OG_FONT_NAMES } from "@/lib/og";
 
 export const OG_IMAGE_WIDTH = 1200;
 export const OG_IMAGE_HEIGHT = 630;

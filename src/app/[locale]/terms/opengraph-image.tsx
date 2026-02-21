@@ -1,7 +1,6 @@
 import { ImageResponse } from "next/og";
-import { getTranslations } from "next-intl/server";
 import { OgImageTemplate, OG_IMAGE_WIDTH, OG_IMAGE_HEIGHT } from "@/components/modules/OgImageTemplate";
-import { getOgFonts } from "@/lib/ogFonts";
+import { getOgImageData } from "@/lib/og";
 
 export const runtime = "nodejs";
 
@@ -15,17 +14,18 @@ type OpengraphImageProps = {
 
 export default async function OpengraphImage({ params }: OpengraphImageProps) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "terms" });
-  const eyebrow = t("ogEyebrow");
-  const headline = t("ogHeadline");
-  const subline = t("ogSubline");
-  const { fonts, loaded } = await getOgFonts();
+  const data = await getOgImageData(locale, "terms");
 
   return new ImageResponse(
-    <OgImageTemplate eyebrow={eyebrow} headline={headline} subline={subline} fontsLoaded={loaded} />,
+    <OgImageTemplate
+      eyebrow={data.eyebrow}
+      headline={data.headline}
+      subline={data.subline}
+      fontsLoaded={data.fontsLoaded}
+    />,
     {
       ...size,
-      fonts: fonts.length > 0 ? fonts : undefined,
+      fonts: data.fonts.length > 0 ? data.fonts : undefined,
     },
   );
 }

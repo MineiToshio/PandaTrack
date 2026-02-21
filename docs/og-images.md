@@ -19,12 +19,12 @@ src/
 ├── components/modules/
 │   └── OgImageTemplate.tsx          # Shared layout: logo, eyebrow pill, headline, subline
 └── lib/
-    └── ogFonts.ts                   # Load logo/title/body fonts; returns descriptors + loaded flags
+    └── og.ts                        # Font loading (getOgFonts) + image data (getOgImageData) for OG routes
 ```
 
-- **opengraph-image.tsx** (per segment): awaits `params`, gets translations for that segment’s namespace, calls `getOgFonts()`, then returns `new ImageResponse(<OgImageTemplate ... />, { fonts })`.
+- **opengraph-image.tsx** (per segment): awaits `params`, calls `getOgImageData(locale, namespace)`, then returns `new ImageResponse(<OgImageTemplate ... />, { fonts })`. Segment-specific only in the namespace passed to `getOgImageData` (e.g. `"landing"`, `"terms"`, `"privacy"`).
+- **og.ts**: font loading (`getOgFonts()` returns `{ fonts, loaded }`) and image data (`getOgImageData(locale, namespace)` loads translations and fonts; returns `{ eyebrow, headline, subline, fontsLoaded, fonts }`) so route handlers stay thin.
 - **OgImageTemplate**: receives `eyebrow`, `headline`, `subline`, and `fontsLoaded`. Uses brand colors and gradient background; applies logo font only to the “PandaTrack” logo, title font to eyebrow/headline, body font to subline.
-- **ogFonts.ts**: loads font files and returns `{ fonts: OgFontDescriptor[], loaded: { logo, title, body } }` for `ImageResponse` and for choosing fallback typefaces when a font is missing.
 
 ## Copy (i18n)
 
@@ -36,11 +36,11 @@ Each page that has an OG image has three keys in its locale namespace:
 
 Namespaces and keys:
 
-| Route      | Namespace | Keys used in opengraph-image     |
-|-----------|-----------|-----------------------------------|
+| Route                 | Namespace | Keys used in opengraph-image           |
+| --------------------- | --------- | -------------------------------------- |
 | `/[locale]` (landing) | `landing` | `ogEyebrow`, `ogHeadline`, `ogSubline` |
-| `/[locale]/terms`     | `terms`   | same                             |
-| `/[locale]/privacy`   | `privacy` | same                             |
+| `/[locale]/terms`     | `terms`   | same                                   |
+| `/[locale]/privacy`   | `privacy` | same                                   |
 
 Add or edit these keys in `src/i18n/locales/{en,es}/{landing,terms,privacy}.json` as needed.
 
@@ -54,24 +54,26 @@ ImageResponse (Satori) supports **ttf, otf, woff**. It does **not** support woff
 
 So that the image is not generated before fonts are ready, we load from disk when possible and pass the resulting array (and `loaded` flags) into `ImageResponse` and the template.
 
-### Load order (`getOgFonts()` in `src/lib/ogFonts.ts`)
+### Load order (`getOgFonts()` in `src/lib/og.ts`)
 
 1. **node_modules/@fontsource**  
    We read woff files from:
    - `@fontsource/zilla-slab-highlight/files/zilla-slab-highlight-latin-700-normal.woff`
    - `@fontsource/roboto-condensed/files/roboto-condensed-latin-400-normal.woff` and `-700-normal.woff`
    - `@fontsource/open-sans/files/open-sans-latin-400-normal.woff` and `-600-normal.woff`  
-   These packages are in the repo (devDependencies). This is the primary source.
+     These packages are in the repo (devDependencies). This is the primary source.
 
 2. **public/fonts/** (fallback)  
    If no fonts were found from @fontsource (e.g. in a minimal install), we try to read from `public/fonts/` with fixed filenames:
    - `zilla-slab-highlight-700.woff`
    - `roboto-condensed-400.woff`, `roboto-condensed-700.woff`
    - `open-sans-400.woff`, `open-sans-600.woff`  
-   You can generate them (when Google returns woff) with:
+     You can generate them (when Google returns woff) with:
+
    ```bash
    npm run download-og-fonts
    ```
+
    Often Google only returns woff2, so no files are written. In that case you can download woff/ttf from [Google Fonts](https://fonts.google.com/) or [google-webfonts-helper](https://gwfh.mranftl.com/), then place the files in `public/fonts/` with the names above.
 
 3. **Google Fonts (fetch)**  
@@ -82,13 +84,13 @@ The template uses `fontsLoaded` so that only when a given family was actually lo
 ### Adding or changing fonts
 
 - Font descriptors must match next/og: `name`, `data` (ArrayBuffer), `weight` (100–900), `style` (`"normal"` or `"italic"`).
-- In `ogFonts.ts`, extend `FONTSOURCE_PATHS` (or `PUBLIC_FONT_FILES` for the fallback) and keep `loaded` in sync with the families you use.
+- In `og.ts`, extend `FONTSOURCE_PATHS` (or `PUBLIC_FONT_FILES` for the fallback) and keep `loaded` in sync with the families you use.
 - In `OgImageTemplate`, use the same `name` as in the descriptors for `fontFamily` when `fontsLoaded` is true for that role.
 
 ## Adding a new page with an OG image
 
-1. Add a route segment (e.g. `src/app/[locale]/blog/opengraph-image.tsx`).
-2. In that file: set `runtime = "nodejs"`, get `params`, use `getTranslations` with the segment’s namespace, call `getOgFonts()`, and return `new ImageResponse(<OgImageTemplate ... />, { fonts })`.
+1. Add the namespace to `OgImageNamespace` in `src/lib/og.ts` (e.g. `"blog"`).
+2. Add a route segment (e.g. `src/app/[locale]/blog/opengraph-image.tsx`). In that file: set `runtime = "nodejs"`, await `params`, call `getOgImageData(locale, "blog")`, then return `new ImageResponse(<OgImageTemplate ... />, { fonts })` (same pattern as existing opengraph-image files).
 3. In that namespace’s locale files, add `ogEyebrow`, `ogHeadline`, and `ogSubline`.
 4. Ensure the segment’s namespace is loaded in `src/i18n/request.ts` (same as for any page with i18n).
 
