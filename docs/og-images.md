@@ -105,3 +105,13 @@ With the dev server running, open:
 - Privacy: `http://localhost:3000/es/privacy/opengraph-image`
 
 Replace `es` with `en` for English copy.
+
+## Production and social crawlers
+
+Social networks (Facebook, Twitter, LinkedIn, etc.) require **absolute** URLs for `og:image`. Relative paths like `/en/opengraph-image` often fail.
+
+- **metadataBase**: Set in `src/app/[locale]/layout.tsx` via `getSiteUrl()` so that Next.js can resolve relative metadata URLs. See `src/lib/seo.ts`.
+- **Explicit og:image URL**: `buildPageMetadata()` in `src/lib/seo.ts` sets `openGraph.images` with the full URL (e.g. `https://panda-track.vercel.app/en/opengraph-image`) using `getSiteUrl()`. That way crawlers always receive an absolute image URL.
+- **Env**: In production (e.g. Vercel), set `NEXT_PUBLIC_SITE_URL` to your canonical origin (e.g. `https://panda-track.vercel.app`). If unset, `getSiteUrl()` falls back to `VERCEL_URL` or `http://localhost:3000`, which can break previews.
+
+After deploying, use [Facebook Sharing Debugger](https://developers.facebook.com/tools/debug/) or [Twitter Card Validator](https://cards-dev.twitter.com/validator) to refresh the cache and confirm the image appears.
