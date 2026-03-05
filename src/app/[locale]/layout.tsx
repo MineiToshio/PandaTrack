@@ -10,12 +10,6 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { getSiteUrl } from "@/lib/seo";
 import { APP_NAME } from "@/lib/constants";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(getSiteUrl()),
-  title: { default: APP_NAME, template: `%s | ${APP_NAME}` },
-  description: "Track your collection efficiently",
-};
-
 type LocaleLayoutProps = {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
@@ -28,6 +22,9 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
   const baseUrl = getSiteUrl();
   const imageUrl = `${baseUrl.replace(/\/$/, "")}/${locale}/opengraph-image`;
   return {
+    metadataBase: new URL(baseUrl),
+    title: { default: APP_NAME, template: `%s | ${APP_NAME}` },
+    description: "Track your collection efficiently",
     openGraph: {
       images: [imageUrl],
     },
