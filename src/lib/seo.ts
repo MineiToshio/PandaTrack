@@ -34,17 +34,12 @@ export type BuildPageMetadataOptions = {
   descriptionKey: string;
 };
 
-/** OG image dimensions (must match opengraph-image.tsx). */
-const OG_IMAGE_WIDTH = 1200;
-const OG_IMAGE_HEIGHT = 630;
-
 /**
  * Absolute URL for this page's dynamic OG image (opengraph-image.tsx).
  * Required so social crawlers receive a full URL; relative paths often fail.
  */
 function getOgImageUrl(baseUrl: string, locale: string, pathSegment: PageCanonicalSegment): string {
-  const path =
-    pathSegment === "" ? `/${locale}/opengraph-image` : `/${locale}/${pathSegment}/opengraph-image`;
+  const path = pathSegment === "" ? `/${locale}/opengraph-image` : `/${locale}/${pathSegment}/opengraph-image`;
   return `${baseUrl.replace(/\/$/, "")}${path}`;
 }
 
@@ -77,14 +72,8 @@ export async function buildPageMetadata({
       siteName: APP_NAME,
       locale: locale === "es" ? "es" : "en",
       type: "website",
-      images: [
-        {
-          url: getOgImageUrl(baseUrl, locale, pathSegment),
-          width: OG_IMAGE_WIDTH,
-          height: OG_IMAGE_HEIGHT,
-          alt: title,
-        },
-      ],
+      // Explicit URL so Facebook gets a clear og:image (not inferred from other tags).
+      images: [getOgImageUrl(baseUrl, locale, pathSegment)],
     },
   };
 }

@@ -16,17 +16,29 @@ export const metadata: Metadata = {
   description: "Track your collection efficiently",
 };
 
+type LocaleLayoutProps = {
+  children: React.ReactNode;
+  params: Promise<{ locale: string }>;
+};
+
+/** Explicit default og:image for this locale so Facebook gets a non-inferred og:image. Pages override with their segment image. */
+export async function generateMetadata({ params }: LocaleLayoutProps): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  const baseUrl = getSiteUrl();
+  const imageUrl = `${baseUrl.replace(/\/$/, "")}/${locale}/opengraph-image`;
+  return {
+    openGraph: {
+      images: [imageUrl],
+    },
+  };
+}
+
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
-export default async function LocaleLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: Promise<{ locale: string }>;
-}) {
+export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
   const { locale } = await params;
 
   // Ensure that the incoming `locale` is valid
