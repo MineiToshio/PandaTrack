@@ -14,6 +14,28 @@ This folder stores feature-level product and implementation packets.
 - `FEAT-0008-auth-core-authorization-verify-email.md`: Better Auth core, route protection, Google + email/password, verify lifecycle.
 - `FEAT-0009-account-recovery-forgot-reset-password.md`: Forgot/reset password flow with 60-minute token expiration.
 
+## Packet routing index (use this first)
+
+Use this index to identify which packet to read/update before implementation. Do not scan all packets by default.
+
+| Feature     | Area                                     | Primary code paths / signals                                                                              |
+| ----------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `FEAT-0001` | Pre-release landing + waitlist           | `src/app/[locale]/(landing)/**`, waitlist components/actions, landing CTA-to-waitlist behavior            |
+| `FEAT-0002` | Analytics (PostHog)                      | `src/lib/constants.ts` (`POSTHOG_EVENTS`), `src/lib/posthog*`, `data-ph-event`, analytics capture logic   |
+| `FEAT-0003` | Monitoring (Sentry)                      | `src/instrumentation*.ts`, `sentry.*.config.ts`, `src/app/global-error.tsx`                               |
+| `FEAT-0004` | SEO foundation                           | `src/lib/seo.ts`, `src/app/sitemap.ts`, `src/app/robots.ts`, metadata generation, canonical/OG URL logic  |
+| `FEAT-0005` | i18n foundation                          | `src/i18n/**`, `src/proxy.ts`, locale routing, translation namespaces                                     |
+| `FEAT-0006` | Privacy page                             | `src/app/[locale]/privacy/**`, `src/i18n/locales/*/privacy.json`                                          |
+| `FEAT-0007` | Terms page                               | `src/app/[locale]/terms/**`, `src/i18n/locales/*/terms.json`                                              |
+| `FEAT-0008` | Auth core + authorization + verify email | auth routes (`/sign-up`, `/sign-in`), session/guards/protected routes, provider linking, verify lifecycle |
+| `FEAT-0009` | Forgot/reset password                    | password recovery routes/actions, reset token flow, recovery email delivery                               |
+
+### Selection rule
+
+- Pick the packet with strongest path/signal match as primary.
+- If needed, include at most 2 related packets.
+- If still ambiguous, ask the user which packet is authoritative.
+
 ## Conventions
 
 - One file per feature: `FEAT-XXXX-short-name.md`

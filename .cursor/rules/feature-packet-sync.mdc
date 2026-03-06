@@ -1,0 +1,43 @@
+---
+description: Keep feature packets synchronized with implemented behavior and decisions
+alwaysApply: true
+---
+
+# Feature packet sync - PandaTrack
+
+Feature packets under `docs/product/feature-packets/` are living documents and must match shipped behavior.
+
+## Context-efficiency rule (token/cost control)
+
+- Do not read all feature packets by default.
+- First read `docs/product/feature-packets/README.md` and use its mapping/index to identify likely affected packets.
+- Read only:
+  - The primary affected packet, and
+  - At most 2 related packets when cross-feature impact is likely.
+- If ambiguity remains after checking the index and up to 2 candidates, ask the user which packet is authoritative before proceeding.
+
+## Required behavior
+
+1. Before implementation, identify the affected feature packet(s).
+2. If implementation changes scope, flow, rules, or dependencies, update the packet in the same change.
+3. Do not finish a task with behavior that conflicts with the current packet.
+
+## When to update vs create new packet
+
+- Update the existing packet for incremental changes within the same feature objective.
+- Create a new packet when objective/core flow/success criteria change significantly.
+- When creating a new packet, add bidirectional references:
+  - New packet: `Supersedes: FEAT-XXXX`
+  - Old packet: `Superseded by: FEAT-YYYY`
+
+## Architecture changes
+
+- If implementation changes core architecture decisions, update ADR references in the packet.
+- Create or update an ADR following `.cursor/rules/adr-decision-records.mdc`.
+
+## Minimum packet sync checklist
+
+- Metadata remains accurate (`Status`, dependencies, risk when affected).
+- Functional/business rules reflect actual behavior.
+- Acceptance criteria cover the final implemented flow.
+- Test plan reflects what must be validated after the change.

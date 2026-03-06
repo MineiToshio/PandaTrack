@@ -101,6 +101,7 @@ Product architecture:
 
 - Update `docs/` only when a change adds reusable architecture/process knowledge.
 - Prefer updating existing rules/docs instead of creating duplicates.
+- Keep `docs/product/feature-packets/` synchronized with implemented behavior; if implementation changes the spec, update the packet in the same change (or supersede it with a new packet when scope/goal changes significantly).
 
 ## 5) i18n and locale routing
 
