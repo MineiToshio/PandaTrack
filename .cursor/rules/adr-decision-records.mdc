@@ -1,0 +1,37 @@
+---
+description: Create or update ADRs when implementation introduces recurring architecture decisions
+alwaysApply: true
+---
+
+# ADR decision records - PandaTrack
+
+Create an ADR when a change introduces a technical decision that affects future implementation patterns.
+
+## Create or update an ADR when
+
+- A new cross-feature pattern is introduced (data access, module boundaries, API shape, error strategy, caching, auth flow).
+- A structural decision changes how future code should be written.
+- A meaningful tradeoff is made and alternatives were considered.
+- A decision modifies or supersedes a previous architecture decision.
+
+## Do not create an ADR for
+
+- Small local refactors without architectural impact.
+- Pure copy/style tweaks.
+- Isolated bug fixes that do not change system design.
+
+## Required workflow
+
+1. If the change is architectural, create or update an ADR under `docs/architecture/adr/`.
+2. Use `docs/templates/adr-template.md` as the base format.
+3. Name new files as `ADR-XXXX-short-kebab-title.md`.
+4. In the related Feature Packet, update:
+   - `Requires ADR: Yes`
+   - ADR link/reference
+5. If no ADR is needed, set `Requires ADR: No` in the Feature Packet.
+
+## ADR quality bar
+
+- State context, decision, and consequences clearly.
+- Record at least one alternative and why it was not chosen.
+- Keep the ADR concise and actionable for future contributors.
