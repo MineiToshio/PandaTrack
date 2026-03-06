@@ -17,6 +17,9 @@ Use this index to find documentation by domain.
 
 - `docs/development/i18n.md`: localization setup and conventions
 - `docs/development/og-images.md`: OG image conventions
+- `docs/development/posthog.md`: analytics implementation notes
+- `docs/development/sentry.md`: monitoring implementation notes
+- `docs/development/seo.md`: SEO implementation notes
 
 ## Templates
 
