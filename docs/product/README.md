@@ -10,6 +10,7 @@ This folder is the source of truth for PandaTrack product documentation.
 - `workflows.md`: key user workflows for the tracking journey.
 - `landing-and-positioning.md`: landing page messaging and waitlist content strategy.
 - `roadmap.md`: phased roadmap and release sequencing.
+- `glossary.md`: shared terminology for product, process, and engineering docs.
 
 ## Usage guidance
 
