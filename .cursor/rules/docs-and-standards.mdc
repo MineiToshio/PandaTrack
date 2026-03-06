@@ -15,7 +15,7 @@ Use the `docs/` folder for knowledge that helps future work and onboarding, not 
 
 ### Document in `docs/` when:
 
-- **New module or area**: You add a new subsystem (e.g. auth, payments, a new app section). Create or update a doc that describes structure, entry points, and how to extend it (similar to `docs/i18n.md`).
+- **New module or area**: You add a new subsystem (e.g. auth, payments, a new app section). Create or update a doc that describes structure, entry points, and how to extend it (similar to `docs/development/i18n.md`).
 - **Design or architecture decision**: A choice affects how other code should be written (e.g. how we call APIs, how we handle errors in a new layer). Add a short note in an existing doc or a small ADR-style section (what we decided and why).
 - **Convention or flow others must follow**: Any pattern that other developers (or the AI) should reuse (e.g. adding a new locale, adding a new page type). Document the steps and where to touch the code.
 
@@ -26,9 +26,11 @@ Use the `docs/` folder for knowledge that helps future work and onboarding, not 
 
 ### Structure in `docs/`:
 
-- **`docs/product.md`**: Product vision, roadmap, and high-level features. Update when the product direction or scope changes.
-- **`docs/i18n.md`**: i18n setup, structure, and how to add locales or namespaces. Use as the template for other “how this subsystem works” docs.
-- **New areas**: Prefer one file per topic (e.g. `docs/architecture.md`, `docs/auth.md`, `docs/modules/<name>.md`). Keep each doc focused; link between them if needed.
+- **`docs/product/`**: Product source of truth (overview, scope, workflows, roadmap, glossary).
+- **`docs/development/i18n.md`**: i18n setup, structure, and how to add locales or namespaces.
+- **`docs/development/og-images.md`**: OG image generation conventions and implementation notes.
+- **`docs/process/`**: Delivery process standards (DoD, review checklist, AI workflow).
+- **New areas**: Prefer one focused file per topic and place it in the nearest coherent folder.
 
 When you add or update something in `docs/`, place it in the right file and keep the same style (short sections, code examples where useful, clear headings).
 
