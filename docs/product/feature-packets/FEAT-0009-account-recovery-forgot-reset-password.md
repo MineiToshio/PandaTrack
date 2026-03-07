@@ -195,3 +195,60 @@ Provide a secure, low-friction forgot/reset password experience with clear feedb
 
 - Final retry/cooldown policy thresholds for forgot-password requests.
 - Whether to force immediate sign-out of all active sessions after password reset.
+
+## 10) Implementation Slices
+
+### Slice 1 - Recovery request baseline
+
+- Goal: enable forgot-password request flow safely.
+- Scope:
+  - Forgot-password view/form
+  - Neutral success response (no account enumeration)
+  - Basic request validation and throttling hook points
+- Exit criteria:
+  - Users can submit recovery request with neutral feedback
+  - No user existence leakage in UI/API responses
+
+### Slice 2 - Token issuance and reset email delivery
+
+- Goal: deliver valid reset links through transactional email.
+- Scope:
+  - Token generation and expiry configuration (60 minutes)
+  - Resend provider integration for recovery emails
+  - Failure handling with retry-later UX message
+- Exit criteria:
+  - Reset email sent for valid recovery requests
+  - Provider failures are handled without app crash
+
+### Slice 3 - Reset password completion flow
+
+- Goal: allow secure credential reset from tokenized link.
+- Scope:
+  - Reset page/form with token validation
+  - New-password submission and update
+  - Invalid/expired token states and fallback action
+- Exit criteria:
+  - Valid token resets password successfully
+  - Invalid/expired tokens show clear recovery path
+
+### Slice 4 - Security hardening and session policy
+
+- Goal: enforce abuse controls and post-reset account safety.
+- Scope:
+  - Single-use token enforcement
+  - Cooldown/rate-limit policy implementation
+  - Session invalidation behavior after successful reset
+- Exit criteria:
+  - Token reuse is prevented
+  - Repeated abuse attempts are throttled
+
+### Slice 5 - Observability and regression validation
+
+- Goal: ensure flow is measurable and stable.
+- Scope:
+  - PostHog events for recovery journey
+  - Sentry capture for unexpected failures
+  - Unit/integration/E2E checks on critical paths
+- Exit criteria:
+  - Recovery funnel events are visible
+  - Core recovery scenarios pass validation

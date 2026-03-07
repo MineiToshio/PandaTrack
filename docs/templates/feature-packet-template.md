@@ -160,3 +160,31 @@ Reference global DoD and add only feature-specific additions.
 ## 10) Open Questions
 
 -
+
+## 11) Implementation Slices
+
+Use implementation slices to plan delivery in small end-to-end increments. This section is required.
+
+### Slice 1 - [Short title]
+
+- Goal:
+- Scope:
+  -
+- Exit criteria:
+  -
+
+### Slice 2 - [Short title]
+
+- Goal:
+- Scope:
+  -
+- Exit criteria:
+  -
+
+### Slice 3 - [Short title]
+
+- Goal:
+- Scope:
+  -
+- Exit criteria:
+  -

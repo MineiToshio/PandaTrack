@@ -349,3 +349,75 @@ Collectors using PandaTrack to manage personal purchase and tracking data.
 - Whether account deletion after extended unverified state should be automated in a later phase.
 - Final copy for the verification gate message and CTA labels in `es` and `en`.
 - Conflict resolution policy for rare edge cases where provider email normalization differs across identity providers.
+
+## 10) Implementation Slices
+
+### Slice 1 - Auth foundation (Better Auth + Prisma + Neon)
+
+- Goal: establish self-hosted auth core and session baseline.
+- Scope:
+  - Better Auth setup and database schema/migrations
+  - Session read/write and signout primitives
+  - Environment/config wiring for auth providers and secrets
+- Exit criteria:
+  - Session can be created and read on server side
+  - Signout invalidates session correctly
+
+### Slice 2 - Auth entry pages and provider flows
+
+- Goal: ship `/sign-up` and `/sign-in` with minimal entry friction.
+- Scope:
+  - Email/password sign-up (email + password only)
+  - Email/password sign-in
+  - Google sign-in
+  - Cross-links sign-up <-> sign-in
+  - Redirect authenticated users to `/dashboard`
+- Exit criteria:
+  - Users can authenticate via email/password and Google
+  - Authenticated users cannot stay on auth entry pages
+
+### Slice 3 - Route authorization boundaries
+
+- Goal: enforce public vs private route access.
+- Scope:
+  - Public: landing + stores
+  - Private: dashboard/purchases/payments/shipments/budget routes
+  - Anonymous redirect to `/sign-in` for private routes
+- Exit criteria:
+  - Public routes remain accessible without auth
+  - Private routes consistently require valid session
+
+### Slice 4 - Verify email lifecycle and gate
+
+- Goal: enforce verification policy without forced logout.
+- Scope:
+  - Verify banner for unverified email/password users
+  - Day-6 single reminder email dispatch
+  - Day-7 private-route blocking gate
+  - `Resend verification` action in gate
+- Exit criteria:
+  - Unverified users can use app during grace period
+  - Unverified users are gated from private routes at day 7+
+
+### Slice 5 - Identity linking and profile hydration
+
+- Goal: prevent duplicate identities and keep account continuity.
+- Scope:
+  - Link Google auth to existing email account on same email
+  - Store provider profile fields when available (`name`, `avatar`)
+  - Keep single user identity across linked methods
+- Exit criteria:
+  - No duplicate account created for same email across providers
+  - Linked account can sign in with both methods
+
+### Slice 6 - Kit sync, instrumentation, and validation
+
+- Goal: complete integrations and quality checks.
+- Scope:
+  - Sync/tag authenticated users in Kit (`app_user`)
+  - Add required PostHog auth events
+  - Capture unexpected auth errors in Sentry
+  - Validate ACs with unit/integration/E2E coverage for critical paths
+- Exit criteria:
+  - Kit sync is non-blocking and reliable
+  - Key auth flows are observable and validated
