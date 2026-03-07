@@ -8,10 +8,17 @@ PandaTrack uses [Better Auth](https://better-auth.com/) (self-hosted) with Prism
 
 Set these for local and production:
 
-| Variable             | Required | Description                                                                                        |
-| -------------------- | -------- | -------------------------------------------------------------------------------------------------- |
-| `BETTER_AUTH_SECRET` | Yes      | Secret used to sign cookies and tokens. Generate with `npx auth@latest secret`. Must be 32+ chars. |
-| `DATABASE_URL`       | Yes      | PostgreSQL connection string (Neon). Already used by Prisma.                                       |
+| Variable                           | Required           | Description                                                                                        |
+| ---------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------- |
+| `BETTER_AUTH_SECRET`               | Yes                | Secret used to sign cookies and tokens. Generate with `npx auth@latest secret`. Must be 32+ chars. |
+| `DATABASE_URL`                     | Yes                | PostgreSQL connection string (Neon). Already used by Prisma.                                       |
+| `BETTER_AUTH_GOOGLE_CLIENT_ID`     | For Google sign-in | Google OAuth 2.0 client ID from Google Cloud Console.                                              |
+| `BETTER_AUTH_GOOGLE_CLIENT_SECRET` | For Google sign-in | Google OAuth 2.0 client secret.                                                                    |
+
+For Google OAuth, configure the authorized redirect URI in Google Cloud Console:
+
+- Local: `http://localhost:3000/api/auth/callback/google`
+- Production: `https://<your-domain>/api/auth/callback/google`
 
 The auth base URL is not configured via env: it is inferred by `getAppBaseUrl()` in `src/lib/app-url.ts` (local: `http://localhost:3000`, Vercel: `https://${VERCEL_URL}`).
 

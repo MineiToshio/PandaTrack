@@ -5,8 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { getAppBaseUrl } from "@/lib/app-url";
 
 /**
- * Better Auth server instance (FEAT-0008). Used by the API route handler and server-side session helpers.
- * Email/password and Google are enabled; UI and redirects are implemented in later slices.
+ * Better Auth server instance used by the API route handler and server-side session helpers.
+ * Email/password and Google providers are enabled.
  */
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -18,5 +18,11 @@ export const auth = betterAuth({
   plugins: [nextCookies()],
   emailAndPassword: {
     enabled: true,
+  },
+  socialProviders: {
+    google: {
+      clientId: process.env.BETTER_AUTH_GOOGLE_CLIENT_ID ?? "",
+      clientSecret: process.env.BETTER_AUTH_GOOGLE_CLIENT_SECRET ?? "",
+    },
   },
 });

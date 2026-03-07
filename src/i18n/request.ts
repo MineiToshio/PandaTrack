@@ -19,6 +19,8 @@ export default getRequestConfig(async ({ requestLocale }) => {
       landing: (await import(`./locales/${locale}/landing.json`)).default,
       terms: (await import(`./locales/${locale}/terms.json`)).default,
       privacy: (await import(`./locales/${locale}/privacy.json`)).default,
+      auth: (await import(`./locales/${locale}/auth.json`)).default,
+      dashboard: (await import(`./locales/${locale}/dashboard.json`)).default,
     },
   };
 });

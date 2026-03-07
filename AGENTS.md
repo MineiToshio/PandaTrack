@@ -54,6 +54,7 @@ Product architecture:
 - Keep all code identifiers, comments, logs, and developer-facing strings in English.
 - Never hardcode user-facing copy in components.
 - Put locale-dependent content in `src/i18n/locales/{locale}/*.json`.
+- Do not reference planning artifacts in source comments (no `FEAT-*`, `epic`, `slice`, ticket IDs, or issue URLs in code comments/JSDoc).
 
 ### React and Next.js
 

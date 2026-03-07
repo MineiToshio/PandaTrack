@@ -26,6 +26,16 @@ alwaysApply: true
 - **Spelling and grammar**: Use correct spelling and grammar in all of the above (English).
 - **No em dash**: Never use the em dash character (—) when generating text. Use a hyphen (-), a colon (:), or rephrase the sentence instead.
 
+## No planning references in code comments
+
+Do not include planning metadata in source code comments or JSDoc, including:
+
+- Feature IDs like `FEAT-XXXX`
+- Terms like `epic`, `slice`, `ticket`, or issue numbers/URLs
+- References to implementation phases tied to planning artifacts
+
+Code comments must explain behavior and intent only, independent of project management tracking.
+
 ## Reuse existing components and elements
 
 Prefer reusing existing building blocks so the app stays consistent and maintainable.
@@ -50,6 +60,35 @@ Prefer reusing existing building blocks so the app stays consistent and maintain
 
 // ✅ Fine: use Button for CTAs that match its variants
 <Button variant="primary">Join the waitlist</Button>
+```
+
+## Apply DRY: extract repeated code into reusable pieces
+
+Whenever the same components, functions, behavior, or logic appears in more than one place, extract it into a reusable unit instead of duplicating. Apply DRY (Don't Repeat Yourself) by default.
+
+- **Repeated UI, layout, or form structure**: Extract a shared component. Prefer reusing existing components from `src/components/core/` or `src/components/modules/` first; if the repeated block has no suitable component, create one (in core, modules, or route-level `_components` as per project structure). Pass varying parts as props or children.
+- **Repeated logic or calculations**: Extract to a shared function. Place it in `src/lib/` for app-wide use, in `src/hooks/` for reactive logic, or in route-level `_utils`/`_actions` when scoped to a segment.
+- **Repeated behavior or flow** (e.g. same submit flow with different endpoints, same validation pattern): Extract to a shared function, hook, or small module so one place owns the behavior and callers stay thin.
+
+**Exception:** Do not extract when it would hurt readability or create unnecessary abstraction. If the "reusable" version would be full of conditionals, obscure the intent, or only be used twice with very different futures, prefer a bit of duplication. Clarity and ease of understanding trump DRY when they conflict.
+
+```tsx
+// ❌ Avoid: same layout and form structure duplicated in two pages
+// SignInForm.tsx and SignUpForm.tsx each with 60+ lines of identical shell + similar fields
+
+// ✅ Prefer: shared layout and shared form component; each page keeps only its specific logic
+<AuthFormLayout title={...} footerLinkHref={...}>
+  <EmailPasswordForm idPrefix="signin" ... onSubmit={handleSignIn} />
+</AuthFormLayout>
+```
+
+```typescript
+// ❌ Avoid: same validation or format logic copy-pasted in several components
+if (!email.trim() || !password.trim()) setError(t("invalidCredentials"));
+// ... repeated elsewhere
+
+// ✅ Prefer: one helper or hook, reused everywhere
+const { validate, error } = useEmailPasswordValidation({ t });
 ```
 
 ## Reusable constants for app-wide values

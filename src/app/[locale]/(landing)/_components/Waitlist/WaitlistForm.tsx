@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
 import Input from "@/components/core/Input";
+import Label from "@/components/core/Label";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
@@ -26,12 +27,12 @@ export default function WaitlistForm({ locale, onSubmit, isPending, emailError, 
     <form action={onSubmit} className="mt-10 space-y-5" aria-busy={isPending}>
       <input type="hidden" name="locale" value={locale} />
       <div>
-        <label htmlFor="waitlist-email" className="text-text-title mb-1.5 block text-sm font-medium">
+        <Label htmlFor="waitlist-email" color="title">
           {t("fields.email")}{" "}
           <span className="text-destructive" aria-hidden>
             *
           </span>
-        </label>
+        </Label>
         <Input
           id="waitlist-email"
           name="email"
@@ -52,10 +53,10 @@ export default function WaitlistForm({ locale, onSubmit, isPending, emailError, 
         )}
       </div>
       <div>
-        <label htmlFor="waitlist-name" className="text-text-title mb-1.5 block text-sm font-medium">
+        <Label htmlFor="waitlist-name" color="title">
           {t("fields.name")}{" "}
           <span className="text-muted-foreground text-xs font-normal">({t("fields.nameOptional")})</span>
-        </label>
+        </Label>
         <Input
           id="waitlist-name"
           name="name"
@@ -67,10 +68,10 @@ export default function WaitlistForm({ locale, onSubmit, isPending, emailError, 
         />
       </div>
       <div>
-        <label htmlFor="waitlist-comment" className="text-text-title mb-1.5 block text-sm font-medium">
+        <Label htmlFor="waitlist-comment" color="title">
           {t("fields.comment")}{" "}
           <span className="text-muted-foreground text-xs font-normal">({t("fields.commentOptional")})</span>
-        </label>
+        </Label>
         <Textarea
           id="waitlist-comment"
           name="comment"

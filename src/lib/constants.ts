@@ -7,6 +7,9 @@ export const ROUTES = {
   home: "",
   terms: "/terms",
   privacy: "/privacy",
+  signUp: "/sign-up",
+  signIn: "/sign-in",
+  dashboard: "/dashboard",
 } as const;
 
 /** Query param for referral links (e.g. waitlist share). Value used in share/copy link. */
@@ -36,5 +39,15 @@ export const POSTHOG_EVENTS = {
       SHARE_NATIVE_CLICKED: "waitlist_share_native_clicked",
       SHARE_COPY_LINK_CLICKED: "waitlist_share_copy_link_clicked",
     },
+  },
+  AUTH: {
+    SIGNUP_SUBMITTED: "auth_signup_submitted",
+    SIGNUP_SUCCESS: "auth_signup_success",
+    SIGNUP_FAILED: "auth_signup_failed",
+    SIGNIN_SUBMITTED: "auth_signin_submitted",
+    SIGNIN_SUCCESS: "auth_signin_success",
+    SIGNIN_FAILED: "auth_signin_failed",
+    GOOGLE_SIGNIN_CLICKED: "auth_google_signin_clicked",
+    SIGNOUT: "auth_signout",
   },
 } as const;
