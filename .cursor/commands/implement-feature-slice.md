@@ -31,9 +31,19 @@ Implement a single slice from a feature packet with minimal, reviewable changes.
 - If implementation changes behavior, update the same feature packet in the same change.
 - If objective/core flow changed materially, create a new packet and add `Supersedes` / `Superseded by` links.
 - If architecture changed, update/create ADR per `.cursor/rules/adr-decision-records.mdc`.
-- Update the slice metadata:
-  - `Status` (`In Progress`, `Done`, or `Blocked` as appropriate)
+- Use canonical status terminology (must match script parsing):
+  - Packet status: `Ready`, `In Progress`, `Done`, `Blocked`
+  - Slice status: `Planned`, `In Progress`, `Done`, `Blocked`
+- Update packet and slice metadata in the same change:
+  - `Status`
   - `Last updated` date
+- Required status transitions when implementing a slice:
+  - Set packet `Status` to `In Progress` when working on any non-finalized slice.
+  - Set selected slice `Status` to `In Progress` while execution is ongoing.
+  - Set selected slice `Status` to `Done` only when its exit criteria are met.
+  - Set selected slice `Status` to `Blocked` when progress cannot continue due to dependency or decision.
+  - If all slices are `Done`, set packet `Status` to `Done`.
+  - If at least one slice is `Done` and others are pending, packet stays `In Progress`.
 - Keep `Progress notes` stable and product-level.
 - Do not add volatile implementation details to the packet (exact file paths, env vars, internal wiring).
 

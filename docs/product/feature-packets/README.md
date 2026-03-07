@@ -14,6 +14,34 @@ This folder stores feature-level product and implementation packets.
 - `FEAT-0008-auth-core-authorization-verify-email.md`: Better Auth core, route protection, Google + email/password, verify lifecycle.
 - `FEAT-0009-account-recovery-forgot-reset-password.md`: Forgot/reset password flow with 60-minute token expiration.
 
+## Feature status board
+
+This board gives a quick view of current status without opening each packet.
+
+| Feature ID  | Title                                      | Status        | Current/next slice                            |
+| ----------- | ------------------------------------------ | ------------- | --------------------------------------------- |
+| `FEAT-0001` | Pre-release landing and waitlist capture   | `Done`        | -                                             |
+| `FEAT-0002` | Analytics foundation and event model       | `Done`        | -                                             |
+| `FEAT-0003` | Error monitoring baseline across runtimes  | `Done`        | -                                             |
+| `FEAT-0004` | SEO foundation                             | `Done`        | -                                             |
+| `FEAT-0005` | Locale routing and translation foundation  | `Done`        | -                                             |
+| `FEAT-0006` | Public privacy policy page                 | `Done`        | -                                             |
+| `FEAT-0007` | Public terms page                          | `Done`        | -                                             |
+| `FEAT-0008` | Auth core, authorization, and verify email | `In Progress` | Slice 2 - Auth entry pages and provider flows |
+| `FEAT-0009` | Account recovery (forgot/reset password)   | `Ready`       | Slice 1 - Recovery request baseline           |
+
+### How to check status quickly
+
+Run:
+
+`npm run feature-packets:status`
+
+The command shows:
+
+- In-progress feature packets
+- Current/next slice for each in-progress packet
+- Recommended next slice to implement
+
 ## Packet routing index (use this first)
 
 Use this index to identify which packet to read/update before implementation. Do not scan all packets by default.

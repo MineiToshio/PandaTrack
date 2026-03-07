@@ -5,7 +5,7 @@
 - Feature ID: `FEAT-0008`
 - Feature name: Auth core, route protection, and verify email lifecycle
 - Owner: Product + Engineering
-- Status: `Ready`
+- Status: `In Progress`
 - Priority: `P0`
 - Date: `2026-03-06`
 - Dependencies: `better-auth` (self-hosted), Prisma, Neon Postgres, Google OAuth, Resend, Kit API
@@ -354,7 +354,7 @@ Collectors using PandaTrack to manage personal purchase and tracking data.
 
 ### Slice 1 - Auth foundation (Better Auth + Prisma + Neon)
 
-- Status: `Planned`
+- Status: `Done`
 - Last updated: `2026-03-06`
 - Goal: establish self-hosted auth core and session baseline.
 - Scope:
