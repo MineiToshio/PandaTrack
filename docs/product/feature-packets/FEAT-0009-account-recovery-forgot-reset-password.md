@@ -200,6 +200,8 @@ Provide a secure, low-friction forgot/reset password experience with clear feedb
 
 ### Slice 1 - Recovery request baseline
 
+- Status: `Planned`
+- Last updated: `2026-03-06`
 - Goal: enable forgot-password request flow safely.
 - Scope:
   - Forgot-password view/form
@@ -208,9 +210,13 @@ Provide a secure, low-friction forgot/reset password experience with clear feedb
 - Exit criteria:
   - Users can submit recovery request with neutral feedback
   - No user existence leakage in UI/API responses
+- Progress notes (stable, optional):
+  -
 
 ### Slice 2 - Token issuance and reset email delivery
 
+- Status: `Planned`
+- Last updated: `2026-03-06`
 - Goal: deliver valid reset links through transactional email.
 - Scope:
   - Token generation and expiry configuration (60 minutes)
@@ -219,9 +225,13 @@ Provide a secure, low-friction forgot/reset password experience with clear feedb
 - Exit criteria:
   - Reset email sent for valid recovery requests
   - Provider failures are handled without app crash
+- Progress notes (stable, optional):
+  -
 
 ### Slice 3 - Reset password completion flow
 
+- Status: `Planned`
+- Last updated: `2026-03-06`
 - Goal: allow secure credential reset from tokenized link.
 - Scope:
   - Reset page/form with token validation
@@ -230,9 +240,13 @@ Provide a secure, low-friction forgot/reset password experience with clear feedb
 - Exit criteria:
   - Valid token resets password successfully
   - Invalid/expired tokens show clear recovery path
+- Progress notes (stable, optional):
+  -
 
 ### Slice 4 - Security hardening and session policy
 
+- Status: `Planned`
+- Last updated: `2026-03-06`
 - Goal: enforce abuse controls and post-reset account safety.
 - Scope:
   - Single-use token enforcement
@@ -241,9 +255,13 @@ Provide a secure, low-friction forgot/reset password experience with clear feedb
 - Exit criteria:
   - Token reuse is prevented
   - Repeated abuse attempts are throttled
+- Progress notes (stable, optional):
+  -
 
 ### Slice 5 - Observability and regression validation
 
+- Status: `Planned`
+- Last updated: `2026-03-06`
 - Goal: ensure flow is measurable and stable.
 - Scope:
   - PostHog events for recovery journey
@@ -252,3 +270,5 @@ Provide a secure, low-friction forgot/reset password experience with clear feedb
 - Exit criteria:
   - Recovery funnel events are visible
   - Core recovery scenarios pass validation
+- Progress notes (stable, optional):
+  -

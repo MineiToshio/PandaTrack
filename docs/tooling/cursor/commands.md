@@ -36,6 +36,9 @@ Implements one `Implementation Slice` from a feature packet with minimal scoped 
 2. Reads only the necessary packet(s) and selects the requested slice.
 3. Implements only that slice using `Goal`, `Scope`, and `Exit criteria` as contract.
 4. Updates the feature packet in the same change if implementation behavior differs.
-5. Runs validation checks and reports exit-criteria status.
+5. Updates slice metadata (`Status`, `Last updated`, stable progress notes).
+6. Avoids volatile implementation details inside feature packets (exact file paths, env vars, internal wiring).
+7. Runs validation checks and reports exit-criteria status.
+8. Returns functional test steps and test cases so implementation can be manually verified.
 
 See `.cursor/commands/implement-feature-slice.md` for the full command behavior.

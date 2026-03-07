@@ -167,18 +167,42 @@ Use implementation slices to plan delivery in small end-to-end increments. This 
 
 ### Slice 1 - [Short title]
 
+- Status: `Planned | In Progress | Done | Blocked`
+- Last updated: `YYYY-MM-DD`
 - Goal:
-- ## Scope:
-- ## Exit criteria:
+- Scope:
+  -
+- Exit criteria:
+  -
+- Progress notes (stable, optional):
+  -
 
 ### Slice 2 - [Short title]
 
+- Status: `Planned | In Progress | Done | Blocked`
+- Last updated: `YYYY-MM-DD`
 - Goal:
-- ## Scope:
-- ## Exit criteria:
+- Scope:
+  -
+- Exit criteria:
+  -
+- Progress notes (stable, optional):
+  -
 
 ### Slice 3 - [Short title]
 
+- Status: `Planned | In Progress | Done | Blocked`
+- Last updated: `YYYY-MM-DD`
 - Goal:
-- ## Scope:
-- ## Exit criteria:
+- Scope:
+  -
+- Exit criteria:
+  -
+- Progress notes (stable, optional):
+  -
+
+Notes:
+
+- Keep progress notes stable and product-level.
+- Do not put volatile implementation details here (exact file paths, env vars, internal wiring).
+- Put volatile technical details in PR descriptions, commit history, or `docs/development/*` when reusable.

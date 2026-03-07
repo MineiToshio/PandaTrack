@@ -1,0 +1,19 @@
+---
+description: Keep .env.example in sync when adding or using new environment variables
+alwaysApply: false
+---
+
+# Environment variables and .env.example – PandaTrack
+
+Whenever you introduce or use a **new environment variable** in the project, add it to **`.env.example`** in the same change.
+
+## Rules
+
+- **Add the key** to `.env.example` with an empty value (or a non-secret placeholder for URLs/hosts). Do not put real secrets or credentials in `.env.example`.
+- **Optional**: Add a short comment above the variable if the name is not self-explanatory or if there is a specific way to obtain the value (e.g. "Generate secret: npx auth@latest secret").
+- **Group by area** when it helps: keep related variables together (e.g. auth, database, analytics).
+- **Existing vars**: If the variable is already listed in `.env.example`, you do not need to add it again.
+
+## Why
+
+`.env.example` is the single reference for which environment variables the app expects. Keeping it updated ensures new contributors and deployments know what to configure and avoids missing variables in production or CI.

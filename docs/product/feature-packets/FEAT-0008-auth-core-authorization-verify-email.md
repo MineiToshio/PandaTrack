@@ -354,6 +354,8 @@ Collectors using PandaTrack to manage personal purchase and tracking data.
 
 ### Slice 1 - Auth foundation (Better Auth + Prisma + Neon)
 
+- Status: `Planned`
+- Last updated: `2026-03-06`
 - Goal: establish self-hosted auth core and session baseline.
 - Scope:
   - Better Auth setup and database schema/migrations
@@ -362,9 +364,13 @@ Collectors using PandaTrack to manage personal purchase and tracking data.
 - Exit criteria:
   - Session can be created and read on server side
   - Signout invalidates session correctly
+- Progress notes (stable, optional):
+  -
 
 ### Slice 2 - Auth entry pages and provider flows
 
+- Status: `Planned`
+- Last updated: `2026-03-06`
 - Goal: ship `/sign-up` and `/sign-in` with minimal entry friction.
 - Scope:
   - Email/password sign-up (email + password only)
@@ -375,9 +381,13 @@ Collectors using PandaTrack to manage personal purchase and tracking data.
 - Exit criteria:
   - Users can authenticate via email/password and Google
   - Authenticated users cannot stay on auth entry pages
+- Progress notes (stable, optional):
+  -
 
 ### Slice 3 - Route authorization boundaries
 
+- Status: `Planned`
+- Last updated: `2026-03-06`
 - Goal: enforce public vs private route access.
 - Scope:
   - Public: landing + stores
@@ -386,9 +396,13 @@ Collectors using PandaTrack to manage personal purchase and tracking data.
 - Exit criteria:
   - Public routes remain accessible without auth
   - Private routes consistently require valid session
+- Progress notes (stable, optional):
+  -
 
 ### Slice 4 - Verify email lifecycle and gate
 
+- Status: `Planned`
+- Last updated: `2026-03-06`
 - Goal: enforce verification policy without forced logout.
 - Scope:
   - Verify banner for unverified email/password users
@@ -398,9 +412,13 @@ Collectors using PandaTrack to manage personal purchase and tracking data.
 - Exit criteria:
   - Unverified users can use app during grace period
   - Unverified users are gated from private routes at day 7+
+- Progress notes (stable, optional):
+  -
 
 ### Slice 5 - Identity linking and profile hydration
 
+- Status: `Planned`
+- Last updated: `2026-03-06`
 - Goal: prevent duplicate identities and keep account continuity.
 - Scope:
   - Link Google auth to existing email account on same email
@@ -409,9 +427,13 @@ Collectors using PandaTrack to manage personal purchase and tracking data.
 - Exit criteria:
   - No duplicate account created for same email across providers
   - Linked account can sign in with both methods
+- Progress notes (stable, optional):
+  -
 
 ### Slice 6 - Kit sync, instrumentation, and validation
 
+- Status: `Planned`
+- Last updated: `2026-03-06`
 - Goal: complete integrations and quality checks.
 - Scope:
   - Sync/tag authenticated users in Kit (`app_user`)
@@ -421,3 +443,5 @@ Collectors using PandaTrack to manage personal purchase and tracking data.
 - Exit criteria:
   - Kit sync is non-blocking and reliable
   - Key auth flows are observable and validated
+- Progress notes (stable, optional):
+  -

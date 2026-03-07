@@ -17,7 +17,7 @@ Implement a single slice from a feature packet with minimal, reviewable changes.
 
 2. Build implementation contract
 - Treat as binding for this execution:
-  - Slice `Goal`, `Scope`, and `Exit criteria`
+  - Slice `Goal`, `Scope`, `Exit criteria`, and current `Status`
   - Relevant `FR`, `BR`, `AC`, and `Test Plan` from the packet
 - If packet details conflict with user instructions from this chat, follow the user and update the packet in the same change.
 
@@ -31,6 +31,11 @@ Implement a single slice from a feature packet with minimal, reviewable changes.
 - If implementation changes behavior, update the same feature packet in the same change.
 - If objective/core flow changed materially, create a new packet and add `Supersedes` / `Superseded by` links.
 - If architecture changed, update/create ADR per `.cursor/rules/adr-decision-records.mdc`.
+- Update the slice metadata:
+  - `Status` (`In Progress`, `Done`, or `Blocked` as appropriate)
+  - `Last updated` date
+- Keep `Progress notes` stable and product-level.
+- Do not add volatile implementation details to the packet (exact file paths, env vars, internal wiring).
 
 5. Validate
 - Run:
@@ -46,4 +51,7 @@ Return:
 2. `Files changed`: path + short reason
 3. `Validation`: command results and failures if any
 4. `Exit criteria`: each criterion as `met` / `not met`
-5. `Packet sync`: what was updated in docs (or `no packet changes`)
+5. `Slice status update`: updated `Status` + `Last updated` + short stable `Progress notes`
+6. `Packet sync`: what was updated in docs (or `no packet changes`)
+7. `Functional test steps`: manual step-by-step checks to validate behavior in the app
+8. `Test cases`: concise test cases (`Given / When / Then`) covering happy path, edge cases, and failure paths for the implemented slice
