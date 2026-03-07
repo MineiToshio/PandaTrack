@@ -21,6 +21,7 @@ const SENSITIVE_BASENAMES = [
 function isSensitive(filePath) {
   if (!filePath || typeof filePath !== "string") return false;
   const base = path.basename(filePath);
+  if (base === ".env.example") return false;
   if (SENSITIVE_BASENAMES.includes(base)) return true;
   if (base === ".env" || base.startsWith(".env.")) return true;
   return false;
