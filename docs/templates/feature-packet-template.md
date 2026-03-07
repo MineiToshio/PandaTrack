@@ -170,36 +170,27 @@ Use implementation slices to plan delivery in small end-to-end increments. This 
 - Status: `Planned | In Progress | Done | Blocked`
 - Last updated: `YYYY-MM-DD`
 - Goal:
-- Scope:
-  -
-- Exit criteria:
-  -
-- Progress notes (stable, optional):
-  -
+- ## Scope:
+- ## Exit criteria:
+- ## Progress notes (stable, optional):
 
 ### Slice 2 - [Short title]
 
 - Status: `Planned | In Progress | Done | Blocked`
 - Last updated: `YYYY-MM-DD`
 - Goal:
-- Scope:
-  -
-- Exit criteria:
-  -
-- Progress notes (stable, optional):
-  -
+- ## Scope:
+- ## Exit criteria:
+- ## Progress notes (stable, optional):
 
 ### Slice 3 - [Short title]
 
 - Status: `Planned | In Progress | Done | Blocked`
 - Last updated: `YYYY-MM-DD`
 - Goal:
-- Scope:
-  -
-- Exit criteria:
-  -
-- Progress notes (stable, optional):
-  -
+- ## Scope:
+- ## Exit criteria:
+- ## Progress notes (stable, optional):
 
 Notes:
 

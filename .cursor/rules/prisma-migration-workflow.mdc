@@ -1,0 +1,43 @@
+---
+description: Prisma migration workflow: run db-migrate on schema/database changes and use short descriptive migration names
+globs: "prisma/schema.prisma"
+alwaysApply: false
+---
+
+# Prisma migration workflow - PandaTrack
+
+When a change modifies the database schema or requires a database structure update, always create a Prisma migration in the same task.
+
+## Required command
+
+Use the project npm script (not raw Prisma command):
+
+`npm run db-migrate -- --name <migration-name>`
+
+Do not finish the task with only schema changes. The migration files under `prisma/migrations/` must be created as part of the same change.
+
+## Migration naming
+
+Migration names must be:
+
+- Short and explicit
+- Lowercase
+- Kebab-case
+- Focused on the implemented change
+
+Examples:
+
+- `add-order-tracking-number`
+- `create-store-trust-fields`
+- `rename-payment-status`
+
+Avoid vague names like `update-schema`, `fix-db`, or `changes`.
+
+## Agent checklist for DB changes
+
+When DB-related files are changed, the agent must:
+
+1. Run `npm run db-migrate -- --name <short-kebab-name>`.
+2. Ensure new migration files are generated in `prisma/migrations/`.
+3. Keep migration name aligned with what was implemented.
+4. Include generated migration files in the final diff.

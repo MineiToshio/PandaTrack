@@ -210,8 +210,7 @@ Provide a secure, low-friction forgot/reset password experience with clear feedb
 - Exit criteria:
   - Users can submit recovery request with neutral feedback
   - No user existence leakage in UI/API responses
-- Progress notes (stable, optional):
-  -
+- ## Progress notes (stable, optional):
 
 ### Slice 2 - Token issuance and reset email delivery
 
@@ -225,8 +224,7 @@ Provide a secure, low-friction forgot/reset password experience with clear feedb
 - Exit criteria:
   - Reset email sent for valid recovery requests
   - Provider failures are handled without app crash
-- Progress notes (stable, optional):
-  -
+- ## Progress notes (stable, optional):
 
 ### Slice 3 - Reset password completion flow
 
@@ -240,8 +238,7 @@ Provide a secure, low-friction forgot/reset password experience with clear feedb
 - Exit criteria:
   - Valid token resets password successfully
   - Invalid/expired tokens show clear recovery path
-- Progress notes (stable, optional):
-  -
+- ## Progress notes (stable, optional):
 
 ### Slice 4 - Security hardening and session policy
 
@@ -255,8 +252,7 @@ Provide a secure, low-friction forgot/reset password experience with clear feedb
 - Exit criteria:
   - Token reuse is prevented
   - Repeated abuse attempts are throttled
-- Progress notes (stable, optional):
-  -
+- ## Progress notes (stable, optional):
 
 ### Slice 5 - Observability and regression validation
 
@@ -270,5 +266,4 @@ Provide a secure, low-friction forgot/reset password experience with clear feedb
 - Exit criteria:
   - Recovery funnel events are visible
   - Core recovery scenarios pass validation
-- Progress notes (stable, optional):
-  -
+- ## Progress notes (stable, optional):
