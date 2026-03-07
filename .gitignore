@@ -45,3 +45,7 @@ generated/prisma
 # Sentry Config File
 .env.sentry-build-plugin
 .env.local
+
+# cursor mcp local credentials
+.cursor/mcp.json
+.cursor/mcp.local.json
