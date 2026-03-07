@@ -9,7 +9,7 @@ Use this index to find documentation by domain.
 
 ## Process
 
-- `docs/process/workflow-ai.md`: delivery workflow using Feature Packets
+- `docs/process/workflow-ai.md`: delivery workflow using GitHub epics/slices
 - `docs/process/definition-of-done.md`: global quality checklist
 - `docs/process/review-checklist.md`: review checklist before merge
 
@@ -24,7 +24,7 @@ Use this index to find documentation by domain.
 ## Templates
 
 - `docs/templates/README.md`: templates index
-- `docs/templates/feature-packet-template.md`
+- `docs/templates/feature-epic-template.md`
 - `docs/templates/adr-template.md`
 - `docs/templates/prompt-pack-template.md`
 

@@ -2,7 +2,7 @@
 
 ## 1) Implementation Prompt
 
-Objective: Implement `FEAT-XXXX` using the linked feature packet.
+Objective: Implement one GitHub slice issue (`#<issue-number>` or issue URL) using the linked epic and slice content.
 
 Constraints:
 

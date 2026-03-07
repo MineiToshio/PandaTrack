@@ -1,23 +1,20 @@
 # AI Workflow
 
-This workflow is optimized for building features with Codex and Cursor using a single Feature Packet.
+This workflow is optimized for building features with Codex and Cursor using GitHub Project as source of truth.
 
-## 1) Plan in one document
+## 1) Plan in GitHub
 
-1. Create a new feature folder: `docs/features/FEAT-XXXX-feature-name/`
-2. Add `feature-packet.md` from the template in `docs/templates/feature-packet-template.md`
-3. Complete the packet sections in this order:
-   - Product Requirements
-   - Functional Requirements
-   - Data Contract
-   - Acceptance Criteria
-   - Test Plan
+1. Create or update an Epic issue in GitHub Project.
+2. Keep full feature context in the epic body (requirements, scope, acceptance criteria, test plan).
+3. Create slice sub-issues under the epic.
+4. Use `type:epic` and `type:slice` labels for issue type.
+5. Use Project `Status` field (`Todo`, `In Progress`, `Done`) for progress tracking.
 
 ## 2) Prepare execution prompts
 
-1. Create `prompts.md` in the same feature folder
-2. Start from `docs/templates/prompt-pack-template.md`
-3. Fill feature-specific context, constraints, and expected output
+1. Call implementation commands with a GitHub issue number or full issue URL.
+2. Resolve parent epic from the slice issue before coding.
+3. Use epic + slice as implementation contract.
 
 ## 3) Implement with AI agents
 
@@ -38,11 +35,11 @@ This workflow is optimized for building features with Codex and Cursor using a s
    - `npm run lint`
    - Build for affected scope (or full build when needed)
 2. Validate DoD in `docs/process/definition-of-done.md`
-3. Update Feature Packet status to `Done`
+3. Update GitHub slice and epic statuses in Project
 
 ## Rules for consistency
 
-- Use one Feature Packet per feature (do not split into standalone PRD/FRD files).
+- Use one Epic issue per feature and one or more Slice sub-issues.
 - Keep user-facing copy in locale JSON files only.
 - Keep Prisma access out of UI components.
 - Keep analytics event names centralized.

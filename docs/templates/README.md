@@ -4,15 +4,15 @@ Use these templates to keep feature delivery consistent when working with AI cod
 
 ## Suggested usage order
 
-1. `feature-packet-template.md` (single source for a feature)
+1. `feature-epic-template.md` (Epic issue body content in GitHub)
 2. `adr-template.md` (only when architecture decisions are needed)
 3. `prompt-pack-template.md` (execution prompts for Codex/Cursor)
 4. Reference global DoD from `docs/process/definition-of-done.md`
 
 ## Recommended flow
 
-1. Define product scope and outcomes in the Feature Packet.
-2. Define functional and non-functional requirements in the same packet.
-3. Freeze data contract and acceptance criteria.
-4. Add implementation/review prompts for AI agents.
-5. Validate against the DoD before closing the feature.
+1. Create an Epic issue in GitHub Project and use the Feature Epic template as the epic body.
+2. Define functional and non-functional requirements in that epic.
+3. Freeze data contract and acceptance criteria in the epic.
+4. Create slice sub-issues (`type:slice`) as separate tickets under the epic.
+5. Track execution status in GitHub Project `Status` field, then validate against DoD before closing.

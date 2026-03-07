@@ -10,7 +10,6 @@
     "db-reset": "npx prisma db push --force-reset",
     "db-migrate": "npx prisma migrate dev",
     "db-migrate-deploy": "npx prisma migrate deploy",
-    "feature-packets:status": "node scripts/featurePacketsStatus.mjs",
     "prettier": "prettier --config .prettierrc.json --write \"**/*.*\"",
     "type-check": "tsc --pretty --noEmit",
     "lint": "eslint",

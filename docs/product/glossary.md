@@ -24,7 +24,8 @@ This glossary defines shared terms used across PandaTrack product and feature do
 
 ## Process and documentation terms
 
-- **Feature Packet**: Single source document for one feature (requirements, data contract, AC, tests, risks).
+- **Epic Issue**: Single source issue for one feature (requirements, data contract, AC, tests, risks).
+- **Slice Issue**: Sub-issue under an epic representing one implementation increment.
 - **Acceptance Criteria (AC)**: Testable Given/When/Then conditions that define done behavior.
 - **Definition of Done (DoD)**: Global quality and delivery checklist required before closing a feature.
 - **ADR (Architecture Decision Record)**: Lightweight record of a technical decision, alternatives, and tradeoffs.
@@ -54,4 +55,4 @@ This glossary defines shared terms used across PandaTrack product and feature do
 
 ## Naming note
 
-Use these terms consistently in docs and feature packets to reduce ambiguity.
+Use these terms consistently in docs and GitHub issues to reduce ambiguity.

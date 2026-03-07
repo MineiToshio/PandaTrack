@@ -1,11 +1,16 @@
-# Feature Packet Template
+# Feature Epic Template
+
+Use this template as the Epic issue body in GitHub Project (source of truth), not as a local tracking file.
 
 ## 0) Metadata
 
 - Feature ID: `FEAT-XXXX`
 - Feature name:
 - Owner:
-- Status: `Draft | Ready | In Progress | Review | Done`
+- Epic issue title: `FEAT-XXXX: <feature name>`
+- Epic issue label: `type:epic`
+- Project URL: `https://github.com/users/MineiToshio/projects/4`
+- Status source: GitHub Project `Status` field (`Todo | In Progress | Done`)
 - Priority: `P0 | P1 | P2`
 - Date:
 - Dependencies:
@@ -161,39 +166,31 @@ Reference global DoD and add only feature-specific additions.
 
 -
 
-## 11) Implementation Slices
+## 11) Implementation Slices (GitHub sub-issues)
 
-Use implementation slices to plan delivery in small end-to-end increments. This section is required.
+Slices are separate GitHub sub-issues (tickets) under this epic, not inline tracking blocks in the template.
 
-### Slice 1 - [Short title]
+Each slice should be created as:
 
-- Status: `Planned | In Progress | Done | Blocked`
-- Last updated: `YYYY-MM-DD`
-- Goal:
-- ## Scope:
-- ## Exit criteria:
-- ## Progress notes (stable, optional):
+- Issue label: `type:slice`
+- Title: concise and descriptive (no prefixes required)
+- Parent: this epic issue
+- Status source: GitHub Project `Status` field (`Todo | In Progress | Done`)
 
-### Slice 2 - [Short title]
+### Planned slices
 
-- Status: `Planned | In Progress | Done | Blocked`
-- Last updated: `YYYY-MM-DD`
-- Goal:
-- ## Scope:
-- ## Exit criteria:
-- ## Progress notes (stable, optional):
+1. [Short slice title]
+2. [Short slice title]
+3. [Short slice title]
 
-### Slice 3 - [Short title]
+### Slice ticket references
 
-- Status: `Planned | In Progress | Done | Blocked`
-- Last updated: `YYYY-MM-DD`
-- Goal:
-- ## Scope:
-- ## Exit criteria:
-- ## Progress notes (stable, optional):
+- Slice 1 issue: `#`
+- Slice 2 issue: `#`
+- Slice 3 issue: `#`
 
 Notes:
 
-- Keep progress notes stable and product-level.
-- Do not put volatile implementation details here (exact file paths, env vars, internal wiring).
+- Keep this section focused on slice definitions and references.
+- Keep ongoing execution/progress updates in each slice ticket, not in this template.
 - Put volatile technical details in PR descriptions, commit history, or `docs/development/*` when reusable.

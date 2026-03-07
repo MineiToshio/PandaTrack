@@ -47,6 +47,6 @@ Use this checklist for AI-assisted or manual review before merging feature chang
 
 ## Final documentation check
 
-- [ ] Feature Packet is updated to match implementation
+- [ ] Epic/slice issues are updated to match implementation
 - [ ] ADR added/updated if an architectural decision was made
 - [ ] Known limitations and follow-ups are explicit

@@ -11,11 +11,10 @@ This folder is the source of truth for PandaTrack product documentation.
 - `landing-and-positioning.md`: landing page messaging and waitlist content strategy.
 - `roadmap.md`: phased roadmap and release sequencing.
 - `glossary.md`: shared terminology for product, process, and engineering docs.
-- `feature-packets/README.md`: feature-level packets (requirements, contracts, AC, tests).
-- `feature-packets/FEAT-0001-pre-release-landing.md`: active landing packet (pre-release phase).
+- GitHub Project #4 and its epic/slice issues: feature-level execution source of truth.
 
 ## Usage guidance
 
 - Keep strategy-level content here.
-- Keep feature-level specs in `docs/product/feature-packets/FEAT-XXXX-short-name.md`.
+- Keep feature-level specs in GitHub epic/slice issues.
 - Keep process standards in `docs/process/`.

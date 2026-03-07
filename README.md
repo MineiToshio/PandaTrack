@@ -190,7 +190,7 @@ Details: [docs/development/i18n.md](docs/development/i18n.md).
 | [docs/product/README.md](docs/product/README.md)               | Product docs index (overview, scope, workflows, roadmap) |
 | [docs/development/i18n.md](docs/development/i18n.md)           | i18n setup, locales, and how to add translations         |
 | [docs/development/og-images.md](docs/development/og-images.md) | OG image generation conventions                          |
-| [docs/process/workflow-ai.md](docs/process/workflow-ai.md)     | AI delivery workflow (Feature Packet first)              |
+| [docs/process/workflow-ai.md](docs/process/workflow-ai.md)     | AI delivery workflow (GitHub Epic/Slice first)           |
 | [AGENTS.md](AGENTS.md)                                         | Guidelines for AI and human contributors                 |
 
 ---

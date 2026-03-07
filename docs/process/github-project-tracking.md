@@ -4,21 +4,23 @@
 
 Centralize the minimum information needed to access and operate PandaTrack planning in GitHub.
 
+GitHub Project and its issues are the source of truth for feature scope and execution status.
+
 ## Quick Links
 
 - Repository: https://github.com/MineiToshio/PandaTrack
 - Issues: https://github.com/MineiToshio/PandaTrack/issues
-- Active Project (feature packets): https://github.com/users/MineiToshio/projects/4
+- Active Project (feature delivery): https://github.com/users/MineiToshio/projects/4
 - Projects (user): https://github.com/users/MineiToshio/projects
-- Feature packets: `docs/product/feature-packets/`
 
 ## Canonical Mapping
 
-- One feature packet file -> one Epic issue
+- One feature (`FEAT-XXXX`) -> one Epic issue
 - One Epic issue -> multiple Slice sub-issues
 - Every Epic/Slice should be added to the GitHub Project board
 - Keep issue titles concise and readable.
 - Distinguish epic vs slice using `type:*` labels, not title prefixes.
+- Automation inputs should use GitHub issue number or full GitHub issue URL.
 
 ## Labels
 
@@ -46,14 +48,13 @@ Current project status source of truth is the GitHub Project `Status` field (`To
 
 - Title: `FEAT-XXXX: <feature name>`
 - Must include:
-  - Packet link (`docs/product/feature-packets/<file>.md`)
   - Goal
   - Scope
   - Acceptance criteria
 
 ## Slice Template (Sub-issue)
 
-- Title: `[FEAT-XXXX] Slice: <small deliverable>`
+- Title: `<small deliverable>`
 - Must include:
   - Parent Epic reference
   - Clear scope boundary

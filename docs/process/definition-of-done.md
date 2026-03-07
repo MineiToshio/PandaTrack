@@ -12,7 +12,7 @@ Every feature must satisfy this checklist before being marked `Done`.
 
 ## Product behavior
 
-- [ ] All acceptance criteria in the Feature Packet are validated
+- [ ] All acceptance criteria in the Epic issue are validated
 - [ ] Happy path is verified
 - [ ] Edge/error paths are verified
 - [ ] No known regressions in adjacent workflows
@@ -40,6 +40,6 @@ Every feature must satisfy this checklist before being marked `Done`.
 
 ## Documentation and delivery
 
-- [ ] Feature Packet reflects final shipped behavior
+- [ ] Epic and slice issues reflect final shipped behavior
 - [ ] ADR is added/updated when architecture decisions changed
 - [ ] Follow-ups and known limitations are documented

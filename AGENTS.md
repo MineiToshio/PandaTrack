@@ -27,6 +27,11 @@ When instructions conflict, use this order:
 
 If still ambiguous, choose the smallest safe change and note assumptions.
 
+### Feature planning source
+
+- Feature planning source of truth is GitHub Project: `https://github.com/users/MineiToshio/projects/4`.
+- Epic and slice issues in GitHub are canonical for feature scope/status.
+
 ## 3) Stack and architecture
 
 - Next.js App Router (`src/app`)
@@ -101,7 +106,7 @@ Product architecture:
 
 - Update `docs/` only when a change adds reusable architecture/process knowledge.
 - Prefer updating existing rules/docs instead of creating duplicates.
-- Keep `docs/product/feature-packets/` synchronized with implemented behavior; if implementation changes the spec, update the packet in the same change (or supersede it with a new packet when scope/goal changes significantly).
+- Keep GitHub epic/slice issues synchronized with implemented behavior; if implementation changes feature scope, update the corresponding epic/slice issue in the same change.
 
 ## 5) i18n and locale routing
 

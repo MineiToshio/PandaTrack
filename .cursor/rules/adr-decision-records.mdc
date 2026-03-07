@@ -25,10 +25,10 @@ Create an ADR when a change introduces a technical decision that affects future 
 1. If the change is architectural, create or update an ADR under `docs/architecture/adr/`.
 2. Use `docs/templates/adr-template.md` as the base format.
 3. Name new files as `ADR-XXXX-short-kebab-title.md`.
-4. In the related Feature Packet, update:
+4. In the related Epic issue, update:
    - `Requires ADR: Yes`
    - ADR link/reference
-5. If no ADR is needed, set `Requires ADR: No` in the Feature Packet.
+5. If no ADR is needed, set `Requires ADR: No` in the Epic issue.
 
 ## ADR quality bar
 

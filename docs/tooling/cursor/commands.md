@@ -23,22 +23,21 @@ See `.cursor/commands/release-tag-and-notes.md` for the full step-by-step instru
 
 ## implement-feature-slice
 
-Implements one `Implementation Slice` from a feature packet with minimal scoped changes and packet-sync enforcement.
+Implements one slice issue from GitHub with minimal scoped changes and GitHub-sync enforcement.
 
 **You can pass context after the command**, e.g.:
 
-- `/implement-feature-slice FEAT-0008 slice 2`
-- `/implement-feature-slice auth packet slice "verify lifecycle gate"`
+- `/implement-feature-slice 45`
+- `/implement-feature-slice https://github.com/MineiToshio/PandaTrack/issues/45`
 
 **What it does:**
 
-1. Resolves the packet using `docs/product/feature-packets/README.md` (routing index first).
-2. Reads only the necessary packet(s) and selects the requested slice.
-3. Implements only that slice using `Goal`, `Scope`, and `Exit criteria` as contract.
-4. Updates the feature packet in the same change if implementation behavior differs.
-5. Updates slice metadata (`Status`, `Last updated`, stable progress notes).
-6. Avoids volatile implementation details inside feature packets (exact file paths, env vars, internal wiring).
-7. Runs validation checks and reports exit-criteria status.
-8. Returns functional test steps and test cases so implementation can be manually verified.
+1. Resolves the target slice issue from GitHub by issue number or URL.
+2. Reads the slice issue and its parent epic via GitHub MCP.
+3. Implements only that slice using epic/slice scope and acceptance criteria as contract.
+4. Updates epic/slice issue tracking in GitHub in the same change if behavior differs.
+5. Uses GitHub Project `Status` as execution status source of truth.
+6. Runs validation checks and reports exit-criteria status.
+7. Returns functional test steps and test cases so implementation can be manually verified.
 
 See `.cursor/commands/implement-feature-slice.md` for the full command behavior.
