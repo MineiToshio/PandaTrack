@@ -168,23 +168,17 @@ Use implementation slices to plan delivery in small end-to-end increments. This 
 ### Slice 1 - [Short title]
 
 - Goal:
-- Scope:
-  -
-- Exit criteria:
-  -
+- ## Scope:
+- ## Exit criteria:
 
 ### Slice 2 - [Short title]
 
 - Goal:
-- Scope:
-  -
-- Exit criteria:
-  -
+- ## Scope:
+- ## Exit criteria:
 
 ### Slice 3 - [Short title]
 
 - Goal:
-- Scope:
-  -
-- Exit criteria:
-  -
+- ## Scope:
+- ## Exit criteria:

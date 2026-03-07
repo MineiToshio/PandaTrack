@@ -20,3 +20,22 @@ Creates a new version tag (from the latest tag + major/minor/patch), pushes it t
 6. Returns markdown ready for copy/paste into the GitHub Release description, with a `[SCREENSHOTS]` placeholder.
 
 See `.cursor/commands/release-tag-and-notes.md` for the full step-by-step instructions the agent follows.
+
+## implement-feature-slice
+
+Implements one `Implementation Slice` from a feature packet with minimal scoped changes and packet-sync enforcement.
+
+**You can pass context after the command**, e.g.:
+
+- `/implement-feature-slice FEAT-0008 slice 2`
+- `/implement-feature-slice auth packet slice "verify lifecycle gate"`
+
+**What it does:**
+
+1. Resolves the packet using `docs/product/feature-packets/README.md` (routing index first).
+2. Reads only the necessary packet(s) and selects the requested slice.
+3. Implements only that slice using `Goal`, `Scope`, and `Exit criteria` as contract.
+4. Updates the feature packet in the same change if implementation behavior differs.
+5. Runs validation checks and reports exit-criteria status.
+
+See `.cursor/commands/implement-feature-slice.md` for the full command behavior.
