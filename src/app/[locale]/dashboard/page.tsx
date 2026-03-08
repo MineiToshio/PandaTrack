@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { buildPageMetadata } from "@/lib/seo";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
+import { ROUTES } from "@/lib/constants";
 
 type DashboardPageProps = {
   params: Promise<{ locale: string }>;
@@ -26,7 +27,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
   const session = await getSession();
 
   if (!session) {
-    redirect(`/${locale}/sign-in`);
+    redirect(`/${locale}${ROUTES.signIn}`);
   }
 
   const t = await getTranslations({ locale, namespace: "dashboard" });

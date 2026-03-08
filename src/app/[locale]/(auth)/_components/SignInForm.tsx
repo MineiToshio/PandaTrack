@@ -7,10 +7,14 @@ import posthog from "posthog-js";
 import AuthFormLayout from "./AuthFormLayout";
 import EmailPasswordForm from "./EmailPasswordForm";
 import { authClient } from "@/lib/auth-client";
-import { ROUTES } from "@/lib/constants";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 
-export default function SignInForm() {
+type SignInFormProps = {
+  callbackURL: string;
+  signUpHref: string;
+};
+
+export default function SignInForm({ callbackURL, signUpHref }: SignInFormProps) {
   const locale = useLocale();
   const t = useTranslations("auth.signIn");
   const tErrors = useTranslations("auth.errors");
@@ -20,8 +24,6 @@ export default function SignInForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-
-  const callbackURL = `/${locale}${ROUTES.dashboard}`;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -65,7 +67,7 @@ export default function SignInForm() {
       title={t("title")}
       googleVariant="signIn"
       callbackURL={callbackURL}
-      footerLinkHref={`/${locale}${ROUTES.signUp}`}
+      footerLinkHref={signUpHref}
       footerLinkLabel={t("linkToSignUp")}
       dividerLabel={tAuth("dividerOr")}
     >

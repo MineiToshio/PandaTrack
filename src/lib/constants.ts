@@ -10,6 +10,10 @@ export const ROUTES = {
   signUp: "/sign-up",
   signIn: "/sign-in",
   dashboard: "/dashboard",
+  purchases: "/purchases",
+  payments: "/payments",
+  shipments: "/shipments",
+  budget: "/budget",
 } as const;
 
 /** Query param for referral links (e.g. waitlist share). Value used in share/copy link. */
