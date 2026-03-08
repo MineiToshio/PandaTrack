@@ -9,6 +9,7 @@ export const ROUTES = {
   privacy: "/privacy",
   signUp: "/sign-up",
   signIn: "/sign-in",
+  verifyEmailGate: "/verify-email-required",
   dashboard: "/dashboard",
   purchases: "/purchases",
   payments: "/payments",
@@ -53,5 +54,10 @@ export const POSTHOG_EVENTS = {
     SIGNIN_FAILED: "auth_signin_failed",
     GOOGLE_SIGNIN_CLICKED: "auth_google_signin_clicked",
     SIGNOUT: "auth_signout",
+    VERIFY_BANNER_SHOWN: "auth_verify_banner_shown",
+    VERIFY_EMAIL_SENT: "auth_verify_email_sent",
+    VERIFY_EMAIL_FAILED: "auth_verify_email_failed",
+    PRIVATE_ACCESS_BLOCKED_UNVERIFIED: "auth_private_access_blocked_unverified",
+    VERIFY_EMAIL_RESEND_CLICKED: "auth_verify_email_resent_clicked",
   },
 } as const;

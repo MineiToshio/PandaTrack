@@ -26,6 +26,24 @@ alwaysApply: true
 - **Spelling and grammar**: Use correct spelling and grammar in all of the above (English).
 - **No em dash**: Never use the em dash character (—) when generating text. Use a hyphen (-), a colon (:), or rephrase the sentence instead.
 
+## Server Actions first (App Router)
+
+For app-internal mutations and authenticated UI actions in App Router, prioritize Server Actions.
+
+- Use `"use server"` actions by default for mutations triggered from this app UI.
+- Do not create `src/app/api/**/route.ts` when a Server Action can solve the same use case cleanly.
+- Keep validation and auth checks at the action boundary.
+
+Use Route Handlers only when truly necessary:
+
+1. The endpoint must be consumed by external clients/systems (webhooks, third parties, mobile, CLI, public API).
+2. You need HTTP behavior not provided by Server Actions (multiple verbs, custom status/header/caching policies).
+3. You need streaming/protocol responses (SSE, file streaming/download).
+4. The flow is machine-to-machine or not triggered from a React tree (callbacks, health checks, HTTP-triggered jobs).
+5. You need request/response primitives tied to API boundaries.
+
+If Route Handler is chosen, add a short code comment explaining why Server Action was not suitable.
+
 ## No planning references in code comments
 
 Do not include planning metadata in source code comments or JSDoc, including:
