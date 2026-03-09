@@ -17,6 +17,28 @@ alwaysApply: true
 
 **Exception:** Anything that depends on the active locale (user-facing text, asset paths, or other locale-specific configuration) must live in the locale files under `src/i18n/locales/` (e.g. `en/`, `es/`). Do not hardcode copy or locale-specific values in components. The keys and the content of those files may be in any language the product supports; only the **code** (identifiers, comments, commit messages, etc.) is required to be in English.
 
+### Emails are user-facing copy (must use i18n)
+
+Transactional emails are part of product UX. Therefore, all user-visible email copy must use i18n locale files, including:
+
+- Subject lines
+- Plain text body
+- HTML body content
+- CTA labels and fallback messages
+
+Do not hardcode email copy in provider utilities (for example `src/lib/resend.ts`), auth config, route handlers, or server actions.
+
+Locale resolution must be explicit and deterministic (for example callback URL locale, user locale, request locale, then default locale).
+
+```ts
+// ✅ Prefer: load locale messages and interpolate values
+const messages = (await import(`@/i18n/locales/${locale}/auth.json`)).default;
+const subject = interpolate(messages.verificationEmail.subject, { appName });
+
+// ❌ Avoid: hardcoded single-language copy in email utility
+subject: `Verify your email for ${APP_NAME}`;
+```
+
 ## Fundamental principles
 
 - **Clarity over cleverness**: Write code that is easy to understand. Prioritize readability over micro-optimizations.
