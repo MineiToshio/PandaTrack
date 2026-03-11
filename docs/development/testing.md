@@ -98,7 +98,39 @@ Use these commands locally:
 Current representative coverage:
 
 - unit coverage for isolated analytics helper behavior
-- RTL integration coverage for the landing waitlist share client component, including share URL generation and copy interaction
+- landing waitlist coverage for server-action contracts, client validation/submission behavior, and share interactions
+
+## Test file organization
+
+PandaTrack keeps tests close to the code they protect, but not mixed indiscriminately with implementation files.
+
+Use this convention:
+
+- feature- or component-specific tests go in **`_tests/`** inside the relevant multi-file folder
+- shared testing helpers go in **`src/test/`**
+
+Example:
+
+- `src/app/[locale]/(landing)/_components/Waitlist/Waitlist.tsx`
+- `src/app/[locale]/(landing)/_components/Waitlist/submitWaitlist.ts`
+- `src/app/[locale]/(landing)/_components/Waitlist/_tests/Waitlist.test.tsx`
+- `src/app/[locale]/(landing)/_components/Waitlist/_tests/submitWaitlist.test.ts`
+- `src/app/[locale]/(landing)/_components/Waitlist/_tests/WaitlistShare.test.tsx`
+
+Why this split:
+
+- `_tests/` keeps the feature folder easy to scan
+- co-location keeps test intent discoverable during implementation and refactors
+- `src/test/` avoids duplicating setup code across unrelated areas
+
+Use `src/test/` for things like:
+
+- custom `renderWithProviders()` helpers
+- shared browser API mocks such as `matchMedia`, `ResizeObserver`, or clipboard helpers
+- reusable fixtures/factories such as mock users, sessions, or common `FormData` builders
+- common testing wrappers for `next-intl`, theme providers, or analytics mocks
+
+Do not move a helper into `src/test/` just because it exists. Promote it only when it is clearly reused across multiple test files or feature areas.
 
 Keep App Router limitations explicit:
 

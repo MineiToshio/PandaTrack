@@ -74,3 +74,10 @@ When test infrastructure exists for the affected scope, run the relevant automat
 1. `npm run type-check`
 2. `npm run lint`
 3. `npm run validate-build`
+
+## Test file placement
+
+- Co-locate tests with the feature they protect.
+- For multi-file components or feature folders, place test files in a dedicated **`_tests/`** folder inside that feature folder.
+- Use **`src/test/`** only for shared test infrastructure such as render helpers, fixtures, factories, or reusable mocks.
+- Avoid mixing large numbers of `*.test.ts(x)` siblings directly with implementation files when a feature already has its own folder.

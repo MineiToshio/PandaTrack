@@ -65,6 +65,7 @@ This rule applies everywhere: core components, module components, and page-speci
 - Put component-only siblings inside that folder:
   - component-scoped helpers (hooks, utils, types, styles, tests)
   - component-scoped subcomponents used only by the main component (like `Menu/` in the landing page)
+- When component tests exist for a multi-file component, place them in a dedicated **`_tests/`** folder inside that component folder instead of mixing `*.test.ts(x)` files with implementation files.
 
 If a folder only contains one file (for example `AnchorLink/AnchorLink.tsx` and nothing else), flatten it.
 
@@ -75,7 +76,7 @@ You should only create the component folder if there are component-scoped files 
 - `*.utils.ts`, `*.constants.ts`
 - `*.types.ts`
 - `use*.ts` hooks
-- `*.test.ts(x)`
+- `_tests/*.test.ts(x)`
 - `*.styles.ts` (or other styling modules)
 
 If a helper is used by multiple components, do not keep it component-scoped. Move it to the page level (`_utils/`, `_types/`, `_hooks/`) or app level (`src/lib/`, `src/types/`, `src/hooks/`) following the existing project structure rules.
@@ -94,6 +95,7 @@ Multi-file:
 - `src/components/core/Button/Button.tsx`
 - `src/components/core/Button/types.ts`
 - `src/components/core/Button/utils.ts`
+- `src/components/core/Button/_tests/Button.test.tsx`
 
 Module components (`src/components/modules/`)
 
@@ -105,6 +107,7 @@ Multi-file:
 
 - `src/components/modules/FaqAccordion/FaqAccordion.tsx`
 - `src/components/modules/FaqAccordion/utils.ts`
+- `src/components/modules/FaqAccordion/_tests/FaqAccordion.test.tsx`
 
 Page-specific components (`_components/` next to a route or layout)
 
@@ -117,6 +120,7 @@ Multi-file:
 - `src/app/[locale]/(landing)/_components/Menu/Menu.tsx`
 - `src/app/[locale]/(landing)/_components/Menu/BurgerMenu.tsx`
 - `src/app/[locale]/(landing)/_components/Menu/utils.ts`
+- `src/app/[locale]/(landing)/_components/Menu/_tests/Menu.test.tsx`
 
 ### Core components → `src/components/core/`
 
@@ -148,9 +152,11 @@ Components that are specific to a single page or route group live next to that p
 - Use a **folder** with the **same name** as the main component.
 - The main component file must have the **same name as the folder** (do **not** use `index.tsx`).
 - Put child components, utils, actions, or related files inside that folder.
+- Put component-scoped tests in **`_tests/`** inside that component folder. This keeps tests co-located while keeping the implementation tree visually clean.
 - Examples:
   - **`src/app/[locale]/(landing)/_components/Menu/Menu.tsx`** (and siblings inside `Menu/`)
   - **`src/app/[locale]/(landing)/_components/Waitlist/Waitlist.tsx`** (and siblings inside `Waitlist/`)
+  - **`src/app/[locale]/(landing)/_components/Waitlist/_tests/Waitlist.test.tsx`**
 
 ---
 
@@ -223,6 +229,15 @@ Prefer one schema per concern or form; co-locate with the action or component th
 - **Global actions**: place in a suitable app-level folder (e.g. under **`src/actions/`** or next to the feature they serve), following existing project conventions.
 - **Page-level actions**: **`_actions/`** next to **`_components`** in the page folder.
 - **Component-specific actions**: inside the component’s folder.
+
+---
+
+## Test organization
+
+- **Component- or feature-scoped tests**: place them in **`_tests/`** inside the relevant multi-file component or feature folder.
+- **Shared testing infrastructure**: place reusable render helpers, fixtures, factories, and mocks in **`src/test/`**.
+- Keep tests close to the code they verify unless the helper is reused across multiple unrelated test files.
+- Do not create a generic top-level test dump for route-specific behavior when the code already has a clear feature folder.
 
 ---
 
