@@ -1,20 +1,49 @@
-import { Open_Sans, Roboto_Condensed, Zilla_Slab_Highlight } from "next/font/google";
+import localFont from "next/font/local";
 
-const openSans = Open_Sans({
-  weight: ["400", "500", "600", "700"],
-  subsets: ["latin-ext"],
+const openSans = localFont({
+  src: [
+    {
+      path: "../../node_modules/@fontsource/open-sans/files/open-sans-latin-ext-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource/open-sans/files/open-sans-latin-ext-500-normal.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource/open-sans/files/open-sans-latin-ext-600-normal.woff2",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource/open-sans/files/open-sans-latin-ext-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-regular",
 });
 
-const robotoCondensed = Roboto_Condensed({
-  weight: ["400", "700"],
-  subsets: ["latin"],
+const robotoCondensed = localFont({
+  src: [
+    {
+      path: "../../node_modules/@fontsource/roboto-condensed/files/roboto-condensed-latin-400-normal.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../../node_modules/@fontsource/roboto-condensed/files/roboto-condensed-latin-700-normal.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-secondary",
 });
 
-const zilla = Zilla_Slab_Highlight({
-  weight: "700",
-  subsets: ["latin"],
+const zilla = localFont({
+  src: "../../node_modules/@fontsource/zilla-slab-highlight/files/zilla-slab-highlight-latin-700-normal.woff2",
   variable: "--font-logo",
 });
 

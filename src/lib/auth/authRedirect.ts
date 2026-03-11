@@ -42,7 +42,11 @@ export function resolveAuthCallbackURL(locale: string, returnTo?: string | null)
   const localizedPath = toLocalizedPath(parsedReturnTo.pathname, locale);
   const localizedPathWithoutLocale = localizedPath.replace(/^\/(es|en)/, "") || "/";
 
-  if (localizedPathWithoutLocale === ROUTES.signIn || localizedPathWithoutLocale === ROUTES.signUp) {
+  if (
+    localizedPathWithoutLocale === ROUTES.signIn ||
+    localizedPathWithoutLocale === ROUTES.signUp ||
+    localizedPathWithoutLocale === ROUTES.forgotPassword
+  ) {
     return defaultPath;
   }
 

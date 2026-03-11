@@ -3,9 +3,9 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import SignOutButton from "@/components/modules/auth/SignOutButton";
 import VerifyEmailBanner from "@/components/modules/auth/VerifyEmailBanner";
-import { AUTH_RETURN_TO_PARAM } from "@/lib/authRedirect";
-import { getSession } from "@/lib/auth-server";
-import { getVerificationSnapshot, maybeSendDaySixVerificationReminder } from "@/lib/authVerification";
+import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
+import { getSession } from "@/lib/auth/auth-server";
+import { getVerificationSnapshot, maybeSendDaySixVerificationReminder } from "@/lib/auth/authVerification";
 import { ROUTES } from "@/lib/constants";
 
 type PrivateAppLayoutProps = {

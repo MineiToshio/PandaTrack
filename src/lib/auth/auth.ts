@@ -4,10 +4,11 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
 import { getAppBaseUrl } from "@/lib/app-url";
-import { buildVerificationConfirmHref, getLocaleSegment } from "@/lib/authRedirect";
-import { buildAuthVerificationEmail } from "@/lib/authVerificationEmail";
-import { syncAuthenticatedUserToKit } from "@/lib/kit";
-import { sendEmailWithResend } from "@/lib/resend";
+import { handlePasswordRecoveryRequest } from "@/lib/auth/authPasswordRecovery";
+import { buildVerificationConfirmHref, getLocaleSegment } from "@/lib/auth/authRedirect";
+import { buildAuthVerificationEmail } from "@/lib/auth/authVerificationEmail";
+import { syncAuthenticatedUserToKit } from "@/lib/integrations/kit";
+import { sendEmailWithResend } from "@/lib/integrations/resend";
 
 /**
  * Better Auth server instance used by the API route handler and server-side session helpers.
@@ -33,6 +34,14 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
+    sendResetPassword: async ({ user, token, url }, request) => {
+      await handlePasswordRecoveryRequest({
+        email: user.email,
+        request,
+        token,
+        url,
+      });
+    },
   },
   emailVerification: {
     sendOnSignUp: true,

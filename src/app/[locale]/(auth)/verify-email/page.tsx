@@ -5,9 +5,9 @@ import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import VerificationResend from "@/components/modules/auth/VerificationResend";
-import { buildAuthAlternativeHref, resolveAuthCallbackURL } from "@/lib/authRedirect";
-import { getSession } from "@/lib/auth-server";
-import { getVerificationSnapshot } from "@/lib/authVerification";
+import { buildAuthAlternativeHref, resolveAuthCallbackURL } from "@/lib/auth/authRedirect";
+import { getSession } from "@/lib/auth/auth-server";
+import { getVerificationSnapshot } from "@/lib/auth/authVerification";
 import { ROUTES } from "@/lib/constants";
 
 type VerifyEmailStatusPageProps = {

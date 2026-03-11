@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { buildVerificationStatusHref } from "@/lib/authRedirect";
+import { auth } from "@/lib/auth/auth";
+import { buildVerificationStatusHref } from "@/lib/auth/authRedirect";
 
 type VerifyEmailConfirmPageProps = {
   params: Promise<{ locale: string }>;

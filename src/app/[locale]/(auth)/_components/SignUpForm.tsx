@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
 import AuthFormLayout from "./AuthFormLayout";
 import EmailPasswordForm from "./EmailPasswordForm";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 
 type SignUpFormProps = {

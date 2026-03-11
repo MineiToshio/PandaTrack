@@ -21,7 +21,6 @@ type WaitlistFormProps = {
 
 export default function WaitlistForm({ locale, onSubmit, isPending, emailError, showError }: WaitlistFormProps) {
   const t = useTranslations("landing.waitlist");
-  const tValidation = useTranslations("landing.waitlist.validation");
 
   return (
     <form action={onSubmit} className="mt-10 space-y-5" aria-busy={isPending}>

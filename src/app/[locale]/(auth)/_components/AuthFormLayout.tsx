@@ -6,8 +6,9 @@ import GoogleSignInButton from "./GoogleSignInButton";
 
 type AuthFormLayoutProps = {
   title: string;
-  googleVariant: "signIn" | "signUp";
-  callbackURL: string;
+  description?: string;
+  googleVariant?: "signIn" | "signUp";
+  callbackURL?: string;
   footerLinkHref: string;
   footerLinkLabel: string;
   dividerLabel: string;
@@ -20,6 +21,7 @@ type AuthFormLayoutProps = {
  */
 export default function AuthFormLayout({
   title,
+  description,
   googleVariant,
   callbackURL,
   footerLinkHref,
@@ -34,18 +36,23 @@ export default function AuthFormLayout({
           <Heading as="h1" size="sm" className="text-text-title">
             {title}
           </Heading>
+          {description ? <p className="text-text-muted mt-2 text-sm">{description}</p> : null}
         </header>
 
-        <GoogleSignInButton callbackURL={callbackURL} variant={googleVariant} />
+        {googleVariant && callbackURL ? (
+          <>
+            <GoogleSignInButton callbackURL={callbackURL} variant={googleVariant} />
 
-        <div className="relative">
-          <div className="border-border absolute inset-0 flex items-center" aria-hidden>
-            <span className="border-border w-full border-t" />
-          </div>
-          <div className="text-text-muted relative flex justify-center text-xs">
-            <span className="bg-background px-2">{dividerLabel}</span>
-          </div>
-        </div>
+            <div className="relative">
+              <div className="border-border absolute inset-0 flex items-center" aria-hidden>
+                <span className="border-border w-full border-t" />
+              </div>
+              <div className="text-text-muted relative flex justify-center text-xs">
+                <span className="bg-background px-2">{dividerLabel}</span>
+              </div>
+            </div>
+          </>
+        ) : null}
 
         {children}
 

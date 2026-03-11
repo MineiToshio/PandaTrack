@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import posthog from "posthog-js";
 import { siGoogle } from "simple-icons";

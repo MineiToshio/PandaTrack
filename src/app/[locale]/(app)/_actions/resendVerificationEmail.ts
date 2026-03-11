@@ -1,9 +1,9 @@
 "use server";
 
 import { headers } from "next/headers";
-import { resolveAuthCallbackURL } from "@/lib/authRedirect";
-import { getSession } from "@/lib/auth-server";
-import { getVerificationSnapshot, sendVerificationEmail } from "@/lib/authVerification";
+import { resolveAuthCallbackURL } from "@/lib/auth/authRedirect";
+import { getSession } from "@/lib/auth/auth-server";
+import { getVerificationSnapshot, sendVerificationEmail } from "@/lib/auth/authVerification";
 
 type ResendVerificationEmailInput = {
   locale: string;

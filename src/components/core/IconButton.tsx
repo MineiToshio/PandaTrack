@@ -4,7 +4,7 @@ import { ButtonHTMLAttributes, MouseEvent, forwardRef } from "react";
 import { cva, VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/styles";
 import { LucideIcon } from "lucide-react";
-import { getPosthogDataAttributes, PosthogTrackingProps } from "@/lib/posthogDataAttributes";
+import { getPosthogDataAttributes, PosthogTrackingProps } from "@/lib/analytics/posthogDataAttributes";
 
 export const iconButtonVariants = cva(
   "disabled:pointer-events-none disabled:opacity-50 transition-colors cursor-pointer h-8 w-8 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",

@@ -7,9 +7,9 @@ Technical reference for analytics instrumentation in PandaTrack.
 ## Current architecture
 
 - Client init: `src/instrumentation-client.ts`
-- Server client: `src/lib/posthog-server.ts`
+- Server client: `src/lib/analytics/posthog-server.ts`
 - Event names: `src/lib/constants.ts` (`POSTHOG_EVENTS`)
-- Declarative attributes helper: `src/lib/posthogDataAttributes.ts`
+- Declarative attributes helper: `src/lib/analytics/posthogDataAttributes.ts`
 
 ## Client-side tracking pattern
 

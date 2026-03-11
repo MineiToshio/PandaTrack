@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/styles";
 import { AnchorHTMLAttributes, useCallback } from "react";
-import { getPosthogDataAttributes } from "@/lib/posthogDataAttributes";
+import { getPosthogDataAttributes } from "@/lib/analytics/posthogDataAttributes";
 
 type AnchorLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
   /** Must be a same-page hash (e.g. "#waitlist"). Click always scrolls to the target, even when the URL already has that hash. */

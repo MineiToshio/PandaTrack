@@ -170,6 +170,9 @@ Shared utilities live in **`src/lib/`**. Split by **purpose**:
   - Examples: `mapbox.ts`, `serpApi.ts`, `prisma.ts`.
 - **General utilities** (no external library): one file per **classification**.
   - Examples: `constants.ts`, `fonts.ts`, `formatting.ts`, `cookies.ts`, `loggers.ts`, `styles.ts` (e.g. `cn`).
+- When two or more files clearly belong to the same concern, group them in a domain subfolder under `src/lib/` instead of leaving them flat.
+  - Examples: `src/lib/auth/` for Better Auth-related files, `src/lib/analytics/` for PostHog helpers, `src/lib/integrations/` for third-party service clients.
+- Leave a file at the `src/lib/` root only when it does not have at least one closely related peer or when it is a cross-domain utility used broadly across the app.
 
 Utils can be client or server functions; place them in the file that matches the classification or library above.
 

@@ -1,6 +1,6 @@
 import { APP_NAME } from "@/lib/constants";
 import { getPublicSiteUrl } from "@/lib/app-url";
-import { buildTransactionalEmailTemplate } from "@/lib/resend";
+import { buildTransactionalEmailTemplate } from "@/lib/integrations/resend";
 import { Locale, isLocale } from "@/types/locale";
 
 const DEFAULT_LOCALE: Locale = "es";

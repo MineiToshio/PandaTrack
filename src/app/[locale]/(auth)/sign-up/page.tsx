@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth-server";
+import { getSession } from "@/lib/auth/auth-server";
 import { ROUTES } from "@/lib/constants";
 import { resolveAuthEntryContext } from "../_utils/authEntryContext";
 import SignUpForm from "../_components/SignUpForm";

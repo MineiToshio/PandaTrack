@@ -1,4 +1,4 @@
-import { buildAuthAlternativeHref, resolveAuthCallbackURL } from "@/lib/authRedirect";
+import { buildAuthAlternativeHref, resolveAuthCallbackURL } from "@/lib/auth/authRedirect";
 
 type ResolveAuthEntryContextParams = {
   locale: string;

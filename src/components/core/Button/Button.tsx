@@ -4,7 +4,7 @@ import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn } from "@/lib/styles";
 import { VariantProps } from "class-variance-authority";
 import { ButtonHTMLAttributes, forwardRef, useCallback, useRef, useState } from "react";
-import { getPosthogDataAttributes, PosthogTrackingProps } from "@/lib/posthogDataAttributes";
+import { getPosthogDataAttributes, PosthogTrackingProps } from "@/lib/analytics/posthogDataAttributes";
 
 const RIPPLE_DURATION_MS = 600;
 

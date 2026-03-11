@@ -1,9 +1,9 @@
 "use server";
 
-import { appendWaitlistToGoogleSheet } from "@/lib/GoogleAppsScript";
-import { createSubscriber, tagSubscriberByLocale, tagWaitlistSubscriber } from "@/lib/kit";
+import { appendWaitlistToGoogleSheet } from "@/lib/integrations/GoogleAppsScript";
+import { createSubscriber, tagSubscriberByLocale, tagWaitlistSubscriber } from "@/lib/integrations/kit";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { getPostHogClient } from "@/lib/posthog-server";
+import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { isLocale } from "@/types/locale";
 import { waitlistSchema } from "./waitlistSchema";
 

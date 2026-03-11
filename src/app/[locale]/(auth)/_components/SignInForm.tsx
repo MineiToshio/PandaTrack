@@ -1,20 +1,20 @@
 "use client";
-
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
 import AuthFormLayout from "./AuthFormLayout";
 import EmailPasswordForm from "./EmailPasswordForm";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 
 type SignInFormProps = {
   callbackURL: string;
   signUpHref: string;
+  forgotPasswordHref: string;
 };
 
-export default function SignInForm({ callbackURL, signUpHref }: SignInFormProps) {
+export default function SignInForm({ callbackURL, signUpHref, forgotPasswordHref }: SignInFormProps) {
   const locale = useLocale();
   const t = useTranslations("auth.signIn");
   const tErrors = useTranslations("auth.errors");
@@ -82,6 +82,8 @@ export default function SignInForm({ callbackURL, signUpHref }: SignInFormProps)
         submitLabel={t("submit")}
         emailLabel={t("email")}
         passwordLabel={t("password")}
+        passwordAuxiliaryHref={forgotPasswordHref}
+        passwordAuxiliaryLabel={t("forgotPassword")}
         passwordAutoComplete="current-password"
         onSubmit={handleSubmit}
       />

@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 import { ROUTES } from "@/lib/constants";
-import { AUTH_RETURN_TO_PARAM } from "@/lib/authRedirect";
+import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
 import { routing } from "./i18n/routing";
 
 const handleI18nRouting = createMiddleware({

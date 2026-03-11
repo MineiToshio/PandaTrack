@@ -12,6 +12,7 @@ const globalForPrisma = global as typeof globalThis & {
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  allowExitOnIdle: true,
 });
 
 const adapter = new PrismaPg(pool);

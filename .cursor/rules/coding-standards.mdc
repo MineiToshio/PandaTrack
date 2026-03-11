@@ -26,7 +26,7 @@ Transactional emails are part of product UX. Therefore, all user-visible email c
 - HTML body content
 - CTA labels and fallback messages
 
-Do not hardcode email copy in provider utilities (for example `src/lib/resend.ts`), auth config, route handlers, or server actions.
+Do not hardcode email copy in provider utilities (for example `src/lib/integrations/resend.ts`), auth config, route handlers, or server actions.
 
 Locale resolution must be explicit and deterministic (for example callback URL locale, user locale, request locale, then default locale).
 

@@ -1,7 +1,7 @@
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { getPostHogClient } from "@/lib/posthog-server";
+import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import * as Sentry from "@sentry/nextjs";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;

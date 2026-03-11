@@ -3,8 +3,8 @@ import { getTranslations } from "next-intl/server";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import VerificationResend from "@/components/modules/auth/VerificationResend";
-import { getSession } from "@/lib/auth-server";
-import { getVerificationSnapshot } from "@/lib/authVerification";
+import { getSession } from "@/lib/auth/auth-server";
+import { getVerificationSnapshot } from "@/lib/auth/authVerification";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 
 type VerifyEmailRequiredPageProps = {

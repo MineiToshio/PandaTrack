@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
 import Button from "@/components/core/Button/Button";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { authClient } from "@/lib/auth-client";
+import { authClient } from "@/lib/auth/auth-client";
 
 type SignOutButtonProps = {
   locale: string;
