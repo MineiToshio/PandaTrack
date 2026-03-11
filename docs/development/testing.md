@@ -86,6 +86,26 @@ When adding test infrastructure, use:
 
 This stack balances fast local feedback with realistic coverage for App Router behavior.
 
+## Current baseline
+
+The repository now includes a Vitest + React Testing Library baseline for fast unit and integration checks on isolated modules and Client Components.
+
+Use these commands locally:
+
+1. `npm run test`
+2. `npm run test:watch`
+
+Current representative coverage:
+
+- unit coverage for isolated analytics helper behavior
+- RTL integration coverage for the landing waitlist share client component, including share URL generation and copy interaction
+
+Keep App Router limitations explicit:
+
+- prefer RTL for Client Components and synchronous browser behavior
+- do not treat async Server Components as good RTL targets by default
+- use Playwright for end-to-end App Router flow validation when route transitions, redirects, or async server rendering are the real risk
+
 ## Decision framework for every implementation
 
 Every feature, bugfix, or refactor should evaluate these three questions before completion:

@@ -1,5 +1,5 @@
 ---
-description: Which commands to run for local and agent validation (type-check, lint, validate-build vs build)
+description: Which commands to run for local and agent validation (test, type-check, lint, validate-build vs build)
 alwaysApply: true
 ---
 
@@ -7,9 +7,10 @@ alwaysApply: true
 
 When finalizing changes or running the validation checklist (e.g. after implementing a feature, before submitting), run these commands in order:
 
-1. `npm run type-check`
-2. `npm run lint`
-3. `npm run validate-build`
+1. `npm run test`
+2. `npm run type-check`
+3. `npm run lint`
+4. `npm run validate-build`
 
 ## Use validate-build, not build, for validation
 

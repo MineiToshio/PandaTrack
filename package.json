@@ -7,6 +7,8 @@
     "build": "prisma generate && prisma migrate deploy && next build",
     "validate-build": "prisma generate && next build --webpack",
     "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db-push": "npx prisma db push && npx prisma generate",
     "db-reset": "npx prisma db push --force-reset",
     "db-migrate": "npx prisma migrate dev",
@@ -40,16 +42,22 @@
     "@fontsource/roboto-condensed": "^5.2.8",
     "@fontsource/zilla-slab-highlight": "^5.2.8",
     "@tailwindcss/postcss": "^4",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20",
     "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "jsdom": "^28.1.0",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "prisma": "^7.3.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.0.18"
   }
 }
