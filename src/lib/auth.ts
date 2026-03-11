@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
 import { getAppBaseUrl } from "@/lib/app-url";
+import { buildVerificationConfirmHref, getLocaleSegment } from "@/lib/authRedirect";
 import { buildAuthVerificationEmail } from "@/lib/authVerificationEmail";
 import { sendEmailWithResend } from "@/lib/resend";
 
@@ -23,9 +24,18 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendOnSignUp: true,
-    sendVerificationEmail: async ({ user, url }, request) => {
+    sendVerificationEmail: async ({ user, token, url }, request) => {
+      const rawVerificationUrl = new URL(url);
+      const originalCallbackURL = rawVerificationUrl.searchParams.get("callbackURL");
+      const callbackPathname = originalCallbackURL
+        ? new URL(originalCallbackURL, "https://pandatrack.local").pathname
+        : null;
+      const locale = callbackPathname ? (getLocaleSegment(callbackPathname) ?? "es") : "es";
+      const verificationPath = buildVerificationConfirmHref(locale, token, originalCallbackURL);
+      const verificationUrl = new URL(verificationPath, getAppBaseUrl()).toString();
+
       const emailContent = await buildAuthVerificationEmail({
-        verificationUrl: url,
+        verificationUrl,
         request,
       });
 

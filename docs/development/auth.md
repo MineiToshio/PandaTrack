@@ -8,14 +8,14 @@ PandaTrack uses [Better Auth](https://better-auth.com/) (self-hosted) with Prism
 
 Set these for local and production:
 
-| Variable                           | Required               | Description                                                                                        |
-| ---------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------- |
-| `BETTER_AUTH_SECRET`               | Yes                    | Secret used to sign cookies and tokens. Generate with `npx auth@latest secret`. Must be 32+ chars. |
-| `DATABASE_URL`                     | Yes                    | PostgreSQL connection string (Neon). Already used by Prisma.                                       |
-| `BETTER_AUTH_GOOGLE_CLIENT_ID`     | For Google sign-in     | Google OAuth 2.0 client ID from Google Cloud Console.                                              |
-| `BETTER_AUTH_GOOGLE_CLIENT_SECRET` | For Google sign-in     | Google OAuth 2.0 client secret.                                                                    |
-| `RESEND_API_KEY`                   | For email verification | Resend API key used to send verification emails.                                                   |
-| `RESEND_FROM_EMAIL`                | For email verification | Verified sender address in Resend (for example `PandaTrack <auth@your-domain.com>`).               |
+| Variable                           | Required               | Description                                                                                                    |
+| ---------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `BETTER_AUTH_SECRET`               | Yes                    | Secret used to sign cookies and tokens. Generate with `npx auth@latest secret`. Must be 32+ chars.             |
+| `DATABASE_URL`                     | Yes                    | PostgreSQL connection string (Neon). Already used by Prisma.                                                   |
+| `BETTER_AUTH_GOOGLE_CLIENT_ID`     | For Google sign-in     | Google OAuth 2.0 client ID from Google Cloud Console.                                                          |
+| `BETTER_AUTH_GOOGLE_CLIENT_SECRET` | For Google sign-in     | Google OAuth 2.0 client secret.                                                                                |
+| `RESEND_API_KEY`                   | For email verification | Resend API key used to send verification emails.                                                               |
+| `RESEND_FROM_EMAIL`                | For email verification | Verified sender address in Resend (for example `hello@your-domain.com`). Sender name is fixed to `PandaTrack`. |
 
 For Google OAuth, configure the authorized redirect URI in Google Cloud Console:
 

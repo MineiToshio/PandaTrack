@@ -1,4 +1,6 @@
 import { APP_NAME } from "@/lib/constants";
+import { getPublicSiteUrl } from "@/lib/app-url";
+import { buildTransactionalEmailTemplate } from "@/lib/resend";
 import { Locale, isLocale } from "@/types/locale";
 
 const DEFAULT_LOCALE: Locale = "es";
@@ -6,9 +8,13 @@ const DEFAULT_LOCALE: Locale = "es";
 type VerificationEmailMessages = {
   subject: string;
   text: string;
+  eyebrow: string;
+  title: string;
   intro: string;
+  body: string;
   cta: string;
   fallback: string;
+  footer: string;
 };
 
 function getLocaleFromPath(pathname: string): Locale | null {
@@ -20,6 +26,12 @@ function getLocaleFromPath(pathname: string): Locale | null {
 function getLocaleFromCallbackUrl(verificationUrl: string): Locale | null {
   try {
     const url = new URL(verificationUrl);
+    const localeFromOwnPath = getLocaleFromPath(url.pathname);
+
+    if (localeFromOwnPath) {
+      return localeFromOwnPath;
+    }
+
     const callbackUrl = url.searchParams.get("callbackURL");
 
     if (!callbackUrl) {
@@ -81,15 +93,6 @@ function interpolate(template: string, values: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (_, key: string) => values[key] ?? "");
 }
 
-function escapeHtml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
 type BuildAuthVerificationEmailInput = {
   verificationUrl: string;
   request?: Request;
@@ -108,14 +111,30 @@ export async function buildAuthVerificationEmail({
 
   const subject = interpolate(messages.subject, interpolationValues);
   const text = interpolate(messages.text, interpolationValues);
+  const eyebrow = interpolate(messages.eyebrow, interpolationValues);
+  const title = interpolate(messages.title, interpolationValues);
   const intro = interpolate(messages.intro, interpolationValues);
+  const body = interpolate(messages.body, interpolationValues);
   const cta = interpolate(messages.cta, interpolationValues);
   const fallback = interpolate(messages.fallback, interpolationValues);
-  const escapedUrl = escapeHtml(verificationUrl);
+  const footer = interpolate(messages.footer, interpolationValues);
+  const logoUrl = `${getPublicSiteUrl()}/icon.svg`;
 
   return {
     subject,
     text,
-    html: `<p>${escapeHtml(intro)}</p><p><a href="${escapedUrl}">${escapeHtml(cta)}</a></p><p>${escapeHtml(fallback)} <a href="${escapedUrl}">${escapedUrl}</a></p>`,
+    html: buildTransactionalEmailTemplate({
+      appName: APP_NAME,
+      logoUrl,
+      eyebrow,
+      title,
+      intro,
+      body,
+      ctaLabel: cta,
+      ctaUrl: verificationUrl,
+      fallbackLabel: fallback,
+      fallbackUrl: verificationUrl,
+      footer,
+    }),
   };
 }

@@ -9,3 +9,17 @@ export function getAppBaseUrl(): string {
   if (vercelUrl) return `https://${vercelUrl}`;
   return "http://localhost:3000";
 }
+
+/**
+ * Public site URL for assets that must be reachable outside the local runtime,
+ * such as email images opened in external clients.
+ */
+export function getPublicSiteUrl(): string {
+  const explicitSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+  if (explicitSiteUrl) {
+    return explicitSiteUrl.replace(/\/$/, "");
+  }
+
+  return getAppBaseUrl();
+}

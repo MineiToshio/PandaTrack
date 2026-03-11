@@ -1,4 +1,5 @@
 export const APP_NAME = "PandaTrack";
+export const EMAIL_FROM_NAME = APP_NAME;
 
 export const THEME_STORAGE_KEY = "theme";
 
@@ -9,6 +10,7 @@ export const ROUTES = {
   privacy: "/privacy",
   signUp: "/sign-up",
   signIn: "/sign-in",
+  verifyEmailStatus: "/verify-email",
   verifyEmailGate: "/verify-email-required",
   dashboard: "/dashboard",
   purchases: "/purchases",

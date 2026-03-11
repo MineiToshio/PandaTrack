@@ -2,7 +2,7 @@ import { ROUTES } from "@/lib/constants";
 
 export const AUTH_RETURN_TO_PARAM = "returnTo";
 
-function getLocaleSegment(pathname: string): string | null {
+export function getLocaleSegment(pathname: string): string | null {
   const localeMatch = pathname.match(/^\/(es|en)(\/|$)/);
   return localeMatch?.[1] ?? null;
 }
@@ -59,6 +59,23 @@ export function buildAuthAlternativeHref(basePath: string, locale: string, retur
 
   const href = new URL(hrefBase, "https://pandatrack.local");
   href.searchParams.set(AUTH_RETURN_TO_PARAM, callbackURL);
+
+  return `${href.pathname}${href.search}`;
+}
+
+export function buildVerificationStatusHref(locale: string, returnTo?: string | null) {
+  const resolvedReturnTo = resolveAuthCallbackURL(locale, returnTo);
+  const href = new URL(`/${locale}${ROUTES.verifyEmailStatus}`, "https://pandatrack.local");
+  href.searchParams.set(AUTH_RETURN_TO_PARAM, resolvedReturnTo);
+
+  return `${href.pathname}${href.search}`;
+}
+
+export function buildVerificationConfirmHref(locale: string, token: string, returnTo?: string | null) {
+  const resolvedReturnTo = resolveAuthCallbackURL(locale, returnTo);
+  const href = new URL(`/${locale}${ROUTES.verifyEmailStatus}/confirm`, "https://pandatrack.local");
+  href.searchParams.set("token", token);
+  href.searchParams.set(AUTH_RETURN_TO_PARAM, resolvedReturnTo);
 
   return `${href.pathname}${href.search}`;
 }

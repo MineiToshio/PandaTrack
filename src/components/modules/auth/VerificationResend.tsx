@@ -11,22 +11,26 @@ type VerificationResendProps = {
   locale: string;
   returnTo?: string;
   compact?: boolean;
+  suppressFeedback?: boolean;
   buttonLabel: string;
   pendingLabel: string;
   successMessage: string;
   errorMessage: string;
   shownEvent?: string;
+  onResult?: (result: "success" | "error") => void;
 };
 
 export default function VerificationResend({
   locale,
   returnTo,
   compact = false,
+  suppressFeedback = false,
   buttonLabel,
   pendingLabel,
   successMessage,
   errorMessage,
   shownEvent,
+  onResult,
 }: VerificationResendProps) {
   const [isPending, setIsPending] = useState(false);
   const [feedback, setFeedback] = useState<"success" | "error" | null>(null);
@@ -48,19 +52,22 @@ export default function VerificationResend({
 
       if (!response.success) {
         setFeedback("error");
+        onResult?.("error");
         posthog.capture(POSTHOG_EVENTS.AUTH.VERIFY_EMAIL_FAILED, { locale, reason: response.reason });
         return;
       }
 
       setFeedback("success");
+      onResult?.("success");
       posthog.capture(POSTHOG_EVENTS.AUTH.VERIFY_EMAIL_SENT, { locale, source: "manual_resend" });
     } catch {
       setFeedback("error");
+      onResult?.("error");
       posthog.capture(POSTHOG_EVENTS.AUTH.VERIFY_EMAIL_FAILED, { locale, reason: "network_error" });
     } finally {
       setIsPending(false);
     }
-  }, [locale, returnTo]);
+  }, [locale, onResult, returnTo]);
 
   const feedbackNode =
     feedback === "success" ? (
@@ -87,7 +94,7 @@ export default function VerificationResend({
         {isPending ? pendingLabel : buttonLabel}
       </Button>
 
-      {feedbackNode}
+      {!suppressFeedback && feedbackNode}
     </div>
   );
 }
