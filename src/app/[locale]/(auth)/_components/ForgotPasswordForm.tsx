@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import posthog from "posthog-js";
 import * as Sentry from "@sentry/nextjs";
@@ -8,16 +8,16 @@ import Button from "@/components/core/Button/Button";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
 import Typography from "@/components/core/Typography";
+import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import AuthFormLayout from "./AuthFormLayout";
 import { authClient } from "@/lib/auth/auth-client";
-import { POSTHOG_EVENTS } from "@/lib/constants";
 
 type ForgotPasswordFormProps = {
+  locale: string;
   signInHref: string;
 };
 
-export default function ForgotPasswordForm({ signInHref }: ForgotPasswordFormProps) {
-  const locale = useLocale();
+export default function ForgotPasswordForm({ locale, signInHref }: ForgotPasswordFormProps) {
   const t = useTranslations("auth.forgotPassword");
   const tErrors = useTranslations("auth.errors");
   const tAuth = useTranslations("auth");
@@ -49,6 +49,7 @@ export default function ForgotPasswordForm({ signInHref }: ForgotPasswordFormPro
     try {
       const { error: requestError } = await authClient.requestPasswordReset({
         email: emailTrimmed,
+        redirectTo: `/${locale}${ROUTES.resetPassword}`,
       });
 
       if (requestError) {
@@ -56,7 +57,7 @@ export default function ForgotPasswordForm({ signInHref }: ForgotPasswordFormPro
           locale,
           error_code: requestError.code ?? "unknown",
         });
-        setError(requestError.message ?? t("error"));
+        setError(t("retryLater"));
         return;
       }
 
@@ -67,7 +68,7 @@ export default function ForgotPasswordForm({ signInHref }: ForgotPasswordFormPro
         locale,
         error_code: "network_error",
       });
-      setError(t("error"));
+      setError(t("retryLater"));
     } finally {
       setIsPending(false);
     }

@@ -8,14 +8,14 @@ PandaTrack uses [Better Auth](https://better-auth.com/) (self-hosted) with Prism
 
 Set these for local and production:
 
-| Variable                           | Required               | Description                                                                                                    |
-| ---------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `BETTER_AUTH_SECRET`               | Yes                    | Secret used to sign cookies and tokens. Generate with `npx auth@latest secret`. Must be 32+ chars.             |
-| `DATABASE_URL`                     | Yes                    | PostgreSQL connection string (Neon). Already used by Prisma.                                                   |
-| `BETTER_AUTH_GOOGLE_CLIENT_ID`     | For Google sign-in     | Google OAuth 2.0 client ID from Google Cloud Console.                                                          |
-| `BETTER_AUTH_GOOGLE_CLIENT_SECRET` | For Google sign-in     | Google OAuth 2.0 client secret.                                                                                |
-| `RESEND_API_KEY`                   | For email verification | Resend API key used to send verification emails.                                                               |
-| `RESEND_FROM_EMAIL`                | For email verification | Verified sender address in Resend (for example `hello@your-domain.com`). Sender name is fixed to `PandaTrack`. |
+| Variable                           | Required           | Description                                                                                                    |
+| ---------------------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `BETTER_AUTH_SECRET`               | Yes                | Secret used to sign cookies and tokens. Generate with `npx auth@latest secret`. Must be 32+ chars.             |
+| `DATABASE_URL`                     | Yes                | PostgreSQL connection string (Neon). Already used by Prisma.                                                   |
+| `BETTER_AUTH_GOOGLE_CLIENT_ID`     | For Google sign-in | Google OAuth 2.0 client ID from Google Cloud Console.                                                          |
+| `BETTER_AUTH_GOOGLE_CLIENT_SECRET` | For Google sign-in | Google OAuth 2.0 client secret.                                                                                |
+| `RESEND_API_KEY`                   | For auth emails    | Resend API key used to send verification and password reset emails.                                            |
+| `RESEND_FROM_EMAIL`                | For auth emails    | Verified sender address in Resend (for example `hello@your-domain.com`). Sender name is fixed to `PandaTrack`. |
 
 For Google OAuth, configure the authorized redirect URI in Google Cloud Console:
 
@@ -32,9 +32,18 @@ The auth base URL is not configured via env: it is inferred by `getAppBaseUrl()`
 ## Key files
 
 - `src/lib/auth/auth.ts` – Better Auth config (database adapter, plugins, email/password, account linking, Google profile mapping).
+- `src/lib/auth/authPasswordRecovery.ts` – password reset delivery handling, locale resolution, analytics, and provider failure mapping.
+- `src/lib/auth/authPasswordResetEmail.ts` – localized password reset email copy and HTML generation.
 - `src/lib/app-url.ts` – `getAppBaseUrl()` for auth base URL (local vs Vercel).
 - `src/lib/auth/auth-server.ts` – Server-only helpers (e.g. `getSession()`).
 - `src/app/api/auth/[...all]/route.ts` – Catch-all route for Better Auth (sign-in, sign-up, sign-out, get-session, etc.).
+
+## Password reset delivery
+
+- Better Auth issues password reset tokens through `requestPasswordReset` and PandaTrack sets `emailAndPassword.resetPasswordTokenExpiresIn` to `3600` seconds (60 minutes).
+- The forgot-password form sends a localized `redirectTo` path so the email link can return the user to the app reset route after Better Auth validates the token.
+- Transactional reset emails are sent through Resend with localized copy from `src/i18n/locales/{locale}/auth.json`.
+- Resend delivery failures are surfaced back to the forgot-password UI as a retry-later message and captured for Sentry/PostHog without leaking whether the email exists.
 
 ## Account linking and profile hydration
 

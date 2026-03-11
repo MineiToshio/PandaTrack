@@ -23,5 +23,5 @@ export default async function ForgotPasswordPage({ params, searchParams }: Forgo
     redirect(callbackURL);
   }
 
-  return <ForgotPasswordForm signInHref={alternativeHref} />;
+  return <ForgotPasswordForm locale={locale} signInHref={alternativeHref} />;
 }
