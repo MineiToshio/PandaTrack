@@ -138,9 +138,9 @@ Specify who uses this and under which context.
 
 ## 6) Test Plan
 
-- Unit tests:
-- Integration tests:
-- E2E tests (if applicable):
+- Unit tests: required / not required + short reason
+- Integration tests: required / not required + short reason
+- E2E tests (if applicable): required / not required + short reason
 - Regression checks:
 
 ## 7) ADR Reference

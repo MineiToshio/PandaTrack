@@ -7,8 +7,9 @@ This workflow is optimized for building features with Codex and Cursor using Git
 1. Create or update an Epic issue in GitHub Project.
 2. Keep full feature context in the epic body (requirements, scope, acceptance criteria, test plan).
 3. Create slice sub-issues under the epic.
-4. Use `type:epic` and `type:slice` labels for issue type.
-5. Use Project `Status` field (`Todo`, `In Progress`, `Done`) for progress tracking.
+4. In the epic and every slice, state unit, integration, and E2E expectations explicitly as required or not required with a short reason.
+5. Use `type:epic` and `type:slice` labels for issue type.
+6. Use Project `Status` field (`Todo`, `In Progress`, `Done`) for progress tracking.
 
 ## 2) Prepare execution prompts
 
@@ -34,7 +35,7 @@ This workflow is optimized for building features with Codex and Cursor using Git
 1. Run required checks:
    - `npm run type-check`
    - `npm run lint`
-   - Build for affected scope (or full build when needed)
+   - `npm run validate-build` for the affected scope (use `npm run build` only for deploy-style validation)
 2. Run relevant automated tests for the affected scope when test infrastructure exists
 3. Validate DoD in `docs/process/definition-of-done.md`
 4. Update GitHub slice and epic statuses in Project

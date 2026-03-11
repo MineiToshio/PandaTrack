@@ -96,6 +96,13 @@ Every feature, bugfix, or refactor should evaluate these three questions before 
 
 If the answer is yes, add the relevant tests in the same change whenever practical.
 
+Record the decision in the related Epic and Slice artifacts. For each test type, mark it as:
+
+- required, with the target behavior or flow to cover
+- not required, with a short risk-based reason
+
+This keeps planning, implementation, and review aligned on the same testing expectation.
+
 ## What deserves priority coverage
 
 Start with the highest-risk product areas:
@@ -114,6 +121,8 @@ Usually avoid spending early effort on:
 - static presentational markup with no branching logic
 - trivial wrappers around framework primitives
 - low-risk visual changes better covered by manual review
+
+When a change falls into this category, do not leave testing unspecified. Explicitly document that unit, integration, and E2E tests are not required by risk.
 
 ## Relationship with automated checks
 

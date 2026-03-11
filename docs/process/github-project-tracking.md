@@ -36,10 +36,8 @@ Do not use `status:*` labels. Status is tracked only through the GitHub Project 
 
 ## Board Statuses
 
-- `Backlog`
-- `Ready`
+- `Todo`
 - `In Progress`
-- `Review`
 - `Done`
 
 Current project status source of truth is the GitHub Project `Status` field (`Todo`, `In Progress`, `Done`).
@@ -51,6 +49,7 @@ Current project status source of truth is the GitHub Project `Status` field (`To
   - Goal
   - Scope
   - Acceptance criteria
+  - Test plan with explicit unit, integration, and E2E expectations
 
 ## Slice Template (Sub-issue)
 
@@ -58,7 +57,8 @@ Current project status source of truth is the GitHub Project `Status` field (`To
 - Must include:
   - Parent Epic reference
   - Clear scope boundary
-  - Validation notes (type-check/lint/build or equivalent)
+  - `Testing` section that marks unit, integration, and E2E as required or not required with a short reason
+  - `Validation notes` section (`npm run type-check`, `npm run lint`, `npm run validate-build`, or equivalent scoped checks)
 
 ## Security Rules
 

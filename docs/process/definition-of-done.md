@@ -7,7 +7,7 @@ Every feature must satisfy this checklist before being marked `Done`.
 
 - [ ] `npm run type-check` passes
 - [ ] `npm run lint` passes
-- [ ] Build for the affected scope passes
+- [ ] `npm run validate-build` passes for the affected scope (or an equivalent scoped build check)
 - [ ] Required unit/integration/E2E tests for the change are added or explicitly not needed by risk
 - [ ] No dead code, unused imports, or commented-out obsolete code
 
@@ -42,5 +42,6 @@ Every feature must satisfy this checklist before being marked `Done`.
 ## Documentation and delivery
 
 - [ ] Epic and slice issues reflect final shipped behavior
+- [ ] Epic and slice issues state unit, integration, and E2E expectations explicitly
 - [ ] ADR is added/updated when architecture decisions changed
 - [ ] Follow-ups and known limitations are documented

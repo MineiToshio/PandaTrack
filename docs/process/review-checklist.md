@@ -41,10 +41,11 @@ Use this checklist for AI-assisted or manual review before merging feature chang
 
 - [ ] Unit/integration/E2E coverage matches feature risk
 - [ ] Test choice is justified by the change instead of skipped by default
+- [ ] Epic/slice artifacts state each test type as required or not required with a short reason
 - [ ] Edge/error tests exist for critical rules
 - [ ] `npm run type-check` passes
 - [ ] `npm run lint` passes
-- [ ] Build for affected scope passes
+- [ ] `npm run validate-build` passes for the affected scope (or an equivalent scoped build check)
 
 ## Final documentation check
 
