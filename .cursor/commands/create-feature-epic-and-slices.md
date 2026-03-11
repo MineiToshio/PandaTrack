@@ -11,6 +11,7 @@ Create a GitHub epic and its slice sub-issues from a raw feature idea. The comma
 
 - Conversation with the user must be in Spanish.
 - Generated GitHub issue content must be in English.
+- Do not write to GitHub or local product docs until the user approves the proposed epic/slice plan.
 - Do not assume missing product or technical details when they materially affect scope, architecture, integrations, or acceptance criteria.
 - Use `docs/templates/feature-epic-template.md` as the mandatory base for the epic body.
 - GitHub Project is the source of truth: `https://github.com/users/MineiToshio/projects/4`
@@ -76,6 +77,15 @@ If the user gives an incomplete idea, ask only the minimum set of high-value que
 
 Do not draft the epic or slices until the critical ambiguities are resolved.
 
+Also, before assuming a new epic is needed, inspect existing GitHub epics for overlap.
+
+If the requested feature appears to belong to an existing epic, do not create a new epic immediately. Instead, ask the user in Spanish which path they want:
+
+- update the existing epic and adjust its slices
+- create a new epic anyway
+
+When asking, mention the related epic number and title explicitly.
+
 ### 2. Think beyond the user prompt
 
 Act as a product-minded software architect.
@@ -109,6 +119,8 @@ Follow repository rules:
 - Centralize analytics event names in `POSTHOG_EVENTS`
 - Avoid noisy Sentry capture; capture unexpected failures with useful context only
 - Keep `docs/product` updated at product-summary level, not implementation-detail level
+- Never modify closed slices; create a new slice instead
+- Reopen a closed epic if new scope is added to it
 
 ### 4. Slice design rules
 
@@ -152,6 +164,7 @@ Before drafting:
 
 - Extract explicit facts from the user brief.
 - List implicit assumptions that need confirmation.
+- Check whether the request overlaps meaningfully with an existing epic in GitHub.
 - Ask the user focused questions in Spanish.
 - Wait for answers when critical information is missing.
 
@@ -175,9 +188,43 @@ Once the feature is clear, define internally:
 - acceptance criteria
 - test plan
 
-### 4. Draft the epic
+### 4. Propose the planning split and ask for approval
 
-Create the epic issue in GitHub using the feature epic template as the structure.
+Before creating or updating anything in GitHub, send the user a short planning summary in Spanish and wait for approval.
+
+The summary must be concise and decision-oriented. Do not dump full specs. Include:
+
+- whether you propose:
+  - creating one new epic
+  - creating multiple new epics
+  - updating one or more existing epics
+  - combining an existing epic update with new epics
+- the proposed epic titles only
+- for each epic, the number of slices you expect
+- for each epic, list the slice titles only
+- when relevant, which existing epic would be reused or expanded
+- any important scope split rationale only if it affects the user's decision
+
+Example shape:
+
+- `Epic 1`: `<title>` - `3` slices
+  - `<slice title 1>`
+  - `<slice title 2>`
+  - `<slice title 3>`
+- `Epic 2`: `<title>` - `5` slices
+  - `<slice title 1>`
+  - `<slice title 2>`
+- Existing epic to update: `#43 FEAT-0008: ...` - add `2` slices
+  - `<slice title 1>`
+  - `<slice title 2>`
+
+Then ask the user for explicit approval before continuing.
+
+If the user wants changes to the split, adjust the proposal first and ask again if needed.
+
+### 5. Draft the epic
+
+If the user confirmed that a new epic is needed, create the epic issue in GitHub using the feature epic template as the structure.
 
 Requirements:
 
@@ -193,7 +240,16 @@ Requirements:
 
 If existing feature numbering cannot be determined safely, use a temporary placeholder such as `FEAT-TBD`.
 
-### 5. Design slices
+If the user chose to extend an existing epic instead of creating a new one:
+
+- update that epic body to reflect the new scope
+- update or add slices as needed
+- keep the epic internally consistent after the change
+- avoid duplicating scope across multiple epics
+- if the epic is currently closed/done, move it back to an active status such as `In Progress` or `Todo` before adding new work
+- do not edit closed slice issues; add new slice issues for the newly added scope
+
+### 6. Design slices
 
 Create slice sub-issues under the epic.
 
@@ -217,7 +273,7 @@ For each slice:
 
 Each slice should be small enough for a focused implementation pass, but large enough to be demoable or verifiable on its own.
 
-### 6. Update product documentation in-repo
+### 7. Update product documentation in-repo
 
 After the feature scope is clear, update `docs/product/overview.md`.
 
@@ -233,19 +289,26 @@ Also review nearby producßt docs and update them only if the new feature materi
 
 Make only product-facing updates there. Do not dump technical implementation notes into product docs.
 
-### 7. GitHub creation
+### 8. GitHub creation
 
 Use GitHub MCP to:
 
-- create the epic issue
+- create the epic issue when a new epic is required
+- or update the existing epic when the user chose that route
 - create each slice issue
 - link slices as sub-issues of the epic
 - apply labels
 - add the issues to the active GitHub Project when possible
 
+Status handling rules:
+
+- if an epic was previously `Done` and new scope is added, change it back to an active project status before finishing
+- if an existing slice is closed, leave it untouched even when the new work is closely related
+- represent any newly requested work as a new slice issue instead of reopening or rewriting a closed slice
+
 If GitHub creation cannot be completed, return the drafted epic and slice content in the chat instead of stopping silently.
 
-### 8. Sync with existing GitHub planning
+### 9. Sync with existing GitHub planning
 
 Before finishing, inspect existing epic issues in GitHub Project and ensure the local product docs remain aligned with the actual feature set already tracked there.
 
@@ -255,7 +318,7 @@ At minimum:
 - avoid documenting a feature in `docs/product` as shipped if GitHub planning clearly shows it is only planned
 - if the new feature changes product positioning or current-state summary, reflect that in `docs/product/overview.md`
 
-### 9. Final response format
+### 10. Final response format
 
 Return in Spanish:
 
@@ -264,6 +327,8 @@ Return in Spanish:
 3. `Docs updated`: which `docs/product` files were updated
 4. `Open assumptions`: only unresolved non-blocking assumptions
 5. `Planning notes`: only important scope or architecture decisions that shaped the split
+
+If an existing epic was reused, say `Epic updated` instead of `Epic created`.
 
 ## Quality bar
 
