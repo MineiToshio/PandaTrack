@@ -1,7 +1,7 @@
 "use server";
 
 import { appendWaitlistToGoogleSheet } from "@/lib/GoogleAppsScript";
-import { createSubscriber, tagSubscriberByLocale } from "@/lib/kit";
+import { createSubscriber, tagSubscriberByLocale, tagWaitlistSubscriber } from "@/lib/kit";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { getPostHogClient } from "@/lib/posthog-server";
 import { isLocale } from "@/types/locale";
@@ -48,6 +48,12 @@ export async function submitWaitlist(formData: FormData): Promise<SubmitWaitlist
 
   try {
     await createSubscriber({ email, firstName: name ?? undefined });
+    try {
+      await tagWaitlistSubscriber(email);
+    } catch (tagErr) {
+      console.error("Waitlist source tag failed (subscriber was created):", tagErr);
+    }
+
     if (locale) {
       try {
         await tagSubscriberByLocale(locale, email);

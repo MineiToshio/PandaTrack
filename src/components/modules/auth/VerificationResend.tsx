@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import posthog from "posthog-js";
+import * as Sentry from "@sentry/nextjs";
 import Button from "@/components/core/Button/Button";
 import Typography from "@/components/core/Typography";
 import { POSTHOG_EVENTS } from "@/lib/constants";
@@ -60,9 +61,10 @@ export default function VerificationResend({
       setFeedback("success");
       onResult?.("success");
       posthog.capture(POSTHOG_EVENTS.AUTH.VERIFY_EMAIL_SENT, { locale, source: "manual_resend" });
-    } catch {
+    } catch (error) {
       setFeedback("error");
       onResult?.("error");
+      Sentry.captureException(error);
       posthog.capture(POSTHOG_EVENTS.AUTH.VERIFY_EMAIL_FAILED, { locale, reason: "network_error" });
     } finally {
       setIsPending(false);

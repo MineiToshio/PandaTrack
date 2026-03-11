@@ -3,7 +3,24 @@
  * @see https://developers.kit.com/api-reference/overview
  */
 
+import * as Sentry from "@sentry/nextjs";
+
 const KIT_API_BASE = "https://api.kit.com";
+
+function parseTagId(raw: string | undefined): number | undefined {
+  if (raw === undefined || raw === "") return undefined;
+  const id = Number.parseInt(raw, 10);
+  return Number.isNaN(id) ? undefined : id;
+}
+
+export const KIT_TAG = {
+  waitlist: parseTagId(process.env.KIT_TAG_ID_WAITLIST),
+  appUser: parseTagId(process.env.KIT_TAG_ID_APP_USER),
+  locale: {
+    es: parseTagId(process.env.KIT_TAG_ID_ES),
+    en: parseTagId(process.env.KIT_TAG_ID_EN),
+  },
+} as const;
 
 function getApiKey(): string {
   const key = process.env.KIT_API_KEY;
@@ -57,14 +74,27 @@ export async function createSubscriber(input: CreateSubscriberInput): Promise<Ki
 }
 
 /**
- * Returns the tag ID for the given locale when configured (KIT_TAG_ID_ES, KIT_TAG_ID_EN).
- * Used to tag waitlist subscribers by language for email segmentation.
+ * Syncs an authenticated user to Kit: creates or updates subscriber and tags with app_user.
+ * Non-blocking and safe to call from auth hooks; logs to Sentry on failure without throwing.
+ * No-op when KIT_API_KEY or KIT_TAG_ID_APP_USER is not set.
  */
+export async function syncAuthenticatedUserToKit(email: string, firstName?: string | null): Promise<void> {
+  if (!process.env.KIT_API_KEY?.trim() || KIT_TAG.appUser === undefined) {
+    return;
+  }
+  try {
+    await createSubscriber({ email, firstName });
+    const tagId = KIT_TAG.appUser;
+    if (tagId !== undefined) {
+      await tagSubscriberByEmail(tagId, email);
+    }
+  } catch (error) {
+    Sentry.captureException(error);
+  }
+}
+
 function getTagIdForLocale(locale: string): number | undefined {
-  const raw = locale === "es" ? process.env.KIT_TAG_ID_ES : locale === "en" ? process.env.KIT_TAG_ID_EN : undefined;
-  if (raw === undefined || raw === "") return undefined;
-  const id = Number.parseInt(raw, 10);
-  return Number.isNaN(id) ? undefined : id;
+  return locale === "es" ? KIT_TAG.locale.es : locale === "en" ? KIT_TAG.locale.en : undefined;
 }
 
 /**
@@ -95,6 +125,16 @@ export async function tagSubscriberByEmail(tagId: number, email: string): Promis
  */
 export async function tagSubscriberByLocale(locale: string, email: string): Promise<void> {
   const tagId = getTagIdForLocale(locale);
+  if (tagId === undefined) return;
+  await tagSubscriberByEmail(tagId, email);
+}
+
+/**
+ * Tags a subscriber as waitlist when a tag ID is configured.
+ * No-op when KIT_TAG_ID_WAITLIST is not set.
+ */
+export async function tagWaitlistSubscriber(email: string): Promise<void> {
+  const tagId = KIT_TAG.waitlist;
   if (tagId === undefined) return;
   await tagSubscriberByEmail(tagId, email);
 }

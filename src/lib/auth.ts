@@ -1,10 +1,12 @@
 import { betterAuth } from "better-auth";
+import { createAuthMiddleware } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { buildVerificationConfirmHref, getLocaleSegment } from "@/lib/authRedirect";
 import { buildAuthVerificationEmail } from "@/lib/authVerificationEmail";
+import { syncAuthenticatedUserToKit } from "@/lib/kit";
 import { sendEmailWithResend } from "@/lib/resend";
 
 /**
@@ -73,5 +75,15 @@ export const auth = betterAuth({
         };
       },
     },
+  },
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      const newSession = ctx.context.newSession;
+      if (newSession?.user?.email) {
+        const email = newSession.user.email;
+        const name = newSession.user.name ?? null;
+        void syncAuthenticatedUserToKit(email, name).catch(() => {});
+      }
+    }),
   },
 });

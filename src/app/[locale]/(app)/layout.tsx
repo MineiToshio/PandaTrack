@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
+import SignOutButton from "@/components/modules/auth/SignOutButton";
 import VerifyEmailBanner from "@/components/modules/auth/VerifyEmailBanner";
 import { AUTH_RETURN_TO_PARAM } from "@/lib/authRedirect";
 import { getSession } from "@/lib/auth-server";
@@ -34,10 +35,19 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
   }
 
   if (snapshot?.state !== "grace") {
-    return <>{children}</>;
+    const tAuth = await getTranslations({ locale, namespace: "auth" });
+    return (
+      <>
+        <header className="border-border bg-background flex items-center justify-end gap-4 px-4 py-3">
+          <SignOutButton locale={locale} label={tAuth("signOut")} />
+        </header>
+        {children}
+      </>
+    );
   }
 
   const tVerification = await getTranslations({ locale, namespace: "auth.verificationBanner" });
+  const tAuth = await getTranslations({ locale, namespace: "auth" });
 
   return (
     <>
@@ -53,6 +63,9 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
           resendError={tVerification("resendError")}
         />
       </div>
+      <header className="border-border bg-background flex items-center justify-end gap-4 px-4 py-3">
+        <SignOutButton locale={locale} label={tAuth("signOut")} />
+      </header>
       {children}
     </>
   );

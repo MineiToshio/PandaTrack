@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { getPostHogClient } from "@/lib/posthog-server";
+import * as Sentry from "@sentry/nextjs";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const VERIFICATION_GRACE_DAYS = 7;
@@ -101,6 +102,7 @@ export async function sendVerificationEmail(
     });
     return { ok: true };
   } catch (error) {
+    Sentry.captureException(error);
     const errorMessage = error instanceof Error ? error.message : "unknown_error";
     return { ok: false, error: errorMessage };
   }
