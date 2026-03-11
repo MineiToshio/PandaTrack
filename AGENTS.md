@@ -145,7 +145,9 @@ Before finalizing changes, run relevant checks:
 
 1. `npm run type-check`
 2. `npm run lint`
-3. `npm run build` (or the minimal equivalent for the touched area if build is too costly)
+3. `npm run validate-build` (local validation: generates Prisma client and builds Next.js without applying migrations; use this instead of `npm run build` for agent/local checks)
+
+Use `npm run build` only when simulating or executing the full deploy pipeline (e.g. Vercel); it includes `prisma migrate deploy` and requires a database that accepts migrations.
 
 If a command cannot be run, state it explicitly and why.
 

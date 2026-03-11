@@ -38,6 +38,26 @@ Implements one slice issue from GitHub with minimal scoped changes and GitHub-sy
 4. Updates epic/slice issue tracking in GitHub in the same change if behavior differs.
 5. Uses GitHub Project `Status` as execution status source of truth.
 6. Runs validation checks and reports exit-criteria status.
+   - Use `npm run validate-build` for build validation (not `npm run build`; that one runs migrate deploy and is for the Vercel pipeline).
 7. Returns functional test steps and test cases so implementation can be manually verified.
 
 See `.cursor/commands/implement-feature-slice.md` for the full command behavior.
+
+## create-feature-epic-and-slices
+
+Creates a new feature epic in GitHub and decomposes it into small, functional slice sub-issues.
+
+**You can pass context after the command**, e.g.:
+
+- `/create-feature-epic-and-slices Add split shipment support for one purchase`
+- `/create-feature-epic-and-slices Build store trust signals and seller notes for collectors`
+
+**What it does:**
+
+1. Reads the official epic template from `docs/templates/feature-epic-template.md`.
+2. Reviews the feature brief and asks clarifying questions before planning when anything important is ambiguous.
+3. Expands scope thoughtfully to include validations, state handling, analytics, Sentry, and integration concerns when relevant.
+4. Creates one `type:epic` issue and multiple `type:slice` sub-issues in GitHub.
+5. Keeps slices small, functional, and independently testable instead of splitting incomplete partial work.
+
+See `.cursor/commands/create-feature-epic-and-slices.md` for the full command behavior.

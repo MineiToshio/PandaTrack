@@ -122,17 +122,18 @@ Open [http://localhost:3000](http://localhost:3000). The app will redirect to th
 
 ## Scripts
 
-| Command                     | Description                                |
-| --------------------------- | ------------------------------------------ |
-| `npm run dev`               | Start Next.js dev server                   |
-| `npm run build`             | Generate Prisma client + build Next.js     |
-| `npm run start`             | Start production server (after `build`)    |
-| `npm run db-push`           | Push Prisma schema and generate client     |
-| `npm run db-reset`          | Force-reset DB and push schema             |
-| `npm run type-check`        | Run TypeScript check (`tsc --noEmit`)      |
-| `npm run lint`              | Run ESLint                                 |
-| `npm run prettier`          | Format code with Prettier                  |
-| `npm run download-og-fonts` | Download fonts used by OG image generation |
+| Command                     | Description                                                          |
+| --------------------------- | -------------------------------------------------------------------- |
+| `npm run dev`               | Start Next.js dev server                                             |
+| `npm run build`             | Full deploy build: Prisma generate + migrate deploy + Next.js build  |
+| `npm run validate-build`    | Local validation: Prisma generate + Next.js build (no DB migrations) |
+| `npm run start`             | Start production server (after `build`)                              |
+| `npm run db-push`           | Push Prisma schema and generate client                               |
+| `npm run db-reset`          | Force-reset DB and push schema                                       |
+| `npm run type-check`        | Run TypeScript check (`tsc --noEmit`)                                |
+| `npm run lint`              | Run ESLint                                                           |
+| `npm run prettier`          | Format code with Prettier                                            |
+| `npm run download-og-fonts` | Download fonts used by OG image generation                           |
 
 ---
 
@@ -199,7 +200,7 @@ Details: [docs/development/i18n.md](docs/development/i18n.md).
 
 1. Follow the conventions in [AGENTS.md](AGENTS.md) and `.cursor/rules/`.
 2. Keep code and comments in English; user-facing copy goes in locale JSON files.
-3. Before submitting: `npm run type-check`, `npm run lint`, and ensure `npm run build` succeeds.
+3. Before submitting: `npm run type-check`, `npm run lint`, and ensure `npm run validate-build` succeeds.
 
 ---
 

@@ -1,0 +1,19 @@
+---
+description: Which commands to run for local and agent validation (type-check, lint, validate-build vs build)
+alwaysApply: true
+---
+
+# Validation checklist – PandaTrack
+
+When finalizing changes or running the validation checklist (e.g. after implementing a feature, before submitting), run these commands in order:
+
+1. `npm run type-check`
+2. `npm run lint`
+3. `npm run validate-build`
+
+## Use validate-build, not build, for validation
+
+Use **`npm run validate-build`** to verify the app compiles. Do **not** use `npm run build` for that.
+
+- **`npm run validate-build`**: Prisma generate + Next.js build only. No database access. Use for local and agent validation.
+- **`npm run build`**: Full deploy pipeline (Prisma generate + **prisma migrate deploy** + Next.js build). Reserved for CI/Vercel; requires a database that accepts migrations and can fail locally (e.g. P3005) if the DB is not baselined.

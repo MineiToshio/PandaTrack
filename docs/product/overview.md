@@ -36,6 +36,29 @@ PandaTrack is designed for collectors who:
 - Lower mental overhead for order management
 - Better buying confidence through store trust signals
 
+## Current product shape
+
+PandaTrack is currently structured around two complementary layers:
+
+- A public experience that explains the product, builds trust, and gives people a clear entry point into the app
+- A private account experience where collectors will manage their orders, payments, shipments, and account activity
+
+The public foundation already covers the essentials needed to present the product clearly:
+
+- Landing and positioning pages
+- Localized experience in Spanish and English
+- Legal pages for privacy and terms
+- Search/social-sharing foundations so public pages are easy to discover and share
+
+The account foundation is now taking shape around a secure collector workspace:
+
+- Sign up and sign in flows
+- Protected private access for account-based product areas
+- Email verification lifecycle and account protection rules
+- Account recovery for people who forget their password
+
+This means PandaTrack is moving from a pre-release marketing experience into a usable product shell with identity, access, and recovery basics in place.
+
 ## Core features (full vision)
 
 - Store database and discovery
@@ -49,6 +72,17 @@ PandaTrack is designed for collectors who:
 - Collection management (later)
 - Wishlist (later)
 
+## Product capabilities tracked today
+
+From the current product and planning work, PandaTrack now groups its capabilities into these areas:
+
+- Public product presence: landing, localized messaging, legal trust pages, and SEO/shareability
+- Product measurement and reliability: analytics for meaningful interactions and error monitoring for unexpected failures
+- Account access: sign up, sign in, sign out, route protection, email verification, and password recovery
+- Collector workflow foundation: the next major layer is still centered on stores, purchases, pre-order payments, shipments, and dashboard clarity
+
+At a product level, this means the app already covers the outer layer of trust, discovery, and access, while the core tracking workflow remains the next major delivery focus.
+
 ## MVP focus
 
 The first version prioritizes the workflow:
@@ -61,6 +95,26 @@ Priority order:
 3. Pre-order payment tracking
 4. Shipment tracking (including split shipments)
 5. Dashboard clarity
+
+## What is already in place vs. what comes next
+
+Already in place or substantially defined:
+
+- Product positioning and public landing
+- Locale support for the public app
+- Privacy and terms pages
+- SEO and social preview foundations
+- Product analytics and monitoring foundations
+- Account access baseline
+- Email verification and recovery planning
+
+Next major user value to deliver:
+
+- Store discovery and trust signals inside the product workflow
+- Purchase and item tracking
+- Pre-order payment visibility
+- Shipment tracking and split-shipment handling
+- A dashboard that answers the most important status and money questions quickly
 
 ## Product architecture
 

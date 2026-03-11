@@ -18,3 +18,4 @@ This folder is the source of truth for PandaTrack product documentation.
 - Keep strategy-level content here.
 - Keep feature-level specs in GitHub epic/slice issues.
 - Keep process standards in `docs/process/`.
+- Keep `overview.md` synchronized with the product capabilities reflected in GitHub epic planning, using product language instead of implementation detail.

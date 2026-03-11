@@ -45,7 +45,7 @@ Implement one slice issue from GitHub with minimal, reviewable changes.
 - Run:
   - `npm run type-check`
   - `npm run lint`
-  - minimal affected build check (or `npm run build` if needed)
+  - `npm run validate-build` (or minimal affected build check if preferred)
 
 ## Output format
 
