@@ -8,6 +8,7 @@ Every feature must satisfy this checklist before being marked `Done`.
 - [ ] `npm run type-check` passes
 - [ ] `npm run lint` passes
 - [ ] Build for the affected scope passes
+- [ ] Required unit/integration/E2E tests for the change are added or explicitly not needed by risk
 - [ ] No dead code, unused imports, or commented-out obsolete code
 
 ## Product behavior

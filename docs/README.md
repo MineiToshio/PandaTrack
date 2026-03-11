@@ -20,6 +20,7 @@ Use this index to find documentation by domain.
 - `docs/development/posthog.md`: analytics implementation notes
 - `docs/development/sentry.md`: monitoring implementation notes
 - `docs/development/seo.md`: SEO implementation notes
+- `docs/development/testing.md`: automated testing strategy for unit, integration, and E2E coverage
 - `docs/development/lib-utilities.md`: `src/lib` utilities inventory and responsibilities
 
 ## Templates

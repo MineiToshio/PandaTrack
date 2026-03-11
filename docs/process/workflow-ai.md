@@ -20,7 +20,8 @@ This workflow is optimized for building features with Codex and Cursor using Git
 
 1. Run implementation prompt (Codex or Cursor)
 2. Keep changes minimal and scoped to the feature
-3. Re-run with focused prompts for missing pieces (tests, i18n, analytics, accessibility)
+3. Evaluate unit, integration, and E2E coverage needs based on feature risk
+4. Re-run with focused prompts for missing pieces (tests, i18n, analytics, accessibility)
 
 ## 4) Review with a second pass
 
@@ -34,8 +35,9 @@ This workflow is optimized for building features with Codex and Cursor using Git
    - `npm run type-check`
    - `npm run lint`
    - Build for affected scope (or full build when needed)
-2. Validate DoD in `docs/process/definition-of-done.md`
-3. Update GitHub slice and epic statuses in Project
+2. Run relevant automated tests for the affected scope when test infrastructure exists
+3. Validate DoD in `docs/process/definition-of-done.md`
+4. Update GitHub slice and epic statuses in Project
 
 ## Rules for consistency
 
@@ -43,4 +45,5 @@ This workflow is optimized for building features with Codex and Cursor using Git
 - Keep user-facing copy in locale JSON files only.
 - Keep Prisma access out of UI components.
 - Keep analytics event names centralized.
+- Apply risk-based test coverage instead of chasing blanket coverage.
 - Prefer small, reviewable diffs over broad refactors.

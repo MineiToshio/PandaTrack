@@ -1,0 +1,76 @@
+---
+description: Evaluate and add unit, integration, and E2E tests according to feature risk instead of aiming for blanket coverage
+alwaysApply: true
+---
+
+# Testing strategy – PandaTrack
+
+Every implementation must explicitly evaluate whether it needs **unit tests**, **integration tests**, and/or **E2E tests**.
+
+Do not aim for blanket coverage. Aim for **risk-based coverage** on business-critical behavior.
+
+## Required evaluation on every change
+
+Before finalizing a feature, bugfix, or refactor, decide which of these apply:
+
+1. **Unit tests** for isolated business rules and data transformations
+2. **Integration tests** for contracts between modules/layers
+3. **E2E tests** for user-critical flows in the real app
+
+If a test type is not added, that should be because it is **not justified by the change**, not because it was skipped by default.
+
+## When each test type is expected
+
+### Unit tests
+
+Add unit tests when the change includes:
+
+- business rules, calculations, totals, balances, status resolution, or date logic
+- validation helpers, parsers, formatters, mappers, or branching logic
+- bug fixes that can regress at function level
+
+### Integration tests
+
+Add integration tests when the change includes:
+
+- server actions, route handlers, or query/data modules with meaningful logic
+- Zod validation + server logic + persistence working together
+- interactions between Prisma/data access and application rules
+- third-party integrations where request/response handling is important
+
+### E2E tests
+
+Add E2E tests when the change affects:
+
+- core MVP workflows
+- navigation or form flows whose value is only proven end-to-end
+- App Router behavior involving async server rendering, redirects, or cross-page state transitions
+- regressions that are easiest to catch from the user perspective
+
+## App Router guidance
+
+For Next.js App Router, do not rely on component tests alone for async Server Component behavior. Prefer a small number of focused E2E tests for critical end-to-end flows.
+
+## Priority areas for PandaTrack
+
+Prioritize tests for:
+
+- purchase and item tracking rules
+- pre-order payment calculations and remaining balance
+- shipment and split-shipment behavior
+- dashboard totals and status summaries
+- trust/store signals if they influence product decisions or filters
+
+## What not to optimize for
+
+- Do not require 100% coverage.
+- Do not add shallow tests for trivial markup with no meaningful logic.
+- Do not add brittle tests tied to implementation details instead of user behavior or stable contracts.
+
+## Validation expectation
+
+When test infrastructure exists for the affected scope, run the relevant automated tests together with:
+
+1. `npm run type-check`
+2. `npm run lint`
+3. `npm run validate-build`

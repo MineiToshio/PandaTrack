@@ -40,6 +40,7 @@ Use this checklist for AI-assisted or manual review before merging feature chang
 ## Tests and validation
 
 - [ ] Unit/integration/E2E coverage matches feature risk
+- [ ] Test choice is justified by the change instead of skipped by default
 - [ ] Edge/error tests exist for critical rules
 - [ ] `npm run type-check` passes
 - [ ] `npm run lint` passes

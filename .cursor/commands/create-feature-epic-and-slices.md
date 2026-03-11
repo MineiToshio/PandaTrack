@@ -103,6 +103,9 @@ Even if the user does not mention them, consider whether the feature should incl
 - email/notification side effects
 - migration or schema changes
 - accessibility requirements
+- unit test needs
+- integration test needs
+- E2E test needs
 - testability and rollout risk
 
 If any of these affect scope, include them in the epic and slices. If they need a product decision, ask first.
@@ -130,6 +133,7 @@ Good slice characteristics:
 
 - user can exercise the behavior end-to-end
 - acceptance criteria are testable
+- test expectations are explicit for unit, integration, and E2E coverage when relevant
 - analytics and error handling are included when they belong to that increment
 - no slice exists only for a tiny UI tweak, error string, or instrumentation fragment
 
@@ -187,6 +191,7 @@ Once the feature is clear, define internally:
 - observability plan
 - acceptance criteria
 - test plan
+- test distribution by slice (unit/integration/E2E)
 
 ### 4. Propose the planning split and ask for approval
 
@@ -202,6 +207,7 @@ The summary must be concise and decision-oriented. Do not dump full specs. Inclu
 - the proposed epic titles only
 - for each epic, the number of slices you expect
 - for each epic, list the slice titles only
+- any slice that clearly requires unit, integration, or E2E coverage if that affects the split
 - when relevant, which existing epic would be reused or expanded
 - any important scope split rationale only if it affects the user's decision
 
@@ -236,6 +242,7 @@ Requirements:
 - If a section is not applicable, say so briefly instead of leaving it blank
 - Include PostHog events in section `3.4 Analytics` when relevant
 - Include Sentry/observability notes in non-functional requirements and test plan when relevant
+- In the test plan, explicitly evaluate unit, integration, and E2E coverage based on feature risk
 - In `11) Implementation Slices`, list the planned slices by title
 
 If existing feature numbering cannot be determined safely, use a temporary placeholder such as `FEAT-TBD`.
@@ -263,10 +270,15 @@ For each slice:
   - `Goal`
   - `Scope`
   - `Exit criteria`
+  - `Testing`
   - optional `Validation notes`
   - optional `Progress notes`
 - include clear in-scope and out-of-scope boundaries
 - include acceptance criteria
+- include the expected testing coverage for that slice:
+  - `Unit tests`: required / not required with short reason
+  - `Integration tests`: required / not required with short reason
+  - `E2E tests`: required / not required with short reason
 - include validation notes
 - include analytics/error-handling work when it belongs to that slice
 - mention affected routes/modules/data boundaries when useful
@@ -337,6 +349,7 @@ Reject weak planning. Before creating issues, verify:
 - the epic is testable and not vague
 - slices do not overlap
 - slices are not partial/incomplete user flows
+- the epic and each slice state the relevant unit, integration, and E2E expectations
 - analytics are not forgotten for meaningful interactions
 - Sentry is considered for unexpected failures only
 - acceptance criteria can be executed by a human reviewer
