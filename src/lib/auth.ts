@@ -10,6 +10,9 @@ import { sendEmailWithResend } from "@/lib/resend";
 /**
  * Better Auth server instance used by the API route handler and server-side session helpers.
  * Email/password and Google providers are enabled.
+ * Account linking: when a user signs in with Google using an email that already has an
+ * email/password account, the Google account is linked to the same user (no duplicate).
+ * Profile hydration: name and image from Google are stored when available.
  */
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
@@ -19,6 +22,13 @@ export const auth = betterAuth({
   baseURL: getAppBaseUrl(),
   trustedOrigins: [getAppBaseUrl()],
   plugins: [nextCookies()],
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+      updateUserInfoOnLink: true,
+    },
+  },
   emailAndPassword: {
     enabled: true,
   },
@@ -51,6 +61,17 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.BETTER_AUTH_GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.BETTER_AUTH_GOOGLE_CLIENT_SECRET ?? "",
+      mapProfileToUser: (profile) => {
+        const name =
+          (profile.name && profile.name.trim()) ||
+          [profile.given_name, profile.family_name].filter(Boolean).join(" ").trim() ||
+          profile.email?.split("@")[0] ||
+          "User";
+        return {
+          name,
+          image: profile.picture ?? null,
+        };
+      },
     },
   },
 });

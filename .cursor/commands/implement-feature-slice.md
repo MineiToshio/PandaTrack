@@ -52,9 +52,6 @@ Implement one slice issue from GitHub with minimal, reviewable changes.
 Return:
 
 1. `Implemented`: what was completed for this slice
-2. `Files changed`: path + short reason
-3. `Validation`: command results and failures if any
-4. `Exit criteria`: each criterion as `met` / `not met`
-5. `GitHub sync`: what was updated in slice/epic issues and project status
-6. `Functional test steps`: manual step-by-step checks
-7. `Test cases`: concise `Given / When / Then` cases
+2. `Exit criteria`: each criterion as `met` / `not met`
+3. `Functional test steps`: manual step-by-step checks
+4. `Test cases`: concise `Given / When / Then` cases

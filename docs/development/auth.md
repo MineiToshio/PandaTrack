@@ -31,10 +31,20 @@ The auth base URL is not configured via env: it is inferred by `getAppBaseUrl()`
 
 ## Key files
 
-- `src/lib/auth.ts` – Better Auth config (database adapter, plugins, email/password).
+- `src/lib/auth.ts` – Better Auth config (database adapter, plugins, email/password, account linking, Google profile mapping).
 - `src/lib/app-url.ts` – `getAppBaseUrl()` for auth base URL (local vs Vercel).
 - `src/lib/auth-server.ts` – Server-only helpers (e.g. `getSession()`).
 - `src/app/api/auth/[...all]/route.ts` – Catch-all route for Better Auth (sign-in, sign-up, sign-out, get-session, etc.).
+
+## Account linking and profile hydration
+
+When a user signs in with Google using an email that already has an email/password account, Better Auth links the Google account to the same user (no duplicate account). Configuration in `src/lib/auth.ts`:
+
+- **Account linking**: `account.accountLinking.enabled: true` with `trustedProviders: ["google"]`. When the provider confirms the email, sign-in with Google attaches the new account to the existing user.
+- **Update on link**: `updateUserInfoOnLink: true` so that when an account is linked, name and image from the provider can update the user record.
+- **Profile from Google**: `socialProviders.google.mapProfileToUser` maps `name` (from `profile.name`, `given_name`/`family_name`, or email prefix) and `image` (from `profile.picture`) so that new Google sign-ups and linked accounts get profile data stored.
+
+Result: a single user identity can sign in with both email/password and Google; no duplicate user is created for the same email.
 
 ## Database
 
