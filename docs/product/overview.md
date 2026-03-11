@@ -79,6 +79,7 @@ From the current product and planning work, PandaTrack now groups its capabiliti
 - Public product presence: landing, localized messaging, legal trust pages, and SEO/shareability
 - Product measurement and reliability: analytics for meaningful interactions and error monitoring for unexpected failures
 - Account access: sign up, sign in, sign out, route protection, email verification, and password recovery
+- Quality foundation: a risk-based automated testing strategy is now part of delivery planning so critical landing and account flows gain unit, integration, and end-to-end coverage over time
 - Collector workflow foundation: the next major layer is still centered on stores, purchases, pre-order payments, shipments, and dashboard clarity
 
 At a product level, this means the app already covers the outer layer of trust, discovery, and access, while the core tracking workflow remains the next major delivery focus.

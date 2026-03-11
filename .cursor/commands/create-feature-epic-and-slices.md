@@ -12,6 +12,8 @@ Create a GitHub epic and its slice sub-issues from a raw feature idea. The comma
 - Conversation with the user must be in Spanish.
 - Generated GitHub issue content must be in English.
 - Do not write to GitHub or local product docs until the user approves the proposed epic/slice plan.
+- Treat approval as **explicit permission to execute creation/update**, not as general agreement with the planning direction.
+- Do not infer approval from comments like "looks good", "consider this too", "add this case", or feedback that only refines scope. After any meaningful scope update, restate the full proposed epic/slice outcome and wait again for explicit approval to create/update.
 - Do not assume missing product or technical details when they materially affect scope, architecture, integrations, or acceptance criteria.
 - Use `docs/templates/feature-epic-template.md` as the mandatory base for the epic body.
 - GitHub Project is the source of truth: `https://github.com/users/MineiToshio/projects/4`
@@ -226,6 +228,15 @@ Example shape:
 
 Then ask the user for explicit approval before continuing.
 
+Approval must clearly authorize execution, for example:
+
+- "sí, créalo"
+- "dale, procede"
+- "ok, crea eso"
+- "aprobado"
+
+If the user adds scope changes, constraints, or corrections instead of clearly authorizing execution, treat that as **not approved yet**. Update the proposal, show the full updated split again, and ask for explicit approval one more time.
+
 If the user wants changes to the split, adjust the proposal first and ask again if needed.
 
 ### 5. Draft the epic
@@ -310,13 +321,27 @@ Use GitHub MCP to:
 - create each slice issue
 - link slices as sub-issues of the epic
 - apply labels
-- add the issues to the active GitHub Project when possible
+- add the issues to the active GitHub Project
+- set initial GitHub Project `Status` for newly created items unless the user requested a different initial state
+
+Project sync is **mandatory**, not optional. Creating repo issues without adding them to the active GitHub Project is an incomplete result for this command.
+
+If GitHub MCP does not expose the required project operation directly, use any other available authenticated GitHub API path (for example GraphQL) to:
+
+- add the epic to Project `4`
+- add every slice to Project `4`
+- set their initial `Status` (default: `Todo`)
+- verify that the project now contains those items before finishing
+
+Do not report success until this project sync is verified.
 
 Status handling rules:
 
 - if an epic was previously `Done` and new scope is added, change it back to an active project status before finishing
 - if an existing slice is closed, leave it untouched even when the new work is closely related
 - represent any newly requested work as a new slice issue instead of reopening or rewriting a closed slice
+
+If repo issue creation succeeds but project sync fails, do not present the command as fully completed. State the failure explicitly, include the affected issue numbers, and treat the GitHub Project requirement as blocked/incomplete.
 
 If GitHub creation cannot be completed, return the drafted epic and slice content in the chat instead of stopping silently.
 
@@ -336,9 +361,10 @@ Return in Spanish:
 
 1. `Epic created`: epic number/title or draft-only notice
 2. `Slices created`: numbered list with issue numbers/titles or draft-only notice
-3. `Docs updated`: which `docs/product` files were updated
-4. `Open assumptions`: only unresolved non-blocking assumptions
-5. `Planning notes`: only important scope or architecture decisions that shaped the split
+3. `Project updated`: whether the epic and all slices were added to GitHub Project `4`, including initial `Status`
+4. `Docs updated`: which `docs/product` files were updated
+5. `Open assumptions`: only unresolved non-blocking assumptions
+6. `Planning notes`: only important scope or architecture decisions that shaped the split
 
 If an existing epic was reused, say `Epic updated` instead of `Epic created`.
 
@@ -350,6 +376,8 @@ Reject weak planning. Before creating issues, verify:
 - slices do not overlap
 - slices are not partial/incomplete user flows
 - the epic and each slice state the relevant unit, integration, and E2E expectations
+- the user has explicitly approved execution after the latest scope change
+- the epic and every slice are present in GitHub Project `4` before the command is considered complete
 - analytics are not forgotten for meaningful interactions
 - Sentry is considered for unexpected failures only
 - acceptance criteria can be executed by a human reviewer
