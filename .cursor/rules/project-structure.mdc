@@ -173,6 +173,13 @@ Shared utilities live in **`src/lib/`**. Split by **purpose**:
 - When two or more files clearly belong to the same concern, group them in a domain subfolder under `src/lib/` instead of leaving them flat.
   - Examples: `src/lib/auth/` for Better Auth-related files, `src/lib/analytics/` for PostHog helpers, `src/lib/integrations/` for third-party service clients.
 - Leave a file at the `src/lib/` root only when it does not have at least one closely related peer or when it is a cross-domain utility used broadly across the app.
+- When creating a new file in `src/lib/`, first check whether a matching domain folder already exists. If it does, place the file there instead of at the root.
+- When a new `src/lib/` file creates the second file in a clear category, promote that category immediately:
+  - create the domain folder,
+  - move both the existing related file and the new file into it,
+  - update all imports and path references in the same change.
+- Treat this promotion as part of the feature work, not as optional cleanup. Do not leave one old file at the root and one new file inside the category.
+- After any `src/lib/` move, add, or rename, update the `src/lib` inventory doc and any other docs/rules that mention the old paths.
 
 Utils can be client or server functions; place them in the file that matches the classification or library above.
 
