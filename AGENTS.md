@@ -167,3 +167,28 @@ If a command cannot be run, state it explicitly and why.
 - Repeated inline PostHog event strings
 - Large client components when server components would work
 - New folders/files that duplicate an existing pattern
+
+## 11) Command-file enforcement for Codex
+
+When the user references a file under `.cursor/commands/*.md`, treat that file as an execution contract, not as optional context.
+
+Required behavior:
+
+- If the user includes text on the same line as the referenced command file, interpret that text as the command input payload automatically.
+- Do not require the user to restate the command instructions in natural language when the command file and its inputs are already provided.
+- Default to the simplest Cursor-like invocation model: command file reference plus positional input values.
+- Follow the command file `Steps` section as mandatory workflow unless it conflicts with a direct user instruction.
+- Read the command file completely enough to identify any `Output`, `Output format`, `Return`, or equivalent response-shape section.
+- Treat the command file response-shape section as mandatory final response contract.
+- Match the requested output structure, section names, ordering, and formatting as closely as the command specifies.
+- Do not replace the required final output with only a GitHub comment or only an implementation summary.
+- If a command requires external state updates (for example GitHub Project `Status` changes) and the available tools do not support that operation directly, report that explicitly as a blocked requirement in the final response.
+- When possible, still complete all remaining command steps that are supported by available tools.
+
+Input interpretation rules:
+
+- Parse the referenced command file first, then map the inline user text to the command `Inputs` section by position and format.
+- Accept either raw values or URLs when the command input description allows them.
+- If optional extra context is provided after the required input, treat it as additional command context without requiring a special wrapper.
+- Only ask the user for clarification when the provided inline input cannot be mapped safely to the command `Inputs` section.
+- If the command defines no explicit response-shape section, return a concise result summary plus any validation or blocker information required by the command steps.
