@@ -12,6 +12,15 @@ When finalizing changes or running the validation checklist (e.g. after implemen
 3. `npm run lint`
 4. `npm run validate-build`
 
+Additionally:
+
+5. `npm run test:e2e` for any change that touches a workflow already covered by Playwright, or any critical cross-route/browser-driven flow where end-to-end behavior is part of the risk.
+
+If a full E2E run is unnecessarily broad, run the matching scoped spec(s) instead, for example:
+
+- `npm run test:e2e -- e2e/auth.spec.ts`
+- `npm run test:e2e -- e2e/landing.spec.ts`
+
 ## Use validate-build, not build, for validation
 
 Use **`npm run validate-build`** to verify the app compiles. Do **not** use `npm run build` for that.

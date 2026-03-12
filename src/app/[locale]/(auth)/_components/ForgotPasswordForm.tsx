@@ -29,7 +29,6 @@ export default function ForgotPasswordForm({ locale, signInHref }: ForgotPasswor
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
-    setHasSubmitted(false);
 
     const emailTrimmed = email.trim();
 
@@ -99,7 +98,7 @@ export default function ForgotPasswordForm({ locale, signInHref }: ForgotPasswor
         </div>
         {hasSubmitted ? (
           <Typography size="xs" className="text-text-body" role="status" aria-live="polite">
-            {t("success")}
+            {t("locked")}
           </Typography>
         ) : null}
         {error ? (
@@ -107,7 +106,7 @@ export default function ForgotPasswordForm({ locale, signInHref }: ForgotPasswor
             {error}
           </Typography>
         ) : null}
-        <Button type="submit" className="w-full" disabled={isPending}>
+        <Button type="submit" className="w-full" disabled={isPending || hasSubmitted}>
           {isPending ? "..." : t("submit")}
         </Button>
       </form>

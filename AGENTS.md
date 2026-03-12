@@ -143,9 +143,14 @@ For OG image work:
 
 Before finalizing changes, run relevant checks:
 
-1. `npm run type-check`
-2. `npm run lint`
-3. `npm run validate-build` (local validation: generates Prisma client and builds Next.js without applying migrations; use this instead of `npm run build` for agent/local checks)
+1. `npm run test`
+2. `npm run type-check`
+3. `npm run lint`
+4. `npm run validate-build` (local validation: generates Prisma client and builds Next.js without applying migrations; use this instead of `npm run build` for agent/local checks)
+
+Run `npm run test:e2e` whenever the affected workflow already has Playwright coverage, or when the change touches a critical user flow whose real behavior depends on routing, browser state, redirects, form submission, or cross-page transitions.
+
+At minimum, if the repo already has a matching spec for the affected area (for example `e2e/auth.spec.ts` for auth flows or `e2e/landing.spec.ts` for landing flows), run that spec before finalizing.
 
 Use `npm run build` only when simulating or executing the full deploy pipeline (e.g. Vercel); it includes `prisma migrate deploy` and requires a database that accepts migrations.
 

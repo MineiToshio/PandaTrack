@@ -66,6 +66,18 @@ Prioritize tests for:
 - Do not require 100% coverage.
 - Do not add shallow tests for trivial markup with no meaningful logic.
 - Do not add brittle tests tied to implementation details instead of user behavior or stable contracts.
+- Do not assert exact user-facing UX copy in tests unless that wording is itself the requirement.
+
+## Copy assertions
+
+- Prefer assertions on stable behavior:
+  - element visibility
+  - ARIA roles such as `alert` or `status`
+  - URLs and redirects
+  - enabled/disabled state
+  - side effects such as analytics calls or submitted payloads
+- Treat normal product copy as volatile. A copy refresh should not break tests for otherwise-correct behavior.
+- Only assert exact text when the wording is contractual, legal, compliance-related, or intentionally fixed as part of the acceptance criteria.
 
 ## Validation expectation
 

@@ -34,6 +34,7 @@ The auth base URL is not configured via env: it is inferred by `getAppBaseUrl()`
 - `src/lib/auth/auth.ts` – Better Auth config (database adapter, plugins, email/password, account linking, Google profile mapping).
 - `src/lib/auth/authPasswordRecovery.ts` – password reset delivery handling, locale resolution, analytics, and provider failure mapping.
 - `src/lib/auth/authPasswordResetEmail.ts` – localized password reset email copy and HTML generation.
+- `src/app/[locale]/(auth)/reset-password/page.tsx` – localized reset-password route that handles valid-token, invalid-token, and success states.
 - `src/lib/app-url.ts` – `getAppBaseUrl()` for auth base URL (local vs Vercel).
 - `src/lib/auth/auth-server.ts` – Server-only helpers (e.g. `getSession()`).
 - `src/app/api/auth/[...all]/route.ts` – Catch-all route for Better Auth (sign-in, sign-up, sign-out, get-session, etc.).
@@ -42,6 +43,7 @@ The auth base URL is not configured via env: it is inferred by `getAppBaseUrl()`
 
 - Better Auth issues password reset tokens through `requestPasswordReset` and PandaTrack sets `emailAndPassword.resetPasswordTokenExpiresIn` to `3600` seconds (60 minutes).
 - The forgot-password form sends a localized `redirectTo` path so the email link can return the user to the app reset route after Better Auth validates the token.
+- The reset-password route consumes the `token`/`error` query params from Better Auth and keeps recovery UI localized for valid, invalid, and already-used links.
 - Transactional reset emails are sent through Resend with localized copy from `src/i18n/locales/{locale}/auth.json`.
 - Resend delivery failures are surfaced back to the forgot-password UI as a retry-later message and captured for Sentry/PostHog without leaking whether the email exists.
 

@@ -10,7 +10,12 @@ The goal is not full coverage. The goal is to protect the product areas where re
 - Match the test type to the risk.
 - Keep tests deterministic and focused on stable behavior.
 - Avoid tests that mostly duplicate implementation details.
+- Avoid exact-copy assertions for normal UX text. Prefer stable signals like role, visibility, state changes, URLs, disabled/enabled state, and side effects.
 - Use automated checks as a baseline on every meaningful change.
+
+Exception:
+
+- Exact text assertions are allowed only when the text itself is contractual or product-critical, such as legal copy, compliance requirements, or intentionally fixed security wording.
 
 ## Test pyramid for PandaTrack
 
@@ -179,6 +184,7 @@ Usually avoid spending early effort on:
 - static presentational markup with no branching logic
 - trivial wrappers around framework primitives
 - low-risk visual changes better covered by manual review
+- brittle assertions against marketing or UX copy that may evolve without changing the behavior
 
 When a change falls into this category, do not leave testing unspecified. Explicitly document that unit, integration, and E2E tests are not required by risk.
 
@@ -191,6 +197,14 @@ Tests complement, but do not replace, the standard validation checklist:
 3. `npm run validate-build`
 
 When test scripts exist for the affected scope, run the relevant automated tests as part of the same validation pass.
+
+For workflows that already have Playwright coverage, E2E validation is not optional at close-out. Run the matching spec for the touched area, or run the full `npm run test:e2e` suite when multiple covered workflows are affected.
+
+Examples:
+
+- auth flow changes: `npm run test:e2e -- e2e/auth.spec.ts`
+- landing CTA/waitlist changes: `npm run test:e2e -- e2e/landing.spec.ts`
+- broader routing or multiple covered flows: `npm run test:e2e`
 
 ## Practical rollout
 

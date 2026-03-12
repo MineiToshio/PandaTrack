@@ -23,6 +23,7 @@ type EmailPasswordFormProps = {
   passwordAuxiliaryHref?: string;
   passwordAuxiliaryLabel?: string;
   passwordAutoComplete: "current-password" | "new-password";
+  hideEmailField?: boolean;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 };
 
@@ -44,6 +45,7 @@ export default function EmailPasswordForm({
   passwordAuxiliaryHref,
   passwordAuxiliaryLabel,
   passwordAutoComplete,
+  hideEmailField = false,
   onSubmit,
 }: EmailPasswordFormProps) {
   const t = useTranslations("auth.passwordVisibility");
@@ -53,20 +55,22 @@ export default function EmailPasswordForm({
 
   return (
     <form className="space-y-4" onSubmit={onSubmit} noValidate>
-      <div className="space-y-2">
-        <Label htmlFor={emailId}>{emailLabel}</Label>
-        <Input
-          id={emailId}
-          type="email"
-          name="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => onEmailChange(e.target.value)}
-          disabled={isPending}
-          required
-          error={!!error}
-        />
-      </div>
+      {hideEmailField ? null : (
+        <div className="space-y-2">
+          <Label htmlFor={emailId}>{emailLabel}</Label>
+          <Input
+            id={emailId}
+            type="email"
+            name="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => onEmailChange(e.target.value)}
+            disabled={isPending}
+            required
+            error={!!error}
+          />
+        </div>
+      )}
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-3">
           <Label htmlFor={passwordId}>{passwordLabel}</Label>
