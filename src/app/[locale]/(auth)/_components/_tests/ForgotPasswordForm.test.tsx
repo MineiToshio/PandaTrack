@@ -1,5 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ForgotPasswordForm from "@/app/[locale]/(auth)/_components/ForgotPasswordForm";
 import { ROUTES } from "@/lib/constants";
@@ -18,6 +17,10 @@ const translationMap = {
     "We've sent a password reset email if this email is registered with PandaTrack. Check your inbox and spam folder to continue.",
   locked:
     "We've sent a password reset email if this email is registered with PandaTrack. Check your inbox and spam folder to continue.",
+  sentWithCooldown:
+    "We've sent a password reset email if this email is registered with PandaTrack. Check your inbox and spam folder. If you need another one, wait {minutes, plural, one {# minute} other {# minutes}}.",
+  cooldownNotice:
+    "We've already sent a reset link for this email recently. Use the latest email in your inbox and wait {minutes, plural, one {# minute} other {# minutes}} before requesting another.",
   retryLater: "We couldn't send the reset email right now. Please try again in a few minutes.",
   emailRequired: "Email is required.",
   emailInvalid: "Enter a valid email address.",
@@ -25,8 +28,12 @@ const translationMap = {
 } as const;
 
 vi.mock("next-intl", () => ({
-  useTranslations: (namespace: string) => (key: keyof typeof translationMap) => {
+  useTranslations: (namespace: string) => (key: keyof typeof translationMap, values?: Record<string, number>) => {
     if (namespace === "auth.forgotPassword" || namespace === "auth.errors" || namespace === "auth") {
+      if (key === "cooldownNotice" && values?.minutes) {
+        return `${key}:${values.minutes}`;
+      }
+
       return translationMap[key];
     }
 
@@ -53,46 +60,52 @@ vi.mock("@/lib/auth/auth-client", () => ({
 describe("ForgotPasswordForm", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    const storage = new Map<string, string>();
+
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: {
+        getItem: vi.fn((key: string) => storage.get(key) ?? null),
+        setItem: vi.fn((key: string, value: string) => {
+          storage.set(key, value);
+        }),
+        removeItem: vi.fn((key: string) => {
+          storage.delete(key);
+        }),
+        clear: vi.fn(() => {
+          storage.clear();
+        }),
+      },
+    });
   });
 
-  it("locks the form after the first successful reset request until refresh", async () => {
-    const user = userEvent.setup();
+  it("shows the neutral success message after the first successful reset request", async () => {
     requestPasswordResetMock.mockResolvedValue({ error: null });
 
     render(<ForgotPasswordForm locale="en" signInHref="/en/sign-in" />);
 
-    await user.type(screen.getByRole("textbox"), "collector@example.com");
-    await user.click(screen.getByRole("button"));
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "collector@example.com" } });
+    fireEvent.click(screen.getByRole("button"));
 
-    expect(await screen.findByRole("status")).toBeInTheDocument();
-
+    expect(await screen.findByRole("status")).toHaveTextContent(translationMap.success);
     expect(requestPasswordResetMock).toHaveBeenCalledWith({
       email: "collector@example.com",
       redirectTo: `/en${ROUTES.resetPassword}`,
     });
-
-    await waitFor(() => {
-      expect(screen.getByRole("button")).toBeDisabled();
-    });
-    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.getByRole("button")).not.toBeDisabled();
   });
 
-  it("allows sending again after remounting the page", async () => {
-    const user = userEvent.setup();
+  it("shows the remaining wait time instead of sending again during the active cooldown", async () => {
     requestPasswordResetMock.mockResolvedValue({ error: null });
-
-    const { unmount } = render(<ForgotPasswordForm locale="en" signInHref="/en/sign-in" />);
-
-    await user.type(screen.getByRole("textbox"), "collector@example.com");
-    await user.click(screen.getByRole("button"));
-
-    await screen.findByRole("status");
-    unmount();
 
     render(<ForgotPasswordForm locale="en" signInHref="/en/sign-in" />);
 
-    await waitFor(() => {
-      expect(screen.getByRole("button")).not.toBeDisabled();
-    });
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "collector@example.com" } });
+    fireEvent.click(screen.getByRole("button"));
+    await screen.findByRole("status");
+    fireEvent.click(screen.getByRole("button"));
+
+    expect(screen.getByRole("status")).toHaveTextContent("cooldownNotice:2");
+    expect(requestPasswordResetMock).toHaveBeenCalledTimes(1);
   });
 });

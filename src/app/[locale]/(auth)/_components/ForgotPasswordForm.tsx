@@ -9,6 +9,13 @@ import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
 import Typography from "@/components/core/Typography";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import {
+  getPasswordRecoveryActiveThrottleState,
+  getPasswordRecoveryNextThrottleState,
+  getPasswordRecoveryRemainingMinutes,
+  parsePasswordRecoveryThrottleState,
+  PASSWORD_RECOVERY_CLIENT_STORAGE_KEY,
+} from "@/lib/auth/passwordRecoveryThrottle";
 import AuthFormLayout from "./AuthFormLayout";
 import { authClient } from "@/lib/auth/auth-client";
 
@@ -17,28 +24,76 @@ type ForgotPasswordFormProps = {
   signInHref: string;
 };
 
+type ForgotPasswordFeedback = { tone: "status"; message: string } | { tone: "alert"; message: string } | null;
+
+function normalizeRecoveryEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+function readPasswordRecoveryThrottleMap() {
+  try {
+    const rawValue = window.localStorage.getItem(PASSWORD_RECOVERY_CLIENT_STORAGE_KEY);
+
+    if (!rawValue) {
+      return {} as Record<string, string>;
+    }
+
+    const parsed = JSON.parse(rawValue);
+    return typeof parsed === "object" && parsed !== null ? (parsed as Record<string, string>) : {};
+  } catch {
+    return {} as Record<string, string>;
+  }
+}
+
+function writePasswordRecoveryThrottleState(email: string, serializedState: string) {
+  const throttleMap = readPasswordRecoveryThrottleMap();
+
+  throttleMap[normalizeRecoveryEmail(email)] = serializedState;
+  window.localStorage.setItem(PASSWORD_RECOVERY_CLIENT_STORAGE_KEY, JSON.stringify(throttleMap));
+}
+
+function getStoredPasswordRecoveryThrottleState(email: string) {
+  const throttleMap = readPasswordRecoveryThrottleMap();
+  return parsePasswordRecoveryThrottleState(throttleMap[normalizeRecoveryEmail(email)]);
+}
+
 export default function ForgotPasswordForm({ locale, signInHref }: ForgotPasswordFormProps) {
   const t = useTranslations("auth.forgotPassword");
   const tErrors = useTranslations("auth.errors");
   const tAuth = useTranslations("auth");
   const [email, setEmail] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<ForgotPasswordFeedback>(null);
   const [isPending, setIsPending] = useState(false);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
+    setFeedback(null);
 
     const emailTrimmed = email.trim();
 
     if (!emailTrimmed) {
-      setError(tErrors("emailRequired"));
+      setFeedback({ tone: "alert", message: tErrors("emailRequired") });
       return;
     }
 
     if (!emailTrimmed.includes("@")) {
-      setError(tErrors("emailInvalid"));
+      setFeedback({ tone: "alert", message: tErrors("emailInvalid") });
+      return;
+    }
+
+    const now = new Date();
+    const activeThrottleState = getPasswordRecoveryActiveThrottleState(
+      getStoredPasswordRecoveryThrottleState(emailTrimmed),
+      now,
+    );
+
+    if (activeThrottleState) {
+      setFeedback({
+        tone: "status",
+        message: t("cooldownNotice", {
+          minutes: getPasswordRecoveryRemainingMinutes(activeThrottleState, now),
+        }),
+      });
       return;
     }
 
@@ -56,18 +111,24 @@ export default function ForgotPasswordForm({ locale, signInHref }: ForgotPasswor
           locale,
           error_code: requestError.code ?? "unknown",
         });
-        setError(t("retryLater"));
+        setFeedback({ tone: "alert", message: t("retryLater") });
         return;
       }
 
-      setHasSubmitted(true);
+      const nextThrottleState = getPasswordRecoveryNextThrottleState(null, new Date());
+
+      writePasswordRecoveryThrottleState(emailTrimmed, JSON.stringify(nextThrottleState));
+      setFeedback({
+        tone: "status",
+        message: t("success"),
+      });
     } catch (requestError) {
       Sentry.captureException(requestError);
       posthog.capture(POSTHOG_EVENTS.AUTH.FORGOT_PASSWORD_FAILED, {
         locale,
         error_code: "network_error",
       });
-      setError(t("retryLater"));
+      setFeedback({ tone: "alert", message: t("retryLater") });
     } finally {
       setIsPending(false);
     }
@@ -93,20 +154,20 @@ export default function ForgotPasswordForm({ locale, signInHref }: ForgotPasswor
             onChange={(event) => setEmail(event.target.value)}
             disabled={isPending}
             required
-            error={!!error}
+            error={feedback?.tone === "alert"}
           />
         </div>
-        {hasSubmitted ? (
+        {feedback?.tone === "status" ? (
           <Typography size="xs" className="text-text-body" role="status" aria-live="polite">
-            {t("locked")}
+            {feedback.message}
           </Typography>
         ) : null}
-        {error ? (
+        {feedback?.tone === "alert" ? (
           <Typography size="xs" className="text-destructive" role="alert">
-            {error}
+            {feedback.message}
           </Typography>
         ) : null}
-        <Button type="submit" className="w-full" disabled={isPending || hasSubmitted}>
+        <Button type="submit" className="w-full" disabled={isPending}>
           {isPending ? "..." : t("submit")}
         </Button>
       </form>

@@ -1,8 +1,20 @@
 import * as Sentry from "@sentry/nextjs";
+import { createHash } from "node:crypto";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { sendEmailWithResend } from "@/lib/integrations/resend";
 import { buildAuthPasswordResetEmail } from "@/lib/auth/authPasswordResetEmail";
+import {
+  deletePasswordResetVerificationToken,
+  getPasswordRecoveryThrottleMarker,
+  upsertPasswordRecoveryThrottleMarker,
+} from "@/lib/auth/authPasswordRecoveryData";
+import {
+  getPasswordRecoveryActiveThrottleState,
+  getPasswordRecoveryNextThrottleState,
+  getPasswordRecoveryRemainingMinutes,
+  parsePasswordRecoveryThrottleState,
+} from "@/lib/auth/passwordRecoveryThrottle";
 import { Locale, isLocale } from "@/types/locale";
 
 type PasswordRecoveryRequestContext = {
@@ -14,10 +26,63 @@ type PasswordRecoveryRequestContext = {
 
 type PasswordRecoveryThrottleResult = {
   allowed: boolean;
+  cooldownMinutes?: number;
+  scopeId: string;
 };
 
-export async function evaluatePasswordRecoveryThrottle(): Promise<PasswordRecoveryThrottleResult> {
-  return { allowed: true };
+function normalizeRecoveryEmail(email: string) {
+  return email.trim().toLowerCase();
+}
+
+function getRequestIpAddress(request: Request | undefined) {
+  const forwardedFor = request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+
+  return (
+    forwardedFor ||
+    request?.headers.get("cf-connecting-ip")?.trim() ||
+    request?.headers.get("x-real-ip")?.trim() ||
+    "unknown-ip"
+  );
+}
+
+function getRequestDeviceSignature(request: Request | undefined) {
+  const userAgent = request?.headers.get("user-agent")?.trim() || "unknown-user-agent";
+  const acceptLanguage = request?.headers.get("accept-language")?.trim() || "unknown-language";
+
+  return `${userAgent}|${acceptLanguage}`;
+}
+
+function buildPasswordRecoveryThrottleScopeId(email: string, request: Request | undefined) {
+  const fingerprint = createHash("sha256")
+    .update(`${normalizeRecoveryEmail(email)}|${getRequestIpAddress(request)}|${getRequestDeviceSignature(request)}`)
+    .digest("hex");
+
+  return `password-recovery-throttle:${fingerprint}`;
+}
+
+export async function evaluatePasswordRecoveryThrottle(
+  email: string,
+  request: Request | undefined,
+): Promise<PasswordRecoveryThrottleResult> {
+  const scopeId = buildPasswordRecoveryThrottleScopeId(email, request);
+  const existingMarker = await getPasswordRecoveryThrottleMarker(scopeId);
+  const now = new Date();
+  const currentState = parsePasswordRecoveryThrottleState(existingMarker?.value);
+  const activeState = getPasswordRecoveryActiveThrottleState(currentState, now);
+
+  if (activeState) {
+    const nextState = getPasswordRecoveryNextThrottleState(activeState, now);
+
+    await upsertPasswordRecoveryThrottleMarker(scopeId, nextState);
+
+    return {
+      allowed: false,
+      cooldownMinutes: getPasswordRecoveryRemainingMinutes(nextState, now),
+      scopeId,
+    };
+  }
+
+  return { allowed: true, scopeId };
 }
 
 const DEFAULT_LOCALE: Locale = "es";
@@ -93,17 +158,27 @@ function createPasswordRecoveryDeliveryError(): Error {
 export async function handlePasswordRecoveryRequest({
   email,
   request,
+  token,
   url,
 }: PasswordRecoveryRequestContext): Promise<void> {
-  const throttleResult = await evaluatePasswordRecoveryThrottle();
+  const throttleResult = await evaluatePasswordRecoveryThrottle(email, request);
+  const posthog = getPostHogClient();
 
   if (!throttleResult.allowed) {
+    await deletePasswordResetVerificationToken(token);
+    posthog.capture({
+      distinctId: email,
+      event: POSTHOG_EVENTS.AUTH.FORGOT_PASSWORD_FAILED,
+      properties: {
+        reason: "rate_limited",
+        cooldown_minutes: throttleResult.cooldownMinutes,
+      },
+    });
     return;
   }
 
   const locale = resolvePasswordRecoveryLocale(url, request);
   const emailContent = await buildAuthPasswordResetEmail(locale, url);
-  const posthog = getPostHogClient();
 
   try {
     await sendEmailWithResend({
@@ -120,7 +195,12 @@ export async function handlePasswordRecoveryRequest({
         locale,
       },
     });
+    await upsertPasswordRecoveryThrottleMarker(
+      throttleResult.scopeId,
+      getPasswordRecoveryNextThrottleState(null, new Date()),
+    );
   } catch (error) {
+    await deletePasswordResetVerificationToken(token);
     Sentry.captureException(error, {
       tags: {
         auth_flow: "password_recovery",

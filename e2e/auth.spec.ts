@@ -21,8 +21,11 @@ test.describe("Auth critical flows", () => {
     await expect(page.locator("#forgot-password-email")).toBeVisible();
   });
 
-  test("forgot-password success feedback is shown after the auth endpoint succeeds", async ({ page }) => {
+  test("forgot-password success stays neutral and repeated local retries are throttled", async ({ page }) => {
+    let requestCount = 0;
+
     await page.route("**/api/auth/request-password-reset", async (route) => {
+      requestCount += 1;
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -35,7 +38,13 @@ test.describe("Auth critical flows", () => {
     await page.getByRole("button", { name: "Send reset link" }).click();
 
     await expect(page.getByRole("status")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Send reset link" })).toBeDisabled();
+    await expect(page.getByRole("status")).not.toContainText("wait");
+    await expect(page.getByRole("button", { name: "Send reset link" })).toBeEnabled();
+
+    await page.getByRole("button", { name: "Send reset link" }).click();
+
+    await expect(page.getByRole("status")).toContainText("wait");
+    expect(requestCount).toBe(1);
   });
 
   test("sign-up maps an existing-account auth error to the localized message", async ({ page }) => {
