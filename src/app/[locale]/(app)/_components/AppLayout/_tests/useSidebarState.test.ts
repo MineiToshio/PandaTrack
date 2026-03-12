@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useSidebarState } from "../useSidebarState";
 import { APP_SHELL_SIDEBAR_STORAGE_KEY } from "@/lib/constants";
@@ -24,10 +24,10 @@ describe("useSidebarState", () => {
     expect(result.current.expanded).toBe(true);
   });
 
-  it("returns expanded false when storage has collapsed value", () => {
+  it("returns expanded false after hydration when storage has collapsed value", async () => {
     storage[APP_SHELL_SIDEBAR_STORAGE_KEY] = "false";
     const { result } = renderHook(() => useSidebarState());
-    expect(result.current.expanded).toBe(false);
+    await waitFor(() => expect(result.current.expanded).toBe(false));
   });
 
   it("toggle flips expanded and persists to storage", () => {

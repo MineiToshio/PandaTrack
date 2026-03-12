@@ -80,5 +80,6 @@ export const POSTHOG_EVENTS = {
   APP_SHELL: {
     SIDEBAR_TOGGLED: "app_shell_sidebar_toggled",
     NAV_CLICKED: "app_shell_nav_clicked",
+    DRAWER_OPENED: "app_shell_drawer_opened",
   },
 } as const;

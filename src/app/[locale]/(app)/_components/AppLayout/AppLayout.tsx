@@ -1,6 +1,8 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import AppNavDrawer from "./AppNavDrawer";
 import AppSidebar from "./AppSidebar";
 import ContentHeader from "./ContentHeader";
 import { useSidebarState } from "./useSidebarState";
@@ -17,12 +19,18 @@ type AppLayoutProps = {
 export default function AppLayout({ locale, signOutLabel, children }: AppLayoutProps) {
   const pathname = usePathname();
   const { expanded, toggle } = useSidebarState();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const burgerButtonRef = useRef<HTMLButtonElement>(null);
 
   const contentOffsetRem = expanded ? SIDEBAR_WIDTH_EXPANDED_REM : SIDEBAR_RAIL_WIDTH_REM;
+
+  const handleOpenDrawer = () => setDrawerOpen(true);
+  const handleCloseDrawer = () => setDrawerOpen(false);
 
   return (
     <div className="flex min-h-screen flex-col">
       <AppSidebar locale={locale} expanded={expanded} onToggle={toggle} />
+      <AppNavDrawer locale={locale} isOpen={drawerOpen} onClose={handleCloseDrawer} returnFocusRef={burgerButtonRef} />
 
       {/* Content area: offset on desktop (lg) so it starts after the sidebar */}
       <div className="flex min-w-0 flex-1 flex-col">
@@ -34,7 +42,14 @@ export default function AppLayout({ locale, signOutLabel, children }: AppLayoutP
           }
         `}</style>
         <div className="app-layout-content flex min-w-0 flex-1 flex-col">
-          <ContentHeader locale={locale} pathname={pathname ?? ""} signOutLabel={signOutLabel} />
+          <ContentHeader
+            locale={locale}
+            pathname={pathname ?? ""}
+            signOutLabel={signOutLabel}
+            drawerOpen={drawerOpen}
+            onOpenDrawer={handleOpenDrawer}
+            burgerButtonRef={burgerButtonRef}
+          />
           <main className="flex min-w-0 flex-1 flex-col">{children}</main>
         </div>
       </div>

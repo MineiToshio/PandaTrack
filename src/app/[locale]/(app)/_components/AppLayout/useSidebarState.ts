@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { APP_SHELL_SIDEBAR_STORAGE_KEY } from "@/lib/constants";
 
 const STORAGE_VALUE_EXPANDED = "true";
 const STORAGE_VALUE_COLLAPSED = "false";
 
+const DEFAULT_EXPANDED = true;
+
 function readStoredPreference(): boolean {
-  if (typeof window === "undefined") return true;
+  if (typeof window === "undefined") return DEFAULT_EXPANDED;
   try {
     const stored = localStorage.getItem(APP_SHELL_SIDEBAR_STORAGE_KEY);
     if (stored === STORAGE_VALUE_EXPANDED) return true;
@@ -15,7 +17,7 @@ function readStoredPreference(): boolean {
   } catch {
     // Ignore storage errors
   }
-  return true;
+  return DEFAULT_EXPANDED;
 }
 
 function writeStoredPreference(expanded: boolean) {
@@ -27,7 +29,11 @@ function writeStoredPreference(expanded: boolean) {
 }
 
 export function useSidebarState() {
-  const [expanded, setExpandedState] = useState(() => (typeof window === "undefined" ? true : readStoredPreference()));
+  const [expanded, setExpandedState] = useState(DEFAULT_EXPANDED);
+
+  useEffect(() => {
+    setExpandedState(readStoredPreference());
+  }, []);
 
   const setExpanded = useCallback((next: boolean) => {
     setExpandedState(next);

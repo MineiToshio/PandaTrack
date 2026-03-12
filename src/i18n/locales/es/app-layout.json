@@ -10,6 +10,10 @@
     "expand": "Expandir barra lateral",
     "collapse": "Contraer barra lateral"
   },
+  "drawer": {
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú"
+  },
   "placeholder": "Contenido próximamente.",
   "meta": {
     "description": "Espacio de trabajo del coleccionista PandaTrack."
