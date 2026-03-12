@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import posthog from "posthog-js";
@@ -5,7 +6,8 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import ResetPasswordForm from "@/app/[locale]/(auth)/_components/ResetPasswordForm";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 
-const { pushMock, resetPasswordMock } = vi.hoisted(() => ({
+const { captureExceptionMock, pushMock, resetPasswordMock } = vi.hoisted(() => ({
+  captureExceptionMock: vi.fn(),
   pushMock: vi.fn(),
   resetPasswordMock: vi.fn(),
 }));
@@ -54,7 +56,7 @@ vi.mock("posthog-js", () => ({
 }));
 
 vi.mock("@sentry/nextjs", () => ({
-  captureException: vi.fn(),
+  captureException: captureExceptionMock,
 }));
 
 vi.mock("@/lib/auth/auth-client", () => ({
@@ -117,6 +119,9 @@ describe("ResetPasswordForm", () => {
       token: "valid-token",
       newPassword: "new-password-123",
     });
+    expect(posthog.capture).toHaveBeenCalledWith(POSTHOG_EVENTS.AUTH.RESET_PASSWORD_SUBMITTED, {
+      locale: "en",
+    });
     expect(posthog.capture).toHaveBeenCalledWith(POSTHOG_EVENTS.AUTH.RESET_PASSWORD_SUCCESS, {
       locale: "en",
     });
@@ -150,5 +155,31 @@ describe("ResetPasswordForm", () => {
       error_code: "INVALID_TOKEN",
     });
     expect(await screen.findByRole("heading", { level: 1 })).toBeInTheDocument();
+  });
+
+  it("captures unexpected reset failures in Sentry and shows the fallback error", async () => {
+    const user = userEvent.setup();
+    const networkError = new Error("Network unavailable");
+    resetPasswordMock.mockRejectedValue(networkError);
+
+    render(
+      <ResetPasswordForm
+        token="valid-token"
+        signInHref="/en/sign-in"
+        forgotPasswordHref="/en/forgot-password"
+        initialState="ready"
+        invalidDescription={translationMap.invalidDescription}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(translationMap.password), "new-password-123");
+    await user.click(getSubmitButton());
+
+    expect(Sentry.captureException).toHaveBeenCalledWith(networkError);
+    expect(posthog.capture).toHaveBeenCalledWith(POSTHOG_EVENTS.AUTH.RESET_PASSWORD_FAILED, {
+      locale: "en",
+      error_code: "network_error",
+    });
+    expect(await screen.findByRole("alert")).toHaveTextContent(translationMap.error);
   });
 });

@@ -1,9 +1,13 @@
+import * as Sentry from "@sentry/nextjs";
 import { fireEvent, render, screen } from "@testing-library/react";
+import posthog from "posthog-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ForgotPasswordForm from "@/app/[locale]/(auth)/_components/ForgotPasswordForm";
-import { ROUTES } from "@/lib/constants";
+import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 
-const { requestPasswordResetMock } = vi.hoisted(() => ({
+const { captureExceptionMock, posthogCaptureMock, requestPasswordResetMock } = vi.hoisted(() => ({
+  captureExceptionMock: vi.fn(),
+  posthogCaptureMock: vi.fn(),
   requestPasswordResetMock: vi.fn(),
 }));
 
@@ -43,12 +47,12 @@ vi.mock("next-intl", () => ({
 
 vi.mock("posthog-js", () => ({
   default: {
-    capture: vi.fn(),
+    capture: posthogCaptureMock,
   },
 }));
 
 vi.mock("@sentry/nextjs", () => ({
-  captureException: vi.fn(),
+  captureException: captureExceptionMock,
 }));
 
 vi.mock("@/lib/auth/auth-client", () => ({
@@ -92,6 +96,9 @@ describe("ForgotPasswordForm", () => {
       email: "collector@example.com",
       redirectTo: `/en${ROUTES.resetPassword}`,
     });
+    expect(posthog.capture).toHaveBeenCalledWith(POSTHOG_EVENTS.AUTH.FORGOT_PASSWORD_SUBMITTED, {
+      locale: "en",
+    });
     expect(screen.getByRole("button")).not.toBeDisabled();
   });
 
@@ -107,5 +114,47 @@ describe("ForgotPasswordForm", () => {
 
     expect(screen.getByRole("status")).toHaveTextContent("cooldownNotice:2");
     expect(requestPasswordResetMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("tracks auth API failures and shows the retry-later message", async () => {
+    requestPasswordResetMock.mockResolvedValue({
+      error: {
+        code: "PASSWORD_RESET_EMAIL_DELIVERY_FAILED",
+      },
+    });
+
+    render(<ForgotPasswordForm locale="en" signInHref="/en/sign-in" />);
+
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "collector@example.com" } });
+    fireEvent.click(screen.getByRole("button"));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(translationMap.retryLater);
+    expect(posthog.capture).toHaveBeenNthCalledWith(1, POSTHOG_EVENTS.AUTH.FORGOT_PASSWORD_SUBMITTED, {
+      locale: "en",
+    });
+    expect(posthog.capture).toHaveBeenNthCalledWith(2, POSTHOG_EVENTS.AUTH.FORGOT_PASSWORD_FAILED, {
+      locale: "en",
+      error_code: "PASSWORD_RESET_EMAIL_DELIVERY_FAILED",
+    });
+  });
+
+  it("captures unexpected request failures in Sentry and PostHog", async () => {
+    const networkError = new Error("Network unavailable");
+    requestPasswordResetMock.mockRejectedValue(networkError);
+
+    render(<ForgotPasswordForm locale="en" signInHref="/en/sign-in" />);
+
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "collector@example.com" } });
+    fireEvent.click(screen.getByRole("button"));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(translationMap.retryLater);
+    expect(Sentry.captureException).toHaveBeenCalledWith(networkError);
+    expect(posthog.capture).toHaveBeenNthCalledWith(1, POSTHOG_EVENTS.AUTH.FORGOT_PASSWORD_SUBMITTED, {
+      locale: "en",
+    });
+    expect(posthog.capture).toHaveBeenNthCalledWith(2, POSTHOG_EVENTS.AUTH.FORGOT_PASSWORD_FAILED, {
+      locale: "en",
+      error_code: "network_error",
+    });
   });
 });

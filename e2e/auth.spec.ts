@@ -47,6 +47,33 @@ test.describe("Auth critical flows", () => {
     expect(requestCount).toBe(1);
   });
 
+  test("reset-password renders the invalid-link recovery state", async ({ page }) => {
+    await page.goto("/en/reset-password?error=INVALID_TOKEN");
+
+    await expect(page.getByRole("heading", { level: 1, name: "This reset link is not valid" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Request another reset link" })).toHaveAttribute(
+      "href",
+      "/en/forgot-password",
+    );
+  });
+
+  test("reset-password accepts a valid token and shows the success state", async ({ page }) => {
+    await page.route("**/api/auth/reset-password", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ status: true }),
+      });
+    });
+
+    await page.goto("/en/reset-password?token=valid-token");
+    await page.getByLabel("New password").fill("new-password-123");
+    await page.getByRole("button", { name: "Update password" }).click();
+
+    await expect(page.getByRole("heading", { level: 1, name: "Password updated" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Go to sign in" })).toBeVisible();
+  });
+
   test("sign-up maps an existing-account auth error to the localized message", async ({ page }) => {
     await page.route("**/api/auth/sign-up/email", async (route) => {
       await route.fulfill({
