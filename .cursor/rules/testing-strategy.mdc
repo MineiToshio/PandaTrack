@@ -79,5 +79,7 @@ When test infrastructure exists for the affected scope, run the relevant automat
 
 - Co-locate tests with the feature they protect.
 - For multi-file components or feature folders, place test files in a dedicated **`_tests/`** folder inside that feature folder.
+- Put Playwright specs in a top-level **`e2e/`** folder and split them by domain or workflow area such as `landing.spec.ts`, `auth.spec.ts`, or `dashboard.spec.ts`.
+- Do not group unrelated domains into one large E2E spec file when separate domain files would keep the suite easier to scan.
 - Use **`src/test/`** only for shared test infrastructure such as render helpers, fixtures, factories, or reusable mocks.
 - Avoid mixing large numbers of `*.test.ts(x)` siblings directly with implementation files when a feature already has its own folder.

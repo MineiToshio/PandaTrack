@@ -88,17 +88,19 @@ This stack balances fast local feedback with realistic coverage for App Router b
 
 ## Current baseline
 
-The repository now includes a Vitest + React Testing Library baseline for fast unit and integration checks on isolated modules and Client Components.
+The repository now includes a Vitest + React Testing Library baseline for fast unit and integration checks on isolated modules and Client Components, plus a small Playwright suite for cross-route landing and auth flows.
 
 Use these commands locally:
 
 1. `npm run test`
 2. `npm run test:watch`
+3. `npm run test:e2e`
 
 Current representative coverage:
 
 - unit coverage for isolated analytics helper behavior
 - landing waitlist coverage for server-action contracts, client validation/submission behavior, and share interactions
+- Playwright coverage for critical landing CTA, auth entry, password recovery, and unauthenticated dashboard access flows
 
 ## Test file organization
 
@@ -107,6 +109,7 @@ PandaTrack keeps tests close to the code they protect, but not mixed indiscrimin
 Use this convention:
 
 - feature- or component-specific tests go in **`_tests/`** inside the relevant multi-file folder
+- Playwright E2E specs go in **`e2e/`** and must be split by domain or workflow area such as `landing.spec.ts`, `auth.spec.ts`, or `dashboard.spec.ts`
 - shared testing helpers go in **`src/test/`**
 
 Example:
@@ -116,12 +119,15 @@ Example:
 - `src/app/[locale]/(landing)/_components/Waitlist/_tests/Waitlist.test.tsx`
 - `src/app/[locale]/(landing)/_components/Waitlist/_tests/submitWaitlist.test.ts`
 - `src/app/[locale]/(landing)/_components/Waitlist/_tests/WaitlistShare.test.tsx`
+- `e2e/landing.spec.ts`
+- `e2e/auth.spec.ts`
 
 Why this split:
 
 - `_tests/` keeps the feature folder easy to scan
 - co-location keeps test intent discoverable during implementation and refactors
 - `src/test/` avoids duplicating setup code across unrelated areas
+- domain-based E2E files avoid turning browser coverage into one large mixed spec that is harder to scan and maintain
 
 Use `src/test/` for things like:
 
