@@ -12,6 +12,9 @@ The MVP follows this workflow priority:
 
 ## In scope
 
+- Collector workspace shell for private routes
+- Dashboard-first private navigation
+- Page-level search inside the relevant modules when needed
 - Store discovery by category
 - Store trust indicators (reviews/feedback)
 - Purchase tracking with item-level detail
@@ -21,6 +24,8 @@ The MVP follows this workflow priority:
 
 ## Out of scope (later phases)
 
+- Global search in the private app header
+- Sidebar mini stats and gamification surfaces
 - Full collection management
 - Wishlist management
 - Advanced analytics and automation-heavy features
@@ -31,3 +36,4 @@ The MVP follows this workflow priority:
 - Upcoming balances are visible and predictable
 - Fewer missed follow-ups on delayed or silent shipments
 - Clear trust context before buying from a store
+- Users can understand the private app structure and reach the main workflow areas immediately after sign-in

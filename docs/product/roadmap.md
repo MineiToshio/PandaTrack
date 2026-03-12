@@ -2,6 +2,7 @@
 
 ## Phase 1: Tracking foundation (MVP)
 
+- Collector workspace shell and dashboard-first navigation
 - Store database and discovery
 - Store trust signals/reviews (initial version)
 - Purchases/orders with item list
@@ -18,6 +19,7 @@
 ## Phase 3: Power features (optional)
 
 - Advanced analytics
+- Global search or command palette if module-level search usage proves the need
 - Smarter reminders and follow-ups
 - Better organization at larger scale
 
