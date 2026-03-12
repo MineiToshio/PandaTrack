@@ -3,6 +3,9 @@ export const EMAIL_FROM_NAME = APP_NAME;
 
 export const THEME_STORAGE_KEY = "theme";
 
+/** Local storage key for private app sidebar expanded/collapsed preference. */
+export const APP_SHELL_SIDEBAR_STORAGE_KEY = "appShellSidebarExpanded";
+
 /** Path segments for app routes (no locale prefix). Use with `/${locale}${ROUTES.xyz}` for links. */
 export const ROUTES = {
   home: "",
@@ -15,10 +18,12 @@ export const ROUTES = {
   verifyEmailStatus: "/verify-email",
   verifyEmailGate: "/verify-email-required",
   dashboard: "/dashboard",
+  stores: "/stores",
   purchases: "/purchases",
   payments: "/payments",
   shipments: "/shipments",
   budget: "/budget",
+  settings: "/settings",
 } as const;
 
 /** Query param for referral links (e.g. waitlist share). Value used in share/copy link. */
@@ -71,5 +76,9 @@ export const POSTHOG_EVENTS = {
     VERIFY_EMAIL_FAILED: "auth_verify_email_failed",
     PRIVATE_ACCESS_BLOCKED_UNVERIFIED: "auth_private_access_blocked_unverified",
     VERIFY_EMAIL_RESEND_CLICKED: "auth_verify_email_resent_clicked",
+  },
+  APP_SHELL: {
+    SIDEBAR_TOGGLED: "app_shell_sidebar_toggled",
+    NAV_CLICKED: "app_shell_nav_clicked",
   },
 } as const;

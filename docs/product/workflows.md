@@ -3,7 +3,7 @@
 ## Collector workspace entry
 
 - Enter the private app and land on the dashboard first
-- Use the shared shell to move across the main collector areas
+- Use the shared layout to move across the main collector areas
 - Keep navigation stable through a left sidebar and a content header
 - Use module-level searches inside the relevant pages instead of a global header search in MVP
 
@@ -46,7 +46,7 @@
 - What is still unpaid, and when is it due?
 - What is this month's spending outlook?
 
-## Shell behavior expectations
+## Layout behavior expectations
 
 - Desktop uses a hybrid sidebar with expanded, collapsed, and floating-preview behavior
 - Tablet and mobile use a drawer-style navigation pattern instead of hover

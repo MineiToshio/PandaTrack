@@ -4,34 +4,33 @@ import { buildPageMetadata } from "@/lib/seo";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 
-type DashboardPageProps = {
+type PurchasesPageProps = {
   params: Promise<{ locale: string }>;
 };
 
-export async function generateMetadata({ params }: DashboardPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: PurchasesPageProps): Promise<Metadata> {
   const { locale } = await params;
   return buildPageMetadata({
     locale,
-    namespace: "dashboard",
-    pathSegment: "dashboard",
-    titleKey: "meta.title",
+    namespace: "appLayout",
+    pathSegment: "purchases",
+    titleKey: "nav.purchases",
     descriptionKey: "meta.description",
   });
 }
 
-export default async function DashboardPage({ params }: DashboardPageProps) {
+export default async function PurchasesPage({ params }: PurchasesPageProps) {
   const { locale } = await params;
-
-  const t = await getTranslations({ locale, namespace: "dashboard" });
+  const t = await getTranslations({ locale, namespace: "appLayout" });
 
   return (
     <div className="bg-background text-foreground px-4 py-8">
       <div className="mx-auto max-w-4xl">
-        <Heading as="h1" size="sm" className="text-text-title">
-          {t("title")}
+        <Heading as="h2" size="sm" className="text-text-title">
+          {t("nav.purchases")}
         </Heading>
         <Typography size="md" className="text-text-body mt-2">
-          {t("welcome")}
+          {t("placeholder")}
         </Typography>
       </div>
     </div>

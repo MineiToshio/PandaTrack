@@ -1,0 +1,17 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "stores": "Stores",
+    "purchases": "Purchases",
+    "shipments": "Shipments",
+    "settings": "Settings"
+  },
+  "sidebar": {
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar"
+  },
+  "placeholder": "Content coming soon.",
+  "meta": {
+    "description": "PandaTrack collector workspace."
+  }
+}

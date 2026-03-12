@@ -4,7 +4,7 @@
 
 Define the product-level layout direction for PandaTrack's private collector workspace.
 
-This document captures how the app shell should feel, how users move through it, and how the structure can grow without a redesign when dashboard, stores, purchases, shipments, quick actions, compact stats, and lightweight gamification mature.
+This document captures how the app layout should feel, how users move through it, and how the structure can grow without a redesign when dashboard, stores, purchases, shipments, quick actions, compact stats, and lightweight gamification mature.
 
 ## Product intent
 
@@ -18,7 +18,7 @@ The private app should feel:
 
 The design goal is not a neutral admin panel. It should still feel like a collector product for a hobby audience, especially younger users who expect personality, momentum, and visible progress.
 
-## Core shell structure
+## Core layout structure
 
 The collector workspace uses:
 
@@ -49,7 +49,7 @@ The dashboard is the default entry point after sign-in and should become the str
 
 ## Desktop sidebar behavior
 
-The desktop shell uses a hybrid sidebar model:
+The desktop layout uses a hybrid sidebar model:
 
 - Expanded:
   - shows icons and labels
@@ -62,7 +62,7 @@ The desktop shell uses a hybrid sidebar model:
   - when the collapsed rail is hovered or keyboard-focused, the full menu appears as a floating panel
   - the content area does not resize or shift
 
-This model gives power users a stable shell while preserving more screen space when they want a lighter view.
+This model gives power users a stable layout while preserving more screen space when they want a lighter view.
 
 The expanded/collapsed preference should be remembered locally in the browser.
 
@@ -83,7 +83,7 @@ It should not include a global search field in MVP.
 
 ## Search strategy
 
-For MVP, search belongs inside the relevant module rather than in the global shell.
+For MVP, search belongs inside the relevant module rather than in the global layout.
 
 Examples:
 
@@ -91,22 +91,22 @@ Examples:
 - Purchases page search
 - Shipments page search
 
-This keeps the shell simpler while the team learns which search behaviors users actually need. A future global search or command palette can be reconsidered later based on usage.
+This keeps the layout simpler while the team learns which search behaviors users actually need. A future global search or command palette can be reconsidered later based on usage.
 
 ## Information density
 
-The shell should begin from a low-friction, easy-to-understand baseline.
+The layout should begin from a low-friction, easy-to-understand baseline.
 
 PandaTrack should be understandable even for users with little experience in complex productivity tools, while still leaving room for denser and more advanced views later through per-page patterns and settings.
 
-The shell itself should stay medium-density:
+The layout itself should stay medium-density:
 
 - enough structure to feel useful
 - enough breathing room to feel inviting
 
 ## Motion and personality
 
-The shell should feel polished and alive, but not noisy.
+The layout should feel polished and alive, but not noisy.
 
 Useful motion areas:
 
@@ -134,7 +134,7 @@ Responsive behavior should preserve the same information architecture even when 
 
 ## Future-ready zones
 
-The shell should reserve structural room for compact future additions without making MVP visually heavy.
+The layout should reserve structural room for compact future additions without making MVP visually heavy.
 
 Likely future additions:
 
@@ -150,7 +150,7 @@ These future surfaces should stay compact and glanceable. The sidebar is not int
 ## Product constraints
 
 - Keep dashboard-first orientation
-- Keep the shell simple enough for first-time users
-- Keep all shell copy localized in `es` and `en`
+- Keep the layout simple enough for first-time users
+- Keep all layout copy localized in `es` and `en`
 - Keep navigation stable across product growth
-- Keep future expansion possible without rethinking the entire app shell
+- Keep future expansion possible without rethinking the entire app layout

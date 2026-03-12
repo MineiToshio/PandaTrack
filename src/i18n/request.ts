@@ -21,6 +21,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
       privacy: (await import(`./locales/${locale}/privacy.json`)).default,
       auth: (await import(`./locales/${locale}/auth.json`)).default,
       dashboard: (await import(`./locales/${locale}/dashboard.json`)).default,
+      appLayout: (await import(`./locales/${locale}/app-layout.json`)).default,
     },
   };
 });

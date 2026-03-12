@@ -15,7 +15,15 @@ export function getSiteUrl(): string {
   return "http://localhost:3000";
 }
 
-export type PageCanonicalSegment = "" | "terms" | "privacy" | "dashboard";
+export type PageCanonicalSegment =
+  | ""
+  | "terms"
+  | "privacy"
+  | "dashboard"
+  | "stores"
+  | "purchases"
+  | "shipments"
+  | "settings";
 
 /**
  * Builds the path segment for a canonical URL (no leading slash for home, e.g. "" or "/en", "/terms", "/en/terms").
@@ -28,7 +36,7 @@ export function buildCanonicalPath(locale: string, segment: PageCanonicalSegment
 
 export type BuildPageMetadataOptions = {
   locale: string;
-  namespace: "terms" | "privacy" | "landing" | "dashboard";
+  namespace: "terms" | "privacy" | "landing" | "dashboard" | "appLayout";
   pathSegment: PageCanonicalSegment;
   titleKey: string;
   descriptionKey: string;

@@ -12,7 +12,7 @@ The MVP follows this workflow priority:
 
 ## In scope
 
-- Collector workspace shell for private routes
+- Collector workspace layout for private routes
 - Dashboard-first private navigation
 - Page-level search inside the relevant modules when needed
 - Store discovery by category

@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
-import SignOutButton from "@/components/modules/auth/SignOutButton";
+import AppLayout from "@/app/[locale]/(app)/_components/AppLayout/AppLayout";
 import VerifyEmailBanner from "@/components/modules/auth/VerifyEmailBanner";
 import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
 import { getSession } from "@/lib/auth/auth-server";
@@ -34,20 +34,19 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
     await maybeSendDaySixVerificationReminder(snapshot, `/${locale}${ROUTES.dashboard}`, requestHeaders);
   }
 
+  const tAuth = await getTranslations({ locale, namespace: "auth" });
+
   if (snapshot?.state !== "grace") {
-    const tAuth = await getTranslations({ locale, namespace: "auth" });
     return (
       <>
-        <header className="border-border bg-background flex items-center justify-end gap-4 px-4 py-3">
-          <SignOutButton locale={locale} label={tAuth("signOut")} />
-        </header>
-        {children}
+        <AppLayout locale={locale} signOutLabel={tAuth("signOut")}>
+          {children}
+        </AppLayout>
       </>
     );
   }
 
   const tVerification = await getTranslations({ locale, namespace: "auth.verificationBanner" });
-  const tAuth = await getTranslations({ locale, namespace: "auth" });
 
   return (
     <>
@@ -63,10 +62,9 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
           resendError={tVerification("resendError")}
         />
       </div>
-      <header className="border-border bg-background flex items-center justify-end gap-4 px-4 py-3">
-        <SignOutButton locale={locale} label={tAuth("signOut")} />
-      </header>
-      {children}
+      <AppLayout locale={locale} signOutLabel={tAuth("signOut")}>
+        {children}
+      </AppLayout>
     </>
   );
 }

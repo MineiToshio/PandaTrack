@@ -1,0 +1,17 @@
+{
+  "nav": {
+    "dashboard": "Panel",
+    "stores": "Tiendas",
+    "purchases": "Compras",
+    "shipments": "Envíos",
+    "settings": "Ajustes"
+  },
+  "sidebar": {
+    "expand": "Expandir barra lateral",
+    "collapse": "Contraer barra lateral"
+  },
+  "placeholder": "Contenido próximamente.",
+  "meta": {
+    "description": "Espacio de trabajo del coleccionista PandaTrack."
+  }
+}

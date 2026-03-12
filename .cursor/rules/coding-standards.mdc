@@ -114,7 +114,7 @@ Whenever the same components, functions, behavior, or logic appears in more than
 
 ```tsx
 // ❌ Avoid: same layout and form structure duplicated in two pages
-// SignInForm.tsx and SignUpForm.tsx each with 60+ lines of identical shell + similar fields
+// SignInForm.tsx and SignUpForm.tsx each with 60+ lines of identical layout + similar fields
 
 // ✅ Prefer: shared layout and shared form component; each page keeps only its specific logic
 <AuthFormLayout title={...} footerLinkHref={...}>

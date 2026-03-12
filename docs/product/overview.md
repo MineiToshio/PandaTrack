@@ -56,9 +56,9 @@ The account foundation is now taking shape around a secure collector workspace:
 - Protected private access for account-based product areas
 - Email verification lifecycle and account protection rules
 - Account recovery for people who forget their password
-- A planned collector workspace shell centered on dashboard-first navigation and a reusable private app layout
+- A planned collector workspace layout centered on dashboard-first navigation and a reusable private app layout
 
-This means PandaTrack is moving from a pre-release marketing experience into a usable product shell with identity, access, and recovery basics in place.
+This means PandaTrack is moving from a pre-release marketing experience into a usable product layout with identity, access, and recovery basics in place.
 
 ## Core features (full vision)
 
@@ -81,7 +81,7 @@ From the current product and planning work, PandaTrack now groups its capabiliti
 - Product measurement and reliability: analytics for meaningful interactions and error monitoring for unexpected failures
 - Account access: sign up, sign in, sign out, route protection, email verification, and password recovery
 - Quality foundation: a risk-based automated testing strategy is now part of delivery planning so critical landing and account flows gain unit, integration, and end-to-end coverage over time
-- Collector workspace foundation: the next major layer now includes the private app shell, dashboard-first navigation, and the shared layout needed to make the workflow understandable
+- Collector workspace foundation: the next major layer now includes the private app layout, dashboard-first navigation, and the shared layout needed to make the workflow understandable
 - Collector workflow foundation: the next major layer remains centered on stores, purchases, pre-order payments, shipments, and dashboard clarity
 
 At a product level, this means the app already covers the outer layer of trust, discovery, and access, while the core tracking workflow remains the next major delivery focus.
@@ -115,7 +115,7 @@ Already in place or substantially defined:
 
 Next major user value to deliver:
 
-- A reusable collector workspace shell with a hybrid desktop sidebar, content header, and responsive navigation patterns
+- A reusable collector workspace layout with a hybrid desktop sidebar, content header, and responsive navigation patterns
 - A dashboard-first private experience that makes the main product areas easy to reach
 - Store discovery and trust signals inside the product workflow
 - Purchase and item tracking

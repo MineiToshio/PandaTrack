@@ -2,7 +2,7 @@
 
 ## Phase 1: Tracking foundation (MVP)
 
-- Collector workspace shell and dashboard-first navigation
+- Collector workspace layout and dashboard-first navigation
 - Store database and discovery
 - Store trust signals/reviews (initial version)
 - Purchases/orders with item list
