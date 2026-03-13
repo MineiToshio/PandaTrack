@@ -9,15 +9,14 @@ Every implementation must explicitly evaluate whether it needs **unit tests**, *
 
 Do not aim for blanket coverage. Aim for **risk-based coverage** on business-critical behavior.
 
+**Tests must reflect the current implementation.** If they get out of sync with the code, they lose value and can mislead. Review and update tests in the same change that modifies the behavior they cover.
+
 ## Required evaluation on every change
 
-Before finalizing a feature, bugfix, or refactor, decide which of these apply:
+Before finalizing a feature, bugfix, or refactor:
 
-1. **Unit tests** for isolated business rules and data transformations
-2. **Integration tests** for contracts between modules/layers
-3. **E2E tests** for user-critical flows in the real app
-
-If a test type is not added, that should be because it is **not justified by the change**, not because it was skipped by default.
+1. **Review existing tests** in the affected scope. If the change alters behavior that existing tests assert, **update those tests in the same change** so they match the new behavior. Do not leave tests that no longer reflect what the code does.
+2. **Decide whether to add** unit, integration, and/or E2E tests (see below). If a test type is not added, that should be because it is **not justified by the change**, not because it was skipped by default.
 
 ## When each test type is expected
 
@@ -81,11 +80,7 @@ Prioritize tests for:
 
 ## Validation expectation
 
-When test infrastructure exists for the affected scope, run the relevant automated tests together with:
-
-1. `npm run type-check`
-2. `npm run lint`
-3. `npm run validate-build`
+When finalizing a change, run the relevant automated tests so that updated or new tests are executed, not only written. See the **validation checklist** rule for the full order of commands (`npm run test`, type-check, lint, validate-build, and E2E when applicable). When test infrastructure exists for the affected scope, run at least the tests that cover the changed behavior.
 
 ## Test file placement
 

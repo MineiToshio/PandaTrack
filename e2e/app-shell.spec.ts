@@ -58,7 +58,8 @@ test.describe("App shell header and breadcrumbs", () => {
     await page.getByRole("button", { name: "Sign in" }).click();
     await expect(page).toHaveURL(/\/en\/dashboard/);
 
-    await expect(page.getByRole("heading", { name: "Dashboard", level: 1 })).toBeVisible();
+    // Header (banner) shows page title; main content also has an h1, so target the banner heading to avoid strict mode.
+    await expect(page.getByRole("banner").getByRole("heading", { name: "Dashboard", level: 1 })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Breadcrumb" })).not.toBeVisible();
   });
 

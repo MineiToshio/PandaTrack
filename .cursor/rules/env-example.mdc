@@ -10,10 +10,10 @@ Whenever you introduce or use a **new environment variable** in the project, add
 ## Rules
 
 - **Add the key** to `.env.example` with an empty value (or a non-secret placeholder for URLs/hosts). Do not put real secrets or credentials in `.env.example`.
-- **Optional**: Add a short comment above the variable if the name is not self-explanatory or if there is a specific way to obtain the value (e.g. "Generate secret: npx auth@latest secret").
-- **Group by area** when it helps: keep related variables together (e.g. auth, database, analytics).
+- **Categorize**: Place the variable under the appropriate section in `.env.example`. Use the existing section headers (Database, Auth, Email, Waitlist/Kit, Monitoring, Analytics, App/site, E2E tests). If the variable belongs to a new area, add a new section with a clear heading and a short block comment explaining the group.
+- **Document**: Add a short comment above the variable (or inline after the key) explaining what it is for and, when relevant, how to obtain the value (e.g. "Generate secret: npx auth@latest secret").
 - **Existing vars**: If the variable is already listed in `.env.example`, you do not need to add it again.
 
 ## Why
 
-`.env.example` is the single reference for which environment variables the app expects. Keeping it updated ensures new contributors and deployments know what to configure and avoids missing variables in production or CI.
+`.env.example` is the single reference for which environment variables the app expects. Grouping by category and documenting each variable makes it easier for contributors and deployments to know what to configure and avoids missing variables in production or CI.
