@@ -32,6 +32,8 @@ export function useSidebarState() {
   const [expanded, setExpandedState] = useState(DEFAULT_EXPANDED);
 
   useEffect(() => {
+    // Hydrate from localStorage after mount to avoid SSR mismatch and to respect user preference.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional client-only hydration from localStorage
     setExpandedState(readStoredPreference());
   }, []);
 

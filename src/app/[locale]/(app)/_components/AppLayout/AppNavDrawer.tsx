@@ -7,9 +7,10 @@ import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import posthog from "posthog-js";
 import IconButton from "@/components/core/IconButton";
+import Logo from "@/components/core/Logo";
 import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { getActiveNavItem, getPrivateAppNavItems, type NavItem, type NavItemId } from "./navigationConfig";
+import { getActiveNavItem, getPrivateAppNavItems, type NavItemId } from "./navigationConfig";
 
 const NAV_ICON_MAP: Record<NavItemId, React.ComponentType<{ className?: string }>> = {
   dashboard: LayoutDashboard,
@@ -69,20 +70,20 @@ export default function AppNavDrawer({ locale, isOpen, onClose, returnFocusRef }
         type="button"
         aria-label={t("drawer.closeMenu")}
         className={cn(
-          "bg-background/80 absolute inset-0 backdrop-blur-sm transition-opacity",
+          "bg-background/80 absolute inset-0 backdrop-blur-sm transition-opacity duration-200 motion-reduce:duration-0",
           isOpen ? "opacity-100" : "opacity-0",
         )}
         onClick={handleClose}
       />
       <aside
         className={cn(
-          "border-border bg-surface absolute top-0 left-0 flex h-full w-80 max-w-[85vw] min-w-0 flex-col border-r shadow-lg transition-transform duration-200",
+          "border-border bg-surface absolute top-0 left-0 flex h-full w-80 max-w-[85vw] min-w-0 flex-col border-r shadow-lg transition-transform duration-200 motion-reduce:duration-0",
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="flex min-h-0 flex-1 flex-col overflow-auto">
-          <div className="border-border flex shrink-0 items-center justify-between border-b px-3 py-3">
-            <span className="text-text-muted text-sm font-medium">{t("drawer.closeMenu")}</span>
+          <div className="border-border flex shrink-0 items-center justify-between gap-2 border-b px-3 py-3">
+            <Logo className="text-2xl" />
             <IconButton
               ref={closeButtonRef}
               Icon={X}
@@ -104,7 +105,7 @@ export default function AppNavDrawer({ locale, isOpen, onClose, returnFocusRef }
                   href={href}
                   onClick={handleClose}
                   className={cn(
-                    "flex h-10 items-center gap-3 rounded-lg px-2.5 pr-3 text-sm font-medium transition-colors",
+                    "focus-visible:ring-ring focus-visible:ring-offset-background flex h-10 items-center gap-3 rounded-lg px-2.5 pr-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                     isActive ? "bg-primary/20 text-primary" : "text-text-body hover:bg-muted hover:text-foreground",
                   )}
                   aria-current={isActive ? "page" : undefined}

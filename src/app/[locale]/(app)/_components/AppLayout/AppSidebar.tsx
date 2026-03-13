@@ -55,7 +55,7 @@ export default function AppSidebar({ locale, expanded, onToggle }: AppSidebarPro
     <>
       {/* Desktop sidebar: fixed left, full height. Hidden below lg. */}
       <aside
-        className="border-border bg-surface fixed inset-y-0 left-0 z-40 hidden flex-col border-r lg:flex"
+        className="border-border bg-surface fixed inset-y-0 left-0 z-40 hidden flex-col border-r transition-[width] duration-200 ease-out motion-reduce:transition-none lg:flex"
         style={{
           width: expanded ? `${SIDEBAR_WIDTH_EXPANDED_REM}rem` : `${SIDEBAR_RAIL_WIDTH_REM}rem`,
         }}
@@ -97,7 +97,7 @@ export default function AppSidebar({ locale, expanded, onToggle }: AppSidebarPro
       {/* Floating preview when collapsed: same sidebar expanded over the rail (left: 0 so rail is not visible behind) */}
       {!expanded && floatingOpen && (
         <div
-          className="border-border bg-surface fixed inset-y-0 left-0 z-50 flex w-[16rem] flex-col border-r shadow-lg lg:flex"
+          className="border-border bg-surface fixed inset-y-0 left-0 z-50 flex w-[16rem] flex-col border-r shadow-lg transition-opacity duration-150 ease-out motion-reduce:duration-0 lg:flex"
           onMouseEnter={handleRailEnter}
           onMouseLeave={handleRailLeave}
         >
@@ -174,7 +174,7 @@ function RailIcons({
             aria-label={t(item.labelKey)}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex h-10 w-full shrink-0 items-center justify-center rounded-lg transition-colors",
+              "focus-visible:ring-ring focus-visible:ring-offset-background flex h-10 w-full shrink-0 items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
               isActive ? "bg-primary/20 text-primary" : "text-text-muted hover:bg-muted hover:text-foreground",
             )}
             data-ph-event={POSTHOG_EVENTS.APP_SHELL.NAV_CLICKED}
@@ -208,7 +208,7 @@ function NavLink({
     <Link
       href={href}
       className={cn(
-        "flex h-10 items-center gap-3 rounded-lg pr-3 pl-2.5 text-sm font-medium transition-colors",
+        "focus-visible:ring-ring focus-visible:ring-offset-background flex h-10 items-center gap-3 rounded-lg pr-3 pl-2.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
         isActive ? "bg-primary/20 text-primary" : "text-text-body hover:bg-muted hover:text-foreground",
       )}
       aria-current={isActive ? "page" : undefined}

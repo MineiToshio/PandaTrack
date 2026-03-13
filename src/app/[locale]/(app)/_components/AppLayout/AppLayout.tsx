@@ -41,7 +41,7 @@ export default function AppLayout({ locale, signOutLabel, children }: AppLayoutP
             }
           }
         `}</style>
-        <div className="app-layout-content flex min-w-0 flex-1 flex-col">
+        <div className="app-layout-content flex min-w-0 flex-1 flex-col transition-[margin-left] duration-200 ease-out motion-reduce:transition-none">
           <ContentHeader
             locale={locale}
             pathname={pathname ?? ""}

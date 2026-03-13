@@ -58,7 +58,10 @@ export default function ContentHeader({
                         {label}
                       </span>
                     ) : (
-                      <Link href={crumb.href} className="text-link max-w-32 truncate hover:underline sm:max-w-48">
+                      <Link
+                        href={crumb.href}
+                        className="text-link focus-visible:ring-ring focus-visible:ring-offset-background max-w-32 truncate rounded hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:max-w-48"
+                      >
                         {label}
                       </Link>
                     )}

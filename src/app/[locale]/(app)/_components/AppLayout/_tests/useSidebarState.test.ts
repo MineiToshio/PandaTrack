@@ -30,6 +30,12 @@ describe("useSidebarState", () => {
     await waitFor(() => expect(result.current.expanded).toBe(false));
   });
 
+  it("returns expanded true after hydration when storage has invalid value (safe fallback)", async () => {
+    storage[APP_SHELL_SIDEBAR_STORAGE_KEY] = "invalid";
+    const { result } = renderHook(() => useSidebarState());
+    await waitFor(() => expect(result.current.expanded).toBe(true));
+  });
+
   it("toggle flips expanded and persists to storage", () => {
     const { result } = renderHook(() => useSidebarState());
     expect(result.current.expanded).toBe(true);
