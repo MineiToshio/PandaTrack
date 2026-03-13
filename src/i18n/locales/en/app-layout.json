@@ -3,8 +3,12 @@
     "dashboard": "Dashboard",
     "stores": "Stores",
     "purchases": "Purchases",
+    "preOrders": "Pre-orders",
     "shipments": "Shipments",
     "settings": "Settings"
+  },
+  "breadcrumb": {
+    "detail": "Detail"
   },
   "sidebar": {
     "expand": "Expand sidebar",

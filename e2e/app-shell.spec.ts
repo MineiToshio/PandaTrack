@@ -44,3 +44,42 @@ test.describe("App shell at mobile and tablet viewport", () => {
     await expect(dialog).not.toBeVisible();
   });
 });
+
+test.describe("App shell header and breadcrumbs", () => {
+  test("first-level route shows page title only in header", async ({ page }) => {
+    test.skip(
+      !process.env.E2E_USER_EMAIL || !process.env.E2E_USER_PASSWORD,
+      "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set",
+    );
+
+    await page.goto("/en/sign-in");
+    await page.getByLabel("Email").fill(process.env.E2E_USER_EMAIL!);
+    await page.locator('input[name="password"]').fill(process.env.E2E_USER_PASSWORD!);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/en\/dashboard/);
+
+    await expect(page.getByRole("heading", { name: "Dashboard", level: 1 })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Breadcrumb" })).not.toBeVisible();
+  });
+
+  test("nested route shows breadcrumbs and page title", async ({ page }) => {
+    test.skip(
+      !process.env.E2E_USER_EMAIL || !process.env.E2E_USER_PASSWORD,
+      "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set",
+    );
+
+    await page.goto("/en/sign-in");
+    await page.getByLabel("Email").fill(process.env.E2E_USER_EMAIL!);
+    await page.locator('input[name="password"]').fill(process.env.E2E_USER_PASSWORD!);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/en\/dashboard/);
+
+    await page.goto("/en/purchases/pre-orders");
+    await expect(page).toHaveURL(/\/en\/purchases\/pre-orders/);
+
+    const breadcrumbNav = page.getByRole("navigation", { name: "Breadcrumb" });
+    await expect(breadcrumbNav).toBeVisible();
+    await expect(breadcrumbNav.getByRole("link", { name: "Purchases" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Pre-orders", level: 1 })).toBeVisible();
+  });
+});

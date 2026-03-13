@@ -3,8 +3,12 @@
     "dashboard": "Panel",
     "stores": "Tiendas",
     "purchases": "Compras",
+    "preOrders": "Pre-reservas",
     "shipments": "Envíos",
     "settings": "Ajustes"
+  },
+  "breadcrumb": {
+    "detail": "Detalle"
   },
   "sidebar": {
     "expand": "Expandir barra lateral",
