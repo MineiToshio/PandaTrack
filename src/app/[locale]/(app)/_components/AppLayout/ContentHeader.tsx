@@ -9,6 +9,7 @@ import ThemeToggle from "@/app/[locale]/(landing)/_components/Menu/ThemeToggle";
 import SignOutButton from "@/components/modules/auth/SignOutButton";
 import Heading from "@/components/core/Heading";
 import IconButton from "@/components/core/IconButton";
+import { POSTHOG_EVENTS } from "@/lib/constants";
 
 type ContentHeaderProps = {
   locale: string;
@@ -30,6 +31,8 @@ export default function ContentHeader({
   const t = useTranslations("appLayout");
   const pageHeader = getPageHeader(pathname, locale);
   const pageTitle = t(pageHeader.titleKey);
+  const appShellBreadcrumbLabel = t("accessibility.breadcrumbNavigation");
+  const appShellLanguageLabel = t("accessibility.languageNavigation");
 
   return (
     <header className="border-border bg-background flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4 sm:gap-4 lg:px-6">
@@ -46,7 +49,7 @@ export default function ContentHeader({
         />
         <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
           {pageHeader.breadcrumbs.length > 0 && (
-            <nav aria-label="Breadcrumb" className="flex min-w-0 shrink-0 items-center gap-1.5 text-sm">
+            <nav aria-label={appShellBreadcrumbLabel} className="flex min-w-0 shrink-0 items-center gap-1.5 text-sm">
               {pageHeader.breadcrumbs.map((crumb, index) => {
                 const isLast = index === pageHeader.breadcrumbs.length - 1;
                 const label = t(crumb.labelKey);
@@ -76,8 +79,16 @@ export default function ContentHeader({
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-        <LanguageToggle className="hidden sm:flex" />
-        <ThemeToggle />
+        <LanguageToggle
+          className="hidden sm:flex"
+          ariaLabel={appShellLanguageLabel}
+          posthogEvent={POSTHOG_EVENTS.APP_SHELL.LOCALE_CHANGED}
+          getPosthogProps={(targetLocale) => ({
+            locale: targetLocale,
+            route: pathname,
+          })}
+        />
+        <ThemeToggle posthogEvent={POSTHOG_EVENTS.APP_SHELL.THEME_CHANGED} posthogProps={{ route: pathname }} />
         <SignOutButton locale={locale} label={signOutLabel} />
       </div>
     </header>

@@ -18,6 +18,16 @@
     "openMenu": "Abrir menú",
     "closeMenu": "Cerrar menú"
   },
+  "accessibility": {
+    "mainNavigation": "Navegación principal",
+    "breadcrumbNavigation": "Ruta de navegación",
+    "languageNavigation": "Selector de idioma"
+  },
+  "error": {
+    "title": "Algo salió mal",
+    "description": "No pudimos cargar esta sección de la app. Inténtalo de nuevo.",
+    "retry": "Reintentar"
+  },
   "placeholder": "Contenido próximamente.",
   "meta": {
     "description": "Espacio de trabajo del coleccionista PandaTrack."

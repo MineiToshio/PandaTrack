@@ -18,6 +18,16 @@
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
   },
+  "accessibility": {
+    "mainNavigation": "Main navigation",
+    "breadcrumbNavigation": "Breadcrumb",
+    "languageNavigation": "Language"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "description": "We could not load this app area. Please try again.",
+    "retry": "Try again"
+  },
   "placeholder": "Content coming soon.",
   "meta": {
     "description": "PandaTrack collector workspace."

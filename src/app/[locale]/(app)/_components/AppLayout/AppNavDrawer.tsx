@@ -40,6 +40,7 @@ export default function AppNavDrawer({ locale, isOpen, onClose, returnFocusRef }
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const navItems = getPrivateAppNavItems();
   const activeItem = getActiveNavItem(pathname ?? "");
+  const appShellMainNavigationLabel = t("accessibility.mainNavigation");
 
   useEffect(() => {
     if (isOpen) {
@@ -94,7 +95,7 @@ export default function AppNavDrawer({ locale, isOpen, onClose, returnFocusRef }
               className="shrink-0"
             />
           </div>
-          <nav className="flex flex-1 flex-col gap-1 px-2 py-3" aria-label="Main">
+          <nav className="flex flex-1 flex-col gap-1 px-2 py-3" aria-label={appShellMainNavigationLabel}>
             {navItems.map((item) => {
               const Icon = NAV_ICON_MAP[item.id];
               const isActive = activeItem.id === item.id;

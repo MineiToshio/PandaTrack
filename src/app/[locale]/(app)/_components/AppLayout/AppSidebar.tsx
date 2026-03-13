@@ -149,9 +149,11 @@ function ExpandedSidebarContent({
   t: (key: string) => string;
   showCollapse: boolean;
 }) {
+  const appShellMainNavigationLabel = t("accessibility.mainNavigation");
+
   return (
     <>
-      <nav className="flex flex-1 flex-col gap-1 px-2 py-3" aria-label="Main">
+      <nav className="flex flex-1 flex-col gap-1 px-2 py-3" aria-label={appShellMainNavigationLabel}>
         {navItems.map((item) => (
           <NavLink key={item.id} item={item} locale={locale} isActive={activeItem.id === item.id} t={t} />
         ))}
@@ -180,8 +182,10 @@ function RailIcons({
   activeItem: NavItem;
   t: (key: string) => string;
 }) {
+  const appShellMainNavigationLabel = t("accessibility.mainNavigation");
+
   return (
-    <nav className="flex w-full flex-col gap-1 px-2" aria-label="Main">
+    <nav className="flex w-full flex-col gap-1 px-2" aria-label={appShellMainNavigationLabel}>
       {navItems.map((item) => {
         const Icon = NAV_ICON_MAP[item.id];
         const isActive = activeItem.id === item.id;

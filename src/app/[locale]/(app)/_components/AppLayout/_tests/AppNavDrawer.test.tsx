@@ -11,6 +11,7 @@ const translationMap: Record<string, string> = {
   "nav.settings": "Settings",
   "drawer.openMenu": "Open menu",
   "drawer.closeMenu": "Close menu",
+  "accessibility.mainNavigation": "Main navigation",
 };
 
 vi.mock("next-intl", () => ({
@@ -37,7 +38,7 @@ describe("AppNavDrawer", () => {
     render(<AppNavDrawer locale="en" isOpen onClose={vi.fn()} returnFocusRef={{ current: null }} />);
 
     expect(screen.getByRole("dialog", { name: "Close menu" })).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeInTheDocument();
 
     expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Stores" })).toBeInTheDocument();
@@ -73,5 +74,16 @@ describe("AppNavDrawer", () => {
     render(<AppNavDrawer locale="en" isOpen onClose={vi.fn()} returnFocusRef={{ current: null }} />);
     const dashboardLink = screen.getByRole("link", { name: "Dashboard" });
     expect(dashboardLink).toHaveAttribute("aria-current", "page");
+  });
+
+  it("adds centralized PostHog data attributes to nav links", () => {
+    render(<AppNavDrawer locale="en" isOpen onClose={vi.fn()} returnFocusRef={{ current: null }} />);
+    const storesLink = screen.getByRole("link", { name: "Stores" });
+
+    expect(storesLink).toHaveAttribute("data-ph-event", "app_shell_nav_clicked");
+    expect(storesLink).toHaveAttribute(
+      "data-ph-props",
+      JSON.stringify({ destination: "stores", navigation_level: "primary" }),
+    );
   });
 });
