@@ -32,7 +32,7 @@ export default function ContentHeader({
   const pageTitle = t(pageHeader.titleKey);
 
   return (
-    <header className="border-border bg-background flex min-h-14 shrink-0 items-center justify-between gap-3 border-b px-4 py-3 sm:gap-4 lg:px-6">
+    <header className="border-border bg-background flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4 sm:gap-4 lg:px-6">
       <div className="flex min-w-0 flex-1 items-center gap-2 lg:flex-initial lg:gap-4">
         <IconButton
           ref={burgerButtonRef}

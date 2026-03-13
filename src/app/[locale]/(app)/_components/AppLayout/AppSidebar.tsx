@@ -2,17 +2,22 @@
 
 import { LayoutDashboard, Package, Settings, ShoppingBag, Store, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import posthog from "posthog-js";
 import IconButton from "@/components/core/IconButton";
+import Logo from "@/components/core/Logo";
 import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { getActiveNavItem, getPrivateAppNavItems, type NavItem, type NavItemId } from "./navigationConfig";
 
 const SIDEBAR_WIDTH_EXPANDED_REM = 16;
 const SIDEBAR_RAIL_WIDTH_REM = 3.5;
+
+/** Fixed height matching ContentHeader (h-14) so the logo strip aligns with the content header. */
+const SIDEBAR_HEADER_BASE = "border-border flex h-14 shrink-0 items-center border-b px-4";
 
 const NAV_ICON_MAP: Record<NavItemId, LucideIcon> = {
   dashboard: LayoutDashboard,
@@ -60,19 +65,28 @@ export default function AppSidebar({ locale, expanded, onToggle }: AppSidebarPro
           width: expanded ? `${SIDEBAR_WIDTH_EXPANDED_REM}rem` : `${SIDEBAR_RAIL_WIDTH_REM}rem`,
         }}
       >
+        <div className={cn(SIDEBAR_HEADER_BASE, expanded ? "w-full justify-start" : "justify-center")}>
+          {expanded ? (
+            <Logo className="min-w-0 flex-1 text-2xl" />
+          ) : (
+            <Image src="/icon.svg" alt="" width={32} height={32} className="h-8 w-8 shrink-0 object-contain" />
+          )}
+        </div>
         {expanded ? (
-          <ExpandedSidebarContent
-            locale={locale}
-            navItems={navItems}
-            activeItem={activeItem}
-            onToggle={handleToggle}
-            t={t}
-            showCollapse
-          />
+          <div className="flex min-h-0 flex-1 flex-col">
+            <ExpandedSidebarContent
+              locale={locale}
+              navItems={navItems}
+              activeItem={activeItem}
+              onToggle={handleToggle}
+              t={t}
+              showCollapse
+            />
+          </div>
         ) : (
-          <div className="flex h-full w-full flex-col py-3">
+          <div className="flex min-h-0 flex-1 flex-col">
             <div
-              className="w-full"
+              className="w-full flex-1 py-2"
               onMouseEnter={handleRailEnter}
               onMouseLeave={handleRailLeave}
               onFocus={() => setFloatingOpen(true)}
@@ -82,7 +96,7 @@ export default function AppSidebar({ locale, expanded, onToggle }: AppSidebarPro
             >
               <RailIcons locale={locale} navItems={navItems} activeItem={activeItem} t={t} />
             </div>
-            <div className="mt-auto flex w-full justify-center px-2">
+            <div className="border-border flex w-full justify-center border-t px-2 py-2">
               <IconButton
                 Icon={PanelLeftOpen}
                 variant="outline"
@@ -101,14 +115,19 @@ export default function AppSidebar({ locale, expanded, onToggle }: AppSidebarPro
           onMouseEnter={handleRailEnter}
           onMouseLeave={handleRailLeave}
         >
-          <ExpandedSidebarContent
-            locale={locale}
-            navItems={navItems}
-            activeItem={activeItem}
-            onToggle={handleToggle}
-            t={t}
-            showCollapse={false}
-          />
+          <div className={cn(SIDEBAR_HEADER_BASE, "w-full justify-start")}>
+            <Logo className="min-w-0 flex-1 text-2xl" />
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <ExpandedSidebarContent
+              locale={locale}
+              navItems={navItems}
+              activeItem={activeItem}
+              onToggle={handleToggle}
+              t={t}
+              showCollapse={false}
+            />
+          </div>
         </div>
       )}
     </>
