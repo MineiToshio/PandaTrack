@@ -19,6 +19,7 @@ Use the `docs/` folder for knowledge that helps future work and onboarding, not 
 - **Design or architecture decision**: A choice affects how other code should be written (e.g. how we call APIs, how we handle errors in a new layer). Add a short note in an existing doc or a small ADR-style section (what we decided and why).
 - **Convention or flow others must follow**: Any pattern that other developers (or the AI) should reuse (e.g. adding a new locale, adding a new page type). Document the steps and where to touch the code.
 - **Shared utilities inventory changes**: When `src/lib/` changes (new file, removed file, rename, or responsibility changes), update `docs/development/lib-utilities.md` in the same change.
+- **Database schema changes**: When `prisma/schema.prisma` changes (new or removed tables or columns, renamed fields, or meaning/purpose of a table or attribute), update `docs/development/database-schema.md` in the same change. That doc describes purpose and usage only; types and constraints stay in the schema.
 
 ### Do not push to `docs/` for:
 
@@ -31,6 +32,7 @@ Use the `docs/` folder for knowledge that helps future work and onboarding, not 
 - **`docs/development/i18n.md`**: i18n setup, structure, and how to add locales or namespaces.
 - **`docs/development/og-images.md`**: OG image generation conventions and implementation notes.
 - **`docs/development/lib-utilities.md`**: app-wide utilities inventory (`src/lib`) and each file responsibility.
+- **`docs/development/database-schema.md`**: database tables and attributes (purpose, where used, why it matters); see `prisma/schema.prisma` for types and constraints.
 - **`docs/process/`**: Delivery process standards (DoD, review checklist, AI workflow).
 - **New areas**: Prefer one focused file per topic and place it in the nearest coherent folder.
 
