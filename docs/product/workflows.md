@@ -16,6 +16,13 @@
 - Save store channels, links, contact details, and notes
 - Leave one public review per store and keep private notes separately
 
+### Store creation and moderation UX (current behavior)
+
+- After creating a store, the user is redirected directly to `/store/[slug]`
+- The create form does not keep a dedicated pending/approved success screen
+- If the store is `PENDING`, the detail page shows an informational caution disclaimer
+- `PENDING` stores remain visible in in-app listing and search
+
 ## 2) Track a purchase
 
 - Assign a store to the purchase

@@ -18,6 +18,8 @@ The MVP follows this workflow priority:
 - Store discovery by category
 - Public store profiles with search by name and filters for category, country, and presence
 - Public store moderation-aware publishing (`PENDING` vs `APPROVED`)
+- `PENDING` stores are visible in in-app listing/search and show a caution disclaimer in the store detail page
+- Public store details resolve on `/store/[slug]` (legacy `/stores/[slug]` redirects)
 - Store trust indicators (reviews/feedback)
 - Store reports, category requests, and approved-store change requests
 - Purchase tracking with item-level detail

@@ -18,7 +18,7 @@ Reference for seeded store catalog identifiers and how they are used. Labels are
 - **Display labels:** i18n key `storeCategories.{key}` (e.g. `storeCategories.manga`, `storeCategories.trading_cards`).
 - **Seeded keys:** See `prisma/seed.ts` (`STORE_CATEGORY_KEYS`). Initial set is collector-focused: `albums`, `art_books`, `books`, `book_accessories` (care, separators, sleeves for books/manga/light novels), `comics`, `figures`, `funkos`, `funko_accessories` (pedestals, display steps, protectors), `home_video` (DVD/Blu-ray: anime, movies, series), `light_novels`, `manga`, `merchandise`, `music` (CDs, vinyl), `signatures`, `trading_cards`, `video_games`. Do not change existing keys; add new categories via seed or admin flow and document them here.
 
-**Usage:** Store creation and filters use category keys from the catalog. Category-specific property definitions (slice 3) link to these keys.
+**Usage:** Store creation and filters use category keys from the catalog.
 
 ## Review aggregates (baseline)
 
@@ -46,4 +46,4 @@ The seed is idempotent: safe to run multiple times. Countries and store categori
 ## Adding new catalog values
 
 1. **Countries:** Add the ISO 3166-1 alpha-2 code to `COUNTRY_CODES` in `prisma/seed.ts`, then run the seed. Add i18n keys for the new code in each locale.
-2. **Categories:** Add the key to `STORE_CATEGORY_KEYS` in `prisma/seed.ts`, run the seed, and add i18n keys. If the category drives property definitions, update slice 3 (property definitions) accordingly.
+2. **Categories:** Add the key to `STORE_CATEGORY_KEYS` in `prisma/seed.ts`, run the seed, and add i18n keys.

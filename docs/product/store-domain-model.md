@@ -38,6 +38,7 @@ This document defines the PandaTrack MVP data model and product rules for stores
 - `PENDING` stores are not search-engine indexable.
 - `APPROVED` stores are search-engine indexable.
 - `PENDING` stores must display a disclaimer in the product explaining that the profile was created by a user and has not been approved yet.
+- After store creation, the app should redirect users to the store detail page where this disclaimer is shown when applicable.
 - Duplicate prevention should happen during creation:
   - while the user types the store name
   - again before final submit if similar stores are found

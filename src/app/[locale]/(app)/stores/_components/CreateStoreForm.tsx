@@ -40,6 +40,7 @@ const CONTACT_CHANNEL_TYPES = [
   "TIKTOK",
   "OTHER",
 ] as const;
+type ContactChannelType = (typeof CONTACT_CHANNEL_TYPES)[number];
 
 const resolveFirstErrorElement = (form: HTMLFormElement, fieldKey: string): HTMLElement | null => {
   if (fieldKey === "name") return form.querySelector("#store-name");
@@ -112,6 +113,9 @@ export default function CreateStoreForm({ countries, categories }: CreateStoreFo
   const [selectedCategoryKeys, setSelectedCategoryKeys] = useState<string[]>([]);
   const [selectedImportCountries, setSelectedImportCountries] = useState<string[]>([]);
   const [contactChannelRows, setContactChannelRows] = useState<number[]>([]);
+  const [contactChannelTypeByRowId, setContactChannelTypeByRowId] = useState<
+    Partial<Record<number, ContactChannelType>>
+  >({});
   const [addressRows, setAddressRows] = useState<number[]>([]);
   const nextContactRowIdRef = useRef(1);
   const nextAddressRowIdRef = useRef(1);
@@ -188,12 +192,30 @@ export default function CreateStoreForm({ countries, categories }: CreateStoreFo
 
   const handleAddContactChannel = () => {
     const nextId = nextContactRowIdRef.current;
+    const defaultType = CONTACT_CHANNEL_TYPES[contactChannelRows.length % CONTACT_CHANNEL_TYPES.length];
     nextContactRowIdRef.current += 1;
     setContactChannelRows((previous) => [...previous, nextId]);
+    setContactChannelTypeByRowId((previous) => ({
+      ...previous,
+      [nextId]: defaultType,
+    }));
   };
 
   const handleRemoveContactChannel = (rowId: number) => {
     setContactChannelRows((previous) => previous.filter((item) => item !== rowId));
+    setContactChannelTypeByRowId((previous) => {
+      const next = { ...previous };
+      delete next[rowId];
+      return next;
+    });
+  };
+
+  const getContactChannelTypeForRow = (rowId: number, rowIndex: number): ContactChannelType => {
+    return contactChannelTypeByRowId[rowId] ?? CONTACT_CHANNEL_TYPES[rowIndex % CONTACT_CHANNEL_TYPES.length];
+  };
+
+  const getContactChannelPlaceholder = (type: ContactChannelType) => {
+    return tCreate(`contactChannelPlaceholder.${type}`);
   };
 
   const handleAddAddress = () => {
@@ -515,79 +537,89 @@ export default function CreateStoreForm({ countries, categories }: CreateStoreFo
                 <StoreEmptyStateBox message={tCreate("noContactChannels")} />
               ) : (
                 <div className="space-y-3">
-                  {contactChannelRows.map((rowId, rowIndex) => (
-                    <div
-                      key={rowId}
-                      className={cn(
-                        "border-border bg-background rounded-lg border p-3",
-                        (getContactChannelTypeError(rowIndex) || getContactChannelValueError(rowIndex)) &&
-                          "border-destructive",
-                      )}
-                    >
-                      <div className="grid grid-cols-1 gap-3 md:grid-cols-[140px_minmax(0,1fr)_auto]">
-                        <div className="min-w-0 md:max-w-[140px]">
-                          <Label htmlFor={`contact-channel-type-${rowId}`} className="text-xs">
-                            {tCreate("contactChannelType")}
-                          </Label>
-                          <StoreSelect
-                            id={`contact-channel-type-${rowId}`}
-                            name="contactChannelType"
-                            className={cn(
-                              "px-2 py-1.5",
-                              getContactChannelTypeError(rowIndex) &&
-                                "border-destructive focus-visible:ring-destructive",
-                            )}
-                            defaultValue={CONTACT_CHANNEL_TYPES[rowIndex % CONTACT_CHANNEL_TYPES.length]}
-                            aria-invalid={!!getContactChannelTypeError(rowIndex)}
+                  {contactChannelRows.map((rowId, rowIndex) => {
+                    const selectedType = getContactChannelTypeForRow(rowId, rowIndex);
+                    return (
+                      <div
+                        key={rowId}
+                        className={cn(
+                          "border-border bg-background rounded-lg border p-3",
+                          (getContactChannelTypeError(rowIndex) || getContactChannelValueError(rowIndex)) &&
+                            "border-destructive",
+                        )}
+                      >
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[140px_minmax(0,1fr)_auto]">
+                          <div className="min-w-0 md:max-w-[140px]">
+                            <Label htmlFor={`contact-channel-type-${rowId}`} className="text-xs">
+                              {tCreate("contactChannelType")}
+                            </Label>
+                            <StoreSelect
+                              id={`contact-channel-type-${rowId}`}
+                              name="contactChannelType"
+                              className={cn(
+                                "px-2 py-1.5",
+                                getContactChannelTypeError(rowIndex) &&
+                                  "border-destructive focus-visible:ring-destructive",
+                              )}
+                              value={selectedType}
+                              onChange={(event) => {
+                                const selectedValue = event.target.value as ContactChannelType;
+                                setContactChannelTypeByRowId((previous) => ({
+                                  ...previous,
+                                  [rowId]: selectedValue,
+                                }));
+                              }}
+                              aria-invalid={!!getContactChannelTypeError(rowIndex)}
+                            >
+                              {CONTACT_CHANNEL_TYPES.map((type) => (
+                                <option key={type} value={type}>
+                                  {tChannelTypes(type)}
+                                </option>
+                              ))}
+                            </StoreSelect>
+                          </div>
+                          <div className="min-w-0">
+                            <Label htmlFor={`contact-channel-value-${rowId}`} className="text-xs">
+                              {tCreate("contactChannelValue")}
+                            </Label>
+                            <Input
+                              id={`contact-channel-value-${rowId}`}
+                              name="contactChannelValue"
+                              type="text"
+                              placeholder={getContactChannelPlaceholder(selectedType)}
+                              error={!!getContactChannelValueError(rowIndex)}
+                              aria-invalid={!!getContactChannelValueError(rowIndex)}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveContactChannel(rowId)}
+                            aria-label={tCreate("remove")}
+                            className="h-10 justify-center self-end"
                           >
-                            {CONTACT_CHANNEL_TYPES.map((type) => (
-                              <option key={type} value={type}>
-                                {tChannelTypes(type)}
-                              </option>
-                            ))}
-                          </StoreSelect>
+                            <X size={16} aria-hidden />
+                          </Button>
                         </div>
-                        <div className="min-w-0">
-                          <Label htmlFor={`contact-channel-value-${rowId}`} className="text-xs">
-                            {tCreate("contactChannelValue")}
-                          </Label>
-                          <Input
-                            id={`contact-channel-value-${rowId}`}
-                            name="contactChannelValue"
-                            type="text"
-                            placeholder="https://..."
-                            error={!!getContactChannelValueError(rowIndex)}
-                            aria-invalid={!!getContactChannelValueError(rowIndex)}
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveContactChannel(rowId)}
-                          aria-label={tCreate("remove")}
-                          className="h-10 justify-center self-end"
-                        >
-                          <X size={16} aria-hidden />
-                        </Button>
+                        {getContactChannelValueError(rowIndex) && (
+                          <Typography size="xs" className="text-destructive mt-2" role="alert">
+                            {tValidation(
+                              getContactChannelValueError(rowIndex) as
+                                | "contactValueRequired"
+                                | "contactValueInvalidWebsite"
+                                | "contactValueInvalidWhatsApp"
+                                | "contactValueInvalidInstagram"
+                                | "contactValueInvalidFacebook"
+                                | "contactValueInvalidTikTok"
+                                | "contactValueInvalidEmail"
+                                | "contactValueInvalidPhone",
+                            )}
+                          </Typography>
+                        )}
                       </div>
-                      {getContactChannelValueError(rowIndex) && (
-                        <Typography size="xs" className="text-destructive mt-2" role="alert">
-                          {tValidation(
-                            getContactChannelValueError(rowIndex) as
-                              | "contactValueRequired"
-                              | "contactValueInvalidWebsite"
-                              | "contactValueInvalidWhatsApp"
-                              | "contactValueInvalidInstagram"
-                              | "contactValueInvalidFacebook"
-                              | "contactValueInvalidTikTok"
-                              | "contactValueInvalidEmail"
-                              | "contactValueInvalidPhone",
-                          )}
-                        </Typography>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </StoreFormSectionCard>
