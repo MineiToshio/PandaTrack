@@ -64,7 +64,6 @@ This document defines the PandaTrack MVP data model and product rules for stores
 - Public profile still shows:
   - store name
   - categories
-  - public store properties
   - reviews and trust signals
 
 ## Internationalization strategy
@@ -77,10 +76,9 @@ This document defines the PandaTrack MVP data model and product rules for stores
   - database stores `PE`
   - i18n resolves `countries.PE`
 
-### Categories and property labels
+### Categories
 
 - Store categories are stored with stable keys.
-- Store property definitions are stored with stable keys and `labelKey` values.
 - Display labels are always resolved in the application through i18n.
 
 ### Addresses
@@ -119,9 +117,6 @@ This document defines the PandaTrack MVP data model and product rules for stores
 - `StoreImportCountry`
 - `StoreCategory`
 - `StoreCategoryAssignment`
-- `StorePropertyDefinition`
-- `StorePropertyDefinitionCategory`
-- `StorePropertyValue`
 - `StoreReview`
 - `StoreNote`
 - `StoreReport`
@@ -206,36 +201,20 @@ This document defines the PandaTrack MVP data model and product rules for stores
   - requester
   - moderation status
 
-## Store properties
+## Store metadata scope
 
-### Why store properties exist
-
-- Some store details are global and belong directly on `Store`.
-- Other details vary by category and should not force schema changes every time a new attribute is added.
-
-### What belongs directly on `Store`
-
-- `hasStock`
-- `receivesOrders`
-- identity and moderation fields
-- main country
-
-### What belongs in store properties
-
-- Category-specific or optional attributes such as:
-  - supported publishers
-  - supported TCG titles
-  - preorder support
-  - special product lines
-  - condition or edition details
-
-### Property model rules
-
-- Property definitions are controlled by the system.
-- Users do not create arbitrary property definitions in MVP.
-- Each property definition can apply to one or many categories.
-- If multiple categories overlap on the same concept, the model must reuse one property definition instead of duplicating it.
-- Property values are stored per store.
+- MVP store metadata stays intentionally simple.
+- Core store fields belong directly on `Store`.
+- Supported metadata layers in MVP are:
+  - categories
+  - import countries
+  - stock flag
+  - receives-orders flag
+  - visibility and moderation state
+  - reviews
+  - private notes
+- Dynamic category-specific property-definition systems are out of MVP scope.
+- Subcategories are also out of MVP scope for now.
 
 ## Reviews
 

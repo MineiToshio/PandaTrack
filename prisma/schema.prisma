@@ -46,13 +46,6 @@ enum StoreContactChannelType {
   OTHER
 }
 
-enum StorePropertyValueType {
-  TEXT
-  BOOLEAN
-  NUMBER
-  JSON
-}
-
 enum StoreCategoryRequestStatus {
   PENDING
   APPROVED
@@ -183,7 +176,6 @@ model Store {
   addresses           StoreAddress[]
   importCountries     StoreImportCountry[]
   categoryAssignments StoreCategoryAssignment[]
-  propertyValues      StorePropertyValue[]
   reviews             StoreReview[]
   notes               StoreNote[]
   reports             StoreReport[]
@@ -263,12 +255,11 @@ model StoreImportCountry {
 }
 
 model StoreCategory {
-  key           String                            @id
-  isActive      Boolean                           @default(true)
-  createdAt     DateTime                          @default(now())
-  updatedAt     DateTime                          @updatedAt
-  assignments   StoreCategoryAssignment[]
-  propertyLinks StorePropertyDefinitionCategory[]
+  key         String                    @id
+  isActive    Boolean                   @default(true)
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+  assignments StoreCategoryAssignment[]
 
   @@map("store_category")
 }
@@ -283,51 +274,6 @@ model StoreCategoryAssignment {
   @@id([storeId, categoryKey])
   @@index([categoryKey])
   @@map("store_category_assignment")
-}
-
-model StorePropertyDefinition {
-  id           String                            @id @default(cuid())
-  key          String                            @unique
-  labelKey     String
-  valueType    StorePropertyValueType
-  isPublic     Boolean                           @default(true)
-  isFilterable Boolean                           @default(false)
-  sortOrder    Int                               @default(0)
-  createdAt    DateTime                          @default(now())
-  updatedAt    DateTime                          @updatedAt
-  categories   StorePropertyDefinitionCategory[]
-  values       StorePropertyValue[]
-
-  @@map("store_property_definition")
-}
-
-model StorePropertyDefinitionCategory {
-  propertyDefinitionId String
-  categoryKey          String
-  propertyDefinition   StorePropertyDefinition @relation(fields: [propertyDefinitionId], references: [id], onDelete: Cascade)
-  category             StoreCategory           @relation(fields: [categoryKey], references: [key], onDelete: Restrict)
-
-  @@id([propertyDefinitionId, categoryKey])
-  @@index([categoryKey])
-  @@map("store_property_definition_category")
-}
-
-model StorePropertyValue {
-  id                   String                  @id @default(cuid())
-  storeId              String
-  propertyDefinitionId String
-  valueText            String?
-  valueBoolean         Boolean?
-  valueNumber          Float?
-  valueJson            Json?
-  createdAt            DateTime                @default(now())
-  updatedAt            DateTime                @updatedAt
-  store                Store                   @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  propertyDefinition   StorePropertyDefinition @relation(fields: [propertyDefinitionId], references: [id], onDelete: Cascade)
-
-  @@unique([storeId, propertyDefinitionId])
-  @@index([propertyDefinitionId])
-  @@map("store_property_value")
 }
 
 model StoreReview {
