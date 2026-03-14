@@ -34,6 +34,7 @@ This document defines the PandaTrack MVP data model and product rules for stores
 - Stores created by admins are automatically `APPROVED`.
 - Stores created by normal users are created as public and `PENDING`.
 - `PENDING` stores are publicly visible.
+- `PENDING` stores are included in in-app listings and search results.
 - `PENDING` stores are not search-engine indexable.
 - `APPROVED` stores are search-engine indexable.
 - `PENDING` stores must display a disclaimer in the product explaining that the profile was created by a user and has not been approved yet.
@@ -125,7 +126,7 @@ This document defines the PandaTrack MVP data model and product rules for stores
 
 ## Store routes and slugs
 
-- Public store routes use `/stores/[slug]`.
+- Public store routes use `/store/[slug]` (legacy `/stores/[slug]` redirects to this path).
 - Store slugs must be SEO-friendly and stable.
 - Slug format should be:
   - `slugified-store-name` + `-` + stable short random suffix

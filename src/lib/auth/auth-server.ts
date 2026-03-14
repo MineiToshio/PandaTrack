@@ -13,3 +13,21 @@ export async function getSession() {
     headers: requestHeaders,
   });
 }
+
+const ADMIN_EMAILS_KEY = "ADMIN_EMAILS";
+
+/**
+ * Returns true if the session user is considered an admin (e.g. store moderation).
+ * Admin emails are configured via ADMIN_EMAILS (comma-separated, trimmed).
+ */
+export function getIsAdmin(session: { user: { email?: string | null } } | null): boolean {
+  const email = session?.user?.email?.trim().toLowerCase();
+  if (!email) return false;
+  const list = process.env[ADMIN_EMAILS_KEY];
+  if (!list) return false;
+  const allowed = list
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return allowed.includes(email);
+}

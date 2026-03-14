@@ -37,10 +37,10 @@ export function buildCanonicalPath(locale: string, segment: PageCanonicalSegment
 
 export type BuildPageMetadataOptions = {
   locale: string;
-  namespace: "terms" | "privacy" | "landing" | "dashboard" | "appLayout";
+  namespace: "terms" | "privacy" | "landing" | "dashboard" | "appLayout" | "stores";
   pathSegment: PageCanonicalSegment;
   titleKey: string;
-  descriptionKey: string;
+  descriptionKey?: string;
 };
 
 /**
@@ -68,15 +68,15 @@ export async function buildPageMetadata({
   const path = buildCanonicalPath(locale, pathSegment);
   const canonical = path ? `${baseUrl}${path}` : baseUrl;
   const title = t(titleKey);
-  const description = t(descriptionKey);
+  const description = descriptionKey ? t(descriptionKey) : undefined;
 
   return {
     title,
-    description,
+    ...(description && { description }),
     alternates: { canonical },
     openGraph: {
       title,
-      description,
+      ...(description && { description }),
       url: canonical,
       siteName: APP_NAME,
       locale: locale === "es" ? "es" : "en",

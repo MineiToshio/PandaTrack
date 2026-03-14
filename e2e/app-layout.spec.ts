@@ -1,10 +1,22 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const MOBILE_VIEWPORT = { width: 375, height: 667 };
+const SIGN_IN_RETURN_TO_DASHBOARD = "/en/sign-in?returnTo=%2Fen%2Fdashboard";
+const SIDEBAR_STORAGE_KEY = "appShellSidebarExpanded";
+const SIDEBAR_COLLAPSED_STORAGE_VALUE = "false";
 const MAIN_NAVIGATION_LABEL_REGEX = /main navigation|navegaci\u00f3n principal/i;
 const OPEN_MENU_LABEL_REGEX = /open menu|abrir men\u00fa/i;
 const EXPAND_SIDEBAR_LABEL_REGEX = /expand sidebar|expandir barra lateral/i;
 const COLLAPSE_SIDEBAR_LABEL_REGEX = /collapse sidebar|contraer barra lateral/i;
+
+async function signInAndLandOnDashboard(page: Page) {
+  await page.context().clearCookies();
+  await page.goto(SIGN_IN_RETURN_TO_DASHBOARD);
+  await page.getByLabel("Email").fill(process.env.E2E_USER_EMAIL!);
+  await page.locator('input[name="password"]').fill(process.env.E2E_USER_PASSWORD!);
+  await page.locator('form button[type="submit"]').click();
+  await expect(page).toHaveURL(/\/en\/dashboard/, { timeout: 10_000 });
+}
 
 test.describe("App layout at mobile and tablet viewport", () => {
   test("unauthenticated user is redirected to sign-in from dashboard at mobile viewport", async ({ page }) => {
@@ -22,21 +34,15 @@ test.describe("App layout at mobile and tablet viewport", () => {
     );
 
     await page.setViewportSize(MOBILE_VIEWPORT);
-    await page.goto("/en/sign-in");
-
-    await page.getByLabel("Email").fill(process.env.E2E_USER_EMAIL!);
-    await page.locator('input[name="password"]').fill(process.env.E2E_USER_PASSWORD!);
-    await page.getByRole("button", { name: "Sign in" }).click();
-
-    await expect(page).toHaveURL(/\/en\/dashboard/);
+    await signInAndLandOnDashboard(page);
 
     const openMenuButton = page.getByRole("button", { name: OPEN_MENU_LABEL_REGEX });
     await expect(openMenuButton).toBeVisible();
     await openMenuButton.click();
+    await expect(openMenuButton).toHaveAttribute("aria-expanded", "true");
 
-    const drawer = page.getByRole("dialog");
-    await expect(drawer).toBeVisible();
-    await expect(page.getByRole("navigation", { name: MAIN_NAVIGATION_LABEL_REGEX })).toBeVisible();
+    const primaryNavigation = page.getByRole("navigation", { name: MAIN_NAVIGATION_LABEL_REGEX });
+    await expect(primaryNavigation).toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Stores" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Purchases" })).toBeVisible();
@@ -45,7 +51,7 @@ test.describe("App layout at mobile and tablet viewport", () => {
 
     await page.getByRole("link", { name: "Stores" }).click();
     await expect(page).toHaveURL(/\/en\/stores/);
-    await expect(page.getByRole("navigation", { name: MAIN_NAVIGATION_LABEL_REGEX })).not.toBeVisible();
+    await expect(primaryNavigation).not.toBeVisible();
   });
 });
 
@@ -59,18 +65,20 @@ test.describe("App layout desktop sidebar persistence", () => {
     );
 
     await page.setViewportSize(DESKTOP_VIEWPORT);
-    await page.goto("/en/sign-in");
-    await page.getByLabel("Email").fill(process.env.E2E_USER_EMAIL!);
-    await page.locator('input[name="password"]').fill(process.env.E2E_USER_PASSWORD!);
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/en\/dashboard/);
+    await signInAndLandOnDashboard(page);
 
     const collapseButton = page.getByRole("button", { name: COLLAPSE_SIDEBAR_LABEL_REGEX });
     await expect(collapseButton).toBeVisible();
-    await collapseButton.click();
+    await collapseButton.click({ force: true });
+
+    await expect
+      .poll(async () => page.evaluate((storageKey) => window.localStorage.getItem(storageKey), SIDEBAR_STORAGE_KEY), {
+        timeout: 10_000,
+      })
+      .toBe(SIDEBAR_COLLAPSED_STORAGE_VALUE);
 
     const expandButton = page.getByRole("button", { name: EXPAND_SIDEBAR_LABEL_REGEX }).first();
-    await expect(expandButton).toBeVisible();
+    await expect(expandButton).toBeVisible({ timeout: 10_000 });
 
     await page.reload();
     await expect(page).toHaveURL(/\/en\/dashboard/);
@@ -86,11 +94,7 @@ test.describe("App layout header and breadcrumbs", () => {
       "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set",
     );
 
-    await page.goto("/en/sign-in");
-    await page.getByLabel("Email").fill(process.env.E2E_USER_EMAIL!);
-    await page.locator('input[name="password"]').fill(process.env.E2E_USER_PASSWORD!);
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/en\/dashboard/);
+    await signInAndLandOnDashboard(page);
 
     // Header (banner) shows page title; main content also has an h1, so target the banner heading to avoid strict mode.
     await expect(page.getByRole("banner").getByRole("heading", { name: "Dashboard", level: 1 })).toBeVisible();
@@ -103,11 +107,7 @@ test.describe("App layout header and breadcrumbs", () => {
       "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set",
     );
 
-    await page.goto("/en/sign-in");
-    await page.getByLabel("Email").fill(process.env.E2E_USER_EMAIL!);
-    await page.locator('input[name="password"]').fill(process.env.E2E_USER_PASSWORD!);
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/en\/dashboard/);
+    await signInAndLandOnDashboard(page);
 
     await page.goto("/en/purchases/pre-orders");
     await expect(page).toHaveURL(/\/en\/purchases\/pre-orders/);

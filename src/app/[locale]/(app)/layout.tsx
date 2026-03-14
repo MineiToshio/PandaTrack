@@ -6,7 +6,7 @@ import VerifyEmailBanner from "@/components/modules/auth/VerifyEmailBanner";
 import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
 import { getSession } from "@/lib/auth/auth-server";
 import { getVerificationSnapshot, maybeSendDaySixVerificationReminder } from "@/lib/auth/authVerification";
-import { ROUTES } from "@/lib/constants";
+import { ROUTES, VERIFICATION_BANNER_HEIGHT_PX } from "@/lib/constants";
 
 type PrivateAppLayoutProps = {
   children: React.ReactNode;
@@ -38,18 +38,18 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
 
   if (snapshot?.state !== "grace") {
     return (
-      <>
+      <div style={{ ["--app-banner-offset" as string]: "0px" } as React.CSSProperties}>
         <AppLayout locale={locale} signOutLabel={tAuth("signOut")}>
           {children}
         </AppLayout>
-      </>
+      </div>
     );
   }
 
   const tVerification = await getTranslations({ locale, namespace: "auth.verificationBanner" });
 
   return (
-    <>
+    <div style={{ ["--app-banner-offset" as string]: `${VERIFICATION_BANNER_HEIGHT_PX}px` } as React.CSSProperties}>
       <div className="sticky top-0 z-50 w-full">
         <VerifyEmailBanner
           locale={locale}
@@ -65,6 +65,6 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
       <AppLayout locale={locale} signOutLabel={tAuth("signOut")}>
         {children}
       </AppLayout>
-    </>
+    </div>
   );
 }

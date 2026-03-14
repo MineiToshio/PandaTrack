@@ -6,6 +6,9 @@ export const THEME_STORAGE_KEY = "theme";
 /** Local storage key for private app sidebar expanded/collapsed preference. */
 export const APP_SHELL_SIDEBAR_STORAGE_KEY = "appShellSidebarExpanded";
 
+/** Height of the verification email banner (px) for layout offset. Used so the fixed sidebar starts below it. */
+export const VERIFICATION_BANNER_HEIGHT_PX = 56;
+
 /** Path segments for app routes (no locale prefix). Use with `/${locale}${ROUTES.xyz}` for links. */
 export const ROUTES = {
   home: "",
@@ -19,6 +22,7 @@ export const ROUTES = {
   verifyEmailGate: "/verify-email-required",
   dashboard: "/dashboard",
   stores: "/stores",
+  storesNew: "/stores/new",
   purchases: "/purchases",
   payments: "/payments",
   shipments: "/shipments",
@@ -83,5 +87,9 @@ export const POSTHOG_EVENTS = {
     DRAWER_OPENED: "app_shell_drawer_opened",
     THEME_CHANGED: "app_shell_theme_changed",
     LOCALE_CHANGED: "app_shell_locale_changed",
+  },
+  STORE: {
+    CREATED: "store_created",
+    DUPLICATE_SUGGESTIONS_SHOWN: "store_duplicate_suggestions_shown",
   },
 } as const;

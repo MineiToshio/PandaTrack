@@ -61,10 +61,10 @@ export default function VerifyEmailBanner({
 
   return (
     <section
-      className="border-border bg-surface/95 w-full border-b backdrop-blur"
+      className="border-border bg-surface/95 w-full border-b backdrop-blur lg:h-14"
       aria-labelledby="verify-email-banner-title"
     >
-      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-2 px-4 py-2">
+      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-2 px-4 py-2 lg:h-full lg:flex-nowrap">
         <Typography id="verify-email-banner-title" size="xs" className="text-text-title font-semibold">
           {title}
         </Typography>

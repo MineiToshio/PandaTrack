@@ -58,11 +58,13 @@ export default function AppSidebar({ locale, expanded, onToggle }: AppSidebarPro
 
   return (
     <>
-      {/* Desktop sidebar: fixed left, full height. Hidden below lg. */}
+      {/* Desktop sidebar: fixed left, starts below verification banner when present. Hidden below lg. */}
       <aside
-        className="border-border bg-surface fixed inset-y-0 left-0 z-40 hidden flex-col border-r transition-[width] duration-200 ease-out motion-reduce:transition-none lg:flex"
+        className="border-border bg-surface fixed left-0 z-40 hidden flex-col border-r transition-[width] duration-200 ease-out motion-reduce:transition-none lg:flex"
         style={{
           width: expanded ? `${SIDEBAR_WIDTH_EXPANDED_REM}rem` : `${SIDEBAR_RAIL_WIDTH_REM}rem`,
+          top: "var(--app-banner-offset, 0px)",
+          height: "calc(100vh - var(--app-banner-offset, 0px))",
         }}
       >
         <div className={cn(SIDEBAR_HEADER_BASE, expanded ? "w-full justify-start" : "justify-center")}>
@@ -111,7 +113,11 @@ export default function AppSidebar({ locale, expanded, onToggle }: AppSidebarPro
       {/* Floating preview when collapsed: same sidebar expanded over the rail (left: 0 so rail is not visible behind) */}
       {!expanded && floatingOpen && (
         <div
-          className="border-border bg-surface fixed inset-y-0 left-0 z-50 flex w-[16rem] flex-col border-r shadow-lg transition-opacity duration-150 ease-out motion-reduce:duration-0 lg:flex"
+          className="border-border bg-surface fixed left-0 z-50 flex w-[16rem] flex-col border-r shadow-lg transition-opacity duration-150 ease-out motion-reduce:duration-0 lg:flex"
+          style={{
+            top: "var(--app-banner-offset, 0px)",
+            height: "calc(100vh - var(--app-banner-offset, 0px))",
+          }}
           onMouseEnter={handleRailEnter}
           onMouseLeave={handleRailLeave}
         >

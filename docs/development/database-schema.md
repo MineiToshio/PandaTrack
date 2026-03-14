@@ -65,7 +65,7 @@ Reference for what each table and attribute is for, where it is used, and why it
 **Purpose:** Main entity: a place or seller where collectors buy. Holds identity, moderation state, visibility, and aggregated trust (rating, review count). Used by discovery, profile, orders, deliveries, reviews, notes, reports, and change requests.
 
 - **id** – Unique identifier (cuid).
-- **slug** – URL-safe, stable identifier for public routes (`/stores/[slug]`). Not changed when the name changes.
+- **slug** – URL-safe, stable identifier for public routes (`/store/[slug]`; legacy `/stores/[slug]` redirects). Not changed when the name changes.
 - **name / description** – Public-facing identity; description can be empty.
 - **logoUrl** – Logo for business stores; person stores do not show it on the public profile.
 - **storeType** – BUSINESS vs PERSON; drives visibility rules (contact/address/logo visibility).

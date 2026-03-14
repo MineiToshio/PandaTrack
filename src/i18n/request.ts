@@ -22,6 +22,9 @@ export default getRequestConfig(async ({ requestLocale }) => {
       auth: (await import(`./locales/${locale}/auth.json`)).default,
       dashboard: (await import(`./locales/${locale}/dashboard.json`)).default,
       appLayout: (await import(`./locales/${locale}/app-layout.json`)).default,
+      stores: (await import(`./locales/${locale}/stores.json`)).default,
+      countries: (await import(`./locales/${locale}/countries.json`)).default,
+      storeCategories: (await import(`./locales/${locale}/storeCategories.json`)).default,
     },
   };
 });

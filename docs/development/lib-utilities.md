@@ -11,7 +11,7 @@ This file is the source of truth for shared app-level utilities in `src/lib/`.
 ## Organization rules
 
 - Use domain folders inside `src/lib/` when there are at least two files that belong to the same concern.
-- Current grouped concerns are `src/lib/auth/`, `src/lib/analytics/`, and `src/lib/integrations/`.
+- Current grouped concerns are `src/lib/auth/`, `src/lib/analytics/`, `src/lib/integrations/`, and `src/lib/store/`.
 - Keep a file in the `src/lib/` root only when it is cross-domain or does not have a close sibling category yet.
 
 ## Inventory
@@ -36,6 +36,8 @@ This file is the source of truth for shared app-level utilities in `src/lib/`.
 | `src/lib/og.ts`                              | OG image helpers and localized OG text helpers.                                                                    |
 | `src/lib/prisma.ts`                          | Prisma client singleton and adapter setup.                                                                         |
 | `src/lib/seo.ts`                             | SEO metadata and canonical URL helpers.                                                                            |
+| `src/lib/store/duplicateMatch.ts`            | Store name normalization for duplicate-matching (used by store creation flow).                                     |
+| `src/lib/store/slug.ts`                      | Store slug generation: slugify name + 6-char shortId for stable, collision-resistant slugs.                        |
 | `src/lib/styles.ts`                          | Shared class merging utilities (`cn`) and style helpers.                                                           |
 
 ## Maintenance rule
