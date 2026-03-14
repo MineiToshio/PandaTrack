@@ -1,17 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { shouldSkipAuthenticatedE2E, signInAndLandOnDashboard } from "./_helpers/auth";
 
 test.describe("Store creation flow", () => {
-  test("authenticated user can open create store page and see form", async ({ page }) => {
-    test.skip(
-      !process.env.E2E_USER_EMAIL || !process.env.E2E_USER_PASSWORD,
-      "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set",
-    );
+  test.describe.configure({ mode: "serial" });
 
-    await page.goto("/en/sign-in");
-    await page.getByLabel("Email").fill(process.env.E2E_USER_EMAIL!);
-    await page.locator('input[name="password"]').fill(process.env.E2E_USER_PASSWORD!);
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/en\/dashboard/);
+  test("authenticated user can open create store page and see form", async ({ page }) => {
+    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
+    await signInAndLandOnDashboard(page);
 
     await page.goto("/en/stores");
     await expect(page).toHaveURL(/\/en\/stores/);
@@ -26,16 +21,8 @@ test.describe("Store creation flow", () => {
   test("authenticated user can create a store and is redirected to store detail with pending disclaimer", async ({
     page,
   }) => {
-    test.skip(
-      !process.env.E2E_USER_EMAIL || !process.env.E2E_USER_PASSWORD,
-      "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set",
-    );
-
-    await page.goto("/en/sign-in");
-    await page.getByLabel("Email").fill(process.env.E2E_USER_EMAIL!);
-    await page.locator('input[name="password"]').fill(process.env.E2E_USER_PASSWORD!);
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL(/\/en\/dashboard/);
+    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
+    await signInAndLandOnDashboard(page);
 
     await page.goto("/en/stores/new");
     await page.getByLabel(/store name|nombre de la tienda/i).fill(`E2E Store ${Date.now()}`);

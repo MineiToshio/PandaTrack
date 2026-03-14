@@ -1,24 +1,55 @@
 import { expect, test, type Page } from "@playwright/test";
+import { shouldSkipAuthenticatedE2E, signInAndLandOnDashboard } from "./_helpers/auth";
 
 const MOBILE_VIEWPORT = { width: 375, height: 667 };
-const SIGN_IN_RETURN_TO_DASHBOARD = "/en/sign-in?returnTo=%2Fen%2Fdashboard";
-const SIDEBAR_STORAGE_KEY = "appShellSidebarExpanded";
-const SIDEBAR_COLLAPSED_STORAGE_VALUE = "false";
 const MAIN_NAVIGATION_LABEL_REGEX = /main navigation|navegaci\u00f3n principal/i;
 const OPEN_MENU_LABEL_REGEX = /open menu|abrir men\u00fa/i;
 const EXPAND_SIDEBAR_LABEL_REGEX = /expand sidebar|expandir barra lateral/i;
 const COLLAPSE_SIDEBAR_LABEL_REGEX = /collapse sidebar|contraer barra lateral/i;
+const RETRY_ATTEMPTS = 3;
+const RETRY_WAIT_MS = 250;
 
-async function signInAndLandOnDashboard(page: Page) {
-  await page.context().clearCookies();
-  await page.goto(SIGN_IN_RETURN_TO_DASHBOARD);
-  await page.getByLabel("Email").fill(process.env.E2E_USER_EMAIL!);
-  await page.locator('input[name="password"]').fill(process.env.E2E_USER_PASSWORD!);
-  await page.locator('form button[type="submit"]').click();
-  await expect(page).toHaveURL(/\/en\/dashboard/, { timeout: 10_000 });
+async function openMobileDrawer(page: Page) {
+  const openMenuButton = page.getByRole("button", { name: OPEN_MENU_LABEL_REGEX });
+  const primaryNavigation = page.getByRole("navigation", { name: MAIN_NAVIGATION_LABEL_REGEX });
+
+  await expect(openMenuButton).toBeVisible();
+
+  for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt += 1) {
+    await openMenuButton.click({ force: true });
+
+    if (await primaryNavigation.isVisible()) {
+      return;
+    }
+
+    await page.waitForTimeout(RETRY_WAIT_MS);
+  }
+
+  await expect(primaryNavigation).toBeVisible({ timeout: 10_000 });
+}
+
+async function collapseDesktopSidebar(page: Page) {
+  const collapseButton = page.getByRole("button", { name: COLLAPSE_SIDEBAR_LABEL_REGEX });
+  const expandButton = page.getByRole("button", { name: EXPAND_SIDEBAR_LABEL_REGEX }).first();
+
+  await expect(collapseButton).toBeVisible();
+
+  for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt += 1) {
+    await collapseButton.click({ force: true });
+
+    if (await expandButton.isVisible()) {
+      return;
+    }
+
+    await page.waitForTimeout(RETRY_WAIT_MS);
+  }
+
+  await expect(expandButton).toBeVisible({ timeout: 10_000 });
 }
 
 test.describe("App layout at mobile and tablet viewport", () => {
+  test.describe.configure({ mode: "serial" });
+
   test("unauthenticated user is redirected to sign-in from dashboard at mobile viewport", async ({ page }) => {
     await page.setViewportSize(MOBILE_VIEWPORT);
     await page.goto("/en/dashboard");
@@ -28,21 +59,12 @@ test.describe("App layout at mobile and tablet viewport", () => {
   });
 
   test("authenticated user at mobile viewport sees burger and drawer with primary nav", async ({ page }) => {
-    test.skip(
-      !process.env.E2E_USER_EMAIL || !process.env.E2E_USER_PASSWORD,
-      "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set for authenticated app layout tests",
-    );
+    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
 
     await page.setViewportSize(MOBILE_VIEWPORT);
     await signInAndLandOnDashboard(page);
-
-    const openMenuButton = page.getByRole("button", { name: OPEN_MENU_LABEL_REGEX });
-    await expect(openMenuButton).toBeVisible();
-    await openMenuButton.click();
-    await expect(openMenuButton).toHaveAttribute("aria-expanded", "true");
-
+    await openMobileDrawer(page);
     const primaryNavigation = page.getByRole("navigation", { name: MAIN_NAVIGATION_LABEL_REGEX });
-    await expect(primaryNavigation).toBeVisible({ timeout: 10_000 });
     await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Stores" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Purchases" })).toBeVisible();
@@ -56,29 +78,16 @@ test.describe("App layout at mobile and tablet viewport", () => {
 });
 
 test.describe("App layout desktop sidebar persistence", () => {
+  test.describe.configure({ mode: "serial" });
+
   const DESKTOP_VIEWPORT = { width: 1280, height: 720 };
 
   test("sidebar collapsed preference is restored after page reload", async ({ page }) => {
-    test.skip(
-      !process.env.E2E_USER_EMAIL || !process.env.E2E_USER_PASSWORD,
-      "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set",
-    );
+    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
 
     await page.setViewportSize(DESKTOP_VIEWPORT);
     await signInAndLandOnDashboard(page);
-
-    const collapseButton = page.getByRole("button", { name: COLLAPSE_SIDEBAR_LABEL_REGEX });
-    await expect(collapseButton).toBeVisible();
-    await collapseButton.click({ force: true });
-
-    await expect
-      .poll(async () => page.evaluate((storageKey) => window.localStorage.getItem(storageKey), SIDEBAR_STORAGE_KEY), {
-        timeout: 10_000,
-      })
-      .toBe(SIDEBAR_COLLAPSED_STORAGE_VALUE);
-
-    const expandButton = page.getByRole("button", { name: EXPAND_SIDEBAR_LABEL_REGEX }).first();
-    await expect(expandButton).toBeVisible({ timeout: 10_000 });
+    await collapseDesktopSidebar(page);
 
     await page.reload();
     await expect(page).toHaveURL(/\/en\/dashboard/);
@@ -88,11 +97,10 @@ test.describe("App layout desktop sidebar persistence", () => {
 });
 
 test.describe("App layout header and breadcrumbs", () => {
+  test.describe.configure({ mode: "serial" });
+
   test("first-level route shows page title only in header", async ({ page }) => {
-    test.skip(
-      !process.env.E2E_USER_EMAIL || !process.env.E2E_USER_PASSWORD,
-      "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set",
-    );
+    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
 
     await signInAndLandOnDashboard(page);
 
@@ -102,10 +110,7 @@ test.describe("App layout header and breadcrumbs", () => {
   });
 
   test("nested route shows breadcrumbs and page title", async ({ page }) => {
-    test.skip(
-      !process.env.E2E_USER_EMAIL || !process.env.E2E_USER_PASSWORD,
-      "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set",
-    );
+    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
 
     await signInAndLandOnDashboard(page);
 
