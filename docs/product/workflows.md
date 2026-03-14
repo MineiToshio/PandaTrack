@@ -9,9 +9,12 @@
 
 ## 1) Discover and save a store
 
-- Browse stores by category
+- Browse stores by category, country, and presence
+- Search stores by name
 - Review trust/reliability signals
+- Review pending disclaimers and inactive-store warnings when relevant
 - Save store channels, links, contact details, and notes
+- Leave one public review per store and keep private notes separately
 
 ## 2) Track a purchase
 
@@ -29,6 +32,7 @@
 ## 4) Track shipments (including split shipments)
 
 - Link one or multiple shipments to a single purchase
+- Allow one shipment to consolidate items from multiple orders of the same store
 - Track shipment states (waiting, shipped, in transit, delivered)
 - Store carrier and tracking code when available
 

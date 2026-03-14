@@ -83,10 +83,13 @@ From the current product and planning work, PandaTrack now groups its capabiliti
 - Quality foundation: a risk-based automated testing strategy is now part of delivery planning so critical landing and account flows gain unit, integration, and end-to-end coverage over time
 - Collector workspace foundation: the next major layer now includes the private app layout, dashboard-first navigation, and the shared layout needed to make the workflow understandable
 - Collector workflow foundation: the next major layer remains centered on stores, purchases, pre-order payments, shipments, and dashboard clarity
+- Store domain planning: the product now has a defined store model covering business vs person profiles, public discovery, pending-vs-approved moderation, trust signals, reports, category requests, and category-specific attributes
 
 At a product level, this means the app already covers the outer layer of trust, discovery, and access, while the core tracking workflow remains the next major delivery focus.
 
 That next phase now has a clearer product surface: PandaTrack is moving toward a private collector workspace where the dashboard acts as the home base, navigation stays stable across the app, and module-level searches live within the relevant product areas instead of the global header in MVP.
+
+The next workflow layer is now better defined as well: stores will act as the public trust and discovery surface for the product, with searchable public profiles, category-aware metadata, moderation-aware publishing, collector reviews, and support for future order and delivery tracking under the same store entity.
 
 ## MVP focus
 
@@ -118,6 +121,7 @@ Next major user value to deliver:
 - A reusable collector workspace layout with a hybrid desktop sidebar, content header, and responsive navigation patterns
 - A dashboard-first private experience that makes the main product areas easy to reach
 - Store discovery and trust signals inside the product workflow
+- Public store profiles with moderation-aware visibility, reviews, reports, and category-based discovery
 - Purchase and item tracking
 - Pre-order payment visibility
 - Shipment tracking and split-shipment handling

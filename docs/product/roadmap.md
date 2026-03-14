@@ -3,8 +3,9 @@
 ## Phase 1: Tracking foundation (MVP)
 
 - Collector workspace layout and dashboard-first navigation
-- Store database and discovery
-- Store trust signals/reviews (initial version)
+- Store domain model, moderation-aware publishing, and public discovery
+- Store trust signals/reviews and private notes (initial version)
+- Store reports, category requests, and approved-store change requests
 - Purchases/orders with item list
 - Pre-order payments and monthly upcoming balances
 - Shipment tracking with split-shipment support

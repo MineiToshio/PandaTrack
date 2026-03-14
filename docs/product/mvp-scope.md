@@ -16,7 +16,10 @@ The MVP follows this workflow priority:
 - Dashboard-first private navigation
 - Page-level search inside the relevant modules when needed
 - Store discovery by category
+- Public store profiles with search by name and filters for category, country, and presence
+- Public store moderation-aware publishing (`PENDING` vs `APPROVED`)
 - Store trust indicators (reviews/feedback)
+- Store reports, category requests, and approved-store change requests
 - Purchase tracking with item-level detail
 - Pre-order partial payment tracking and upcoming payments by month
 - Shipment tracking with support for split shipments
@@ -36,4 +39,5 @@ The MVP follows this workflow priority:
 - Upcoming balances are visible and predictable
 - Fewer missed follow-ups on delayed or silent shipments
 - Clear trust context before buying from a store
+- Public store profiles feel searchable, understandable, and trustworthy enough to support future purchase workflows
 - Users can understand the private app structure and reach the main workflow areas immediately after sign-in

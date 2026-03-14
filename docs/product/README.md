@@ -12,6 +12,7 @@ This folder is the source of truth for PandaTrack product documentation.
 - `landing-and-positioning.md`: landing page messaging and waitlist content strategy.
 - `roadmap.md`: phased roadmap and release sequencing.
 - `glossary.md`: shared terminology for product, process, and engineering docs.
+- `store-domain-model.md`: store domain model, moderation rules, categories, and metadata decisions.
 - GitHub Project #4 and its epic/slice issues: feature-level execution source of truth.
 
 ## Usage guidance

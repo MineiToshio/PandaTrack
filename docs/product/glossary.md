@@ -8,7 +8,11 @@ This glossary defines shared terms used across PandaTrack product and feature do
 
 - **Collector**: A user who buys and tracks collectible items across multiple stores/channels.
 - **Store**: A seller source (e.g., website, Instagram, WhatsApp contact) where purchases are made.
+- **Store Type**: Public classification for a store profile, currently `BUSINESS` or `PERSON`.
+- **Store Presence**: Where a store operates, currently `ONLINE`, `PHYSICAL`, or both through multiple presence values.
 - **Trust Signal**: A reliability indicator for a store (reviews, feedback, response quality, delivery consistency).
+- **Pending Store**: A public store profile created by a normal user that is visible in the product but not yet approved and not indexable for SEO.
+- **Approved Store**: A public store profile approved for general publishing and SEO indexing.
 - **Purchase**: A buying record linked to one store and one or more items.
 - **Item**: A collectible unit within a purchase (e.g., one manga volume, one figure).
 - **Pre-order**: A purchase made before item release or stock availability.
@@ -16,6 +20,7 @@ This glossary defines shared terms used across PandaTrack product and feature do
 - **Remaining Balance**: Amount still owed after deposits/partial payments.
 - **Shipment**: A delivery unit linked to a purchase; one purchase can have multiple shipments.
 - **Split Shipment**: When items from one purchase are delivered in separate shipment batches.
+- **Consolidated Shipment**: When one delivery contains items from multiple orders of the same store.
 - **Shipment Status**: Current delivery state (e.g., waiting, shipped, in transit, delivered, delayed).
 - **Carrier**: Shipping provider used for a shipment.
 - **Tracking Code**: Carrier identifier used to follow shipment progress.
