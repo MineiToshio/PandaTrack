@@ -13,16 +13,91 @@ datasource db {
   provider = "postgresql"
 }
 
+enum StoreType {
+  BUSINESS
+  PERSON
+}
+
+enum StoreStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+enum StoreVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum StorePresenceType {
+  ONLINE
+  PHYSICAL
+}
+
+enum StoreContactChannelType {
+  INSTAGRAM
+  WHATSAPP
+  EMAIL
+  PHONE
+  WEBSITE
+  FACEBOOK
+  TIKTOK
+  OTHER
+}
+
+enum StorePropertyValueType {
+  TEXT
+  BOOLEAN
+  NUMBER
+  JSON
+}
+
+enum StoreCategoryRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum StoreReportReason {
+  SPAM
+  DUPLICATE
+  INCORRECT_INFO
+  DOES_NOT_EXIST
+  INAPPROPRIATE
+}
+
+enum StoreReportStatus {
+  OPEN
+  REVIEWED
+  DISMISSED
+}
+
+enum StoreChangeRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
-  id            String    @id
-  name          String
-  email         String    @unique
-  emailVerified Boolean
-  image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
-  sessions      Session[]
-  accounts      Account[]
+  id                          String                 @id
+  name                        String
+  email                       String                 @unique
+  emailVerified               Boolean
+  image                       String?
+  createdAt                   DateTime
+  updatedAt                   DateTime
+  sessions                    Session[]
+  accounts                    Account[]
+  createdStores               Store[]                @relation("StoreCreator")
+  approvedStores              Store[]                @relation("StoreApprover")
+  storeReviews                StoreReview[]
+  storeNotes                  StoreNote[]
+  storeReports                StoreReport[]
+  storeCategoryRequests       StoreCategoryRequest[]
+  storeChangeRequests         StoreChangeRequest[]
+  reviewedStoreChangeRequests StoreChangeRequest[]   @relation("StoreChangeRequestReviewer")
+  orders                      Order[]
 
   @@map("user")
 }
@@ -69,4 +144,329 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+model Country {
+  code           String               @id
+  stores         Store[]
+  storeAddresses StoreAddress[]
+  storeImports   StoreImportCountry[]
+
+  @@map("country")
+}
+
+model Store {
+  id                  String                    @id @default(cuid())
+  slug                String                    @unique
+  name                String
+  description         String?
+  logoUrl             String?
+  storeType           StoreType
+  status              StoreStatus               @default(PENDING)
+  visibility          StoreVisibility           @default(PUBLIC)
+  isActive            Boolean                   @default(true)
+  hasStock            Boolean?
+  receivesOrders      Boolean?
+  countryCode         String
+  averageRating       Float?
+  reviewCount         Int                       @default(0)
+  createdByUserId     String
+  approvedByUserId    String?
+  approvedAt          DateTime?
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  country             Country                   @relation(fields: [countryCode], references: [code], onDelete: Restrict)
+  createdByUser       User                      @relation("StoreCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  approvedByUser      User?                     @relation("StoreApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  presences           StorePresence[]
+  contactChannels     StoreContactChannel[]
+  addresses           StoreAddress[]
+  importCountries     StoreImportCountry[]
+  categoryAssignments StoreCategoryAssignment[]
+  propertyValues      StorePropertyValue[]
+  reviews             StoreReview[]
+  notes               StoreNote[]
+  reports             StoreReport[]
+  changeRequests      StoreChangeRequest[]
+  orders              Order[]
+  deliveries          Delivery[]
+
+  @@index([countryCode])
+  @@index([createdByUserId])
+  @@index([approvedByUserId])
+  @@index([status])
+  @@index([visibility])
+  @@index([isActive])
+  @@index([status, visibility, isActive])
+  @@map("store")
+}
+
+model StorePresence {
+  storeId      String
+  presenceType StorePresenceType
+  createdAt    DateTime          @default(now())
+  store        Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@id([storeId, presenceType])
+  @@index([presenceType])
+  @@map("store_presence")
+}
+
+model StoreContactChannel {
+  id              String                  @id @default(cuid())
+  storeId         String
+  type            StoreContactChannelType
+  value           String
+  label           String?
+  customTypeLabel String?
+  isPrimary       Boolean                 @default(false)
+  isPublic        Boolean                 @default(true)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  store           Store                   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@index([type])
+  @@map("store_contact_channel")
+}
+
+model StoreAddress {
+  id          String   @id @default(cuid())
+  storeId     String
+  countryCode String
+  city        String?
+  district    String?
+  addressLine String
+  reference   String?
+  isPrimary   Boolean  @default(false)
+  isPublic    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  country     Country  @relation(fields: [countryCode], references: [code], onDelete: Restrict)
+
+  @@index([storeId])
+  @@index([countryCode])
+  @@map("store_address")
+}
+
+model StoreImportCountry {
+  storeId     String
+  countryCode String
+  createdAt   DateTime @default(now())
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  country     Country  @relation(fields: [countryCode], references: [code], onDelete: Restrict)
+
+  @@id([storeId, countryCode])
+  @@index([countryCode])
+  @@map("store_import_country")
+}
+
+model StoreCategory {
+  key           String                            @id
+  isActive      Boolean                           @default(true)
+  createdAt     DateTime                          @default(now())
+  updatedAt     DateTime                          @updatedAt
+  assignments   StoreCategoryAssignment[]
+  propertyLinks StorePropertyDefinitionCategory[]
+
+  @@map("store_category")
+}
+
+model StoreCategoryAssignment {
+  storeId     String
+  categoryKey String
+  createdAt   DateTime      @default(now())
+  store       Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  category    StoreCategory @relation(fields: [categoryKey], references: [key], onDelete: Restrict)
+
+  @@id([storeId, categoryKey])
+  @@index([categoryKey])
+  @@map("store_category_assignment")
+}
+
+model StorePropertyDefinition {
+  id           String                            @id @default(cuid())
+  key          String                            @unique
+  labelKey     String
+  valueType    StorePropertyValueType
+  isPublic     Boolean                           @default(true)
+  isFilterable Boolean                           @default(false)
+  sortOrder    Int                               @default(0)
+  createdAt    DateTime                          @default(now())
+  updatedAt    DateTime                          @updatedAt
+  categories   StorePropertyDefinitionCategory[]
+  values       StorePropertyValue[]
+
+  @@map("store_property_definition")
+}
+
+model StorePropertyDefinitionCategory {
+  propertyDefinitionId String
+  categoryKey          String
+  propertyDefinition   StorePropertyDefinition @relation(fields: [propertyDefinitionId], references: [id], onDelete: Cascade)
+  category             StoreCategory           @relation(fields: [categoryKey], references: [key], onDelete: Restrict)
+
+  @@id([propertyDefinitionId, categoryKey])
+  @@index([categoryKey])
+  @@map("store_property_definition_category")
+}
+
+model StorePropertyValue {
+  id                   String                  @id @default(cuid())
+  storeId              String
+  propertyDefinitionId String
+  valueText            String?
+  valueBoolean         Boolean?
+  valueNumber          Float?
+  valueJson            Json?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime                @updatedAt
+  store                Store                   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  propertyDefinition   StorePropertyDefinition @relation(fields: [propertyDefinitionId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, propertyDefinitionId])
+  @@index([propertyDefinitionId])
+  @@map("store_property_value")
+}
+
+model StoreReview {
+  id                        String   @id @default(cuid())
+  storeId                   String
+  userId                    String
+  overallRating             Int
+  communicationRating       Int?
+  packingRating             Int?
+  deliveryReliabilityRating Int?
+  wouldBuyAgain             Boolean?
+  comment                   String?
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+  store                     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, userId])
+  @@index([userId])
+  @@map("store_review")
+}
+
+model StoreNote {
+  id        String   @id @default(cuid())
+  storeId   String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@index([userId])
+  @@map("store_note")
+}
+
+model StoreReport {
+  id           String            @id @default(cuid())
+  storeId      String
+  reportedById String
+  reason       StoreReportReason
+  details      String?
+  status       StoreReportStatus @default(OPEN)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  store        Store             @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  reportedBy   User              @relation(fields: [reportedById], references: [id], onDelete: Cascade)
+
+  @@index([storeId])
+  @@index([reportedById])
+  @@index([status])
+  @@map("store_report")
+}
+
+model StoreCategoryRequest {
+  id            String                     @id @default(cuid())
+  requestedById String
+  suggestedKey  String?
+  suggestedName String
+  reason        String?
+  status        StoreCategoryRequestStatus @default(PENDING)
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
+  requestedBy   User                       @relation(fields: [requestedById], references: [id], onDelete: Cascade)
+
+  @@index([requestedById])
+  @@index([status])
+  @@map("store_category_request")
+}
+
+model StoreChangeRequest {
+  id               String                   @id @default(cuid())
+  storeId          String
+  requestedById    String
+  status           StoreChangeRequestStatus @default(PENDING)
+  changes          Json
+  comment          String?
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  store            Store                    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  requestedBy      User                     @relation(fields: [requestedById], references: [id], onDelete: Cascade)
+  reviewedBy       User?                    @relation("StoreChangeRequestReviewer", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([storeId])
+  @@index([requestedById])
+  @@index([status])
+  @@map("store_change_request")
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  storeId   String
+  userId    String
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  store     Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     OrderItem[]
+
+  @@index([storeId])
+  @@index([userId])
+  @@map("order")
+}
+
+model OrderItem {
+  id            String              @id @default(cuid())
+  orderId       String
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  order         Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  deliveryItems DeliveryOrderItem[]
+
+  @@index([orderId])
+  @@map("order_item")
+}
+
+model Delivery {
+  id         String              @id @default(cuid())
+  storeId    String
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  store      Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderItems DeliveryOrderItem[]
+
+  @@index([storeId])
+  @@map("delivery")
+}
+
+model DeliveryOrderItem {
+  deliveryId  String
+  orderItemId String
+  createdAt   DateTime  @default(now())
+  delivery    Delivery  @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@id([deliveryId, orderItemId])
+  @@index([orderItemId])
+  @@map("delivery_order_item")
 }
