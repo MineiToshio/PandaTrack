@@ -54,7 +54,7 @@ Reference for what each table and attribute is for, where it is used, and why it
 
 **Purpose:** Stable list of countries. Used for store country, addresses, and import countries. Labels come from i18n (e.g. `countries.PE`), not from the DB.
 
-- **code** – Primary key; ISO-style code (e.g. ES, PE). All country references in the app point here.
+- **code** – Primary key; ISO 3166-1 alpha-2 code (e.g. ES, PE). Seeded by `prisma/seed.ts`; see `docs/development/store-catalogs.md` for stable identifiers and usage.
 
 ---
 
@@ -119,7 +119,7 @@ Reference for what each table and attribute is for, where it is used, and why it
 
 **Purpose:** Catalog of store categories (manga, comics, figures, etc.). Keys are stable; labels come from i18n. Used for assignment to stores and for property definitions.
 
-- **key** – Primary key; stable key (e.g. manga, figures). Used in assignments and filters.
+- **key** – Primary key; stable key (e.g. manga, figures). Seeded by `prisma/seed.ts`; see `docs/development/store-catalogs.md` for stable identifiers and usage.
 - **isActive** – Whether the category is still available for assignment.
 
 ### `store_category_assignment`
