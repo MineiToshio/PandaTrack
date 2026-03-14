@@ -51,9 +51,11 @@ export const STORE_CATEGORY_KEYS = [
   "albums",
   "art_books",
   "books",
+  "book_accessories", // care, separators, sleeves, etc. for books/manga/light novels
   "comics",
   "figures",
   "funkos",
+  "funko_accessories", // pedestals, display steps, protectors, cases
   "home_video", // DVD, Blu-ray: anime, movies, series (physical)
   "light_novels",
   "manga",
