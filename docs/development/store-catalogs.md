@@ -16,7 +16,7 @@ Reference for seeded store catalog identifiers and how they are used. Labels are
 - **Table:** `store_category`
 - **Primary key:** `key` (stable string, snake_case)
 - **Display labels:** i18n key `storeCategories.{key}` (e.g. `storeCategories.manga`, `storeCategories.trading_cards`).
-- **Seeded keys:** See `prisma/seed.ts` (`STORE_CATEGORY_KEYS`). Initial set is collector-focused: `albums`, `art_books`, `books`, `comics`, `figures`, `funkos`, `home_video` (DVD/Blu-ray: anime, movies, series), `light_novels`, `manga`, `merchandise`, `music` (CDs, vinyl), `trading_cards`, `video_games`. Do not change existing keys; add new categories via seed or admin flow and document them here.
+- **Seeded keys:** See `prisma/seed.ts` (`STORE_CATEGORY_KEYS`). Initial set is collector-focused: `albums`, `art_books`, `books`, `comics`, `figures`, `funkos`, `home_video` (DVD/Blu-ray: anime, movies, series), `light_novels`, `manga`, `merchandise`, `music` (CDs, vinyl), `signatures`, `trading_cards`, `video_games`. Do not change existing keys; add new categories via seed or admin flow and document them here.
 
 **Usage:** Store creation and filters use category keys from the catalog. Category-specific property definitions (slice 3) link to these keys.
 

@@ -59,6 +59,7 @@ export const STORE_CATEGORY_KEYS = [
   "manga",
   "merchandise",
   "music", // CDs, vinyl, physical music
+  "signatures",
   "trading_cards",
   "video_games",
 ] as const;
