@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "title": "Tiendas",
+    "description": "Descubre y explora tiendas para tu colección."
+  },
+  "title": "Tiendas",
+  "backToListing": "Volver al listado",
+  "browseStores": "Ver tiendas",
+  "searchPlaceholder": "Buscar por nombre de tienda",
+  "searchButton": "Buscar",
+  "filters": {
+    "category": "Categoría",
+    "country": "País",
+    "presence": "Presencia",
+    "importCountry": "País de importación"
+  },
+  "presence": {
+    "ONLINE": "Online",
+    "PHYSICAL": "Físico"
+  },
+  "empty": "Aún no hay tiendas. Sé el primero en añadir una.",
+  "noResults": "Ninguna tienda coincide con los filtros. Prueba a cambiarlos o quitarlos.",
+  "clearFilters": "Quitar filtros",
+  "ratingCount": "{count} reseña",
+  "ratingCount_other": "{count} reseñas",
+  "pendingBadge": "Pendiente de revisión"
+}

@@ -37,7 +37,7 @@ export function buildCanonicalPath(locale: string, segment: PageCanonicalSegment
 
 export type BuildPageMetadataOptions = {
   locale: string;
-  namespace: "terms" | "privacy" | "landing" | "dashboard" | "appLayout" | "stores";
+  namespace: "terms" | "privacy" | "landing" | "dashboard" | "appLayout" | "stores" | "storeListing";
   pathSegment: PageCanonicalSegment;
   titleKey: string;
   descriptionKey?: string;
@@ -83,6 +83,41 @@ export async function buildPageMetadata({
       type: "website",
       // Explicit URL so Facebook gets a clear og:image (not inferred from other tags).
       images: [getOgImageUrl(baseUrl, locale, pathSegment)],
+    },
+  };
+}
+
+/**
+ * Builds metadata for the public store detail page.
+ * When noindex is true (e.g. PENDING stores), search engines are asked not to index the page.
+ */
+export async function buildStoreDetailMetadata({
+  locale,
+  storeName,
+  slug,
+  noindex,
+}: {
+  locale: string;
+  storeName: string;
+  slug: string;
+  noindex: boolean;
+}): Promise<Metadata> {
+  const baseUrl = getSiteUrl();
+  const path = buildCanonicalPath(locale, "stores") + `/${slug}`;
+  const canonical = `${baseUrl}${path}`;
+
+  return {
+    title: storeName,
+    alternates: { canonical },
+    ...(noindex && {
+      robots: { index: false, follow: false },
+    }),
+    openGraph: {
+      title: storeName,
+      url: canonical,
+      siteName: APP_NAME,
+      locale: locale === "es" ? "es" : "en",
+      type: "website",
     },
   };
 }

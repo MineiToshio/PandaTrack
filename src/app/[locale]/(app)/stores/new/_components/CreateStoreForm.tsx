@@ -22,7 +22,7 @@ import StoreSelect from "./StoreSelect";
 import StoreSegmentedControl from "./StoreSegmentedControl";
 import StoreSelectableTagGroup from "./StoreSelectableTagGroup";
 import StoreToggleSwitch from "./StoreToggleSwitch";
-import StoreMultiTagAutocomplete from "./StoreMultiTagAutocomplete";
+import StoreMultiTagAutocomplete from "../../_components/StoreMultiTagAutocomplete";
 import StoreFormSectionCard from "./StoreFormSectionCard";
 import StoreEmptyStateBox from "./StoreEmptyStateBox";
 
@@ -306,7 +306,7 @@ export default function CreateStoreForm({ countries, categories }: CreateStoreFo
       return;
     }
 
-    router.replace(`/${locale}/store/${createdStoreSlug}`);
+    router.replace(`/${locale}${ROUTES.stores}/${createdStoreSlug}`);
   }, [createdStoreSlug, locale, router]);
 
   if (success) {

@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "title": "Stores",
+    "description": "Discover and browse stores for your collection."
+  },
+  "title": "Stores",
+  "backToListing": "Back to stores",
+  "browseStores": "Browse stores",
+  "searchPlaceholder": "Search by store name",
+  "searchButton": "Search",
+  "filters": {
+    "category": "Category",
+    "country": "Country",
+    "presence": "Presence",
+    "importCountry": "Import country"
+  },
+  "presence": {
+    "ONLINE": "Online",
+    "PHYSICAL": "Physical"
+  },
+  "empty": "No stores yet. Be the first to add one.",
+  "noResults": "No stores match your filters. Try changing or clearing them.",
+  "clearFilters": "Clear filters",
+  "ratingCount": "{count} review",
+  "ratingCount_other": "{count} reviews",
+  "pendingBadge": "Pending review"
+}

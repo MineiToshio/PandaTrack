@@ -82,6 +82,15 @@ Prioritize tests for:
 
 When finalizing a change, run the relevant automated tests so that updated or new tests are executed, not only written. See the **validation checklist** rule for the full order of commands (`npm run test`, type-check, lint, validate-build, and E2E when applicable). When test infrastructure exists for the affected scope, run at least the tests that cover the changed behavior.
 
+## E2E database hygiene (required)
+
+E2E tests must not leave persistent test data in the database.
+
+- If a test creates records, clean them up in teardown (`afterEach`/`afterAll`) in the same spec.
+- Prefer deterministic cleanup keys (for example captured IDs or slugs) over broad deletes.
+- If you intentionally verify persistence, still delete the created records before the suite ends.
+- Never leave E2E-generated rows as permanent data in shared environments.
+
 ## Test file placement
 
 - Co-locate tests with the feature they protect.

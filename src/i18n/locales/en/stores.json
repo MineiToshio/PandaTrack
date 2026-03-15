@@ -71,6 +71,8 @@
   "detail": {
     "pendingDisclaimerTitle": "Store pending review",
     "pendingDisclaimerMessage": "This profile was created by the community and has not been verified by our team yet. Please review the information with caution.",
+    "inactiveWarningTitle": "Store no longer active",
+    "inactiveWarningMessage": "This store is no longer operating. The information is kept for reference only.",
     "noDescription": "This store does not have a description yet.",
     "countryLabel": "Country",
     "categoriesLabel": "Categories"

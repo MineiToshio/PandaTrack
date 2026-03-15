@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/styles";
+import Chip from "@/components/core/Chip";
 
 type StoreMultiTagAutocompleteOption = {
   value: string;
@@ -155,10 +156,7 @@ export default function StoreMultiTagAutocomplete({
           : null}
         <div className="border-input bg-background focus-within:ring-ring flex min-h-10 w-full flex-wrap items-center gap-1 rounded-md border px-2 py-1 focus-within:ring-2 focus-within:ring-offset-2 focus-within:outline-none">
           {selectedOptions.map((option) => (
-            <span
-              key={option.value}
-              className="border-border bg-muted inline-flex items-center gap-1 rounded-full border px-2 py-1 text-sm"
-            >
+            <Chip key={option.value} className="inline-flex items-center gap-1 px-2 py-1 text-sm">
               {option.label}
               <button
                 type="button"
@@ -168,7 +166,7 @@ export default function StoreMultiTagAutocomplete({
               >
                 <X size={14} aria-hidden />
               </button>
-            </span>
+            </Chip>
           ))}
           <input
             id={id}

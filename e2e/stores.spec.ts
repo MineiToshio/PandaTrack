@@ -18,19 +18,15 @@ test.describe("Store creation flow", () => {
     await expect(page.getByRole("button", { name: /create store|crear tienda/i })).toBeVisible();
   });
 
-  test("authenticated user can create a store and is redirected to store detail with pending disclaimer", async ({
-    page,
-  }) => {
+  test("create store form validates required fields without persisting data", async ({ page }) => {
     test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
     await signInAndLandOnDashboard(page);
 
     await page.goto("/en/stores/new");
-    await page.getByLabel(/store name|nombre de la tienda/i).fill(`E2E Store ${Date.now()}`);
-    await page.locator("#store-country").selectOption("ES");
-    await page.getByRole("button", { name: /manga/i }).click();
     await page.getByRole("button", { name: /create store|crear tienda/i }).click();
 
-    await expect(page).toHaveURL(/\/en\/store\/.+/);
-    await expect(page.getByText(/store pending review|tienda pendiente de revisión/i)).toBeVisible();
+    await expect(page).toHaveURL(/\/en\/stores\/new$/);
+    await expect(page.getByLabel(/store name|nombre de la tienda/i)).toHaveAttribute("aria-invalid", "true");
+    await expect(page.locator("#store-country")).toHaveAttribute("aria-invalid", "true");
   });
 });

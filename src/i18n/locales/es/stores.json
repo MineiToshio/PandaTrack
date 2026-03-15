@@ -71,6 +71,8 @@
   "detail": {
     "pendingDisclaimerTitle": "Tienda pendiente de revisión",
     "pendingDisclaimerMessage": "Este perfil fue creado por la comunidad y todavía no ha sido verificado por el equipo. Te recomendamos revisar la información con precaución.",
+    "inactiveWarningTitle": "Tienda sin actividad",
+    "inactiveWarningMessage": "Esta tienda ya no está en actividad. La información se mantiene solo como referencia.",
     "noDescription": "Esta tienda no tiene descripción todavía.",
     "countryLabel": "País",
     "categoriesLabel": "Categorías"

@@ -91,5 +91,6 @@ export const POSTHOG_EVENTS = {
   STORE: {
     CREATED: "store_created",
     DUPLICATE_SUGGESTIONS_SHOWN: "store_duplicate_suggestions_shown",
+    SEARCHED: "store_searched",
   },
 } as const;

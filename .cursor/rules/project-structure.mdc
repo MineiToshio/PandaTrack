@@ -254,6 +254,17 @@ For a given page or route group, you can have:
 
 All of these are **siblings** at the same level (e.g. under **`src/app/[locale]/(landing)/`**).
 
+### Nested route segments: scope by segment first
+
+When a feature has nested route segments (for example `stores/new` and `stores/[slug]`), do not keep all page-specific files in the parent segment.
+
+- Put files used only by the parent page in the parent segment folders (for example `stores/_components`, `stores/_utils` for `stores/page.tsx` only).
+- Put files used only by a child segment inside that child segment:
+  - `stores/new/_components`, `stores/new/_actions`, `stores/new/_schemas`
+  - `stores/[slug]/_components`, `stores/[slug]/_utils`, etc.
+- If a file is shared by multiple child segments, keep it in the nearest shared parent segment.
+- Prefer the smallest valid scope: `segment/_components` before parent-level `_components`.
+
 ---
 
 ## Promotion rule: when to move code up

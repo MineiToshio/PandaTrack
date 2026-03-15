@@ -6,7 +6,7 @@ import { POSTHOG_EVENTS } from "@/lib/constants";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { createStore as createStoreQuery } from "@/queries/store";
 import { createStoreSchema, type CreateStoreInput } from "../_schemas/createStoreSchema";
-import type { StoreStatus } from "../../../../../../generated/prisma/client";
+import type { StoreStatus } from "../../../../../../../generated/prisma/client";
 
 const SLUG_COLLISION_MAX_ATTEMPTS = 5;
 

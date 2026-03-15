@@ -1,7 +1,8 @@
+import type { ReactNode } from "react";
 import { cn } from "@/lib/styles";
 
 type ChipProps = {
-  children: string;
+  children: ReactNode;
   className?: string;
 };
 

@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { buildPageMetadata } from "@/lib/seo";
-import CreateStoreForm from "../_components/CreateStoreForm";
+import CreateStoreForm from "./_components/CreateStoreForm";
 
 type StoresNewPageProps = {
   params: Promise<{ locale: string }>;

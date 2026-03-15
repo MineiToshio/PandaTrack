@@ -81,9 +81,43 @@ export interface StoreDetail {
   status: StoreStatus;
   storeType: "BUSINESS" | "PERSON";
   countryCode: string;
+  isActive: boolean;
   createdAt: Date;
   presenceTypes: StorePresenceType[];
   categoryKeys: string[];
+  /** Only for BUSINESS stores; PERSON stores do not expose these. */
+  logoUrl?: string | null;
+  /** Only for BUSINESS stores; public channels only. */
+  contactChannels?: Array<{ type: StoreContactChannelType; value: string; label?: string | null }>;
+  /** Only for BUSINESS stores; public addresses only. */
+  addresses?: Array<{
+    countryCode: string;
+    city?: string | null;
+    addressLine: string;
+    reference?: string | null;
+  }>;
+}
+
+export interface PublicStoreListingItem {
+  slug: string;
+  name: string;
+  countryCode: string;
+  status: StoreStatus;
+  storeType: "BUSINESS" | "PERSON";
+  presenceTypes: StorePresenceType[];
+  categoryKeys: string[];
+  averageRating: number | null;
+  reviewCount: number;
+}
+
+export interface PublicStoreListingFilters {
+  nameQuery?: string;
+  categoryKeys?: string[];
+  countryCodes?: string[];
+  importCountryCodes?: string[];
+  presenceTypes?: StorePresenceType[];
+  receivesOrders?: boolean;
+  hasStock?: boolean;
 }
 
 /**
@@ -151,15 +185,15 @@ export async function createStore(db: PrismaClient, input: CreateStoreInput): Pr
 }
 
 /**
- * Returns a public, active store by slug for the store detail page.
- * Pending stores are included so they can be discovered in-app while moderation is ongoing.
+ * Returns a public store by slug for the store detail page.
+ * Pending stores are included so they can be discovered in-app; inactive stores are included and should show a warning.
+ * Business vs person visibility: BUSINESS exposes logo, contact channels, and addresses; PERSON does not.
  */
 export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<StoreDetail | null> {
   const store = await db.store.findFirst({
     where: {
       slug,
       visibility: "PUBLIC",
-      isActive: true,
       status: { in: ["PENDING", "APPROVED"] },
     },
     select: {
@@ -170,7 +204,9 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
       status: true,
       storeType: true,
       countryCode: true,
+      isActive: true,
       createdAt: true,
+      logoUrl: true,
       presences: {
         select: {
           presenceType: true,
@@ -181,6 +217,23 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
           categoryKey: true,
         },
       },
+      contactChannels: {
+        where: { isPublic: true },
+        select: {
+          type: true,
+          value: true,
+          label: true,
+        },
+      },
+      addresses: {
+        where: { isPublic: true },
+        select: {
+          countryCode: true,
+          city: true,
+          addressLine: true,
+          reference: true,
+        },
+      },
     },
   });
 
@@ -188,7 +241,10 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
     return null;
   }
 
-  return {
+  const presenceTypes = store.presences.map((p) => p.presenceType);
+  const categoryKeys = store.categoryAssignments.map((a) => a.categoryKey);
+
+  const base: StoreDetail = {
     id: store.id,
     slug: store.slug,
     name: store.name,
@@ -196,8 +252,113 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
     status: store.status,
     storeType: store.storeType,
     countryCode: store.countryCode,
+    isActive: store.isActive,
     createdAt: store.createdAt,
-    presenceTypes: store.presences.map((presence) => presence.presenceType),
-    categoryKeys: store.categoryAssignments.map((assignment) => assignment.categoryKey),
+    presenceTypes,
+    categoryKeys,
   };
+
+  if (store.storeType === "BUSINESS") {
+    return {
+      ...base,
+      logoUrl: store.logoUrl,
+      contactChannels: store.contactChannels.map((ch) => ({
+        type: ch.type,
+        value: ch.value,
+        label: ch.label,
+      })),
+      addresses: store.addresses.map((a) => ({
+        countryCode: a.countryCode,
+        city: a.city,
+        addressLine: a.addressLine,
+        reference: a.reference,
+      })),
+    };
+  }
+
+  return base;
+}
+
+/**
+ * Public store listing with optional filters.
+ * OR within same filter family (e.g. any of selected categories), AND across families.
+ * Only PUBLIC, PENDING or APPROVED stores; isActive is not filtered so inactive stores can appear (detail page shows warning).
+ */
+export async function getPublicStoresListing(
+  db: PrismaClient,
+  filters: PublicStoreListingFilters,
+): Promise<PublicStoreListingItem[]> {
+  const {
+    nameQuery,
+    categoryKeys = [],
+    countryCodes = [],
+    importCountryCodes = [],
+    presenceTypes = [],
+    receivesOrders = false,
+    hasStock = false,
+  } = filters;
+
+  const trimmedName = nameQuery?.trim();
+  const hasCategoryFilter = categoryKeys.length > 0;
+  const hasCountryFilter = countryCodes.length > 0;
+  const hasImportCountryFilter = importCountryCodes.length > 0;
+  const hasPresenceFilter = presenceTypes.length > 0;
+
+  const stores = await db.store.findMany({
+    where: {
+      visibility: "PUBLIC",
+      status: { in: ["PENDING", "APPROVED"] },
+      ...(trimmedName && {
+        name: { contains: trimmedName, mode: "insensitive" },
+      }),
+      ...(hasCategoryFilter && {
+        categoryAssignments: {
+          some: { categoryKey: { in: categoryKeys } },
+        },
+      }),
+      ...(hasCountryFilter && {
+        countryCode: { in: countryCodes },
+      }),
+      ...(hasPresenceFilter && {
+        presences: {
+          some: { presenceType: { in: presenceTypes } },
+        },
+      }),
+      ...(hasImportCountryFilter && {
+        importCountries: {
+          some: { countryCode: { in: importCountryCodes } },
+        },
+      }),
+      ...(receivesOrders && {
+        receivesOrders: true,
+      }),
+      ...(hasStock && {
+        hasStock: true,
+      }),
+    },
+    select: {
+      slug: true,
+      name: true,
+      countryCode: true,
+      status: true,
+      storeType: true,
+      averageRating: true,
+      reviewCount: true,
+      presences: { select: { presenceType: true } },
+      categoryAssignments: { select: { categoryKey: true } },
+    },
+    orderBy: [{ averageRating: "desc" }, { reviewCount: "desc" }, { name: "asc" }],
+  });
+
+  return stores.map((s) => ({
+    slug: s.slug,
+    name: s.name,
+    countryCode: s.countryCode,
+    status: s.status,
+    storeType: s.storeType,
+    presenceTypes: s.presences.map((p) => p.presenceType),
+    categoryKeys: s.categoryAssignments.map((a) => a.categoryKey),
+    averageRating: s.averageRating,
+    reviewCount: s.reviewCount,
+  }));
 }
