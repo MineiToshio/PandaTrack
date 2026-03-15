@@ -11,6 +11,7 @@ describe("parseListingSearchParams", () => {
       presenceTypes: [],
       receivesOrders: false,
       hasStock: false,
+      page: 1,
     });
   });
 
@@ -23,6 +24,7 @@ describe("parseListingSearchParams", () => {
       presenceTypes: [],
       receivesOrders: false,
       hasStock: false,
+      page: 1,
     });
   });
 
@@ -35,6 +37,7 @@ describe("parseListingSearchParams", () => {
       presenceTypes: [],
       receivesOrders: false,
       hasStock: false,
+      page: 1,
     });
   });
 
@@ -47,6 +50,7 @@ describe("parseListingSearchParams", () => {
       presenceTypes: [],
       receivesOrders: false,
       hasStock: false,
+      page: 1,
     });
   });
 
@@ -59,6 +63,7 @@ describe("parseListingSearchParams", () => {
       presenceTypes: [],
       receivesOrders: false,
       hasStock: false,
+      page: 1,
     });
   });
 
@@ -71,6 +76,7 @@ describe("parseListingSearchParams", () => {
       presenceTypes: [],
       receivesOrders: false,
       hasStock: false,
+      page: 1,
     });
   });
 
@@ -88,6 +94,7 @@ describe("parseListingSearchParams", () => {
       presenceTypes: ["ONLINE", "PHYSICAL"],
       receivesOrders: false,
       hasStock: false,
+      page: 1,
     });
   });
 
@@ -104,6 +111,7 @@ describe("parseListingSearchParams", () => {
       presenceTypes: ["ONLINE", "PHYSICAL"],
       receivesOrders: false,
       hasStock: false,
+      page: 1,
     });
   });
 
@@ -122,6 +130,33 @@ describe("parseListingSearchParams", () => {
       presenceTypes: [],
       receivesOrders: true,
       hasStock: true,
+      page: 1,
+    });
+  });
+
+  it("parses page when value is valid", () => {
+    expect(parseListingSearchParams({ page: "3" })).toEqual({
+      nameQuery: undefined,
+      categoryKeys: [],
+      countryCodes: [],
+      importCountryCodes: [],
+      presenceTypes: [],
+      receivesOrders: false,
+      hasStock: false,
+      page: 3,
+    });
+  });
+
+  it("defaults page to one when value is invalid", () => {
+    expect(parseListingSearchParams({ page: "0" })).toEqual({
+      nameQuery: undefined,
+      categoryKeys: [],
+      countryCodes: [],
+      importCountryCodes: [],
+      presenceTypes: [],
+      receivesOrders: false,
+      hasStock: false,
+      page: 1,
     });
   });
 });

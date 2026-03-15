@@ -12,6 +12,7 @@ export function parseListingSearchParams(raw: Record<string, string | string[] |
   presenceTypes: StorePresenceType[];
   receivesOrders: boolean;
   hasStock: boolean;
+  page: number;
 } {
   const nameQuery = typeof raw.q === "string" ? raw.q.trim() || undefined : undefined;
   const categoryKeys = arrayFromParam(raw.category).filter(Boolean);
@@ -22,10 +23,25 @@ export function parseListingSearchParams(raw: Record<string, string | string[] |
   );
   const receivesOrders = raw.receivesOrders === "true";
   const hasStock = raw.hasStock === "true";
-  return { nameQuery, categoryKeys, countryCodes, importCountryCodes, presenceTypes, receivesOrders, hasStock };
+  const page = parsePositiveInteger(raw.page);
+  return { nameQuery, categoryKeys, countryCodes, importCountryCodes, presenceTypes, receivesOrders, hasStock, page };
 }
 
 function arrayFromParam(p: string | string[] | undefined): string[] {
   if (p == null) return [];
   return Array.isArray(p) ? p : [p];
+}
+
+function parsePositiveInteger(value: string | string[] | undefined): number {
+  const firstValue = Array.isArray(value) ? value[0] : value;
+  if (!firstValue) {
+    return 1;
+  }
+
+  const parsedValue = Number.parseInt(firstValue, 10);
+  if (!Number.isFinite(parsedValue) || parsedValue < 1) {
+    return 1;
+  }
+
+  return parsedValue;
 }

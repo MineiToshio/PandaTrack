@@ -25,6 +25,14 @@
   "empty": "No stores yet. Be the first to add one.",
   "noResults": "No stores match your filters. Try changing or clearing them.",
   "clearFilters": "Clear filters",
+  "pagination": {
+    "summary": "{total} stores total - showing {start}-{end}",
+    "summaryEmpty": "0 stores total",
+    "navigationAriaLabel": "Store pagination",
+    "goToPageAriaLabel": "Go to page {page}",
+    "previous": "Previous",
+    "next": "Next"
+  },
   "ratingCount": "{count} review",
   "ratingCount_other": "{count} reviews",
   "pendingBadge": "Pending review",

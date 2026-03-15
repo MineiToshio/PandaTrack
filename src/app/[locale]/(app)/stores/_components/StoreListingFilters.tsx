@@ -31,6 +31,9 @@ type StoreListingFiltersProps = {
   initialPresenceTypes: string[];
   initialReceivesOrders: boolean;
   initialHasStock: boolean;
+  totalStores: number;
+  showingFrom: number;
+  showingTo: number;
 };
 
 type ListingFilters = {
@@ -65,6 +68,9 @@ export default function StoreListingFilters({
   initialPresenceTypes,
   initialReceivesOrders,
   initialHasStock,
+  totalStores,
+  showingFrom,
+  showingTo,
 }: StoreListingFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -127,7 +133,7 @@ export default function StoreListingFilters({
     [countryOptions, tCountries],
   );
 
-  const buildUrlWithFilters = (filters: ListingFilters) => {
+  const buildUrlWithFilters = (filters: ListingFilters, page: number = 1) => {
     const params = new URLSearchParams();
     if (filters.nameQuery.trim()) params.set("q", filters.nameQuery.trim());
     filters.categoryKeys.forEach((value) => params.append("category", value));
@@ -136,6 +142,7 @@ export default function StoreListingFilters({
     filters.presenceTypes.forEach((value) => params.append("presence", value));
     if (filters.receivesOrders) params.set("receivesOrders", "true");
     if (filters.hasStock) params.set("hasStock", "true");
+    if (page > 1) params.set("page", String(page));
     const queryString = params.toString();
     return queryString ? `${pathname}?${queryString}` : pathname;
   };
@@ -150,7 +157,7 @@ export default function StoreListingFilters({
       receives_orders: draftFilters.receivesOrders,
       has_stock: draftFilters.hasStock,
     });
-    const nextUrl = buildUrlWithFilters(draftFilters);
+    const nextUrl = buildUrlWithFilters(draftFilters, 1);
     router.push(nextUrl);
     setIsOpen(false);
   };
@@ -189,7 +196,7 @@ export default function StoreListingFilters({
     if (type === "presence" && value)
       nextFilters.presenceTypes = nextFilters.presenceTypes.filter((item) => item !== value);
 
-    router.push(buildUrlWithFilters(nextFilters));
+    router.push(buildUrlWithFilters(nextFilters, 1));
   };
 
   const toggleDraftPresenceFilter = (value: string) => {
@@ -203,24 +210,38 @@ export default function StoreListingFilters({
 
   return (
     <div className="mt-4 space-y-4">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={openDrawer}
-          className={cn(buttonVariants({ variant: "secondary" }), "min-h-11 rounded-xl px-4")}
-        >
-          <Filter className="mr-2 size-4" aria-hidden />
-          {t("searchButton")}
-        </button>
-        <Link
-          href={`/${locale}${ROUTES.storesNew}`}
-          className={cn(
-            buttonVariants({ variant: "primary" }),
-            "min-h-11 shrink-0 rounded-xl px-5 shadow-sm transition-transform duration-200 hover:-translate-y-0.5",
-          )}
-        >
-          {createStoreLabel}
-        </Link>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 space-y-2">
+          <Typography size="sm" className="text-text-muted">
+            {totalStores === 0
+              ? t("pagination.summaryEmpty")
+              : t("pagination.summary", {
+                  total: totalStores,
+                  start: showingFrom,
+                  end: showingTo,
+                })}
+          </Typography>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-2 lg:justify-start">
+          <button
+            type="button"
+            onClick={openDrawer}
+            className={cn(buttonVariants({ variant: "secondary" }), "min-h-11 rounded-xl px-4")}
+          >
+            <Filter className="mr-2 size-4" aria-hidden />
+            {t("searchButton")}
+          </button>
+          <Link
+            href={`/${locale}${ROUTES.storesNew}`}
+            className={cn(
+              buttonVariants({ variant: "primary" }),
+              "min-h-11 shrink-0 rounded-xl px-5 shadow-sm transition-transform duration-200 hover:-translate-y-0.5",
+            )}
+          >
+            {createStoreLabel}
+          </Link>
+        </div>
       </div>
 
       {hasActiveFilters && (

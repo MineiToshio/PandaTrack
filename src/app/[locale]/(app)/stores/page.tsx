@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import { getPublicStoresListing } from "@/queries/store";
+import { DEFAULT_PUBLIC_STORE_PAGE_SIZE, getPublicStoresListingPage } from "@/queries/store";
 import { buildPageMetadata } from "@/lib/seo";
 import { parseListingSearchParams } from "./_utils/listingParams";
 import StoreListingContent from "./_components/StoreListingContent";
@@ -9,11 +9,42 @@ import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import { Sparkles } from "lucide-react";
 import StoreListingFilters from "./_components/StoreListingFilters";
+import StoreListingPagination from "./_components/StoreListingPagination";
 
 type StoresPageProps = {
   params: Promise<{ locale: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+function createStoresPageHref(
+  basePath: string,
+  rawParams: Record<string, string | string[] | undefined>,
+  page: number,
+): string {
+  const params = new URLSearchParams();
+
+  Object.entries(rawParams).forEach(([key, value]) => {
+    if (key === "page" || value == null) {
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        params.append(key, item);
+      });
+      return;
+    }
+
+    params.set(key, value);
+  });
+
+  if (page > 1) {
+    params.set("page", String(page));
+  }
+
+  const queryString = params.toString();
+  return queryString ? `${basePath}?${queryString}` : basePath;
+}
 
 export async function generateMetadata({ params }: StoresPageProps): Promise<Metadata> {
   const { locale } = await params;
@@ -31,11 +62,11 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
   await getTranslations({ locale, namespace: "storeListing" });
 
   const rawParams = await searchParams;
-  const { nameQuery, categoryKeys, countryCodes, importCountryCodes, presenceTypes, receivesOrders, hasStock } =
+  const { nameQuery, categoryKeys, countryCodes, importCountryCodes, presenceTypes, receivesOrders, hasStock, page } =
     parseListingSearchParams(rawParams);
 
-  const [stores, categoryOptions, countryOptions] = await Promise.all([
-    getPublicStoresListing(prisma, {
+  const [listingPage, categoryOptions, countryOptions] = await Promise.all([
+    getPublicStoresListingPage(prisma, {
       nameQuery,
       categoryKeys: categoryKeys.length > 0 ? categoryKeys : undefined,
       countryCodes: countryCodes.length > 0 ? countryCodes : undefined,
@@ -43,6 +74,8 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
       presenceTypes: presenceTypes.length > 0 ? presenceTypes : undefined,
       receivesOrders,
       hasStock,
+      page,
+      pageSize: DEFAULT_PUBLIC_STORE_PAGE_SIZE,
     }),
     prisma.storeCategory.findMany({
       where: { isActive: true },
@@ -57,6 +90,10 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
 
   const tStores = await getTranslations({ locale, namespace: "stores" });
   const tListing = await getTranslations({ locale, namespace: "storeListing" });
+  const showingFrom = listingPage.totalCount === 0 ? 0 : (listingPage.currentPage - 1) * listingPage.pageSize + 1;
+  const showingTo = Math.min(listingPage.currentPage * listingPage.pageSize, listingPage.totalCount);
+  const storesBasePath = `/${locale}/stores`;
+  const buildPaginationHref = (targetPage: number) => createStoresPageHref(storesBasePath, rawParams, targetPage);
 
   return (
     <div className="bg-background text-foreground px-4 py-6 sm:py-8">
@@ -89,8 +126,17 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
           initialPresenceTypes={presenceTypes}
           initialReceivesOrders={receivesOrders}
           initialHasStock={hasStock}
+          totalStores={listingPage.totalCount}
+          showingFrom={showingFrom}
+          showingTo={showingTo}
         />
-        <StoreListingContent locale={locale} stores={stores} />
+        <StoreListingContent locale={locale} stores={listingPage.items} />
+        <StoreListingPagination
+          locale={locale}
+          totalPages={listingPage.totalPages}
+          currentPage={listingPage.currentPage}
+          createPageHref={buildPaginationHref}
+        />
       </div>
     </div>
   );

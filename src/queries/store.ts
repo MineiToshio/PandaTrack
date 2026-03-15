@@ -1,4 +1,5 @@
 import type {
+  Prisma,
   PrismaClient,
   StoreContactChannelType,
   StorePresenceType,
@@ -8,6 +9,7 @@ import { normalizeStoreName } from "@/lib/store/duplicateMatch";
 import { generateStoreSlug } from "@/lib/store/slug";
 
 const DEFAULT_DUPLICATE_CANDIDATES_LIMIT = 10;
+export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = 10;
 
 export interface DuplicateCandidate {
   id: string;
@@ -122,6 +124,154 @@ export interface PublicStoreListingFilters {
   presenceTypes?: StorePresenceType[];
   receivesOrders?: boolean;
   hasStock?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface PublicStoreListingPage {
+  items: PublicStoreListingItem[];
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prisma.StoreWhereInput {
+  const {
+    nameQuery,
+    categoryKeys = [],
+    countryCodes = [],
+    importCountryCodes = [],
+    presenceTypes = [],
+    receivesOrders = false,
+    hasStock = false,
+  } = filters;
+
+  const trimmedName = nameQuery?.trim();
+  const hasCategoryFilter = categoryKeys.length > 0;
+  const hasCountryFilter = countryCodes.length > 0;
+  const hasImportCountryFilter = importCountryCodes.length > 0;
+  const hasPresenceFilter = presenceTypes.length > 0;
+
+  return {
+    visibility: "PUBLIC",
+    status: { in: ["PENDING", "APPROVED"] },
+    ...(trimmedName && {
+      name: { contains: trimmedName, mode: "insensitive" },
+    }),
+    ...(hasCategoryFilter && {
+      categoryAssignments: {
+        some: { categoryKey: { in: categoryKeys } },
+      },
+    }),
+    ...(hasCountryFilter && {
+      countryCode: { in: countryCodes },
+    }),
+    ...(hasPresenceFilter && {
+      presences: {
+        some: { presenceType: { in: presenceTypes } },
+      },
+    }),
+    ...(hasImportCountryFilter && {
+      importCountries: {
+        some: { countryCode: { in: importCountryCodes } },
+      },
+    }),
+    ...(receivesOrders && {
+      receivesOrders: true,
+    }),
+    ...(hasStock && {
+      hasStock: true,
+    }),
+  };
+}
+
+function mapPublicStoreListingItem(store: {
+  slug: string;
+  name: string;
+  countryCode: string;
+  status: StoreStatus;
+  storeType: "BUSINESS" | "PERSON";
+  receivesOrders: boolean | null;
+  hasStock: boolean | null;
+  averageRating: number | null;
+  reviewCount: number;
+  presences: Array<{ presenceType: StorePresenceType }>;
+  categoryAssignments: Array<{ categoryKey: string }>;
+  importCountries: Array<{ countryCode: string }>;
+  contactChannels: Array<{ type: StoreContactChannelType; value: string }>;
+}): PublicStoreListingItem {
+  return {
+    slug: store.slug,
+    name: store.name,
+    countryCode: store.countryCode,
+    status: store.status,
+    storeType: store.storeType,
+    presenceTypes: store.presences.map((p) => p.presenceType),
+    categoryKeys: store.categoryAssignments.map((a) => a.categoryKey),
+    importCountryCodes: store.importCountries.map((country) => country.countryCode),
+    contactChannels: store.contactChannels.map((channel) => ({
+      type: channel.type,
+      value: channel.value,
+    })),
+    receivesOrders: store.receivesOrders,
+    hasStock: store.hasStock,
+    averageRating: store.averageRating,
+    reviewCount: store.reviewCount,
+  };
+}
+
+export async function getPublicStoresListingPage(
+  db: PrismaClient,
+  filters: PublicStoreListingFilters,
+): Promise<PublicStoreListingPage> {
+  const requestedPage = filters.page && Number.isInteger(filters.page) && filters.page > 0 ? filters.page : 1;
+  const requestedPageSize =
+    filters.pageSize && Number.isInteger(filters.pageSize) && filters.pageSize > 0
+      ? filters.pageSize
+      : DEFAULT_PUBLIC_STORE_PAGE_SIZE;
+  const where = buildPublicStoreListingWhere(filters);
+
+  const totalCount = await db.store.count({ where });
+  const totalPages = Math.max(1, Math.ceil(totalCount / requestedPageSize));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const skip = (currentPage - 1) * requestedPageSize;
+
+  const stores = await db.store.findMany({
+    where,
+    select: {
+      slug: true,
+      name: true,
+      countryCode: true,
+      status: true,
+      storeType: true,
+      receivesOrders: true,
+      hasStock: true,
+      averageRating: true,
+      reviewCount: true,
+      presences: { select: { presenceType: true } },
+      categoryAssignments: { select: { categoryKey: true } },
+      importCountries: { select: { countryCode: true } },
+      contactChannels: {
+        where: { isPublic: true },
+        select: {
+          type: true,
+          value: true,
+        },
+      },
+    },
+    orderBy: [{ name: "asc" }],
+    skip,
+    take: requestedPageSize,
+  });
+
+  return {
+    items: stores.map(mapPublicStoreListingItem),
+    totalCount,
+    currentPage,
+    pageSize: requestedPageSize,
+    totalPages,
+  };
 }
 
 /**
@@ -292,94 +442,6 @@ export async function getPublicStoresListing(
   db: PrismaClient,
   filters: PublicStoreListingFilters,
 ): Promise<PublicStoreListingItem[]> {
-  const {
-    nameQuery,
-    categoryKeys = [],
-    countryCodes = [],
-    importCountryCodes = [],
-    presenceTypes = [],
-    receivesOrders = false,
-    hasStock = false,
-  } = filters;
-
-  const trimmedName = nameQuery?.trim();
-  const hasCategoryFilter = categoryKeys.length > 0;
-  const hasCountryFilter = countryCodes.length > 0;
-  const hasImportCountryFilter = importCountryCodes.length > 0;
-  const hasPresenceFilter = presenceTypes.length > 0;
-
-  const stores = await db.store.findMany({
-    where: {
-      visibility: "PUBLIC",
-      status: { in: ["PENDING", "APPROVED"] },
-      ...(trimmedName && {
-        name: { contains: trimmedName, mode: "insensitive" },
-      }),
-      ...(hasCategoryFilter && {
-        categoryAssignments: {
-          some: { categoryKey: { in: categoryKeys } },
-        },
-      }),
-      ...(hasCountryFilter && {
-        countryCode: { in: countryCodes },
-      }),
-      ...(hasPresenceFilter && {
-        presences: {
-          some: { presenceType: { in: presenceTypes } },
-        },
-      }),
-      ...(hasImportCountryFilter && {
-        importCountries: {
-          some: { countryCode: { in: importCountryCodes } },
-        },
-      }),
-      ...(receivesOrders && {
-        receivesOrders: true,
-      }),
-      ...(hasStock && {
-        hasStock: true,
-      }),
-    },
-    select: {
-      slug: true,
-      name: true,
-      countryCode: true,
-      status: true,
-      storeType: true,
-      receivesOrders: true,
-      hasStock: true,
-      averageRating: true,
-      reviewCount: true,
-      presences: { select: { presenceType: true } },
-      categoryAssignments: { select: { categoryKey: true } },
-      importCountries: { select: { countryCode: true } },
-      contactChannels: {
-        where: { isPublic: true },
-        select: {
-          type: true,
-          value: true,
-        },
-      },
-    },
-    orderBy: [{ name: "asc" }],
-  });
-
-  return stores.map((s) => ({
-    slug: s.slug,
-    name: s.name,
-    countryCode: s.countryCode,
-    status: s.status,
-    storeType: s.storeType,
-    presenceTypes: s.presences.map((p) => p.presenceType),
-    categoryKeys: s.categoryAssignments.map((a) => a.categoryKey),
-    importCountryCodes: s.importCountries.map((country) => country.countryCode),
-    contactChannels: s.contactChannels.map((channel) => ({
-      type: channel.type,
-      value: channel.value,
-    })),
-    receivesOrders: s.receivesOrders,
-    hasStock: s.hasStock,
-    averageRating: s.averageRating,
-    reviewCount: s.reviewCount,
-  }));
+  const listingPage = await getPublicStoresListingPage(db, filters);
+  return listingPage.items;
 }
