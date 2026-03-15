@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Filter, Globe, Search, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ROUTES } from "@/lib/constants";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
@@ -43,6 +43,16 @@ type ListingFilters = {
   hasStock: boolean;
 };
 
+function cloneListingFilters(filters: ListingFilters): ListingFilters {
+  return {
+    ...filters,
+    categoryKeys: [...filters.categoryKeys],
+    countryCodes: [...filters.countryCodes],
+    importCountryCodes: [...filters.importCountryCodes],
+    presenceTypes: [...filters.presenceTypes],
+  };
+}
+
 export default function StoreListingFilters({
   locale,
   createStoreLabel,
@@ -73,26 +83,6 @@ export default function StoreListingFilters({
     hasStock: initialHasStock,
   });
 
-  useEffect(() => {
-    setDraftFilters({
-      nameQuery: initialNameQuery,
-      categoryKeys: initialCategoryKeys,
-      countryCodes: initialCountryCodes,
-      importCountryCodes: initialImportCountryCodes,
-      presenceTypes: initialPresenceTypes,
-      receivesOrders: initialReceivesOrders,
-      hasStock: initialHasStock,
-    });
-  }, [
-    initialNameQuery,
-    initialCategoryKeys,
-    initialCountryCodes,
-    initialImportCountryCodes,
-    initialPresenceTypes,
-    initialReceivesOrders,
-    initialHasStock,
-  ]);
-
   const activeFilters = useMemo(
     () => ({
       nameQuery: initialNameQuery,
@@ -122,6 +112,11 @@ export default function StoreListingFilters({
     activeFilters.presenceTypes.length > 0 ||
     activeFilters.receivesOrders ||
     activeFilters.hasStock;
+
+  const openDrawer = () => {
+    setDraftFilters(cloneListingFilters(activeFilters));
+    setIsOpen(true);
+  };
 
   const categoryAutocompleteOptions = useMemo(
     () => categoryOptions.map((category) => ({ value: category.key, label: tCategories(category.key) })),
@@ -179,13 +174,7 @@ export default function StoreListingFilters({
     type: "query" | "category" | "country" | "importCountry" | "presence" | "orders" | "stock",
     value?: string,
   ) => {
-    const nextFilters: ListingFilters = {
-      ...activeFilters,
-      categoryKeys: [...activeFilters.categoryKeys],
-      countryCodes: [...activeFilters.countryCodes],
-      importCountryCodes: [...activeFilters.importCountryCodes],
-      presenceTypes: [...activeFilters.presenceTypes],
-    };
+    const nextFilters: ListingFilters = cloneListingFilters(activeFilters);
 
     if (type === "query") nextFilters.nameQuery = "";
     if (type === "orders") nextFilters.receivesOrders = false;
@@ -217,7 +206,7 @@ export default function StoreListingFilters({
       <div className="flex flex-wrap items-center justify-end gap-2">
         <button
           type="button"
-          onClick={() => setIsOpen(true)}
+          onClick={openDrawer}
           className={cn(buttonVariants({ variant: "secondary" }), "min-h-11 rounded-xl px-4")}
         >
           <Filter className="mr-2 size-4" aria-hidden />

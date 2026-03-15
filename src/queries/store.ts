@@ -106,6 +106,9 @@ export interface PublicStoreListingItem {
   storeType: "BUSINESS" | "PERSON";
   presenceTypes: StorePresenceType[];
   categoryKeys: string[];
+  importCountryCodes: string[];
+  receivesOrders: boolean | null;
+  hasStock: boolean | null;
   averageRating: number | null;
   reviewCount: number;
 }
@@ -342,10 +345,13 @@ export async function getPublicStoresListing(
       countryCode: true,
       status: true,
       storeType: true,
+      receivesOrders: true,
+      hasStock: true,
       averageRating: true,
       reviewCount: true,
       presences: { select: { presenceType: true } },
       categoryAssignments: { select: { categoryKey: true } },
+      importCountries: { select: { countryCode: true } },
     },
     orderBy: [{ averageRating: "desc" }, { reviewCount: "desc" }, { name: "asc" }],
   });
@@ -358,6 +364,9 @@ export async function getPublicStoresListing(
     storeType: s.storeType,
     presenceTypes: s.presences.map((p) => p.presenceType),
     categoryKeys: s.categoryAssignments.map((a) => a.categoryKey),
+    importCountryCodes: s.importCountries.map((country) => country.countryCode),
+    receivesOrders: s.receivesOrders,
+    hasStock: s.hasStock,
     averageRating: s.averageRating,
     reviewCount: s.reviewCount,
   }));

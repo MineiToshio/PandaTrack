@@ -11,17 +11,29 @@
   "filters": {
     "category": "Category",
     "country": "Country",
-    "presence": "Presence",
+    "presence": "Sales channels",
     "importCountry": "Import country"
   },
   "presence": {
-    "ONLINE": "Online",
-    "PHYSICAL": "Physical"
+    "ONLINE": "Online store",
+    "PHYSICAL": "Physical location"
   },
   "empty": "No stores yet. Be the first to add one.",
   "noResults": "No stores match your filters. Try changing or clearing them.",
   "clearFilters": "Clear filters",
   "ratingCount": "{count} review",
   "ratingCount_other": "{count} reviews",
-  "pendingBadge": "Pending review"
+  "pendingBadge": "Pending review",
+  "cards": {
+    "country": "Country",
+    "categories": "Categories",
+    "importCountries": "Import countries",
+    "noImportCountries": "No import countries",
+    "receivesOrdersYes": "Accepts orders",
+    "receivesOrdersNo": "Does not accept orders",
+    "hasStockYes": "Manages inventory",
+    "hasStockNo": "Does not manage inventory",
+    "storeTypeBusiness": "Business",
+    "storeTypePerson": "Seller"
+  }
 }

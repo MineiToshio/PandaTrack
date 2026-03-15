@@ -11,17 +11,29 @@
   "filters": {
     "category": "Categoría",
     "country": "País",
-    "presence": "Presencia",
+    "presence": "Canales de venta",
     "importCountry": "País de importación"
   },
   "presence": {
-    "ONLINE": "Online",
-    "PHYSICAL": "Físico"
+    "ONLINE": "Tienda online",
+    "PHYSICAL": "Con local"
   },
   "empty": "Aún no hay tiendas. Sé el primero en añadir una.",
   "noResults": "Ninguna tienda coincide con los filtros. Prueba a cambiarlos o quitarlos.",
   "clearFilters": "Quitar filtros",
   "ratingCount": "{count} reseña",
   "ratingCount_other": "{count} reseñas",
-  "pendingBadge": "Pendiente de revisión"
+  "pendingBadge": "Pendiente de revisión",
+  "cards": {
+    "country": "País",
+    "categories": "Categorías",
+    "importCountries": "Países de importación",
+    "noImportCountries": "Sin países de importación",
+    "receivesOrdersYes": "Acepta pedidos",
+    "receivesOrdersNo": "No acepta pedidos",
+    "hasStockYes": "Maneja inventario",
+    "hasStockNo": "No maneja inventario",
+    "storeTypeBusiness": "Negocio",
+    "storeTypePerson": "Vendedor"
+  }
 }
