@@ -361,7 +361,7 @@ export async function getPublicStoresListing(
         },
       },
     },
-    orderBy: [{ averageRating: "desc" }, { reviewCount: "desc" }, { name: "asc" }],
+    orderBy: [{ name: "asc" }],
   });
 
   return stores.map((s) => ({

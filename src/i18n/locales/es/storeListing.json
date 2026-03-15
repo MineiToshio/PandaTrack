@@ -4,6 +4,10 @@
     "description": "Descubre y explora tiendas para tu colección."
   },
   "title": "Tiendas",
+  "hero": {
+    "eyebrow": "Explora y compara",
+    "title": "Directorio de tiendas"
+  },
   "backToListing": "Volver al listado",
   "browseStores": "Ver tiendas",
   "searchPlaceholder": "Buscar por nombre de tienda",

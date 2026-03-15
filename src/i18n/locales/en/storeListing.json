@@ -4,6 +4,10 @@
     "description": "Discover and browse stores for your collection."
   },
   "title": "Stores",
+  "hero": {
+    "eyebrow": "Explore and compare",
+    "title": "Stores directory"
+  },
   "backToListing": "Back to stores",
   "browseStores": "Browse stores",
   "searchPlaceholder": "Search by store name",

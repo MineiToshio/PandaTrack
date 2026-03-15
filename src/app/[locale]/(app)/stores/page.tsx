@@ -55,7 +55,6 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
     }),
   ]);
 
-  const tApp = await getTranslations({ locale, namespace: "appLayout" });
   const tStores = await getTranslations({ locale, namespace: "stores" });
   const tListing = await getTranslations({ locale, namespace: "storeListing" });
 
@@ -67,10 +66,10 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
             <div className="space-y-2">
               <span className="bg-primary/15 text-primary inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold">
                 <Sparkles className="size-3.5" aria-hidden />
-                {tListing("title")}
+                {tListing("hero.eyebrow")}
               </span>
-              <Heading as="h1" size="xs" className="text-text-title">
-                {tApp("nav.stores")}
+              <Heading as="h1" size="xs" className="text-text-title text-base">
+                {tListing("hero.title")}
               </Heading>
               <Typography size="sm" className="text-text-muted max-w-2xl">
                 {tListing("meta.description")}
