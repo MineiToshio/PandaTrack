@@ -107,6 +107,7 @@ export interface PublicStoreListingItem {
   presenceTypes: StorePresenceType[];
   categoryKeys: string[];
   importCountryCodes: string[];
+  contactChannels: Array<{ type: StoreContactChannelType; value: string }>;
   receivesOrders: boolean | null;
   hasStock: boolean | null;
   averageRating: number | null;
@@ -352,6 +353,13 @@ export async function getPublicStoresListing(
       presences: { select: { presenceType: true } },
       categoryAssignments: { select: { categoryKey: true } },
       importCountries: { select: { countryCode: true } },
+      contactChannels: {
+        where: { isPublic: true },
+        select: {
+          type: true,
+          value: true,
+        },
+      },
     },
     orderBy: [{ averageRating: "desc" }, { reviewCount: "desc" }, { name: "asc" }],
   });
@@ -365,6 +373,10 @@ export async function getPublicStoresListing(
     presenceTypes: s.presences.map((p) => p.presenceType),
     categoryKeys: s.categoryAssignments.map((a) => a.categoryKey),
     importCountryCodes: s.importCountries.map((country) => country.countryCode),
+    contactChannels: s.contactChannels.map((channel) => ({
+      type: channel.type,
+      value: channel.value,
+    })),
     receivesOrders: s.receivesOrders,
     hasStock: s.hasStock,
     averageRating: s.averageRating,
