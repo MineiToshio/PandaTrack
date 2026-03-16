@@ -85,8 +85,13 @@ export interface StoreDetail {
   countryCode: string;
   isActive: boolean;
   createdAt: Date;
+  receivesOrders: boolean | null;
+  hasStock: boolean | null;
+  averageRating: number | null;
+  reviewCount: number;
   presenceTypes: StorePresenceType[];
   categoryKeys: string[];
+  importCountryCodes: string[];
   /** Only for BUSINESS stores; PERSON stores do not expose these. */
   logoUrl?: string | null;
   /** Only for BUSINESS stores; public channels only. */
@@ -360,6 +365,10 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
       countryCode: true,
       isActive: true,
       createdAt: true,
+      receivesOrders: true,
+      hasStock: true,
+      averageRating: true,
+      reviewCount: true,
       logoUrl: true,
       presences: {
         select: {
@@ -369,6 +378,11 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
       categoryAssignments: {
         select: {
           categoryKey: true,
+        },
+      },
+      importCountries: {
+        select: {
+          countryCode: true,
         },
       },
       contactChannels: {
@@ -397,6 +411,7 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
 
   const presenceTypes = store.presences.map((p) => p.presenceType);
   const categoryKeys = store.categoryAssignments.map((a) => a.categoryKey);
+  const importCountryCodes = store.importCountries.map((country) => country.countryCode);
 
   const base: StoreDetail = {
     id: store.id,
@@ -408,8 +423,13 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
     countryCode: store.countryCode,
     isActive: store.isActive,
     createdAt: store.createdAt,
+    receivesOrders: store.receivesOrders,
+    hasStock: store.hasStock,
+    averageRating: store.averageRating,
+    reviewCount: store.reviewCount,
     presenceTypes,
     categoryKeys,
+    importCountryCodes,
   };
 
   if (store.storeType === "BUSINESS") {

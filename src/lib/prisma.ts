@@ -10,8 +10,31 @@ const globalForPrisma = global as typeof globalThis & {
   prisma?: PrismaClient;
 };
 
+const LEGACY_SSL_MODES = new Set(["prefer", "require", "verify-ca"]);
+
+function normalizeDatabaseUrlSslMode(databaseUrl: string | undefined): string | undefined {
+  if (!databaseUrl) {
+    return databaseUrl;
+  }
+
+  try {
+    const parsedUrl = new URL(databaseUrl);
+    const sslMode = parsedUrl.searchParams.get("sslmode");
+
+    if (sslMode && LEGACY_SSL_MODES.has(sslMode.toLowerCase())) {
+      parsedUrl.searchParams.set("sslmode", "verify-full");
+      return parsedUrl.toString();
+    }
+
+    return databaseUrl;
+  } catch {
+    // Keep original value if URL parsing fails.
+    return databaseUrl;
+  }
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: normalizeDatabaseUrlSslMode(process.env.DATABASE_URL),
   allowExitOnIdle: true,
 });
 
