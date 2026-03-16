@@ -39,14 +39,11 @@ This document defines the PandaTrack MVP data model and product rules for stores
 - `APPROVED` stores are search-engine indexable.
 - `PENDING` stores must display a disclaimer in the product explaining that the profile was created by a user and has not been approved yet.
 - After store creation, the app should redirect users to the store detail page where this disclaimer is shown when applicable.
-- Duplicate prevention should happen during creation:
-  - when the user leaves the store-name input (on blur)
-  - again before final submit if similar stores are found
-  - suggestion list is capped to top 5 results ordered by best match
-  - matching is normalized (case-insensitive, diacritics-insensitive)
-  - matching supports token reordering and partial meaningful-name overlap (e.g. `Kota Store`, `Store Kota`, `Kota`)
-  - generic terms such as "store" should not be treated as the only matching signal
-  - each suggestion should link to the candidate store profile in a new tab for quick verification
+- Duplicate prevention during creation has two moments (see [Store duplicate detection (create-store flow)](../development/store-duplicate-detection.md)):
+  - **On blur:** When the user leaves the store-name input, show inline suggestions of stores with similar names (all countries, any positive match score, top 5). Each suggestion links to the candidate store profile in a new tab.
+  - **On submit:** Before creating, check for stores in the **same country** with name similarity at or above a threshold (e.g. 70%). If any exist, show a modal with the list; the user can confirm "Create anyway" or cancel. Same name in different countries does not block creation.
+  - Suggestion list is capped to top 5 results ordered by best match.
+  - Matching is normalized (case-insensitive, diacritics-insensitive), supports token reordering and partial meaningful-name overlap (e.g. `Kota Store`, `Store Kota`, `Kota`), and does not treat generic terms (e.g. "store") as the only matching signal.
 
 ### Editing policy
 
