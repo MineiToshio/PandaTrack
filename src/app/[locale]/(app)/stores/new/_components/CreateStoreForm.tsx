@@ -18,7 +18,8 @@ import { ROUTES } from "@/lib/constants";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import posthog from "posthog-js";
 import { createStore, type CreateStoreResult } from "../_actions/createStore";
-import { getDuplicateCandidates } from "../_actions/getDuplicateCandidates";
+import { getDuplicateCandidates, getDuplicateCandidatesForSubmit } from "../_actions/getDuplicateCandidates";
+import { SIMILARITY_THRESHOLD_PERCENT } from "@/lib/store/duplicateMatch";
 import StoreSelect from "./StoreSelect";
 import StoreSegmentedControl from "./StoreSegmentedControl";
 import StoreSelectableTagGroup from "./StoreSelectableTagGroup";
@@ -176,6 +177,7 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
   const [showConfirmDuplicate, setShowConfirmDuplicate] = useState(false);
   const pendingFormDataRef = useRef<FormData | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
+  const duplicateModalCancelRef = useRef<HTMLButtonElement | null>(null);
 
   const fetchCandidates = useCallback(async (query: string) => {
     const trimmedQuery = query.trim();
@@ -278,11 +280,19 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
 
   const handleSubmit = async (formData: FormData) => {
     const submittedName = formData.get("name");
-    const nameToValidate = typeof submittedName === "string" ? submittedName : "";
-    const latestCandidates = await fetchCandidates(nameToValidate);
-    if (latestCandidates.length > 0) {
+    const submittedCountry = formData.get("countryCode");
+    const nameToValidate = typeof submittedName === "string" ? submittedName.trim() : "";
+    const countryCode = typeof submittedCountry === "string" ? submittedCountry : "";
+    const submitCandidates = await getDuplicateCandidatesForSubmit(nameToValidate, countryCode);
+    if (submitCandidates.length > 0) {
+      setDuplicateCandidates(submitCandidates);
       setShowConfirmDuplicate(true);
       pendingFormDataRef.current = formData;
+      posthog.capture(POSTHOG_EVENTS.STORE.DUPLICATE_SUBMIT_MODAL_SHOWN, {
+        candidate_count: submitCandidates.length,
+        name_query: nameToValidate,
+        country_code: countryCode,
+      });
       return;
     }
     startTransition(() => {
@@ -360,6 +370,12 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
     router.replace(`/${locale}${ROUTES.stores}/${createdStoreSlug}`);
   }, [createdStoreSlug, locale, router]);
 
+  useEffect(() => {
+    if (showConfirmDuplicate && duplicateModalCancelRef.current) {
+      duplicateModalCancelRef.current.focus();
+    }
+  }, [showConfirmDuplicate]);
+
   if (success) {
     return (
       <div className="space-y-6">
@@ -378,27 +394,42 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
 
       {showConfirmDuplicate && (
         <div
-          className="border-border bg-muted/30 rounded-lg border p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
           role="alertdialog"
+          aria-modal="true"
           aria-labelledby="duplicate-dialog-title"
           aria-describedby="duplicate-dialog-desc"
         >
-          <Heading as="h3" id="duplicate-dialog-title" size="xs" className="text-text-title mb-2">
-            {t("duplicate.suggestionsTitle")}
-          </Heading>
-          <Typography id="duplicate-dialog-desc" size="sm" className="text-text-body mb-4">
-            {t("duplicate.suggestionsDescription")}
-          </Typography>
-          <div className="mb-4">
-            <DuplicateCandidatesList candidates={duplicateCandidates} locale={locale} tCountries={tCountries} />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="primary" onClick={handleConfirmCreateAnyway} type="button">
-              {t("duplicate.confirmCreate")}
-            </Button>
-            <Button variant="secondary" onClick={handleCancelDuplicateConfirm} type="button">
-              {t("duplicate.cancel")}
-            </Button>
+          <button
+            type="button"
+            className="bg-background/70 absolute inset-0 backdrop-blur-sm"
+            onClick={handleCancelDuplicateConfirm}
+            aria-hidden
+            tabIndex={-1}
+          />
+          <div className="border-border bg-background relative z-10 w-full max-w-lg rounded-xl border p-6 shadow-xl">
+            <Heading as="h3" id="duplicate-dialog-title" size="sm" className="text-text-title mb-2">
+              {t("duplicate.submitModalTitle")}
+            </Heading>
+            <Typography id="duplicate-dialog-desc" size="sm" className="text-text-body mb-4">
+              {t("duplicate.submitModalDescription", { percent: SIMILARITY_THRESHOLD_PERCENT })}
+            </Typography>
+            <div className="mb-6">
+              <DuplicateCandidatesList candidates={duplicateCandidates} locale={locale} tCountries={tCountries} />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="primary" onClick={handleConfirmCreateAnyway} type="button">
+                {t("duplicate.confirmCreate")}
+              </Button>
+              <Button
+                ref={duplicateModalCancelRef}
+                variant="secondary"
+                onClick={handleCancelDuplicateConfirm}
+                type="button"
+              >
+                {t("duplicate.cancel")}
+              </Button>
+            </div>
           </div>
         </div>
       )}

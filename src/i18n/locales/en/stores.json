@@ -57,6 +57,8 @@
   "duplicate": {
     "suggestionsTitle": "Stores with similar names",
     "suggestionsDescription": "Please verify the store you are about to create does not already exist.",
+    "submitModalTitle": "Stores with similar names in the same country",
+    "submitModalDescription": "In the selected country there are stores with a similar name (at least {percent}% similarity). Please verify the store you want to create is not one of the following. You can create the store anyway or cancel.",
     "confirmCreate": "Create anyway",
     "cancel": "Cancel"
   },

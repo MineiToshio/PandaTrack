@@ -57,6 +57,8 @@
   "duplicate": {
     "suggestionsTitle": "Tiendas con nombres similares",
     "suggestionsDescription": "Por favor, verifica que la tienda que vas a crear no exista actualmente.",
+    "submitModalTitle": "Tiendas con nombres similares en el mismo país",
+    "submitModalDescription": "En el país seleccionado hay tiendas con nombre similar (similitud de al menos {percent}%). Verifica que la tienda que quieres crear no sea una de las siguientes. Puedes crear la tienda igualmente o cancelar.",
     "confirmCreate": "Crear igualmente",
     "cancel": "Cancelar"
   },

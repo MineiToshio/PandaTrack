@@ -90,3 +90,17 @@ export function getDuplicateMatchScore(query: string, candidateName: string): nu
 
   return score;
 }
+
+/** Score value that corresponds to 100% similarity (exact / near-exact match). */
+const SCORE_FOR_100_PERCENT = 500;
+
+/**
+ * Converts the raw duplicate match score to a 0–100 similarity percentage for threshold and display.
+ */
+export function getSimilarityPercent(query: string, candidateName: string): number {
+  const score = getDuplicateMatchScore(query, candidateName);
+  return Math.min(100, Math.round((score / SCORE_FOR_100_PERCENT) * 100));
+}
+
+/** Minimum name similarity (0–100) to consider a store a duplicate candidate in the same country. */
+export const SIMILARITY_THRESHOLD_PERCENT = 70;

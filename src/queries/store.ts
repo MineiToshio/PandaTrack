@@ -5,7 +5,12 @@ import type {
   StorePresenceType,
   StoreStatus,
 } from "../../generated/prisma/client";
-import { getDuplicateMatchScore, normalizeStoreName } from "@/lib/store/duplicateMatch";
+import {
+  getDuplicateMatchScore,
+  getSimilarityPercent,
+  normalizeStoreName,
+  SIMILARITY_THRESHOLD_PERCENT,
+} from "@/lib/store/duplicateMatch";
 import { generateStoreSlug } from "@/lib/store/slug";
 
 const DEFAULT_DUPLICATE_CANDIDATES_LIMIT = 5;
@@ -58,6 +63,40 @@ export async function findDuplicateCandidates(
     .filter((item) => item.score > 0)
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
+      return normalizeStoreName(a.store.name).localeCompare(normalizeStoreName(b.store.name));
+    })
+    .slice(0, limit)
+    .map((item) => item.store);
+}
+
+/**
+ * Finds stores in the given country whose name similarity to the query meets the minimum threshold.
+ * Used on create-store submit to warn only when there are similar stores in the same country.
+ */
+export async function findDuplicateCandidatesInCountry(
+  db: PrismaClient,
+  nameQuery: string,
+  countryCode: string,
+  limit: number = DEFAULT_DUPLICATE_CANDIDATES_LIMIT,
+  minSimilarityPercent: number = SIMILARITY_THRESHOLD_PERCENT,
+): Promise<DuplicateCandidate[]> {
+  const trimmed = nameQuery.trim();
+  if (!trimmed || !countryCode) return [];
+
+  const stores = await db.store.findMany({
+    where: { countryCode },
+    select: { id: true, name: true, slug: true, countryCode: true, logoUrl: true },
+    orderBy: { name: "asc" },
+  });
+
+  return stores
+    .map((store) => ({
+      store,
+      similarityPercent: getSimilarityPercent(trimmed, store.name),
+    }))
+    .filter((item) => item.similarityPercent >= minSimilarityPercent)
+    .sort((a, b) => {
+      if (b.similarityPercent !== a.similarityPercent) return b.similarityPercent - a.similarityPercent;
       return normalizeStoreName(a.store.name).localeCompare(normalizeStoreName(b.store.name));
     })
     .slice(0, limit)

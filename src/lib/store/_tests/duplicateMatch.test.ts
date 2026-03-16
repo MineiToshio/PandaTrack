@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getDuplicateMatchScore, normalizeStoreName } from "../duplicateMatch";
+import {
+  getDuplicateMatchScore,
+  getSimilarityPercent,
+  normalizeStoreName,
+  SIMILARITY_THRESHOLD_PERCENT,
+} from "../duplicateMatch";
 
 describe("normalizeStoreName", () => {
   it("trims and lowercases", () => {
@@ -39,5 +44,27 @@ describe("getDuplicateMatchScore", () => {
   it("does not match queries with only generic terms", () => {
     const score = getDuplicateMatchScore("Store", "Any Other Store");
     expect(score).toBe(0);
+  });
+});
+
+describe("getSimilarityPercent", () => {
+  it("returns 100 for exact match", () => {
+    expect(getSimilarityPercent("Manga Store", "Manga Store")).toBe(100);
+  });
+
+  it("returns 0 when no match", () => {
+    expect(getSimilarityPercent("Store", "Any Other Store")).toBe(0);
+  });
+
+  it("returns a value between 0 and 100 for partial match", () => {
+    const percent = getSimilarityPercent("Kota Store", "Store Kota");
+    expect(percent).toBeGreaterThan(0);
+    expect(percent).toBeLessThanOrEqual(100);
+  });
+});
+
+describe("SIMILARITY_THRESHOLD_PERCENT", () => {
+  it("is 70 so submit modal only shows for same-country stores with at least 70% name similarity", () => {
+    expect(SIMILARITY_THRESHOLD_PERCENT).toBe(70);
   });
 });
