@@ -12,6 +12,9 @@ const NESTED_SEGMENT_LABELS: Partial<Record<NavItemId, Record<string, string>>> 
   purchases: {
     "pre-orders": "nav.preOrders",
   },
+  stores: {
+    new: "stores.newStore",
+  },
 };
 
 export interface BreadcrumbItem {
@@ -48,8 +51,9 @@ export function isFirstLevelPrivateRoute(pathname: string): boolean {
 }
 
 /**
- * Builds breadcrumb items for nested private routes. Returns empty array for first-level routes.
- * Parent (primary area) is first; current page is last. Locale is used to build hrefs.
+ * Builds breadcrumb items for nested private routes. Returns only parent segments so the
+ * current page is shown only as the title (avoids duplicating "Detail" in breadcrumb and title).
+ * Locale is used to build hrefs.
  */
 export function getBreadcrumbs(pathname: string, locale: string): BreadcrumbItem[] {
   const segments = getPrivateAppPathSegments(pathname);
@@ -62,7 +66,7 @@ export function getBreadcrumbs(pathname: string, locale: string): BreadcrumbItem
   const navLabelKey = getNavLabelKeyForSegment(primary);
   const items: BreadcrumbItem[] = [{ labelKey: navLabelKey, href: basePath }];
 
-  for (let i = 1; i < segments.length; i++) {
+  for (let i = 1; i < segments.length - 1; i++) {
     const segment = segments[i];
     const nestedLabels = NESTED_SEGMENT_LABELS[primary];
     const labelKey = nestedLabels?.[segment] ?? "breadcrumb.detail";
@@ -84,9 +88,18 @@ function getNavLabelKeyForSegment(segment: NavItemId): string {
   return map[segment] ?? "nav.dashboard";
 }
 
+function getTitleKeyForLastSegment(pathname: string): string {
+  const segments = getPrivateAppPathSegments(pathname);
+  if (segments.length < 2) return "breadcrumb.detail";
+  const primary = segments[0] as NavItemId;
+  const lastSegment = segments[segments.length - 1];
+  const nestedLabels = NESTED_SEGMENT_LABELS[primary];
+  return nestedLabels?.[lastSegment] ?? "breadcrumb.detail";
+}
+
 /**
  * Returns the data to show in the page header (title and optional breadcrumbs) for the current pathname.
- * First-level routes: title only. Nested routes: breadcrumb trail plus current page title.
+ * First-level routes: title only. Nested routes: parent breadcrumb trail plus current page title (no duplicate).
  */
 export function getPageHeader(pathname: string, locale: string): PageHeader {
   const isFirstLevel = isFirstLevelPrivateRoute(pathname);
@@ -101,10 +114,10 @@ export function getPageHeader(pathname: string, locale: string): PageHeader {
     };
   }
 
-  const lastCrumb = breadcrumbs[breadcrumbs.length - 1];
+  const titleKey = getTitleKeyForLastSegment(pathname);
   return {
     isFirstLevel: false,
-    titleKey: lastCrumb.labelKey,
+    titleKey,
     breadcrumbs,
   };
 }

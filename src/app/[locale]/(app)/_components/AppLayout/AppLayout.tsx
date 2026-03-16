@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import AppNavDrawer from "./AppNavDrawer";
 import AppSidebar from "./AppSidebar";
 import ContentHeader from "./ContentHeader";
+import { HeaderTitleProvider } from "./HeaderTitleContext";
 import { useSidebarState } from "./useSidebarState";
 
 const SIDEBAR_WIDTH_EXPANDED_REM = 16;
@@ -42,15 +43,17 @@ export default function AppLayout({ locale, signOutLabel, children }: AppLayoutP
           }
         `}</style>
         <div className="app-layout-content flex min-w-0 flex-1 flex-col transition-[margin-left] duration-200 ease-out motion-reduce:transition-none">
-          <ContentHeader
-            locale={locale}
-            pathname={pathname ?? ""}
-            signOutLabel={signOutLabel}
-            drawerOpen={drawerOpen}
-            onOpenDrawer={handleOpenDrawer}
-            burgerButtonRef={burgerButtonRef}
-          />
-          <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+          <HeaderTitleProvider>
+            <ContentHeader
+              locale={locale}
+              pathname={pathname ?? ""}
+              signOutLabel={signOutLabel}
+              drawerOpen={drawerOpen}
+              onOpenDrawer={handleOpenDrawer}
+              burgerButtonRef={burgerButtonRef}
+            />
+            <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+          </HeaderTitleProvider>
         </div>
       </div>
     </div>

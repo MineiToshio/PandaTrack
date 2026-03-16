@@ -10,6 +10,9 @@
   "breadcrumb": {
     "detail": "Detail"
   },
+  "stores": {
+    "newStore": "New store"
+  },
   "sidebar": {
     "expand": "Expand sidebar",
     "collapse": "Collapse sidebar"

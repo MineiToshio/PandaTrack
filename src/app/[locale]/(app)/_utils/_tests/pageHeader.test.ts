@@ -39,19 +39,16 @@ describe("getBreadcrumbs", () => {
     expect(getBreadcrumbs("/en/purchases", "en")).toEqual([]);
   });
 
-  it("returns parent and current for known nested segment (purchases > pre-orders)", () => {
+  it("returns only parent for nested segment (current page shown as title only)", () => {
     const crumbs = getBreadcrumbs("/es/purchases/pre-orders", "es");
-    expect(crumbs).toHaveLength(2);
+    expect(crumbs).toHaveLength(1);
     expect(crumbs[0]).toEqual({ labelKey: "nav.purchases", href: "/es/purchases" });
-    expect(crumbs[1]).toEqual({ labelKey: "nav.preOrders", href: "/es/purchases/pre-orders" });
   });
 
-  it("uses breadcrumb.detail for unknown nested segment", () => {
+  it("returns only parent for unknown nested segment (e.g. store slug)", () => {
     const crumbs = getBreadcrumbs("/en/stores/some-id", "en");
-    expect(crumbs).toHaveLength(2);
+    expect(crumbs).toHaveLength(1);
     expect(crumbs[0]).toEqual({ labelKey: "nav.stores", href: "/en/stores" });
-    expect(crumbs[1].labelKey).toBe("breadcrumb.detail");
-    expect(crumbs[1].href).toBe("/en/stores/some-id");
   });
 });
 
@@ -63,12 +60,19 @@ describe("getPageHeader", () => {
     expect(header.breadcrumbs).toEqual([]);
   });
 
-  it("returns breadcrumbs and current title for nested routes", () => {
+  it("returns parent breadcrumbs and current page title for nested routes", () => {
     const header = getPageHeader("/en/purchases/pre-orders", "en");
     expect(header.isFirstLevel).toBe(false);
     expect(header.titleKey).toBe("nav.preOrders");
-    expect(header.breadcrumbs).toHaveLength(2);
+    expect(header.breadcrumbs).toHaveLength(1);
     expect(header.breadcrumbs[0].labelKey).toBe("nav.purchases");
-    expect(header.breadcrumbs[1].labelKey).toBe("nav.preOrders");
+  });
+
+  it("returns stores.newStore title key for create store route", () => {
+    const header = getPageHeader("/es/stores/new", "es");
+    expect(header.isFirstLevel).toBe(false);
+    expect(header.titleKey).toBe("stores.newStore");
+    expect(header.breadcrumbs).toHaveLength(1);
+    expect(header.breadcrumbs[0].labelKey).toBe("nav.stores");
   });
 });
