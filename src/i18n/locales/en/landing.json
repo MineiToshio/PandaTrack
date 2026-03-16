@@ -13,7 +13,7 @@
       "stores": {
         "title": "Stores you trust",
         "description": "Find stores that match your type of collection and save your favorites in one place. Check references and feedback to buy with confidence.",
-        "bullets": ["Browse by category", "Community reviews"]
+        "bullets": ["Browse by product type", "Community reviews"]
       },
       "purchases": {
         "title": "Orders, all sorted",

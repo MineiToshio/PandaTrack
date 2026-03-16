@@ -4,9 +4,9 @@
  *
  * Seeds:
  * - Country catalog (ISO 3166-1 alpha-2 codes) for store country and import-country references.
- * - Store categories (collector-focused) for store assignment and filters.
+ * - Store product types (collector-focused) for store assignment and filters.
  *
- * Labels for countries and categories are resolved via i18n (e.g. countries.{code}, storeCategories.{key}).
+ * Labels for countries and product types are resolved via i18n (e.g. countries.{code}, storeProductTypes.{key}).
  * See docs/development/store-catalogs.md for stable identifiers and usage.
  */
 
@@ -46,8 +46,8 @@ export const COUNTRY_CODES = [
   "US", // United States
 ] as const;
 
-/** Collector-focused store category keys. Stable; display labels come from i18n (storeCategories.{key}). */
-export const STORE_CATEGORY_KEYS = [
+/** Collector-focused store product type keys. Stable; display labels come from i18n (storeProductTypes.{key}). */
+export const STORE_PRODUCT_TYPE_KEYS = [
   "albums",
   "art_books",
   "books",
@@ -73,9 +73,9 @@ async function seedCountries(db: PrismaClient): Promise<void> {
   });
 }
 
-async function seedStoreCategories(db: PrismaClient): Promise<void> {
-  await db.storeCategory.createMany({
-    data: STORE_CATEGORY_KEYS.map((key) => ({ key, isActive: true })),
+async function seedStoreProductTypes(db: PrismaClient): Promise<void> {
+  await db.storeProductType.createMany({
+    data: STORE_PRODUCT_TYPE_KEYS.map((key) => ({ key, isActive: true })),
     skipDuplicates: true,
   });
 }
@@ -83,7 +83,7 @@ async function seedStoreCategories(db: PrismaClient): Promise<void> {
 export async function runSeed(db?: PrismaClient): Promise<void> {
   const client = db ?? defaultPrisma;
   await seedCountries(client);
-  await seedStoreCategories(client);
+  await seedStoreProductTypes(client);
 }
 
 async function main(): Promise<void> {

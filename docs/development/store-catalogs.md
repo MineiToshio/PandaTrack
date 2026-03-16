@@ -11,14 +11,14 @@ Reference for seeded store catalog identifiers and how they are used. Labels are
 
 **Usage:** Store `countryCode` (create/forms), addresses, import countries, and filters must reference only codes present in `country`. Validation should check `countryCode` against the catalog.
 
-## Store categories
+## Store product types
 
-- **Table:** `store_category`
+- **Table:** `store_product_type`
 - **Primary key:** `key` (stable string, snake_case)
-- **Display labels:** i18n key `storeCategories.{key}` (e.g. `storeCategories.manga`, `storeCategories.trading_cards`).
-- **Seeded keys:** See `prisma/seed.ts` (`STORE_CATEGORY_KEYS`). Initial set is collector-focused: `albums`, `art_books`, `books`, `book_accessories` (care, separators, sleeves for books/manga/light novels), `comics`, `figures`, `funkos`, `funko_accessories` (pedestals, display steps, protectors), `home_video` (DVD/Blu-ray: anime, movies, series), `light_novels`, `manga`, `merchandise`, `music` (CDs, vinyl), `signatures`, `trading_cards`, `video_games`. Do not change existing keys; add new categories via seed or admin flow and document them here.
+- **Display labels:** i18n key `storeProductTypes.{key}` (e.g. `storeProductTypes.manga`, `storeProductTypes.trading_cards`).
+- **Seeded keys:** See `prisma/seed.ts` (`STORE_PRODUCT_TYPE_KEYS`). Initial set is collector-focused: `albums`, `art_books`, `books`, `book_accessories` (care, separators, sleeves for books/manga/light novels), `comics`, `figures`, `funkos`, `funko_accessories` (pedestals, display steps, protectors), `home_video` (DVD/Blu-ray: anime, movies, series), `light_novels`, `manga`, `merchandise`, `music` (CDs, vinyl), `signatures`, `trading_cards`, `video_games`. Do not change existing keys; add new product types via seed or admin flow and document them here.
 
-**Usage:** Store creation and filters use category keys from the catalog.
+**Usage:** Store creation and filters use product type keys from the catalog.
 
 ## Review aggregates (baseline)
 
@@ -41,9 +41,9 @@ Or:
 npx prisma db seed
 ```
 
-The seed is idempotent: safe to run multiple times. Countries and store categories both use `createMany` with `skipDuplicates`.
+The seed is idempotent: safe to run multiple times. Countries and store product types both use `createMany` with `skipDuplicates`.
 
 ## Adding new catalog values
 
 1. **Countries:** Add the ISO 3166-1 alpha-2 code to `COUNTRY_CODES` in `prisma/seed.ts`, then run the seed. Add i18n keys for the new code in each locale.
-2. **Categories:** Add the key to `STORE_CATEGORY_KEYS` in `prisma/seed.ts`, run the seed, and add i18n keys.
+2. **Product types:** Add the key to `STORE_PRODUCT_TYPE_KEYS` in `prisma/seed.ts`, run the seed, and add i18n keys.

@@ -1,6 +1,6 @@
 /**
  * Integration tests for store queries: createStore and findDuplicateCandidates.
- * Run when DATABASE_URL is set; seed must have been run (countries and store categories).
+ * Run when DATABASE_URL is set; seed must have been run (countries and store product types).
  */
 
 import { prisma } from "@/lib/prisma";
@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
 const hasDatabase = Boolean(process.env.DATABASE_URL);
 
 describe("store queries", () => {
-  it.skipIf(!hasDatabase)("createStore creates store with presences and category assignments", async () => {
+  it.skipIf(!hasDatabase)("createStore creates store with presences and product type assignments", async () => {
     await runSeed(prisma);
 
     const user = await prisma.user.create({
@@ -32,7 +32,7 @@ describe("store queries", () => {
         storeType: "BUSINESS",
         countryCode: "ES",
         presenceTypes: ["ONLINE", "PHYSICAL"],
-        categoryKeys: ["manga", "comics"],
+        productTypeKeys: ["manga", "comics"],
         createdByUserId: user.id,
         status: "PENDING",
       });
@@ -42,14 +42,17 @@ describe("store queries", () => {
 
       const store = await prisma.store.findUnique({
         where: { id: result.id },
-        include: { presences: true, categoryAssignments: true },
+        include: { presences: true, productTypeAssignments: true },
       });
       expect(store).not.toBeNull();
       expect(store?.name).toBe("Integration Test Store");
       expect(store?.status).toBe("PENDING");
       expect(store?.presences).toHaveLength(2);
       expect(store?.presences.map((p) => p.presenceType).sort()).toEqual(["ONLINE", "PHYSICAL"]);
-      expect(store?.categoryAssignments.map((a) => a.categoryKey).sort()).toEqual(["comics", "manga"]);
+      expect(store?.productTypeAssignments.map((assignment) => assignment.productTypeKey).sort()).toEqual([
+        "comics",
+        "manga",
+      ]);
     } finally {
       await prisma.store.deleteMany({ where: { createdByUserId: user.id } });
       await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
@@ -76,7 +79,7 @@ describe("store queries", () => {
         storeType: "PERSON",
         countryCode: "US",
         presenceTypes: ["ONLINE"],
-        categoryKeys: ["figures"],
+        productTypeKeys: ["figures"],
         createdByUserId: user.id,
         status: "APPROVED",
         approvedByUserId: user.id,
@@ -112,7 +115,7 @@ describe("store queries", () => {
         storeType: "BUSINESS",
         countryCode: "ES",
         presenceTypes: ["ONLINE"],
-        categoryKeys: ["manga"],
+        productTypeKeys: ["manga"],
         createdByUserId: user.id,
         status: "PENDING",
       });
@@ -150,7 +153,7 @@ describe("store queries", () => {
           storeType: "BUSINESS",
           countryCode: "ES",
           presenceTypes: ["ONLINE"],
-          categoryKeys: ["manga"],
+          productTypeKeys: ["manga"],
           createdByUserId: user.id,
           status: "APPROVED",
           approvedByUserId: user.id,
@@ -160,7 +163,7 @@ describe("store queries", () => {
           storeType: "BUSINESS",
           countryCode: "US",
           presenceTypes: ["PHYSICAL"],
-          categoryKeys: ["comics"],
+          productTypeKeys: ["comics"],
           createdByUserId: user.id,
           status: "PENDING",
         });
@@ -174,8 +177,8 @@ describe("store queries", () => {
         expect(byName.some((s) => s.slug === a.slug)).toBe(true);
         expect(byName.some((s) => s.slug === b.slug)).toBe(false);
 
-        const byCategory = await getPublicStoresListing(prisma, { categoryKeys: ["manga"] });
-        expect(byCategory.some((s) => s.slug === a.slug)).toBe(true);
+        const byProductType = await getPublicStoresListing(prisma, { productTypeKeys: ["manga"] });
+        expect(byProductType.some((s) => s.slug === a.slug)).toBe(true);
 
         const byCountry = await getPublicStoresListing(prisma, { countryCodes: ["US"] });
         expect(byCountry.some((s) => s.slug === b.slug)).toBe(true);
@@ -209,7 +212,7 @@ describe("store queries", () => {
         storeType: "BUSINESS",
         countryCode: "ES",
         presenceTypes: ["ONLINE"],
-        categoryKeys: ["manga"],
+        productTypeKeys: ["manga"],
         createdByUserId: user.id,
         status: "APPROVED",
         approvedByUserId: user.id,
@@ -249,7 +252,7 @@ describe("store queries", () => {
         storeType: "PERSON",
         countryCode: "MX",
         presenceTypes: ["ONLINE"],
-        categoryKeys: ["figures"],
+        productTypeKeys: ["figures"],
         createdByUserId: user.id,
         status: "APPROVED",
         approvedByUserId: user.id,

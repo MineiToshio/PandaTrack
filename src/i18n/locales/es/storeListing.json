@@ -13,7 +13,7 @@
   "searchPlaceholder": "Buscar por nombre de tienda",
   "searchButton": "Buscar",
   "filters": {
-    "category": "Categoría",
+    "productType": "Tipo de producto",
     "country": "País",
     "presence": "Canales de venta",
     "importCountry": "País de importación"
@@ -38,7 +38,7 @@
   "pendingBadge": "Pendiente de revisión",
   "cards": {
     "country": "País",
-    "categories": "Categorías",
+    "productTypes": "Tipos de producto",
     "importCountries": "Países de importación",
     "noImportCountries": "Sin países de importación",
     "receivesOrdersYes": "Acepta pedidos",

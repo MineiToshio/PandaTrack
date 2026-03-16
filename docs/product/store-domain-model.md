@@ -40,8 +40,13 @@ This document defines the PandaTrack MVP data model and product rules for stores
 - `PENDING` stores must display a disclaimer in the product explaining that the profile was created by a user and has not been approved yet.
 - After store creation, the app should redirect users to the store detail page where this disclaimer is shown when applicable.
 - Duplicate prevention should happen during creation:
-  - while the user types the store name
+  - when the user leaves the store-name input (on blur)
   - again before final submit if similar stores are found
+  - suggestion list is capped to top 5 results ordered by best match
+  - matching is normalized (case-insensitive, diacritics-insensitive)
+  - matching supports token reordering and partial meaningful-name overlap (e.g. `Kota Store`, `Store Kota`, `Kota`)
+  - generic terms such as "store" should not be treated as the only matching signal
+  - each suggestion should link to the candidate store profile in a new tab for quick verification
 
 ### Editing policy
 
@@ -65,7 +70,7 @@ This document defines the PandaTrack MVP data model and product rules for stores
 - Logo is not used.
 - Public profile still shows:
   - store name
-  - categories
+  - product types
   - reviews and trust signals
 
 ## Internationalization strategy
@@ -78,9 +83,9 @@ This document defines the PandaTrack MVP data model and product rules for stores
   - database stores `PE`
   - i18n resolves `countries.PE`
 
-### Categories
+### Product types
 
-- Store categories are stored with stable keys.
+- Store product types are stored with stable keys.
 - Display labels are always resolved in the application through i18n.
 
 ### Addresses
@@ -117,12 +122,12 @@ This document defines the PandaTrack MVP data model and product rules for stores
 - `StoreContactChannel`
 - `StoreAddress`
 - `StoreImportCountry`
-- `StoreCategory`
-- `StoreCategoryAssignment`
+- `StoreProductType`
+- `StoreProductTypeAssignment`
 - `StoreReview`
 - `StoreNote`
 - `StoreReport`
-- `StoreCategoryRequest`
+- `StoreProductTypeRequest`
 - `StoreChangeRequest`
 
 ## Store routes and slugs
@@ -168,9 +173,9 @@ This document defines the PandaTrack MVP data model and product rules for stores
 - A store can import from multiple countries.
 - Import countries must reference the `Country` catalog.
 
-## Categories
+## Product types
 
-### Initial category set
+### Initial product type set
 
 - `manga`
 - `comics`
@@ -186,18 +191,18 @@ This document defines the PandaTrack MVP data model and product rules for stores
 - `light_novels`
 - `games`
 
-### Category rules
+### Product type rules
 
-- A store can belong to multiple categories.
-- Categories are assigned through a pivot relation.
-- Categories use stable keys and translated labels.
-- Users do not create categories directly in MVP.
+- A store can belong to multiple product types.
+- Product types are assigned through a pivot relation.
+- Product types use stable keys and translated labels.
+- Users do not create product types directly in MVP.
 
-### Category requests
+### Product type requests
 
-- Users can request new categories.
-- Category requests are stored separately from the official category catalog.
-- A category request should capture:
+- Users can request new product types.
+- Product type requests are stored separately from the official product type catalog.
+- A product type request should capture:
   - suggested key or name
   - optional explanation
   - requester
@@ -208,14 +213,14 @@ This document defines the PandaTrack MVP data model and product rules for stores
 - MVP store metadata stays intentionally simple.
 - Core store fields belong directly on `Store`.
 - Supported metadata layers in MVP are:
-  - categories
+  - product types
   - import countries
   - stock flag
   - receives-orders flag
   - visibility and moderation state
   - reviews
   - private notes
-- Dynamic category-specific property-definition systems are out of MVP scope.
+- Dynamic product-type-specific property-definition systems are out of MVP scope.
 - Subcategories are also out of MVP scope for now.
 
 ## Reviews
@@ -233,7 +238,7 @@ This document defines the PandaTrack MVP data model and product rules for stores
 
 - Public store discovery must support:
   - search by name
-  - filter by category
+  - filter by product type
   - filter by country
   - filter by presence
 - Multi-select values inside the same filter family use OR logic.
@@ -284,4 +289,4 @@ This document defines the PandaTrack MVP data model and product rules for stores
 - Admin moderation panel for store approval and reports
 - Store edit suggestions for non-owners
 - Richer trust signals derived from orders and deliveries
-- Additional category families beyond the initial collector-focused set
+- Additional product type families beyond the initial collector-focused set

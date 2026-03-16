@@ -13,7 +13,7 @@
       "stores": {
         "title": "Tiendas confiables",
         "description": "Descubre tiendas según tu tipo de colección y guarda tus favoritas en un solo lugar. Revisa referencias y feedback para comprar con más seguridad.",
-        "bullets": ["Descubre por categoría", "Reviews de la comunidad"]
+        "bullets": ["Descubre por tipo de producto", "Reviews de la comunidad"]
       },
       "purchases": {
         "title": "Compras ordenadas",

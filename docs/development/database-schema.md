@@ -113,24 +113,24 @@ Reference for what each table and attribute is for, where it is used, and why it
 
 ---
 
-## Categories and properties
+## Product types and properties
 
-### `store_category`
+### `store_product_type`
 
-**Purpose:** Catalog of store categories (manga, comics, figures, etc.). Keys are stable; labels come from i18n. Used for assignment to stores and for property definitions.
+**Purpose:** Catalog of store product types (manga, comics, figures, etc.). Keys are stable; labels come from i18n. Used for assignment to stores and for property definitions.
 
 - **key** – Primary key; stable key (e.g. manga, figures). Seeded by `prisma/seed.ts`; see `docs/development/store-catalogs.md` for stable identifiers and usage.
-- **isActive** – Whether the category is still available for assignment.
+- **isActive** – Whether the product type is still available for assignment.
 
-### `store_category_assignment`
+### `store_product_type_assignment`
 
-**Purpose:** Links stores to categories. A store can have multiple categories; used for discovery filters and profile.
+**Purpose:** Links stores to product types. A store can have multiple product types; used for discovery filters and profile.
 
-- **storeId / categoryKey** – Composite PK; which store has which category.
+- **storeId / productTypeKey** – Composite PK; which store has which product type.
 
 ### `store_property_definition`
 
-**Purpose:** Defines optional or category-specific attributes (e.g. “supports preorders”, “TCG games”). System-defined in MVP; users do not create definitions. Used to show and filter store details without schema changes.
+**Purpose:** Defines optional or product-type-specific attributes (e.g. “supports preorders”, “TCG games”). System-defined in MVP; users do not create definitions. Used to show and filter store details without schema changes.
 
 - **key** – Stable identifier for the property.
 - **labelKey** – i18n key for the display label.
@@ -141,9 +141,9 @@ Reference for what each table and attribute is for, where it is used, and why it
 
 ### `store_property_definition_category`
 
-**Purpose:** Which categories a property applies to. A property can be linked to several categories; only those stores show/edit that property.
+**Purpose:** Which product types a property applies to. A property can be linked to several product types; only those stores show/edit that property.
 
-- **propertyDefinitionId / categoryKey** – Composite PK; property applies to this category.
+- **propertyDefinitionId / productTypeKey** – Composite PK; property applies to this product type.
 
 ### `store_property_value`
 
@@ -183,13 +183,13 @@ Reference for what each table and attribute is for, where it is used, and why it
 - **details** – Optional explanation.
 - **status** – OPEN, REVIEWED, DISMISSED.
 
-### `store_category_request`
+### `store_product_type_request`
 
-**Purpose:** User suggestion to add a new category to the catalog. Moderation decides approval/rejection; not tied to a specific store.
+**Purpose:** User suggestion to add a new product type to the catalog. Moderation decides approval/rejection; not tied to a specific store.
 
 - **requestedById** – User who requested.
-- **suggestedKey** – Optional stable key for the new category.
-- **suggestedName** – Name proposed for the category.
+- **suggestedKey** – Optional stable key for the new product type.
+- **suggestedName** – Name proposed for the product type.
 - **reason** – Optional justification.
 - **status** – PENDING, APPROVED, REJECTED.
 
@@ -244,7 +244,7 @@ Reference for what each table and attribute is for, where it is used, and why it
 - **StorePresenceType** – ONLINE, PHYSICAL (filters and profile).
 - **StoreContactChannelType** – INSTAGRAM, WHATSAPP, EMAIL, PHONE, WEBSITE, FACEBOOK, TIKTOK, OTHER.
 - **StorePropertyValueType** – TEXT, BOOLEAN, NUMBER, JSON (property definition and value storage).
-- **StoreCategoryRequestStatus** – PENDING, APPROVED, REJECTED.
+- **StoreProductTypeRequestStatus** – PENDING, APPROVED, REJECTED.
 - **StoreReportReason** – SPAM, DUPLICATE, INCORRECT_INFO, DOES_NOT_EXIST, INAPPROPRIATE.
 - **StoreReportStatus** – OPEN, REVIEWED, DISMISSED.
 - **StoreChangeRequestStatus** – PENDING, APPROVED, REJECTED.

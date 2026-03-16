@@ -22,10 +22,10 @@ const FILTER_CHIP_SELECTED_CLASSNAME =
 type StoreListingFiltersProps = {
   locale: string;
   createStoreLabel: string;
-  categoryOptions: { key: string }[];
+  productTypeOptions: { key: string }[];
   countryOptions: { code: string }[];
   initialNameQuery: string;
-  initialCategoryKeys: string[];
+  initialProductTypeKeys: string[];
   initialCountryCodes: string[];
   initialImportCountryCodes: string[];
   initialPresenceTypes: string[];
@@ -38,7 +38,7 @@ type StoreListingFiltersProps = {
 
 type ListingFilters = {
   nameQuery: string;
-  categoryKeys: string[];
+  productTypeKeys: string[];
   countryCodes: string[];
   importCountryCodes: string[];
   presenceTypes: string[];
@@ -49,7 +49,7 @@ type ListingFilters = {
 function cloneListingFilters(filters: ListingFilters): ListingFilters {
   return {
     ...filters,
-    categoryKeys: [...filters.categoryKeys],
+    productTypeKeys: [...filters.productTypeKeys],
     countryCodes: [...filters.countryCodes],
     importCountryCodes: [...filters.importCountryCodes],
     presenceTypes: [...filters.presenceTypes],
@@ -59,10 +59,10 @@ function cloneListingFilters(filters: ListingFilters): ListingFilters {
 export default function StoreListingFilters({
   locale,
   createStoreLabel,
-  categoryOptions,
+  productTypeOptions,
   countryOptions,
   initialNameQuery,
-  initialCategoryKeys,
+  initialProductTypeKeys,
   initialCountryCodes,
   initialImportCountryCodes,
   initialPresenceTypes,
@@ -75,13 +75,13 @@ export default function StoreListingFilters({
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("storeListing");
-  const tCategories = useTranslations("storeCategories");
+  const tProductTypes = useTranslations("storeProductTypes");
   const tCountries = useTranslations("countries");
   const tCreate = useTranslations("stores.create");
   const [isOpen, setIsOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState<ListingFilters>({
     nameQuery: initialNameQuery,
-    categoryKeys: initialCategoryKeys,
+    productTypeKeys: initialProductTypeKeys,
     countryCodes: initialCountryCodes,
     importCountryCodes: initialImportCountryCodes,
     presenceTypes: initialPresenceTypes,
@@ -92,7 +92,7 @@ export default function StoreListingFilters({
   const activeFilters = useMemo(
     () => ({
       nameQuery: initialNameQuery,
-      categoryKeys: initialCategoryKeys,
+      productTypeKeys: initialProductTypeKeys,
       countryCodes: initialCountryCodes,
       importCountryCodes: initialImportCountryCodes,
       presenceTypes: initialPresenceTypes,
@@ -101,7 +101,7 @@ export default function StoreListingFilters({
     }),
     [
       initialNameQuery,
-      initialCategoryKeys,
+      initialProductTypeKeys,
       initialCountryCodes,
       initialImportCountryCodes,
       initialPresenceTypes,
@@ -112,7 +112,7 @@ export default function StoreListingFilters({
 
   const hasActiveFilters =
     !!activeFilters.nameQuery ||
-    activeFilters.categoryKeys.length > 0 ||
+    activeFilters.productTypeKeys.length > 0 ||
     activeFilters.countryCodes.length > 0 ||
     activeFilters.importCountryCodes.length > 0 ||
     activeFilters.presenceTypes.length > 0 ||
@@ -124,9 +124,9 @@ export default function StoreListingFilters({
     setIsOpen(true);
   };
 
-  const categoryAutocompleteOptions = useMemo(
-    () => categoryOptions.map((category) => ({ value: category.key, label: tCategories(category.key) })),
-    [categoryOptions, tCategories],
+  const productTypeAutocompleteOptions = useMemo(
+    () => productTypeOptions.map((productType) => ({ value: productType.key, label: tProductTypes(productType.key) })),
+    [productTypeOptions, tProductTypes],
   );
   const countryAutocompleteOptions = useMemo(
     () => countryOptions.map((country) => ({ value: country.code, label: tCountries(country.code) })),
@@ -136,7 +136,7 @@ export default function StoreListingFilters({
   const buildUrlWithFilters = (filters: ListingFilters, page: number = 1) => {
     const params = new URLSearchParams();
     if (filters.nameQuery.trim()) params.set("q", filters.nameQuery.trim());
-    filters.categoryKeys.forEach((value) => params.append("category", value));
+    filters.productTypeKeys.forEach((value) => params.append("productType", value));
     filters.countryCodes.forEach((value) => params.append("country", value));
     filters.importCountryCodes.forEach((value) => params.append("importCountry", value));
     filters.presenceTypes.forEach((value) => params.append("presence", value));
@@ -150,7 +150,7 @@ export default function StoreListingFilters({
   const applyFilters = () => {
     posthog.capture(POSTHOG_EVENTS.STORE.SEARCHED, {
       query_present: !!draftFilters.nameQuery.trim(),
-      category_count: draftFilters.categoryKeys.length,
+      product_type_count: draftFilters.productTypeKeys.length,
       country_count: draftFilters.countryCodes.length,
       import_country_count: draftFilters.importCountryCodes.length,
       presence_count: draftFilters.presenceTypes.length,
@@ -165,7 +165,7 @@ export default function StoreListingFilters({
   const clearAndApplyFilters = () => {
     const clearedFilters: ListingFilters = {
       nameQuery: "",
-      categoryKeys: [],
+      productTypeKeys: [],
       countryCodes: [],
       importCountryCodes: [],
       presenceTypes: [],
@@ -178,7 +178,7 @@ export default function StoreListingFilters({
   };
 
   const removeActiveFilterChip = (
-    type: "query" | "category" | "country" | "importCountry" | "presence" | "orders" | "stock",
+    type: "query" | "productType" | "country" | "importCountry" | "presence" | "orders" | "stock",
     value?: string,
   ) => {
     const nextFilters: ListingFilters = cloneListingFilters(activeFilters);
@@ -186,8 +186,8 @@ export default function StoreListingFilters({
     if (type === "query") nextFilters.nameQuery = "";
     if (type === "orders") nextFilters.receivesOrders = false;
     if (type === "stock") nextFilters.hasStock = false;
-    if (type === "category" && value)
-      nextFilters.categoryKeys = nextFilters.categoryKeys.filter((item) => item !== value);
+    if (type === "productType" && value)
+      nextFilters.productTypeKeys = nextFilters.productTypeKeys.filter((item) => item !== value);
     if (type === "country" && value)
       nextFilters.countryCodes = nextFilters.countryCodes.filter((item) => item !== value);
     if (type === "importCountry" && value) {
@@ -258,14 +258,14 @@ export default function StoreListingFilters({
                 <X className="ml-1 size-3.5" aria-hidden />
               </button>
             )}
-            {activeFilters.categoryKeys.map((value) => (
+            {activeFilters.productTypeKeys.map((value) => (
               <button
-                key={`active-category-${value}`}
+                key={`active-product-type-${value}`}
                 type="button"
-                onClick={() => removeActiveFilterChip("category", value)}
+                onClick={() => removeActiveFilterChip("productType", value)}
                 className={cn(FILTER_CHIP_CLASSNAME, FILTER_CHIP_SELECTED_CLASSNAME, "min-h-9 px-3 py-1.5")}
               >
-                <span>{tCategories(value)}</span>
+                <span>{tProductTypes(value)}</span>
                 <X className="ml-1 size-3.5" aria-hidden />
               </button>
             ))}
@@ -364,14 +364,14 @@ export default function StoreListingFilters({
 
               <div className="space-y-3">
                 <Typography as="span" size="xs" className="text-text-title mb-1 block font-semibold">
-                  {t("filters.category")}
+                  {t("filters.productType")}
                 </Typography>
                 <StoreMultiTagAutocomplete
-                  id="stores-filter-category"
-                  options={categoryAutocompleteOptions}
-                  selectedValues={draftFilters.categoryKeys}
-                  onChange={(values) => setDraftFilters((previous) => ({ ...previous, categoryKeys: values }))}
-                  placeholder={t("filters.category")}
+                  id="stores-filter-product-type"
+                  options={productTypeAutocompleteOptions}
+                  selectedValues={draftFilters.productTypeKeys}
+                  onChange={(values) => setDraftFilters((previous) => ({ ...previous, productTypeKeys: values }))}
+                  placeholder={t("filters.productType")}
                   removeItemAriaLabel={(itemLabel) => `${t("clearFilters")} ${itemLabel}`}
                   className="mt-1"
                 />

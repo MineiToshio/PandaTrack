@@ -140,7 +140,7 @@ export const createStoreSchema = z.object({
   storeType: storeTypeEnum,
   countryCode: z.string().length(2, "countryInvalid").toUpperCase(),
   presenceTypes: z.array(presenceTypeEnum).min(1, "presenceRequired"),
-  categoryKeys: z.array(z.string().min(1)).min(1, "categoryRequired"),
+  productTypeKeys: z.array(z.string().min(1)).min(1, "productTypeRequired"),
   hasStock: z.boolean().optional().nullable(),
   receivesOrders: z.boolean().optional().nullable(),
   contactChannels: z.array(contactChannelSchema).optional().default([]),

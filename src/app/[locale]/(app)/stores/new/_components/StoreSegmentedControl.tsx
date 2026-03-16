@@ -1,10 +1,12 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { cn } from "@/lib/styles";
 
 type StoreSegmentedControlOption = {
   value: string;
   label: string;
+  icon?: ReactNode;
 };
 
 type StoreSegmentedControlProps = {
@@ -34,10 +36,15 @@ export default function StoreSegmentedControl({
             aria-pressed={isSelected}
             onClick={() => onChange(option.value)}
             className={cn(
-              "border-border bg-background text-text-body focus-visible:ring-ring min-h-11 cursor-pointer rounded-lg border px-4 py-3 text-left text-sm transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+              "border-border bg-background text-text-body focus-visible:ring-ring inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border px-4 py-3 text-left text-sm transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
               isSelected && "border-primary bg-primary/10 text-text-title",
             )}
           >
+            {option.icon ? (
+              <span className="[&>svg]:size-3.5" aria-hidden>
+                {option.icon}
+              </span>
+            ) : null}
             {option.label}
           </button>
         );

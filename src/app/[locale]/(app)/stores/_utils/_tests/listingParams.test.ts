@@ -5,7 +5,7 @@ describe("parseListingSearchParams", () => {
   it("returns empty filters when searchParams is empty", () => {
     expect(parseListingSearchParams({})).toEqual({
       nameQuery: undefined,
-      categoryKeys: [],
+      productTypeKeys: [],
       countryCodes: [],
       importCountryCodes: [],
       presenceTypes: [],
@@ -18,7 +18,7 @@ describe("parseListingSearchParams", () => {
   it("parses single name query", () => {
     expect(parseListingSearchParams({ q: "manga" })).toEqual({
       nameQuery: "manga",
-      categoryKeys: [],
+      productTypeKeys: [],
       countryCodes: [],
       importCountryCodes: [],
       presenceTypes: [],
@@ -31,7 +31,7 @@ describe("parseListingSearchParams", () => {
   it("trims name query", () => {
     expect(parseListingSearchParams({ q: "  manga  " })).toEqual({
       nameQuery: "manga",
-      categoryKeys: [],
+      productTypeKeys: [],
       countryCodes: [],
       importCountryCodes: [],
       presenceTypes: [],
@@ -44,7 +44,7 @@ describe("parseListingSearchParams", () => {
   it("treats empty string name as undefined", () => {
     expect(parseListingSearchParams({ q: "   " })).toEqual({
       nameQuery: undefined,
-      categoryKeys: [],
+      productTypeKeys: [],
       countryCodes: [],
       importCountryCodes: [],
       presenceTypes: [],
@@ -54,10 +54,10 @@ describe("parseListingSearchParams", () => {
     });
   });
 
-  it("parses multiple category keys", () => {
-    expect(parseListingSearchParams({ category: ["manga", "comics"] })).toEqual({
+  it("parses multiple product type keys", () => {
+    expect(parseListingSearchParams({ productType: ["manga", "comics"] })).toEqual({
       nameQuery: undefined,
-      categoryKeys: ["manga", "comics"],
+      productTypeKeys: ["manga", "comics"],
       countryCodes: [],
       importCountryCodes: [],
       presenceTypes: [],
@@ -67,10 +67,10 @@ describe("parseListingSearchParams", () => {
     });
   });
 
-  it("parses single category as array of one", () => {
-    expect(parseListingSearchParams({ category: "manga" })).toEqual({
+  it("parses single product type as array of one", () => {
+    expect(parseListingSearchParams({ productType: "manga" })).toEqual({
       nameQuery: undefined,
-      categoryKeys: ["manga"],
+      productTypeKeys: ["manga"],
       countryCodes: [],
       importCountryCodes: [],
       presenceTypes: [],
@@ -88,7 +88,7 @@ describe("parseListingSearchParams", () => {
       }),
     ).toEqual({
       nameQuery: undefined,
-      categoryKeys: [],
+      productTypeKeys: [],
       countryCodes: ["ES"],
       importCountryCodes: [],
       presenceTypes: ["ONLINE", "PHYSICAL"],
@@ -105,7 +105,7 @@ describe("parseListingSearchParams", () => {
       }),
     ).toEqual({
       nameQuery: undefined,
-      categoryKeys: [],
+      productTypeKeys: [],
       countryCodes: [],
       importCountryCodes: [],
       presenceTypes: ["ONLINE", "PHYSICAL"],
@@ -124,7 +124,7 @@ describe("parseListingSearchParams", () => {
       }),
     ).toEqual({
       nameQuery: undefined,
-      categoryKeys: [],
+      productTypeKeys: [],
       countryCodes: [],
       importCountryCodes: ["JP", "US"],
       presenceTypes: [],
@@ -137,7 +137,7 @@ describe("parseListingSearchParams", () => {
   it("parses page when value is valid", () => {
     expect(parseListingSearchParams({ page: "3" })).toEqual({
       nameQuery: undefined,
-      categoryKeys: [],
+      productTypeKeys: [],
       countryCodes: [],
       importCountryCodes: [],
       presenceTypes: [],
@@ -150,7 +150,7 @@ describe("parseListingSearchParams", () => {
   it("defaults page to one when value is invalid", () => {
     expect(parseListingSearchParams({ page: "0" })).toEqual({
       nameQuery: undefined,
-      categoryKeys: [],
+      productTypeKeys: [],
       countryCodes: [],
       importCountryCodes: [],
       presenceTypes: [],

@@ -48,7 +48,7 @@ export type StoreListingContentProps = {
 export default function StoreListingContent({ locale, stores }: StoreListingContentProps) {
   const t = useTranslations("storeListing");
   const tStores = useTranslations("stores");
-  const tCategories = useTranslations("storeCategories");
+  const tProductTypes = useTranslations("storeProductTypes");
   const tCountries = useTranslations("countries");
 
   const showEmptyState = stores.length === 0;
@@ -145,15 +145,15 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                     <div className="border-border/55 bg-muted/32 rounded-xl border p-3">
                       <div className="space-y-1.5">
                         <Typography size="2xs" className="text-text-muted block font-medium">
-                          {t("cards.categories")}
+                          {t("cards.productTypes")}
                         </Typography>
                         <div className="flex flex-wrap gap-1.5">
-                          {store.categoryKeys.map((categoryKey) => (
+                          {store.productTypeKeys.map((productTypeKey) => (
                             <span
-                              key={`${store.slug}-${categoryKey}`}
+                              key={`${store.slug}-${productTypeKey}`}
                               className={cn(INFO_CHIP_CLASSNAME, "bg-primary/8 text-primary border-primary/20")}
                             >
-                              {tCategories(categoryKey)}
+                              {tProductTypes(productTypeKey)}
                             </span>
                           ))}
                         </div>

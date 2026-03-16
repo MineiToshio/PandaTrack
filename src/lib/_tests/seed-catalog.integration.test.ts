@@ -4,13 +4,13 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { COUNTRY_CODES, runSeed, STORE_CATEGORY_KEYS } from "../../../prisma/seed";
+import { COUNTRY_CODES, runSeed, STORE_PRODUCT_TYPE_KEYS } from "../../../prisma/seed";
 import { describe, expect, it } from "vitest";
 
 const hasDatabase = Boolean(process.env.DATABASE_URL);
 
 describe("store catalog seed", () => {
-  it.skipIf(!hasDatabase)("runs idempotently and seeds countries and store categories", async () => {
+  it.skipIf(!hasDatabase)("runs idempotently and seeds countries and store product types", async () => {
     await runSeed(prisma);
 
     const countries = await prisma.country.findMany({
@@ -19,10 +19,10 @@ describe("store catalog seed", () => {
     expect(countries.length).toBe(COUNTRY_CODES.length);
     expect(new Set(countries.map((c) => c.code))).toEqual(new Set(COUNTRY_CODES));
 
-    const categories = await prisma.storeCategory.findMany({
-      where: { key: { in: [...STORE_CATEGORY_KEYS] } },
+    const productTypes = await prisma.storeProductType.findMany({
+      where: { key: { in: [...STORE_PRODUCT_TYPE_KEYS] } },
     });
-    expect(categories.length).toBe(STORE_CATEGORY_KEYS.length);
-    expect(new Set(categories.map((c) => c.key))).toEqual(new Set(STORE_CATEGORY_KEYS));
+    expect(productTypes.length).toBe(STORE_PRODUCT_TYPE_KEYS.length);
+    expect(new Set(productTypes.map((productType) => productType.key))).toEqual(new Set(STORE_PRODUCT_TYPE_KEYS));
   });
 });

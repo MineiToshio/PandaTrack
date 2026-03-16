@@ -13,7 +13,7 @@
   "searchPlaceholder": "Search by store name",
   "searchButton": "Search",
   "filters": {
-    "category": "Category",
+    "productType": "Product type",
     "country": "Country",
     "presence": "Sales channels",
     "importCountry": "Import country"
@@ -38,7 +38,7 @@
   "pendingBadge": "Pending review",
   "cards": {
     "country": "Country",
-    "categories": "Categories",
+    "productTypes": "Product types",
     "importCountries": "Import countries",
     "noImportCountries": "No import countries",
     "receivesOrdersYes": "Accepts orders",

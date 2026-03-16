@@ -81,7 +81,7 @@ function getContactIcon(type: NonNullable<StoreDetail["contactChannels"]>[number
 export default function StoreDetailContent({ locale, store }: StoreDetailContentProps) {
   const tStores = useTranslations("stores");
   const tCountries = useTranslations("countries");
-  const tCategories = useTranslations("storeCategories");
+  const tProductTypes = useTranslations("storeProductTypes");
   const tListing = useTranslations("storeListing");
 
   const isPendingReview = store.status === "PENDING";
@@ -190,10 +190,10 @@ export default function StoreDetailContent({ locale, store }: StoreDetailContent
               <div className={METRIC_CARD_CLASSNAME}>
                 <div className="text-text-muted flex items-center gap-1.5">
                   <Box className="size-3.5" aria-hidden />
-                  <Typography size="2xs">{tStores("detail.categoriesLabel")}</Typography>
+                  <Typography size="2xs">{tStores("detail.productTypesLabel")}</Typography>
                 </div>
                 <Typography size="sm" className="text-text-title mt-1.5 text-2xl leading-none font-semibold">
-                  {store.categoryKeys.length}
+                  {store.productTypeKeys.length}
                 </Typography>
               </div>
               <div className={METRIC_CARD_CLASSNAME}>
@@ -277,13 +277,13 @@ export default function StoreDetailContent({ locale, store }: StoreDetailContent
           >
             <div>
               <Typography size="xs" className="text-text-muted">
-                {tStores("detail.categoriesLabel")}
+                {tStores("detail.productTypesLabel")}
               </Typography>
               <div className="mt-2.5 flex flex-wrap gap-2">
-                {store.categoryKeys.map((categoryKey) => (
-                  <span key={categoryKey} className={cn(TAG_CLASSNAME, "bg-primary/10 text-primary")}>
+                {store.productTypeKeys.map((productTypeKey) => (
+                  <span key={productTypeKey} className={cn(TAG_CLASSNAME, "bg-primary/10 text-primary")}>
                     <Box className="size-3.5" aria-hidden />
-                    {tCategories(categoryKey)}
+                    {tProductTypes(productTypeKey)}
                   </span>
                 ))}
               </div>

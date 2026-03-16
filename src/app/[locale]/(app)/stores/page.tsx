@@ -62,13 +62,21 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
   await getTranslations({ locale, namespace: "storeListing" });
 
   const rawParams = await searchParams;
-  const { nameQuery, categoryKeys, countryCodes, importCountryCodes, presenceTypes, receivesOrders, hasStock, page } =
-    parseListingSearchParams(rawParams);
+  const {
+    nameQuery,
+    productTypeKeys,
+    countryCodes,
+    importCountryCodes,
+    presenceTypes,
+    receivesOrders,
+    hasStock,
+    page,
+  } = parseListingSearchParams(rawParams);
 
-  const [listingPage, categoryOptions, countryOptions] = await Promise.all([
+  const [listingPage, productTypeOptions, countryOptions] = await Promise.all([
     getPublicStoresListingPage(prisma, {
       nameQuery,
-      categoryKeys: categoryKeys.length > 0 ? categoryKeys : undefined,
+      productTypeKeys: productTypeKeys.length > 0 ? productTypeKeys : undefined,
       countryCodes: countryCodes.length > 0 ? countryCodes : undefined,
       importCountryCodes: importCountryCodes.length > 0 ? importCountryCodes : undefined,
       presenceTypes: presenceTypes.length > 0 ? presenceTypes : undefined,
@@ -77,7 +85,7 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
       page,
       pageSize: DEFAULT_PUBLIC_STORE_PAGE_SIZE,
     }),
-    prisma.storeCategory.findMany({
+    prisma.storeProductType.findMany({
       where: { isActive: true },
       select: { key: true },
       orderBy: { key: "asc" },
@@ -117,10 +125,10 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
         <StoreListingFilters
           locale={locale}
           createStoreLabel={tStores("create.title")}
-          categoryOptions={categoryOptions}
+          productTypeOptions={productTypeOptions}
           countryOptions={countryOptions}
           initialNameQuery={nameQuery ?? ""}
-          initialCategoryKeys={categoryKeys}
+          initialProductTypeKeys={productTypeKeys}
           initialCountryCodes={countryCodes}
           initialImportCountryCodes={importCountryCodes}
           initialPresenceTypes={presenceTypes}

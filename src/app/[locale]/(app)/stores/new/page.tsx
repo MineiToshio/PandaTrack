@@ -22,9 +22,9 @@ export default async function StoresNewPage({ params }: StoresNewPageProps) {
   const { locale } = await params;
   await getTranslations({ locale, namespace: "stores" });
 
-  const [countries, categories] = await Promise.all([
+  const [countries, productTypes] = await Promise.all([
     prisma.country.findMany({ select: { code: true }, orderBy: { code: "asc" } }),
-    prisma.storeCategory.findMany({
+    prisma.storeProductType.findMany({
       where: { isActive: true },
       select: { key: true },
       orderBy: { key: "asc" },
@@ -34,7 +34,7 @@ export default async function StoresNewPage({ params }: StoresNewPageProps) {
   return (
     <div className="bg-background text-foreground px-4 py-8">
       <div className="mx-auto max-w-2xl">
-        <CreateStoreForm countries={countries} categories={categories} />
+        <CreateStoreForm countries={countries} productTypes={productTypes} />
       </div>
     </div>
   );

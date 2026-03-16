@@ -52,7 +52,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
     storeType: formData.get("storeType") ?? undefined,
     countryCode: formData.get("countryCode") ?? undefined,
     presenceTypes: formData.getAll("presenceTypes").filter((v): v is string => typeof v === "string"),
-    categoryKeys: formData.getAll("categoryKeys").filter((v): v is string => typeof v === "string"),
+    productTypeKeys: formData.getAll("productTypeKeys").filter((v): v is string => typeof v === "string"),
     hasStock: formData.get("hasStock") === "on" ? true : undefined,
     receivesOrders: formData.get("receivesOrders") === "on" ? true : undefined,
     contactChannels: contactChannels as { type: string; value: string; label?: string }[],
@@ -68,7 +68,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
     storeType: raw.storeType,
     countryCode: typeof raw.countryCode === "string" ? raw.countryCode : "",
     presenceTypes: raw.presenceTypes,
-    categoryKeys: raw.categoryKeys,
+    productTypeKeys: raw.productTypeKeys,
     hasStock: raw.hasStock,
     receivesOrders: raw.receivesOrders,
     contactChannels: raw.contactChannels,
@@ -95,13 +95,13 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
   ].filter(Boolean);
   const uniqueCountryCodes = [...new Set(allCountryCodes)];
 
-  const [countriesExist, categoriesExist] = await Promise.all([
+  const [countriesExist, productTypesExist] = await Promise.all([
     prisma.country.findMany({
       where: { code: { in: uniqueCountryCodes } },
       select: { code: true },
     }),
-    prisma.storeCategory.findMany({
-      where: { key: { in: input.categoryKeys } },
+    prisma.storeProductType.findMany({
+      where: { key: { in: input.productTypeKeys } },
       select: { key: true },
     }),
   ]);
@@ -112,10 +112,14 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
     return { success: false, error: "countryInvalid", fieldErrors: { countryCode: ["countryInvalid"] } };
   }
 
-  const foundCategoryKeys = new Set(categoriesExist.map((c) => c.key));
-  const missing = input.categoryKeys.filter((k) => !foundCategoryKeys.has(k));
+  const foundProductTypeKeys = new Set(productTypesExist.map((productType) => productType.key));
+  const missing = input.productTypeKeys.filter((key) => !foundProductTypeKeys.has(key));
   if (missing.length > 0) {
-    return { success: false, error: "categoryInvalid", fieldErrors: { categoryKeys: ["categoryInvalid"] } };
+    return {
+      success: false,
+      error: "validation_failed",
+      fieldErrors: { productTypeKeys: ["productTypeInvalid"] },
+    };
   }
 
   const isAdmin = getIsAdmin(session);
@@ -130,7 +134,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
         storeType: input.storeType,
         countryCode: input.countryCode,
         presenceTypes: input.presenceTypes,
-        categoryKeys: input.categoryKeys,
+        productTypeKeys: input.productTypeKeys,
         createdByUserId: session.user.id,
         status,
         approvedByUserId: isAdmin ? session.user.id : null,
@@ -148,7 +152,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
           store_type: input.storeType,
           status,
           presence_count: input.presenceTypes.length,
-          category_count: input.categoryKeys.length,
+          product_type_count: input.productTypeKeys.length,
           created_by_role: isAdmin ? "admin" : "user",
         },
       });

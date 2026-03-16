@@ -5,16 +5,18 @@ import type {
   StorePresenceType,
   StoreStatus,
 } from "../../generated/prisma/client";
-import { normalizeStoreName } from "@/lib/store/duplicateMatch";
+import { getDuplicateMatchScore, normalizeStoreName } from "@/lib/store/duplicateMatch";
 import { generateStoreSlug } from "@/lib/store/slug";
 
-const DEFAULT_DUPLICATE_CANDIDATES_LIMIT = 10;
+const DEFAULT_DUPLICATE_CANDIDATES_LIMIT = 5;
 export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = 10;
 
 export interface DuplicateCandidate {
   id: string;
   name: string;
   slug: string;
+  countryCode: string;
+  logoUrl: string | null;
 }
 
 export interface ContactChannelInput {
@@ -32,8 +34,8 @@ export interface AddressInput {
 }
 
 /**
- * Finds stores whose name matches the query (case-insensitive contains),
- * for duplicate suggestion UI. Results are limited and ordered by name.
+ * Finds likely duplicate stores for the provided query using normalized and token-based matching.
+ * Results are sorted by best match score first and then by name.
  */
 export async function findDuplicateCandidates(
   db: PrismaClient,
@@ -44,18 +46,22 @@ export async function findDuplicateCandidates(
   if (!trimmed) return [];
 
   const stores = await db.store.findMany({
-    where: {
-      name: { contains: trimmed, mode: "insensitive" },
-    },
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true, slug: true, countryCode: true, logoUrl: true },
     orderBy: { name: "asc" },
-    take: limit,
   });
 
-  const normalizedQuery = normalizeStoreName(trimmed);
-  return stores.filter(
-    (s) => normalizeStoreName(s.name).includes(normalizedQuery) || normalizedQuery.includes(normalizeStoreName(s.name)),
-  );
+  return stores
+    .map((store) => ({
+      store,
+      score: getDuplicateMatchScore(trimmed, store.name),
+    }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return normalizeStoreName(a.store.name).localeCompare(normalizeStoreName(b.store.name));
+    })
+    .slice(0, limit)
+    .map((item) => item.store);
 }
 
 export interface CreateStoreInput {
@@ -64,7 +70,7 @@ export interface CreateStoreInput {
   storeType: "BUSINESS" | "PERSON";
   countryCode: string;
   presenceTypes: StorePresenceType[];
-  categoryKeys: string[];
+  productTypeKeys: string[];
   createdByUserId: string;
   status: StoreStatus;
   approvedByUserId?: string | null;
@@ -90,7 +96,7 @@ export interface StoreDetail {
   averageRating: number | null;
   reviewCount: number;
   presenceTypes: StorePresenceType[];
-  categoryKeys: string[];
+  productTypeKeys: string[];
   importCountryCodes: string[];
   /** Only for BUSINESS stores; PERSON stores do not expose these. */
   logoUrl?: string | null;
@@ -112,7 +118,7 @@ export interface PublicStoreListingItem {
   status: StoreStatus;
   storeType: "BUSINESS" | "PERSON";
   presenceTypes: StorePresenceType[];
-  categoryKeys: string[];
+  productTypeKeys: string[];
   importCountryCodes: string[];
   contactChannels: Array<{ type: StoreContactChannelType; value: string }>;
   receivesOrders: boolean | null;
@@ -123,7 +129,7 @@ export interface PublicStoreListingItem {
 
 export interface PublicStoreListingFilters {
   nameQuery?: string;
-  categoryKeys?: string[];
+  productTypeKeys?: string[];
   countryCodes?: string[];
   importCountryCodes?: string[];
   presenceTypes?: StorePresenceType[];
@@ -144,7 +150,7 @@ export interface PublicStoreListingPage {
 function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prisma.StoreWhereInput {
   const {
     nameQuery,
-    categoryKeys = [],
+    productTypeKeys = [],
     countryCodes = [],
     importCountryCodes = [],
     presenceTypes = [],
@@ -153,7 +159,7 @@ function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prism
   } = filters;
 
   const trimmedName = nameQuery?.trim();
-  const hasCategoryFilter = categoryKeys.length > 0;
+  const hasProductTypeFilter = productTypeKeys.length > 0;
   const hasCountryFilter = countryCodes.length > 0;
   const hasImportCountryFilter = importCountryCodes.length > 0;
   const hasPresenceFilter = presenceTypes.length > 0;
@@ -164,9 +170,9 @@ function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prism
     ...(trimmedName && {
       name: { contains: trimmedName, mode: "insensitive" },
     }),
-    ...(hasCategoryFilter && {
-      categoryAssignments: {
-        some: { categoryKey: { in: categoryKeys } },
+    ...(hasProductTypeFilter && {
+      productTypeAssignments: {
+        some: { productTypeKey: { in: productTypeKeys } },
       },
     }),
     ...(hasCountryFilter && {
@@ -202,7 +208,7 @@ function mapPublicStoreListingItem(store: {
   averageRating: number | null;
   reviewCount: number;
   presences: Array<{ presenceType: StorePresenceType }>;
-  categoryAssignments: Array<{ categoryKey: string }>;
+  productTypeAssignments: Array<{ productTypeKey: string }>;
   importCountries: Array<{ countryCode: string }>;
   contactChannels: Array<{ type: StoreContactChannelType; value: string }>;
 }): PublicStoreListingItem {
@@ -213,7 +219,7 @@ function mapPublicStoreListingItem(store: {
     status: store.status,
     storeType: store.storeType,
     presenceTypes: store.presences.map((p) => p.presenceType),
-    categoryKeys: store.categoryAssignments.map((a) => a.categoryKey),
+    productTypeKeys: store.productTypeAssignments.map((assignment) => assignment.productTypeKey),
     importCountryCodes: store.importCountries.map((country) => country.countryCode),
     contactChannels: store.contactChannels.map((channel) => ({
       type: channel.type,
@@ -255,7 +261,7 @@ export async function getPublicStoresListingPage(
       averageRating: true,
       reviewCount: true,
       presences: { select: { presenceType: true } },
-      categoryAssignments: { select: { categoryKey: true } },
+      productTypeAssignments: { select: { productTypeKey: true } },
       importCountries: { select: { countryCode: true } },
       contactChannels: {
         where: { isPublic: true },
@@ -280,13 +286,14 @@ export async function getPublicStoresListingPage(
 }
 
 /**
- * Creates a store and its presences, category assignments, contact channels, addresses, and import countries in a single transaction.
- * Slug is generated from name; caller must ensure countryCode and categoryKeys exist in catalogs.
+ * Creates a store and its presences, product type assignments, contact channels, addresses, and import countries
+ * in a single transaction. Slug is generated from name; caller must ensure countryCode and productTypeKeys exist
+ * in catalogs.
  */
 export async function createStore(db: PrismaClient, input: CreateStoreInput): Promise<{ id: string; slug: string }> {
   const slug = generateStoreSlug(input.name);
   const presenceTypes = [...new Set(input.presenceTypes)];
-  const categoryKeys = [...new Set(input.categoryKeys)];
+  const productTypeKeys = [...new Set(input.productTypeKeys)];
   const contactChannels = input.contactChannels ?? [];
   const addresses = input.addresses ?? [];
   const importCountryCodes = [...new Set(input.importCountries ?? [])];
@@ -307,8 +314,8 @@ export async function createStore(db: PrismaClient, input: CreateStoreInput): Pr
       presences: {
         create: presenceTypes.map((presenceType) => ({ presenceType })),
       },
-      categoryAssignments: {
-        create: categoryKeys.map((categoryKey) => ({ categoryKey })),
+      productTypeAssignments: {
+        create: productTypeKeys.map((productTypeKey) => ({ productTypeKey })),
       },
       ...(contactChannels.length > 0 && {
         contactChannels: {
@@ -375,9 +382,9 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
           presenceType: true,
         },
       },
-      categoryAssignments: {
+      productTypeAssignments: {
         select: {
-          categoryKey: true,
+          productTypeKey: true,
         },
       },
       importCountries: {
@@ -410,7 +417,7 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
   }
 
   const presenceTypes = store.presences.map((p) => p.presenceType);
-  const categoryKeys = store.categoryAssignments.map((a) => a.categoryKey);
+  const productTypeKeys = store.productTypeAssignments.map((assignment) => assignment.productTypeKey);
   const importCountryCodes = store.importCountries.map((country) => country.countryCode);
 
   const base: StoreDetail = {
@@ -428,7 +435,7 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
     averageRating: store.averageRating,
     reviewCount: store.reviewCount,
     presenceTypes,
-    categoryKeys,
+    productTypeKeys,
     importCountryCodes,
   };
 
@@ -455,7 +462,7 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
 
 /**
  * Public store listing with optional filters.
- * OR within same filter family (e.g. any of selected categories), AND across families.
+ * OR within same filter family (e.g. any of selected product types), AND across families.
  * Only PUBLIC, PENDING or APPROVED stores; isActive is not filtered so inactive stores can appear (detail page shows warning).
  */
 export async function getPublicStoresListing(

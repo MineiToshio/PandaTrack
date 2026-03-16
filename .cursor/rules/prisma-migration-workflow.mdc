@@ -1,12 +1,22 @@
 ---
 description: Prisma migration workflow: run db-migrate on schema/database changes and use short descriptive migration names
-globs: "prisma/schema.prisma"
-alwaysApply: false
+globs: "prisma/**"
+alwaysApply: true
 ---
 
 # Prisma migration workflow - PandaTrack
 
 When a change modifies the database schema or requires a database structure update, always create a Prisma migration in the same task.
+
+## Migration history is immutable
+
+Never manually edit existing migration files under `prisma/migrations/**` that already exist in the repository history.
+
+- Do not rewrite old SQL migrations.
+- Do not "fix" previous migrations by modifying their files.
+- Do not rename or reorder existing migration folders.
+
+If a migration result is wrong or incomplete, create a new migration that applies the correction.
 
 ## Required command
 
@@ -14,7 +24,7 @@ Use the project npm script (not raw Prisma command):
 
 `npm run db-migrate -- --name <migration-name>`
 
-Do not finish the task with only schema changes. The migration files under `prisma/migrations/` must be created as part of the same change.
+Do not finish the task with only schema changes. A new migration folder under `prisma/migrations/` must be created as part of the same change.
 
 ## Migration naming
 
@@ -38,6 +48,7 @@ Avoid vague names like `update-schema`, `fix-db`, or `changes`.
 When DB-related files are changed, the agent must:
 
 1. Run `npm run db-migrate -- --name <short-kebab-name>`.
-2. Ensure new migration files are generated in `prisma/migrations/`.
-3. Keep migration name aligned with what was implemented.
-4. Include generated migration files in the final diff.
+2. Ensure a new migration folder is generated in `prisma/migrations/`.
+3. Verify no pre-existing migration files were edited.
+4. Keep migration name aligned with what was implemented.
+5. Include only the newly generated migration files in the final diff.

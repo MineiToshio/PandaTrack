@@ -46,7 +46,7 @@ enum StoreContactChannelType {
   OTHER
 }
 
-enum StoreCategoryRequestStatus {
+enum StoreProductTypeRequestStatus {
   PENDING
   APPROVED
   REJECTED
@@ -87,7 +87,7 @@ model User {
   storeReviews                StoreReview[]
   storeNotes                  StoreNote[]
   storeReports                StoreReport[]
-  storeCategoryRequests       StoreCategoryRequest[]
+  storeProductTypeRequests    StoreProductTypeRequest[]
   storeChangeRequests         StoreChangeRequest[]
   reviewedStoreChangeRequests StoreChangeRequest[]   @relation("StoreChangeRequestReviewer")
   orders                      Order[]
@@ -175,7 +175,7 @@ model Store {
   contactChannels     StoreContactChannel[]
   addresses           StoreAddress[]
   importCountries     StoreImportCountry[]
-  categoryAssignments StoreCategoryAssignment[]
+  productTypeAssignments StoreProductTypeAssignment[]
   reviews             StoreReview[]
   notes               StoreNote[]
   reports             StoreReport[]
@@ -254,26 +254,26 @@ model StoreImportCountry {
   @@map("store_import_country")
 }
 
-model StoreCategory {
+model StoreProductType {
   key         String                    @id
   isActive    Boolean                   @default(true)
   createdAt   DateTime                  @default(now())
   updatedAt   DateTime                  @updatedAt
-  assignments StoreCategoryAssignment[]
+  assignments StoreProductTypeAssignment[]
 
-  @@map("store_category")
+  @@map("store_product_type")
 }
 
-model StoreCategoryAssignment {
-  storeId     String
-  categoryKey String
-  createdAt   DateTime      @default(now())
-  store       Store         @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  category    StoreCategory @relation(fields: [categoryKey], references: [key], onDelete: Restrict)
+model StoreProductTypeAssignment {
+  storeId        String
+  productTypeKey String
+  createdAt      DateTime         @default(now())
+  store          Store            @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  productType    StoreProductType @relation(fields: [productTypeKey], references: [key], onDelete: Restrict)
 
-  @@id([storeId, categoryKey])
-  @@index([categoryKey])
-  @@map("store_category_assignment")
+  @@id([storeId, productTypeKey])
+  @@index([productTypeKey])
+  @@map("store_product_type_assignment")
 }
 
 model StoreReview {
@@ -329,20 +329,20 @@ model StoreReport {
   @@map("store_report")
 }
 
-model StoreCategoryRequest {
+model StoreProductTypeRequest {
   id            String                     @id @default(cuid())
   requestedById String
   suggestedKey  String?
   suggestedName String
   reason        String?
-  status        StoreCategoryRequestStatus @default(PENDING)
+  status        StoreProductTypeRequestStatus @default(PENDING)
   createdAt     DateTime                   @default(now())
   updatedAt     DateTime                   @updatedAt
   requestedBy   User                       @relation(fields: [requestedById], references: [id], onDelete: Cascade)
 
   @@index([requestedById])
   @@index([status])
-  @@map("store_category_request")
+  @@map("store_product_type_request")
 }
 
 model StoreChangeRequest {

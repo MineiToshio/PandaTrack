@@ -1,10 +1,11 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { Box, Building2, Globe, Plus, UserRound, X } from "lucide-react";
 import { startTransition, useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import Label from "@/components/core/Label";
@@ -26,9 +27,8 @@ import StoreMultiTagAutocomplete from "../../_components/StoreMultiTagAutocomple
 import StoreFormSectionCard from "./StoreFormSectionCard";
 import StoreEmptyStateBox from "./StoreEmptyStateBox";
 
-type DuplicateCandidate = { id: string; name: string; slug: string };
+type DuplicateCandidate = { id: string; name: string; slug: string; countryCode: string; logoUrl: string | null };
 
-const DEBOUNCE_MS = 400;
 const MIN_QUERY_LENGTH = 2;
 const CONTACT_CHANNEL_TYPES = [
   "INSTAGRAM",
@@ -47,7 +47,7 @@ const resolveFirstErrorElement = (form: HTMLFormElement, fieldKey: string): HTML
   if (fieldKey === "description") return form.querySelector("#store-description");
   if (fieldKey === "countryCode") return form.querySelector("#store-country");
   if (fieldKey === "presenceTypes") return form.querySelector('[data-field="presenceTypes"] button');
-  if (fieldKey === "categoryKeys") return form.querySelector('[data-field="categoryKeys"] button');
+  if (fieldKey === "productTypeKeys") return form.querySelector('[data-field="productTypeKeys"] button');
   if (fieldKey === "importCountries") return form.querySelector("#import-countries-input");
 
   if (fieldKey.startsWith("contactChannels.")) {
@@ -91,26 +91,72 @@ const resolveFirstErrorElement = (form: HTMLFormElement, fieldKey: string): HTML
   return null;
 };
 
-export type CreateStoreFormProps = {
-  countries: { code: string }[];
-  categories: { key: string }[];
+type DuplicateCandidatesListProps = {
+  candidates: DuplicateCandidate[];
+  locale: string;
+  tCountries: (key: string) => string;
 };
 
-export default function CreateStoreForm({ countries, categories }: CreateStoreFormProps) {
+function DuplicateCandidatesList({ candidates, locale, tCountries }: DuplicateCandidatesListProps) {
+  return (
+    <ul className="space-y-2">
+      {candidates.map((candidate) => (
+        <li key={candidate.id}>
+          <Link
+            href={`/${locale}${ROUTES.stores}/${candidate.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="border-border bg-background/70 hover:border-primary/60 hover:bg-background group flex items-center gap-2 rounded-lg border p-2 transition-colors"
+          >
+            {candidate.logoUrl ? (
+              <Image
+                src={candidate.logoUrl}
+                alt=""
+                width={28}
+                height={28}
+                className="size-7 shrink-0 rounded-md object-cover"
+                unoptimized
+              />
+            ) : (
+              <span className="bg-muted text-text-muted group-hover:text-primary inline-flex size-7 shrink-0 items-center justify-center rounded-md transition-colors">
+                <Building2 size={14} aria-hidden />
+              </span>
+            )}
+            <span className="min-w-0">
+              <Typography size="xs" className="text-text-body block truncate">
+                {candidate.name}
+              </Typography>
+              <Typography size="2xs" className="text-text-muted block">
+                {tCountries(candidate.countryCode)}
+              </Typography>
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export type CreateStoreFormProps = {
+  countries: { code: string }[];
+  productTypes: { key: string }[];
+};
+
+export default function CreateStoreForm({ countries, productTypes }: CreateStoreFormProps) {
   const locale = useLocale();
   const router = useRouter();
   const t = useTranslations("stores");
   const tCreate = useTranslations("stores.create");
   const tValidation = useTranslations("stores.validation");
   const tCountries = useTranslations("countries");
-  const tCategories = useTranslations("storeCategories");
+  const tProductTypes = useTranslations("storeProductTypes");
   const tChannelTypes = useTranslations("stores.contactChannelTypes");
 
   const [storeType, setStoreType] = useState<"BUSINESS" | "PERSON">("BUSINESS");
   const [hasStock, setHasStock] = useState(false);
   const [receivesOrders, setReceivesOrders] = useState(false);
   const [presenceTypes, setPresenceTypes] = useState<Array<"ONLINE" | "PHYSICAL">>(["ONLINE"]);
-  const [selectedCategoryKeys, setSelectedCategoryKeys] = useState<string[]>([]);
+  const [selectedProductTypeKeys, setSelectedProductTypeKeys] = useState<string[]>([]);
   const [selectedImportCountries, setSelectedImportCountries] = useState<string[]>([]);
   const [contactChannelRows, setContactChannelRows] = useState<number[]>([]);
   const [contactChannelTypeByRowId, setContactChannelTypeByRowId] = useState<
@@ -129,32 +175,33 @@ export default function CreateStoreForm({ countries, categories }: CreateStoreFo
   const [duplicateCandidates, setDuplicateCandidates] = useState<DuplicateCandidate[]>([]);
   const [showConfirmDuplicate, setShowConfirmDuplicate] = useState(false);
   const pendingFormDataRef = useRef<FormData | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  const fetchCandidates = useCallback((query: string) => {
-    if (query.trim().length < MIN_QUERY_LENGTH) {
+  const fetchCandidates = useCallback(async (query: string) => {
+    const trimmedQuery = query.trim();
+    if (trimmedQuery.length < MIN_QUERY_LENGTH) {
       setDuplicateCandidates([]);
-      return;
+      return [];
     }
-    getDuplicateCandidates(query).then((list) => {
-      setDuplicateCandidates(list);
-      if (list.length > 0) {
-        posthog.capture(POSTHOG_EVENTS.STORE.DUPLICATE_SUGGESTIONS_SHOWN, {
-          candidate_count: list.length,
-          name_query: query,
-        });
-      }
-    });
+    const list = await getDuplicateCandidates(trimmedQuery);
+    setDuplicateCandidates(list);
+    if (list.length > 0) {
+      posthog.capture(POSTHOG_EVENTS.STORE.DUPLICATE_SUGGESTIONS_SHOWN, {
+        candidate_count: list.length,
+        name_query: trimmedQuery,
+      });
+    }
+    return list;
   }, []);
 
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchCandidates(nameValue), DEBOUNCE_MS);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [nameValue, fetchCandidates]);
+  const handleNameBlur = async () => {
+    await fetchCandidates(nameValue);
+  };
+
+  const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setNameValue(event.target.value);
+    setDuplicateCandidates([]);
+  };
 
   const countryOptions = useMemo(
     () =>
@@ -167,27 +214,28 @@ export default function CreateStoreForm({ countries, categories }: CreateStoreFo
 
   const storeTypeOptions = useMemo(
     () => [
-      { value: "BUSINESS", label: tCreate("storeTypeBusiness") },
-      { value: "PERSON", label: tCreate("storeTypePerson") },
+      { value: "BUSINESS", label: tCreate("storeTypeBusiness"), icon: <Building2 aria-hidden /> },
+      { value: "PERSON", label: tCreate("storeTypePerson"), icon: <UserRound aria-hidden /> },
     ],
     [tCreate],
   );
 
   const presenceOptions = useMemo(
     () => [
-      { value: "ONLINE", label: tCreate("presenceOnline") },
-      { value: "PHYSICAL", label: tCreate("presencePhysical") },
+      { value: "ONLINE", label: tCreate("presenceOnline"), icon: <Globe aria-hidden /> },
+      { value: "PHYSICAL", label: tCreate("presencePhysical"), icon: <Globe aria-hidden /> },
     ],
     [tCreate],
   );
 
-  const categoryOptions = useMemo(
+  const productTypeOptions = useMemo(
     () =>
-      categories.map((category) => ({
-        value: category.key,
-        label: tCategories(category.key),
+      productTypes.map((productType) => ({
+        value: productType.key,
+        label: tProductTypes(productType.key),
+        icon: <Box aria-hidden />,
       })),
-    [categories, tCategories],
+    [productTypes, tProductTypes],
   );
 
   const handleAddContactChannel = () => {
@@ -228,8 +276,11 @@ export default function CreateStoreForm({ countries, categories }: CreateStoreFo
     setAddressRows((previous) => previous.filter((item) => item !== rowId));
   };
 
-  const handleSubmit = (formData: FormData) => {
-    if (duplicateCandidates.length > 0) {
+  const handleSubmit = async (formData: FormData) => {
+    const submittedName = formData.get("name");
+    const nameToValidate = typeof submittedName === "string" ? submittedName : "";
+    const latestCandidates = await fetchCandidates(nameToValidate);
+    if (latestCandidates.length > 0) {
       setShowConfirmDuplicate(true);
       pendingFormDataRef.current = formData;
       return;
@@ -255,9 +306,9 @@ export default function CreateStoreForm({ countries, categories }: CreateStoreFo
     pendingFormDataRef.current = null;
   };
 
-  const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    handleSubmit(new FormData(event.currentTarget));
+    await handleSubmit(new FormData(event.currentTarget));
   };
 
   const success = state?.success === true;
@@ -266,7 +317,7 @@ export default function CreateStoreForm({ countries, categories }: CreateStoreFo
   const serverError = state?.success === false && "error" in state ? state.error : null;
   const firstErrorKey = Object.keys(fieldErrors)[0];
   const hasPresenceError = !!fieldErrors.presenceTypes?.length;
-  const hasCategoryError = !!fieldErrors.categoryKeys?.length;
+  const hasProductTypeError = !!fieldErrors.productTypeKeys?.length;
 
   const getContactChannelValueError = (rowIndex: number) => {
     return (
@@ -338,13 +389,9 @@ export default function CreateStoreForm({ countries, categories }: CreateStoreFo
           <Typography id="duplicate-dialog-desc" size="sm" className="text-text-body mb-4">
             {t("duplicate.suggestionsDescription")}
           </Typography>
-          <ul className="text-text-body mb-4 list-disc space-y-1 pl-5 text-sm">
-            {duplicateCandidates.map((c) => (
-              <li key={c.id}>
-                {c.name} <span className="text-text-muted">({c.slug})</span>
-              </li>
-            ))}
-          </ul>
+          <div className="mb-4">
+            <DuplicateCandidatesList candidates={duplicateCandidates} locale={locale} tCountries={tCountries} />
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="primary" onClick={handleConfirmCreateAnyway} type="button">
               {t("duplicate.confirmCreate")}
@@ -371,7 +418,8 @@ export default function CreateStoreForm({ countries, categories }: CreateStoreFo
               name="name"
               type="text"
               value={nameValue}
-              onChange={(event) => setNameValue(event.target.value)}
+              onChange={handleNameChange}
+              onBlur={handleNameBlur}
               placeholder={tCreate("namePlaceholder")}
               required
               maxLength={200}
@@ -387,19 +435,16 @@ export default function CreateStoreForm({ countries, categories }: CreateStoreFo
             {duplicateCandidates.length > 0 && !showConfirmDuplicate && (
               <div
                 id="duplicate-suggestions"
-                className="border-border bg-muted/20 mt-2 rounded border p-3"
+                className="border-primary/35 bg-primary/8 ring-primary/20 mt-2 rounded-xl border p-3.5 shadow-sm ring-1"
                 role="status"
               >
-                <Typography size="xs" className="text-text-title mb-1 font-medium">
+                <Typography size="xs" className="text-text-title mb-1.5 font-semibold">
                   {t("duplicate.suggestionsTitle")}
                 </Typography>
-                <ul className="text-text-body list-disc space-y-0.5 pl-4 text-xs">
-                  {duplicateCandidates.map((candidate) => (
-                    <li key={candidate.id}>
-                      {candidate.name} <span className="text-text-muted">({candidate.slug})</span>
-                    </li>
-                  ))}
-                </ul>
+                <Typography size="2xs" className="text-text-muted mb-2">
+                  {t("duplicate.suggestionsDescription")}
+                </Typography>
+                <DuplicateCandidatesList candidates={duplicateCandidates} locale={locale} tCountries={tCountries} />
               </div>
             )}
           </div>
@@ -487,21 +532,21 @@ export default function CreateStoreForm({ countries, categories }: CreateStoreFo
           </div>
 
           <div className="space-y-3">
-            <Label>{tCreate("categoriesLabel")}</Label>
+            <Label>{tCreate("productTypesLabel")}</Label>
             <div
-              data-field="categoryKeys"
-              className={cn(hasCategoryError && "border-destructive rounded-lg border p-2")}
+              data-field="productTypeKeys"
+              className={cn(hasProductTypeError && "border-destructive rounded-lg border p-2")}
             >
               <StoreSelectableTagGroup
-                options={categoryOptions}
-                selectedValues={selectedCategoryKeys}
-                onChange={setSelectedCategoryKeys}
-                inputName="categoryKeys"
+                options={productTypeOptions}
+                selectedValues={selectedProductTypeKeys}
+                onChange={setSelectedProductTypeKeys}
+                inputName="productTypeKeys"
               />
             </div>
-            {fieldErrors.categoryKeys?.[0] && (
+            {fieldErrors.productTypeKeys?.[0] && (
               <Typography size="xs" className="text-destructive mt-1" role="alert">
-                {tValidation("categoryInvalid")}
+                {tValidation(fieldErrors.productTypeKeys[0] as "productTypeRequired" | "productTypeInvalid")}
               </Typography>
             )}
           </div>
