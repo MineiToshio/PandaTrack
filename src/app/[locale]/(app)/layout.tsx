@@ -38,7 +38,10 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
 
   if (snapshot?.state !== "grace") {
     return (
-      <div style={{ ["--app-banner-offset" as string]: "0px" } as React.CSSProperties}>
+      <div
+        className="from-background via-primary/5 to-accent/5 min-h-screen bg-linear-to-b"
+        style={{ ["--app-banner-offset" as string]: "0px" } as React.CSSProperties}
+      >
         <AppLayout locale={locale} signOutLabel={tAuth("signOut")}>
           {children}
         </AppLayout>
@@ -49,7 +52,10 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
   const tVerification = await getTranslations({ locale, namespace: "auth.verificationBanner" });
 
   return (
-    <div style={{ ["--app-banner-offset" as string]: `${VERIFICATION_BANNER_HEIGHT_PX}px` } as React.CSSProperties}>
+    <div
+      className="from-background via-primary/5 to-accent/5 min-h-screen bg-linear-to-b"
+      style={{ ["--app-banner-offset" as string]: `${VERIFICATION_BANNER_HEIGHT_PX}px` } as React.CSSProperties}
+    >
       <div className="sticky top-0 z-50 w-full">
         <VerifyEmailBanner
           locale={locale}

@@ -32,7 +32,7 @@ export default async function StoresNewPage({ params }: StoresNewPageProps) {
   ]);
 
   return (
-    <div className="bg-background text-foreground px-4 py-8">
+    <div className="text-foreground px-4 py-8">
       <div className="mx-auto max-w-2xl">
         <CreateStoreForm countries={countries} productTypes={productTypes} />
       </div>

@@ -25,7 +25,7 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
   const t = await getTranslations({ locale, namespace: "dashboard" });
 
   return (
-    <div className="bg-background text-foreground px-4 py-8">
+    <div className="text-foreground px-4 py-8">
       <div className="mx-auto max-w-4xl">
         <Heading as="h1" size="sm" className="text-text-title">
           {t("title")}

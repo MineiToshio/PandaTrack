@@ -110,7 +110,7 @@ export default function StoreDetailContent({ locale, store }: StoreDetailContent
   const addressesCount = store.addresses?.length ?? 0;
 
   return (
-    <div className="from-background via-primary/5 to-accent/5 bg-linear-to-b px-4 py-7 sm:px-6 sm:py-8">
+    <div className="px-4 py-7 sm:px-6 sm:py-8">
       <div className="mx-auto max-w-6xl space-y-6">
         <Link
           href={`/${locale}${ROUTES.stores}`}
