@@ -43,8 +43,9 @@ Produce:
 1. one new `FRD` under the specified `PRD`
 2. one or more related `Blueprints`
 3. one or more `Work Orders` under each `Blueprint`
-4. one matching GitHub Epic for the `FRD`
-5. one GitHub ticket per `Work Order`
+4. an updated parent `PRD` that reflects the new `FRD`
+5. one matching GitHub Epic for the `FRD`
+6. one GitHub ticket per `Work Order`
 
 ## Required product-doc structure
 
@@ -143,6 +144,13 @@ Before drafting:
 3. Inspect the current codebase for implemented behavior that should influence the new documents.
 4. Review current GitHub epics and tickets to avoid duplicating existing work.
 
+The target `PRD` must be updated as part of this command when the new `FRD` changes:
+
+- the PRD child list
+- the PRD scope summary
+- the PRD linked-FRD section
+- the workflow priority or product map, when applicable
+
 If the requested FRD overlaps with an existing Epic or existing FRD, ask the user in Spanish whether they want:
 
 - to extend the existing FRD/Epic
@@ -228,6 +236,7 @@ Before writing docs or GitHub issues, present the plan in Spanish and wait for e
 The proposal must include:
 
 - target `PRD`
+- whether the target `PRD` will need scope/map updates beyond just adding the new child link
 - whether the request should:
   - create a new `FRD`
   - extend an existing `FRD`
@@ -322,14 +331,15 @@ When creating the new FRD package:
 
 Return in Spanish:
 
-1. `FRD created` or `FRD updated`
-2. `Blueprints created`
-3. `Work Orders created`
-4. `GitHub epic`
-5. `GitHub tickets`
-6. `Docs updated`
-7. `Open assumptions`
-8. `Follow-up notes`
+1. `PRD updated`
+2. `FRD created` or `FRD updated`
+3. `Blueprints created`
+4. `Work Orders created`
+5. `GitHub epic`
+6. `GitHub tickets`
+7. `Docs updated`
+8. `Open assumptions`
+9. `Follow-up notes`
 
 If creation was blocked before approval or by missing information, say so clearly and summarize what is still needed.
 
@@ -338,6 +348,7 @@ If creation was blocked before approval or by missing information, say so clearl
 Before finishing, verify:
 
 - the target PRD was read
+- the target PRD was updated to reflect the new or expanded FRD
 - the new FRD does not duplicate an existing one unnecessarily
 - the command explicitly evaluated whether the request belongs in an existing FRD instead of a new one
 - the command explicitly evaluated whether the request should be split into multiple FRDs
