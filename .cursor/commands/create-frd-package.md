@@ -262,28 +262,43 @@ After approval:
 The GitHub Epic must contain only lightweight tracking information:
 
 - Epic title
-- link to parent `PRD`
-- link to matching `FRD`
-- links to related `Blueprints`
+- `PRD Path`
+- `FRD Path`
+- `Blueprint Path` or `Blueprint Paths`
 - checklist of linked `Work Orders`
 - short status/blocker notes when useful
 
 Do not duplicate the full FRD body in GitHub.
+Do not use branch-specific GitHub blob URLs as the canonical reference format.
+Use repository-relative paths as the durable reference.
 
 ### Ticket body
 
 Each GitHub ticket must contain only lightweight tracking information:
 
 - Parent Epic reference
-- link to parent `PRD`
-- link to parent `FRD`
-- link to parent `Blueprint`
-- link to matching `Work Order`
+- `PRD Path`
+- `FRD Path`
+- `Blueprint Path`
+- `Work Order Path`
 - brief execution notes
 - blockers if any
 - linked PRs if any
 
 Do not duplicate the full Work Order body in GitHub.
+
+### Path format
+
+Use repository-relative paths in Epic and ticket bodies.
+
+Examples:
+
+- `docs/product/prd-01-collector-mvp/prd-01-collector-mvp.md`
+- `docs/product/prd-01-collector-mvp/frd-04-store-domain/frd-04-store-domain.md`
+- `docs/product/prd-01-collector-mvp/frd-04-store-domain/bp-01-store-public-trust-system/bp-01-store-public-trust-system.md`
+- `docs/product/prd-01-collector-mvp/frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-01-store-persistence-foundation.md`
+
+Optional GitHub links may be added as convenience only when useful, but the path is the source-of-truth reference.
 
 ### GitHub labels and project rules
 

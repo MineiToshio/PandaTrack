@@ -47,26 +47,40 @@ Current project status source of truth is the GitHub Project `Status` field (`To
 
 - Title: same as the `FRD` title whenever practical
 - Must include:
-  - link to parent `PRD`
-  - link to matching `FRD`
-  - links to related `Blueprints`
+  - `PRD Path`
+  - `FRD Path`
+  - `Blueprint Path` or `Blueprint Paths`
   - checklist of linked `Work Orders`
   - short status/blocker notes when needed
 - Must not include:
   - full duplicated FRD content
+  - branch-specific URLs as the only way to locate docs
 
 ## Ticket Template (Work Order Issue)
 
 - Title: same as the `Work Order` title whenever practical
 - Must include:
   - Parent Epic reference
-  - link to parent `PRD`
-  - link to parent `FRD`
-  - link to parent `Blueprint`
-  - link to matching `Work Order`
+  - `PRD Path`
+  - `FRD Path`
+  - `Blueprint Path`
+  - `Work Order Path`
   - brief execution notes and blockers if needed
 - Must not include:
   - full duplicated Work Order content
+
+## Path Format
+
+Use repository-relative paths in issue bodies as the canonical doc reference format.
+
+Examples:
+
+- `docs/product/prd-01-collector-mvp/prd-01-collector-mvp.md`
+- `docs/product/prd-01-collector-mvp/frd-04-store-domain/frd-04-store-domain.md`
+- `docs/product/prd-01-collector-mvp/frd-04-store-domain/bp-01-store-public-trust-system/bp-01-store-public-trust-system.md`
+- `docs/product/prd-01-collector-mvp/frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-01-store-persistence-foundation.md`
+
+Optional GitHub links may be added as convenience only when needed, but the path is the durable reference.
 
 ## Security Rules
 

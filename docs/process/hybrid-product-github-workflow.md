@@ -74,13 +74,22 @@ Examples:
 An Epic should contain:
 
 - Epic title
-- link to the parent `PRD`
-- link to the matching `FRD`
-- links to related `Blueprints`
+- repo path to the parent `PRD`
+- repo path to the matching `FRD`
+- repo paths to related `Blueprints`
 - checklist of related `Work Orders`
 - current status notes or blockers when useful
 
 An Epic should not duplicate the full `FRD` body.
+
+Use repository paths as the canonical reference format in GitHub, not branch-specific GitHub blob URLs.
+
+Examples:
+
+- `PRD Path: docs/product/prd-01-collector-mvp/prd-01-collector-mvp.md`
+- `FRD Path: docs/product/prd-01-collector-mvp/frd-04-store-domain/frd-04-store-domain.md`
+
+Optional clickable GitHub links may be added as convenience only when they point to a currently valid branch, but the path remains the source-of-truth reference.
 
 ## GitHub Ticket Rules
 
@@ -100,10 +109,10 @@ Examples:
 
 A ticket should contain:
 
-- link to the parent `PRD`
-- link to the parent `FRD`
-- link to the parent `Blueprint`
-- link to the matching `Work Order`
+- repo path to the parent `PRD`
+- repo path to the parent `FRD`
+- repo path to the parent `Blueprint`
+- repo path to the matching `Work Order`
 - brief execution notes
 - blockers if any
 - linked PRs if any
@@ -116,6 +125,7 @@ A ticket should not duplicate the full `Work Order` content.
 - Every GitHub ticket must point to exactly one `Work Order`.
 - Every `Work Order` should be traceable back to one `FRD` through its `Blueprint`.
 - Status changes happen in GitHub, not by renaming files in `docs/product`.
+- GitHub should store doc references primarily as repo paths so issue bodies remain branch-agnostic.
 - If a user instruction changes scope, requirements, architecture, or execution definition during implementation, update the appropriate doc in `docs/product` first and then sync GitHub tracking to match.
 
 ## Recommended Status Workflow

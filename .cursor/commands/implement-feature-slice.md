@@ -18,15 +18,15 @@ Implement one Work Order ticket from GitHub with minimal, reviewable changes usi
 - From the slice issue, resolve the parent epic issue.
 - Read the slice body and current status in the Project board.
 - Read the parent epic body and extract:
-  - linked `PRD`
-  - linked `FRD`
-  - linked `Blueprints`
+  - `PRD Path`
+  - `FRD Path`
+  - `Blueprint Path` or `Blueprint Paths`
 - From the slice ticket body, extract:
-  - linked `Blueprint`
-  - linked `Work Order`
+  - `Blueprint Path`
+  - `Work Order Path`
 - Read the referenced `PRD`, `FRD`, `Blueprint`, and `Work Order` from `docs/product/`.
 - Treat the product docs as the implementation contract and GitHub as the execution-tracking layer.
-- If any required document link is missing from the Epic or ticket, stop and report which reference is missing instead of guessing.
+- If any required doc path is missing from the Epic or ticket, stop and report which reference is missing instead of guessing.
 - If needed, read related linked issues/PRs for blocking context.
 
 3. Build implementation contract
