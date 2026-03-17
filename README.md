@@ -1,6 +1,6 @@
 # PandaTrack
 
-**Organize purchases, pre-orders, payments, and shipments in one place.**
+**Organize orders, pre-orders, payments, and shipments in one place.**
 
 PandaTrack is a web app for collectors who buy across multiple stores and channels. It turns scattered orders, tracking links, and upcoming payments into a single source of truth so collecting stays fun instead of chaotic.
 
@@ -36,7 +36,7 @@ PandaTrack is a web app for collectors who buy across multiple stores and channe
 The first version focuses on the "discover → buy → wait → receive" workflow:
 
 1. **Stores**: Database and discovery by category (manga, figures, TCG, etc.), with trust signals and reviews.
-2. **Purchases & orders**: Track items, status, dates, and details per purchase.
+2. **Orders**: Track items, status, dates, and details per order.
 3. **Pre-orders & payments**: Deposits vs remaining balance; upcoming payments by month.
 4. **Shipments**: Track single and split shipments (carrier, tracking, status).
 5. **Dashboard**: Status, upcoming payments, and totals at a glance.
@@ -48,7 +48,7 @@ The first version focuses on the "discover → buy → wait → receive" workflo
 - Budget setup and alerts.
 - Deeper analytics and smarter reminders.
 
-See [docs/product/overview.md](docs/product/overview.md) for full product vision and workflows.
+See [docs/product/README.md](docs/product/README.md) for the active product-documentation tree, including [docs/product/prd-00-pre-release-validation/prd-00-pre-release-validation.md](docs/product/prd-00-pre-release-validation/prd-00-pre-release-validation.md) and [docs/product/prd-01-collector-mvp/prd-01-collector-mvp.md](docs/product/prd-01-collector-mvp/prd-01-collector-mvp.md).
 
 ---
 
@@ -186,13 +186,13 @@ Details: [docs/development/i18n.md](docs/development/i18n.md).
 
 ## Documentation
 
-| Document                                                       | Description                                              |
-| -------------------------------------------------------------- | -------------------------------------------------------- |
-| [docs/product/README.md](docs/product/README.md)               | Product docs index (overview, scope, workflows, roadmap) |
-| [docs/development/i18n.md](docs/development/i18n.md)           | i18n setup, locales, and how to add translations         |
-| [docs/development/og-images.md](docs/development/og-images.md) | OG image generation conventions                          |
-| [docs/process/workflow-ai.md](docs/process/workflow-ai.md)     | AI delivery workflow (GitHub Epic/Slice first)           |
-| [AGENTS.md](AGENTS.md)                                         | Guidelines for AI and human contributors                 |
+| Document                                                       | Description                                             |
+| -------------------------------------------------------------- | ------------------------------------------------------- |
+| [docs/product/README.md](docs/product/README.md)               | Product docs index (PRD, FRDs, blueprints, work orders) |
+| [docs/development/i18n.md](docs/development/i18n.md)           | i18n setup, locales, and how to add translations        |
+| [docs/development/og-images.md](docs/development/og-images.md) | OG image generation conventions                         |
+| [docs/process/workflow-ai.md](docs/process/workflow-ai.md)     | AI delivery workflow (GitHub Epic/Slice first)          |
+| [AGENTS.md](AGENTS.md)                                         | Guidelines for AI and human contributors                |
 
 ---
 

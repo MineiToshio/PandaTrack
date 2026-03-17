@@ -71,7 +71,7 @@ This document describes how similar-store detection works during store creation:
 
 - **Raw score:** `getDuplicateMatchScore(query, candidateName)` in `duplicateMatch.ts` uses:
   - Normalized names (lowercase, trim, collapse spaces, strip diacritics).
-  - Exact match bonus (400), substring bonus (150), token overlap (40 per token, +120 if all query tokens match), and generic-term rules (e.g. "store" alone does not match everything).
+  - Exact match bonus (400), substring bonus (150) only when the contained string has length ≥ 2 (avoids matching a store named "l" when the query is "lang-en"), token overlap (40 per token, +120 if all query tokens match), and generic-term rules (e.g. "store" alone does not match everything).
 - **Percentage:** `getSimilarityPercent(query, candidateName)` maps that score to 0–100 (score / 500 capped at 100). Used only for the submit flow and the 70% threshold.
 - **Threshold:** Submit flow uses `SIMILARITY_THRESHOLD_PERCENT = 70`. To change when the modal appears, change this constant and the copy in i18n (`duplicate.submitModalDescription` with `{percent}`).
 

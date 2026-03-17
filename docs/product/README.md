@@ -1,23 +1,54 @@
+---
+id: PRODUCT-DOCS
+type: INDEX
+status: ACTIVE
+format: MARKDOWN
+convention: "prefix + short number + descriptive slug"
+last_updated: 2026-03-16
+---
+
 # Product Docs
 
-This folder is the source of truth for PandaTrack product documentation.
+This folder is the product source of truth for PandaTrack.
 
-## Documents
+It follows a hierarchical 80/90-style documentation model:
 
-- `overview.md`: consolidated product overview and high-level context.
-- `vision-and-problem.md`: product vision, problem statement, target users, and principles.
-- `mvp-scope.md`: MVP priorities, in/out scope, and success metrics.
-- `workflows.md`: key user workflows for the tracking journey.
-- `collector-workspace-layout.md`: private app layout direction, navigation model, and future-ready layout guidance.
-- `landing-and-positioning.md`: landing page messaging and waitlist content strategy.
-- `roadmap.md`: phased roadmap and release sequencing.
-- `glossary.md`: shared terminology for product, process, and engineering docs.
-- `store-domain-model.md`: store domain model, moderation rules, categories, and metadata decisions.
-- GitHub Project #4 and its epic/slice issues: feature-level execution source of truth.
+- `PRD` defines the product or release
+- each `PRD` contains one or more `FRDs`
+- each `FRD` contains one or more `Blueprints`
+- each `Blueprint` contains its `Work Orders`
 
-## Usage guidance
+## Active Product Tree
 
-- Keep strategy-level content here.
-- Keep feature-level specs in GitHub epic/slice issues.
-- Keep process standards in `docs/process/`.
-- Keep `overview.md` synchronized with the product capabilities reflected in GitHub epic planning, using product language instead of implementation detail.
+- `prd-00-pre-release-validation/`
+  - Documents the public pre-release phase used to validate demand, collect waitlist interest, and establish public-web foundations.
+  - Covers the landing, waitlist capture, analytics, observability, localization, SEO, and legal transparency layers that shipped before the collector workspace.
+- `prd-01-collector-mvp/`
+  - Documents the authenticated collector product.
+  - Covers account access and recovery, testing baseline, app shell, store domain, and draft collector workflow domains that feed the later dashboard experience.
+
+## Naming Standard
+
+- `prd-00-pre-release-validation`
+- `prd-01-collector-mvp`
+- `frd-01-account-access-and-recovery`
+- `frd-04-store-domain`
+- `bp-01-collector-workspace-shell`
+- `wo-01-auth-core-and-entry-flows`
+
+## Authoring Rules
+
+- Keep documents in Markdown.
+- Use consistent YAML frontmatter.
+- Use explicit parent-child references in metadata.
+- Keep one concept per file.
+- Add `source_features` when the doc consolidates one or more GitHub epics.
+- Add `implementation_status` when code exists and the doc is partially reverse-engineered from the repository.
+- Keep `Confirmed`, `Open Questions`, and `Out of Scope` clearly separated.
+- Keep GitHub execution aligned with these docs, but do not use GitHub as the only product-definition source.
+
+## Related References
+
+- Templates and authoring guide: `docs/templates/`
+- Process standards: `docs/process/`
+- Reusable technical details: `docs/development/`

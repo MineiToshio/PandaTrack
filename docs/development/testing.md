@@ -60,7 +60,7 @@ Use E2E tests for the few workflows that must work from the user perspective.
 
 Typical candidates:
 
-- create a purchase
+- create an order
 - register a partial payment
 - verify remaining amount
 - register shipment or split shipment
@@ -173,7 +173,7 @@ Start with the highest-risk product areas:
 - pre-order payment tracking
 - paid vs remaining amount calculations
 - shipment and split shipment state changes
-- purchase lifecycle status logic
+- order lifecycle status logic
 - dashboard totals and derived summaries
 - validation at server boundaries
 

@@ -2,9 +2,10 @@
 
 ## Purpose
 
-Centralize the minimum information needed to access and operate PandaTrack planning in GitHub.
+Centralize the minimum information needed to access and operate PandaTrack execution tracking in GitHub.
 
-GitHub Project and its issues are the source of truth for feature scope and execution status.
+GitHub Project and its issues are the source of truth for execution status.
+`docs/product` is the source of truth for product definition.
 
 ## Quick Links
 
@@ -15,8 +16,8 @@ GitHub Project and its issues are the source of truth for feature scope and exec
 
 ## Canonical Mapping
 
-- One feature (`FEAT-XXXX`) -> one Epic issue
-- One Epic issue -> multiple Slice sub-issues
+- One `FRD` -> one Epic issue
+- One Epic issue -> multiple `Work Order` tickets
 - Every Epic/Slice should be added to the GitHub Project board
 - Keep issue titles concise and readable.
 - Distinguish epic vs slice using `type:*` labels, not title prefixes.
@@ -44,21 +45,28 @@ Current project status source of truth is the GitHub Project `Status` field (`To
 
 ## Epic Template (Issue)
 
-- Title: `FEAT-XXXX: <feature name>`
+- Title: same as the `FRD` title whenever practical
 - Must include:
-  - Goal
-  - Scope
-  - Acceptance criteria
-  - Test plan with explicit unit, integration, and E2E expectations
+  - link to parent `PRD`
+  - link to matching `FRD`
+  - links to related `Blueprints`
+  - checklist of linked `Work Orders`
+  - short status/blocker notes when needed
+- Must not include:
+  - full duplicated FRD content
 
-## Slice Template (Sub-issue)
+## Ticket Template (Work Order Issue)
 
-- Title: `<small deliverable>`
+- Title: same as the `Work Order` title whenever practical
 - Must include:
   - Parent Epic reference
-  - Clear scope boundary
-  - `Testing` section that marks unit, integration, and E2E as required or not required with a short reason
-  - `Validation notes` section (`npm run type-check`, `npm run lint`, `npm run validate-build`, or equivalent scoped checks)
+  - link to parent `PRD`
+  - link to parent `FRD`
+  - link to parent `Blueprint`
+  - link to matching `Work Order`
+  - brief execution notes and blockers if needed
+- Must not include:
+  - full duplicated Work Order content
 
 ## Security Rules
 

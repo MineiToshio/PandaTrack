@@ -28,7 +28,7 @@ Use the `docs/` folder for knowledge that helps future work and onboarding, not 
 
 ### Structure in `docs/`:
 
-- **`docs/product/`**: Product source of truth (overview, scope, workflows, roadmap, glossary).
+- **`docs/product/`**: Product source of truth (`PRD`, `FRDs`, `Blueprints`, `Work Orders`).
 - **`docs/development/i18n.md`**: i18n setup, structure, and how to add locales or namespaces.
 - **`docs/development/og-images.md`**: OG image generation conventions and implementation notes.
 - **`docs/development/lib-utilities.md`**: app-wide utilities inventory (`src/lib`) and each file responsibility.

@@ -1,21 +1,24 @@
 # AI Workflow
 
-This workflow is optimized for building features with Codex and Cursor using GitHub Project as source of truth.
+This workflow is optimized for building features with Codex and Cursor using a hybrid model:
 
-## 1) Plan in GitHub
+- `docs/product` is the source of truth for product definition
+- GitHub Project is the source of truth for execution status
 
-1. Create or update an Epic issue in GitHub Project.
-2. Keep full feature context in the epic body (requirements, scope, acceptance criteria, test plan).
-3. Create slice sub-issues under the epic.
-4. In the epic and every slice, state unit, integration, and E2E expectations explicitly as required or not required with a short reason.
+## 1) Define in docs, mirror in GitHub
+
+1. Create or update the `PRD`, `FRD`, `Blueprint`, and `Work Orders` in `docs/product`.
+2. Create or update one GitHub Epic from the `FRD`.
+3. Create one GitHub ticket per `Work Order`.
+4. Keep GitHub issue bodies lightweight and link back to the docs instead of duplicating them.
 5. Use `type:epic` and `type:slice` labels for issue type.
 6. Use Project `Status` field (`Todo`, `In Progress`, `Done`) for progress tracking.
 
 ## 2) Prepare execution prompts
 
 1. Call implementation commands with a GitHub issue number or full issue URL.
-2. Resolve parent epic from the slice issue before coding.
-3. Use epic + slice as implementation contract.
+2. Resolve parent Epic, linked `FRD`, and linked `Work Order` before coding.
+3. Use the product docs as the implementation contract and GitHub as the execution tracker.
 
 ## 3) Implement with AI agents
 
@@ -42,7 +45,8 @@ This workflow is optimized for building features with Codex and Cursor using Git
 
 ## Rules for consistency
 
-- Use one Epic issue per feature and one or more Slice sub-issues.
+- Use one Epic per `FRD` and one ticket per `Work Order`.
+- Keep `Blueprints` in docs only unless there is a rare reason to track one separately.
 - Keep user-facing copy in locale JSON files only.
 - Keep Prisma access out of UI components.
 - Keep analytics event names centralized.

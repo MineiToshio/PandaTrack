@@ -25,7 +25,7 @@ Produce:
 
 1. One epic issue with complete requirements and acceptance criteria.
 2. Multiple slice sub-issues under that epic.
-3. Updated product docs in `docs/product`, especially `docs/product/overview.md`, so the repository keeps a product-level summary of what PandaTrack now includes.
+3. Updated product docs in `docs/product`, especially the active `PRD` and affected `FRDs`, so the repository keeps a product-level source of truth for what PandaTrack includes.
 4. Slices that are:
    - small and reviewable
    - independently testable
@@ -298,9 +298,9 @@ Each slice should be small enough for a focused implementation pass, but large e
 
 ### 7. Update product documentation in-repo
 
-After the feature scope is clear, update `docs/product/overview.md`.
+After the feature scope is clear, update the active product docs in `docs/product/`.
 
-Requirements for the overview update:
+Requirements for the product-doc update:
 
 - write at product level, not as an engineering changelog
 - summarize what PandaTrack now does for users
@@ -353,7 +353,7 @@ At minimum:
 
 - use current epic issues as the source for the current product capabilities snapshot
 - avoid documenting a feature in `docs/product` as shipped if GitHub planning clearly shows it is only planned
-- if the new feature changes product positioning or current-state summary, reflect that in `docs/product/overview.md`
+- if the new feature changes product positioning or release-level scope, reflect that in the appropriate active PRD under `docs/product/` (currently `docs/product/prd-00-pre-release-validation/prd-00-pre-release-validation.md` for public pre-release work or `docs/product/prd-01-collector-mvp/prd-01-collector-mvp.md` for the collector MVP)
 
 ### 10. Final response format
 

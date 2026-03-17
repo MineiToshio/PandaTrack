@@ -1,18 +1,26 @@
 # Templates
 
-Use these templates to keep feature delivery consistent when working with AI coding agents.
+Use these templates to keep PandaTrack product definition and execution documentation consistent and AI-friendly.
 
-## Suggested usage order
+## Product Documentation Templates
 
-1. `feature-epic-template.md` (Epic issue body content in GitHub)
-2. `adr-template.md` (only when architecture decisions are needed)
-3. `prompt-pack-template.md` (execution prompts for Codex/Cursor)
-4. Reference global DoD from `docs/process/definition-of-done.md`
+1. `product-docs-guide.md`
+2. `prd-template.md`
+3. `frd-template.md`
+4. `blueprint-template.md`
+5. `work-order-template.md`
 
-## Recommended flow
+## Execution and GitHub Templates
 
-1. Create an Epic issue in GitHub Project and use the Feature Epic template as the epic body.
-2. Define functional and non-functional requirements in that epic.
-3. Freeze data contract and acceptance criteria in the epic.
-4. Create slice sub-issues (`type:slice`) as separate tickets under the epic.
-5. Track execution status in GitHub Project `Status` field, then validate against DoD before closing.
+1. `feature-epic-template.md`
+2. `adr-template.md`
+3. `prompt-pack-template.md`
+
+## Recommended authoring flow
+
+1. Create or update a `PRD` using the product-doc templates.
+2. Add one or more `FRDs` under that `PRD`.
+3. Add one or more `Blueprints` under each `FRD`.
+4. Add `Work Orders` under each `Blueprint`.
+5. Reflect execution in GitHub epics and slices.
+6. Use the GitHub feature-epic template only after the product docs are clear enough to support execution.

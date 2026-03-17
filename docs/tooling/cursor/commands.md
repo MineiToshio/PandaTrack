@@ -28,15 +28,14 @@ Implements one slice issue from GitHub with minimal scoped changes and GitHub-sy
 **You can pass context after the command**, e.g.:
 
 - `/implement-feature-slice 45`
-- `/implement-feature-slice https://github.com/MineiToshio/PandaTrack/issues/45`
 
 **What it does:**
 
-1. Resolves the target slice issue from GitHub by issue number or URL.
-2. Reads the slice issue and its parent epic via GitHub MCP.
-3. Implements only that slice using epic/slice scope and acceptance criteria as contract.
-4. Updates epic/slice issue tracking in GitHub in the same change if behavior differs.
-5. Uses GitHub Project `Status` as execution status source of truth.
+1. Resolves the target slice issue from GitHub by issue number.
+2. Reads the slice ticket, parent epic, and the linked `PRD`, `FRD`, `Blueprint`, and `Work Order`.
+3. Uses the docs as the implementation contract and GitHub as the execution-tracking layer.
+4. Implements only that slice using the linked Work Order as the primary execution scope.
+5. Updates tracking to `In Progress` instead of `Done`, so manual verification can happen afterward.
 6. Runs validation checks and reports exit-criteria status.
    - Use `npm run validate-build` for build validation (not `npm run build`; that one runs migrate deploy and is for the Vercel pipeline).
 7. Returns functional test steps and test cases so implementation can be manually verified.
@@ -49,7 +48,7 @@ Creates a new feature epic in GitHub and decomposes it into small, functional sl
 
 **You can pass context after the command**, e.g.:
 
-- `/create-feature-epic-and-slices Add split shipment support for one purchase`
+- `/create-feature-epic-and-slices Add split shipment support for one order`
 - `/create-feature-epic-and-slices Build store trust signals and seller notes for collectors`
 
 **What it does:**
@@ -61,3 +60,23 @@ Creates a new feature epic in GitHub and decomposes it into small, functional sl
 5. Keeps slices small, functional, and independently testable instead of splitting incomplete partial work.
 
 See `.cursor/commands/create-feature-epic-and-slices.md` for the full command behavior.
+
+## create-frd-package
+
+Creates a new FRD package under an existing PRD and mirrors it into GitHub using the hybrid workflow.
+
+**You can pass context after the command**, e.g.:
+
+- `/create-frd-package prd-01-collector-mvp Add order tracking with partial payments and split shipments`
+- `/create-frd-package docs/product/prd-00-pre-release-validation Add a public referral flow for the waitlist`
+
+**What it does:**
+
+1. Reads the target PRD and nearby product docs for context.
+2. Reviews the codebase and current GitHub planning to avoid duplication.
+3. Asks exhaustive clarification questions in Spanish before drafting.
+4. Creates the new `FRD`, its `Blueprints`, and its `Work Orders` using `docs/templates/*`.
+5. Creates or updates the matching GitHub Epic from the FRD.
+6. Creates one GitHub ticket per Work Order, following the hybrid tracking rules.
+
+See `.cursor/commands/create-frd-package.md` for the full command behavior.
