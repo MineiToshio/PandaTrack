@@ -66,7 +66,11 @@ export function getDuplicateMatchScore(query: string, candidateName: string): nu
     score += 400;
   }
 
-  if (normalizedCandidate.includes(normalizedQuery) || normalizedQuery.includes(normalizedCandidate)) {
+  const minLengthForSubstringBonus = 2;
+  const shorter = normalizedQuery.length <= normalizedCandidate.length ? normalizedQuery : normalizedCandidate;
+  const longer = normalizedQuery.length > normalizedCandidate.length ? normalizedQuery : normalizedCandidate;
+  const hasSubstringMatch = longer.includes(shorter) && shorter.length >= minLengthForSubstringBonus;
+  if (hasSubstringMatch) {
     score += 150;
   }
 

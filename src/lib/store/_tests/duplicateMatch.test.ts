@@ -45,6 +45,11 @@ describe("getDuplicateMatchScore", () => {
     const score = getDuplicateMatchScore("Store", "Any Other Store");
     expect(score).toBe(0);
   });
+
+  it("does not match when candidate is a single character that only appears inside the query", () => {
+    const score = getDuplicateMatchScore("lang-en", "l");
+    expect(score).toBe(0);
+  });
 });
 
 describe("getSimilarityPercent", () => {
