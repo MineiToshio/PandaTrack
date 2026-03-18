@@ -39,6 +39,7 @@
   "cards": {
     "country": "País",
     "productTypes": "Tipos de producto",
+    "noProductTypes": "Sin tipos de producto definidos",
     "importCountries": "Países de importación",
     "noImportCountries": "Sin países de importación",
     "receivesOrdersYes": "Acepta pedidos",

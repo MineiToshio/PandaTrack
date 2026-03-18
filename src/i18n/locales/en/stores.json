@@ -78,6 +78,7 @@
     "noDescription": "This store does not have a description yet.",
     "countryLabel": "Country",
     "productTypesLabel": "Product types",
+    "noProductTypes": "No product types have been set.",
     "presenceLabel": "Sales channels",
     "importCountriesLabel": "Import countries",
     "contactChannelsCountLabel": "Contact channels",

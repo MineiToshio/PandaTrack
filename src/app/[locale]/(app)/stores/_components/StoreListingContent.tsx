@@ -147,16 +147,22 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                         <Typography size="2xs" className="text-text-muted block font-medium">
                           {t("cards.productTypes")}
                         </Typography>
-                        <div className="flex flex-wrap gap-1.5">
-                          {store.productTypeKeys.map((productTypeKey) => (
-                            <span
-                              key={`${store.slug}-${productTypeKey}`}
-                              className={cn(INFO_CHIP_CLASSNAME, "bg-primary/8 text-primary border-primary/20")}
-                            >
-                              {tProductTypes(productTypeKey)}
-                            </span>
-                          ))}
-                        </div>
+                        {store.productTypeKeys.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {store.productTypeKeys.map((productTypeKey) => (
+                              <span
+                                key={`${store.slug}-${productTypeKey}`}
+                                className={cn(INFO_CHIP_CLASSNAME, "bg-primary/8 text-primary border-primary/20")}
+                              >
+                                {tProductTypes(productTypeKey)}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <Typography size="xs" className="text-text-muted">
+                            {t("cards.noProductTypes")}
+                          </Typography>
+                        )}
                       </div>
 
                       <div className="mt-2 grid gap-2 sm:grid-cols-2">

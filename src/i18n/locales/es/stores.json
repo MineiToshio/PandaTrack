@@ -78,6 +78,7 @@
     "noDescription": "Esta tienda no tiene descripción todavía.",
     "countryLabel": "País",
     "productTypesLabel": "Tipos de producto",
+    "noProductTypes": "No se han definido tipos de producto.",
     "presenceLabel": "Canales de venta",
     "importCountriesLabel": "Países de importación",
     "contactChannelsCountLabel": "Canales de contacto",

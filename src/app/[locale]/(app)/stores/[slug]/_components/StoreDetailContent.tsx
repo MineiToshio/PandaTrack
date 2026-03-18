@@ -279,14 +279,20 @@ export default function StoreDetailContent({ locale, store }: StoreDetailContent
               <Typography size="xs" className="text-text-muted">
                 {tStores("detail.productTypesLabel")}
               </Typography>
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                {store.productTypeKeys.map((productTypeKey) => (
-                  <span key={productTypeKey} className={cn(TAG_CLASSNAME, "bg-primary/10 text-primary")}>
-                    <Box className="size-3.5" aria-hidden />
-                    {tProductTypes(productTypeKey)}
-                  </span>
-                ))}
-              </div>
+              {store.productTypeKeys.length > 0 ? (
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  {store.productTypeKeys.map((productTypeKey) => (
+                    <span key={productTypeKey} className={cn(TAG_CLASSNAME, "bg-primary/10 text-primary")}>
+                      <Box className="size-3.5" aria-hidden />
+                      {tProductTypes(productTypeKey)}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <Typography size="xs" className="text-text-muted mt-2.5">
+                  {tStores("detail.noProductTypes")}
+                </Typography>
+              )}
             </div>
 
             <div>
