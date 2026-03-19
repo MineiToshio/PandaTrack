@@ -9,6 +9,7 @@ import RatingStars from "@/components/core/RatingStars";
 import Typography from "@/components/core/Typography";
 import { Modal } from "@/components/modules/Modal";
 import { cn } from "@/lib/styles";
+import type { StoreViewerReview } from "@/queries/store";
 import { deleteStoreReview } from "../_actions/deleteStoreReview";
 import StoreReviewForm from "./StoreReviewForm";
 import { useStoreReviewsState } from "./StoreReviewsStateProvider";
@@ -30,14 +31,34 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
     applyOptimisticReviewSave,
   } = useStoreReviewsState();
   const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [composerReviewSnapshot, setComposerReviewSnapshot] = useState<StoreViewerReview | null>(null);
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [editingReviewSnapshot, setEditingReviewSnapshot] = useState<StoreViewerReview | null>(null);
   const [reviewIdToDelete, setReviewIdToDelete] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const cancelDeleteRef = useRef<HTMLButtonElement>(null);
   const hasViewerReview = viewerReview != null;
 
-  const closeEditForm = () => setEditingReviewId(null);
+  const closeComposer = () => {
+    setIsComposerOpen(false);
+    setComposerReviewSnapshot(null);
+  };
+
+  const closeEditForm = () => {
+    setEditingReviewId(null);
+    setEditingReviewSnapshot(null);
+  };
+
+  const openCreateForm = () => {
+    setComposerReviewSnapshot(null);
+    setIsComposerOpen(true);
+  };
+
+  const openEditForm = (reviewId: string) => {
+    setEditingReviewId(reviewId);
+    setEditingReviewSnapshot(viewerReview);
+  };
 
   const openDeleteModal = (reviewId: string) => {
     setDeleteError(null);
@@ -96,7 +117,7 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
           </div>
 
           {!hasViewerReview && !isComposerOpen && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => setIsComposerOpen(true)}>
+            <Button type="button" variant="ghost" size="sm" onClick={openCreateForm}>
               {t("detail.reviews.form.openCreateCta")}
             </Button>
           )}
@@ -105,12 +126,12 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
 
       {isComposerOpen && (
         <StoreReviewForm
-          key={viewerReview ? `${viewerReview.updatedAt.toISOString()}-${viewerReview.overallRating}` : "new-review"}
+          key="create-review"
           locale={locale}
           storeSlug={storeSlug}
-          existingReview={viewerReview}
-          onCancel={() => setIsComposerOpen(false)}
-          onSaved={() => setIsComposerOpen(false)}
+          existingReview={composerReviewSnapshot}
+          onCancel={closeComposer}
+          onSaved={closeComposer}
           onOptimisticSave={applyOptimisticReviewSave}
         />
       )}
@@ -157,14 +178,14 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
           {reviews.map((review) => {
             const isEditingThis = editingReviewId === review.id;
 
-            if (isEditingThis && review.isViewerReview && viewerReview) {
+            if (isEditingThis && review.isViewerReview && editingReviewSnapshot) {
               return (
                 <li key={review.id}>
                   <StoreReviewForm
-                    key={`edit-${review.id}-${viewerReview.updatedAt.toISOString()}`}
+                    key={`edit-${review.id}`}
                     locale={locale}
                     storeSlug={storeSlug}
-                    existingReview={viewerReview}
+                    existingReview={editingReviewSnapshot}
                     onCancel={closeEditForm}
                     onSaved={closeEditForm}
                     onOptimisticSave={applyOptimisticReviewSave}
@@ -209,7 +230,7 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
                         Icon={PenSquare}
                         size="sm"
                         aria-label={t("detail.reviews.form.openEditCta")}
-                        onClick={() => setEditingReviewId(review.id)}
+                        onClick={() => openEditForm(review.id)}
                         disabled={isPending || reviewIdToDelete != null}
                       />
                       <IconButton

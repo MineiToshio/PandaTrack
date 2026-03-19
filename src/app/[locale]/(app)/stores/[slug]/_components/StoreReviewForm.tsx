@@ -45,6 +45,7 @@ export default function StoreReviewForm({
   const [state, setState] = useState<SaveStoreReviewResult | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
   const [ratingValue, setRatingValue] = useState(existingReview?.overallRating ?? 0);
+  const startedAsEditRef = useRef(existingReview != null);
 
   const fieldErrors = state?.success === false ? state.fieldErrors : undefined;
   const overallRatingError = fieldErrors?.overallRating?.[0];
@@ -190,10 +191,10 @@ export default function StoreReviewForm({
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button type="submit" variant="primary" size="lg" disabled={isPending} className="w-full sm:w-auto">
           {isPending
-            ? existingReview
+            ? startedAsEditRef.current
               ? t("detail.reviews.form.updating")
               : t("detail.reviews.form.submitting")
-            : existingReview
+            : startedAsEditRef.current
               ? t("detail.reviews.form.updateCta")
               : t("detail.reviews.form.submitCta")}
         </Button>
