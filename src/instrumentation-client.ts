@@ -39,7 +39,9 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
   ui_host: "https://us.posthog.com",
   defaults: "2025-11-30",
   capture_exceptions: true,
-  debug: process.env.NODE_ENV === "development",
+  // Keep debug off to avoid console noise when PostHog API returns 5xx (e.g. 502).
+  // To debug PostHog in dev, add ?__posthog_debug=true to the URL.
+  debug: false,
 });
 
 type PosthogClickDelegateOptions = {
