@@ -96,7 +96,70 @@
     "noAddresses": "No public addresses available.",
     "notAvailableForStoreType": "This information does not apply to this store type.",
     "receivesOrdersUnknown": "Orders: not specified",
-    "hasStockUnknown": "Inventory: not specified"
+    "hasStockUnknown": "Inventory: not specified",
+    "reviews": {
+      "eyebrow": "Public trust",
+      "title": "Community reviews",
+      "description": "Public reviews help other collectors judge how reliable this store feels over time.",
+      "empty": "This store does not have public reviews yet.",
+      "noAverage": "No rating yet",
+      "noComment": "No public comment was added.",
+      "anonymousAuthor": "Collector",
+      "yourReviewBadge": "Your review",
+      "ratingBadge": "{rating}/5",
+      "form": {
+        "eyebrow": "Your review",
+        "title": "Share your public review",
+        "description": "Your rating becomes part of the store's public trust score. You can edit it later.",
+        "lastUpdated": "Last updated: {date}",
+        "ratingLabel": "Overall rating",
+        "ratingHelper": "Tap the left half of a star for .5 and the right half for the full star.",
+        "ratingPlaceholder": "Select a rating",
+        "ratingSelected": "{rating} out of 5",
+        "ratingOption": "{rating} out of 5",
+        "commentLabel": "Public comment (optional)",
+        "commentPlaceholder": "Share context that may help other collectors.",
+        "commentHelper": "Keep it focused on your experience with this store.",
+        "openCreateCta": "Write a review",
+        "openEditCta": "Edit your review",
+        "cancelCta": "Cancel",
+        "submitCta": "Publish review",
+        "updateCta": "Update review",
+        "submitting": "Saving review…",
+        "success": "Your review was saved.",
+        "errors": {
+          "unauthorized": "You must sign in to save a review.",
+          "validation_failed": "Please review the form and try again.",
+          "storeUnavailable": "This store is no longer available for reviews.",
+          "overallRatingInvalid": "Select a rating from 0.5 to 5 in 0.5 steps.",
+          "commentTooLong": "Comment is too long.",
+          "saveReviewFailed": "Could not save the review. Please try again."
+        }
+      }
+    },
+    "privateNote": {
+      "eyebrow": "Private memory",
+      "title": "Your private note",
+      "description": "Only you can see this note. Use it for reminders, cautions, or follow-up details.",
+      "lastUpdated": "Last updated: {date}",
+      "form": {
+        "contentLabel": "Private note",
+        "contentPlaceholder": "Add a reminder or private context about this store.",
+        "helper": "This note is never shown in the public store profile.",
+        "submitCta": "Save note",
+        "updateCta": "Update note",
+        "submitting": "Saving note…",
+        "success": "Your private note was saved.",
+        "errors": {
+          "unauthorized": "You must sign in to save a private note.",
+          "validation_failed": "Please review the note and try again.",
+          "storeUnavailable": "This store is no longer available.",
+          "noteRequired": "Write a note before saving.",
+          "noteTooLong": "Note is too long.",
+          "saveNoteFailed": "Could not save the note. Please try again."
+        }
+      }
+    }
   },
   "validation": {
     "nameRequired": "Name is required",

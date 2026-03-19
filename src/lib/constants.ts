@@ -93,5 +93,7 @@ export const POSTHOG_EVENTS = {
     DUPLICATE_SUGGESTIONS_SHOWN: "store_duplicate_suggestions_shown",
     DUPLICATE_SUBMIT_MODAL_SHOWN: "store_duplicate_submit_modal_shown",
     SEARCHED: "store_searched",
+    REVIEW_SAVED: "store_review_saved",
+    NOTE_SAVED: "store_note_saved",
   },
 } as const;

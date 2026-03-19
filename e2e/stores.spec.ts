@@ -13,7 +13,7 @@ test.describe("Store creation flow", () => {
     await page.getByRole("link", { name: /new store|nueva tienda/i }).click();
     await expect(page).toHaveURL(/\/en\/stores\/new/);
 
-    await expect(page.getByRole("heading", { name: /new store/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /new store/i, level: 1 })).toBeVisible();
     await expect(page.getByLabel(/store name|nombre de la tienda/i)).toBeVisible();
     await expect(page.getByRole("button", { name: /create store|crear tienda/i })).toBeVisible();
   });
@@ -26,7 +26,7 @@ test.describe("Store creation flow", () => {
     await page.getByRole("button", { name: /create store|crear tienda/i }).click();
 
     await expect(page).toHaveURL(/\/en\/stores\/new$/);
-    await expect(page.getByLabel(/store name|nombre de la tienda/i)).toHaveAttribute("aria-invalid", "true");
-    await expect(page.locator("#store-country")).toHaveAttribute("aria-invalid", "true");
+    await expect(page.locator("#store-name:invalid")).toBeVisible();
+    await expect(page.locator("#store-country:invalid")).toBeVisible();
   });
 });

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getStoreBySlug } from "@/queries/store";
+import { getSession } from "@/lib/auth/auth-server";
+import { getPublicStoreReviews, getStoreBySlug, getStoreViewerContext } from "@/queries/store";
 import { buildStoreDetailMetadata } from "@/lib/seo";
 import StoreDetailContent from "./_components/StoreDetailContent";
 
@@ -28,5 +29,21 @@ export default async function StoreDetailPage({ params }: StoreDetailPageProps) 
     notFound();
   }
 
-  return <StoreDetailContent locale={locale} store={store} />;
+  const session = await getSession();
+  const [reviews, viewerContext] = session?.user?.id
+    ? await Promise.all([
+        getPublicStoreReviews(prisma, store.id, session.user.id),
+        getStoreViewerContext(prisma, store.id, session.user.id),
+      ])
+    : [[], { review: null, note: null }];
+
+  return (
+    <StoreDetailContent
+      locale={locale}
+      store={store}
+      reviews={reviews}
+      viewerReview={viewerContext.review}
+      viewerNote={viewerContext.note}
+    />
+  );
 }

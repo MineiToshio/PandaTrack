@@ -251,7 +251,6 @@ Should extend:
 
 ## Risks and Constraints
 
-- GitHub comments currently contain a route inconsistency; code is the source of truth here.
 - Review, report, and change-request flows are not implemented yet, so future work must not assume those payloads already exist in UI or query shape.
 - Cloudflare R2 integration is planned but not present in current store code paths.
 

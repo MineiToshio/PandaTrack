@@ -4,7 +4,16 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { createStore, findDuplicateCandidates, getPublicStoresListing, getStoreBySlug } from "../store";
+import {
+  createStore,
+  findDuplicateCandidates,
+  getPublicStoreReviews,
+  getPublicStoresListing,
+  getStoreBySlug,
+  getStoreViewerContext,
+  upsertStoreNote,
+  upsertStoreReview,
+} from "../store";
 import { runSeed } from "../../../prisma/seed";
 import { describe, expect, it } from "vitest";
 
@@ -264,6 +273,130 @@ describe("store queries", () => {
       expect(store?.contactChannels).toBeUndefined();
       expect(store?.addresses).toBeUndefined();
       expect(store?.logoUrl).toBeUndefined();
+    } finally {
+      await prisma.store.deleteMany({ where: { createdByUserId: user.id } });
+      await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+    }
+  });
+
+  it.skipIf(!hasDatabase)("upsertStoreReview updates the existing review and store aggregates", async () => {
+    await runSeed(prisma);
+
+    const user = await prisma.user.create({
+      data: {
+        id: `test-review-${Date.now()}`,
+        name: "Review Author",
+        email: `review-${Date.now()}@example.com`,
+        emailVerified: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+    const secondUser = await prisma.user.create({
+      data: {
+        id: `test-review-peer-${Date.now()}`,
+        name: "Other Reviewer",
+        email: `review-peer-${Date.now()}@example.com`,
+        emailVerified: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    try {
+      const { id: storeId } = await createStore(prisma, {
+        name: "Review Aggregate Store",
+        storeType: "BUSINESS",
+        countryCode: "ES",
+        presenceTypes: ["ONLINE"],
+        productTypeKeys: ["manga"],
+        createdByUserId: user.id,
+        status: "APPROVED",
+        approvedByUserId: user.id,
+      });
+
+      await upsertStoreReview(prisma, {
+        storeId,
+        userId: secondUser.id,
+        overallRating: 4,
+        comment: "Reliable shipping",
+      });
+
+      await upsertStoreReview(prisma, {
+        storeId,
+        userId: user.id,
+        overallRating: 4,
+        comment: "Helpful service",
+      });
+
+      await upsertStoreReview(prisma, {
+        storeId,
+        userId: user.id,
+        overallRating: 3.5,
+        comment: "Updated after a poor follow-up\nWith a second line",
+      });
+
+      const [store, reviews] = await Promise.all([
+        prisma.store.findUnique({ where: { id: storeId } }),
+        getPublicStoreReviews(prisma, storeId, user.id),
+      ]);
+
+      expect(store?.reviewCount).toBe(2);
+      expect(store?.averageRating).toBeCloseTo(3.75);
+      expect(reviews).toHaveLength(2);
+      expect(reviews[0]?.isViewerReview).toBe(true);
+      expect(reviews[0]?.overallRating).toBe(3.5);
+      expect(reviews[0]?.comment).toBe("Updated after a poor follow-up\nWith a second line");
+      expect(reviews[0]?.authorName).toBe("Review Author");
+      expect(reviews[1]?.isViewerReview).toBe(false);
+    } finally {
+      await prisma.store.deleteMany({ where: { createdByUserId: user.id } });
+      await prisma.user.delete({ where: { id: secondUser.id } }).catch(() => {});
+      await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+    }
+  });
+
+  it.skipIf(!hasDatabase)("upsertStoreNote keeps notes private to the viewer context", async () => {
+    await runSeed(prisma);
+
+    const user = await prisma.user.create({
+      data: {
+        id: `test-note-${Date.now()}`,
+        name: "Note Owner",
+        email: `note-${Date.now()}@example.com`,
+        emailVerified: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    try {
+      const { id: storeId, slug } = await createStore(prisma, {
+        name: "Private Note Store",
+        storeType: "BUSINESS",
+        countryCode: "MX",
+        presenceTypes: ["ONLINE"],
+        productTypeKeys: ["figures"],
+        createdByUserId: user.id,
+        status: "APPROVED",
+        approvedByUserId: user.id,
+      });
+
+      const privateNoteContent = "Only I should see this reminder.";
+
+      await upsertStoreNote(prisma, {
+        storeId,
+        userId: user.id,
+        content: privateNoteContent,
+      });
+
+      const [viewerContext, publicStore] = await Promise.all([
+        getStoreViewerContext(prisma, storeId, user.id),
+        getStoreBySlug(prisma, slug),
+      ]);
+
+      expect(viewerContext.note?.content).toBe(privateNoteContent);
+      expect(JSON.stringify(publicStore)).not.toContain(privateNoteContent);
     } finally {
       await prisma.store.deleteMany({ where: { createdByUserId: user.id } });
       await prisma.user.delete({ where: { id: user.id } }).catch(() => {});

@@ -15,6 +15,7 @@ import { generateStoreSlug } from "@/lib/store/slug";
 
 const DEFAULT_DUPLICATE_CANDIDATES_LIMIT = 5;
 export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = 10;
+const DEFAULT_PUBLIC_STORE_REVIEW_LIMIT = 10;
 
 export interface DuplicateCandidate {
   id: string;
@@ -184,6 +185,45 @@ export interface PublicStoreListingPage {
   currentPage: number;
   pageSize: number;
   totalPages: number;
+}
+
+export interface PublicStoreReview {
+  id: string;
+  overallRating: number;
+  comment: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  authorName: string | null;
+  isViewerReview: boolean;
+}
+
+export interface StoreViewerReview {
+  overallRating: number;
+  comment: string | null;
+  updatedAt: Date;
+}
+
+export interface StoreViewerNote {
+  content: string;
+  updatedAt: Date;
+}
+
+export interface StoreViewerContext {
+  review: StoreViewerReview | null;
+  note: StoreViewerNote | null;
+}
+
+export interface UpsertStoreReviewInput {
+  storeId: string;
+  userId: string;
+  overallRating: number;
+  comment?: string | null;
+}
+
+export interface UpsertStoreNoteInput {
+  storeId: string;
+  userId: string;
+  content: string;
 }
 
 function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prisma.StoreWhereInput {
@@ -510,4 +550,225 @@ export async function getPublicStoresListing(
 ): Promise<PublicStoreListingItem[]> {
   const listingPage = await getPublicStoresListingPage(db, filters);
   return listingPage.items;
+}
+
+export async function getPublicStoreReviews(
+  db: PrismaClient,
+  storeId: string,
+  viewerUserId?: string,
+  limit: number = DEFAULT_PUBLIC_STORE_REVIEW_LIMIT,
+): Promise<PublicStoreReview[]> {
+  const reviews = await db.storeReview.findMany({
+    where: { storeId },
+    select: {
+      id: true,
+      userId: true,
+      overallRating: true,
+      comment: true,
+      createdAt: true,
+      updatedAt: true,
+      user: {
+        select: {
+          name: true,
+        },
+      },
+    },
+    orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+    take: limit,
+  });
+
+  return reviews
+    .map((review) => ({
+      id: review.id,
+      overallRating: review.overallRating,
+      comment: review.comment,
+      createdAt: review.createdAt,
+      updatedAt: review.updatedAt,
+      authorName: review.user.name,
+      isViewerReview: viewerUserId != null && review.userId === viewerUserId,
+    }))
+    .sort((left, right) => {
+      if (left.isViewerReview && !right.isViewerReview) return -1;
+      if (!left.isViewerReview && right.isViewerReview) return 1;
+      return right.updatedAt.getTime() - left.updatedAt.getTime();
+    });
+}
+
+export async function getStoreViewerContext(
+  db: PrismaClient,
+  storeId: string,
+  userId: string,
+): Promise<StoreViewerContext> {
+  const [review, note] = await Promise.all([
+    db.storeReview.findUnique({
+      where: {
+        storeId_userId: {
+          storeId,
+          userId,
+        },
+      },
+      select: {
+        overallRating: true,
+        comment: true,
+        updatedAt: true,
+      },
+    }),
+    db.storeNote.findFirst({
+      where: { storeId, userId },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      select: {
+        content: true,
+        updatedAt: true,
+      },
+    }),
+  ]);
+
+  return {
+    review: review
+      ? {
+          overallRating: review.overallRating,
+          comment: review.comment,
+          updatedAt: review.updatedAt,
+        }
+      : null,
+    note: note
+      ? {
+          content: note.content,
+          updatedAt: note.updatedAt,
+        }
+      : null,
+  };
+}
+
+export async function upsertStoreReview(db: PrismaClient, input: UpsertStoreReviewInput): Promise<StoreViewerReview> {
+  const trimmedComment = input.comment?.trim() || null;
+  const RATING_PERSISTENCE_TOLERANCE = 0.001;
+
+  return db.$transaction(async (tx) => {
+    await tx.store.findUniqueOrThrow({
+      where: { id: input.storeId },
+      select: { id: true },
+    });
+
+    let review = await tx.storeReview.upsert({
+      where: {
+        storeId_userId: {
+          storeId: input.storeId,
+          userId: input.userId,
+        },
+      },
+      update: {
+        overallRating: input.overallRating,
+        comment: trimmedComment,
+      },
+      create: {
+        storeId: input.storeId,
+        userId: input.userId,
+        overallRating: input.overallRating,
+        comment: trimmedComment,
+      },
+      select: {
+        overallRating: true,
+        comment: true,
+        updatedAt: true,
+      },
+    });
+
+    const persistedRatingMismatch = Math.abs(review.overallRating - input.overallRating) > RATING_PERSISTENCE_TOLERANCE;
+
+    if (persistedRatingMismatch) {
+      await tx.$executeRaw`
+        UPDATE "store_review"
+        SET "overallRating" = ${input.overallRating}
+        WHERE "storeId" = ${input.storeId} AND "userId" = ${input.userId}
+      `;
+
+      review = await tx.storeReview.findUniqueOrThrow({
+        where: {
+          storeId_userId: {
+            storeId: input.storeId,
+            userId: input.userId,
+          },
+        },
+        select: {
+          overallRating: true,
+          comment: true,
+          updatedAt: true,
+        },
+      });
+    }
+
+    const [reviewCount, reviewAggregate] = await Promise.all([
+      tx.storeReview.count({
+        where: { storeId: input.storeId },
+      }),
+      tx.storeReview.aggregate({
+        where: { storeId: input.storeId },
+        _avg: {
+          overallRating: true,
+        },
+      }),
+    ]);
+
+    await tx.store.update({
+      where: { id: input.storeId },
+      data: {
+        reviewCount,
+        averageRating: reviewAggregate._avg.overallRating,
+      },
+    });
+
+    return {
+      overallRating: review.overallRating,
+      comment: review.comment,
+      updatedAt: review.updatedAt,
+    };
+  });
+}
+
+export async function upsertStoreNote(db: PrismaClient, input: UpsertStoreNoteInput): Promise<StoreViewerNote> {
+  const trimmedContent = input.content.trim();
+
+  return db.$transaction(async (tx) => {
+    await tx.store.findUniqueOrThrow({
+      where: { id: input.storeId },
+      select: { id: true },
+    });
+
+    // Keep one editable note per user/store until the database enforces note uniqueness.
+    const existingNote = await tx.storeNote.findFirst({
+      where: {
+        storeId: input.storeId,
+        userId: input.userId,
+      },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      select: { id: true },
+    });
+
+    const note = existingNote
+      ? await tx.storeNote.update({
+          where: { id: existingNote.id },
+          data: { content: trimmedContent },
+          select: {
+            content: true,
+            updatedAt: true,
+          },
+        })
+      : await tx.storeNote.create({
+          data: {
+            storeId: input.storeId,
+            userId: input.userId,
+            content: trimmedContent,
+          },
+          select: {
+            content: true,
+            updatedAt: true,
+          },
+        });
+
+    return {
+      content: note.content,
+      updatedAt: note.updatedAt,
+    };
+  });
 }

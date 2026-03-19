@@ -161,10 +161,10 @@ Reference for what each table and attribute is for, where it is used, and why it
 **Purpose:** Public review of a store by a user. One review per user per store; editable by the author. Feeds `store.averageRating` and `store.reviewCount`; used for trust signals. No requirement to have an order to leave a review in MVP.
 
 - **storeId / userId** – Unique together; one review per user per store.
-- **overallRating** – Main score; always present.
+- **overallRating** – Main score; always present and supports `0.5` increments.
 - **communicationRating / packingRating / deliveryReliabilityRating** – Optional sub-scores.
 - **wouldBuyAgain** – Optional recommendation.
-- **comment** – Optional text.
+- **comment** – Optional text; preserve user line breaks in read views.
 
 ### `store_note`
 

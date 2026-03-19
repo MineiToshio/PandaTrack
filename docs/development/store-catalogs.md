@@ -26,8 +26,9 @@ Store-level trust summary is persisted on `store`:
 
 - **averageRating:** Denormalized from `store_review`; updated when reviews are created, updated, or deleted.
 - **reviewCount:** Denormalized count of public reviews; updated in the same write path as `averageRating`.
+- **overallRating input:** review authors can submit ratings in `0.5` steps; aggregate averages remain float values.
 
-No seed data is required for these fields; new stores start with `averageRating: null` and `reviewCount: 0`. Later slices (e.g. store reviews) will implement the logic to keep these in sync.
+No seed data is required for these fields; new stores start with `averageRating: null` and `reviewCount: 0`. Store review writes are responsible for keeping both fields in sync.
 
 ## Running the seed
 

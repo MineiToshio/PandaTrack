@@ -26,11 +26,16 @@ import Typography from "@/components/core/Typography";
 import { ROUTES } from "@/lib/constants";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn } from "@/lib/styles";
-import type { StoreDetail } from "@/queries/store";
+import type { PublicStoreReview, StoreDetail, StoreViewerNote, StoreViewerReview } from "@/queries/store";
+import StorePublicReviewsSection from "./StorePublicReviewsSection";
+import StoreNoteForm from "./StoreNoteForm";
 
 type StoreDetailContentProps = {
   locale: string;
   store: StoreDetail;
+  reviews: PublicStoreReview[];
+  viewerReview: StoreViewerReview | null;
+  viewerNote: StoreViewerNote | null;
 };
 
 const STAGGER_BASE_DELAY_MS = 90;
@@ -78,7 +83,13 @@ function getContactIcon(type: NonNullable<StoreDetail["contactChannels"]>[number
   return <Link2 className="size-4" aria-hidden />;
 }
 
-export default function StoreDetailContent({ locale, store }: StoreDetailContentProps) {
+export default function StoreDetailContent({
+  locale,
+  store,
+  reviews,
+  viewerReview,
+  viewerNote,
+}: StoreDetailContentProps) {
   const tStores = useTranslations("stores");
   const tCountries = useTranslations("countries");
   const tProductTypes = useTranslations("storeProductTypes");
@@ -465,6 +476,17 @@ export default function StoreDetailContent({ locale, store }: StoreDetailContent
             </Typography>
           )}
         </section>
+
+        <StorePublicReviewsSection
+          locale={locale}
+          storeSlug={store.slug}
+          averageRating={store.averageRating}
+          reviewCount={store.reviewCount}
+          reviews={reviews}
+          viewerReview={viewerReview}
+        />
+
+        <StoreNoteForm locale={locale} storeSlug={store.slug} existingNote={viewerNote} />
       </div>
     </div>
   );

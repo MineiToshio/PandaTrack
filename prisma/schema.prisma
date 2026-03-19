@@ -280,7 +280,7 @@ model StoreReview {
   id                        String   @id @default(cuid())
   storeId                   String
   userId                    String
-  overallRating             Int
+  overallRating             Float
   communicationRating       Int?
   packingRating             Int?
   deliveryReliabilityRating Int?

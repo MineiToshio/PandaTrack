@@ -96,7 +96,70 @@
     "noAddresses": "No hay direcciones públicas disponibles.",
     "notAvailableForStoreType": "Esta información no aplica para este tipo de tienda.",
     "receivesOrdersUnknown": "Pedidos: no especificado",
-    "hasStockUnknown": "Inventario: no especificado"
+    "hasStockUnknown": "Inventario: no especificado",
+    "reviews": {
+      "eyebrow": "Confianza pública",
+      "title": "Reseñas de la comunidad",
+      "description": "Las reseñas públicas ayudan a otros coleccionistas a juzgar qué tan confiable se siente esta tienda con el tiempo.",
+      "empty": "Esta tienda todavía no tiene reseñas públicas.",
+      "noAverage": "Sin calificación",
+      "noComment": "No se agregó un comentario público.",
+      "anonymousAuthor": "Coleccionista",
+      "yourReviewBadge": "Tu reseña",
+      "ratingBadge": "{rating}/5",
+      "form": {
+        "eyebrow": "Tu reseña",
+        "title": "Comparte tu reseña pública",
+        "description": "Tu calificación pasa a formar parte del puntaje público de confianza de la tienda. Puedes editarla más adelante.",
+        "lastUpdated": "Última actualización: {date}",
+        "ratingLabel": "Calificación general",
+        "ratingHelper": "Toca la mitad izquierda de una estrella para .5 y la derecha para la estrella completa.",
+        "ratingPlaceholder": "Selecciona una calificación",
+        "ratingSelected": "{rating} de 5",
+        "ratingOption": "{rating} de 5",
+        "commentLabel": "Comentario público (opcional)",
+        "commentPlaceholder": "Comparte contexto que pueda ayudar a otros coleccionistas.",
+        "commentHelper": "Mantenlo centrado en tu experiencia con esta tienda.",
+        "openCreateCta": "Escribir reseña",
+        "openEditCta": "Editar tu reseña",
+        "cancelCta": "Cancelar",
+        "submitCta": "Publicar reseña",
+        "updateCta": "Actualizar reseña",
+        "submitting": "Guardando reseña…",
+        "success": "Tu reseña se guardó.",
+        "errors": {
+          "unauthorized": "Debes iniciar sesión para guardar una reseña.",
+          "validation_failed": "Revisa el formulario e inténtalo de nuevo.",
+          "storeUnavailable": "Esta tienda ya no está disponible para reseñas.",
+          "overallRatingInvalid": "Selecciona una calificación entre 0.5 y 5 en pasos de 0.5.",
+          "commentTooLong": "El comentario es demasiado largo.",
+          "saveReviewFailed": "No se pudo guardar la reseña. Inténtalo de nuevo."
+        }
+      }
+    },
+    "privateNote": {
+      "eyebrow": "Memoria privada",
+      "title": "Tu nota privada",
+      "description": "Solo tú puedes ver esta nota. Úsala para recordatorios, alertas o detalles de seguimiento.",
+      "lastUpdated": "Última actualización: {date}",
+      "form": {
+        "contentLabel": "Nota privada",
+        "contentPlaceholder": "Añade un recordatorio o contexto privado sobre esta tienda.",
+        "helper": "Esta nota nunca se muestra en el perfil público de la tienda.",
+        "submitCta": "Guardar nota",
+        "updateCta": "Actualizar nota",
+        "submitting": "Guardando nota…",
+        "success": "Tu nota privada se guardó.",
+        "errors": {
+          "unauthorized": "Debes iniciar sesión para guardar una nota privada.",
+          "validation_failed": "Revisa la nota e inténtalo de nuevo.",
+          "storeUnavailable": "Esta tienda ya no está disponible.",
+          "noteRequired": "Escribe una nota antes de guardar.",
+          "noteTooLong": "La nota es demasiado larga.",
+          "saveNoteFailed": "No se pudo guardar la nota. Inténtalo de nuevo."
+        }
+      }
+    }
   },
   "validation": {
     "nameRequired": "El nombre es obligatorio",
