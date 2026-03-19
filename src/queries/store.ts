@@ -726,6 +726,65 @@ export async function upsertStoreReview(db: PrismaClient, input: UpsertStoreRevi
   });
 }
 
+export interface DeleteStoreReviewInput {
+  reviewId: string;
+  userId: string;
+}
+
+export interface DeleteStoreReviewResult {
+  slug: string;
+}
+
+/**
+ * Deletes a store review owned by the given user and updates the store's review stats.
+ * Returns the store slug for path revalidation. Returns null if the review was not found or not owned by the user.
+ */
+export async function deleteStoreReview(
+  db: PrismaClient,
+  input: DeleteStoreReviewInput,
+): Promise<DeleteStoreReviewResult | null> {
+  const review = await db.storeReview.findFirst({
+    where: {
+      id: input.reviewId,
+      userId: input.userId,
+    },
+    select: { storeId: true },
+  });
+
+  if (!review) {
+    return null;
+  }
+
+  return db.$transaction(async (tx) => {
+    await tx.storeReview.delete({
+      where: { id: input.reviewId },
+    });
+
+    const [reviewCount, reviewAggregate] = await Promise.all([
+      tx.storeReview.count({
+        where: { storeId: review.storeId },
+      }),
+      tx.storeReview.aggregate({
+        where: { storeId: review.storeId },
+        _avg: {
+          overallRating: true,
+        },
+      }),
+    ]);
+
+    const store = await tx.store.update({
+      where: { id: review.storeId },
+      data: {
+        reviewCount,
+        averageRating: reviewAggregate._avg.overallRating,
+      },
+      select: { slug: true },
+    });
+
+    return { slug: store.slug };
+  });
+}
+
 export async function upsertStoreNote(db: PrismaClient, input: UpsertStoreNoteInput): Promise<StoreViewerNote> {
   const trimmedContent = input.content.trim();
 

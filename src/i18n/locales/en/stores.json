@@ -122,6 +122,11 @@
         "commentHelper": "Keep it focused on your experience with this store.",
         "openCreateCta": "Write a review",
         "openEditCta": "Edit your review",
+        "deleteCta": "Delete review",
+        "deleteConfirm": "Delete your review? This action cannot be undone.",
+        "deleteConfirmModalTitle": "Delete your review?",
+        "deleteConfirmModalDescription": "This action cannot be undone. Your review will be permanently removed and will no longer appear on the store profile.",
+        "deleteConfirmCta": "Delete",
         "cancelCta": "Cancel",
         "submitCta": "Publish review",
         "updateCta": "Update review",
@@ -133,7 +138,10 @@
           "storeUnavailable": "This store is no longer available for reviews.",
           "overallRatingInvalid": "Select a rating from 0.5 to 5 in 0.5 steps.",
           "commentTooLong": "Comment is too long.",
-          "saveReviewFailed": "Could not save the review. Please try again."
+          "saveReviewFailed": "Could not save the review. Please try again.",
+          "deleteReviewFailed": "Could not delete the review. Please try again.",
+          "reviewNotFound": "Review not found or you do not have permission to delete it.",
+          "unauthorizedDelete": "You must sign in to delete a review."
         }
       }
     },

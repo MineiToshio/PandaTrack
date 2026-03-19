@@ -122,6 +122,11 @@
         "commentHelper": "Mantenlo centrado en tu experiencia con esta tienda.",
         "openCreateCta": "Escribir reseña",
         "openEditCta": "Editar tu reseña",
+        "deleteCta": "Eliminar reseña",
+        "deleteConfirm": "¿Eliminar tu reseña? Esta acción no se puede deshacer.",
+        "deleteConfirmModalTitle": "¿Eliminar tu reseña?",
+        "deleteConfirmModalDescription": "Esta acción no se puede deshacer. La reseña se borrará de forma permanente y dejará de mostrarse en el perfil de la tienda.",
+        "deleteConfirmCta": "Eliminar",
         "cancelCta": "Cancelar",
         "submitCta": "Publicar reseña",
         "updateCta": "Actualizar reseña",
@@ -133,7 +138,10 @@
           "storeUnavailable": "Esta tienda ya no está disponible para reseñas.",
           "overallRatingInvalid": "Selecciona una calificación entre 0.5 y 5 en pasos de 0.5.",
           "commentTooLong": "El comentario es demasiado largo.",
-          "saveReviewFailed": "No se pudo guardar la reseña. Inténtalo de nuevo."
+          "saveReviewFailed": "No se pudo guardar la reseña. Inténtalo de nuevo.",
+          "deleteReviewFailed": "No se pudo eliminar la reseña. Inténtalo de nuevo.",
+          "reviewNotFound": "No se encontró la reseña o no tienes permiso para eliminarla.",
+          "unauthorizedDelete": "Debes iniciar sesión para eliminar una reseña."
         }
       }
     },
