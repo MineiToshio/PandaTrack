@@ -23,6 +23,7 @@ Every feature must satisfy this checklist before being marked `Done`.
 - [ ] No hardcoded user-facing copy in components
 - [ ] Locale keys exist in `es` and `en`
 - [ ] Loading, empty, error, and success states are handled
+- [ ] User-triggered mutations provide immediate visible feedback without depending on a full route refresh when local reconciliation is feasible
 - [ ] Keyboard navigation works for interactive elements
 - [ ] Visible focus and proper labels are present
 

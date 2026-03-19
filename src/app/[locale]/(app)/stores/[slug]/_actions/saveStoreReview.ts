@@ -5,11 +5,15 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { getStoreBySlug, upsertStoreReview } from "@/queries/store";
+import { getStoreBySlug, upsertStoreReview, type PersistedStoreReview } from "@/queries/store";
 import { storeReviewSchema } from "../_schemas/storeReviewSchema";
 
+export interface SavedStoreReview extends PersistedStoreReview {
+  authorName: string | null;
+}
+
 export type SaveStoreReviewResult =
-  | { success: true }
+  | { success: true; review: SavedStoreReview }
   | { success: false; error: string; fieldErrors?: Record<string, string[]> };
 
 export async function saveStoreReview(
@@ -43,7 +47,7 @@ export async function saveStoreReview(
   }
 
   try {
-    await upsertStoreReview(prisma, {
+    const review = await upsertStoreReview(prisma, {
       storeId: store.id,
       userId: session.user.id,
       overallRating: parsed.data.overallRating,
@@ -63,7 +67,13 @@ export async function saveStoreReview(
     revalidatePath(`/${parsed.data.locale}${ROUTES.stores}`);
     revalidatePath(`/${parsed.data.locale}${ROUTES.stores}/${store.slug}`);
 
-    return { success: true };
+    return {
+      success: true,
+      review: {
+        ...review,
+        authorName: session.user.name ?? null,
+      },
+    };
   } catch {
     return { success: false, error: "saveReviewFailed" };
   }

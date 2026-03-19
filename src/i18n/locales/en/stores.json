@@ -130,7 +130,8 @@
         "cancelCta": "Cancel",
         "submitCta": "Publish review",
         "updateCta": "Update review",
-        "submitting": "Saving review…",
+        "submitting": "Saving your review…",
+        "updating": "Updating your review…",
         "success": "Your review was saved.",
         "errors": {
           "unauthorized": "You must sign in to save a review.",

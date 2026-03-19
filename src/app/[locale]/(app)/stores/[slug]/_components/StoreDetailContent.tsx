@@ -17,7 +17,6 @@ import {
   PackageSearch,
   Phone,
   ShoppingBag,
-  Star,
   UserRound,
 } from "lucide-react";
 import { siFacebook, siInstagram, siTiktok, siWhatsapp } from "simple-icons";
@@ -27,7 +26,9 @@ import { ROUTES } from "@/lib/constants";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn } from "@/lib/styles";
 import type { PublicStoreReview, StoreDetail, StoreViewerNote, StoreViewerReview } from "@/queries/store";
+import StoreReviewAggregateBadge from "./StoreReviewAggregateBadge";
 import StorePublicReviewsSection from "./StorePublicReviewsSection";
+import StoreReviewsStateProvider from "./StoreReviewsStateProvider";
 import StoreNoteForm from "./StoreNoteForm";
 
 type StoreDetailContentProps = {
@@ -121,18 +122,24 @@ export default function StoreDetailContent({
   const addressesCount = store.addresses?.length ?? 0;
 
   return (
-    <div className="px-4 py-7 sm:px-6 sm:py-8">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <Link
-          href={`/${locale}${ROUTES.stores}`}
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "sm" }),
-            "bg-background/70 inline-flex items-center gap-1.5 rounded-full shadow-sm backdrop-blur-sm",
-          )}
-        >
-          <ArrowLeft className="size-4" aria-hidden />
-          {tListing("backToListing")}
-        </Link>
+    <StoreReviewsStateProvider
+      averageRating={store.averageRating}
+      reviewCount={store.reviewCount}
+      reviews={reviews}
+      viewerReview={viewerReview}
+    >
+      <div className="px-4 py-7 sm:px-6 sm:py-8">
+        <div className="mx-auto max-w-6xl space-y-6">
+          <Link
+            href={`/${locale}${ROUTES.stores}`}
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" }),
+              "bg-background/70 inline-flex items-center gap-1.5 rounded-full shadow-sm backdrop-blur-sm",
+            )}
+          >
+            <ArrowLeft className="size-4" aria-hidden />
+            {tListing("backToListing")}
+          </Link>
 
         <section className="from-primary/20 via-highlight/12 to-info/20 relative animate-[hero-fade-in-up_460ms_ease-out_both] overflow-hidden rounded-3xl bg-linear-to-br px-5 py-6 shadow-sm sm:px-8 sm:py-8">
           <div className="bg-primary/30 absolute -top-20 right-0 size-44 animate-[hero-glow-pulse_6s_ease-in-out_infinite] rounded-full blur-3xl" />
@@ -166,13 +173,7 @@ export default function StoreDetailContent({
                       <MapPinned className="size-3.5" aria-hidden />
                       {tCountries(store.countryCode)}
                     </span>
-                    {store.averageRating != null && (
-                      <span className={cn(TAG_CLASSNAME, "bg-background/80 text-text-body")}>
-                        <Star className="text-warning size-3.5 fill-current" aria-hidden />
-                        {store.averageRating.toFixed(1)}
-                        {store.reviewCount > 0 ? ` (${store.reviewCount})` : ""}
-                      </span>
-                    )}
+                    <StoreReviewAggregateBadge className={TAG_CLASSNAME} />
                   </div>
                 </div>
               </div>
@@ -477,17 +478,11 @@ export default function StoreDetailContent({
           )}
         </section>
 
-        <StorePublicReviewsSection
-          locale={locale}
-          storeSlug={store.slug}
-          averageRating={store.averageRating}
-          reviewCount={store.reviewCount}
-          reviews={reviews}
-          viewerReview={viewerReview}
-        />
+          <StorePublicReviewsSection locale={locale} storeSlug={store.slug} />
 
-        <StoreNoteForm locale={locale} storeSlug={store.slug} existingNote={viewerNote} />
+          <StoreNoteForm locale={locale} storeSlug={store.slug} existingNote={viewerNote} />
+        </div>
       </div>
-    </div>
+    </StoreReviewsStateProvider>
   );
 }

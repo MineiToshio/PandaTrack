@@ -2,7 +2,6 @@
 
 import { PenSquare, Trash2 } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
 import IconButton from "@/components/core/IconButton";
@@ -10,30 +9,26 @@ import RatingStars from "@/components/core/RatingStars";
 import Typography from "@/components/core/Typography";
 import { Modal } from "@/components/modules/Modal";
 import { cn } from "@/lib/styles";
-import type { PublicStoreReview, StoreViewerReview } from "@/queries/store";
 import { deleteStoreReview } from "../_actions/deleteStoreReview";
 import StoreReviewForm from "./StoreReviewForm";
+import { useStoreReviewsState } from "./StoreReviewsStateProvider";
 
 type StorePublicReviewsSectionProps = {
   locale: string;
   storeSlug: string;
-  averageRating: number | null;
-  reviewCount: number;
-  reviews: PublicStoreReview[];
-  viewerReview: StoreViewerReview | null;
 };
 
-export default function StorePublicReviewsSection({
-  locale,
-  storeSlug,
-  averageRating,
-  reviewCount,
-  reviews,
-  viewerReview,
-}: StorePublicReviewsSectionProps) {
+export default function StorePublicReviewsSection({ locale, storeSlug }: StorePublicReviewsSectionProps) {
   const t = useTranslations("stores");
   const tListing = useTranslations("storeListing");
-  const router = useRouter();
+  const {
+    averageRating,
+    reviewCount,
+    reviews,
+    viewerReview,
+    applyOptimisticReviewDelete,
+    applyOptimisticReviewSave,
+  } = useStoreReviewsState();
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [reviewIdToDelete, setReviewIdToDelete] = useState<string | null>(null);
@@ -54,14 +49,14 @@ export default function StorePublicReviewsSection({
   const handleConfirmDeleteReview = () => {
     if (!reviewIdToDelete) return;
     startTransition(async () => {
+      const optimisticDelete = applyOptimisticReviewDelete(reviewIdToDelete);
       const formData = new FormData();
       formData.set("reviewId", reviewIdToDelete);
       formData.set("locale", locale);
       const result = await deleteStoreReview(null, formData);
       setReviewIdToDelete(null);
-      if (result.success) {
-        router.refresh();
-      } else {
+      if (!result.success) {
+        optimisticDelete.rollback();
         setDeleteError(result.error);
       }
     });
@@ -116,6 +111,7 @@ export default function StorePublicReviewsSection({
           existingReview={viewerReview}
           onCancel={() => setIsComposerOpen(false)}
           onSaved={() => setIsComposerOpen(false)}
+          onOptimisticSave={applyOptimisticReviewSave}
         />
       )}
 
@@ -171,6 +167,7 @@ export default function StorePublicReviewsSection({
                     existingReview={viewerReview}
                     onCancel={closeEditForm}
                     onSaved={closeEditForm}
+                    onOptimisticSave={applyOptimisticReviewSave}
                   />
                 </li>
               );

@@ -130,7 +130,8 @@
         "cancelCta": "Cancelar",
         "submitCta": "Publicar reseña",
         "updateCta": "Actualizar reseña",
-        "submitting": "Guardando reseña…",
+        "submitting": "Guardando tu reseña…",
+        "updating": "Actualizando tu reseña…",
         "success": "Tu reseña se guardó.",
         "errors": {
           "unauthorized": "Debes iniciar sesión para guardar una reseña.",

@@ -66,6 +66,21 @@ Use Route Handlers only when truly necessary:
 
 If Route Handler is chosen, add a short code comment explaining why Server Action was not suitable.
 
+## Fast mutation feedback in the UI
+
+For user-triggered create/update/delete flows, prefer immediate client-visible feedback instead of waiting for a full server round-trip to refresh the screen.
+
+- Keep the server and database as the source of truth for persisted data.
+- Prefer optimistic or locally reconciled UI updates for the currently visible state when the result can be derived safely from the user input and existing client state.
+- Disable the submitted control and show a clear pending label while the mutation is in flight.
+- Have the Server Action return the minimal persisted payload needed to reconcile client state after success.
+- Roll back the optimistic client state if the mutation fails.
+- Use `revalidatePath()` for cache consistency across routes when needed, but do not rely on `router.refresh()` as the default way to make the initiating user see their own change.
+- Use `router.refresh()` after a mutation only when local reconciliation is impractical, unsafe, or would create materially incorrect UI.
+- When aggregates are affected (counts, averages, totals, derived badges), update the visible aggregate optimistically when it can be computed safely, then reconcile with the persisted server result.
+
+This preference is especially important for forms, inline editors, toggles, and item lists where the user expects the result to appear immediately after submit.
+
 ## No planning references in code comments
 
 Do not include planning metadata in source code comments or JSDoc, including:

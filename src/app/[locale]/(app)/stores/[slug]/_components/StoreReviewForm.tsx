@@ -1,22 +1,29 @@
 "use client";
 
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
 import Button from "@/components/core/Button/Button";
 import Label from "@/components/core/Label";
 import RatingStars from "@/components/core/RatingStars";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import type { StoreViewerReview } from "@/queries/store";
-import { saveStoreReview, type SaveStoreReviewResult } from "../_actions/saveStoreReview";
+import { saveStoreReview, type SaveStoreReviewResult, type SavedStoreReview } from "../_actions/saveStoreReview";
 
 type StoreReviewFormProps = {
   locale: string;
   storeSlug: string;
   existingReview: StoreViewerReview | null;
   onCancel?: () => void;
-  onSaved?: () => void;
+  onSaved?: (review: SavedStoreReview) => void;
+  onOptimisticSave?: (draft: {
+    overallRating: number;
+    comment: string | null;
+  }) => {
+    commit: (review: SavedStoreReview) => void;
+    rollback: () => void;
+  };
 };
 
 function translateReviewError(t: ReturnType<typeof useTranslations>, errorKey: string) {
@@ -31,9 +38,9 @@ export default function StoreReviewForm({
   existingReview,
   onCancel,
   onSaved,
+  onOptimisticSave,
 }: StoreReviewFormProps) {
   const t = useTranslations("stores");
-  const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [state, setState] = useState<SaveStoreReviewResult | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -50,15 +57,6 @@ export default function StoreReviewForm({
       }).format(existingReview.updatedAt)
     : null;
 
-  useEffect(() => {
-    if (state?.success !== true) {
-      return;
-    }
-
-    onSaved?.();
-    router.refresh();
-  }, [onSaved, router, state?.success]);
-
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -67,12 +65,31 @@ export default function StoreReviewForm({
     }
 
     const formData = new FormData(formRef.current);
-    setIsPending(true);
+    const rawComment = formData.get("comment");
+    const comment = typeof rawComment === "string" ? rawComment.trim() || null : null;
+    const optimisticController =
+      ratingValue > 0
+        ? onOptimisticSave?.({
+            overallRating: ratingValue,
+            comment,
+          })
+        : null;
+
+    flushSync(() => {
+      setIsPending(true);
+    });
 
     try {
       const result = await saveStoreReview(null, formData);
+      if (result.success) {
+        optimisticController?.commit(result.review);
+        onSaved?.(result.review);
+      } else {
+        optimisticController?.rollback();
+      }
       setState(result);
     } catch {
+      optimisticController?.rollback();
       setState({ success: false, error: "saveReviewFailed" });
     } finally {
       setIsPending(false);
@@ -173,7 +190,9 @@ export default function StoreReviewForm({
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button type="submit" variant="primary" size="lg" disabled={isPending} className="w-full sm:w-auto">
           {isPending
-            ? t("detail.reviews.form.submitting")
+            ? existingReview
+              ? t("detail.reviews.form.updating")
+              : t("detail.reviews.form.submitting")
             : existingReview
               ? t("detail.reviews.form.updateCta")
               : t("detail.reviews.form.submitCta")}

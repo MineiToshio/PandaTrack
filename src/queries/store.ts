@@ -203,6 +203,14 @@ export interface StoreViewerReview {
   updatedAt: Date;
 }
 
+export interface PersistedStoreReview {
+  id: string;
+  overallRating: number;
+  comment: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface StoreViewerNote {
   content: string;
   updatedAt: Date;
@@ -640,7 +648,10 @@ export async function getStoreViewerContext(
   };
 }
 
-export async function upsertStoreReview(db: PrismaClient, input: UpsertStoreReviewInput): Promise<StoreViewerReview> {
+export async function upsertStoreReview(
+  db: PrismaClient,
+  input: UpsertStoreReviewInput,
+): Promise<PersistedStoreReview> {
   const trimmedComment = input.comment?.trim() || null;
   const RATING_PERSISTENCE_TOLERANCE = 0.001;
 
@@ -668,8 +679,10 @@ export async function upsertStoreReview(db: PrismaClient, input: UpsertStoreRevi
         comment: trimmedComment,
       },
       select: {
+        id: true,
         overallRating: true,
         comment: true,
+        createdAt: true,
         updatedAt: true,
       },
     });
@@ -691,8 +704,10 @@ export async function upsertStoreReview(db: PrismaClient, input: UpsertStoreRevi
           },
         },
         select: {
+          id: true,
           overallRating: true,
           comment: true,
+          createdAt: true,
           updatedAt: true,
         },
       });
@@ -719,8 +734,10 @@ export async function upsertStoreReview(db: PrismaClient, input: UpsertStoreRevi
     });
 
     return {
+      id: review.id,
       overallRating: review.overallRating,
       comment: review.comment,
+      createdAt: review.createdAt,
       updatedAt: review.updatedAt,
     };
   });
