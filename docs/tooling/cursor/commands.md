@@ -62,25 +62,6 @@ Marks one GitHub slice ticket as done and cascades completion upward through the
 
 See `.cursor/commands/mark-ticket-done.md` for the full command behavior.
 
-## create-feature-epic-and-slices
-
-Creates a new feature epic in GitHub and decomposes it into small, functional slice sub-issues.
-
-**You can pass context after the command**, e.g.:
-
-- `/create-feature-epic-and-slices Add split shipment support for one order`
-- `/create-feature-epic-and-slices Build store trust signals and seller notes for collectors`
-
-**What it does:**
-
-1. Reads the official epic template from `docs/templates/feature-epic-template.md`.
-2. Reviews the feature brief and asks clarifying questions before planning when anything important is ambiguous.
-3. Expands scope thoughtfully to include validations, state handling, analytics, Sentry, and integration concerns when relevant.
-4. Creates one `type:epic` issue and multiple `type:slice` sub-issues in GitHub.
-5. Keeps slices small, functional, and independently testable instead of splitting incomplete partial work.
-
-See `.cursor/commands/create-feature-epic-and-slices.md` for the full command behavior.
-
 ## create-frd-package
 
 Creates a new FRD package under an existing PRD and mirrors it into GitHub using the hybrid workflow.

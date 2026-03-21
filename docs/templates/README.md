@@ -14,7 +14,6 @@ Use these templates to keep PandaTrack product definition and execution document
 
 1. `feature-epic-template.md`
 2. `adr-template.md`
-3. `prompt-pack-template.md`
 
 ## Recommended authoring flow
 
@@ -23,4 +22,4 @@ Use these templates to keep PandaTrack product definition and execution document
 3. Add one or more `Blueprints` under each `FRD`.
 4. Add `Work Orders` under each `Blueprint`.
 5. Reflect execution in GitHub epics and slices.
-6. Use the GitHub feature-epic template only after the product docs are clear enough to support execution.
+6. Use the GitHub feature-epic template only as a lightweight mirror of the linked `FRD` and `Work Orders`.

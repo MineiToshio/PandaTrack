@@ -36,7 +36,6 @@ Use this index to find documentation by domain.
 - `docs/templates/work-order-template.md`
 - `docs/templates/feature-epic-template.md`
 - `docs/templates/adr-template.md`
-- `docs/templates/prompt-pack-template.md`
 
 ## Tooling
 
