@@ -42,7 +42,7 @@ It follows a hierarchical 80/90-style documentation model:
 - Use consistent YAML frontmatter.
 - Use explicit parent-child references in metadata.
 - Keep one concept per file.
-- Add `source_features` when the doc consolidates one or more GitHub epics.
+- Add `source_features` only as traceability metadata when the doc consolidates one or more GitHub epics.
 - Add `implementation_status` when code exists and the doc is partially reverse-engineered from the repository.
 - Keep `Confirmed`, `Open Questions`, and `Out of Scope` clearly separated.
 - Keep GitHub execution aligned with these docs, but do not use GitHub as the only product-definition source.

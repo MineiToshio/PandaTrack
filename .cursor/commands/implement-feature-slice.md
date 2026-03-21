@@ -1,6 +1,6 @@
 # Implement GitHub Slice
 
-Implement one Work Order ticket from GitHub with minimal, reviewable changes using the hybrid product-doc workflow.
+Implement one GitHub slice ticket that mirrors a `Work Order`, using the hybrid product-doc workflow.
 
 ## Inputs
 
@@ -25,7 +25,7 @@ Implement one Work Order ticket from GitHub with minimal, reviewable changes usi
   - `Blueprint Path`
   - `Work Order Path`
 - Read the referenced `PRD`, `FRD`, `Blueprint`, and `Work Order` from `docs/product/`.
-- Treat the product docs as the implementation contract and GitHub as the execution-tracking layer.
+- Treat `docs/product` as the implementation contract and GitHub as the execution-tracking layer.
 - If any required doc path is missing from the Epic or ticket, stop and report which reference is missing instead of guessing.
 - If needed, read related linked issues/PRs for blocking context.
 
@@ -61,7 +61,7 @@ Implement one Work Order ticket from GitHub with minimal, reviewable changes usi
   - Update parent epic status if needed.
   - Add implementation summary and validation notes to the slice issue.
 - Keep product-definition updates in docs whenever implementation or follow-up user instructions materially change requirements, architecture, or execution definition.
-- Docs remain the source of truth for definition; GitHub remains the source of truth for execution status.
+- `docs/product` remains the source of truth for definition; GitHub remains the source of truth for execution status.
 - Required transitions:
   - Slice: move to `In Progress` during or after implementation handoff, but do **not** move it to `Done`
   - Epic: keep `In Progress` while any non-done slices remain; do not move the epic to `Done` from this command unless the user explicitly asked for that workflow

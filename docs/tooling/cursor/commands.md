@@ -33,8 +33,8 @@ Implements one slice issue from GitHub with minimal scoped changes and GitHub-sy
 
 1. Resolves the target slice issue from GitHub by issue number.
 2. Reads the slice ticket, parent epic, and the linked `PRD`, `FRD`, `Blueprint`, and `Work Order`.
-3. Uses the docs as the implementation contract and GitHub as the execution-tracking layer.
-4. Implements only that slice using the linked Work Order as the primary execution scope.
+3. Uses `docs/product` as the implementation contract and GitHub as the execution-tracking layer.
+4. Implements only that slice using the linked `Work Order` as the primary execution scope.
 5. Updates tracking to `In Progress` instead of `Done`, so manual verification can happen afterward.
 6. Runs validation checks and reports exit-criteria status.
    - Use `npm run validate-build` for build validation (not `npm run build`; that one runs migrate deploy and is for the Vercel pipeline).
@@ -64,7 +64,7 @@ See `.cursor/commands/mark-ticket-done.md` for the full command behavior.
 
 ## create-frd-package
 
-Creates a new FRD package under an existing PRD and mirrors it into GitHub using the hybrid workflow.
+Creates a new `FRD` package under an existing `PRD` and mirrors it into GitHub using the hybrid workflow.
 
 **You can pass context after the command**, e.g.:
 
@@ -77,8 +77,8 @@ Creates a new FRD package under an existing PRD and mirrors it into GitHub using
 2. Reviews the codebase and current GitHub planning to avoid duplication.
 3. Asks exhaustive clarification questions in Spanish before drafting.
 4. Creates the new `FRD`, its `Blueprints`, and its `Work Orders` using `docs/templates/*`.
-5. Creates or updates the matching GitHub Epic from the FRD.
-6. Creates one GitHub ticket per Work Order, following the hybrid tracking rules.
+5. Creates or updates the matching GitHub Epic from the `FRD`.
+6. Creates one GitHub ticket per `Work Order`, following the hybrid tracking rules.
 
 See `.cursor/commands/create-frd-package.md` for the full command behavior.
 

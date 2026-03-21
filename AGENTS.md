@@ -27,10 +27,11 @@ When instructions conflict, use this order:
 
 If still ambiguous, choose the smallest safe change and note assumptions.
 
-### Feature planning source
+### Product and execution source of truth
 
-- Feature planning source of truth is GitHub Project: `https://github.com/users/MineiToshio/projects/4`.
-- Epic and slice issues in GitHub are canonical for feature scope/status.
+- `docs/product` is the source of truth for product definition, scope, requirements, and acceptance criteria.
+- GitHub Project `4` and its issues are the source of truth for execution status and delivery tracking.
+- GitHub epic and slice issues must mirror the approved docs, not define product scope on their own.
 
 ## 3) Stack and architecture
 

@@ -41,7 +41,7 @@ Use this checklist for AI-assisted or manual review before merging feature chang
 
 - [ ] Unit/integration/E2E coverage matches feature risk
 - [ ] Test choice is justified by the change instead of skipped by default
-- [ ] Epic/slice artifacts state each test type as required or not required with a short reason
+- [ ] Source docs and mirrored GitHub tickets state each test type as required or not required with a short reason
 - [ ] Edge/error tests exist for critical rules
 - [ ] `npm run type-check` passes
 - [ ] `npm run lint` passes
@@ -49,6 +49,7 @@ Use this checklist for AI-assisted or manual review before merging feature chang
 
 ## Final documentation check
 
-- [ ] Epic/slice issues are updated to match implementation
+- [ ] `docs/product` is updated to match implementation
+- [ ] Mirrored GitHub epic/slice issues are updated to match implementation
 - [ ] ADR added/updated if an architectural decision was made
 - [ ] Known limitations and follow-ups are explicit

@@ -5,12 +5,14 @@ alwaysApply: true
 
 # Feature tracking sync - PandaTrack
 
-GitHub Project (`https://github.com/users/MineiToshio/projects/4`) and its epic/slice issues are the source of truth for feature planning and status.
+`docs/product` is the source of truth for product definition, scope, requirements, and acceptance criteria.
+GitHub Project (`https://github.com/users/MineiToshio/projects/4`) and its epic/slice issues are the source of truth for execution status and delivery tracking.
+GitHub issues must mirror the approved docs, not replace them.
 
 ## Context-efficiency rule (token/cost control)
 
 - Do not read all GitHub issues by default.
-- First resolve the target slice issue by issue number or URL.
+- First resolve the target Work Order or slice issue by issue number or URL.
 - Then read only:
   - The target slice issue, and
   - Its parent epic issue.
@@ -18,14 +20,14 @@ GitHub Project (`https://github.com/users/MineiToshio/projects/4`) and its epic/
 
 ## Required behavior
 
-1. Before implementation, identify the target slice issue and parent epic issue.
-2. If implementation changes scope, flow, rules, or dependencies, update the corresponding GitHub issue(s) in the same change.
-3. Do not finish a task with behavior that conflicts with the current epic/slice issue content.
+1. Before implementation, identify the target Work Order doc, the target slice issue, and the parent epic issue when applicable.
+2. If implementation changes scope, flow, rules, or dependencies, update the corresponding `docs/product` file first, then sync the GitHub issue(s) in the same change when practical.
+3. Do not finish a task with behavior that conflicts with the current `docs/product` definition or the mirrored GitHub issue content.
 
 ## When to update vs create new issue
 
-- Update existing epic/slice issues for incremental changes within the same feature objective.
-- Create a new epic when objective/core flow/success criteria change significantly.
+- Update existing epic/slice issues for incremental changes that stay within the same approved docs/product objective.
+- Create a new epic when the underlying FRD objective, core flow, or success criteria change significantly.
 - Add bidirectional references when superseding:
   - New epic: `Supersedes: FEAT-XXXX`
   - Old epic: `Superseded by: FEAT-YYYY`
@@ -38,6 +40,6 @@ GitHub Project (`https://github.com/users/MineiToshio/projects/4`) and its epic/
 ## Minimum issue sync checklist
 
 - Epic/slice status remains accurate in GitHub Project `Status` field.
-- Functional/business rules in epic/slice reflect actual behavior.
-- Acceptance criteria cover the final implemented flow.
+- Functional/business rules in the mirrored GitHub issue content reflect the approved docs/product behavior.
+- Acceptance criteria cover the final implemented flow described in docs/product.
 - Validation notes reflect what must be verified after the change.

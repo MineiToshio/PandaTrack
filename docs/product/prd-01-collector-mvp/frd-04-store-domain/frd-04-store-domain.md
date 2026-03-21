@@ -29,7 +29,7 @@ It exists so collectors can:
 This domain is already partially implemented in production code. This FRD reflects both:
 
 - the current implemented behavior confirmed through reverse engineering of the codebase
-- the remaining planned behavior already represented in active GitHub slices
+- the remaining planned behavior already represented in linked Work Orders and mirrored in GitHub tracking
 
 ## Current State
 

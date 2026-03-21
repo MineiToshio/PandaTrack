@@ -13,7 +13,7 @@ Every feature must satisfy this checklist before being marked `Done`.
 
 ## Product behavior
 
-- [ ] All acceptance criteria in the Epic issue are validated
+- [ ] All acceptance criteria in the source docs are validated, with mirrored GitHub issues kept in sync
 - [ ] Happy path is verified
 - [ ] Edge/error paths are verified
 - [ ] No known regressions in adjacent workflows
@@ -42,7 +42,8 @@ Every feature must satisfy this checklist before being marked `Done`.
 
 ## Documentation and delivery
 
-- [ ] Epic and slice issues reflect final shipped behavior
-- [ ] Epic and slice issues state unit, integration, and E2E expectations explicitly
+- [ ] `docs/product` reflects final shipped behavior
+- [ ] Mirrored GitHub epic/slice issues stay aligned with the source docs
+- [ ] Mirrored GitHub epic/slice issues state unit, integration, and E2E expectations explicitly when needed
 - [ ] ADR is added/updated when architecture decisions changed
 - [ ] Follow-ups and known limitations are documented

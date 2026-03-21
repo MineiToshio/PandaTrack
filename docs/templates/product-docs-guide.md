@@ -71,6 +71,7 @@ Examples:
 - Keep requirements testable when possible.
 - Avoid mixing high-level strategy with task-level execution.
 - When reverse engineering from code, say so explicitly and cite the current implementation layer.
+- Treat `source_features` as traceability only, not as a source of authority for scope or behavior.
 - Keep GitHub epic/slice mapping visible in `source_features` or in dedicated sections when the doc consolidates historical work.
 
 ## Recommended statuses

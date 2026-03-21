@@ -1,6 +1,6 @@
 # Mark Ticket Done
 
-Mark one GitHub slice ticket as done and cascade completion status upward through the linked Work Order, Blueprint, FRD, Epic, and PRD when all descendants are complete.
+Mark one GitHub slice ticket as done and cascade completion status upward through the linked `Work Order`, `Blueprint`, `FRD`, `Epic`, and `PRD` when all descendants are complete.
 
 ## Inputs
 
@@ -13,6 +13,7 @@ Mark one GitHub slice ticket as done and cascade completion status upward throug
 - This command is an execution/tracking command. The user invoking it is explicit permission to apply the updates immediately.
 - Repository: `MineiToshio/PandaTrack`
 - GitHub Project is the source of truth for execution progress: `https://github.com/users/MineiToshio/projects/4`
+- `docs/product` remains the source of truth for product definition.
 
 ## Scope
 
@@ -50,7 +51,7 @@ From the slice issue body, extract:
 
 From the parent epic body, extract:
 
-- all linked Work Order issue numbers from the checklist
+- all linked `Work Order` issue numbers from the checklist
 - the Epic title for reporting
 
 Read the referenced docs in `docs/product/`.

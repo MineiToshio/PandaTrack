@@ -11,6 +11,8 @@ last_updated: YYYY-MM-DD
 
 # WO-XX Replace With Title
 
+`Work Orders` are the operational contract for implementation. Use them as the executable slice-level source for scope, requirements, and acceptance tests.
+
 ## Summary
 
 ## In Scope

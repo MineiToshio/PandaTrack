@@ -4,8 +4,8 @@
 
 Centralize the minimum information needed to access and operate PandaTrack execution tracking in GitHub.
 
-GitHub Project and its issues are the source of truth for execution status.
 `docs/product` is the source of truth for product definition.
+GitHub Project and its issues are the source of truth for execution status and mirror approved product-doc scope.
 
 ## Quick Links
 
@@ -18,6 +18,7 @@ GitHub Project and its issues are the source of truth for execution status.
 
 - One `FRD` -> one Epic issue
 - One Epic issue -> multiple `Work Order` tickets
+- Epic issues should stay lightweight and reference the matching `FRD` and `Work Order` paths instead of duplicating product definition.
 - Every Epic/Slice should be added to the GitHub Project board
 - Keep issue titles concise and readable.
 - Distinguish epic vs slice using `type:*` labels, not title prefixes.
@@ -53,7 +54,7 @@ Current project status source of truth is the GitHub Project `Status` field (`To
   - checklist of linked `Work Orders`
   - short status/blocker notes when needed
 - Must not include:
-  - full duplicated FRD content
+  - full duplicated `FRD` content
   - branch-specific URLs as the only way to locate docs
 
 ## Ticket Template (Work Order Issue)
@@ -67,7 +68,7 @@ Current project status source of truth is the GitHub Project `Status` field (`To
   - `Work Order Path`
   - brief execution notes and blockers if needed
 - Must not include:
-  - full duplicated Work Order content
+  - full duplicated `Work Order` content
 
 ## Path Format
 
