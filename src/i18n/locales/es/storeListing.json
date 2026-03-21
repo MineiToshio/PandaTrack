@@ -33,8 +33,7 @@
     "previous": "Anterior",
     "next": "Siguiente"
   },
-  "ratingCount": "{count} reseña",
-  "ratingCount_other": "{count} reseñas",
+  "ratingCount": "{count, plural, one {# reseña} other {# reseñas}}",
   "pendingBadge": "Pendiente de revisión",
   "cards": {
     "country": "País",

@@ -33,8 +33,7 @@
     "previous": "Previous",
     "next": "Next"
   },
-  "ratingCount": "{count} review",
-  "ratingCount_other": "{count} reviews",
+  "ratingCount": "{count, plural, one {# review} other {# reviews}}",
   "pendingBadge": "Pending review",
   "cards": {
     "country": "Country",
