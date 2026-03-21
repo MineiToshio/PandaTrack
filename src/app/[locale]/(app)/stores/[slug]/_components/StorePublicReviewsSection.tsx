@@ -9,6 +9,7 @@ import RatingStars from "@/components/core/RatingStars";
 import Typography from "@/components/core/Typography";
 import { Modal } from "@/components/modules/Modal";
 import { cn } from "@/lib/styles";
+import { POSTHOG_EVENTS } from "@/lib/constants";
 import type { StoreViewerReview } from "@/queries/store";
 import { deleteStoreReview } from "../_actions/deleteStoreReview";
 import StoreReviewForm from "./StoreReviewForm";
@@ -22,14 +23,8 @@ type StorePublicReviewsSectionProps = {
 export default function StorePublicReviewsSection({ locale, storeSlug }: StorePublicReviewsSectionProps) {
   const t = useTranslations("stores");
   const tListing = useTranslations("storeListing");
-  const {
-    averageRating,
-    reviewCount,
-    reviews,
-    viewerReview,
-    applyOptimisticReviewDelete,
-    applyOptimisticReviewSave,
-  } = useStoreReviewsState();
+  const { averageRating, reviewCount, reviews, viewerReview, applyOptimisticReviewDelete, applyOptimisticReviewSave } =
+    useStoreReviewsState();
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [composerReviewSnapshot, setComposerReviewSnapshot] = useState<StoreViewerReview | null>(null);
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
@@ -225,17 +220,26 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
                   </div>
 
                   {review.isViewerReview && (
-                    <div className="flex shrink-0 items-center gap-1">
-                      <IconButton
-                        Icon={PenSquare}
+                    <div className="flex w-full min-w-0 shrink-0 items-stretch gap-2 sm:w-auto sm:items-center sm:justify-end">
+                      <Button
+                        type="button"
+                        variant="outline"
                         size="sm"
+                        className="min-h-11 flex-1 gap-2 px-4 sm:h-10 sm:min-h-0 sm:flex-initial"
                         aria-label={t("detail.reviews.form.openEditCta")}
+                        posthogEvent={POSTHOG_EVENTS.STORE.REVIEW_EDIT_CLICKED}
                         onClick={() => openEditForm(review.id)}
                         disabled={isPending || reviewIdToDelete != null}
-                      />
+                      >
+                        <PenSquare className="size-4 shrink-0" aria-hidden />
+                        {t("detail.reviews.form.editVisibleCta")}
+                      </Button>
                       <IconButton
                         Icon={Trash2}
-                        size="sm"
+                        variant="outline"
+                        size="md"
+                        className="min-h-11 min-w-11 shrink-0 sm:min-h-0 sm:min-w-0"
+                        iconClassName="text-destructive group-hover/icon-button:text-destructive"
                         aria-label={t("detail.reviews.form.deleteCta")}
                         onClick={() => openDeleteModal(review.id)}
                         disabled={isPending || reviewIdToDelete != null}

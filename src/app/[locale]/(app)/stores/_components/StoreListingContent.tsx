@@ -7,6 +7,7 @@ import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
+import StoreEmptyCatalogTag from "./StoreEmptyCatalogTag";
 
 const INFO_CHIP_CLASSNAME =
   "border-border/70 bg-muted/40 text-text-body inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs";
@@ -163,9 +164,7 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                             ))}
                           </div>
                         ) : (
-                          <Typography size="xs" className="text-text-muted">
-                            {t("cards.noProductTypes")}
-                          </Typography>
+                          <StoreEmptyCatalogTag>{t("cards.noProductTypes")}</StoreEmptyCatalogTag>
                         )}
                       </div>
 
@@ -207,9 +206,7 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                               ))}
                             </div>
                           ) : (
-                            <Typography size="xs" className="text-text-muted">
-                              {t("cards.noImportCountries")}
-                            </Typography>
+                            <StoreEmptyCatalogTag>{t("cards.noImportCountries")}</StoreEmptyCatalogTag>
                           )}
                         </div>
                       </div>

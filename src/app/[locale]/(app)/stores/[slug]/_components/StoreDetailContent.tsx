@@ -30,6 +30,7 @@ import StoreReviewAggregateBadge from "./StoreReviewAggregateBadge";
 import StorePublicReviewsSection from "./StorePublicReviewsSection";
 import StoreReviewsStateProvider from "./StoreReviewsStateProvider";
 import StoreNoteForm from "./StoreNoteForm";
+import StoreEmptyCatalogTag from "../../_components/StoreEmptyCatalogTag";
 
 type StoreDetailContentProps = {
   locale: string;
@@ -292,9 +293,11 @@ export default function StoreDetailContent({
                     ))}
                   </div>
                 ) : (
-                  <Typography size="xs" className="text-text-muted mt-2.5">
-                    {tStores("detail.noProductTypes")}
-                  </Typography>
+                  <div className="mt-2.5">
+                    <StoreEmptyCatalogTag className="px-3 py-1.5">
+                      {tStores("detail.noProductTypes")}
+                    </StoreEmptyCatalogTag>
+                  </div>
                 )}
               </div>
 
@@ -326,9 +329,11 @@ export default function StoreDetailContent({
                     ))}
                   </div>
                 ) : (
-                  <Typography size="sm" className="text-text-muted mt-2">
-                    {tStores("detail.noImportCountries")}
-                  </Typography>
+                  <div className="mt-2.5">
+                    <StoreEmptyCatalogTag className="px-3 py-1.5">
+                      {tStores("detail.noImportCountries")}
+                    </StoreEmptyCatalogTag>
+                  </div>
                 )}
               </div>
             </section>
