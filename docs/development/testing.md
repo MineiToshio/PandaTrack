@@ -159,7 +159,7 @@ Every feature, bugfix, or refactor should evaluate these three questions before 
 
 If the answer is yes, add the relevant tests in the same change whenever practical.
 
-Record the decision in the related Epic and Slice artifacts. For each test type, mark it as:
+Record the decision in the related `Work Order` and source product docs, and keep mirrored GitHub artifacts aligned. For each test type, mark it as:
 
 - required, with the target behavior or flow to cover
 - not required, with a short risk-based reason

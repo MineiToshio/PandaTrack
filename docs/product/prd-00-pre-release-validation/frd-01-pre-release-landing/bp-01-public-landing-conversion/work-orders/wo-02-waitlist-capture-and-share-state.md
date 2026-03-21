@@ -8,8 +8,8 @@ parent: BP-01
 last_updated: 2026-03-16
 source_features:
   - FEAT-0001
-  - Slice 2
-  - Slice 3
+  - type:slice ticket for mirrored waitlist capture work
+  - type:slice ticket for mirrored post-submit share-state work
 ---
 
 # WO-02 Waitlist Capture and Share State

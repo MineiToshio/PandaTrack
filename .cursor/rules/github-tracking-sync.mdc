@@ -1,9 +1,9 @@
 ---
-description: Keep GitHub epic/slice issues synchronized with implemented behavior and decisions
+description: Keep mirrored GitHub epic/slice issues synchronized with approved docs/product behavior and decisions
 alwaysApply: true
 ---
 
-# Feature tracking sync - PandaTrack
+# GitHub tracking sync - PandaTrack
 
 `docs/product` is the source of truth for product definition, scope, requirements, and acceptance criteria.
 GitHub Project (`https://github.com/users/MineiToshio/projects/4`) and its epic/slice issues are the source of truth for execution status and delivery tracking.

@@ -2,7 +2,7 @@
 
 ## Overview
 
-PandaTrack uses [Better Auth](https://better-auth.com/) (self-hosted) with Prisma and Neon Postgres. This doc covers the foundation setup from Slice 1: config, session, and signout.
+PandaTrack uses [Better Auth](https://better-auth.com/) (self-hosted) with Prisma and Neon Postgres. This doc covers the foundation setup for the first auth implementation increment: config, session, and signout.
 
 ## Environment variables
 

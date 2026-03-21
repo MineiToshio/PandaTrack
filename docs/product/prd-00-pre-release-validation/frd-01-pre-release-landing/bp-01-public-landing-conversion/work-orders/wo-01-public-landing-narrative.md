@@ -8,7 +8,7 @@ parent: BP-01
 last_updated: 2026-03-16
 source_features:
   - FEAT-0001
-  - Slice 1
+  - type:slice ticket for the mirrored landing narrative work
 ---
 
 # WO-01 Public Landing Narrative

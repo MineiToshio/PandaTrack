@@ -21,7 +21,7 @@ This FRD defines the public landing experience PandaTrack used during the pre-re
 
 It is reverse-engineered from:
 
-- the FEAT-0001 epic and slice tickets
+- the FEAT-0001 GitHub tracking artifacts that mirrored the original work orders
 - the implemented landing route and waitlist components
 - landing tests and translation files
 
