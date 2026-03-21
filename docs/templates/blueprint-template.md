@@ -14,18 +14,36 @@ implementation_status: <PLANNED | IN_PROGRESS | PARTIALLY_IMPLEMENTED | IMPLEMEN
 
 ## Purpose
 
+Explain what technical layer, subsystem, or architecture boundary this blueprint defines for the parent FRD.
+
 ## Runtime Components
+
+List the main runtime pieces involved, such as routes, actions, schemas, services, jobs, or shared libraries.
 
 ## Architecture Decisions
 
+Document the key technical decisions, boundaries, and patterns that implementation should follow.
+
 ## Contracts
+
+Describe the important inputs, outputs, interfaces, or data contracts between components or layers.
 
 ## Operational Priorities
 
+State the technical qualities that matter most here, such as reliability, clarity, performance, observability, or safety.
+
 ## Dependencies
+
+List upstream systems, shared modules, external services, or prerequisite work this blueprint depends on.
 
 ## Risks
 
+Highlight the main technical risks, failure modes, or edge cases that could affect delivery.
+
 ## Extension Points
 
+Describe where future work is expected to build on this blueprint without redefining its core architecture.
+
 ## Linked Work Orders
+
+Reference the work orders that break this blueprint into implementation slices.

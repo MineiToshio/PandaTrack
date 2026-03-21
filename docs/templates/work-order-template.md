@@ -16,12 +16,24 @@ last_updated: YYYY-MM-DD
 
 ## Summary
 
+Describe the exact slice of work this document covers and the implementation outcome it should produce.
+
 ## In Scope
+
+List the concrete deliverables, behaviors, and surfaces this work order is responsible for.
 
 ## Out of Scope
 
+List adjacent work that should not be included in this slice, even if it is related.
+
 ## Requirements
+
+Reference the FRD requirements, business rules, and any slice-specific expectations this implementation must satisfy.
 
 ## Blueprints
 
+Point to the relevant blueprint sections, technical boundaries, or extension points that govern this work.
+
 ## E2E Acceptance Tests
+
+Describe the end-to-end scenarios that should pass when this work order is correctly implemented.
