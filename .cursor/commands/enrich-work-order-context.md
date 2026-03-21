@@ -22,6 +22,7 @@ The command must treat the referenced `Work Order` as the entry point, but it mu
 - Treat this command as a structured discovery workflow, not as immediate drafting.
 - Repository docs remain the source of truth for product definition.
 - If the referenced Work Order is also linked to GitHub tracking, keep GitHub issue content aligned after doc approval when practical.
+- Before asking any clarification questions, provide a concise Spanish summary of what the target `Work Order` does today so the user has shared context for the discovery conversation.
 
 ## Planning objective
 
@@ -62,6 +63,13 @@ Before asking questions or drafting changes, resolve the target context in this 
 - read the parent Epic when needed to understand current tracking wording and linked scope
 
 Do not guess missing parent references when the docs already define them.
+
+Before starting the question phase, synthesize the resolved context into a short Spanish pre-brief that explains:
+
+- the main goal of the target `Work Order`
+- the user-facing or system behavior it is meant to add
+- the most important in-scope vs out-of-scope boundary
+- any obvious dependency on sibling `Work Orders` when that context helps the user understand the slice
 
 ## Discovery roles
 
@@ -258,10 +266,11 @@ If the required GitHub Project or issue-body sync cannot be completed with avail
 
 If still in discovery and waiting on user answers, return in Spanish:
 
-1. `Work Order analyzed`
-2. `Questions by role`
-3. `Why these matter`
-4. `Next step`
+1. `Work Order summary`
+2. `Work Order analyzed`
+3. `Questions by role`
+4. `Why these matter`
+5. `Next step`
 
 If approval was given and docs were updated, return in Spanish:
 
