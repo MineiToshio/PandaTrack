@@ -242,6 +242,7 @@ The proposal must include:
   - extend an existing `FRD`
   - or be split into multiple new `FRDs`
 - proposed `FRD` title or titles
+- proposed Epic title using the format `FEAT-XXXX: <FRD title>`
 - if reusing an existing FRD, the existing FRD path and related Epic reference
 - proposed `Blueprint` titles
 - proposed `Work Order` titles
@@ -311,6 +312,7 @@ Optional GitHub links may be added as convenience only when useful, but the path
 
 ### GitHub labels and project rules
 
+- Epic title must always include the feature code using the format `FEAT-XXXX: <FRD title>`.
 - Epic label: `type:epic`
 - Work Order ticket label: `type:slice`
 - add area label when inferable

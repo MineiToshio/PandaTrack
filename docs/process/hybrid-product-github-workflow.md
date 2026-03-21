@@ -61,13 +61,17 @@ Each Epic should represent one `FRD`.
 
 ### Epic title
 
-Use the same domain title as the `FRD` whenever practical.
+Use the matching feature code plus the `FRD` title.
+
+Format:
+
+- `FEAT-XXXX: <FRD title>`
 
 Examples:
 
-- `Store Domain`
-- `Account Access and Recovery`
-- `Collector App Shell and Dashboard-first Navigation`
+- `FEAT-0012: Store Domain`
+- `FEAT-0008: Account Access and Recovery`
+- `FEAT-0011: Collector App Shell and Dashboard-first Navigation`
 
 ### Epic body should stay lightweight
 

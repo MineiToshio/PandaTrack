@@ -45,7 +45,7 @@ Current project status source of truth is the GitHub Project `Status` field (`To
 
 ## Epic Template (Issue)
 
-- Title: same as the `FRD` title whenever practical
+- Title: `FEAT-XXXX: <FRD title>`
 - Must include:
   - `PRD Path`
   - `FRD Path`
