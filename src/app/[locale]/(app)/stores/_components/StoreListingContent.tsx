@@ -77,69 +77,73 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                 />
                 <div className="pointer-events-none space-y-3.5">
                   <div className="space-y-3">
-                    <div className="flex flex-wrap items-start justify-between gap-2.5">
-                      <div className="min-w-0 flex-1 space-y-1.5">
-                        <Heading as="h3" size="xs" className="text-text-title line-clamp-2">
+                    <div className="space-y-1.5">
+                      <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                        <Heading as="h3" size="xs" className="text-text-title line-clamp-2 min-w-0 flex-1 leading-snug">
                           {store.name}
                         </Heading>
-                        <div className="text-text-muted flex flex-wrap items-center gap-2 text-sm">
-                          <MapPin className="size-4 shrink-0" aria-hidden />
-                          <span>{tCountries(store.countryCode)}</span>
-                          {store.contactChannels.length > 0 && (
-                            <>
-                              <span className="bg-border/70 h-3.5 w-px rounded-full" aria-hidden />
-                              <div className="pointer-events-auto relative z-20 flex items-center gap-1.5">
-                                {store.contactChannels.slice(0, MAX_CONTACT_CHANNELS).map((channel) => {
-                                  const href = buildContactHref(channel.type, channel.value);
-                                  if (!href) {
-                                    return null;
-                                  }
-
-                                  const icon =
-                                    channel.type === "INSTAGRAM" ? (
-                                      <SimpleIconSvg path={siInstagram.path} />
-                                    ) : channel.type === "WHATSAPP" ? (
-                                      <SimpleIconSvg path={siWhatsapp.path} />
-                                    ) : channel.type === "FACEBOOK" ? (
-                                      <SimpleIconSvg path={siFacebook.path} />
-                                    ) : channel.type === "TIKTOK" ? (
-                                      <SimpleIconSvg path={siTiktok.path} />
-                                    ) : channel.type === "EMAIL" ? (
-                                      <Mail className="size-3.5" aria-hidden />
-                                    ) : channel.type === "PHONE" ? (
-                                      <Phone className="size-3.5" aria-hidden />
-                                    ) : (
-                                      <Link2 className="size-3.5" aria-hidden />
-                                    );
-
-                                  return (
-                                    <a
-                                      key={`${store.slug}-${channel.type}-${channel.value}`}
-                                      href={href}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      aria-label={tStores(`contactChannelTypes.${channel.type}`)}
-                                      title={tStores(`contactChannelTypes.${channel.type}`)}
-                                      className="text-text-muted hover:text-primary focus-visible:ring-ring inline-flex size-6 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                                    >
-                                      {icon}
-                                    </a>
-                                  );
-                                })}
-                              </div>
-                            </>
-                          )}
-                        </div>
+                        {(store.averageRating != null || store.reviewCount > 0) && (
+                          <div className="text-text-muted flex shrink-0 items-center gap-1.5 text-sm">
+                            <Star className="text-primary size-4 shrink-0 fill-current" aria-hidden />
+                            {store.averageRating != null && (
+                              <span className="font-semibold tabular-nums">{store.averageRating.toFixed(1)}</span>
+                            )}
+                            {store.reviewCount > 0 && (
+                              <span className="whitespace-nowrap">
+                                {t("ratingCount", { count: store.reviewCount })}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      {(store.averageRating != null || store.reviewCount > 0) && (
-                        <div className="text-text-muted flex items-center gap-1.5 text-sm">
-                          <Star className="text-primary size-4 fill-current" aria-hidden />
-                          {store.averageRating != null && (
-                            <span className="font-semibold">{store.averageRating.toFixed(1)}</span>
-                          )}
-                          {store.reviewCount > 0 && <span>{t("ratingCount", { count: store.reviewCount })}</span>}
-                        </div>
-                      )}
+                      <div className="text-text-muted flex flex-wrap items-center gap-2 text-sm">
+                        <MapPin className="size-4 shrink-0" aria-hidden />
+                        <span>{tCountries(store.countryCode)}</span>
+                        {store.contactChannels.length > 0 && (
+                          <>
+                            <span className="bg-border/70 h-3.5 w-px rounded-full" aria-hidden />
+                            <div className="pointer-events-auto relative z-20 flex items-center gap-1.5">
+                              {store.contactChannels.slice(0, MAX_CONTACT_CHANNELS).map((channel) => {
+                                const href = buildContactHref(channel.type, channel.value);
+                                if (!href) {
+                                  return null;
+                                }
+
+                                const icon =
+                                  channel.type === "INSTAGRAM" ? (
+                                    <SimpleIconSvg path={siInstagram.path} />
+                                  ) : channel.type === "WHATSAPP" ? (
+                                    <SimpleIconSvg path={siWhatsapp.path} />
+                                  ) : channel.type === "FACEBOOK" ? (
+                                    <SimpleIconSvg path={siFacebook.path} />
+                                  ) : channel.type === "TIKTOK" ? (
+                                    <SimpleIconSvg path={siTiktok.path} />
+                                  ) : channel.type === "EMAIL" ? (
+                                    <Mail className="size-3.5" aria-hidden />
+                                  ) : channel.type === "PHONE" ? (
+                                    <Phone className="size-3.5" aria-hidden />
+                                  ) : (
+                                    <Link2 className="size-3.5" aria-hidden />
+                                  );
+
+                                return (
+                                  <a
+                                    key={`${store.slug}-${channel.type}-${channel.value}`}
+                                    href={href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={tStores(`contactChannelTypes.${channel.type}`)}
+                                    title={tStores(`contactChannelTypes.${channel.type}`)}
+                                    className="text-text-muted hover:text-primary focus-visible:ring-ring inline-flex size-6 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                                  >
+                                    {icon}
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
 
                     <div className="border-border/55 bg-muted/32 rounded-xl border p-3">
