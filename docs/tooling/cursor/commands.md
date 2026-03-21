@@ -42,6 +42,26 @@ Implements one slice issue from GitHub with minimal scoped changes and GitHub-sy
 
 See `.cursor/commands/implement-feature-slice.md` for the full command behavior.
 
+## mark-ticket-done
+
+Marks one GitHub slice ticket as done and cascades completion upward through the linked product docs and Epic when all siblings are complete.
+
+**You can pass context after the command**, e.g.:
+
+- `/mark-ticket-done 74`
+
+**What it does:**
+
+1. Resolves the target slice issue from GitHub by issue number.
+2. Closes the slice and moves its GitHub Project status to `Done`.
+3. Marks the linked `Work Order` doc as `DONE`.
+4. If all sibling `Work Orders` are `DONE`, also marks the parent `Blueprint` as `DONE`.
+5. If all sibling `Blueprints` are complete, also marks the parent `FRD` as `DONE`.
+6. If all sibling `FRDs` are complete, also marks the parent `PRD` as `DONE`.
+7. Syncs the parent Epic checklist and, if all slices are complete, also marks the Epic as `Done`.
+
+See `.cursor/commands/mark-ticket-done.md` for the full command behavior.
+
 ## create-feature-epic-and-slices
 
 Creates a new feature epic in GitHub and decomposes it into small, functional slice sub-issues.

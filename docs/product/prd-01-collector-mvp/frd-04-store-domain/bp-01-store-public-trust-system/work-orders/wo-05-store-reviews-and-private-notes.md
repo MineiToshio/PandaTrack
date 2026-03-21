@@ -3,7 +3,7 @@ id: WO-05
 type: WORK_ORDER
 slug: store-reviews-and-private-notes
 title: Store Reviews and Private Notes
-status: ACTIVE
+status: DONE
 parent: BP-01
 source_issue: 74
 last_updated: 2026-03-21
