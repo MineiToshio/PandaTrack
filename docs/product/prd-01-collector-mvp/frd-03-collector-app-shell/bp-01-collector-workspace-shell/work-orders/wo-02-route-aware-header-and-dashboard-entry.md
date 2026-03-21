@@ -3,11 +3,12 @@ id: WO-02
 type: WORK_ORDER
 slug: route-aware-header-and-dashboard-entry
 title: Route-aware Header and Dashboard Entry
-status: DONE
+status: ACTIVE
 parent: BP-01
-last_updated: 2026-03-16
+last_updated: 2026-03-21
 source_features:
   - FEAT-0011
+implementation_status: IMPLEMENTED
 ---
 
 # WO-02 Route-aware Header and Dashboard Entry

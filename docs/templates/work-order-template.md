@@ -3,9 +3,10 @@ id: WO-XX
 type: WORK_ORDER
 slug: descriptive-slug
 title: Replace With Title
-status: PLANNED
+status: <DRAFT | ACTIVE | BLOCKED | SUPERSEDED>
 parent: BP-XX
 source_features: []
+implementation_status: <PLANNED | IN_PROGRESS | PARTIALLY_IMPLEMENTED | IMPLEMENTED>
 last_updated: YYYY-MM-DD
 ---
 

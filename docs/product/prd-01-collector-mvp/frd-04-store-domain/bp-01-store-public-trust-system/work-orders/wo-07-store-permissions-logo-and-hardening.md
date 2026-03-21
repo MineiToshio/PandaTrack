@@ -3,10 +3,11 @@ id: WO-07
 type: WORK_ORDER
 slug: store-permissions-logo-and-hardening
 title: Store Permissions, Logo, and Hardening
-status: PLANNED
+status: ACTIVE
 parent: BP-01
 source_issue: 76
-last_updated: 2026-03-16
+last_updated: 2026-03-21
+implementation_status: PLANNED
 ---
 
 # WO-07 Store Permissions, Logo, and Hardening

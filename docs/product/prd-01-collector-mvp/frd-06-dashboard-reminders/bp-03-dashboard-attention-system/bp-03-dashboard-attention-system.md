@@ -9,7 +9,8 @@ children:
   - WO-12
   - WO-13
   - WO-14
-last_updated: 2026-03-16
+last_updated: 2026-03-21
+implementation_status: PLANNED
 ---
 
 # BP-03 Dashboard Attention System

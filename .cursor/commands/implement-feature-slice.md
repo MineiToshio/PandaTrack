@@ -65,7 +65,8 @@ Implement one GitHub slice ticket that mirrors a `Work Order`, using the hybrid 
 - Required transitions:
   - Slice: move to `In Progress` during or after implementation handoff, but do **not** move it to `Done`
   - Epic: keep `In Progress` while any non-done slices remain; do not move the epic to `Done` from this command unless the user explicitly asked for that workflow
-- Update the matching `Work Order` document status from its initial planning state to `ACTIVE` when implementation starts.
+- Ensure the matching `Work Order` doc remains lifecycle-valid with `status: ACTIVE` when it is the current approved slice definition.
+- Update the matching `Work Order` `implementation_status` to `IN_PROGRESS` when implementation starts, unless it is already `IMPLEMENTED`.
 
 6. Validate
 - Run:
@@ -81,4 +82,4 @@ Return:
 2. `Exit criteria`: each criterion as `met` / `not met`
 3. `Functional test steps`: manual step-by-step checks
 4. `Test cases`: concise `Given / When / Then` cases
-5. `Tracking updated`: GitHub status and Work Order status changes applied
+5. `Tracking updated`: GitHub status and Work Order lifecycle / implementation-status changes applied

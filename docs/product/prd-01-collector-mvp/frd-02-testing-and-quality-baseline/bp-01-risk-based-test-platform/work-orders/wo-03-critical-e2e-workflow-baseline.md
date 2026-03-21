@@ -3,11 +3,12 @@ id: WO-03
 type: WORK_ORDER
 slug: critical-e2e-workflow-baseline
 title: Critical E2E Workflow Baseline
-status: DONE
+status: ACTIVE
 parent: BP-01
-last_updated: 2026-03-16
+last_updated: 2026-03-21
 source_features:
   - FEAT-0010
+implementation_status: IMPLEMENTED
 ---
 
 # WO-03 Critical E2E Workflow Baseline

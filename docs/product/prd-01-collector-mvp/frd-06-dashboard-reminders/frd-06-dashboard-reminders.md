@@ -7,9 +7,10 @@ status: DRAFT
 parent: PRD-01
 children:
   - BP-03
-last_updated: 2026-03-16
+last_updated: 2026-03-21
 source_features:
   - FUTURE-DASHBOARD-ATTENTION
+implementation_status: PLANNED
 ---
 
 # FRD-06 Dashboard and Reminders

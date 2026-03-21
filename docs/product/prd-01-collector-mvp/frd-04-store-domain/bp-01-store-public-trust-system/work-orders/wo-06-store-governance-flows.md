@@ -3,10 +3,11 @@ id: WO-06
 type: WORK_ORDER
 slug: store-governance-flows
 title: Store Governance Flows
-status: PLANNED
+status: ACTIVE
 parent: BP-01
 source_issue: 75
-last_updated: 2026-03-16
+last_updated: 2026-03-21
+implementation_status: PLANNED
 ---
 
 # WO-06 Store Governance Flows

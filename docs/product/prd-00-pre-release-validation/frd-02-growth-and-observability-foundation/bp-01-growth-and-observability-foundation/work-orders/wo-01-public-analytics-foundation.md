@@ -3,11 +3,12 @@ id: WO-01
 type: WORK_ORDER
 slug: public-analytics-foundation
 title: Public Analytics Foundation
-status: DONE
+status: ACTIVE
 parent: BP-01
-last_updated: 2026-03-16
+last_updated: 2026-03-21
 source_features:
   - FEAT-0002
+implementation_status: IMPLEMENTED
 ---
 
 # WO-01 Public Analytics Foundation

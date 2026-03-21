@@ -3,10 +3,11 @@ id: WO-05
 type: WORK_ORDER
 slug: store-reviews-and-private-notes
 title: Store Reviews and Private Notes
-status: DONE
+status: ACTIVE
 parent: BP-01
 source_issue: 74
 last_updated: 2026-03-21
+implementation_status: IMPLEMENTED
 ---
 
 # WO-05 Store Reviews and Private Notes

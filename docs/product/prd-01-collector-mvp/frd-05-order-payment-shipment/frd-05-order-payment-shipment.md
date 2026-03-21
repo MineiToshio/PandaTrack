@@ -7,9 +7,10 @@ status: DRAFT
 parent: PRD-01
 children:
   - BP-02
-last_updated: 2026-03-16
+last_updated: 2026-03-21
 source_features:
   - FUTURE-ORDER-CORE
+implementation_status: PLANNED
 ---
 
 # FRD-05 Order, Payment, and Shipment

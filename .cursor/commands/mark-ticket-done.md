@@ -1,6 +1,6 @@
 # Mark Ticket Done
 
-Mark one GitHub slice ticket as done and cascade completion status upward through the linked `Work Order`, `Blueprint`, `FRD`, `Epic`, and `PRD` when all descendants are complete.
+Mark one GitHub slice ticket as done and reconcile implementation completion through the linked `Work Order`, `Blueprint`, `FRD`, and `Epic`.
 
 ## Inputs
 
@@ -22,11 +22,10 @@ This command is only for GitHub slice tickets (`type:slice`).
 The command must:
 
 1. mark the target slice ticket as done in GitHub
-2. update the linked `Work Order` doc to `DONE`
-3. if all sibling `Work Orders` are `DONE`, mark the parent `Blueprint` as done
-4. if all sibling `Blueprints` are done, mark the parent `FRD` as done
-5. if all sibling `FRDs` are done, mark the parent `PRD` as done
-6. if all slice tickets under the parent Epic are done, mark the Epic as done too
+2. update the linked `Work Order` doc to `implementation_status: IMPLEMENTED`
+3. if all sibling `Work Orders` are `IMPLEMENTED`, mark the parent `Blueprint` `implementation_status: IMPLEMENTED`
+4. if all sibling `Blueprints` are `IMPLEMENTED`, mark the parent `FRD` `implementation_status: IMPLEMENTED`
+5. if all slice tickets under the parent Epic are done, mark the Epic as done too
 
 Do not mark ancestors as done if any sibling item is still incomplete.
 
@@ -63,16 +62,13 @@ If any required path or the parent epic reference is missing, stop and report th
 Determine whether completion should cascade upward:
 
 - `Work Order` level:
-  - always mark the linked `Work Order` doc as `DONE`
+  - always mark the linked `Work Order` doc as `implementation_status: IMPLEMENTED`
 - `Blueprint` level:
   - read every `Work Order` listed in the parent `Blueprint` `children`
-  - mark the `Blueprint` as done only if every child `Work Order` has `status: DONE` after the target update
+  - mark the `Blueprint` as implemented only if every child `Work Order` has `implementation_status: IMPLEMENTED` after the target update
 - `FRD` level:
   - read every child `Blueprint` listed in the parent `FRD` `children`
-  - mark the `FRD` as done only if every child `Blueprint` is done after the target update
-- `PRD` level:
-  - read every child `FRD` listed in the parent `PRD` `children`
-  - mark the `PRD` as done only if every child `FRD` is done after the target update
+  - mark the `FRD` as implemented only if every child `Blueprint` has `implementation_status: IMPLEMENTED` after the target update
 - `Epic` level:
   - inspect all slice issues linked from the Epic checklist
   - mark the Epic as done only if every linked slice issue is done after the target update
@@ -110,23 +106,22 @@ When updating frontmatter:
 Use these lifecycle transitions:
 
 - `Work Order`:
-  - set `status: DONE`
+  - keep `status: ACTIVE` when the doc remains the current source of truth
+  - set `implementation_status: IMPLEMENTED`
 - `Blueprint` when all child Work Orders are done:
-  - set `status: DONE`
+  - keep `status: ACTIVE` when the doc remains current
   - set `implementation_status: IMPLEMENTED` if the field exists; add it if missing
 - `FRD` when all child Blueprints are done:
-  - set `status: DONE`
+  - keep `status: ACTIVE` when the doc remains current
   - set `implementation_status: IMPLEMENTED`
-- `PRD` when all child FRDs are done:
-  - set `status: DONE`
 
-If an ancestor is not yet fully complete, leave its current doc status unchanged.
+Do not use `status: DONE` in product docs to represent implementation completion. If an ancestor is not yet fully complete, leave its current doc `implementation_status` unchanged.
 
 ## Guardrails
 
 - Do not create new docs or GitHub issues.
 - Do not edit unrelated product docs.
-- Do not mark an ancestor done if any descendant remains `PLANNED`, `DRAFT`, `ACTIVE`, or otherwise incomplete.
+- Do not mark an ancestor implemented if any descendant remains `PLANNED`, `IN_PROGRESS`, `PARTIALLY_IMPLEMENTED`, `DRAFT`, or otherwise incomplete.
 - Do not treat a closed issue outside the Epic checklist as evidence that the Epic is complete; only evaluate the linked slices in the Epic body.
 - If the target slice is already closed, still reconcile doc status, Epic checklist state, and cascade eligibility.
 
@@ -136,8 +131,8 @@ Return in Spanish:
 
 1. `Slice updated`: issue number/title and whether it is now `Done`
 2. `Epic updated`: whether the checklist was synced and whether the Epic was also marked `Done`
-3. `Docs updated`: each touched `Work Order`, `Blueprint`, `FRD`, or `PRD` path with its resulting status
-4. `Cascade result`: concise statement of which levels advanced to done and which did not
+3. `Docs updated`: each touched `Work Order`, `Blueprint`, or `FRD` path with its resulting `status` and `implementation_status`
+4. `Cascade result`: concise statement of which levels advanced to `IMPLEMENTED` and which did not
 5. `Blocked requirements`: only project-sync or reference-resolution blockers
 
 If the command stops early, say exactly what was missing or invalid.

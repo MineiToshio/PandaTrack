@@ -3,10 +3,11 @@ id: WO-02
 type: WORK_ORDER
 slug: store-catalog-foundation
 title: Store Catalog Foundation
-status: DONE
+status: ACTIVE
 parent: BP-01
 source_issue: 70
-last_updated: 2026-03-16
+last_updated: 2026-03-21
+implementation_status: IMPLEMENTED
 ---
 
 # WO-02 Store Catalog Foundation

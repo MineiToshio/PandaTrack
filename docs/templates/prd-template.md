@@ -3,7 +3,7 @@ id: PRD-XX
 type: PRD
 slug: descriptive-slug
 title: Replace With Title
-status: DRAFT
+status: <DRAFT | ACTIVE | BLOCKED | SUPERSEDED>
 parent: null
 children: []
 last_updated: YYYY-MM-DD

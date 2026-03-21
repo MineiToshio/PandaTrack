@@ -4,7 +4,7 @@ type: INDEX
 status: ACTIVE
 format: MARKDOWN
 convention: "prefix + short number + descriptive slug"
-last_updated: 2026-03-16
+last_updated: 2026-03-21
 ---
 
 # Product Docs
@@ -43,7 +43,9 @@ It follows a hierarchical 80/90-style documentation model:
 - Use explicit parent-child references in metadata.
 - Keep one concept per file.
 - Add `source_features` only as traceability metadata when the doc consolidates one or more GitHub epics.
-- Add `implementation_status` when code exists and the doc is partially reverse-engineered from the repository.
+- Use `status` for document lifecycle only: `DRAFT`, `ACTIVE`, `BLOCKED`, `SUPERSEDED`.
+- Use `implementation_status` for delivery reality on `FRD`, `Blueprint`, and `Work Order`: `PLANNED`, `IN_PROGRESS`, `PARTIALLY_IMPLEMENTED`, `IMPLEMENTED`.
+- Do not add `implementation_status` to `PRD` by default.
 - Keep `Confirmed`, `Open Questions`, and `Out of Scope` clearly separated.
 - Keep GitHub execution aligned with these docs, but do not use GitHub as the only product-definition source.
 

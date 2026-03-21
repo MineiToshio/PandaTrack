@@ -3,11 +3,12 @@ id: WO-02
 type: WORK_ORDER
 slug: route-protection-and-verification-lifecycle
 title: Route Protection and Verification Lifecycle
-status: DONE
+status: ACTIVE
 parent: BP-01
-last_updated: 2026-03-16
+last_updated: 2026-03-21
 source_features:
   - FEAT-0008
+implementation_status: IMPLEMENTED
 ---
 
 # WO-02 Route Protection and Verification Lifecycle

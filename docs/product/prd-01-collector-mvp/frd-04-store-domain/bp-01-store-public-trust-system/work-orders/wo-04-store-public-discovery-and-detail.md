@@ -3,10 +3,11 @@ id: WO-04
 type: WORK_ORDER
 slug: store-public-discovery-and-detail
 title: Store Public Discovery and Detail
-status: DONE
+status: ACTIVE
 parent: BP-01
 source_issue: 73
-last_updated: 2026-03-16
+last_updated: 2026-03-21
+implementation_status: IMPLEMENTED
 ---
 
 # WO-04 Store Public Discovery and Detail

@@ -10,7 +10,8 @@ children:
   - WO-09
   - WO-10
   - WO-11
-last_updated: 2026-03-16
+last_updated: 2026-03-21
+implementation_status: PLANNED
 ---
 
 # BP-02 Order, Payment, and Shipment Core

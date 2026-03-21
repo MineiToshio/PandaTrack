@@ -10,7 +10,7 @@ children:
   - FRD-02
   - FRD-03
   - FRD-04
-last_updated: 2026-03-16
+last_updated: 2026-03-21
 source_features:
   - FEAT-0001
   - FEAT-0002

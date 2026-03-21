@@ -3,10 +3,11 @@ id: WO-03
 type: WORK_ORDER
 slug: store-creation-and-duplicate-prevention
 title: Store Creation and Duplicate Prevention
-status: DONE
+status: ACTIVE
 parent: BP-01
 source_issue: 72
-last_updated: 2026-03-16
+last_updated: 2026-03-21
+implementation_status: IMPLEMENTED
 ---
 
 # WO-03 Store Creation and Duplicate Prevention

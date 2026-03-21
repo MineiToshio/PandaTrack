@@ -136,7 +136,8 @@ A ticket should not duplicate the full `Work Order` content.
 
 ### In docs
 
-- use document status for lifecycle meaning such as `DRAFT`, `ACTIVE`, `DONE`, or `SUPERSEDED`
+- use document `status` for lifecycle meaning such as `DRAFT`, `ACTIVE`, `BLOCKED`, or `SUPERSEDED`
+- use `implementation_status` for implementation reality such as `PLANNED`, `IN_PROGRESS`, `PARTIALLY_IMPLEMENTED`, or `IMPLEMENTED`
 - do not use file renames to represent day-to-day execution status
 
 ### In GitHub

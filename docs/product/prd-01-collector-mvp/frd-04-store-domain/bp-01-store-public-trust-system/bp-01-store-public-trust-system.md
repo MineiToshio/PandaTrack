@@ -13,7 +13,8 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-03-16
+last_updated: 2026-03-21
+implementation_status: PARTIALLY_IMPLEMENTED
 ---
 
 # BP-01 Store Public Trust System

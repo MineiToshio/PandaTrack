@@ -63,6 +63,36 @@ Examples:
 - `source_features`
 - `implementation_status`
 
+## Status semantics
+
+- `status` means document lifecycle, not daily execution progress.
+- Use `status` to answer whether the document is still the current approved source of truth.
+- Use `implementation_status` to answer whether the described capability is planned, partially built, in progress, or implemented.
+- Keep daily execution tracking in GitHub Project `Status`, not in `docs/product`.
+
+### `status`
+
+- `DRAFT`: the document is still being defined or reviewed
+- `ACTIVE`: the document is current and valid
+- `BLOCKED`: the document is current, but progress is blocked by a dependency or decision
+- `SUPERSEDED`: the document has been replaced by a newer source of truth
+
+Avoid using `DONE` as the primary meaning for product-doc lifecycle. A shipped feature can still have `status: ACTIVE` when the document remains current.
+
+### `implementation_status`
+
+- `PLANNED`: not implemented yet
+- `IN_PROGRESS`: implementation has started but is not complete
+- `PARTIALLY_IMPLEMENTED`: some meaningful subset exists, but the document scope is not fully delivered
+- `IMPLEMENTED`: the described scope is fully implemented
+
+### Type guidance
+
+- `PRD`: use `status`; do not add `implementation_status` by default
+- `FRD`: use both `status` and `implementation_status`
+- `Blueprint`: use both `status` and `implementation_status`
+- `Work Order`: use both `status` and `implementation_status`
+
 ## Writing rules
 
 - Write all product docs in English.
@@ -74,11 +104,16 @@ Examples:
 - Treat `source_features` as traceability only, not as a source of authority for scope or behavior.
 - Keep GitHub epic/slice mapping visible in `source_features` or in dedicated sections when the doc consolidates historical work.
 
-## Recommended statuses
+## Recommended status values
 
 - `DRAFT`
 - `ACTIVE`
-- `PLANNED`
-- `DONE`
 - `BLOCKED`
 - `SUPERSEDED`
+
+## Recommended implementation status values
+
+- `PLANNED`
+- `IN_PROGRESS`
+- `PARTIALLY_IMPLEMENTED`
+- `IMPLEMENTED`

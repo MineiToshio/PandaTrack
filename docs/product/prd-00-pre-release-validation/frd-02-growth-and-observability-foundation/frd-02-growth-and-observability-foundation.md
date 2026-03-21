@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-00
 children:
   - BP-01
-last_updated: 2026-03-16
+last_updated: 2026-03-21
 source_features:
   - FEAT-0002
   - FEAT-0003
