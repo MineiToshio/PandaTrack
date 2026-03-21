@@ -560,46 +560,98 @@ export async function getPublicStoresListing(
   return listingPage.items;
 }
 
+const publicStoreReviewSelect = {
+  id: true,
+  userId: true,
+  overallRating: true,
+  comment: true,
+  createdAt: true,
+  updatedAt: true,
+  user: {
+    select: {
+      name: true,
+    },
+  },
+} as const;
+
+const publicStoreReviewOrderBy = [{ updatedAt: "desc" as const }, { createdAt: "desc" as const }];
+
+function mapRowsToPublicStoreReviews(
+  rows: Array<{
+    id: string;
+    userId: string;
+    overallRating: number;
+    comment: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    user: { name: string | null };
+  }>,
+  viewerUserId: string | undefined,
+): PublicStoreReview[] {
+  return rows.map((review) => ({
+    id: review.id,
+    overallRating: review.overallRating,
+    comment: review.comment,
+    createdAt: review.createdAt,
+    updatedAt: review.updatedAt,
+    authorName: review.user.name,
+    isViewerReview: viewerUserId != null && review.userId === viewerUserId,
+  }));
+}
+
+/**
+ * Public reviews for a store, newest first among "other" reviewers.
+ * When `viewerUserId` is set and that user has a review, it is always included first and counts toward `limit`;
+ * remaining slots are filled with the most recently updated reviews from everyone else.
+ */
 export async function getPublicStoreReviews(
   db: PrismaClient,
   storeId: string,
   viewerUserId?: string,
   limit: number = DEFAULT_PUBLIC_STORE_REVIEW_LIMIT,
 ): Promise<PublicStoreReview[]> {
-  const reviews = await db.storeReview.findMany({
-    where: { storeId },
-    select: {
-      id: true,
-      userId: true,
-      overallRating: true,
-      comment: true,
-      createdAt: true,
-      updatedAt: true,
-      user: {
-        select: {
-          name: true,
-        },
+  if (limit <= 0) {
+    return [];
+  }
+
+  if (viewerUserId == null || viewerUserId === "") {
+    const reviews = await db.storeReview.findMany({
+      where: { storeId },
+      select: publicStoreReviewSelect,
+      orderBy: publicStoreReviewOrderBy,
+      take: limit,
+    });
+    return mapRowsToPublicStoreReviews(reviews, undefined);
+  }
+
+  const viewerReviewRow = await db.storeReview.findUnique({
+    where: {
+      storeId_userId: {
+        storeId,
+        userId: viewerUserId,
       },
     },
-    orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
-    take: limit,
+    select: publicStoreReviewSelect,
   });
 
-  return reviews
-    .map((review) => ({
-      id: review.id,
-      overallRating: review.overallRating,
-      comment: review.comment,
-      createdAt: review.createdAt,
-      updatedAt: review.updatedAt,
-      authorName: review.user.name,
-      isViewerReview: viewerUserId != null && review.userId === viewerUserId,
-    }))
-    .sort((left, right) => {
-      if (left.isViewerReview && !right.isViewerReview) return -1;
-      if (!left.isViewerReview && right.isViewerReview) return 1;
-      return right.updatedAt.getTime() - left.updatedAt.getTime();
-    });
+  const remainingSlots = Math.max(0, limit - (viewerReviewRow ? 1 : 0));
+
+  const otherReviewRows =
+    remainingSlots > 0
+      ? await db.storeReview.findMany({
+          where: {
+            storeId,
+            ...(viewerReviewRow ? { userId: { not: viewerUserId } } : {}),
+          },
+          select: publicStoreReviewSelect,
+          orderBy: publicStoreReviewOrderBy,
+          take: remainingSlots,
+        })
+      : [];
+
+  const combinedRows = viewerReviewRow ? [viewerReviewRow, ...otherReviewRows] : otherReviewRows;
+
+  return mapRowsToPublicStoreReviews(combinedRows, viewerUserId);
 }
 
 export async function getStoreViewerContext(

@@ -356,6 +356,115 @@ describe("store queries", () => {
     }
   });
 
+  it.skipIf(!hasDatabase)(
+    "getPublicStoreReviews pins the viewer review first when it is not among the most recently updated reviews",
+    async () => {
+      await runSeed(prisma);
+
+      const viewer = await prisma.user.create({
+        data: {
+          id: `test-review-pin-viewer-${Date.now()}`,
+          name: "Pinned Viewer",
+          email: `pinned-viewer-${Date.now()}@example.com`,
+          emailVerified: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+
+      const otherUsers = await Promise.all(
+        [1, 2, 3, 4, 5].map((index) =>
+          prisma.user.create({
+            data: {
+              id: `test-review-pin-other-${Date.now()}-${index}`,
+              name: `Other Reviewer ${index}`,
+              email: `pinned-other-${Date.now()}-${index}@example.com`,
+              emailVerified: true,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          }),
+        ),
+      );
+
+      try {
+        const { id: storeId } = await createStore(prisma, {
+          name: "Pinned Review Store",
+          storeType: "BUSINESS",
+          countryCode: "ES",
+          presenceTypes: ["ONLINE"],
+          productTypeKeys: ["manga"],
+          createdByUserId: viewer.id,
+          status: "APPROVED",
+          approvedByUserId: viewer.id,
+        });
+
+        await upsertStoreReview(prisma, {
+          storeId,
+          userId: viewer.id,
+          overallRating: 3,
+          comment: "Oldest updated review from viewer",
+        });
+
+        const viewerReviewRow = await prisma.storeReview.findUnique({
+          where: { storeId_userId: { storeId, userId: viewer.id } },
+        });
+        if (!viewerReviewRow) {
+          throw new Error("Expected viewer review row");
+        }
+
+        await prisma.storeReview.update({
+          where: { id: viewerReviewRow.id },
+          data: {
+            updatedAt: new Date("2020-01-01T00:00:00.000Z"),
+          },
+        });
+
+        for (const [index, otherUser] of otherUsers.entries()) {
+          await upsertStoreReview(prisma, {
+            storeId,
+            userId: otherUser.id,
+            overallRating: 4,
+            comment: `Other review slot ${index + 1}`,
+          });
+
+          const row = await prisma.storeReview.findUnique({
+            where: { storeId_userId: { storeId, userId: otherUser.id } },
+          });
+          if (!row) {
+            throw new Error("Expected other review row");
+          }
+
+          await prisma.storeReview.update({
+            where: { id: row.id },
+            data: {
+              updatedAt: new Date(`2024-06-${String(index + 1).padStart(2, "0")}T12:00:00.000Z`),
+            },
+          });
+        }
+
+        const reviews = await getPublicStoreReviews(prisma, storeId, viewer.id, 5);
+
+        expect(reviews).toHaveLength(5);
+        expect(reviews[0]?.isViewerReview).toBe(true);
+        expect(reviews[0]?.comment).toBe("Oldest updated review from viewer");
+        expect(reviews.map((review) => review.comment)).toEqual([
+          "Oldest updated review from viewer",
+          "Other review slot 5",
+          "Other review slot 4",
+          "Other review slot 3",
+          "Other review slot 2",
+        ]);
+      } finally {
+        await prisma.store.deleteMany({ where: { createdByUserId: viewer.id } });
+        for (const otherUser of otherUsers) {
+          await prisma.user.delete({ where: { id: otherUser.id } }).catch(() => {});
+        }
+        await prisma.user.delete({ where: { id: viewer.id } }).catch(() => {});
+      }
+    },
+  );
+
   it.skipIf(!hasDatabase)("upsertStoreNote keeps notes private to the viewer context", async () => {
     await runSeed(prisma);
 

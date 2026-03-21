@@ -100,6 +100,7 @@
       "eyebrow": "Public trust",
       "title": "Community reviews",
       "description": "Public reviews help other collectors judge how reliable this store feels over time.",
+      "showMoreCta": "View {count, plural, one {# more review} other {# more reviews}}",
       "empty": "This store does not have public reviews yet.",
       "noAverage": "No rating yet",
       "noComment": "No public comment was added.",

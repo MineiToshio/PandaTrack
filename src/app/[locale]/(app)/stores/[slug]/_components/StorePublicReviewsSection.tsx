@@ -15,6 +15,8 @@ import { deleteStoreReview } from "../_actions/deleteStoreReview";
 import StoreReviewForm from "./StoreReviewForm";
 import { useStoreReviewsState } from "./StoreReviewsStateProvider";
 
+const REVIEWS_INCREMENT = 5;
+
 type StorePublicReviewsSectionProps = {
   locale: string;
   storeSlug: string;
@@ -26,6 +28,7 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
   const { averageRating, reviewCount, reviews, viewerReview, applyOptimisticReviewDelete, applyOptimisticReviewSave } =
     useStoreReviewsState();
   const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [visibleReviewCount, setVisibleReviewCount] = useState(REVIEWS_INCREMENT);
   const [composerReviewSnapshot, setComposerReviewSnapshot] = useState<StoreViewerReview | null>(null);
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [editingReviewSnapshot, setEditingReviewSnapshot] = useState<StoreViewerReview | null>(null);
@@ -34,6 +37,9 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
   const [isPending, startTransition] = useTransition();
   const cancelDeleteRef = useRef<HTMLButtonElement>(null);
   const hasViewerReview = viewerReview != null;
+  const visibleReviews = reviews.slice(0, visibleReviewCount);
+  const remainingReviewCount = Math.max(0, reviews.length - visibleReviewCount);
+  const nextRevealCount = Math.min(REVIEWS_INCREMENT, remainingReviewCount);
 
   const closeComposer = () => {
     setIsComposerOpen(false);
@@ -61,6 +67,8 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
   };
 
   const closeDeleteModal = () => setReviewIdToDelete(null);
+  const handleShowMoreReviews = () =>
+    setVisibleReviewCount((currentVisibleReviewCount) => currentVisibleReviewCount + REVIEWS_INCREMENT);
 
   const handleConfirmDeleteReview = () => {
     if (!reviewIdToDelete) return;
@@ -170,7 +178,7 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
 
       {reviews.length > 0 ? (
         <ul className="mt-5 space-y-3" role="list">
-          {reviews.map((review) => {
+          {visibleReviews.map((review) => {
             const isEditingThis = editingReviewId === review.id;
 
             if (isEditingThis && review.isViewerReview && editingReviewSnapshot) {
@@ -288,6 +296,14 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
         <Typography size="sm" className="text-text-muted mt-5">
           {t("detail.reviews.empty")}
         </Typography>
+      )}
+
+      {remainingReviewCount > 0 && (
+        <div className="mt-4 flex justify-center">
+          <Button type="button" variant="ghost" size="sm" onClick={handleShowMoreReviews}>
+            {t("detail.reviews.showMoreCta", { count: nextRevealCount })}
+          </Button>
+        </div>
       )}
     </section>
   );

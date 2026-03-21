@@ -100,6 +100,7 @@
       "eyebrow": "Confianza pública",
       "title": "Reseñas de la comunidad",
       "description": "Las reseñas públicas ayudan a otros coleccionistas a juzgar qué tan confiable se siente esta tienda con el tiempo.",
+      "showMoreCta": "Ver {count, plural, one {# reseña más} other {# reseñas más}}",
       "empty": "Esta tienda todavía no tiene reseñas públicas.",
       "noAverage": "Sin calificación",
       "noComment": "No se agregó un comentario público.",

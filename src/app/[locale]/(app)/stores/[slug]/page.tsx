@@ -32,7 +32,7 @@ export default async function StoreDetailPage({ params }: StoreDetailPageProps) 
   const session = await getSession();
   const [reviews, viewerContext] = session?.user?.id
     ? await Promise.all([
-        getPublicStoreReviews(prisma, store.id, session.user.id),
+        getPublicStoreReviews(prisma, store.id, session.user.id, store.reviewCount),
         getStoreViewerContext(prisma, store.id, session.user.id),
       ])
     : [[], { review: null, note: null }];

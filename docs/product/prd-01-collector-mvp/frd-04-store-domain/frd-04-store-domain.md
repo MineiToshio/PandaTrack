@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-03-16
+last_updated: 2026-03-21
 source_features:
   - FEAT-0012
 implementation_status: PARTIALLY_IMPLEMENTED
@@ -132,7 +132,7 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 
 ### Trust and governance
 
-- `FR-01-24`: Users must be able to create or edit one public review per store.
+- `FR-01-24`: Users must be able to create or edit one public review per store, and public store-detail review lists must show an initial batch of 5 reviews and allow users to reveal 5 additional reviews per action when more are available. When the signed-in viewer already has a public review for that store, that review must always appear first in the ordered list and must always count toward each batch size; remaining slots are filled with the most recently updated reviews from other users.
 - `FR-01-25`: Store-level aggregate trust fields must be persisted instead of recalculated on every read.
 - `FR-01-26`: Users must be able to save private notes on stores.
 - `FR-01-27`: Users must be able to report stores.
@@ -149,7 +149,7 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - `BR-01-04`: Pending stores are public in-app but must remain non-indexable for SEO.
 - `BR-01-05`: Approved stores are public and SEO-indexable.
 - `BR-01-06`: Inactive stores remain publicly viewable but must surface a warning.
-- `BR-01-07`: Review publication does not require a linked order in MVP.
+- `BR-01-07`: Review publication does not require a linked order in MVP, and public review sections progressively disclose long review lists in 5-review increments instead of rendering the full list by default.
 - `BR-01-08`: Duplicate submit warnings are triggered only for same-country stores at or above the configured similarity threshold.
 - `BR-01-09`: Same-name stores in different countries do not trigger the submit modal.
 - `BR-01-10`: Store creation currently redirects directly to the created detail route after success.
