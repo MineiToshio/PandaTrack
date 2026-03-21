@@ -100,3 +100,24 @@ Creates a new FRD package under an existing PRD and mirrors it into GitHub using
 6. Creates one GitHub ticket per Work Order, following the hybrid tracking rules.
 
 See `.cursor/commands/create-frd-package.md` for the full command behavior.
+
+## enrich-work-order-context
+
+Deepens one existing Work Order through a structured discovery pass before updating the docs upward.
+
+**You can pass context after the command**, e.g.:
+
+- `/enrich-work-order-context 75`
+- `/enrich-work-order-context WO-06 quiero aterrizar mejor validaciones, UX y seguridad`
+- `/enrich-work-order-context docs/product/prd-01-collector-mvp/frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-06-store-governance-flows.md`
+
+**What it does:**
+
+1. Resolves the target Work Order from a path, Work Order id, or linked GitHub slice issue.
+2. Reads the parent `Blueprint`, `FRD`, and `PRD`, plus nearby context that may affect scope.
+3. Acts as product, UX/UI, senior full-stack, security, and QA reviewer to find missing decisions.
+4. Asks grouped questions in Spanish with concrete options and recommendations.
+5. Waits for explicit approval before editing any docs.
+6. Updates the `Work Order` and synchronizes approved changes upward into the `Blueprint`, `FRD`, and `PRD` only where appropriate.
+
+See `.cursor/commands/enrich-work-order-context.md` for the full command behavior.
