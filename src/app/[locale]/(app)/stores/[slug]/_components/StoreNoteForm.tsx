@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, type ChangeEvent } from "react";
 import { useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
 import Label from "@/components/core/Label";
@@ -24,10 +24,32 @@ function translateNoteError(t: ReturnType<typeof useTranslations>, errorKey: str
 export default function StoreNoteForm({ locale, storeSlug, existingNote }: StoreNoteFormProps) {
   const t = useTranslations("stores");
   const [state, formAction, isPending] = useActionState(saveStoreNote, null);
+  const persistedContent = existingNote?.content ?? "";
+  const [draftContent, setDraftContent] = useState(persistedContent);
+
+  const handleDraftChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    setDraftContent(event.target.value);
+  };
+
+  const persistedNormalized = persistedContent.trim();
+  const draftNormalized = draftContent.trim();
+  const canSubmit = draftNormalized.length > 0 && draftNormalized !== persistedNormalized;
+  const submitDisabled = isPending || !canSubmit;
+  const submitCtaVisible = existingNote
+    ? t("detail.privateNote.form.updateCta")
+    : t("detail.privateNote.form.submitCta");
+  const submitDisabledAriaLabel =
+    !isPending && !canSubmit
+      ? `${submitCtaVisible}. ${
+          draftNormalized.length === 0
+            ? t("detail.privateNote.form.submitDisabledEmpty")
+            : t("detail.privateNote.form.submitDisabledUnchanged")
+        }`
+      : undefined;
 
   const fieldErrors = state?.success === false ? state.fieldErrors : undefined;
   const contentError = fieldErrors?.content?.[0];
-  const formError = !state?.success ? state?.error : null;
+  const formError = state?.success === false && "error" in state && state.error ? state.error : null;
   const updatedAtLabel = existingNote
     ? new Intl.DateTimeFormat(locale, {
         dateStyle: "medium",
@@ -65,7 +87,8 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
           <Textarea
             id="store-private-note"
             name="content"
-            defaultValue={existingNote?.content ?? ""}
+            value={draftContent}
+            onChange={handleDraftChange}
             rows={6}
             maxLength={2000}
             disabled={isPending}
@@ -96,7 +119,14 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
           </Typography>
         )}
 
-        <Button type="submit" variant="secondary" size="lg" disabled={isPending} className="w-full sm:w-auto">
+        <Button
+          type="submit"
+          variant="secondary"
+          size="lg"
+          disabled={submitDisabled}
+          aria-label={submitDisabledAriaLabel}
+          className="w-full sm:w-auto"
+        >
           {isPending
             ? t("detail.privateNote.form.submitting")
             : existingNote

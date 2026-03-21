@@ -90,7 +90,6 @@
     "statusPending": "Pending review",
     "statusApproved": "Approved",
     "createdAtLabel": "Profile created",
-    "slugLabel": "Profile",
     "noImportCountries": "No import countries were provided.",
     "noContactChannels": "No public contact channels available.",
     "noAddresses": "No public addresses available.",
@@ -157,6 +156,8 @@
         "helper": "This note is never shown in the public store profile.",
         "submitCta": "Save note",
         "updateCta": "Update note",
+        "submitDisabledEmpty": "Add note text to enable saving.",
+        "submitDisabledUnchanged": "Edit the note to enable saving.",
         "submitting": "Saving note…",
         "success": "Your private note was saved.",
         "errors": {

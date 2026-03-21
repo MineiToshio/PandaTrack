@@ -141,346 +141,337 @@ export default function StoreDetailContent({
             {tListing("backToListing")}
           </Link>
 
-        <section className="from-primary/20 via-highlight/12 to-info/20 relative animate-[hero-fade-in-up_460ms_ease-out_both] overflow-hidden rounded-3xl bg-linear-to-br px-5 py-6 shadow-sm sm:px-8 sm:py-8">
-          <div className="bg-primary/30 absolute -top-20 right-0 size-44 animate-[hero-glow-pulse_6s_ease-in-out_infinite] rounded-full blur-3xl" />
-          <div
-            className="bg-accent/30 absolute -bottom-20 -left-10 size-44 animate-[hero-glow-pulse_7s_ease-in-out_infinite] rounded-full blur-3xl"
-            style={{ animationDelay: "420ms" }}
-          />
+          <section className="from-primary/20 via-highlight/12 to-info/20 relative animate-[hero-fade-in-up_460ms_ease-out_both] overflow-hidden rounded-3xl bg-linear-to-br px-5 py-6 shadow-sm sm:px-8 sm:py-8">
+            <div className="bg-primary/30 absolute -top-20 right-0 size-44 animate-[hero-glow-pulse_6s_ease-in-out_infinite] rounded-full blur-3xl" />
+            <div
+              className="bg-accent/30 absolute -bottom-20 -left-10 size-44 animate-[hero-glow-pulse_7s_ease-in-out_infinite] rounded-full blur-3xl"
+              style={{ animationDelay: "420ms" }}
+            />
 
-          <div className="relative z-10 space-y-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-              <div className="flex items-center gap-4">
-                {isBusiness && store.logoUrl ? (
-                  <div className="bg-background/85 relative size-20 shrink-0 animate-[hero-float_5s_ease-in-out_infinite] overflow-hidden rounded-2xl shadow-sm">
-                    <Image src={store.logoUrl} alt="" width={80} height={80} className="object-cover" unoptimized />
+            <div className="relative z-10 space-y-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                <div className="flex items-center gap-4">
+                  {isBusiness && store.logoUrl ? (
+                    <div className="bg-background/85 relative size-20 shrink-0 animate-[hero-float_5s_ease-in-out_infinite] overflow-hidden rounded-2xl shadow-sm">
+                      <Image src={store.logoUrl} alt="" width={80} height={80} className="object-cover" unoptimized />
+                    </div>
+                  ) : (
+                    <div className="bg-background/85 text-primary flex size-20 shrink-0 animate-[hero-float_5s_ease-in-out_infinite] items-center justify-center rounded-2xl shadow-sm">
+                      <Building2 className="size-9" aria-hidden />
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Heading as="h1" size="sm" className="text-text-title">
+                      {store.name}
+                    </Heading>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={cn(TAG_CLASSNAME, "bg-background/80 text-text-body")}>
+                        <Globe className="size-3.5" aria-hidden />
+                        {storeTypeLabel}
+                      </span>
+                      <span className={cn(TAG_CLASSNAME, "bg-background/80 text-text-body")}>
+                        <MapPinned className="size-3.5" aria-hidden />
+                        {tCountries(store.countryCode)}
+                      </span>
+                      <StoreReviewAggregateBadge className={TAG_CLASSNAME} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {store.description ? (
+                <Typography size="sm" className="text-text-body max-w-4xl">
+                  {store.description}
+                </Typography>
+              ) : (
+                <Typography size="sm" className="text-text-muted max-w-4xl">
+                  {tStores("detail.noDescription")}
+                </Typography>
+              )}
+
+              <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-4">
+                <div className={METRIC_CARD_CLASSNAME}>
+                  <div className="text-text-muted flex items-center gap-1.5">
+                    <Box className="size-3.5" aria-hidden />
+                    <Typography size="2xs">{tStores("detail.productTypesLabel")}</Typography>
+                  </div>
+                  <Typography size="sm" className="text-text-title mt-1.5 text-2xl leading-none font-semibold">
+                    {store.productTypeKeys.length}
+                  </Typography>
+                </div>
+                <div className={METRIC_CARD_CLASSNAME}>
+                  <div className="text-text-muted flex items-center gap-1.5">
+                    <Globe className="size-3.5" aria-hidden />
+                    <Typography size="2xs">{tStores("detail.importCountriesLabel")}</Typography>
+                  </div>
+                  <Typography size="sm" className="text-text-title mt-1.5 text-2xl leading-none font-semibold">
+                    {store.importCountryCodes.length}
+                  </Typography>
+                </div>
+                <div className={METRIC_CARD_CLASSNAME}>
+                  <div className="text-text-muted flex items-center gap-1.5">
+                    <Link2 className="size-3.5" aria-hidden />
+                    <Typography size="2xs">{tStores("detail.contactChannelsCountLabel")}</Typography>
+                  </div>
+                  <Typography size="sm" className="text-text-title mt-1.5 text-2xl leading-none font-semibold">
+                    {contactChannelsCount}
+                  </Typography>
+                </div>
+                <div className={METRIC_CARD_CLASSNAME}>
+                  <div className="text-text-muted flex items-center gap-1.5">
+                    <MapPinned className="size-3.5" aria-hidden />
+                    <Typography size="2xs">{tStores("detail.addressesCountLabel")}</Typography>
+                  </div>
+                  <Typography size="sm" className="text-text-title mt-1.5 text-2xl leading-none font-semibold">
+                    {addressesCount}
+                  </Typography>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {(isPendingReview || isInactive) && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {isPendingReview && (
+                <div
+                  className="bg-warning/14 text-text-body animate-[hero-fade-in-up_420ms_ease-out_both] rounded-2xl p-4 shadow-sm sm:col-span-2"
+                  role="note"
+                  style={{ animationDelay: `${STAGGER_BASE_DELAY_MS}ms` }}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <CircleAlert className="text-warning mt-1 size-4 shrink-0" aria-hidden />
+                    <div>
+                      <Typography size="sm" className="text-text-title font-semibold">
+                        {tStores("detail.pendingDisclaimerTitle")}
+                      </Typography>
+                      <Typography size="xs" className="text-text-body mt-1">
+                        {tStores("detail.pendingDisclaimerMessage")}
+                      </Typography>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {isInactive && (
+                <div
+                  className="bg-destructive/12 text-text-body animate-[hero-fade-in-up_420ms_ease-out_both] rounded-2xl p-4 shadow-sm"
+                  role="alert"
+                  style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 2}ms` }}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <CircleAlert className="text-destructive mt-0.5 size-4 shrink-0" aria-hidden />
+                    <div>
+                      <Typography size="sm" className="text-text-title font-semibold">
+                        {tStores("detail.inactiveWarningTitle")}
+                      </Typography>
+                      <Typography size="xs" className="text-text-body mt-1">
+                        {tStores("detail.inactiveWarningMessage")}
+                      </Typography>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="grid gap-4 lg:grid-cols-[1.18fr_0.82fr]">
+            <section
+              className="bg-background/70 animate-[hero-fade-in-up_430ms_ease-out_both] space-y-4 rounded-3xl p-5 shadow-sm sm:p-6"
+              style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 2}ms` }}
+            >
+              <div>
+                <Typography size="xs" className="text-text-muted">
+                  {tStores("detail.productTypesLabel")}
+                </Typography>
+                {store.productTypeKeys.length > 0 ? (
+                  <div className="mt-2.5 flex flex-wrap gap-2">
+                    {store.productTypeKeys.map((productTypeKey) => (
+                      <span key={productTypeKey} className={cn(TAG_CLASSNAME, "bg-primary/10 text-primary")}>
+                        <Box className="size-3.5" aria-hidden />
+                        {tProductTypes(productTypeKey)}
+                      </span>
+                    ))}
                   </div>
                 ) : (
-                  <div className="bg-background/85 text-primary flex size-20 shrink-0 animate-[hero-float_5s_ease-in-out_infinite] items-center justify-center rounded-2xl shadow-sm">
-                    <Building2 className="size-9" aria-hidden />
-                  </div>
+                  <Typography size="xs" className="text-text-muted mt-2.5">
+                    {tStores("detail.noProductTypes")}
+                  </Typography>
                 )}
-                <div className="space-y-2">
-                  <Heading as="h1" size="sm" className="text-text-title">
-                    {store.name}
-                  </Heading>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={cn(TAG_CLASSNAME, "bg-background/80 text-text-body")}>
+              </div>
+
+              <div>
+                <Typography size="xs" className="text-text-muted">
+                  {tStores("detail.presenceLabel")}
+                </Typography>
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  {store.presenceTypes.map((presenceType) => (
+                    <span key={presenceType} className={cn(TAG_CLASSNAME, "bg-info/14 text-text-body")}>
                       <Globe className="size-3.5" aria-hidden />
-                      {storeTypeLabel}
-                    </span>
-                    <span className={cn(TAG_CLASSNAME, "bg-background/80 text-text-body")}>
-                      <MapPinned className="size-3.5" aria-hidden />
-                      {tCountries(store.countryCode)}
-                    </span>
-                    <StoreReviewAggregateBadge className={TAG_CLASSNAME} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-text-muted ml-auto text-xs sm:text-right">
-                <Typography as="span" size="xs" className="block">
-                  {tStores("detail.slugLabel")}
-                </Typography>
-                <Typography as="span" size="sm" className="text-text-body block font-medium">
-                  /stores/{store.slug}
-                </Typography>
-              </div>
-            </div>
-
-            {store.description ? (
-              <Typography size="sm" className="text-text-body max-w-4xl">
-                {store.description}
-              </Typography>
-            ) : (
-              <Typography size="sm" className="text-text-muted max-w-4xl">
-                {tStores("detail.noDescription")}
-              </Typography>
-            )}
-
-            <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-4">
-              <div className={METRIC_CARD_CLASSNAME}>
-                <div className="text-text-muted flex items-center gap-1.5">
-                  <Box className="size-3.5" aria-hidden />
-                  <Typography size="2xs">{tStores("detail.productTypesLabel")}</Typography>
-                </div>
-                <Typography size="sm" className="text-text-title mt-1.5 text-2xl leading-none font-semibold">
-                  {store.productTypeKeys.length}
-                </Typography>
-              </div>
-              <div className={METRIC_CARD_CLASSNAME}>
-                <div className="text-text-muted flex items-center gap-1.5">
-                  <Globe className="size-3.5" aria-hidden />
-                  <Typography size="2xs">{tStores("detail.importCountriesLabel")}</Typography>
-                </div>
-                <Typography size="sm" className="text-text-title mt-1.5 text-2xl leading-none font-semibold">
-                  {store.importCountryCodes.length}
-                </Typography>
-              </div>
-              <div className={METRIC_CARD_CLASSNAME}>
-                <div className="text-text-muted flex items-center gap-1.5">
-                  <Link2 className="size-3.5" aria-hidden />
-                  <Typography size="2xs">{tStores("detail.contactChannelsCountLabel")}</Typography>
-                </div>
-                <Typography size="sm" className="text-text-title mt-1.5 text-2xl leading-none font-semibold">
-                  {contactChannelsCount}
-                </Typography>
-              </div>
-              <div className={METRIC_CARD_CLASSNAME}>
-                <div className="text-text-muted flex items-center gap-1.5">
-                  <MapPinned className="size-3.5" aria-hidden />
-                  <Typography size="2xs">{tStores("detail.addressesCountLabel")}</Typography>
-                </div>
-                <Typography size="sm" className="text-text-title mt-1.5 text-2xl leading-none font-semibold">
-                  {addressesCount}
-                </Typography>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {(isPendingReview || isInactive) && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {isPendingReview && (
-              <div
-                className="bg-warning/14 text-text-body animate-[hero-fade-in-up_420ms_ease-out_both] rounded-2xl p-4 shadow-sm sm:col-span-2"
-                role="note"
-                style={{ animationDelay: `${STAGGER_BASE_DELAY_MS}ms` }}
-              >
-                <div className="flex items-start gap-2.5">
-                  <CircleAlert className="text-warning mt-1 size-4 shrink-0" aria-hidden />
-                  <div>
-                    <Typography size="sm" className="text-text-title font-semibold">
-                      {tStores("detail.pendingDisclaimerTitle")}
-                    </Typography>
-                    <Typography size="xs" className="text-text-body mt-1">
-                      {tStores("detail.pendingDisclaimerMessage")}
-                    </Typography>
-                  </div>
-                </div>
-              </div>
-            )}
-            {isInactive && (
-              <div
-                className="bg-destructive/12 text-text-body animate-[hero-fade-in-up_420ms_ease-out_both] rounded-2xl p-4 shadow-sm"
-                role="alert"
-                style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 2}ms` }}
-              >
-                <div className="flex items-start gap-2.5">
-                  <CircleAlert className="text-destructive mt-0.5 size-4 shrink-0" aria-hidden />
-                  <div>
-                    <Typography size="sm" className="text-text-title font-semibold">
-                      {tStores("detail.inactiveWarningTitle")}
-                    </Typography>
-                    <Typography size="xs" className="text-text-body mt-1">
-                      {tStores("detail.inactiveWarningMessage")}
-                    </Typography>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="grid gap-4 lg:grid-cols-[1.18fr_0.82fr]">
-          <section
-            className="bg-background/70 animate-[hero-fade-in-up_430ms_ease-out_both] space-y-4 rounded-3xl p-5 shadow-sm sm:p-6"
-            style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 2}ms` }}
-          >
-            <div>
-              <Typography size="xs" className="text-text-muted">
-                {tStores("detail.productTypesLabel")}
-              </Typography>
-              {store.productTypeKeys.length > 0 ? (
-                <div className="mt-2.5 flex flex-wrap gap-2">
-                  {store.productTypeKeys.map((productTypeKey) => (
-                    <span key={productTypeKey} className={cn(TAG_CLASSNAME, "bg-primary/10 text-primary")}>
-                      <Box className="size-3.5" aria-hidden />
-                      {tProductTypes(productTypeKey)}
+                      {tListing(`presence.${presenceType}`)}
                     </span>
                   ))}
                 </div>
-              ) : (
-                <Typography size="xs" className="text-text-muted mt-2.5">
-                  {tStores("detail.noProductTypes")}
+              </div>
+
+              <div>
+                <Typography size="xs" className="text-text-muted">
+                  {tStores("detail.importCountriesLabel")}
                 </Typography>
-              )}
-            </div>
-
-            <div>
-              <Typography size="xs" className="text-text-muted">
-                {tStores("detail.presenceLabel")}
-              </Typography>
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                {store.presenceTypes.map((presenceType) => (
-                  <span key={presenceType} className={cn(TAG_CLASSNAME, "bg-info/14 text-text-body")}>
-                    <Globe className="size-3.5" aria-hidden />
-                    {tListing(`presence.${presenceType}`)}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Typography size="xs" className="text-text-muted">
-                {tStores("detail.importCountriesLabel")}
-              </Typography>
-              {store.importCountryCodes.length > 0 ? (
-                <div className="mt-2.5 flex flex-wrap gap-2">
-                  {store.importCountryCodes.map((countryCode) => (
-                    <span key={countryCode} className={cn(TAG_CLASSNAME, "bg-success/14 text-text-body")}>
-                      <ShoppingBag className="size-3.5" aria-hidden />
-                      {tCountries(countryCode)}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <Typography size="sm" className="text-text-muted mt-2">
-                  {tStores("detail.noImportCountries")}
-                </Typography>
-              )}
-            </div>
-          </section>
-
-          <section
-            className="bg-background/70 animate-[hero-fade-in-up_430ms_ease-out_both] space-y-4 rounded-3xl p-5 shadow-sm sm:p-6"
-            style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 3}ms` }}
-          >
-            <div className="space-y-2">
-              <Typography size="xs" className="text-text-muted">
-                {tStores("detail.businessSignalsTitle")}
-              </Typography>
-              <div className="flex flex-wrap gap-2">
-                <span
-                  className={cn(TAG_CLASSNAME, store.receivesOrders ? "bg-primary/15 text-primary" : "bg-muted/65")}
-                >
-                  <PackageSearch className="size-3.5" aria-hidden />
-                  {receivesOrdersLabel}
-                </span>
-                <span className={cn(TAG_CLASSNAME, store.hasStock ? "bg-success/15 text-success" : "bg-muted/65")}>
-                  <Box className="size-3.5" aria-hidden />
-                  {hasStockLabel}
-                </span>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Typography size="xs" className="text-text-muted">
-                {tStores("detail.profileSummaryTitle")}
-              </Typography>
-              <div className="grid gap-2">
-                <div className="bg-muted/45 rounded-2xl px-3 py-2.5">
-                  <Typography size="2xs" className="text-text-muted">
-                    {tStores("detail.storeTypeLabel")}
-                  </Typography>
-                  <Typography size="sm" className="text-text-body mt-0.5 inline-flex items-center gap-1.5">
-                    {storeTypeIcon}
-                    {storeTypeLabel}
-                  </Typography>
-                </div>
-                <div className="bg-muted/45 rounded-2xl px-3 py-2.5">
-                  <Typography size="2xs" className="text-text-muted">
-                    {tStores("detail.statusLabel")}
-                  </Typography>
-                  <Typography size="sm" className="text-text-body mt-0.5 inline-flex items-center gap-1.5">
-                    <BadgeCheck className="text-success size-3.5" aria-hidden />
-                    {store.status === "PENDING" ? tStores("detail.statusPending") : tStores("detail.statusApproved")}
-                  </Typography>
-                </div>
-                <div className="bg-muted/45 rounded-2xl px-3 py-2.5">
-                  <Typography size="2xs" className="text-text-muted">
-                    {tStores("detail.createdAtLabel")}
-                  </Typography>
-                  <Typography size="sm" className="text-text-body mt-0.5 inline-flex items-center gap-1.5">
-                    <CalendarClock className="text-info size-3.5" aria-hidden />
-                    {profileCreatedAt}
-                  </Typography>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <section
-          className="bg-background/70 animate-[hero-fade-in-up_440ms_ease-out_both] rounded-3xl p-5 shadow-sm sm:p-6"
-          style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 4}ms` }}
-        >
-          <Typography size="xs" className="text-text-muted">
-            {tStores("create.contactChannelsLabel")}
-          </Typography>
-          {isBusiness && contactChannelsCount > 0 ? (
-            <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
-              {store.contactChannels?.map((ch) => {
-                const href = buildContactHref(ch.type, ch.value);
-                if (!href) return null;
-
-                return (
-                  <li key={`${ch.type}-${ch.value}`}>
-                    <a href={href} target="_blank" rel="noopener noreferrer" className={CONTACT_LINK_CLASSNAME}>
-                      <span className="flex min-w-0 items-center gap-2.5">
-                        <span className="bg-primary/12 text-primary inline-flex size-8 shrink-0 items-center justify-center rounded-full">
-                          {getContactIcon(ch.type)}
-                        </span>
-                        <span className="min-w-0">
-                          <Typography size="2xs" className="text-text-muted block">
-                            {ch.label ?? tStores(`contactChannelTypes.${ch.type}`)}
-                          </Typography>
-                          <Typography size="sm" className="text-text-body block truncate">
-                            {ch.value}
-                          </Typography>
-                        </span>
+                {store.importCountryCodes.length > 0 ? (
+                  <div className="mt-2.5 flex flex-wrap gap-2">
+                    {store.importCountryCodes.map((countryCode) => (
+                      <span key={countryCode} className={cn(TAG_CLASSNAME, "bg-success/14 text-text-body")}>
+                        <ShoppingBag className="size-3.5" aria-hidden />
+                        {tCountries(countryCode)}
                       </span>
-                      <ExternalLink className="text-text-muted group-hover:text-primary size-4 shrink-0 transition-colors" />
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : (
-            <Typography size="sm" className="text-text-muted mt-2">
-              {isBusiness ? tStores("detail.noContactChannels") : tStores("detail.notAvailableForStoreType")}
-            </Typography>
-          )}
-        </section>
-
-        <section
-          className="bg-background/70 animate-[hero-fade-in-up_460ms_ease-out_both] rounded-3xl p-5 shadow-sm sm:p-6"
-          style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 5}ms` }}
-        >
-          <Typography size="xs" className="text-text-muted">
-            {tStores("create.addressesLabel")}
-          </Typography>
-          {isBusiness && addressesCount > 0 ? (
-            <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
-              {store.addresses?.map((address, index) => (
-                <li key={`${address.countryCode}-${address.addressLine}-${index}`}>
-                  <div className="bg-muted/45 rounded-2xl p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5">
-                    <Typography size="xs" className="text-text-muted">
-                      {tCountries(address.countryCode)}
-                    </Typography>
-                    <Typography size="sm" className="text-text-body mt-1">
-                      {address.city ? `${address.city} - ` : ""}
-                      {address.addressLine}
-                    </Typography>
-                    {address.reference && (
-                      <Typography size="xs" className="text-text-muted mt-1">
-                        {address.reference}
-                      </Typography>
-                    )}
+                    ))}
                   </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <Typography size="sm" className="text-text-muted mt-2">
-              {isBusiness ? tStores("detail.noAddresses") : tStores("detail.notAvailableForStoreType")}
+                ) : (
+                  <Typography size="sm" className="text-text-muted mt-2">
+                    {tStores("detail.noImportCountries")}
+                  </Typography>
+                )}
+              </div>
+            </section>
+
+            <section
+              className="bg-background/70 animate-[hero-fade-in-up_430ms_ease-out_both] space-y-4 rounded-3xl p-5 shadow-sm sm:p-6"
+              style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 3}ms` }}
+            >
+              <div className="space-y-2">
+                <Typography size="xs" className="text-text-muted">
+                  {tStores("detail.businessSignalsTitle")}
+                </Typography>
+                <div className="flex flex-wrap gap-2">
+                  <span
+                    className={cn(TAG_CLASSNAME, store.receivesOrders ? "bg-primary/15 text-primary" : "bg-muted/65")}
+                  >
+                    <PackageSearch className="size-3.5" aria-hidden />
+                    {receivesOrdersLabel}
+                  </span>
+                  <span className={cn(TAG_CLASSNAME, store.hasStock ? "bg-success/15 text-success" : "bg-muted/65")}>
+                    <Box className="size-3.5" aria-hidden />
+                    {hasStockLabel}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Typography size="xs" className="text-text-muted">
+                  {tStores("detail.profileSummaryTitle")}
+                </Typography>
+                <div className="grid gap-2">
+                  <div className="bg-muted/45 rounded-2xl px-3 py-2.5">
+                    <Typography size="2xs" className="text-text-muted">
+                      {tStores("detail.storeTypeLabel")}
+                    </Typography>
+                    <Typography size="sm" className="text-text-body mt-0.5 inline-flex items-center gap-1.5">
+                      {storeTypeIcon}
+                      {storeTypeLabel}
+                    </Typography>
+                  </div>
+                  <div className="bg-muted/45 rounded-2xl px-3 py-2.5">
+                    <Typography size="2xs" className="text-text-muted">
+                      {tStores("detail.statusLabel")}
+                    </Typography>
+                    <Typography size="sm" className="text-text-body mt-0.5 inline-flex items-center gap-1.5">
+                      <BadgeCheck className="text-success size-3.5" aria-hidden />
+                      {store.status === "PENDING" ? tStores("detail.statusPending") : tStores("detail.statusApproved")}
+                    </Typography>
+                  </div>
+                  <div className="bg-muted/45 rounded-2xl px-3 py-2.5">
+                    <Typography size="2xs" className="text-text-muted">
+                      {tStores("detail.createdAtLabel")}
+                    </Typography>
+                    <Typography size="sm" className="text-text-body mt-0.5 inline-flex items-center gap-1.5">
+                      <CalendarClock className="text-info size-3.5" aria-hidden />
+                      {profileCreatedAt}
+                    </Typography>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <section
+            className="bg-background/70 animate-[hero-fade-in-up_440ms_ease-out_both] rounded-3xl p-5 shadow-sm sm:p-6"
+            style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 4}ms` }}
+          >
+            <Typography size="xs" className="text-text-muted">
+              {tStores("create.contactChannelsLabel")}
             </Typography>
-          )}
-        </section>
+            {isBusiness && contactChannelsCount > 0 ? (
+              <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
+                {store.contactChannels?.map((ch) => {
+                  const href = buildContactHref(ch.type, ch.value);
+                  if (!href) return null;
+
+                  return (
+                    <li key={`${ch.type}-${ch.value}`}>
+                      <a href={href} target="_blank" rel="noopener noreferrer" className={CONTACT_LINK_CLASSNAME}>
+                        <span className="flex min-w-0 items-center gap-2.5">
+                          <span className="bg-primary/12 text-primary inline-flex size-8 shrink-0 items-center justify-center rounded-full">
+                            {getContactIcon(ch.type)}
+                          </span>
+                          <span className="min-w-0">
+                            <Typography size="2xs" className="text-text-muted block">
+                              {ch.label ?? tStores(`contactChannelTypes.${ch.type}`)}
+                            </Typography>
+                            <Typography size="sm" className="text-text-body block truncate">
+                              {ch.value}
+                            </Typography>
+                          </span>
+                        </span>
+                        <ExternalLink className="text-text-muted group-hover:text-primary size-4 shrink-0 transition-colors" />
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <Typography size="sm" className="text-text-muted mt-2">
+                {isBusiness ? tStores("detail.noContactChannels") : tStores("detail.notAvailableForStoreType")}
+              </Typography>
+            )}
+          </section>
+
+          <section
+            className="bg-background/70 animate-[hero-fade-in-up_460ms_ease-out_both] rounded-3xl p-5 shadow-sm sm:p-6"
+            style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 5}ms` }}
+          >
+            <Typography size="xs" className="text-text-muted">
+              {tStores("create.addressesLabel")}
+            </Typography>
+            {isBusiness && addressesCount > 0 ? (
+              <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
+                {store.addresses?.map((address, index) => (
+                  <li key={`${address.countryCode}-${address.addressLine}-${index}`}>
+                    <div className="bg-muted/45 rounded-2xl p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5">
+                      <Typography size="xs" className="text-text-muted">
+                        {tCountries(address.countryCode)}
+                      </Typography>
+                      <Typography size="sm" className="text-text-body mt-1">
+                        {address.city ? `${address.city} - ` : ""}
+                        {address.addressLine}
+                      </Typography>
+                      {address.reference && (
+                        <Typography size="xs" className="text-text-muted mt-1">
+                          {address.reference}
+                        </Typography>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <Typography size="sm" className="text-text-muted mt-2">
+                {isBusiness ? tStores("detail.noAddresses") : tStores("detail.notAvailableForStoreType")}
+              </Typography>
+            )}
+          </section>
 
           <StorePublicReviewsSection locale={locale} storeSlug={store.slug} />
 
-          <StoreNoteForm locale={locale} storeSlug={store.slug} existingNote={viewerNote} />
+          <StoreNoteForm key={store.slug} locale={locale} storeSlug={store.slug} existingNote={viewerNote} />
         </div>
       </div>
     </StoreReviewsStateProvider>

@@ -90,7 +90,6 @@
     "statusPending": "Pendiente de revisión",
     "statusApproved": "Aprobada",
     "createdAtLabel": "Perfil creado",
-    "slugLabel": "Perfil",
     "noImportCountries": "No se registraron países de importación.",
     "noContactChannels": "No hay canales de contacto públicos disponibles.",
     "noAddresses": "No hay direcciones públicas disponibles.",
@@ -157,6 +156,8 @@
         "helper": "Esta nota nunca se muestra en el perfil público de la tienda.",
         "submitCta": "Guardar nota",
         "updateCta": "Actualizar nota",
+        "submitDisabledEmpty": "Escribe la nota para poder guardar.",
+        "submitDisabledUnchanged": "Cambia la nota para poder guardar.",
         "submitting": "Guardando nota…",
         "success": "Tu nota privada se guardó.",
         "errors": {

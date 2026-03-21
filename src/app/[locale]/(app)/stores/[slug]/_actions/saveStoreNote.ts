@@ -10,7 +10,8 @@ import { storeNoteSchema } from "../_schemas/storeNoteSchema";
 
 export type SaveStoreNoteResult =
   | { success: true }
-  | { success: false; error: string; fieldErrors?: Record<string, string[]> };
+  | { success: false; error: string; fieldErrors?: Record<string, string[]> }
+  | { success: false; fieldErrors: Record<string, string[]> };
 
 export async function saveStoreNote(
   _prev: SaveStoreNoteResult | null,
@@ -34,7 +35,7 @@ export async function saveStoreNote(
       if (!fieldErrors[path]) fieldErrors[path] = [];
       fieldErrors[path].push(issue.message);
     }
-    return { success: false, error: "validation_failed", fieldErrors };
+    return { success: false, fieldErrors };
   }
 
   const store = await getStoreBySlug(prisma, parsed.data.slug);
