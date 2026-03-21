@@ -358,7 +358,7 @@ export async function getPublicStoresListingPage(
         },
       },
     },
-    orderBy: [{ name: "asc" }],
+    orderBy: [{ averageRating: "desc" }, { reviewCount: "desc" }, { name: "asc" }],
     skip,
     take: requestedPageSize,
   });
