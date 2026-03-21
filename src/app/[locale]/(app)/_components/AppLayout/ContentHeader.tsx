@@ -49,18 +49,21 @@ export default function ContentHeader({
           onClick={onOpenDrawer}
           className="shrink-0 lg:hidden"
         />
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+        <div className="flex min-w-0 flex-1 flex-row items-center gap-1.5 sm:gap-2">
           {pageHeader.breadcrumbs.length > 0 && (
             <>
-              <nav aria-label={appShellBreadcrumbLabel} className="flex min-w-0 shrink-0 items-center gap-1.5 text-sm">
+              <nav
+                aria-label={appShellBreadcrumbLabel}
+                className="flex max-w-[min(11rem,45%)] shrink-0 items-center gap-1.5 text-sm sm:max-w-none"
+              >
                 {pageHeader.breadcrumbs.map((crumb, index) => {
                   const label = t(crumb.labelKey);
                   return (
-                    <span key={crumb.href} className="flex items-center gap-1.5">
+                    <span key={crumb.href} className="flex min-w-0 items-center gap-1.5">
                       {index > 0 && <ChevronRight className="text-text-muted h-4 w-4 shrink-0" aria-hidden />}
                       <Link
                         href={crumb.href}
-                        className="text-link focus-visible:ring-ring focus-visible:ring-offset-background max-w-32 truncate rounded hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:max-w-48"
+                        className="text-link focus-visible:ring-ring focus-visible:ring-offset-background min-w-0 truncate rounded hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:max-w-48"
                       >
                         {label}
                       </Link>
@@ -71,9 +74,11 @@ export default function ContentHeader({
               <ChevronRight className="text-text-muted h-4 w-4 shrink-0" aria-hidden />
             </>
           )}
-          <Heading as="h1" size="xs" className="text-text-title min-w-0 truncate">
-            {pageTitle}
-          </Heading>
+          <div className="min-w-0 flex-1">
+            <Heading as="h1" size="xs" className="text-text-title truncate">
+              {pageTitle}
+            </Heading>
+          </div>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
