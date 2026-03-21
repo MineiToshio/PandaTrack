@@ -19,7 +19,8 @@
   },
   "drawer": {
     "openMenu": "Abrir menú",
-    "closeMenu": "Cerrar menú"
+    "closeMenu": "Cerrar menú",
+    "preferencesAriaLabel": "Preferencias y cuenta"
   },
   "accessibility": {
     "mainNavigation": "Navegación principal",

@@ -81,9 +81,8 @@ export default function ContentHeader({
           </div>
         </div>
       </div>
-      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+      <div className="hidden shrink-0 items-center gap-2 sm:gap-3 lg:flex">
         <LanguageToggle
-          className="hidden sm:flex"
           ariaLabel={appShellLanguageLabel}
           posthogEvent={POSTHOG_EVENTS.APP_SHELL.LOCALE_CHANGED}
           getPosthogProps={(targetLocale) => ({

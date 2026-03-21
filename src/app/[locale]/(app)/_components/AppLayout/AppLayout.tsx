@@ -31,7 +31,13 @@ export default function AppLayout({ locale, signOutLabel, children }: AppLayoutP
   return (
     <div className="flex min-h-screen flex-col">
       <AppSidebar locale={locale} expanded={expanded} onToggle={toggle} />
-      <AppNavDrawer locale={locale} isOpen={drawerOpen} onClose={handleCloseDrawer} returnFocusRef={burgerButtonRef} />
+      <AppNavDrawer
+        locale={locale}
+        signOutLabel={signOutLabel}
+        isOpen={drawerOpen}
+        onClose={handleCloseDrawer}
+        returnFocusRef={burgerButtonRef}
+      />
 
       {/* Content area: offset on desktop (lg) so it starts after the sidebar */}
       <div className="flex min-w-0 flex-1 flex-col">

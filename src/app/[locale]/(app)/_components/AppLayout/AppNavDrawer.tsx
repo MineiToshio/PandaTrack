@@ -6,8 +6,11 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import posthog from "posthog-js";
+import LanguageToggle from "@/app/[locale]/(landing)/_components/Menu/LanguageToggle";
+import ThemeToggle from "@/app/[locale]/(landing)/_components/Menu/ThemeToggle";
 import IconButton from "@/components/core/IconButton";
 import Logo from "@/components/core/Logo";
+import SignOutButton from "@/components/modules/auth/SignOutButton";
 import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { getActiveNavItem, getPrivateAppNavItems, type NavItemId } from "./navigationConfig";
@@ -29,18 +32,21 @@ function getViewportKind(): "mobile" | "tablet" {
 
 type AppNavDrawerProps = {
   locale: string;
+  signOutLabel: string;
   isOpen: boolean;
   onClose: () => void;
   returnFocusRef: React.RefObject<HTMLButtonElement | null>;
 };
 
-export default function AppNavDrawer({ locale, isOpen, onClose, returnFocusRef }: AppNavDrawerProps) {
+export default function AppNavDrawer({ locale, signOutLabel, isOpen, onClose, returnFocusRef }: AppNavDrawerProps) {
   const pathname = usePathname();
   const t = useTranslations("appLayout");
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const navItems = getPrivateAppNavItems();
   const activeItem = getActiveNavItem(pathname ?? "");
   const appShellMainNavigationLabel = t("accessibility.mainNavigation");
+  const appShellLanguageLabel = t("accessibility.languageNavigation");
+  const drawerPreferencesLabel = t("drawer.preferencesAriaLabel");
 
   useEffect(() => {
     if (isOpen) {
@@ -82,44 +88,69 @@ export default function AppNavDrawer({ locale, isOpen, onClose, returnFocusRef }
           isOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        <div className="flex min-h-0 flex-1 flex-col overflow-auto">
-          <div className="border-border flex shrink-0 items-center justify-between gap-2 border-b px-3 py-3">
-            <Logo className="text-2xl" />
-            <IconButton
-              ref={closeButtonRef}
-              Icon={X}
-              variant="outline"
-              size="sm"
-              aria-label={t("drawer.closeMenu")}
-              onClick={handleClose}
-              className="shrink-0"
+        <div className="border-border flex shrink-0 items-center justify-between gap-2 border-b px-3 py-3">
+          <Logo className="text-2xl" />
+          <IconButton
+            ref={closeButtonRef}
+            Icon={X}
+            variant="outline"
+            size="sm"
+            aria-label={t("drawer.closeMenu")}
+            onClick={handleClose}
+            className="shrink-0"
+          />
+        </div>
+        <nav
+          className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-2 py-3"
+          aria-label={appShellMainNavigationLabel}
+        >
+          {navItems.map((item) => {
+            const Icon = NAV_ICON_MAP[item.id];
+            const isActive = activeItem.id === item.id;
+            const href = item.href(locale);
+            return (
+              <Link
+                key={item.id}
+                href={href}
+                onClick={handleClose}
+                className={cn(
+                  "focus-visible:ring-ring focus-visible:ring-offset-background flex h-11 min-h-11 items-center gap-3 rounded-lg px-2.5 pr-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                  isActive ? "bg-primary/20 text-primary" : "text-text-body hover:bg-muted hover:text-foreground",
+                )}
+                aria-current={isActive ? "page" : undefined}
+                data-ph-event={POSTHOG_EVENTS.APP_SHELL.NAV_CLICKED}
+                data-ph-props={JSON.stringify({ destination: item.id, navigation_level: "primary" })}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                <span>{t(item.labelKey)}</span>
+              </Link>
+            );
+          })}
+        </nav>
+        <section
+          aria-label={drawerPreferencesLabel}
+          className="border-border flex shrink-0 flex-col gap-4 border-t px-3 py-4"
+        >
+          <div className="flex min-w-0 flex-wrap items-center justify-start gap-3">
+            <LanguageToggle
+              className="min-w-0 shrink-0 justify-start gap-2 text-base [&>span]:gap-2"
+              compact
+              onNavigate={handleClose}
+              ariaLabel={appShellLanguageLabel}
+              posthogEvent={POSTHOG_EVENTS.APP_SHELL.LOCALE_CHANGED}
+              getPosthogProps={(targetLocale) => ({
+                locale: targetLocale,
+                route: pathname ?? "",
+              })}
+            />
+            <ThemeToggle
+              className="h-11 w-11 shrink-0"
+              posthogEvent={POSTHOG_EVENTS.APP_SHELL.THEME_CHANGED}
+              posthogProps={{ route: pathname ?? "" }}
             />
           </div>
-          <nav className="flex flex-1 flex-col gap-1 px-2 py-3" aria-label={appShellMainNavigationLabel}>
-            {navItems.map((item) => {
-              const Icon = NAV_ICON_MAP[item.id];
-              const isActive = activeItem.id === item.id;
-              const href = item.href(locale);
-              return (
-                <Link
-                  key={item.id}
-                  href={href}
-                  onClick={handleClose}
-                  className={cn(
-                    "focus-visible:ring-ring focus-visible:ring-offset-background flex h-10 items-center gap-3 rounded-lg px-2.5 pr-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-                    isActive ? "bg-primary/20 text-primary" : "text-text-body hover:bg-muted hover:text-foreground",
-                  )}
-                  aria-current={isActive ? "page" : undefined}
-                  data-ph-event={POSTHOG_EVENTS.APP_SHELL.NAV_CLICKED}
-                  data-ph-props={JSON.stringify({ destination: item.id, navigation_level: "primary" })}
-                >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  <span>{t(item.labelKey)}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
+          <SignOutButton locale={locale} label={signOutLabel} className="h-11 w-full" />
+        </section>
       </aside>
     </div>
   );

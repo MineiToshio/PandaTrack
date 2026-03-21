@@ -19,7 +19,8 @@
   },
   "drawer": {
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "preferencesAriaLabel": "Preferences and account"
   },
   "accessibility": {
     "mainNavigation": "Main navigation",

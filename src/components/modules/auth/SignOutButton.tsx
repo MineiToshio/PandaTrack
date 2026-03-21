@@ -9,9 +9,10 @@ import { authClient } from "@/lib/auth/auth-client";
 type SignOutButtonProps = {
   locale: string;
   label: string;
+  className?: string;
 };
 
-export default function SignOutButton({ locale, label }: SignOutButtonProps) {
+export default function SignOutButton({ locale, label, className }: SignOutButtonProps) {
   const router = useRouter();
 
   const handleSignOut = () => {
@@ -27,7 +28,7 @@ export default function SignOutButton({ locale, label }: SignOutButtonProps) {
   };
 
   return (
-    <Button type="button" variant="secondary" onClick={handleSignOut}>
+    <Button type="button" variant="secondary" className={className} onClick={handleSignOut}>
       {label}
     </Button>
   );
