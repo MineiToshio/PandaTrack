@@ -135,10 +135,10 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - `FR-01-24`: Users must be able to create or edit one public review per store, and public store-detail review lists must show an initial batch of 5 reviews and allow users to reveal 5 additional reviews per action when more are available. When the signed-in viewer already has a public review for that store, that review must always appear first in the ordered list and must always count toward each batch size; remaining slots are filled with the most recently updated reviews from other users.
 - `FR-01-25`: Store-level aggregate trust fields must be persisted instead of recalculated on every read.
 - `FR-01-26`: Users must be able to save private notes on stores.
-- `FR-01-27`: Users must be able to report stores.
-- `FR-01-28`: Users must be able to request new product types.
-- `FR-01-29`: Approved stores must support change requests instead of direct edits by normal users.
-- `FR-01-30`: Pending stores must be editable only by their creator and admins.
+- `FR-01-27`: Authenticated users must be able to create and update one open report per store using one supported reason plus optional free-text context, and they may create a new report for that same store after the earlier report is resolved.
+- `FR-01-28`: Authenticated users must be able to request new product types from store create and store edit flows.
+- `FR-01-29`: Approved stores must support change requests instead of direct edits by normal users, and each authenticated user may keep only one open change request per store.
+- `FR-01-30`: Pending stores must be directly editable only by their creator and admins; other authenticated users must use the change-request flow instead.
 - `FR-01-31`: Business stores must support logo upload backed by external object storage.
 
 ## Business Rules
@@ -153,6 +153,14 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - `BR-01-08`: Duplicate submit warnings are triggered only for same-country stores at or above the configured similarity threshold.
 - `BR-01-09`: Same-name stores in different countries do not trigger the submit modal.
 - `BR-01-10`: Store creation currently redirects directly to the created detail route after success.
+- `BR-01-11`: Store edit routes must follow the canonical pattern `/stores/[slug]/edit`.
+- `BR-01-12`: Public store-detail governance summaries may be visible to any visitor, but governance submissions require authentication.
+- `BR-01-13`: Public governance summaries must not expose requester identity or raw free-text report details to non-admin viewers.
+- `BR-01-14`: A user may have only one open store report per store at a time; once the earlier report is resolved, the user may create a new report for that store.
+- `BR-01-15`: A user may have only one open store change request per store at a time; once the earlier request is resolved, the user may create a new change request for that store.
+- `BR-01-16`: Store change requests persist only the changed fields and must be discarded or deleted when no effective diff remains.
+- `BR-01-17`: Store-country and store-type changes are not allowed through direct edit or change-request flows; store-type disputes must be raised through the report flow.
+- `BR-01-18`: Product-type request names are limited to 50 characters, and free-text governance context fields are limited to 500 characters.
 
 ## State Model
 
@@ -247,6 +255,49 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - Then those values are treated with OR logic
 - And different filter families are combined with AND logic
 
+### `AC-01-08` Public governance summary visibility
+
+- Given a public store-detail page with existing governance activity
+- When any visitor opens the governance summary UI
+- Then they can see report counts grouped by supported reason
+- And they can see summaries of pending or historical change requests
+- But they do not see requester identity or raw free-text report details
+
+### `AC-01-09` Update open store report
+
+- Given an authenticated user who already has one open report for a store
+- When they reopen the report flow and submit new details
+- Then the existing report is updated
+- And a second open report is not created
+
+### `AC-01-10` Re-report after resolution
+
+- Given an authenticated user whose previous report for a store is already resolved
+- When they submit a new report for that same store
+- Then the system creates a new report record
+- And the earlier resolved report remains in history
+
+### `AC-01-11` Approved-store change request
+
+- Given an authenticated non-admin user on `/stores/[slug]/edit` for an approved store
+- When they submit one or more allowed field changes
+- Then the system persists only the changed fields as a store change request
+- And direct mutation of the approved store does not occur
+
+### `AC-01-12` No-op change request cleanup
+
+- Given an authenticated user with an open change request for a store
+- When they edit that request until it no longer differs from the persisted store
+- Then no effective change request remains stored for that user and store
+
+### `AC-01-13` Pending-store direct edit ownership
+
+- Given a pending store
+- When the creator or an admin opens `/stores/[slug]/edit`
+- Then they can directly edit the store
+- But when another authenticated user opens that route
+- Then they must follow the change-request path instead
+
 ## Current Implementation Notes
 
 - Canonical route in code today is `/stores/[slug]`, not `/store/[slug]`.
@@ -261,10 +312,10 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 ## Open Questions
 
 - Review fields are still not fully specified in product detail.
-- Report-reason UX and moderation-state lifecycle still need full downstream definition.
-- Product-type request payload and moderation rules still need full downstream definition.
-- Approved-store change-request shape still needs full downstream definition.
-- Pending-store edit UX still needs concrete final behavior.
+- Moderation-state lifecycle and admin review tooling for governance records still need full downstream definition.
+- Product-type request payload and moderation rules still need implementation.
+- Approved-store change-request shape and edit-route behavior still need implementation.
+- Pending-store edit UX now has approved direction but still needs implementation.
 - Logo upload constraints and processing contract still need final definition.
 
 ## Source Signals Used For Reverse Engineering

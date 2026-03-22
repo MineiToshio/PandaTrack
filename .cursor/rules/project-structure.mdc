@@ -16,6 +16,7 @@ Code is organized by **reusability** and **scope**: app-wide vs page-specific vs
 Next.js App Router lives under **`src/app/`**.
 
 - **Routes**: Use **`[locale]`** (or other dynamic segments) and **route groups** like **`(landing)`** to group routes without affecting the URL.
+- **Edit-route convention**: When a resource has a dedicated edit page, use the canonical pattern **`/resource/[slug-or-id]/edit`** instead of **`/resource/edit/[slug-or-id]`**. Keep this pattern consistent across the app unless a direct user instruction requires otherwise.
 - **Layouts**: `layout.tsx` at the segment level that applies (e.g. **`src/app/[locale]/layout.tsx`**, **`src/app/[locale]/(landing)/layout.tsx`**).
 - **Global styles**: **`src/app/globals.css`** (or import from the root layout).
 - **Pages**: `page.tsx` in the segment folder that defines the route.

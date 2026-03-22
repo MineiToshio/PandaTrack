@@ -238,9 +238,12 @@ Should extend:
 Should extend:
 
 - data model layer
+- query layer for public governance-summary reads
 - request validation layer
 - targeted UI entry points
+- `/stores/[slug]/edit` route contract
 - moderation-ready storage contracts
+- reusable modal and max-length field UX patterns shared with store forms
 
 ### Logo upload
 
@@ -253,6 +256,9 @@ Should extend:
 ## Risks and Constraints
 
 - Review, report, and change-request flows are not implemented yet, so future work must not assume those payloads already exist in UI or query shape.
+- Public governance summary reads must avoid exposing requester identity or raw free-text report details to non-admin viewers.
+- Change-request persistence must stay diff-based; snapshot-style writes would make moderation review noisier and increase accidental drift.
+- Pending-store direct edits and approved-store change requests now share the same route shape, so permission checks must stay explicit at the action and query boundaries.
 - Cloudflare R2 integration is planned but not present in current store code paths.
 
 ## ADR Need
@@ -262,6 +268,7 @@ Potential ADR candidates when the next store slice starts:
 - storage strategy for business logos
 - write-path design for review aggregate synchronization
 - permission boundary for pending direct edit vs approved change request
+- governance-summary read model for public vs admin audiences
 
 ## Linked Work Orders
 
