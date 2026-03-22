@@ -44,6 +44,17 @@ Highlight the main technical risks, failure modes, or edge cases that could affe
 
 Describe where future work is expected to build on this blueprint without redefining its core architecture.
 
+## Implementation Plan
+
+Describe the recommended execution order for the linked work orders.
+
+Include:
+
+- which work order must happen first
+- which work orders depend on earlier slices
+- which work orders can run in parallel after a prerequisite is complete
+- any sequencing constraints that matter for AI-agent delegation or human planning
+
 ## Linked Work Orders
 
-Reference the work orders that break this blueprint into implementation slices.
+List work orders in implementation order, not arbitrary order. If some can run in parallel, note that briefly next to the ordered list.

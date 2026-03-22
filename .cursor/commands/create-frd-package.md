@@ -27,6 +27,7 @@ The command must follow PandaTrack's hybrid workflow:
 - Generated documentation and GitHub issue content must be in English.
 - Do not create or update local docs or GitHub issues until the user gives explicit approval after the proposal phase.
 - Treat this command as a combined PM + software architect + senior full-stack planning workflow.
+- Prefer smaller, implementation-ready `Work Orders` over broad mixed-scope slices whenever a feature can be split into independently reviewable outcomes.
 - Use the relevant templates in `docs/templates/` as the mandatory base:
   - `docs/templates/frd-template.md`
   - `docs/templates/blueprint-template.md`
@@ -106,7 +107,10 @@ Ask whatever is needed to define:
 Ask whatever is needed to define:
 
 - a good vertical split
+- whether apparently related user actions should actually be separate work orders
 - implementation sequencing
+- which work orders are strict prerequisites for others
+- which work orders can run in parallel after a dependency is finished
 - testing boundaries
 - validation needs
 - i18n impact
@@ -195,6 +199,10 @@ Each `Blueprint` must:
 - explain architecture decisions and contracts
 - reference related files/modules when known
 - break down the FRD into a coherent technical design
+- include an explicit implementation plan that:
+  - lists work orders in recommended execution order
+  - identifies prerequisite relationships
+  - calls out which work orders can be executed in parallel after their dependencies are complete
 
 ### Work Order
 
@@ -203,6 +211,7 @@ Each `Work Order` must:
 - use the work-order template
 - be executable by an AI or human without major ambiguity
 - represent a coherent vertical implementation slice
+- stay narrow enough that one implementation agent can complete it without mixing multiple loosely related user actions
 - avoid splitting tiny technical leftovers into separate tickets
 - include:
   - `Summary`
@@ -216,18 +225,44 @@ Each `Work Order` must:
 
 Split work by coherent outcomes, not by arbitrary technical fragments.
 
+Prefer more, smaller work orders when that improves implementation clarity, sequencing, and parallel execution.
+
 Good `Work Orders`:
 
 - implement one meaningful flow or foundational capability
 - can be reviewed independently
 - map clearly to a GitHub ticket
 - have test implications that are easy to reason about
+- are small enough that a single implementation agent can own the slice without juggling multiple unrelated behaviors
 
 Avoid:
 
 - form UI in one work order and validation in another unless they are truly separate deliverables
 - one work order only for analytics unless it is a final hardening pass
 - tiny leftover work orders that exist only because of file boundaries
+- combining multiple independent submission flows into one work order just because they belong to the same domain area
+- combining a foundational prerequisite with multiple downstream user flows when the downstream flows could be implemented independently after the foundation lands
+
+When a work order candidate contains two or more user actions that could reasonably be implemented, reviewed, tested, or delegated separately, split them unless a shared implementation contract would become unnaturally fragmented.
+
+## Work Order ordering and dependency rules
+
+Work orders must be ordered by recommended implementation sequence, not by brainstorming order.
+
+This means:
+
+- assign `WO-01`, `WO-02`, `WO-03`, etc. in the order the work should ideally be executed
+- list work orders inside each blueprint in that same execution order
+- ensure prerequisite/foundation work orders come before dependent user-facing slices
+- when multiple work orders can start only after one prerequisite is complete, keep the prerequisite first and then note the parallelizable group explicitly in the blueprint implementation plan
+- do not create numbering that implies one order while the blueprint text recommends another
+
+If the best split is:
+
+- one foundation slice
+- then several independent slices that can run in parallel
+
+the blueprint must say so explicitly in its implementation plan.
 
 ## Proposal and approval phase
 
@@ -245,7 +280,8 @@ The proposal must include:
 - proposed Epic title using the format `FEAT-XXXX: <FRD title>`
 - if reusing an existing FRD, the existing FRD path and related Epic reference
 - proposed `Blueprint` titles
-- proposed `Work Order` titles
+- proposed `Work Order` titles in implementation order
+- proposed work-order dependency and parallelization plan
 - whether the command will create a new GitHub Epic or update an existing one
 - how many GitHub tickets will be created
 - any important split rationale only when it affects the user's decision
