@@ -7,6 +7,7 @@ import posthog from "posthog-js";
 import Button from "@/components/core/Button/Button";
 import FieldCharacterCount from "@/components/core/FieldCharacterCount";
 import Label from "@/components/core/Label";
+import Select from "@/components/core/Select";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import Modal from "@/components/modules/Modal/Modal";
@@ -22,6 +23,8 @@ type StoreReportModalProps = {
 
 const REPORT_REASONS = ["SPAM", "DUPLICATE", "INCORRECT_INFO", "DOES_NOT_EXIST", "INAPPROPRIATE"] as const;
 
+type ReportReason = (typeof REPORT_REASONS)[number];
+
 function translateError(t: ReturnType<typeof useTranslations>, errorKey: string) {
   return t.has(`governance.report.errors.${errorKey}`)
     ? t(`governance.report.errors.${errorKey}`)
@@ -33,12 +36,14 @@ export default function StoreReportModal({ locale, storeSlug, existingReport }: 
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [state, setState] = useState<SaveStoreReportResult | null>(null);
-  const [reason, setReason] = useState<(typeof REPORT_REASONS)[number]>(existingReport?.reason ?? "INCORRECT_INFO");
+  const [reason, setReason] = useState<ReportReason | "">(existingReport?.reason ?? "");
   const [details, setDetails] = useState(existingReport?.details ?? "");
 
   const fieldErrors = state?.success === false ? state.fieldErrors : undefined;
+  const reasonFieldInvalid = Boolean(fieldErrors?.reason?.[0]);
 
   const openModal = () => {
+    setState(null);
     setIsOpen(true);
     posthog.capture(POSTHOG_EVENTS.STORE.REPORT_OPENED, {
       store_slug: storeSlug,
@@ -53,8 +58,30 @@ export default function StoreReportModal({ locale, storeSlug, existingReport }: 
 
   const reportTriggerLabel = existingReport ? t("governance.report.updateCta") : t("governance.report.openCta");
 
+  const handleReasonChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextValue = event.target.value as ReportReason | "";
+    setReason(nextValue);
+    setState((prev) => {
+      if (!prev || prev.success !== false || !prev.fieldErrors?.reason) return prev;
+      const nextFieldErrors = { ...prev.fieldErrors };
+      delete nextFieldErrors.reason;
+      if (Object.keys(nextFieldErrors).length === 0) {
+        return null;
+      }
+      return { ...prev, fieldErrors: nextFieldErrors };
+    });
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (reason === "") {
+      setState({
+        success: false,
+        error: "validation_failed",
+        fieldErrors: { reason: ["reasonRequired"] },
+      });
+      return;
+    }
     setIsPending(true);
     const result = await saveStoreReport(null, new FormData(event.currentTarget));
     setState(result);
@@ -90,19 +117,26 @@ export default function StoreReportModal({ locale, storeSlug, existingReport }: 
             <Label htmlFor="store-report-reason" className="text-text-title">
               {t("governance.report.reasonLabel")}
             </Label>
-            <select
+            <Select
               id="store-report-reason"
               name="reason"
               value={reason}
-              onChange={(event) => setReason(event.target.value as (typeof REPORT_REASONS)[number])}
-              className="border-input bg-background/90 text-foreground focus-visible:ring-ring flex h-11 w-full rounded-xl border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
+              onChange={handleReasonChange}
+              aria-invalid={reasonFieldInvalid}
+              aria-required
+              error={reasonFieldInvalid}
+              showChevron
+              className="bg-background/90 h-11 rounded-xl"
             >
+              <option value="" disabled>
+                {t("governance.report.reasonPlaceholder")}
+              </option>
               {REPORT_REASONS.map((option) => (
                 <option key={option} value={option}>
                   {t(`governance.report.reasonOptions.${option}`)}
                 </option>
               ))}
-            </select>
+            </Select>
             {fieldErrors?.reason?.[0] && (
               <Typography size="xs" className="text-destructive" role="alert">
                 {translateError(t, fieldErrors.reason[0])}

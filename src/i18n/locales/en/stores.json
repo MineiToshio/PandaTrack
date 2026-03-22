@@ -241,6 +241,7 @@
       "title": "Report this store",
       "description": "You can keep one open report per store. Reopening this form updates your active report.",
       "reasonLabel": "Reason",
+      "reasonPlaceholder": "Select a reason",
       "detailsLabel": "Additional context (optional)",
       "detailsHelper": "Keep it factual. Raw details stay hidden from public visitors.",
       "submitCta": "Save report",

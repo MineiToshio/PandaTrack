@@ -10,6 +10,7 @@ import FieldCharacterCount from "@/components/core/FieldCharacterCount";
 import Heading from "@/components/core/Heading";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
+import Select from "@/components/core/Select";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
@@ -20,7 +21,6 @@ import StoreProductTypeRequestModal from "../../../_components/StoreProductTypeR
 import StoreMultiTagAutocomplete from "../../../_components/StoreMultiTagAutocomplete";
 import StoreEmptyStateBox from "../../../new/_components/StoreEmptyStateBox";
 import StoreFormSectionCard from "../../../new/_components/StoreFormSectionCard";
-import StoreSelect from "../../../new/_components/StoreSelect";
 import StoreSelectableTagGroup from "../../../new/_components/StoreSelectableTagGroup";
 import StoreToggleSwitch from "../../../new/_components/StoreToggleSwitch";
 import { saveStoreEdit, type SaveStoreEditResult } from "../_actions/saveStoreEdit";
@@ -76,7 +76,9 @@ export default function EditStoreForm({
   const [contactChannelRows, setContactChannelRows] = useState<number[]>(
     initialValues.contactChannels?.map((_, index) => index + 1) ?? [],
   );
-  const [contactChannelTypeByRowId, setContactChannelTypeByRowId] = useState<Partial<Record<number, ContactChannelType>>>(
+  const [contactChannelTypeByRowId, setContactChannelTypeByRowId] = useState<
+    Partial<Record<number, ContactChannelType>>
+  >(
     Object.fromEntries(
       (initialValues.contactChannels ?? []).map((channel, index) => [index + 1, channel.type as ContactChannelType]),
     ),
@@ -145,7 +147,7 @@ export default function EditStoreForm({
     [t],
   );
 
-  const fieldErrors = state?.success === false ? state.fieldErrors ?? {} : {};
+  const fieldErrors = state?.success === false ? (state.fieldErrors ?? {}) : {};
   const serverError = state?.success === false ? state.error : null;
   const modeKey = canDirectlyEdit ? "edit.direct" : "edit.changeRequest";
 
@@ -193,7 +195,10 @@ export default function EditStoreForm({
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <Link href={`/${locale}${ROUTES.stores}/${store.slug}`} className={cn(buttonVariants({ variant: "secondary" }))}>
+        <Link
+          href={`/${locale}${ROUTES.stores}/${store.slug}`}
+          className={cn(buttonVariants({ variant: "secondary" }))}
+        >
           {t("edit.backToDetail")}
         </Link>
         <Heading as="h1" size="sm" className="text-text-title">
@@ -243,7 +248,8 @@ export default function EditStoreForm({
             <div className="mt-1 flex items-center justify-between gap-3">
               <Typography size="xs" className="text-text-muted">
                 {t("edit.immutableFieldsHelper", {
-                  storeType: store.storeType === "BUSINESS" ? t("create.storeTypeBusiness") : t("create.storeTypePerson"),
+                  storeType:
+                    store.storeType === "BUSINESS" ? t("create.storeTypeBusiness") : t("create.storeTypePerson"),
                   country: tCountries(store.countryCode),
                 })}
               </Typography>
@@ -298,7 +304,12 @@ export default function EditStoreForm({
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <StoreToggleSwitch label={t("create.hasStockLabel")} checked={hasStock} onChange={setHasStock} name="hasStock" />
+            <StoreToggleSwitch
+              label={t("create.hasStockLabel")}
+              checked={hasStock}
+              onChange={setHasStock}
+              name="hasStock"
+            />
             <StoreToggleSwitch
               label={t("create.receivesOrdersLabel")}
               checked={receivesOrders}
@@ -355,7 +366,7 @@ export default function EditStoreForm({
                           <Label htmlFor={`edit-contact-type-${rowId}`} className="text-xs">
                             {t("create.contactChannelType")}
                           </Label>
-                          <StoreSelect
+                          <Select
                             id={`edit-contact-type-${rowId}`}
                             name="contactChannelType"
                             value={getContactChannelTypeForRow(rowId)}
@@ -372,7 +383,7 @@ export default function EditStoreForm({
                                 {tChannelTypes(type)}
                               </option>
                             ))}
-                          </StoreSelect>
+                          </Select>
                         </div>
                         <div>
                           <Label htmlFor={`edit-contact-value-${rowId}`} className="text-xs">
@@ -383,7 +394,10 @@ export default function EditStoreForm({
                             name="contactChannelValue"
                             value={contactChannelValuesByRowId[rowId] ?? ""}
                             onChange={(event) =>
-                              setContactChannelValuesByRowId((previous) => ({ ...previous, [rowId]: event.target.value }))
+                              setContactChannelValuesByRowId((previous) => ({
+                                ...previous,
+                                [rowId]: event.target.value,
+                              }))
                             }
                             error={Boolean(getContactChannelValueError(rowIndex))}
                           />
@@ -397,11 +411,19 @@ export default function EditStoreForm({
                             name="contactChannelLabel"
                             value={contactChannelLabelsByRowId[rowId] ?? ""}
                             onChange={(event) =>
-                              setContactChannelLabelsByRowId((previous) => ({ ...previous, [rowId]: event.target.value }))
+                              setContactChannelLabelsByRowId((previous) => ({
+                                ...previous,
+                                [rowId]: event.target.value,
+                              }))
                             }
                           />
                         </div>
-                        <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveContactChannel(rowId)}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveContactChannel(rowId)}
+                        >
                           <X size={16} aria-hidden />
                         </Button>
                       </div>
@@ -446,7 +468,7 @@ export default function EditStoreForm({
                           <Label htmlFor={`edit-address-country-${rowId}`} className="text-xs">
                             {t("create.addressCountry")}
                           </Label>
-                          <StoreSelect
+                          <Select
                             id={`edit-address-country-${rowId}`}
                             name="addressCountryCode"
                             value={addressCountryByRowId[rowId] ?? ""}
@@ -461,7 +483,7 @@ export default function EditStoreForm({
                                 {tCountries(country.code)}
                               </option>
                             ))}
-                          </StoreSelect>
+                          </Select>
                         </div>
                         <div>
                           <Label htmlFor={`edit-address-city-${rowId}`} className="text-xs">
@@ -543,7 +565,10 @@ export default function EditStoreForm({
           <Button type="submit" variant="primary" disabled={isPending}>
             {isPending ? t(`${modeKey}.submitting`) : t(`${modeKey}.submitCta`)}
           </Button>
-          <Link href={`/${locale}${ROUTES.stores}/${store.slug}`} className={cn(buttonVariants({ variant: "secondary" }))}>
+          <Link
+            href={`/${locale}${ROUTES.stores}/${store.slug}`}
+            className={cn(buttonVariants({ variant: "secondary" }))}
+          >
             {t("edit.cancelCta")}
           </Link>
         </div>

@@ -10,6 +10,7 @@ import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import Label from "@/components/core/Label";
 import Input from "@/components/core/Input";
+import Select from "@/components/core/Select";
 import Textarea from "@/components/core/Textarea";
 import Button from "@/components/core/Button/Button";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
@@ -20,7 +21,6 @@ import posthog from "posthog-js";
 import { createStore, type CreateStoreResult } from "../_actions/createStore";
 import { getDuplicateCandidates, getDuplicateCandidatesForSubmit } from "../_actions/getDuplicateCandidates";
 import { SIMILARITY_THRESHOLD_PERCENT } from "@/lib/store/duplicateMatch";
-import StoreSelect from "./StoreSelect";
 import StoreSegmentedControl from "./StoreSegmentedControl";
 import StoreSelectableTagGroup from "./StoreSelectableTagGroup";
 import StoreToggleSwitch from "./StoreToggleSwitch";
@@ -504,12 +504,12 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
 
           <div className="space-y-3">
             <Label>{tCreate("countryLabel")}</Label>
-            <StoreSelect
+            <Select
               id="store-country"
               name="countryCode"
               required
               aria-invalid={!!fieldErrors.countryCode?.length}
-              className={cn(fieldErrors.countryCode?.length && "border-destructive focus-visible:ring-destructive")}
+              error={!!fieldErrors.countryCode?.length}
             >
               <option value="">{locale === "es" ? "Selecciona país" : "Select country"}</option>
               {countries.map((country) => (
@@ -517,7 +517,7 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
                   {tCountries(country.code)}
                 </option>
               ))}
-            </StoreSelect>
+            </Select>
             {fieldErrors.countryCode?.[0] && (
               <Typography size="xs" className="text-destructive mt-1" role="alert">
                 {tValidation("countryInvalid")}
@@ -634,14 +634,11 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
                             <Label htmlFor={`contact-channel-type-${rowId}`} className="text-xs">
                               {tCreate("contactChannelType")}
                             </Label>
-                            <StoreSelect
+                            <Select
                               id={`contact-channel-type-${rowId}`}
                               name="contactChannelType"
-                              className={cn(
-                                "px-2 py-1.5",
-                                getContactChannelTypeError(rowIndex) &&
-                                  "border-destructive focus-visible:ring-destructive",
-                              )}
+                              className="px-2 py-1.5"
+                              error={!!getContactChannelTypeError(rowIndex)}
                               value={selectedType}
                               onChange={(event) => {
                                 const selectedValue = event.target.value as ContactChannelType;
@@ -657,7 +654,7 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
                                   {tChannelTypes(type)}
                                 </option>
                               ))}
-                            </StoreSelect>
+                            </Select>
                           </div>
                           <div className="min-w-0">
                             <Label htmlFor={`contact-channel-value-${rowId}`} className="text-xs">
@@ -741,18 +738,14 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
                           <Label htmlFor={`address-country-${rowId}`} className="text-xs">
                             {tCreate("addressCountry")}
                           </Label>
-                          <StoreSelect
-                            id={`address-country-${rowId}`}
-                            name="addressCountryCode"
-                            className="px-2 py-1.5"
-                          >
+                          <Select id={`address-country-${rowId}`} name="addressCountryCode" className="px-2 py-1.5">
                             <option value="">-</option>
                             {countries.map((country) => (
                               <option key={country.code} value={country.code}>
                                 {tCountries(country.code)}
                               </option>
                             ))}
-                          </StoreSelect>
+                          </Select>
                         </div>
                         <div className="min-w-0">
                           <Label htmlFor={`address-city-${rowId}`} className="text-xs">

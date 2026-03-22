@@ -241,6 +241,7 @@
       "title": "Reportar esta tienda",
       "description": "Puedes mantener un solo reporte abierto por tienda. Si vuelves a abrir este formulario, se actualizará tu reporte activo.",
       "reasonLabel": "Motivo",
+      "reasonPlaceholder": "Seleccionar motivo",
       "detailsLabel": "Contexto adicional (opcional)",
       "detailsHelper": "Mantén el texto factual. Los detalles no se muestran públicamente.",
       "submitCta": "Guardar reporte",
