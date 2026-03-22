@@ -141,26 +141,31 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
         role="alertdialog"
         closeOnBackdropClick={false}
         initialFocusRef={cancelDeleteRef}
+        closeButtonLabel={t("detail.reviews.form.cancelCta")}
+        className="max-w-xl"
       >
-        <div className="flex flex-wrap gap-2">
-          <Button
-            ref={cancelDeleteRef}
-            type="button"
-            variant="secondary"
-            onClick={closeDeleteModal}
-            disabled={isPending}
-          >
-            {t("detail.reviews.form.cancelCta")}
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={handleConfirmDeleteReview}
-            disabled={isPending}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            {t("detail.reviews.form.deleteConfirmCta")}
-          </Button>
+        <div className="space-y-5">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button
+              ref={cancelDeleteRef}
+              type="button"
+              variant="secondary"
+              onClick={closeDeleteModal}
+              disabled={isPending}
+              className="min-h-11 px-5"
+            >
+              {t("detail.reviews.form.cancelCta")}
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleConfirmDeleteReview}
+              disabled={isPending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 min-h-11 px-5"
+            >
+              {t("detail.reviews.form.deleteConfirmCta")}
+            </Button>
+          </div>
         </div>
       </Modal>
 

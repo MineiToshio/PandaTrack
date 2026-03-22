@@ -49,19 +49,24 @@ export default function StoreGovernanceSummaryModal({ storeSlug, summary }: Stor
         onClose={() => setIsOpen(false)}
         title={t("governance.summary.title")}
         description={t("governance.summary.description")}
+        closeButtonLabel={t("governance.report.cancelCta")}
+        className="max-w-3xl"
       >
         <div className="space-y-5">
-          <section className="space-y-2">
+          <section className="space-y-3">
             <Typography size="sm" className="text-text-title font-semibold">
               {t("governance.summary.reportSectionTitle")}
             </Typography>
             <div className="grid gap-2 sm:grid-cols-2">
               {summary.reportCounts.map((item) => (
-                <div key={item.reason} className="bg-muted/45 rounded-2xl px-3 py-2.5">
+                <div
+                  key={item.reason}
+                  className="from-primary/10 via-background to-background rounded-[24px] border border-border/60 bg-linear-to-br px-4 py-3 shadow-sm"
+                >
                   <Typography size="2xs" className="text-text-muted">
                     {t(`governance.report.reasonOptions.${item.reason}`)}
                   </Typography>
-                  <Typography size="sm" className="text-text-body mt-0.5 font-semibold">
+                  <Typography size="sm" className="text-text-body mt-1 font-semibold">
                     {item.count}
                   </Typography>
                 </div>
@@ -69,26 +74,29 @@ export default function StoreGovernanceSummaryModal({ storeSlug, summary }: Stor
             </div>
           </section>
 
-          <section className="space-y-2">
+          <section className="space-y-3">
             <Typography size="sm" className="text-text-title font-semibold">
               {t("governance.summary.changeRequestSectionTitle")}
             </Typography>
             <div className="grid gap-2 sm:grid-cols-3">
               {summary.changeRequestCounts.map((item) => (
-                <div key={item.status} className="bg-muted/45 rounded-2xl px-3 py-2.5">
+                <div
+                  key={item.status}
+                  className="from-highlight/10 via-background to-background rounded-[24px] border border-border/60 bg-linear-to-br px-4 py-3 shadow-sm"
+                >
                   <Typography size="2xs" className="text-text-muted">
                     {t(`governance.summary.changeRequestStatuses.${item.status}`)}
                   </Typography>
-                  <Typography size="sm" className="text-text-body mt-0.5 font-semibold">
+                  <Typography size="sm" className="text-text-body mt-1 font-semibold">
                     {item.count}
                   </Typography>
                 </div>
               ))}
             </div>
             {recentChanges.length > 0 ? (
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 {recentChanges.map((request) => (
-                  <li key={request.id} className="bg-background/70 rounded-2xl px-3 py-3">
+                  <li key={request.id} className="bg-muted/30 rounded-[24px] border border-border/50 px-4 py-3.5">
                     <Typography size="xs" className="text-text-muted">
                       {t(`governance.summary.changeRequestStatuses.${request.status}`)}
                     </Typography>
@@ -103,7 +111,7 @@ export default function StoreGovernanceSummaryModal({ storeSlug, summary }: Stor
                 ))}
               </ul>
             ) : (
-              <Typography size="sm" className="text-text-muted">
+              <Typography size="sm" className="bg-muted/30 text-text-muted rounded-[24px] border border-dashed border-border/60 px-4 py-4">
                 {t("governance.summary.noChangeRequests")}
               </Typography>
             )}

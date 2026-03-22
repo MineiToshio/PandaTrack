@@ -79,19 +79,23 @@ export default function StoreReportModal({ locale, storeSlug, existingReport }: 
         onClose={closeModal}
         title={t("governance.report.title")}
         description={t("governance.report.description")}
+        closeButtonLabel={t("governance.report.cancelCta")}
+        className="max-w-2xl"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <input type="hidden" name="slug" value={storeSlug} />
           <input type="hidden" name="locale" value={locale} />
 
-          <div>
-            <Label htmlFor="store-report-reason">{t("governance.report.reasonLabel")}</Label>
+          <div className="space-y-2">
+            <Label htmlFor="store-report-reason" className="text-text-title">
+              {t("governance.report.reasonLabel")}
+            </Label>
             <select
               id="store-report-reason"
               name="reason"
               value={reason}
               onChange={(event) => setReason(event.target.value as (typeof REPORT_REASONS)[number])}
-              className="border-input bg-background text-foreground focus-visible:ring-ring mt-1 flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
+              className="border-input bg-background/90 text-foreground focus-visible:ring-ring flex h-11 w-full rounded-xl border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:outline-none"
             >
               {REPORT_REASONS.map((option) => (
                 <option key={option} value={option}>
@@ -100,14 +104,16 @@ export default function StoreReportModal({ locale, storeSlug, existingReport }: 
               ))}
             </select>
             {fieldErrors?.reason?.[0] && (
-              <Typography size="xs" className="text-destructive mt-1" role="alert">
+              <Typography size="xs" className="text-destructive" role="alert">
                 {translateError(t, fieldErrors.reason[0])}
               </Typography>
             )}
           </div>
 
-          <div>
-            <Label htmlFor="store-report-details">{t("governance.report.detailsLabel")}</Label>
+          <div className="space-y-2">
+            <Label htmlFor="store-report-details" className="text-text-title">
+              {t("governance.report.detailsLabel")}
+            </Label>
             <Textarea
               id="store-report-details"
               name="details"
@@ -117,9 +123,9 @@ export default function StoreReportModal({ locale, storeSlug, existingReport }: 
               maxLength={500}
               error={Boolean(fieldErrors?.details?.[0])}
               aria-invalid={Boolean(fieldErrors?.details?.[0])}
-              className="mt-1 resize-y"
+              className="bg-background/90 min-h-36 resize-y rounded-xl px-4 py-3"
             />
-            <div className="mt-1 flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3">
               <Typography size="xs" className="text-text-muted">
                 {t("governance.report.detailsHelper")}
               </Typography>
@@ -128,30 +134,44 @@ export default function StoreReportModal({ locale, storeSlug, existingReport }: 
               </Typography>
             </div>
             {fieldErrors?.details?.[0] && (
-              <Typography size="xs" className="text-destructive mt-1" role="alert">
+              <Typography size="xs" className="text-destructive" role="alert">
                 {translateError(t, fieldErrors.details[0])}
               </Typography>
             )}
           </div>
 
           {state?.success && (
-            <Typography size="xs" className="text-text-body" role="status">
+            <Typography
+              size="xs"
+              className="bg-primary/8 text-text-body border-primary/12 rounded-2xl border px-4 py-3"
+              role="status"
+            >
               {t("governance.report.success")}
             </Typography>
           )}
 
           {state?.success === false && state.error && (
-            <Typography size="xs" className="text-destructive" role="alert">
+            <Typography
+              size="xs"
+              className="bg-destructive/8 text-destructive border-destructive/20 rounded-2xl border px-4 py-3"
+              role="alert"
+            >
               {translateError(t, state.error)}
             </Typography>
           )}
 
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" variant="primary" disabled={isPending}>
-              {isPending ? t("governance.report.submitting") : t("governance.report.submitCta")}
-            </Button>
-            <Button type="button" variant="secondary" disabled={isPending} onClick={closeModal}>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={isPending}
+              onClick={closeModal}
+              className="min-h-11 px-5"
+            >
               {t("governance.report.cancelCta")}
+            </Button>
+            <Button type="submit" variant="primary" disabled={isPending} className="min-h-11 px-5">
+              {isPending ? t("governance.report.submitting") : t("governance.report.submitCta")}
             </Button>
           </div>
         </form>

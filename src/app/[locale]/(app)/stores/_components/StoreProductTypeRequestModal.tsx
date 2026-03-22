@@ -75,13 +75,15 @@ export default function StoreProductTypeRequestModal({ locale, source }: StorePr
         onClose={closeModal}
         title={t("governance.productTypeRequest.title")}
         description={t("governance.productTypeRequest.description")}
+        closeButtonLabel={t("governance.productTypeRequest.cancelCta")}
+        className="max-w-2xl"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <input type="hidden" name="locale" value={locale} />
           <input type="hidden" name="source" value={source} />
 
-          <div>
-            <Label htmlFor={`product-type-request-name-${source}`}>
+          <div className="bg-muted/35 rounded-[24px] border border-border/60 p-4 sm:p-5">
+            <Label htmlFor={`product-type-request-name-${source}`} className="text-text-title">
               {t("governance.productTypeRequest.nameLabel")}
             </Label>
             <Input
@@ -92,7 +94,7 @@ export default function StoreProductTypeRequestModal({ locale, source }: StorePr
               maxLength={50}
               error={Boolean(fieldErrors?.suggestedName?.[0])}
               aria-invalid={Boolean(fieldErrors?.suggestedName?.[0])}
-              className="mt-1"
+              className="mt-2 h-11 rounded-xl bg-background/90"
             />
             <div className="mt-1 flex items-center justify-between gap-3">
               <Typography size="xs" className="text-text-muted">
@@ -109,8 +111,8 @@ export default function StoreProductTypeRequestModal({ locale, source }: StorePr
             )}
           </div>
 
-          <div>
-            <Label htmlFor={`product-type-request-reason-${source}`}>
+          <div className="bg-muted/35 rounded-[24px] border border-border/60 p-4 sm:p-5">
+            <Label htmlFor={`product-type-request-reason-${source}`} className="text-text-title">
               {t("governance.productTypeRequest.reasonLabel")}
             </Label>
             <Textarea
@@ -122,7 +124,7 @@ export default function StoreProductTypeRequestModal({ locale, source }: StorePr
               maxLength={500}
               error={Boolean(fieldErrors?.reason?.[0])}
               aria-invalid={Boolean(fieldErrors?.reason?.[0])}
-              className="mt-1 resize-y"
+              className="mt-2 min-h-32 rounded-xl bg-background/90 px-4 py-3 resize-y"
             />
             <div className="mt-1 flex items-center justify-between gap-3">
               <Typography size="xs" className="text-text-muted">
@@ -140,23 +142,27 @@ export default function StoreProductTypeRequestModal({ locale, source }: StorePr
           </div>
 
           {state?.success && (
-            <Typography size="xs" className="text-text-body" role="status">
+            <Typography size="xs" className="bg-primary/8 text-text-body rounded-2xl border border-primary/12 px-4 py-3" role="status">
               {t("governance.productTypeRequest.success")}
             </Typography>
           )}
 
           {state?.success === false && state.error && (
-            <Typography size="xs" className="text-destructive" role="alert">
+            <Typography
+              size="xs"
+              className="bg-destructive/8 text-destructive rounded-2xl border border-destructive/20 px-4 py-3"
+              role="alert"
+            >
               {translateError(t, state.error)}
             </Typography>
           )}
 
-          <div className="flex flex-wrap gap-2">
-            <Button type="submit" variant="primary" disabled={isPending}>
-              {isPending ? t("governance.productTypeRequest.submitting") : t("governance.productTypeRequest.submitCta")}
-            </Button>
-            <Button type="button" variant="secondary" disabled={isPending} onClick={closeModal}>
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button type="button" variant="secondary" disabled={isPending} onClick={closeModal} className="min-h-11 px-5">
               {t("governance.productTypeRequest.cancelCta")}
+            </Button>
+            <Button type="submit" variant="primary" disabled={isPending} className="min-h-11 px-5">
+              {isPending ? t("governance.productTypeRequest.submitting") : t("governance.productTypeRequest.submitCta")}
             </Button>
           </div>
         </form>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useEffectEvent } from "react";
+import { X } from "lucide-react";
 import Heading from "@/components/core/Heading";
 import Portal from "@/components/core/Portal";
 import Typography from "@/components/core/Typography";
@@ -33,7 +34,18 @@ export type ModalProps = {
   titleId?: string;
   /** Optional id for the description element (for aria-describedby). Auto-generated if not provided. */
   descriptionId?: string;
+  /** Accessible label for the optional close button. */
+  closeButtonLabel?: string;
 };
+
+const FOCUSABLE_SELECTOR =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function getFocusableElements(container: HTMLElement) {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (element) => !element.hasAttribute("aria-hidden"),
+  );
+}
 
 /**
  * Reusable modal with backdrop, focus management, and Escape key support.
@@ -52,6 +64,7 @@ export default function Modal({
   className,
   titleId: titleIdProp,
   descriptionId: descriptionIdProp,
+  closeButtonLabel,
 }: ModalProps) {
   const generatedTitleId = useId();
   const generatedDescriptionId = useId();
@@ -65,9 +78,32 @@ export default function Modal({
     if (!isOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      onCloseEvent();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCloseEvent();
+        return;
+      }
+
+      if (event.key !== "Tab" || !panelRef.current) return;
+
+      const focusableElements = getFocusableElements(panelRef.current);
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        panelRef.current.focus();
+        return;
+      }
+
+      const firstFocusable = focusableElements[0];
+      const lastFocusable = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && activeElement === firstFocusable) {
+        event.preventDefault();
+        lastFocusable.focus();
+      } else if (!event.shiftKey && activeElement === lastFocusable) {
+        event.preventDefault();
+        firstFocusable.focus();
+      }
     };
 
     document.addEventListener("keydown", handleKeyDown);
@@ -85,10 +121,12 @@ export default function Modal({
       if (initialFocusRef?.current) {
         initialFocusRef.current.focus();
       } else {
-        const firstFocusable = focusTarget.querySelector<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        );
-        firstFocusable?.focus();
+        const firstFocusable = getFocusableElements(focusTarget)[0];
+        if (firstFocusable) {
+          firstFocusable.focus();
+        } else {
+          focusTarget.focus();
+        }
       }
     }
 
@@ -117,28 +155,74 @@ export default function Modal({
       >
         <button
           type="button"
-          className="bg-background/70 absolute inset-0 backdrop-blur-sm"
+          className="from-background/82 via-background/64 to-background/82 absolute inset-0 bg-linear-to-br backdrop-blur-md"
           onClick={handleBackdropClick}
           aria-hidden
           tabIndex={-1}
         />
         <div
           ref={panelRef}
+          tabIndex={-1}
           className={cn(
-            "border-border bg-background relative z-10 w-full max-w-lg rounded-xl border p-6 shadow-xl",
+            "border-border/70 bg-card/95 text-foreground relative z-10 w-full max-w-xl overflow-hidden rounded-[28px] border shadow-[0_32px_90px_-40px_rgba(15,23,42,0.6)] backdrop-blur",
             className,
           )}
           role="document"
         >
-          <Heading as="h2" id={titleId} size="sm" className="text-text-title mb-2">
-            {title}
-          </Heading>
-          {description && (
-            <Typography id={descriptionId} size="sm" className="text-text-body mb-4">
-              {description}
-            </Typography>
-          )}
-          {children}
+          <div
+            className="from-primary/16 via-highlight/8 pointer-events-none absolute inset-x-0 top-0 h-[min(52%,18rem)] min-h-44 bg-linear-to-b to-transparent sm:min-h-52"
+            aria-hidden
+          />
+          <div
+            className="bg-primary/10 pointer-events-none absolute -top-10 right-0 size-32 rounded-full blur-3xl sm:size-36"
+            aria-hidden
+          />
+          <div
+            className="bg-highlight/10 pointer-events-none absolute top-24 -left-10 size-28 rounded-full blur-3xl sm:top-28 sm:size-32"
+            aria-hidden
+          />
+
+          <div className="relative flex max-h-[min(85vh,48rem)] flex-col">
+            <div className="border-border/60 flex items-start justify-between gap-4 border-b px-5 py-5 sm:px-6 sm:py-6">
+              <div className="min-w-0 space-y-2">
+                <span
+                  className={cn(
+                    "bg-primary/12 inline-flex h-2 w-16 rounded-full",
+                    role === "alertdialog" && "bg-destructive/16",
+                  )}
+                  aria-hidden
+                />
+                <div className="space-y-2">
+                  <Heading
+                    as="h2"
+                    id={titleId}
+                    size="xs"
+                    className="text-text-title text-xl leading-tight font-semibold tracking-tight sm:text-2xl"
+                  >
+                    {title}
+                  </Heading>
+                  {description && (
+                    <Typography id={descriptionId} size="xs" className="text-text-body max-w-2xl leading-6">
+                      {description}
+                    </Typography>
+                  )}
+                </div>
+              </div>
+
+              {closeButtonLabel ? (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="border-border bg-background/82 text-text-muted hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background inline-flex size-11 shrink-0 items-center justify-center rounded-2xl border transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                  aria-label={closeButtonLabel}
+                >
+                  <X className="size-4" aria-hidden />
+                </button>
+              ) : null}
+            </div>
+
+            <div className="overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">{children}</div>
+          </div>
         </div>
       </div>
     </Portal>
