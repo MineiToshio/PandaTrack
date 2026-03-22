@@ -13,7 +13,6 @@ import Input from "@/components/core/Input";
 import Select from "@/components/core/Select";
 import Textarea from "@/components/core/Textarea";
 import Button from "@/components/core/Button/Button";
-import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn } from "@/lib/styles";
 import { ROUTES } from "@/lib/constants";
 import { POSTHOG_EVENTS } from "@/lib/constants";
@@ -21,6 +20,7 @@ import posthog from "posthog-js";
 import { createStore, type CreateStoreResult } from "../_actions/createStore";
 import { getDuplicateCandidates, getDuplicateCandidatesForSubmit } from "../_actions/getDuplicateCandidates";
 import { SIMILARITY_THRESHOLD_PERCENT } from "@/lib/store/duplicateMatch";
+import BackNavLink from "@/components/core/BackNavLink";
 import StoreAddressList from "../../_components/share/StoreAddressList";
 import StoreContactChannelList, {
   STORE_CONTACT_CHANNEL_TYPES,
@@ -256,7 +256,9 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
   };
 
   const getContactChannelTypeForRow = (rowId: number, rowIndex: number): StoreContactChannelType => {
-    return contactChannelTypeByRowId[rowId] ?? STORE_CONTACT_CHANNEL_TYPES[rowIndex % STORE_CONTACT_CHANNEL_TYPES.length];
+    return (
+      contactChannelTypeByRowId[rowId] ?? STORE_CONTACT_CHANNEL_TYPES[rowIndex % STORE_CONTACT_CHANNEL_TYPES.length]
+    );
   };
 
   const getContactChannelPlaceholder = (type: StoreContactChannelType) => {
@@ -692,9 +694,7 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
           <Button type="submit" variant="primary" disabled={isPending}>
             {isPending ? tCreate("submitting") : tCreate("submit")}
           </Button>
-          <Link href={`/${locale}${ROUTES.stores}`} className={cn(buttonVariants({ variant: "secondary" }))}>
-            {tCreate("backToList")}
-          </Link>
+          <BackNavLink href={`/${locale}${ROUTES.stores}`}>{tCreate("backToList")}</BackNavLink>
         </div>
       </form>
     </div>

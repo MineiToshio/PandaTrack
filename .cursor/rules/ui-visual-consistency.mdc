@@ -1,0 +1,38 @@
+---
+description: Visual and interaction consistency across pages; navigation affordances and reuse of shared UI patterns
+globs: "**/*.tsx,**/*.css"
+alwaysApply: false
+---
+
+# UI visual consistency – PandaTrack
+
+Interfaces must feel like one product: predictable controls, spacing, typography, and theme tokens. Avoid improvised one-off patterns when an established pattern already exists.
+
+## Navigation that means "back" or "up" a level
+
+When the user returns to a parent screen (listing, detail, or previous step), the control must match the **canonical back pattern** for that app subtree unless product explicitly requires a different treatment.
+
+- **Canonical back control**: Use **`BackNavLink`** from `@/components/core/BackNavLink` for any link whose job is "go back" or "up" to a parent screen when this pill pattern is the established chrome for that flow (for example stores: listing, detail, new, edit).
+  - Do not use a plain text link, a different `buttonVariants` variant (for example `secondary` alone), or a raw `<a>` for that job when the surrounding product area already uses this back control.
+- **Other route trees**: Prefer **`BackNavLink`** when the pill back pattern fits the flow. Otherwise search the subtree for an existing back/up control (`_components/share/` or sibling pages) and reuse or extract a shared component rather than inventing a third style.
+
+## Links that look like buttons
+
+Use Next.js **`Link`** (with locale-prefixed `href` where the app uses locale routing) together with **`buttonVariants`** from `@/components/core/Button/buttonVariants` (and `cn()` when composing) so keyboard focus, hover, and theme tokens stay aligned with **`Button`**.
+
+Do not give the same semantic action different visual treatments on nearby flows (for example back as text link on one page and as a filled secondary button on another).
+
+## Spacing, type, and color
+
+- Prefer **semantic Tailwind tokens** (`text-text-title`, `bg-background`, `border-border`, etc.) per `theme-light-dark.mdc`.
+- Reuse **core** and **module** components for typography and controls before duplicating class stacks.
+- Keep **responsive** behavior consistent with `responsive-design.mdc` (no accidental overlap; sensible tap targets).
+
+## When this rule applies
+
+Read and follow this rule when adding or changing:
+
+- Page chrome: back links, breadcrumbs, or top-of-page navigation to a parent route.
+- Footer actions on forms where a link navigates away (cancel / back to list) next to a primary submit.
+
+For general hierarchy and flow, still follow **`role-ui-ux-design.mdc`**.

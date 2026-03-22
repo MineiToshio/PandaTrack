@@ -3,7 +3,6 @@
 import { Box, Globe, Plus } from "lucide-react";
 import { startTransition, useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import Link from "next/link";
 import posthog from "posthog-js";
 import Button from "@/components/core/Button/Button";
 import FieldCharacterCount from "@/components/core/FieldCharacterCount";
@@ -12,10 +11,9 @@ import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
-import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { cn } from "@/lib/styles";
 import type { EditableStore, EditableStoreInput, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
+import BackNavLink from "@/components/core/BackNavLink";
 import StoreAddressList from "../../../_components/share/StoreAddressList";
 import StoreContactChannelList, {
   STORE_CONTACT_CHANNEL_TYPES,
@@ -71,7 +69,10 @@ export default function EditStoreForm({
     Partial<Record<number, StoreContactChannelType>>
   >(
     Object.fromEntries(
-      (initialValues.contactChannels ?? []).map((channel, index) => [index + 1, channel.type as StoreContactChannelType]),
+      (initialValues.contactChannels ?? []).map((channel, index) => [
+        index + 1,
+        channel.type as StoreContactChannelType,
+      ]),
     ),
   );
   const [contactChannelValuesByRowId, setContactChannelValuesByRowId] = useState<Record<number, string>>(
@@ -205,7 +206,8 @@ export default function EditStoreForm({
 
   const getContactChannelValueError = (rowIndex: number) =>
     fieldErrors[`contactChannels.${rowIndex}.value`]?.[0] ?? fieldErrors[`contactChannels.${rowIndex}`]?.[0] ?? null;
-  const getContactChannelLabelError = (rowIndex: number) => fieldErrors[`contactChannels.${rowIndex}.label`]?.[0] ?? null;
+  const getContactChannelLabelError = (rowIndex: number) =>
+    fieldErrors[`contactChannels.${rowIndex}.label`]?.[0] ?? null;
 
   const handleSubmit = (formData: FormData) => {
     startTransition(() => {
@@ -223,12 +225,7 @@ export default function EditStoreForm({
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <Link
-          href={`/${locale}${ROUTES.stores}/${store.slug}`}
-          className={cn(buttonVariants({ variant: "secondary" }))}
-        >
-          {t("edit.backToDetail")}
-        </Link>
+        <BackNavLink href={`/${locale}${ROUTES.stores}/${store.slug}`}>{t("edit.backToDetail")}</BackNavLink>
         <Heading as="h1" size="sm" className="text-text-title">
           {t(`${modeKey}.title`)}
         </Heading>
@@ -523,12 +520,7 @@ export default function EditStoreForm({
           <Button type="submit" variant="primary" disabled={isPending}>
             {isPending ? t(`${modeKey}.submitting`) : t(`${modeKey}.submitCta`)}
           </Button>
-          <Link
-            href={`/${locale}${ROUTES.stores}/${store.slug}`}
-            className={cn(buttonVariants({ variant: "secondary" }))}
-          >
-            {t("edit.cancelCta")}
-          </Link>
+          <BackNavLink href={`/${locale}${ROUTES.stores}/${store.slug}`}>{t("edit.cancelCta")}</BackNavLink>
         </div>
       </form>
     </div>

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import {
-  ArrowLeft,
   BadgeCheck,
   Box,
   Building2,
@@ -28,6 +27,7 @@ import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn } from "@/lib/styles";
 import type { PublicStoreReview, StoreDetail, StoreViewerNote, StoreViewerReview } from "@/queries/store";
 import type { EditableStore, StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
+import BackNavLink from "@/components/core/BackNavLink";
 import StoreSurfaceCard from "../../_components/share/StoreSurfaceCard";
 import StoreReviewAggregateBadge from "./StoreReviewAggregateBadge";
 import StorePublicReviewsSection from "./StorePublicReviewsSection";
@@ -147,16 +147,7 @@ export default function StoreDetailContent({
     >
       <div className="px-4 py-7 sm:px-6 sm:py-8">
         <div className="mx-auto max-w-6xl space-y-6">
-          <Link
-            href={`/${locale}${ROUTES.stores}`}
-            className={cn(
-              buttonVariants({ variant: "ghost", size: "sm" }),
-              "bg-background/70 inline-flex items-center gap-1.5 rounded-full shadow-sm backdrop-blur-sm",
-            )}
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-            {tListing("backToListing")}
-          </Link>
+          <BackNavLink href={`/${locale}${ROUTES.stores}`}>{tListing("backToListing")}</BackNavLink>
 
           <section className="from-primary/20 via-highlight/12 to-info/20 relative animate-[hero-fade-in-up_460ms_ease-out_both] overflow-hidden rounded-3xl bg-linear-to-br px-5 py-6 shadow-sm sm:px-8 sm:py-8">
             <div className="bg-primary/30 absolute -top-20 right-0 size-44 animate-[hero-glow-pulse_6s_ease-in-out_infinite] rounded-full blur-3xl" />

@@ -55,6 +55,7 @@ Read these on every implementation because they define project-wide defaults:
 - `project-structure.mdc`: Use when deciding where files should live or when adding new route-level or shared modules, including `_components/share/` folders for route-subtree reuse and promotion from child pages when reuse appears.
 - `role-frontend-development.mdc`: Use when designing component APIs, extracting hooks, splitting components, or making maintainability decisions in frontend code.
 - `role-ui-ux-design.mdc`: Use when making layout, hierarchy, spacing, interaction, or flow decisions.
+- `ui-visual-consistency.mdc`: Use when adding or changing back/up navigation, form footer links that navigate away, or any control that must match an existing visual pattern in the same app area.
 - `responsive-design.mdc`: Use whenever UI can be affected by viewport changes, especially navigation, headers, cards, tables, forms, and dense layouts.
 - `tailwind-semantic-html.mdc`: Use whenever editing JSX or CSS classes so semantic elements and `cn()` are applied correctly.
 - `theme-light-dark.mdc`: Use for any UI or styling change that could break theme support.
@@ -88,35 +89,36 @@ Read these on every implementation because they define project-wide defaults:
 
 ## Rule inventory
 
-| Rule file | Primary purpose | Read when |
-| --- | --- | --- |
-| `adr-decision-records.mdc` | ADR creation/update criteria | Architecture or recurring technical decisions change |
-| `coding-standards.mdc` | Core coding conventions and implementation defaults | Any code is written or changed |
-| `docs-and-standards.mdc` | Documentation and rule maintenance policy | Behavior, docs, or standards change |
-| `english-code-only.mdc` | English-only code and developer text | Editing code, comments, tests, logs, or messages |
-| `env-example.mdc` | `.env.example` synchronization | New env vars are introduced or required |
-| `error-handling-validation.mdc` | Zod, expected errors, and logging guidance | Validation, parsing, or error handling changes |
-| `github-tracking-sync.mdc` | Sync between docs/product and GitHub execution tracking | Work orders, epics, or scope are involved |
-| `icons.mdc` | Approved icon sources | Icons are added or changed |
-| `next-intl-translation-apis.mdc` | next-intl API selection rules | Translations are used in React or framework code |
-| `posthog-events.mdc` | Event naming and tracking expectations | Meaningful user interactions change |
-| `prisma-data-layer.mdc` | Prisma data access boundaries | Prisma, queries, repositories, or DB access change |
-| `prisma-migration-workflow.mdc` | Schema and migration workflow | Prisma schema or migrations change |
-| `project-structure.mdc` | File placement and project organization | New files/folders are added or moved, including route-subtree shared component placement |
-| `quality-docs-cleanup.mdc` | Comments, cleanup, lint discipline | Cleanup, JSDoc, comments, or lint exceptions are involved |
-| `react-next-components.mdc` | React and Next component patterns | Components, layouts, pages, hooks, or client boundaries change |
-| `responsive-design.mdc` | Responsive layout behavior | UI changes must work across breakpoints |
-| `role-accessibility.mdc` | Accessibility review mindset | Interactive UI, forms, dialogs, nav, or feedback change |
-| `role-copywriting-marketing.mdc` | Conversion-focused user-facing copy | Landing, CTA, email, notification, or product copy changes |
-| `role-frontend-development.mdc` | Senior frontend implementation mindset | Frontend architecture or component design decisions are needed |
-| `role-full-stack-development.mdc` | Senior full-stack implementation mindset | Backend, data, auth, or integration work is involved |
-| `role-ui-ux-design.mdc` | UI/UX design decision support | Layout, spacing, visual hierarchy, or user flow changes |
-| `sentry-error-handling.mdc` | Sentry capture strategy | Monitoring or exception capture changes |
-| `tailwind-semantic-html.mdc` | Tailwind composition and semantic HTML | JSX or CSS classes change |
-| `testing-strategy.mdc` | Risk-based test decisions | Any behavior changes |
-| `theme-light-dark.mdc` | Light/dark theme support | Visual or styling changes |
-| `typescript-practices.mdc` | TypeScript typing conventions | TypeScript code or shared types change |
-| `validation-checklist.mdc` | Final validation commands | Final verification before completion |
+| Rule file                         | Primary purpose                                         | Read when                                                                                |
+| --------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `adr-decision-records.mdc`        | ADR creation/update criteria                            | Architecture or recurring technical decisions change                                     |
+| `coding-standards.mdc`            | Core coding conventions and implementation defaults     | Any code is written or changed                                                           |
+| `docs-and-standards.mdc`          | Documentation and rule maintenance policy               | Behavior, docs, or standards change                                                      |
+| `english-code-only.mdc`           | English-only code and developer text                    | Editing code, comments, tests, logs, or messages                                         |
+| `env-example.mdc`                 | `.env.example` synchronization                          | New env vars are introduced or required                                                  |
+| `error-handling-validation.mdc`   | Zod, expected errors, and logging guidance              | Validation, parsing, or error handling changes                                           |
+| `github-tracking-sync.mdc`        | Sync between docs/product and GitHub execution tracking | Work orders, epics, or scope are involved                                                |
+| `icons.mdc`                       | Approved icon sources                                   | Icons are added or changed                                                               |
+| `next-intl-translation-apis.mdc`  | next-intl API selection rules                           | Translations are used in React or framework code                                         |
+| `posthog-events.mdc`              | Event naming and tracking expectations                  | Meaningful user interactions change                                                      |
+| `prisma-data-layer.mdc`           | Prisma data access boundaries                           | Prisma, queries, repositories, or DB access change                                       |
+| `prisma-migration-workflow.mdc`   | Schema and migration workflow                           | Prisma schema or migrations change                                                       |
+| `project-structure.mdc`           | File placement and project organization                 | New files/folders are added or moved, including route-subtree shared component placement |
+| `quality-docs-cleanup.mdc`        | Comments, cleanup, lint discipline                      | Cleanup, JSDoc, comments, or lint exceptions are involved                                |
+| `react-next-components.mdc`       | React and Next component patterns                       | Components, layouts, pages, hooks, or client boundaries change                           |
+| `responsive-design.mdc`           | Responsive layout behavior                              | UI changes must work across breakpoints                                                  |
+| `role-accessibility.mdc`          | Accessibility review mindset                            | Interactive UI, forms, dialogs, nav, or feedback change                                  |
+| `role-copywriting-marketing.mdc`  | Conversion-focused user-facing copy                     | Landing, CTA, email, notification, or product copy changes                               |
+| `role-frontend-development.mdc`   | Senior frontend implementation mindset                  | Frontend architecture or component design decisions are needed                           |
+| `role-full-stack-development.mdc` | Senior full-stack implementation mindset                | Backend, data, auth, or integration work is involved                                     |
+| `role-ui-ux-design.mdc`           | UI/UX design decision support                           | Layout, spacing, visual hierarchy, or user flow changes                                  |
+| `ui-visual-consistency.mdc`       | Shared navigation and control styling                   | Back/up links, consistent link-as-button patterns, avoiding one-off chrome styles        |
+| `sentry-error-handling.mdc`       | Sentry capture strategy                                 | Monitoring or exception capture changes                                                  |
+| `tailwind-semantic-html.mdc`      | Tailwind composition and semantic HTML                  | JSX or CSS classes change                                                                |
+| `testing-strategy.mdc`            | Risk-based test decisions                               | Any behavior changes                                                                     |
+| `theme-light-dark.mdc`            | Light/dark theme support                                | Visual or styling changes                                                                |
+| `typescript-practices.mdc`        | TypeScript typing conventions                           | TypeScript code or shared types change                                                   |
+| `validation-checklist.mdc`        | Final validation commands                               | Final verification before completion                                                     |
 
 ## Maintenance requirement
 

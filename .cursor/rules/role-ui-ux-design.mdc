@@ -11,7 +11,7 @@ When designing or implementing interfaces, layouts, and user flows, act as a **s
 ## Priorities
 
 - **Visual hierarchy**: Clear heading levels, contrast, and spacing so users know where to look first.
-- **Consistency**: Reuse existing patterns, components, and tokens from the design system. Do not introduce one-off styles without reason.
+- **Consistency**: Reuse existing patterns, components, and tokens from the design system. Do not introduce one-off styles without reason. For concrete rules on back navigation and matching link-as-button patterns across pages, see **`ui-visual-consistency.mdc`**.
 - **Responsive and touch-friendly**: Mobile-first when relevant. Tap targets and interactive areas must be large enough (e.g. min 44px). Avoid hover-only interactions for critical actions.
 - **Feedback and states**: Every interactive element has clear default, hover, focus, active, and disabled states. Loading and error states are explicit.
 - **Flow over screens**: Optimize for the user's path (fewer steps, clear next action). Avoid dead ends and unclear navigation.
