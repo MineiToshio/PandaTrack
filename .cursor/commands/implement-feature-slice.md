@@ -49,13 +49,37 @@ Implement one GitHub slice ticket that mirrors a `Work Order`, using the hybrid 
   - then update the GitHub Epic and ticket content to match the docs
 - Apply the same rule to follow-up messages during the same conversation: if the user changes the work in a later message, update the correct docs first, then sync GitHub tracking.
 
-4. Implement only this slice
+4. Plan execution and delegate when useful
+- Before coding, identify:
+  - the critical-path task the main agent should keep locally
+  - any bounded research or code-reading subtasks that can run in parallel
+  - any disjoint implementation subtasks that can be delegated safely without overlapping write ownership
+  - any verification or test-prep subtasks that can run in parallel with implementation
+- Prefer delegation when it materially improves speed, reduces context load, or keeps the main agent focused on integration decisions.
+- Good delegation candidates include:
+  - focused codebase exploration or reverse engineering
+  - locating relevant files, contracts, or edge cases
+  - drafting or implementing one isolated code path with a disjoint write set
+  - writing or extending one isolated test file while the main agent implements the feature
+  - summarizing a large body of context into a filtered implementation brief
+- Avoid delegation when the task is tiny, highly coupled to the immediate next edit, or likely to block the main agent's very next step.
+- If the environment supports sub-agents or background agents (for example Codex sub-agents), use them deliberately:
+  - give each delegated task a narrow goal
+  - define file or responsibility ownership clearly
+  - require the delegated result to return a concise summary plus any changed-file list or findings
+  - keep the main agent responsible for final integration, conflict resolution, contradiction cleanup, and user-facing status
+- If the environment does not support true sub-agents (or the current tool cannot invoke them), still follow the same decomposition mindset:
+  - split the work into smaller internal passes
+  - keep research, implementation, and verification scoped and sequentially summarized
+  - avoid letting one monolithic reasoning pass absorb the whole slice context
+
+5. Implement only this slice
 - Keep changes minimal and scoped.
 - Follow `AGENTS.md` and `.cursor/rules/*.mdc`.
 - Respect architecture and code organization conventions.
 - Do not include unrelated refactors.
 
-5. Update GitHub tracking
+6. Update GitHub tracking
 - Keep execution tracking in GitHub:
   - Update slice issue progress notes.
   - Update parent epic status if needed.
@@ -68,11 +92,38 @@ Implement one GitHub slice ticket that mirrors a `Work Order`, using the hybrid 
 - Ensure the matching `Work Order` doc remains lifecycle-valid with `status: ACTIVE` when it is the current approved slice definition.
 - Update the matching `Work Order` `implementation_status` to `IN_PROGRESS` when implementation starts, unless it is already `IMPLEMENTED`.
 
-6. Validate
+7. Validate
 - Run:
   - `npm run type-check`
   - `npm run lint`
   - `npm run validate-build` (or minimal affected build check if preferred)
+
+## Delegation guardrails
+
+- Never delegate the whole slice blindly.
+- The main agent must always retain ownership of:
+  - scope control
+  - architectural consistency
+  - resolving conflicts, overlaps, or contradictory outputs produced by delegated tasks
+  - final doc/GitHub sync
+  - final validation and user summary
+- Delegated coding tasks should have disjoint write scopes whenever possible.
+- Delegated research tasks should return filtered findings, not raw context dumps.
+- If delegated outputs conflict with each other or with the main implementation, the main agent must resolve the conflict explicitly instead of passing the inconsistency through to the final result.
+- The main agent must choose the best final implementation when delegated outputs disagree, and should reconcile code, tests, docs, and user-facing behavior into one coherent slice.
+- If multiple delegated tasks run in parallel, the command should explicitly note:
+  - what each task owns
+  - what result the main agent is waiting for
+  - what work can continue without waiting
+- Prefer parallel delegation for:
+  - independent read-only exploration questions
+  - isolated tests vs implementation
+  - separate modules that do not share the same file set
+- Prefer single-task delegation for:
+  - large context digestion
+  - focused codebase audits
+  - narrow, self-contained patches
+- If delegation would create merge risk or duplicate work, keep it local instead.
 
 ## Output format
 
@@ -82,4 +133,5 @@ Return:
 2. `Exit criteria`: each criterion as `met` / `not met`
 3. `Functional test steps`: manual step-by-step checks
 4. `Test cases`: concise `Given / When / Then` cases
-5. `Tracking updated`: GitHub status and Work Order lifecycle / implementation-status changes applied
+5. `Delegation used`: what was delegated, what stayed local, and why
+6. `Tracking updated`: GitHub status and Work Order lifecycle / implementation-status changes applied
