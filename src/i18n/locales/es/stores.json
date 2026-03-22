@@ -108,6 +108,8 @@
   "detail": {
     "pendingDisclaimerTitle": "Tienda pendiente de revisión",
     "pendingDisclaimerMessage": "Este perfil fue creado por la comunidad y todavía no ha sido verificado por el equipo. Te recomendamos revisar la información con precaución.",
+    "governanceAlertTitle": "Actividad de gobernanza",
+    "governanceAlertMessage": "Esta tienda tiene reportes o solicitudes de cambio registradas. Abre el resumen para revisar las señales.",
     "inactiveWarningTitle": "Tienda sin actividad",
     "inactiveWarningMessage": "Esta tienda ya no está en actividad. La información se mantiene solo como referencia.",
     "noDescription": "Esta tienda no tiene descripción todavía.",

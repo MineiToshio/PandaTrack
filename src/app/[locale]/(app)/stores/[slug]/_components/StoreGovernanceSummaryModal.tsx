@@ -8,21 +8,26 @@ import Button from "@/components/core/Button/Button";
 import Typography from "@/components/core/Typography";
 import Modal from "@/components/modules/Modal/Modal";
 import { POSTHOG_EVENTS } from "@/lib/constants";
+import { cn } from "@/lib/styles";
 import type { StoreGovernanceSummary } from "@/queries/storeGovernance";
 
 type StoreGovernanceSummaryModalProps = {
   storeSlug: string;
   summary: StoreGovernanceSummary;
-  locale: string;
+  showTopSeparator: boolean;
 };
 
-export default function StoreGovernanceSummaryModal({ storeSlug, summary }: StoreGovernanceSummaryModalProps) {
+export default function StoreGovernanceSummaryModal({
+  storeSlug,
+  summary,
+  showTopSeparator,
+}: StoreGovernanceSummaryModalProps) {
   const t = useTranslations("stores");
   const [isOpen, setIsOpen] = useState(false);
 
   const recentChanges = useMemo(() => summary.recentChangeRequests.slice(0, 5), [summary.recentChangeRequests]);
 
-  const openModal = () => {
+  const handleOpenModal = () => {
     setIsOpen(true);
     posthog.capture(POSTHOG_EVENTS.STORE.GOVERNANCE_SUMMARY_OPENED, {
       store_slug: storeSlug,
@@ -33,16 +38,34 @@ export default function StoreGovernanceSummaryModal({ storeSlug, summary }: Stor
 
   return (
     <>
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        className="gap-1.5 max-lg:h-11 max-lg:min-w-11 max-lg:justify-center max-lg:px-0"
-        onClick={openModal}
+      <div
+        className={cn(
+          "flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4",
+          showTopSeparator && "border-border/50 mt-4 border-t pt-4",
+        )}
+        role="note"
       >
-        <Scale className="size-4 shrink-0" aria-hidden />
-        <span className="max-lg:sr-only">{t("governance.summary.openCta")}</span>
-      </Button>
+        <div className="flex min-w-0 items-start gap-2.5">
+          <Scale className="text-warning mt-1 size-4 shrink-0" aria-hidden />
+          <div className="min-w-0">
+            <Typography size="sm" className="text-text-title font-semibold">
+              {t("detail.governanceAlertTitle")}
+            </Typography>
+            <Typography size="xs" className="text-text-body mt-1">
+              {t("detail.governanceAlertMessage")}
+            </Typography>
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="border-warning/35 bg-warning/12 text-text-title hover:bg-warning/18 shrink-0 sm:mt-0.5"
+          onClick={handleOpenModal}
+        >
+          {t("governance.summary.openCta")}
+        </Button>
+      </div>
 
       <Modal
         isOpen={isOpen}
@@ -61,7 +84,7 @@ export default function StoreGovernanceSummaryModal({ storeSlug, summary }: Stor
               {summary.reportCounts.map((item) => (
                 <div
                   key={item.reason}
-                  className="from-primary/10 via-background to-background rounded-[24px] border border-border/60 bg-linear-to-br px-4 py-3 shadow-sm"
+                  className="from-primary/10 via-background to-background border-border/60 rounded-[24px] border bg-linear-to-br px-4 py-3 shadow-sm"
                 >
                   <Typography size="2xs" className="text-text-muted">
                     {t(`governance.report.reasonOptions.${item.reason}`)}
@@ -82,7 +105,7 @@ export default function StoreGovernanceSummaryModal({ storeSlug, summary }: Stor
               {summary.changeRequestCounts.map((item) => (
                 <div
                   key={item.status}
-                  className="from-highlight/10 via-background to-background rounded-[24px] border border-border/60 bg-linear-to-br px-4 py-3 shadow-sm"
+                  className="from-highlight/10 via-background to-background border-border/60 rounded-[24px] border bg-linear-to-br px-4 py-3 shadow-sm"
                 >
                   <Typography size="2xs" className="text-text-muted">
                     {t(`governance.summary.changeRequestStatuses.${item.status}`)}
@@ -96,7 +119,7 @@ export default function StoreGovernanceSummaryModal({ storeSlug, summary }: Stor
             {recentChanges.length > 0 ? (
               <ul className="space-y-2.5">
                 {recentChanges.map((request) => (
-                  <li key={request.id} className="bg-muted/30 rounded-[24px] border border-border/50 px-4 py-3.5">
+                  <li key={request.id} className="bg-muted/30 border-border/50 rounded-[24px] border px-4 py-3.5">
                     <Typography size="xs" className="text-text-muted">
                       {t(`governance.summary.changeRequestStatuses.${request.status}`)}
                     </Typography>
@@ -111,7 +134,10 @@ export default function StoreGovernanceSummaryModal({ storeSlug, summary }: Stor
                 ))}
               </ul>
             ) : (
-              <Typography size="sm" className="bg-muted/30 text-text-muted rounded-[24px] border border-dashed border-border/60 px-4 py-4">
+              <Typography
+                size="sm"
+                className="bg-muted/30 text-text-muted border-border/60 rounded-[24px] border border-dashed px-4 py-4"
+              >
                 {t("governance.summary.noChangeRequests")}
               </Typography>
             )}

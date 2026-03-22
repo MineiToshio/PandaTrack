@@ -115,6 +115,8 @@ export default function StoreDetailContent({
 
   const isPendingReview = store.status === "PENDING";
   const isInactive = !store.isActive;
+  const hasGovernanceSummaryContent = governanceSummary.totalReports > 0 || governanceSummary.totalChangeRequests > 0;
+  const showStoreStatusCard = isPendingReview || isInactive || hasGovernanceSummaryContent;
   const isBusiness = store.storeType === "BUSINESS";
   const storeTypeLabel = isBusiness ? tStores("create.storeTypeBusiness") : tStores("create.storeTypePerson");
   const storeTypeIcon = isBusiness ? (
@@ -174,7 +176,6 @@ export default function StoreDetailContent({
                       {store.name}
                     </Heading>
                     <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
-                      <StoreGovernanceSummaryModal locale={locale} storeSlug={store.slug} summary={governanceSummary} />
                       <StoreReportModal
                         locale={locale}
                         storeSlug={store.slug}
@@ -259,45 +260,46 @@ export default function StoreDetailContent({
             </div>
           </section>
 
-          {(isPendingReview || isInactive) && (
-            <div className="grid gap-3 sm:grid-cols-2">
+          {showStoreStatusCard && (
+            <div
+              className="border-border/55 bg-background/85 text-text-body animate-[hero-fade-in-up_420ms_ease-out_both] rounded-2xl border p-4 shadow-sm"
+              style={{ animationDelay: `${STAGGER_BASE_DELAY_MS}ms` }}
+            >
               {isPendingReview && (
-                <div
-                  className="bg-warning/14 text-text-body animate-[hero-fade-in-up_420ms_ease-out_both] rounded-2xl p-4 shadow-sm sm:col-span-2"
-                  role="note"
-                  style={{ animationDelay: `${STAGGER_BASE_DELAY_MS}ms` }}
-                >
-                  <div className="flex items-start gap-2.5">
-                    <CircleAlert className="text-warning mt-1 size-4 shrink-0" aria-hidden />
-                    <div>
-                      <Typography size="sm" className="text-text-title font-semibold">
-                        {tStores("detail.pendingDisclaimerTitle")}
-                      </Typography>
-                      <Typography size="xs" className="text-text-body mt-1">
-                        {tStores("detail.pendingDisclaimerMessage")}
-                      </Typography>
-                    </div>
+                <div className="flex items-start gap-2.5" role="note">
+                  <CircleAlert className="text-warning mt-1 size-4 shrink-0" aria-hidden />
+                  <div className="min-w-0">
+                    <Typography size="sm" className="text-text-title font-semibold">
+                      {tStores("detail.pendingDisclaimerTitle")}
+                    </Typography>
+                    <Typography size="xs" className="text-text-body mt-1">
+                      {tStores("detail.pendingDisclaimerMessage")}
+                    </Typography>
                   </div>
                 </div>
               )}
               {isInactive && (
                 <div
-                  className="bg-destructive/12 text-text-body animate-[hero-fade-in-up_420ms_ease-out_both] rounded-2xl p-4 shadow-sm"
+                  className={cn("flex items-start gap-2.5", isPendingReview && "border-border/50 mt-4 border-t pt-4")}
                   role="alert"
-                  style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 2}ms` }}
                 >
-                  <div className="flex items-start gap-2.5">
-                    <CircleAlert className="text-destructive mt-0.5 size-4 shrink-0" aria-hidden />
-                    <div>
-                      <Typography size="sm" className="text-text-title font-semibold">
-                        {tStores("detail.inactiveWarningTitle")}
-                      </Typography>
-                      <Typography size="xs" className="text-text-body mt-1">
-                        {tStores("detail.inactiveWarningMessage")}
-                      </Typography>
-                    </div>
+                  <CircleAlert className="text-destructive mt-0.5 size-4 shrink-0" aria-hidden />
+                  <div className="min-w-0">
+                    <Typography size="sm" className="text-text-title font-semibold">
+                      {tStores("detail.inactiveWarningTitle")}
+                    </Typography>
+                    <Typography size="xs" className="text-text-body mt-1">
+                      {tStores("detail.inactiveWarningMessage")}
+                    </Typography>
                   </div>
                 </div>
+              )}
+              {hasGovernanceSummaryContent && (
+                <StoreGovernanceSummaryModal
+                  storeSlug={store.slug}
+                  summary={governanceSummary}
+                  showTopSeparator={isPendingReview || isInactive}
+                />
               )}
             </div>
           )}
