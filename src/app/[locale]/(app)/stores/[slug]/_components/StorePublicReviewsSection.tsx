@@ -9,6 +9,7 @@ import RatingStars from "@/components/core/RatingStars";
 import Typography from "@/components/core/Typography";
 import { Modal } from "@/components/modules/Modal";
 import { POSTHOG_EVENTS } from "@/lib/constants";
+import { cn } from "@/lib/styles";
 import type { StoreViewerReview } from "@/queries/store";
 import StoreSectionLabel from "../../_components/share/StoreSectionLabel";
 import StoreSurfaceCard from "../../_components/share/StoreSurfaceCard";
@@ -18,6 +19,68 @@ import { useStoreReviewsState } from "./StoreReviewsStateProvider";
 
 const REVIEWS_INCREMENT = 5;
 
+/** Matches `mt-5` on the list, empty state, and review form so spacing above/below the rating chip is even. */
+const REVIEWS_HEADER_RATING_GAP = "gap-5";
+const REVIEWS_TITLE_TO_RATING_SPACE = "space-y-5";
+
+type StoreReviewsWriteCtaProps = {
+  onClick: () => void;
+  /** `ghost` reads as a text link; `outline` reads as a button (desktop). */
+  variant?: "ghost" | "outline";
+};
+
+function StoreReviewsWriteCta({ onClick, variant = "outline" }: StoreReviewsWriteCtaProps) {
+  const t = useTranslations("stores");
+  return (
+    <Button
+      type="button"
+      variant={variant}
+      size="md"
+      className="min-h-11 shrink-0 gap-2"
+      posthogEvent={POSTHOG_EVENTS.STORE.REVIEW_WRITE_CLICKED}
+      onClick={onClick}
+    >
+      <PenSquare className="size-4 shrink-0" aria-hidden />
+      {t("detail.reviews.form.openCreateCta")}
+    </Button>
+  );
+}
+
+function StoreReviewsTitleBlock() {
+  const t = useTranslations("stores");
+  return (
+    <div className="space-y-1">
+      <StoreSectionLabel>{t("detail.reviews.title")}</StoreSectionLabel>
+      <Typography size="sm" className="text-text-muted">
+        {t("detail.reviews.description")}
+      </Typography>
+    </div>
+  );
+}
+
+type StoreReviewsRatingSummaryProps = {
+  averageRating: number | null | undefined;
+  reviewCount: number;
+};
+
+function StoreReviewsRatingSummary({ averageRating, reviewCount }: StoreReviewsRatingSummaryProps) {
+  const t = useTranslations("stores");
+  const tListing = useTranslations("storeListing");
+  return (
+    <div className="bg-primary/8 border-primary/20 flex max-w-full min-w-0 flex-row flex-nowrap items-center gap-2 rounded-2xl border px-3 py-2">
+      <div className="flex min-w-0 shrink-0 items-center gap-2">
+        <RatingStars value={averageRating ?? 0} readOnly size="sm" ariaLabel={t("detail.reviews.title")} />
+        <Typography size="sm" className="text-text-body shrink-0">
+          {averageRating != null ? averageRating.toFixed(1) : t("detail.reviews.noAverage")}
+        </Typography>
+      </div>
+      <Typography size="xs" className="text-text-muted min-w-0 truncate">
+        {tListing("ratingCount", { count: reviewCount })}
+      </Typography>
+    </div>
+  );
+}
+
 type StorePublicReviewsSectionProps = {
   locale: string;
   storeSlug: string;
@@ -25,7 +88,6 @@ type StorePublicReviewsSectionProps = {
 
 export default function StorePublicReviewsSection({ locale, storeSlug }: StorePublicReviewsSectionProps) {
   const t = useTranslations("stores");
-  const tListing = useTranslations("storeListing");
   const { averageRating, reviewCount, reviews, viewerReview, applyOptimisticReviewDelete, applyOptimisticReviewSave } =
     useStoreReviewsState();
   const [isComposerOpen, setIsComposerOpen] = useState(false);
@@ -87,35 +149,30 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
     });
   };
 
+  const showWriteReviewCta = !hasViewerReview && !isComposerOpen;
+
   return (
     <StoreSurfaceCard>
-      <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0 space-y-1">
-          <StoreSectionLabel>{t("detail.reviews.title")}</StoreSectionLabel>
-          <Typography size="sm" className="text-text-muted">
-            {t("detail.reviews.description")}
-          </Typography>
+      <div className={cn("flex flex-col lg:hidden", REVIEWS_HEADER_RATING_GAP)}>
+        <StoreReviewsTitleBlock />
+        <div className="flex min-w-0 flex-row flex-wrap items-center gap-3">
+          <StoreReviewsRatingSummary averageRating={averageRating} reviewCount={reviewCount} />
+          {showWriteReviewCta ? <StoreReviewsWriteCta variant="ghost" onClick={openCreateForm} /> : null}
         </div>
+      </div>
 
-        <div className="flex min-w-0 shrink-0 flex-col items-start gap-3 sm:items-end">
-          <div className="bg-primary/8 border-primary/20 flex min-w-0 flex-row flex-nowrap items-center gap-2 rounded-2xl border px-3 py-2">
-            <div className="flex min-w-0 shrink-0 items-center gap-2">
-              <RatingStars value={averageRating ?? 0} readOnly size="sm" ariaLabel={t("detail.reviews.title")} />
-              <Typography size="sm" className="text-text-body shrink-0">
-                {averageRating != null ? averageRating.toFixed(1) : t("detail.reviews.noAverage")}
-              </Typography>
-            </div>
-            <Typography size="xs" className="text-text-muted min-w-0 truncate">
-              {tListing("ratingCount", { count: reviewCount })}
-            </Typography>
+      <div className="hidden min-w-0 flex-col gap-4 lg:flex lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+        <div className={cn("min-w-0 flex-1", REVIEWS_TITLE_TO_RATING_SPACE)}>
+          <StoreReviewsTitleBlock />
+          <div className="w-fit max-w-full">
+            <StoreReviewsRatingSummary averageRating={averageRating} reviewCount={reviewCount} />
           </div>
-
-          {!hasViewerReview && !isComposerOpen && (
-            <Button type="button" variant="ghost" size="sm" onClick={openCreateForm}>
-              {t("detail.reviews.form.openCreateCta")}
-            </Button>
-          )}
         </div>
+        {showWriteReviewCta ? (
+          <div className="shrink-0">
+            <StoreReviewsWriteCta variant="outline" onClick={openCreateForm} />
+          </div>
+        ) : null}
       </div>
 
       {isComposerOpen && (

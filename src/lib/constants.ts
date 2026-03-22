@@ -102,6 +102,7 @@ export const POSTHOG_EVENTS = {
     CHANGE_REQUEST_SUBMITTED: "store_change_request_submitted",
     CHANGE_REQUEST_NOOP_DISCARDED: "store_change_request_noop_discarded",
     REVIEW_SAVED: "store_review_saved",
+    REVIEW_WRITE_CLICKED: "store_review_write_clicked",
     REVIEW_EDIT_CLICKED: "store_review_edit_clicked",
     REVIEW_DELETED: "store_review_deleted",
     NOTE_SAVED: "store_note_saved",

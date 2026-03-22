@@ -136,7 +136,7 @@ export default function StoreReviewForm({
               : t("detail.reviews.form.ratingPlaceholder")}
           </Typography>
         </div>
-        <Typography size="xs" className="text-text-muted mt-2">
+        <Typography size="xs" className="text-text-muted mt-2 lg:hidden">
           {t("detail.reviews.form.ratingHelper")}
         </Typography>
         {overallRatingError && (
@@ -162,9 +162,6 @@ export default function StoreReviewForm({
           placeholder={t("detail.reviews.form.commentPlaceholder")}
           className="mt-1 resize-y whitespace-pre-wrap"
         />
-        <Typography size="xs" className="text-text-muted mt-1">
-          {t("detail.reviews.form.commentHelper")}
-        </Typography>
         {commentError && (
           <Typography size="xs" className="text-destructive mt-1" role="alert">
             {translateReviewError(t, commentError)}
