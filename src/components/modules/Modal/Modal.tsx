@@ -41,6 +41,9 @@ export type ModalProps = {
 const FOCUSABLE_SELECTOR =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+/** Avoid scrolling the page when focus moves inside a fixed overlay (browser default scroll-into-view). */
+const FOCUS_OPTIONS_NO_SCROLL: FocusOptions = { preventScroll: true };
+
 function getFocusableElements(container: HTMLElement) {
   return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
     (element) => !element.hasAttribute("aria-hidden"),
@@ -89,7 +92,7 @@ export default function Modal({
       const focusableElements = getFocusableElements(panelRef.current);
       if (focusableElements.length === 0) {
         event.preventDefault();
-        panelRef.current.focus();
+        panelRef.current.focus(FOCUS_OPTIONS_NO_SCROLL);
         return;
       }
 
@@ -99,10 +102,10 @@ export default function Modal({
 
       if (event.shiftKey && activeElement === firstFocusable) {
         event.preventDefault();
-        lastFocusable.focus();
+        lastFocusable.focus(FOCUS_OPTIONS_NO_SCROLL);
       } else if (!event.shiftKey && activeElement === lastFocusable) {
         event.preventDefault();
-        firstFocusable.focus();
+        firstFocusable.focus(FOCUS_OPTIONS_NO_SCROLL);
       }
     };
 
@@ -119,13 +122,13 @@ export default function Modal({
     const focusTarget = initialFocusRef?.current ?? panelRef.current;
     if (focusTarget) {
       if (initialFocusRef?.current) {
-        initialFocusRef.current.focus();
+        initialFocusRef.current.focus(FOCUS_OPTIONS_NO_SCROLL);
       } else {
         const firstFocusable = getFocusableElements(focusTarget)[0];
         if (firstFocusable) {
-          firstFocusable.focus();
+          firstFocusable.focus(FOCUS_OPTIONS_NO_SCROLL);
         } else {
-          focusTarget.focus();
+          focusTarget.focus(FOCUS_OPTIONS_NO_SCROLL);
         }
       }
     }
@@ -133,7 +136,7 @@ export default function Modal({
     return () => {
       const node = (returnFocusRef != null ? returnFocusNode : previousActiveElementRef.current) as HTMLElement | null;
       if (node && typeof node.focus === "function") {
-        node.focus();
+        node.focus(FOCUS_OPTIONS_NO_SCROLL);
       }
     };
   }, [isOpen, initialFocusRef, returnFocusRef]);
