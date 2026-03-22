@@ -10,6 +10,7 @@ import Typography from "@/components/core/Typography";
 import { Modal } from "@/components/modules/Modal";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import type { StoreViewerReview } from "@/queries/store";
+import StoreSectionLabel from "../../_components/share/StoreSectionLabel";
 import StoreSurfaceCard from "../../_components/share/StoreSurfaceCard";
 import { deleteStoreReview } from "../_actions/deleteStoreReview";
 import StoreReviewForm from "./StoreReviewForm";
@@ -90,16 +91,14 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
     <StoreSurfaceCard>
       <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 space-y-1">
-          <Typography size="xs" className="text-text-muted">
-            {t("detail.reviews.title")}
-          </Typography>
+          <StoreSectionLabel>{t("detail.reviews.title")}</StoreSectionLabel>
           <Typography size="sm" className="text-text-muted">
             {t("detail.reviews.description")}
           </Typography>
         </div>
 
         <div className="flex min-w-0 shrink-0 flex-col items-start gap-3 sm:items-end">
-          <div className="bg-muted/45 flex min-w-0 flex-row flex-nowrap items-center gap-2 rounded-2xl px-3 py-2">
+          <div className="bg-primary/8 border-primary/20 flex min-w-0 flex-row flex-nowrap items-center gap-2 rounded-2xl border px-3 py-2">
             <div className="flex min-w-0 shrink-0 items-center gap-2">
               <RatingStars value={averageRating ?? 0} readOnly size="sm" ariaLabel={t("detail.reviews.title")} />
               <Typography size="sm" className="text-text-body shrink-0">
@@ -199,7 +198,10 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
             }).format(review.updatedAt);
 
             return (
-              <li key={review.id} className="bg-muted/35 rounded-2xl border border-transparent p-4">
+              <li
+                key={review.id}
+                className="bg-muted/35 border-border/50 border-l-highlight/45 rounded-2xl border border-l-4 p-4 shadow-sm"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">

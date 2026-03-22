@@ -28,6 +28,7 @@ import { cn } from "@/lib/styles";
 import type { PublicStoreReview, StoreDetail, StoreViewerNote, StoreViewerReview } from "@/queries/store";
 import type { EditableStore, StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
 import BackNavLink from "@/components/core/BackNavLink";
+import StoreSectionLabel from "../../_components/share/StoreSectionLabel";
 import StoreSurfaceCard from "../../_components/share/StoreSurfaceCard";
 import StoreReviewAggregateBadge from "./StoreReviewAggregateBadge";
 import StorePublicReviewsSection from "./StorePublicReviewsSection";
@@ -52,10 +53,10 @@ type StoreDetailContentProps = {
 
 const STAGGER_BASE_DELAY_MS = 90;
 const CONTACT_LINK_CLASSNAME =
-  "group inline-flex w-full items-center justify-between gap-3 rounded-2xl bg-background/70 px-4 py-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-background focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none";
+  "group border-border/55 hover:border-primary/25 inline-flex w-full items-center justify-between gap-3 rounded-2xl border bg-background/70 px-4 py-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-background focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none";
 const TAG_CLASSNAME = "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium";
 const METRIC_CARD_CLASSNAME =
-  "bg-background/75 border-border/50 rounded-2xl border px-3 py-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow";
+  "bg-background/80 rounded-2xl border border-border/50 border-t-2 border-t-primary/35 px-3 py-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5";
 
 function SimpleIconSvg({ path, size = 16 }: { path: string; size?: number }) {
   return (
@@ -307,9 +308,7 @@ export default function StoreDetailContent({
               style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 2}ms` }}
             >
               <div>
-                <Typography size="xs" className="text-text-muted">
-                  {tStores("detail.productTypesLabel")}
-                </Typography>
+                <StoreSectionLabel>{tStores("detail.productTypesLabel")}</StoreSectionLabel>
                 {store.productTypeKeys.length > 0 ? (
                   <div className="mt-2.5 flex flex-wrap gap-2">
                     {store.productTypeKeys.map((productTypeKey) => (
@@ -329,9 +328,7 @@ export default function StoreDetailContent({
               </div>
 
               <div>
-                <Typography size="xs" className="text-text-muted">
-                  {tStores("detail.presenceLabel")}
-                </Typography>
+                <StoreSectionLabel>{tStores("detail.presenceLabel")}</StoreSectionLabel>
                 <div className="mt-2.5 flex flex-wrap gap-2">
                   {store.presenceTypes.map((presenceType) => (
                     <span key={presenceType} className={cn(TAG_CLASSNAME, "bg-info/14 text-text-body")}>
@@ -343,9 +340,7 @@ export default function StoreDetailContent({
               </div>
 
               <div>
-                <Typography size="xs" className="text-text-muted">
-                  {tStores("detail.importCountriesLabel")}
-                </Typography>
+                <StoreSectionLabel>{tStores("detail.importCountriesLabel")}</StoreSectionLabel>
                 {store.importCountryCodes.length > 0 ? (
                   <div className="mt-2.5 flex flex-wrap gap-2">
                     {store.importCountryCodes.map((countryCode) => (
@@ -370,9 +365,7 @@ export default function StoreDetailContent({
               style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 3}ms` }}
             >
               <div className="space-y-2">
-                <Typography size="xs" className="text-text-muted">
-                  {tStores("detail.businessSignalsTitle")}
-                </Typography>
+                <StoreSectionLabel>{tStores("detail.businessSignalsTitle")}</StoreSectionLabel>
                 <div className="flex flex-wrap gap-2">
                   <span
                     className={cn(TAG_CLASSNAME, store.receivesOrders ? "bg-primary/15 text-primary" : "bg-muted/65")}
@@ -388,9 +381,7 @@ export default function StoreDetailContent({
               </div>
 
               <div className="space-y-2">
-                <Typography size="xs" className="text-text-muted">
-                  {tStores("detail.profileSummaryTitle")}
-                </Typography>
+                <StoreSectionLabel>{tStores("detail.profileSummaryTitle")}</StoreSectionLabel>
                 <div className="grid gap-2">
                   <div className="bg-muted/45 rounded-2xl px-3 py-2.5">
                     <Typography size="2xs" className="text-text-muted">
@@ -428,9 +419,7 @@ export default function StoreDetailContent({
             className="animate-[hero-fade-in-up_440ms_ease-out_both]"
             style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 4}ms` }}
           >
-            <Typography size="xs" className="text-text-muted">
-              {tStores("create.contactChannelsLabel")}
-            </Typography>
+            <StoreSectionLabel>{tStores("create.contactChannelsLabel")}</StoreSectionLabel>
             {isBusiness && contactChannelsCount > 0 ? (
               <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
                 {store.contactChannels?.map((ch) => {
@@ -470,14 +459,12 @@ export default function StoreDetailContent({
             className="animate-[hero-fade-in-up_460ms_ease-out_both]"
             style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 5}ms` }}
           >
-            <Typography size="xs" className="text-text-muted">
-              {tStores("create.addressesLabel")}
-            </Typography>
+            <StoreSectionLabel>{tStores("create.addressesLabel")}</StoreSectionLabel>
             {isBusiness && addressesCount > 0 ? (
               <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
                 {store.addresses?.map((address, index) => (
                   <li key={`${address.countryCode}-${address.addressLine}-${index}`}>
-                    <div className="bg-muted/45 rounded-2xl p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5">
+                    <div className="bg-muted/45 border-border/60 border-l-info/40 hover:border-l-info/55 rounded-2xl border border-l-4 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5">
                       <Typography size="xs" className="text-text-muted">
                         {tCountries(address.countryCode)}
                       </Typography>
