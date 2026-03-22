@@ -3,7 +3,6 @@
 import { useActionState, useState, type ChangeEvent } from "react";
 import { useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
-import Label from "@/components/core/Label";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import type { StoreViewerNote } from "@/queries/store";
@@ -61,10 +60,7 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
   return (
     <StoreSurfaceCard>
       <div className="space-y-1">
-        <Typography size="xs" className="text-text-muted">
-          {t("detail.privateNote.eyebrow")}
-        </Typography>
-        <Typography size="sm" className="text-text-title font-semibold">
+        <Typography id="store-private-note-heading" size="xs" className="text-text-muted">
           {t("detail.privateNote.title")}
         </Typography>
         <Typography size="sm" className="text-text-muted">
@@ -82,9 +78,6 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
         <input type="hidden" name="locale" value={locale} />
 
         <div>
-          <Label htmlFor="store-private-note" color="title">
-            {t("detail.privateNote.form.contentLabel")}
-          </Label>
           <Textarea
             id="store-private-note"
             name="content"
@@ -95,8 +88,9 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
             disabled={isPending}
             error={Boolean(contentError)}
             aria-invalid={Boolean(contentError)}
+            aria-labelledby="store-private-note-heading"
             placeholder={t("detail.privateNote.form.contentPlaceholder")}
-            className="mt-1 resize-y"
+            className="resize-y"
           />
           <Typography size="xs" className="text-text-muted mt-1">
             {t("detail.privateNote.form.helper")}

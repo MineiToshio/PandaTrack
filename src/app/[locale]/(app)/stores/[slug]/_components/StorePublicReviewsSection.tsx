@@ -91,9 +91,6 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
       <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 space-y-1">
           <Typography size="xs" className="text-text-muted">
-            {t("detail.reviews.eyebrow")}
-          </Typography>
-          <Typography size="sm" className="text-text-title font-semibold">
             {t("detail.reviews.title")}
           </Typography>
           <Typography size="sm" className="text-text-muted">
@@ -105,7 +102,7 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
           <div className="bg-muted/45 flex min-w-0 flex-row flex-nowrap items-center gap-2 rounded-2xl px-3 py-2">
             <div className="flex min-w-0 shrink-0 items-center gap-2">
               <RatingStars value={averageRating ?? 0} readOnly size="sm" ariaLabel={t("detail.reviews.title")} />
-              <Typography size="sm" className="text-text-title shrink-0 font-semibold">
+              <Typography size="sm" className="text-text-body shrink-0">
                 {averageRating != null ? averageRating.toFixed(1) : t("detail.reviews.noAverage")}
               </Typography>
             </div>
@@ -206,7 +203,7 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Typography size="sm" className="text-text-title font-semibold">
+                      <Typography size="sm" className="text-text-body">
                         {review.authorName || t("detail.reviews.anonymousAuthor")}
                       </Typography>
                       {review.isViewerReview && (

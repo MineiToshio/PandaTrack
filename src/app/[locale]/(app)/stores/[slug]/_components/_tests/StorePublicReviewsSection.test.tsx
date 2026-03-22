@@ -12,7 +12,6 @@ const { useStoreReviewsStateMock } = vi.hoisted(() => ({
 vi.mock("next-intl", () => ({
   useTranslations: (namespace: string) => (key: string, values?: { count?: number }) => {
     if (namespace === "stores") {
-      if (key === "detail.reviews.eyebrow") return "Public trust";
       if (key === "detail.reviews.title") return "Community reviews";
       if (key === "detail.reviews.description") return "Public reviews help collectors judge store trust.";
       if (key === "detail.reviews.form.openCreateCta") return "Write a review";

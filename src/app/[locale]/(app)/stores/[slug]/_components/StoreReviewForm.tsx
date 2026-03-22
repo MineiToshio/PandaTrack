@@ -17,10 +17,7 @@ type StoreReviewFormProps = {
   existingReview: StoreViewerReview | null;
   onCancel?: () => void;
   onSaved?: (review: SavedStoreReview) => void;
-  onOptimisticSave?: (draft: {
-    overallRating: number;
-    comment: string | null;
-  }) => {
+  onOptimisticSave?: (draft: { overallRating: number; comment: string | null }) => {
     commit: (review: SavedStoreReview) => void;
     rollback: () => void;
   };
@@ -109,7 +106,7 @@ export default function StoreReviewForm({
       <input type="hidden" name="overallRating" value={ratingValue > 0 ? ratingValue : ""} />
 
       <div className="space-y-1">
-        <Typography size="sm" className="text-text-title font-semibold">
+        <Typography size="xs" className="text-text-muted">
           {t("detail.reviews.form.title")}
         </Typography>
         <Typography size="sm" className="text-text-muted">

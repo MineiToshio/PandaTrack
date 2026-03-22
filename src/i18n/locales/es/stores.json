@@ -132,7 +132,6 @@
     "receivesOrdersUnknown": "Pedidos: no especificado",
     "hasStockUnknown": "Inventario: no especificado",
     "reviews": {
-      "eyebrow": "Confianza pública",
       "title": "Reseñas de la comunidad",
       "description": "Las reseñas públicas ayudan a otros coleccionistas a juzgar qué tan confiable se siente esta tienda con el tiempo.",
       "showMoreCta": "Ver {count, plural, one {# reseña más} other {# reseñas más}}",
@@ -183,12 +182,10 @@
       }
     },
     "privateNote": {
-      "eyebrow": "Memoria privada",
       "title": "Tu nota privada",
       "description": "Solo tú puedes ver esta nota. Úsala para recordatorios, alertas o detalles de seguimiento.",
       "lastUpdated": "Última actualización: {date}",
       "form": {
-        "contentLabel": "Nota privada",
         "contentPlaceholder": "Añade un recordatorio o contexto privado sobre esta tienda.",
         "helper": "Esta nota nunca se muestra en el perfil público de la tienda.",
         "submitCta": "Guardar nota",
@@ -213,8 +210,6 @@
       "openCta": "Ver gobernanza",
       "title": "Actividad de gobernanza",
       "description": "Estas señales resumidas ayudan a entender cómo la comunidad intenta mejorar este perfil de tienda.",
-      "publicNoteEyebrow": "Resumen de gobernanza",
-      "publicNoteMessage": "La gobernanza comunitaria solo se muestra en resumen. Reportes: {reports}. Solicitudes de cambio: {changeRequests}.",
       "reportSectionTitle": "Reportes por motivo",
       "changeRequestSectionTitle": "Solicitudes de cambio",
       "noChangeRequests": "Aún no se han enviado solicitudes de cambio.",

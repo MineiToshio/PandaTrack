@@ -428,19 +428,6 @@ export default function StoreDetailContent({
             className="animate-[hero-fade-in-up_440ms_ease-out_both]"
             style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 4}ms` }}
           >
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <Typography size="xs" className="text-text-muted">
-                  {tStores("governance.summary.publicNoteEyebrow")}
-                </Typography>
-                <Typography size="sm" className="text-text-body mt-1">
-                  {tStores("governance.summary.publicNoteMessage", {
-                    reports: governanceSummary.totalReports,
-                    changeRequests: governanceSummary.totalChangeRequests,
-                  })}
-                </Typography>
-              </div>
-            </div>
             <Typography size="xs" className="text-text-muted">
               {tStores("create.contactChannelsLabel")}
             </Typography>

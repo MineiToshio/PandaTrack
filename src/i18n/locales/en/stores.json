@@ -132,7 +132,6 @@
     "receivesOrdersUnknown": "Orders: not specified",
     "hasStockUnknown": "Inventory: not specified",
     "reviews": {
-      "eyebrow": "Public trust",
       "title": "Community reviews",
       "description": "Public reviews help other collectors judge how reliable this store feels over time.",
       "showMoreCta": "View {count, plural, one {# more review} other {# more reviews}}",
@@ -183,12 +182,10 @@
       }
     },
     "privateNote": {
-      "eyebrow": "Private memory",
       "title": "Your private note",
       "description": "Only you can see this note. Use it for reminders, cautions, or follow-up details.",
       "lastUpdated": "Last updated: {date}",
       "form": {
-        "contentLabel": "Private note",
         "contentPlaceholder": "Add a reminder or private context about this store.",
         "helper": "This note is never shown in the public store profile.",
         "submitCta": "Save note",
@@ -213,8 +210,6 @@
       "openCta": "View governance",
       "title": "Governance activity",
       "description": "These summary signals help collectors understand how the community is trying to improve this store profile.",
-      "publicNoteEyebrow": "Governance summary",
-      "publicNoteMessage": "Community governance is visible in summary form only. Reports: {reports}. Change requests: {changeRequests}.",
       "reportSectionTitle": "Reports by reason",
       "changeRequestSectionTitle": "Change requests",
       "noChangeRequests": "No change requests have been submitted yet.",
