@@ -75,14 +75,14 @@
       "change_request_discarded": "No effective differences remained, so the pending change request was discarded."
     },
     "direct": {
-      "title": "Edit store",
+      "title": "Edit {storeName}",
       "description": "You can update this pending store directly because you are allowed to manage it.",
       "shortLabel": "Edit store",
       "submitCta": "Save changes",
       "submitting": "Saving changes…"
     },
     "changeRequest": {
-      "title": "Suggest store changes",
+      "title": "Suggest changes for {storeName}",
       "description": "Your edits will be saved as a change request for moderation instead of updating the public profile immediately.",
       "shortLabel": "Suggest changes",
       "submitCta": "Submit change request",

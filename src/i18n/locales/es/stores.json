@@ -75,14 +75,14 @@
       "change_request_discarded": "Ya no quedaban diferencias efectivas, así que la solicitud pendiente fue descartada."
     },
     "direct": {
-      "title": "Editar tienda",
+      "title": "Editar {storeName}",
       "description": "Puedes actualizar esta tienda pendiente directamente porque tienes permiso para administrarla.",
       "shortLabel": "Editar tienda",
       "submitCta": "Guardar cambios",
       "submitting": "Guardando cambios…"
     },
     "changeRequest": {
-      "title": "Sugerir cambios",
+      "title": "Sugerir cambios en {storeName}",
       "description": "Tus ediciones se guardarán como una solicitud de cambio para moderación en lugar de actualizar el perfil público de inmediato.",
       "shortLabel": "Sugerir cambios",
       "submitCta": "Enviar solicitud",

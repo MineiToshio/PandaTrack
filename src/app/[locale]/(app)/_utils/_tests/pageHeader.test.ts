@@ -50,6 +50,12 @@ describe("getBreadcrumbs", () => {
     expect(crumbs).toHaveLength(1);
     expect(crumbs[0]).toEqual({ labelKey: "nav.stores", href: "/en/stores" });
   });
+
+  it("returns only stores parent for store edit (slug crumb comes from header context)", () => {
+    const crumbs = getBreadcrumbs("/en/stores/some-id/edit", "en");
+    expect(crumbs).toHaveLength(1);
+    expect(crumbs[0]).toEqual({ labelKey: "nav.stores", href: "/en/stores" });
+  });
 });
 
 describe("getPageHeader", () => {
@@ -72,6 +78,14 @@ describe("getPageHeader", () => {
     const header = getPageHeader("/es/stores/new", "es");
     expect(header.isFirstLevel).toBe(false);
     expect(header.titleKey).toBe("stores.newStore");
+    expect(header.breadcrumbs).toHaveLength(1);
+    expect(header.breadcrumbs[0].labelKey).toBe("nav.stores");
+  });
+
+  it("returns stores.editStore title key for store edit route", () => {
+    const header = getPageHeader("/es/stores/some-slug/edit", "es");
+    expect(header.isFirstLevel).toBe(false);
+    expect(header.titleKey).toBe("stores.editStore");
     expect(header.breadcrumbs).toHaveLength(1);
     expect(header.breadcrumbs[0].labelKey).toBe("nav.stores");
   });

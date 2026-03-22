@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getStoreBySlug } from "@/queries/store";
-import SetHeaderTitle from "@/app/[locale]/(app)/_components/AppLayout/SetHeaderTitle";
+import StoreSegmentContentHeader from "./_components/StoreSegmentContentHeader";
 
 type StoreDetailLayoutProps = {
   children: React.ReactNode;
@@ -9,7 +9,7 @@ type StoreDetailLayoutProps = {
 };
 
 export default async function StoreDetailLayout({ children, params }: StoreDetailLayoutProps) {
-  const { slug } = await params;
+  const { slug, locale } = await params;
   const store = await getStoreBySlug(prisma, slug);
 
   if (!store) {
@@ -18,7 +18,7 @@ export default async function StoreDetailLayout({ children, params }: StoreDetai
 
   return (
     <>
-      <SetHeaderTitle title={store.name} />
+      <StoreSegmentContentHeader locale={locale} storeSlug={slug} storeName={store.name} />
       {children}
     </>
   );

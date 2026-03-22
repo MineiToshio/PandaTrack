@@ -14,6 +14,7 @@ const NESTED_SEGMENT_LABELS: Partial<Record<NavItemId, Record<string, string>>> 
   },
   stores: {
     new: "stores.newStore",
+    edit: "stores.editStore",
   },
 };
 
@@ -66,8 +67,14 @@ export function getBreadcrumbs(pathname: string, locale: string): BreadcrumbItem
   const navLabelKey = getNavLabelKeyForSegment(primary);
   const items: BreadcrumbItem[] = [{ labelKey: navLabelKey, href: basePath }];
 
-  for (let i = 1; i < segments.length - 1; i++) {
+  const lastIndex = segments.length - 1;
+
+  for (let i = 1; i < lastIndex; i++) {
     const segment = segments[i];
+    // .../stores/:slug/edit: skip the slug segment; the store name crumb comes from header context.
+    if (primary === "stores" && i === 1 && segment !== "new" && segments[lastIndex] === "edit") {
+      continue;
+    }
     const nestedLabels = NESTED_SEGMENT_LABELS[primary];
     const labelKey = nestedLabels?.[segment] ?? "breadcrumb.detail";
     const pathSoFar = `/${locale}/${segments.slice(0, i + 1).join("/")}`;

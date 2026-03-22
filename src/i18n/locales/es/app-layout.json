@@ -11,7 +11,8 @@
     "detail": "Detalle"
   },
   "stores": {
-    "newStore": "Nueva tienda"
+    "newStore": "Nueva tienda",
+    "editStore": "Editar"
   },
   "sidebar": {
     "expand": "Expandir barra lateral",

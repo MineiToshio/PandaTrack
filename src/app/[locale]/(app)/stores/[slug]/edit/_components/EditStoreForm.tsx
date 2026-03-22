@@ -227,7 +227,9 @@ export default function EditStoreForm({
       <div className="space-y-3">
         <BackNavLink href={`/${locale}${ROUTES.stores}/${store.slug}`}>{t("edit.backToDetail")}</BackNavLink>
         <Heading as="h1" size="sm" className="text-text-title">
-          {t(`${modeKey}.title`)}
+          {t(`${modeKey}.title`, {
+            storeName: name.trim() || store.name,
+          })}
         </Heading>
         <Typography size="sm" className="text-text-muted">
           {t(`${modeKey}.description`)}

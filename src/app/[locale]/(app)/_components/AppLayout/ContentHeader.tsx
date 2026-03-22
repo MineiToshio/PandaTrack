@@ -3,7 +3,7 @@
 import { ChevronRight, Menu } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { getPageHeader } from "@/app/[locale]/(app)/_utils/pageHeader";
+import { getPageHeader, type BreadcrumbItem } from "@/app/[locale]/(app)/_utils/pageHeader";
 import { useHeaderTitle } from "./HeaderTitleContext";
 import LanguageToggle from "@/app/[locale]/(landing)/_components/Menu/LanguageToggle";
 import ThemeToggle from "@/app/[locale]/(landing)/_components/Menu/ThemeToggle";
@@ -21,6 +21,26 @@ type ContentHeaderProps = {
   burgerButtonRef: React.RefObject<HTMLButtonElement | null>;
 };
 
+type DisplayBreadcrumb =
+  | { kind: "i18n"; href: string; labelKey: string }
+  | { kind: "literal"; href: string; label: string };
+
+function toDisplayBreadcrumbs(
+  items: BreadcrumbItem[],
+  afterFirst: { label: string; href: string } | null,
+): DisplayBreadcrumb[] {
+  if (items.length === 0) return [];
+  const first: DisplayBreadcrumb = { kind: "i18n", href: items[0].href, labelKey: items[0].labelKey };
+  if (!afterFirst) {
+    return [first, ...items.slice(1).map((b) => ({ kind: "i18n" as const, href: b.href, labelKey: b.labelKey }))];
+  }
+  return [
+    first,
+    { kind: "literal", href: afterFirst.href, label: afterFirst.label },
+    ...items.slice(1).map((b) => ({ kind: "i18n" as const, href: b.href, labelKey: b.labelKey })),
+  ];
+}
+
 export default function ContentHeader({
   locale,
   pathname,
@@ -30,8 +50,9 @@ export default function ContentHeader({
   burgerButtonRef,
 }: ContentHeaderProps) {
   const t = useTranslations("appLayout");
-  const { title: titleOverride } = useHeaderTitle();
+  const { title: titleOverride, breadcrumbAfterStores } = useHeaderTitle();
   const pageHeader = getPageHeader(pathname, locale);
+  const displayBreadcrumbs = toDisplayBreadcrumbs(pageHeader.breadcrumbs, breadcrumbAfterStores);
   const pageTitle = titleOverride ?? t(pageHeader.titleKey);
   const appShellBreadcrumbLabel = t("accessibility.breadcrumbNavigation");
   const appShellLanguageLabel = t("accessibility.languageNavigation");
@@ -50,16 +71,17 @@ export default function ContentHeader({
           className="shrink-0 lg:hidden"
         />
         <div className="flex min-w-0 flex-1 flex-row items-center gap-1.5 sm:gap-2">
-          {pageHeader.breadcrumbs.length > 0 && (
+          {displayBreadcrumbs.length > 0 && (
             <>
               <nav
                 aria-label={appShellBreadcrumbLabel}
                 className="flex max-w-[min(11rem,45%)] shrink-0 items-center gap-1.5 text-sm sm:max-w-none"
               >
-                {pageHeader.breadcrumbs.map((crumb, index) => {
-                  const label = t(crumb.labelKey);
+                {displayBreadcrumbs.map((crumb, index) => {
+                  const label = crumb.kind === "i18n" ? t(crumb.labelKey) : crumb.label;
+                  const key = `${crumb.href}-${index}`;
                   return (
-                    <span key={crumb.href} className="flex min-w-0 items-center gap-1.5">
+                    <span key={key} className="flex min-w-0 items-center gap-1.5">
                       {index > 0 && <ChevronRight className="text-text-muted h-4 w-4 shrink-0" aria-hidden />}
                       <Link
                         href={crumb.href}
