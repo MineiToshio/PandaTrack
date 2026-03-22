@@ -54,6 +54,40 @@
     "submitting": "Creando…",
     "backToList": "Volver a tiendas"
   },
+  "edit": {
+    "backToDetail": "Volver a la tienda",
+    "cancelCta": "Cancelar",
+    "identityEyebrow": "Paso 1",
+    "identityTitle": "Perfil editable",
+    "catalogEyebrow": "Paso 2",
+    "catalogTitle": "Catálogo y perfil comercial",
+    "contactEyebrow": "Paso 3",
+    "addressEyebrow": "Paso 4",
+    "commentEyebrow": "Detalles de la solicitud",
+    "commentTitle": "¿Por qué sugieres este cambio?",
+    "commentLabel": "Contexto de la solicitud (opcional)",
+    "commentHelper": "Agrega contexto breve que ayude al moderador a entender por qué se necesita esta actualización.",
+    "immutableFieldsHelper": "El tipo de tienda ({storeType}) y el país ({country}) no se pueden cambiar desde este flujo.",
+    "success": {
+      "direct_edit": "La tienda fue actualizada.",
+      "change_request_saved": "Tu solicitud de cambio fue guardada.",
+      "change_request_discarded": "Ya no quedaban diferencias efectivas, así que la solicitud pendiente fue descartada."
+    },
+    "direct": {
+      "title": "Editar tienda",
+      "description": "Puedes actualizar esta tienda pendiente directamente porque tienes permiso para administrarla.",
+      "shortLabel": "Editar tienda",
+      "submitCta": "Guardar cambios",
+      "submitting": "Guardando cambios…"
+    },
+    "changeRequest": {
+      "title": "Sugerir cambios",
+      "description": "Tus ediciones se guardarán como una solicitud de cambio para moderación en lugar de actualizar el perfil público de inmediato.",
+      "shortLabel": "Sugerir cambios",
+      "submitCta": "Enviar solicitud",
+      "submitting": "Guardando solicitud…"
+    }
+  },
   "duplicate": {
     "suggestionsTitle": "Tiendas con nombres similares",
     "suggestionsDescription": "Por favor, verifica que la tienda que vas a crear no exista actualmente.",
@@ -173,6 +207,93 @@
       }
     }
   },
+  "governance": {
+    "summary": {
+      "openCta": "Ver gobernanza",
+      "title": "Actividad de gobernanza",
+      "description": "Estas señales resumidas ayudan a entender cómo la comunidad intenta mejorar este perfil de tienda.",
+      "publicNoteEyebrow": "Resumen de gobernanza",
+      "publicNoteMessage": "La gobernanza comunitaria solo se muestra en resumen. Reportes: {reports}. Solicitudes de cambio: {changeRequests}.",
+      "reportSectionTitle": "Reportes por motivo",
+      "changeRequestSectionTitle": "Solicitudes de cambio",
+      "noChangeRequests": "Aún no se han enviado solicitudes de cambio.",
+      "noChangedFields": "No hay campos cambiados disponibles.",
+      "changeRequestStatuses": {
+        "PENDING": "Pendiente",
+        "APPROVED": "Aprobada",
+        "REJECTED": "Rechazada"
+      },
+      "fieldLabels": {
+        "name": "Nombre de la tienda",
+        "description": "Descripción",
+        "presenceTypes": "Canales de venta",
+        "productTypeKeys": "Tipos de producto",
+        "hasStock": "Inventario",
+        "receivesOrders": "Recibe pedidos",
+        "contactChannels": "Canales de contacto",
+        "addresses": "Direcciones",
+        "importCountries": "Países de importación"
+      }
+    },
+    "report": {
+      "openCta": "Reportar tienda",
+      "updateCta": "Actualizar reporte",
+      "title": "Reportar esta tienda",
+      "description": "Puedes mantener un solo reporte abierto por tienda. Si vuelves a abrir este formulario, se actualizará tu reporte activo.",
+      "reasonLabel": "Motivo",
+      "detailsLabel": "Contexto adicional (opcional)",
+      "detailsHelper": "Mantén el texto factual. Los detalles no se muestran públicamente.",
+      "submitCta": "Guardar reporte",
+      "submitting": "Guardando reporte…",
+      "cancelCta": "Cancelar",
+      "success": "Tu reporte fue guardado.",
+      "reasonOptions": {
+        "SPAM": "Perfil spam o estafa",
+        "DUPLICATE": "Tienda duplicada",
+        "INCORRECT_INFO": "Información incorrecta",
+        "DOES_NOT_EXIST": "La tienda ya no existe",
+        "INAPPROPRIATE": "Contenido inapropiado"
+      },
+      "errors": {
+        "unauthorized": "Debes iniciar sesión para reportar una tienda.",
+        "validation_failed": "Revisa el formulario e inténtalo otra vez.",
+        "storeUnavailable": "Esta tienda ya no está disponible.",
+        "reasonRequired": "Elige un motivo para el reporte.",
+        "detailsTooLong": "Los detalles del reporte son demasiado largos.",
+        "saveReportFailed": "No se pudo guardar el reporte. Inténtalo otra vez."
+      }
+    },
+    "productTypeRequest": {
+      "openCta": "Solicitar tipo de producto",
+      "title": "Solicitar un nuevo tipo de producto",
+      "description": "Si los tipos actuales no encajan con esta tienda, envía una sugerencia para revisión.",
+      "nameLabel": "Tipo de producto sugerido",
+      "nameHelper": "Usa una etiqueta corta y clara para coleccionistas.",
+      "reasonLabel": "¿Por qué deberíamos agregarlo? (opcional)",
+      "reasonHelper": "Este contexto ayuda a moderación a entender la necesidad.",
+      "submitCta": "Enviar solicitud",
+      "submitting": "Enviando solicitud…",
+      "cancelCta": "Cancelar",
+      "success": "Tu solicitud fue enviada.",
+      "errors": {
+        "unauthorized": "Debes iniciar sesión para solicitar un tipo de producto.",
+        "validation_failed": "Revisa la solicitud e inténtalo otra vez.",
+        "suggestedNameRequired": "Ingresa un nombre sugerido.",
+        "suggestedNameTooLong": "El nombre sugerido es demasiado largo.",
+        "reasonTooLong": "La justificación es demasiado larga.",
+        "saveProductTypeRequestFailed": "No se pudo guardar la solicitud. Inténtalo otra vez."
+      }
+    },
+    "edit": {
+      "errors": {
+        "unauthorized": "Debes iniciar sesión para editar esta tienda.",
+        "validation_failed": "Revisa el formulario e inténtalo otra vez.",
+        "storeUnavailable": "Esta tienda ya no está disponible.",
+        "commentTooLong": "El comentario de la solicitud es demasiado largo.",
+        "saveEditFailed": "No se pudo guardar la edición. Inténtalo otra vez."
+      }
+    }
+  },
   "validation": {
     "nameRequired": "El nombre es obligatorio",
     "nameTooLong": "Nombre demasiado largo",
@@ -188,7 +309,13 @@
     "contactValueInvalidTikTok": "Formato esperado: enlace de TikTok (ej. https://tiktok.com/@usuario)",
     "contactValueInvalidEmail": "Formato esperado: correo valido (ej. usuario@correo.com)",
     "contactValueInvalidPhone": "Formato esperado: telefono con al menos 7 digitos; puede incluir +, espacios, parentesis o guiones (ej. +51 999 999 999)",
-    "addressLineRequired": "La dirección es obligatoria"
+    "addressLineRequired": "La dirección es obligatoria",
+    "suggestedNameRequired": "El tipo de producto sugerido es obligatorio",
+    "suggestedNameTooLong": "El tipo de producto sugerido es demasiado largo",
+    "reasonTooLong": "La justificación es demasiado larga",
+    "reasonRequired": "El motivo es obligatorio",
+    "detailsTooLong": "Los detalles son demasiado largos",
+    "commentTooLong": "El comentario es demasiado largo"
   },
   "contactChannelTypes": {
     "INSTAGRAM": "Instagram",

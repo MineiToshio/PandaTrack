@@ -7,7 +7,7 @@ status: ACTIVE
 parent: BP-01
 source_issue: 75
 last_updated: 2026-03-21
-implementation_status: PLANNED
+implementation_status: IN_PROGRESS
 ---
 
 # WO-06 Store Governance Flows
@@ -142,4 +142,4 @@ Relevant acceptance signals:
 
 ## Status Note
 
-Planned. Schema foundations exist, but route contracts, public governance-summary reads, request-validation rules, and UI entry points still need implementation.
+In progress. Governance schema foundations exist and the slice implementation is wiring the public summary, report flow, product-type request flow, and `/stores/[slug]/edit` route contract.

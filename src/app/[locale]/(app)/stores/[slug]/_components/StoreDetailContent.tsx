@@ -15,6 +15,7 @@ import {
   Mail,
   MapPinned,
   PackageSearch,
+  Pencil,
   Phone,
   ShoppingBag,
   UserRound,
@@ -26,18 +27,26 @@ import { ROUTES } from "@/lib/constants";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn } from "@/lib/styles";
 import type { PublicStoreReview, StoreDetail, StoreViewerNote, StoreViewerReview } from "@/queries/store";
+import type { EditableStore, StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
 import StoreReviewAggregateBadge from "./StoreReviewAggregateBadge";
 import StorePublicReviewsSection from "./StorePublicReviewsSection";
 import StoreReviewsStateProvider from "./StoreReviewsStateProvider";
 import StoreNoteForm from "./StoreNoteForm";
 import StoreEmptyCatalogTag from "../../_components/StoreEmptyCatalogTag";
+import StoreGovernanceSummaryModal from "./StoreGovernanceSummaryModal";
+import StoreReportModal from "./StoreReportModal";
 
 type StoreDetailContentProps = {
   locale: string;
   store: StoreDetail;
+  editableStore: EditableStore;
   reviews: PublicStoreReview[];
   viewerReview: StoreViewerReview | null;
   viewerNote: StoreViewerNote | null;
+  governanceSummary: StoreGovernanceSummary;
+  governanceViewerContext: StoreGovernanceViewerContext;
+  canAccessEditRoute: boolean;
+  canDirectlyEdit: boolean;
 };
 
 const STAGGER_BASE_DELAY_MS = 90;
@@ -88,9 +97,14 @@ function getContactIcon(type: NonNullable<StoreDetail["contactChannels"]>[number
 export default function StoreDetailContent({
   locale,
   store,
+  editableStore,
   reviews,
   viewerReview,
   viewerNote,
+  governanceSummary,
+  governanceViewerContext,
+  canAccessEditRoute,
+  canDirectlyEdit,
 }: StoreDetailContentProps) {
   const tStores = useTranslations("stores");
   const tCountries = useTranslations("countries");
@@ -121,6 +135,7 @@ export default function StoreDetailContent({
         : tListing("cards.hasStockNo");
   const contactChannelsCount = store.contactChannels?.length ?? 0;
   const addressesCount = store.addresses?.length ?? 0;
+  const editModeLabel = canDirectlyEdit ? tStores("edit.direct.shortLabel") : tStores("edit.changeRequest.shortLabel");
 
   return (
     <StoreReviewsStateProvider
@@ -150,32 +165,52 @@ export default function StoreDetailContent({
             />
 
             <div className="relative z-10 space-y-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                <div className="flex items-center gap-4">
-                  {isBusiness && store.logoUrl ? (
-                    <div className="bg-background/85 relative size-20 shrink-0 animate-[hero-float_5s_ease-in-out_infinite] overflow-hidden rounded-2xl shadow-sm">
-                      <Image src={store.logoUrl} alt="" width={80} height={80} className="object-cover" unoptimized />
-                    </div>
-                  ) : (
-                    <div className="bg-background/85 text-primary flex size-20 shrink-0 animate-[hero-float_5s_ease-in-out_infinite] items-center justify-center rounded-2xl shadow-sm">
-                      <Building2 className="size-9" aria-hidden />
-                    </div>
-                  )}
-                  <div className="space-y-2">
-                    <Heading as="h1" size="sm" className="text-text-title">
+              <div className="flex items-start gap-4">
+                {isBusiness && store.logoUrl ? (
+                  <div className="bg-background/85 relative size-20 shrink-0 animate-[hero-float_5s_ease-in-out_infinite] overflow-hidden rounded-2xl shadow-sm">
+                    <Image src={store.logoUrl} alt="" width={80} height={80} className="object-cover" unoptimized />
+                  </div>
+                ) : (
+                  <div className="bg-background/85 text-primary flex size-20 shrink-0 animate-[hero-float_5s_ease-in-out_infinite] items-center justify-center rounded-2xl shadow-sm">
+                    <Building2 className="size-9" aria-hidden />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <Heading as="h1" size="sm" className="text-text-title min-w-0 flex-1 pr-1">
                       {store.name}
                     </Heading>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={cn(TAG_CLASSNAME, "bg-background/80 text-text-body")}>
-                        <Globe className="size-3.5" aria-hidden />
-                        {storeTypeLabel}
-                      </span>
-                      <span className={cn(TAG_CLASSNAME, "bg-background/80 text-text-body")}>
-                        <MapPinned className="size-3.5" aria-hidden />
-                        {tCountries(store.countryCode)}
-                      </span>
-                      <StoreReviewAggregateBadge className={TAG_CLASSNAME} />
+                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+                      <StoreGovernanceSummaryModal locale={locale} storeSlug={store.slug} summary={governanceSummary} />
+                      <StoreReportModal
+                        locale={locale}
+                        storeSlug={store.slug}
+                        existingReport={governanceViewerContext.openReport}
+                      />
+                      {canAccessEditRoute && (
+                        <Link
+                          href={`/${locale}${ROUTES.stores}/${editableStore.slug}/edit`}
+                          className={cn(
+                            buttonVariants({ variant: "secondary", size: "sm" }),
+                            "gap-1.5 max-lg:h-11 max-lg:min-w-11 max-lg:justify-center max-lg:px-0",
+                          )}
+                        >
+                          <Pencil className="size-4 shrink-0" aria-hidden />
+                          <span className="max-lg:sr-only">{editModeLabel}</span>
+                        </Link>
+                      )}
                     </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={cn(TAG_CLASSNAME, "bg-background/80 text-text-body")}>
+                      <Globe className="size-3.5" aria-hidden />
+                      {storeTypeLabel}
+                    </span>
+                    <span className={cn(TAG_CLASSNAME, "bg-background/80 text-text-body")}>
+                      <MapPinned className="size-3.5" aria-hidden />
+                      {tCountries(store.countryCode)}
+                    </span>
+                    <StoreReviewAggregateBadge className={TAG_CLASSNAME} />
                   </div>
                 </div>
               </div>
@@ -401,6 +436,19 @@ export default function StoreDetailContent({
             className="bg-background/70 animate-[hero-fade-in-up_440ms_ease-out_both] rounded-3xl p-5 shadow-sm sm:p-6"
             style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 4}ms` }}
           >
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <Typography size="xs" className="text-text-muted">
+                  {tStores("governance.summary.publicNoteEyebrow")}
+                </Typography>
+                <Typography size="sm" className="text-text-body mt-1">
+                  {tStores("governance.summary.publicNoteMessage", {
+                    reports: governanceSummary.totalReports,
+                    changeRequests: governanceSummary.totalChangeRequests,
+                  })}
+                </Typography>
+              </div>
+            </div>
             <Typography size="xs" className="text-text-muted">
               {tStores("create.contactChannelsLabel")}
             </Typography>

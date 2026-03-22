@@ -25,6 +25,7 @@ import StoreSegmentedControl from "./StoreSegmentedControl";
 import StoreSelectableTagGroup from "./StoreSelectableTagGroup";
 import StoreToggleSwitch from "./StoreToggleSwitch";
 import StoreMultiTagAutocomplete from "../../_components/StoreMultiTagAutocomplete";
+import StoreProductTypeRequestModal from "../../_components/StoreProductTypeRequestModal";
 import StoreFormSectionCard from "./StoreFormSectionCard";
 import StoreEmptyStateBox from "./StoreEmptyStateBox";
 
@@ -525,7 +526,11 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
           </div>
         </StoreFormSectionCard>
 
-        <StoreFormSectionCard eyebrow={tCreate("commercialEyebrow")} title={tCreate("commercialTitle")}>
+        <StoreFormSectionCard
+          eyebrow={tCreate("commercialEyebrow")}
+          title={tCreate("commercialTitle")}
+          action={<StoreProductTypeRequestModal locale={locale} source="create" />}
+        >
           <div className="space-y-3">
             <Label>{tCreate("presenceLabel")}</Label>
             <div

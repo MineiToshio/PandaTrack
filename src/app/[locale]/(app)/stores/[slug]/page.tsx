@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth/auth-server";
+import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
 import { getPublicStoreReviews, getStoreBySlug, getStoreViewerContext } from "@/queries/store";
+import { getEditableStoreBySlug, getStoreGovernanceSummary, getStoreGovernanceViewerContext } from "@/queries/storeGovernance";
 import { buildStoreDetailMetadata } from "@/lib/seo";
 import StoreDetailContent from "./_components/StoreDetailContent";
 
@@ -24,26 +25,40 @@ export async function generateMetadata({ params }: StoreDetailPageProps) {
 export default async function StoreDetailPage({ params }: StoreDetailPageProps) {
   const { locale, slug } = await params;
   const store = await getStoreBySlug(prisma, slug);
+  const editableStore = await getEditableStoreBySlug(prisma, slug);
 
-  if (!store) {
+  if (!store || !editableStore) {
     notFound();
   }
 
   const session = await getSession();
-  const [reviews, viewerContext] = session?.user?.id
-    ? await Promise.all([
-        getPublicStoreReviews(prisma, store.id, session.user.id, store.reviewCount),
-        getStoreViewerContext(prisma, store.id, session.user.id),
-      ])
-    : [[], { review: null, note: null }];
+  const isAdmin = getIsAdmin(session);
+  const [reviews, viewerContext, governanceSummary, governanceViewerContext] = await Promise.all([
+    session?.user?.id ? getPublicStoreReviews(prisma, store.id, session.user.id, store.reviewCount) : [],
+    session?.user?.id ? getStoreViewerContext(prisma, store.id, session.user.id) : { review: null, note: null },
+    getStoreGovernanceSummary(prisma, store.id),
+    session?.user?.id
+      ? getStoreGovernanceViewerContext(prisma, store.id, session.user.id)
+      : { openReport: null, openChangeRequest: null },
+  ]);
+
+  const canAccessEditRoute = session?.user?.id != null;
+  const canDirectlyEdit = Boolean(
+    session?.user?.id && (isAdmin || (editableStore.status === "PENDING" && editableStore.createdByUserId === session.user.id)),
+  );
 
   return (
     <StoreDetailContent
       locale={locale}
       store={store}
+      editableStore={editableStore}
       reviews={reviews}
       viewerReview={viewerContext.review}
       viewerNote={viewerContext.note}
+      governanceSummary={governanceSummary}
+      governanceViewerContext={governanceViewerContext}
+      canAccessEditRoute={canAccessEditRoute}
+      canDirectlyEdit={canDirectlyEdit}
     />
   );
 }

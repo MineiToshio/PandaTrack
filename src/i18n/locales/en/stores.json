@@ -54,6 +54,40 @@
     "submitting": "Creating…",
     "backToList": "Back to stores"
   },
+  "edit": {
+    "backToDetail": "Back to store",
+    "cancelCta": "Cancel",
+    "identityEyebrow": "Step 1",
+    "identityTitle": "Editable profile",
+    "catalogEyebrow": "Step 2",
+    "catalogTitle": "Catalog and commerce",
+    "contactEyebrow": "Step 3",
+    "addressEyebrow": "Step 4",
+    "commentEyebrow": "Request details",
+    "commentTitle": "Why are you suggesting this change?",
+    "commentLabel": "Change request context (optional)",
+    "commentHelper": "Add concise context that helps moderators understand why this update is needed.",
+    "immutableFieldsHelper": "Store type ({storeType}) and country ({country}) cannot be changed from this flow.",
+    "success": {
+      "direct_edit": "The store was updated.",
+      "change_request_saved": "Your change request was saved.",
+      "change_request_discarded": "No effective differences remained, so the pending change request was discarded."
+    },
+    "direct": {
+      "title": "Edit store",
+      "description": "You can update this pending store directly because you are allowed to manage it.",
+      "shortLabel": "Edit store",
+      "submitCta": "Save changes",
+      "submitting": "Saving changes…"
+    },
+    "changeRequest": {
+      "title": "Suggest store changes",
+      "description": "Your edits will be saved as a change request for moderation instead of updating the public profile immediately.",
+      "shortLabel": "Suggest changes",
+      "submitCta": "Submit change request",
+      "submitting": "Saving request…"
+    }
+  },
   "duplicate": {
     "suggestionsTitle": "Stores with similar names",
     "suggestionsDescription": "Please verify the store you are about to create does not already exist.",
@@ -173,6 +207,93 @@
       }
     }
   },
+  "governance": {
+    "summary": {
+      "openCta": "View governance",
+      "title": "Governance activity",
+      "description": "These summary signals help collectors understand how the community is trying to improve this store profile.",
+      "publicNoteEyebrow": "Governance summary",
+      "publicNoteMessage": "Community governance is visible in summary form only. Reports: {reports}. Change requests: {changeRequests}.",
+      "reportSectionTitle": "Reports by reason",
+      "changeRequestSectionTitle": "Change requests",
+      "noChangeRequests": "No change requests have been submitted yet.",
+      "noChangedFields": "No field changes available.",
+      "changeRequestStatuses": {
+        "PENDING": "Pending",
+        "APPROVED": "Approved",
+        "REJECTED": "Rejected"
+      },
+      "fieldLabels": {
+        "name": "Store name",
+        "description": "Description",
+        "presenceTypes": "Sales channels",
+        "productTypeKeys": "Product types",
+        "hasStock": "Inventory",
+        "receivesOrders": "Orders accepted",
+        "contactChannels": "Contact channels",
+        "addresses": "Addresses",
+        "importCountries": "Import countries"
+      }
+    },
+    "report": {
+      "openCta": "Report store",
+      "updateCta": "Update report",
+      "title": "Report this store",
+      "description": "You can keep one open report per store. Reopening this form updates your active report.",
+      "reasonLabel": "Reason",
+      "detailsLabel": "Additional context (optional)",
+      "detailsHelper": "Keep it factual. Raw details stay hidden from public visitors.",
+      "submitCta": "Save report",
+      "submitting": "Saving report…",
+      "cancelCta": "Cancel",
+      "success": "Your report was saved.",
+      "reasonOptions": {
+        "SPAM": "Spam or scam profile",
+        "DUPLICATE": "Duplicate store",
+        "INCORRECT_INFO": "Incorrect information",
+        "DOES_NOT_EXIST": "Store no longer exists",
+        "INAPPROPRIATE": "Inappropriate content"
+      },
+      "errors": {
+        "unauthorized": "You must sign in to report a store.",
+        "validation_failed": "Please review the report form and try again.",
+        "storeUnavailable": "This store is no longer available.",
+        "reasonRequired": "Choose one reason for the report.",
+        "detailsTooLong": "Report details are too long.",
+        "saveReportFailed": "Could not save the report. Please try again."
+      }
+    },
+    "productTypeRequest": {
+      "openCta": "Request product type",
+      "title": "Request a new product type",
+      "description": "If the existing product types do not fit this store, send a suggestion for moderation review.",
+      "nameLabel": "Suggested product type",
+      "nameHelper": "Use a short, collector-friendly label.",
+      "reasonLabel": "Why should we add it? (optional)",
+      "reasonHelper": "This context helps moderators understand the need.",
+      "submitCta": "Send request",
+      "submitting": "Sending request…",
+      "cancelCta": "Cancel",
+      "success": "Your product type request was sent.",
+      "errors": {
+        "unauthorized": "You must sign in to request a product type.",
+        "validation_failed": "Please review the request and try again.",
+        "suggestedNameRequired": "Enter a suggested product type name.",
+        "suggestedNameTooLong": "The product type name is too long.",
+        "reasonTooLong": "The justification is too long.",
+        "saveProductTypeRequestFailed": "Could not save the request. Please try again."
+      }
+    },
+    "edit": {
+      "errors": {
+        "unauthorized": "You must sign in to edit this store.",
+        "validation_failed": "Please review the edit form and try again.",
+        "storeUnavailable": "This store is no longer available.",
+        "commentTooLong": "The change request comment is too long.",
+        "saveEditFailed": "Could not save the edit. Please try again."
+      }
+    }
+  },
   "validation": {
     "nameRequired": "Name is required",
     "nameTooLong": "Name is too long",
@@ -188,7 +309,13 @@
     "contactValueInvalidTikTok": "Expected format: TikTok URL (e.g. https://tiktok.com/@username)",
     "contactValueInvalidEmail": "Expected format: valid email address (e.g. user@example.com)",
     "contactValueInvalidPhone": "Expected format: phone number with at least 7 digits; it may include +, spaces, parentheses, or hyphens (e.g. +1 555 123 4567)",
-    "addressLineRequired": "Address line is required"
+    "addressLineRequired": "Address line is required",
+    "suggestedNameRequired": "Suggested product type is required",
+    "suggestedNameTooLong": "Suggested product type is too long",
+    "reasonTooLong": "Justification is too long",
+    "reasonRequired": "Reason is required",
+    "detailsTooLong": "Details are too long",
+    "commentTooLong": "Comment is too long"
   },
   "contactChannelTypes": {
     "INSTAGRAM": "Instagram",

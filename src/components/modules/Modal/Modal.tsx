@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useEffectEvent } from "react";
 import Heading from "@/components/core/Heading";
+import Portal from "@/components/core/Portal";
 import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
 
@@ -58,20 +59,26 @@ export default function Modal({
   const descriptionId = descriptionIdProp ?? generatedDescriptionId;
   const panelRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<Element | null>(null);
+  const onCloseEvent = useEffectEvent(onClose);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      onCloseEvent();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const returnFocusNode = returnFocusRef?.current ?? null;
     previousActiveElementRef.current = document.activeElement ?? null;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.preventDefault();
-      onClose();
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
 
     const focusTarget = initialFocusRef?.current ?? panelRef.current;
     if (focusTarget) {
@@ -86,13 +93,12 @@ export default function Modal({
     }
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
       const node = (returnFocusRef != null ? returnFocusNode : previousActiveElementRef.current) as HTMLElement | null;
       if (node && typeof node.focus === "function") {
         node.focus();
       }
     };
-  }, [isOpen, onClose, initialFocusRef, returnFocusRef]);
+  }, [isOpen, initialFocusRef, returnFocusRef]);
 
   if (!isOpen) return null;
 
@@ -101,38 +107,40 @@ export default function Modal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      role={role}
-      aria-modal="true"
-      aria-labelledby={titleId}
-      aria-describedby={description ? descriptionId : undefined}
-    >
-      <button
-        type="button"
-        className="bg-background/70 absolute inset-0 backdrop-blur-sm"
-        onClick={handleBackdropClick}
-        aria-hidden
-        tabIndex={-1}
-      />
+    <Portal>
       <div
-        ref={panelRef}
-        className={cn(
-          "border-border bg-background relative z-10 w-full max-w-lg rounded-xl border p-6 shadow-xl",
-          className,
-        )}
-        role="document"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        role={role}
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
       >
-        <Heading as="h2" id={titleId} size="sm" className="text-text-title mb-2">
-          {title}
-        </Heading>
-        {description && (
-          <Typography id={descriptionId} size="sm" className="text-text-body mb-4">
-            {description}
-          </Typography>
-        )}
-        {children}
+        <button
+          type="button"
+          className="bg-background/70 absolute inset-0 backdrop-blur-sm"
+          onClick={handleBackdropClick}
+          aria-hidden
+          tabIndex={-1}
+        />
+        <div
+          ref={panelRef}
+          className={cn(
+            "border-border bg-background relative z-10 w-full max-w-lg rounded-xl border p-6 shadow-xl",
+            className,
+          )}
+          role="document"
+        >
+          <Heading as="h2" id={titleId} size="sm" className="text-text-title mb-2">
+            {title}
+          </Heading>
+          {description && (
+            <Typography id={descriptionId} size="sm" className="text-text-body mb-4">
+              {description}
+            </Typography>
+          )}
+          {children}
+        </div>
       </div>
-    </div>
+    </Portal>
   );
 }
