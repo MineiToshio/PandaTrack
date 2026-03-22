@@ -51,8 +51,8 @@ Read these on every implementation because they define project-wide defaults:
 
 ### React, Next.js, and frontend structure
 
-- `react-next-components.mdc`: Use when creating or refactoring React components, pages, layouts, hooks, client boundaries, or component composition.
-- `project-structure.mdc`: Use when deciding where files should live or when adding new route-level or shared modules.
+- `react-next-components.mdc`: Use when creating or refactoring React components, pages, layouts, hooks, client boundaries, or component composition. It also reinforces subtree reuse before creating parallel route-local components.
+- `project-structure.mdc`: Use when deciding where files should live or when adding new route-level or shared modules, including `_components/share/` folders for route-subtree reuse and promotion from child pages when reuse appears.
 - `role-frontend-development.mdc`: Use when designing component APIs, extracting hooks, splitting components, or making maintainability decisions in frontend code.
 - `role-ui-ux-design.mdc`: Use when making layout, hierarchy, spacing, interaction, or flow decisions.
 - `responsive-design.mdc`: Use whenever UI can be affected by viewport changes, especially navigation, headers, cards, tables, forms, and dense layouts.
@@ -102,7 +102,7 @@ Read these on every implementation because they define project-wide defaults:
 | `posthog-events.mdc` | Event naming and tracking expectations | Meaningful user interactions change |
 | `prisma-data-layer.mdc` | Prisma data access boundaries | Prisma, queries, repositories, or DB access change |
 | `prisma-migration-workflow.mdc` | Schema and migration workflow | Prisma schema or migrations change |
-| `project-structure.mdc` | File placement and project organization | New files/folders are added or moved |
+| `project-structure.mdc` | File placement and project organization | New files/folders are added or moved, including route-subtree shared component placement |
 | `quality-docs-cleanup.mdc` | Comments, cleanup, lint discipline | Cleanup, JSDoc, comments, or lint exceptions are involved |
 | `react-next-components.mdc` | React and Next component patterns | Components, layouts, pages, hooks, or client boundaries change |
 | `responsive-design.mdc` | Responsive layout behavior | UI changes must work across breakpoints |

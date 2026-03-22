@@ -1,8 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { buildPageMetadata } from "@/lib/seo";
-import Heading from "@/components/core/Heading";
-import Typography from "@/components/core/Typography";
+import AppPlaceholderPage from "../../_components/AppPlaceholderPage";
 
 type PreOrdersPageProps = {
   params: Promise<{ locale: string }>;
@@ -24,15 +23,6 @@ export default async function PreOrdersPage({ params }: PreOrdersPageProps) {
   const t = await getTranslations({ locale, namespace: "appLayout" });
 
   return (
-    <div className="text-foreground px-4 py-8">
-      <div className="mx-auto max-w-4xl">
-        <Heading as="h2" size="sm" className="text-text-title">
-          {t("nav.preOrders")}
-        </Heading>
-        <Typography size="md" className="text-text-body mt-2">
-          {t("placeholder")}
-        </Typography>
-      </div>
-    </div>
+    <AppPlaceholderPage title={t("nav.preOrders")} description={t("placeholder")} />
   );
 }

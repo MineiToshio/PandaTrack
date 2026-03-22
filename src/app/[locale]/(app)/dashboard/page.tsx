@@ -1,8 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { buildPageMetadata } from "@/lib/seo";
-import Heading from "@/components/core/Heading";
-import Typography from "@/components/core/Typography";
+import AppPlaceholderPage from "../_components/AppPlaceholderPage";
 
 type DashboardPageProps = {
   params: Promise<{ locale: string }>;
@@ -25,15 +24,6 @@ export default async function DashboardPage({ params }: DashboardPageProps) {
   const t = await getTranslations({ locale, namespace: "dashboard" });
 
   return (
-    <div className="text-foreground px-4 py-8">
-      <div className="mx-auto max-w-4xl">
-        <Heading as="h1" size="sm" className="text-text-title">
-          {t("title")}
-        </Heading>
-        <Typography size="md" className="text-text-body mt-2">
-          {t("welcome")}
-        </Typography>
-      </div>
-    </div>
+    <AppPlaceholderPage title={t("title")} description={t("welcome")} headingAs="h1" />
   );
 }

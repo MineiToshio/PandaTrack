@@ -95,6 +95,7 @@ Code comments must explain behavior and intent only, independent of project mana
 
 Prefer reusing existing building blocks so the app stays consistent and maintainable.
 
+- **Reuse check is mandatory before creating UI**: Before adding a new component, styled element block, or duplicated Tailwind stack, check in this order: `src/components/core/`, `src/components/modules/`, the current route subtree's parent `_components/share/`, and then the local page `_components/`. Do not skip this review step.
 - **Core and module components first**: Before adding raw HTML or new components, check `src/components/core/` and `src/components/modules/`. Use `Typography` for paragraph or span text, `Heading` for headings, `Button` for actions, `Input` / `Textarea` / **`Select`** for native form controls, etc., so styling and behavior stay consistent.
 - **Native form controls belong in core**: Do not paste a styled `<select>` (or duplicate `Input`-level classes on `<select>`) inside route `_components` or modules. Use **`src/components/core/Select`** and pass `error`, `className`, and `showChevron` when you need the custom chevron layout. If a new form primitive is needed app-wide, add or extend a **core** component instead of a route-local copy.
 - **Semantic HTML when no component fits**: If no core or module component matches the need, use the appropriate HTML element (`<p>`, `<button>`, `<nav>`, etc.) with the project’s Tailwind/semantic tokens. Do not create a one-off component when a simple element plus `className` is enough.
@@ -122,6 +123,9 @@ Prefer reusing existing building blocks so the app stays consistent and maintain
 
 Whenever the same components, functions, behavior, or logic appears in more than one place, extract it into a reusable unit instead of duplicating. Apply DRY (Don't Repeat Yourself) by default.
 
+- **Second-use extraction is expected**: If the same UI structure, field group, interactive control, or layout pattern appears in a second place, extract it in that same change instead of shipping another copy. Do not leave the duplication behind as "cleanup for later".
+- **Promote to the right shared scope immediately**: When reuse crosses page boundaries, move the code to the nearest shared owner right away: local page `_components`, parent route `_components/share/`, then `src/components/modules/`, then `src/components/core/` depending on scope. Do not keep one copy in `new/`, another in `edit/`, and plan to unify later.
+- **Copy-pasted JSX is a smell by default**: If a new component is mostly copied from an existing one and only labels, options, handlers, or a small part of the markup differ, stop and extract a reusable component instead.
 - **Repeated UI, layout, or form structure**: Extract a shared component. Prefer reusing existing components from `src/components/core/` or `src/components/modules/` first; if the repeated block has no suitable component, create one (in core, modules, or route-level `_components` as per project structure). Pass varying parts as props or children.
 - **Repeated logic or calculations**: Extract to a shared function. Place it in `src/lib/` for app-wide use, in `src/hooks/` for reactive logic, or in route-level `_utils`/`_actions` when scoped to a segment.
 - **Repeated behavior or flow** (e.g. same submit flow with different endpoints, same validation pattern): Extract to a shared function, hook, or small module so one place owns the behavior and callers stay thin.

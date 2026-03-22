@@ -14,7 +14,7 @@ import { POSTHOG_EVENTS } from "@/lib/constants";
 import {
   saveStoreProductTypeRequest,
   type SaveStoreProductTypeRequestResult,
-} from "../_actions/saveStoreProductTypeRequest";
+} from "../../_actions/saveStoreProductTypeRequest";
 
 type StoreProductTypeRequestModalProps = {
   locale: string;

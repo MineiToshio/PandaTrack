@@ -1,8 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { buildPageMetadata } from "@/lib/seo";
-import Heading from "@/components/core/Heading";
-import Typography from "@/components/core/Typography";
+import AppPlaceholderPage from "../_components/AppPlaceholderPage";
 
 type PurchasesPageProps = {
   params: Promise<{ locale: string }>;
@@ -24,15 +23,6 @@ export default async function PurchasesPage({ params }: PurchasesPageProps) {
   const t = await getTranslations({ locale, namespace: "appLayout" });
 
   return (
-    <div className="text-foreground px-4 py-8">
-      <div className="mx-auto max-w-4xl">
-        <Heading as="h2" size="sm" className="text-text-title">
-          {t("nav.purchases")}
-        </Heading>
-        <Typography size="md" className="text-text-body mt-2">
-          {t("placeholder")}
-        </Typography>
-      </div>
-    </div>
+    <AppPlaceholderPage title={t("nav.purchases")} description={t("placeholder")} />
   );
 }

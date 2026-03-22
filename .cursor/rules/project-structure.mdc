@@ -144,6 +144,9 @@ Multi-file:
 Components that are specific to a single page or route group live next to that page.
 
 - Use a **`_components`** folder inside the route/layout that owns them (e.g. **`src/app/[locale]/(landing)/_components/`**).
+- When a route segment has child pages and some components are reused across that segment and its descendants, place those shared subtree components inside **`_components/shared/`** for that segment (for example **`src/app/[locale]/(app)/stores/_components/shared/`**).
+- Put components directly in the owning **`_components/`** folder only when they are used by that route itself and not by child routes.
+- Keep child-page-only components in that child page's own **`_components/`** folder when they are not reused outside that page.
 
 **Single-file component**
 
@@ -159,6 +162,21 @@ Components that are specific to a single page or route group live next to that p
   - **`src/app/[locale]/(landing)/_components/Menu/Menu.tsx`** (and siblings inside `Menu/`)
   - **`src/app/[locale]/(landing)/_components/Waitlist/Waitlist.tsx`** (and siblings inside `Waitlist/`)
   - **`src/app/[locale]/(landing)/_components/Waitlist/_tests/Waitlist.test.tsx`**
+
+### Shared route-subtree components → `_components/share/`
+
+Use **`_components/share/`** when multiple pages inside the same route subtree reuse the same UI and that UI does not belong in app-wide core or module components.
+
+- Use this for feature-shared UI across sibling pages such as **`stores/page.tsx`**, **`stores/new/page.tsx`**, **`stores/[slug]/page.tsx`**, or **`stores/[slug]/edit/page.tsx`**.
+- When a component that started in a child page becomes reused by another page in the same subtree, move it to the parent route's **`_components/share/`** in that same change.
+- Do not move app-wide primitives into **`_components/share/`**. If the component is broadly reusable across unrelated features, keep it in **`src/components/core/`** or **`src/components/modules/`**.
+- Keep subtree-shared tests next to the component inside that shared component folder, following the same single-file vs multi-file rules.
+
+Examples:
+
+- **`src/app/[locale]/(app)/stores/_components/StoreListingFilters.tsx`**: used only by the stores listing page.
+- **`src/app/[locale]/(app)/stores/_components/share/StoreFormSectionCard.tsx`**: shared by multiple pages inside the stores subtree.
+- **`src/app/[locale]/(app)/stores/new/_components/CreateStoreForm.tsx`**: used only by the create page.
 
 ---
 

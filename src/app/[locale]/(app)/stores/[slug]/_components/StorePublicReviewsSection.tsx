@@ -10,6 +10,7 @@ import Typography from "@/components/core/Typography";
 import { Modal } from "@/components/modules/Modal";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import type { StoreViewerReview } from "@/queries/store";
+import StoreSurfaceCard from "../../_components/share/StoreSurfaceCard";
 import { deleteStoreReview } from "../_actions/deleteStoreReview";
 import StoreReviewForm from "./StoreReviewForm";
 import { useStoreReviewsState } from "./StoreReviewsStateProvider";
@@ -86,7 +87,7 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
   };
 
   return (
-    <section className="bg-background/70 rounded-3xl p-5 shadow-sm sm:p-6">
+    <StoreSurfaceCard>
       <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0 space-y-1">
           <Typography size="xs" className="text-text-muted">
@@ -304,6 +305,6 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
           </Button>
         </div>
       )}
-    </section>
+    </StoreSurfaceCard>
   );
 }

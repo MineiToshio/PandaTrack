@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
+import Input from "@/components/core/Input";
 import Typography from "@/components/core/Typography";
 import { POSTHOG_EVENTS, REFERRAL_QUERY_KEY, REFERRAL_VALUE_WAITLIST } from "@/lib/constants";
 import { cn } from "@/lib/styles";
@@ -159,11 +160,11 @@ export default function WaitlistShare({ locale }: { locale: string }) {
             <Typography size="sm" className="text-text-muted mb-2">
               {t("copyFallbackLabel")}
             </Typography>
-            <input
+            <Input
               type="text"
               readOnly
               value={shareUrl}
-              className="border-border bg-background text-foreground focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none"
+              className="w-full"
               aria-label={t("copyFallbackLabel")}
               onFocus={(e) => e.target.select()}
             />

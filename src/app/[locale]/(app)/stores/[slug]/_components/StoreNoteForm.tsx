@@ -7,6 +7,7 @@ import Label from "@/components/core/Label";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import type { StoreViewerNote } from "@/queries/store";
+import StoreSurfaceCard from "../../_components/share/StoreSurfaceCard";
 import { saveStoreNote } from "../_actions/saveStoreNote";
 
 type StoreNoteFormProps = {
@@ -58,7 +59,7 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
     : null;
 
   return (
-    <section className="bg-background/70 rounded-3xl p-5 shadow-sm sm:p-6">
+    <StoreSurfaceCard>
       <div className="space-y-1">
         <Typography size="xs" className="text-text-muted">
           {t("detail.privateNote.eyebrow")}
@@ -134,6 +135,6 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
               : t("detail.privateNote.form.submitCta")}
         </Button>
       </form>
-    </section>
+    </StoreSurfaceCard>
   );
 }

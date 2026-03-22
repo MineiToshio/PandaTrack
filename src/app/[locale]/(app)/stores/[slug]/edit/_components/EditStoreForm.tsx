@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Globe, Plus, X } from "lucide-react";
+import { Box, Globe, Plus } from "lucide-react";
 import { startTransition, useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
@@ -10,33 +10,24 @@ import FieldCharacterCount from "@/components/core/FieldCharacterCount";
 import Heading from "@/components/core/Heading";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
-import Select from "@/components/core/Select";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import type { EditableStore, EditableStoreInput, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
-import StoreProductTypeRequestModal from "../../../_components/StoreProductTypeRequestModal";
-import StoreMultiTagAutocomplete from "../../../_components/StoreMultiTagAutocomplete";
-import StoreEmptyStateBox from "../../../new/_components/StoreEmptyStateBox";
-import StoreFormSectionCard from "../../../new/_components/StoreFormSectionCard";
-import StoreSelectableTagGroup from "../../../new/_components/StoreSelectableTagGroup";
-import StoreToggleSwitch from "../../../new/_components/StoreToggleSwitch";
+import StoreAddressList from "../../../_components/share/StoreAddressList";
+import StoreContactChannelList, {
+  STORE_CONTACT_CHANNEL_TYPES,
+  type StoreContactChannelType,
+} from "../../../_components/share/StoreContactChannelList";
+import StoreEmptyStateBox from "../../../_components/share/StoreEmptyStateBox";
+import StoreFormSectionCard from "../../../_components/share/StoreFormSectionCard";
+import StoreMultiTagAutocomplete from "../../../_components/share/StoreMultiTagAutocomplete";
+import StoreProductTypeRequestModal from "../../../_components/share/StoreProductTypeRequestModal";
+import StoreSelectableTagGroup from "../../../_components/share/StoreSelectableTagGroup";
+import StoreToggleSwitch from "../../../_components/share/StoreToggleSwitch";
 import { saveStoreEdit, type SaveStoreEditResult } from "../_actions/saveStoreEdit";
-
-const CONTACT_CHANNEL_TYPES = [
-  "INSTAGRAM",
-  "WHATSAPP",
-  "EMAIL",
-  "PHONE",
-  "WEBSITE",
-  "FACEBOOK",
-  "TIKTOK",
-  "OTHER",
-] as const;
-
-type ContactChannelType = (typeof CONTACT_CHANNEL_TYPES)[number];
 
 type EditStoreFormProps = {
   locale: string;
@@ -77,10 +68,10 @@ export default function EditStoreForm({
     initialValues.contactChannels?.map((_, index) => index + 1) ?? [],
   );
   const [contactChannelTypeByRowId, setContactChannelTypeByRowId] = useState<
-    Partial<Record<number, ContactChannelType>>
+    Partial<Record<number, StoreContactChannelType>>
   >(
     Object.fromEntries(
-      (initialValues.contactChannels ?? []).map((channel, index) => [index + 1, channel.type as ContactChannelType]),
+      (initialValues.contactChannels ?? []).map((channel, index) => [index + 1, channel.type as StoreContactChannelType]),
     ),
   );
   const [contactChannelValuesByRowId, setContactChannelValuesByRowId] = useState<Record<number, string>>(
@@ -155,7 +146,7 @@ export default function EditStoreForm({
     const nextId = nextContactRowIdRef.current;
     nextContactRowIdRef.current += 1;
     setContactChannelRows((previous) => [...previous, nextId]);
-    setContactChannelTypeByRowId((previous) => ({ ...previous, [nextId]: "INSTAGRAM" }));
+    setContactChannelTypeByRowId((previous) => ({ ...previous, [nextId]: STORE_CONTACT_CHANNEL_TYPES[0] }));
     setContactChannelValuesByRowId((previous) => ({ ...previous, [nextId]: "" }));
     setContactChannelLabelsByRowId((previous) => ({ ...previous, [nextId]: "" }));
   };
@@ -168,16 +159,53 @@ export default function EditStoreForm({
 
   const handleRemoveContactChannel = (rowId: number) => {
     setContactChannelRows((previous) => previous.filter((item) => item !== rowId));
+    setContactChannelTypeByRowId((previous) => {
+      const next = { ...previous };
+      delete next[rowId];
+      return next;
+    });
+    setContactChannelValuesByRowId((previous) => {
+      const next = { ...previous };
+      delete next[rowId];
+      return next;
+    });
+    setContactChannelLabelsByRowId((previous) => {
+      const next = { ...previous };
+      delete next[rowId];
+      return next;
+    });
   };
 
   const handleRemoveAddress = (rowId: number) => {
     setAddressRows((previous) => previous.filter((item) => item !== rowId));
+    setAddressCountryByRowId((previous) => {
+      const next = { ...previous };
+      delete next[rowId];
+      return next;
+    });
+    setAddressCityByRowId((previous) => {
+      const next = { ...previous };
+      delete next[rowId];
+      return next;
+    });
+    setAddressLineByRowId((previous) => {
+      const next = { ...previous };
+      delete next[rowId];
+      return next;
+    });
+    setAddressReferenceByRowId((previous) => {
+      const next = { ...previous };
+      delete next[rowId];
+      return next;
+    });
   };
 
-  const getContactChannelTypeForRow = (rowId: number) => contactChannelTypeByRowId[rowId] ?? "INSTAGRAM";
+  const getContactChannelTypeForRow = (rowId: number) =>
+    contactChannelTypeByRowId[rowId] ?? STORE_CONTACT_CHANNEL_TYPES[0];
 
   const getContactChannelValueError = (rowIndex: number) =>
     fieldErrors[`contactChannels.${rowIndex}.value`]?.[0] ?? fieldErrors[`contactChannels.${rowIndex}`]?.[0] ?? null;
+  const getContactChannelLabelError = (rowIndex: number) => fieldErrors[`contactChannels.${rowIndex}.label`]?.[0] ?? null;
 
   const handleSubmit = (formData: FormData) => {
     startTransition(() => {
@@ -358,83 +386,49 @@ export default function EditStoreForm({
               {contactChannelRows.length === 0 ? (
                 <StoreEmptyStateBox message={t("create.noContactChannels")} />
               ) : (
-                <div className="space-y-3">
-                  {contactChannelRows.map((rowId, rowIndex) => (
-                    <div key={rowId} className="border-border bg-background rounded-lg border p-3">
-                      <div className="grid grid-cols-1 gap-3 md:grid-cols-[140px_minmax(0,1fr)_minmax(0,1fr)_auto]">
-                        <div>
-                          <Label htmlFor={`edit-contact-type-${rowId}`} className="text-xs">
-                            {t("create.contactChannelType")}
-                          </Label>
-                          <Select
-                            id={`edit-contact-type-${rowId}`}
-                            name="contactChannelType"
-                            value={getContactChannelTypeForRow(rowId)}
-                            onChange={(event) =>
-                              setContactChannelTypeByRowId((previous) => ({
-                                ...previous,
-                                [rowId]: event.target.value as ContactChannelType,
-                              }))
-                            }
-                            className="px-2 py-1.5"
-                          >
-                            {CONTACT_CHANNEL_TYPES.map((type) => (
-                              <option key={type} value={type}>
-                                {tChannelTypes(type)}
-                              </option>
-                            ))}
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor={`edit-contact-value-${rowId}`} className="text-xs">
-                            {t("create.contactChannelValue")}
-                          </Label>
-                          <Input
-                            id={`edit-contact-value-${rowId}`}
-                            name="contactChannelValue"
-                            value={contactChannelValuesByRowId[rowId] ?? ""}
-                            onChange={(event) =>
-                              setContactChannelValuesByRowId((previous) => ({
-                                ...previous,
-                                [rowId]: event.target.value,
-                              }))
-                            }
-                            error={Boolean(getContactChannelValueError(rowIndex))}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor={`edit-contact-label-${rowId}`} className="text-xs">
-                            {t("create.contactChannelLabel")}
-                          </Label>
-                          <Input
-                            id={`edit-contact-label-${rowId}`}
-                            name="contactChannelLabel"
-                            value={contactChannelLabelsByRowId[rowId] ?? ""}
-                            onChange={(event) =>
-                              setContactChannelLabelsByRowId((previous) => ({
-                                ...previous,
-                                [rowId]: event.target.value,
-                              }))
-                            }
-                          />
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveContactChannel(rowId)}
-                        >
-                          <X size={16} aria-hidden />
-                        </Button>
-                      </div>
-                      {getContactChannelValueError(rowIndex) && (
-                        <Typography size="xs" className="text-destructive mt-2" role="alert">
-                          {renderError(getContactChannelValueError(rowIndex) as string)}
-                        </Typography>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <StoreContactChannelList
+                  idPrefix="edit-contact-channel"
+                  rows={contactChannelRows.map((rowId, rowIndex) => ({
+                    rowId,
+                    rowIndex,
+                    type: getContactChannelTypeForRow(rowId),
+                    value: contactChannelValuesByRowId[rowId] ?? "",
+                    label: contactChannelLabelsByRowId[rowId] ?? "",
+                    typeError: fieldErrors[`contactChannels.${rowIndex}.type`]?.[0] ?? undefined,
+                    valueError: getContactChannelValueError(rowIndex) ?? undefined,
+                    labelError: getContactChannelLabelError(rowIndex) ?? undefined,
+                  }))}
+                  typeInputName="contactChannelType"
+                  valueInputName="contactChannelValue"
+                  labelInputName="contactChannelLabel"
+                  typeLabel={t("create.contactChannelType")}
+                  valueLabel={t("create.contactChannelValue")}
+                  labelLabel={t("create.contactChannelLabel")}
+                  removeLabel={t("create.remove")}
+                  optionLabel={(type) => tChannelTypes(type)}
+                  valuePlaceholder={(type) => t(`create.contactChannelPlaceholder.${type}` as never)}
+                  onTypeChange={(rowId, nextType) => {
+                    setContactChannelTypeByRowId((previous) => ({
+                      ...previous,
+                      [rowId]: nextType,
+                    }));
+                  }}
+                  onValueChange={(rowId, nextValue) => {
+                    setContactChannelValuesByRowId((previous) => ({
+                      ...previous,
+                      [rowId]: nextValue,
+                    }));
+                  }}
+                  onLabelChange={(rowId, nextValue) => {
+                    setContactChannelLabelsByRowId((previous) => ({
+                      ...previous,
+                      [rowId]: nextValue,
+                    }));
+                  }}
+                  onRemove={handleRemoveContactChannel}
+                  renderValueError={renderError}
+                  renderLabelError={renderError}
+                />
               )}
             </StoreFormSectionCard>
 
@@ -451,86 +445,50 @@ export default function EditStoreForm({
               {addressRows.length === 0 ? (
                 <StoreEmptyStateBox message={t("create.noAddresses")} />
               ) : (
-                <div className="space-y-3">
-                  {addressRows.map((rowId, rowIndex) => (
-                    <div key={rowId} className="border-border bg-background space-y-3 rounded-lg border p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <Typography size="xs" className="text-text-muted font-medium">
-                          {t("create.addressItemLabel", { index: rowIndex + 1 })}
-                        </Typography>
-                        <Button type="button" variant="ghost" size="sm" onClick={() => handleRemoveAddress(rowId)}>
-                          <X size={16} aria-hidden />
-                        </Button>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <div>
-                          <Label htmlFor={`edit-address-country-${rowId}`} className="text-xs">
-                            {t("create.addressCountry")}
-                          </Label>
-                          <Select
-                            id={`edit-address-country-${rowId}`}
-                            name="addressCountryCode"
-                            value={addressCountryByRowId[rowId] ?? ""}
-                            onChange={(event) =>
-                              setAddressCountryByRowId((previous) => ({ ...previous, [rowId]: event.target.value }))
-                            }
-                            className="px-2 py-1.5"
-                          >
-                            <option value="">-</option>
-                            {countries.map((country) => (
-                              <option key={country.code} value={country.code}>
-                                {tCountries(country.code)}
-                              </option>
-                            ))}
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor={`edit-address-city-${rowId}`} className="text-xs">
-                            {t("create.addressCity")}
-                          </Label>
-                          <Input
-                            id={`edit-address-city-${rowId}`}
-                            name="addressCity"
-                            value={addressCityByRowId[rowId] ?? ""}
-                            onChange={(event) =>
-                              setAddressCityByRowId((previous) => ({ ...previous, [rowId]: event.target.value }))
-                            }
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <div>
-                          <Label htmlFor={`edit-address-line-${rowId}`} className="text-xs">
-                            {t("create.addressLine")}
-                          </Label>
-                          <Input
-                            id={`edit-address-line-${rowId}`}
-                            name="addressAddressLine"
-                            value={addressLineByRowId[rowId] ?? ""}
-                            onChange={(event) =>
-                              setAddressLineByRowId((previous) => ({ ...previous, [rowId]: event.target.value }))
-                            }
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor={`edit-address-reference-${rowId}`} className="text-xs">
-                            {t("create.addressReference")}
-                          </Label>
-                          <Input
-                            id={`edit-address-reference-${rowId}`}
-                            name="addressReference"
-                            value={addressReferenceByRowId[rowId] ?? ""}
-                            onChange={(event) =>
-                              setAddressReferenceByRowId((previous) => ({ ...previous, [rowId]: event.target.value }))
-                            }
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <StoreAddressList
+                  idPrefix="edit-address"
+                  rows={addressRows.map((rowId, rowIndex) => ({
+                    rowId,
+                    rowIndex,
+                    countryCode: addressCountryByRowId[rowId] ?? "",
+                    city: addressCityByRowId[rowId] ?? "",
+                    addressLine: addressLineByRowId[rowId] ?? "",
+                    reference: addressReferenceByRowId[rowId] ?? "",
+                    countryError: fieldErrors[`addresses.${rowIndex}.countryCode`]?.[0] ?? undefined,
+                    cityError: fieldErrors[`addresses.${rowIndex}.city`]?.[0] ?? undefined,
+                    addressLineError: fieldErrors[`addresses.${rowIndex}.addressLine`]?.[0] ?? undefined,
+                    referenceError: fieldErrors[`addresses.${rowIndex}.reference`]?.[0] ?? undefined,
+                  }))}
+                  countryOptions={countryOptions}
+                  emptyCountryLabel="-"
+                  countryLabel={t("create.addressCountry")}
+                  cityLabel={t("create.addressCity")}
+                  addressLineLabel={t("create.addressLine")}
+                  referenceLabel={t("create.addressReference")}
+                  countryInputName="addressCountryCode"
+                  cityInputName="addressCity"
+                  addressLineInputName="addressAddressLine"
+                  referenceInputName="addressReference"
+                  removeLabel={t("create.remove")}
+                  rowLabel={(index) => t("create.addressItemLabel", { index: index + 1 })}
+                  onCountryChange={(rowId, nextValue) => {
+                    setAddressCountryByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
+                  }}
+                  onCityChange={(rowId, nextValue) => {
+                    setAddressCityByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
+                  }}
+                  onAddressLineChange={(rowId, nextValue) => {
+                    setAddressLineByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
+                  }}
+                  onReferenceChange={(rowId, nextValue) => {
+                    setAddressReferenceByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
+                  }}
+                  onRemove={handleRemoveAddress}
+                  renderCountryError={renderError}
+                  renderCityError={renderError}
+                  renderAddressLineError={renderError}
+                  renderReferenceError={renderError}
+                />
               )}
             </StoreFormSectionCard>
           </section>

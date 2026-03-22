@@ -6,7 +6,7 @@ type StoreEmptyStateBoxProps = {
 
 export default function StoreEmptyStateBox({ message }: StoreEmptyStateBoxProps) {
   return (
-    <div className="border-border bg-background rounded-lg border border-dashed p-4">
+    <div className="border-border/70 bg-background/60 rounded-lg border border-dashed px-4 py-6 text-center">
       <Typography size="sm" className="text-text-muted">
         {message}
       </Typography>

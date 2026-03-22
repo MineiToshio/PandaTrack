@@ -1,7 +1,7 @@
+import { ReactNode } from "react";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
-import { ReactNode } from "react";
 
 type StoreFormSectionCardProps = {
   eyebrow: string;

@@ -14,6 +14,7 @@
     "storeTypeBusiness": "Business",
     "storeTypePerson": "Individual seller",
     "countryLabel": "Country",
+    "countryPlaceholder": "Select country",
     "presenceLabel": "Sales channels",
     "presenceOnline": "Online store",
     "presencePhysical": "Physical location",

@@ -28,6 +28,7 @@ import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn } from "@/lib/styles";
 import type { PublicStoreReview, StoreDetail, StoreViewerNote, StoreViewerReview } from "@/queries/store";
 import type { EditableStore, StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
+import StoreSurfaceCard from "../../_components/share/StoreSurfaceCard";
 import StoreReviewAggregateBadge from "./StoreReviewAggregateBadge";
 import StorePublicReviewsSection from "./StorePublicReviewsSection";
 import StoreReviewsStateProvider from "./StoreReviewsStateProvider";
@@ -310,8 +311,8 @@ export default function StoreDetailContent({
           )}
 
           <div className="grid gap-4 lg:grid-cols-[1.18fr_0.82fr]">
-            <section
-              className="bg-background/70 animate-[hero-fade-in-up_430ms_ease-out_both] space-y-4 rounded-3xl p-5 shadow-sm sm:p-6"
+            <StoreSurfaceCard
+              className="animate-[hero-fade-in-up_430ms_ease-out_both] space-y-4"
               style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 2}ms` }}
             >
               <div>
@@ -371,10 +372,10 @@ export default function StoreDetailContent({
                   </div>
                 )}
               </div>
-            </section>
+            </StoreSurfaceCard>
 
-            <section
-              className="bg-background/70 animate-[hero-fade-in-up_430ms_ease-out_both] space-y-4 rounded-3xl p-5 shadow-sm sm:p-6"
+            <StoreSurfaceCard
+              className="animate-[hero-fade-in-up_430ms_ease-out_both] space-y-4"
               style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 3}ms` }}
             >
               <div className="space-y-2">
@@ -429,11 +430,11 @@ export default function StoreDetailContent({
                   </div>
                 </div>
               </div>
-            </section>
+            </StoreSurfaceCard>
           </div>
 
-          <section
-            className="bg-background/70 animate-[hero-fade-in-up_440ms_ease-out_both] rounded-3xl p-5 shadow-sm sm:p-6"
+          <StoreSurfaceCard
+            className="animate-[hero-fade-in-up_440ms_ease-out_both]"
             style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 4}ms` }}
           >
             <div className="mb-4 flex items-start justify-between gap-3">
@@ -485,10 +486,10 @@ export default function StoreDetailContent({
                 {isBusiness ? tStores("detail.noContactChannels") : tStores("detail.notAvailableForStoreType")}
               </Typography>
             )}
-          </section>
+          </StoreSurfaceCard>
 
-          <section
-            className="bg-background/70 animate-[hero-fade-in-up_460ms_ease-out_both] rounded-3xl p-5 shadow-sm sm:p-6"
+          <StoreSurfaceCard
+            className="animate-[hero-fade-in-up_460ms_ease-out_both]"
             style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 5}ms` }}
           >
             <Typography size="xs" className="text-text-muted">
@@ -520,7 +521,7 @@ export default function StoreDetailContent({
                 {isBusiness ? tStores("detail.noAddresses") : tStores("detail.notAvailableForStoreType")}
               </Typography>
             )}
-          </section>
+          </StoreSurfaceCard>
 
           <StorePublicReviewsSection locale={locale} storeSlug={store.slug} />
 

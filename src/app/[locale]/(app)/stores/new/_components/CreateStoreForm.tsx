@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Building2, Globe, Plus, UserRound, X } from "lucide-react";
+import { Box, Building2, Globe, Plus, UserRound } from "lucide-react";
 import { startTransition, useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -21,28 +21,22 @@ import posthog from "posthog-js";
 import { createStore, type CreateStoreResult } from "../_actions/createStore";
 import { getDuplicateCandidates, getDuplicateCandidatesForSubmit } from "../_actions/getDuplicateCandidates";
 import { SIMILARITY_THRESHOLD_PERCENT } from "@/lib/store/duplicateMatch";
-import StoreSegmentedControl from "./StoreSegmentedControl";
-import StoreSelectableTagGroup from "./StoreSelectableTagGroup";
-import StoreToggleSwitch from "./StoreToggleSwitch";
-import StoreMultiTagAutocomplete from "../../_components/StoreMultiTagAutocomplete";
-import StoreProductTypeRequestModal from "../../_components/StoreProductTypeRequestModal";
-import StoreFormSectionCard from "./StoreFormSectionCard";
-import StoreEmptyStateBox from "./StoreEmptyStateBox";
+import StoreAddressList from "../../_components/share/StoreAddressList";
+import StoreContactChannelList, {
+  STORE_CONTACT_CHANNEL_TYPES,
+  type StoreContactChannelType,
+} from "../../_components/share/StoreContactChannelList";
+import StoreEmptyStateBox from "../../_components/share/StoreEmptyStateBox";
+import StoreFormSectionCard from "../../_components/share/StoreFormSectionCard";
+import StoreMultiTagAutocomplete from "../../_components/share/StoreMultiTagAutocomplete";
+import StoreProductTypeRequestModal from "../../_components/share/StoreProductTypeRequestModal";
+import StoreSegmentedControl from "../../_components/share/StoreSegmentedControl";
+import StoreSelectableTagGroup from "../../_components/share/StoreSelectableTagGroup";
+import StoreToggleSwitch from "../../_components/share/StoreToggleSwitch";
 
 type DuplicateCandidate = { id: string; name: string; slug: string; countryCode: string; logoUrl: string | null };
 
 const MIN_QUERY_LENGTH = 2;
-const CONTACT_CHANNEL_TYPES = [
-  "INSTAGRAM",
-  "WHATSAPP",
-  "EMAIL",
-  "PHONE",
-  "WEBSITE",
-  "FACEBOOK",
-  "TIKTOK",
-  "OTHER",
-] as const;
-type ContactChannelType = (typeof CONTACT_CHANNEL_TYPES)[number];
 
 const resolveFirstErrorElement = (form: HTMLFormElement, fieldKey: string): HTMLElement | null => {
   if (fieldKey === "name") return form.querySelector("#store-name");
@@ -162,7 +156,7 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
   const [selectedImportCountries, setSelectedImportCountries] = useState<string[]>([]);
   const [contactChannelRows, setContactChannelRows] = useState<number[]>([]);
   const [contactChannelTypeByRowId, setContactChannelTypeByRowId] = useState<
-    Partial<Record<number, ContactChannelType>>
+    Partial<Record<number, StoreContactChannelType>>
   >({});
   const [addressRows, setAddressRows] = useState<number[]>([]);
   const nextContactRowIdRef = useRef(1);
@@ -243,7 +237,7 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
 
   const handleAddContactChannel = () => {
     const nextId = nextContactRowIdRef.current;
-    const defaultType = CONTACT_CHANNEL_TYPES[contactChannelRows.length % CONTACT_CHANNEL_TYPES.length];
+    const defaultType = STORE_CONTACT_CHANNEL_TYPES[contactChannelRows.length % STORE_CONTACT_CHANNEL_TYPES.length];
     nextContactRowIdRef.current += 1;
     setContactChannelRows((previous) => [...previous, nextId]);
     setContactChannelTypeByRowId((previous) => ({
@@ -261,11 +255,11 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
     });
   };
 
-  const getContactChannelTypeForRow = (rowId: number, rowIndex: number): ContactChannelType => {
-    return contactChannelTypeByRowId[rowId] ?? CONTACT_CHANNEL_TYPES[rowIndex % CONTACT_CHANNEL_TYPES.length];
+  const getContactChannelTypeForRow = (rowId: number, rowIndex: number): StoreContactChannelType => {
+    return contactChannelTypeByRowId[rowId] ?? STORE_CONTACT_CHANNEL_TYPES[rowIndex % STORE_CONTACT_CHANNEL_TYPES.length];
   };
 
-  const getContactChannelPlaceholder = (type: ContactChannelType) => {
+  const getContactChannelPlaceholder = (type: StoreContactChannelType) => {
     return tCreate(`contactChannelPlaceholder.${type}`);
   };
 
@@ -511,7 +505,7 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
               aria-invalid={!!fieldErrors.countryCode?.length}
               error={!!fieldErrors.countryCode?.length}
             >
-              <option value="">{locale === "es" ? "Selecciona país" : "Select country"}</option>
+              <option value="">{tCreate("countryPlaceholder")}</option>
               {countries.map((country) => (
                 <option key={country.code} value={country.code}>
                   {tCountries(country.code)}
@@ -617,88 +611,43 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
               {contactChannelRows.length === 0 ? (
                 <StoreEmptyStateBox message={tCreate("noContactChannels")} />
               ) : (
-                <div className="space-y-3">
-                  {contactChannelRows.map((rowId, rowIndex) => {
-                    const selectedType = getContactChannelTypeForRow(rowId, rowIndex);
-                    return (
-                      <div
-                        key={rowId}
-                        className={cn(
-                          "border-border bg-background rounded-lg border p-3",
-                          (getContactChannelTypeError(rowIndex) || getContactChannelValueError(rowIndex)) &&
-                            "border-destructive",
-                        )}
-                      >
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[140px_minmax(0,1fr)_auto]">
-                          <div className="min-w-0 md:max-w-[140px]">
-                            <Label htmlFor={`contact-channel-type-${rowId}`} className="text-xs">
-                              {tCreate("contactChannelType")}
-                            </Label>
-                            <Select
-                              id={`contact-channel-type-${rowId}`}
-                              name="contactChannelType"
-                              className="px-2 py-1.5"
-                              error={!!getContactChannelTypeError(rowIndex)}
-                              value={selectedType}
-                              onChange={(event) => {
-                                const selectedValue = event.target.value as ContactChannelType;
-                                setContactChannelTypeByRowId((previous) => ({
-                                  ...previous,
-                                  [rowId]: selectedValue,
-                                }));
-                              }}
-                              aria-invalid={!!getContactChannelTypeError(rowIndex)}
-                            >
-                              {CONTACT_CHANNEL_TYPES.map((type) => (
-                                <option key={type} value={type}>
-                                  {tChannelTypes(type)}
-                                </option>
-                              ))}
-                            </Select>
-                          </div>
-                          <div className="min-w-0">
-                            <Label htmlFor={`contact-channel-value-${rowId}`} className="text-xs">
-                              {tCreate("contactChannelValue")}
-                            </Label>
-                            <Input
-                              id={`contact-channel-value-${rowId}`}
-                              name="contactChannelValue"
-                              type="text"
-                              placeholder={getContactChannelPlaceholder(selectedType)}
-                              error={!!getContactChannelValueError(rowIndex)}
-                              aria-invalid={!!getContactChannelValueError(rowIndex)}
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveContactChannel(rowId)}
-                            aria-label={tCreate("remove")}
-                            className="h-10 justify-center self-end"
-                          >
-                            <X size={16} aria-hidden />
-                          </Button>
-                        </div>
-                        {getContactChannelValueError(rowIndex) && (
-                          <Typography size="xs" className="text-destructive mt-2" role="alert">
-                            {tValidation(
-                              getContactChannelValueError(rowIndex) as
-                                | "contactValueRequired"
-                                | "contactValueInvalidWebsite"
-                                | "contactValueInvalidWhatsApp"
-                                | "contactValueInvalidInstagram"
-                                | "contactValueInvalidFacebook"
-                                | "contactValueInvalidTikTok"
-                                | "contactValueInvalidEmail"
-                                | "contactValueInvalidPhone",
-                            )}
-                          </Typography>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+                <StoreContactChannelList
+                  idPrefix="contact-channel"
+                  rows={contactChannelRows.map((rowId, rowIndex) => ({
+                    rowId,
+                    rowIndex,
+                    type: getContactChannelTypeForRow(rowId, rowIndex),
+                    typeError: getContactChannelTypeError(rowIndex) ?? undefined,
+                    valueError: getContactChannelValueError(rowIndex) ?? undefined,
+                  }))}
+                  typeInputName="contactChannelType"
+                  valueInputName="contactChannelValue"
+                  typeLabel={tCreate("contactChannelType")}
+                  valueLabel={tCreate("contactChannelValue")}
+                  removeLabel={tCreate("remove")}
+                  optionLabel={(type) => tChannelTypes(type)}
+                  valuePlaceholder={getContactChannelPlaceholder}
+                  onTypeChange={(rowId, nextType) => {
+                    setContactChannelTypeByRowId((previous) => ({
+                      ...previous,
+                      [rowId]: nextType,
+                    }));
+                  }}
+                  onRemove={handleRemoveContactChannel}
+                  renderValueError={(errorKey) =>
+                    tValidation(
+                      errorKey as
+                        | "contactValueRequired"
+                        | "contactValueInvalidWebsite"
+                        | "contactValueInvalidWhatsApp"
+                        | "contactValueInvalidInstagram"
+                        | "contactValueInvalidFacebook"
+                        | "contactValueInvalidTikTok"
+                        | "contactValueInvalidEmail"
+                        | "contactValueInvalidPhone",
+                    )
+                  }
+                />
               )}
             </StoreFormSectionCard>
 
@@ -715,68 +664,25 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
               {addressRows.length === 0 ? (
                 <StoreEmptyStateBox message={tCreate("noAddresses")} />
               ) : (
-                <div className="space-y-3">
-                  {addressRows.map((rowId, rowIndex) => (
-                    <div key={rowId} className="border-border bg-background space-y-3 rounded-lg border p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <Typography size="xs" className="text-text-muted font-medium">
-                          {tCreate("addressItemLabel", { index: rowIndex + 1 })}
-                        </Typography>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveAddress(rowId)}
-                          aria-label={tCreate("remove")}
-                        >
-                          <X size={16} aria-hidden />
-                        </Button>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <div className="min-w-0">
-                          <Label htmlFor={`address-country-${rowId}`} className="text-xs">
-                            {tCreate("addressCountry")}
-                          </Label>
-                          <Select id={`address-country-${rowId}`} name="addressCountryCode" className="px-2 py-1.5">
-                            <option value="">-</option>
-                            {countries.map((country) => (
-                              <option key={country.code} value={country.code}>
-                                {tCountries(country.code)}
-                              </option>
-                            ))}
-                          </Select>
-                        </div>
-                        <div className="min-w-0">
-                          <Label htmlFor={`address-city-${rowId}`} className="text-xs">
-                            {tCreate("addressCity")}
-                          </Label>
-                          <Input id={`address-city-${rowId}`} name="addressCity" type="text" />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <div className="min-w-0">
-                          <Label htmlFor={`address-line-${rowId}`} className="text-xs">
-                            {tCreate("addressLine")}
-                          </Label>
-                          <Input
-                            id={`address-line-${rowId}`}
-                            name="addressAddressLine"
-                            type="text"
-                            required={rowIndex === 0}
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <Label htmlFor={`address-reference-${rowId}`} className="text-xs">
-                            {tCreate("addressReference")}
-                          </Label>
-                          <Input id={`address-reference-${rowId}`} name="addressReference" type="text" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <StoreAddressList
+                  idPrefix="address"
+                  rows={addressRows.map((rowId, rowIndex) => ({
+                    rowId,
+                    rowIndex,
+                  }))}
+                  countryOptions={countryOptions}
+                  emptyCountryLabel={tCreate("countryPlaceholder")}
+                  countryLabel={tCreate("addressCountry")}
+                  cityLabel={tCreate("addressCity")}
+                  addressLineLabel={tCreate("addressLine")}
+                  referenceLabel={tCreate("addressReference")}
+                  countryInputName="addressCountryCode"
+                  cityInputName="addressCity"
+                  addressLineInputName="addressAddressLine"
+                  referenceInputName="addressReference"
+                  removeLabel={tCreate("remove")}
+                  onRemove={handleRemoveAddress}
+                />
               )}
             </StoreFormSectionCard>
           </section>

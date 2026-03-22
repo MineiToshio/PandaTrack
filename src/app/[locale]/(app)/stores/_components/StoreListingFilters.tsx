@@ -5,13 +5,14 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Filter, Globe, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
+import Input from "@/components/core/Input";
 import { ROUTES } from "@/lib/constants";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn } from "@/lib/styles";
 import posthog from "posthog-js";
 import Typography from "@/components/core/Typography";
-import StoreMultiTagAutocomplete from "./StoreMultiTagAutocomplete";
+import StoreMultiTagAutocomplete from "./share/StoreMultiTagAutocomplete";
 
 const PRESENCE_TYPES = ["ONLINE", "PHYSICAL"] as const;
 const FILTER_CHIP_CLASSNAME =
@@ -353,12 +354,12 @@ export default function StoreListingFilters({
                 <Typography as="span" size="xs" className="text-text-title mb-1 block font-semibold">
                   {t("searchPlaceholder")}
                 </Typography>
-                <input
+                <Input
                   type="search"
                   value={draftFilters.nameQuery}
                   onChange={(event) => setDraftFilters((previous) => ({ ...previous, nameQuery: event.target.value }))}
                   placeholder={t("searchPlaceholder")}
-                  className="border-border bg-background placeholder:text-text-muted focus:ring-ring h-11 w-full rounded-xl border px-3 text-sm focus:ring-2 focus:outline-none"
+                  className="h-11 rounded-xl"
                 />
               </div>
 

@@ -14,6 +14,10 @@ When a part of the tree must be interactive, keep the client boundary minimal bu
 
 Reuse existing components from `src/components/core/` and `src/components/modules/` before introducing new Client Components. For example, use the core `Button` for interactive buttons instead of creating a new Client Component per button. For native fields, use core **`Input`**, **`Textarea`**, and **`Select`** instead of inlining `<input>`, `<textarea>`, or `<select>` with duplicated Tailwind stacks. Create a new Client Component only when (1) no core or module component fits the need, or (2) the interactivity is a full logical block (form, menu, carousel, etc.) that deserves its own component.
 
+Before creating a route-level component, also check whether the same pattern already exists in the current route subtree's parent `_components/share/` folder. If the same interactive pattern is now needed by a second page in the same subtree, promote it there in the same change instead of creating another page-local copy.
+
+Avoid "copy, rename, tweak" component creation. If the new component starts from an existing file with only minor differences in labels, options, layout slots, or handlers, extract a shared component instead of maintaining parallel copies.
+
 ## Small, focused components
 
 Keep components small with a single clear responsibility. If business logic grows, extract hooks or utilities.
