@@ -129,6 +129,7 @@ Multi-file:
 
 - Place all core components in **`src/components/core/`**.
 - Examples: `Input`, `Typography`, `Heading`, `Select`, `Checkbox`, `Button`, `Textarea`, `Chip`.
+- **Keep the examples real**: primitives named here (such as **`Select`**) should be implemented under **`src/components/core/`**, not reimplemented per route. Route-level `_components` may compose core primitives; they should not own a second copy of the same styled control.
 - Do not put app-wide utilities in `src/components/core/`. If it is not a React component, it does not belong here.
 
 ### Module components → `src/components/modules/`

@@ -95,7 +95,8 @@ Code comments must explain behavior and intent only, independent of project mana
 
 Prefer reusing existing building blocks so the app stays consistent and maintainable.
 
-- **Core and module components first**: Before adding raw HTML or new components, check `src/components/core/` and `src/components/modules/`. Use `Typography` for paragraph or span text, `Heading` for headings, `Button` for actions, etc., so styling and behavior stay consistent.
+- **Core and module components first**: Before adding raw HTML or new components, check `src/components/core/` and `src/components/modules/`. Use `Typography` for paragraph or span text, `Heading` for headings, `Button` for actions, `Input` / `Textarea` / **`Select`** for native form controls, etc., so styling and behavior stay consistent.
+- **Native form controls belong in core**: Do not paste a styled `<select>` (or duplicate `Input`-level classes on `<select>`) inside route `_components` or modules. Use **`src/components/core/Select`** and pass `error`, `className`, and `showChevron` when you need the custom chevron layout. If a new form primitive is needed app-wide, add or extend a **core** component instead of a route-local copy.
 - **Semantic HTML when no component fits**: If no core or module component matches the need, use the appropriate HTML element (`<p>`, `<button>`, `<nav>`, etc.) with the project’s Tailwind/semantic tokens. Do not create a one-off component when a simple element plus `className` is enough.
 - **Do not force reuse when purpose or design differs**: Reuse only when the use case and visual intent align. For example, use `Button` for primary/secondary CTAs, but a plain `<button>` or `<div>` with `role="button"` for a backdrop overlay that closes a drawer, or for custom controls that do not look or behave like app buttons.
 

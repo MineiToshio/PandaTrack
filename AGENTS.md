@@ -27,6 +27,16 @@ When instructions conflict, use this order:
 
 If still ambiguous, choose the smallest safe change and note assumptions.
 
+### AI rule enforcement
+
+- `.cursor/rules/*.mdc` remains the source of truth for these repository implementation rules, even though the folder name references Cursor.
+- These rules apply to any AI agent working in this repository, including Cursor, Codex, Claude Code, or any other implementation agent.
+- `docs/tooling/cursor/rules.md` is the required index for identifying which rule files must be read for a given task.
+- Before implementing, reviewing, or validating a change, any AI agent must first consult `docs/tooling/cursor/rules.md`, identify the matching rules, then read the corresponding `.cursor/rules/*.mdc` files.
+- Treat the matching rules as mandatory implementation constraints, not optional guidance. The implementation must satisfy both the user request and the applicable repository rules.
+- Re-check the matching rules when the task expands in scope (for example UI plus backend, or implementation plus docs/testing).
+- If any file under `.cursor/rules/` is added, removed, renamed, or materially changed, update `docs/tooling/cursor/rules.md` in the same change so the rule index stays accurate.
+
 ### Product and execution source of truth
 
 - `docs/product` is the source of truth for product definition, scope, requirements, and acceptance criteria.
@@ -164,6 +174,9 @@ If a command cannot be run, state it explicitly and why.
 - Do not introduce unrelated refactors.
 - Document assumptions when requirements are incomplete.
 - Prefer small, reviewable diffs.
+- Start each implementation by identifying the applicable repository rules through `docs/tooling/cursor/rules.md` and enforcing them throughout the change.
+- When multiple rule files apply, satisfy all of them together and resolve ambiguity using the source-of-truth order above.
+- Do not finalize work until the relevant rule-driven requirements for implementation, docs, tests, accessibility, theming, analytics, and validation have been checked according to the task scope.
 
 ## 10) Anti-patterns to avoid
 

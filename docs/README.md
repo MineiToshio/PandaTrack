@@ -41,3 +41,4 @@ Use this index to find documentation by domain.
 
 - `docs/tooling/cursor/commands.md`: Cursor command usage
 - `docs/tooling/cursor/hooks.md`: Cursor hooks usage
+- `docs/tooling/cursor/rules.md`: Cursor rules index, when each rule must be read, and maintenance expectations
