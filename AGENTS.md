@@ -119,6 +119,9 @@ Product architecture:
 - Update `docs/` only when a change adds reusable architecture/process knowledge.
 - Prefer updating existing rules/docs instead of creating duplicates.
 - Keep GitHub epic/slice issues synchronized with implemented behavior; if implementation changes feature scope, update the corresponding epic/slice issue in the same change.
+- Any user-requested product change, behavior change, UX change, flow change, copy change, or newly introduced requirement must trigger a documentation alignment review against `docs/product` in the same change.
+- Agents must not wait for an explicit follow-up request to update product docs. If the implemented behavior is new, differs from the current docs, or fills a previously undocumented product decision, the agent must update the owning product doc proactively.
+- The minimum expectation is to update the nearest owning product doc (`Work Order`, `Blueprint`, `FRD`, or `PRD`). If the change affects more than one product level, update every affected level in the same change.
 
 ## 5) i18n and locale routing
 
@@ -177,6 +180,7 @@ If a command cannot be run, state it explicitly and why.
 - Start each implementation by identifying the applicable repository rules through `docs/tooling/cursor/rules.md` and enforcing them throughout the change.
 - When multiple rule files apply, satisfy all of them together and resolve ambiguity using the source-of-truth order above.
 - Do not finalize work until the relevant rule-driven requirements for implementation, docs, tests, accessibility, theming, analytics, and validation have been checked according to the task scope.
+- Treat documentation alignment as part of implementation completion, not as optional follow-up work. A task that changes product behavior is incomplete until the affected `docs/product` source-of-truth files have been reviewed and updated when needed.
 
 ## 10) Anti-patterns to avoid
 

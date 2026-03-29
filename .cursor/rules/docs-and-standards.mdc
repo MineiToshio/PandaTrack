@@ -19,6 +19,7 @@ Use the `docs/` folder for knowledge that helps future work, onboarding, and pro
 - **Design or architecture decision**: A choice affects how other code should be written (e.g. how we call APIs, how we handle errors in a new layer). Add a short note in an existing doc or a small ADR-style section (what we decided and why).
 - **Convention or flow others must follow**: Any pattern that other developers (or the AI) should reuse (e.g. adding a new locale, adding a new page type). Document the steps and where to touch the code.
 - **Product behavior changes**: When a feature's user-visible behavior, rules, limits, defaults, or flow changes, update the relevant `docs/product/` file (`PRD`, `FRD`, `Blueprint`, or `Work Order`) in the same change so the documented product matches the shipped behavior.
+- **Requested product additions or undocumented decisions**: When the user asks for a new behavior, UX pattern, copy decision, flow detail, or implementation rule that affects the product and that detail is missing from `docs/product`, add it to the owning product doc in the same change even if the user did not explicitly ask for docs updates.
 - **Shared utilities inventory changes**: When `src/lib/` changes (new file, removed file, rename, or responsibility changes), update `docs/development/lib-utilities.md` in the same change.
 - **Database schema changes**: When `prisma/schema.prisma` changes (new or removed tables or columns, renamed fields, or meaning/purpose of a table or attribute), update `docs/development/database-schema.md` in the same change. That doc describes purpose and usage only; types and constraints stay in the schema.
 
@@ -35,6 +36,8 @@ Use the `docs/` folder for knowledge that helps future work, onboarding, and pro
 - `Blueprint` for system flow boundaries and implementation contracts.
 - `Work Order` for concrete slice behavior, acceptance criteria, and execution-level flow details.
 - If a behavior change is material at more than one level, update more than one product doc in the same change.
+- Do not treat documentation sync as optional or defer it until a later prompt. The agent must proactively review whether the implemented behavior is already specified and must update the relevant product doc(s) before considering the task complete.
+- If the behavior is both newly introduced and not yet represented anywhere in `docs/product`, document it at the nearest owning level and propagate upward to additional levels when the new detail affects requirements, business rules, architecture contracts, or product goals.
 
 ### Requirement and rule identifiers
 

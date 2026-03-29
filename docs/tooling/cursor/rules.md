@@ -40,7 +40,7 @@ Read these on every implementation because they define project-wide defaults:
 ### Documentation and architecture
 
 - `adr-decision-records.mdc`: Use when the change introduces a lasting architectural decision, tradeoff, or new cross-feature pattern.
-- `docs-and-standards.mdc`: Use when behavior, architecture, `src/lib`, database shape, or reusable process knowledge changes.
+- `docs-and-standards.mdc`: Use when behavior, architecture, `src/lib`, database shape, reusable process knowledge, or undocumented product decisions change. It requires proactive `docs/product` updates in the same change when shipped behavior is new, changed, or previously undocumented.
 - `quality-docs-cleanup.mdc`: Use when adding comments, JSDoc, utilities, cleanup, or lint-related exceptions.
 
 ### Core coding and language
@@ -93,7 +93,7 @@ Read these on every implementation because they define project-wide defaults:
 | --------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | `adr-decision-records.mdc`        | ADR creation/update criteria                            | Architecture or recurring technical decisions change                                     |
 | `coding-standards.mdc`            | Core coding conventions and implementation defaults     | Any code is written or changed                                                           |
-| `docs-and-standards.mdc`          | Documentation and rule maintenance policy               | Behavior, docs, or standards change                                                      |
+| `docs-and-standards.mdc`          | Documentation and rule maintenance policy               | Behavior, docs, standards, or undocumented product decisions change                      |
 | `english-code-only.mdc`           | English-only code and developer text                    | Editing code, comments, tests, logs, or messages                                         |
 | `env-example.mdc`                 | `.env.example` synchronization                          | New env vars are introduced or required                                                  |
 | `error-handling-validation.mdc`   | Zod, expected errors, and logging guidance              | Validation, parsing, or error handling changes                                           |
