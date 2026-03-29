@@ -23,6 +23,7 @@ The command must treat the referenced `Work Order` as the entry point, but it mu
 - Repository docs remain the source of truth for product definition.
 - If the referenced Work Order is also linked to GitHub tracking, keep GitHub issue content aligned after doc approval when practical.
 - Before asking any clarification questions, provide a concise Spanish summary of what the target `Work Order` does today so the user has shared context for the discovery conversation.
+- Treat implementation-critical undefined decisions as blockers, not as minor omissions. If a missing technical or operational decision would likely cause rework during implementation, the command must surface it explicitly before docs are approved.
 
 ## Planning objective
 
@@ -35,6 +36,7 @@ Produce an implementation-ready definition package centered on one existing `Wor
 5. updating the target `Work Order`
 6. propagating necessary changes upward to the parent `Blueprint`, `FRD`, and `PRD`
 7. keeping related GitHub tracking aligned when the linked issue content becomes stale relative to the docs
+8. identifying implementation-critical undefined decisions before they become execution risk
 
 ## Resolution requirements
 
@@ -62,6 +64,21 @@ Before asking questions or drafting changes, resolve the target context in this 
 - if the `Work Order` has a `source_issue` or the input came from GitHub, read the linked slice issue
 - read the parent Epic when needed to understand current tracking wording and linked scope
 
+5. resolve role-specific implementation context
+- inspect the relevant code paths from each applicable role perspective, not only as a generic reader
+- when the slice touches infrastructure, storage, uploads, integrations, queues, auth, observability, cron, email, payments, or other operational concerns, inspect those boundaries explicitly
+- when helpful and available, delegate bounded investigations to subagents by role and have them report:
+  - decisions already defined
+  - high-risk gaps
+  - recommended questions
+  - recommended decisions
+  - risks if left undefined
+- the main agent remains responsible for synthesis and must not simply forward raw subagent output
+
+6. resolve external pattern context when it would materially improve discovery quality
+- when the slice involves non-trivial UX patterns, file/media handling, storage/infrastructure choices, security-sensitive flows, or other areas where established practice matters, research current patterns from high-quality sources
+- use that research to improve the quality of questions and recommendations, not to replace the repository source of truth
+
 Do not guess missing parent references when the docs already define them.
 
 Before starting the question phase, synthesize the resolved context into a short Spanish pre-brief that explains:
@@ -70,6 +87,13 @@ Before starting the question phase, synthesize the resolved context into a short
 - the user-facing or system behavior it is meant to add
 - the most important in-scope vs out-of-scope boundary
 - any obvious dependency on sibling `Work Orders` when that context helps the user understand the slice
+
+Before asking questions, produce an internal role-by-role gap analysis that identifies:
+
+- what is already clearly defined
+- what is partially defined
+- what is undefined but implementation-critical
+- which undefined items must be asked before the `Work Order` can be considered implementation-ready
 
 ## Discovery roles
 
@@ -121,6 +145,19 @@ Ask about implementation-definition gaps such as:
 - concurrency or transaction requirements
 - backward compatibility considerations
 - dependencies on sibling work
+
+This role must also actively pressure-test implementation-critical operational details such as:
+
+- external service/provider choice
+- storage or infrastructure destination
+- bucket/container/prefix/folder structure
+- object key or file naming conventions
+- input vs output format decisions
+- size limits, retention rules, and cleanup strategy
+- synchronous vs asynchronous processing boundaries
+- retry, failure, and recovery behavior
+- cache/CDN implications when relevant
+- whether the current `Blueprint` should be updated with a technical contract before implementation begins
 
 ### 4. Security and abuse-prevention role
 
@@ -190,6 +227,33 @@ The command must explicitly pressure-test whether the current `Work Order` is su
 - dependencies on other slices
 - whether the `Work Order` is too broad or should be split
 
+The command must not stop at generic categories. It must also identify the specific missing decisions underneath them.
+
+For example, if the slice touches uploads, storage, media, or external services, the command must explicitly pressure-test:
+
+- chosen provider/service
+- why that provider fits the current architecture
+- exact storage location strategy
+- exact key/path/naming convention
+- file lifecycle and overwrite/versioning behavior
+- input constraints
+- output constraints
+- processing location and timing
+- user feedback when processing fails
+- operational or cost risks
+
+If the slice touches any of the following domains, the senior full-stack role must produce a mini operational spec before discovery can be considered complete:
+
+- file upload or media handling
+- external storage
+- third-party integrations
+- payments
+- auth/security boundaries
+- background jobs or cron
+- observability/monitoring
+- email delivery
+- scheduled or asynchronous processing
+
 If the command concludes the target `Work Order` is too large, too cross-cutting, or too ambiguous to implement safely as a single slice, it must say so clearly in Spanish and propose a better split before editing docs.
 
 ## Proposal phase
@@ -201,6 +265,7 @@ After discovery and before any file edits, return a proposal in Spanish with:
 
 2. `Open decisions`
 - the unresolved decisions grouped by role
+- explicitly separate `implementation-critical decisions still undefined` from lower-risk open questions
 
 3. `Recommended decisions`
 - your recommended answers for each major unresolved area
@@ -214,6 +279,7 @@ After discovery and before any file edits, return a proposal in Spanish with:
 
 5. `Approval gate`
 - ask the user to confirm whether to apply the proposed decisions
+- do not ask for approval until all implementation-critical undefined decisions are either resolved or explicitly deferred by the user
 
 Do not edit docs before this approval.
 
@@ -261,6 +327,7 @@ If the required GitHub Project or issue-body sync cannot be completed with avail
 - Do not add product requirements to the `Blueprint` when they belong in the `FRD`.
 - Do not leave critical ambiguity unresolved while pretending the `Work Order` is implementation-ready.
 - Do not overwrite existing intent in docs without reconciling it explicitly.
+- Do not treat infrastructure, storage, naming, error-recovery, or observability choices as “implementation details” when they are necessary to prevent downstream execution chaos; surface them during discovery at the correct doc layer.
 
 ## Final response format
 
