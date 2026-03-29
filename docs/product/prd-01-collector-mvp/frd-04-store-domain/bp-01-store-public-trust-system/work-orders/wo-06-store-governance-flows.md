@@ -75,8 +75,14 @@ Relevant acceptance signals:
   - a CTA that opens a modal with reports-and-suggestions summary data
 - The public `Reports and suggestions` modal must:
   - use two primary sections: `Community reports` and `Change requests`
-  - in each section, show the signed-in viewer's own open item first when one exists
-  - show the aggregated community summary after the personalized panel
+  - present those primary sections as tabs or an equivalent parallel-navigation pattern when that lowers density without hiding critical context
+  - avoid adding a redundant outer summary card around the whole active tab when the tab header already provides that parent context
+  - in each primary section, show the signed-in viewer's own open item first when one exists
+  - omit the personalized subsection entirely when the signed-in viewer has no open item for that tab instead of rendering an empty personalized panel
+  - show the aggregated community summary after the personalized subsection
+  - keep subsection hierarchy explicit so the personalized subsection and the aggregated community subsection read as sibling blocks, not as unrelated chrome styles
+  - allow subsection-leading icons when they clarify the difference between personal and community views better than numeric markers
+  - place equivalent subsection actions consistently across both primary sections
   - show aggregate report counts grouped by supported reason
   - show change-request summaries without exposing requester identity
   - avoid rendering raw free-text report details from other users for non-admin viewers

@@ -1,0 +1,379 @@
+# Visual Foundations
+
+This document defines PandaTrack's visual language: semantic design variables, typography, color, spacing, surfaces, radius, elevation, shadows, and gradients.
+
+## Typography
+
+### Font Families
+
+#### Primary body font: Open Sans
+
+Defined in `src/lib/fonts.ts` as `--font-regular` and mapped to Tailwind `font-sans`.
+
+Use for:
+
+- paragraphs
+- form labels
+- helper text
+- table and list content
+- buttons by default
+- dense app content
+
+#### Secondary display and structural font: Roboto Condensed
+
+Defined as `--font-secondary`.
+
+Use for:
+
+- compact navigation
+- structural labels that need stronger editorial rhythm
+- selective section emphasis
+
+Rule:
+
+- do not use `font-secondary` for long reading blocks or form-heavy content
+
+#### Brand font: Zilla Slab Highlight
+
+Defined as `--font-logo`.
+
+Use only for:
+
+- PandaTrack wordmark and logo
+
+Rule:
+
+- never use the logo font for body copy, headings, controls, or cards
+
+### Type Scale
+
+#### Body scale
+
+Implemented in `src/components/core/Typography.tsx`.
+
+| Variable | Current class mapping | Use |
+| --- | --- | --- |
+| `2xs` | `text-xs` | fine print, disclaimers, metadata labels |
+| `xs` | `text-xs sm:text-sm` | helper text, compact descriptions, secondary labels |
+| `sm` | `text-sm sm:text-base` | standard supporting text, card details, form guidance |
+| `md` | `text-base sm:text-lg` | default paragraph and section text |
+| `lg` | `text-lg sm:text-xl` | prominent body copy, intro text |
+
+Rules:
+
+- use `md` as the default paragraph size
+- use `sm` for dense app UI
+- use `xs` and `2xs` only for secondary information
+
+#### Heading scale
+
+Implemented in `src/components/core/Heading.tsx`.
+
+| Variable | Current class mapping | Use |
+| --- | --- | --- |
+| `lg` | `text-5xl md:text-6xl lg:text-7xl` | hero headlines only |
+| `md` | `text-4xl md:text-5xl lg:text-6xl` | large section headers and high-impact titles |
+| `sm` | `text-2xl md:text-3xl lg:text-4xl` | major section titles |
+| `xs` | `text-lg font-semibold` | compact page titles, card titles, modal titles, subsection headers |
+
+Rules:
+
+- one dominant `h1` per screen
+- `lg` and `md` belong mostly to landing and high-visibility sections
+- private-app page titles should usually use `Heading size="xs"` or a close equivalent
+- titles inside modals, tab panels, and dense summary surfaces must still read as titles, not helper text
+
+### Font Weights
+
+Observed weight system:
+
+- `400` regular
+- `500` medium
+- `600` semibold
+- `700` bold
+
+Guidance:
+
+- `400`: default reading text
+- `500`: labels, metadata, minor emphasis
+- `600`: section labels, key values, card headings
+- `700`: hero headlines and major promotional emphasis
+
+Rules:
+
+- prefer weight changes only when they signal hierarchy
+- avoid light weights in product UI
+
+### Letter Spacing And Text Transform
+
+Observed patterns:
+
+- headings use tighter tracking
+- eyebrow labels use wide tracking with uppercase
+- body copy uses normal tracking
+
+Rules:
+
+- tight tracking is for display headings only
+- wide uppercase tracking is reserved for eyebrow labels, micro-badges, and high-level categorization
+
+## Color System
+
+### Theme Model
+
+Theme variables live in `src/app/globals.css`:
+
+- `:root` is the dark baseline
+- `:root[data-theme="light"]` defines explicit light theme
+- `@media (prefers-color-scheme: light)` defines the light fallback when no explicit theme is selected
+
+### Color Roles
+
+#### Foundations
+
+| Variable | Dark | Light | Purpose |
+| --- | --- | --- | --- |
+| `background` | `#0b0f14` | `#f8fafc` | page background |
+| `foreground` | `#e6edf3` | `#0f172a` | default high-contrast foreground |
+| `surface` | `#111826` | `#ffffff` | primary elevated surface |
+| `surface-2` | `#0f172a` | `#f1f5f9` | secondary or nested surface |
+| `card` | `#111826` | `#ffffff` | card and dialog surfaces |
+| `popover` | `#111826` | `#ffffff` | floating overlays |
+
+#### Borders and inputs
+
+| Variable | Dark | Light | Purpose |
+| --- | --- | --- | --- |
+| `border` | `#1f2a3a` | `#e2e8f0` | default border |
+| `input` | `#1f2a3a` | `#e2e8f0` | input border |
+| `ring` | `#8b5cf6` | `#7c3aed` | focus ring |
+
+#### Brand and action colors
+
+| Variable | Dark | Light | Purpose |
+| --- | --- | --- | --- |
+| `primary` | `#8b5cf6` | `#7c3aed` | main CTA, selected states, key emphasis |
+| `secondary` | `#6d28d9` | `#5b21b6` | deeper brand support |
+| `accent` | `#f59e0b` | `#d97706` | highlight, warmth, warning-adjacent emphasis |
+| `highlight` | `#a78bfa` | `#7c3aed` | glow, gradients, softer brand accent |
+| `link` | `#a78bfa` | `#6d28d9` | inline links |
+| `link-hover` | `#c4b5fd` | `#7c3aed` | link hover |
+
+#### Text roles
+
+| Variable | Dark | Light | Purpose |
+| --- | --- | --- | --- |
+| `text-title` | `#f2f6fb` | `#0f172a` | titles and key labels |
+| `text-body` | `#d6dee6` | `#1f2937` | default body copy |
+| `text-muted` | `#a8b3c0` | `#64748b` | secondary and supporting text |
+
+#### Semantic feedback
+
+| Variable | Dark | Light | Purpose |
+| --- | --- | --- | --- |
+| `destructive` | `#ef4444` | `#dc2626` | destructive actions and critical errors |
+| `success` | `#22c55e` | `#16a34a` | success confirmations |
+| `warning` | `#f59e0b` | `#d97706` | warnings and cautionary messaging |
+| `info` | `#38bdf8` | `#0ea5e9` | informational emphasis |
+
+### Theme Rules
+
+- use semantic variables, not theme-blind colors
+- define every new theme-dependent variable for both themes
+- verify hierarchy and contrast in both themes
+
+## Spacing System
+
+### Base Unit
+
+PandaTrack behaves like a 4px-based system with most layout decisions landing on 8px multiples.
+
+Rule:
+
+- 4px is the foundational unit
+- 8px is the default composition rhythm
+
+### Recommended scale
+
+| Value | Usage |
+| --- | --- |
+| `4px` | ultra-tight inline spacing |
+| `8px` | default small gap |
+| `12px` | compact grouped controls |
+| `16px` | default component padding |
+| `20px` | emphasized control spacing |
+| `24px` | standard card, modal, header padding |
+| `32px` | section spacing |
+| `40px` | generous section spacing |
+| `48px+` | hero and large composition spacing |
+
+### Spacing Rules
+
+- use 8px rhythm by default
+- use 4px increments only when finer control is genuinely needed
+- avoid arbitrary spacing values when an existing step already works
+
+### Layout Containers
+
+Observed patterns:
+
+- `max-w-6xl` for landing and large app content
+- `max-w-xl` and `max-w-sm` for auth and modal-width content
+- page padding commonly uses `px-4`, `sm:px-6`, `lg:px-8`
+
+## Surface System
+
+### Surface Hierarchy
+
+#### Level 0: Page background
+
+Use `bg-background` for the canvas.
+
+#### Level 1: Primary containers
+
+Use `bg-surface` or `bg-card` with `border-border` for:
+
+- cards
+- auth panels
+- sidebars
+- dialogs
+- filter shells
+
+#### Level 2: Nested sections
+
+Use muted or translucent nested surfaces for:
+
+- grouped form sections
+- metadata panels
+- inset summaries
+- nested action zones
+
+Common patterns:
+
+- `bg-muted/35`
+- `bg-background/70`
+- `bg-background/90`
+
+### Maximum Visual Depth
+
+Avoid turning the UI into a visible stack of boxes inside boxes inside boxes.
+
+Rule of thumb:
+
+- one main surface is expected
+- a second visual level is acceptable for grouped content
+- a third visual level should be rare and justified
+- beyond that, prefer flatter layouts with dividers, headings, spacing, and inline grouping
+
+Prefer solving dense content with:
+
+- section titles
+- spacing
+- divider lines
+- compact labels
+- grid or list layouts
+- tabs when the content represents parallel sections
+- a soft second-level subsection container when sibling groups need to feel clearly separated
+
+Avoid solving dense content with:
+
+- repeated nested cards
+- multiple bordered containers inside already elevated containers
+- different tinted backgrounds at every level
+- stacking rounded boxes when the content could read as one structured section
+
+## Border Radius
+
+| Radius | Typical Tailwind class | Use |
+| --- | --- | --- |
+| small | `rounded-md` | form fields, buttons, compact controls |
+| medium | `rounded-lg` | nav items, segmented controls, utility cards |
+| large | `rounded-xl` | cards, accordions, elevated groups |
+| extra large | `rounded-2xl` | prominent cards, detail modules, modal controls |
+| hero or feature | `rounded-3xl` or `rounded-[28px]` | hero media, standout containers, modal shells |
+| pill | `rounded-full` | eyebrow labels, back links, toggles, circular decorative shapes |
+
+Rules:
+
+- `rounded-md` is the default for fields and standard buttons
+- `rounded-xl` and `rounded-2xl` are preferred for card-based product UI
+- reserve `rounded-full` for eyebrow labels, back navigation, toggles, and truly circular decorative or icon-based shapes
+- status tags, data tags, filter chips, and compact badges should default to `rounded-lg`, `rounded-xl`, or `rounded-2xl`
+- count badges inside tags should not default to fully circular shapes
+
+## Borders, Elevation, And Shadows
+
+Observed pattern:
+
+- borders are used more often than heavy shadows
+- shadows exist mainly as soft depth for hero cards, detail cards, and modal surfaces
+
+Rules:
+
+- use borders as the first separation tool
+- use shadows as secondary depth
+- avoid strong drop shadows in dense app screens
+
+### Shadow Levels
+
+#### Level 0: No shadow
+
+Use for standard layout blocks and dense app surfaces already separated by border and contrast.
+
+#### Level 1: Soft elevation
+
+Use for:
+
+- standard cards that need gentle lift
+- hover states on selectable rows or cards
+- summary panels that need slightly more separation
+
+#### Level 2: Elevated surface
+
+Use for:
+
+- modals
+- floating drawers
+- spotlight cards
+- hero media containers
+- sticky elements that should feel above the page
+
+#### Level 3: Atmospheric glow or dramatic emphasis
+
+Use only for marketing hero treatments, celebratory states, or standout showcase panels.
+
+### Shadow Rules
+
+- in the private app, start with border and surface contrast before shadow
+- in dark theme, subtle shadows are acceptable when hierarchy is already clear
+- hover elevation should usually be one level stronger than resting elevation
+
+## Gradients
+
+Gradients are part of PandaTrack's visual personality, but they should signal emphasis, not become the default fill for everything.
+
+### When gradients are appropriate
+
+Use gradients for:
+
+- hero sections
+- primary page-intro panels
+- spotlight containers
+- decorative glow backgrounds
+- highlighted headings or accents
+
+### When gradients are not appropriate
+
+Do not use gradients as the default for:
+
+- standard cards
+- most forms
+- dense data areas
+- repeated list items
+- low-priority controls
+
+### Gradient Rules
+
+- keep gradients soft and layered, not loud
+- prefer brand-adjacent blends such as `primary`, `highlight`, `accent`, and `info`
+- in the private app, gradients should appear mainly on page intros, hero-like summaries, or elevated callout surfaces

@@ -86,7 +86,7 @@ Product architecture:
 - Use semantic HTML (`button`, `nav`, `main`, `section`, etc.).
 - Use `cn()` from `@/lib/styles` for class composition.
 - Use theme-aware semantic design variables, not hardcoded light/dark colors.
-- Treat `docs/development/design-system.md` as the source of truth for typography, color, spacing, radius, surfaces, and shared UI hierarchy decisions. Review it before introducing or changing reusable interface patterns.
+- Treat `docs/design/README.md` and the files in `docs/design/` as the source of truth for typography, color, spacing, radius, surfaces, and shared UI hierarchy decisions. Review the relevant design doc before introducing or changing reusable interface patterns.
 - Validate responsive behavior across mobile/tablet/desktop. No overlap or accidental overflow.
 
 ### Accessibility
@@ -182,7 +182,7 @@ If a command cannot be run, state it explicitly and why.
 - Start each implementation by identifying the applicable repository rules through `docs/tooling/cursor/rules.md` and enforcing them throughout the change.
 - When multiple rule files apply, satisfy all of them together and resolve ambiguity using the source-of-truth order above.
 - Do not finalize work until the relevant rule-driven requirements for implementation, docs, tests, accessibility, theming, analytics, and validation have been checked according to the task scope.
-- For UI work, ensure the result aligns with `docs/development/design-system.md`; if the implementation introduces a reusable visual rule not captured there, update the document in the same change.
+- For UI work, ensure the result aligns with `docs/design/README.md` and the relevant file in `docs/design/`; if the implementation introduces a reusable visual rule not captured there, update the matching design document in the same change.
 - Treat documentation alignment as part of implementation completion, not as optional follow-up work. A task that changes product behavior is incomplete until the affected `docs/product` source-of-truth files have been reviewed and updated when needed.
 
 ## 10) Anti-patterns to avoid

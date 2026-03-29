@@ -30,6 +30,8 @@ export type ModalProps = {
   returnFocusRef?: React.RefObject<HTMLElement | null>;
   /** Optional class name for the content panel. */
   className?: string;
+  /** Optional class name for the scrollable body region below the modal header. */
+  bodyClassName?: string;
   /** Optional id for the title element (for aria-labelledby). Auto-generated if not provided. */
   titleId?: string;
   /** Optional id for the description element (for aria-describedby). Auto-generated if not provided. */
@@ -65,6 +67,7 @@ export default function Modal({
   initialFocusRef,
   returnFocusRef,
   className,
+  bodyClassName,
   titleId: titleIdProp,
   descriptionId: descriptionIdProp,
   closeButtonLabel,
@@ -224,7 +227,7 @@ export default function Modal({
               ) : null}
             </div>
 
-            <div className="overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">{children}</div>
+            <div className={cn("overflow-y-auto px-5 py-5 sm:px-6 sm:py-6", bodyClassName)}>{children}</div>
           </div>
         </div>
       </div>

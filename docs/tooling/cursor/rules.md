@@ -54,7 +54,7 @@ Read these on every implementation because they define project-wide defaults:
 - `react-next-components.mdc`: Use when creating or refactoring React components, pages, layouts, hooks, client boundaries, or component composition. It also reinforces subtree reuse before creating parallel route-local components.
 - `project-structure.mdc`: Use when deciding where files should live or when adding new route-level or shared modules, including `_components/share/` folders for route-subtree reuse and promotion from child pages when reuse appears.
 - `role-frontend-development.mdc`: Use when designing component APIs, extracting hooks, splitting components, or making maintainability decisions in frontend code.
-- `role-ui-ux-design.mdc`: Use when making layout, hierarchy, spacing, interaction, or flow decisions. It now requires consulting `docs/development/design-system.md` before introducing or changing reusable interface patterns.
+- `role-ui-ux-design.mdc`: Use when making layout, hierarchy, spacing, interaction, or flow decisions. It now requires consulting `docs/design/README.md` and the relevant file in `docs/design/` before introducing or changing reusable interface patterns.
 - `ui-visual-consistency.mdc`: Use when adding or changing back/up navigation, form footer links that navigate away, or any control that must match an existing visual pattern in the same app area.
 - `responsive-design.mdc`: Use whenever UI can be affected by viewport changes, especially navigation, headers, cards, tables, forms, and dense layouts.
 - `tailwind-semantic-html.mdc`: Use whenever editing JSX or CSS classes so semantic elements and `cn()` are applied correctly.
@@ -111,7 +111,7 @@ Read these on every implementation because they define project-wide defaults:
 | `role-copywriting-marketing.mdc`  | Conversion-focused user-facing copy                     | Landing, CTA, email, notification, or product copy changes                               |
 | `role-frontend-development.mdc`   | Senior frontend implementation mindset                  | Frontend architecture or component design decisions are needed                           |
 | `role-full-stack-development.mdc` | Senior full-stack implementation mindset                | Backend, data, auth, or integration work is involved                                     |
-| `role-ui-ux-design.mdc`           | UI/UX design decision support                           | Layout, spacing, visual hierarchy, or user flow changes; consult `docs/development/design-system.md` for reusable UI standards and semantic design variables |
+| `role-ui-ux-design.mdc`           | UI/UX design decision support                           | Layout, spacing, visual hierarchy, or user flow changes; consult `docs/design/README.md` and the relevant file in `docs/design/` for reusable UI standards and semantic design variables |
 | `ui-visual-consistency.mdc`       | Shared navigation and control styling                   | Back/up links, consistent link-as-button patterns, avoiding one-off chrome styles        |
 | `sentry-error-handling.mdc`       | Sentry capture strategy                                 | Monitoring or exception capture changes                                                  |
 | `tailwind-semantic-html.mdc`      | Tailwind composition and semantic HTML                  | JSX or CSS classes change                                                                |

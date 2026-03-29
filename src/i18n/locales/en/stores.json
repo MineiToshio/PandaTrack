@@ -228,7 +228,7 @@
       "changedFieldsLabel": "Requested fields",
       "commentLabel": "Reason or comment",
       "noComment": "You did not add an extra comment.",
-      "yourPendingChangeRequestEditCta": "Continue editing your suggestion",
+      "yourPendingChangeRequestEditCta": "Continue editing",
       "communityChangeRequestTitle": "Community change summary",
       "communityChangeRequestUpdated": "Updated on {date}",
       "empty": "There are no reports or suggestions available for this store yet.",

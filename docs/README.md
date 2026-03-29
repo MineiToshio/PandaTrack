@@ -16,9 +16,14 @@ Use this index to find documentation by domain.
 - `docs/process/definition-of-done.md`: global quality checklist
 - `docs/process/review-checklist.md`: review checklist before merge
 
+## Design
+
+- `docs/design/README.md`: design-system entry point and file-selection guide
+- `docs/design/visual-foundations.md`: typography, color, spacing, surfaces, radius, shadows, and gradients
+- `docs/design/interface-patterns.md`: hierarchy, tabs, modals, right sidebars, controls, motion, navigation, and status patterns
+
 ## Development
 
-- `docs/development/design-system.md`: design system source of truth for typography, color, spacing, surfaces, and interface implementation rules
 - `docs/development/i18n.md`: localization setup and conventions
 - `docs/development/og-images.md`: OG image conventions
 - `docs/development/posthog.md`: analytics implementation notes

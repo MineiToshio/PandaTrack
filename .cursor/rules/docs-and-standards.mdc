@@ -49,6 +49,9 @@ Use the `docs/` folder for knowledge that helps future work, onboarding, and pro
 
 - **`docs/product/`**: Product source of truth (`PRD`, `FRDs`, `Blueprints`, `Work Orders`).
 - **`docs/development/i18n.md`**: i18n setup, structure, and how to add locales or namespaces.
+- **`docs/design/README.md`**: design-system index and file-selection guide.
+- **`docs/design/visual-foundations.md`**: visual language, semantic design variables, typography, color, spacing, surfaces, and elevation.
+- **`docs/design/interface-patterns.md`**: layout hierarchy, tabs, modals, right sidebars, controls, motion, and reusable interface patterns.
 - **`docs/development/og-images.md`**: OG image generation conventions and implementation notes.
 - **`docs/development/lib-utilities.md`**: app-wide utilities inventory (`src/lib`) and each file responsibility.
 - **`docs/development/database-schema.md`**: database tables and attributes (purpose, where used, why it matters); see `prisma/schema.prisma` for types and constraints.
