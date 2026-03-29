@@ -72,7 +72,7 @@ export default function RatingStars({
 
         return (
           <div key={starIndex} className={cn("relative", sizeClassName)}>
-            <Star className={cn("text-border absolute inset-0", sizeClassName)} aria-hidden />
+            <Star className={cn("text-muted-foreground absolute inset-0", sizeClassName)} aria-hidden />
             <div
               className="absolute inset-y-0 left-0 overflow-hidden"
               style={{ width: `${fillPercentage}%` }}
