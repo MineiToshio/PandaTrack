@@ -16,7 +16,7 @@ import StoreMultiTagAutocomplete from "./share/StoreMultiTagAutocomplete";
 
 const PRESENCE_TYPES = ["ONLINE", "PHYSICAL"] as const;
 const FILTER_CHIP_CLASSNAME =
-  "border-border/70 bg-background text-text-body hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-ring inline-flex min-h-11 cursor-pointer items-center justify-center rounded-full border px-3 py-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:outline-none";
+  "border-border/70 bg-background text-text-body hover:border-primary/60 hover:bg-primary/10 focus-visible:ring-ring inline-flex min-h-11 cursor-pointer items-center justify-center rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-200 focus-visible:ring-2 focus-visible:outline-none";
 const FILTER_CHIP_SELECTED_CLASSNAME =
   "border-primary bg-primary text-primary-foreground shadow-md hover:bg-primary/90 hover:text-primary-foreground";
 

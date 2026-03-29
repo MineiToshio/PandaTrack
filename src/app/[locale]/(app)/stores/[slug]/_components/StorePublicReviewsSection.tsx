@@ -266,7 +266,7 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
                         {review.authorName || t("detail.reviews.anonymousAuthor")}
                       </Typography>
                       {review.isViewerReview && (
-                        <span className="bg-background text-text-body inline-flex rounded-full px-2 py-1 text-xs font-medium">
+                        <span className="bg-background text-text-body inline-flex rounded-lg px-2 py-1 text-xs font-medium">
                           {t("detail.reviews.yourReviewBadge")}
                         </span>
                       )}

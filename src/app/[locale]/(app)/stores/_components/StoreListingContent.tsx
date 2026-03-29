@@ -10,7 +10,7 @@ import Typography from "@/components/core/Typography";
 import StoreEmptyCatalogTag from "./StoreEmptyCatalogTag";
 
 const INFO_CHIP_CLASSNAME =
-  "border-border/70 bg-muted/40 text-text-body inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs";
+  "border-border/70 bg-muted/40 text-text-body inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs";
 const MAX_CONTACT_CHANNELS = 4;
 
 function SimpleIconSvg({ path }: { path: string }) {

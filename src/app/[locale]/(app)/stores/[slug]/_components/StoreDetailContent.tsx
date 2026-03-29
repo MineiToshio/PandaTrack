@@ -54,7 +54,7 @@ type StoreDetailContentProps = {
 const STAGGER_BASE_DELAY_MS = 90;
 const CONTACT_LINK_CLASSNAME =
   "group border-border/55 hover:border-primary/25 inline-flex w-full items-center justify-between gap-3 rounded-2xl border bg-background/70 px-4 py-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-background focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none";
-const TAG_CLASSNAME = "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium";
+const TAG_CLASSNAME = "inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium";
 const METRIC_CARD_CLASSNAME =
   "bg-background/80 rounded-2xl border border-border/50 border-t-2 border-t-primary/35 px-3 py-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5";
 

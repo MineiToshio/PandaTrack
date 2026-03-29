@@ -229,7 +229,7 @@ export default function StoreGovernanceSummaryModal({
                           return (
                             <li key={item.reason}>
                               <span
-                                className="border-warning/30 bg-warning/14 text-text-title inline-flex min-h-11 max-w-full min-w-0 items-center gap-2 rounded-full border py-1 pr-1 pl-3 sm:pr-1.5 sm:pl-3.5"
+                                className="border-warning/30 bg-warning/14 text-text-title inline-flex min-h-11 max-w-full min-w-0 items-center gap-2 rounded-2xl border py-1 pr-1 pl-3 sm:pr-1.5 sm:pl-3.5"
                                 aria-label={t("governance.summary.reportReasonChipAriaLabel", {
                                   label: reasonLabel,
                                   count: item.count,
@@ -239,7 +239,7 @@ export default function StoreGovernanceSummaryModal({
                                   {reasonLabel}
                                 </span>
                                 <span
-                                  className="bg-warning/28 text-warning flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums sm:size-9 sm:text-sm"
+                                  className="bg-warning/28 text-warning flex min-w-8 shrink-0 items-center justify-center rounded-xl px-2 text-xs font-bold tabular-nums sm:min-w-9 sm:px-2.5 sm:text-sm"
                                   aria-hidden
                                 >
                                   {item.count}
@@ -292,7 +292,7 @@ export default function StoreGovernanceSummaryModal({
                     <Typography
                       as="span"
                       size="2xs"
-                      className="bg-primary/12 text-primary inline-flex rounded-full px-3 py-1 font-semibold"
+                      className="bg-primary/12 text-primary inline-flex rounded-xl px-3 py-1 font-semibold"
                     >
                       {t("governance.summary.yourPendingChangeRequestStatus")}
                     </Typography>
