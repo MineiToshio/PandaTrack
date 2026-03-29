@@ -115,7 +115,11 @@ export default function StoreDetailContent({
 
   const isPendingReview = store.status === "PENDING";
   const isInactive = !store.isActive;
-  const hasGovernanceSummaryContent = governanceSummary.totalReports > 0 || governanceSummary.totalChangeRequests > 0;
+  const hasGovernanceSummaryContent =
+    governanceSummary.totalReports > 0 ||
+    governanceSummary.totalChangeRequests > 0 ||
+    governanceViewerContext.openChangeRequest != null ||
+    governanceViewerContext.openReport != null;
   const showStoreStatusCard = isPendingReview || isInactive || hasGovernanceSummaryContent;
   const isBusiness = store.storeType === "BUSINESS";
   const storeTypeLabel = isBusiness ? tStores("create.storeTypeBusiness") : tStores("create.storeTypePerson");
@@ -296,9 +300,12 @@ export default function StoreDetailContent({
               )}
               {hasGovernanceSummaryContent && (
                 <StoreGovernanceSummaryModal
+                  locale={locale}
                   storeSlug={store.slug}
                   summary={governanceSummary}
                   showTopSeparator={isPendingReview || isInactive}
+                  viewerOpenReport={governanceViewerContext.openReport}
+                  viewerOpenChangeRequest={governanceViewerContext.openChangeRequest}
                 />
               )}
             </div>

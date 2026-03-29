@@ -71,6 +71,7 @@ export type StoreGovernanceViewerContext = {
     id: string;
     reason: StoreReportReason;
     details: string | null;
+    createdAt: Date;
     updatedAt: Date;
   } | null;
   openChangeRequest: {
@@ -366,6 +367,7 @@ export async function getStoreGovernanceViewerContext(
         id: true,
         reason: true,
         details: true,
+        createdAt: true,
         updatedAt: true,
       },
     }),

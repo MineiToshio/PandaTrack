@@ -137,8 +137,10 @@ Relevant acceptance signals:
 - If a pending change request becomes identical to the persisted store, it is removed instead of being kept as a no-op request.
 - Pending-store creator can directly edit the store from `/stores/[slug]/edit`.
 - Non-owner viewer of a pending store cannot directly edit it and must use the change-request path instead.
+- After a successful save from `/stores/[slug]/edit` (direct edit, change request saved, or no-op discard), the user is redirected to the store detail `/stores/[slug]` for the active locale.
+- The store-detail governance summary modal must surface the signed-in viewer’s own pending change request (fields and last updated) when one exists, not only the anonymous recent-requests list.
 - Public governance summary visibility does not expose raw report details or requester identity.
-- Submission success and validation states are visible and localized.
+- Validation and error feedback remain on the edit form when submission fails; copy stays localized.
 
 ## Status Note
 

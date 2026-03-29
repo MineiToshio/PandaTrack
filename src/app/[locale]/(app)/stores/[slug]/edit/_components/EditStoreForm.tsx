@@ -228,7 +228,7 @@ export default function EditStoreForm({
         <BackNavLink href={`/${locale}${ROUTES.stores}/${store.slug}`}>{t("edit.backToDetail")}</BackNavLink>
         <Heading as="h1" size="sm" className="text-text-title">
           {t(`${modeKey}.title`, {
-            storeName: name.trim() || store.name,
+            storeName: store.name,
           })}
         </Heading>
         <Typography size="sm" className="text-text-muted">
@@ -239,12 +239,6 @@ export default function EditStoreForm({
       {serverError && (
         <Typography size="sm" className="text-destructive" role="alert">
           {renderError(serverError)}
-        </Typography>
-      )}
-
-      {state?.success && (
-        <Typography size="sm" className="text-text-body" role="status">
-          {t(`edit.success.${state.mode}`)}
         </Typography>
       )}
 
@@ -518,11 +512,13 @@ export default function EditStoreForm({
           </StoreFormSectionCard>
         )}
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" variant="primary" disabled={isPending}>
             {isPending ? t(`${modeKey}.submitting`) : t(`${modeKey}.submitCta`)}
           </Button>
-          <BackNavLink href={`/${locale}${ROUTES.stores}/${store.slug}`}>{t("edit.cancelCta")}</BackNavLink>
+          <BackNavLink href={`/${locale}${ROUTES.stores}/${store.slug}`} className="h-10 px-4">
+            {t("edit.cancelCta")}
+          </BackNavLink>
         </div>
       </form>
     </div>

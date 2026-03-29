@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Flag } from "lucide-react";
 import posthog from "posthog-js";
@@ -19,6 +20,9 @@ type StoreReportModalProps = {
   locale: string;
   storeSlug: string;
   existingReport: StoreGovernanceViewerContext["openReport"];
+  hideTrigger?: boolean;
+  openRequestNonce?: number;
+  renderTrigger?: (args: { openModal: () => void; label: string }) => ReactNode;
 };
 
 const REPORT_REASONS = ["SPAM", "DUPLICATE", "INCORRECT_INFO", "DOES_NOT_EXIST", "INAPPROPRIATE"] as const;
@@ -31,13 +35,21 @@ function translateError(t: ReturnType<typeof useTranslations>, errorKey: string)
     : t("error.validation_failed");
 }
 
-export default function StoreReportModal({ locale, storeSlug, existingReport }: StoreReportModalProps) {
+export default function StoreReportModal({
+  locale,
+  storeSlug,
+  existingReport,
+  hideTrigger = false,
+  openRequestNonce = 0,
+  renderTrigger,
+}: StoreReportModalProps) {
   const t = useTranslations("stores");
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [state, setState] = useState<SaveStoreReportResult | null>(null);
   const [reason, setReason] = useState<ReportReason | "">(existingReport?.reason ?? "");
   const [details, setDetails] = useState(existingReport?.details ?? "");
+  const lastOpenRequestNonceRef = useRef(openRequestNonce);
 
   const fieldErrors = state?.success === false ? state.fieldErrors : undefined;
   const reasonFieldInvalid = Boolean(fieldErrors?.reason?.[0]);
@@ -57,6 +69,15 @@ export default function StoreReportModal({ locale, storeSlug, existingReport }: 
   };
 
   const reportTriggerLabel = existingReport ? t("governance.report.updateCta") : t("governance.report.openCta");
+
+  useEffect(() => {
+    if (openRequestNonce === 0 || openRequestNonce === lastOpenRequestNonceRef.current) {
+      return;
+    }
+
+    lastOpenRequestNonceRef.current = openRequestNonce;
+    openModal();
+  }, [openRequestNonce]);
 
   const handleReasonChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const nextValue = event.target.value as ReportReason | "";
@@ -90,16 +111,20 @@ export default function StoreReportModal({ locale, storeSlug, existingReport }: 
 
   return (
     <>
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        className="gap-1.5 max-lg:h-11 max-lg:min-w-11 max-lg:justify-center max-lg:px-0"
-        onClick={openModal}
-      >
-        <Flag className="size-4 shrink-0" aria-hidden />
-        <span className="max-lg:sr-only">{reportTriggerLabel}</span>
-      </Button>
+      {hideTrigger ? null : renderTrigger ? (
+        renderTrigger({ openModal, label: reportTriggerLabel })
+      ) : (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="gap-1.5 max-lg:h-11 max-lg:min-w-11 max-lg:justify-center max-lg:px-0"
+          onClick={openModal}
+        >
+          <Flag className="size-4 shrink-0" aria-hidden />
+          <span className="max-lg:sr-only">{reportTriggerLabel}</span>
+        </Button>
+      )}
 
       <Modal
         isOpen={isOpen}

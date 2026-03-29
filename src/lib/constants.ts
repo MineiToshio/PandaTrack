@@ -94,6 +94,7 @@ export const POSTHOG_EVENTS = {
     DUPLICATE_SUBMIT_MODAL_SHOWN: "store_duplicate_submit_modal_shown",
     SEARCHED: "store_searched",
     GOVERNANCE_SUMMARY_OPENED: "store_governance_summary_opened",
+    GOVERNANCE_SUMMARY_CONTINUE_CHANGE_REQUEST_CLICKED: "store_governance_summary_continue_change_request_clicked",
     REPORT_OPENED: "store_report_opened",
     REPORT_SUBMITTED: "store_report_submitted",
     PRODUCT_TYPE_REQUEST_OPENED: "store_product_type_request_opened",
