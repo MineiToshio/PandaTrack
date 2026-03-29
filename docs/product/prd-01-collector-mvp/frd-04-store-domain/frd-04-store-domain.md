@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-03-21
+last_updated: 2026-03-29
 source_features:
   - FEAT-0012
 implementation_status: PARTIALLY_IMPLEMENTED
@@ -46,16 +46,16 @@ This domain is already partially implemented in production code. This FRD reflec
 - Pending-store in-app visibility
 - Pending-store detail disclaimer
 - Inactive-store warning on detail page
+- Store report submission
+- Product-type request submission
+- Approved-store change-request flow
+- Pending-store direct-edit permissions and route branching
 - Store search/filter analytics events for listing and duplicate flows
 
 ### Planned but not yet implemented
 
 - Public review create/edit flow
 - Private store notes
-- Store report submission
-- Product-type request submission
-- Approved-store change requests
-- Pending-store direct-edit permissions UI/flow
 - Business logo upload pipeline
 - Final analytics and error-handling hardening for remaining store flows
 

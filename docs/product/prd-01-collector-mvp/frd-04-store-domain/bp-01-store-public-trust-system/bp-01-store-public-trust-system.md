@@ -249,13 +249,22 @@ Should extend:
 
 Should extend:
 
+- create-store form flow
+- edit-store form flow
+- in-memory image-editing UI boundary for crop/zoom confirmation before submit
 - server action layer
+- image-processing boundary
 - storage integration layer
 - query read model for logo reference
 
+Current logo-storage decision:
+
+- use the `store-logos/` prefix for persisted business logos
+- persist the final optimized asset with the object key `store-logos/{storeId}.webp`
+
 ## Risks and Constraints
 
-- Review, report, and change-request flows are not implemented yet, so future work must not assume those payloads already exist in UI or query shape.
+- Review, report, and change-request flows now exist in the store domain, but future work must not assume admin moderation actions or dashboards already exist.
 - Public governance summary reads must avoid exposing requester identity or raw free-text report details to non-admin viewers.
 - Change-request persistence must stay diff-based; snapshot-style writes would make moderation review noisier and increase accidental drift.
 - Pending-store direct edits and approved-store change requests now share the same route shape, so permission checks must stay explicit at the action and query boundaries.

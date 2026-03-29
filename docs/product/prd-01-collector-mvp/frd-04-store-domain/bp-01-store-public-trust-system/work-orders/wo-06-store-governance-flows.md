@@ -144,7 +144,7 @@ Relevant acceptance signals:
 
 - `WO-03 Store Creation and Duplicate Prevention` for shared create-store field definitions and validation patterns.
 - `WO-04 Store Public Discovery and Detail` for the store-detail entry point and public summary rendering.
-- `WO-07 Store Permissions, Logo, and Hardening` for future admin-side moderation completion and final hardening.
+- `WO-07 Store Logo and Hardening` for logo upload and final hardening around observability, validation, and regression safety.
 
 ## E2E Acceptance Tests
 
