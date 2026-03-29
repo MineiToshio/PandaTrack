@@ -203,6 +203,13 @@ Required behavior:
 - If the user includes text on the same line as the referenced command file, interpret that text as the command input payload automatically.
 - Do not require the user to restate the command instructions in natural language when the command file and its inputs are already provided.
 - Default to the simplest Cursor-like invocation model: command file reference plus positional input values.
+- Treat the referenced command file as the active execution authority for that turn.
+- Command-file workflow takes priority over generic skill workflows or default process habits that would otherwise delay implementation.
+- Do not pause for unrelated brainstorming, spec-writing, or approval gates when executing a command file unless:
+  - the user explicitly asks for that extra phase, or
+  - the command reaches a decision with non-obvious destructive or scope-expanding consequences.
+- Skills may still be used to help complete the command, but they must not override, replace, or slow the command's required workflow.
+- Each command should be treated as self-contained: follow its own steps, scope boundaries, validation rules, tracking rules, and output contract independently of other skill-level process defaults.
 - Follow the command file `Steps` section as mandatory workflow unless it conflicts with a direct user instruction.
 - Read the command file completely enough to identify any `Output`, `Output format`, `Return`, or equivalent response-shape section.
 - Treat the command file response-shape section as mandatory final response contract.
