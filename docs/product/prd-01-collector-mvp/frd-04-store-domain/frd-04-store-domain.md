@@ -154,8 +154,8 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - `BR-01-09`: Same-name stores in different countries do not trigger the submit modal.
 - `BR-01-10`: Store creation currently redirects directly to the created detail route after success.
 - `BR-01-11`: Store edit routes must follow the canonical pattern `/stores/[slug]/edit`.
-- `BR-01-12`: Public store-detail governance summaries may be visible to any visitor, but governance submissions require authentication.
-- `BR-01-13`: Public governance summaries must not expose requester identity or raw free-text report details to non-admin viewers.
+- `BR-01-12`: Public store-detail `Reports and suggestions` summaries may be visible to any visitor, but report and change-request submissions require authentication.
+- `BR-01-13`: Public `Reports and suggestions` summaries must not expose requester identity or raw free-text report details to non-admin viewers, except that the signed-in viewer may see their own open report details and their own pending change-request comment inside the personalized summary panel.
 - `BR-01-14`: A user may have only one open store report per store at a time; once the earlier report is resolved, the user may create a new report for that store.
 - `BR-01-15`: A user may have only one open store change request per store at a time; once the earlier request is resolved, the user may create a new change request for that store.
 - `BR-01-16`: Store change requests persist only the changed fields and must be discarded or deleted when no effective diff remains.
@@ -255,13 +255,15 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - Then those values are treated with OR logic
 - And different filter families are combined with AND logic
 
-### `AC-01-08` Public governance summary visibility
+### `AC-01-08` Public reports-and-suggestions summary visibility
 
-- Given a public store-detail page with existing governance activity
-- When any visitor opens the governance summary UI
-- Then they can see report counts grouped by supported reason
+- Given a public store-detail page with existing reports or change-request activity
+- When any visitor opens the `Reports and suggestions` summary UI
+- Then they can see two primary sections: `Community reports` and `Change requests`
+- And each section is structured so personalized viewer information appears before the aggregated community summary when the viewer has an open record
+- And they can see report counts grouped by supported reason
 - And they can see summaries of pending or historical change requests
-- But they do not see requester identity or raw free-text report details
+- But they do not see requester identity or raw free-text report details from other users
 
 ### `AC-01-09` Update open store report
 
@@ -269,28 +271,36 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - When they reopen the report flow and submit new details
 - Then the existing report is updated
 - And a second open report is not created
+- And the `Reports and suggestions` summary surfaces that same viewer report with its submitted date, selected reason, optional description, and an edit CTA that reopens the report form preloaded
 
-### `AC-01-10` Re-report after resolution
+### `AC-01-10` Personalized pending change request summary
+
+- Given an authenticated user who already has one pending change request for a store
+- When they open the `Reports and suggestions` summary UI
+- Then the personalized change-request panel shows the latest update timestamp, changed fields, optional comment, and a CTA to continue editing
+- And the aggregated community change summary remains visible as a separate block after the personalized panel
+
+### `AC-01-11` Re-report after resolution
 
 - Given an authenticated user whose previous report for a store is already resolved
 - When they submit a new report for that same store
 - Then the system creates a new report record
 - And the earlier resolved report remains in history
 
-### `AC-01-11` Approved-store change request
+### `AC-01-12` Approved-store change request
 
 - Given an authenticated non-admin user on `/stores/[slug]/edit` for an approved store
 - When they submit one or more allowed field changes
 - Then the system persists only the changed fields as a store change request
 - And direct mutation of the approved store does not occur
 
-### `AC-01-12` No-op change request cleanup
+### `AC-01-13` No-op change request cleanup
 
 - Given an authenticated user with an open change request for a store
 - When they edit that request until it no longer differs from the persisted store
 - Then no effective change request remains stored for that user and store
 
-### `AC-01-13` Pending-store direct edit ownership
+### `AC-01-14` Pending-store direct edit ownership
 
 - Given a pending store
 - When the creator or an admin opens `/stores/[slug]/edit`

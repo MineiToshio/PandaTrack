@@ -6,7 +6,7 @@ title: Store Governance Flows
 status: ACTIVE
 parent: BP-01
 source_issue: 75
-last_updated: 2026-03-21
+last_updated: 2026-03-28
 implementation_status: IN_PROGRESS
 ---
 
@@ -14,11 +14,11 @@ implementation_status: IN_PROGRESS
 
 ## Summary
 
-Add the first store-governance submission flows so the public store layer can improve over time without uncontrolled direct editing of approved stores.
+Add the first store-governance submission flows so the public store layer can improve over time without uncontrolled direct editing of approved stores. In the user-facing product, this summary is presented as `Reports and suggestions`.
 
 ## In Scope
 
-- public governance summary visibility on store detail
+- public `Reports and suggestions` summary visibility on store detail
 - store report create and update flow
 - product-type request submission from store forms
 - store change-request create and update flow
@@ -27,7 +27,7 @@ Add the first store-governance submission flows so the public store layer can im
 - route and validation contracts for `/stores/[slug]/edit`
 - reusable modal and field-character-count support needed by these flows
 - localized success and validation states
-- analytics for governance entry points and submissions
+- analytics for reports-and-suggestions entry points and submissions
 
 ## Out of Scope
 
@@ -46,7 +46,7 @@ Add the first store-governance submission flows so the public store layer can im
 
 Relevant acceptance signals:
 
-- public store detail shows a governance summary note and modal without exposing sensitive free-text submissions
+- public store detail shows a `Reports and suggestions` note and modal without exposing sensitive free-text submissions
 - authenticated users can report a store with one supported reason plus free-text context
 - authenticated users can submit product-type requests from create and edit flows
 - users can submit or update one open change request per store when direct edit is not allowed
@@ -59,24 +59,38 @@ Relevant acceptance signals:
   - data model layer
   - query layer for public governance summary reads
   - request validation layer
-  - targeted governance UI entry points
+- targeted reports-and-suggestions UI entry points
   - `/stores/[slug]/edit` route contract
 
 ## Assumptions
 
-- Store detail remains publicly viewable, so governance summary signals must be safe for unauthenticated visitors.
-- Governance submission flows require authentication even though governance summary visibility is public.
+- Store detail remains publicly viewable, so `Reports and suggestions` summary signals must be safe for unauthenticated visitors.
+- Governance submission flows require authentication even though `Reports and suggestions` visibility is public.
 - Moderation decisions, reviewer identity, and raw free-text report details belong to future admin tooling, not this work order.
 
 ## UX Notes
 
 - Store detail must expose:
-  - a public governance note
-  - a CTA that opens a modal with governance summary data
-- The public governance modal must:
+  - a public `Reports and suggestions` note
+  - a CTA that opens a modal with reports-and-suggestions summary data
+- The public `Reports and suggestions` modal must:
+  - use two primary sections: `Community reports` and `Change requests`
+  - in each section, show the signed-in viewer's own open item first when one exists
+  - show the aggregated community summary after the personalized panel
   - show aggregate report counts grouped by supported reason
   - show change-request summaries without exposing requester identity
-  - avoid rendering raw free-text report details for non-admin viewers
+  - avoid rendering raw free-text report details from other users for non-admin viewers
+- The personalized `Community reports` panel must show:
+  - submission date
+  - selected reason
+  - optional viewer-authored description
+  - an edit CTA that reopens the report form preloaded
+- The personalized `Change requests` panel must show:
+  - current pending status
+  - last-updated timestamp
+  - changed fields
+  - optional viewer-authored comment
+  - a CTA to continue editing through `/stores/[slug]/edit`
 - Store report submission should begin from store detail with a lightweight modal or dialog flow.
 - Product-type request submission should open inside store forms (`stores/new` and `/stores/[slug]/edit`) using a reusable modal pattern.
 - Editing a store through `/stores/[slug]/edit` should feel like the create-store form with preloaded data, while still saving a change request when direct edit is not allowed.
@@ -104,7 +118,7 @@ Relevant acceptance signals:
 ## Security Notes
 
 - Governance submission flows require an authenticated session.
-- Public governance summaries must not expose requester identity or raw user-submitted free text.
+- Public `Reports and suggestions` summaries must not expose requester identity or raw user-submitted free text from other users.
 - The persistence model must preserve historical records so future admin tooling can identify repeated report or change-request activity by the same user on the same store.
 - Max-length validation must be enforced server-side as well as in the UI.
 
@@ -138,10 +152,11 @@ Relevant acceptance signals:
 - Pending-store creator can directly edit the store from `/stores/[slug]/edit`.
 - Non-owner viewer of a pending store cannot directly edit it and must use the change-request path instead.
 - After a successful save from `/stores/[slug]/edit` (direct edit, change request saved, or no-op discard), the user is redirected to the store detail `/stores/[slug]` for the active locale.
-- The store-detail governance summary modal must surface the signed-in viewer’s own pending change request (fields and last updated) when one exists, not only the anonymous recent-requests list.
-- Public governance summary visibility does not expose raw report details or requester identity.
+- The store-detail `Reports and suggestions` modal must surface the signed-in viewer’s own open report with submission date, selected reason, optional description, and edit CTA when one exists.
+- The store-detail `Reports and suggestions` modal must surface the signed-in viewer’s own pending change request (fields, optional comment, and last updated) when one exists, not only the anonymous recent-requests list.
+- Public `Reports and suggestions` visibility does not expose raw report details or requester identity from other users.
 - Validation and error feedback remain on the edit form when submission fails; copy stays localized.
 
 ## Status Note
 
-In progress. Governance schema foundations exist and the slice implementation is wiring the public summary, report flow, product-type request flow, and `/stores/[slug]/edit` route contract.
+In progress. Governance schema foundations exist and the slice implementation is wiring the public `Reports and suggestions` summary, report flow, product-type request flow, and `/stores/[slug]/edit` route contract.
