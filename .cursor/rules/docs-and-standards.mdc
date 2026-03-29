@@ -57,6 +57,11 @@ Use the `docs/` folder for knowledge that helps future work, onboarding, and pro
 
 When you add or update something in `docs/`, place it in the right file and keep the same style (short sections, code examples where useful, clear headings).
 
+### Path references in docs
+
+- Use repository-relative paths or plain repo paths in documentation.
+- Do not use machine-specific absolute filesystem paths such as `/Users/...` because docs must remain portable across environments.
+
 ---
 
 ## 2. Create a new Cursor rule only when it is a recurring standard

@@ -18,6 +18,7 @@ Use this index to find documentation by domain.
 
 ## Development
 
+- `docs/development/design-system.md`: design system source of truth for typography, color, spacing, surfaces, and interface implementation rules
 - `docs/development/i18n.md`: localization setup and conventions
 - `docs/development/og-images.md`: OG image conventions
 - `docs/development/posthog.md`: analytics implementation notes

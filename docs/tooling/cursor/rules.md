@@ -40,7 +40,7 @@ Read these on every implementation because they define project-wide defaults:
 ### Documentation and architecture
 
 - `adr-decision-records.mdc`: Use when the change introduces a lasting architectural decision, tradeoff, or new cross-feature pattern.
-- `docs-and-standards.mdc`: Use when behavior, architecture, `src/lib`, database shape, reusable process knowledge, or undocumented product decisions change. It requires proactive `docs/product` updates in the same change when shipped behavior is new, changed, or previously undocumented.
+- `docs-and-standards.mdc`: Use when behavior, architecture, `src/lib`, database shape, reusable process knowledge, or undocumented product decisions change. It requires proactive `docs/product` updates in the same change when shipped behavior is new, changed, or previously undocumented, and requires documentation paths to stay repository-relative instead of machine-specific absolute paths.
 - `quality-docs-cleanup.mdc`: Use when adding comments, JSDoc, utilities, cleanup, or lint-related exceptions.
 
 ### Core coding and language
@@ -54,7 +54,7 @@ Read these on every implementation because they define project-wide defaults:
 - `react-next-components.mdc`: Use when creating or refactoring React components, pages, layouts, hooks, client boundaries, or component composition. It also reinforces subtree reuse before creating parallel route-local components.
 - `project-structure.mdc`: Use when deciding where files should live or when adding new route-level or shared modules, including `_components/share/` folders for route-subtree reuse and promotion from child pages when reuse appears.
 - `role-frontend-development.mdc`: Use when designing component APIs, extracting hooks, splitting components, or making maintainability decisions in frontend code.
-- `role-ui-ux-design.mdc`: Use when making layout, hierarchy, spacing, interaction, or flow decisions.
+- `role-ui-ux-design.mdc`: Use when making layout, hierarchy, spacing, interaction, or flow decisions. It now requires consulting `docs/development/design-system.md` before introducing or changing reusable interface patterns.
 - `ui-visual-consistency.mdc`: Use when adding or changing back/up navigation, form footer links that navigate away, or any control that must match an existing visual pattern in the same app area.
 - `responsive-design.mdc`: Use whenever UI can be affected by viewport changes, especially navigation, headers, cards, tables, forms, and dense layouts.
 - `tailwind-semantic-html.mdc`: Use whenever editing JSX or CSS classes so semantic elements and `cn()` are applied correctly.
@@ -93,7 +93,7 @@ Read these on every implementation because they define project-wide defaults:
 | --------------------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | `adr-decision-records.mdc`        | ADR creation/update criteria                            | Architecture or recurring technical decisions change                                     |
 | `coding-standards.mdc`            | Core coding conventions and implementation defaults     | Any code is written or changed                                                           |
-| `docs-and-standards.mdc`          | Documentation and rule maintenance policy               | Behavior, docs, standards, or undocumented product decisions change                      |
+| `docs-and-standards.mdc`          | Documentation and rule maintenance policy               | Behavior, docs, standards, or undocumented product decisions change; keep documentation paths repository-relative |
 | `english-code-only.mdc`           | English-only code and developer text                    | Editing code, comments, tests, logs, or messages                                         |
 | `env-example.mdc`                 | `.env.example` synchronization                          | New env vars are introduced or required                                                  |
 | `error-handling-validation.mdc`   | Zod, expected errors, and logging guidance              | Validation, parsing, or error handling changes                                           |
@@ -111,7 +111,7 @@ Read these on every implementation because they define project-wide defaults:
 | `role-copywriting-marketing.mdc`  | Conversion-focused user-facing copy                     | Landing, CTA, email, notification, or product copy changes                               |
 | `role-frontend-development.mdc`   | Senior frontend implementation mindset                  | Frontend architecture or component design decisions are needed                           |
 | `role-full-stack-development.mdc` | Senior full-stack implementation mindset                | Backend, data, auth, or integration work is involved                                     |
-| `role-ui-ux-design.mdc`           | UI/UX design decision support                           | Layout, spacing, visual hierarchy, or user flow changes                                  |
+| `role-ui-ux-design.mdc`           | UI/UX design decision support                           | Layout, spacing, visual hierarchy, or user flow changes; consult `docs/development/design-system.md` for reusable UI standards and semantic design variables |
 | `ui-visual-consistency.mdc`       | Shared navigation and control styling                   | Back/up links, consistent link-as-button patterns, avoiding one-off chrome styles        |
 | `sentry-error-handling.mdc`       | Sentry capture strategy                                 | Monitoring or exception capture changes                                                  |
 | `tailwind-semantic-html.mdc`      | Tailwind composition and semantic HTML                  | JSX or CSS classes change                                                                |
