@@ -6,8 +6,8 @@ title: Store Governance Flows
 status: ACTIVE
 parent: BP-01
 source_issue: 75
-last_updated: 2026-03-28
-implementation_status: IN_PROGRESS
+last_updated: 2026-03-29
+implementation_status: IMPLEMENTED
 ---
 
 # WO-06 Store Governance Flows
