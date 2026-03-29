@@ -28,6 +28,8 @@ The command must follow PandaTrack's hybrid workflow:
 - Do not create or update local docs or GitHub issues until the user gives explicit approval after the proposal phase.
 - Treat this command as a combined PM + software architect + senior full-stack planning workflow.
 - Prefer smaller, implementation-ready `Work Orders` over broad mixed-scope slices whenever a feature can be split into independently reviewable outcomes.
+- Treat this command as the place to define the `FRD`, the `Blueprints`, and the initial `Work Order` split well, but not as the place to fully enrich every `Work Order`.
+- Use `enrich work order context` later to turn an individual `Work Order` into an implementation-ready slice with deeper product, UX, technical, security, and QA detail.
 - Use the relevant templates in `docs/templates/` as the mandatory base:
   - `docs/templates/frd-template.md`
   - `docs/templates/blueprint-template.md`
@@ -47,6 +49,8 @@ Produce:
 4. an updated parent `PRD` that reflects the new `FRD`
 5. one matching GitHub Epic for the `FRD`
 6. one GitHub ticket per `Work Order`
+
+The goal of the `Work Orders` created here is to be well-scoped, well-ordered, and well-justified. They must provide a strong initial execution baseline, but they do not need to contain the full enriched detail that belongs in the later `enrich work order context` workflow.
 
 ## Required product-doc structure
 
@@ -119,6 +123,14 @@ Ask whatever is needed to define:
 - atomic write requirements
 - likely implementation risks
 
+This role must also classify technical decisions into three buckets:
+
+- decisions that must be resolved now at `FRD` level
+- decisions that must be resolved now at `Blueprint` level so the split stays coherent
+- decisions that can safely be deferred to later `enrich work order context` runs for individual `Work Orders`
+
+The command must not try to fully resolve all `Work Order`-level implementation details here. Its job is to identify enough structure to create the right slices and to flag which slices will later need deeper enrichment.
+
 ## Mandatory clarification rules
 
 Do not create the FRD package until critical ambiguity is resolved.
@@ -134,6 +146,8 @@ You must ask follow-up questions in Spanish whenever any of these remain materia
 - what permissions apply
 - how reminders, analytics, or observability should behave
 - what edge cases the user may have missed
+- whether any architectural or operational decision must already be fixed at `Blueprint` level to avoid a bad `Work Order` split
+- whether any details can be intentionally deferred to later `enrich work order context` passes without creating execution chaos
 
 The questions should be grouped into concise but thorough batches.
 
@@ -147,6 +161,13 @@ Before drafting:
 2. Review nearby `FRDs` under the same `PRD` so the new one fits the existing product map.
 3. Inspect the current codebase for implemented behavior that should influence the new documents.
 4. Review current GitHub epics and tickets to avoid duplicating existing work.
+
+Before proposing the package, perform an internal gap analysis that identifies:
+
+- what is already defined well enough to shape the `FRD`
+- what is already defined well enough to shape the `Blueprints`
+- what must be decided now so the `Work Order` split is valid
+- what can be intentionally deferred to later `enrich work order context` work on specific `Work Orders`
 
 The target `PRD` must be updated as part of this command when the new `FRD` changes:
 
@@ -203,6 +224,7 @@ Each `Blueprint` must:
   - lists work orders in recommended execution order
   - identifies prerequisite relationships
   - calls out which work orders can be executed in parallel after their dependencies are complete
+- state the technical contracts or boundary decisions that must already be fixed before the downstream `Work Orders` are enriched individually
 
 ### Work Order
 
@@ -220,6 +242,16 @@ Each `Work Order` must:
   - `Requirements`
   - `Blueprints`
   - `E2E Acceptance Tests`
+
+Each `Work Order` created here should be treated as an initial slice definition, not as a fully enriched implementation brief.
+
+Each proposed `Work Order` must also have an explicit internal rationale covering:
+
+- `Outcome`: what meaningful user or system outcome this slice owns
+- `Why separate`: why this should be its own `Work Order` instead of being merged with a sibling
+- `Dependencies`: what must land first, if anything
+- `Parallelizable after`: what prerequisite unlocks parallel work
+- `Needs enrich`: whether later `enrich work order context` work is likely `high`, `medium`, or `low`
 
 ## Work Order splitting rules
 
@@ -245,6 +277,8 @@ Avoid:
 
 When a work order candidate contains two or more user actions that could reasonably be implemented, reviewed, tested, or delegated separately, split them unless a shared implementation contract would become unnaturally fragmented.
 
+Do not create “fake-ready” `Work Orders` that look valid on paper but still hide major ambiguity in what outcome they own. If a candidate `Work Order` cannot be described cleanly in terms of a single coherent outcome plus clear prerequisites, the split is not ready yet.
+
 ## Work Order ordering and dependency rules
 
 Work orders must be ordered by recommended implementation sequence, not by brainstorming order.
@@ -264,6 +298,13 @@ If the best split is:
 
 the blueprint must say so explicitly in its implementation plan.
 
+When a `Work Order` depends on a still-undefined technical contract, either:
+
+- resolve that contract now in the `Blueprint`, or
+- move the `Work Order` split so that the dependency structure remains honest
+
+Do not hide architecture uncertainty inside downstream `Work Orders` if it would distort the split or ordering.
+
 ## Proposal and approval phase
 
 Before writing docs or GitHub issues, present the plan in Spanish and wait for explicit approval.
@@ -282,6 +323,8 @@ The proposal must include:
 - proposed `Blueprint` titles
 - proposed `Work Order` titles in implementation order
 - proposed work-order dependency and parallelization plan
+- a short `Work Order split rationale` that explains why these slices are the right cut
+- which `Work Orders` will likely need deeper follow-up through `enrich work order context`
 - whether the command will create a new GitHub Epic or update an existing one
 - how many GitHub tickets will be created
 - any important split rationale only when it affects the user's decision
@@ -317,6 +360,13 @@ The GitHub Epic must contain only lightweight tracking information:
 Do not duplicate the full FRD body in GitHub.
 Do not use branch-specific GitHub blob URLs as the canonical reference format.
 Use repository-relative paths as the durable reference.
+
+## Guardrails
+
+- Do not try to fully enrich every `Work Order` during this command; preserve the separation of responsibilities with `enrich work order context`.
+- Do not defer `Blueprint`-level technical contracts that are necessary to produce a sane `Work Order` split.
+- Do not force unresolved architecture decisions down into `Work Orders` when they properly belong in the `Blueprint`.
+- Do not create `Work Orders` whose only purpose is “leftover technical cleanup” unless that cleanup is itself a coherent hardening or foundation slice.
 
 ### Ticket body
 
