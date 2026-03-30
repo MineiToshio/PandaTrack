@@ -78,6 +78,12 @@ Implement one GitHub slice ticket that mirrors a `Work Order`, using the hybrid 
 - Follow `AGENTS.md` and `.cursor/rules/*.mdc`.
 - Respect architecture and code organization conventions.
 - Do not include unrelated refactors.
+- If the slice introduces or wires an external service or third-party integration (for example S3-compatible storage, analytics, email, OAuth, or similar), also update the relevant docs and environment examples in the same change so the integration is actually operable by another developer.
+- In those cases, include operator-facing setup guidance covering:
+  - which environment variables are required
+  - how to obtain each value from the external service
+  - any required dashboard, bucket, credential, callback, or permission setup steps
+  - any relevant public/base URL or secret-handling notes needed to run the feature correctly
 
 6. Update GitHub tracking
 - Keep execution tracking in GitHub:
@@ -135,3 +141,4 @@ Return:
 4. `Test cases`: concise `Given / When / Then` cases
 5. `Delegation used`: what was delegated, what stayed local, and why
 6. `Tracking updated`: GitHub status and Work Order lifecycle / implementation-status changes applied
+7. `External service setup`: only when applicable; required env vars plus concise steps to obtain/configure them
