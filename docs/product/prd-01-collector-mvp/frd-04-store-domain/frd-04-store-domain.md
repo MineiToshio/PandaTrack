@@ -7,10 +7,10 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-03-29
+last_updated: 2026-04-02
 source_features:
   - FEAT-0012
-implementation_status: PARTIALLY_IMPLEMENTED
+implementation_status: IMPLEMENTED
 ---
 
 # FRD-04 Store Domain
