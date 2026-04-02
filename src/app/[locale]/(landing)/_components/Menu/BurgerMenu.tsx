@@ -10,30 +10,56 @@ import HeaderNav, { HeaderNavItem } from "./HeaderNav";
 import LanguageToggle from "./LanguageToggle";
 import ThemeToggle from "./ThemeToggle";
 import { POSTHOG_EVENTS } from "@/lib/constants";
+import { useFocusScope } from "@/lib/a11y/useFocusScope";
+import { useTranslations } from "next-intl";
+import { useRef } from "react";
 
 type BurgerMenuProps = {
   isOpen: boolean;
   onClose: () => void;
   items: HeaderNavItem[];
   ctaLabel: string;
+  returnFocusRef: React.RefObject<HTMLButtonElement | null>;
 };
 
-export default function BurgerMenu({ isOpen, onClose, items, ctaLabel }: BurgerMenuProps) {
+export default function BurgerMenu({ isOpen, onClose, items, ctaLabel, returnFocusRef }: BurgerMenuProps) {
+  const t = useTranslations("landing.header");
+  const drawerRootRef = useRef<HTMLDivElement>(null);
+
+  useFocusScope({
+    active: isOpen,
+    rootRef: drawerRootRef,
+    onClose,
+    returnFocusRef,
+  });
+
   const handleLogoClick = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     onClose();
   };
 
   return (
-    <div className={cn("fixed inset-0 z-50 lg:hidden", isOpen ? "pointer-events-auto" : "pointer-events-none")}>
+    <div
+      ref={drawerRootRef}
+      className={cn("fixed inset-0 z-50 lg:hidden", isOpen ? "pointer-events-auto" : "pointer-events-none")}
+      aria-hidden={!isOpen}
+      {...(isOpen
+        ? ({
+            role: "dialog",
+            "aria-modal": true,
+            "aria-label": t("menuDialogLabel"),
+          } as const)
+        : {})}
+    >
       <button
         type="button"
-        aria-label="Close menu"
         className={cn(
           "bg-background/80 absolute inset-0 backdrop-blur-sm transition-opacity",
           isOpen ? "opacity-100" : "opacity-0",
         )}
         onClick={onClose}
+        aria-hidden
+        tabIndex={-1}
       />
       <aside
         className={cn(
@@ -42,23 +68,23 @@ export default function BurgerMenu({ isOpen, onClose, items, ctaLabel }: BurgerM
         )}
       >
         <div className="flex min-h-0 flex-1 flex-col overflow-auto p-4 sm:p-6">
-          <div className="flex min-w-0 shrink-0 items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={handleLogoClick}
-              aria-label="Scroll to top"
-              className="min-w-0 shrink-0 cursor-pointer border-none bg-transparent p-0"
-            >
-              <Logo />
-            </button>
+          <div className="flex min-w-0 shrink-0 flex-row-reverse items-center justify-between gap-3">
             <IconButton
               Icon={X}
               variant="outline"
               size="sm"
-              aria-label="Close menu"
+              aria-label={t("closeMenu")}
               onClick={onClose}
               className="shrink-0"
             />
+            <button
+              type="button"
+              onClick={handleLogoClick}
+              aria-label={t("scrollToTop")}
+              className="min-w-0 shrink-0 cursor-pointer border-none bg-transparent p-0"
+            >
+              <Logo />
+            </button>
           </div>
           <div className="mt-8 flex-1">
             <HeaderNav

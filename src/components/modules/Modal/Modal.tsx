@@ -6,6 +6,7 @@ import Heading from "@/components/core/Heading";
 import Portal from "@/components/core/Portal";
 import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
+import { FOCUS_OPTIONS_NO_SCROLL, getFocusableElements } from "@/lib/a11y/focusable";
 
 export type ModalRole = "dialog" | "alertdialog";
 
@@ -39,18 +40,6 @@ export type ModalProps = {
   /** Accessible label for the optional close button. */
   closeButtonLabel?: string;
 };
-
-const FOCUSABLE_SELECTOR =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-/** Avoid scrolling the page when focus moves inside a fixed overlay (browser default scroll-into-view). */
-const FOCUS_OPTIONS_NO_SCROLL: FocusOptions = { preventScroll: true };
-
-function getFocusableElements(container: HTMLElement) {
-  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (element) => !element.hasAttribute("aria-hidden"),
-  );
-}
 
 /**
  * Reusable modal with backdrop, focus management, and Escape key support.

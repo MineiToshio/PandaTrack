@@ -4,8 +4,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { Filter, Globe, Search, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useId, useMemo, useRef, useState } from "react";
 import Input from "@/components/core/Input";
+import Label from "@/components/core/Label";
+import { useFocusScope } from "@/lib/a11y/useFocusScope";
 import { ROUTES } from "@/lib/constants";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
@@ -79,6 +81,10 @@ export default function StoreListingFilters({
   const tProductTypes = useTranslations("storeProductTypes");
   const tCountries = useTranslations("countries");
   const tCreate = useTranslations("stores.create");
+  const filtersPanelTitleId = useId();
+  const nameQueryFieldId = useId();
+  const filterOpenButtonRef = useRef<HTMLButtonElement>(null);
+  const filtersDrawerRootRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState<ListingFilters>({
     nameQuery: initialNameQuery,
@@ -120,6 +126,17 @@ export default function StoreListingFilters({
     activeFilters.receivesOrders ||
     activeFilters.hasStock;
 
+  const closeDrawer = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+
+  useFocusScope({
+    active: isOpen,
+    rootRef: filtersDrawerRootRef,
+    onClose: closeDrawer,
+    returnFocusRef: filterOpenButtonRef,
+  });
+
   const openDrawer = () => {
     setDraftFilters(cloneListingFilters(activeFilters));
     setIsOpen(true);
@@ -160,7 +177,7 @@ export default function StoreListingFilters({
     });
     const nextUrl = buildUrlWithFilters(draftFilters, 1);
     router.push(nextUrl);
-    setIsOpen(false);
+    closeDrawer();
   };
 
   const clearAndApplyFilters = () => {
@@ -175,7 +192,7 @@ export default function StoreListingFilters({
     };
     setDraftFilters(clearedFilters);
     router.push(pathname);
-    setIsOpen(false);
+    closeDrawer();
   };
 
   const removeActiveFilterChip = (
@@ -226,6 +243,7 @@ export default function StoreListingFilters({
 
         <div className="flex flex-wrap items-center justify-end gap-2 lg:justify-start">
           <button
+            ref={filterOpenButtonRef}
             type="button"
             onClick={openDrawer}
             className={cn(buttonVariants({ variant: "secondary" }), "min-h-11 rounded-xl px-4")}
@@ -329,21 +347,30 @@ export default function StoreListingFilters({
       )}
 
       {isOpen && (
-        <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={t("searchButton")}>
+        <div
+          ref={filtersDrawerRootRef}
+          className="fixed inset-0 z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={filtersPanelTitleId}
+        >
           <button
             type="button"
             className="bg-background/70 absolute inset-0 backdrop-blur-sm"
-            onClick={() => setIsOpen(false)}
+            onClick={closeDrawer}
+            aria-hidden
+            tabIndex={-1}
           />
           <aside className="border-border bg-background absolute top-0 right-0 flex h-full w-full max-w-md flex-col border-l shadow-xl">
             <div className="border-border flex items-center justify-between gap-2 border-b p-4 sm:p-6">
-              <Typography as="span" size="md" className="text-text-title font-semibold">
-                {t("searchButton")}
+              <Typography id={filtersPanelTitleId} as="span" size="md" className="text-text-title font-semibold">
+                {t("filtersDialogTitle")}
               </Typography>
               <button
                 type="button"
-                onClick={() => setIsOpen(false)}
+                onClick={closeDrawer}
                 className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+                aria-label={t("closeFiltersPanel")}
               >
                 <X className="size-4" aria-hidden />
               </button>
@@ -351,10 +378,17 @@ export default function StoreListingFilters({
 
             <div className="flex-1 space-y-6 overflow-y-auto p-4 pt-5 pb-24 sm:p-6 sm:pt-7 sm:pb-28">
               <div className="space-y-3">
-                <Typography as="span" size="xs" className="text-text-title mb-1 block font-semibold">
+                <Label
+                  htmlFor={nameQueryFieldId}
+                  size="xs"
+                  color="title"
+                  spacing="tight"
+                  className="mb-1 font-semibold"
+                >
                   {t("searchPlaceholder")}
-                </Typography>
+                </Label>
                 <Input
+                  id={nameQueryFieldId}
                   type="search"
                   value={draftFilters.nameQuery}
                   onChange={(event) => setDraftFilters((previous) => ({ ...previous, nameQuery: event.target.value }))}

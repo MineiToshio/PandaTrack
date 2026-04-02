@@ -60,7 +60,7 @@ describe("AppNavDrawer", () => {
   it("renders overlay and panel with primary nav when open", () => {
     render(<AppNavDrawer locale="en" isOpen {...drawerProps} />);
 
-    expect(screen.getByRole("dialog", { name: "Close menu" })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Main navigation" })).toBeInTheDocument();
     expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeInTheDocument();
 
     expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
@@ -80,8 +80,7 @@ describe("AppNavDrawer", () => {
     const onClose = vi.fn();
     render(<AppNavDrawer locale="en" isOpen {...drawerProps} onClose={onClose} />);
 
-    const closeButtons = screen.getAllByRole("button", { name: "Close menu" });
-    await user.click(closeButtons[1]);
+    await user.click(screen.getByRole("button", { name: "Close menu" }));
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -89,11 +88,11 @@ describe("AppNavDrawer", () => {
   it("calls onClose when backdrop is clicked", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
-    render(<AppNavDrawer locale="en" isOpen {...drawerProps} onClose={onClose} />);
+    const { container } = render(<AppNavDrawer locale="en" isOpen {...drawerProps} onClose={onClose} />);
 
-    const closeButtons = screen.getAllByRole("button", { name: "Close menu" });
-    const backdrop = closeButtons[0];
-    await user.click(backdrop);
+    const backdrop = container.querySelector("button[aria-hidden='true']");
+    expect(backdrop).toBeInstanceOf(HTMLButtonElement);
+    await user.click(backdrop as HTMLButtonElement);
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });

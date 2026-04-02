@@ -4,7 +4,8 @@ import "react-easy-crop/react-easy-crop.css";
 
 import { Building2, ImagePlus, Pencil, Upload, X } from "lucide-react";
 import Image from "next/image";
-import { type ChangeEvent, type DragEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, type DragEvent, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useFocusScope } from "@/lib/a11y/useFocusScope";
 import Cropper, { type Area, type Point } from "react-easy-crop";
 import Button from "@/components/core/Button/Button";
 import Label from "@/components/core/Label";
@@ -83,6 +84,8 @@ export default function StoreLogoField({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [confirmedCrop, setConfirmedCrop] = useState<Point>(DEFAULT_CROP);
   const [confirmedZoom, setConfirmedZoom] = useState(DEFAULT_ZOOM);
+  const editorDescriptionId = useId();
+  const editorPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     onChange(submission);
@@ -202,6 +205,12 @@ export default function StoreLogoField({
     resetEditorState();
   };
 
+  useFocusScope({
+    active: Boolean(editorImageUrl),
+    rootRef: editorPanelRef,
+    onClose: handleEditorCancel,
+  });
+
   const handleEditorConfirm = async () => {
     if (!editorFile || !editorImageUrl || !croppedAreaPixels) {
       setEditorError("logoMalformed");
@@ -265,7 +274,14 @@ export default function StoreLogoField({
           onDragOver={(event) => event.preventDefault()}
         >
           <>
-            <Image src={previewUrl} alt="" fill sizes="(max-width: 768px) 100vw, 320px" className="object-cover" unoptimized />
+            <Image
+              src={previewUrl}
+              alt=""
+              fill
+              sizes="(max-width: 768px) 100vw, 320px"
+              className="object-cover"
+              unoptimized
+            />
             <div className="bg-background/75 absolute inset-x-0 bottom-0 flex flex-wrap items-center justify-center gap-2 p-3 backdrop-blur-sm">
               {canEditPreview ? (
                 <Button type="button" variant="secondary" size="sm" onClick={handleEdit} disabled={disabled}>
@@ -311,7 +327,7 @@ export default function StoreLogoField({
               </Typography>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2">
-              <span className="text-primary inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium">
+              <span className="text-primary bg-primary/10 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
                 <Upload size={14} aria-hidden />
                 {copy.uploadCta}
               </span>
@@ -329,7 +345,15 @@ export default function StoreLogoField({
 
       {(error || editorError) && (
         <Typography size="xs" className="text-destructive" role="alert">
-          {error ? (renderError ? renderError(error) : error) : editorError ? (renderError ? renderError(editorError) : editorError) : null}
+          {error
+            ? renderError
+              ? renderError(error)
+              : error
+            : editorError
+              ? renderError
+                ? renderError(editorError)
+                : editorError
+              : null}
         </Typography>
       )}
 
@@ -339,13 +363,18 @@ export default function StoreLogoField({
           role="dialog"
           aria-modal="true"
           aria-labelledby={`${id}-editor-title`}
+          aria-describedby={editorDescriptionId}
         >
-          <div className="border-border bg-surface w-full max-w-2xl space-y-5 rounded-2xl border p-5 shadow-2xl">
+          <div
+            ref={editorPanelRef}
+            tabIndex={-1}
+            className="border-border bg-surface w-full max-w-2xl space-y-5 rounded-2xl border p-5 shadow-2xl"
+          >
             <div className="space-y-2">
               <Typography id={`${id}-editor-title`} size="sm" className="text-text-title font-semibold">
                 {copy.editorTitle}
               </Typography>
-              <Typography size="xs" className="text-text-muted">
+              <Typography id={editorDescriptionId} size="xs" className="text-text-muted">
                 {copy.editorDescription}
               </Typography>
             </div>

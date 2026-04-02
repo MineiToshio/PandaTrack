@@ -12,6 +12,8 @@
   "browseStores": "Ver tiendas",
   "searchPlaceholder": "Buscar por nombre de tienda",
   "searchButton": "Buscar",
+  "filtersDialogTitle": "Búsqueda y filtros",
+  "closeFiltersPanel": "Cerrar búsqueda y filtros",
   "filters": {
     "productType": "Tipo de producto",
     "country": "País",

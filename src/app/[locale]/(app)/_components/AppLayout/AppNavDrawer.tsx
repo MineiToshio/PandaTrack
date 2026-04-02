@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef } from "react";
 import posthog from "posthog-js";
+import { useFocusScope } from "@/lib/a11y/useFocusScope";
 import LanguageToggle from "@/app/[locale]/(landing)/_components/Menu/LanguageToggle";
 import ThemeToggle from "@/app/[locale]/(landing)/_components/Menu/ThemeToggle";
 import IconButton from "@/components/core/IconButton";
@@ -41,12 +42,19 @@ type AppNavDrawerProps = {
 export default function AppNavDrawer({ locale, signOutLabel, isOpen, onClose, returnFocusRef }: AppNavDrawerProps) {
   const pathname = usePathname();
   const t = useTranslations("appLayout");
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const drawerRootRef = useRef<HTMLDivElement>(null);
   const navItems = getPrivateAppNavItems();
   const activeItem = getActiveNavItem(pathname ?? "");
   const appShellMainNavigationLabel = t("accessibility.mainNavigation");
   const appShellLanguageLabel = t("accessibility.languageNavigation");
   const drawerPreferencesLabel = t("drawer.preferencesAriaLabel");
+
+  useFocusScope({
+    active: isOpen,
+    rootRef: drawerRootRef,
+    onClose,
+    returnFocusRef,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -54,33 +62,28 @@ export default function AppNavDrawer({ locale, signOutLabel, isOpen, onClose, re
         viewport: getViewportKind(),
         route: pathname ?? "",
       });
-      closeButtonRef.current?.focus();
     }
   }, [isOpen, pathname]);
-
-  const handleClose = () => {
-    returnFocusRef.current?.focus();
-    onClose();
-  };
 
   if (!isOpen) return null;
 
   return (
     <div
+      ref={drawerRootRef}
       className="fixed inset-0 z-50 lg:hidden"
-      aria-hidden={!isOpen}
       role="dialog"
       aria-modal="true"
-      aria-label={t("drawer.closeMenu")}
+      aria-label={appShellMainNavigationLabel}
     >
       <button
         type="button"
-        aria-label={t("drawer.closeMenu")}
         className={cn(
           "bg-background/80 absolute inset-0 backdrop-blur-sm transition-opacity duration-200 motion-reduce:duration-0",
           isOpen ? "opacity-100" : "opacity-0",
         )}
-        onClick={handleClose}
+        onClick={onClose}
+        aria-hidden
+        tabIndex={-1}
       />
       <aside
         className={cn(
@@ -91,12 +94,11 @@ export default function AppNavDrawer({ locale, signOutLabel, isOpen, onClose, re
         <div className="border-border flex shrink-0 items-center justify-between gap-2 border-b px-3 py-3">
           <Logo className="text-2xl" />
           <IconButton
-            ref={closeButtonRef}
             Icon={X}
             variant="outline"
             size="sm"
             aria-label={t("drawer.closeMenu")}
-            onClick={handleClose}
+            onClick={onClose}
             className="shrink-0"
           />
         </div>
@@ -112,7 +114,7 @@ export default function AppNavDrawer({ locale, signOutLabel, isOpen, onClose, re
               <Link
                 key={item.id}
                 href={href}
-                onClick={handleClose}
+                onClick={onClose}
                 className={cn(
                   "focus-visible:ring-ring focus-visible:ring-offset-background flex h-11 min-h-11 items-center gap-3 rounded-lg px-2.5 pr-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                   isActive ? "bg-primary/20 text-primary" : "text-text-body hover:bg-muted hover:text-foreground",
@@ -135,7 +137,7 @@ export default function AppNavDrawer({ locale, signOutLabel, isOpen, onClose, re
             <LanguageToggle
               className="min-w-0 shrink-0 justify-start gap-2 text-base [&>span]:gap-2"
               compact
-              onNavigate={handleClose}
+              onNavigate={onClose}
               ariaLabel={appShellLanguageLabel}
               posthogEvent={POSTHOG_EVENTS.APP_SHELL.LOCALE_CHANGED}
               getPosthogProps={(targetLocale) => ({

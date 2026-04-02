@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Logo from "@/components/core/Logo";
 import HeaderNav, { HeaderNavItem } from "./HeaderNav";
 import AnchorLink from "@/components/core/AnchorLink";
@@ -22,6 +22,7 @@ const NAV_ITEMS: HeaderNavItem[] = [
 
 export default function Header() {
   const t = useTranslations("landing.header");
+  const menuOpenButtonRef = useRef<HTMLButtonElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleOpenMenu = () => {
@@ -43,7 +44,7 @@ export default function Header() {
           <button
             type="button"
             onClick={handleLogoClick}
-            aria-label="Scroll to top"
+            aria-label={t("scrollToTop")}
             className="shrink-0 cursor-pointer border-none bg-transparent p-0"
           >
             <Logo />
@@ -63,17 +64,24 @@ export default function Header() {
               {t("cta")}
             </AnchorLink>
             <IconButton
+              ref={menuOpenButtonRef}
               Icon={Menu}
               variant="outline"
               className="lg:hidden"
-              aria-label="Open menu"
+              aria-label={t("openMenu")}
               data-ph-event={POSTHOG_EVENTS.LANDING.MOBILE_MENU_OPENED}
               onClick={handleOpenMenu}
             />
           </div>
         </div>
       </header>
-      <BurgerMenu isOpen={isMenuOpen} onClose={handleCloseMenu} items={NAV_ITEMS} ctaLabel={t("cta")} />
+      <BurgerMenu
+        isOpen={isMenuOpen}
+        onClose={handleCloseMenu}
+        items={NAV_ITEMS}
+        ctaLabel={t("cta")}
+        returnFocusRef={menuOpenButtonRef}
+      />
     </>
   );
 }

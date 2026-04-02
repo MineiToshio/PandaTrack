@@ -12,6 +12,8 @@
   "browseStores": "Browse stores",
   "searchPlaceholder": "Search by store name",
   "searchButton": "Search",
+  "filtersDialogTitle": "Search and filters",
+  "closeFiltersPanel": "Close search and filters",
   "filters": {
     "productType": "Product type",
     "country": "Country",

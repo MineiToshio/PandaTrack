@@ -90,7 +90,7 @@ export default function Footer({ locale }: FooterProps) {
             />
           </Typography>
         </div>
-        <nav aria-label="Legal" className="flex gap-6">
+        <nav aria-label={t("legalNavAriaLabel")} className="flex gap-6">
           <Link
             href={`/${locale}${ROUTES.terms}`}
             className={cn("text-muted-foreground hover:text-foreground text-sm transition-colors", FOCUS_VISIBLE_CLASS)}

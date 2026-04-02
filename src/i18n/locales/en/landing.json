@@ -57,6 +57,11 @@
   },
   "header": {
     "cta": "Join the waitlist",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "scrollToTop": "Scroll to top",
+    "menuDialogLabel": "Site menu",
+    "mainNavAriaLabel": "Main navigation",
     "nav": {
       "forYou": "Who it's for",
       "features": "Features",
@@ -189,6 +194,7 @@
     "copyright": "© {year} PandaTrack. All rights reserved.",
     "madeBy": "Made by Panda D. Collector",
     "terms": "Terms of Service",
-    "privacy": "Privacy Policy"
+    "privacy": "Privacy Policy",
+    "legalNavAriaLabel": "Legal"
   }
 }

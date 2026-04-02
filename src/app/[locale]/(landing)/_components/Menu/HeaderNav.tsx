@@ -18,9 +18,13 @@ type HeaderNavProps = {
 
 export default function HeaderNav({ items, className, itemClassName, onNavigate }: HeaderNavProps) {
   const t = useTranslations("landing.header.nav");
+  const tHeader = useTranslations("landing.header");
 
   return (
-    <nav aria-label="Main" className={cn("font-secondary text-text-body flex items-center gap-6 text-sm", className)}>
+    <nav
+      aria-label={tHeader("mainNavAriaLabel")}
+      className={cn("font-secondary text-text-body flex items-center gap-6 text-sm", className)}
+    >
       {items.map((item) => (
         <AnchorLink
           key={item.href}

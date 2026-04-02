@@ -57,6 +57,11 @@
   },
   "header": {
     "cta": "Unirme a la lista",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
+    "scrollToTop": "Volver arriba",
+    "menuDialogLabel": "Menú del sitio",
+    "mainNavAriaLabel": "Navegación principal",
     "nav": {
       "forYou": "Para quién es",
       "features": "Características",
@@ -189,6 +194,7 @@
     "copyright": "© {year} PandaTrack. Todos los derechos reservados.",
     "madeBy": "Hecho por Panda D. Collector",
     "terms": "Términos de servicio",
-    "privacy": "Política de privacidad"
+    "privacy": "Política de privacidad",
+    "legalNavAriaLabel": "Enlaces legales"
   }
 }
