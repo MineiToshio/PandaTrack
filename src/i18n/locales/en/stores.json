@@ -100,6 +100,24 @@
     "viewStores": "View stores",
     "redirectingToStore": "Store created. Redirecting to the store profile..."
   },
+  "logo": {
+    "label": "Business logo",
+    "helper": "Upload a square-friendly logo for the public store profile. You can drag, crop, replace, or remove it before saving.",
+    "emptyTitle": "Add a store logo",
+    "emptyDescription": "Choose a PNG, JPG, JPEG, or WebP file. We will open the crop editor before anything is uploaded.",
+    "uploadCta": "Click or drop an image",
+    "editCta": "Edit",
+    "replaceCta": "Replace",
+    "removeCta": "Remove",
+    "editorTitle": "Adjust logo framing",
+    "editorDescription": "Move the image inside the square frame and use zoom to keep the most important part visible.",
+    "zoomLabel": "Zoom",
+    "editorCancel": "Cancel",
+    "editorConfirm": "Use this crop",
+    "acceptedFormats": "PNG, JPG, JPEG, or WebP",
+    "maxSize": "Max {size} MB",
+    "detailAlt": "{storeName} logo"
+  },
   "detail": {
     "pendingDisclaimerTitle": "Store pending review",
     "pendingDisclaimerMessage": "This profile was created by the community and has not been verified by our team yet. Please review the information with caution.",
@@ -241,6 +259,7 @@
       "fieldLabels": {
         "name": "Store name",
         "description": "Description",
+        "logoUrl": "Business logo",
         "presenceTypes": "Sales channels",
         "productTypeKeys": "Product types",
         "hasStock": "Inventory",
@@ -331,7 +350,13 @@
     "reasonTooLong": "Justification is too long",
     "reasonRequired": "Reason is required",
     "detailsTooLong": "Details are too long",
-    "commentTooLong": "Comment is too long"
+    "commentTooLong": "Comment is too long",
+    "logoRequired": "Select a logo image before saving.",
+    "logoInvalidType": "Logo must be a PNG, JPG, JPEG, or WebP file.",
+    "logoTooLarge": "Logo source file must be 5 MB or smaller.",
+    "logoMalformed": "The selected logo file could not be read.",
+    "logoProcessingFailed": "Could not process the selected logo. Please try a different image.",
+    "logoUploadFailed": "Could not upload the logo. Please try again."
   },
   "contactChannelTypes": {
     "INSTAGRAM": "Instagram",
@@ -346,6 +371,7 @@
   "error": {
     "unauthorized": "You must sign in to create a store.",
     "validation_failed": "Please check the fields and try again.",
-    "create_failed": "Could not create the store. Please try again."
+    "create_failed": "Could not create the store. Please try again.",
+    "logoUploadFailed": "Could not upload the logo. Please try again."
   }
 }

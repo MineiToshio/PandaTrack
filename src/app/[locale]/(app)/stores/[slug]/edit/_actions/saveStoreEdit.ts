@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -7,7 +8,16 @@ import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import {
+  getPendingStoreLogoObjectKey,
+  getStoreLogoObjectKey,
+  parseStoreLogoCropArea,
+  processStoreLogoFile,
+  StoreLogoError,
+} from "@/lib/store/logo";
+import { deleteStoreLogoObject, uploadStoreLogoBuffer } from "@/lib/store/logoStorage";
+import {
   getEditableStoreBySlug,
+  getStoreGovernanceViewerContext,
   updateStoreEditableFields,
   upsertStoreChangeRequest,
   type EditableAddressInput,
@@ -71,6 +81,14 @@ export async function saveStoreEdit(
       reference: addressReferences[index] || undefined,
     }))
     .filter((address) => address.addressLine.trim().length > 0 && address.countryCode.length === 2);
+  const logoFileValue = formData.get("logoFile");
+  const logoFile = logoFileValue instanceof File && logoFileValue.size > 0 ? logoFileValue : null;
+  const logoCropArea = parseStoreLogoCropArea({
+    x: formData.get("logoCropX"),
+    y: formData.get("logoCropY"),
+    width: formData.get("logoCropWidth"),
+    height: formData.get("logoCropHeight"),
+  });
 
   const parsed = editStoreSchema.safeParse({
     slug: formData.get("slug"),
@@ -88,6 +106,8 @@ export async function saveStoreEdit(
     importCountries: formData
       .getAll("importCountries")
       .filter((value): value is string => typeof value === "string" && value.length === 2),
+    logoAction: formData.get("logoAction") ?? "keep",
+    logoCropArea,
     comment: formData.get("comment") ?? undefined,
   });
 
@@ -107,14 +127,108 @@ export async function saveStoreEdit(
   }
 
   const isAdmin = getIsAdmin(session);
+  const viewerContext = await getStoreGovernanceViewerContext(prisma, store.id, session.user.id);
   const storeDetailPath = `/${parsed.data.locale}${ROUTES.stores}/${store.slug}`;
   const storeEditPath = `${storeDetailPath}/edit`;
+  const canDirectEdit = canDirectlyEditStore(store, session.user.id, isAdmin);
+  const currentLogoUrl = viewerContext.openChangeRequest?.changes.logoUrl ?? store.logoUrl;
+  const isBusinessLogoSet = store.storeType === "BUSINESS" && parsed.data.logoAction === "set";
+
+  if (isBusinessLogoSet && (!logoFile || !parsed.data.logoCropArea)) {
+    return {
+      success: false,
+      error: "validation_failed",
+      fieldErrors: {
+        logo: ["logoRequired"],
+      },
+    };
+  }
+
+  const posthogClient = getPostHogClient();
+  let nextLogoUrl = currentLogoUrl;
+
+  if (store.storeType === "BUSINESS") {
+    if (parsed.data.logoAction === "remove") {
+      nextLogoUrl = null;
+    }
+
+    if (isBusinessLogoSet && logoFile && parsed.data.logoCropArea) {
+      try {
+        posthogClient.capture({
+          distinctId: session.user.id,
+          event: POSTHOG_EVENTS.STORE.LOGO_UPLOAD_STARTED,
+          properties: {
+            flow: "edit",
+            mode: canDirectEdit ? "direct" : "change_request",
+            store_slug: store.slug,
+          },
+        });
+
+        const processedLogoBuffer = await processStoreLogoFile(logoFile, parsed.data.logoCropArea);
+        const objectKey = canDirectEdit
+          ? getStoreLogoObjectKey(store.id)
+          : getPendingStoreLogoObjectKey(store.id, session.user.id);
+
+        nextLogoUrl = await uploadStoreLogoBuffer(objectKey, processedLogoBuffer);
+
+        posthogClient.capture({
+          distinctId: session.user.id,
+          event: POSTHOG_EVENTS.STORE.LOGO_UPLOAD_SUCCEEDED,
+          properties: {
+            flow: "edit",
+            mode: canDirectEdit ? "direct" : "change_request",
+            store_slug: store.slug,
+          },
+        });
+      } catch (error) {
+        const errorCode = error instanceof StoreLogoError ? error.code : "logoUploadFailed";
+
+        posthogClient.capture({
+          distinctId: session.user.id,
+          event: POSTHOG_EVENTS.STORE.LOGO_UPLOAD_FAILED,
+          properties: {
+            flow: "edit",
+            mode: canDirectEdit ? "direct" : "change_request",
+            store_slug: store.slug,
+            error_code: errorCode,
+          },
+        });
+
+        if (!(error instanceof StoreLogoError)) {
+          Sentry.withScope((scope) => {
+            scope.setTag("feature", "store_logo");
+            scope.setTag("action", "save_store_edit");
+            scope.setTag("severity", "high");
+            scope.setContext("storeLogo", {
+              flow: "edit",
+              mode: canDirectEdit ? "direct" : "change_request",
+              storeSlug: store.slug,
+              sourceMimeType: logoFile.type,
+              sourceSizeBytes: logoFile.size,
+            });
+            Sentry.captureException(error);
+          });
+        }
+
+        return {
+          success: false,
+          error: errorCode,
+          fieldErrors: {
+            logo: [errorCode],
+          },
+        };
+      }
+    }
+  } else {
+    nextLogoUrl = null;
+  }
 
   try {
-    if (canDirectlyEditStore(store, session.user.id, isAdmin)) {
+    if (canDirectEdit) {
       await updateStoreEditableFields(prisma, store, {
         name: parsed.data.name,
         description: parsed.data.description,
+        logoUrl: nextLogoUrl,
         presenceTypes: parsed.data.presenceTypes,
         productTypeKeys: parsed.data.productTypeKeys,
         hasStock: parsed.data.hasStock,
@@ -123,6 +237,22 @@ export async function saveStoreEdit(
         addresses: parsed.data.addresses,
         importCountries: parsed.data.importCountries,
       });
+
+      if (parsed.data.logoAction === "remove" && store.logoUrl) {
+        await deleteStoreLogoObject(getStoreLogoObjectKey(store.id)).catch((error) => {
+          Sentry.withScope((scope) => {
+            scope.setTag("feature", "store_logo");
+            scope.setTag("action", "delete_store_logo");
+            scope.setTag("severity", "medium");
+            scope.setContext("storeLogo", {
+              flow: "edit",
+              mode: "direct",
+              storeSlug: store.slug,
+            });
+            Sentry.captureException(error);
+          });
+        });
+      }
 
       revalidatePath(storeDetailPath);
       revalidatePath(storeEditPath);
@@ -137,6 +267,7 @@ export async function saveStoreEdit(
       {
         name: parsed.data.name,
         description: parsed.data.description,
+        logoUrl: nextLogoUrl,
         presenceTypes: parsed.data.presenceTypes,
         productTypeKeys: parsed.data.productTypeKeys,
         hasStock: parsed.data.hasStock,

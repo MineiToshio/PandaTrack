@@ -326,7 +326,7 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - Product-type request payload and moderation rules still need implementation.
 - Approved-store change-request shape and edit-route behavior still need implementation.
 - Pending-store edit UX now has approved direction but still needs implementation.
-- Logo upload constraints and processing contract still need final definition.
+- Approved-store logo replacements must stage assets outside the live public object key until moderation applies them.
 
 ## Source Signals Used For Reverse Engineering
 

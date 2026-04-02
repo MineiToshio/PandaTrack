@@ -6,8 +6,8 @@ title: Store Logo and Hardening
 status: ACTIVE
 parent: BP-01
 source_issue: 76
-last_updated: 2026-03-29
-implementation_status: PLANNED
+last_updated: 2026-04-02
+implementation_status: IN_PROGRESS
 ---
 
 # WO-07 Store Logo and Hardening
@@ -74,6 +74,7 @@ Relevant acceptance signals:
 
 - Business stores should support a consistent logo experience in both create and edit flows.
 - In both flows, the logo control should live in step 1 (`base information`) so it is visible as part of the primary store identity block.
+- In the create flow, step 1 should begin with `store type` before `name`, `description`, and logo so the user establishes the seller category before the form reveals business-only fields.
 - The initial state should render a clearly visible placeholder that makes the logo slot obvious even when no image exists yet.
 - The empty state should include a clear upload affordance such as click-to-upload guidance while also supporting drag and drop.
 - The logo interaction should support:
@@ -99,8 +100,11 @@ Relevant acceptance signals:
 - Source files must be limited to `5 MB` before they are accepted into the crop/edit flow.
 - Accepted uploads may start from arbitrary original dimensions, but the client-side editor should keep the image in memory first, allow manual square cropping, and only upload the optimized result during final submit.
 - The optimized output should target a lightweight asset suitable for store listing and detail usage without requiring any paid media-processing service.
+- The shared assets bucket for the active environment should be configured through generic assets-storage environment variables.
 - The storage prefix for persisted business logos should be `store-logos/`.
 - The final persisted object key should follow the convention `store-logos/{storeId}.webp`.
+- When a direct edit overwrites the same persisted object key, the saved public `logoUrl` should append a content-version query token so the updated logo is visible immediately instead of being masked by long-lived asset caching.
+- When an approved-store edit is saved as a change request, the uploaded logo should be staged under `store-logos/pending/{storeId}-{userId}.webp` until moderation applies the change, so the current public logo is not replaced early.
 - Logo validation must run at the server boundary and reject unsupported MIME types, malformed uploads, and oversize source files before storage is attempted.
 - If logo processing or upload fails, the store create/edit submission must fail as a whole, surface a localized error, and leave the user able to retry or remove the logo selection.
 - Adding logo support must not regress the current direct-edit vs change-request behavior already implemented in the shared edit flow.
@@ -132,4 +136,4 @@ Relevant acceptance signals:
 
 ## Status Note
 
-Planned. This work order is the release-hardening pass for store logo support and the remaining observability, validation, and regression depth around the store domain.
+In progress. This work order is the release-hardening pass for store logo support and the remaining observability, validation, and regression depth around the store domain.

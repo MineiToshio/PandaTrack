@@ -25,6 +25,7 @@ export type EditableAddressInput = {
 export type EditableStoreInput = {
   name: string;
   description?: string | null;
+  logoUrl?: string | null;
   presenceTypes: StorePresenceType[];
   productTypeKeys: string[];
   hasStock?: boolean | null;
@@ -39,6 +40,7 @@ export type EditableStore = {
   slug: string;
   name: string;
   description: string | null;
+  logoUrl: string | null;
   status: StoreStatus;
   storeType: StoreType;
   countryCode: string;
@@ -85,6 +87,7 @@ export type StoreGovernanceViewerContext = {
 export type EditableStoreDiff = Partial<{
   name: string;
   description: string | null;
+  logoUrl: string | null;
   presenceTypes: StorePresenceType[];
   productTypeKeys: string[];
   hasStock: boolean | null;
@@ -145,6 +148,7 @@ function normalizeEditableStoreInput(input: EditableStoreInput, storeType: Store
   return {
     name: input.name.trim(),
     description: normalizeNullableString(input.description),
+    logoUrl: storeType === "BUSINESS" ? normalizeNullableString(input.logoUrl) : null,
     presenceTypes: [...new Set(input.presenceTypes)].sort((left, right) => left.localeCompare(right)),
     productTypeKeys: uniqueSorted(input.productTypeKeys),
     hasStock: input.hasStock ?? null,
@@ -160,6 +164,7 @@ function mapStoreToEditableStore(store: {
   slug: string;
   name: string;
   description: string | null;
+  logoUrl: string | null;
   status: StoreStatus;
   storeType: StoreType;
   countryCode: string;
@@ -177,6 +182,7 @@ function mapStoreToEditableStore(store: {
     slug: store.slug,
     name: store.name,
     description: store.description,
+    logoUrl: store.logoUrl,
     status: store.status,
     storeType: store.storeType,
     countryCode: store.countryCode,
@@ -223,6 +229,7 @@ function buildEditableStoreDiff(existing: EditableStore, input: Required<Editabl
 
   if (existing.name !== input.name) diff.name = input.name;
   if ((existing.description ?? null) !== input.description) diff.description = input.description;
+  if ((existing.logoUrl ?? null) !== input.logoUrl) diff.logoUrl = input.logoUrl;
   if (JSON.stringify(existing.presenceTypes) !== JSON.stringify(input.presenceTypes)) diff.presenceTypes = input.presenceTypes;
   if (JSON.stringify(existing.productTypeKeys) !== JSON.stringify(input.productTypeKeys)) {
     diff.productTypeKeys = input.productTypeKeys;
@@ -245,6 +252,7 @@ export function mergeEditableStoreWithChangeRequest(
   return {
     name: changeRequest?.name ?? store.name,
     description: changeRequest?.description ?? store.description,
+    logoUrl: changeRequest?.logoUrl ?? store.logoUrl,
     presenceTypes: changeRequest?.presenceTypes ?? store.presenceTypes,
     productTypeKeys: changeRequest?.productTypeKeys ?? store.productTypeKeys,
     hasStock: changeRequest?.hasStock ?? store.hasStock,
@@ -267,6 +275,7 @@ export async function getEditableStoreBySlug(db: PrismaClient, slug: string): Pr
       slug: true,
       name: true,
       description: true,
+      logoUrl: true,
       status: true,
       storeType: true,
       countryCode: true,
@@ -497,6 +506,7 @@ export async function updateStoreEditableFields(
       data: {
         name: normalizedInput.name,
         description: normalizedInput.description,
+        logoUrl: normalizedInput.logoUrl,
         hasStock: normalizedInput.hasStock,
         receivesOrders: normalizedInput.receivesOrders,
       },

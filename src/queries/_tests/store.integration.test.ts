@@ -68,6 +68,46 @@ describe("store queries", () => {
     }
   });
 
+  it.skipIf(!hasDatabase)("createStore persists business logoUrl and exposes it in the public detail read model", async () => {
+    await runSeed(prisma);
+
+    const user = await prisma.user.create({
+      data: {
+        id: `test-store-logo-${Date.now()}`,
+        name: "Logo User",
+        email: `store-logo-${Date.now()}@example.com`,
+        emailVerified: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    try {
+      const { id, slug } = await createStore(prisma, {
+        name: "Logo Ready Store",
+        storeType: "BUSINESS",
+        countryCode: "PE",
+        presenceTypes: ["ONLINE"],
+        productTypeKeys: ["figures"],
+        createdByUserId: user.id,
+        status: "APPROVED",
+        approvedByUserId: user.id,
+        logoUrl: "https://cdn.example.com/store-logos/store-123.webp?v=abc123def456",
+      });
+
+      const [persistedStore, detailStore] = await Promise.all([
+        prisma.store.findUnique({ where: { id } }),
+        getStoreBySlug(prisma, slug),
+      ]);
+
+      expect(persistedStore?.logoUrl).toBe("https://cdn.example.com/store-logos/store-123.webp?v=abc123def456");
+      expect(detailStore?.logoUrl).toBe("https://cdn.example.com/store-logos/store-123.webp?v=abc123def456");
+    } finally {
+      await prisma.store.deleteMany({ where: { createdByUserId: user.id } });
+      await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+    }
+  });
+
   it.skipIf(!hasDatabase)("createStore with APPROVED sets approvedByUserId and approvedAt", async () => {
     await runSeed(prisma);
 

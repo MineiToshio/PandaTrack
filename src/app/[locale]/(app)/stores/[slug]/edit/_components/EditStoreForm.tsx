@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Globe, Plus } from "lucide-react";
-import { startTransition, useActionState, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, startTransition, useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import posthog from "posthog-js";
 import Button from "@/components/core/Button/Button";
@@ -12,6 +12,7 @@ import Label from "@/components/core/Label";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { STORE_LOGO_MAX_SOURCE_SIZE_MB } from "@/lib/store/logoShared";
 import type { EditableStore, EditableStoreInput, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
 import BackNavLink from "@/components/core/BackNavLink";
 import StoreAddressList from "../../../_components/share/StoreAddressList";
@@ -21,6 +22,7 @@ import StoreContactChannelList, {
 } from "../../../_components/share/StoreContactChannelList";
 import StoreEmptyStateBox from "../../../_components/share/StoreEmptyStateBox";
 import StoreFormSectionCard from "../../../_components/share/StoreFormSectionCard";
+import StoreLogoField, { type StoreLogoSubmission } from "../../../_components/share/StoreLogoField/StoreLogoField";
 import StoreMultiTagAutocomplete from "../../../_components/share/StoreMultiTagAutocomplete";
 import StoreProductTypeRequestModal from "../../../_components/share/StoreProductTypeRequestModal";
 import StoreSelectableTagGroup from "../../../_components/share/StoreSelectableTagGroup";
@@ -54,6 +56,11 @@ export default function EditStoreForm({
 
   const [name, setName] = useState(initialValues.name);
   const [description, setDescription] = useState(initialValues.description ?? "");
+  const [logoSubmission, setLogoSubmission] = useState<StoreLogoSubmission>({
+    action: "keep",
+    file: null,
+    cropArea: null,
+  });
   const [presenceTypes, setPresenceTypes] = useState<Array<"ONLINE" | "PHYSICAL">>(
     initialValues.presenceTypes as Array<"ONLINE" | "PHYSICAL">,
   );
@@ -222,6 +229,26 @@ export default function EditStoreForm({
         ? t(`governance.edit.errors.${errorKey}` as never)
         : t("error.validation_failed");
 
+  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const nextFormData = new FormData(event.currentTarget);
+    if (store.storeType === "BUSINESS") {
+      nextFormData.set("logoAction", logoSubmission.action);
+      if (logoSubmission.action === "set" && logoSubmission.file && logoSubmission.cropArea) {
+        nextFormData.set("logoFile", logoSubmission.file, logoSubmission.file.name);
+        nextFormData.set("logoCropX", String(logoSubmission.cropArea.x));
+        nextFormData.set("logoCropY", String(logoSubmission.cropArea.y));
+        nextFormData.set("logoCropWidth", String(logoSubmission.cropArea.width));
+        nextFormData.set("logoCropHeight", String(logoSubmission.cropArea.height));
+      }
+    } else {
+      nextFormData.set("logoAction", "keep");
+    }
+
+    handleSubmit(nextFormData);
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-3">
@@ -242,13 +269,7 @@ export default function EditStoreForm({
         </Typography>
       )}
 
-      <form
-        className="space-y-5"
-        onSubmit={(event) => {
-          event.preventDefault();
-          handleSubmit(new FormData(event.currentTarget));
-        }}
-      >
+      <form className="space-y-5" onSubmit={handleFormSubmit}>
         <input type="hidden" name="slug" value={store.slug} />
         <input type="hidden" name="locale" value={locale} />
         <input type="hidden" name="storeType" value={store.storeType} />
@@ -302,6 +323,40 @@ export default function EditStoreForm({
               </Typography>
             </div>
           </div>
+
+          {store.storeType === "BUSINESS" ? (
+            <StoreLogoField
+              id="edit-store-logo"
+              initialLogoUrl={initialValues.logoUrl ?? null}
+              copy={{
+                label: t("logo.label"),
+                helper: t("logo.helper"),
+                emptyTitle: t("logo.emptyTitle"),
+                emptyDescription: t("logo.emptyDescription"),
+                uploadCta: t("logo.uploadCta"),
+                editCta: t("logo.editCta"),
+                replaceCta: t("logo.replaceCta"),
+                removeCta: t("logo.removeCta"),
+                editorTitle: t("logo.editorTitle"),
+                editorDescription: t("logo.editorDescription"),
+                zoomLabel: t("logo.zoomLabel"),
+                editorCancel: t("logo.editorCancel"),
+                editorConfirm: t("logo.editorConfirm"),
+                acceptedFormats: t("logo.acceptedFormats"),
+                maxSize: t("logo.maxSize", { size: STORE_LOGO_MAX_SOURCE_SIZE_MB }),
+              }}
+              error={fieldErrors.logo?.[0] ?? null}
+              renderError={renderError}
+              onChange={setLogoSubmission}
+              onRemove={() =>
+                posthog.capture(POSTHOG_EVENTS.STORE.LOGO_REMOVED, {
+                  flow: "edit",
+                  mode: canDirectlyEdit ? "direct" : "change_request",
+                  store_slug: store.slug,
+                })
+              }
+            />
+          ) : null}
         </StoreFormSectionCard>
 
         <StoreFormSectionCard

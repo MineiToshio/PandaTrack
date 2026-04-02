@@ -1,10 +1,18 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { createStore as createStoreQuery } from "@/queries/store";
+import {
+  getStoreLogoObjectKey,
+  parseStoreLogoCropArea,
+  processStoreLogoFile,
+  StoreLogoError,
+} from "@/lib/store/logo";
+import { uploadStoreLogoBuffer } from "@/lib/store/logoStorage";
 import { createStoreSchema, type CreateStoreInput } from "../_schemas/createStoreSchema";
 import type { StoreStatus } from "../../../../../../../generated/prisma/client";
 
@@ -60,7 +68,16 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
     importCountries: formData
       .getAll("importCountries")
       .filter((v): v is string => typeof v === "string" && v.length === 2),
+    logoAction: formData.get("logoAction") ?? "keep",
+    logoCropArea: parseStoreLogoCropArea({
+      x: formData.get("logoCropX"),
+      y: formData.get("logoCropY"),
+      width: formData.get("logoCropWidth"),
+      height: formData.get("logoCropHeight"),
+    }),
   };
+  const logoFileValue = formData.get("logoFile");
+  const logoFile = logoFileValue instanceof File && logoFileValue.size > 0 ? logoFileValue : null;
 
   const parsed = createStoreSchema.safeParse({
     name: typeof raw.name === "string" ? raw.name : "",
@@ -74,6 +91,8 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
     contactChannels: raw.contactChannels,
     addresses: raw.addresses,
     importCountries: raw.importCountries,
+    logoAction: raw.logoAction,
+    logoCropArea: raw.logoCropArea,
   });
 
   if (!parsed.success) {
@@ -87,6 +106,16 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
   }
 
   const input = parsed.data as CreateStoreInput;
+  const isBusinessLogoSet = input.storeType === "BUSINESS" && input.logoAction === "set";
+  if (isBusinessLogoSet && (!logoFile || !input.logoCropArea)) {
+    return {
+      success: false,
+      error: "validation_failed",
+      fieldErrors: {
+        logo: ["logoRequired"],
+      },
+    };
+  }
 
   const allCountryCodes = [
     input.countryCode,
@@ -124,11 +153,56 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
 
   const isAdmin = getIsAdmin(session);
   const status: StoreStatus = isAdmin ? "APPROVED" : "PENDING";
+  const posthogClient = getPostHogClient();
+
+  let processedLogoBuffer: Buffer | null = null;
+  if (isBusinessLogoSet && logoFile && input.logoCropArea) {
+    try {
+      processedLogoBuffer = await processStoreLogoFile(logoFile, input.logoCropArea);
+    } catch (error) {
+      const errorCode = error instanceof StoreLogoError ? error.code : "logoProcessingFailed";
+
+      posthogClient.capture({
+        distinctId: session.user.id,
+        event: POSTHOG_EVENTS.STORE.LOGO_UPLOAD_FAILED,
+        properties: {
+          flow: "create",
+          stage: "processing",
+          store_type: input.storeType,
+          error_code: errorCode,
+        },
+      });
+
+      if (!(error instanceof StoreLogoError)) {
+        Sentry.withScope((scope) => {
+          scope.setTag("feature", "store_logo");
+          scope.setTag("action", "create_store");
+          scope.setTag("severity", "high");
+          scope.setContext("storeLogo", {
+            flow: "create",
+            storeType: input.storeType,
+            sourceMimeType: logoFile.type,
+            sourceSizeBytes: logoFile.size,
+          });
+          Sentry.captureException(error);
+        });
+      }
+
+      return {
+        success: false,
+        error: errorCode,
+        fieldErrors: {
+          logo: [errorCode],
+        },
+      };
+    }
+  }
 
   let lastError: Error | null = null;
   for (let attempt = 0; attempt < SLUG_COLLISION_MAX_ATTEMPTS; attempt++) {
+    let createdStore: { id: string; slug: string } | null = null;
     try {
-      const result = await createStoreQuery(prisma, {
+      createdStore = await createStoreQuery(prisma, {
         name: input.name,
         description: input.description ?? null,
         storeType: input.storeType,
@@ -143,9 +217,38 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
         contactChannels: input.storeType === "BUSINESS" ? input.contactChannels : [],
         addresses: input.storeType === "BUSINESS" ? input.addresses : [],
         importCountries: input.importCountries?.length ? input.importCountries : undefined,
+        logoUrl: null,
       });
 
-      getPostHogClient().capture({
+      if (processedLogoBuffer) {
+        posthogClient.capture({
+          distinctId: session.user.id,
+          event: POSTHOG_EVENTS.STORE.LOGO_UPLOAD_STARTED,
+          properties: {
+            flow: "create",
+            stage: "upload",
+            store_type: input.storeType,
+          },
+        });
+
+        const logoUrl = await uploadStoreLogoBuffer(getStoreLogoObjectKey(createdStore.id), processedLogoBuffer);
+
+        await prisma.store.update({
+          where: { id: createdStore.id },
+          data: { logoUrl },
+        });
+
+        posthogClient.capture({
+          distinctId: session.user.id,
+          event: POSTHOG_EVENTS.STORE.LOGO_UPLOAD_SUCCEEDED,
+          properties: {
+            flow: "create",
+            store_id: createdStore.id,
+          },
+        });
+      }
+
+      posthogClient.capture({
         distinctId: session.user.id,
         event: POSTHOG_EVENTS.STORE.CREATED,
         properties: {
@@ -159,14 +262,51 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
 
       return {
         success: true,
-        storeId: result.id,
-        slug: result.slug,
+        storeId: createdStore.id,
+        slug: createdStore.slug,
         status,
       };
     } catch (e) {
       lastError = e instanceof Error ? e : new Error(String(e));
       const isSlugConflict =
         typeof (e as { code?: string })?.code === "string" && (e as { code: string }).code === "P2002";
+
+      if (createdStore && processedLogoBuffer && !isSlugConflict) {
+        await prisma.store.delete({ where: { id: createdStore.id } }).catch(() => null);
+      }
+
+      if (processedLogoBuffer && !isSlugConflict) {
+        posthogClient.capture({
+          distinctId: session.user.id,
+          event: POSTHOG_EVENTS.STORE.LOGO_UPLOAD_FAILED,
+          properties: {
+            flow: "create",
+            stage: "upload",
+            store_type: input.storeType,
+            error_code: "logoUploadFailed",
+          },
+        });
+
+        Sentry.withScope((scope) => {
+          scope.setTag("feature", "store_logo");
+          scope.setTag("action", "create_store");
+          scope.setTag("severity", "high");
+          scope.setContext("storeLogo", {
+            flow: "create",
+            storeType: input.storeType,
+          });
+          Sentry.captureException(e);
+        });
+
+        return {
+          success: false,
+          error: "logoUploadFailed",
+          fieldErrors: {
+            logo: ["logoUploadFailed"],
+          },
+        };
+      }
+
       if (!isSlugConflict) break;
     }
   }

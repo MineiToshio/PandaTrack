@@ -13,7 +13,7 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-03-21
+last_updated: 2026-04-02
 implementation_status: PARTIALLY_IMPLEMENTED
 ---
 
@@ -259,8 +259,11 @@ Should extend:
 
 Current logo-storage decision:
 
-- use the `store-logos/` prefix for persisted business logos
+- use the shared assets bucket configured for the active environment
+- use the `store-logos/` asset route prefix for persisted business logos
 - persist the final optimized asset with the object key `store-logos/{storeId}.webp`
+- when the same persisted logo object key is overwritten, the public store `logoUrl` may append a content-version query token so browsers and CDN layers do not keep serving a stale cached asset
+- when an approved-store edit is saved as a change request, stage the pending logo under `store-logos/pending/{storeId}-{userId}.webp` so the public logo does not change before moderation
 
 ## Risks and Constraints
 

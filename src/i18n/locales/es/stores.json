@@ -100,6 +100,24 @@
     "viewStores": "Ver tiendas",
     "redirectingToStore": "Tienda creada. Redirigiendo al perfil de la tienda..."
   },
+  "logo": {
+    "label": "Logo comercial",
+    "helper": "Sube un logo pensado para mostrarse en cuadrado en el perfil público. Puedes arrastrarlo, recortarlo, reemplazarlo o quitarlo antes de guardar.",
+    "emptyTitle": "Agregar logo de la tienda",
+    "emptyDescription": "Elige un archivo PNG, JPG, JPEG o WebP. Abriremos el editor de recorte antes de subir cualquier archivo.",
+    "uploadCta": "Haz clic o suelta una imagen",
+    "editCta": "Editar",
+    "replaceCta": "Reemplazar",
+    "removeCta": "Quitar",
+    "editorTitle": "Ajusta el encuadre del logo",
+    "editorDescription": "Mueve la imagen dentro del marco cuadrado y usa el zoom para dejar visible la parte más importante.",
+    "zoomLabel": "Zoom",
+    "editorCancel": "Cancelar",
+    "editorConfirm": "Usar este recorte",
+    "acceptedFormats": "PNG, JPG, JPEG o WebP",
+    "maxSize": "Máximo {size} MB",
+    "detailAlt": "Logo de {storeName}"
+  },
   "detail": {
     "pendingDisclaimerTitle": "Tienda pendiente de revisión",
     "pendingDisclaimerMessage": "Este perfil fue creado por la comunidad y todavía no ha sido verificado por el equipo. Te recomendamos revisar la información con precaución.",
@@ -241,6 +259,7 @@
       "fieldLabels": {
         "name": "Nombre de la tienda",
         "description": "Descripción",
+        "logoUrl": "Logo comercial",
         "presenceTypes": "Canales de venta",
         "productTypeKeys": "Tipos de producto",
         "hasStock": "Inventario",
@@ -331,7 +350,13 @@
     "reasonTooLong": "La justificación es demasiado larga",
     "reasonRequired": "El motivo es obligatorio",
     "detailsTooLong": "Los detalles son demasiado largos",
-    "commentTooLong": "El comentario es demasiado largo"
+    "commentTooLong": "El comentario es demasiado largo",
+    "logoRequired": "Selecciona una imagen de logo antes de guardar.",
+    "logoInvalidType": "El logo debe ser un archivo PNG, JPG, JPEG o WebP.",
+    "logoTooLarge": "El archivo fuente del logo debe pesar 5 MB o menos.",
+    "logoMalformed": "No se pudo leer el archivo de logo seleccionado.",
+    "logoProcessingFailed": "No se pudo procesar el logo seleccionado. Prueba con otra imagen.",
+    "logoUploadFailed": "No se pudo subir el logo. Inténtalo otra vez."
   },
   "contactChannelTypes": {
     "INSTAGRAM": "Instagram",
@@ -346,6 +371,7 @@
   "error": {
     "unauthorized": "Debes iniciar sesión para crear una tienda.",
     "validation_failed": "Revisa los campos e inténtalo de nuevo.",
-    "create_failed": "No se pudo crear la tienda. Inténtalo de nuevo."
+    "create_failed": "No se pudo crear la tienda. Inténtalo de nuevo.",
+    "logoUploadFailed": "No se pudo subir el logo. Inténtalo otra vez."
   }
 }

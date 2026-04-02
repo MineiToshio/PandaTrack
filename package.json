@@ -21,6 +21,7 @@
     "download-og-fonts": "node scripts/download-og-fonts.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1019.0",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "@sentry/nextjs": "^10.38.0",
@@ -35,6 +36,8 @@
     "posthog-node": "^5.24.15",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-easy-crop": "^5.5.7",
+    "sharp": "^0.34.5",
     "simple-icons": "^16.8.0",
     "tailwind-merge": "^3.4.0",
     "zod": "^3.24.0"
@@ -59,8 +62,8 @@
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "prisma": "^7.3.0",
-    "tsx": "^4.19.2",
     "tailwindcss": "^4",
+    "tsx": "^4.19.2",
     "typescript": "^5",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.0.18"

@@ -107,6 +107,7 @@ export async function findDuplicateCandidatesInCountry(
 export interface CreateStoreInput {
   name: string;
   description?: string | null;
+  logoUrl?: string | null;
   storeType: "BUSINESS" | "PERSON";
   countryCode: string;
   presenceTypes: StorePresenceType[];
@@ -390,6 +391,7 @@ export async function createStore(db: PrismaClient, input: CreateStoreInput): Pr
       slug,
       name: input.name.trim(),
       description: input.description?.trim() || null,
+      logoUrl: input.logoUrl ?? null,
       storeType: input.storeType,
       countryCode: input.countryCode,
       status: input.status,

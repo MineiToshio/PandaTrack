@@ -15,6 +15,8 @@ export const editStoreSchema = z.object({
   contactChannels: createStoreSchema.shape.contactChannels,
   addresses: createStoreSchema.shape.addresses,
   importCountries: createStoreSchema.shape.importCountries,
+  logoAction: createStoreSchema.shape.logoAction,
+  logoCropArea: createStoreSchema.shape.logoCropArea,
   comment: z.string().max(500, "commentTooLong").trim().optional().nullable(),
 });
 

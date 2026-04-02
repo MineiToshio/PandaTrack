@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { storeLogoActionSchema, storeLogoCropAreaSchema } from "@/lib/store/logoShared";
 
 const storeTypeEnum = z.enum(["BUSINESS", "PERSON"]);
 const presenceTypeEnum = z.enum(["ONLINE", "PHYSICAL"]);
@@ -146,6 +147,8 @@ export const createStoreSchema = z.object({
   contactChannels: z.array(contactChannelSchema).optional().default([]),
   addresses: z.array(addressSchema).optional().default([]),
   importCountries: z.array(z.string().length(2).toUpperCase()).optional().default([]),
+  logoAction: storeLogoActionSchema.default("keep"),
+  logoCropArea: storeLogoCropAreaSchema.optional().nullable(),
 });
 
 export type CreateStoreInput = z.infer<typeof createStoreSchema>;

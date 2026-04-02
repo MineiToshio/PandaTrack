@@ -40,6 +40,11 @@ export const CONTACT_INFO = {
   whatsapp: "https://whatsapp.com/channel/0029VbAil5KBVJl1UttAWe2j",
 } as const;
 
+export const CLOUDFLARE_ASSET_ROUTES = {
+  STORE_LOGOS: "store-logos",
+  STORE_LOGOS_PENDING: "store-logos/pending",
+} as const;
+
 export const POSTHOG_EVENTS = {
   LANDING: {
     HERO_CTA_CLICKED: "hero_cta_clicked",
@@ -102,6 +107,10 @@ export const POSTHOG_EVENTS = {
     CHANGE_REQUEST_EDIT_ENTERED: "store_change_request_edit_entered",
     CHANGE_REQUEST_SUBMITTED: "store_change_request_submitted",
     CHANGE_REQUEST_NOOP_DISCARDED: "store_change_request_noop_discarded",
+    LOGO_UPLOAD_STARTED: "store_logo_upload_started",
+    LOGO_UPLOAD_SUCCEEDED: "store_logo_upload_succeeded",
+    LOGO_UPLOAD_FAILED: "store_logo_upload_failed",
+    LOGO_REMOVED: "store_logo_removed",
     REVIEW_SAVED: "store_review_saved",
     REVIEW_WRITE_CLICKED: "store_review_write_clicked",
     REVIEW_EDIT_CLICKED: "store_review_edit_clicked",

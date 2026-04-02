@@ -167,7 +167,14 @@ export default function StoreDetailContent({
               <div className="flex items-start gap-4">
                 {isBusiness && store.logoUrl ? (
                   <div className="bg-background/85 relative size-20 shrink-0 animate-[hero-float_5s_ease-in-out_infinite] overflow-hidden rounded-2xl shadow-sm">
-                    <Image src={store.logoUrl} alt="" width={80} height={80} className="object-cover" unoptimized />
+                    <Image
+                      src={store.logoUrl}
+                      alt={tStores("logo.detailAlt", { storeName: store.name })}
+                      width={80}
+                      height={80}
+                      className="object-cover"
+                      unoptimized
+                    />
                   </div>
                 ) : (
                   <div className="bg-background/85 text-primary flex size-20 shrink-0 animate-[hero-float_5s_ease-in-out_infinite] items-center justify-center rounded-2xl shadow-sm">

@@ -1,7 +1,17 @@
 "use client";
 
 import { Box, Building2, Globe, Plus, UserRound } from "lucide-react";
-import { startTransition, useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type ChangeEvent,
+  type FormEvent,
+  startTransition,
+  useActionState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -20,6 +30,7 @@ import posthog from "posthog-js";
 import { createStore, type CreateStoreResult } from "../_actions/createStore";
 import { getDuplicateCandidates, getDuplicateCandidatesForSubmit } from "../_actions/getDuplicateCandidates";
 import { SIMILARITY_THRESHOLD_PERCENT } from "@/lib/store/duplicateMatch";
+import { STORE_LOGO_MAX_SOURCE_SIZE_MB } from "@/lib/store/logoShared";
 import BackNavLink from "@/components/core/BackNavLink";
 import StoreAddressList from "../../_components/share/StoreAddressList";
 import StoreContactChannelList, {
@@ -28,6 +39,7 @@ import StoreContactChannelList, {
 } from "../../_components/share/StoreContactChannelList";
 import StoreEmptyStateBox from "../../_components/share/StoreEmptyStateBox";
 import StoreFormSectionCard from "../../_components/share/StoreFormSectionCard";
+import StoreLogoField, { type StoreLogoSubmission } from "../../_components/share/StoreLogoField/StoreLogoField";
 import StoreMultiTagAutocomplete from "../../_components/share/StoreMultiTagAutocomplete";
 import StoreProductTypeRequestModal from "../../_components/share/StoreProductTypeRequestModal";
 import StoreSegmentedControl from "../../_components/share/StoreSegmentedControl";
@@ -41,6 +53,7 @@ const MIN_QUERY_LENGTH = 2;
 const resolveFirstErrorElement = (form: HTMLFormElement, fieldKey: string): HTMLElement | null => {
   if (fieldKey === "name") return form.querySelector("#store-name");
   if (fieldKey === "description") return form.querySelector("#store-description");
+  if (fieldKey === "logo") return form.querySelector('[data-field="logo"] button, [data-field="logo"] input');
   if (fieldKey === "countryCode") return form.querySelector("#store-country");
   if (fieldKey === "presenceTypes") return form.querySelector('[data-field="presenceTypes"] button');
   if (fieldKey === "productTypeKeys") return form.querySelector('[data-field="productTypeKeys"] button');
@@ -159,6 +172,11 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
     Partial<Record<number, StoreContactChannelType>>
   >({});
   const [addressRows, setAddressRows] = useState<number[]>([]);
+  const [logoSubmission, setLogoSubmission] = useState<StoreLogoSubmission>({
+    action: "keep",
+    file: null,
+    cropArea: null,
+  });
   const nextContactRowIdRef = useRef(1);
   const nextAddressRowIdRef = useRef(1);
 
@@ -195,7 +213,7 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
     await fetchCandidates(nameValue);
   };
 
-  const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     setNameValue(event.target.value);
     setDuplicateCandidates([]);
   };
@@ -313,9 +331,24 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
     pendingFormDataRef.current = null;
   };
 
-  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await handleSubmit(new FormData(event.currentTarget));
+    const nextFormData = new FormData(event.currentTarget);
+
+    if (storeType === "BUSINESS") {
+      nextFormData.set("logoAction", logoSubmission.action);
+      if (logoSubmission.action === "set" && logoSubmission.file && logoSubmission.cropArea) {
+        nextFormData.set("logoFile", logoSubmission.file, logoSubmission.file.name);
+        nextFormData.set("logoCropX", String(logoSubmission.cropArea.x));
+        nextFormData.set("logoCropY", String(logoSubmission.cropArea.y));
+        nextFormData.set("logoCropWidth", String(logoSubmission.cropArea.width));
+        nextFormData.set("logoCropHeight", String(logoSubmission.cropArea.height));
+      }
+    } else {
+      nextFormData.set("logoAction", "keep");
+    }
+
+    await handleSubmit(nextFormData);
   };
 
   const success = state?.success === true;
@@ -325,6 +358,7 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
   const firstErrorKey = Object.keys(fieldErrors)[0];
   const hasPresenceError = !!fieldErrors.presenceTypes?.length;
   const hasProductTypeError = !!fieldErrors.productTypeKeys?.length;
+  const logoError = fieldErrors.logo?.[0] ?? null;
 
   const getContactChannelValueError = (rowIndex: number) => {
     return (
@@ -372,6 +406,14 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
       duplicateModalCancelRef.current.focus();
     }
   }, [showConfirmDuplicate]);
+
+  const renderLogoError = (errorKey: string) => {
+    return tValidation.has(errorKey)
+      ? tValidation(errorKey as never)
+      : t.has(`error.${errorKey}`)
+        ? t(`error.${errorKey}` as never)
+        : t("error.create_failed");
+  };
 
   if (success) {
     return (
@@ -433,12 +475,32 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
 
       {serverError && (
         <Typography size="sm" className="text-destructive" role="alert">
-          {t(`error.${serverError as "unauthorized" | "validation_failed" | "create_failed"}`)}
+          {t.has(`error.${serverError}` as never) ? t(`error.${serverError}` as never) : t("error.create_failed")}
         </Typography>
       )}
 
       <form ref={formRef} className="space-y-5" onSubmit={handleFormSubmit}>
         <StoreFormSectionCard eyebrow={tCreate("basicsEyebrow")} title={tCreate("basicsTitle")}>
+          <div className="space-y-3">
+            <Label>{tCreate("storeTypeLabel")}</Label>
+            <StoreSegmentedControl
+              name="storeType"
+              options={storeTypeOptions}
+              value={storeType}
+              onChange={(value) => {
+                const nextStoreType = value as "BUSINESS" | "PERSON";
+                setStoreType(nextStoreType);
+                if (nextStoreType === "PERSON") {
+                  setLogoSubmission({
+                    action: "keep",
+                    file: null,
+                    cropArea: null,
+                  });
+                }
+              }}
+            />
+          </div>
+
           <div>
             <Label htmlFor="store-name">{tCreate("nameLabel")}</Label>
             <Input
@@ -488,15 +550,36 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
             />
           </div>
 
-          <div className="space-y-3">
-            <Label>{tCreate("storeTypeLabel")}</Label>
-            <StoreSegmentedControl
-              name="storeType"
-              options={storeTypeOptions}
-              value={storeType}
-              onChange={(value) => setStoreType(value as "BUSINESS" | "PERSON")}
+          {storeType === "BUSINESS" ? (
+            <StoreLogoField
+              id="store-logo"
+              copy={{
+                label: t("logo.label"),
+                helper: t("logo.helper"),
+                emptyTitle: t("logo.emptyTitle"),
+                emptyDescription: t("logo.emptyDescription"),
+                uploadCta: t("logo.uploadCta"),
+                editCta: t("logo.editCta"),
+                replaceCta: t("logo.replaceCta"),
+                removeCta: t("logo.removeCta"),
+                editorTitle: t("logo.editorTitle"),
+                editorDescription: t("logo.editorDescription"),
+                zoomLabel: t("logo.zoomLabel"),
+                editorCancel: t("logo.editorCancel"),
+                editorConfirm: t("logo.editorConfirm"),
+                acceptedFormats: t("logo.acceptedFormats"),
+                maxSize: t("logo.maxSize", { size: STORE_LOGO_MAX_SOURCE_SIZE_MB }),
+              }}
+              error={logoError}
+              renderError={renderLogoError}
+              onChange={setLogoSubmission}
+              onRemove={() =>
+                posthog.capture(POSTHOG_EVENTS.STORE.LOGO_REMOVED, {
+                  flow: "create",
+                })
+              }
             />
-          </div>
+          ) : null}
 
           <div className="space-y-3">
             <Label>{tCreate("countryLabel")}</Label>
