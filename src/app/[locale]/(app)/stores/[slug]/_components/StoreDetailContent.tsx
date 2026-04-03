@@ -57,6 +57,7 @@ const CONTACT_LINK_CLASSNAME =
 const TAG_CLASSNAME = "inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium";
 const METRIC_CARD_CLASSNAME =
   "bg-background/80 rounded-2xl border border-border/50 border-t-2 border-t-primary/35 px-3 py-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5";
+const METRIC_VALUE_CLASSNAME = "text-text-title mt-1.5 text-2xl leading-none font-semibold sm:text-3xl lg:text-4xl";
 
 function SimpleIconSvg({ path, size = 16 }: { path: string; size?: number }) {
   return (
@@ -236,7 +237,7 @@ export default function StoreDetailContent({
                     <Box className="size-3.5" aria-hidden />
                     <Typography size="2xs">{tStores("detail.productTypesLabel")}</Typography>
                   </div>
-                  <Typography size="sm" className="text-text-title mt-1.5 text-2xl leading-none font-semibold">
+                  <Typography size="sm" className={METRIC_VALUE_CLASSNAME}>
                     {store.productTypeKeys.length}
                   </Typography>
                 </div>
@@ -245,7 +246,7 @@ export default function StoreDetailContent({
                     <Globe className="size-3.5" aria-hidden />
                     <Typography size="2xs">{tStores("detail.importCountriesLabel")}</Typography>
                   </div>
-                  <Typography size="sm" className="text-text-title mt-1.5 text-2xl leading-none font-semibold">
+                  <Typography size="sm" className={METRIC_VALUE_CLASSNAME}>
                     {store.importCountryCodes.length}
                   </Typography>
                 </div>
@@ -254,7 +255,7 @@ export default function StoreDetailContent({
                     <Link2 className="size-3.5" aria-hidden />
                     <Typography size="2xs">{tStores("detail.contactChannelsCountLabel")}</Typography>
                   </div>
-                  <Typography size="sm" className="text-text-title mt-1.5 text-2xl leading-none font-semibold">
+                  <Typography size="sm" className={METRIC_VALUE_CLASSNAME}>
                     {contactChannelsCount}
                   </Typography>
                 </div>
@@ -263,7 +264,7 @@ export default function StoreDetailContent({
                     <MapPinned className="size-3.5" aria-hidden />
                     <Typography size="2xs">{tStores("detail.addressesCountLabel")}</Typography>
                   </div>
-                  <Typography size="sm" className="text-text-title mt-1.5 text-2xl leading-none font-semibold">
+                  <Typography size="sm" className={METRIC_VALUE_CLASSNAME}>
                     {addressesCount}
                   </Typography>
                 </div>

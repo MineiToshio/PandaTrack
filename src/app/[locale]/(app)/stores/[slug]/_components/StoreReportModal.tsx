@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Flag } from "lucide-react";
 import posthog from "posthog-js";
@@ -54,14 +54,14 @@ export default function StoreReportModal({
   const fieldErrors = state?.success === false ? state.fieldErrors : undefined;
   const reasonFieldInvalid = Boolean(fieldErrors?.reason?.[0]);
 
-  const openModal = () => {
+  const openModal = useCallback(() => {
     setState(null);
     setIsOpen(true);
     posthog.capture(POSTHOG_EVENTS.STORE.REPORT_OPENED, {
       store_slug: storeSlug,
       has_existing_open_report: existingReport != null,
     });
-  };
+  }, [existingReport, storeSlug]);
 
   const closeModal = () => {
     if (isPending) return;
@@ -76,8 +76,10 @@ export default function StoreReportModal({
     }
 
     lastOpenRequestNonceRef.current = openRequestNonce;
-    openModal();
-  }, [openRequestNonce]);
+    startTransition(() => {
+      openModal();
+    });
+  }, [openRequestNonce, openModal]);
 
   const handleReasonChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const nextValue = event.target.value as ReportReason | "";

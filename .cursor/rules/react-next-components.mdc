@@ -92,4 +92,19 @@ Prefer composition with subcomponents or slots over components with many props.
 
 Use `useMemo` and `useCallback` only for expensive computations or functions passed to many children; not for trivial values or functions.
 
-For performance and advanced React/Next patterns (waterfalls, Suspense, RSC), follow the guides in `.agents/skills/vercel-react-best-practices/AGENTS.md` when they apply.
+## Loading UI, skeletons, and `next/dynamic` (App Router)
+
+**Problem to avoid:** Adding skeletons or `dynamic(..., { loading })` for Client Components that are still **server-rendered** (`ssr: true`, the default) inside a Server Component page. In that setup, the HTML and RSC payload already include the real markup; users wait on the **full server response**, not on a client chunk that would show a fallback. The `loading` UI then **almost never appears**, but the code adds complexity and maintenance cost for no visible benefit.
+
+**Do not** introduce route-level skeletons or dynamic `loading` fallbacks for that pattern unless there is a **measured** bundle problem and an explicit, reviewed tradeoff (document briefly in PR or `docs/` if non-obvious).
+
+**When loading or skeleton UI does make sense**
+
+- **`loading.tsx`** in a route segment: while Next is still resolving the **server** work for that segment (slow DB, slow RSC). This is server-pending UI, not JavaScript chunk loading.
+- **`Suspense`** with a fallback around **async Server Components** or streaming server data where the framework can show the fallback until the server sends that subtree.
+- **Inside a Client Component**: explicit states the user triggers (e.g. submit pending, lazy sub-panel opened, `ssr: false` island where product accepts empty-first paint). Not as a default for every heavy form on an SSR page.
+- **`next/dynamic` with `ssr: false`**: only when the product accepts client-only rendering for that subtree; understand SEO and first-paint implications. Do not pair `ssr: false` with server-driven critical forms unless that is intentional.
+
+**Skills and external guides** (e.g. Vercel React/Next performance docs) still apply for waterfalls, memoization, and bundle size, but they **must not override** this rule: do not add skeletons or dynamic `loading` props that imply a client loading phase when the UI is actually delivered by the server in the same navigation.
+
+For performance and advanced React/Next patterns (waterfalls, Suspense, RSC), follow the guides in `.agents/skills/vercel-react-best-practices/AGENTS.md` when they apply, **in addition to** the constraints above.

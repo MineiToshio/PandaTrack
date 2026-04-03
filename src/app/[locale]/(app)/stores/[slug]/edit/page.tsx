@@ -38,7 +38,7 @@ export default async function EditStorePage({ params }: EditStorePageProps) {
   const initialValues = mergeEditableStoreWithChangeRequest(store, viewerContext.openChangeRequest?.changes);
 
   return (
-    <div className="px-4 py-8 text-foreground">
+    <div className="text-foreground px-4 py-8">
       <div className="mx-auto max-w-3xl">
         <EditStoreForm
           locale={locale}
