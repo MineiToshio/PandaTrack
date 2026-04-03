@@ -4,7 +4,7 @@ type: WORK_ORDER
 slug: account-credentials-and-email-management
 title: Account Credentials and Email Management
 status: DRAFT
-parent: BP-04
+parent: BP-01
 source_features:
   - FEAT-0013
 last_updated: 2026-04-03
@@ -41,8 +41,8 @@ Implement the provider-aware account-management controls for email, password cha
 
 ## Blueprints
 
-- `BP-04` account-management contract
-- `BP-04` auth-method branching decisions
+- `BP-01` account-management contract
+- `BP-01` auth-method branching decisions
 
 ## E2E Acceptance Tests
 

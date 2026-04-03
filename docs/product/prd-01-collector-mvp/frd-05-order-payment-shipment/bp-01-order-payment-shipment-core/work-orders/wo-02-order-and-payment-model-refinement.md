@@ -4,7 +4,7 @@ type: WORK_ORDER
 slug: order-and-payment-model-refinement
 title: Order and Payment Model Refinement
 status: DRAFT
-parent: BP-02
+parent: BP-01
 last_updated: 2026-04-03
 implementation_status: PLANNED
 ---

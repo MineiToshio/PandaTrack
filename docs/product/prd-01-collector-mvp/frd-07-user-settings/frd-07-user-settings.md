@@ -6,7 +6,7 @@ title: User Settings and Account Preferences
 status: ACTIVE
 parent: PRD-01
 children:
-  - BP-04
+  - BP-01
 last_updated: 2026-04-03
 source_features:
   - FEAT-0013
@@ -190,4 +190,4 @@ As a product owner, I want settings behavior to respect whether a user signed up
 
 ## Linked Blueprints
 
-- `docs/product/prd-01-collector-mvp/frd-07-user-settings/bp-04-user-settings-identity-and-preferences/bp-04-user-settings-identity-and-preferences.md`
+- `docs/product/prd-01-collector-mvp/frd-07-user-settings/bp-01-user-settings-identity-and-preferences/bp-01-user-settings-identity-and-preferences.md`

@@ -1,5 +1,5 @@
 ---
-id: BP-04
+id: BP-01
 type: BLUEPRINT
 slug: user-settings-identity-and-preferences
 title: User Settings, Identity, and Preferences
@@ -16,7 +16,7 @@ last_updated: 2026-04-03
 implementation_status: PLANNED
 ---
 
-# BP-04 User Settings, Identity, and Preferences
+# BP-01 User Settings, Identity, and Preferences
 
 ## Purpose
 

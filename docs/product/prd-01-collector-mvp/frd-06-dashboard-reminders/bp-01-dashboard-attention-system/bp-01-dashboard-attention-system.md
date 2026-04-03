@@ -1,5 +1,5 @@
 ---
-id: BP-03
+id: BP-01
 type: BLUEPRINT
 slug: dashboard-attention-system
 title: Dashboard Attention System
@@ -13,7 +13,7 @@ last_updated: 2026-04-03
 implementation_status: PLANNED
 ---
 
-# BP-03 Dashboard Attention System
+# BP-01 Dashboard Attention System
 
 ## Purpose
 

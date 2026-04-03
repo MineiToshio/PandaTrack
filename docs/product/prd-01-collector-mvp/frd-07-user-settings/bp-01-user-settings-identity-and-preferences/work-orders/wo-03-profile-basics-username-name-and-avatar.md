@@ -4,7 +4,7 @@ type: WORK_ORDER
 slug: profile-basics-username-name-and-avatar
 title: Profile Basics: Username, Name, and Avatar
 status: DRAFT
-parent: BP-04
+parent: BP-01
 source_features:
   - FEAT-0013
 last_updated: 2026-04-03
@@ -40,8 +40,8 @@ Implement the `Profile` section of settings for username editing, display-name e
 
 ## Blueprints
 
-- `BP-04` username-edit contract
-- `BP-04` avatar contract
+- `BP-01` username-edit contract
+- `BP-01` avatar contract
 
 ## E2E Acceptance Tests
 

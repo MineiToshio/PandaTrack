@@ -4,7 +4,7 @@ type: WORK_ORDER
 slug: order-terminology-and-entity-alignment
 title: Order Terminology and Entity Alignment
 status: DRAFT
-parent: BP-02
+parent: BP-01
 last_updated: 2026-04-03
 implementation_status: PLANNED
 ---

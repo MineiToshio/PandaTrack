@@ -4,7 +4,7 @@ type: WORK_ORDER
 slug: app-shell-user-menu-and-identity-surface
 title: App Shell User Menu and Identity Surface
 status: DRAFT
-parent: BP-04
+parent: BP-01
 source_features:
   - FEAT-0013
 last_updated: 2026-04-03
@@ -41,7 +41,7 @@ Replace the shell sign-out-only account affordance with a clear avatar-plus-user
 
 ## Blueprints
 
-- `BP-04` shell identity contract and one-page settings discoverability decisions
+- `BP-01` shell identity contract and one-page settings discoverability decisions
 
 ## E2E Acceptance Tests
 

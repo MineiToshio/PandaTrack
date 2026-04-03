@@ -4,7 +4,7 @@ type: WORK_ORDER
 slug: preferences-currency-country-product-types-and-budget
 title: Preferences: Currency, Country, Product Types, and Budget
 status: DRAFT
-parent: BP-04
+parent: BP-01
 source_features:
   - FEAT-0013
 last_updated: 2026-04-03
@@ -42,8 +42,8 @@ Implement the `Preferences` section of settings so each user can define the base
 
 ## Blueprints
 
-- `BP-04` preference contract
-- `BP-04` budget extensibility decision
+- `BP-01` preference contract
+- `BP-01` budget extensibility decision
 
 ## E2E Acceptance Tests
 

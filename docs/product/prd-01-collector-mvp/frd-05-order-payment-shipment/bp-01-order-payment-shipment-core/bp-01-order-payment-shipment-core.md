@@ -1,5 +1,5 @@
 ---
-id: BP-02
+id: BP-01
 type: BLUEPRINT
 slug: order-payment-shipment-core
 title: Order, Payment, and Shipment Core
@@ -14,7 +14,7 @@ last_updated: 2026-04-03
 implementation_status: PLANNED
 ---
 
-# BP-02 Order, Payment, and Shipment Core
+# BP-01 Order, Payment, and Shipment Core
 
 ## Purpose
 

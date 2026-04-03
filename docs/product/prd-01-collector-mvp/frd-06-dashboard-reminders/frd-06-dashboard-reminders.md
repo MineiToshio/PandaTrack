@@ -6,7 +6,7 @@ title: Dashboard and Reminders
 status: DRAFT
 parent: PRD-01
 children:
-  - BP-03
+  - BP-01
 last_updated: 2026-03-21
 source_features:
   - FUTURE-DASHBOARD-ATTENTION
@@ -69,4 +69,4 @@ The dashboard is the main decision screen after sign-in. Its job is not to show 
 
 ## Linked Blueprints
 
-- `docs/product/prd-01-collector-mvp/frd-06-dashboard-reminders/bp-03-dashboard-attention-system/bp-03-dashboard-attention-system.md`
+- `docs/product/prd-01-collector-mvp/frd-06-dashboard-reminders/bp-01-dashboard-attention-system/bp-01-dashboard-attention-system.md`

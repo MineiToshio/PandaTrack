@@ -4,7 +4,7 @@ type: WORK_ORDER
 slug: store-entry-defaults-from-user-preferences
 title: Store Entry Defaults from User Preferences
 status: DRAFT
-parent: BP-04
+parent: BP-01
 source_features:
   - FEAT-0013
 last_updated: 2026-04-03
@@ -39,7 +39,7 @@ Use saved user preferences to build the default `Stores` listing entry URL from 
 
 ## Blueprints
 
-- `BP-04` URL-canonical preference-consumption decision
+- `BP-01` URL-canonical preference-consumption decision
 
 ## E2E Acceptance Tests
 

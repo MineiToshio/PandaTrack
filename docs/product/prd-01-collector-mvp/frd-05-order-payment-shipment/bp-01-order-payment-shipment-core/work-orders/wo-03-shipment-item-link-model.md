@@ -4,7 +4,7 @@ type: WORK_ORDER
 slug: shipment-item-link-model
 title: Shipment Item-Link Model
 status: DRAFT
-parent: BP-02
+parent: BP-01
 last_updated: 2026-04-03
 implementation_status: PLANNED
 ---

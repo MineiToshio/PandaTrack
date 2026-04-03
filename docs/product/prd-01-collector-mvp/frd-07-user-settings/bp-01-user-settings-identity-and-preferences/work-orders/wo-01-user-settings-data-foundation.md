@@ -4,7 +4,7 @@ type: WORK_ORDER
 slug: user-settings-data-foundation
 title: User Settings Data Foundation
 status: DRAFT
-parent: BP-04
+parent: BP-01
 source_features:
   - FEAT-0013
 last_updated: 2026-04-03
@@ -43,7 +43,7 @@ Create the persistence, validation, and shared domain contracts required for use
 
 ## Blueprints
 
-- `BP-04` architecture decisions for username identity, budget extensibility, and URL-canonical preference consumption
+- `BP-01` architecture decisions for username identity, budget extensibility, and URL-canonical preference consumption
 
 ## E2E Acceptance Tests
 

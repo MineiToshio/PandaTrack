@@ -4,7 +4,7 @@ type: WORK_ORDER
 slug: reminder-trigger-matrix
 title: Reminder Trigger Matrix
 status: DRAFT
-parent: BP-03
+parent: BP-01
 last_updated: 2026-04-03
 implementation_status: PLANNED
 ---

@@ -6,7 +6,7 @@ title: Order, Payment, and Shipment
 status: DRAFT
 parent: PRD-01
 children:
-  - BP-02
+  - BP-01
 last_updated: 2026-03-21
 source_features:
   - FUTURE-ORDER-CORE
@@ -104,4 +104,4 @@ Define the minimum agreed requirements for the MVP tracking core beyond stores. 
 
 ## Linked Blueprints
 
-- `docs/product/prd-01-collector-mvp/frd-05-order-payment-shipment/bp-02-order-payment-shipment-core/bp-02-order-payment-shipment-core.md`
+- `docs/product/prd-01-collector-mvp/frd-05-order-payment-shipment/bp-01-order-payment-shipment-core/bp-01-order-payment-shipment-core.md`

@@ -412,7 +412,7 @@ Optional GitHub links may be added as convenience only when useful, but the path
 When creating the new FRD package:
 
 - choose the next correct `FRD` number under the target `PRD`
-- choose local `Blueprint` numbering inside that `FRD`
+- choose local `Blueprint` numbering inside that `FRD`, resetting from `BP-01` for each `FRD`
 - choose local `Work Order` numbering inside that `Blueprint`
 - use descriptive slugs
 - preserve the existing naming style in `docs/product`

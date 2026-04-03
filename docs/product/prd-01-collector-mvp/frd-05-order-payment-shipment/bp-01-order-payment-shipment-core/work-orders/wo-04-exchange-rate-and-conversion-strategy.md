@@ -4,7 +4,7 @@ type: WORK_ORDER
 slug: exchange-rate-and-conversion-strategy
 title: Exchange-Rate and Conversion Strategy
 status: DRAFT
-parent: BP-02
+parent: BP-01
 last_updated: 2026-04-03
 implementation_status: PLANNED
 ---
