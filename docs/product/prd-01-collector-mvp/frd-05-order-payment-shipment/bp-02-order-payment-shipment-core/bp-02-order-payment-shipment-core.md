@@ -6,11 +6,11 @@ title: Order, Payment, and Shipment Core
 status: DRAFT
 parent: FRD-05
 children:
-  - WO-08
-  - WO-09
-  - WO-10
-  - WO-11
-last_updated: 2026-03-21
+  - WO-01
+  - WO-02
+  - WO-03
+  - WO-04
+last_updated: 2026-04-03
 implementation_status: PLANNED
 ---
 
@@ -36,7 +36,7 @@ Organize the core tracking domain for orders, payments, and shipments into a sys
 
 ## Linked Work Orders
 
-- `work-orders/wo-08-order-terminology-and-entity-alignment.md`
-- `work-orders/wo-09-order-and-payment-model-refinement.md`
-- `work-orders/wo-10-shipment-item-link-model.md`
-- `work-orders/wo-11-exchange-rate-and-conversion-strategy.md`
+- `work-orders/wo-01-order-terminology-and-entity-alignment.md`
+- `work-orders/wo-02-order-and-payment-model-refinement.md`
+- `work-orders/wo-03-shipment-item-link-model.md`
+- `work-orders/wo-04-exchange-rate-and-conversion-strategy.md`

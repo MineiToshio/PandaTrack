@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-04-02
+last_updated: 2026-04-03
 source_features:
   - FEAT-0012
 implementation_status: IMPLEMENTED
@@ -30,6 +30,8 @@ This domain is already partially implemented in production code. This FRD reflec
 
 - the current implemented behavior confirmed through reverse engineering of the codebase
 - the remaining planned behavior already represented in linked Work Orders and mirrored in GitHub tracking
+
+It also defines how the listing layer behaves when upstream navigation chooses to prefill the URL from user preferences.
 
 ## Current State
 
@@ -218,6 +220,11 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - When they submit a valid new store
 - Then the store is persisted with status `APPROVED`
 - And `approvedByUserId` and `approvedAt` are stored
+
+## Implementation Notes
+
+- The store listing remains URL-driven.
+- Upstream navigation may construct listing URLs with prefilled country and product-type filters from user preferences, but the listing route must continue to treat the final URL as the canonical input state.
 
 ### `AC-01-03` Blur duplicate suggestions
 

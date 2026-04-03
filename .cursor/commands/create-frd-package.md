@@ -224,6 +224,7 @@ Each `Blueprint` must:
   - lists work orders in recommended execution order
   - identifies prerequisite relationships
   - calls out which work orders can be executed in parallel after their dependencies are complete
+- present that implementation plan using Mermaid when it improves clarity, plus a short plain-text sequencing summary so both humans and AI agents can interpret it reliably
 - state the technical contracts or boundary decisions that must already be fixed before the downstream `Work Orders` are enriched individually
 
 ### Work Order
@@ -286,6 +287,7 @@ Work orders must be ordered by recommended implementation sequence, not by brain
 This means:
 
 - assign `WO-01`, `WO-02`, `WO-03`, etc. in the order the work should ideally be executed
+- reset `WO` numbering locally inside each `FRD`/`Blueprint` package instead of continuing a repository-global running sequence
 - list work orders inside each blueprint in that same execution order
 - ensure prerequisite/foundation work orders come before dependent user-facing slices
 - when multiple work orders can start only after one prerequisite is complete, keep the prerequisite first and then note the parallelizable group explicitly in the blueprint implementation plan

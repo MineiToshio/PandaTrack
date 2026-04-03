@@ -13,7 +13,7 @@ children:
   - FRD-05
   - FRD-06
   - FRD-07
-last_updated: 2026-03-16
+last_updated: 2026-04-03
 ---
 
 # PRD-01 PandaTrack Collector MVP
@@ -117,6 +117,7 @@ A collector with lower order volume who still wants:
 - Monthly budget and dashboard reporting
 - In-app reminders and email reminders
 - User settings for budget, preferred currency, and notification preferences
+- User settings for account identity, profile management, preferred country and product types, budget defaults, and store-entry defaults
 
 ### Out of scope
 
@@ -179,6 +180,14 @@ A collector with lower order volume who still wants:
 2. User sees upcoming payments, delayed arrivals, budget usage, and delivery signals.
 3. User decides what to pay, follow up, or review next.
 
+### Manage account settings
+
+1. User opens the account menu from the app shell.
+2. User can review their username, profile image, and account entry options.
+3. User can update personal profile fields and account credentials according to the linked auth method.
+4. User can define country, base currency, collected product types, and budget defaults.
+5. The store listing can open with defaults aligned to the user's saved preferences.
+
 ### Receive reminders
 
 1. The system detects important events or risk conditions.
@@ -196,6 +205,7 @@ A collector with lower order volume who still wants:
 - Users can see budget and upcoming payment pressure in their own base currency.
 - Users can evaluate store trust before placing another order.
 - Dashboard answers the highest-priority collector questions quickly.
+- Users can identify themselves clearly inside the private shell and manage their account without support intervention.
 
 ## MVP Questions the Product Must Answer
 

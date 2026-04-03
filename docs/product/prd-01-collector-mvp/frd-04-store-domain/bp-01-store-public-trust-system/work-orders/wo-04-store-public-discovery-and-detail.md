@@ -6,7 +6,7 @@ title: Store Public Discovery and Detail
 status: ACTIVE
 parent: BP-01
 source_issue: 73
-last_updated: 2026-03-21
+last_updated: 2026-04-03
 implementation_status: IMPLEMENTED
 ---
 
@@ -75,3 +75,5 @@ Relevant acceptance criteria copied from the FRD:
 ## Status Note
 
 Implemented in current code, with some E2E coverage still lighter than the full requirement set.
+
+Cross-domain note: later user-settings work may generate default listing query strings from saved preferences, but this listing slice still treats the resolved URL as the canonical filter state.

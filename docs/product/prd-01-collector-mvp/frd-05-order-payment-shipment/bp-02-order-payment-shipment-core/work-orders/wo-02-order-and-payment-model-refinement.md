@@ -1,15 +1,15 @@
 ---
-id: WO-09
+id: WO-02
 type: WORK_ORDER
 slug: order-and-payment-model-refinement
 title: Order and Payment Model Refinement
 status: DRAFT
 parent: BP-02
-last_updated: 2026-03-21
+last_updated: 2026-04-03
 implementation_status: PLANNED
 ---
 
-# WO-09 Order and Payment Model Refinement
+# WO-02 Order and Payment Model Refinement
 
 ## Goal
 

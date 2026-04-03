@@ -1,15 +1,15 @@
 ---
-id: WO-12
+id: WO-01
 type: WORK_ORDER
 slug: dashboard-output-model
 title: Dashboard Output Model
 status: DRAFT
 parent: BP-03
-last_updated: 2026-03-21
+last_updated: 2026-04-03
 implementation_status: PLANNED
 ---
 
-# WO-12 Dashboard Output Model
+# WO-01 Dashboard Output Model
 
 ## Goal
 

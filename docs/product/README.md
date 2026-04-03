@@ -4,7 +4,7 @@ type: INDEX
 status: ACTIVE
 format: MARKDOWN
 convention: "prefix + short number + descriptive slug"
-last_updated: 2026-03-21
+last_updated: 2026-04-03
 ---
 
 # Product Docs
@@ -42,6 +42,7 @@ It follows a hierarchical 80/90-style documentation model:
 - Use consistent YAML frontmatter.
 - Use explicit parent-child references in metadata.
 - Keep one concept per file.
+- Number `Work Orders` locally within each `FRD` or `Blueprint` package instead of using one repo-global running sequence. Always reference a work order together with its parent `FRD`/`Blueprint` context when discussing it outside the file path.
 - Add `source_features` only as traceability metadata when the doc consolidates one or more GitHub epics.
 - Use `status` for document lifecycle only: `DRAFT`, `ACTIVE`, `BLOCKED`, `SUPERSEDED`.
 - Use `implementation_status` for delivery reality on `FRD`, `Blueprint`, and `Work Order`: `PLANNED`, `IN_PROGRESS`, `PARTIALLY_IMPLEMENTED`, `IMPLEMENTED`.

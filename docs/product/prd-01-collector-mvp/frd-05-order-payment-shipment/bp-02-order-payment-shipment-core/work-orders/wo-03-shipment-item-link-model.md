@@ -1,15 +1,15 @@
 ---
-id: WO-10
+id: WO-03
 type: WORK_ORDER
 slug: shipment-item-link-model
 title: Shipment Item-Link Model
 status: DRAFT
 parent: BP-02
-last_updated: 2026-03-21
+last_updated: 2026-04-03
 implementation_status: PLANNED
 ---
 
-# WO-10 Shipment Item-Link Model
+# WO-03 Shipment Item-Link Model
 
 ## Goal
 

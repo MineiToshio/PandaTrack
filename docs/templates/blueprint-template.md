@@ -48,6 +48,8 @@ Describe where future work is expected to build on this blueprint without redefi
 
 Describe the recommended execution order for the linked work orders.
 
+When helpful, include a Mermaid dependency or flow diagram plus a short plain-text summary so the sequencing stays readable both visually and textually.
+
 Include:
 
 - which work order must happen first
