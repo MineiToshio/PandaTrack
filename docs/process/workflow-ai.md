@@ -10,9 +10,14 @@ This workflow is optimized for building features with Codex and Cursor using a h
 1. Create or update the `PRD`, `FRD`, `Blueprint`, and `Work Orders` in `docs/product`.
 2. Create or update one GitHub Epic from the `FRD`.
 3. Create one GitHub ticket per `Work Order`.
-4. Keep GitHub issue bodies lightweight and link back to the docs instead of duplicating them.
-5. Use `type:epic` and `type:slice` labels for issue type.
-6. Use Project `Status` field (`Todo`, `In Progress`, `Done`) for progress tracking.
+4. Attach each Work Order ticket as a **sub-issue** of that Epic (GitHub parent/child), in Work Order execution order, and confirm the Epic's sub-issue list matches every created slice before considering the link step complete.
+5. Add the Epic and every created ticket to GitHub Project `4` during the same workflow pass.
+6. Set Project `Status` to **`Todo`** on the Epic and every new slice unless product workflow explicitly documented a different initial value for that run.
+7. Verify that the Epic and every created ticket are present in GitHub Project `4` before considering the sync complete.
+8. Verify that the Epic and every created ticket are **open** (GitHub issue state) and that Project `Status` is **`Todo`** (or the documented alternative) before considering the sync complete.
+9. Keep GitHub issue bodies lightweight and link back to the docs instead of duplicating them.
+10. Use `type:epic` and `type:slice` labels for issue type.
+11. Use Project `Status` field (`Todo`, `In Progress`, `Done`) for day-to-day progress after the initial setup; move items forward as work advances.
 
 ## 2) Prepare execution prompts
 
@@ -45,7 +50,8 @@ This workflow is optimized for building features with Codex and Cursor using a h
 
 ## Rules for consistency
 
-- Use one Epic per `FRD` and one ticket per `Work Order`.
+- Use one Epic per `FRD` and one ticket per `Work Order`, with every slice ticket registered as a sub-issue of that Epic.
+- When creating or first syncing an FRD package to GitHub: Epic and slices stay **open**, and Project `4` **Status** starts as **`Todo`** on all of them unless a written exception was agreed for that package.
 - Keep `Blueprints` in docs only unless there is a rare reason to track one separately.
 - Keep user-facing copy in locale JSON files only.
 - Keep Prisma access out of UI components.

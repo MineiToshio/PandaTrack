@@ -127,6 +127,7 @@ A ticket should not duplicate the full `Work Order` content.
 
 - Every GitHub Epic must point to exactly one `FRD`.
 - Every GitHub ticket must point to exactly one `Work Order`.
+- Every GitHub Work Order ticket must be attached as a **sub-issue** of its Epic (GitHub parent/child). A line such as `Parent Epic: #NN` in the body is not enough on its own; the Epic must actually list the ticket under Sub-issues so hierarchy and rollups stay correct in GitHub and on the Project board.
 - Every `Work Order` should be traceable back to one `FRD` through its `Blueprint`.
 - Status changes happen in GitHub, not by renaming files in `docs/product`.
 - GitHub should store doc references primarily as repo paths so issue bodies remain branch-agnostic.
@@ -144,6 +145,8 @@ A ticket should not duplicate the full `Work Order` content.
 
 - use the GitHub Project `Status` field for execution progress
 - examples: `Todo`, `In Progress`, `Done`
+- when an Epic and its Work Order tickets are first created (for example from the Create FRD Package flow): every issue must be **open**, and Project `Status` must be **`Todo`** on the Epic and every slice unless the team explicitly agreed a different initial value for that batch
+- do not create or leave new tracking issues **closed** or with Project `Status` **`Done`** as the default for untouched backlog work
 
 ## Practical Daily Workflow
 

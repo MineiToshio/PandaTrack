@@ -17,9 +17,10 @@ GitHub Project and its issues are the source of truth for execution status and m
 ## Canonical Mapping
 
 - One `FRD` -> one Epic issue
-- One Epic issue -> multiple `Work Order` tickets
+- One Epic issue -> multiple `Work Order` tickets, each attached as a **sub-issue** of that Epic (GitHub parent/child), not only cross-linked by issue number in the body
 - Epic issues should stay lightweight and reference the matching `FRD` and `Work Order` paths instead of duplicating product definition.
 - Every Epic/Slice should be added to the GitHub Project board
+- New Epics and slices start **open** (issue state), with Project `Status` **`Todo`**, unless a one-off agreement says otherwise for that creation run
 - Keep issue titles concise and readable.
 - Distinguish epic vs slice using `type:*` labels, not title prefixes.
 - Automation inputs should use GitHub issue number or full GitHub issue URL.

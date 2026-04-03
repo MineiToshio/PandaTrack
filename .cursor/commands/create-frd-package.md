@@ -346,7 +346,15 @@ After approval:
 
 - create or update one GitHub Epic for the `FRD`
 - create one GitHub ticket per `Work Order`
+- keep the Epic and every Work Order ticket **open** (GitHub issue `state: open`). New issues are created open by default; do not close any of them in this command. If you update or reuse an Epic or slice that is currently closed, **reopen** it so execution tracking starts from an open backlog item
+- attach every created Work Order ticket as a **sub-issue** of that Epic (GitHub parent/child relationship), not only via a `Parent Epic: #NN` line in the ticket body
+- add sub-issues in **Work Order execution order** (first child can be added without a position hint; for each additional child, if GitHub returns a priority or placement error, add it immediately after the previous slice using that sibling issue's numeric REST `id` as `after_id`, since `id` is not the same as the public issue number)
 - do not create GitHub issues for `Blueprints`
+- add the Epic and every created ticket to GitHub Project `4` in the same execution pass
+- set the GitHub Project `4` **Status** field to **`Todo`** on the Epic and on every created ticket (this is independent of issue open/closed). The only exception is when the user explicitly approved a different initial `Status` value during the proposal approval step
+- explicitly verify that the Epic and every created ticket are present in GitHub Project `4` before finishing
+- explicitly verify that the Epic and every created ticket are **open** and have Project `Status` **`Todo`** (or the user-approved alternative) before finishing
+- explicitly verify that the Epic lists every created Work Order ticket as a sub-issue (for example via GitHub MCP `issue_read` with `get_sub_issues`) before finishing
 
 ### Epic body
 
@@ -405,7 +413,10 @@ Optional GitHub links may be added as convenience only when useful, but the path
 - Work Order ticket label: `type:slice`
 - add area label when inferable
 - add both Epic and tickets to GitHub Project `4`
-- set initial `Status` to `Todo` unless the user requested another starting state
+- set Project `Status` to **`Todo`** on the Epic and every slice by default. Do not leave new items as `Done` or `In Progress` unless the user explicitly requested that initial value when they approved the proposal
+- keep every Epic and slice **open** (issue state); closing issues is out of scope for this command
+- do not treat issue creation as complete until project membership has been confirmed for the Epic and every created ticket
+- if any issue cannot be added to Project `4`, cannot be kept or set **open**, or its `Status` cannot be set to the required initial value, report the specific blocked issue numbers in the final response and treat the command as partially complete
 
 ## Numbering and naming rules
 
@@ -427,9 +438,10 @@ Return in Spanish:
 4. `Work Orders created`
 5. `GitHub epic`
 6. `GitHub tickets`
-7. `Docs updated`
-8. `Open assumptions`
-9. `Follow-up notes`
+7. `GitHub project sync`
+8. `Docs updated`
+9. `Open assumptions`
+10. `Follow-up notes`
 
 If creation was blocked before approval or by missing information, say so clearly and summarize what is still needed.
 
@@ -446,4 +458,6 @@ Before finishing, verify:
 - the Blueprints are concrete and architecture-aware
 - the Work Orders are executable and not too thin
 - GitHub Epic/Tickets follow the hybrid workflow instead of duplicating docs
+- the GitHub Epic and every created ticket were added to GitHub Project `4`
+- the GitHub Epic and every created ticket are **open** and were verified in GitHub Project `4` with initial `Status` **`Todo`** (or the user-approved alternative from the proposal)
 - all created items fit the current `docs/product` structure

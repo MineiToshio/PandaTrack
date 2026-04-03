@@ -1,0 +1,103 @@
+---
+id: BP-01
+type: BLUEPRINT
+slug: order-domain-foundation
+title: Order Domain Foundation
+status: ACTIVE
+parent: FRD-05
+children:
+  - WO-01
+  - WO-02
+  - WO-03
+last_updated: 2026-04-03
+implementation_status: PLANNED
+---
+
+# BP-01 Order Domain Foundation
+
+## Purpose
+
+Define the persistence, state, and monetary contracts that make order and payment behavior coherent before any list or detail experience is layered on top.
+
+## Runtime Components
+
+- Prisma models for orders, order items, payments, private notes, history entries, and currencies
+- order query modules and mutation modules under the private app data layer
+- validation schemas for create, edit, pay, delete, and cancel flows
+- shared money and identifier helpers in `src/lib`
+- detail-view data loaders that join store, item, payment, and derived summary information
+
+## Architecture Decisions
+
+- Currency should be a catalog table storing stable code and symbol only; localized names should be resolved in UI through the code.
+- Exchange-rate context should be stored once per order in MVP so reporting and derived totals have one stable conversion basis.
+- Order identifiers should be generated at persistence time using a deterministic date-based prefix plus a two-digit daily sequence.
+- Payment progress should be derived from payment records instead of duplicated into manually edited columns.
+- Order history should be append-oriented and human-readable, but individual entries may still be user-deleted.
+- Delete and cancel must remain separate operations:
+  - cancel preserves the order record and moves it to `CANCELLED`
+  - delete physically removes the order only when delete rules allow it
+
+## Contracts
+
+- currency contract:
+  - input: catalog currency code and symbol
+  - output: selectable currency option plus i18n-resolved label
+- order create contract:
+  - input: store, order date, expected delivery range, currency, optional exchange rate, total cost, item rows
+  - output: persisted order with generated identifier and derived state
+- payment contract:
+  - input: order id, payment amount, payment date
+  - output: persisted payment row plus recalculated order payment summary
+- delete/cancel contract:
+  - input: user intent plus current order dependencies
+  - output: either cancelled order, deleted order, or rejected destructive action
+
+## Operational Priorities
+
+- deterministic money handling
+- predictable state transitions
+- atomic writes around item, payment, and history changes
+- easy-to-explain deletion and cancellation rules
+- future dashboard compatibility
+
+## Dependencies
+
+- user base-currency preference from `FRD-07`
+- store identity from `FRD-04`
+- private app access model from `FRD-01` and `FRD-03`
+
+## Risks
+
+- order-level FX simplifies MVP but can become a migration concern if later finance rules need per-payment FX
+- itemized total logic can drift if quantity and unit price validation are not normalized in one place
+- delete rules can become confusing if cancellation and physical deletion are not documented consistently in UI copy
+
+## Extension Points
+
+- richer per-order analytics
+- per-payment FX in a later finance iteration
+- attachments or external references on orders
+- dashboard rollups that consume order and payment summaries
+
+## Implementation Plan
+
+```mermaid
+flowchart LR
+  WO01["WO-01 Currency Catalog, Order Identifiers, and Persistence Contracts"]
+  WO02["WO-02 Order Item Model, Totals, FX, and Derived Order-State Rules"]
+  WO03["WO-03 Order Payments, Balances, and Payment Mutation Rules"]
+
+  WO01 --> WO02
+  WO02 --> WO03
+```
+
+- `WO-01` must land first because it establishes the catalog and persistence primitives every later slice depends on.
+- `WO-02` must land after `WO-01` because order totals, FX, and state rules all depend on the currency and identifier contract.
+- `WO-03` must land after `WO-02` because payment validation and remaining-balance logic rely on the finalized order total model.
+
+## Linked Work Orders
+
+- `work-orders/wo-01-currency-catalog-order-identifiers-and-persistence-contracts.md`
+- `work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md`
+- `work-orders/wo-03-order-payments-balances-and-payment-mutation-rules.md`

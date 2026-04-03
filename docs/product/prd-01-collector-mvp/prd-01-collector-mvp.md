@@ -13,6 +13,7 @@ children:
   - FRD-05
   - FRD-06
   - FRD-07
+  - FRD-08
 last_updated: 2026-04-03
 ---
 
@@ -28,7 +29,7 @@ This PRD covers:
 - quality and testing foundations for AI-assisted delivery
 - the private collector workspace shell
 - the store trust domain
-- the draft collector workflow domains that still need refinement before implementation
+- the collector workflow domains for orders, payments, deliveries, reminders, and preferences
 
 ## Product Summary
 
@@ -111,9 +112,9 @@ A collector with lower order volume who still wants:
 - Risk-based testing baseline for critical workflows
 - Dashboard-first private navigation
 - Public store discovery and store trust layer
-- Orders as the primary tracked transaction entity
+- Orders as the primary tracked transaction entity with line items, derived totals, and private notes
 - Partial and complete payment tracking per order
-- Shipment tracking, including multi-order shipment grouping within one store
+- Delivery tracking as a store-scoped workflow that may group products from multiple orders
 - Monthly budget and dashboard reporting
 - In-app reminders and email reminders
 - User settings for budget, preferred currency, and notification preferences
@@ -137,8 +138,7 @@ A collector with lower order volume who still wants:
 - `Store`
 - `Order`
 - `OrderPayment`
-- `Shipment`
-- `ShipmentOrderItem`
+- `Delivery`
 - `OrderItem`
 - `Reminder`
 - `UserSettings`
@@ -163,16 +163,16 @@ A collector with lower order volume who still wants:
 ### Track a new order
 
 1. User creates an order linked to a store.
-2. User sets order currency, key dates, and expected delivery window.
-3. User adds items and current order status.
-4. User records payment progress over time.
+2. User sets order currency, exchange-rate context when needed, key dates, and expected delivery window.
+3. User adds items with quantity, optional unit price, and optional product type.
+4. User records payment progress over time from the order detail view.
 
 ### Track delivery progress
 
-1. User creates or updates a shipment for one store.
-2. User links one or more order items to that shipment.
-3. User updates shipment state until delivery.
-4. User sees which orders are fully or partially delivered.
+1. User creates or updates a delivery for one store.
+2. User links one or more eligible order items from that store to that delivery.
+3. User updates delivery state until delivery or reopens it when corrections are needed.
+4. User sees which orders are fully or partially delivered and which delivered orders still have pending payment.
 
 ### Use the dashboard
 
@@ -233,3 +233,4 @@ A collector with lower order volume who still wants:
 - `docs/product/prd-01-collector-mvp/frd-05-order-payment-shipment/frd-05-order-payment-shipment.md`
 - `docs/product/prd-01-collector-mvp/frd-06-dashboard-reminders/frd-06-dashboard-reminders.md`
 - `docs/product/prd-01-collector-mvp/frd-07-user-settings/frd-07-user-settings.md`
+- `docs/product/prd-01-collector-mvp/frd-08-delivery-management/frd-08-delivery-management.md`
