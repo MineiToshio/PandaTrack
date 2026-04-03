@@ -36,36 +36,65 @@ Describe the technical layer that powers profile editing, account-management con
 
 - One settings route should host both `Profile` and `Preferences` sections to keep account management discoverable without splitting navigation depth.
 - Username becomes a first-class identity field separate from display name and email.
+- The canonical shell identity trigger lives in the lower navigation area:
+  - desktop expanded sidebar: avatar plus username above the expand/collapse control
+  - desktop collapsed sidebar: keep the avatar or fallback visible in the lower rail and reveal the full trigger when hover/focus expansion opens the sidebar
+  - mobile/tablet drawer: the same trigger replaces the lower sign-out-only control
+- The account menu should open upward from the lower navigation area on desktop so the trigger and menu remain visually paired.
+- The mobile/tablet drawer should reuse the same content model through an inline anchored menu instead of a floating overlay.
+- One shared account-menu component should power desktop and mobile placements.
 - Username uniqueness is enforced case-insensitively at the system boundary even if the stored display value preserves casing.
+- Username must be generated during server-side account creation so every newly created account already has a valid persisted username before reaching the private app.
+- Reserved names, PandaTrack brand protections, and blocked tokens for usernames are maintained in code/config for MVP.
+- Display name remains a separate non-unique profile field with `trim`, a `50` character maximum, and the same reserved-name, PandaTrack brand, and blocked-token protections as username.
 - Avatar upload should reuse the existing image-crop and optimization interaction already established for store logos.
+- `User.image` is the effective avatar URL in MVP:
+  - provider-hosted URLs may remain the initial value for Google-created accounts
+  - once the collector uploads a replacement, the field must point to the Cloudflare R2 asset URL
+  - removing the effective avatar always clears the field and returns the UI to the username-initial fallback instead of restoring a provider image automatically
+- User-managed avatar assets use the stable object key `user-images/{userId}.webp` so replacements overwrite the current file in MVP.
+- Successful profile-basic saves must update the settings preview and shell identity surfaces immediately in client state without a full page refresh.
 - Email-change rules must branch by account-provider posture:
   - credential-only: email change allowed
   - Google-only: email change blocked
   - Google plus credentials: email change blocked in MVP
-- Budget persistence should be modeled so that a future multi-budget expansion does not require rethinking the persistence layer.
+- Account-management capabilities for later settings slices must be derived at runtime from auth/account posture rather than persisted as duplicated capability flags.
+- Budget persistence lives on `User` in MVP and is intentionally limited to one active budget, accepting a later migration if multi-budget support becomes necessary.
 - Preference-driven store defaults should be implemented as URL generation from navigation entry points rather than hidden server-side filtering so the listing remains URL-canonical.
+- Privacy Policy and Terms and Conditions links stay visible inside the user menu as shell-level trust and compliance exits.
+- `Settings` should live in the account menu rather than in the primary shell navigation once this slice ships.
 
 ## Contracts
 
 - Shell identity contract:
   - input: authenticated user session plus resolved username/image
-  - output: avatar, username, menu actions
+  - output: avatar, username, lower-shell trigger, desktop floating menu actions, mobile inline menu actions
 - Username-edit contract:
   - input: candidate username
   - output: format-valid state, availability state, save eligibility, persisted username
+- Display-name contract:
+  - input: candidate display name
+  - output: trimmed persisted display name or validation rejection for reserved-name, brand-protected, blocked-token, or length violations
+- Username-foundation contract:
+  - input: new authenticated account plus email local part
+  - output: persisted valid username, persisted normalized uniqueness value, collision-safe fallback handling
 - Avatar contract:
-  - input: source image up to 10 MB
-  - output: cropped optimized asset in `user-images`, stored URL in user record
+  - input: provider image URL or source image up to 10 MB
+  - output: effective avatar URL in `User.image`, with cropped optimized asset in `user-images/{userId}.webp` when the collector uploads a replacement, immediate client-side identity refresh after successful changes, and username-initial fallback after successful removal
 - Account-management contract:
   - input: auth-method posture plus email/password change request
   - output: allowed action set and any verification lifecycle restart
+- Account-capability contract:
+  - input: authenticated user plus linked auth accounts
+  - output: runtime capability set for `changeEmail`, `changePassword`, `setPassword`, and blocked-state messaging
 - Preference contract:
   - input: country, base currency, preferred product types, budget amount, budget reset rule
-  - output: saved user preference record and navigation defaults for `Stores`
+  - output: saved user-owned preference fields and navigation defaults for `Stores`
 
 ## Operational Priorities
 
 - identity clarity in the shell
+- cross-device navigation consistency between desktop sidebar and mobile drawer
 - safe auth-method handling
 - low-friction profile editing
 - deterministic URL-driven store discovery behavior
@@ -81,9 +110,14 @@ Describe the technical layer that powers profile editing, account-management con
 ## Risks
 
 - case-insensitive username uniqueness can be implemented incorrectly if persistence and validation normalization diverge
+- signup can become brittle if username generation is not collision-safe and atomic
 - account-provider edge cases can create confusing UX if Google-linked users are offered unsupported email actions
 - image upload reuse can drift if the store-logo pipeline is copied instead of shared
+- avatar cleanup can leave orphaned storage objects if R2 deletion fails after `User.image` is cleared, so observability must cover that path
+- storing all MVP preference and budget fields on `User` increases pressure to keep naming and query boundaries disciplined for future migration
 - preference-driven store defaults can feel surprising if the navigation-generated URL and direct URL entry rules are not explicit
+- the lower-shell account trigger can feel inconsistent if expanded sidebar, collapsed hover state, and mobile drawer do not share the same interaction and menu ordering
+- removing `Settings` from primary navigation can hurt discoverability if the account trigger is not visually obvious in both expanded and collapsed states
 
 ## Extension Points
 
@@ -114,6 +148,7 @@ flowchart LR
 - `WO-01` must land first because it defines the persistence and validation contracts used by every later slice.
 - After `WO-01`, `WO-02`, `WO-03`, `WO-04`, and `WO-05` can run in parallel because they depend on the same shared foundation but own different user outcomes.
 - `WO-06` must happen after `WO-05` because it consumes saved preferences to build default store-entry URLs.
+- `WO-02` should establish the reusable lower-shell account-menu primitive that later settings slices can rely on for discoverability.
 - If execution uncovers provider-account complexity that changes the email or password rules, update this blueprint before enriching or implementing the dependent work orders.
 
 ## Linked Work Orders

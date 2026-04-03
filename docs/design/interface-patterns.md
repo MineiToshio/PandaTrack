@@ -107,6 +107,30 @@ Rules:
 - reuse the existing navigation pattern for the same product area
 - do not invent a new back, sidebar, or local nav style when a canonical pattern already exists nearby
 
+### Reusable Pattern: Lower Shell Account Menu
+
+Use this pattern for the authenticated collector shell account affordance.
+
+Recommended structure:
+
+1. place the account trigger in the lower navigation area rather than the page header
+2. show avatar plus username when space allows
+3. keep the whole trigger row interactive
+4. open the menu upward from the trigger
+5. keep legal/trust links visible inside the menu footer
+
+Rules:
+
+- desktop expanded sidebar: place the trigger above the sidebar expand/collapse control
+- desktop collapsed sidebar: keep the avatar or fallback visible in the lower rail and reveal the full trigger on hover or focus expansion
+- mobile/tablet drawer: replace any sign-out-only footer control with the same account trigger
+- reuse one menu component across desktop and mobile placements
+- keep the menu ordering stable when the same actions appear on different surfaces
+- desktop may use a floating upward panel, but mobile/tablet drawer should prefer an inline anchored expansion for stability
+- do not split core account actions between header and sidebar in the same shell
+- the trigger must have hover, focus-visible, active, and pointer feedback
+- the menu should feel visually anchored to the lower navigation area, not like a detached center-screen popover
+
 ## Content Hierarchy
 
 ### Standard Hierarchy Recipe

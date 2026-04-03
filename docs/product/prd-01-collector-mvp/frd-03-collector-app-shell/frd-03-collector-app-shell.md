@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-03-21
+last_updated: 2026-04-03
 source_features:
   - FEAT-0011
 implementation_status: IMPLEMENTED
@@ -28,8 +28,14 @@ This FRD defines the private collector workspace shell that gives PandaTrack a s
 - desktop sidebar expand/collapse behavior
 - touch-friendly drawer navigation
 - route-aware content header
-- locale/theme/profile controls
+- locale/theme controls
 - tests for layout behavior and E2E app-shell navigation
+
+### Planned Alignment
+
+- lower-shell account trigger in the desktop sidebar and mobile drawer
+- account actions moved out of the content header
+- primary navigation updated so `Settings` lives in the lower account menu instead of the main nav list
 
 ## Functional Requirements
 
@@ -38,7 +44,7 @@ This FRD defines the private collector workspace shell that gives PandaTrack a s
 - `FR-03-03`: The desktop sidebar must support expanded and collapsed states.
 - `FR-03-04`: The mobile and tablet experience must replace hover-dependent behavior with a drawer pattern.
 - `FR-03-05`: The content header must support route-aware title and contextual chrome.
-- `FR-03-06`: Locale, theme, and profile actions must be available from the shell.
+- `FR-03-06`: Locale, theme, and account actions must be available from the shell.
 - `FR-03-07`: Sidebar preference may be persisted locally in the browser.
 - `FR-03-08`: Shell interactions should be instrumentable and shell failures should be observable without noisy duplication.
 
@@ -47,6 +53,8 @@ This FRD defines the private collector workspace shell that gives PandaTrack a s
 - `BR-03-01`: Dashboard is the private starting point.
 - `BR-03-02`: `Pre-orders` stay conceptually grouped under purchases in MVP navigation.
 - `BR-03-03`: Shell clarity matters more than novelty.
+- `BR-03-04`: The content header owns page context, not primary account actions.
+- `BR-03-05`: Lower-shell account affordances should stay aligned between desktop sidebar and mobile drawer.
 
 ## Acceptance Criteria
 
@@ -67,6 +75,12 @@ This FRD defines the private collector workspace shell that gives PandaTrack a s
 - Given the user navigates between first-level and nested routes
 - When the header renders
 - Then it adapts page context appropriately.
+
+### `AC-03-04`
+
+- Given the shell exposes account actions
+- When the user is on desktop or mobile/tablet
+- Then the account trigger appears in the lower shell navigation area rather than in the content header.
 
 ## Linked Blueprint
 
