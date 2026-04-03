@@ -102,6 +102,8 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - `FR-07-27`: The persistence and architecture for budget settings must be prepared to support multiple budgets later even though MVP exposes only one active budget.
 - `FR-07-28`: Entering the `Stores` listing from the private app navigation must prefill the listing URL with the user's saved country and preferred product-type filters.
 - `FR-07-29`: Direct navigation to `/{locale}/stores` without query params, or with user-supplied query params, must continue to honor the URL as the canonical listing input.
+- `FR-07-30`: The settings page must expose `Profile`, `Account`, and `Preferences` as three distinct sections on the same route. The `Account` section contains email and password management controls.
+- `FR-07-31`: When a credential-account user successfully submits an email change, the system must send an informational security notification to the old email address that includes the support contact (`hello@pandatrack.app`) and does not include an approval or reversal link.
 
 ## Business Rules
 
@@ -121,6 +123,7 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - `BR-07-14`: Google-provider trust continues to count as verified identity for email-verification purposes.
 - `BR-07-15`: MVP does not expose a settings toggle for email delivery preferences; PandaTrack may continue to send product emails by default while provider-side unsubscribe handles opt-out.
 - `BR-07-16`: Preferred product types in user settings are collector-interest inputs, not a replacement for the store product-type catalog or store moderation rules.
+- `BR-07-17`: Email changes are rate-limited to one successful change per user per seven days to prevent abuse and spam to arbitrary new addresses.
 
 ## Acceptance Criteria
 
@@ -169,6 +172,30 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - When they open `Stores` from the private navigation
 - Then the listing route opens with matching query-string filters derived from those preferences
 
+### `AC-07-08`
+
+- Given a credential-only user opens the `Account` section of settings and clicks "Change email"
+- When they enter a new email and their current password in the modal and confirm
+- Then the change is submitted, an informational security email is sent to the old address, the verification link is sent to the new address, the new email appears in the settings field, and the verification banner lifecycle restarts
+
+### `AC-07-09`
+
+- Given a Google-only or Google-linked credential user opens the `Account` section of settings
+- When they view the email field
+- Then the field is read-only with no action button and shows helper text explaining they must update their email directly in their Google account
+
+### `AC-07-10`
+
+- Given a Google-only user opens the `Account` section and sets a password successfully
+- When the save completes
+- Then the section transitions to show the "Change password" form on the next component load
+
+### `AC-07-11`
+
+- Given a credential-only user has already successfully changed their email within the past seven days
+- When they attempt to change their email again
+- Then the system rejects the request with an error before sending any emails or calling Better Auth
+
 ## Implementation Notes
 
 - Private shell entry: `src/app/[locale]/(app)/layout.tsx`
@@ -189,7 +216,7 @@ As a product owner, I want settings behavior to respect whether a user signed up
 
 - FRD-07 extends the existing user-settings scope rather than creating a new FRD
 - MVP uses one blueprint for this domain
-- `/settings` stays one page with `Profile` and `Preferences` sections
+- `/settings` stays one page with three sections: `Profile`, `Account`, and `Preferences`
 - No onboarding is required immediately after sign-up in MVP
 - Budget currency equals base currency in MVP
 - Username is the primary shell identity surface and a future profile handle foundation
@@ -204,6 +231,11 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - Desktop collapsed sidebar keeps only the avatar or fallback visible until hover/focus expansion reveals the username
 - Desktop uses a floating upward menu while mobile/tablet use an inline menu inside the drawer
 - `Settings` moves fully into the account menu and no longer appears in primary shell navigation
+- The email change flow sends the verification link to the new email only; the old email receives an informational-only security notification via Resend (no approval or reversal link)
+- The email change server action must validate the current password manually before calling Better Auth, regardless of Better Auth's native session-only behavior
+- Email changes are rate-limited to 1 successful change per user per 7 days
+- Google-only users set a password via `auth.api.setPassword` (server-only); after success the UI transitions to "Change password"
+- The active session is not revoked after an email change; the new email becomes the login identifier only after the user clicks the verification link
 
 ## Open Questions
 

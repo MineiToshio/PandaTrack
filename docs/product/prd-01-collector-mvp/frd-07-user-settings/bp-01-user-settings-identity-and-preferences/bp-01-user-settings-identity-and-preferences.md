@@ -59,6 +59,10 @@ Describe the technical layer that powers profile editing, account-management con
   - Google-only: email change blocked
   - Google plus credentials: email change blocked in MVP
 - Account-management capabilities for later settings slices must be derived at runtime from auth/account posture rather than persisted as duplicated capability flags.
+- `user.changeEmail.enabled: true` must be set in `src/lib/auth/auth.ts` for the email change flow to work. `sendChangeEmailConfirmation` is intentionally not configured — the verification link goes directly to the new email via `sendVerificationEmail`; the informational notification to the old address is sent via a direct Resend call in the server action.
+- `auth.api.setPassword` (server-only) is the correct Better Auth endpoint for Google-only users adding a password. `changePassword` cannot be used for this case because it requires `currentPassword` as a mandatory field.
+- When a user confirms an email change via the verification link, Better Auth sets `emailVerified = false`. This is expected and intentional: it activates the existing seven-day verification banner lifecycle for the new email address.
+- The settings page exposes three sections in MVP: `Profile`, `Account`, and `Preferences`. `Account` is a distinct section that owns all email and password management controls.
 - Budget persistence lives on `User` in MVP and is intentionally limited to one active budget, accepting a later migration if multi-budget support becomes necessary.
 - Preference-driven store defaults should be implemented as URL generation from navigation entry points rather than hidden server-side filtering so the listing remains URL-canonical.
 - Privacy Policy and Terms and Conditions links stay visible inside the user menu as shell-level trust and compliance exits.
@@ -82,8 +86,12 @@ Describe the technical layer that powers profile editing, account-management con
   - input: provider image URL or source image up to 10 MB
   - output: effective avatar URL in `User.image`, with cropped optimized asset in `user-images/{userId}.webp` when the collector uploads a replacement, immediate client-side identity refresh after successful changes, and username-initial fallback after successful removal
 - Account-management contract:
-  - input: auth-method posture plus email/password change request
+  - input: auth-method posture plus email/password change request plus current password for email-change operations
   - output: allowed action set and any verification lifecycle restart
+  - email change requires: manual current-password validation in server action before calling `auth.api.changeEmail`; rate-limit check (1 per 7 days per user); informational Resend notification to old address after Better Auth accepts the request; verification link to new address via existing `sendVerificationEmail` handler
+  - password setup for Google-only users uses `auth.api.setPassword` (server-only); creates a new `Account` row with `providerId: "credential"` without requiring a current password
+  - password change for credential-bearing users uses `auth.api.changePassword` with `revokeOtherSessions: false`
+  - active session is not revoked after an email change; `User.email` remains the old value until the user clicks the verification link; Better Auth sets `emailVerified = false` on link confirmation, which activates the existing banner lifecycle
 - Account-capability contract:
   - input: authenticated user plus linked auth accounts
   - output: runtime capability set for `changeEmail`, `changePassword`, `setPassword`, and blocked-state messaging
@@ -116,6 +124,9 @@ Describe the technical layer that powers profile editing, account-management con
 - avatar cleanup can leave orphaned storage objects if R2 deletion fails after `User.image` is cleared, so observability must cover that path
 - storing all MVP preference and budget fields on `User` increases pressure to keep naming and query boundaries disciplined for future migration
 - preference-driven store defaults can feel surprising if the navigation-generated URL and direct URL entry rules are not explicit
+- the email change server action must validate the current password manually before calling `auth.api.changeEmail`; omitting this step allows session hijacking to result in an account email takeover
+- the rate limit for email change must be enforced server-side; a missing or bypassable check exposes the system to spam and enumeration via the new-email verification flow
+- the informational Resend call to the old address can fail silently after `auth.api.changeEmail` succeeds; observability must cover this path so orphaned changes without notification are detectable
 - the lower-shell account trigger can feel inconsistent if expanded sidebar, collapsed hover state, and mobile drawer do not share the same interaction and menu ordering
 - removing `Settings` from primary navigation can hurt discoverability if the account trigger is not visually obvious in both expanded and collapsed states
 
