@@ -3,7 +3,7 @@ id: WO-01
 type: WORK_ORDER
 slug: user-settings-data-foundation
 title: User Settings Data Foundation
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0013

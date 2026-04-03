@@ -3,7 +3,7 @@ id: WO-03
 type: WORK_ORDER
 slug: profile-basics-username-name-and-avatar
 title: Profile Basics: Username, Name, and Avatar
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0013

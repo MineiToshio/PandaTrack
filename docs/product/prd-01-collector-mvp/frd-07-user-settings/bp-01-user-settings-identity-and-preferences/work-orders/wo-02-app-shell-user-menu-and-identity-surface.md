@@ -3,7 +3,7 @@ id: WO-02
 type: WORK_ORDER
 slug: app-shell-user-menu-and-identity-surface
 title: App Shell User Menu and Identity Surface
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0013

@@ -78,7 +78,7 @@ Creates a new `FRD` package under an existing `PRD` and mirrors it into GitHub u
 3. Asks exhaustive clarification questions in Spanish before drafting.
 4. Creates the new `FRD`, its `Blueprints`, and its `Work Orders` using `docs/templates/*`.
 5. Creates or updates the matching GitHub Epic from the `FRD`.
-6. Creates one GitHub ticket per `Work Order`, following the hybrid tracking rules.
+6. Creates one GitHub ticket per `Work Order`, following the hybrid tracking rules, with every newly created `Work Order` starting in `status: DRAFT`.
 
 See `.cursor/commands/create-frd-package.md` for the full command behavior.
 
@@ -99,6 +99,6 @@ Deepens one existing Work Order through a structured discovery pass before updat
 3. Acts as product, UX/UI, senior full-stack, security, and QA reviewer to find missing decisions.
 4. Asks grouped questions in Spanish with concrete options and recommendations.
 5. Waits for explicit approval before editing any docs.
-6. Updates the `Work Order` and synchronizes approved changes upward into the `Blueprint`, `FRD`, and `PRD` only where appropriate.
+6. Updates the `Work Order`, promotes that `Work Order` to `status: ACTIVE`, and synchronizes approved changes upward into the `Blueprint`, `FRD`, and `PRD` only where appropriate.
 
 See `.cursor/commands/enrich-work-order-context.md` for the full command behavior.

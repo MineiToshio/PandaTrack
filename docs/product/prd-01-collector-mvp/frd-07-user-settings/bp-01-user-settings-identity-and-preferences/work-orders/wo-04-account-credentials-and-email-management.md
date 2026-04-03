@@ -3,7 +3,7 @@ id: WO-04
 type: WORK_ORDER
 slug: account-credentials-and-email-management
 title: Account Credentials and Email Management
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0013

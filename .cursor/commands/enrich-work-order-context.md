@@ -291,6 +291,8 @@ Once the user explicitly approves the proposal, apply the decisions to the docs 
 
 Update the target `Work Order` so it becomes materially more implementation-ready.
 
+When this command updates the target `Work Order` after user approval, set its document `status` to `ACTIVE` as part of the same edit unless the user explicitly instructs a different lifecycle state.
+
 Expand it as needed with concrete, testable content. When helpful, add sections beyond the template, such as:
 
 - `Assumptions`

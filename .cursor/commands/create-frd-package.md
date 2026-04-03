@@ -246,6 +246,8 @@ Each `Work Order` must:
 
 Each `Work Order` created here should be treated as an initial slice definition, not as a fully enriched implementation brief.
 
+Every `Work Order` created by this command must start with document `status: DRAFT`. Promotion to `ACTIVE` happens later through the `enrich work order context` workflow unless the user explicitly approves a different lifecycle state during this command.
+
 Each proposed `Work Order` must also have an explicit internal rationale covering:
 
 - `Outcome`: what meaningful user or system outcome this slice owns

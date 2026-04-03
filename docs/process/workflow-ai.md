@@ -52,6 +52,7 @@ This workflow is optimized for building features with Codex and Cursor using a h
 
 - Use one Epic per `FRD` and one ticket per `Work Order`, with every slice ticket registered as a sub-issue of that Epic.
 - When creating or first syncing an FRD package to GitHub: Epic and slices stay **open**, and Project `4` **Status** starts as **`Todo`** on all of them unless a written exception was agreed for that package.
+- Work Orders created by the FRD-package workflow start as document `status: DRAFT`; promote a Work Order to `status: ACTIVE` when it is later deepened through the enrich-work-order-context workflow unless a command explicitly documents a different lifecycle choice.
 - Keep `Blueprints` in docs only unless there is a rare reason to track one separately.
 - Keep user-facing copy in locale JSON files only.
 - Keep Prisma access out of UI components.
