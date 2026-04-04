@@ -63,9 +63,9 @@ Define the persistence, state, and monetary contracts that make order and paymen
 
 ## Dependencies
 
-- user base-currency preference from `FRD-07`
-- store identity from `FRD-04`
-- private app access model from `FRD-01` and `FRD-03`
+- user base-currency preference from [`FRD-07`](../../frd-07-user-settings/frd-07-user-settings.md)
+- store identity from [`FRD-04`](../../frd-04-store-domain/frd-04-store-domain.md)
+- private app access model from [`FRD-01`](../../frd-01-account-access-and-recovery/frd-01-account-access-and-recovery.md) and [`FRD-03`](../../frd-03-collector-app-shell/frd-03-collector-app-shell.md)
 
 ## Risks
 

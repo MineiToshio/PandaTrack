@@ -56,7 +56,7 @@ Implement the `Preferences` section of `/settings` so each collector can save op
 
 ## Cross-domain notes
 
-- **Orders** already persist **order currency** and optional **exchange rate into the user's base currency at save time** (`FR-05-14`–`FR-05-16`, `BR-05-07`). Changing **base currency** in settings does **not** rewrite old orders; **dashboard** rollups must follow `FR-06-13` so totals in the **new** base currency do not silently mix stale conversion context.
+- **Orders** already persist **order currency** and optional **exchange rate into the user's base currency at save time** (`FR-05-14`–`FR-05-16`, `BR-05-07` in [`FRD-05`](../../../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md#functional-requirements)). Changing **base currency** in settings does **not** rewrite old orders; **dashboard** rollups must follow [`FR-06-13`](../../../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md#functional-requirements) ([`FRD-06`](../../../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md)) so totals in the **new** base currency do not silently mix stale conversion context.
 - **Upcoming payments** and order surfaces should continue to show amounts in **order currency** where that is the faithful representation.
 
 ## Assumptions
@@ -68,7 +68,7 @@ Implement the `Preferences` section of `/settings` so each collector can save op
 ## UX Notes
 
 - Use clear section hierarchy inside `Preferences`: currency, country, product types (with `FR-07-23` copy), then budget and reset rule.
-- Empty states: explain that preferences drive defaults (e.g. store listing via `WO-06`) without forcing completion.
+- Empty states: explain that preferences drive defaults (e.g. store listing via [WO-06 _store-entry-defaults-from-user-preferences_](wo-06-store-entry-defaults-from-user-preferences.md)) without forcing completion.
 - Loading and error states should mirror patterns used in other settings sections for consistency.
 - Currency-change confirmation must be **explicit** (modal or blocking dialog) and require confirm to proceed with save.
 - The initial confirmation modal should not list individual orders. Keep it concise and action-oriented, then route to a follow-up reconciliation flow that handles bulk updates by currency pair.
@@ -95,7 +95,7 @@ Implement the `Preferences` section of `/settings` so each collector can save op
 ## Dependencies
 
 - `WO-01` (persistence, validation, shared modules).
-- Seeded `Country` and `StoreProductType` catalogs (`FRD-04`).
+- Seeded `Country` and `StoreProductType` catalogs ([`FRD-04`](../../../frd-04-store-domain/frd-04-store-domain.md)).
 - `WO-06` consumes saved preferences after this slice.
 
 ## Testing Notes

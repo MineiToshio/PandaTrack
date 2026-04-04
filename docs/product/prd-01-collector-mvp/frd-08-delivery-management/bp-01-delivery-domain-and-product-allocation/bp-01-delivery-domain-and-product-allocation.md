@@ -55,9 +55,9 @@ Define the persistence, eligibility, and lifecycle rules that let one delivery g
 
 ## Dependencies
 
-- order-product model from `FRD-05`
-- user base-currency preference from `FRD-07`
-- private app route shell from `FRD-03`
+- order-product model from [`FRD-05`](../../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md)
+- user base-currency preference from [`FRD-07`](../../frd-07-user-settings/frd-07-user-settings.md)
+- private app route shell from [`FRD-03`](../../frd-03-collector-app-shell/frd-03-collector-app-shell.md)
 
 ## Risks
 

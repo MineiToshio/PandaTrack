@@ -102,6 +102,11 @@ Describe the technical layer that powers profile editing, account-management con
   - budget amount: positive integer in whole units of the active base currency only (no fractional subunits)
   - budget period boundary: evaluate reset logic in user timezone when available, fallback to `UTC`
   - preferred product types: many-to-many link rows between `User` and `StoreProductType` (no duplicate catalog)
+- Store listing entry URL contract:
+  - input: locale, authenticated user, optional saved preferred country, optional saved preferred product-type keys, and the active `Country` / `StoreProductType` catalogs used by the public listing
+  - output: canonical listing path `/{locale}/stores` with optional repeated `country` and `productType` query keys matching `parseListingSearchParams` / `StoreListingFilters` encoding; include **only** saved dimensions the user has persisted; **drop** any saved code or key that is not in the active catalog at build time
+  - shell behavior: each use of the primary `Stores` nav item recomputes the href from **current** saved preferences (not a no-op when the visible URL already lacks query params)
+  - cross-surface rule: any **future** in-app link to the same listing (for example dashboard CTAs under FRD-06) must call the **same shared URL builder** as the shell so behavior stays consistent; see [FRD-06 · Cross-domain notes](../../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md#cross-domain-notes)
 
 ## Operational Priorities
 
@@ -114,10 +119,10 @@ Describe the technical layer that powers profile editing, account-management con
 
 ## Dependencies
 
-- Better Auth account/session foundation from `FRD-01`
-- current shell layout and navigation components from `FRD-03`
-- seeded `Country` and `StoreProductType` catalogs from `FRD-04`
-- future dashboard/reporting consumers of base currency and budget defaults from `FRD-06`
+- Better Auth account/session foundation from [`FRD-01`](../../../frd-01-account-access-and-recovery/frd-01-account-access-and-recovery.md)
+- current shell layout and navigation components from [`FRD-03`](../../../frd-03-collector-app-shell/frd-03-collector-app-shell.md)
+- seeded `Country` and `StoreProductType` catalogs from [`FRD-04`](../../../frd-04-store-domain/frd-04-store-domain.md)
+- future dashboard/reporting consumers of base currency and budget defaults from [`FRD-06`](../../../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md)
 
 ## Risks
 

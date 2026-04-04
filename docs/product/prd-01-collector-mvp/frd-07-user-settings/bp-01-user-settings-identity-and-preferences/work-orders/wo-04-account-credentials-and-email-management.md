@@ -98,7 +98,7 @@ Each subsection has its own save flow and must never be bundled together or with
 ### Email blocked state (Google-only and Google-linked credential users)
 
 - The email field is rendered as read-only with no action button.
-- A helper text below reads: *"Your account uses Google. To change your email, update it directly in your Google account."*
+- A helper text below reads: _"Your account uses Google. To change your email, update it directly in your Google account."_
 
 ### Password change flow (credential-only and Google-linked credential users)
 
@@ -146,7 +146,7 @@ The server action must execute the following steps in order before calling Bette
 A new email template is required for this notification:
 
 - **Recipient:** old email address (before the change)
-- **Subject:** localized — e.g., *"Your PandaTrack email is being changed"*
+- **Subject:** localized — e.g., _"Your PandaTrack email is being changed"_
 - **Body:** "Someone requested to change the email address for your PandaTrack account to [new email]. If this was you, no further action is needed. If you did not request this change, please contact us at hello@pandatrack.app."
 - Build using the existing `buildTransactionalEmailTemplate()` helper.
 - Must be localized (Spanish/English) following the same pattern as `buildAuthVerificationEmail` and `buildAuthPasswordResetEmail`.
@@ -209,7 +209,7 @@ The active session is not revoked after an email change request. The new email b
 - Rate limiting pattern: adapt `passwordRecoveryThrottle.ts` for email change
 - `buildTransactionalEmailTemplate()` for the informational email template
 - Existing `buildAuthVerificationEmail` as reference for the new template's structure and i18n pattern
-- Existing verification banner lifecycle from `FRD-01`
+- Existing verification banner lifecycle from [`FRD-01`](../../../frd-01-account-access-and-recovery/frd-01-account-access-and-recovery.md)
 
 ## Testing Notes
 

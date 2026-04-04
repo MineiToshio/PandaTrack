@@ -45,6 +45,30 @@ Examples:
 - `bp-01-store-public-trust-system`
 - `wo-01-store-persistence-foundation`
 
+## Cross-FRD references
+
+**Cross-FRD** means one product document cites a requirement, blueprint, work order, or behavior that **belongs to a different FRD** under the same PRD (or another PRD). Readers cannot infer the target from a bare `WO-06` or `BP-01`, because those numbers reset per FRD.
+
+### Identifier semantics
+
+- **`FR-XX-NN`**: functional requirement `NN` in **FRD-XX**. The middle segment is the FRD id, so this form is **unique within a PRD** without extra context.
+- **`BP-NN` and `WO-NN`**: blueprint and work-order numbers are **local** to their FRD (and usually to one blueprint tree). **FRD-07 · WO-06** and **FRD-04 · WO-06** are different files.
+
+### How to write references
+
+- **Inside the same FRD** (same `frd-XX-...` folder): you may use `BP-01`, `WO-06`, or `FR-XX-NN` when the surrounding heading or path already makes the FRD obvious.
+- **Across FRDs**: always qualify the owning FRD and point to the **exact markdown file**:
+  - write **FRD-XX · BP-NN** or **FRD-XX · WO-NN**;
+  - add the work-order **slug** (from the filename) when it helps disambiguation;
+  - use a **repository-relative Markdown link** to the target `.md` so GitHub, editors, and exports resolve unambiguously;
+  - when useful, add a **heading anchor** (for example `#functional-requirements`, `#cross-domain-notes`) so the reader lands near the right paragraph.
+
+Prefer a short **Cross-domain notes** (or equivalent) section in an FRD when a dependency spans FRDs, and link to it from the consuming doc.
+
+### GitHub and Cursor commands
+
+Authoring flows such as **Create FRD Package** and **Enrich Work Order Context** must apply these rules whenever new or updated text mentions another FRD's blueprints, work orders, or functional requirements.
+
 ## Required frontmatter fields
 
 ### For all files

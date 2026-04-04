@@ -38,6 +38,7 @@ The command must follow PandaTrack's hybrid workflow:
   - `docs/process/hybrid-product-github-workflow.md`
   - `docs/process/github-project-tracking.md`
   - `docs/process/workflow-ai.md`
+  - `docs/templates/product-docs-guide.md` (**Cross-FRD references**): whenever the new `FRD`, a `Blueprint`, or a `Work Order` mentions another FRD's `BP`/`WO` or `FR-XX-NN`, qualify with **FRD-XX**, include the work-order slug when useful, and add repository-relative Markdown links to the target `.md` files (and heading anchors when they help).
 
 ## Planning objective
 
@@ -197,6 +198,10 @@ Signals that should trigger this warning include:
 When this happens, propose the candidate FRD titles and wait for the user to choose the split before writing docs or GitHub issues.
 
 ## Drafting rules
+
+### Cross-FRD references
+
+If any drafted text depends on or constrains work owned by **another FRD** (for example dashboard behavior that must match shell navigation built under User Settings), document it using the **Cross-FRD references** rules in `docs/templates/product-docs-guide.md`: qualified **FRD-XX · BP/WO** labels, optional slug, and **clickable repo-relative links** to the owning files. Prefer a **Cross-domain notes** (or similar) section in the consuming FRD when the rule is shared across domains.
 
 ### FRD
 

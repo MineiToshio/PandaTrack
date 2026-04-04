@@ -30,7 +30,7 @@ Give collectors a reliable way to consolidate products from one store into deliv
 
 - no delivery implementation exists yet in PandaTrack
 - the private app shell already exposes a `Shipments` navigation surface that this FRD can later align to
-- `FRD-05` now defines the order-product structure that delivery eligibility depends on
+- [`FRD-05`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md) now defines the order-product structure that delivery eligibility depends on
 
 ### Planned
 
@@ -137,7 +137,7 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 
 ## Implementation Notes
 
-- This FRD depends on `FRD-05` for order items, delivery eligibility, and order completion derivation.
+- This FRD depends on [`FRD-05`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md) for order items, delivery eligibility, and order completion derivation.
 - Delivery list and detail should also prefer expandable cards over rigid tables for parity with the order workspace and better mobile behavior.
 - Product grouping should surface the order identifier prominently because delivery selection spans multiple orders from one store.
 

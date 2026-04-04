@@ -76,4 +76,4 @@ Relevant acceptance criteria copied from the FRD:
 
 Implemented in current code, with some E2E coverage still lighter than the full requirement set.
 
-Cross-domain note: later user-settings work may generate default listing query strings from saved preferences, but this listing slice still treats the resolved URL as the canonical filter state.
+Cross-domain note: later [FRD-07 · WO-06 (store-entry-defaults-from-user-preferences)](../../../frd-07-user-settings/bp-01-user-settings-identity-and-preferences/work-orders/wo-06-store-entry-defaults-from-user-preferences.md) work may generate default listing query strings from saved preferences, but this listing slice still treats the resolved URL as the canonical filter state.

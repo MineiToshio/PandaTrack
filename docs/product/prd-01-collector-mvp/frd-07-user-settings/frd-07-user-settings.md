@@ -235,6 +235,7 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - The shell should reuse one account-menu component across desktop sidebar, collapsed-sidebar hover state, and mobile drawer placements rather than maintaining separate interaction logic per surface
 - The lower shell identity trigger should open upward on desktop and render as an inline anchored menu in the drawer on mobile/tablet
 - The account menu should close on outside click, route change, and any menu-action selection
+- Preference-driven store listing URLs: primary shell navigation implements [`FR-07-28`](frd-07-user-settings.md#functional-requirements) per [WO-06 _store-entry-defaults-from-user-preferences_](bp-01-user-settings-identity-and-preferences/work-orders/wo-06-store-entry-defaults-from-user-preferences.md) and [BP-01](bp-01-user-settings-identity-and-preferences/bp-01-user-settings-identity-and-preferences.md) (**FRD-07**). Any future dashboard (or other) links to the same listing must follow the shared builder rule in [FRD-06 · Cross-domain notes](../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md#cross-domain-notes).
 
 ## Confirmed
 

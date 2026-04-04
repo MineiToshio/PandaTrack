@@ -1,0 +1,22 @@
+---
+description: Unambiguous cross-FRD references in docs/product (FRD, Blueprint, Work Order)
+alwaysApply: false
+---
+
+# Product doc cross-FRD references – PandaTrack
+
+Use this rule when **authoring or editing** `docs/product` files and the text mentions a blueprint, work order, or functional requirement that **belongs to a different FRD** than the file you are editing.
+
+## Canonical spec
+
+Follow **`docs/templates/product-docs-guide.md`**, section **Cross-FRD references**.
+
+## Minimum bar
+
+- Do not cite another domain using only `WO-NN` or `BP-NN`.
+- Write **FRD-XX · WO-NN** or **FRD-XX · BP-NN**, add the work-order **slug** when it helps, and add a **repository-relative Markdown link** to the target `.md` file.
+- Use **heading anchors** in those links when they shorten the reader’s search (for example `#cross-domain-notes`, `#functional-requirements`).
+
+## Commands
+
+The **Create FRD Package** and **Enrich Work Order Context** workflows must apply this rule whenever they introduce or change cross-FRD wording.

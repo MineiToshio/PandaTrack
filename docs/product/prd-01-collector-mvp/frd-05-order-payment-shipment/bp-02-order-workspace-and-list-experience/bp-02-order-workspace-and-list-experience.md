@@ -59,8 +59,8 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
 ## Dependencies
 
 - `BP-01` order persistence and summary contracts
-- store selection and catalog data from `FRD-04`
-- base-currency preference defaults from `FRD-07`
+- store selection and catalog data from [`FRD-04`](../../frd-04-store-domain/frd-04-store-domain.md)
+- base-currency preference defaults from [`FRD-07`](../../frd-07-user-settings/frd-07-user-settings.md)
 
 ## Risks
 

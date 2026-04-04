@@ -52,7 +52,7 @@ Define how collectors inspect, act on, and filter deliveries across the private 
 ## Dependencies
 
 - `BP-01` eligibility, persistence, and lifecycle rules
-- shared app-shell patterns from `FRD-03`
+- shared app-shell patterns from [`FRD-03`](../../frd-03-collector-app-shell/frd-03-collector-app-shell.md)
 
 ## Risks
 

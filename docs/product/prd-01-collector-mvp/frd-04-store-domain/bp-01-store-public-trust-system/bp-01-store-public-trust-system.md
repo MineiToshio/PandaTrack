@@ -21,7 +21,7 @@ implementation_status: IMPLEMENTED
 
 ## Overview
 
-This blueprint is the technical counterpart to `FRD-04 Store Domain`.
+This blueprint is the technical counterpart to [FRD-04 Store Domain](../frd-04-store-domain.md).
 
 Its job is to explain how the current store domain is composed, where the runtime boundaries live, which parts are already implemented, and which work orders should extend which layer.
 

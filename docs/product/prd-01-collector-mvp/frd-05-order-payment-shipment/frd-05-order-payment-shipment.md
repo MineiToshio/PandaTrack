@@ -31,7 +31,7 @@ Give collectors one reliable place to record what they bought, what it cost, how
 ### Implemented
 
 - private app navigation already exposes `Purchases` and `Pre-orders` entry points
-- `FRD-07` already defines a user-level base currency preference that this domain can consume
+- [`FRD-07`](../frd-07-user-settings/frd-07-user-settings.md) already defines a user-level base currency preference that this domain can consume
 - store discovery and store detail flows already exist, which makes store selection a prerequisite rather than a parallel domain problem
 
 ### Planned
@@ -173,8 +173,8 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 
 ## Implementation Notes
 
-- This FRD consumes base-currency settings from `FRD-07`.
-- Recorded order totals, item prices, and payment rows remain denominated in the **order currency** (`FR-05-14`); changing the collector's base currency in settings does not rewrite stored order rows. Per-order exchange-rate context (`FR-05-16`, `BR-05-07`) is interpreted relative to the base currency **at the time the order was saved**, which matters for dashboard rollups (`FR-06-13`).
+- This FRD consumes base-currency settings from [`FRD-07`](../frd-07-user-settings/frd-07-user-settings.md).
+- Recorded order totals, item prices, and payment rows remain denominated in the **order currency** (`FR-05-14`); changing the collector's base currency in settings does not rewrite stored order rows. Per-order exchange-rate context (`FR-05-16`, `BR-05-07`) is interpreted relative to the base currency **at the time the order was saved**, which matters for dashboard rollups ([`FR-06-13`](../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md#functional-requirements); [`FRD-06`](../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md)).
 - The orders list should expose filter label `Needs currency update`, chip label `Currency update needed`, and query-state parameter `fxStatus=needs_reconciliation` to keep UX and URL behavior consistent.
 - Store selection should reuse the existing shared searchable-select interaction pattern rather than invent a new picker.
 - The order identifier format should remain stable across locales even if the human-readable date display changes.

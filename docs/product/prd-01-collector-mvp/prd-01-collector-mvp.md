@@ -14,7 +14,7 @@ children:
   - FRD-06
   - FRD-07
   - FRD-08
-last_updated: 2026-04-03
+last_updated: 2026-04-04
 ---
 
 # PRD-01 PandaTrack Collector MVP
@@ -186,7 +186,7 @@ A collector with lower order volume who still wants:
 2. User can review their username, profile image, and account entry options.
 3. User can update personal profile fields and account credentials according to the linked auth method.
 4. User can define country, base currency, collected product types, and budget defaults.
-5. The store listing can open with defaults aligned to the user's saved preferences.
+5. The store listing can open with defaults aligned to the user's saved preferences when the user enters it from private shell navigation ([`FR-07-28`](frd-07-user-settings/frd-07-user-settings.md#functional-requirements); **FRD-07** · [BP-01](frd-07-user-settings/bp-01-user-settings-identity-and-preferences/bp-01-user-settings-identity-and-preferences.md) · [WO-06 _store-entry-defaults-from-user-preferences_](frd-07-user-settings/bp-01-user-settings-identity-and-preferences/work-orders/wo-06-store-entry-defaults-from-user-preferences.md)). Other surfaces that link to the same listing should follow the same URL rule once they exist ([FRD-06 cross-domain notes](frd-06-dashboard-reminders/frd-06-dashboard-reminders.md#cross-domain-notes)).
 
 ### Receive reminders
 

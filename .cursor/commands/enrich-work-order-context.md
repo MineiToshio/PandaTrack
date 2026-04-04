@@ -21,6 +21,7 @@ The command must treat the referenced `Work Order` as the entry point, but it mu
 - Do not update any doc until the user explicitly approves the proposed decisions.
 - Treat this command as a structured discovery workflow, not as immediate drafting.
 - Repository docs remain the source of truth for product definition.
+- When approved edits mention another FRD's blueprints, work orders, or functional requirements, apply **Cross-FRD references** from `docs/templates/product-docs-guide.md` (qualified **FRD-XX**, links to target `.md` files, optional slug and heading anchors).
 - If the referenced Work Order is also linked to GitHub tracking, keep GitHub issue content aligned after doc approval when practical.
 - Before asking any clarification questions, provide a concise Spanish summary of what the target `Work Order` does today so the user has shared context for the discovery conversation.
 - Treat implementation-critical undefined decisions as blockers, not as minor omissions. If a missing technical or operational decision would likely cause rework during implementation, the command must surface it explicitly before docs are approved.
@@ -304,6 +305,10 @@ Expand it as needed with concrete, testable content. When helpful, add sections 
 - `Open Questions` only if the user explicitly wants some decisions deferred
 
 The updated `Work Order` should reduce ambiguity for implementation, not just become longer.
+
+### Cross-FRD reference hygiene
+
+Any new or updated sentence that points at **another FRD** must not rely on bare `WO-NN` or `BP-NN` alone. Use **FRD-XX · WO-NN** / **FRD-XX · BP-NN**, add the slug when it helps, and link to the concrete markdown path (see `docs/templates/product-docs-guide.md`, **Cross-FRD references**).
 
 ### Upward sync requirements
 

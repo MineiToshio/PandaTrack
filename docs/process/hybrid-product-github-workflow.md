@@ -41,6 +41,7 @@ GitHub does not replace the product-definition documents.
 - `FRD` lives only in `docs/product`
 - `Blueprint` lives only in `docs/product`
 - `Work Order` lives only in `docs/product`
+- Cross-FRD citations (one FRD pointing at another FRD's `BP`/`WO`/requirements) must stay unambiguous: qualify with **FRD-XX**, link to the target markdown file, and follow `docs/templates/product-docs-guide.md` (**Cross-FRD references**).
 
 ### In GitHub
 

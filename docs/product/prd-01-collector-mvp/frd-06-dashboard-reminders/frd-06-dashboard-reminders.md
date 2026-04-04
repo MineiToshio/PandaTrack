@@ -68,6 +68,12 @@ The dashboard is the main decision screen after sign-in. Its job is not to show 
 - it is not yet decided whether reminders appear as a feed, cards, badges, or a mixed model
 - it is not yet decided whether historical dashboard analytics need filtering by store, month, or category in MVP
 
+## Cross-domain notes
+
+**Cross-FRD** means this FRD depends on a requirement, blueprint, or work order that **lives under another FRD**. Plain labels like `WO-06` or `BP-01` are not unique across the PRD, so the owning **FRD** and a **file link** are spelled out below.
+
+- When the dashboard (or any other non-shell surface) adds a link or CTA to the **public store listing** (`/{locale}/stores`), that href **must** use the same **preference-driven URL construction** as the private shell `Stores` nav item. Source of truth: requirement [`FR-07-28`](../frd-07-user-settings/frd-07-user-settings.md#functional-requirements) in **FRD-07**, with implementation detail in [**FRD-07 · BP-01**](../frd-07-user-settings/bp-01-user-settings-identity-and-preferences/bp-01-user-settings-identity-and-preferences.md) and [**FRD-07 · WO-06** _store-entry-defaults-from-user-preferences_](../frd-07-user-settings/bp-01-user-settings-identity-and-preferences/work-orders/wo-06-store-entry-defaults-from-user-preferences.md). Implementations should call the **shared helper** introduced for shell navigation rather than hardcoding a bare `/stores` path, so collectors see consistent defaults everywhere.
+
 ## Linked Blueprints
 
 - `docs/product/prd-01-collector-mvp/frd-06-dashboard-reminders/bp-01-dashboard-attention-system/bp-01-dashboard-attention-system.md`

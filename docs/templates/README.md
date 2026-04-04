@@ -21,5 +21,6 @@ Use these templates to keep PandaTrack product definition and execution document
 2. Add one or more `FRDs` under that `PRD`.
 3. Add one or more `Blueprints` under each `FRD`.
 4. Add `Work Orders` under each `Blueprint`.
-5. Reflect execution in GitHub epics and slices.
-6. Use the GitHub feature-epic template only as a lightweight mirror of the linked `FRD` and `Work Orders`.
+5. When one `FRD` cites another `FRD`'s `BP`/`WO` or requirements, follow **Cross-FRD references** in `product-docs-guide.md` (qualified **FRD-XX**, file links, optional slug and anchors).
+6. Reflect execution in GitHub epics and slices.
+7. Use the GitHub feature-epic template only as a lightweight mirror of the linked `FRD` and `Work Orders`.
