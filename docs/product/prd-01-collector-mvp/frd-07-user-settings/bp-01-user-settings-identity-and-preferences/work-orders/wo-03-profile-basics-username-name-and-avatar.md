@@ -7,7 +7,7 @@ status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0013
-last_updated: 2026-04-03
+last_updated: 2026-04-04
 implementation_status: PLANNED
 ---
 
@@ -39,8 +39,10 @@ This slice must keep `username`, `display name`, and `avatar` as separate save f
 ## Requirements
 
 - `FR-07-04` through `FR-07-13`
+- `FR-07-33`
 - `BR-07-02`
 - `BR-07-09` through `BR-07-12`
+- `BR-07-18`
 
 ## Blueprints
 
@@ -84,6 +86,7 @@ This slice must keep `username`, `display name`, and `avatar` as separate save f
 
 ## Security Notes
 
+- Enforce a server-side rate limit of **one successful username change per user per seven days**, aligned with `BR-07-18` and `FR-07-33`, rejecting additional attempts before persistence and without relying on client-only checks.
 - Username validation must enforce the existing username format contract, reserved-name list, PandaTrack brand protections, blocked-token filtering, and case-insensitive uniqueness at save time.
 - Display-name validation must apply `trim`, a maximum length of `50` characters, and the same reserved-name, PandaTrack brand, and blocked-token protections used for username, while remaining more permissive about spaces and punctuation.
 - Display-name filtering must avoid broad substring false positives and should operate on normalized explicit tokens the same way username filtering does.
@@ -105,6 +108,7 @@ This slice must keep `username`, `display name`, and `avatar` as separate save f
 
 ## Testing Notes
 
+- Prove the username change rate limit: a second successful change within seven days is rejected with a clear error.
 - Add coverage for username format feedback, debounce-backed availability checks, and server-side revalidation on save.
 - Add coverage for display-name validation, including trim behavior, maximum length, reserved-name rejection, PandaTrack brand rejection, and blocked-token rejection.
 - Prove that a successful username save updates the visible shell identity label without a full page refresh.
@@ -123,3 +127,4 @@ This slice must keep `username`, `display name`, and `avatar` as separate save f
 - Successful avatar uploads and replacements are reflected immediately in both settings and the shell identity surface without a full page refresh.
 - Removing a Google-provided avatar falls back to the username initial.
 - Removing a user-uploaded avatar falls back to the username initial even when R2 cleanup fails.
+- A second username change within seven days of a successful change is blocked with a clear error (`AC-07-13`).

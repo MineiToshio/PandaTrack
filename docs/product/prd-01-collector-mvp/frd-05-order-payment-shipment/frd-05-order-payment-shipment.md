@@ -8,7 +8,7 @@ parent: PRD-01
 children:
   - BP-01
   - BP-02
-last_updated: 2026-04-03
+last_updated: 2026-04-04
 source_features:
   - FEAT-0014
 implementation_status: PLANNED
@@ -99,6 +99,9 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - `FR-05-33`: Payment state must remain conceptually distinct from order fulfillment state.
 - `FR-05-34`: When all products linked to an order are delivered, the order must move to `COMPLETED` even if payment is still pending.
 - `FR-05-35`: Completed orders with pending payment must still show a visible unpaid signal in both list and detail surfaces.
+- `FR-05-36`: The orders workspace must support a `Needs currency update` filter that returns orders requiring exchange-rate reconciliation to the collector's current base currency.
+- `FR-05-37`: Exchange-rate reconciliation eligibility must be based on budget-impact periods from the current month onward, not only order status; completed orders that still impact current/future payment periods remain eligible.
+- `FR-05-38`: When the collector changes base currency, the product must support bulk exchange-rate reconciliation grouped by currency pair (`from -> to`) and allow deferring reconciliation for manual per-order updates later.
 
 ## Business Rules
 
@@ -114,6 +117,8 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - `BR-05-10`: Payments may be deleted and the paid-versus-remaining summary must recalculate immediately after deletion.
 - `BR-05-11`: Changing an order's store is allowed only while the order remains `OPEN` and has no associated deliveries.
 - `BR-05-12`: Cancelled orders remain visible in historical lists and filter results when the chosen filters include them.
+- `BR-05-13`: The `Needs currency update` indicator must represent reconciliation state against the collector's current base currency rather than a simple order-status proxy.
+- `BR-05-14`: Bulk reconciliation may apply one entered rate to all affected orders within the same currency pair, while preserving order-level manual edits when the user chooses to defer.
 
 ## Acceptance Criteria
 
@@ -152,9 +157,25 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - Then the resulting URL reflects those filters
 - And the UI shows removable chips matching the active filter state
 
+### `AC-05-06`
+
+- Given the collector changed base currency
+- When they open the orders workspace with pending reconciliation
+- Then they can filter affected records using `Needs currency update`
+- And completed orders are included when they still impact current or future budget periods
+
+### `AC-05-07`
+
+- Given there are affected orders from multiple source currencies after a base-currency change
+- When the collector opens bulk reconciliation
+- Then the flow groups updates by currency pair and allows applying one rate per group
+- And if the collector skips reconciliation, those orders remain available for manual per-order updates later
+
 ## Implementation Notes
 
 - This FRD consumes base-currency settings from `FRD-07`.
+- Recorded order totals, item prices, and payment rows remain denominated in the **order currency** (`FR-05-14`); changing the collector's base currency in settings does not rewrite stored order rows. Per-order exchange-rate context (`FR-05-16`, `BR-05-07`) is interpreted relative to the base currency **at the time the order was saved**, which matters for dashboard rollups (`FR-06-13`).
+- The orders list should expose filter label `Needs currency update`, chip label `Currency update needed`, and query-state parameter `fxStatus=needs_reconciliation` to keep UX and URL behavior consistent.
 - Store selection should reuse the existing shared searchable-select interaction pattern rather than invent a new picker.
 - The order identifier format should remain stable across locales even if the human-readable date display changes.
 - Orders and deliveries should use expandable cards rather than dense tables because the card format better fits status signals, actions, and mobile layouts.
@@ -162,6 +183,7 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 
 ## Confirmed
 
+- Monetary amounts on an order stay anchored to the order's stored currency; the collector's later base currency preference alone does not retroactively change historical amounts.
 - `Order` remains the canonical product term
 - the initial order state is `OPEN`
 - one exchange-rate value per order is the MVP model

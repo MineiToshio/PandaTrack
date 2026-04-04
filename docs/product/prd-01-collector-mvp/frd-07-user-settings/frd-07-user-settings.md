@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-04-03
+last_updated: 2026-04-04
 source_features:
   - FEAT-0013
 implementation_status: PLANNED
@@ -96,7 +96,7 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - `FR-07-21`: The settings page must let each user define one preferred country.
 - `FR-07-22`: The settings page must let each user define multiple preferred product types using the seeded store product-type catalog.
 - `FR-07-23`: The user-facing copy for preferred product types must ask `What types of products do you collect?`
-- `FR-07-24`: The settings page must let each user define one active budget amount in the same currency as the base currency.
+- `FR-07-24`: The settings page must let each user define one active budget amount in the same currency as the base currency, stored as a **positive integer** in **whole currency units** with **no fractional subunits** (minimum value `1`, upper bound enforced by validation).
 - `FR-07-25`: The settings page must let each user choose whether the budget resets at month end or on one specific day of the month.
 - `FR-07-26`: When the configured reset day does not exist in a given month, the system must use the last day of that month.
 - `FR-07-27`: The persistence and architecture for budget settings must be prepared to support multiple budgets later even though MVP exposes only one active budget.
@@ -104,6 +104,9 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - `FR-07-29`: Direct navigation to `/{locale}/stores` without query params, or with user-supplied query params, must continue to honor the URL as the canonical listing input.
 - `FR-07-30`: The settings page must expose `Profile`, `Account`, and `Preferences` as three distinct sections on the same route. The `Account` section contains email and password management controls.
 - `FR-07-31`: When a credential-account user successfully submits an email change, the system must send an informational security notification to the old email address that includes the support contact (`hello@pandatrack.app`) and does not include an approval or reversal link.
+- `FR-07-32`: When the user changes their saved base currency, the settings flow must present an explicit confirmation step that explains the change affects currency reconciliation for orders impacting current and future budget periods, offers bulk update by currency pair, and warns that skipping reconciliation now requires manual per-order updates later.
+- `FR-07-33`: Username changes must be rate-limited to **one successful change per user per seven days**, using the same window semantics as email-change rate limiting.
+- `FR-07-34`: Budget-period boundaries and budget-reset execution must use the user's configured timezone when available; if user timezone is missing, the system must fall back to `UTC`.
 
 ## Business Rules
 
@@ -124,6 +127,7 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - `BR-07-15`: MVP does not expose a settings toggle for email delivery preferences; PandaTrack may continue to send product emails by default while provider-side unsubscribe handles opt-out.
 - `BR-07-16`: Preferred product types in user settings are collector-interest inputs, not a replacement for the store product-type catalog or store moderation rules.
 - `BR-07-17`: Email changes are rate-limited to one successful change per user per seven days to prevent abuse and spam to arbitrary new addresses.
+- `BR-07-18`: Username changes are rate-limited to one successful change per user per seven days to prevent abuse and handle churn, separate from email-change limits.
 
 ## Acceptance Criteria
 
@@ -196,6 +200,26 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - When they attempt to change their email again
 - Then the system rejects the request with an error before sending any emails or calling Better Auth
 
+### `AC-07-12`
+
+- Given a user edits base currency in `Preferences` to a value different from the persisted base currency
+- When they attempt to save preferences
+- Then the flow requires explicit confirmation that orders affecting current and future budget periods may need currency reconciliation
+- And the user can choose to open a bulk reconciliation flow by currency pair or continue and reconcile manually later
+
+### `AC-07-13`
+
+- Given a user has successfully changed their username within the past seven days
+- When they attempt another username change
+- Then the system rejects the request with an error before persisting a new username
+
+### `AC-07-14`
+
+- Given a user has a configured timezone and a budget reset day
+- When period boundaries are evaluated for budget calculations and reset behavior
+- Then the system applies that timezone
+- And if no user timezone is available, it applies `UTC`
+
 ## Implementation Notes
 
 - Private shell entry: `src/app/[locale]/(app)/layout.tsx`
@@ -234,6 +258,8 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - The email change flow sends the verification link to the new email only; the old email receives an informational-only security notification via Resend (no approval or reversal link)
 - The email change server action must validate the current password manually before calling Better Auth, regardless of Better Auth's native session-only behavior
 - Email changes are rate-limited to 1 successful change per user per 7 days
+- Username changes are rate-limited to 1 successful change per user per 7 days
+- Budget amount is a positive integer in whole currency units only
 - Google-only users set a password via `auth.api.setPassword` (server-only); after success the UI transitions to "Change password"
 - The active session is not revoked after an email change; the new email becomes the login identifier only after the user clicks the verification link
 

@@ -7,7 +7,7 @@ status: DRAFT
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-03-21
+last_updated: 2026-04-04
 source_features:
   - FUTURE-DASHBOARD-ATTENTION
 implementation_status: PLANNED
@@ -45,6 +45,7 @@ The dashboard is the main decision screen after sign-in. Its job is not to show 
 - `FR-06-10`: The product must support reminders by email.
 - `FR-06-11`: Reminder content must be derived from order, payment, shipment, and expected-arrival data.
 - `FR-06-12`: Dashboard surfaces and reminder delivery should stay consistent in meaning.
+- `FR-06-13`: Dashboard rollups denominated in the user's **current** base currency must not silently merge historical orders using an exchange-rate snapshot that was recorded against a **different** base currency preference. Fidelity rules: show order and payment amounts in the **order currency** where needed; exclude non-reconciled affected orders from single-currency budget totals; and show a visible warning that totals are partial until reconciliation is completed.
 
 ## Reminder Categories
 

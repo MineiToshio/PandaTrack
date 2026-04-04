@@ -7,7 +7,7 @@ status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0013
-last_updated: 2026-04-03
+last_updated: 2026-04-04
 implementation_status: PLANNED
 ---
 
@@ -42,8 +42,12 @@ This slice is the implementation foundation for `WO-02` through `WO-06`. It must
 ## Requirements
 
 - `FR-07-03` through `FR-07-07`
-- `FR-07-19` through `FR-07-26`
+- `FR-07-20` through `FR-07-26`
+- `FR-07-32`
+- `FR-07-33`
+- `FR-07-34`
 - `BR-07-03` through `BR-07-05`
+- `BR-07-18`
 
 ## Blueprints
 
@@ -59,6 +63,12 @@ This slice is the implementation foundation for `WO-02` through `WO-06`. It must
 ## Technical Notes
 
 - The persistence model for MVP keeps username, collector preferences, and the single active budget on the `User` record.
+- Persist a timestamp (or equivalent) used to enforce **username** change rate limiting (`BR-07-18`, `FR-07-33`) with the same seven-day window semantics as email-change limiting.
+- Persist preferred product types as a **many-to-many** relation between `User` and `StoreProductType` (junction table), not as duplicated free-text catalog entries.
+- Budget amount is a **positive integer** in **whole units** of the user's base currency (no fractional subunits), with a high upper bound enforced in validation.
+- Budget reset uses a **nullable day-of-month** field (`1` through `31`): `null` means reset on the **last calendar day** of each month; when the chosen day does not exist in a month, reset on that month's last day (`FR-07-26`).
+- Budget period and reset evaluation should use the user's stored timezone when present; fallback to `UTC` when timezone is missing (`FR-07-34`).
+- Expose a **curated currency code list** derived from the seeded `Country` catalog (one primary currency per seeded country code); expanding `COUNTRY_CODES` in `prisma/seed.ts` implies revisiting the currency list.
 - The implementation must still keep naming, validation, and query boundaries coherent enough that a future migration to a dedicated budget table remains straightforward.
 - Username generation must happen in the server-side account-creation flow so every newly created account leaves signup with a persisted valid username.
 - The generated username strategy must:
@@ -101,7 +111,7 @@ This slice is the implementation foundation for `WO-02` through `WO-06`. It must
 - Prove that reserved names, blocked tokens, malformed usernames, and case-only collisions are rejected.
 - Prove that successful account creation persists a valid username.
 - Prove that optional settings fields can remain empty initially without breaking the settings domain contract.
-- Prove that country, base currency, preferred product types, budget amount, and budget reset rule persist and re-read correctly.
+- Prove that country, base currency, preferred product types, budget amount as a **positive integer in whole currency units only**, and budget reset rule persist and re-read correctly.
 - Prove that a reset day beyond the number of days in a month resolves to the last day of that month.
 - Prove that provider-aware account capabilities can be derived correctly from runtime auth/account state for later settings slices.
 

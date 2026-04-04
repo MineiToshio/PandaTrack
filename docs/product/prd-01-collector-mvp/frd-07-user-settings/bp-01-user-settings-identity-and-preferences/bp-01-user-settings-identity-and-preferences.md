@@ -12,7 +12,7 @@ children:
   - WO-04
   - WO-05
   - WO-06
-last_updated: 2026-04-03
+last_updated: 2026-04-04
 implementation_status: PLANNED
 ---
 
@@ -98,6 +98,10 @@ Describe the technical layer that powers profile editing, account-management con
 - Preference contract:
   - input: country, base currency, preferred product types, budget amount, budget reset rule
   - output: saved user-owned preference fields and navigation defaults for `Stores`
+  - base currency change: requires explicit user confirmation that orders affecting current and future budget periods may need currency reconciliation; flow should offer bulk update by currency pair and allow deferred manual reconciliation
+  - budget amount: positive integer in whole units of the active base currency only (no fractional subunits)
+  - budget period boundary: evaluate reset logic in user timezone when available, fallback to `UTC`
+  - preferred product types: many-to-many link rows between `User` and `StoreProductType` (no duplicate catalog)
 
 ## Operational Priorities
 
