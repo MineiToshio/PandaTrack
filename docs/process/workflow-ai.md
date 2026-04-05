@@ -10,7 +10,7 @@ This workflow is optimized for building features with Codex and Cursor using a h
 1. Create or update the `PRD`, `FRD`, `Blueprint`, and `Work Orders` in `docs/product`.
 2. Create or update one GitHub Epic from the `FRD`.
 3. Create one GitHub ticket per `Work Order`.
-4. Attach each Work Order ticket as a **sub-issue** of that Epic (GitHub parent/child), in Work Order execution order, and confirm the Epic's sub-issue list matches every created slice before considering the link step complete.
+4. Attach each Work Order ticket as a **sub-issue** of that Epic (GitHub parent/child), in **Work Order execution order** (`WO-01`, then `WO-02`, …; not sorted by public issue `#`). Confirm the Epic's sub-issue list matches every created slice **and** that GitHub's sub-issue order matches the Work Order sequence before considering the link step complete.
 5. Add the Epic and every created ticket to GitHub Project `4` during the same workflow pass.
 6. Set Project `Status` to **`Todo`** on the Epic and every new slice unless product workflow explicitly documented a different initial value for that run.
 7. Verify that the Epic and every created ticket are present in GitHub Project `4` before considering the sync complete.

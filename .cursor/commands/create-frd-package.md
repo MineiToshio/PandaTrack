@@ -355,13 +355,15 @@ After approval:
 - create one GitHub ticket per `Work Order`
 - keep the Epic and every Work Order ticket **open** (GitHub issue `state: open`). New issues are created open by default; do not close any of them in this command. If you update or reuse an Epic or slice that is currently closed, **reopen** it so execution tracking starts from an open backlog item
 - attach every created Work Order ticket as a **sub-issue** of that Epic (GitHub parent/child relationship), not only via a `Parent Epic: #NN` line in the ticket body
-- add sub-issues in **Work Order execution order** (first child can be added without a position hint; for each additional child, if GitHub returns a priority or placement error, add it immediately after the previous slice using that sibling issue's numeric REST `id` as `after_id`, since `id` is not the same as the public issue number)
+- add sub-issues in **Work Order execution order** (`WO-01`, then `WO-02`, then `WO-03`, and so on across the FRD). When an FRD has multiple `Blueprints`, follow the same order as the blueprint implementation plan and linked work-order lists (typically all `WO`s from `BP-01` in order, then `BP-02`, etc.). **Do not** sort or infer order from public GitHub issue numbers (`#78`, `#81`, …); those reflect creation time, not `WO` sequence, and a wrong sub-issue order breaks Epic views, Project child lists, and planning.
+- first child can be added without a position hint; for each additional child, if GitHub returns a priority or placement error, add it immediately after the previous slice using that sibling issue's numeric REST `id` as `after_id`, since `id` is not the same as the public issue number
+- after all sub-issues are attached, **verify** with GitHub MCP `issue_read` (`get_sub_issues`) that the returned list order matches `WO-01` through `WO-NN`. If not, use `sub_issue_write` (`reprioritize`) with sibling REST `id` values (`after_id` / `before_id`) until the order matches the Work Order docs
 - do not create GitHub issues for `Blueprints`
 - add the Epic and every created ticket to GitHub Project `4` in the same execution pass
 - set the GitHub Project `4` **Status** field to **`Todo`** on the Epic and on every created ticket (this is independent of issue open/closed). The only exception is when the user explicitly approved a different initial `Status` value during the proposal approval step
 - explicitly verify that the Epic and every created ticket are present in GitHub Project `4` before finishing
 - explicitly verify that the Epic and every created ticket are **open** and have Project `Status` **`Todo`** (or the user-approved alternative) before finishing
-- explicitly verify that the Epic lists every created Work Order ticket as a sub-issue (for example via GitHub MCP `issue_read` with `get_sub_issues`) before finishing
+- explicitly verify that the Epic lists every created Work Order ticket as a sub-issue (for example via GitHub MCP `issue_read` with `get_sub_issues`) **and that sub-issues appear in `WO-01`…`WO-NN` order** before finishing
 
 ### Epic body
 

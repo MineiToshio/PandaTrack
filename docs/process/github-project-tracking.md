@@ -18,6 +18,7 @@ GitHub Project and its issues are the source of truth for execution status and m
 
 - One `FRD` -> one Epic issue
 - One Epic issue -> multiple `Work Order` tickets, each attached as a **sub-issue** of that Epic (GitHub parent/child), not only cross-linked by issue number in the body
+- **Sub-issue order under the Epic must match Work Order execution order** (`WO-01` first, then `WO-02`, and so on, including across multiple `Blueprints` in blueprint order). GitHub public issue numbers (`#NN`) are not a reliable sequence indicator. Wrong ordering misleads the Project board, Epic child views, and anyone using “first sub-issue” as the next slice.
 - Epic issues should stay lightweight and reference the matching `FRD` and `Work Order` paths instead of duplicating product definition.
 - Every Epic/Slice should be added to the GitHub Project board
 - New Epics and slices start **open** (issue state), with Project `Status` **`Todo`**, unless a one-off agreement says otherwise for that creation run
