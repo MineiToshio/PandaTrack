@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import posthog from "posthog-js";
@@ -15,11 +16,32 @@ import {
   saveStoreProductTypeRequest,
   type SaveStoreProductTypeRequestResult,
 } from "../../_actions/saveStoreProductTypeRequest";
+import { cn } from "@/lib/styles";
 
 type StoreProductTypeRequestModalProps = {
   locale: string;
   source: "create" | "edit";
+  /** `chip`: dashed tag-style control for use next to product type options. */
+  triggerVariant?: "default" | "chip";
 };
+
+export function StoreProductTypeRequestChip({ onOpen }: { onOpen: () => void }) {
+  const t = useTranslations("stores");
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={cn(
+        "border-border bg-background text-text-body focus-visible:ring-ring inline-flex min-h-10 max-w-full cursor-pointer items-center gap-1.5 rounded-xl border border-dashed px-4 text-left text-sm transition",
+        "hover:border-primary/50 hover:bg-muted/25 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+      )}
+    >
+      <Plus className="size-3.5 shrink-0" aria-hidden />
+      <span className="min-w-0 whitespace-normal">{t("governance.productTypeRequest.chipCta")}</span>
+    </button>
+  );
+}
 
 function translateError(t: ReturnType<typeof useTranslations>, errorKey: string) {
   return t.has(`governance.productTypeRequest.errors.${errorKey}`)
@@ -27,7 +49,11 @@ function translateError(t: ReturnType<typeof useTranslations>, errorKey: string)
     : t("error.validation_failed");
 }
 
-export default function StoreProductTypeRequestModal({ locale, source }: StoreProductTypeRequestModalProps) {
+export default function StoreProductTypeRequestModal({
+  locale,
+  source,
+  triggerVariant = "default",
+}: StoreProductTypeRequestModalProps) {
   const t = useTranslations("stores");
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -64,11 +90,18 @@ export default function StoreProductTypeRequestModal({ locale, source }: StorePr
     }
   };
 
-  return (
-    <>
+  const triggerControl =
+    triggerVariant === "chip" ? (
+      <StoreProductTypeRequestChip onOpen={openModal} />
+    ) : (
       <Button type="button" variant="secondary" size="sm" onClick={openModal}>
         {t("governance.productTypeRequest.openCta")}
       </Button>
+    );
+
+  return (
+    <>
+      {triggerControl}
 
       <Modal
         isOpen={isOpen}
@@ -78,11 +111,11 @@ export default function StoreProductTypeRequestModal({ locale, source }: StorePr
         closeButtonLabel={t("governance.productTypeRequest.cancelCta")}
         className="max-w-2xl"
       >
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <input type="hidden" name="locale" value={locale} />
           <input type="hidden" name="source" value={source} />
 
-          <div className="bg-muted/35 rounded-[24px] border border-border/60 p-4 sm:p-5">
+          <div className="space-y-2">
             <Label htmlFor={`product-type-request-name-${source}`} className="text-text-title">
               {t("governance.productTypeRequest.nameLabel")}
             </Label>
@@ -94,24 +127,24 @@ export default function StoreProductTypeRequestModal({ locale, source }: StorePr
               maxLength={50}
               error={Boolean(fieldErrors?.suggestedName?.[0])}
               aria-invalid={Boolean(fieldErrors?.suggestedName?.[0])}
-              className="mt-2 h-11 rounded-xl bg-background/90"
+              className="h-11 rounded-xl"
             />
-            <div className="mt-1 flex items-center justify-between gap-3">
-              <Typography size="xs" className="text-text-muted">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <Typography size="xs" className="text-text-muted min-w-0 flex-1">
                 {t("governance.productTypeRequest.nameHelper")}
               </Typography>
-              <Typography size="xs" className="text-text-muted">
+              <Typography size="xs" className="text-text-muted shrink-0 tabular-nums">
                 <FieldCharacterCount currentLength={suggestedName.length} maxLength={50} />
               </Typography>
             </div>
             {fieldErrors?.suggestedName?.[0] && (
-              <Typography size="xs" className="text-destructive mt-1" role="alert">
+              <Typography size="xs" className="text-destructive" role="alert">
                 {translateError(t, fieldErrors.suggestedName[0])}
               </Typography>
             )}
           </div>
 
-          <div className="bg-muted/35 rounded-[24px] border border-border/60 p-4 sm:p-5">
+          <div className="space-y-2">
             <Label htmlFor={`product-type-request-reason-${source}`} className="text-text-title">
               {t("governance.productTypeRequest.reasonLabel")}
             </Label>
@@ -124,25 +157,29 @@ export default function StoreProductTypeRequestModal({ locale, source }: StorePr
               maxLength={500}
               error={Boolean(fieldErrors?.reason?.[0])}
               aria-invalid={Boolean(fieldErrors?.reason?.[0])}
-              className="mt-2 min-h-32 rounded-xl bg-background/90 px-4 py-3 resize-y"
+              className="min-h-32 resize-y rounded-xl px-4 py-3"
             />
-            <div className="mt-1 flex items-center justify-between gap-3">
-              <Typography size="xs" className="text-text-muted">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+              <Typography size="xs" className="text-text-muted min-w-0 flex-1">
                 {t("governance.productTypeRequest.reasonHelper")}
               </Typography>
-              <Typography size="xs" className="text-text-muted">
+              <Typography size="xs" className="text-text-muted shrink-0 tabular-nums">
                 <FieldCharacterCount currentLength={reason.length} maxLength={500} />
               </Typography>
             </div>
             {fieldErrors?.reason?.[0] && (
-              <Typography size="xs" className="text-destructive mt-1" role="alert">
+              <Typography size="xs" className="text-destructive" role="alert">
                 {translateError(t, fieldErrors.reason[0])}
               </Typography>
             )}
           </div>
 
           {state?.success && (
-            <Typography size="xs" className="bg-primary/8 text-text-body rounded-2xl border border-primary/12 px-4 py-3" role="status">
+            <Typography
+              size="xs"
+              className="bg-primary/8 text-text-body border-primary/12 rounded-xl border px-4 py-3"
+              role="status"
+            >
               {t("governance.productTypeRequest.success")}
             </Typography>
           )}
@@ -150,7 +187,7 @@ export default function StoreProductTypeRequestModal({ locale, source }: StorePr
           {state?.success === false && state.error && (
             <Typography
               size="xs"
-              className="bg-destructive/8 text-destructive rounded-2xl border border-destructive/20 px-4 py-3"
+              className="bg-destructive/8 text-destructive border-destructive/20 rounded-xl border px-4 py-3"
               role="alert"
             >
               {translateError(t, state.error)}
@@ -158,7 +195,13 @@ export default function StoreProductTypeRequestModal({ locale, source }: StorePr
           )}
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <Button type="button" variant="secondary" disabled={isPending} onClick={closeModal} className="min-h-11 px-5">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={isPending}
+              onClick={closeModal}
+              className="min-h-11 px-5"
+            >
               {t("governance.productTypeRequest.cancelCta")}
             </Button>
             <Button type="submit" variant="primary" disabled={isPending} className="min-h-11 px-5">

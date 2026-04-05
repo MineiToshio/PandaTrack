@@ -30,13 +30,19 @@ export type SendEmailInput = {
   from?: string;
 };
 
+/** Accent for links on dark transactional emails (matches verification “copy link” styling). */
+export const TRANSACTIONAL_EMAIL_ACCENT_LINK = "#a78bfa";
+
 export type TransactionalEmailTemplateInput = {
   appName: string;
   logoUrl: string;
   eyebrow?: string;
   title: string;
   intro: string;
+  /** Plain-text body; HTML-escaped when rendered. Ignored when `bodyHtml` is set. */
   body?: string;
+  /** Pre-escaped HTML for the body paragraph only (caller builds safe markup). */
+  bodyHtml?: string;
   ctaLabel?: string;
   ctaUrl?: string;
   fallbackLabel?: string;
@@ -44,13 +50,26 @@ export type TransactionalEmailTemplateInput = {
   footer: string;
 };
 
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+const TRANSACTIONAL_EMAIL_BODY_LINK_STYLE = `color:${TRANSACTIONAL_EMAIL_ACCENT_LINK};font-size:15px;line-height:1.75;font-weight:600;text-decoration:none;word-break:break-all;`;
+
+/**
+ * Renders a mailto link with accent styling for dark transactional templates.
+ * Use only with server-controlled email addresses.
+ */
+export function buildTransactionalMailtoLink(email: string): string {
+  const trimmed = email.trim();
+  const display = escapeHtml(trimmed);
+  const href = escapeHtml(`mailto:${trimmed}`);
+  return `<a href="${href}" style="${TRANSACTIONAL_EMAIL_BODY_LINK_STYLE}">${display}</a>`;
 }
 
 export function buildTransactionalEmailTemplate({
@@ -64,6 +83,7 @@ export function buildTransactionalEmailTemplate({
   ctaUrl,
   fallbackLabel,
   fallbackUrl,
+  bodyHtml,
   footer,
 }: TransactionalEmailTemplateInput): string {
   const safeAppName = escapeHtml(appName);
@@ -72,6 +92,7 @@ export function buildTransactionalEmailTemplate({
   const safeTitle = escapeHtml(title);
   const safeIntro = escapeHtml(intro);
   const safeBody = body ? escapeHtml(body) : "";
+  const safeBodyHtml = bodyHtml ?? "";
   const safeFooter = escapeHtml(footer);
   const safeCtaLabel = ctaLabel ? escapeHtml(ctaLabel) : "";
   const safeCtaUrl = ctaUrl ? escapeHtml(ctaUrl) : "";
@@ -82,9 +103,11 @@ export function buildTransactionalEmailTemplate({
     ? `<div style="display:inline-block;margin-bottom:14px;padding:6px 10px;border:1px solid rgba(139,92,246,0.4);border-radius:999px;background:rgba(139,92,246,0.18);color:#f2f6fb;font-size:12px;letter-spacing:0.08em;text-transform:uppercase;">${safeEyebrow}</div>`
     : "";
 
-  const bodyBlock = body
-    ? `<p style="margin:0 0 24px;color:#d6dee6;font-size:15px;line-height:1.75;">${safeBody}</p>`
-    : "";
+  const bodyBlock = bodyHtml
+    ? `<p style="margin:0 0 24px;color:#d6dee6;font-size:15px;line-height:1.75;">${safeBodyHtml}</p>`
+    : body
+      ? `<p style="margin:0 0 24px;color:#d6dee6;font-size:15px;line-height:1.75;">${safeBody}</p>`
+      : "";
 
   const ctaBlock =
     ctaLabel && ctaUrl
@@ -101,7 +124,7 @@ export function buildTransactionalEmailTemplate({
     fallbackLabel && fallbackUrl
       ? `<div style="margin-top:8px;padding-top:18px;border-top:1px solid #1f2a3a;">
           <p style="margin:0 0 8px;color:#a8b3c0;font-size:12px;line-height:1.6;">${safeFallbackLabel}</p>
-          <a href="${safeFallbackUrl}" style="color:#a78bfa;font-size:12px;line-height:1.6;word-break:break-all;text-decoration:none;">${safeFallbackUrl}</a>
+          <a href="${safeFallbackUrl}" style="color:${TRANSACTIONAL_EMAIL_ACCENT_LINK};font-size:12px;line-height:1.6;word-break:break-all;text-decoration:none;">${safeFallbackUrl}</a>
         </div>`
       : "";
 

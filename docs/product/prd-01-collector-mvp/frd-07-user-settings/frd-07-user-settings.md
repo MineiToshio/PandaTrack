@@ -262,7 +262,7 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - Username changes are rate-limited to 1 successful change per user per 7 days
 - Budget amount is a positive integer in whole currency units only
 - Google-only users set a password via `auth.api.setPassword` (server-only); after success the UI transitions to "Change password"
-- The active session is not revoked after an email change; the new email becomes the login identifier only after the user clicks the verification link
+- The active session is not revoked after an email change; `User.email` becomes the new login identifier immediately and `emailVerified` is set false until the user completes the verification link (banner and resend use the standard credential verification flow)
 
 ## Open Questions
 

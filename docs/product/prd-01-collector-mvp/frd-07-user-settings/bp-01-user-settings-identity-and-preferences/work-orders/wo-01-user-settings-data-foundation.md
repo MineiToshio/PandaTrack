@@ -1,5 +1,6 @@
 ---
-id: WO-01
+
+## id: WO-01
 type: WORK_ORDER
 slug: user-settings-data-foundation
 title: User Settings Data Foundation
@@ -9,7 +10,6 @@ source_features:
   - FEAT-0013
 last_updated: 2026-04-04
 implementation_status: PLANNED
----
 
 # WO-01 User Settings Data Foundation
 

@@ -11,10 +11,12 @@ const DAY_SIX_REMINDER_MARKER_PREFIX = "verification-day6-reminder:";
 
 export type VerificationAccessState = "not_applicable" | "verified" | "grace" | "blocked";
 
-type VerificationSnapshot = {
+export type VerificationSnapshot = {
   userId: string;
   email: string;
   createdAt: Date;
+  /** Start of the 7-day verification window (`unverifiedGraceStartsAt` or account `createdAt`). */
+  verificationGraceAnchor: Date;
   emailVerified: boolean;
   hasCredentialAccount: boolean;
   state: VerificationAccessState;
@@ -39,6 +41,7 @@ export async function getVerificationSnapshot(userId: string): Promise<Verificat
       id: true,
       email: true,
       createdAt: true,
+      unverifiedGraceStartsAt: true,
       emailVerified: true,
       accounts: {
         select: {
@@ -54,12 +57,14 @@ export async function getVerificationSnapshot(userId: string): Promise<Verificat
 
   const hasCredentialAccount = user.accounts.some((account) => account.providerId === "credential");
   const createdAt = asDate(user.createdAt);
+  const verificationGraceAnchor = asDate(user.unverifiedGraceStartsAt ?? user.createdAt);
 
   if (!hasCredentialAccount) {
     return {
       userId: user.id,
       email: user.email,
       createdAt,
+      verificationGraceAnchor,
       emailVerified: user.emailVerified,
       hasCredentialAccount,
       state: "not_applicable",
@@ -71,6 +76,7 @@ export async function getVerificationSnapshot(userId: string): Promise<Verificat
       userId: user.id,
       email: user.email,
       createdAt,
+      verificationGraceAnchor,
       emailVerified: user.emailVerified,
       hasCredentialAccount,
       state: "verified",
@@ -81,9 +87,10 @@ export async function getVerificationSnapshot(userId: string): Promise<Verificat
     userId: user.id,
     email: user.email,
     createdAt,
+    verificationGraceAnchor,
     emailVerified: user.emailVerified,
     hasCredentialAccount,
-    state: new Date() >= getDeadline(createdAt) ? "blocked" : "grace",
+    state: new Date() >= getDeadline(verificationGraceAnchor) ? "blocked" : "grace",
   };
 }
 
@@ -118,8 +125,8 @@ export async function maybeSendDaySixVerificationReminder(
   }
 
   const now = new Date();
-  const reminderStart = getReminderWindowStart(snapshot.createdAt);
-  const deadline = getDeadline(snapshot.createdAt);
+  const reminderStart = getReminderWindowStart(snapshot.verificationGraceAnchor);
+  const deadline = getDeadline(snapshot.verificationGraceAnchor);
 
   if (now < reminderStart || now >= deadline) {
     return { sent: false };

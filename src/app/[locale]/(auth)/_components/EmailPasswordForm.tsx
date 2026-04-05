@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
-import { useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
+import PasswordInput from "@/components/core/PasswordInput";
 import Typography from "@/components/core/Typography";
 
 type EmailPasswordFormProps = {
@@ -48,10 +46,8 @@ export default function EmailPasswordForm({
   hideEmailField = false,
   onSubmit,
 }: EmailPasswordFormProps) {
-  const t = useTranslations("auth.passwordVisibility");
   const emailId = `${idPrefix}-email`;
   const passwordId = `${idPrefix}-password`;
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   return (
     <form className="space-y-4" onSubmit={onSubmit} noValidate>
@@ -83,30 +79,16 @@ export default function EmailPasswordForm({
             </Link>
           ) : null}
         </div>
-        <div className="relative">
-          <Input
-            id={passwordId}
-            type={isPasswordVisible ? "text" : "password"}
-            name="password"
-            autoComplete={passwordAutoComplete}
-            value={password}
-            onChange={(e) => onPasswordChange(e.target.value)}
-            disabled={isPending}
-            required
-            error={!!error}
-            className="pr-11"
-          />
-          <button
-            type="button"
-            className="text-text-muted hover:text-foreground focus-visible:ring-ring absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md focus-visible:ring-2 focus-visible:outline-none disabled:pointer-events-none"
-            onClick={() => setIsPasswordVisible((current) => !current)}
-            aria-label={isPasswordVisible ? t("hide") : t("show")}
-            title={isPasswordVisible ? t("hide") : t("show")}
-            disabled={isPending}
-          >
-            {isPasswordVisible ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
-          </button>
-        </div>
+        <PasswordInput
+          id={passwordId}
+          name="password"
+          autoComplete={passwordAutoComplete}
+          value={password}
+          onChange={(e) => onPasswordChange(e.target.value)}
+          disabled={isPending}
+          required
+          error={!!error}
+        />
       </div>
       {error && (
         <Typography size="xs" className="text-destructive" role="alert">

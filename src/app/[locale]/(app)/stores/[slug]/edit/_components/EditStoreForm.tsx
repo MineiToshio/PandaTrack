@@ -359,11 +359,7 @@ export default function EditStoreForm({
           ) : null}
         </StoreFormSectionCard>
 
-        <StoreFormSectionCard
-          eyebrow={t("edit.catalogEyebrow")}
-          title={t("edit.catalogTitle")}
-          action={<StoreProductTypeRequestModal locale={locale} source="edit" />}
-        >
+        <StoreFormSectionCard eyebrow={t("edit.catalogEyebrow")} title={t("edit.catalogTitle")}>
           <div className="space-y-3">
             <Label>{t("create.presenceLabel")}</Label>
             <StoreSelectableTagGroup
@@ -401,6 +397,7 @@ export default function EditStoreForm({
               selectedValues={selectedProductTypeKeys}
               onChange={setSelectedProductTypeKeys}
               inputName="productTypeKeys"
+              trailingSlot={<StoreProductTypeRequestModal locale={locale} source="edit" triggerVariant="chip" />}
             />
           </div>
 

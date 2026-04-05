@@ -300,6 +300,7 @@
     },
     "productTypeRequest": {
       "openCta": "Solicitar tipo de producto",
+      "chipCta": "Solicitar un nuevo tipo de producto",
       "title": "Solicitar un nuevo tipo de producto",
       "description": "Si los tipos actuales no encajan con esta tienda, envía una sugerencia para revisión.",
       "nameLabel": "Tipo de producto sugerido",

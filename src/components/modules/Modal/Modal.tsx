@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useId, useRef, useEffectEvent } from "react";
 import { X } from "lucide-react";
 import Heading from "@/components/core/Heading";
@@ -17,8 +18,8 @@ export type ModalProps = {
   onClose: () => void;
   /** Modal title. Required for accessibility (aria-labelledby). */
   title: string;
-  /** Optional description or body text. Used for aria-describedby when provided. */
-  description?: string;
+  /** Optional description under the title. Used for aria-describedby when provided. */
+  description?: string | ReactNode;
   /** Content rendered below the title/description (e.g. actions or custom body). */
   children: React.ReactNode;
   /** Role: "dialog" for general dialogs, "alertdialog" for confirmations that require a choice. */
@@ -146,7 +147,7 @@ export default function Modal({
         role={role}
         aria-modal="true"
         aria-labelledby={titleId}
-        aria-describedby={description ? descriptionId : undefined}
+        aria-describedby={description != null && description !== "" ? descriptionId : undefined}
       >
         <button
           type="button"
@@ -178,12 +179,14 @@ export default function Modal({
           />
 
           <div className="relative flex max-h-[min(85vh,48rem)] flex-col">
-            <div className="border-border/60 flex items-start justify-between gap-4 border-b px-5 py-5 sm:px-6 sm:py-6">
+            <div className="border-border flex items-start justify-between gap-4 border-b px-5 py-5 sm:px-6 sm:py-6">
               <div className="min-w-0 space-y-2">
                 <span
                   className={cn(
-                    "bg-primary/12 inline-flex h-2 w-16 rounded-full",
-                    role === "alertdialog" && "bg-destructive/16",
+                    "inline-flex h-2 w-16 shrink-0 rounded-full bg-linear-to-r",
+                    role === "alertdialog"
+                      ? "from-destructive/28 via-destructive/40 to-destructive/18"
+                      : "from-primary/22 via-highlight/38 to-primary/14",
                   )}
                   aria-hidden
                 />
@@ -196,11 +199,17 @@ export default function Modal({
                   >
                     {title}
                   </Heading>
-                  {description && (
-                    <Typography id={descriptionId} size="xs" className="text-text-body max-w-2xl leading-6">
-                      {description}
-                    </Typography>
-                  )}
+                  {description != null && description !== "" ? (
+                    typeof description === "string" ? (
+                      <Typography id={descriptionId} size="xs" className="text-text-body max-w-2xl leading-6">
+                        {description}
+                      </Typography>
+                    ) : (
+                      <div id={descriptionId} className="text-text-body max-w-2xl text-xs leading-6 sm:text-sm">
+                        {description}
+                      </div>
+                    )
+                  ) : null}
                 </div>
               </div>
 
@@ -208,7 +217,7 @@ export default function Modal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="border-border bg-background/82 text-text-muted hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background inline-flex size-11 shrink-0 items-center justify-center rounded-2xl border transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                  className="border-border bg-background/82 text-text-muted hover:border-foreground/55 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background active:border-foreground/65 inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                   aria-label={closeButtonLabel}
                 >
                   <X className="size-4" aria-hidden />

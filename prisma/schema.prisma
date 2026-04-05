@@ -77,6 +77,8 @@ model User {
   name                        String
   email                       String                 @unique
   emailVerified               Boolean
+  /// When set, the 7-day credential verification grace window counts from this time (e.g. immediate email change). Otherwise `createdAt` is used.
+  unverifiedGraceStartsAt     DateTime?
   image                       String?
   createdAt                   DateTime
   updatedAt                   DateTime

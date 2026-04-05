@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "title": "Settings",
+    "description": "Manage your PandaTrack account and preferences."
+  },
+  "hero": {
+    "eyebrow": "Collector settings"
+  },
+  "title": "Settings",
+  "intro": "Manage your profile, sign-in details, and preferences in one place.",
+  "profile": {
+    "title": "Profile",
+    "placeholder": "Username, display name, and avatar are managed here in a future update."
+  },
+  "preferences": {
+    "title": "Preferences",
+    "placeholder": "Country, currency, product types, and budget will be available here in a future update."
+  },
+  "account": {
+    "title": "Account",
+    "email": {
+      "label": "Email",
+      "changeButton": "Change email",
+      "googleHelper": "Your account uses Google. To change your email, update it directly in your Google account.",
+      "pendingVerification": "We've sent a verification link to {email}. Please verify to complete the change."
+    },
+    "emailModal": {
+      "title": "Change email",
+      "descriptionIntro": "Enter your new email and current password to confirm.",
+      "descriptionIrreversible": "This change is <b>immediate and irreversible</b>. The <b>new email</b> is what you'll use to <b>sign in</b> from now on.",
+      "descriptionCooldown": "You can only make this change once <b>every 7 days</b>. Double-check the address before you confirm.",
+      "newEmail": "New email",
+      "currentPassword": "Current password",
+      "cancel": "Cancel",
+      "confirm": "Confirm change",
+      "pending": "Saving..."
+    },
+    "validation": {
+      "fillRequiredFields": "Fill in the highlighted fields to continue."
+    },
+    "password": {
+      "changeTitle": "Change password",
+      "setTitle": "Set password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "save": "Save password",
+      "pending": "Saving..."
+    },
+    "success": {
+      "passwordUpdated": "Your password was updated.",
+      "passwordSet": "Your password was set. You can sign in with Google or email and password."
+    },
+    "errors": {
+      "validation": "Check the form fields and try again.",
+      "unauthorized": "You need to be signed in.",
+      "notAllowed": "This action is not available for your account.",
+      "rateLimited": "You can only change your email once every 7 days. Try again after {date}.",
+      "sameEmail": "Enter an email address different from your current one.",
+      "emailTaken": "This email is already used by another account.",
+      "invalidPassword": "Current password is incorrect.",
+      "passwordTooShort": "Password is too short.",
+      "passwordTooLong": "Password is too long.",
+      "passwordAlreadySet": "A password is already set for this account.",
+      "generic": "Something went wrong. Please try again."
+    }
+  }
+}

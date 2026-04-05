@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { createAuthMiddleware } from "better-auth/api";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getAppBaseUrl } from "@/lib/app-url";
 import { handlePasswordRecoveryRequest } from "@/lib/auth/authPasswordRecovery";
@@ -24,6 +25,16 @@ export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: getAppBaseUrl(),
   trustedOrigins: [getAppBaseUrl()],
+  /**
+   * Load session user from the database on each request so server actions that update `user.email`
+   * (immediate email change) are visible to the next Better Auth call in the same flow without stale
+   * JWT-in-cookie user snapshots.
+   */
+  session: {
+    cookieCache: {
+      enabled: false,
+    },
+  },
   plugins: [nextCookies()],
   account: {
     accountLinking: {
@@ -47,6 +58,16 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendOnSignUp: true,
+    afterEmailVerification: async (user) => {
+      try {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { unverifiedGraceStartsAt: null },
+        });
+      } catch (error) {
+        Sentry.captureException(error);
+      }
+    },
     sendVerificationEmail: async ({ user, token, url }, request) => {
       const rawVerificationUrl = new URL(url);
       const originalCallbackURL = rawVerificationUrl.searchParams.get("callbackURL");

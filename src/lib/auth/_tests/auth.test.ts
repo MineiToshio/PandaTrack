@@ -62,6 +62,11 @@ describe("auth config", () => {
 
     expect(betterAuthMock).toHaveBeenCalledWith(
       expect.objectContaining({
+        session: expect.objectContaining({
+          cookieCache: expect.objectContaining({
+            enabled: false,
+          }),
+        }),
         emailAndPassword: expect.objectContaining({
           resetPasswordTokenExpiresIn: 60 * 60,
           revokeSessionsOnPasswordReset: true,

@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "title": "Ajustes",
+    "description": "Gestiona tu cuenta y preferencias en PandaTrack."
+  },
+  "hero": {
+    "eyebrow": "Ajustes del coleccionista"
+  },
+  "title": "Ajustes",
+  "intro": "Gestiona tu perfil, datos de acceso y preferencias en un solo lugar.",
+  "profile": {
+    "title": "Perfil",
+    "placeholder": "El nombre de usuario, el nombre visible y el avatar se gestionarán aquí en una próxima actualización."
+  },
+  "preferences": {
+    "title": "Preferencias",
+    "placeholder": "País, moneda, tipos de producto y presupuesto estarán disponibles aquí en una próxima actualización."
+  },
+  "account": {
+    "title": "Cuenta",
+    "email": {
+      "label": "Correo electrónico",
+      "changeButton": "Cambiar correo",
+      "googleHelper": "Tu cuenta usa Google. Para cambiar el correo, actualízalo directamente en tu cuenta de Google.",
+      "pendingVerification": "Hemos enviado un enlace de verificación a {email}. Verifícalo para completar el cambio."
+    },
+    "emailModal": {
+      "title": "Cambiar correo",
+      "descriptionIntro": "Introduce tu nuevo correo y tu contraseña actual para confirmar.",
+      "descriptionIrreversible": "Este cambio es <b>inmediato e irreversible</b>. El <b>nuevo correo</b> será el que uses para <b>iniciar sesión</b> a partir de entonces.",
+      "descriptionCooldown": "Este cambio solo lo puedes realizar una vez <b>cada 7 días</b>. Revisa bien antes de confirmar.",
+      "newEmail": "Nuevo correo",
+      "currentPassword": "Contraseña actual",
+      "cancel": "Cancelar",
+      "confirm": "Confirmar cambio",
+      "pending": "Guardando..."
+    },
+    "validation": {
+      "fillRequiredFields": "Completa los campos marcados para continuar."
+    },
+    "password": {
+      "changeTitle": "Cambiar contraseña",
+      "setTitle": "Establecer contraseña",
+      "currentPassword": "Contraseña actual",
+      "newPassword": "Nueva contraseña",
+      "save": "Guardar contraseña",
+      "pending": "Guardando..."
+    },
+    "success": {
+      "passwordUpdated": "Tu contraseña se actualizó.",
+      "passwordSet": "Tu contraseña se configuró. Puedes iniciar sesión con Google o con correo y contraseña."
+    },
+    "errors": {
+      "validation": "Revisa los campos del formulario e inténtalo de nuevo.",
+      "unauthorized": "Necesitas iniciar sesión.",
+      "notAllowed": "Esta acción no está disponible para tu cuenta.",
+      "rateLimited": "Solo puedes cambiar el correo una vez cada 7 días. Vuelve a intentarlo después del {date}.",
+      "sameEmail": "Introduce un correo distinto al actual.",
+      "emailTaken": "Este correo ya está en uso por otra cuenta.",
+      "invalidPassword": "La contraseña actual no es correcta.",
+      "passwordTooShort": "La contraseña es demasiado corta.",
+      "passwordTooLong": "La contraseña es demasiado larga.",
+      "passwordAlreadySet": "Esta cuenta ya tiene una contraseña configurada.",
+      "generic": "Algo salió mal. Inténtalo de nuevo."
+    }
+  }
+}

@@ -154,6 +154,33 @@ Rules:
 - sibling subsections must use the same chrome for equivalent roles
 - subsection titles must still read as headings, not helper text
 - equivalent subsection actions should appear in the same place across similar sections
+- when a screen has both a page title and major section headings, the page `h1` must use a **larger** `Heading` size than those section `h2`s (see `visual-foundations.md` heading scale)
+
+### Private-app hero header (collector shell)
+
+Use the same top-of-page header block for comparable collector flows (for example `/settings` and `/stores` listing). Implement it with `src/components/modules/AppPageHero.tsx` so markup and tokens stay in sync.
+
+1. optional eyebrow pill (`text-xs`, `Sparkles`, primary-tinted chip)
+2. page title: `Heading` as `h1` with `size="sm"` and `text-text-title`
+3. one short supporting line: `Typography size="sm"` with `text-text-muted`
+4. gradient border card wrapper: `rounded-2xl border bg-linear-to-br from-primary/12 via-background to-accent/10` (match existing pages)
+5. optional `aside` prop on `AppPageHero` for a trailing column (flex row with wrap)
+
+Rules:
+
+- keep `h1` typography aligned across routes that share this pattern (settings and stores listing use the same `Heading` size)
+- major sections below use `Heading` as `h2` with `size="xs"` and `text-text-title` unless a different density is documented for that route
+
+### Collector settings route (`/settings`)
+
+- page title block: `AppPageHero` with the same `h1` scale and supporting line as other collector routes (`visual-foundations.md` heading scale).
+- major section titles (Profile, Account, Preferences): `Heading` as `h2` with `size="xs"` and `text-text-title`.
+- stack major sections (Profile, Account, Preferences) as **sibling** level-1 surfaces with **identical** chrome: `bg-card`, `border-border`, `rounded-xl`, and the same padding scale (`p-4 sm:p-6`). Do not vary translucent `bg-card/*` opacity between equivalent blocks.
+- container: `max-w-6xl`, horizontal padding `px-4 sm:px-6 lg:px-8`, vertical rhythm `space-y-8` between the header and sections (`visual-foundations.md` layout containers).
+- dense copy inside sections: prefer `Typography size="sm"` for placeholders and primary read values; use `Typography size="xs"` for field labels and subsection captions.
+- form groups: `space-y-3` (12px) between stacked fields in dense settings forms.
+- informational account states (for example pending email verification after a change request): semantic **info** treatment (`bg-info/12`, `border-info/35`, `rounded-xl`), not ad hoc `primary` fills.
+- shared class for the three main section panels: `src/app/[locale]/(app)/settings/settingsSectionChrome.ts` (`SETTINGS_SECTION_SURFACE_CLASSNAME`).
 
 ### Reusable Pattern: Dense Summary Modal
 

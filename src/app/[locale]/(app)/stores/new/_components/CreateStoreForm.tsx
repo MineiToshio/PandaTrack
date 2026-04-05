@@ -605,11 +605,7 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
           </div>
         </StoreFormSectionCard>
 
-        <StoreFormSectionCard
-          eyebrow={tCreate("commercialEyebrow")}
-          title={tCreate("commercialTitle")}
-          action={<StoreProductTypeRequestModal locale={locale} source="create" />}
-        >
+        <StoreFormSectionCard eyebrow={tCreate("commercialEyebrow")} title={tCreate("commercialTitle")}>
           <div className="space-y-3">
             <Label>{tCreate("presenceLabel")}</Label>
             <div
@@ -657,6 +653,7 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
                 selectedValues={selectedProductTypeKeys}
                 onChange={setSelectedProductTypeKeys}
                 inputName="productTypeKeys"
+                trailingSlot={<StoreProductTypeRequestModal locale={locale} source="create" triggerVariant="chip" />}
               />
             </div>
             {fieldErrors.productTypeKeys?.[0] && (

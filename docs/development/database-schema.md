@@ -12,8 +12,9 @@ Reference for what each table and attribute is for, where it is used, and why it
 
 - **id** – Stable identifier; referenced by sessions, accounts, stores, orders, reviews, notes, reports.
 - **name** – Display name in the app.
-- **email** – Login identifier; unique.
+- **email** – Login identifier; unique. After a successful credential email change in settings, this is updated immediately to the new address while `emailVerified` is set false until the user completes the verification link.
 - **emailVerified** – Whether the email was verified (affects trust / flows that require verification).
+- **unverifiedGraceStartsAt** – Optional anchor for the credential 7-day verification grace window. Set to “now” on immediate email change so re-verification gets a fresh window; cleared when the user verifies. If null, grace is counted from `createdAt`.
 - **image** – Profile picture URL when provided by the provider or user.
 - **createdAt / updatedAt** – Audit and ordering.
 
@@ -31,7 +32,7 @@ Reference for what each table and attribute is for, where it is used, and why it
 
 **Purpose:** Links the user to an external provider (OAuth or credentials). One user can have several accounts (e.g. Google + GitHub).
 
-- **accountId / providerId** – Identify the account at the provider.
+- **accountId / providerId** – Identify the account at the provider. For the `credential` provider, `accountId` is kept aligned with `User.email` when the collector changes email in settings so email/password sign-in stays consistent.
 - **userId** – Owner of this account.
 - **accessToken / refreshToken / idToken** – Used to call the provider API or refresh the session; optional when not needed.
 - **accessTokenExpiresAt / refreshTokenExpiresAt** – When to refresh or re-auth.

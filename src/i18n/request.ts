@@ -26,6 +26,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
       storeListing: (await import(`./locales/${locale}/storeListing.json`)).default,
       countries: (await import(`./locales/${locale}/countries.json`)).default,
       storeProductTypes: (await import(`./locales/${locale}/storeProductTypes.json`)).default,
+      settings: (await import(`./locales/${locale}/settings.json`)).default,
     },
   };
 });

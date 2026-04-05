@@ -5,9 +5,7 @@ import { DEFAULT_PUBLIC_STORE_PAGE_SIZE, getPublicStoresListingPage } from "@/qu
 import { buildPageMetadata } from "@/lib/seo";
 import { parseListingSearchParams } from "./_utils/listingParams";
 import StoreListingContent from "./_components/StoreListingContent";
-import Heading from "@/components/core/Heading";
-import Typography from "@/components/core/Typography";
-import { Sparkles } from "lucide-react";
+import AppPageHero from "@/components/modules/AppPageHero";
 import StoreListingFilters from "./_components/StoreListingFilters";
 import StoreListingPagination from "./_components/StoreListingPagination";
 
@@ -106,22 +104,11 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
   return (
     <div className="text-foreground px-4 py-6 sm:py-8">
       <div className="mx-auto max-w-4xl">
-        <div className="border-border/70 from-primary/12 via-background to-accent/10 rounded-2xl border bg-linear-to-br p-5 shadow-sm sm:p-6">
-          <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2">
-              <span className="bg-primary/15 text-primary inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold">
-                <Sparkles className="size-3.5" aria-hidden />
-                {tListing("hero.eyebrow")}
-              </span>
-              <Heading as="h1" size="xs" className="text-text-title text-base">
-                {tListing("hero.title")}
-              </Heading>
-              <Typography size="sm" className="text-text-muted max-w-2xl">
-                {tListing("meta.description")}
-              </Typography>
-            </div>
-          </div>
-        </div>
+        <AppPageHero
+          eyebrow={tListing("hero.eyebrow")}
+          title={tListing("hero.title")}
+          description={tListing("meta.description")}
+        />
         <StoreListingFilters
           locale={locale}
           createStoreLabel={tStores("create.title")}

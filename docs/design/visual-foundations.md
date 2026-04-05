@@ -51,13 +51,13 @@ Rule:
 
 Implemented in `src/components/core/Typography.tsx`.
 
-| Variable | Current class mapping | Use |
-| --- | --- | --- |
-| `2xs` | `text-xs` | fine print, disclaimers, metadata labels |
-| `xs` | `text-xs sm:text-sm` | helper text, compact descriptions, secondary labels |
-| `sm` | `text-sm sm:text-base` | standard supporting text, card details, form guidance |
-| `md` | `text-base sm:text-lg` | default paragraph and section text |
-| `lg` | `text-lg sm:text-xl` | prominent body copy, intro text |
+| Variable | Current class mapping  | Use                                                   |
+| -------- | ---------------------- | ----------------------------------------------------- |
+| `2xs`    | `text-xs`              | fine print, disclaimers, metadata labels              |
+| `xs`     | `text-xs sm:text-sm`   | helper text, compact descriptions, secondary labels   |
+| `sm`     | `text-sm sm:text-base` | standard supporting text, card details, form guidance |
+| `md`     | `text-base sm:text-lg` | default paragraph and section text                    |
+| `lg`     | `text-lg sm:text-xl`   | prominent body copy, intro text                       |
 
 Rules:
 
@@ -69,18 +69,18 @@ Rules:
 
 Implemented in `src/components/core/Heading.tsx`.
 
-| Variable | Current class mapping | Use |
-| --- | --- | --- |
-| `lg` | `text-5xl md:text-6xl lg:text-7xl` | hero headlines only |
-| `md` | `text-4xl md:text-5xl lg:text-6xl` | large section headers and high-impact titles |
-| `sm` | `text-2xl md:text-3xl lg:text-4xl` | major section titles |
-| `xs` | `text-lg font-semibold` | compact page titles, card titles, modal titles, subsection headers |
+| Variable | Current class mapping              | Use                                                                                                             |
+| -------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `lg`     | `text-5xl md:text-6xl lg:text-7xl` | hero headlines only                                                                                             |
+| `md`     | `text-4xl md:text-5xl lg:text-6xl` | large section headers and high-impact titles                                                                    |
+| `sm`     | `text-2xl md:text-3xl lg:text-4xl` | **private-app screen titles (`h1`)** when the page stacks major sections below; large marketing section headers |
+| `xs`     | `text-lg font-semibold`            | **major section titles (`h2`) under that private-app `h1`**; card titles, modal titles, compact in-card headers |
 
 Rules:
 
-- one dominant `h1` per screen
+- one dominant `h1` per screen; it must read as the strongest heading on the page (larger and heavier than in-page section `h2`s)
 - `lg` and `md` belong mostly to landing and high-visibility sections
-- private-app page titles should usually use `Heading size="xs"` or a close equivalent
+- on private-app pages that combine a top hero header with sibling section panels (for example `/settings`, `/stores`), use `Heading size="sm"` for the page `h1` and `Heading size="xs"` for each major section `h2`; do not shrink the `h1` with body utilities such as `text-base`, or section headings will visually outrank the page title
 - titles inside modals, tab panels, and dense summary surfaces must still read as titles, not helper text
 
 ### Font Weights
@@ -131,50 +131,50 @@ Theme variables live in `src/app/globals.css`:
 
 #### Foundations
 
-| Variable | Dark | Light | Purpose |
-| --- | --- | --- | --- |
-| `background` | `#0b0f14` | `#f8fafc` | page background |
+| Variable     | Dark      | Light     | Purpose                          |
+| ------------ | --------- | --------- | -------------------------------- |
+| `background` | `#0b0f14` | `#f8fafc` | page background                  |
 | `foreground` | `#e6edf3` | `#0f172a` | default high-contrast foreground |
-| `surface` | `#111826` | `#ffffff` | primary elevated surface |
-| `surface-2` | `#0f172a` | `#f1f5f9` | secondary or nested surface |
-| `card` | `#111826` | `#ffffff` | card and dialog surfaces |
-| `popover` | `#111826` | `#ffffff` | floating overlays |
+| `surface`    | `#111826` | `#ffffff` | primary elevated surface         |
+| `surface-2`  | `#0f172a` | `#f1f5f9` | secondary or nested surface      |
+| `card`       | `#111826` | `#ffffff` | card and dialog surfaces         |
+| `popover`    | `#111826` | `#ffffff` | floating overlays                |
 
 #### Borders and inputs
 
-| Variable | Dark | Light | Purpose |
-| --- | --- | --- | --- |
+| Variable | Dark      | Light     | Purpose        |
+| -------- | --------- | --------- | -------------- |
 | `border` | `#1f2a3a` | `#e2e8f0` | default border |
-| `input` | `#1f2a3a` | `#e2e8f0` | input border |
-| `ring` | `#8b5cf6` | `#7c3aed` | focus ring |
+| `input`  | `#1f2a3a` | `#e2e8f0` | input border   |
+| `ring`   | `#8b5cf6` | `#7c3aed` | focus ring     |
 
 #### Brand and action colors
 
-| Variable | Dark | Light | Purpose |
-| --- | --- | --- | --- |
-| `primary` | `#8b5cf6` | `#7c3aed` | main CTA, selected states, key emphasis |
-| `secondary` | `#6d28d9` | `#5b21b6` | deeper brand support |
-| `accent` | `#f59e0b` | `#d97706` | highlight, warmth, warning-adjacent emphasis |
-| `highlight` | `#a78bfa` | `#7c3aed` | glow, gradients, softer brand accent |
-| `link` | `#a78bfa` | `#6d28d9` | inline links |
-| `link-hover` | `#c4b5fd` | `#7c3aed` | link hover |
+| Variable     | Dark      | Light     | Purpose                                      |
+| ------------ | --------- | --------- | -------------------------------------------- |
+| `primary`    | `#8b5cf6` | `#7c3aed` | main CTA, selected states, key emphasis      |
+| `secondary`  | `#6d28d9` | `#5b21b6` | deeper brand support                         |
+| `accent`     | `#f59e0b` | `#d97706` | highlight, warmth, warning-adjacent emphasis |
+| `highlight`  | `#a78bfa` | `#7c3aed` | glow, gradients, softer brand accent         |
+| `link`       | `#a78bfa` | `#6d28d9` | inline links                                 |
+| `link-hover` | `#c4b5fd` | `#7c3aed` | link hover                                   |
 
 #### Text roles
 
-| Variable | Dark | Light | Purpose |
-| --- | --- | --- | --- |
-| `text-title` | `#f2f6fb` | `#0f172a` | titles and key labels |
-| `text-body` | `#d6dee6` | `#1f2937` | default body copy |
+| Variable     | Dark      | Light     | Purpose                       |
+| ------------ | --------- | --------- | ----------------------------- |
+| `text-title` | `#f2f6fb` | `#0f172a` | titles and key labels         |
+| `text-body`  | `#d6dee6` | `#1f2937` | default body copy             |
 | `text-muted` | `#a8b3c0` | `#64748b` | secondary and supporting text |
 
 #### Semantic feedback
 
-| Variable | Dark | Light | Purpose |
-| --- | --- | --- | --- |
+| Variable      | Dark      | Light     | Purpose                                 |
+| ------------- | --------- | --------- | --------------------------------------- |
 | `destructive` | `#ef4444` | `#dc2626` | destructive actions and critical errors |
-| `success` | `#22c55e` | `#16a34a` | success confirmations |
-| `warning` | `#f59e0b` | `#d97706` | warnings and cautionary messaging |
-| `info` | `#38bdf8` | `#0ea5e9` | informational emphasis |
+| `success`     | `#22c55e` | `#16a34a` | success confirmations                   |
+| `warning`     | `#f59e0b` | `#d97706` | warnings and cautionary messaging       |
+| `info`        | `#38bdf8` | `#0ea5e9` | informational emphasis                  |
 
 ### Theme Rules
 
@@ -195,17 +195,17 @@ Rule:
 
 ### Recommended scale
 
-| Value | Usage |
-| --- | --- |
-| `4px` | ultra-tight inline spacing |
-| `8px` | default small gap |
-| `12px` | compact grouped controls |
-| `16px` | default component padding |
-| `20px` | emphasized control spacing |
-| `24px` | standard card, modal, header padding |
-| `32px` | section spacing |
-| `40px` | generous section spacing |
-| `48px+` | hero and large composition spacing |
+| Value   | Usage                                |
+| ------- | ------------------------------------ |
+| `4px`   | ultra-tight inline spacing           |
+| `8px`   | default small gap                    |
+| `12px`  | compact grouped controls             |
+| `16px`  | default component padding            |
+| `20px`  | emphasized control spacing           |
+| `24px`  | standard card, modal, header padding |
+| `32px`  | section spacing                      |
+| `40px`  | generous section spacing             |
+| `48px+` | hero and large composition spacing   |
 
 ### Spacing Rules
 
@@ -284,14 +284,14 @@ Avoid solving dense content with:
 
 ## Border Radius
 
-| Radius | Typical Tailwind class | Use |
-| --- | --- | --- |
-| small | `rounded-md` | form fields, buttons, compact controls |
-| medium | `rounded-lg` | nav items, segmented controls, utility cards |
-| large | `rounded-xl` | cards, accordions, elevated groups |
-| extra large | `rounded-2xl` | prominent cards, detail modules, modal controls |
-| hero or feature | `rounded-3xl` or `rounded-[28px]` | hero media, standout containers, modal shells |
-| pill | `rounded-full` | eyebrow labels, back links, toggles, circular decorative shapes |
+| Radius          | Typical Tailwind class            | Use                                                             |
+| --------------- | --------------------------------- | --------------------------------------------------------------- |
+| small           | `rounded-md`                      | form fields, buttons, compact controls                          |
+| medium          | `rounded-lg`                      | nav items, segmented controls, utility cards                    |
+| large           | `rounded-xl`                      | cards, accordions, elevated groups                              |
+| extra large     | `rounded-2xl`                     | prominent cards, detail modules, modal controls                 |
+| hero or feature | `rounded-3xl` or `rounded-[28px]` | hero media, standout containers, modal shells                   |
+| pill            | `rounded-full`                    | eyebrow labels, back links, toggles, circular decorative shapes |
 
 Rules:
 

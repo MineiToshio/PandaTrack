@@ -73,6 +73,7 @@ describe("authVerification", () => {
         id: "user-social",
         email: "collector@example.com",
         createdAt: new Date("2026-03-10T10:00:00.000Z"),
+        unverifiedGraceStartsAt: null,
         emailVerified: false,
         accounts: [{ providerId: "google" }],
       });
@@ -81,6 +82,7 @@ describe("authVerification", () => {
         userId: "user-social",
         email: "collector@example.com",
         createdAt: new Date("2026-03-10T10:00:00.000Z"),
+        verificationGraceAnchor: new Date("2026-03-10T10:00:00.000Z"),
         emailVerified: false,
         hasCredentialAccount: false,
         state: "not_applicable",
@@ -93,6 +95,7 @@ describe("authVerification", () => {
           id: "user-grace",
           email: "grace@example.com",
           createdAt: new Date("2026-03-05T12:00:00.000Z"),
+          unverifiedGraceStartsAt: null,
           emailVerified: false,
           accounts: [{ providerId: "credential" }],
         })
@@ -100,6 +103,7 @@ describe("authVerification", () => {
           id: "user-blocked",
           email: "blocked@example.com",
           createdAt: new Date("2026-03-03T12:00:00.000Z"),
+          unverifiedGraceStartsAt: null,
           emailVerified: false,
           accounts: [{ providerId: "credential" }],
         });
@@ -114,6 +118,27 @@ describe("authVerification", () => {
         userId: "user-blocked",
         state: "blocked",
         hasCredentialAccount: true,
+      });
+    });
+
+    it("returns grace when a previously verified credential user must re-verify after an immediate email change", async () => {
+      userFindUniqueMock.mockResolvedValueOnce({
+        id: "user-reverify",
+        email: "new@example.com",
+        createdAt: new Date("2019-01-01T00:00:00.000Z"),
+        unverifiedGraceStartsAt: new Date("2026-03-11T12:00:00.000Z"),
+        emailVerified: false,
+        accounts: [{ providerId: "credential" }],
+      });
+
+      await expect(getVerificationSnapshot("user-reverify")).resolves.toEqual({
+        userId: "user-reverify",
+        email: "new@example.com",
+        createdAt: new Date("2019-01-01T00:00:00.000Z"),
+        verificationGraceAnchor: new Date("2026-03-11T12:00:00.000Z"),
+        emailVerified: false,
+        hasCredentialAccount: true,
+        state: "grace",
       });
     });
   });
@@ -137,6 +162,7 @@ describe("authVerification", () => {
       userId: "user-grace",
       email: "grace@example.com",
       createdAt: new Date("2026-03-05T00:00:00.000Z"),
+      verificationGraceAnchor: new Date("2026-03-05T00:00:00.000Z"),
       emailVerified: false,
       hasCredentialAccount: true,
       state: "grace" as const,

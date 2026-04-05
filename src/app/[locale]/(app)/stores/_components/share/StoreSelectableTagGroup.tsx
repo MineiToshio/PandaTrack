@@ -17,6 +17,8 @@ type StoreSelectableTagGroupProps = {
   singleSelect?: boolean;
   className?: string;
   tagClassName?: string;
+  /** Rendered after option tags inside the same flex row (e.g. auxiliary actions). */
+  trailingSlot?: ReactNode;
 };
 
 export default function StoreSelectableTagGroup({
@@ -27,6 +29,7 @@ export default function StoreSelectableTagGroup({
   singleSelect = false,
   className,
   tagClassName,
+  trailingSlot,
 }: StoreSelectableTagGroupProps) {
   const handleToggle = (value: string) => {
     const isSelected = selectedValues.includes(value);
@@ -74,6 +77,7 @@ export default function StoreSelectableTagGroup({
           </button>
         );
       })}
+      {trailingSlot}
     </div>
   );
 }

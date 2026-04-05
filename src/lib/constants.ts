@@ -40,6 +40,9 @@ export const CONTACT_INFO = {
   whatsapp: "https://whatsapp.com/channel/0029VbAil5KBVJl1UttAWe2j",
 } as const;
 
+/** Support address referenced in security and account notification emails (FRD-07). */
+export const SUPPORT_CONTACT_EMAIL = "hello@pandatrack.app";
+
 export const CLOUDFLARE_ASSET_ROUTES = {
   STORE_LOGOS: "store-logos",
   STORE_LOGOS_PENDING: "store-logos/pending",
@@ -92,6 +95,12 @@ export const POSTHOG_EVENTS = {
     DRAWER_OPENED: "app_shell_drawer_opened",
     THEME_CHANGED: "app_shell_theme_changed",
     LOCALE_CHANGED: "app_shell_locale_changed",
+  },
+  SETTINGS: {
+    ACCOUNT_EMAIL_CHANGE_MODAL_OPENED: "settings_account_email_change_modal_opened",
+    ACCOUNT_EMAIL_CHANGE_SUBMITTED: "settings_account_email_change_submitted",
+    ACCOUNT_PASSWORD_CHANGE_SUBMITTED: "settings_account_password_change_submitted",
+    ACCOUNT_PASSWORD_SET_SUBMITTED: "settings_account_password_set_submitted",
   },
   STORE: {
     CREATED: "store_created",
