@@ -1,4 +1,5 @@
 ---
+
 id: WO-01
 type: WORK_ORDER
 slug: user-settings-data-foundation
@@ -6,9 +7,10 @@ title: User Settings Data Foundation
 status: ACTIVE
 parent: BP-01
 source_features:
-  - FEAT-0013
-last_updated: 2026-04-04
-implementation_status: IMPLEMENTED
+
+- FEAT-0013
+  last_updated: 2026-04-07
+  implementation_status: IMPLEMENTED
 
 # WO-01 User Settings Data Foundation
 
