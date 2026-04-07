@@ -12,8 +12,10 @@ Interfaces must feel like one product: predictable controls, spacing, typography
 
 When the user returns to a parent screen (listing, detail, or previous step), the control must match the **canonical back pattern** for that app subtree unless product explicitly requires a different treatment.
 
-- **Canonical back control**: Use **`BackNavLink`** from `@/components/core/BackNavLink` for any link whose job is "go back" or "up" to a parent screen when this pill pattern is the established chrome for that flow (for example stores: listing, detail, new, edit).
-  - Do not use a plain text link, a different `buttonVariants` variant (for example `secondary` alone), or a raw `<a>` for that job when the surrounding product area already uses this back control.
+- **Canonical back control**: Use **`BackNavLink`** from `@/components/core/BackNavLink` for any link whose job is "go back" or "up" to a parent screen.
+  - Use default **`appearance="pill"`** when the surrounding area already uses that pill chrome (for example store detail hero, edit page header).
+  - Use **`appearance="button"`** in **form footers** next to a primary submit so cancel or "back to list" matches **`Button`** geometry and tokens (`outline`, `md`).
+  - Do not use a plain text link or a raw `<a>` with ad hoc classes when **`BackNavLink`** already covers the case.
 - **Other route trees**: Prefer **`BackNavLink`** when the pill back pattern fits the flow. Otherwise search the subtree for an existing back/up control (`_components/share/` or sibling pages) and reuse or extract a shared component rather than inventing a third style.
 
 ## Links that look like buttons

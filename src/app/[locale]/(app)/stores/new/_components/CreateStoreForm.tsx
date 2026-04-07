@@ -777,7 +777,9 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
           <Button type="submit" variant="primary" disabled={isPending}>
             {isPending ? tCreate("submitting") : tCreate("submit")}
           </Button>
-          <BackNavLink href={`/${locale}${ROUTES.stores}`}>{tCreate("backToList")}</BackNavLink>
+          <BackNavLink appearance="button" href={`/${locale}${ROUTES.stores}`}>
+            {tCreate("backToList")}
+          </BackNavLink>
         </div>
       </form>
     </div>

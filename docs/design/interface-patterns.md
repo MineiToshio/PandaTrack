@@ -107,7 +107,10 @@ Set `mode` to `"single"` or `"multiple"` to match the data shape. Prefer this co
 
 ### Back navigation
 
-Use `src/components/core/BackNavLink.tsx` when the flow already uses that pill-back pattern.
+Use `src/components/core/BackNavLink.tsx` for parent-route navigation.
+
+- **`appearance="pill"`** (default): compact rounded control with blur for page chrome (for example above a hero or under a page title).
+- **`appearance="button"`**: `outline` variant at `md` size so it matches `Button` next to a primary submit in form footers.
 
 ### Primary navigation
 

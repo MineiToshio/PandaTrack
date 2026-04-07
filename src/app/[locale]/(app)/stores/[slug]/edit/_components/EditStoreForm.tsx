@@ -570,7 +570,7 @@ export default function EditStoreForm({
           <Button type="submit" variant="primary" disabled={isPending}>
             {isPending ? t(`${modeKey}.submitting`) : t(`${modeKey}.submitCta`)}
           </Button>
-          <BackNavLink href={`/${locale}${ROUTES.stores}/${store.slug}`} className="h-10 px-4">
+          <BackNavLink appearance="button" href={`/${locale}${ROUTES.stores}/${store.slug}`}>
             {t("edit.cancelCta")}
           </BackNavLink>
         </div>
