@@ -1,6 +1,5 @@
 ---
-
-## id: WO-01
+id: WO-01
 type: WORK_ORDER
 slug: user-settings-data-foundation
 title: User Settings Data Foundation
@@ -9,7 +8,7 @@ parent: BP-01
 source_features:
   - FEAT-0013
 last_updated: 2026-04-04
-implementation_status: PLANNED
+implementation_status: IMPLEMENTED
 
 # WO-01 User Settings Data Foundation
 
@@ -76,7 +75,7 @@ This slice is the implementation foundation for `WO-02` through `WO-06`. It must
   - append a short random suffix
   - retry on collisions
   - use a safe fallback when normalization alone cannot produce a valid candidate
-- Username uniqueness must be enforced using a normalized case-insensitive value, even if the stored display value preserves the user's chosen casing.
+- Username uniqueness must be enforced by persisting usernames in canonical lowercase form.
 - Reserved names and blocked tokens must be maintained in code/config for MVP rather than in a database-managed moderation surface.
 - The provider-aware account capability model for later settings slices must be derived at runtime from the authenticated user's `Account` records and Better Auth posture, not persisted as duplicated boolean flags on `User`.
 - `User.image` is the effective avatar URL in MVP:

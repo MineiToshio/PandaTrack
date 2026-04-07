@@ -43,7 +43,7 @@ Describe the technical layer that powers profile editing, account-management con
 - The account menu should open upward from the lower navigation area on desktop so the trigger and menu remain visually paired.
 - The mobile/tablet drawer should reuse the same content model through an inline anchored menu instead of a floating overlay.
 - One shared account-menu component should power desktop and mobile placements.
-- Username uniqueness is enforced case-insensitively at the system boundary even if the stored display value preserves casing.
+- Username uniqueness is enforced case-insensitively by persisting usernames in canonical lowercase form.
 - Username must be generated during server-side account creation so every newly created account already has a valid persisted username before reaching the private app.
 - Reserved names, PandaTrack brand protections, and blocked tokens for usernames are maintained in code/config for MVP.
 - Display name remains a separate non-unique profile field with `trim`, a `50` character maximum, and the same reserved-name, PandaTrack brand, and blocked-token protections as username.
@@ -81,7 +81,7 @@ Describe the technical layer that powers profile editing, account-management con
   - output: trimmed persisted display name or validation rejection for reserved-name, brand-protected, blocked-token, or length violations
 - Username-foundation contract:
   - input: new authenticated account plus email local part
-  - output: persisted valid username, persisted normalized uniqueness value, collision-safe fallback handling
+  - output: persisted valid lowercase username and collision-safe fallback handling
 - Avatar contract:
   - input: provider image URL or source image up to 10 MB
   - output: effective avatar URL in `User.image`, with cropped optimized asset in `user-images/{userId}.webp` when the collector uploads a replacement, immediate client-side identity refresh after successful changes, and username-initial fallback after successful removal

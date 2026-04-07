@@ -10,6 +10,7 @@ import { buildVerificationConfirmHref, getLocaleSegment } from "@/lib/auth/authR
 import { buildAuthVerificationEmail } from "@/lib/auth/authVerificationEmail";
 import { syncAuthenticatedUserToKit } from "@/lib/integrations/kit";
 import { sendEmailWithResend } from "@/lib/integrations/resend";
+import { generateUniqueUsernameForNewUser } from "@/lib/user-settings/usernameGeneration";
 
 /**
  * Better Auth server instance used by the API route handler and server-side session helpers.
@@ -22,6 +23,30 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          const email = typeof user.email === "string" ? user.email.trim() : "";
+          if (!email) {
+            return false;
+          }
+          try {
+            const generated = await generateUniqueUsernameForNewUser(prisma, email);
+            return {
+              data: {
+                ...user,
+                username: generated.username,
+              },
+            };
+          } catch (error) {
+            Sentry.captureException(error);
+            return false;
+          }
+        },
+      },
+    },
+  },
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: getAppBaseUrl(),
   trustedOrigins: [getAppBaseUrl()],

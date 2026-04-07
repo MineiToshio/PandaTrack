@@ -10,9 +10,13 @@
  * See docs/development/store-catalogs.md for stable identifiers and usage.
  */
 
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import { PrismaClient } from "../generated/prisma/client";
+import { COUNTRY_CODES } from "../src/lib/catalog/collectorCountries";
+import { STORE_PRODUCT_TYPE_KEYS } from "../src/lib/catalog/storeProductTypes";
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -21,50 +25,8 @@ const pool = new Pool({
 const adapter = new PrismaPg(pool);
 const defaultPrisma = new PrismaClient({ adapter });
 
-/**
- * ISO 3166-1 alpha-2 country codes. Stable; display labels come from i18n (countries.{code}).
- * Initial set: app locales (es, en) and collector-relevant markets. Expand the array when more
- * countries are needed; see docs/development/store-catalogs.md.
- */
-export const COUNTRY_CODES = [
-  "AR", // Argentina
-  "BR", // Brazil
-  "CA", // Canada
-  "CL", // Chile
-  "CN", // China
-  "CO", // Colombia
-  "DE", // Germany
-  "ES", // Spain
-  "FR", // France
-  "GB", // United Kingdom
-  "IT", // Italy
-  "JP", // Japan
-  "KR", // South Korea
-  "MX", // Mexico
-  "PE", // Peru
-  "PT", // Portugal
-  "US", // United States
-] as const;
-
-/** Collector-focused store product type keys. Stable; display labels come from i18n (storeProductTypes.{key}). */
-export const STORE_PRODUCT_TYPE_KEYS = [
-  "albums",
-  "art_books",
-  "books",
-  "book_accessories", // care, separators, sleeves, etc. for books/manga/light novels
-  "comics",
-  "figures",
-  "funkos",
-  "funko_accessories", // pedestals, display steps, protectors, cases
-  "home_video", // DVD, Blu-ray: anime, movies, series (physical)
-  "light_novels",
-  "manga",
-  "merchandise",
-  "music", // CDs, vinyl, physical music
-  "signatures",
-  "trading_cards",
-  "video_games",
-] as const;
+export { COUNTRY_CODES };
+export { STORE_PRODUCT_TYPE_KEYS };
 
 async function seedCountries(db: PrismaClient): Promise<void> {
   await db.country.createMany({
@@ -90,12 +52,18 @@ async function main(): Promise<void> {
   await runSeed();
 }
 
-main()
-  .then(async () => {
-    await defaultPrisma.$disconnect();
-  })
-  .catch(async (e) => {
-    console.error(e);
-    await defaultPrisma.$disconnect();
-    process.exit(1);
-  });
+const seedModulePath = fileURLToPath(import.meta.url);
+const argvEntry = process.argv[1];
+const invokedAsCliEntry = argvEntry !== undefined && path.resolve(argvEntry) === path.resolve(seedModulePath);
+
+if (invokedAsCliEntry) {
+  main()
+    .then(async () => {
+      await defaultPrisma.$disconnect();
+    })
+    .catch(async (e) => {
+      console.error(e);
+      await defaultPrisma.$disconnect();
+      process.exit(1);
+    });
+}

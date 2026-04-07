@@ -15,6 +15,7 @@ import {
   upsertStoreReview,
 } from "../store";
 import { runSeed } from "../../../prisma/seed";
+import { createTestUserData } from "@/test/createTestUserData";
 import { describe, expect, it } from "vitest";
 
 const hasDatabase = Boolean(process.env.DATABASE_URL);
@@ -24,14 +25,11 @@ describe("store queries", () => {
     await runSeed(prisma);
 
     const user = await prisma.user.create({
-      data: {
+      data: createTestUserData({
         id: `test-store-create-${Date.now()}`,
-        name: "Test User",
         email: `test-store-${Date.now()}@example.com`,
-        emailVerified: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
+        name: "Test User",
+      }),
     });
 
     try {
@@ -68,58 +66,55 @@ describe("store queries", () => {
     }
   });
 
-  it.skipIf(!hasDatabase)("createStore persists business logoUrl and exposes it in the public detail read model", async () => {
-    await runSeed(prisma);
+  it.skipIf(!hasDatabase)(
+    "createStore persists business logoUrl and exposes it in the public detail read model",
+    async () => {
+      await runSeed(prisma);
 
-    const user = await prisma.user.create({
-      data: {
-        id: `test-store-logo-${Date.now()}`,
-        name: "Logo User",
-        email: `store-logo-${Date.now()}@example.com`,
-        emailVerified: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
-
-    try {
-      const { id, slug } = await createStore(prisma, {
-        name: "Logo Ready Store",
-        storeType: "BUSINESS",
-        countryCode: "PE",
-        presenceTypes: ["ONLINE"],
-        productTypeKeys: ["figures"],
-        createdByUserId: user.id,
-        status: "APPROVED",
-        approvedByUserId: user.id,
-        logoUrl: "https://cdn.example.com/store-logos/store-123.webp?v=abc123def456",
+      const user = await prisma.user.create({
+        data: createTestUserData({
+          id: `test-store-logo-${Date.now()}`,
+          email: `store-logo-${Date.now()}@example.com`,
+          name: "Logo User",
+        }),
       });
 
-      const [persistedStore, detailStore] = await Promise.all([
-        prisma.store.findUnique({ where: { id } }),
-        getStoreBySlug(prisma, slug),
-      ]);
+      try {
+        const { id, slug } = await createStore(prisma, {
+          name: "Logo Ready Store",
+          storeType: "BUSINESS",
+          countryCode: "PE",
+          presenceTypes: ["ONLINE"],
+          productTypeKeys: ["figures"],
+          createdByUserId: user.id,
+          status: "APPROVED",
+          approvedByUserId: user.id,
+          logoUrl: "https://cdn.example.com/store-logos/store-123.webp?v=abc123def456",
+        });
 
-      expect(persistedStore?.logoUrl).toBe("https://cdn.example.com/store-logos/store-123.webp?v=abc123def456");
-      expect(detailStore?.logoUrl).toBe("https://cdn.example.com/store-logos/store-123.webp?v=abc123def456");
-    } finally {
-      await prisma.store.deleteMany({ where: { createdByUserId: user.id } });
-      await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
-    }
-  });
+        const [persistedStore, detailStore] = await Promise.all([
+          prisma.store.findUnique({ where: { id } }),
+          getStoreBySlug(prisma, slug),
+        ]);
+
+        expect(persistedStore?.logoUrl).toBe("https://cdn.example.com/store-logos/store-123.webp?v=abc123def456");
+        expect(detailStore?.logoUrl).toBe("https://cdn.example.com/store-logos/store-123.webp?v=abc123def456");
+      } finally {
+        await prisma.store.deleteMany({ where: { createdByUserId: user.id } });
+        await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+      }
+    },
+  );
 
   it.skipIf(!hasDatabase)("createStore with APPROVED sets approvedByUserId and approvedAt", async () => {
     await runSeed(prisma);
 
     const user = await prisma.user.create({
-      data: {
+      data: createTestUserData({
         id: `test-store-admin-${Date.now()}`,
-        name: "Admin User",
         email: `admin-${Date.now()}@example.com`,
-        emailVerified: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
+        name: "Admin User",
+      }),
     });
 
     try {
@@ -148,14 +143,11 @@ describe("store queries", () => {
     await runSeed(prisma);
 
     const user = await prisma.user.create({
-      data: {
+      data: createTestUserData({
         id: `test-dup-${Date.now()}`,
-        name: "Dup Test",
         email: `dup-${Date.now()}@example.com`,
-        emailVerified: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
+        name: "Dup Test",
+      }),
     });
 
     try {
@@ -186,14 +178,11 @@ describe("store queries", () => {
       await runSeed(prisma);
 
       const user = await prisma.user.create({
-        data: {
+        data: createTestUserData({
           id: `test-listing-${Date.now()}`,
-          name: "Listing Test",
           email: `listing-${Date.now()}@example.com`,
-          emailVerified: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+          name: "Listing Test",
+        }),
       });
 
       try {
@@ -245,14 +234,11 @@ describe("store queries", () => {
     await runSeed(prisma);
 
     const user = await prisma.user.create({
-      data: {
+      data: createTestUserData({
         id: `test-detail-${Date.now()}`,
-        name: "Detail Test",
         email: `detail-${Date.now()}@example.com`,
-        emailVerified: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
+        name: "Detail Test",
+      }),
     });
 
     try {
@@ -285,14 +271,11 @@ describe("store queries", () => {
     await runSeed(prisma);
 
     const user = await prisma.user.create({
-      data: {
+      data: createTestUserData({
         id: `test-person-${Date.now()}`,
-        name: "Person Test",
         email: `person-${Date.now()}@example.com`,
-        emailVerified: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
+        name: "Person Test",
+      }),
     });
 
     try {
@@ -323,24 +306,18 @@ describe("store queries", () => {
     await runSeed(prisma);
 
     const user = await prisma.user.create({
-      data: {
+      data: createTestUserData({
         id: `test-review-${Date.now()}`,
-        name: "Review Author",
         email: `review-${Date.now()}@example.com`,
-        emailVerified: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
+        name: "Review Author",
+      }),
     });
     const secondUser = await prisma.user.create({
-      data: {
+      data: createTestUserData({
         id: `test-review-peer-${Date.now()}`,
-        name: "Other Reviewer",
         email: `review-peer-${Date.now()}@example.com`,
-        emailVerified: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
+        name: "Other Reviewer",
+      }),
     });
 
     try {
@@ -402,27 +379,21 @@ describe("store queries", () => {
       await runSeed(prisma);
 
       const viewer = await prisma.user.create({
-        data: {
+        data: createTestUserData({
           id: `test-review-pin-viewer-${Date.now()}`,
-          name: "Pinned Viewer",
           email: `pinned-viewer-${Date.now()}@example.com`,
-          emailVerified: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
+          name: "Pinned Viewer",
+        }),
       });
 
       const otherUsers = await Promise.all(
         [1, 2, 3, 4, 5].map((index) =>
           prisma.user.create({
-            data: {
+            data: createTestUserData({
               id: `test-review-pin-other-${Date.now()}-${index}`,
-              name: `Other Reviewer ${index}`,
               email: `pinned-other-${Date.now()}-${index}@example.com`,
-              emailVerified: true,
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
+              name: `Other Reviewer ${index}`,
+            }),
           }),
         ),
       );
@@ -509,14 +480,11 @@ describe("store queries", () => {
     await runSeed(prisma);
 
     const user = await prisma.user.create({
-      data: {
+      data: createTestUserData({
         id: `test-note-${Date.now()}`,
-        name: "Note Owner",
         email: `note-${Date.now()}@example.com`,
-        emailVerified: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
+        name: "Note Owner",
+      }),
     });
 
     try {

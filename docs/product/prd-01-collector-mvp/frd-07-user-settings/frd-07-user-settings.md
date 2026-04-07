@@ -118,7 +118,7 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - `BR-07-06`: On mobile and tablet, the same identity surface appears in the lower drawer area and opens an inline anchored menu pattern inside the drawer.
 - `BR-07-07`: Privacy Policy and Terms and Conditions links remain visible inside the opened user menu and open in a new browser tab.
 - `BR-07-08`: `Settings` is removed from primary shell navigation in MVP once the lower account menu is available.
-- `BR-07-09`: Username uniqueness is case-insensitive even though the stored display form preserves the user's chosen casing.
+- `BR-07-09`: Username uniqueness is case-insensitive because the persisted username is normalized to canonical lowercase form.
 - `BR-07-10`: Reserved usernames such as `admin`, `support`, `pandatrack`, `team`, `help`, `root`, and `system` must never be claimable.
 - `BR-07-11`: Offensive-term filtering for usernames must avoid substring false positives and should only reject explicit blocked tokens according to the configured normalization rules.
 - `BR-07-12`: Display names must remain non-unique but must still reject reserved system names, PandaTrack brand impersonation, and blocked tokens according to the configured normalization rules.

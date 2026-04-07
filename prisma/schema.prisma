@@ -80,6 +80,14 @@ model User {
   /// When set, the 7-day credential verification grace window counts from this time (e.g. immediate email change). Otherwise `createdAt` is used.
   unverifiedGraceStartsAt     DateTime?
   image                       String?
+  username                    String                 @unique
+  usernameChangedAt           DateTime?
+  preferredCountryCode        String?
+  preferredCountry            Country?               @relation(fields: [preferredCountryCode], references: [code], onDelete: SetNull, onUpdate: Cascade)
+  baseCurrencyCode            String?
+  budgetAmount                Int?
+  budgetResetDayOfMonth       Int?
+  timezone                    String?
   createdAt                   DateTime
   updatedAt                   DateTime
   sessions                    Session[]
@@ -93,7 +101,9 @@ model User {
   storeChangeRequests         StoreChangeRequest[]
   reviewedStoreChangeRequests StoreChangeRequest[]   @relation("StoreChangeRequestReviewer")
   orders                      Order[]
+  preferredProductTypes       UserPreferredProductType[]
 
+  @@index([preferredCountryCode])
   @@map("user")
 }
 
@@ -146,6 +156,7 @@ model Country {
   stores         Store[]
   storeAddresses StoreAddress[]
   storeImports   StoreImportCountry[]
+  usersPreferred User[]
 
   @@map("country")
 }
@@ -262,8 +273,21 @@ model StoreProductType {
   createdAt   DateTime                  @default(now())
   updatedAt   DateTime                  @updatedAt
   assignments StoreProductTypeAssignment[]
+  userPreferences UserPreferredProductType[]
 
   @@map("store_product_type")
+}
+
+model UserPreferredProductType {
+  userId           String
+  productTypeKey   String
+  createdAt        DateTime         @default(now())
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productType      StoreProductType @relation(fields: [productTypeKey], references: [key], onDelete: Restrict)
+
+  @@id([userId, productTypeKey])
+  @@index([productTypeKey])
+  @@map("user_preferred_product_type")
 }
 
 model StoreProductTypeAssignment {

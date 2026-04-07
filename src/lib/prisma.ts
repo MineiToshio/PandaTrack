@@ -1,6 +1,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import { PrismaClient } from "../../generated/prisma/client";
+import { generateUniqueUsernameForNewUser } from "@/lib/user-settings/usernameGeneration";
 
 declare global {
   var prisma: PrismaClient | undefined;
@@ -40,10 +41,31 @@ const pool = new Pool({
 
 const adapter = new PrismaPg(pool);
 
-const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
+const basePrisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
+
+const prisma = basePrisma.$extends({
+  query: {
+    user: {
+      async create({ args, query }) {
+        const currentUsername = "username" in args.data ? args.data.username : undefined;
+        const email = "email" in args.data && typeof args.data.email === "string" ? args.data.email.trim() : "";
+
+        if (!currentUsername && email) {
+          const generated = await generateUniqueUsernameForNewUser(basePrisma, email);
+          args.data = {
+            ...args.data,
+            username: generated.username,
+          };
+        }
+
+        return query(args);
+      },
+    },
+  },
+}) as PrismaClient;
 
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+  globalForPrisma.prisma = basePrisma;
 }
 
 export { prisma };

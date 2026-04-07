@@ -16,6 +16,13 @@ Reference for what each table and attribute is for, where it is used, and why it
 - **emailVerified** – Whether the email was verified (affects trust / flows that require verification).
 - **unverifiedGraceStartsAt** – Optional anchor for the credential 7-day verification grace window. Set to “now” on immediate email change so re-verification gets a fresh window; cleared when the user verifies. If null, grace is counted from `createdAt`.
 - **image** – Profile picture URL when provided by the provider or user.
+- **username** – Shell-facing handle, stored in canonical lowercase form and enforced unique. Assigned automatically on signup with collision-safe generation.
+- **usernameChangedAt** – Timestamp of the last successful username change from settings; drives the 7-day username-change rate limit (separate from email-change limits).
+- **preferredCountryCode** – Optional FK to `country` for saved collector country preference (settings).
+- **baseCurrencyCode** – Optional ISO 4217 code from the curated collector currency list aligned with seeded countries.
+- **budgetAmount** – Optional positive budget cap in the user’s base currency. Stored as an integer, so there are no fractional subunits.
+- **budgetResetDayOfMonth** – Optional calendar day `1–31` for budget reset; **null** means the last day of each month (months with fewer days clamp to the last day).
+- **timezone** – Optional IANA zone name for budget period boundaries; missing timezone falls back to UTC in evaluation logic.
 - **createdAt / updatedAt** – Audit and ordering.
 
 ### `session`
@@ -53,7 +60,7 @@ Reference for what each table and attribute is for, where it is used, and why it
 
 ### `country`
 
-**Purpose:** Stable list of countries. Used for store country, addresses, and import countries. Labels come from i18n (e.g. `countries.PE`), not from the DB.
+**Purpose:** Stable list of countries. Used for store country, addresses, import countries, and optional user country preference. Labels come from i18n (e.g. `countries.PE`), not from the DB.
 
 - **code** – Primary key; ISO 3166-1 alpha-2 code (e.g. ES, PE). Seeded by `prisma/seed.ts`; see `docs/development/store-catalogs.md` for stable identifiers and usage.
 
@@ -128,6 +135,13 @@ Reference for what each table and attribute is for, where it is used, and why it
 **Purpose:** Links stores to product types. A store can have multiple product types; used for discovery filters and profile.
 
 - **storeId / productTypeKey** – Composite PK; which store has which product type.
+
+### `user_preferred_product_type`
+
+**Purpose:** Many-to-many between collectors and `store_product_type` for saved “what I collect” preferences (FRD-07). Uses catalog keys only; no duplicate free-text types.
+
+- **userId / productTypeKey** – Composite PK; which user prefers which catalog product type.
+- **createdAt** – When the preference row was created.
 
 ### `store_property_definition`
 
