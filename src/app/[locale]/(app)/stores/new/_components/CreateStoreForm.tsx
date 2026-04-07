@@ -42,9 +42,8 @@ import StoreFormSectionCard from "../../_components/share/StoreFormSectionCard";
 import StoreLogoField, { type StoreLogoSubmission } from "../../_components/share/StoreLogoField/StoreLogoField";
 import StoreMultiTagAutocomplete from "../../_components/share/StoreMultiTagAutocomplete";
 import StoreProductTypeRequestModal from "../../_components/share/StoreProductTypeRequestModal";
-import StoreSegmentedControl from "../../_components/share/StoreSegmentedControl";
-import StoreSelectableTagGroup from "../../_components/share/StoreSelectableTagGroup";
 import StoreToggleSwitch from "../../_components/share/StoreToggleSwitch";
+import ToggleChoiceGroup from "@/components/core/ToggleChoiceGroup";
 
 type DuplicateCandidate = { id: string; name: string; slug: string; countryCode: string; logoUrl: string | null };
 
@@ -483,8 +482,10 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
         <StoreFormSectionCard eyebrow={tCreate("basicsEyebrow")} title={tCreate("basicsTitle")}>
           <div className="space-y-3">
             <Label>{tCreate("storeTypeLabel")}</Label>
-            <StoreSegmentedControl
-              name="storeType"
+            <ToggleChoiceGroup
+              mode="single"
+              appearance="tile"
+              formName="storeType"
               options={storeTypeOptions}
               value={storeType}
               onChange={(value) => {
@@ -612,12 +613,13 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
               data-field="presenceTypes"
               className={cn(hasPresenceError && "border-destructive rounded-lg border p-2")}
             >
-              <StoreSelectableTagGroup
+              <ToggleChoiceGroup
+                mode="multiple"
                 options={presenceOptions}
                 selectedValues={presenceTypes}
                 onChange={(values) => setPresenceTypes(values as Array<"ONLINE" | "PHYSICAL">)}
-                inputName="presenceTypes"
-                tagClassName="min-h-11"
+                formName="presenceTypes"
+                itemClassName="min-h-11"
               />
             </div>
             {fieldErrors.presenceTypes?.[0] && (
@@ -648,11 +650,12 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
               data-field="productTypeKeys"
               className={cn(hasProductTypeError && "border-destructive rounded-lg border p-2")}
             >
-              <StoreSelectableTagGroup
+              <ToggleChoiceGroup
+                mode="multiple"
                 options={productTypeOptions}
                 selectedValues={selectedProductTypeKeys}
                 onChange={setSelectedProductTypeKeys}
-                inputName="productTypeKeys"
+                formName="productTypeKeys"
                 trailingSlot={<StoreProductTypeRequestModal locale={locale} source="create" triggerVariant="chip" />}
               />
             </div>

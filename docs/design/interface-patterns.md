@@ -94,6 +94,15 @@ Base button patterns live in `src/components/core/Button/buttonVariants.ts`.
 
 Use shared form controls before custom markup. Keep labels, helper text, validation, and spacing consistent.
 
+### Toggle choice groups (chip and tile)
+
+Use `src/components/core/ToggleChoiceGroup.tsx` when the user picks one or many options via `aria-pressed` toggle buttons that share one visual language:
+
+- **`appearance="chip"`**: wrapping row, compact height, rounded-xl (multi-select tags, filters).
+- **`appearance="tile"`**: responsive two-column grid on larger viewports, larger targets, rounded-lg (single prominent choice).
+
+Set `mode` to `"single"` or `"multiple"` to match the data shape. Prefer this component over duplicating toggle-button markup in feature routes.
+
 ## Navigation Patterns
 
 ### Back navigation

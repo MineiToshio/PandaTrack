@@ -25,8 +25,8 @@ import StoreFormSectionCard from "../../../_components/share/StoreFormSectionCar
 import StoreLogoField, { type StoreLogoSubmission } from "../../../_components/share/StoreLogoField/StoreLogoField";
 import StoreMultiTagAutocomplete from "../../../_components/share/StoreMultiTagAutocomplete";
 import StoreProductTypeRequestModal from "../../../_components/share/StoreProductTypeRequestModal";
-import StoreSelectableTagGroup from "../../../_components/share/StoreSelectableTagGroup";
 import StoreToggleSwitch from "../../../_components/share/StoreToggleSwitch";
+import ToggleChoiceGroup from "@/components/core/ToggleChoiceGroup";
 import { saveStoreEdit, type SaveStoreEditResult } from "../_actions/saveStoreEdit";
 
 type EditStoreFormProps = {
@@ -362,11 +362,12 @@ export default function EditStoreForm({
         <StoreFormSectionCard eyebrow={t("edit.catalogEyebrow")} title={t("edit.catalogTitle")}>
           <div className="space-y-3">
             <Label>{t("create.presenceLabel")}</Label>
-            <StoreSelectableTagGroup
+            <ToggleChoiceGroup
+              mode="multiple"
               options={presenceOptions}
               selectedValues={presenceTypes}
               onChange={(values) => setPresenceTypes(values as Array<"ONLINE" | "PHYSICAL">)}
-              inputName="presenceTypes"
+              formName="presenceTypes"
             />
             {fieldErrors.presenceTypes?.[0] && (
               <Typography size="xs" className="text-destructive" role="alert">
@@ -392,11 +393,12 @@ export default function EditStoreForm({
 
           <div className="space-y-3">
             <Label>{t("create.productTypesLabel")}</Label>
-            <StoreSelectableTagGroup
+            <ToggleChoiceGroup
+              mode="multiple"
               options={productTypeOptions}
               selectedValues={selectedProductTypeKeys}
               onChange={setSelectedProductTypeKeys}
-              inputName="productTypeKeys"
+              formName="productTypeKeys"
               trailingSlot={<StoreProductTypeRequestModal locale={locale} source="edit" triggerVariant="chip" />}
             />
           </div>
