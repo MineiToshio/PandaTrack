@@ -258,6 +258,15 @@ Common patterns:
 
 Avoid turning the UI into a visible stack of boxes inside boxes inside boxes.
 
+#### 🚨 Anti-Pattern: Box-in-Box Syndrome
+
+**NEVER** encase every piece of information in its own bordered container. This creates a noisy, heavy, and claustrophobic interface.
+
+- **Do not** put a card inside a card inside a card.
+- **Do not** use borders to separate every single group of data.
+- **Instead**, use whitespace (margins/padding), typography (size/weight/color), and subtle dividers (`border-b` or `border-t`) to establish hierarchy.
+- Let the content breathe on the page background (`bg-background`) whenever possible.
+
 Rule of thumb:
 
 - one main surface is expected
