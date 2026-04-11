@@ -142,6 +142,11 @@ Rules:
 - do not split core account actions between header and sidebar in the same shell
 - the trigger must have hover, focus-visible, active, and pointer feedback
 - the menu should feel visually anchored to the lower navigation area, not like a detached center-screen popover
+- desktop trigger should read as a clean row, not a filled pill: keep the avatar unframed by default and let hover supply the surface feedback
+- desktop floating panel may be slightly wider than the trigger row when needed so legal links fit cleanly
+- place `Privacy Policy` and `Terms and Conditions` side by side in a compact footer row, using smaller text and a subtle separator dot
+- when the account menu is open, the trigger should remain visibly active with a stronger filled state than hover
+- keep the avatar anchor visually stable between collapsed-rail and expanded-sidebar states so expansion does not make the identity affordance appear to jump
 
 ## Content Hierarchy
 

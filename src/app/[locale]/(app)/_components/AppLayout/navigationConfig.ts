@@ -9,7 +9,7 @@ export interface NavItem {
   labelKey: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
+const NAV_ROUTE_ITEMS: NavItem[] = [
   {
     id: "dashboard",
     pathSegment: "dashboard",
@@ -37,8 +37,10 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
+const PRIMARY_NAV_ITEM_IDS: NavItemId[] = ["dashboard", "stores", "purchases", "shipments"];
+
 export function getPrivateAppNavItems(): NavItem[] {
-  return NAV_ITEMS;
+  return NAV_ROUTE_ITEMS.filter((item) => PRIMARY_NAV_ITEM_IDS.includes(item.id));
 }
 
 /**
@@ -50,7 +52,7 @@ export function getPrivateAppPathSegment(pathname: string): string | undefined {
   const segmentIndex = 1;
   if (segments.length <= segmentIndex) return undefined;
   const segment = segments[segmentIndex];
-  const known = NAV_ITEMS.map((item) => item.pathSegment);
+  const known = NAV_ROUTE_ITEMS.map((item) => item.pathSegment);
   return known.includes(segment) ? segment : undefined;
 }
 
@@ -59,6 +61,6 @@ export function getPrivateAppPathSegment(pathname: string): string | undefined {
  */
 export function getActiveNavItem(pathname: string): NavItem {
   const segment = getPrivateAppPathSegment(pathname);
-  const found = NAV_ITEMS.find((item) => item.pathSegment === segment);
-  return found ?? NAV_ITEMS[0];
+  const found = NAV_ROUTE_ITEMS.find((item) => item.pathSegment === segment);
+  return found ?? NAV_ROUTE_ITEMS[0];
 }

@@ -37,10 +37,10 @@ describe("getActiveNavItem", () => {
 });
 
 describe("getPrivateAppNavItems", () => {
-  it("returns all five primary nav items in order", () => {
+  it("returns the collector primary nav items in order without settings", () => {
     const items = getPrivateAppNavItems();
-    expect(items).toHaveLength(5);
-    expect(items.map((i) => i.id)).toEqual(["dashboard", "stores", "purchases", "shipments", "settings"]);
+    expect(items).toHaveLength(4);
+    expect(items.map((i) => i.id)).toEqual(["dashboard", "stores", "purchases", "shipments"]);
   });
 
   it("returns items with href that include locale and route", () => {

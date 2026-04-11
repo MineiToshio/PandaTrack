@@ -7,7 +7,6 @@ import { getPageHeader, type BreadcrumbItem } from "@/app/[locale]/(app)/_utils/
 import { useHeaderTitle } from "./HeaderTitleContext";
 import LanguageToggle from "@/app/[locale]/(landing)/_components/Menu/LanguageToggle";
 import ThemeToggle from "@/app/[locale]/(landing)/_components/Menu/ThemeToggle";
-import SignOutButton from "@/components/modules/auth/SignOutButton";
 import Heading from "@/components/core/Heading";
 import IconButton from "@/components/core/IconButton";
 import { POSTHOG_EVENTS } from "@/lib/constants";
@@ -15,7 +14,6 @@ import { POSTHOG_EVENTS } from "@/lib/constants";
 type ContentHeaderProps = {
   locale: string;
   pathname: string;
-  signOutLabel: string;
   drawerOpen: boolean;
   onOpenDrawer: () => void;
   burgerButtonRef: React.RefObject<HTMLButtonElement | null>;
@@ -44,7 +42,6 @@ function toDisplayBreadcrumbs(
 export default function ContentHeader({
   locale,
   pathname,
-  signOutLabel,
   drawerOpen,
   onOpenDrawer,
   burgerButtonRef,
@@ -113,7 +110,6 @@ export default function ContentHeader({
           })}
         />
         <ThemeToggle posthogEvent={POSTHOG_EVENTS.APP_SHELL.THEME_CHANGED} posthogProps={{ route: pathname }} />
-        <SignOutButton locale={locale} label={signOutLabel} />
       </div>
     </header>
   );

@@ -34,17 +34,12 @@ vi.mock("@/app/[locale]/(landing)/_components/Menu/ThemeToggle", () => ({
   default: (props: Record<string, unknown>) => <div data-testid="theme-toggle" data-props={JSON.stringify(props)} />,
 }));
 
-vi.mock("@/components/modules/auth/SignOutButton", () => ({
-  default: () => <button type="button">Sign out</button>,
-}));
-
 describe("ContentHeader", () => {
   it("uses localized labels and wires shell analytics props for toggles", () => {
     render(
       <ContentHeader
         locale="en"
         pathname="/en/purchases/pre-orders"
-        signOutLabel="Sign out"
         drawerOpen={false}
         onOpenDrawer={vi.fn()}
         burgerButtonRef={{ current: null }}

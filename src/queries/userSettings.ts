@@ -16,6 +16,36 @@ export type CollectorPreferencesSnapshot = {
   preferredProductTypeKeys: string[];
 };
 
+export type AppShellUserIdentitySnapshot = {
+  username: string;
+  name: string | null;
+  image: string | null;
+};
+
+/**
+ * Loads the user identity surface needed by the private app shell.
+ */
+export async function getAppShellUserIdentity(userId: string): Promise<AppShellUserIdentitySnapshot | null> {
+  const row = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      username: true,
+      name: true,
+      image: true,
+    },
+  });
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    username: row.username,
+    name: row.name,
+    image: row.image,
+  };
+}
+
 /**
  * Loads persisted collector preferences and preferred product type keys for settings consumers.
  */

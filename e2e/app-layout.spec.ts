@@ -4,6 +4,7 @@ import { shouldSkipAuthenticatedE2E, signInAndLandOnDashboard } from "./_helpers
 const MOBILE_VIEWPORT = { width: 375, height: 667 };
 const MAIN_NAVIGATION_LABEL_REGEX = /main navigation|navegaci\u00f3n principal/i;
 const OPEN_MENU_LABEL_REGEX = /open menu|abrir men\u00fa/i;
+const ACCOUNT_ACTIONS_LABEL_REGEX = /account actions|acciones de cuenta/i;
 const EXPAND_SIDEBAR_LABEL_REGEX = /expand sidebar|expandir barra lateral/i;
 const COLLAPSE_SIDEBAR_LABEL_REGEX = /collapse sidebar|contraer barra lateral/i;
 const RETRY_ATTEMPTS = 3;
@@ -69,7 +70,11 @@ test.describe("App layout at mobile and tablet viewport", () => {
     await expect(page.getByRole("link", { name: "Stores" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Purchases" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Shipments" })).toBeVisible();
+    await expect(primaryNavigation.getByRole("link", { name: "Settings" })).toHaveCount(0);
+    await page.getByRole("button", { name: ACCOUNT_ACTIONS_LABEL_REGEX }).click();
     await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Privacy Policy" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Terms and Conditions" })).toBeVisible();
 
     await page.getByRole("link", { name: "Stores" }).click();
     await expect(page).toHaveURL(/\/en\/stores/);
@@ -93,6 +98,19 @@ test.describe("App layout desktop sidebar persistence", () => {
     await expect(page).toHaveURL(/\/en\/dashboard/);
 
     await expect(page.getByRole("button", { name: EXPAND_SIDEBAR_LABEL_REGEX }).first()).toBeVisible();
+  });
+
+  test("desktop sidebar exposes settings and legal links through the lower account menu", async ({ page }) => {
+    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
+
+    await page.setViewportSize(DESKTOP_VIEWPORT);
+    await signInAndLandOnDashboard(page);
+
+    await expect(page.getByRole("navigation", { name: MAIN_NAVIGATION_LABEL_REGEX }).getByRole("link", { name: "Settings" })).toHaveCount(0);
+    await page.getByRole("button", { name: ACCOUNT_ACTIONS_LABEL_REGEX }).click();
+    await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Privacy Policy" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Terms and Conditions" })).toBeVisible();
   });
 });
 

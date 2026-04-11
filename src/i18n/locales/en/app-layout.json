@@ -23,6 +23,13 @@
     "closeMenu": "Close menu",
     "preferencesAriaLabel": "Preferences and account"
   },
+  "account": {
+    "triggerLabel": "{username} account actions",
+    "identityCaption": "Account and preferences",
+    "settings": "Settings",
+    "privacy": "Privacy Policy",
+    "terms": "Terms and Conditions"
+  },
   "accessibility": {
     "mainNavigation": "Main navigation",
     "breadcrumbNavigation": "Breadcrumb",

@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Package, Settings, ShoppingBag, Store, X } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, Store, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -11,17 +11,19 @@ import LanguageToggle from "@/app/[locale]/(landing)/_components/Menu/LanguageTo
 import ThemeToggle from "@/app/[locale]/(landing)/_components/Menu/ThemeToggle";
 import IconButton from "@/components/core/IconButton";
 import Logo from "@/components/core/Logo";
-import SignOutButton from "@/components/modules/auth/SignOutButton";
 import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { getActiveNavItem, getPrivateAppNavItems, type NavItemId } from "./navigationConfig";
+import ShellAccountMenu from "./ShellAccountMenu";
+import type { AppShellUserIdentity } from "./types";
 
-const NAV_ICON_MAP: Record<NavItemId, React.ComponentType<{ className?: string }>> = {
+type PrimaryNavItemId = Exclude<NavItemId, "settings">;
+
+const NAV_ICON_MAP: Record<PrimaryNavItemId, React.ComponentType<{ className?: string }>> = {
   dashboard: LayoutDashboard,
   stores: Store,
   purchases: ShoppingBag,
   shipments: Package,
-  settings: Settings,
 };
 
 const TABLET_BREAKPOINT_PX = 768;
@@ -33,13 +35,21 @@ function getViewportKind(): "mobile" | "tablet" {
 
 type AppNavDrawerProps = {
   locale: string;
+  currentUser: AppShellUserIdentity;
   signOutLabel: string;
   isOpen: boolean;
   onClose: () => void;
   returnFocusRef: React.RefObject<HTMLButtonElement | null>;
 };
 
-export default function AppNavDrawer({ locale, signOutLabel, isOpen, onClose, returnFocusRef }: AppNavDrawerProps) {
+export default function AppNavDrawer({
+  locale,
+  currentUser,
+  signOutLabel,
+  isOpen,
+  onClose,
+  returnFocusRef,
+}: AppNavDrawerProps) {
   const pathname = usePathname();
   const t = useTranslations("appLayout");
   const drawerRootRef = useRef<HTMLDivElement>(null);
@@ -107,7 +117,7 @@ export default function AppNavDrawer({ locale, signOutLabel, isOpen, onClose, re
           aria-label={appShellMainNavigationLabel}
         >
           {navItems.map((item) => {
-            const Icon = NAV_ICON_MAP[item.id];
+            const Icon = NAV_ICON_MAP[item.id as PrimaryNavItemId];
             const isActive = activeItem.id === item.id;
             const href = item.href(locale);
             return (
@@ -151,7 +161,14 @@ export default function AppNavDrawer({ locale, signOutLabel, isOpen, onClose, re
               posthogProps={{ route: pathname ?? "" }}
             />
           </div>
-          <SignOutButton locale={locale} label={signOutLabel} className="h-11 w-full" />
+          <ShellAccountMenu
+            key={`drawer-account-${pathname ?? ""}`}
+            locale={locale}
+            user={currentUser}
+            signOutLabel={signOutLabel}
+            surface="drawer"
+            onItemSelect={onClose}
+          />
         </section>
       </aside>
     </div>

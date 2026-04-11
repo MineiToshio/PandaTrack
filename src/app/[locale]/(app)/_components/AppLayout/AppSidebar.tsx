@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Package, Settings, ShoppingBag, Store, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, Store, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -12,6 +12,8 @@ import Logo from "@/components/core/Logo";
 import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { getActiveNavItem, getPrivateAppNavItems, type NavItem, type NavItemId } from "./navigationConfig";
+import ShellAccountMenu, { SidebarRailAccountPreview } from "./ShellAccountMenu";
+import type { AppShellUserIdentity } from "./types";
 
 const SIDEBAR_WIDTH_EXPANDED_REM = 16;
 const SIDEBAR_RAIL_WIDTH_REM = 3.5;
@@ -19,23 +21,26 @@ const SIDEBAR_RAIL_WIDTH_REM = 3.5;
 /** Fixed height matching ContentHeader (h-14) so the logo strip aligns with the content header. */
 const SIDEBAR_HEADER_BASE = "border-border flex h-14 shrink-0 items-center border-b px-4";
 
-const NAV_ICON_MAP: Record<NavItemId, LucideIcon> = {
+type PrimaryNavItemId = Exclude<NavItemId, "settings">;
+
+const NAV_ICON_MAP: Record<PrimaryNavItemId, LucideIcon> = {
   dashboard: LayoutDashboard,
   stores: Store,
   purchases: ShoppingBag,
   shipments: Package,
-  settings: Settings,
 };
 
 type LucideIcon = React.ComponentType<{ className?: string }>;
 
 type AppSidebarProps = {
   locale: string;
+  currentUser: AppShellUserIdentity;
+  signOutLabel: string;
   expanded: boolean;
   onToggle: () => void;
 };
 
-export default function AppSidebar({ locale, expanded, onToggle }: AppSidebarProps) {
+export default function AppSidebar({ locale, currentUser, signOutLabel, expanded, onToggle }: AppSidebarProps) {
   const pathname = usePathname();
   const t = useTranslations("appLayout");
   const [floatingOpen, setFloatingOpen] = useState(false);
@@ -78,6 +83,9 @@ export default function AppSidebar({ locale, expanded, onToggle }: AppSidebarPro
           <div className="flex min-h-0 flex-1 flex-col">
             <ExpandedSidebarContent
               locale={locale}
+              pathname={pathname ?? ""}
+              currentUser={currentUser}
+              signOutLabel={signOutLabel}
               navItems={navItems}
               activeItem={activeItem}
               onToggle={handleToggle}
@@ -86,25 +94,25 @@ export default function AppSidebar({ locale, expanded, onToggle }: AppSidebarPro
             />
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 flex-col">
-            <div
-              className="w-full flex-1 py-2"
-              onMouseEnter={handleRailEnter}
-              onMouseLeave={handleRailLeave}
-              onFocus={() => setFloatingOpen(true)}
-              onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) setFloatingOpen(false);
-              }}
-            >
+          <div
+            className="flex min-h-0 flex-1 flex-col"
+            onMouseEnter={handleRailEnter}
+            onMouseLeave={handleRailLeave}
+            onFocus={() => setFloatingOpen(true)}
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) setFloatingOpen(false);
+            }}
+          >
+            <div className="w-full flex-1 py-2">
               <RailIcons locale={locale} navItems={navItems} activeItem={activeItem} t={t} />
             </div>
-            <div className="border-border flex w-full justify-center border-t px-2 py-2">
-              <IconButton
-                Icon={PanelLeftOpen}
-                variant="outline"
-                aria-label={t("sidebar.expand")}
-                onClick={handleToggle}
+            <div className="border-border flex w-full flex-col items-center gap-2 border-t px-2 py-2">
+              <SidebarRailAccountPreview
+                user={currentUser}
+                label={t("account.triggerLabel", { username: currentUser.username })}
+                onOpen={handleRailEnter}
               />
+              <IconButton Icon={PanelLeftOpen} variant="outline" aria-label={t("sidebar.expand")} onClick={handleToggle} />
             </div>
           </div>
         )}
@@ -127,6 +135,9 @@ export default function AppSidebar({ locale, expanded, onToggle }: AppSidebarPro
           <div className="flex min-h-0 flex-1 flex-col">
             <ExpandedSidebarContent
               locale={locale}
+              pathname={pathname ?? ""}
+              currentUser={currentUser}
+              signOutLabel={signOutLabel}
               navItems={navItems}
               activeItem={activeItem}
               onToggle={handleToggle}
@@ -142,6 +153,9 @@ export default function AppSidebar({ locale, expanded, onToggle }: AppSidebarPro
 
 function ExpandedSidebarContent({
   locale,
+  pathname,
+  currentUser,
+  signOutLabel,
   navItems,
   activeItem,
   onToggle,
@@ -149,6 +163,9 @@ function ExpandedSidebarContent({
   showCollapse,
 }: {
   locale: string;
+  pathname: string;
+  currentUser: AppShellUserIdentity;
+  signOutLabel: string;
   navItems: NavItem[];
   activeItem: NavItem;
   onToggle: () => void;
@@ -164,14 +181,23 @@ function ExpandedSidebarContent({
           <NavLink key={item.id} item={item} locale={locale} isActive={activeItem.id === item.id} t={t} />
         ))}
       </nav>
-      <div className="border-border flex items-center justify-between border-t p-3">
-        <span className="text-text-muted text-sm">{showCollapse ? t("sidebar.collapse") : t("sidebar.expand")}</span>
-        <IconButton
-          Icon={showCollapse ? PanelLeftClose : PanelLeftOpen}
-          variant="outline"
-          aria-label={showCollapse ? t("sidebar.collapse") : t("sidebar.expand")}
-          onClick={onToggle}
+      <div className="border-border flex flex-col gap-2 border-t px-2 py-2">
+        <ShellAccountMenu
+          key={`desktop-account-${pathname ?? ""}`}
+          locale={locale}
+          user={currentUser}
+          signOutLabel={signOutLabel}
+          surface="desktop"
         />
+        <div className="flex min-h-11 items-center justify-between px-1">
+          <span className="text-text-muted text-sm">{showCollapse ? t("sidebar.collapse") : t("sidebar.expand")}</span>
+          <IconButton
+            Icon={showCollapse ? PanelLeftClose : PanelLeftOpen}
+            variant="outline"
+            aria-label={showCollapse ? t("sidebar.collapse") : t("sidebar.expand")}
+            onClick={onToggle}
+          />
+        </div>
       </div>
     </>
   );
@@ -193,7 +219,7 @@ function RailIcons({
   return (
     <nav className="flex w-full flex-col gap-1 px-2" aria-label={appShellMainNavigationLabel}>
       {navItems.map((item) => {
-        const Icon = NAV_ICON_MAP[item.id];
+        const Icon = NAV_ICON_MAP[item.id as PrimaryNavItemId];
         const isActive = activeItem.id === item.id;
         const href = item.href(locale);
         return (
@@ -231,7 +257,7 @@ function NavLink({
   isActive: boolean;
   t: (key: string) => string;
 }) {
-  const Icon = NAV_ICON_MAP[item.id];
+  const Icon = NAV_ICON_MAP[item.id as PrimaryNavItemId];
   const href = item.href(locale);
   return (
     <Link

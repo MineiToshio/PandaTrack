@@ -7,6 +7,7 @@ import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
 import { getSession } from "@/lib/auth/auth-server";
 import { getVerificationSnapshot, maybeSendDaySixVerificationReminder } from "@/lib/auth/authVerification";
 import { ROUTES, VERIFICATION_BANNER_HEIGHT_PX } from "@/lib/constants";
+import { getAppShellUserIdentity } from "@/queries/userSettings";
 
 type PrivateAppLayoutProps = {
   children: React.ReactNode;
@@ -35,6 +36,12 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
   }
 
   const tAuth = await getTranslations({ locale, namespace: "auth" });
+  const shellIdentity = await getAppShellUserIdentity(session.user.id);
+  const currentUser = shellIdentity ?? {
+    username: session.user.name?.trim() || "user",
+    name: session.user.name,
+    image: session.user.image,
+  };
 
   if (snapshot?.state !== "grace") {
     return (
@@ -42,7 +49,7 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
         className="from-background via-primary/5 to-accent/5 min-h-screen bg-linear-to-b"
         style={{ ["--app-banner-offset" as string]: "0px" } as React.CSSProperties}
       >
-        <AppLayout locale={locale} signOutLabel={tAuth("signOut")}>
+        <AppLayout locale={locale} signOutLabel={tAuth("signOut")} currentUser={currentUser}>
           {children}
         </AppLayout>
       </div>
@@ -68,7 +75,7 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
           resendError={tVerification("resendError")}
         />
       </div>
-      <AppLayout locale={locale} signOutLabel={tAuth("signOut")}>
+      <AppLayout locale={locale} signOutLabel={tAuth("signOut")} currentUser={currentUser}>
         {children}
       </AppLayout>
     </div>

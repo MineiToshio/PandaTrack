@@ -9,10 +9,14 @@ const translationMap: Record<string, string> = {
   "nav.stores": "Stores",
   "nav.purchases": "Purchases",
   "nav.shipments": "Shipments",
-  "nav.settings": "Settings",
   "drawer.openMenu": "Open menu",
   "drawer.closeMenu": "Close menu",
   "drawer.preferencesAriaLabel": "Preferences and account",
+  "account.triggerLabel": "collector-fox account actions",
+  "account.identityCaption": "Account and preferences",
+  "account.settings": "Settings",
+  "account.privacy": "Privacy Policy",
+  "account.terms": "Terms and Conditions",
   "accessibility.mainNavigation": "Main navigation",
   "accessibility.languageNavigation": "Language",
 };
@@ -38,8 +42,8 @@ vi.mock("@/app/[locale]/(landing)/_components/Menu/ThemeToggle", () => ({
 }));
 
 vi.mock("@/components/modules/auth/SignOutButton", () => ({
-  default: ({ label }: { label: string }) => (
-    <button type="button" data-testid="drawer-sign-out">
+  default: ({ label, onSignOut }: { label: string; onSignOut?: () => void }) => (
+    <button type="button" data-testid="drawer-sign-out" onClick={onSignOut}>
       {label}
     </button>
   ),
@@ -47,6 +51,7 @@ vi.mock("@/components/modules/auth/SignOutButton", () => ({
 
 describe("AppNavDrawer", () => {
   const drawerProps = {
+    currentUser: { username: "collector-fox", name: "Collector Fox", image: null },
     signOutLabel: "Sign out",
     onClose: vi.fn(),
     returnFocusRef: { current: null } as RefObject<HTMLButtonElement | null>,
@@ -67,12 +72,24 @@ describe("AppNavDrawer", () => {
     expect(screen.getByRole("link", { name: "Stores" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Purchases" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Shipments" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
 
     expect(screen.getByRole("region", { name: "Preferences and account" })).toBeInTheDocument();
     expect(screen.getByTestId("drawer-language-toggle")).toBeInTheDocument();
     expect(screen.getByTestId("drawer-theme-toggle")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "collector-fox account actions" })).toBeInTheDocument();
+  });
+
+  it("opens the inline account menu with settings, sign out, and legal links", async () => {
+    const user = userEvent.setup();
+    render(<AppNavDrawer locale="en" isOpen {...drawerProps} />);
+
+    await user.click(screen.getByRole("button", { name: "collector-fox account actions" }));
+
+    expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
     expect(screen.getByTestId("drawer-sign-out")).toHaveTextContent("Sign out");
+    expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("target", "_blank");
+    expect(screen.getByRole("link", { name: "Terms and Conditions" })).toHaveAttribute("target", "_blank");
   });
 
   it("calls onClose when panel close button is clicked", async () => {

@@ -7,8 +7,8 @@ status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0013
-last_updated: 2026-04-03
-implementation_status: PLANNED
+last_updated: 2026-04-08
+implementation_status: IN_PROGRESS
 ---
 
 # WO-02 App Shell User Menu and Identity Surface
@@ -61,6 +61,7 @@ Replace the shell sign-out-only account affordance with a reusable lower-shell i
 
 - In desktop expanded sidebar state, show a rounded avatar plus username row directly above the sidebar expand/collapse control.
 - The entire identity row is interactive, uses pointer cursor and hover feedback, and opens its menu upward.
+- The desktop trigger should feel like a clean row rather than a filled card; the avatar itself does not need a background chip until hover adds surface emphasis to the row.
 - In desktop collapsed sidebar state, keep the avatar or fallback visible in the lower rail even before expansion.
 - In desktop collapsed sidebar state, hover or focus expansion reveals the username and the full trigger layout without changing menu ordering.
 - In mobile and tablet drawer state, replace the current sign-out button in the lower drawer area with the same avatar-plus-username trigger and inline anchored menu.
@@ -75,8 +76,10 @@ Replace the shell sign-out-only account affordance with a reusable lower-shell i
   4. `Terms and Conditions`
 - `Settings` must be removed from the primary shell navigation once this slice ships.
 - On desktop, the menu is a floating panel anchored above the trigger.
+- The desktop floating panel may be a bit wider than the trigger row so the legal footer fits on one compact line.
 - On mobile/tablet drawer, the same menu content opens inline within the drawer instead of as a floating overlay.
 - Legal links remain visible in the opened menu rather than hidden behind a second-level submenu.
+- Legal links should appear side by side in a small footer row with a subtle separator, matching the shell trust-footer pattern.
 - Legal links open in a new browser tab.
 - The menu closes on outside click, route navigation, and any menu-action selection.
 - The account-menu component should be shared between desktop and mobile placements so states, ordering, and accessibility behavior stay aligned.

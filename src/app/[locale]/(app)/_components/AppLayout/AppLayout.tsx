@@ -6,6 +6,7 @@ import AppNavDrawer from "./AppNavDrawer";
 import AppSidebar from "./AppSidebar";
 import ContentHeader from "./ContentHeader";
 import { HeaderTitleProvider } from "./HeaderTitleContext";
+import type { AppShellUserIdentity } from "./types";
 import { useSidebarState } from "./useSidebarState";
 
 const SIDEBAR_WIDTH_EXPANDED_REM = 16;
@@ -14,10 +15,11 @@ const SIDEBAR_RAIL_WIDTH_REM = 3.5;
 type AppLayoutProps = {
   locale: string;
   signOutLabel: string;
+  currentUser: AppShellUserIdentity;
   children: React.ReactNode;
 };
 
-export default function AppLayout({ locale, signOutLabel, children }: AppLayoutProps) {
+export default function AppLayout({ locale, signOutLabel, currentUser, children }: AppLayoutProps) {
   const pathname = usePathname();
   const { expanded, toggle } = useSidebarState();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -30,9 +32,10 @@ export default function AppLayout({ locale, signOutLabel, children }: AppLayoutP
 
   return (
     <div className="flex min-h-screen flex-col">
-      <AppSidebar locale={locale} expanded={expanded} onToggle={toggle} />
+      <AppSidebar locale={locale} currentUser={currentUser} signOutLabel={signOutLabel} expanded={expanded} onToggle={toggle} />
       <AppNavDrawer
         locale={locale}
+        currentUser={currentUser}
         signOutLabel={signOutLabel}
         isOpen={drawerOpen}
         onClose={handleCloseDrawer}
@@ -53,7 +56,6 @@ export default function AppLayout({ locale, signOutLabel, children }: AppLayoutP
             <ContentHeader
               locale={locale}
               pathname={pathname ?? ""}
-              signOutLabel={signOutLabel}
               drawerOpen={drawerOpen}
               onOpenDrawer={handleOpenDrawer}
               burgerButtonRef={burgerButtonRef}
