@@ -13,6 +13,7 @@ import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import Modal from "@/components/modules/Modal/Modal";
 import { POSTHOG_EVENTS } from "@/lib/constants";
+import { cn } from "@/lib/styles";
 import type { StoreGovernanceViewerContext } from "@/queries/storeGovernance";
 import { saveStoreReport, type SaveStoreReportResult } from "../_actions/saveStoreReport";
 
@@ -22,6 +23,8 @@ type StoreReportModalProps = {
   existingReport: StoreGovernanceViewerContext["openReport"];
   hideTrigger?: boolean;
   openRequestNonce?: number;
+  /** Merged into the default trigger button (e.g. higher contrast on tinted hero backgrounds). */
+  triggerClassName?: string;
   renderTrigger?: (args: { openModal: () => void; label: string }) => ReactNode;
 };
 
@@ -41,6 +44,7 @@ export default function StoreReportModal({
   existingReport,
   hideTrigger = false,
   openRequestNonce = 0,
+  triggerClassName,
   renderTrigger,
 }: StoreReportModalProps) {
   const t = useTranslations("stores");
@@ -120,7 +124,7 @@ export default function StoreReportModal({
           type="button"
           variant="secondary"
           size="sm"
-          className="gap-1.5 max-lg:h-11 max-lg:min-w-11 max-lg:justify-center max-lg:px-0"
+          className={cn("gap-1.5 max-lg:h-11 max-lg:min-w-11 max-lg:justify-center max-lg:px-0", triggerClassName)}
           onClick={openModal}
         >
           <Flag className="size-4 shrink-0" aria-hidden />

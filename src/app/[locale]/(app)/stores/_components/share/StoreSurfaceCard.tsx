@@ -1,6 +1,10 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/styles";
 
+/** Shared elevated surface for store routes (reviews card, detail sections, etc.). */
+export const STORE_SURFACE_CARD_CLASSNAME =
+  "bg-background/85 border-border/70 ring-primary/15 rounded-3xl border p-5 shadow-sm ring-1 ring-inset sm:p-6";
+
 type StoreSurfaceCardProps = {
   as?: "section" | "div";
   children: ReactNode;
@@ -11,13 +15,7 @@ export default function StoreSurfaceCard({ as, children, className, ...props }: 
   const Component = as ?? "section";
 
   return (
-    <Component
-      className={cn(
-        "bg-background/80 border-border/60 ring-primary/10 rounded-3xl border p-5 shadow-sm ring-1 ring-inset sm:p-6",
-        className,
-      )}
-      {...props}
-    >
+    <Component className={cn(STORE_SURFACE_CARD_CLASSNAME, className)} {...props}>
       {children}
     </Component>
   );

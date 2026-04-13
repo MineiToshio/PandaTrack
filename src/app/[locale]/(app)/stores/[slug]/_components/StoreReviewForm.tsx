@@ -107,7 +107,7 @@ export default function StoreReviewForm({
       <input type="hidden" name="overallRating" value={ratingValue > 0 ? ratingValue : ""} />
 
       <div className="space-y-1">
-        <StoreSectionLabel>{t("detail.reviews.form.title")}</StoreSectionLabel>
+        <StoreSectionLabel as="h3">{t("detail.reviews.form.title")}</StoreSectionLabel>
         <Typography size="sm" className="text-text-muted">
           {t("detail.reviews.form.description")}
         </Typography>

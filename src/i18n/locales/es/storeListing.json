@@ -43,10 +43,10 @@
     "noProductTypes": "Sin tipos de producto definidos",
     "importCountries": "Países de importación",
     "noImportCountries": "Sin países de importación",
-    "receivesOrdersYes": "Acepta pedidos",
-    "receivesOrdersNo": "No acepta pedidos",
-    "hasStockYes": "Maneja inventario",
-    "hasStockNo": "No maneja inventario",
+    "receivesOrdersYes": "Compras por pedido",
+    "receivesOrdersNo": "No ofrece compras por pedido",
+    "hasStockYes": "Vende con stock",
+    "hasStockNo": "No vende con stock",
     "storeTypeBusiness": "Negocio",
     "storeTypePerson": "Vendedor"
   }

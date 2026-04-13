@@ -46,7 +46,7 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
   if (snapshot?.state !== "grace") {
     return (
       <div
-        className="from-background via-primary/5 to-accent/5 min-h-screen bg-linear-to-b"
+        className="from-background via-primary/3 to-accent/3 min-h-screen bg-linear-to-b"
         style={{ ["--app-banner-offset" as string]: "0px" } as React.CSSProperties}
       >
         <AppLayout locale={locale} signOutLabel={tAuth("signOut")} currentUser={currentUser}>
@@ -60,7 +60,7 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
 
   return (
     <div
-      className="from-background via-primary/5 to-accent/5 min-h-screen bg-linear-to-b"
+      className="from-background via-primary/3 to-accent/3 min-h-screen bg-linear-to-b"
       style={{ ["--app-banner-offset" as string]: `${VERIFICATION_BANNER_HEIGHT_PX}px` } as React.CSSProperties}
     >
       <div className="sticky top-0 z-50 w-full">

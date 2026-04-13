@@ -43,10 +43,10 @@
     "noProductTypes": "No product types set",
     "importCountries": "Import countries",
     "noImportCountries": "No import countries",
-    "receivesOrdersYes": "Accepts orders",
-    "receivesOrdersNo": "Does not accept orders",
-    "hasStockYes": "Manages inventory",
-    "hasStockNo": "Does not manage inventory",
+    "receivesOrdersYes": "Overseas buying for you",
+    "receivesOrdersNo": "No overseas buying",
+    "hasStockYes": "Sells from stock",
+    "hasStockNo": "Not selling from stock",
     "storeTypeBusiness": "Business",
     "storeTypePerson": "Seller"
   }

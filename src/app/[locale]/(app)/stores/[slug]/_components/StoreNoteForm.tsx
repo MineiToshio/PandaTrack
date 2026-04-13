@@ -61,7 +61,9 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
   return (
     <StoreSurfaceCard>
       <div className="space-y-1">
-        <StoreSectionLabel id="store-private-note-heading">{t("detail.privateNote.title")}</StoreSectionLabel>
+        <StoreSectionLabel as="h3" id="store-private-note-heading">
+          {t("detail.privateNote.title")}
+        </StoreSectionLabel>
         <Typography size="sm" className="text-text-muted">
           {t("detail.privateNote.description")}
         </Typography>

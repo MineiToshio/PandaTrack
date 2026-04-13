@@ -17,19 +17,20 @@ import {
   Pencil,
   Phone,
   ShoppingBag,
+  Store,
   UserRound,
 } from "lucide-react";
 import { siFacebook, siInstagram, siTiktok, siWhatsapp } from "simple-icons";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
+import StoreSectionLabel from "../../_components/share/StoreSectionLabel";
+import { STORE_SURFACE_CARD_CLASSNAME } from "../../_components/share/StoreSurfaceCard";
 import { ROUTES } from "@/lib/constants";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn } from "@/lib/styles";
 import type { PublicStoreReview, StoreDetail, StoreViewerNote, StoreViewerReview } from "@/queries/store";
 import type { EditableStore, StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
 import BackNavLink from "@/components/core/BackNavLink";
-import StoreSectionLabel from "../../_components/share/StoreSectionLabel";
-import StoreSurfaceCard from "../../_components/share/StoreSurfaceCard";
 import StoreReviewAggregateBadge from "./StoreReviewAggregateBadge";
 import StorePublicReviewsSection from "./StorePublicReviewsSection";
 import StoreReviewsStateProvider from "./StoreReviewsStateProvider";
@@ -51,14 +52,6 @@ type StoreDetailContentProps = {
   canDirectlyEdit: boolean;
 };
 
-const STAGGER_BASE_DELAY_MS = 90;
-const CONTACT_LINK_CLASSNAME =
-  "group border-border/55 hover:border-primary/25 inline-flex w-full items-center justify-between gap-3 rounded-2xl border bg-background/70 px-4 py-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-background focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none";
-const TAG_CLASSNAME = "inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium";
-const METRIC_CARD_CLASSNAME =
-  "bg-background/80 rounded-2xl border border-border/50 border-t-2 border-t-primary/35 px-3 py-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/5";
-const METRIC_VALUE_CLASSNAME = "text-text-title mt-1.5 text-2xl leading-none font-semibold sm:text-3xl lg:text-4xl";
-
 function SimpleIconSvg({ path, size = 16 }: { path: string; size?: number }) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" width={size} height={size} aria-hidden>
@@ -72,18 +65,9 @@ function buildContactHref(
   value: string,
 ): string | null {
   const trimmedValue = value.trim();
-  if (!trimmedValue) {
-    return null;
-  }
-
-  if (type === "EMAIL") {
-    return `mailto:${trimmedValue}`;
-  }
-
-  if (type === "PHONE") {
-    return `tel:${trimmedValue}`;
-  }
-
+  if (!trimmedValue) return null;
+  if (type === "EMAIL") return `mailto:${trimmedValue}`;
+  if (type === "PHONE") return `tel:${trimmedValue}`;
   return trimmedValue;
 }
 
@@ -95,6 +79,53 @@ function getContactIcon(type: NonNullable<StoreDetail["contactChannels"]>[number
   if (type === "EMAIL") return <Mail className="size-4" aria-hidden />;
   if (type === "PHONE") return <Phone className="size-4" aria-hidden />;
   return <Link2 className="size-4" aria-hidden />;
+}
+
+const METRIC_CARD_SHELL_CLASSNAME = cn(
+  STORE_SURFACE_CARD_CLASSNAME,
+  "overflow-hidden rounded-2xl border-t-2 border-t-primary/45 p-0 sm:p-0",
+);
+
+/** Hero meta chips (store detail pre-refactor style). */
+const HERO_META_PILL_CLASSNAME =
+  "inline-flex items-center gap-1.5 rounded-full bg-background/80 px-3 py-1.5 text-xs font-medium text-text-body";
+
+/** Hero secondary actions: soft neutral edge + shadow so they read on the tinted hero without loud color. */
+const STORE_DETAIL_HERO_ACTION_CLASSNAME = "border border-border/35 shadow-md hover:border-border/50 hover:shadow-lg";
+
+function MetricCard({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
+  return (
+    <div className={METRIC_CARD_SHELL_CLASSNAME}>
+      <div className="px-4 py-3.5">
+        <div className="text-text-muted flex items-center gap-1.5">
+          {icon}
+          <Typography as="span" size="2xs">
+            {label}
+          </Typography>
+        </div>
+        <Typography
+          as="span"
+          size="sm"
+          className="text-text-title mt-1.5 block text-2xl leading-none font-semibold tabular-nums sm:text-3xl"
+        >
+          {value}
+        </Typography>
+      </div>
+    </div>
+  );
+}
+
+function SidebarField({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5">
+      <Typography as="span" size="2xs" className="text-text-muted shrink-0">
+        {label}
+      </Typography>
+      <Typography as="span" size="xs" className="text-text-body text-right font-medium">
+        {children}
+      </Typography>
+    </div>
+  );
 }
 
 export default function StoreDetailContent({
@@ -125,9 +156,9 @@ export default function StoreDetailContent({
   const isBusiness = store.storeType === "BUSINESS";
   const storeTypeLabel = isBusiness ? tStores("create.storeTypeBusiness") : tStores("create.storeTypePerson");
   const storeTypeIcon = isBusiness ? (
-    <Building2 className="text-primary size-3.5" aria-hidden />
+    <Building2 className="text-primary size-3.5 shrink-0" aria-hidden />
   ) : (
-    <UserRound className="text-info size-3.5" aria-hidden />
+    <UserRound className="text-info size-3.5 shrink-0" aria-hidden />
   );
   const profileCreatedAt = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(store.createdAt);
   const receivesOrdersLabel =
@@ -153,51 +184,75 @@ export default function StoreDetailContent({
       reviews={reviews}
       viewerReview={viewerReview}
     >
-      <div className="px-4 py-7 sm:px-6 sm:py-8">
-        <div className="mx-auto max-w-6xl space-y-6">
+      <div className="px-4 py-7 sm:px-6 sm:py-10">
+        <div className="mx-auto max-w-6xl">
           <BackNavLink href={`/${locale}${ROUTES.stores}`}>{tListing("backToListing")}</BackNavLink>
 
-          <section className="from-primary/20 via-highlight/12 to-info/20 relative animate-[hero-fade-in-up_460ms_ease-out_both] overflow-hidden rounded-3xl bg-linear-to-br px-5 py-6 shadow-sm sm:px-8 sm:py-8">
-            <div className="bg-primary/30 absolute -top-20 right-0 size-44 animate-[hero-glow-pulse_6s_ease-in-out_infinite] rounded-full blur-3xl" />
+          {/* ── Header (hero surface, matches pre-layout-refactor store detail) ── */}
+          <section
+            aria-labelledby="store-detail-heading"
+            className={cn(
+              "from-primary/20 via-highlight/12 to-info/20 relative mt-6 overflow-hidden rounded-3xl bg-linear-to-br px-5 py-6 shadow-sm sm:px-8 sm:py-8",
+              "animate-[hero-fade-in-up_460ms_ease-out_both] motion-reduce:animate-none",
+            )}
+          >
             <div
-              className="bg-accent/30 absolute -bottom-20 -left-10 size-44 animate-[hero-glow-pulse_7s_ease-in-out_infinite] rounded-full blur-3xl"
+              className="bg-primary/30 absolute -top-20 right-0 size-44 animate-[hero-glow-pulse_6s_ease-in-out_infinite] rounded-full blur-3xl motion-reduce:animate-none"
+              aria-hidden
+            />
+            <div
+              className="bg-accent/30 absolute -bottom-20 -left-10 size-44 animate-[hero-glow-pulse_7s_ease-in-out_infinite] rounded-full blur-3xl motion-reduce:animate-none"
               style={{ animationDelay: "420ms" }}
+              aria-hidden
             />
 
-            <div className="relative z-10 space-y-5">
-              <div className="flex items-start gap-4">
+            <header className="relative z-10">
+              <div className="flex items-start gap-4 sm:gap-5">
                 {isBusiness && store.logoUrl ? (
-                  <div className="bg-background/85 relative size-20 shrink-0 animate-[hero-float_5s_ease-in-out_infinite] overflow-hidden rounded-2xl shadow-sm">
+                  <div
+                    className={cn(
+                      "border-border/40 bg-background/85 relative size-16 shrink-0 overflow-hidden rounded-2xl border shadow-sm sm:size-20",
+                      "animate-[hero-float_5s_ease-in-out_infinite] motion-reduce:animate-none",
+                    )}
+                  >
                     <Image
                       src={store.logoUrl}
                       alt={tStores("logo.detailAlt", { storeName: store.name })}
                       width={80}
                       height={80}
-                      className="object-cover"
+                      className="size-full object-cover"
                       unoptimized
                     />
                   </div>
                 ) : (
-                  <div className="bg-background/85 text-primary flex size-20 shrink-0 animate-[hero-float_5s_ease-in-out_infinite] items-center justify-center rounded-2xl shadow-sm">
-                    <Building2 className="size-9" aria-hidden />
+                  <div
+                    className={cn(
+                      "border-border/40 bg-background/85 text-primary flex size-16 shrink-0 items-center justify-center rounded-2xl border shadow-sm sm:size-20",
+                      "animate-[hero-float_5s_ease-in-out_infinite] motion-reduce:animate-none",
+                    )}
+                  >
+                    <Building2 className="size-7 sm:size-9" aria-hidden />
                   </div>
                 )}
-                <div className="min-w-0 flex-1 space-y-2">
+
+                <div className="min-w-0 flex-1">
                   <div className="flex items-start justify-between gap-3">
-                    <Heading as="h1" size="sm" className="text-text-title min-w-0 flex-1 pr-1">
+                    <Heading as="h1" size="sm" className="text-text-title" id="store-detail-heading">
                       {store.name}
                     </Heading>
-                    <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5 sm:gap-2">
+                    <div className="flex shrink-0 items-center gap-1.5 pt-1 sm:gap-2">
                       <StoreReportModal
                         locale={locale}
                         storeSlug={store.slug}
                         existingReport={governanceViewerContext.openReport}
+                        triggerClassName={STORE_DETAIL_HERO_ACTION_CLASSNAME}
                       />
                       {canAccessEditRoute && (
                         <Link
                           href={`/${locale}${ROUTES.stores}/${editableStore.slug}/edit`}
                           className={cn(
                             buttonVariants({ variant: "secondary", size: "sm" }),
+                            STORE_DETAIL_HERO_ACTION_CLASSNAME,
                             "gap-1.5 max-lg:h-11 max-lg:min-w-11 max-lg:justify-center max-lg:px-0",
                           )}
                         >
@@ -207,79 +262,63 @@ export default function StoreDetailContent({
                       )}
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className={cn(TAG_CLASSNAME, "bg-background/80 text-text-body")}>
-                      <Globe className="size-3.5" aria-hidden />
+
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className={HERO_META_PILL_CLASSNAME}>
+                      {storeTypeIcon}
                       {storeTypeLabel}
                     </span>
-                    <span className={cn(TAG_CLASSNAME, "bg-background/80 text-text-body")}>
-                      <MapPinned className="size-3.5" aria-hidden />
+                    <span className={HERO_META_PILL_CLASSNAME}>
+                      <MapPinned className="size-3.5 shrink-0" aria-hidden />
                       {tCountries(store.countryCode)}
                     </span>
-                    <StoreReviewAggregateBadge className={TAG_CLASSNAME} />
+                    <StoreReviewAggregateBadge />
                   </div>
                 </div>
               </div>
 
               {store.description ? (
-                <Typography size="sm" className="text-text-body max-w-4xl">
+                <Typography size="sm" className="text-text-body mt-4 max-w-3xl leading-relaxed">
                   {store.description}
                 </Typography>
               ) : (
-                <Typography size="sm" className="text-text-muted max-w-4xl">
+                <Typography size="sm" className="text-text-muted mt-4">
                   {tStores("detail.noDescription")}
                 </Typography>
               )}
-
-              <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-4">
-                <div className={METRIC_CARD_CLASSNAME}>
-                  <div className="text-text-muted flex items-center gap-1.5">
-                    <Box className="size-3.5" aria-hidden />
-                    <Typography size="2xs">{tStores("detail.productTypesLabel")}</Typography>
-                  </div>
-                  <Typography size="sm" className={METRIC_VALUE_CLASSNAME}>
-                    {store.productTypeKeys.length}
-                  </Typography>
-                </div>
-                <div className={METRIC_CARD_CLASSNAME}>
-                  <div className="text-text-muted flex items-center gap-1.5">
-                    <Globe className="size-3.5" aria-hidden />
-                    <Typography size="2xs">{tStores("detail.importCountriesLabel")}</Typography>
-                  </div>
-                  <Typography size="sm" className={METRIC_VALUE_CLASSNAME}>
-                    {store.importCountryCodes.length}
-                  </Typography>
-                </div>
-                <div className={METRIC_CARD_CLASSNAME}>
-                  <div className="text-text-muted flex items-center gap-1.5">
-                    <Link2 className="size-3.5" aria-hidden />
-                    <Typography size="2xs">{tStores("detail.contactChannelsCountLabel")}</Typography>
-                  </div>
-                  <Typography size="sm" className={METRIC_VALUE_CLASSNAME}>
-                    {contactChannelsCount}
-                  </Typography>
-                </div>
-                <div className={METRIC_CARD_CLASSNAME}>
-                  <div className="text-text-muted flex items-center gap-1.5">
-                    <MapPinned className="size-3.5" aria-hidden />
-                    <Typography size="2xs">{tStores("detail.addressesCountLabel")}</Typography>
-                  </div>
-                  <Typography size="sm" className={METRIC_VALUE_CLASSNAME}>
-                    {addressesCount}
-                  </Typography>
-                </div>
-              </div>
-            </div>
+            </header>
           </section>
 
+          {/* ── Metric cards ── */}
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <MetricCard
+              icon={<Box className="size-3.5" aria-hidden />}
+              label={tStores("detail.productTypesLabel")}
+              value={store.productTypeKeys.length}
+            />
+            <MetricCard
+              icon={<Globe className="size-3.5" aria-hidden />}
+              label={tStores("detail.importCountriesLabel")}
+              value={store.importCountryCodes.length}
+            />
+            <MetricCard
+              icon={<Link2 className="size-3.5" aria-hidden />}
+              label={tStores("detail.contactChannelsCountLabel")}
+              value={contactChannelsCount}
+            />
+            <MetricCard
+              icon={<MapPinned className="size-3.5" aria-hidden />}
+              label={tStores("detail.addressesCountLabel")}
+              value={addressesCount}
+            />
+          </div>
+
+          {/* ── Status alerts ── */}
           {showStoreStatusCard && (
-            <div
-              className="border-border/55 bg-background/85 text-text-body animate-[hero-fade-in-up_420ms_ease-out_both] rounded-2xl border p-4 shadow-sm"
-              style={{ animationDelay: `${STAGGER_BASE_DELAY_MS}ms` }}
-            >
+            <div className={cn(STORE_SURFACE_CARD_CLASSNAME, "mt-6 p-4 sm:p-4")}>
               {isPendingReview && (
                 <div className="flex items-start gap-2.5" role="note">
-                  <CircleAlert className="text-warning mt-1 size-4 shrink-0" aria-hidden />
+                  <CircleAlert className="text-warning mt-0.5 size-4 shrink-0" aria-hidden />
                   <div className="min-w-0">
                     <Typography size="sm" className="text-text-title font-semibold">
                       {tStores("detail.pendingDisclaimerTitle")}
@@ -319,195 +358,231 @@ export default function StoreDetailContent({
             </div>
           )}
 
-          <div className="grid gap-4 lg:grid-cols-[1.18fr_0.82fr]">
-            <StoreSurfaceCard
-              className="animate-[hero-fade-in-up_430ms_ease-out_both] space-y-4"
-              style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 2}ms` }}
-            >
-              <div>
-                <StoreSectionLabel>{tStores("detail.productTypesLabel")}</StoreSectionLabel>
-                {store.productTypeKeys.length > 0 ? (
+          {/* ── Two-column body ── */}
+          <div className="mt-6 grid items-start gap-5 lg:grid-cols-[1fr_300px] lg:gap-6 xl:grid-cols-[1fr_340px]">
+            {/* ── Main content ── */}
+            <div className="space-y-5">
+              {/* Catalog card: Product Types + Import Countries */}
+              <section className={cn(STORE_SURFACE_CARD_CLASSNAME, "space-y-5")}>
+                <div aria-labelledby="section-product-types">
+                  <StoreSectionLabel as="h2" id="section-product-types">
+                    {tStores("detail.productTypesLabel")}
+                  </StoreSectionLabel>
+                  {store.productTypeKeys.length > 0 ? (
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      {store.productTypeKeys.map((productTypeKey) => (
+                        <span
+                          key={productTypeKey}
+                          className="bg-primary/8 text-primary border-primary/15 inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
+                        >
+                          <Box className="size-3.5" aria-hidden />
+                          {tProductTypes(productTypeKey)}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-2.5">
+                      <StoreEmptyCatalogTag className="px-3 py-1.5">
+                        {tStores("detail.noProductTypes")}
+                      </StoreEmptyCatalogTag>
+                    </div>
+                  )}
+                </div>
+
+                <hr className="border-border/30" />
+
+                <div aria-labelledby="section-import-countries">
+                  <StoreSectionLabel as="h2" id="section-import-countries">
+                    {tStores("detail.importCountriesLabel")}
+                  </StoreSectionLabel>
+                  {store.importCountryCodes.length > 0 ? (
+                    <div className="mt-2.5 flex flex-wrap gap-2">
+                      {store.importCountryCodes.map((countryCode) => (
+                        <span
+                          key={countryCode}
+                          className="bg-success/8 text-text-body border-success/15 inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
+                        >
+                          <ShoppingBag className="size-3.5" aria-hidden />
+                          {tCountries(countryCode)}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-2.5">
+                      <StoreEmptyCatalogTag className="px-3 py-1.5">
+                        {tStores("detail.noImportCountries")}
+                      </StoreEmptyCatalogTag>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              {/* Contact Channels */}
+              <section className={STORE_SURFACE_CARD_CLASSNAME} aria-labelledby="section-contact">
+                <StoreSectionLabel as="h2" id="section-contact">
+                  {tStores("create.contactChannelsLabel")}
+                </StoreSectionLabel>
+                {isBusiness && contactChannelsCount > 0 ? (
+                  <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
+                    {store.contactChannels?.map((ch) => {
+                      const href = buildContactHref(ch.type, ch.value);
+                      if (!href) return null;
+
+                      return (
+                        <li key={`${ch.type}-${ch.value}`}>
+                          <a
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group border-border/30 hover:border-primary/25 focus-visible:ring-ring flex items-center gap-3 rounded-xl border p-3 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                          >
+                            <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg">
+                              {getContactIcon(ch.type)}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <Typography as="span" size="2xs" className="text-text-muted block">
+                                {ch.label ?? tStores(`contactChannelTypes.${ch.type}`)}
+                              </Typography>
+                              <Typography as="span" size="sm" className="text-text-body block truncate font-medium">
+                                {ch.value}
+                              </Typography>
+                            </span>
+                            <ExternalLink className="text-text-muted group-hover:text-primary size-3.5 shrink-0 transition-colors" />
+                          </a>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <Typography size="sm" className="text-text-muted mt-2">
+                    {isBusiness ? tStores("detail.noContactChannels") : tStores("detail.notAvailableForStoreType")}
+                  </Typography>
+                )}
+              </section>
+
+              {/* Addresses */}
+              <section className={STORE_SURFACE_CARD_CLASSNAME} aria-labelledby="section-addresses">
+                <StoreSectionLabel as="h2" id="section-addresses">
+                  {tStores("create.addressesLabel")}
+                </StoreSectionLabel>
+                {isBusiness && addressesCount > 0 ? (
+                  <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
+                    {store.addresses?.map((address, index) => (
+                      <li key={`${address.countryCode}-${address.addressLine}-${index}`}>
+                        <div className="border-border/30 border-l-primary/25 rounded-xl border border-l-[3px] px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <Store className="text-text-muted size-4 shrink-0" aria-hidden />
+                            <Typography size="sm" className="text-text-muted min-w-0 flex-1 font-semibold">
+                              {address.city
+                                ? `${address.city}, ${tCountries(address.countryCode)}`
+                                : tCountries(address.countryCode)}
+                            </Typography>
+                          </div>
+                          <Typography size="sm" className="text-text-muted mt-1">
+                            {address.addressLine}
+                          </Typography>
+                          {address.reference ? (
+                            <Typography size="xs" className="text-text-muted mt-1">
+                              {address.reference}
+                            </Typography>
+                          ) : null}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <Typography size="sm" className="text-text-muted mt-2">
+                    {isBusiness ? tStores("detail.noAddresses") : tStores("detail.notAvailableForStoreType")}
+                  </Typography>
+                )}
+              </section>
+            </div>
+
+            {/* ── Sidebar ── */}
+            <aside className="max-lg:order-first lg:sticky lg:top-24">
+              <div className={cn(STORE_SURFACE_CARD_CLASSNAME, "space-y-5")}>
+                {/* Profile Summary */}
+                <div>
+                  <StoreSectionLabel as="h3">{tStores("detail.profileSummaryTitle")}</StoreSectionLabel>
+                  <div className="divide-border/40 mt-2 divide-y">
+                    <SidebarField label={tStores("detail.storeTypeLabel")}>
+                      <span className="inline-flex items-center gap-1.5">
+                        {storeTypeIcon}
+                        {storeTypeLabel}
+                      </span>
+                    </SidebarField>
+                    <SidebarField label={tStores("detail.statusLabel")}>
+                      <span className="inline-flex items-center gap-1.5">
+                        <BadgeCheck className="text-success size-3.5" aria-hidden />
+                        {store.status === "PENDING"
+                          ? tStores("detail.statusPending")
+                          : tStores("detail.statusApproved")}
+                      </span>
+                    </SidebarField>
+                    <SidebarField label={tStores("detail.createdAtLabel")}>
+                      <span className="inline-flex items-center gap-1.5">
+                        <CalendarClock className="text-info size-3.5" aria-hidden />
+                        {profileCreatedAt}
+                      </span>
+                    </SidebarField>
+                  </div>
+                </div>
+
+                <hr className="border-border/30" />
+
+                {/* Sales channels (sidebar: visible with sticky column on large screens) */}
+                <div aria-labelledby="section-presence">
+                  <StoreSectionLabel as="h3" id="section-presence">
+                    {tStores("detail.presenceLabel")}
+                  </StoreSectionLabel>
                   <div className="mt-2.5 flex flex-wrap gap-2">
-                    {store.productTypeKeys.map((productTypeKey) => (
-                      <span key={productTypeKey} className={cn(TAG_CLASSNAME, "bg-primary/10 text-primary")}>
-                        <Box className="size-3.5" aria-hidden />
-                        {tProductTypes(productTypeKey)}
+                    {store.presenceTypes.map((presenceType) => (
+                      <span
+                        key={presenceType}
+                        className="bg-info/8 text-text-body border-info/15 inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
+                      >
+                        <Globe className="size-3.5" aria-hidden />
+                        {tListing(`presence.${presenceType}`)}
                       </span>
                     ))}
                   </div>
-                ) : (
-                  <div className="mt-2.5">
-                    <StoreEmptyCatalogTag className="px-3 py-1.5">
-                      {tStores("detail.noProductTypes")}
-                    </StoreEmptyCatalogTag>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <StoreSectionLabel>{tStores("detail.presenceLabel")}</StoreSectionLabel>
-                <div className="mt-2.5 flex flex-wrap gap-2">
-                  {store.presenceTypes.map((presenceType) => (
-                    <span key={presenceType} className={cn(TAG_CLASSNAME, "bg-info/14 text-text-body")}>
-                      <Globe className="size-3.5" aria-hidden />
-                      {tListing(`presence.${presenceType}`)}
-                    </span>
-                  ))}
                 </div>
-              </div>
 
-              <div>
-                <StoreSectionLabel>{tStores("detail.importCountriesLabel")}</StoreSectionLabel>
-                {store.importCountryCodes.length > 0 ? (
-                  <div className="mt-2.5 flex flex-wrap gap-2">
-                    {store.importCountryCodes.map((countryCode) => (
-                      <span key={countryCode} className={cn(TAG_CLASSNAME, "bg-success/14 text-text-body")}>
-                        <ShoppingBag className="size-3.5" aria-hidden />
-                        {tCountries(countryCode)}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-2.5">
-                    <StoreEmptyCatalogTag className="px-3 py-1.5">
-                      {tStores("detail.noImportCountries")}
-                    </StoreEmptyCatalogTag>
-                  </div>
-                )}
-              </div>
-            </StoreSurfaceCard>
+                <hr className="border-border/30" />
 
-            <StoreSurfaceCard
-              className="animate-[hero-fade-in-up_430ms_ease-out_both] space-y-4"
-              style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 3}ms` }}
-            >
-              <div className="space-y-2">
-                <StoreSectionLabel>{tStores("detail.businessSignalsTitle")}</StoreSectionLabel>
-                <div className="flex flex-wrap gap-2">
-                  <span
-                    className={cn(TAG_CLASSNAME, store.receivesOrders ? "bg-primary/15 text-primary" : "bg-muted/65")}
-                  >
-                    <PackageSearch className="size-3.5" aria-hidden />
-                    {receivesOrdersLabel}
-                  </span>
-                  <span className={cn(TAG_CLASSNAME, store.hasStock ? "bg-success/15 text-success" : "bg-muted/65")}>
-                    <Box className="size-3.5" aria-hidden />
-                    {hasStockLabel}
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <StoreSectionLabel>{tStores("detail.profileSummaryTitle")}</StoreSectionLabel>
-                <div className="grid gap-2">
-                  <div className="bg-muted/45 rounded-2xl px-3 py-2.5">
-                    <Typography size="2xs" className="text-text-muted">
-                      {tStores("detail.storeTypeLabel")}
-                    </Typography>
-                    <Typography size="sm" className="text-text-body mt-0.5 inline-flex items-center gap-1.5">
-                      {storeTypeIcon}
-                      {storeTypeLabel}
-                    </Typography>
-                  </div>
-                  <div className="bg-muted/45 rounded-2xl px-3 py-2.5">
-                    <Typography size="2xs" className="text-text-muted">
-                      {tStores("detail.statusLabel")}
-                    </Typography>
-                    <Typography size="sm" className="text-text-body mt-0.5 inline-flex items-center gap-1.5">
-                      <BadgeCheck className="text-success size-3.5" aria-hidden />
-                      {store.status === "PENDING" ? tStores("detail.statusPending") : tStores("detail.statusApproved")}
-                    </Typography>
-                  </div>
-                  <div className="bg-muted/45 rounded-2xl px-3 py-2.5">
-                    <Typography size="2xs" className="text-text-muted">
-                      {tStores("detail.createdAtLabel")}
-                    </Typography>
-                    <Typography size="sm" className="text-text-body mt-0.5 inline-flex items-center gap-1.5">
-                      <CalendarClock className="text-info size-3.5" aria-hidden />
-                      {profileCreatedAt}
-                    </Typography>
+                {/* Business Signals */}
+                <div>
+                  <StoreSectionLabel as="h3">{tStores("detail.businessSignalsTitle")}</StoreSectionLabel>
+                  <div className="mt-3 space-y-2">
+                    <div
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium",
+                        store.receivesOrders ? "bg-primary/10 text-primary" : "bg-muted/50 text-text-muted",
+                      )}
+                    >
+                      <PackageSearch className="size-3.5" aria-hidden />
+                      {receivesOrdersLabel}
+                    </div>
+                    <div
+                      className={cn(
+                        "inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium",
+                        store.hasStock ? "bg-success/10 text-success" : "bg-muted/50 text-text-muted",
+                      )}
+                    >
+                      <Box className="size-3.5" aria-hidden />
+                      {hasStockLabel}
+                    </div>
                   </div>
                 </div>
               </div>
-            </StoreSurfaceCard>
+            </aside>
           </div>
 
-          <StoreSurfaceCard
-            className="animate-[hero-fade-in-up_440ms_ease-out_both]"
-            style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 4}ms` }}
-          >
-            <StoreSectionLabel>{tStores("create.contactChannelsLabel")}</StoreSectionLabel>
-            {isBusiness && contactChannelsCount > 0 ? (
-              <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
-                {store.contactChannels?.map((ch) => {
-                  const href = buildContactHref(ch.type, ch.value);
-                  if (!href) return null;
-
-                  return (
-                    <li key={`${ch.type}-${ch.value}`}>
-                      <a href={href} target="_blank" rel="noopener noreferrer" className={CONTACT_LINK_CLASSNAME}>
-                        <span className="flex min-w-0 items-center gap-2.5">
-                          <span className="bg-primary/12 text-primary inline-flex size-8 shrink-0 items-center justify-center rounded-full">
-                            {getContactIcon(ch.type)}
-                          </span>
-                          <span className="min-w-0">
-                            <Typography size="2xs" className="text-text-muted block">
-                              {ch.label ?? tStores(`contactChannelTypes.${ch.type}`)}
-                            </Typography>
-                            <Typography size="sm" className="text-text-body block truncate">
-                              {ch.value}
-                            </Typography>
-                          </span>
-                        </span>
-                        <ExternalLink className="text-text-muted group-hover:text-primary size-4 shrink-0 transition-colors" />
-                      </a>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <Typography size="sm" className="text-text-muted mt-2">
-                {isBusiness ? tStores("detail.noContactChannels") : tStores("detail.notAvailableForStoreType")}
-              </Typography>
-            )}
-          </StoreSurfaceCard>
-
-          <StoreSurfaceCard
-            className="animate-[hero-fade-in-up_460ms_ease-out_both]"
-            style={{ animationDelay: `${STAGGER_BASE_DELAY_MS * 5}ms` }}
-          >
-            <StoreSectionLabel>{tStores("create.addressesLabel")}</StoreSectionLabel>
-            {isBusiness && addressesCount > 0 ? (
-              <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
-                {store.addresses?.map((address, index) => (
-                  <li key={`${address.countryCode}-${address.addressLine}-${index}`}>
-                    <div className="bg-muted/45 border-border/60 border-l-info/40 hover:border-l-info/55 rounded-2xl border border-l-4 p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5">
-                      <Typography size="xs" className="text-text-muted">
-                        {tCountries(address.countryCode)}
-                      </Typography>
-                      <Typography size="sm" className="text-text-body mt-1">
-                        {address.city ? `${address.city} - ` : ""}
-                        {address.addressLine}
-                      </Typography>
-                      {address.reference && (
-                        <Typography size="xs" className="text-text-muted mt-1">
-                          {address.reference}
-                        </Typography>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <Typography size="sm" className="text-text-muted mt-2">
-                {isBusiness ? tStores("detail.noAddresses") : tStores("detail.notAvailableForStoreType")}
-              </Typography>
-            )}
-          </StoreSurfaceCard>
-
-          <StorePublicReviewsSection locale={locale} storeSlug={store.slug} />
-
-          <StoreNoteForm key={store.slug} locale={locale} storeSlug={store.slug} existingNote={viewerNote} />
+          {/* ── Reviews & Notes (full width) ── */}
+          <div className="mt-6 space-y-5">
+            <StorePublicReviewsSection locale={locale} storeSlug={store.slug} />
+            <StoreNoteForm key={store.slug} locale={locale} storeSlug={store.slug} existingNote={viewerNote} />
+          </div>
         </div>
       </div>
     </StoreReviewsStateProvider>

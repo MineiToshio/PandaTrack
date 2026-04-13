@@ -50,7 +50,9 @@ function StoreReviewsTitleBlock() {
   const t = useTranslations("stores");
   return (
     <div className="space-y-1">
-      <StoreSectionLabel>{t("detail.reviews.title")}</StoreSectionLabel>
+      <StoreSectionLabel as="h2" id="section-store-reviews">
+        {t("detail.reviews.title")}
+      </StoreSectionLabel>
       <Typography size="sm" className="text-text-muted">
         {t("detail.reviews.description")}
       </Typography>
@@ -259,25 +261,25 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
                 key={review.id}
                 className="bg-muted/35 border-border/50 border-l-highlight/45 rounded-2xl border border-l-4 p-4 shadow-sm"
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1 space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Typography size="sm" className="text-text-body">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <Typography as="span" size="sm" className="text-text-body">
                         {review.authorName || t("detail.reviews.anonymousAuthor")}
                       </Typography>
                       {review.isViewerReview && (
-                        <span className="bg-background text-text-body inline-flex rounded-lg px-2 py-1 text-xs font-medium">
+                        <span className="bg-background text-text-body inline-flex items-center rounded-lg px-2 py-1 text-xs leading-none font-medium">
                           {t("detail.reviews.yourReviewBadge")}
                         </span>
                       )}
-                      <Typography size="xs" className="text-text-muted">
+                      <Typography as="span" size="xs" className="text-text-muted">
                         {reviewUpdatedAt}
                       </Typography>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <RatingStars value={review.overallRating} readOnly size="sm" />
-                      <Typography size="xs" className="text-text-muted">
+                      <Typography as="span" size="xs" className="text-text-muted">
                         {t("detail.reviews.ratingBadge", { rating: review.overallRating })}
                       </Typography>
                     </div>
