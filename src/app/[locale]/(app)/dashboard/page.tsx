@@ -21,9 +21,16 @@ export async function generateMetadata({ params }: DashboardPageProps): Promise<
 export default async function DashboardPage({ params }: DashboardPageProps) {
   const { locale } = await params;
 
-  const t = await getTranslations({ locale, namespace: "dashboard" });
+  const [tDashboard, tLayout] = await Promise.all([
+    getTranslations({ locale, namespace: "dashboard" }),
+    getTranslations({ locale, namespace: "appLayout" }),
+  ]);
 
   return (
-    <AppPlaceholderPage title={t("title")} description={t("welcome")} headingAs="h1" />
+    <AppPlaceholderPage
+      eyebrow={tLayout("pageHero.eyebrow")}
+      title={tDashboard("title")}
+      description={tDashboard("welcome")}
+    />
   );
 }

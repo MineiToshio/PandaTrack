@@ -7,7 +7,6 @@ import { getPageHeader, type BreadcrumbItem } from "@/app/[locale]/(app)/_utils/
 import { useHeaderTitle } from "./HeaderTitleContext";
 import LanguageToggle from "@/app/[locale]/(landing)/_components/Menu/LanguageToggle";
 import ThemeToggle from "@/app/[locale]/(landing)/_components/Menu/ThemeToggle";
-import Heading from "@/components/core/Heading";
 import IconButton from "@/components/core/IconButton";
 import { APP_SHELL_CONTENT_MAX_WIDTH_CLASSNAME, POSTHOG_EVENTS } from "@/lib/constants";
 import { cn } from "@/lib/styles";
@@ -101,9 +100,9 @@ export default function ContentHeader({
               </>
             )}
             <div className="min-w-0 flex-1">
-              <Heading as="h1" size="xs" className="text-text-title truncate">
+              <p className="text-text-title truncate text-lg leading-tight font-semibold tracking-tighter">
                 {pageTitle}
-              </Heading>
+              </p>
             </div>
           </div>
         </div>

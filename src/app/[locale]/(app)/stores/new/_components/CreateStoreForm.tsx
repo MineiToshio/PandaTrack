@@ -18,6 +18,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
+import AppPageHero from "@/components/modules/AppPageHero";
 import Label from "@/components/core/Label";
 import Input from "@/components/core/Input";
 import Select from "@/components/core/Select";
@@ -428,9 +429,14 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
 
   return (
     <div className="space-y-6">
-      <Heading as="h2" size="sm" className="text-text-title">
-        {tCreate("title")}
-      </Heading>
+      <div className="space-y-3">
+        <BackNavLink href={`/${locale}${ROUTES.stores}`}>{tCreate("backToList")}</BackNavLink>
+        <AppPageHero
+          eyebrow={tCreate("heroEyebrow")}
+          title={tCreate("title")}
+          description={tCreate("heroDescription")}
+        />
+      </div>
 
       {showConfirmDuplicate && (
         <div

@@ -1,22 +1,16 @@
 import type { ReactNode } from "react";
-import Heading from "@/components/core/Heading";
-import Typography from "@/components/core/Typography";
+import AppPageHero from "@/components/modules/AppPageHero";
 
 type AppPlaceholderPageProps = {
+  eyebrow: ReactNode;
   title: ReactNode;
   description: ReactNode;
-  headingAs?: "h1" | "h2";
 };
 
-export default function AppPlaceholderPage({ title, description, headingAs = "h2" }: AppPlaceholderPageProps) {
+export default function AppPlaceholderPage({ eyebrow, title, description }: AppPlaceholderPageProps) {
   return (
     <div className="text-foreground">
-      <Heading as={headingAs} size="sm" className="text-text-title">
-        {title}
-      </Heading>
-      <Typography size="md" className="text-text-body mt-2">
-        {description}
-      </Typography>
+      <AppPageHero eyebrow={eyebrow} title={title} description={description} />
     </div>
   );
 }

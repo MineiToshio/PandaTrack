@@ -6,8 +6,8 @@ import { useTranslations } from "next-intl";
 import posthog from "posthog-js";
 import Button from "@/components/core/Button/Button";
 import FieldCharacterCount from "@/components/core/FieldCharacterCount";
-import Heading from "@/components/core/Heading";
 import Input from "@/components/core/Input";
+import AppPageHero from "@/components/modules/AppPageHero";
 import Label from "@/components/core/Label";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
@@ -255,14 +255,11 @@ export default function EditStoreForm({
     <div className="space-y-6">
       <div className="space-y-3">
         <BackNavLink href={`/${locale}${ROUTES.stores}/${store.slug}`}>{t("edit.backToDetail")}</BackNavLink>
-        <Heading as="h1" size="sm" className="text-text-title">
-          {t(`${modeKey}.title`, {
-            storeName: store.name,
-          })}
-        </Heading>
-        <Typography size="sm" className="text-text-muted">
-          {t(`${modeKey}.description`)}
-        </Typography>
+        <AppPageHero
+          eyebrow={t(`${modeKey}.shortLabel`)}
+          title={t(`${modeKey}.title`, { storeName: store.name })}
+          description={t(`${modeKey}.description`)}
+        />
       </div>
 
       {serverError && (

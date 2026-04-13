@@ -41,6 +41,12 @@
     "retry": "Try again"
   },
   "placeholder": "Content coming soon.",
+  "pageHero": {
+    "eyebrow": "Collector workspace",
+    "purchasesDescription": "Purchase history and order tracking will live here. More soon.",
+    "preOrdersDescription": "Pre-orders and payment timing will be organized here. More soon.",
+    "shipmentsDescription": "Shipments and split deliveries will be tracked here. More soon."
+  },
   "meta": {
     "description": "PandaTrack collector workspace."
   }

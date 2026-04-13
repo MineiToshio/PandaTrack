@@ -23,6 +23,10 @@ export default async function PurchasesPage({ params }: PurchasesPageProps) {
   const t = await getTranslations({ locale, namespace: "appLayout" });
 
   return (
-    <AppPlaceholderPage title={t("nav.purchases")} description={t("placeholder")} />
+    <AppPlaceholderPage
+      eyebrow={t("pageHero.eyebrow")}
+      title={t("nav.purchases")}
+      description={t("pageHero.purchasesDescription")}
+    />
   );
 }

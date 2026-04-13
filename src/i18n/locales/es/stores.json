@@ -1,5 +1,7 @@
 {
   "create": {
+    "heroEyebrow": "Añadir tienda",
+    "heroDescription": "Crea una ficha pública para que otros coleccionistas descubran la tienda, sus canales y qué vende.",
     "title": "Nueva tienda",
     "basicsEyebrow": "Paso 1",
     "basicsTitle": "Información base",

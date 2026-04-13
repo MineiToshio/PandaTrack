@@ -23,6 +23,10 @@ export default async function PreOrdersPage({ params }: PreOrdersPageProps) {
   const t = await getTranslations({ locale, namespace: "appLayout" });
 
   return (
-    <AppPlaceholderPage title={t("nav.preOrders")} description={t("placeholder")} />
+    <AppPlaceholderPage
+      eyebrow={t("pageHero.eyebrow")}
+      title={t("nav.preOrders")}
+      description={t("pageHero.preOrdersDescription")}
+    />
   );
 }

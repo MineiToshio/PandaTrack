@@ -182,17 +182,26 @@ For **long forms and reading-heavy stacks** (store create, store edit, dense set
 
 ### Private-app hero header (collector shell)
 
-Use the same top-of-page header block for comparable collector flows (for example `/settings` and `/stores` listing). Implement it with `src/components/modules/AppPageHero.tsx` so markup and tokens stay in sync.
+Use **`AppPageHero`** (`src/components/modules/AppPageHero.tsx`) for every authenticated route that introduces a screen with a primary title, including:
+
+- first-level areas still on placeholder copy (`/dashboard`, `/purchases`, `/purchases/pre-orders`, `/shipments`) via `AppPlaceholderPage`
+- `/settings`, `/stores` listing, `/stores/new`, `/stores/[slug]/edit`
+
+**Exception:** `/stores/[slug]` (store profile) uses a **rich profile hero** (logo, KPI row, actions, larger rounded surface) instead of `AppPageHero`, but it must reuse the same **`TINTED_SURFACE_GRADIENT_STOPS`** language and the same **`Heading` `h1` scale** (`size="sm"`) for the store name so it still feels like the same family.
+
+Structure of `AppPageHero`:
 
 1. optional eyebrow pill (`text-xs`, `Sparkles`, primary-tinted chip)
 2. page title: `Heading` as `h1` with `size="sm"` and `text-text-title`
 3. one short supporting line: `Typography size="sm"` with `text-text-muted`
-4. gradient border card wrapper: `rounded-2xl border bg-linear-to-br` plus `TINTED_SURFACE_GRADIENT_STOPS` from `src/lib/styles.ts` (aligned with store detail hero surfaces and landing section washes)
+4. gradient border card wrapper: `rounded-2xl border bg-linear-to-br` plus `TINTED_SURFACE_GRADIENT_STOPS` from `src/lib/styles.ts` (aligned with store profile hero surfaces and landing section washes)
 5. optional `aside` prop on `AppPageHero` for a trailing column (flex row with wrap)
 
 Rules:
 
-- keep `h1` typography aligned across routes that share this pattern (settings and stores listing use the same `Heading` size)
+- the **document `h1`** for these screens lives in `AppPageHero` (or the store profile hero). The sticky shell bar title in `ContentHeader` is a **presentational** line (`p` with heading-like classes), not a second heading, so the outline stays one primary title per view
+- when the flow needs parent navigation (create/edit store), place `BackNavLink` (`appearance="pill"`) in a `space-y-3` stack **above** `AppPageHero`
+- keep `h1` typography aligned across routes that share this pattern
 - major sections below use `Heading` as `h2` with `size="xs"` and `text-text-title` unless a different density is documented for that route
 
 ### Collector settings route (`/settings`)

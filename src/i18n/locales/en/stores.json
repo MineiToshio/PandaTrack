@@ -1,5 +1,7 @@
 {
   "create": {
+    "heroEyebrow": "Add a store",
+    "heroDescription": "Create a public listing so collectors can discover this store, its channels, and what it sells.",
     "title": "New store",
     "basicsEyebrow": "Step 1",
     "basicsTitle": "Base information",
