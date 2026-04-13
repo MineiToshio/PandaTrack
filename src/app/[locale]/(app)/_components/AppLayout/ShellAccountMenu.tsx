@@ -156,7 +156,7 @@ export default function ShellAccountMenu({
               : "hover:bg-muted/85 active:bg-muted/95 rounded-xl px-2 py-2"
             : open
               ? "border-border bg-muted/80 rounded-2xl border px-3 py-3 shadow-[inset_0_0_0_1px_var(--color-border)]"
-              : "border-border bg-card rounded-2xl border px-3 py-3 hover:bg-muted/60 active:bg-muted/80",
+              : "border-border bg-card hover:bg-muted/60 active:bg-muted/80 rounded-2xl border px-3 py-3",
         )}
         onClick={handleToggle}
       >
@@ -179,11 +179,11 @@ export default function ShellAccountMenu({
           className={cn(
             "border-border bg-popover overflow-hidden border shadow-xl",
             surface === "desktop"
-              ? "absolute bottom-full left-0 z-20 mb-3 w-max min-w-[18.5rem] max-w-[calc(100vw-2rem)] rounded-[1.75rem]"
+              ? "absolute bottom-full left-0 z-20 mb-3 w-max max-w-[calc(100vw-2rem)] min-w-[18.5rem] rounded-[1.75rem]"
               : "mt-2 rounded-2xl",
           )}
         >
-          <div className="from-primary/14 via-background to-accent/12 flex items-center gap-3 bg-linear-to-br px-4 py-4">
+          <div className="from-primary/20 via-highlight/12 to-info/20 flex items-center gap-3 bg-linear-to-br px-4 py-4">
             <AccountAvatar user={user} size="lg" />
             <div className="min-w-0">
               <p className="text-text-title truncate text-sm font-semibold">{displayName}</p>
@@ -208,7 +208,7 @@ export default function ShellAccountMenu({
               label={signOutLabel}
               variant="ghost"
               size="md"
-              className="text-text-body hover:bg-muted hover:text-foreground min-h-11 w-full justify-start rounded-xl px-3"
+              className="text-text-body hover:bg-muted hover:text-foreground h-auto min-h-11 w-full justify-start gap-3 rounded-xl px-3 py-2"
               onSignOut={handleItemSelect}
               icon={<LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />}
             />

@@ -32,7 +32,7 @@ export default function AppPageHero({ eyebrow, title, description, aside, classN
   return (
     <header
       className={cn(
-        "border-border/70 from-primary/12 via-background to-accent/10 rounded-2xl border bg-linear-to-br p-5 shadow-sm sm:p-6",
+        "border-border/70 from-primary/20 via-highlight/12 to-info/20 rounded-2xl border bg-linear-to-br p-5 shadow-sm sm:p-6",
         className,
       )}
     >

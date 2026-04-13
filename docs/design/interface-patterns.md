@@ -145,6 +145,7 @@ Rules:
 - desktop trigger should read as a clean row, not a filled pill: keep the avatar unframed by default and let hover supply the surface feedback
 - desktop floating panel may be slightly wider than the trigger row when needed so legal links fit cleanly
 - place `Privacy Policy` and `Terms and Conditions` side by side in a compact footer row, using smaller text and a subtle separator dot
+- identity strip at the top of the menu panel should use the same diagonal gradient stops as other tinted app heroes: `bg-linear-to-br from-primary/20 via-highlight/12 to-info/20` (same trio as `AppPageHero` and store detail hero)
 - when the account menu is open, the trigger should remain visibly active with a stronger filled state than hover
 - keep the avatar anchor visually stable between collapsed-rail and expanded-sidebar states so expansion does not make the identity affordance appear to jump
 
@@ -180,7 +181,7 @@ Use the same top-of-page header block for comparable collector flows (for exampl
 1. optional eyebrow pill (`text-xs`, `Sparkles`, primary-tinted chip)
 2. page title: `Heading` as `h1` with `size="sm"` and `text-text-title`
 3. one short supporting line: `Typography size="sm"` with `text-text-muted`
-4. gradient border card wrapper: `rounded-2xl border bg-linear-to-br from-primary/12 via-background to-accent/10` (match existing pages)
+4. gradient border card wrapper: `rounded-2xl border bg-linear-to-br from-primary/20 via-highlight/12 to-info/20` (aligned with store detail hero surfaces)
 5. optional `aside` prop on `AppPageHero` for a trailing column (flex row with wrap)
 
 Rules:
