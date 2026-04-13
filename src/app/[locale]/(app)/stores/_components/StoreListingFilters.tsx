@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Filter, Globe, Search, X } from "lucide-react";
+import { Filter, Search, X } from "lucide-react";
 import { useCallback, useId, useMemo, useRef, useState } from "react";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
@@ -15,6 +15,7 @@ import { cn } from "@/lib/styles";
 import posthog from "posthog-js";
 import Typography from "@/components/core/Typography";
 import StoreMultiTagAutocomplete from "./share/StoreMultiTagAutocomplete";
+import CollectorCountryFlagEmoji from "./share/CollectorCountryFlagEmoji";
 
 const PRESENCE_TYPES = ["ONLINE", "PHYSICAL"] as const;
 const FILTER_CHIP_CLASSNAME =
@@ -295,6 +296,7 @@ export default function StoreListingFilters({
                 onClick={() => removeActiveFilterChip("country", value)}
                 className={cn(FILTER_CHIP_CLASSNAME, FILTER_CHIP_SELECTED_CLASSNAME, "min-h-9 px-3 py-1.5")}
               >
+                <CollectorCountryFlagEmoji countryCode={value} className="mr-1 shrink-0" />
                 <span>{tCountries(value)}</span>
                 <X className="ml-1 size-3.5" aria-hidden />
               </button>
@@ -306,7 +308,7 @@ export default function StoreListingFilters({
                 onClick={() => removeActiveFilterChip("importCountry", value)}
                 className={cn(FILTER_CHIP_CLASSNAME, FILTER_CHIP_SELECTED_CLASSNAME, "min-h-9 px-3 py-1.5")}
               >
-                <Globe className="mr-1 size-3.5" aria-hidden />
+                <CollectorCountryFlagEmoji countryCode={value} className="mr-1 shrink-0" />
                 <span>{tCountries(value)}</span>
                 <X className="ml-1 size-3.5" aria-hidden />
               </button>

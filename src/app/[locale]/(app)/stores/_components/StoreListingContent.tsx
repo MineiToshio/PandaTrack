@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Box, CheckCircle2, Globe, Link2, Mail, MapPin, Phone, ShoppingBag, Star, XCircle } from "lucide-react";
+import { Box, CheckCircle2, Globe, Link2, Mail, MapPin, Phone, Star, XCircle } from "lucide-react";
 import { siFacebook, siInstagram, siTiktok, siWhatsapp } from "simple-icons";
 import type { PublicStoreListingItem } from "@/queries/store";
 import { ROUTES } from "@/lib/constants";
@@ -8,6 +8,8 @@ import { cn } from "@/lib/styles";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import StoreEmptyCatalogTag from "./StoreEmptyCatalogTag";
+import CollectorCountryFlagEmoji from "./share/CollectorCountryFlagEmoji";
+import { getCollectorCountryFlagEmoji } from "@/lib/catalog/collectorCountries";
 
 const INFO_CHIP_CLASSNAME =
   "border-border/70 bg-muted/40 text-text-body inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs";
@@ -98,7 +100,11 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                         )}
                       </div>
                       <div className="text-text-muted flex flex-wrap items-center gap-2 text-sm">
-                        <MapPin className="size-4 shrink-0" aria-hidden />
+                        {getCollectorCountryFlagEmoji(store.countryCode) ? (
+                          <CollectorCountryFlagEmoji countryCode={store.countryCode} className="shrink-0" />
+                        ) : (
+                          <MapPin className="size-4 shrink-0" aria-hidden />
+                        )}
                         <span>{tCountries(store.countryCode)}</span>
                         {store.contactChannels.length > 0 && (
                           <>
@@ -200,7 +206,7 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                                     "bg-success/12 text-text-body/85 border-success/25",
                                   )}
                                 >
-                                  <ShoppingBag className="size-3.5" aria-hidden />
+                                  <CollectorCountryFlagEmoji countryCode={countryCode} className="shrink-0" />
                                   <span>{tCountries(countryCode)}</span>
                                 </span>
                               ))}
