@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { prisma } from "@/lib/prisma";
+import { APP_SHELL_FORM_RAIL_CLASSNAME } from "@/lib/constants";
 import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
+import { prisma } from "@/lib/prisma";
 import {
   getEditableStoreBySlug,
   getStoreGovernanceViewerContext,
@@ -38,8 +39,8 @@ export default async function EditStorePage({ params }: EditStorePageProps) {
   const initialValues = mergeEditableStoreWithChangeRequest(store, viewerContext.openChangeRequest?.changes);
 
   return (
-    <div className="text-foreground px-4 py-8">
-      <div className="mx-auto max-w-3xl">
+    <div className="text-foreground">
+      <div className={APP_SHELL_FORM_RAIL_CLASSNAME}>
         <EditStoreForm
           locale={locale}
           store={store}

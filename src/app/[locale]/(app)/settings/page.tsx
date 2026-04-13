@@ -55,39 +55,37 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
   }
 
   return (
-    <div className="text-foreground">
-      <div className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6 lg:px-8">
-        <AppPageHero eyebrow={t("hero.eyebrow")} title={t("title")} description={t("intro")} />
+    <div className="text-foreground space-y-8">
+      <AppPageHero eyebrow={t("hero.eyebrow")} title={t("title")} description={t("intro")} />
 
-        <section className={SETTINGS_SECTION_SURFACE_CLASSNAME} aria-labelledby="settings-profile-heading">
-          <Heading id="settings-profile-heading" as="h2" size="xs" className="text-text-title">
-            {t("profile.title")}
-          </Heading>
-          <div className="border-border/55 bg-muted/32 mt-4 rounded-xl border p-4">
-            <Typography size="sm" className="text-text-body">
-              {t("profile.placeholder")}
-            </Typography>
-          </div>
-        </section>
+      <section className={SETTINGS_SECTION_SURFACE_CLASSNAME} aria-labelledby="settings-profile-heading">
+        <Heading id="settings-profile-heading" as="h2" size="xs" className="text-text-title">
+          {t("profile.title")}
+        </Heading>
+        <div className="border-border/55 bg-muted/32 mt-4 rounded-xl border p-4">
+          <Typography size="sm" className="text-text-body">
+            {t("profile.placeholder")}
+          </Typography>
+        </div>
+      </section>
 
-        <SettingsAccountSection
-          locale={locale}
-          initialEmail={userRow.email}
-          emailVerified={userRow.emailVerified}
-          capabilities={capabilities}
-        />
+      <SettingsAccountSection
+        locale={locale}
+        initialEmail={userRow.email}
+        emailVerified={userRow.emailVerified}
+        capabilities={capabilities}
+      />
 
-        <section className={SETTINGS_SECTION_SURFACE_CLASSNAME} aria-labelledby="settings-preferences-heading">
-          <Heading id="settings-preferences-heading" as="h2" size="xs" className="text-text-title">
-            {t("preferences.title")}
-          </Heading>
-          <div className="border-border/55 bg-muted/32 mt-4 rounded-xl border p-4">
-            <Typography size="sm" className="text-text-body">
-              {t("preferences.placeholder")}
-            </Typography>
-          </div>
-        </section>
-      </div>
+      <section className={SETTINGS_SECTION_SURFACE_CLASSNAME} aria-labelledby="settings-preferences-heading">
+        <Heading id="settings-preferences-heading" as="h2" size="xs" className="text-text-title">
+          {t("preferences.title")}
+        </Heading>
+        <div className="border-border/55 bg-muted/32 mt-4 rounded-xl border p-4">
+          <Typography size="sm" className="text-text-body">
+            {t("preferences.placeholder")}
+          </Typography>
+        </div>
+      </section>
     </div>
   );
 }

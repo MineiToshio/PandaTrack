@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { APP_SHELL_MAIN_CLASSNAME } from "@/lib/constants";
+import { cn } from "@/lib/styles";
 import AppNavDrawer from "./AppNavDrawer";
 import AppSidebar from "./AppSidebar";
 import ContentHeader from "./ContentHeader";
@@ -32,7 +34,13 @@ export default function AppLayout({ locale, signOutLabel, currentUser, children 
 
   return (
     <div className="flex min-h-screen flex-col">
-      <AppSidebar locale={locale} currentUser={currentUser} signOutLabel={signOutLabel} expanded={expanded} onToggle={toggle} />
+      <AppSidebar
+        locale={locale}
+        currentUser={currentUser}
+        signOutLabel={signOutLabel}
+        expanded={expanded}
+        onToggle={toggle}
+      />
       <AppNavDrawer
         locale={locale}
         currentUser={currentUser}
@@ -60,7 +68,7 @@ export default function AppLayout({ locale, signOutLabel, currentUser, children 
               onOpenDrawer={handleOpenDrawer}
               burgerButtonRef={burgerButtonRef}
             />
-            <main className="flex min-w-0 flex-1 flex-col">{children}</main>
+            <main className={cn(APP_SHELL_MAIN_CLASSNAME)}>{children}</main>
           </HeaderTitleProvider>
         </div>
       </div>

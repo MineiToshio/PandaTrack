@@ -9,6 +9,20 @@ export const APP_SHELL_SIDEBAR_STORAGE_KEY = "appShellSidebarExpanded";
 /** Height of the verification email banner (px) for layout offset. Used so the fixed sidebar starts below it. */
 export const VERIFICATION_BANNER_HEIGHT_PX = 56;
 
+/** Max width for collector shell content column (main + top header row). */
+export const APP_SHELL_CONTENT_MAX_WIDTH_CLASSNAME = "max-w-6xl";
+
+/**
+ * Collector shell main column: one shared max width and padding for all `(app)` routes.
+ * Applied on `<main>` in `AppLayout`. Do not wrap pages in another `mx-auto max-w-*` container.
+ */
+export const APP_SHELL_MAIN_CLASSNAME = `mx-auto flex min-h-0 min-w-0 w-full ${APP_SHELL_CONTENT_MAX_WIDTH_CLASSNAME} flex-1 flex-col px-4 py-6 sm:px-6 sm:py-8 lg:px-8`;
+
+/**
+ * Reading-width rail for form-heavy flows (store create/edit, etc.) inside the shell main region.
+ */
+export const APP_SHELL_FORM_RAIL_CLASSNAME = "mx-auto w-full max-w-3xl";
+
 /** Path segments for app routes (no locale prefix). Use with `/${locale}${ROUTES.xyz}` for links. */
 export const ROUTES = {
   home: "",

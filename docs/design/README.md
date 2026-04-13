@@ -43,7 +43,7 @@ Open `visual-foundations.md` when the task involves:
 
 Open `interface-patterns.md` when the task involves:
 
-- layout and hierarchy (including **primary column + sticky rail**, **section title with accent**, **secondary actions on tinted panels**)
+- layout and hierarchy (including **collector shell content width**, **primary column + sticky rail**, **section title with accent**, **secondary actions on tinted panels**)
 - tabs
 - modals
 - right sidebars or drawers

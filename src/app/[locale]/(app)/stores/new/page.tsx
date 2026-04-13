@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
+import { APP_SHELL_FORM_RAIL_CLASSNAME } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { buildPageMetadata } from "@/lib/seo";
 import CreateStoreForm from "./_components/CreateStoreForm";
@@ -32,8 +33,8 @@ export default async function StoresNewPage({ params }: StoresNewPageProps) {
   ]);
 
   return (
-    <div className="text-foreground px-4 py-8">
-      <div className="mx-auto max-w-2xl">
+    <div className="text-foreground">
+      <div className={APP_SHELL_FORM_RAIL_CLASSNAME}>
         <CreateStoreForm countries={countries} productTypes={productTypes} />
       </div>
     </div>

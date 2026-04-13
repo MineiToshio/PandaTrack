@@ -218,6 +218,7 @@ Rule:
 Observed patterns:
 
 - `max-w-6xl` for landing and large app content
+- **Private collector shell** (`src/app/[locale]/(app)/`): one shared content column for every route. The `<main>` element uses `APP_SHELL_MAIN_CLASSNAME` in `src/lib/constants.ts` (`max-w-6xl` plus `px-4 py-6 sm:px-6 sm:py-8 lg:px-8`). The sticky top header row uses the same max width via `APP_SHELL_CONTENT_MAX_WIDTH_CLASSNAME` so breadcrumbs and page titles align with the main column. Do not wrap individual pages in another `mx-auto max-w-*` shell. For form-heavy flows (for example store create/edit), constrain the form stack with `APP_SHELL_FORM_RAIL_CLASSNAME` (`max-w-3xl`) **inside** the main region, not by changing the page wrapper.
 - `max-w-xl` and `max-w-sm` for auth and modal-width content
 - page padding commonly uses `px-4`, `sm:px-6`, `lg:px-8`
 

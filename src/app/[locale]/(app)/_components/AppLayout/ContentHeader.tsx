@@ -9,7 +9,8 @@ import LanguageToggle from "@/app/[locale]/(landing)/_components/Menu/LanguageTo
 import ThemeToggle from "@/app/[locale]/(landing)/_components/Menu/ThemeToggle";
 import Heading from "@/components/core/Heading";
 import IconButton from "@/components/core/IconButton";
-import { POSTHOG_EVENTS } from "@/lib/constants";
+import { APP_SHELL_CONTENT_MAX_WIDTH_CLASSNAME, POSTHOG_EVENTS } from "@/lib/constants";
+import { cn } from "@/lib/styles";
 
 type ContentHeaderProps = {
   locale: string;
@@ -55,61 +56,68 @@ export default function ContentHeader({
   const appShellLanguageLabel = t("accessibility.languageNavigation");
 
   return (
-    <header className="border-border bg-background/95 supports-backdrop-filter:bg-background/85 sticky top-(--app-banner-offset,0px) z-40 flex h-14 shrink-0 items-center justify-between gap-3 border-b px-4 backdrop-blur sm:gap-4 lg:px-6">
-      <div className="flex min-w-0 flex-1 items-center gap-2 lg:flex-initial lg:gap-4">
-        <IconButton
-          ref={burgerButtonRef}
-          Icon={Menu}
-          variant="outline"
-          size="sm"
-          aria-label={t("drawer.openMenu")}
-          aria-expanded={drawerOpen}
-          onClick={onOpenDrawer}
-          className="shrink-0 lg:hidden"
-        />
-        <div className="flex min-w-0 flex-1 flex-row items-center gap-1.5 sm:gap-2">
-          {displayBreadcrumbs.length > 0 && (
-            <>
-              <nav
-                aria-label={appShellBreadcrumbLabel}
-                className="flex max-w-[min(11rem,45%)] shrink-0 items-center gap-1.5 text-sm sm:max-w-none"
-              >
-                {displayBreadcrumbs.map((crumb, index) => {
-                  const label = crumb.kind === "i18n" ? t(crumb.labelKey) : crumb.label;
-                  const key = `${crumb.href}-${index}`;
-                  return (
-                    <span key={key} className="flex min-w-0 items-center gap-1.5">
-                      {index > 0 && <ChevronRight className="text-text-muted h-4 w-4 shrink-0" aria-hidden />}
-                      <Link
-                        href={crumb.href}
-                        className="text-link focus-visible:ring-ring focus-visible:ring-offset-background min-w-0 truncate rounded hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:max-w-48"
-                      >
-                        {label}
-                      </Link>
-                    </span>
-                  );
-                })}
-              </nav>
-              <ChevronRight className="text-text-muted h-4 w-4 shrink-0" aria-hidden />
-            </>
-          )}
-          <div className="min-w-0 flex-1">
-            <Heading as="h1" size="xs" className="text-text-title truncate">
-              {pageTitle}
-            </Heading>
+    <header className="border-border bg-background/95 supports-backdrop-filter:bg-background/85 sticky top-(--app-banner-offset,0px) z-40 shrink-0 border-b backdrop-blur">
+      <div
+        className={cn(
+          "mx-auto flex h-14 w-full items-center justify-between gap-3 px-4 sm:gap-4 sm:px-6 lg:px-8",
+          APP_SHELL_CONTENT_MAX_WIDTH_CLASSNAME,
+        )}
+      >
+        <div className="flex min-w-0 flex-1 items-center gap-2 lg:flex-initial lg:gap-4">
+          <IconButton
+            ref={burgerButtonRef}
+            Icon={Menu}
+            variant="outline"
+            size="sm"
+            aria-label={t("drawer.openMenu")}
+            aria-expanded={drawerOpen}
+            onClick={onOpenDrawer}
+            className="shrink-0 lg:hidden"
+          />
+          <div className="flex min-w-0 flex-1 flex-row items-center gap-1.5 sm:gap-2">
+            {displayBreadcrumbs.length > 0 && (
+              <>
+                <nav
+                  aria-label={appShellBreadcrumbLabel}
+                  className="flex max-w-[min(11rem,45%)] shrink-0 items-center gap-1.5 text-sm sm:max-w-none"
+                >
+                  {displayBreadcrumbs.map((crumb, index) => {
+                    const label = crumb.kind === "i18n" ? t(crumb.labelKey) : crumb.label;
+                    const key = `${crumb.href}-${index}`;
+                    return (
+                      <span key={key} className="flex min-w-0 items-center gap-1.5">
+                        {index > 0 && <ChevronRight className="text-text-muted h-4 w-4 shrink-0" aria-hidden />}
+                        <Link
+                          href={crumb.href}
+                          className="text-link focus-visible:ring-ring focus-visible:ring-offset-background min-w-0 truncate rounded hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:max-w-48"
+                        >
+                          {label}
+                        </Link>
+                      </span>
+                    );
+                  })}
+                </nav>
+                <ChevronRight className="text-text-muted h-4 w-4 shrink-0" aria-hidden />
+              </>
+            )}
+            <div className="min-w-0 flex-1">
+              <Heading as="h1" size="xs" className="text-text-title truncate">
+                {pageTitle}
+              </Heading>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="hidden shrink-0 items-center gap-2 sm:gap-3 lg:flex">
-        <LanguageToggle
-          ariaLabel={appShellLanguageLabel}
-          posthogEvent={POSTHOG_EVENTS.APP_SHELL.LOCALE_CHANGED}
-          getPosthogProps={(targetLocale) => ({
-            locale: targetLocale,
-            route: pathname,
-          })}
-        />
-        <ThemeToggle posthogEvent={POSTHOG_EVENTS.APP_SHELL.THEME_CHANGED} posthogProps={{ route: pathname }} />
+        <div className="hidden shrink-0 items-center gap-2 sm:gap-3 lg:flex">
+          <LanguageToggle
+            ariaLabel={appShellLanguageLabel}
+            posthogEvent={POSTHOG_EVENTS.APP_SHELL.LOCALE_CHANGED}
+            getPosthogProps={(targetLocale) => ({
+              locale: targetLocale,
+              route: pathname,
+            })}
+          />
+          <ThemeToggle posthogEvent={POSTHOG_EVENTS.APP_SHELL.THEME_CHANGED} posthogProps={{ route: pathname }} />
+        </div>
       </div>
     </header>
   );

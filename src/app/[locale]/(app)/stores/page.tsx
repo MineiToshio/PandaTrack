@@ -102,37 +102,35 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
   const buildPaginationHref = (targetPage: number) => createStoresPageHref(storesBasePath, rawParams, targetPage);
 
   return (
-    <div className="text-foreground px-4 py-6 sm:py-8">
-      <div className="mx-auto max-w-4xl">
-        <AppPageHero
-          eyebrow={tListing("hero.eyebrow")}
-          title={tListing("hero.title")}
-          description={tListing("meta.description")}
-        />
-        <StoreListingFilters
-          locale={locale}
-          createStoreLabel={tStores("create.title")}
-          productTypeOptions={productTypeOptions}
-          countryOptions={countryOptions}
-          initialNameQuery={nameQuery ?? ""}
-          initialProductTypeKeys={productTypeKeys}
-          initialCountryCodes={countryCodes}
-          initialImportCountryCodes={importCountryCodes}
-          initialPresenceTypes={presenceTypes}
-          initialReceivesOrders={receivesOrders}
-          initialHasStock={hasStock}
-          totalStores={listingPage.totalCount}
-          showingFrom={showingFrom}
-          showingTo={showingTo}
-        />
-        <StoreListingContent locale={locale} stores={listingPage.items} />
-        <StoreListingPagination
-          locale={locale}
-          totalPages={listingPage.totalPages}
-          currentPage={listingPage.currentPage}
-          createPageHref={buildPaginationHref}
-        />
-      </div>
+    <div className="text-foreground">
+      <AppPageHero
+        eyebrow={tListing("hero.eyebrow")}
+        title={tListing("hero.title")}
+        description={tListing("meta.description")}
+      />
+      <StoreListingFilters
+        locale={locale}
+        createStoreLabel={tStores("create.title")}
+        productTypeOptions={productTypeOptions}
+        countryOptions={countryOptions}
+        initialNameQuery={nameQuery ?? ""}
+        initialProductTypeKeys={productTypeKeys}
+        initialCountryCodes={countryCodes}
+        initialImportCountryCodes={importCountryCodes}
+        initialPresenceTypes={presenceTypes}
+        initialReceivesOrders={receivesOrders}
+        initialHasStock={hasStock}
+        totalStores={listingPage.totalCount}
+        showingFrom={showingFrom}
+        showingTo={showingTo}
+      />
+      <StoreListingContent locale={locale} stores={listingPage.items} />
+      <StoreListingPagination
+        locale={locale}
+        totalPages={listingPage.totalPages}
+        currentPage={listingPage.currentPage}
+        createPageHref={buildPaginationHref}
+      />
     </div>
   );
 }
