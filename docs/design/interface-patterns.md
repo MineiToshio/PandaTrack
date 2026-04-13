@@ -390,6 +390,8 @@ Rules:
 - prefer `rounded-lg`, `rounded-xl`, or `rounded-2xl` depending on size and prominence
 - count indicators inside tags should feel integrated, not like detached circular bubbles
 
+**Store listing and store profile (public):** reuse `src/app/[locale]/(app)/stores/_components/share/storePublicChipClassnames.ts` for product-type, import-country, presence, and business-signal chips. **Store listing cards** use `STORE_LISTING_CARD_META_CHIP_CLASSNAME` for country and store type in the bottom row (`rounded-lg`, same rhythm as business-signal chips). **Store profile hero** keeps `STORE_HERO_META_PILL_CLASSNAME` (`rounded-full`, soft `bg-background/80`) for country and store type unchanged.
+
 ## Responsive Rules
 
 - mobile is the baseline

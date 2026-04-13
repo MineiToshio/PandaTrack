@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Box, CheckCircle2, Globe, Link2, Mail, MapPin, Phone, Star, XCircle } from "lucide-react";
+import { Box, Building2, Globe, Link2, Mail, MapPinned, PackageSearch, Phone, Star, UserRound } from "lucide-react";
 import { siFacebook, siInstagram, siTiktok, siWhatsapp } from "simple-icons";
 import type { PublicStoreListingItem } from "@/queries/store";
 import { ROUTES } from "@/lib/constants";
@@ -9,10 +9,16 @@ import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import StoreEmptyCatalogTag from "./StoreEmptyCatalogTag";
 import CollectorCountryFlagEmoji from "./share/CollectorCountryFlagEmoji";
+import {
+  STORE_CATALOG_IMPORT_COUNTRY_CHIP_CLASSNAME,
+  STORE_CATALOG_PRODUCT_TYPE_CHIP_CLASSNAME,
+  STORE_LISTING_CARD_META_CHIP_CLASSNAME,
+  STORE_PRESENCE_CHIP_CLASSNAME,
+  storeHasStockChipClassName,
+  storeReceivesOrdersChipClassName,
+} from "./share/storePublicChipClassnames";
 import { getCollectorCountryFlagEmoji } from "@/lib/catalog/collectorCountries";
 
-const INFO_CHIP_CLASSNAME =
-  "border-border/70 bg-muted/40 text-text-body inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs";
 const MAX_CONTACT_CHANNELS = 4;
 
 function SimpleIconSvg({ path }: { path: string }) {
@@ -174,12 +180,13 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                           {t("cards.productTypes")}
                         </Typography>
                         {store.productTypeKeys.length > 0 ? (
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-2">
                             {store.productTypeKeys.map((productTypeKey) => (
                               <span
                                 key={`${store.slug}-${productTypeKey}`}
-                                className={cn(INFO_CHIP_CLASSNAME, "bg-primary/8 text-primary border-primary/20")}
+                                className={STORE_CATALOG_PRODUCT_TYPE_CHIP_CLASSNAME}
                               >
+                                <Box className="size-3.5 shrink-0" aria-hidden />
                                 {tProductTypes(productTypeKey)}
                               </span>
                             ))}
@@ -194,13 +201,10 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                           <Typography size="2xs" className="text-text-muted block font-medium">
                             {t("filters.presence")}
                           </Typography>
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-2">
                             {store.presenceTypes.map((presenceType) => (
-                              <span
-                                key={`${store.slug}-${presenceType}`}
-                                className={cn(INFO_CHIP_CLASSNAME, "bg-primary/10 text-text-body/85 border-primary/22")}
-                              >
-                                <Globe className="size-3.5" aria-hidden />
+                              <span key={`${store.slug}-${presenceType}`} className={STORE_PRESENCE_CHIP_CLASSNAME}>
+                                <Globe className="size-3.5 shrink-0" aria-hidden />
                                 <span>{t(`presence.${presenceType}`)}</span>
                               </span>
                             ))}
@@ -212,14 +216,11 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                             {t("cards.importCountries")}
                           </Typography>
                           {store.importCountryCodes.length > 0 ? (
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-2">
                               {store.importCountryCodes.map((countryCode) => (
                                 <span
                                   key={`${store.slug}-import-${countryCode}`}
-                                  className={cn(
-                                    INFO_CHIP_CLASSNAME,
-                                    "bg-success/12 text-text-body/85 border-success/25",
-                                  )}
+                                  className={STORE_CATALOG_IMPORT_COUNTRY_CHIP_CLASSNAME}
                                 >
                                   <CollectorCountryFlagEmoji countryCode={countryCode} className="shrink-0" />
                                   <span>{tCountries(countryCode)}</span>
@@ -235,45 +236,41 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 pt-2.5">
-                    <span
-                      className={cn(INFO_CHIP_CLASSNAME, "bg-muted/45 text-text-body/85 border-border/60 max-w-full")}
-                    >
+                    <span className={STORE_LISTING_CARD_META_CHIP_CLASSNAME}>
                       {getCollectorCountryFlagEmoji(store.countryCode) ? (
                         <CollectorCountryFlagEmoji countryCode={store.countryCode} className="shrink-0" />
                       ) : (
-                        <MapPin className="size-3.5 shrink-0" aria-hidden />
+                        <MapPinned className="size-3.5 shrink-0" aria-hidden />
                       )}
                       <span className="min-w-0 truncate">{tCountries(store.countryCode)}</span>
                     </span>
-                    <span className={cn(INFO_CHIP_CLASSNAME, "bg-muted/45 text-text-body/85 border-border/60")}>
-                      <Globe className="size-3.5" aria-hidden />
+                    <span className={STORE_LISTING_CARD_META_CHIP_CLASSNAME}>
+                      {store.storeType === "BUSINESS" ? (
+                        <Building2 className="text-primary size-3.5 shrink-0" aria-hidden />
+                      ) : (
+                        <UserRound className="text-info size-3.5 shrink-0" aria-hidden />
+                      )}
                       <span>{getStoreTypeLabel(store.storeType)}</span>
                     </span>
-                    <span
-                      className={cn(
-                        INFO_CHIP_CLASSNAME,
-                        store.receivesOrders ? "bg-primary/15 text-primary border-primary/30" : "bg-muted/30",
-                      )}
-                    >
-                      {store.receivesOrders ? (
-                        <CheckCircle2 className="size-3.5" aria-hidden />
-                      ) : (
-                        <XCircle className="size-3.5" aria-hidden />
-                      )}
-                      <span>{store.receivesOrders ? t("cards.receivesOrdersYes") : t("cards.receivesOrdersNo")}</span>
+                    <span className={storeReceivesOrdersChipClassName(Boolean(store.receivesOrders))}>
+                      <PackageSearch className="size-3.5 shrink-0" aria-hidden />
+                      <span>
+                        {store.receivesOrders == null
+                          ? tStores("detail.receivesOrdersUnknown")
+                          : store.receivesOrders
+                            ? t("cards.receivesOrdersYes")
+                            : t("cards.receivesOrdersNo")}
+                      </span>
                     </span>
-                    <span
-                      className={cn(
-                        INFO_CHIP_CLASSNAME,
-                        store.hasStock ? "bg-success/15 text-success border-success/30" : "bg-muted/30",
-                      )}
-                    >
-                      {store.hasStock ? (
-                        <Box className="size-3.5" aria-hidden />
-                      ) : (
-                        <XCircle className="size-3.5" aria-hidden />
-                      )}
-                      <span>{store.hasStock ? t("cards.hasStockYes") : t("cards.hasStockNo")}</span>
+                    <span className={storeHasStockChipClassName(Boolean(store.hasStock))}>
+                      <Box className="size-3.5 shrink-0" aria-hidden />
+                      <span>
+                        {store.hasStock == null
+                          ? tStores("detail.hasStockUnknown")
+                          : store.hasStock
+                            ? t("cards.hasStockYes")
+                            : t("cards.hasStockNo")}
+                      </span>
                     </span>
                   </div>
                 </div>

@@ -38,6 +38,14 @@ import StoreEmptyCatalogTag from "../../_components/StoreEmptyCatalogTag";
 import StoreGovernanceSummaryModal from "./StoreGovernanceSummaryModal";
 import StoreReportModal from "./StoreReportModal";
 import CollectorCountryFlagEmoji from "../../_components/share/CollectorCountryFlagEmoji";
+import {
+  STORE_CATALOG_IMPORT_COUNTRY_CHIP_CLASSNAME,
+  STORE_CATALOG_PRODUCT_TYPE_CHIP_CLASSNAME,
+  STORE_HERO_META_PILL_CLASSNAME,
+  STORE_PRESENCE_CHIP_CLASSNAME,
+  storeHasStockChipClassName,
+  storeReceivesOrdersChipClassName,
+} from "../../_components/share/storePublicChipClassnames";
 import { getCollectorCountryFlagEmoji } from "@/lib/catalog/collectorCountries";
 
 type StoreDetailContentProps = {
@@ -86,10 +94,6 @@ const METRIC_CARD_SHELL_CLASSNAME = cn(
   STORE_SURFACE_CARD_CLASSNAME,
   "overflow-hidden rounded-2xl border-t-2 border-t-primary/45 p-0 sm:p-0",
 );
-
-/** Hero meta chips (store detail pre-refactor style). */
-const HERO_META_PILL_CLASSNAME =
-  "inline-flex items-center gap-1.5 rounded-full bg-background/80 px-3 py-1.5 text-xs font-medium text-text-body";
 
 /** Hero secondary actions: soft neutral edge + shadow so they read on the tinted hero without loud color. */
 const STORE_DETAIL_HERO_ACTION_CLASSNAME = "border border-border/35 shadow-md hover:border-border/50 hover:shadow-lg";
@@ -266,11 +270,11 @@ export default function StoreDetailContent({
                 </div>
 
                 <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className={HERO_META_PILL_CLASSNAME}>
+                  <span className={STORE_HERO_META_PILL_CLASSNAME}>
                     {storeTypeIcon}
                     {storeTypeLabel}
                   </span>
-                  <span className={HERO_META_PILL_CLASSNAME}>
+                  <span className={STORE_HERO_META_PILL_CLASSNAME}>
                     {storeCountryFlagEmoji ? (
                       <CollectorCountryFlagEmoji countryCode={store.countryCode} className="shrink-0" />
                     ) : (
@@ -377,10 +381,7 @@ export default function StoreDetailContent({
                 {store.productTypeKeys.length > 0 ? (
                   <div className="mt-2.5 flex flex-wrap gap-2">
                     {store.productTypeKeys.map((productTypeKey) => (
-                      <span
-                        key={productTypeKey}
-                        className="bg-primary/8 text-primary border-primary/15 inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
-                      >
+                      <span key={productTypeKey} className={STORE_CATALOG_PRODUCT_TYPE_CHIP_CLASSNAME}>
                         <Box className="size-3.5" aria-hidden />
                         {tProductTypes(productTypeKey)}
                       </span>
@@ -404,10 +405,7 @@ export default function StoreDetailContent({
                 {store.importCountryCodes.length > 0 ? (
                   <div className="mt-2.5 flex flex-wrap gap-2">
                     {store.importCountryCodes.map((countryCode) => (
-                      <span
-                        key={countryCode}
-                        className="bg-success/8 text-text-body border-success/15 inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
-                      >
+                      <span key={countryCode} className={STORE_CATALOG_IMPORT_COUNTRY_CHIP_CLASSNAME}>
                         <CollectorCountryFlagEmoji countryCode={countryCode} className="shrink-0" />
                         {tCountries(countryCode)}
                       </span>
@@ -541,10 +539,7 @@ export default function StoreDetailContent({
                 </SectionTitleWithAccent>
                 <div className="mt-2.5 flex flex-wrap gap-2">
                   {store.presenceTypes.map((presenceType) => (
-                    <span
-                      key={presenceType}
-                      className="bg-info/8 text-text-body border-info/15 inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium"
-                    >
+                    <span key={presenceType} className={STORE_PRESENCE_CHIP_CLASSNAME}>
                       <Globe className="size-3.5" aria-hidden />
                       {tListing(`presence.${presenceType}`)}
                     </span>
@@ -558,21 +553,11 @@ export default function StoreDetailContent({
               <div>
                 <SectionTitleWithAccent as="h3">{tStores("detail.businessSignalsTitle")}</SectionTitleWithAccent>
                 <div className="mt-3 space-y-2">
-                  <div
-                    className={cn(
-                      "inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium",
-                      store.receivesOrders ? "bg-primary/10 text-primary" : "bg-muted/50 text-text-muted",
-                    )}
-                  >
+                  <div className={storeReceivesOrdersChipClassName(Boolean(store.receivesOrders))}>
                     <PackageSearch className="size-3.5" aria-hidden />
                     {receivesOrdersLabel}
                   </div>
-                  <div
-                    className={cn(
-                      "inline-flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium",
-                      store.hasStock ? "bg-success/10 text-success" : "bg-muted/50 text-text-muted",
-                    )}
-                  >
+                  <div className={storeHasStockChipClassName(Boolean(store.hasStock))}>
                     <Box className="size-3.5" aria-hidden />
                     {hasStockLabel}
                   </div>
