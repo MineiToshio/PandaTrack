@@ -48,6 +48,8 @@
     "receivesOrdersNo": "No overseas buying",
     "hasStockYes": "Sells from stock",
     "hasStockNo": "Not selling from stock",
+    "receivesOrdersTooltip": "Whether the store handles order-based or backorder sourcing: they can fulfill requests even without standing shelf stock.",
+    "hasStockTooltip": "Whether the store sells from on-hand inventory: items are usually available without relying only on one-off special orders.",
     "storeTypeBusiness": "Business",
     "storeTypePerson": "Seller"
   }

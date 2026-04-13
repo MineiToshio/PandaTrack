@@ -13,7 +13,6 @@ import {
   Link2,
   Mail,
   MapPinned,
-  PackageSearch,
   Pencil,
   Phone,
   Store,
@@ -43,9 +42,8 @@ import {
   STORE_CATALOG_PRODUCT_TYPE_CHIP_CLASSNAME,
   STORE_HERO_META_PILL_CLASSNAME,
   STORE_PRESENCE_CHIP_CLASSNAME,
-  storeHasStockChipClassName,
-  storeReceivesOrdersChipClassName,
 } from "../../_components/share/storePublicChipClassnames";
+import StoreCommerceSignalPills from "../../_components/share/StoreCommerceSignalPills";
 import { getCollectorCountryFlagEmoji } from "@/lib/catalog/collectorCountries";
 
 type StoreDetailContentProps = {
@@ -552,15 +550,15 @@ export default function StoreDetailContent({
               {/* Business Signals */}
               <div>
                 <SectionTitleWithAccent as="h3">{tStores("detail.businessSignalsTitle")}</SectionTitleWithAccent>
-                <div className="mt-3 space-y-2">
-                  <div className={storeReceivesOrdersChipClassName(Boolean(store.receivesOrders))}>
-                    <PackageSearch className="size-3.5" aria-hidden />
-                    {receivesOrdersLabel}
-                  </div>
-                  <div className={storeHasStockChipClassName(Boolean(store.hasStock))}>
-                    <Box className="size-3.5" aria-hidden />
-                    {hasStockLabel}
-                  </div>
+                <div className="mt-3 flex flex-row flex-wrap items-start gap-2">
+                  <StoreCommerceSignalPills
+                    receivesOrders={store.receivesOrders}
+                    hasStock={store.hasStock}
+                    receivesOrdersLabel={receivesOrdersLabel}
+                    hasStockLabel={hasStockLabel}
+                    receivesOrdersTooltip={tListing("cards.receivesOrdersTooltip")}
+                    hasStockTooltip={tListing("cards.hasStockTooltip")}
+                  />
                 </div>
               </div>
             </div>

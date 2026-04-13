@@ -24,6 +24,17 @@ export const STORE_CATALOG_IMPORT_COUNTRY_CHIP_CLASSNAME =
 export const STORE_PRESENCE_CHIP_CLASSNAME =
   "inline-flex items-center gap-1.5 rounded-lg border border-info/15 bg-info/8 px-3 py-1.5 text-xs font-medium text-text-body";
 
+/** Commerce pill label: allow shrinking when space is tight (tooltip trigger is the whole chip). */
+export const STORE_COMMERCE_SIGNAL_LABEL_CLASSNAME = "min-w-0";
+
+/**
+ * Hover/focus hint that the commerce pill reveals a tooltip (no extra icons or underlines).
+ */
+export const STORE_COMMERCE_SIGNAL_TOOLTIP_TRIGGER_AFFORDANCE = cn(
+  "motion-safe:transition-shadow motion-safe:duration-150",
+  "hover:shadow-sm hover:ring-1 hover:ring-border/35",
+);
+
 export function storeReceivesOrdersChipClassName(active: boolean) {
   return cn(STORE_BUSINESS_SIGNAL_BASE, active ? "bg-primary/10 text-primary" : "bg-muted/50 text-text-muted");
 }
