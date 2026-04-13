@@ -26,7 +26,7 @@ import StoreSectionLabel from "../../_components/share/StoreSectionLabel";
 import { STORE_SURFACE_CARD_CLASSNAME } from "../../_components/share/StoreSurfaceCard";
 import { ROUTES } from "@/lib/constants";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
-import { cn } from "@/lib/styles";
+import { cn, TINTED_SURFACE_GRADIENT_STOPS } from "@/lib/styles";
 import type { PublicStoreReview, StoreDetail, StoreViewerNote, StoreViewerReview } from "@/queries/store";
 import type { EditableStore, StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
 import BackNavLink from "@/components/core/BackNavLink";
@@ -194,7 +194,8 @@ export default function StoreDetailContent({
           <section
             aria-labelledby="store-detail-heading"
             className={cn(
-              "from-primary/20 via-highlight/12 to-info/20 relative mt-6 overflow-hidden rounded-3xl bg-linear-to-br px-5 py-6 shadow-sm sm:px-8 sm:py-8",
+              TINTED_SURFACE_GRADIENT_STOPS,
+              "relative mt-6 overflow-hidden rounded-3xl bg-linear-to-br px-5 py-6 shadow-sm sm:px-8 sm:py-8",
               "animate-[hero-fade-in-up_460ms_ease-out_both] motion-reduce:animate-none",
             )}
           >

@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import { POSTHOG_EVENTS } from "@/lib/constants";
+import { cn, TINTED_SURFACE_GRADIENT_TOP_WASH } from "@/lib/styles";
 import posthog from "posthog-js";
 import { submitWaitlist } from "./submitWaitlist";
 import { waitlistSchema } from "./waitlistSchema";
@@ -66,7 +67,10 @@ export default function Waitlist() {
       className="bg-surface text-foreground relative w-full overflow-hidden px-4 py-16 md:px-6 md:py-24 lg:px-8"
     >
       <div
-        className="from-primary/20 via-primary/10 pointer-events-none absolute inset-0 bg-linear-to-b to-transparent opacity-90"
+        className={cn(
+          TINTED_SURFACE_GRADIENT_TOP_WASH,
+          "pointer-events-none absolute inset-0 bg-linear-to-b opacity-90",
+        )}
         aria-hidden
       />
       <div

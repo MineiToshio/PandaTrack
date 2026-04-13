@@ -3,7 +3,7 @@ import { useTranslations } from "next-intl";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
-import { cn } from "@/lib/styles";
+import { cn, TINTED_SURFACE_GRADIENT_TOP_WASH } from "@/lib/styles";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 
 const BANNER_CTA_ANIMATION = "banner-cta-subtle 3s ease-in-out infinite";
@@ -18,7 +18,10 @@ export default function Banner() {
       className="bg-surface text-foreground relative w-full px-4 py-16 md:px-6 md:py-24 lg:px-8"
     >
       <div
-        className="from-primary/15 via-primary/8 pointer-events-none absolute inset-0 bg-linear-to-b to-transparent opacity-90"
+        className={cn(
+          TINTED_SURFACE_GRADIENT_TOP_WASH,
+          "pointer-events-none absolute inset-0 bg-linear-to-b opacity-90",
+        )}
         aria-hidden
       />
       <div className="relative mx-auto max-w-6xl">

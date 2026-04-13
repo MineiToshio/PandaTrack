@@ -3,7 +3,7 @@ import { useTranslations } from "next-intl";
 import AnchorLink from "@/components/core/AnchorLink";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { cn } from "@/lib/styles";
+import { cn, TINTED_SURFACE_GRADIENT_TOP_WASH } from "@/lib/styles";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 
@@ -40,7 +40,10 @@ export default function Hero() {
         aria-hidden
       />
       <div
-        className="from-primary/8 via-primary/3 pointer-events-none absolute inset-0 bg-linear-to-b to-transparent"
+        className={cn(
+          TINTED_SURFACE_GRADIENT_TOP_WASH,
+          "pointer-events-none absolute inset-0 bg-linear-to-b opacity-40",
+        )}
         aria-hidden
       />
 

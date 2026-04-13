@@ -396,6 +396,7 @@ Do not use gradients as the default for:
 - keep gradients soft and layered, not loud
 - prefer brand-adjacent blends such as `primary`, `highlight`, `accent`, and `info`
 - in the private app, gradients should appear mainly on page intros, hero-like summaries, or elevated callout surfaces
+- reuse the shared Tailwind stop bundles in `src/lib/styles.ts`: `TINTED_SURFACE_GRADIENT_STOPS` (pair with `bg-linear-to-br` or `bg-linear-to-r`) and `TINTED_SURFACE_GRADIENT_TOP_WASH` (pair with `bg-linear-to-b` for vertical fades to transparent) so heroes, modals, and marketing section overlays stay aligned
 
 ### Private-app page wash (authenticated shell)
 

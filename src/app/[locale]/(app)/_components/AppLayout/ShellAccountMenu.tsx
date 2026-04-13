@@ -9,7 +9,7 @@ import { useTranslations } from "next-intl";
 import posthog from "posthog-js";
 import SignOutButton from "@/components/modules/auth/SignOutButton";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { cn } from "@/lib/styles";
+import { cn, TINTED_SURFACE_GRADIENT_STOPS } from "@/lib/styles";
 import type { AppShellUserIdentity } from "./types";
 
 const AVATAR_SIZE_CLASSNAME = {
@@ -183,7 +183,7 @@ export default function ShellAccountMenu({
               : "mt-2 rounded-2xl",
           )}
         >
-          <div className="from-primary/20 via-highlight/12 to-info/20 flex items-center gap-3 bg-linear-to-br px-4 py-4">
+          <div className={cn(TINTED_SURFACE_GRADIENT_STOPS, "flex items-center gap-3 bg-linear-to-br px-4 py-4")}>
             <AccountAvatar user={user} size="lg" />
             <div className="min-w-0">
               <p className="text-text-title truncate text-sm font-semibold">{displayName}</p>

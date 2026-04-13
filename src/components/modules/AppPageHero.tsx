@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Sparkles } from "lucide-react";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
-import { cn } from "@/lib/styles";
+import { cn, TINTED_SURFACE_GRADIENT_STOPS } from "@/lib/styles";
 
 type AppPageHeroProps = {
   eyebrow: ReactNode;
@@ -32,7 +32,8 @@ export default function AppPageHero({ eyebrow, title, description, aside, classN
   return (
     <header
       className={cn(
-        "border-border/70 from-primary/20 via-highlight/12 to-info/20 rounded-2xl border bg-linear-to-br p-5 shadow-sm sm:p-6",
+        "border-border/70 rounded-2xl border bg-linear-to-br p-5 shadow-sm sm:p-6",
+        TINTED_SURFACE_GRADIENT_STOPS,
         className,
       )}
     >

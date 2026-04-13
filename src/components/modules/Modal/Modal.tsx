@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import Heading from "@/components/core/Heading";
 import Portal from "@/components/core/Portal";
 import Typography from "@/components/core/Typography";
-import { cn } from "@/lib/styles";
+import { cn, TINTED_SURFACE_GRADIENT_STOPS, TINTED_SURFACE_GRADIENT_TOP_WASH } from "@/lib/styles";
 import { FOCUS_OPTIONS_NO_SCROLL, getFocusableElements } from "@/lib/a11y/focusable";
 
 export type ModalRole = "dialog" | "alertdialog";
@@ -166,7 +166,10 @@ export default function Modal({
           role="document"
         >
           <div
-            className="from-primary/16 via-highlight/8 pointer-events-none absolute inset-x-0 top-0 h-[min(52%,18rem)] min-h-44 bg-linear-to-b to-transparent sm:min-h-52"
+            className={cn(
+              TINTED_SURFACE_GRADIENT_TOP_WASH,
+              "pointer-events-none absolute inset-x-0 top-0 h-[min(52%,18rem)] min-h-44 bg-linear-to-b sm:min-h-52",
+            )}
             aria-hidden
           />
           <div
@@ -186,7 +189,7 @@ export default function Modal({
                     "inline-flex h-2 w-16 shrink-0 rounded-full bg-linear-to-r",
                     role === "alertdialog"
                       ? "from-destructive/28 via-destructive/40 to-destructive/18"
-                      : "from-primary/22 via-highlight/38 to-primary/14",
+                      : TINTED_SURFACE_GRADIENT_STOPS,
                   )}
                   aria-hidden
                 />
