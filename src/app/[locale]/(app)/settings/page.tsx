@@ -1,15 +1,16 @@
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import AppPageHero from "@/components/modules/AppPageHero";
+import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
 import SettingsAccountSection from "@/app/[locale]/(app)/settings/_components/SettingsAccountSection";
 import { getSession } from "@/lib/auth/auth-server";
 import { getAccountCapabilitiesForUser } from "@/lib/auth/accountCapabilities";
 import { buildPageMetadata } from "@/lib/seo";
 import { prisma } from "@/lib/prisma";
 import { SETTINGS_SECTION_SURFACE_CLASSNAME } from "@/app/[locale]/(app)/settings/settingsSectionChrome";
+import { COLLECTOR_MUTED_INSET_CLASSNAME, cn } from "@/lib/styles";
 import { isLocale } from "@/types/locale";
 
 type SettingsPageProps = {
@@ -59,10 +60,10 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
       <AppPageHero eyebrow={t("hero.eyebrow")} title={t("title")} description={t("intro")} />
 
       <section className={SETTINGS_SECTION_SURFACE_CLASSNAME} aria-labelledby="settings-profile-heading">
-        <Heading id="settings-profile-heading" as="h2" size="xs" className="text-text-title">
+        <SectionTitleWithAccent id="settings-profile-heading" as="h2">
           {t("profile.title")}
-        </Heading>
-        <div className="border-border/55 bg-muted/32 mt-4 rounded-xl border p-4">
+        </SectionTitleWithAccent>
+        <div className={cn(COLLECTOR_MUTED_INSET_CLASSNAME, "mt-4")}>
           <Typography size="sm" className="text-text-body">
             {t("profile.placeholder")}
           </Typography>
@@ -77,10 +78,10 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
       />
 
       <section className={SETTINGS_SECTION_SURFACE_CLASSNAME} aria-labelledby="settings-preferences-heading">
-        <Heading id="settings-preferences-heading" as="h2" size="xs" className="text-text-title">
+        <SectionTitleWithAccent id="settings-preferences-heading" as="h2">
           {t("preferences.title")}
-        </Heading>
-        <div className="border-border/55 bg-muted/32 mt-4 rounded-xl border p-4">
+        </SectionTitleWithAccent>
+        <div className={cn(COLLECTOR_MUTED_INSET_CLASSNAME, "mt-4")}>
           <Typography size="sm" className="text-text-body">
             {t("preferences.placeholder")}
           </Typography>

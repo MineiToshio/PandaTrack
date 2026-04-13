@@ -4,15 +4,16 @@ import { cn } from "@/lib/styles";
 
 const TITLE_CLASS = "min-w-0 leading-tight";
 
-type StoreSectionLabelProps = {
+export type SectionTitleWithAccentProps = {
   children: ReactNode;
   id?: string;
   className?: string;
-  /** Use `h2` for page section titles; `h3` for secondary blocks; `div` when a heading is not appropriate. */
+  /** Use `h2` for major page sections; `h3` for subsections; `div` when a heading is not appropriate. */
   as?: "h2" | "h3" | "div";
 };
 
-export default function StoreSectionLabel({ children, id, className, as = "div" }: StoreSectionLabelProps) {
+/** Section title row with leading accent bar for in-page sections in the collector shell. */
+export default function SectionTitleWithAccent({ children, id, className, as = "div" }: SectionTitleWithAccentProps) {
   return (
     <div className={cn("flex min-w-0 items-center gap-2", className)}>
       <span className="from-primary to-highlight h-3.5 w-1 shrink-0 rounded-full bg-linear-to-b" aria-hidden />
@@ -21,7 +22,7 @@ export default function StoreSectionLabel({ children, id, className, as = "div" 
           {children}
         </div>
       ) : (
-        <Heading as={as} size="xs" id={id} className={cn(TITLE_CLASS, "text-text-title")}>
+        <Heading as={as} size="xs" id={id} className={cn(TITLE_CLASS, "text-text-title tracking-tighter")}>
           {children}
         </Heading>
       )}

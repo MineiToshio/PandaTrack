@@ -6,7 +6,7 @@ import posthog from "posthog-js";
 import type { ReactNode } from "react";
 import { useCallback, useRef, useState } from "react";
 import Button from "@/components/core/Button/Button";
-import Heading from "@/components/core/Heading";
+import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
 import PasswordInput from "@/components/core/PasswordInput";
@@ -20,7 +20,7 @@ import {
 import type { AccountCapabilities } from "@/lib/auth/accountCapabilities";
 import { SETTINGS_SECTION_SURFACE_CLASSNAME } from "@/app/[locale]/(app)/settings/settingsSectionChrome";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { cn } from "@/lib/styles";
+import { COLLECTOR_MUTED_INSET_CLASSNAME, cn } from "@/lib/styles";
 import type { SettingsAccountErrorCode } from "@/app/[locale]/(app)/settings/_schemas/accountCredentials";
 import type { Locale } from "@/types/locale";
 
@@ -268,12 +268,12 @@ export default function SettingsAccountSection({
 
   return (
     <section className={SETTINGS_SECTION_SURFACE_CLASSNAME} aria-labelledby="settings-account-heading">
-      <Heading id="settings-account-heading" as="h2" size="xs" className="text-text-title">
+      <SectionTitleWithAccent id="settings-account-heading" as="h2">
         {t("title")}
-      </Heading>
+      </SectionTitleWithAccent>
 
       <div className="mt-6 space-y-8">
-        <div className="border-border/55 bg-muted/32 rounded-xl border p-4">
+        <div className={COLLECTOR_MUTED_INSET_CLASSNAME}>
           <Typography size="xs" className="text-text-muted mb-2 font-medium">
             {t("email.label")}
           </Typography>
@@ -312,7 +312,7 @@ export default function SettingsAccountSection({
           ) : null}
         </div>
 
-        <div className="border-border/55 bg-muted/32 rounded-xl border p-4">
+        <div className={COLLECTOR_MUTED_INSET_CLASSNAME}>
           <Typography size="xs" className="text-text-muted mb-4 font-medium">
             {capabilities.canSetPassword ? t("password.setTitle") : t("password.changeTitle")}
           </Typography>

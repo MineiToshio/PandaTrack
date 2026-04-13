@@ -11,7 +11,7 @@ import { Modal } from "@/components/modules/Modal";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import type { StoreViewerReview } from "@/queries/store";
-import StoreSectionLabel from "../../_components/share/StoreSectionLabel";
+import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
 import StoreSurfaceCard from "../../_components/share/StoreSurfaceCard";
 import { deleteStoreReview } from "../_actions/deleteStoreReview";
 import StoreReviewForm from "./StoreReviewForm";
@@ -50,9 +50,9 @@ function StoreReviewsTitleBlock() {
   const t = useTranslations("stores");
   return (
     <div className="space-y-1">
-      <StoreSectionLabel as="h2" id="section-store-reviews">
+      <SectionTitleWithAccent as="h2" id="section-store-reviews">
         {t("detail.reviews.title")}
-      </StoreSectionLabel>
+      </SectionTitleWithAccent>
       <Typography size="sm" className="text-text-muted">
         {t("detail.reviews.description")}
       </Typography>

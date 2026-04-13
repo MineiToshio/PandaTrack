@@ -22,7 +22,7 @@ import {
 import { siFacebook, siInstagram, siTiktok, siWhatsapp } from "simple-icons";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
-import StoreSectionLabel from "../../_components/share/StoreSectionLabel";
+import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
 import { STORE_SURFACE_CARD_CLASSNAME } from "../../_components/share/StoreSurfaceCard";
 import { ROUTES } from "@/lib/constants";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
@@ -371,9 +371,9 @@ export default function StoreDetailContent({
             {/* Catalog card: Product Types + Import Countries */}
             <section className={cn(STORE_SURFACE_CARD_CLASSNAME, "space-y-5")}>
               <div aria-labelledby="section-product-types">
-                <StoreSectionLabel as="h2" id="section-product-types">
+                <SectionTitleWithAccent as="h2" id="section-product-types">
                   {tStores("detail.productTypesLabel")}
-                </StoreSectionLabel>
+                </SectionTitleWithAccent>
                 {store.productTypeKeys.length > 0 ? (
                   <div className="mt-2.5 flex flex-wrap gap-2">
                     {store.productTypeKeys.map((productTypeKey) => (
@@ -398,9 +398,9 @@ export default function StoreDetailContent({
               <hr className="border-border/30" />
 
               <div aria-labelledby="section-import-countries">
-                <StoreSectionLabel as="h2" id="section-import-countries">
+                <SectionTitleWithAccent as="h2" id="section-import-countries">
                   {tStores("detail.importCountriesLabel")}
-                </StoreSectionLabel>
+                </SectionTitleWithAccent>
                 {store.importCountryCodes.length > 0 ? (
                   <div className="mt-2.5 flex flex-wrap gap-2">
                     {store.importCountryCodes.map((countryCode) => (
@@ -425,9 +425,9 @@ export default function StoreDetailContent({
 
             {/* Contact Channels */}
             <section className={STORE_SURFACE_CARD_CLASSNAME} aria-labelledby="section-contact">
-              <StoreSectionLabel as="h2" id="section-contact">
+              <SectionTitleWithAccent as="h2" id="section-contact">
                 {tStores("create.contactChannelsLabel")}
-              </StoreSectionLabel>
+              </SectionTitleWithAccent>
               {isBusiness && contactChannelsCount > 0 ? (
                 <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
                   {store.contactChannels?.map((ch) => {
@@ -468,9 +468,9 @@ export default function StoreDetailContent({
 
             {/* Addresses */}
             <section className={STORE_SURFACE_CARD_CLASSNAME} aria-labelledby="section-addresses">
-              <StoreSectionLabel as="h2" id="section-addresses">
+              <SectionTitleWithAccent as="h2" id="section-addresses">
                 {tStores("create.addressesLabel")}
-              </StoreSectionLabel>
+              </SectionTitleWithAccent>
               {isBusiness && addressesCount > 0 ? (
                 <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
                   {store.addresses?.map((address, index) => (
@@ -509,7 +509,7 @@ export default function StoreDetailContent({
             <div className={cn(STORE_SURFACE_CARD_CLASSNAME, "space-y-5")}>
               {/* Profile Summary */}
               <div>
-                <StoreSectionLabel as="h3">{tStores("detail.profileSummaryTitle")}</StoreSectionLabel>
+                <SectionTitleWithAccent as="h3">{tStores("detail.profileSummaryTitle")}</SectionTitleWithAccent>
                 <div className="divide-border/40 mt-2 divide-y">
                   <SidebarField label={tStores("detail.storeTypeLabel")}>
                     <span className="inline-flex items-center gap-1.5">
@@ -536,9 +536,9 @@ export default function StoreDetailContent({
 
               {/* Sales channels (sidebar: visible with sticky column on large screens) */}
               <div aria-labelledby="section-presence">
-                <StoreSectionLabel as="h3" id="section-presence">
+                <SectionTitleWithAccent as="h3" id="section-presence">
                   {tStores("detail.presenceLabel")}
-                </StoreSectionLabel>
+                </SectionTitleWithAccent>
                 <div className="mt-2.5 flex flex-wrap gap-2">
                   {store.presenceTypes.map((presenceType) => (
                     <span
@@ -556,7 +556,7 @@ export default function StoreDetailContent({
 
               {/* Business Signals */}
               <div>
-                <StoreSectionLabel as="h3">{tStores("detail.businessSignalsTitle")}</StoreSectionLabel>
+                <SectionTitleWithAccent as="h3">{tStores("detail.businessSignalsTitle")}</SectionTitleWithAccent>
                 <div className="mt-3 space-y-2">
                   <div
                     className={cn(

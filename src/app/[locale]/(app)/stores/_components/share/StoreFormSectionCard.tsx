@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
-import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
-import { cn } from "@/lib/styles";
+import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
+import { COLLECTOR_PRIMARY_SECTION_CLASSNAME, cn } from "@/lib/styles";
 
 type StoreFormSectionCardProps = {
   eyebrow: string;
@@ -19,15 +19,13 @@ export default function StoreFormSectionCard({
   className,
 }: StoreFormSectionCardProps) {
   return (
-    <section className={cn("border-border bg-muted/15 space-y-4 rounded-xl border p-4 sm:p-5", className)}>
+    <section className={cn(COLLECTOR_PRIMARY_SECTION_CLASSNAME, "space-y-4", className)}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-1">
+        <div className="min-w-0 flex-1 space-y-1.5">
           <Typography size="xs" className="text-text-muted">
             {eyebrow}
           </Typography>
-          <Heading as="h3" size="xs" className="text-text-title">
-            {title}
-          </Heading>
+          <SectionTitleWithAccent as="h3">{title}</SectionTitleWithAccent>
         </div>
         {action}
       </div>

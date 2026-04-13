@@ -18,7 +18,8 @@
     "productType": "Tipo de producto",
     "country": "País",
     "presence": "Canales de venta",
-    "importCountry": "País de importación"
+    "importCountry": "País de importación",
+    "commerce": "Opciones de compra"
   },
   "presence": {
     "ONLINE": "Tienda online",

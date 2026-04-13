@@ -16,9 +16,9 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import AppPageHero from "@/components/modules/AppPageHero";
+import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
 import Label from "@/components/core/Label";
 import Input from "@/components/core/Input";
 import Select from "@/components/core/Select";
@@ -454,9 +454,9 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
             tabIndex={-1}
           />
           <div className="border-border bg-background relative z-10 w-full max-w-lg rounded-xl border p-6 shadow-xl">
-            <Heading as="h3" id="duplicate-dialog-title" size="sm" className="text-text-title mb-2">
+            <SectionTitleWithAccent as="h3" id="duplicate-dialog-title" className="mb-2">
               {t("duplicate.submitModalTitle")}
-            </Heading>
+            </SectionTitleWithAccent>
             <Typography id="duplicate-dialog-desc" size="sm" className="text-text-body mb-4">
               {t("duplicate.submitModalDescription", { percent: SIMILARITY_THRESHOLD_PERCENT })}
             </Typography>

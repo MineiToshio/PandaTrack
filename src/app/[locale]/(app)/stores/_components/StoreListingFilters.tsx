@@ -233,7 +233,7 @@ export default function StoreListingFilters({
   };
 
   return (
-    <div className="mt-4 space-y-4">
+    <div className="space-y-4">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0 space-y-2">
           <Typography size="sm" className="text-text-muted">
@@ -369,8 +369,13 @@ export default function StoreListingFilters({
             tabIndex={-1}
           />
           <aside className="border-border bg-background absolute top-0 right-0 flex h-full w-full max-w-md flex-col border-l shadow-xl">
-            <div className="border-border flex items-center justify-between gap-2 border-b p-4 sm:p-6">
-              <Typography id={filtersPanelTitleId} as="span" size="md" className="text-text-title font-semibold">
+            <div className="border-border flex min-w-0 items-center justify-between gap-2 border-b p-4 sm:p-6">
+              <Typography
+                id={filtersPanelTitleId}
+                as="span"
+                size="md"
+                className="text-text-title min-w-0 flex-1 font-semibold"
+              >
                 {t("filtersDialogTitle")}
               </Typography>
               <button
@@ -468,24 +473,27 @@ export default function StoreListingFilters({
                 </div>
               </fieldset>
 
-              <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:flex-wrap">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDraftFilters((previous) => ({ ...previous, receivesOrders: !previous.receivesOrders }))
-                  }
-                  className={cn(FILTER_CHIP_CLASSNAME, draftFilters.receivesOrders && FILTER_CHIP_SELECTED_CLASSNAME)}
-                >
-                  {tCreate("receivesOrdersLabel")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDraftFilters((previous) => ({ ...previous, hasStock: !previous.hasStock }))}
-                  className={cn(FILTER_CHIP_CLASSNAME, draftFilters.hasStock && FILTER_CHIP_SELECTED_CLASSNAME)}
-                >
-                  {tCreate("hasStockLabel")}
-                </button>
-              </div>
+              <fieldset className="space-y-3">
+                <legend className="text-text-title text-sm font-semibold">{t("filters.commerce")}</legend>
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDraftFilters((previous) => ({ ...previous, receivesOrders: !previous.receivesOrders }))
+                    }
+                    className={cn(FILTER_CHIP_CLASSNAME, draftFilters.receivesOrders && FILTER_CHIP_SELECTED_CLASSNAME)}
+                  >
+                    {tCreate("receivesOrdersLabel")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDraftFilters((previous) => ({ ...previous, hasStock: !previous.hasStock }))}
+                    className={cn(FILTER_CHIP_CLASSNAME, draftFilters.hasStock && FILTER_CHIP_SELECTED_CLASSNAME)}
+                  >
+                    {tCreate("hasStockLabel")}
+                  </button>
+                </div>
+              </fieldset>
             </div>
 
             <div className="border-border bg-background/95 sticky bottom-0 z-10 border-t p-4 backdrop-blur sm:p-6">

@@ -18,7 +18,8 @@
     "productType": "Product type",
     "country": "Country",
     "presence": "Sales channels",
-    "importCountry": "Import country"
+    "importCountry": "Import country",
+    "commerce": "Shopping options"
   },
   "presence": {
     "ONLINE": "Online store",

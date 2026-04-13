@@ -60,7 +60,7 @@ export default async function StoreListingPagination({
   return (
     <nav
       aria-label={tListing("pagination.navigationAriaLabel")}
-      className="mt-6 flex flex-wrap items-center justify-center gap-1.5"
+      className="flex flex-wrap items-center justify-center gap-1.5"
     >
       {isOnFirstPage ? (
         <span

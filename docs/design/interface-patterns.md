@@ -174,6 +174,20 @@ Rules:
 - equivalent subsection actions should appear in the same place across similar sections
 - when a screen has both a page title and major section headings, the page `h1` must use a **larger** `Heading` size than those section `h2`s (see `visual-foundations.md` heading scale)
 
+### Standard in-page section title (mandatory)
+
+Every **visible section title** under the screen’s primary title (the `h1` inside `AppPageHero`, the store profile hero, or equivalent) must use **`SectionTitleWithAccent`** from `src/components/modules/SectionTitleWithAccent.tsx`. It is the only approved row: vertical gradient accent bar plus title. Do **not** use a bare `Heading` for that row, and do **not** reimplement the bar with ad hoc markup.
+
+Rules:
+
+- **Major peer sections** (sibling blocks at the same level under the page intro): `as="h2"` and a stable `id` when the parent `<section>` uses `aria-labelledby`.
+- **Subsections** inside a column, card stack, or nested block: `as="h3"` unless the document outline requires `h2`.
+- **`as="div"`** only when the string is not a section heading in the outline (rare).
+- Typography and spacing inside the component are fixed (`Heading` `size="xs"`, `tracking-tighter`, shared with `visual-foundations.md`).
+- **Do not** use `SectionTitleWithAccent` for **transient overlay chrome** (drawer, sheet, or flyout **header row**). Those titles belong to a narrow panel, not the main page column; use compact **`Typography`** (or the modal/drawer’s built-in title treatment) instead.
+
+**Store create/edit steps:** **`StoreFormSectionCard`** renders the optional step **eyebrow** (`Typography` muted, e.g. “Step 1”) on the line above **`SectionTitleWithAccent`** (`as="h3"`) for the card title, so wizard sections match the same accent title row as the rest of the shell.
+
 ### Collector shell content width
 
 All authenticated `(app)` routes share one **outer** content width and horizontal padding via `APP_SHELL_MAIN_CLASSNAME` on `<main>` in `AppLayout` (see `visual-foundations.md` layout containers). Listings, detail pages, and settings use the full width of that column. **Do not** add per-route `mx-auto max-w-4xl` / `max-w-6xl` wrappers that fight the shell.
@@ -202,28 +216,19 @@ Rules:
 - the **document `h1`** for these screens lives in `AppPageHero` (or the store profile hero). The sticky shell bar title in `ContentHeader` is a **presentational** line (`p` with heading-like classes), not a second heading, so the outline stays one primary title per view
 - when the flow needs parent navigation (create/edit store), place `BackNavLink` (`appearance="pill"`) in a `space-y-3` stack **above** `AppPageHero`
 - keep `h1` typography aligned across routes that share this pattern
-- major sections below use `Heading` as `h2` with `size="xs"` and `text-text-title` unless a different density is documented for that route
+- major sections below the hero use **`SectionTitleWithAccent`** (`as="h2"`), not a standalone `Heading` (see **Standard in-page section title**)
 
 ### Collector settings route (`/settings`)
 
 - page title block: `AppPageHero` with the same `h1` scale and supporting line as other collector routes (`visual-foundations.md` heading scale).
-- major section titles (Profile, Account, Preferences): `Heading` as `h2` with `size="xs"` and `text-text-title`.
-- stack major sections (Profile, Account, Preferences) as **sibling** level-1 surfaces with **identical** chrome: `bg-card`, `border-border`, `rounded-xl`, and the same padding scale (`p-4 sm:p-6`). Do not vary translucent `bg-card/*` opacity between equivalent blocks.
+- major section titles (Profile, Account, Preferences): `SectionTitleWithAccent` as `h2` (see **Standard in-page section title**).
+- stack major sections (Profile, Account, Preferences) as **sibling** level-1 surfaces with **identical** chrome: use `COLLECTOR_PRIMARY_SECTION_CLASSNAME` from `src/lib/styles.ts` (re-exported as `SETTINGS_SECTION_SURFACE_CLASSNAME` in `settingsSectionChrome.ts`). Store create/edit step cards use the same class via `StoreFormSectionCard`. Do not invent a third panel treatment for equivalent blocks.
+- inset rows and placeholders inside those sections (email block, “coming soon” copy): use `COLLECTOR_MUTED_INSET_CLASSNAME` from `src/lib/styles.ts` instead of one-off `bg-muted/32` stacks.
 - rely on the shared shell main column (`APP_SHELL_MAIN_CLASSNAME`); use `space-y-8` between the hero and major sections only (no extra page-level `max-w-6xl` or horizontal padding wrapper).
 - dense copy inside sections: prefer `Typography size="sm"` for placeholders and primary read values; use `Typography size="xs"` for field labels and subsection captions.
 - form groups: `space-y-3` (12px) between stacked fields in dense settings forms.
 - informational account states (for example pending email verification after a change request): semantic **info** treatment (`bg-info/12`, `border-info/35`, `rounded-xl`), not ad hoc `primary` fills.
 - shared class for the three main section panels: `src/app/[locale]/(app)/settings/settingsSectionChrome.ts` (`SETTINGS_SECTION_SURFACE_CLASSNAME`).
-
-### Pattern: Section title with leading accent
-
-Use when multiple **peer sections** need a consistent, scannable title treatment (not a full `AppPageHero`).
-
-Rules:
-
-- pair a **small brand accent** (vertical bar or short rule) with **one title size** across those sections: `text-lg font-semibold tracking-tighter text-text-title` aligned with `Heading size="xs"`
-- pick the correct **heading level** (`h2` vs `h3`) from document outline; expose stable **`id`s** when sections are referenced by `aria-labelledby`
-- reuse **one component or one class bundle** for the pattern so pages do not drift
 
 ### Pattern: Secondary actions on a tinted or gradient panel
 

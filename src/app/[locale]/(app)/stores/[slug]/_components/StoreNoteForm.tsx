@@ -6,7 +6,7 @@ import Button from "@/components/core/Button/Button";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import type { StoreViewerNote } from "@/queries/store";
-import StoreSectionLabel from "../../_components/share/StoreSectionLabel";
+import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
 import StoreSurfaceCard from "../../_components/share/StoreSurfaceCard";
 import { saveStoreNote } from "../_actions/saveStoreNote";
 
@@ -61,9 +61,9 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
   return (
     <StoreSurfaceCard>
       <div className="space-y-1">
-        <StoreSectionLabel as="h3" id="store-private-note-heading">
+        <SectionTitleWithAccent as="h3" id="store-private-note-heading">
           {t("detail.privateNote.title")}
-        </StoreSectionLabel>
+        </SectionTitleWithAccent>
         <Typography size="sm" className="text-text-muted">
           {t("detail.privateNote.description")}
         </Typography>

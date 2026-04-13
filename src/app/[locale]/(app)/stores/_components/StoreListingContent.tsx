@@ -4,7 +4,7 @@ import { Box, CheckCircle2, Globe, Link2, Mail, MapPin, Phone, Star, XCircle } f
 import { siFacebook, siInstagram, siTiktok, siWhatsapp } from "simple-icons";
 import type { PublicStoreListingItem } from "@/queries/store";
 import { ROUTES } from "@/lib/constants";
-import { cn } from "@/lib/styles";
+import { COLLECTOR_MUTED_INSET_CLASSNAME, cn } from "@/lib/styles";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import StoreEmptyCatalogTag from "./StoreEmptyCatalogTag";
@@ -43,6 +43,62 @@ function buildContactHref(
   return trimmedValue;
 }
 
+function StoreListingContactChannelLinks({
+  storeSlug,
+  channels,
+  tStores,
+}: {
+  storeSlug: string;
+  channels: PublicStoreListingItem["contactChannels"];
+  tStores: ReturnType<typeof useTranslations<"stores">>;
+}) {
+  if (channels.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="pointer-events-auto relative z-20 flex shrink-0 items-center gap-1.5">
+      {channels.slice(0, MAX_CONTACT_CHANNELS).map((channel) => {
+        const href = buildContactHref(channel.type, channel.value);
+        if (!href) {
+          return null;
+        }
+
+        const icon =
+          channel.type === "INSTAGRAM" ? (
+            <SimpleIconSvg path={siInstagram.path} />
+          ) : channel.type === "WHATSAPP" ? (
+            <SimpleIconSvg path={siWhatsapp.path} />
+          ) : channel.type === "FACEBOOK" ? (
+            <SimpleIconSvg path={siFacebook.path} />
+          ) : channel.type === "TIKTOK" ? (
+            <SimpleIconSvg path={siTiktok.path} />
+          ) : channel.type === "EMAIL" ? (
+            <Mail className="size-3.5" aria-hidden />
+          ) : channel.type === "PHONE" ? (
+            <Phone className="size-3.5" aria-hidden />
+          ) : (
+            <Link2 className="size-3.5" aria-hidden />
+          );
+
+        return (
+          <a
+            key={`${storeSlug}-${channel.type}-${channel.value}`}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={tStores(`contactChannelTypes.${channel.type}`)}
+            title={tStores(`contactChannelTypes.${channel.type}`)}
+            className="text-text-muted hover:text-primary focus-visible:ring-ring inline-flex size-6 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          >
+            {icon}
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
 export type StoreListingContentProps = {
   locale: string;
   stores: PublicStoreListingItem[];
@@ -59,7 +115,7 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
     storeType === "BUSINESS" ? t("cards.storeTypeBusiness") : t("cards.storeTypePerson");
 
   return (
-    <div className="mt-6 space-y-6">
+    <div className="space-y-6">
       {showEmptyState && (
         <div className="border-border/70 bg-background/70 rounded-2xl border border-dashed p-8 text-center">
           <Typography size="md" className="text-text-muted">
@@ -81,10 +137,21 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                 <div className="pointer-events-none space-y-3.5">
                   <div className="space-y-3">
                     <div className="space-y-1.5">
-                      <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                        <Heading as="h3" size="xs" className="text-text-title line-clamp-2 min-w-0 flex-1 leading-snug">
-                          {store.name}
-                        </Heading>
+                      <div className="flex w-full min-w-0 flex-wrap items-start gap-x-3 gap-y-2">
+                        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+                          <Heading
+                            as="h3"
+                            size="xs"
+                            className="text-text-title line-clamp-2 max-w-full min-w-0 shrink leading-snug"
+                          >
+                            {store.name}
+                          </Heading>
+                          <StoreListingContactChannelLinks
+                            storeSlug={store.slug}
+                            channels={store.contactChannels}
+                            tStores={tStores}
+                          />
+                        </div>
                         {(store.averageRating != null || store.reviewCount > 0) && (
                           <div className="text-text-muted flex shrink-0 items-center gap-1.5 text-sm">
                             <Star className="text-primary size-4 shrink-0 fill-current" aria-hidden />
@@ -99,61 +166,9 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                           </div>
                         )}
                       </div>
-                      <div className="text-text-muted flex flex-wrap items-center gap-2 text-sm">
-                        {getCollectorCountryFlagEmoji(store.countryCode) ? (
-                          <CollectorCountryFlagEmoji countryCode={store.countryCode} className="shrink-0" />
-                        ) : (
-                          <MapPin className="size-4 shrink-0" aria-hidden />
-                        )}
-                        <span>{tCountries(store.countryCode)}</span>
-                        {store.contactChannels.length > 0 && (
-                          <>
-                            <span className="bg-border/70 h-3.5 w-px rounded-full" aria-hidden />
-                            <div className="pointer-events-auto relative z-20 flex items-center gap-1.5">
-                              {store.contactChannels.slice(0, MAX_CONTACT_CHANNELS).map((channel) => {
-                                const href = buildContactHref(channel.type, channel.value);
-                                if (!href) {
-                                  return null;
-                                }
-
-                                const icon =
-                                  channel.type === "INSTAGRAM" ? (
-                                    <SimpleIconSvg path={siInstagram.path} />
-                                  ) : channel.type === "WHATSAPP" ? (
-                                    <SimpleIconSvg path={siWhatsapp.path} />
-                                  ) : channel.type === "FACEBOOK" ? (
-                                    <SimpleIconSvg path={siFacebook.path} />
-                                  ) : channel.type === "TIKTOK" ? (
-                                    <SimpleIconSvg path={siTiktok.path} />
-                                  ) : channel.type === "EMAIL" ? (
-                                    <Mail className="size-3.5" aria-hidden />
-                                  ) : channel.type === "PHONE" ? (
-                                    <Phone className="size-3.5" aria-hidden />
-                                  ) : (
-                                    <Link2 className="size-3.5" aria-hidden />
-                                  );
-
-                                return (
-                                  <a
-                                    key={`${store.slug}-${channel.type}-${channel.value}`}
-                                    href={href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    aria-label={tStores(`contactChannelTypes.${channel.type}`)}
-                                    title={tStores(`contactChannelTypes.${channel.type}`)}
-                                    className="text-text-muted hover:text-primary focus-visible:ring-ring inline-flex size-6 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                                  >
-                                    {icon}
-                                  </a>
-                                );
-                              })}
-                            </div>
-                          </>
-                        )}
-                      </div>
                     </div>
 
-                    <div className="border-border/55 bg-muted/32 rounded-xl border p-3">
+                    <div className={cn(COLLECTOR_MUTED_INSET_CLASSNAME, "space-y-3 p-3")}>
                       <div className="space-y-1.5">
                         <Typography size="2xs" className="text-text-muted block font-medium">
                           {t("cards.productTypes")}
@@ -174,7 +189,7 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                         )}
                       </div>
 
-                      <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      <div className="grid gap-2 sm:grid-cols-2">
                         <div className="space-y-1.5">
                           <Typography size="2xs" className="text-text-muted block font-medium">
                             {t("filters.presence")}
@@ -220,6 +235,16 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 pt-2.5">
+                    <span
+                      className={cn(INFO_CHIP_CLASSNAME, "bg-muted/45 text-text-body/85 border-border/60 max-w-full")}
+                    >
+                      {getCollectorCountryFlagEmoji(store.countryCode) ? (
+                        <CollectorCountryFlagEmoji countryCode={store.countryCode} className="shrink-0" />
+                      ) : (
+                        <MapPin className="size-3.5 shrink-0" aria-hidden />
+                      )}
+                      <span className="min-w-0 truncate">{tCountries(store.countryCode)}</span>
+                    </span>
                     <span className={cn(INFO_CHIP_CLASSNAME, "bg-muted/45 text-text-body/85 border-border/60")}>
                       <Globe className="size-3.5" aria-hidden />
                       <span>{getStoreTypeLabel(store.storeType)}</span>

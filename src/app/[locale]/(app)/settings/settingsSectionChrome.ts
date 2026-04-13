@@ -1,6 +1,7 @@
+import { COLLECTOR_PRIMARY_SECTION_CLASSNAME } from "@/lib/styles";
+
 /**
- * Shared surface for sibling settings blocks (Profile, Account, Preferences).
- * Matches docs/design/visual-foundations.md level-1 primary containers (`bg-card`, `border-border`, `rounded-xl`).
+ * Sibling settings surfaces (Profile, Account, Preferences) and other collector primary panels.
+ * Implemented by {@link COLLECTOR_PRIMARY_SECTION_CLASSNAME} in `src/lib/styles.ts`.
  */
-export const SETTINGS_SECTION_SURFACE_CLASSNAME =
-  "border-border/70 bg-background/80 ring-primary/10 rounded-2xl border p-4 shadow-sm ring-1 ring-inset sm:p-6";
+export const SETTINGS_SECTION_SURFACE_CLASSNAME = COLLECTOR_PRIMARY_SECTION_CLASSNAME;

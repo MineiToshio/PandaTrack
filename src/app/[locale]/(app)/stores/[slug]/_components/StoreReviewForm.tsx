@@ -8,7 +8,7 @@ import Label from "@/components/core/Label";
 import RatingStars from "@/components/core/RatingStars";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
-import StoreSectionLabel from "../../_components/share/StoreSectionLabel";
+import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
 import type { StoreViewerReview } from "@/queries/store";
 import { saveStoreReview, type SaveStoreReviewResult, type SavedStoreReview } from "../_actions/saveStoreReview";
 
@@ -107,7 +107,7 @@ export default function StoreReviewForm({
       <input type="hidden" name="overallRating" value={ratingValue > 0 ? ratingValue : ""} />
 
       <div className="space-y-1">
-        <StoreSectionLabel as="h3">{t("detail.reviews.form.title")}</StoreSectionLabel>
+        <SectionTitleWithAccent as="h3">{t("detail.reviews.form.title")}</SectionTitleWithAccent>
         <Typography size="sm" className="text-text-muted">
           {t("detail.reviews.form.description")}
         </Typography>

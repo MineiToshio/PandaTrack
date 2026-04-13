@@ -43,7 +43,7 @@ Open `visual-foundations.md` when the task involves:
 
 Open `interface-patterns.md` when the task involves:
 
-- layout and hierarchy (including **collector shell content width**, **`AppPageHero` page headers**, **primary column + sticky rail**, **section title with accent**, **secondary actions on tinted panels**)
+- layout and hierarchy (including **collector shell content width**, **`AppPageHero` page headers**, **`SectionTitleWithAccent` section titles**, **primary column + sticky rail**, **secondary actions on tinted panels**)
 - tabs
 - modals
 - right sidebars or drawers
@@ -70,6 +70,8 @@ Open `interface-patterns.md` when the task involves:
 - `src/lib/fonts.ts`: font loading
 - `src/components/core/Typography.tsx`: body text scale
 - `src/components/core/Heading.tsx`: heading scale
+- `src/components/modules/AppPageHero.tsx`: private-app page intro header
+- `src/components/modules/SectionTitleWithAccent.tsx`: in-page section title row (accent bar + title)
 - `src/components/core/Button/buttonVariants.ts`: button patterns
 
 ## Rule For New Reusable Variables

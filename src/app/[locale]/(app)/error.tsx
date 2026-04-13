@@ -4,8 +4,8 @@ import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
 import { useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
-import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
+import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
 
 type AppShellErrorProps = {
   error: Error & { digest?: string };
@@ -29,9 +29,9 @@ export default function AppShellError({ error, reset }: AppShellErrorProps) {
   return (
     <div className="bg-background flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-6 py-12">
       <div className="bg-surface border-border w-full max-w-xl rounded-xl border p-6 text-center shadow-sm">
-        <Heading as="h2" size="sm" className="text-text-title">
+        <SectionTitleWithAccent as="h2" className="justify-center">
           {t("title")}
-        </Heading>
+        </SectionTitleWithAccent>
         <Typography size="md" className="text-text-body mt-3">
           {t("description")}
         </Typography>

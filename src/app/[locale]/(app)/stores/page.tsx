@@ -102,7 +102,7 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
   const buildPaginationHref = (targetPage: number) => createStoresPageHref(storesBasePath, rawParams, targetPage);
 
   return (
-    <div className="text-foreground">
+    <div className="text-foreground space-y-6">
       <AppPageHero
         eyebrow={tListing("hero.eyebrow")}
         title={tListing("hero.title")}

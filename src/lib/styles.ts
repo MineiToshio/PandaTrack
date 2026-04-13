@@ -16,3 +16,15 @@ export const TINTED_SURFACE_GRADIENT_STOPS = "from-primary/20 via-highlight/12 t
  * Use with `bg-linear-to-b` for section overlays and modal header washes.
  */
 export const TINTED_SURFACE_GRADIENT_TOP_WASH = "from-primary/20 via-highlight/12 to-transparent" as const;
+
+/**
+ * Primary elevated section panel for authenticated collector routes (settings blocks, store form steps, etc.).
+ * Matches `visual-foundations.md` level-1 containers: translucent fill, inset ring, soft shadow.
+ */
+export const COLLECTOR_PRIMARY_SECTION_CLASSNAME =
+  "border-border/70 bg-background/80 shadow-sm ring-primary/10 rounded-2xl border p-4 ring-1 ring-inset sm:p-6" as const;
+
+/**
+ * Muted inset block for secondary content inside a section (email row, placeholders, compact card summaries).
+ */
+export const COLLECTOR_MUTED_INSET_CLASSNAME = "border-border/55 bg-muted/32 rounded-xl border p-4" as const;
