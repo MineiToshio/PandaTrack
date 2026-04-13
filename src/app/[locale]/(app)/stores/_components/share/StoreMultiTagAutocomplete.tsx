@@ -1,13 +1,18 @@
 "use client";
 
 import { X } from "lucide-react";
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
+import { foldSearchText } from "@/lib/strings/foldSearchText";
 import { cn } from "@/lib/styles";
 import Chip from "@/components/core/Chip";
 
 type StoreMultiTagAutocompleteOption = {
   value: string;
+  /** Plain text for filtering, keyboard resolution, and accessible names (no decorative emoji). */
   label: string;
+  /** Optional visual prefix (e.g. flag emoji). Not used for search matching. */
+  leadingDecoration?: ReactNode;
 };
 
 type StoreMultiTagAutocompleteProps = {
@@ -46,15 +51,15 @@ export default function StoreMultiTagAutocomplete({
   );
 
   const availableOptions = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const foldedQuery = foldSearchText(query);
     const unselectedOptions = options.filter((option) => !selectedValues.includes(option.value));
 
     if (!isDropdownOpen) return [];
-    if (!normalizedQuery) return unselectedOptions;
+    if (!foldedQuery) return unselectedOptions;
 
     return unselectedOptions.filter(
       (option) =>
-        option.label.toLowerCase().includes(normalizedQuery) || option.value.toLowerCase().includes(normalizedQuery),
+        foldSearchText(option.label).includes(foldedQuery) || foldSearchText(option.value).includes(foldedQuery),
     );
   }, [isDropdownOpen, options, query, selectedValues]);
 
@@ -65,19 +70,31 @@ export default function StoreMultiTagAutocomplete({
     return activeOptionIndex;
   }, [activeOptionIndex, availableOptions.length]);
 
+  const renderOptionContent = (option: StoreMultiTagAutocompleteOption) => {
+    if (option.leadingDecoration == null) {
+      return option.label;
+    }
+    return (
+      <span className="inline-flex items-center gap-1">
+        <span className="inline-flex shrink-0 items-center">{option.leadingDecoration}</span>
+        {option.label}
+      </span>
+    );
+  };
+
   const resolveBestOption = (rawValue: string) => {
-    const normalizedValue = rawValue.trim().toLowerCase();
-    if (!normalizedValue) return null;
+    const foldedInput = foldSearchText(rawValue);
+    if (!foldedInput) return null;
 
     const unselectedOptions = options.filter((option) => !selectedValues.includes(option.value));
 
-    const byValue = unselectedOptions.find((option) => option.value.toLowerCase() === normalizedValue);
+    const byValue = unselectedOptions.find((option) => foldSearchText(option.value) === foldedInput);
     if (byValue) return byValue;
 
-    const byLabel = unselectedOptions.find((option) => option.label.toLowerCase() === normalizedValue);
+    const byLabel = unselectedOptions.find((option) => foldSearchText(option.label) === foldedInput);
     if (byLabel) return byLabel;
 
-    return unselectedOptions.find((option) => option.label.toLowerCase().startsWith(normalizedValue)) ?? null;
+    return unselectedOptions.find((option) => foldSearchText(option.label).startsWith(foldedInput)) ?? null;
   };
 
   const appendOption = (option: StoreMultiTagAutocompleteOption) => {
@@ -157,7 +174,7 @@ export default function StoreMultiTagAutocomplete({
         <div className="border-input bg-background focus-within:ring-ring flex min-h-10 w-full flex-wrap items-center gap-1 rounded-md border px-2 py-1 focus-within:ring-2 focus-within:ring-offset-2 focus-within:outline-none">
           {selectedOptions.map((option) => (
             <Chip key={option.value} className="inline-flex items-center gap-1 px-2 py-1 text-sm">
-              {option.label}
+              {renderOptionContent(option)}
               <button
                 type="button"
                 onClick={() => removeOption(option.value)}
@@ -214,7 +231,7 @@ export default function StoreMultiTagAutocomplete({
                   role="option"
                   aria-selected={safeActiveOptionIndex === optionIndex}
                 >
-                  {option.label}
+                  {renderOptionContent(option)}
                 </button>
               </li>
             ))}

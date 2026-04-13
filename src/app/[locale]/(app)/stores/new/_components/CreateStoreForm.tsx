@@ -40,6 +40,7 @@ import StoreContactChannelList, {
 import StoreEmptyStateBox from "../../_components/share/StoreEmptyStateBox";
 import StoreFormSectionCard from "../../_components/share/StoreFormSectionCard";
 import StoreLogoField, { type StoreLogoSubmission } from "../../_components/share/StoreLogoField/StoreLogoField";
+import CollectorCountryFlagEmoji from "../../_components/share/CollectorCountryFlagEmoji";
 import StoreMultiTagAutocomplete from "../../_components/share/StoreMultiTagAutocomplete";
 import StoreProductTypeRequestModal from "../../_components/share/StoreProductTypeRequestModal";
 import StoreToggleSwitch from "../../_components/share/StoreToggleSwitch";
@@ -222,6 +223,7 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
       countries.map((country) => ({
         value: country.code,
         label: tCountries(country.code),
+        leadingDecoration: <CollectorCountryFlagEmoji countryCode={country.code} />,
       })),
     [countries, tCountries],
   );

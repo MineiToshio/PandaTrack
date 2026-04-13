@@ -148,7 +148,12 @@ export default function StoreListingFilters({
     [productTypeOptions, tProductTypes],
   );
   const countryAutocompleteOptions = useMemo(
-    () => countryOptions.map((country) => ({ value: country.code, label: tCountries(country.code) })),
+    () =>
+      countryOptions.map((country) => ({
+        value: country.code,
+        label: tCountries(country.code),
+        leadingDecoration: <CollectorCountryFlagEmoji countryCode={country.code} />,
+      })),
     [countryOptions, tCountries],
   );
 
