@@ -36,14 +36,14 @@ Open `visual-foundations.md` when the task involves:
 - typography
 - spacing
 - borders
-- surfaces
+- surfaces (including **repeated elevated panels** and **KPI tiles** on washed backgrounds)
 - radius
 - shadows
-- gradients
+- gradients (including **soft private-app page wash**)
 
 Open `interface-patterns.md` when the task involves:
 
-- layout and hierarchy
+- layout and hierarchy (including **primary column + sticky rail**, **section title with accent**, **secondary actions on tinted panels**)
 - tabs
 - modals
 - right sidebars or drawers

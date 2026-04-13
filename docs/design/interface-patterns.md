@@ -199,6 +199,36 @@ Rules:
 - informational account states (for example pending email verification after a change request): semantic **info** treatment (`bg-info/12`, `border-info/35`, `rounded-xl`), not ad hoc `primary` fills.
 - shared class for the three main section panels: `src/app/[locale]/(app)/settings/settingsSectionChrome.ts` (`SETTINGS_SECTION_SURFACE_CLASSNAME`).
 
+### Pattern: Section title with leading accent
+
+Use when multiple **peer sections** need a consistent, scannable title treatment (not a full `AppPageHero`).
+
+Rules:
+
+- pair a **small brand accent** (vertical bar or short rule) with **one title size** across those sections: `text-lg font-semibold tracking-tighter text-text-title` aligned with `Heading size="xs"`
+- pick the correct **heading level** (`h2` vs `h3`) from document outline; expose stable **`id`s** when sections are referenced by `aria-labelledby`
+- reuse **one component or one class bundle** for the pattern so pages do not drift
+
+### Pattern: Secondary actions on a tinted or gradient panel
+
+When **`secondary`** (or equivalent low-emphasis) controls sit on a **tinted hero, gradient band, or illustration**, default fills can blend in.
+
+Rules:
+
+- prefer **soft neutral border** (`border-border` at low-to-mid opacity) plus **moderate shadow** (`shadow-md`, slightly stronger on hover) over **thick brand-colored outlines** unless the control is the **primary** action
+- keep **focus-visible** treatment from the shared button styles; do not rely on hover alone
+- respect **`prefers-reduced-motion`** for any decorative motion on the same panel
+
+### Pattern: Multi-line structured location block
+
+For **addresses, venues, or pick-up points** in lists or cards:
+
+1. **Locality line**: optional leading icon, **locality + region or country** in **semibold**, `text-text-muted`, body scale `sm`, vertically centered with the icon
+2. **Street line**: full address line, same scale, muted
+3. **Reference line** (optional): one step smaller (`xs`), muted
+
+Use locale-aware formatting and i18n for labels; keep copy plain language for end users.
+
 ### Reusable Pattern: Dense Summary Modal
 
 Use this pattern when a modal needs to present:

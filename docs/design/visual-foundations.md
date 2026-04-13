@@ -254,6 +254,16 @@ Common patterns:
 - `bg-background/70`
 - `bg-background/90`
 
+#### Repeated elevated panels on a washed background
+
+When the **page canvas** uses a very soft vertical tint (see Gradients / private shell below) and you need **several sibling panels** (detail sections, rails, full-width blocks) to feel like one family:
+
+- prefer **one shared class or component** for those panels so opacity, border, and ring stay in sync
+- typical stack: semi-opaque canvas-relative fill (`bg-background/80` to `bg-background/90`), defined border (`border-border/60` to `border-border/70`), **inset** brand ring for depth (`ring-1 ring-inset ring-primary/10` to `ring-primary/15`), `rounded-3xl`, `border`, `shadow-sm`, responsive padding `p-5 sm:p-6`
+- allow **dense exceptions** (alerts, compact callouts) by overriding padding only, not the whole token set
+
+**Metric or KPI tiles** in a **horizontal row** should stay visually quiet: prefer a **thin solid brand top edge** (`border-t-2` + `border-t-primary` at moderate opacity) over repeating **gradient strips** on every tile, so the grid does not compete with the hero or with the numbers.
+
 ### Maximum Visual Depth
 
 Avoid turning the UI into a visible stack of boxes inside boxes inside boxes.
@@ -386,3 +396,7 @@ Do not use gradients as the default for:
 - keep gradients soft and layered, not loud
 - prefer brand-adjacent blends such as `primary`, `highlight`, `accent`, and `info`
 - in the private app, gradients should appear mainly on page intros, hero-like summaries, or elevated callout surfaces
+
+### Private-app page wash (authenticated shell)
+
+The authenticated app may use a **very soft vertical wash** on the root canvas (brand-adjacent `via` / `to` stops at **low opacity**, for example primary and accent in the **~3%** opacity range) so the UI keeps personality without forcing **different panel tints** per section. **Elevated panels** (see above) should rely on their own border, ring, and fill for contrast against this wash, not on one-off background colors per block.
