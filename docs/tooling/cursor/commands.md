@@ -53,7 +53,7 @@ Marks one GitHub slice ticket as done and cascades completion upward through the
 **What it does:**
 
 1. Resolves the target slice issue from GitHub by issue number.
-2. Closes the slice and moves its GitHub Project status to `Done`.
+2. Closes the slice and sets GitHub Project `4` **Status** to `Done` via the **GitHub GraphQL API** (Projects v2; MCP does not cover this).
 3. Marks the linked `Work Order` doc as `DONE`.
 4. If all sibling `Work Orders` are `DONE`, also marks the parent `Blueprint` as `DONE`.
 5. If all sibling `Blueprints` are complete, also marks the parent `FRD` as `DONE`.

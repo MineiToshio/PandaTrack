@@ -33,7 +33,7 @@ Do not mark ancestors as done if any sibling item is still incomplete.
 
 ### 1. Resolve the slice ticket
 
-- Use GitHub MCP to read the issue from `MineiToshio/PandaTrack`.
+- Read the issue from `MineiToshio/PandaTrack` using GitHub MCP or the GitHub REST/GraphQL API (issue details and labels).
 - Accept only the issue number as input.
 - Validate the issue has label `type:slice`.
 - If the issue is not a slice, stop and say so clearly.
@@ -90,7 +90,61 @@ For the parent epic:
 - if all linked slice issues are done, update GitHub Project `4` `Status` to `Done`
 - if not all linked slice issues are done, leave the epic open and do not move it to `Done`
 
-Project sync is mandatory. If GitHub MCP does not expose the required project update directly, use another available authenticated GitHub API path. If the repo issue state can be updated but Project `Status` cannot, report that explicitly as blocked/incomplete instead of claiming full success.
+#### GitHub Project `4` status: use the GraphQL API (not MCP)
+
+The GitHub MCP available in this workspace does **not** implement GitHub Projects v2 field updates. **Do not rely on MCP** to move `Status` to `Done`.
+
+Agents must use the **GitHub GraphQL API** over HTTPS:
+
+- Endpoint: `POST https://api.github.com/graphql`
+- Header: `Authorization: Bearer <PAT>`. Read the PAT from the **shell environment** the agent uses when running `curl` (for example `GITHUB_TOKEN`, `GH_TOKEN`, or any other variable you already keep in your shell profile so it is available in the terminal session). Do **not** paste the token into chat or echo it in command output.
+- The PAT must be allowed to edit the user project (Projects scope / permissions as required by GitHub for `MineiToshio` project number `4`).
+
+**Minimal flow:**
+
+1. Resolve `projectId`, the `Status` field id, and the `Done` option id:
+
+   ```graphql
+   query {
+     user(login: "MineiToshio") {
+       projectV2(number: 4) {
+         id
+         field(name: "Status") {
+           ... on ProjectV2SingleSelectField {
+             id
+             options {
+               id
+               name
+             }
+           }
+         }
+       }
+     }
+   }
+   ```
+
+2. Resolve the `ProjectV2Item` id for the target issue (match `content { ... on Issue { number } }`).
+
+3. Set status to `Done`:
+
+   ```graphql
+   mutation {
+     updateProjectV2ItemFieldValue(
+       input: {
+         projectId: "<from step 1>"
+         itemId: "<from step 2>"
+         fieldId: "<Status field id from step 1>"
+         value: { singleSelectOptionId: "<Done option id from step 1>" }
+       }
+     ) {
+       projectV2Item {
+         id
+       }
+     }
+   }
+   ```
+
+If GraphQL returns permission or configuration errors, report **Blocked requirements** for Project sync and do not claim full success. Issue close and Epic body updates may still proceed when they succeed independently.
 
 Also keep the Epic checklist synchronized:
 
