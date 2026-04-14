@@ -51,3 +51,6 @@ generated/prisma
 # cursor mcp local credentials
 .cursor/mcp.json
 .cursor/mcp.local.json
+
+# claude local settings
+.claude/settings.local.json
