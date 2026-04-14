@@ -28,7 +28,7 @@ export const STORE_PRESENCE_CHIP_CLASSNAME =
 export const STORE_COMMERCE_SIGNAL_LABEL_CLASSNAME = "min-w-0";
 
 /**
- * Hover/focus hint that the commerce pill reveals a tooltip (no extra icons or underlines).
+ * Hover/focus hint that the commerce pill reveals a tooltip (paired with a trailing info icon in the UI).
  */
 export const STORE_COMMERCE_SIGNAL_TOOLTIP_TRIGGER_AFFORDANCE = cn(
   "motion-safe:transition-shadow motion-safe:duration-150",

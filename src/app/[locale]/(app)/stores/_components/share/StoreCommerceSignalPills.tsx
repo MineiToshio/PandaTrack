@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, PackageSearch } from "lucide-react";
+import { Box, Info, PackageSearch } from "lucide-react";
 import Tooltip from "@/components/core/Tooltip";
 import { cn } from "@/lib/styles";
 import {
@@ -23,7 +23,7 @@ export type StoreCommerceSignalPillsProps = {
 
 /**
  * Commerce option chips (order-based buying vs in-stock sales) with accessible tooltips.
- * Hover adds a light ring and shadow so the chip reads as “more info” without an extra icon.
+ * A trailing info icon signals that hover or focus reveals more detail; hover also adds a light ring and shadow.
  */
 export default function StoreCommerceSignalPills({
   receivesOrders,
@@ -46,6 +46,7 @@ export default function StoreCommerceSignalPills({
       >
         <PackageSearch className="size-3.5 shrink-0" aria-hidden />
         <span className={STORE_COMMERCE_SIGNAL_LABEL_CLASSNAME}>{receivesOrdersLabel}</span>
+        <Info className="size-3 shrink-0 opacity-70" aria-hidden />
       </Tooltip>
       <Tooltip
         content={hasStockTooltip}
@@ -57,6 +58,7 @@ export default function StoreCommerceSignalPills({
       >
         <Box className="size-3.5 shrink-0" aria-hidden />
         <span className={STORE_COMMERCE_SIGNAL_LABEL_CLASSNAME}>{hasStockLabel}</span>
+        <Info className="size-3 shrink-0 opacity-70" aria-hidden />
       </Tooltip>
     </>
   );
