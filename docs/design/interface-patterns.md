@@ -16,6 +16,28 @@ That includes:
 - loading
 - success or error feedback when relevant
 
+### Success vs. Error Feedback Placement
+
+Use this split consistently across all settings and mutation flows:
+
+| Feedback type                                       | Where to show it                                                                                                                                                                                                                                                                      |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Validation errors, field-level errors               | **Inline, directly below the control** — place the message immediately under the affected input (after label and helper text, before submit when the block is a single field). Do not render field errors above the label; that breaks scan order and looks unrelated to the control. |
+| Auth errors, rate-limit errors tied to one field    | **Inline, below that field** — same placement as other field errors when the failure maps to a specific input.                                                                                                                                                                        |
+| Auth errors, rate-limit errors that are form-wide   | **Inline above the actions** — only when no single field owns the failure (e.g. session expired on a multi-field form).                                                                                                                                                               |
+| Confirmed successful saves                          | **Toast** — transient notification in the bottom-right corner. Dismisses automatically.                                                                                                                                                                                               |
+| Neutral status updates (e.g. username availability) | **Inline** — below the field as real-time feedback while typing.                                                                                                                                                                                                                      |
+
+**Form field stack (recommended):** label → optional helper → control → **inline validation or live status (if any)** → **submit or server error (if any)** → primary actions.
+
+For a field with **only** simple validation, the error line still sits directly under the control. When **both** live feedback (e.g. username availability) and a **submit or server error** can appear, keep live feedback **directly under the input** and the server error **after** that block so typing, real-time state, and save failures stay in a clear order and the failure sits just above the submit button.
+
+Associate errors with the control using `aria-invalid` and `aria-describedby` pointing at the error message `id` when the message is present.
+
+The key rule: **errors stay with the form; success moves to a toast.** Errors must remain readable while the user decides what to do next. Success is a transient confirmation that can disappear on its own.
+
+See the _Toast Notifications_ section below for the full component API, variants, and duration guidance.
+
 ### Hover
 
 Use a hover state for any desktop-visible interactive element, including:
@@ -192,7 +214,7 @@ Rules:
 
 All authenticated `(app)` routes share one **outer** content width and horizontal padding via `APP_SHELL_MAIN_CLASSNAME` on `<main>` in `AppLayout` (see `visual-foundations.md` layout containers). Listings, detail pages, and settings use the full width of that column. **Do not** add per-route `mx-auto max-w-4xl` / `max-w-6xl` wrappers that fight the shell.
 
-For **long forms and reading-heavy stacks** (store create, store edit, dense settings sub-forms), wrap the relevant block in `APP_SHELL_FORM_RAIL_CLASSNAME` so fields stay at a comfortable measure while the page chrome still aligns with other routes.
+For **long forms and reading-heavy stacks** (store create, store edit, the main settings stack), wrap the relevant block in `APP_SHELL_FORM_RAIL_CLASSNAME` so fields stay at a comfortable measure while the page chrome still aligns with other routes.
 
 ### Private-app hero header (collector shell)
 
@@ -229,6 +251,26 @@ Rules:
 - form groups: `space-y-3` (12px) between stacked fields in dense settings forms.
 - informational account states (for example pending email verification after a change request): semantic **info** treatment (`bg-info/12`, `border-info/35`, `rounded-xl`), not ad hoc `primary` fills.
 - shared class for the three main section panels: `src/app/[locale]/(app)/settings/settingsSectionChrome.ts` (`SETTINGS_SECTION_SURFACE_CLASSNAME`).
+
+#### Sub-section typography hierarchy inside settings cards
+
+Three tiers exist inside each settings card; each must use a distinct visual weight to avoid competition:
+
+| Tier                     | Use                                                                     | Treatment                                                                                                 |
+| ------------------------ | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Form section heading     | Heads a form block (e.g. "Cambiar contrasena")                          | `Typography size="sm" className={SETTINGS_FIELD_GROUP_TITLE_CLASSNAME}` - `font-semibold text-foreground` |
+| Form field label         | Directly labels an `<input>` via `htmlFor` (e.g. "Contrasena actual")   | `Label` component - `font-medium text-foreground`                                                         |
+| Display-only block label | Categorical eyebrow above a read-only value (e.g. "CORREO ELECTRONICO") | `Typography size="2xs" className={SETTINGS_DISPLAY_BLOCK_EYEBROW_CLASSNAME}` - uppercase, tracked, muted  |
+
+Both constants live in `src/app/[locale]/(app)/settings/settingsSectionChrome.ts`.
+
+**Display-only data blocks** (read-only values with an optional action): wrap in `COLLECTOR_MUTED_INSET_CLASSNAME` so the block reads as "data being shown" rather than "a form to fill". Inside:
+
+1. Eyebrow label (category) at the top using `SETTINGS_DISPLAY_BLOCK_EYEBROW_CLASSNAME`
+2. Helper description (`Typography size="xs" className="text-text-muted"`)
+3. The prominent value (`font-semibold text-text-title`) plus action button in a flex row
+
+**Subsections within a card** (avatar, display name, username): separate with `border-t border-border/45` dividers; each subsection starts with its `<Label>` (tied to its input) followed by helper text and then the control.
 
 ### Pattern: Secondary actions on a tinted or gradient panel
 
@@ -367,6 +409,60 @@ Do not use a right sidebar for:
 - critical confirmations
 - high-stakes destructive actions
 - tasks that need full focus and interruption of the base interface
+
+## Toast Notifications
+
+Toasts are transient, auto-dismissing notifications used to confirm actions the user just performed. They appear in the bottom-right corner on desktop and full-width at the bottom on mobile, and stack upward when multiple toasts are active.
+
+### When to use toasts
+
+Use a toast when:
+
+- a mutation or save action completes successfully (e.g. profile saved, password updated)
+- a background operation finishes and the user needs a brief confirmation
+- the result is transient and does not require reading time (success, quick informational message)
+
+Do not use a toast for:
+
+- inline field validation errors - those must remain inline next to the offending field
+- errors that require user action or explanation beyond a short line
+- persistent status that the user may need to re-read (use inline banners or status blocks instead)
+
+### Variants
+
+| Variant   | Semantic color  | Use case                                  |
+| --------- | --------------- | ----------------------------------------- |
+| `success` | `--success`     | Confirming a completed save or action     |
+| `error`   | `--destructive` | Non-form-level errors (e.g. network fail) |
+| `info`    | `--info`        | Neutral informational messages            |
+| `warning` | `--warning`     | Soft warnings that do not block the user  |
+
+### Duration
+
+The default duration is 4000ms. Pass a custom `duration` (in milliseconds) to `addToast` when the content requires more reading time (e.g. longer messages).
+
+### API
+
+```tsx
+const { addToast } = useToast();
+
+addToast("Profile photo updated.");
+addToast("Rate limit exceeded.", { variant: "error", duration: 6000 });
+```
+
+The `ToastProvider` is registered in `AppLayout` and wraps the entire authenticated app shell. `useToast` can be called from any client component inside the app shell.
+
+### Rule: errors stay inline, success goes to toast
+
+- **Inline**: field validation errors, server errors that relate to a specific form field, any error the user must read before retrying.
+- **Toast**: all success confirmations; generic transient errors from mutations that do not relate to a specific field.
+
+### Component location
+
+- Context and hook: `src/contexts/ToastContext.tsx`
+- Toast item: `src/components/core/Toast/Toast.tsx`
+- Container (Portal-rendered): `src/components/core/Toast/ToastContainer.tsx`
+- Public exports: `src/components/core/Toast/index.ts`
 
 ## Status, Badges, And Chips
 

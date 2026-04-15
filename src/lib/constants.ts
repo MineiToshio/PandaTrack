@@ -60,6 +60,7 @@ export const SUPPORT_CONTACT_EMAIL = "hello@pandatrack.app";
 export const CLOUDFLARE_ASSET_ROUTES = {
   STORE_LOGOS: "store-logos",
   STORE_LOGOS_PENDING: "store-logos/pending",
+  USER_IMAGES: "user-images",
 } as const;
 
 export const POSTHOG_EVENTS = {
@@ -117,6 +118,10 @@ export const POSTHOG_EVENTS = {
     ACCOUNT_EMAIL_CHANGE_SUBMITTED: "settings_account_email_change_submitted",
     ACCOUNT_PASSWORD_CHANGE_SUBMITTED: "settings_account_password_change_submitted",
     ACCOUNT_PASSWORD_SET_SUBMITTED: "settings_account_password_set_submitted",
+    PROFILE_USERNAME_SAVED: "settings_profile_username_saved",
+    PROFILE_DISPLAY_NAME_SAVED: "settings_profile_display_name_saved",
+    PROFILE_AVATAR_UPLOADED: "settings_profile_avatar_uploaded",
+    PROFILE_AVATAR_REMOVED: "settings_profile_avatar_removed",
   },
   STORE: {
     CREATED: "store_created",

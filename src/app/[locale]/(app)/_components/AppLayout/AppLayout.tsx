@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { ShellIdentityContext } from "@/contexts/ShellIdentityContext";
+import { ToastProvider } from "@/contexts/ToastContext";
 import { APP_SHELL_MAIN_CLASSNAME } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import AppNavDrawer from "./AppNavDrawer";
@@ -21,11 +23,16 @@ type AppLayoutProps = {
   children: React.ReactNode;
 };
 
-export default function AppLayout({ locale, signOutLabel, currentUser, children }: AppLayoutProps) {
+export default function AppLayout({ locale, signOutLabel, currentUser: initialUser, children }: AppLayoutProps) {
   const pathname = usePathname();
   const { expanded, toggle } = useSidebarState();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const burgerButtonRef = useRef<HTMLButtonElement>(null);
+  const [currentUser, setCurrentUser] = useState<AppShellUserIdentity>(initialUser);
+
+  const updateUser = useCallback((patch: Partial<AppShellUserIdentity>) => {
+    setCurrentUser((prev) => ({ ...prev, ...patch }));
+  }, []);
 
   const contentOffsetRem = expanded ? SIDEBAR_WIDTH_EXPANDED_REM : SIDEBAR_RAIL_WIDTH_REM;
 
@@ -33,45 +40,49 @@ export default function AppLayout({ locale, signOutLabel, currentUser, children 
   const handleCloseDrawer = () => setDrawerOpen(false);
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <AppSidebar
-        locale={locale}
-        currentUser={currentUser}
-        signOutLabel={signOutLabel}
-        expanded={expanded}
-        onToggle={toggle}
-      />
-      <AppNavDrawer
-        locale={locale}
-        currentUser={currentUser}
-        signOutLabel={signOutLabel}
-        isOpen={drawerOpen}
-        onClose={handleCloseDrawer}
-        returnFocusRef={burgerButtonRef}
-      />
+    <ShellIdentityContext.Provider value={{ user: currentUser, updateUser }}>
+      <ToastProvider>
+        <div className="flex min-h-screen flex-col">
+          <AppSidebar
+            locale={locale}
+            currentUser={currentUser}
+            signOutLabel={signOutLabel}
+            expanded={expanded}
+            onToggle={toggle}
+          />
+          <AppNavDrawer
+            locale={locale}
+            currentUser={currentUser}
+            signOutLabel={signOutLabel}
+            isOpen={drawerOpen}
+            onClose={handleCloseDrawer}
+            returnFocusRef={burgerButtonRef}
+          />
 
-      {/* Content area: offset on desktop (lg) so it starts after the sidebar */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <style>{`
+          {/* Content area: offset on desktop (lg) so it starts after the sidebar */}
+          <div className="flex min-w-0 flex-1 flex-col">
+            <style>{`
           @media (min-width: 1024px) {
             .app-layout-content {
               margin-left: ${contentOffsetRem}rem;
             }
           }
         `}</style>
-        <div className="app-layout-content flex min-w-0 flex-1 flex-col transition-[margin-left] duration-200 ease-out motion-reduce:transition-none">
-          <HeaderTitleProvider>
-            <ContentHeader
-              locale={locale}
-              pathname={pathname ?? ""}
-              drawerOpen={drawerOpen}
-              onOpenDrawer={handleOpenDrawer}
-              burgerButtonRef={burgerButtonRef}
-            />
-            <main className={cn(APP_SHELL_MAIN_CLASSNAME)}>{children}</main>
-          </HeaderTitleProvider>
+            <div className="app-layout-content flex min-w-0 flex-1 flex-col transition-[margin-left] duration-200 ease-out motion-reduce:transition-none">
+              <HeaderTitleProvider>
+                <ContentHeader
+                  locale={locale}
+                  pathname={pathname ?? ""}
+                  drawerOpen={drawerOpen}
+                  onOpenDrawer={handleOpenDrawer}
+                  burgerButtonRef={burgerButtonRef}
+                />
+                <main className={cn(APP_SHELL_MAIN_CLASSNAME)}>{children}</main>
+              </HeaderTitleProvider>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </ToastProvider>
+    </ShellIdentityContext.Provider>
   );
 }

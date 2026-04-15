@@ -106,6 +106,7 @@ Each subsection has its own save flow and must never be bundled together or with
 - On save, required fields are validated on the client first: empty values show destructive border styling and a short validation message without invoking the server action.
 - Password strength and auth validation rules match those used in existing auth flows (server-side and Better Auth).
 - A dedicated save button triggers only the password change action.
+- After a successful password change, a transient toast notification confirms the update. Validation errors and auth errors remain inline above the form.
 
 ### Password setup flow (Google-only users)
 
@@ -113,6 +114,11 @@ Each subsection has its own save flow and must never be bundled together or with
 - The form shows a single `New password` field (shared password input with show/hide; no current password field, since none exists).
 - On save, the client validates that the field is non-empty with the same destructive styling pattern as the change-password form before invoking the server action.
 - After a successful save, the section transitions to the "Change password" form on the next component load without a full page refresh.
+- A transient toast notification confirms that the password was set. Validation errors remain inline above the form.
+
+### Success and error feedback pattern (Account section)
+
+Success confirmations (password changed, password set) use toast notifications. Validation errors, auth errors, and rate-limit errors remain inline inside the relevant form so the user can read them while the form is still visible. See `docs/design/interface-patterns.md` — _Toast Notifications_.
 
 ## Technical Notes
 

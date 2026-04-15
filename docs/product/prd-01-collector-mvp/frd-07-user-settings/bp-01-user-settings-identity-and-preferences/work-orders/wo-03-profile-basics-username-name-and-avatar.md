@@ -7,8 +7,8 @@ status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0013
-last_updated: 2026-04-04
-implementation_status: PLANNED
+last_updated: 2026-04-14
+implementation_status: IN_PROGRESS
 ---
 
 # WO-03 Profile Basics: Username, Name, and Avatar
@@ -62,7 +62,9 @@ This slice must keep `username`, `display name`, and `avatar` as separate save f
 - The `Profile` section exposes three independent save flows:
   - username save flow
   - display-name save flow
-  - avatar upload/replace/remove flow
+  - avatar upload/replace/remove flow (upload and replace persist when the user confirms in the crop modal; there is no separate “save photo” control after cropping)
+- Username field helper text should state the 7-day change limit up front so users understand the rule before editing.
+- Display name and username: validation and save/server errors render **below** the input (never above the label). For username, order under the control is: **live feedback** (checking, available, format/taken hints) **first**, then **submit-only or server errors** (for example rate limit, unauthorized, generic save failure) **second**, then the save button — see `docs/design/interface-patterns.md` — _Success vs. Error Feedback Placement_. Avoid a second muted line that repeats the rate-limit story when the save already failed; one clear error message is enough.
 - Username format validation should run immediately while the user types.
 - Username availability should run only after the value is format-valid, using the existing shared debounce pattern when available, or a `300 ms` debounce otherwise.
 - Username save must revalidate format, blocked-token rules, and uniqueness on the server even if client-side feedback already passed.
@@ -70,6 +72,8 @@ This slice must keep `username`, `display name`, and `avatar` as separate save f
 - Successful username changes must update the visible shell identity label immediately in the same client session without a full page refresh.
 - Successful avatar uploads, replacements, and removals must update both the settings preview and the shell identity avatar immediately in the same client session without a full page refresh.
 - Avatar remove should remain a first-class action even when the current effective image originated from Google.
+- Removing a profile photo requires an explicit confirmation in a modal (copy explains the effect and that the exact image cannot be restored; a new upload remains possible). There is no second remove control outside the avatar field.
+- **Success feedback uses toast notifications.** When a save completes successfully (username saved, display name saved, avatar uploaded, avatar removed), a transient toast appears confirming the action. Validation errors and field-level errors remain inline next to the field. This separation keeps the form clean and avoids layout shifts from success copy appearing inside the form body. See `docs/design/interface-patterns.md` — _Toast Notifications_.
 
 ## Technical Notes
 
@@ -122,7 +126,7 @@ This slice must keep `username`, `display name`, and `avatar` as separate save f
 - User can update display name successfully.
 - Username field shows invalid-state feedback for malformed input.
 - Username field shows taken-state feedback when another user already owns the same normalized value.
-- User can upload, crop, save, replace, and remove a profile image using the shared image flow.
+- User can upload, crop and confirm (persisting immediately), replace, and remove a profile image using the shared image flow.
 - Successful username changes are reflected immediately in the shell identity surface without a full page refresh.
 - Successful avatar uploads and replacements are reflected immediately in both settings and the shell identity surface without a full page refresh.
 - Removing a Google-provided avatar falls back to the username initial.
