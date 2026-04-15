@@ -7,10 +7,10 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-04-04
+last_updated: 2026-04-14
 source_features:
   - FEAT-0013
-implementation_status: PLANNED
+implementation_status: IN_PROGRESS
 ---
 
 # FRD-07 User Settings and Account Preferences
@@ -36,7 +36,13 @@ Give every authenticated collector one clear place to manage their account ident
 ### Implemented
 
 - private collector shell with lower navigation areas in the sidebar and drawer
-- app-shell drawer and sidebar navigation framework that will host the user identity surface
+- app-shell drawer and sidebar navigation framework with lower-shell identity trigger and account menu entry to `Settings`
+- shell identity surface showing avatar plus username in the lower shell navigation area (desktop and mobile drawer), with client-side refresh after profile edits without a full page reload
+- dedicated settings page on one route exposing `Profile`, `Account`, and `Preferences` sections
+- `Account` section for provider-aware email and password flows (see `WO-04`)
+- profile basics in `Profile`: username save flow (format validation, debounced availability, seven-day limit stated in field helper, server-enforced uniqueness and rate limit), display-name save flow, profile image upload/replace (persist on crop-modal confirm), and remove (confirmation modal); success feedback via toasts; field-level errors below inputs per `docs/design/interface-patterns.md`
+- unique username persistence and editing (aligned with `WO-01` / `WO-03`)
+- user-uploaded profile image pipeline backed by Cloudflare R2 (`user-images/{userId}.webp`)
 - Better Auth account foundation with email/password and Google
 - current user model fields for `name`, `email`, `emailVerified`, and `image`
 - current verification banner and seven-day blocking lifecycle
@@ -44,14 +50,8 @@ Give every authenticated collector one clear place to manage their account ident
 
 ### Planned
 
-- app-shell identity surface showing avatar plus username in the lower shell navigation area
-- shell account menu as the only MVP entry point to `Settings`
-- dedicated settings page with `Profile` and `Preferences` sections
-- unique username generation and editing
-- profile image management backed by Cloudflare R2
-- account email/password management rules by provider type
-- user country, currency, preferred product types, and budget settings
-- store-entry defaults derived from saved user preferences
+- user country, currency, preferred product types, and budget settings (`WO-05`)
+- store-entry defaults derived from saved user preferences (`WO-06`)
 
 ## User Stories
 
@@ -80,9 +80,9 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - `FR-07-05`: Usernames must allow only letters, numbers, and single hyphen separators, must reject spaces, must reject leading and trailing hyphens, and must reject consecutive hyphens.
 - `FR-07-06`: Usernames must be between 3 and 30 characters inclusive.
 - `FR-07-07`: The system must auto-generate a valid default username for newly created accounts using the email local part plus a random suffix, with a safe fallback when normalization cannot satisfy the format rules.
-- `FR-07-08`: The settings page must let the user edit username through a dedicated save flow with inline format validation, availability feedback, and uniqueness enforcement before persistence.
+- `FR-07-08`: The settings page must let the user edit username through a dedicated save flow with inline format validation, availability feedback, and uniqueness enforcement before persistence. Field helper text under the username control must state that successful username changes are limited to at most one every seven days (see `FR-07-33`).
 - `FR-07-09`: The settings page must let the user edit their display name as a single free-form field with trim handling, a maximum length of `50` characters, and reserved-name, PandaTrack brand, and blocked-token protections.
-- `FR-07-10`: The settings page must let the user upload, replace, and remove a profile image using the same crop-and-confirm interaction pattern already used for store logos.
+- `FR-07-10`: The settings page must let the user upload, replace, and remove a profile image using the same crop-and-confirm interaction pattern already used for store logos. **Successful upload or replacement persists when the user confirms in the crop modal** (no separate “save photo” step after cropping). **Removal requires explicit confirmation in a modal** that explains the effect and that the exact image cannot be restored, while a new upload remains possible.
 - `FR-07-11`: Profile images uploaded by the user must be stored in Cloudflare R2 under the `user-images` namespace and keyed to the user identity so later uploads replace the current asset.
 - `FR-07-12`: When a user has no profile image, avatar fallbacks must use the username initial, including after a collector intentionally removes a Google-provided or user-uploaded avatar.
 - `FR-07-13`: Successful username and avatar changes in settings must update the visible shell identity surface immediately in the current client session without requiring a full page refresh.
@@ -110,7 +110,7 @@ As a product owner, I want settings behavior to respect whether a user signed up
 
 ## Business Rules
 
-- `BR-07-01`: The settings route remains one page in MVP and must expose `Profile` and `Preferences` as sections on the same page rather than separate routes or tabs.
+- `BR-07-01`: The settings route remains one page in MVP and must expose `Profile`, `Account`, and `Preferences` as sections on the same page rather than separate routes or tabs.
 - `BR-07-02`: The shell identity surface uses username as the primary human-facing account identifier rather than email.
 - `BR-07-03`: The canonical account affordance for settings and sign-out lives in the lower shell navigation area rather than in the content header.
 - `BR-07-04`: On desktop, the identity surface appears above the sidebar expand/collapse control and opens an upward menu.
@@ -236,6 +236,7 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - The lower shell identity trigger should open upward on desktop and render as an inline anchored menu in the drawer on mobile/tablet
 - The account menu should close on outside click, route change, and any menu-action selection
 - Preference-driven store listing URLs: primary shell navigation implements [`FR-07-28`](frd-07-user-settings.md#functional-requirements) per [WO-06 _store-entry-defaults-from-user-preferences_](bp-01-user-settings-identity-and-preferences/work-orders/wo-06-store-entry-defaults-from-user-preferences.md) and [BP-01](bp-01-user-settings-identity-and-preferences/bp-01-user-settings-identity-and-preferences.md) (**FRD-07**). Any future dashboard (or other) links to the same listing must follow the shared builder rule in [FRD-06 · Cross-domain notes](../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md#cross-domain-notes).
+- Settings success feedback follows the app-wide toast pattern: validation errors and save/server errors for profile fields stay **inline** (see field stack and placement rules in `docs/design/interface-patterns.md` — _Success vs. Error Feedback Placement_); confirmed saves (username, display name, avatar upload, avatar removal, password change, password setup) show a transient toast notification via `src/contexts/ToastContext.tsx`. See `docs/design/interface-patterns.md` — _Toast Notifications_ for the full rule and component references.
 
 ## Confirmed
 

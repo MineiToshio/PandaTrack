@@ -10,7 +10,65 @@
   "intro": "Gestiona tu perfil, datos de acceso y preferencias en un solo lugar.",
   "profile": {
     "title": "Perfil",
-    "placeholder": "El nombre de usuario, el nombre visible y el avatar se gestionarán aquí en una próxima actualización."
+    "username": {
+      "label": "Nombre de usuario",
+      "helper": "Se usa como identidad de cuenta. Entre 3 y 30 caracteres; solo letras, números y guiones simples. Solo puedes guardar un cambio una vez cada 7 días.",
+      "save": "Guardar nombre de usuario",
+      "pending": "Guardando...",
+      "checking": "Verificando...",
+      "available": "El nombre de usuario está disponible.",
+      "taken": "Este nombre de usuario ya está en uso.",
+      "sameAsCurrent": "Este ya es tu nombre de usuario.",
+      "success": "Nombre de usuario actualizado.",
+      "validation": {
+        "format": "El nombre de usuario solo puede contener letras, números y guiones simples, sin guiones al inicio o al final.",
+        "length": "El nombre de usuario debe tener entre 3 y 30 caracteres.",
+        "reserved": "Este nombre de usuario no está disponible.",
+        "blocked": "Este nombre de usuario contiene un término no permitido."
+      }
+    },
+    "displayName": {
+      "label": "Nombre visible",
+      "helper": "Se muestra junto a tu nombre de usuario. Máximo 50 caracteres.",
+      "save": "Guardar nombre",
+      "pending": "Guardando...",
+      "success": "Nombre visible actualizado."
+    },
+    "avatar": {
+      "label": "Foto de perfil",
+      "helper": "Se usa como avatar en toda la aplicación. PNG, JPEG o WebP, hasta 10 MB.",
+      "emptyTitle": "Subir una foto de perfil",
+      "emptyDescription": "Arrastra o haz clic para elegir un archivo.",
+      "uploadCta": "Elegir archivo",
+      "replaceCta": "Reemplazar",
+      "removeCta": "Eliminar foto",
+      "removeDialogTitle": "¿Quitar tu foto de perfil?",
+      "removeDialogLead": "Tu cuenta mostrará la inicial de tu nombre en lugar de esta imagen en toda la app.",
+      "removeDialogIrreversible": "No podrás recuperar esta misma foto. Siempre puedes subir una nueva cuando quieras.",
+      "removeDialogCancel": "Cancelar",
+      "removeDialogConfirm": "Sí, eliminar foto",
+      "removeDialogPending": "Eliminando…",
+      "editorTitle": "Recorta tu foto",
+      "editorDescription": "Arrastra para reposicionar y usa el control deslizante para hacer zoom.",
+      "zoomLabel": "Zoom",
+      "editorCancel": "Cancelar",
+      "editorConfirm": "Usar esta foto",
+      "acceptedFormats": "PNG, JPEG, WebP",
+      "pending": "Guardando...",
+      "successUploaded": "Foto de perfil actualizada.",
+      "successRemoved": "Foto de perfil eliminada."
+    },
+    "errors": {
+      "validation": "Revisa el campo e inténtalo de nuevo.",
+      "unauthorized": "Necesitas iniciar sesión.",
+      "usernameTaken": "Este nombre de usuario ya está en uso por otra cuenta.",
+      "rateLimited": "Solo puedes cambiar tu nombre de usuario una vez cada 7 días. Vuelve a intentarlo después del {date}.",
+      "avatarInvalidType": "Solo se aceptan imágenes PNG, JPEG y WebP.",
+      "avatarTooLarge": "El archivo seleccionado es demasiado grande. El máximo es 10 MB.",
+      "avatarMalformed": "No se pudo leer la imagen. Prueba con otro archivo.",
+      "avatarProcessingFailed": "Error al procesar la imagen. Prueba con otro archivo.",
+      "generic": "Algo salió mal. Inténtalo de nuevo."
+    }
   },
   "preferences": {
     "title": "Preferencias",
@@ -20,6 +78,7 @@
     "title": "Cuenta",
     "email": {
       "label": "Correo electrónico",
+      "helper": "Es el correo con el que inicias sesión y recibirás avisos importantes. Puedes cambiarlo aquí como máximo una vez cada 7 días.",
       "changeButton": "Cambiar correo",
       "googleHelper": "Tu cuenta usa Google. Para cambiar el correo, actualízalo directamente en tu cuenta de Google.",
       "pendingVerification": "Hemos enviado un enlace de verificación a {email}. Verifícalo para completar el cambio."
@@ -39,6 +98,7 @@
       "fillRequiredFields": "Completa los campos marcados para continuar."
     },
     "password": {
+      "helper": "Usa una contraseña fuerte y no la reutilices en otros sitios.",
       "changeTitle": "Cambiar contraseña",
       "setTitle": "Establecer contraseña",
       "currentPassword": "Contraseña actual",

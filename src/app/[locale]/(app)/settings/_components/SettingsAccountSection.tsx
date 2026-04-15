@@ -18,9 +18,14 @@ import {
   submitSetPasswordAction,
 } from "@/app/[locale]/(app)/settings/_actions/accountCredentialsActions";
 import type { AccountCapabilities } from "@/lib/auth/accountCapabilities";
-import { SETTINGS_SECTION_SURFACE_CLASSNAME } from "@/app/[locale]/(app)/settings/settingsSectionChrome";
+import {
+  SETTINGS_DISPLAY_BLOCK_EYEBROW_CLASSNAME,
+  SETTINGS_FIELD_GROUP_TITLE_CLASSNAME,
+  SETTINGS_SECTION_SURFACE_CLASSNAME,
+} from "@/app/[locale]/(app)/settings/settingsSectionChrome";
+import { useToast } from "@/contexts/ToastContext";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { COLLECTOR_MUTED_INSET_CLASSNAME, cn } from "@/lib/styles";
+import { cn, COLLECTOR_MUTED_INSET_CLASSNAME } from "@/lib/styles";
 import type { SettingsAccountErrorCode } from "@/app/[locale]/(app)/settings/_schemas/accountCredentials";
 import type { Locale } from "@/types/locale";
 
@@ -81,7 +86,7 @@ export default function SettingsAccountSection({
   const [setFieldError, setSetFieldError] = useState(false);
   const [setError, setSetError] = useState<string | null>(null);
   const [isSetSubmitting, setIsSetSubmitting] = useState(false);
-  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   const displayEmail = initialEmail;
 
@@ -171,7 +176,6 @@ export default function SettingsAccountSection({
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       setChangeError(null);
-      setPasswordSuccess(null);
 
       const currentEmpty = changeCurrentPassword.length === 0;
       const newEmpty = changeNewPassword.trim().length === 0;
@@ -199,17 +203,16 @@ export default function SettingsAccountSection({
 
       setChangeCurrentPassword("");
       setChangeNewPassword("");
-      setPasswordSuccess(t("success.passwordUpdated"));
+      addToast(t("success.passwordUpdated"));
       router.refresh();
     },
-    [changeCurrentPassword, changeNewPassword, locale, resolveErrorMessage, router, t],
+    [changeCurrentPassword, changeNewPassword, locale, resolveErrorMessage, router, t, addToast],
   );
 
   const handleSubmitSetPassword = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       setSetError(null);
-      setPasswordSuccess(null);
 
       if (setNewPassword.trim().length === 0) {
         setSetFieldError(true);
@@ -233,10 +236,10 @@ export default function SettingsAccountSection({
       }
 
       setSetNewPassword("");
-      setPasswordSuccess(t("success.passwordSet"));
+      addToast(t("success.passwordSet"));
       router.refresh();
     },
-    [locale, resolveErrorMessage, router, setNewPassword, t],
+    [locale, resolveErrorMessage, router, setNewPassword, t, addToast],
   );
 
   const handleChangeCurrentPasswordInput = useCallback((value: string) => {
@@ -272,13 +275,18 @@ export default function SettingsAccountSection({
         {t("title")}
       </SectionTitleWithAccent>
 
-      <div className="mt-6 space-y-8">
-        <div className={COLLECTOR_MUTED_INSET_CLASSNAME}>
-          <Typography size="xs" className="text-text-muted mb-2 font-medium">
-            {t("email.label")}
-          </Typography>
+      <div className="mt-6">
+        <div className={cn(COLLECTOR_MUTED_INSET_CLASSNAME, "space-y-3")}>
+          <div className="space-y-1">
+            <Typography size="2xs" className={SETTINGS_DISPLAY_BLOCK_EYEBROW_CLASSNAME}>
+              {t("email.label")}
+            </Typography>
+            <Typography size="xs" className="text-text-muted">
+              {capabilities.canChangeEmail ? t("email.helper") : t("email.googleHelper")}
+            </Typography>
+          </div>
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-            <Typography size="sm" className="text-text-body min-w-0 break-all sm:font-medium">
+            <Typography size="sm" className="text-text-title min-w-0 font-semibold break-all">
               {displayEmail}
             </Typography>
             {capabilities.canChangeEmail ? (
@@ -294,14 +302,9 @@ export default function SettingsAccountSection({
               </Button>
             ) : null}
           </div>
-          {!capabilities.canChangeEmail ? (
-            <Typography size="sm" className="text-text-muted mt-2">
-              {t("email.googleHelper")}
-            </Typography>
-          ) : null}
           {capabilities.canChangeEmail && !emailVerified ? (
             <div
-              className="border-info/35 bg-info/12 mt-3 rounded-xl border px-3 py-2.5 sm:px-4"
+              className="border-info/35 bg-info/12 rounded-xl border px-3 py-2.5 sm:px-4"
               role="status"
               aria-live="polite"
             >
@@ -312,16 +315,15 @@ export default function SettingsAccountSection({
           ) : null}
         </div>
 
-        <div className={COLLECTOR_MUTED_INSET_CLASSNAME}>
-          <Typography size="xs" className="text-text-muted mb-4 font-medium">
-            {capabilities.canSetPassword ? t("password.setTitle") : t("password.changeTitle")}
-          </Typography>
-          {passwordSuccess ? (
-            <Typography size="sm" className="text-success mb-4" role="status" aria-live="polite">
-              {passwordSuccess}
+        <div className="border-border/45 mt-8 space-y-4 border-t pt-8">
+          <div className="space-y-1.5">
+            <Typography size="sm" className={SETTINGS_FIELD_GROUP_TITLE_CLASSNAME}>
+              {capabilities.canSetPassword ? t("password.setTitle") : t("password.changeTitle")}
             </Typography>
-          ) : null}
-
+            <Typography size="xs" className="text-text-muted">
+              {t("password.helper")}
+            </Typography>
+          </div>
           {capabilities.canChangePassword ? (
             <form className="w-full space-y-3 sm:max-w-md" onSubmit={handleSubmitChangePassword} noValidate>
               {changeError ? (

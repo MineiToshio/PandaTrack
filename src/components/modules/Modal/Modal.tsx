@@ -187,9 +187,7 @@ export default function Modal({
                 <span
                   className={cn(
                     "inline-flex h-2 w-16 shrink-0 rounded-full bg-linear-to-r",
-                    role === "alertdialog"
-                      ? "from-destructive/28 via-destructive/40 to-destructive/18"
-                      : TINTED_SURFACE_GRADIENT_STOPS,
+                    TINTED_SURFACE_GRADIENT_STOPS,
                   )}
                   aria-hidden
                 />

@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "lh3.googleusercontent.com",
       },
+      // Cloudflare R2 public bucket URLs (user avatars and other ASSETS_PUBLIC_BASE_URL hosts)
+      {
+        protocol: "https",
+        hostname: "*.r2.dev",
+      },
     ],
   },
   async rewrites() {

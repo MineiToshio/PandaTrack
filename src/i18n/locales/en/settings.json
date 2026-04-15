@@ -10,7 +10,65 @@
   "intro": "Manage your profile, sign-in details, and preferences in one place.",
   "profile": {
     "title": "Profile",
-    "placeholder": "Username, display name, and avatar are managed here in a future update."
+    "username": {
+      "label": "Username",
+      "helper": "Used in your account identity. 3-30 characters, letters, numbers, and single hyphens only. You can save a new username at most once every 7 days.",
+      "save": "Save username",
+      "pending": "Saving...",
+      "checking": "Checking...",
+      "available": "Username is available.",
+      "taken": "This username is already taken.",
+      "sameAsCurrent": "This is already your username.",
+      "success": "Username updated.",
+      "validation": {
+        "format": "Username can only contain letters, numbers, and single hyphens, with no leading or trailing hyphens.",
+        "length": "Username must be between 3 and 30 characters.",
+        "reserved": "This username is not available.",
+        "blocked": "This username contains a term that is not allowed."
+      }
+    },
+    "displayName": {
+      "label": "Display name",
+      "helper": "Shown alongside your username. Up to 50 characters.",
+      "save": "Save name",
+      "pending": "Saving...",
+      "success": "Display name updated."
+    },
+    "avatar": {
+      "label": "Profile photo",
+      "helper": "Used as your avatar across the app. PNG, JPEG, or WebP, up to 10 MB.",
+      "emptyTitle": "Upload a profile photo",
+      "emptyDescription": "Drag and drop or click to choose a file.",
+      "uploadCta": "Choose file",
+      "replaceCta": "Replace",
+      "removeCta": "Remove photo",
+      "removeDialogTitle": "Remove your profile photo?",
+      "removeDialogLead": "Your account will show your initial instead of this image everywhere in the app.",
+      "removeDialogIrreversible": "You cannot restore this exact photo after removing it. You can upload a new one anytime.",
+      "removeDialogCancel": "Cancel",
+      "removeDialogConfirm": "Yes, remove photo",
+      "removeDialogPending": "Removing…",
+      "editorTitle": "Crop your photo",
+      "editorDescription": "Drag to reposition and use the slider to zoom.",
+      "zoomLabel": "Zoom",
+      "editorCancel": "Cancel",
+      "editorConfirm": "Use this photo",
+      "acceptedFormats": "PNG, JPEG, WebP",
+      "pending": "Saving...",
+      "successUploaded": "Profile photo updated.",
+      "successRemoved": "Profile photo removed."
+    },
+    "errors": {
+      "validation": "Check the field and try again.",
+      "unauthorized": "You need to be signed in.",
+      "usernameTaken": "This username is already taken by another account.",
+      "rateLimited": "You can only change your username once every 7 days. Try again after {date}.",
+      "avatarInvalidType": "Only PNG, JPEG, and WebP images are accepted.",
+      "avatarTooLarge": "The selected file is too large. Maximum is 10 MB.",
+      "avatarMalformed": "The image could not be read. Try a different file.",
+      "avatarProcessingFailed": "Image processing failed. Try a different file.",
+      "generic": "Something went wrong. Please try again."
+    }
   },
   "preferences": {
     "title": "Preferences",
@@ -20,6 +78,7 @@
     "title": "Account",
     "email": {
       "label": "Email",
+      "helper": "Used to sign in and for important notifications. You can change it here at most once every 7 days.",
       "changeButton": "Change email",
       "googleHelper": "Your account uses Google. To change your email, update it directly in your Google account.",
       "pendingVerification": "We've sent a verification link to {email}. Please verify to complete the change."
@@ -39,6 +98,7 @@
       "fillRequiredFields": "Fill in the highlighted fields to continue."
     },
     "password": {
+      "helper": "Use a strong password and do not reuse it on other sites.",
       "changeTitle": "Change password",
       "setTitle": "Set password",
       "currentPassword": "Current password",

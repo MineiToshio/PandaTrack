@@ -49,6 +49,8 @@ Open `interface-patterns.md` when the task involves:
 - right sidebars or drawers
 - buttons and controls
 - hover, focus, active, selected, disabled states
+- success or error feedback placement (inline vs. toast)
+- toast notifications
 - dense summaries
 - status chips or badges
 - navigation patterns
