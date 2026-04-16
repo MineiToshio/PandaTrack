@@ -8,7 +8,7 @@ parent: BP-01
 source_features:
   - FEAT-0013
 last_updated: 2026-04-14
-implementation_status: IN_PROGRESS
+implementation_status: IMPLEMENTED
 ---
 
 # WO-03 Profile Basics: Username, Name, and Avatar
