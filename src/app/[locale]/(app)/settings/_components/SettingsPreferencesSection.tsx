@@ -550,7 +550,7 @@ export default function SettingsPreferencesSection({
         closeOnBackdropClick={false}
         closeButtonLabel={t("currencyChangeModal.cancel")}
       >
-        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
           <Button type="button" variant="ghost" onClick={handleCurrencyModalCancel} disabled={isSubmitting}>
             {t("currencyChangeModal.cancel")}
           </Button>

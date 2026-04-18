@@ -113,7 +113,7 @@
     "currencyChangeModal": {
       "title": "¿Cambiar moneda base?",
       "description": "Cambiar la moneda base afecta el seguimiento de los períodos de presupuesto desde este mes en adelante. Es posible que los pedidos que impactan períodos actuales y futuros necesiten actualizar su tipo de cambio. Puedes revisar y actualizar los pedidos afectados después de guardar, o hacerlo manualmente por pedido más adelante.",
-      "saveAndReconcile": "Guardar y revisar pedidos afectados",
+      "saveAndReconcile": "Guardar y conciliar",
       "saveSkip": "Guardar sin conciliar",
       "cancel": "Cancelar"
     },

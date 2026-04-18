@@ -113,7 +113,7 @@
     "currencyChangeModal": {
       "title": "Change base currency?",
       "description": "Changing your base currency affects how budget periods are tracked from this month onward. Orders contributing to current and future budget periods may need their currency rate updated. You can review and update affected orders after saving, or do it manually per order later.",
-      "saveAndReconcile": "Save and review affected orders",
+      "saveAndReconcile": "Save and reconcile",
       "saveSkip": "Save without reconciling",
       "cancel": "Cancel"
     },
