@@ -33,7 +33,7 @@ Do not mark ancestors as done if any sibling item is still incomplete.
 
 ### 1. Resolve the slice ticket
 
-- Read the issue from `MineiToshio/PandaTrack` using GitHub MCP or the GitHub REST/GraphQL API (issue details and labels).
+- Read the issue from `MineiToshio/PandaTrack` using the **GitHub MCP** server (`issue_read`) when available; otherwise fall back to the GitHub REST/GraphQL API (issue details and labels).
 - Accept only the issue number as input.
 - Validate the issue has label `type:slice`.
 - If the issue is not a slice, stop and say so clearly.
@@ -81,18 +81,18 @@ Do not infer sibling relationships from filenames when the parent doc already de
 
 For the target slice ticket:
 
-- close the issue with completed reason if it is still open
-- update GitHub Project `4` `Status` to `Done`
+- **Close the issue as done (issue state):** use the **GitHub MCP** server — `issue_write` with `method: update`, `state: closed`, and `state_reason: completed` when the slice is still open. If the issue is already closed, skip this write but still reconcile docs and checklist.
+- **Project board:** update GitHub Project `4` field `Status` to `Done` via GraphQL (see below). That is separate from the issue’s open/closed state.
 
 For the parent epic:
 
-- if all linked slice issues are done, close the epic with completed reason if still open
-- if all linked slice issues are done, update GitHub Project `4` `Status` to `Done`
-- if not all linked slice issues are done, leave the epic open and do not move it to `Done`
+- if all linked slice issues are done, **close the epic as completed** the same way: **GitHub MCP** `issue_write` (`state: closed`, `state_reason: completed`) if still open
+- if all linked slice issues are done, update GitHub Project `4` `Status` to `Done` (GraphQL)
+- if not all linked slice issues are done, leave the epic open and do not move its Project item to `Done`
 
 #### GitHub Project `4` status: use the GraphQL API (not MCP)
 
-The GitHub MCP available in this workspace does **not** implement GitHub Projects v2 field updates. **Do not rely on MCP** to move `Status` to `Done`.
+The GitHub MCP in this workspace **does not** expose GitHub Projects v2 field updates. **Only** the **issue** open/closed “done” transition uses MCP above. **Do not rely on MCP** to move the Project **`Status`** column to `Done`.
 
 Agents must use the **GitHub GraphQL API** over HTTPS:
 
