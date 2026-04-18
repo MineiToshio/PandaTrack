@@ -22,6 +22,19 @@ export type AppShellUserIdentitySnapshot = {
   image: string | null;
 };
 
+export type SettingsPageSnapshot = {
+  email: string;
+  emailVerified: boolean;
+  username: string;
+  name: string;
+  image: string | null;
+  preferredCountryCode: string | null;
+  baseCurrencyCode: string | null;
+  budgetAmount: number | null;
+  budgetResetDayOfMonth: number | null;
+  preferredProductTypeKeys: string[];
+};
+
 /**
  * Loads the user identity surface needed by the private app shell.
  */
@@ -43,6 +56,45 @@ export async function getAppShellUserIdentity(userId: string): Promise<AppShellU
     username: row.username,
     name: row.name,
     image: row.image,
+  };
+}
+
+/**
+ * Loads the combined surface (identity + account + preferences) needed by the settings page.
+ * Consolidates all settings fields into a single round-trip.
+ */
+export async function getSettingsPageSnapshot(userId: string): Promise<SettingsPageSnapshot | null> {
+  const row = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      email: true,
+      emailVerified: true,
+      username: true,
+      name: true,
+      image: true,
+      preferredCountryCode: true,
+      baseCurrencyCode: true,
+      budgetAmount: true,
+      budgetResetDayOfMonth: true,
+      preferredProductTypes: { select: { productTypeKey: true }, orderBy: { productTypeKey: "asc" } },
+    },
+  });
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    email: row.email,
+    emailVerified: row.emailVerified,
+    username: row.username,
+    name: row.name,
+    image: row.image,
+    preferredCountryCode: row.preferredCountryCode,
+    baseCurrencyCode: row.baseCurrencyCode,
+    budgetAmount: row.budgetAmount,
+    budgetResetDayOfMonth: row.budgetResetDayOfMonth,
+    preferredProductTypeKeys: row.preferredProductTypes.map((rowItem) => rowItem.productTypeKey),
   };
 }
 
@@ -141,8 +193,10 @@ export async function applyCollectorPreferencesPatch(
       budgetAmount: resolvePatchedValue(patch.budgetAmount, current.budgetAmount),
       budgetResetDayOfMonth: resolvePatchedValue(patch.budgetResetDayOfMonth, current.budgetResetDayOfMonth),
       timezone: resolvePatchedValue(patch.timezone, current.timezone),
-      preferredProductTypeKeys:
-        resolvePatchedValue(patch.preferredProductTypeKeys, current.preferredProductTypes.map((row) => row.productTypeKey)),
+      preferredProductTypeKeys: resolvePatchedValue(
+        patch.preferredProductTypeKeys,
+        current.preferredProductTypes.map((row) => row.productTypeKey),
+      ),
     });
 
     if (!nextState.ok) {

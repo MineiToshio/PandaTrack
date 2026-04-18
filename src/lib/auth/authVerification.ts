@@ -3,11 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import * as Sentry from "@sentry/nextjs";
+import { findUserVerificationSnapshot } from "@/queries/user";
+import { createVerificationRecord, findFirstVerificationIdByIdentifier } from "@/queries/verification";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const VERIFICATION_GRACE_DAYS = 7;
 const DAY_SIX_REMINDER_START_DAYS = 6;
 const DAY_SIX_REMINDER_MARKER_PREFIX = "verification-day6-reminder:";
+const DAY_SIX_REMINDER_SENTINEL_EXPIRES_AT = new Date("2100-01-01T00:00:00.000Z");
 
 export type VerificationAccessState = "not_applicable" | "verified" | "grace" | "blocked";
 
@@ -35,21 +38,7 @@ function asDate(value: Date | string) {
 }
 
 export async function getVerificationSnapshot(userId: string): Promise<VerificationSnapshot | null> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      email: true,
-      createdAt: true,
-      unverifiedGraceStartsAt: true,
-      emailVerified: true,
-      accounts: {
-        select: {
-          providerId: true,
-        },
-      },
-    },
-  });
+  const user = await findUserVerificationSnapshot(prisma, userId);
 
   if (!user) {
     return null;
@@ -133,10 +122,7 @@ export async function maybeSendDaySixVerificationReminder(
   }
 
   const reminderIdentifier = `${DAY_SIX_REMINDER_MARKER_PREFIX}${snapshot.userId}`;
-  const existingReminder = await prisma.verification.findFirst({
-    where: { identifier: reminderIdentifier },
-    select: { id: true },
-  });
+  const existingReminder = await findFirstVerificationIdByIdentifier(prisma, reminderIdentifier);
 
   if (existingReminder) {
     return { sent: false };
@@ -154,15 +140,12 @@ export async function maybeSendDaySixVerificationReminder(
     return { sent: false, error: sendResult.error };
   }
 
-  await prisma.verification.create({
-    data: {
-      id: crypto.randomUUID(),
-      identifier: reminderIdentifier,
-      value: "sent",
-      expiresAt: new Date("2100-01-01T00:00:00.000Z"),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
+  await createVerificationRecord(prisma, {
+    id: crypto.randomUUID(),
+    identifier: reminderIdentifier,
+    value: "sent",
+    expiresAt: DAY_SIX_REMINDER_SENTINEL_EXPIRES_AT,
+    now: new Date(),
   });
 
   posthog.capture({

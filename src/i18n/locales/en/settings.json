@@ -72,7 +72,71 @@
   },
   "preferences": {
     "title": "Preferences",
-    "placeholder": "Country, currency, product types, and budget will be available here in a future update."
+    "intro": "Set your defaults for country, collecting interests, base currency, and budget. All fields are optional.",
+    "currency": {
+      "label": "Base currency",
+      "helper": "Used for budget tracking and order summaries.",
+      "placeholder": "Search currency…",
+      "clear": "Clear currency",
+      "noResults": "No currency found."
+    },
+    "country": {
+      "label": "Preferred country",
+      "helper": "Used as your default when browsing stores.",
+      "placeholder": "Search country…",
+      "clear": "Clear country preference",
+      "noResults": "No country found."
+    },
+    "productTypes": {
+      "label": "What types of products do you collect?",
+      "helper": "Shown as default filters when browsing stores.",
+      "placeholder": "Add product types…",
+      "removeAriaLabel": "Remove {label}"
+    },
+    "budgetAmount": {
+      "label": "Monthly budget",
+      "helper": "A positive whole number in your base currency. Leave empty for no budget.",
+      "placeholder": "e.g. 200",
+      "currencyRequired": "Set a base currency to enable the budget field."
+    },
+    "budgetResetDay": {
+      "label": "Budget resets on",
+      "helper": "Pick the day of the month when a new budget period starts.",
+      "dayOption": "Day {day} of the month",
+      "dayAriaLabel": "Day {day} of the month",
+      "summaryDay": "Resets on day {day} of every month.",
+      "summaryLastDay": "Resets on the last day of every month (day 31, or the last valid day in shorter months)."
+    },
+    "save": "Save preferences",
+    "pending": "Saving…",
+    "success": "Preferences saved.",
+    "currencyChangeModal": {
+      "title": "Change base currency?",
+      "description": "Changing your base currency affects how budget periods are tracked from this month onward. Orders contributing to current and future budget periods may need their currency rate updated. You can review and update affected orders after saving, or do it manually per order later.",
+      "saveAndReconcile": "Save and review affected orders",
+      "saveSkip": "Save without reconciling",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "unauthorized": "You need to be signed in.",
+      "validation": "Check the fields and try again.",
+      "generic": "Something went wrong. Please try again."
+    },
+    "currencies": {
+      "ARS": "Argentine peso",
+      "BRL": "Brazilian real",
+      "CAD": "Canadian dollar",
+      "CLP": "Chilean peso",
+      "CNY": "Chinese yuan",
+      "COP": "Colombian peso",
+      "EUR": "Euro",
+      "GBP": "British pound",
+      "JPY": "Japanese yen",
+      "KRW": "South Korean won",
+      "MXN": "Mexican peso",
+      "PEN": "Peruvian sol",
+      "USD": "US dollar"
+    }
   },
   "account": {
     "title": "Account",

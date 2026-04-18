@@ -42,9 +42,12 @@ Do not use `status:*` labels. Status is tracked only through the GitHub Project 
 
 - `Todo`
 - `In Progress`
+- `Blocked`
 - `Done`
 
-Current project status source of truth is the GitHub Project `Status` field (`Todo`, `In Progress`, `Done`).
+Use `Blocked` when a slice cannot progress because of an unresolved external dependency (for example, a required model or API that belongs to a different FRD and has not been implemented yet). Include a brief blocker note in the issue body explaining what is missing and which FRD or work order must deliver it first.
+
+Current project status source of truth is the GitHub Project `Status` field (`Todo`, `In Progress`, `Blocked`, `Done`).
 
 ## Epic Template (Issue)
 

@@ -183,7 +183,7 @@ export default function Modal({
 
           <div className="relative flex max-h-[min(85vh,48rem)] flex-col">
             <div className="border-border flex items-start justify-between gap-4 border-b px-5 py-5 sm:px-6 sm:py-6">
-              <div className="min-w-0 space-y-2">
+              <div className="min-w-0 flex-1 space-y-2">
                 <span
                   className={cn(
                     "inline-flex h-2 w-16 shrink-0 rounded-full bg-linear-to-r",
@@ -202,11 +202,11 @@ export default function Modal({
                   </Heading>
                   {description != null && description !== "" ? (
                     typeof description === "string" ? (
-                      <Typography id={descriptionId} size="xs" className="text-text-body max-w-2xl leading-6">
+                      <Typography id={descriptionId} size="xs" className="text-text-body w-full leading-6">
                         {description}
                       </Typography>
                     ) : (
-                      <div id={descriptionId} className="text-text-body max-w-2xl text-xs leading-6 sm:text-sm">
+                      <div id={descriptionId} className="text-text-body w-full text-xs leading-6 sm:text-sm">
                         {description}
                       </div>
                     )

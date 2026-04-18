@@ -72,7 +72,71 @@
   },
   "preferences": {
     "title": "Preferencias",
-    "placeholder": "País, moneda, tipos de producto y presupuesto estarán disponibles aquí en una próxima actualización."
+    "intro": "Establece tus valores predeterminados de país, intereses de colección, moneda base y presupuesto. Todos los campos son opcionales.",
+    "currency": {
+      "label": "Moneda base",
+      "helper": "Se usa para el seguimiento del presupuesto y resúmenes de pedidos.",
+      "placeholder": "Buscar moneda…",
+      "clear": "Limpiar moneda",
+      "noResults": "No se encontró ninguna moneda."
+    },
+    "country": {
+      "label": "País preferido",
+      "helper": "Se usa como valor predeterminado al explorar tiendas.",
+      "placeholder": "Buscar país…",
+      "clear": "Quitar país preferido",
+      "noResults": "No se encontró ningún país."
+    },
+    "productTypes": {
+      "label": "¿Qué tipos de productos coleccionas?",
+      "helper": "Se muestran como filtros predeterminados al explorar tiendas.",
+      "placeholder": "Agregar tipos de producto…",
+      "removeAriaLabel": "Quitar {label}"
+    },
+    "budgetAmount": {
+      "label": "Presupuesto mensual",
+      "helper": "Un número entero positivo en tu moneda base. Déjalo vacío si no quieres definir un presupuesto.",
+      "placeholder": "ej. 200",
+      "currencyRequired": "Define una moneda base para habilitar el campo de presupuesto."
+    },
+    "budgetResetDay": {
+      "label": "El presupuesto se reinicia el",
+      "helper": "Elige el día del mes en el que arranca un nuevo período de presupuesto.",
+      "dayOption": "Día {day} del mes",
+      "dayAriaLabel": "Día {day} del mes",
+      "summaryDay": "Se reinicia el día {day} de cada mes.",
+      "summaryLastDay": "Se reinicia el último día de cada mes (día 31, o el último día válido en meses más cortos)."
+    },
+    "save": "Guardar preferencias",
+    "pending": "Guardando…",
+    "success": "Preferencias guardadas.",
+    "currencyChangeModal": {
+      "title": "¿Cambiar moneda base?",
+      "description": "Cambiar la moneda base afecta el seguimiento de los períodos de presupuesto desde este mes en adelante. Es posible que los pedidos que impactan períodos actuales y futuros necesiten actualizar su tipo de cambio. Puedes revisar y actualizar los pedidos afectados después de guardar, o hacerlo manualmente por pedido más adelante.",
+      "saveAndReconcile": "Guardar y revisar pedidos afectados",
+      "saveSkip": "Guardar sin conciliar",
+      "cancel": "Cancelar"
+    },
+    "errors": {
+      "unauthorized": "Necesitas iniciar sesión.",
+      "validation": "Revisa los campos e inténtalo de nuevo.",
+      "generic": "Algo salió mal. Inténtalo de nuevo."
+    },
+    "currencies": {
+      "ARS": "Peso argentino",
+      "BRL": "Real brasileño",
+      "CAD": "Dólar canadiense",
+      "CLP": "Peso chileno",
+      "CNY": "Yuan chino",
+      "COP": "Peso colombiano",
+      "EUR": "Euro",
+      "GBP": "Libra esterlina",
+      "JPY": "Yen japonés",
+      "KRW": "Won surcoreano",
+      "MXN": "Peso mexicano",
+      "PEN": "Sol peruano",
+      "USD": "Dólar estadounidense"
+    }
   },
   "account": {
     "title": "Cuenta",

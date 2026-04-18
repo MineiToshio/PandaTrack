@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { findVerificationMarkerById, upsertVerificationMarker } from "@/queries/verification";
 
 export const EMAIL_CHANGE_COOLDOWN_DAYS = 7;
 
@@ -19,10 +20,7 @@ export function isWithinEmailChangeCooldown(lastSuccessAtIso: string, now: Date,
 }
 
 export async function getEmailChangeRateRecord(userId: string): Promise<EmailChangeRateRecord | null> {
-  const row = await prisma.verification.findUnique({
-    where: { id: buildEmailChangeRateScopeId(userId) },
-    select: { value: true },
-  });
+  const row = await findVerificationMarkerById(prisma, buildEmailChangeRateScopeId(userId));
 
   if (!row?.value) {
     return null;
@@ -70,20 +68,11 @@ export async function recordSuccessfulEmailChange(userId: string, now: Date): Pr
   const value = JSON.stringify({ lastSuccessAt: now.toISOString() } satisfies EmailChangeRateRecord);
   const expiresAt = new Date(now.getTime() + (EMAIL_CHANGE_COOLDOWN_DAYS + 1) * 24 * 60 * 60 * 1000);
 
-  await prisma.verification.upsert({
-    where: { id },
-    create: {
-      id,
-      identifier: id,
-      value,
-      expiresAt,
-      createdAt: now,
-      updatedAt: now,
-    },
-    update: {
-      value,
-      expiresAt,
-      updatedAt: now,
-    },
+  await upsertVerificationMarker(prisma, {
+    id,
+    identifier: id,
+    value,
+    expiresAt,
+    now,
   });
 }

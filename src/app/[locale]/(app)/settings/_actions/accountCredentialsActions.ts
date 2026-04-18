@@ -13,6 +13,7 @@ import { assertEmailChangeCooldownAllows, recordSuccessfulEmailChange } from "@/
 import { ROUTES } from "@/lib/constants";
 import { sendEmailWithResend } from "@/lib/integrations/resend";
 import { prisma } from "@/lib/prisma";
+import { applyEmailChangeTransaction, findUserIdByEmailExcluding } from "@/queries/user";
 import type { Locale } from "@/types/locale";
 import {
   type ChangePasswordFormInput,
@@ -86,13 +87,7 @@ export async function submitEmailChangeAction(input: EmailChangeFormInput): Prom
     return { ok: false, error: "rateLimited", retryAfterIso: cooldown.retryAfterIso };
   }
 
-  const existingUser = await prisma.user.findFirst({
-    where: {
-      email: normalizedEmail,
-      NOT: { id: session.user.id },
-    },
-    select: { id: true },
-  });
+  const existingUser = await findUserIdByEmailExcluding(prisma, normalizedEmail, session.user.id);
 
   if (existingUser) {
     return { ok: false, error: "emailTaken" };
@@ -118,20 +113,7 @@ export async function submitEmailChangeAction(input: EmailChangeFormInput): Prom
   const oldEmail = session.user.email;
 
   try {
-    await prisma.$transaction(async (tx) => {
-      await tx.user.update({
-        where: { id: session.user.id },
-        data: {
-          email: normalizedEmail,
-          emailVerified: false,
-          unverifiedGraceStartsAt: now,
-        },
-      });
-      await tx.account.updateMany({
-        where: { userId: session.user.id, providerId: "credential" },
-        data: { accountId: normalizedEmail },
-      });
-    });
+    await applyEmailChangeTransaction(prisma, session.user.id, normalizedEmail, now);
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return { ok: false, error: "emailTaken" };

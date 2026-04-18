@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { findUsernameChangedAt, updateUserUsernameChangedAt } from "@/queries/user";
 
 export const USERNAME_CHANGE_COOLDOWN_DAYS = 7;
 
@@ -11,20 +12,17 @@ export async function assertUsernameChangeCooldownAllows(
   userId: string,
   now: Date,
 ): Promise<{ ok: true } | { ok: false; retryAfterIso: string }> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { usernameChangedAt: true },
-  });
+  const row = await findUsernameChangedAt(prisma, userId);
 
-  if (!user?.usernameChangedAt) {
+  if (!row?.usernameChangedAt) {
     return { ok: true };
   }
 
-  if (!isWithinUsernameChangeCooldown(user.usernameChangedAt, now, USERNAME_CHANGE_COOLDOWN_DAYS)) {
+  if (!isWithinUsernameChangeCooldown(row.usernameChangedAt, now, USERNAME_CHANGE_COOLDOWN_DAYS)) {
     return { ok: true };
   }
 
-  const retryAt = new Date(user.usernameChangedAt.getTime() + USERNAME_CHANGE_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
+  const retryAt = new Date(row.usernameChangedAt.getTime() + USERNAME_CHANGE_COOLDOWN_DAYS * 24 * 60 * 60 * 1000);
   return { ok: false, retryAfterIso: retryAt.toISOString() };
 }
 
@@ -32,8 +30,5 @@ export async function assertUsernameChangeCooldownAllows(
  * Records a successful username change for rate limiting (FR-07-33, BR-07-18).
  */
 export async function recordSuccessfulUsernameChange(userId: string, now: Date): Promise<void> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: { usernameChangedAt: now },
-  });
+  await updateUserUsernameChangedAt(prisma, userId, now);
 }

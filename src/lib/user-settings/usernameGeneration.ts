@@ -6,6 +6,7 @@ import {
   USERNAME_MIN_LENGTH,
 } from "@/lib/user-settings/usernameConstants";
 import { validateUsernameCandidate, normalizeUsernameForUniqueness } from "@/lib/user-settings/usernameRules";
+import { findUserIdByUsername } from "@/queries/user";
 
 function randomAlphanumericSuffix(length: number): string {
   const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -54,10 +55,7 @@ function attachSuffix(base: string, suffix: string): string {
 }
 
 async function isUsernameAvailable(db: PrismaClient, username: string): Promise<boolean> {
-  const existing = await db.user.findUnique({
-    where: { username },
-    select: { id: true },
-  });
+  const existing = await findUserIdByUsername(db, username);
   return existing === null;
 }
 
@@ -113,10 +111,7 @@ export async function generateUniqueUsernameForNewUser(db: PrismaClient, email: 
  * Validates that a username is available for assignment (format + uniqueness).
  */
 export async function isUsernameNormalizedTaken(db: PrismaClient, normalized: string): Promise<boolean> {
-  const row = await db.user.findUnique({
-    where: { username: normalizeUsernameForUniqueness(normalized) },
-    select: { id: true },
-  });
+  const row = await findUserIdByUsername(db, normalizeUsernameForUniqueness(normalized));
   return row !== null;
 }
 

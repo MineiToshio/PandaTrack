@@ -146,7 +146,8 @@ A ticket should not duplicate the full `Work Order` content.
 ### In GitHub
 
 - use the GitHub Project `Status` field for execution progress
-- examples: `Todo`, `In Progress`, `Done`
+- valid statuses: `Todo`, `In Progress`, `Blocked`, `Done`
+- use `Blocked` when a slice cannot progress because of an unresolved external dependency (for example, a required model or API that belongs to a different FRD and has not been implemented yet); include a brief blocker note in the issue body explaining what is missing and which FRD or work order must deliver it first
 - when an Epic and its Work Order tickets are first created (for example from the Create FRD Package flow): every issue must be **open**, and Project `Status` must be **`Todo`** on the Epic and every slice unless the team explicitly agreed a different initial value for that batch
 - do not create or leave new tracking issues **closed** or with Project `Status` **`Done`** as the default for untouched backlog work
 

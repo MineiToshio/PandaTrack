@@ -4,6 +4,13 @@ import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { getSession } from "@/lib/auth/auth-server";
 import { prisma } from "@/lib/prisma";
+import {
+  findUserIdByUsername,
+  getUserProfileSnapshot,
+  updateUserDisplayName,
+  updateUserImage,
+  updateUserUsername,
+} from "@/queries/user";
 import { validateUsernameCandidate, normalizeUsernameForUniqueness } from "@/lib/user-settings/usernameRules";
 import { validateDisplayNameCandidate } from "@/lib/user-settings/displayNameRules";
 import { assertUsernameChangeCooldownAllows, recordSuccessfulUsernameChange } from "@/lib/auth/usernameChangeCooldown";
@@ -56,10 +63,7 @@ export async function checkUsernameAvailabilityAction(candidate: string): Promis
   }
 
   const normalized = formatResult.username;
-  const existing = await prisma.user.findUnique({
-    where: { username: normalized },
-    select: { id: true },
-  });
+  const existing = await findUserIdByUsername(prisma, normalized);
 
   const available = !existing || existing.id === session.user.id;
   return { available };
@@ -88,10 +92,7 @@ export async function saveUsernameAction(candidate: string): Promise<UsernameAct
     return { ok: false, error: "rateLimited", retryAfterIso: cooldownResult.retryAfterIso };
   }
 
-  const existing = await prisma.user.findUnique({
-    where: { username: normalized },
-    select: { id: true },
-  });
+  const existing = await findUserIdByUsername(prisma, normalized);
 
   if (existing && existing.id !== session.user.id) {
     return { ok: false, error: "usernameTaken" };
@@ -101,10 +102,7 @@ export async function saveUsernameAction(candidate: string): Promise<UsernameAct
     return { ok: true, username: normalized };
   }
 
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { username: normalized },
-  });
+  await updateUserUsername(prisma, session.user.id, normalized);
 
   await recordSuccessfulUsernameChange(session.user.id, now);
 
@@ -128,10 +126,7 @@ export async function saveDisplayNameAction(displayName: string): Promise<Displa
 
   const trimmedName = validationResult.name;
 
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { name: trimmedName },
-  });
+  await updateUserDisplayName(prisma, session.user.id, trimmedName);
 
   return { ok: true, name: trimmedName };
 }
@@ -182,10 +177,7 @@ export async function saveAvatarAction(formData: FormData): Promise<AvatarUpload
     return { ok: false, error: "generic" };
   }
 
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { image: imageUrl },
-  });
+  await updateUserImage(prisma, session.user.id, imageUrl);
 
   return { ok: true, imageUrl };
 }
@@ -201,10 +193,7 @@ export async function removeAvatarAction(): Promise<AvatarRemoveResult> {
     return { ok: false, error: "unauthorized" };
   }
 
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { image: null },
-  });
+  await updateUserImage(prisma, session.user.id, null);
 
   try {
     await deleteUserAvatarObject(session.user.id);
@@ -234,10 +223,7 @@ export async function getProfileSnapshotAction(): Promise<{
     return null;
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { username: true, name: true, image: true },
-  });
+  const user = await getUserProfileSnapshot(prisma, session.user.id);
 
   if (!user) {
     return null;

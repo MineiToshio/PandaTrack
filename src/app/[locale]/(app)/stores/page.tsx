@@ -2,6 +2,8 @@ import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { DEFAULT_PUBLIC_STORE_PAGE_SIZE, getPublicStoresListingPage } from "@/queries/store";
+import { listCountryCodes } from "@/queries/country";
+import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
 import { buildPageMetadata } from "@/lib/seo";
 import { parseListingSearchParams } from "./_utils/listingParams";
 import StoreListingContent from "./_components/StoreListingContent";
@@ -83,15 +85,8 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
       page,
       pageSize: DEFAULT_PUBLIC_STORE_PAGE_SIZE,
     }),
-    prisma.storeProductType.findMany({
-      where: { isActive: true },
-      select: { key: true },
-      orderBy: { key: "asc" },
-    }),
-    prisma.country.findMany({
-      select: { code: true },
-      orderBy: { code: "asc" },
-    }),
+    listActiveStoreProductTypeKeys(prisma),
+    listCountryCodes(prisma),
   ]);
 
   const tStores = await getTranslations({ locale, namespace: "stores" });

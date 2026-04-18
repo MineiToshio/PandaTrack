@@ -2,6 +2,8 @@ import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { APP_SHELL_FORM_RAIL_CLASSNAME } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
+import { listCountryCodes } from "@/queries/country";
+import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
 import { buildPageMetadata } from "@/lib/seo";
 import CreateStoreForm from "./_components/CreateStoreForm";
 
@@ -24,12 +26,8 @@ export default async function StoresNewPage({ params }: StoresNewPageProps) {
   await getTranslations({ locale, namespace: "stores" });
 
   const [countries, productTypes] = await Promise.all([
-    prisma.country.findMany({ select: { code: true }, orderBy: { code: "asc" } }),
-    prisma.storeProductType.findMany({
-      where: { isActive: true },
-      select: { key: true },
-      orderBy: { key: "asc" },
-    }),
+    listCountryCodes(prisma),
+    listActiveStoreProductTypeKeys(prisma),
   ]);
 
   return (

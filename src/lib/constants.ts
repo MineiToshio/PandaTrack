@@ -122,6 +122,7 @@ export const POSTHOG_EVENTS = {
     PROFILE_DISPLAY_NAME_SAVED: "settings_profile_display_name_saved",
     PROFILE_AVATAR_UPLOADED: "settings_profile_avatar_uploaded",
     PROFILE_AVATAR_REMOVED: "settings_profile_avatar_removed",
+    PREFERENCES_SAVED: "settings_preferences_saved",
   },
   STORE: {
     CREATED: "store_created",

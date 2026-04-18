@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { listProviderIdsForUser } from "@/queries/account";
 
 export type AccountCapabilities = {
   hasGoogleAccount: boolean;
@@ -27,10 +28,6 @@ export function deriveAccountCapabilities(providerIds: readonly string[]): Accou
 }
 
 export async function getAccountCapabilitiesForUser(userId: string): Promise<AccountCapabilities> {
-  const accounts = await prisma.account.findMany({
-    where: { userId },
-    select: { providerId: true },
-  });
-
-  return deriveAccountCapabilities(accounts.map((row) => row.providerId));
+  const providerIds = await listProviderIdsForUser(prisma, userId);
+  return deriveAccountCapabilities(providerIds);
 }

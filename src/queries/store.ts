@@ -856,6 +856,24 @@ export async function deleteStoreReview(
   });
 }
 
+/**
+ * Updates the stored logo URL for a store. Used after a successful logo upload to persist the final URL.
+ */
+export async function updateStoreLogoUrl(db: PrismaClient, storeId: string, logoUrl: string | null): Promise<void> {
+  await db.store.update({
+    where: { id: storeId },
+    data: { logoUrl },
+  });
+}
+
+/**
+ * Deletes a store row by id. Used for best-effort rollback when a multi-step create flow fails
+ * after the row has been inserted (e.g. logo upload failure).
+ */
+export async function deleteStoreById(db: PrismaClient, storeId: string): Promise<void> {
+  await db.store.delete({ where: { id: storeId } });
+}
+
 export async function upsertStoreNote(db: PrismaClient, input: UpsertStoreNoteInput): Promise<StoreViewerNote> {
   const trimmedContent = input.content.trim();
 

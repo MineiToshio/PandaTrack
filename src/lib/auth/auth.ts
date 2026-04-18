@@ -11,6 +11,7 @@ import { buildAuthVerificationEmail } from "@/lib/auth/authVerificationEmail";
 import { syncAuthenticatedUserToKit } from "@/lib/integrations/kit";
 import { sendEmailWithResend } from "@/lib/integrations/resend";
 import { generateUniqueUsernameForNewUser } from "@/lib/user-settings/usernameGeneration";
+import { clearUnverifiedGraceStartsAt } from "@/queries/user";
 
 /**
  * Better Auth server instance used by the API route handler and server-side session helpers.
@@ -85,10 +86,7 @@ export const auth = betterAuth({
     sendOnSignUp: true,
     afterEmailVerification: async (user) => {
       try {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { unverifiedGraceStartsAt: null },
-        });
+        await clearUnverifiedGraceStartsAt(prisma, user.id);
       } catch (error) {
         Sentry.captureException(error);
       }
