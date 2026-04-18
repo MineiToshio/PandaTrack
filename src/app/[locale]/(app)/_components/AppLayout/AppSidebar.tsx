@@ -38,9 +38,10 @@ type AppSidebarProps = {
   signOutLabel: string;
   expanded: boolean;
   onToggle: () => void;
+  storesHref?: string;
 };
 
-export default function AppSidebar({ locale, currentUser, signOutLabel, expanded, onToggle }: AppSidebarProps) {
+export default function AppSidebar({ locale, currentUser, signOutLabel, expanded, onToggle, storesHref }: AppSidebarProps) {
   const pathname = usePathname();
   const t = useTranslations("appLayout");
   const [floatingOpen, setFloatingOpen] = useState(false);
@@ -91,6 +92,7 @@ export default function AppSidebar({ locale, currentUser, signOutLabel, expanded
               onToggle={handleToggle}
               t={t}
               showCollapse
+              storesHref={storesHref}
             />
           </div>
         ) : (
@@ -104,7 +106,7 @@ export default function AppSidebar({ locale, currentUser, signOutLabel, expanded
             }}
           >
             <div className="w-full flex-1 py-2">
-              <RailIcons locale={locale} navItems={navItems} activeItem={activeItem} t={t} />
+              <RailIcons locale={locale} navItems={navItems} activeItem={activeItem} t={t} storesHref={storesHref} />
             </div>
             <div className="border-border flex w-full flex-col items-center gap-2 border-t px-2 py-2">
               <SidebarRailAccountPreview
@@ -143,6 +145,7 @@ export default function AppSidebar({ locale, currentUser, signOutLabel, expanded
               onToggle={handleToggle}
               t={t}
               showCollapse={false}
+              storesHref={storesHref}
             />
           </div>
         </div>
@@ -161,6 +164,7 @@ function ExpandedSidebarContent({
   onToggle,
   t,
   showCollapse,
+  storesHref,
 }: {
   locale: string;
   pathname: string;
@@ -171,6 +175,7 @@ function ExpandedSidebarContent({
   onToggle: () => void;
   t: (key: string) => string;
   showCollapse: boolean;
+  storesHref?: string;
 }) {
   const appShellMainNavigationLabel = t("accessibility.mainNavigation");
 
@@ -178,7 +183,14 @@ function ExpandedSidebarContent({
     <>
       <nav className="flex flex-1 flex-col gap-1 px-2 py-3" aria-label={appShellMainNavigationLabel}>
         {navItems.map((item) => (
-          <NavLink key={item.id} item={item} locale={locale} isActive={activeItem.id === item.id} t={t} />
+          <NavLink
+            key={item.id}
+            item={item}
+            locale={locale}
+            isActive={activeItem.id === item.id}
+            t={t}
+            storesHref={storesHref}
+          />
         ))}
       </nav>
       <div className="border-border flex flex-col gap-2 border-t px-2 py-2">
@@ -208,11 +220,13 @@ function RailIcons({
   navItems,
   activeItem,
   t,
+  storesHref,
 }: {
   locale: string;
   navItems: NavItem[];
   activeItem: NavItem;
   t: (key: string) => string;
+  storesHref?: string;
 }) {
   const appShellMainNavigationLabel = t("accessibility.mainNavigation");
 
@@ -221,7 +235,9 @@ function RailIcons({
       {navItems.map((item) => {
         const Icon = NAV_ICON_MAP[item.id as PrimaryNavItemId];
         const isActive = activeItem.id === item.id;
-        const href = item.href(locale);
+        const href = item.id === "stores" && storesHref != null ? storesHref : item.href(locale);
+        const storesHrefKind =
+          item.id === "stores" ? (href.includes("?") ? "preference_filters" : "plain") : undefined;
         return (
           <Link
             key={item.id}
@@ -236,6 +252,7 @@ function RailIcons({
             data-ph-props={JSON.stringify({
               destination: item.id,
               navigation_level: "primary",
+              ...(storesHrefKind != null && { stores_href_kind: storesHrefKind }),
             })}
           >
             <Icon className="h-5 w-5" />
@@ -251,14 +268,17 @@ function NavLink({
   locale,
   isActive,
   t,
+  storesHref,
 }: {
   item: NavItem;
   locale: string;
   isActive: boolean;
   t: (key: string) => string;
+  storesHref?: string;
 }) {
   const Icon = NAV_ICON_MAP[item.id as PrimaryNavItemId];
-  const href = item.href(locale);
+  const href = item.id === "stores" && storesHref != null ? storesHref : item.href(locale);
+  const storesHrefKind = item.id === "stores" ? (href.includes("?") ? "preference_filters" : "plain") : undefined;
   return (
     <Link
       href={href}
@@ -271,6 +291,7 @@ function NavLink({
       data-ph-props={JSON.stringify({
         destination: item.id,
         navigation_level: "primary",
+        ...(storesHrefKind != null && { stores_href_kind: storesHrefKind }),
       })}
     >
       <Icon className="h-5 w-5 shrink-0" />

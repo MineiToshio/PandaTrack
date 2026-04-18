@@ -2,12 +2,16 @@ import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import AppLayout from "@/app/[locale]/(app)/_components/AppLayout/AppLayout";
+import { buildStoresNavHref } from "@/app/[locale]/(app)/_utils/storesNavHref";
 import VerifyEmailBanner from "@/components/modules/auth/VerifyEmailBanner";
 import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
 import { getSession } from "@/lib/auth/auth-server";
 import { getVerificationSnapshot, maybeSendDaySixVerificationReminder } from "@/lib/auth/authVerification";
 import { ROUTES, VERIFICATION_BANNER_HEIGHT_PX } from "@/lib/constants";
-import { getAppShellUserIdentity } from "@/queries/userSettings";
+import { prisma } from "@/lib/prisma";
+import { listCountryCodes } from "@/queries/country";
+import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
+import { getAppShellUserIdentity, getCollectorPreferencesSnapshot } from "@/queries/userSettings";
 
 type PrivateAppLayoutProps = {
   children: React.ReactNode;
@@ -35,13 +39,31 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
     await maybeSendDaySixVerificationReminder(snapshot, `/${locale}${ROUTES.dashboard}`, requestHeaders);
   }
 
-  const tAuth = await getTranslations({ locale, namespace: "auth" });
-  const shellIdentity = await getAppShellUserIdentity(session.user.id);
+  const [tAuth, shellIdentity, collectorPrefs, catalogCountryCodes, catalogProductTypeKeys] = await Promise.all([
+    getTranslations({ locale, namespace: "auth" }),
+    getAppShellUserIdentity(session.user.id),
+    getCollectorPreferencesSnapshot(session.user.id),
+    listCountryCodes(prisma),
+    listActiveStoreProductTypeKeys(prisma),
+  ]);
+
   const currentUser = shellIdentity ?? {
     username: session.user.name?.trim() || "user",
     name: session.user.name,
     image: session.user.image,
   };
+
+  const storesHref = buildStoresNavHref(
+    locale,
+    {
+      preferredCountryCode: collectorPrefs?.preferredCountryCode ?? null,
+      preferredProductTypeKeys: collectorPrefs?.preferredProductTypeKeys ?? [],
+    },
+    {
+      activeCountryCodes: new Set(catalogCountryCodes.map((r) => r.code)),
+      activeProductTypeKeys: new Set(catalogProductTypeKeys.map((r) => r.key)),
+    },
+  );
 
   if (snapshot?.state !== "grace") {
     return (
@@ -49,7 +71,7 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
         className="from-background via-primary/3 to-accent/3 min-h-screen bg-linear-to-b"
         style={{ ["--app-banner-offset" as string]: "0px" } as React.CSSProperties}
       >
-        <AppLayout locale={locale} signOutLabel={tAuth("signOut")} currentUser={currentUser}>
+        <AppLayout locale={locale} signOutLabel={tAuth("signOut")} currentUser={currentUser} storesHref={storesHref}>
           {children}
         </AppLayout>
       </div>
@@ -75,7 +97,7 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
           resendError={tVerification("resendError")}
         />
       </div>
-      <AppLayout locale={locale} signOutLabel={tAuth("signOut")} currentUser={currentUser}>
+      <AppLayout locale={locale} signOutLabel={tAuth("signOut")} currentUser={currentUser} storesHref={storesHref}>
         {children}
       </AppLayout>
     </div>

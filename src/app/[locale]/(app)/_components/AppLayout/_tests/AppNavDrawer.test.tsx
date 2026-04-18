@@ -127,7 +127,7 @@ describe("AppNavDrawer", () => {
     expect(storesLink).toHaveAttribute("data-ph-event", "app_shell_nav_clicked");
     expect(storesLink).toHaveAttribute(
       "data-ph-props",
-      JSON.stringify({ destination: "stores", navigation_level: "primary" }),
+      JSON.stringify({ destination: "stores", navigation_level: "primary", stores_href_kind: "plain" }),
     );
   });
 });

@@ -20,10 +20,11 @@ type AppLayoutProps = {
   locale: string;
   signOutLabel: string;
   currentUser: AppShellUserIdentity;
+  storesHref?: string;
   children: React.ReactNode;
 };
 
-export default function AppLayout({ locale, signOutLabel, currentUser: initialUser, children }: AppLayoutProps) {
+export default function AppLayout({ locale, signOutLabel, currentUser: initialUser, storesHref, children }: AppLayoutProps) {
   const pathname = usePathname();
   const { expanded, toggle } = useSidebarState();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -49,6 +50,7 @@ export default function AppLayout({ locale, signOutLabel, currentUser: initialUs
             signOutLabel={signOutLabel}
             expanded={expanded}
             onToggle={toggle}
+            storesHref={storesHref}
           />
           <AppNavDrawer
             locale={locale}
@@ -57,6 +59,7 @@ export default function AppLayout({ locale, signOutLabel, currentUser: initialUs
             isOpen={drawerOpen}
             onClose={handleCloseDrawer}
             returnFocusRef={burgerButtonRef}
+            storesHref={storesHref}
           />
 
           {/* Content area: offset on desktop (lg) so it starts after the sidebar */}

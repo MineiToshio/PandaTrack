@@ -40,6 +40,7 @@ type AppNavDrawerProps = {
   isOpen: boolean;
   onClose: () => void;
   returnFocusRef: React.RefObject<HTMLButtonElement | null>;
+  storesHref?: string;
 };
 
 export default function AppNavDrawer({
@@ -49,6 +50,7 @@ export default function AppNavDrawer({
   isOpen,
   onClose,
   returnFocusRef,
+  storesHref,
 }: AppNavDrawerProps) {
   const pathname = usePathname();
   const t = useTranslations("appLayout");
@@ -119,7 +121,9 @@ export default function AppNavDrawer({
           {navItems.map((item) => {
             const Icon = NAV_ICON_MAP[item.id as PrimaryNavItemId];
             const isActive = activeItem.id === item.id;
-            const href = item.href(locale);
+            const href = item.id === "stores" && storesHref != null ? storesHref : item.href(locale);
+            const storesHrefKind =
+              item.id === "stores" ? (href.includes("?") ? "preference_filters" : "plain") : undefined;
             return (
               <Link
                 key={item.id}
@@ -131,7 +135,11 @@ export default function AppNavDrawer({
                 )}
                 aria-current={isActive ? "page" : undefined}
                 data-ph-event={POSTHOG_EVENTS.APP_SHELL.NAV_CLICKED}
-                data-ph-props={JSON.stringify({ destination: item.id, navigation_level: "primary" })}
+                data-ph-props={JSON.stringify({
+                  destination: item.id,
+                  navigation_level: "primary",
+                  ...(storesHrefKind != null && { stores_href_kind: storesHrefKind }),
+                })}
               >
                 <Icon className="h-5 w-5 shrink-0" />
                 <span>{t(item.labelKey)}</span>

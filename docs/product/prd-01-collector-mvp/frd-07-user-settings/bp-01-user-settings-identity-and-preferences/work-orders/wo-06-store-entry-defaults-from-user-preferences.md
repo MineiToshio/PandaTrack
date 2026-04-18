@@ -8,7 +8,7 @@ parent: BP-01
 source_features:
   - FEAT-0013
 last_updated: 2026-04-04
-implementation_status: PLANNED
+implementation_status: IN_PROGRESS
 ---
 
 # WO-06 Store Entry Defaults from User Preferences
