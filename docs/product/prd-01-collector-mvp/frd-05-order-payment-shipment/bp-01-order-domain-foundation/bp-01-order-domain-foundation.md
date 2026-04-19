@@ -52,7 +52,8 @@ Define the persistence, state, and monetary contracts that make order and paymen
   - output: derived `OrderStatus` via pure `deriveOrderStatus` function — six states: `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`, `COMPLETED`, `CANCELLED`; full algorithm in `work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md`
 - payment contract:
   - input: order id, payment amount, payment date
-  - output: persisted payment row plus recalculated order payment summary
+  - output: persisted payment row plus recalculated order payment summary (`paidAmount`, `remainingAmount`, `paymentPercentage`)
+  - transaction scope: balance verification, `OrderPayment` insert, and `PAYMENT_ADDED` history entry are atomic within a single `prisma.$transaction`; delete follows the same pattern with `PAYMENT_DELETED`
 - delete/cancel contract:
   - input: user intent plus current order dependencies
   - output: either cancelled order, deleted order, or rejected destructive action
