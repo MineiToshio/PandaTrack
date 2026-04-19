@@ -6,6 +6,7 @@ title: Replace With Title
 status: <DRAFT | ACTIVE | BLOCKED | SUPERSEDED>
 parent: BP-XX
 source_features: []
+source_issue: <github-issue-number>
 implementation_status: <PLANNED | IN_PROGRESS | PARTIALLY_IMPLEMENTED | IMPLEMENTED>
 last_updated: YYYY-MM-DD
 ---
@@ -13,6 +14,8 @@ last_updated: YYYY-MM-DD
 # WO-XX Replace With Title
 
 `Work Orders` are the operational contract for implementation. Use them as the executable slice-level source for scope, requirements, and acceptance tests.
+
+`source_issue` must be populated with the GitHub slice issue number as soon as the matching ticket is created. Leave it unset only while the Work Order exists in docs before its GitHub counterpart has been opened.
 
 ## Summary
 
