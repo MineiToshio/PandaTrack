@@ -7,8 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-  - BP-02
-last_updated: 2026-04-03
+last_updated: 2026-04-19
 source_features:
   - FEAT-0015
 implementation_status: PLANNED
@@ -166,5 +165,4 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 
 ## Linked Blueprints
 
-- `docs/product/prd-01-collector-mvp/frd-08-delivery-management/bp-01-delivery-domain-and-product-allocation/bp-01-delivery-domain-and-product-allocation.md`
-- `docs/product/prd-01-collector-mvp/frd-08-delivery-management/bp-02-delivery-workspace-and-list-experience/bp-02-delivery-workspace-and-list-experience.md`
+- `docs/product/prd-01-collector-mvp/frd-08-delivery-management/bp-01-delivery-management/bp-01-delivery-management.md`
