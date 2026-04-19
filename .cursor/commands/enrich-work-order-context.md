@@ -25,6 +25,7 @@ The command must treat the referenced `Work Order` as the entry point, but it mu
 - If the referenced Work Order is also linked to GitHub tracking, keep GitHub issue content aligned after doc approval when practical.
 - Before asking any clarification questions, provide a concise Spanish summary of what the target `Work Order` does today so the user has shared context for the discovery conversation.
 - Treat implementation-critical undefined decisions as blockers, not as minor omissions. If a missing technical or operational decision would likely cause rework during implementation, the command must surface it explicitly before docs are approved.
+- Treat established repository conventions as already-made decisions. Any question that is already answered by `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*.mdc`, `docs/tooling/cursor/rules.md`, `docs/design/`, `docs/development/`, applicable ADRs under `docs/` or skills under `.agents/skills/` must not be asked. Instead, surface the applicable convention inline as an inferred assumption and cite the owning file.
 
 ## Planning objective
 
@@ -42,6 +43,14 @@ Produce an implementation-ready definition package centered on one existing `Wor
 ## Resolution requirements
 
 Before asking questions or drafting changes, resolve the target context in this order:
+
+0. resolve repository conventions (always first)
+- read `AGENTS.md` and `CLAUDE.md` to capture mandatory baseline behavior
+- open `docs/tooling/cursor/rules.md` and identify every rule family that could apply to the target `Work Order` based on its scope (frontend, data, auth, i18n, analytics, error handling, design, accessibility, testing, migrations, env vars, optimistic updates, icons, theming, etc.)
+- read each matching `.cursor/rules/*.mdc` file fully enough to know what it already mandates
+- scan `docs/design/README.md` and `docs/development/` for any doc that already owns the decision (file placement, lib inventory, schema, i18n, og images, etc.)
+- scan `docs/` for existing ADRs that already settle a relevant decision
+- record the resulting list of binding conventions so they can be reused in the `Convention-driven assumptions` section of the proposal, and so no question is asked about a decision that is already defined
 
 1. resolve the target `Work Order`
 - If the input is a path, read that file directly.
@@ -95,6 +104,36 @@ Before asking questions, produce an internal role-by-role gap analysis that iden
 - what is partially defined
 - what is undefined but implementation-critical
 - which undefined items must be asked before the `Work Order` can be considered implementation-ready
+
+## Decisions governed by existing conventions
+
+Before building the question list, filter out every candidate question whose answer is already defined by a repository convention. For each filtered item, produce a one-line inferred assumption that:
+
+- states the concrete decision being applied (in product/system terms, not just the category)
+- cites the owning file by repository-relative path (for example `AGENTS.md §4`, `.cursor/rules/next-intl-translation-apis.mdc`, `.cursor/rules/optimistic-client-updates.mdc`, `docs/design/interface-patterns.md`, `docs/development/database-schema.md`)
+
+Typical categories that must not become questions because existing conventions already define them:
+
+- file placement and route-level folder naming (`project-structure.mdc`, `docs/development/file-organization.md`)
+- Server Actions vs Route Handlers (`coding-standards.mdc`)
+- reuse of `src/components/core` / `src/components/modules` before new components (`coding-standards.mdc`, `react-next-components.mdc`)
+- Prisma client usage and data-access boundaries (`prisma-data-layer.mdc`, `data-layer-user-id-duplication.mdc`)
+- Prisma migrations workflow (`prisma-migration-workflow.mdc`)
+- validation with Zod at boundaries and expected-vs-unexpected error handling (`error-handling-validation.mdc`, `sentry-error-handling.mdc`)
+- next-intl API selection in React vs framework functions (`next-intl-translation-apis.mdc`)
+- user-facing copy living in `src/i18n/locales/**` instead of hardcoded strings (`english-code-only.mdc`, `coding-standards.mdc`)
+- PostHog event naming and attachment patterns (`posthog-events.mdc`)
+- optimistic client updates for user-visible mutations (`optimistic-client-updates.mdc`)
+- theme-aware design tokens, semantic HTML, `cn()` usage (`theme-light-dark.mdc`, `tailwind-semantic-html.mdc`, `ui-visual-consistency.mdc`)
+- responsive behavior expectations (`responsive-design.mdc`)
+- accessibility baseline for forms, dialogs, nav, focus, status (`role-accessibility.mdc`)
+- icon sources (`icons.mdc`)
+- testing scope defaults (`testing-strategy.mdc`, `validation-checklist.mdc`)
+- environment variable registration (`env-example.mdc`)
+- cross-FRD reference format (`product-doc-cross-frd-references.mdc`, `docs/templates/product-docs-guide.md`)
+- GitHub tracking sync expectations (`github-tracking-sync.mdc`)
+
+Only ask about these categories when the `Work Order` presents a concrete case that the convention does not cover, and state explicitly why the convention is insufficient.
 
 ## Discovery roles
 
@@ -195,19 +234,77 @@ Questions must:
 - be written in Spanish
 - be grouped by role in concise batches
 - focus only on materially missing decisions
+- be self-contained: the user must be able to answer the question without opening another doc, issue, or code file
 - include a short explanation of why each question matters when useful
 - include concrete options whenever you can propose them
 - include a recommended option first when one seems clearly preferable
 - avoid vague filler questions
 
+### Context requirements for every question
+
+Each question must be **self-contained**: a reader who has never opened the referenced docs or code should still understand exactly what is being decided, why it matters, and what each option means. At minimum:
+
+- state the concrete product or system behavior the decision affects, in plain language, not just the abstract category
+- when the question touches existing code, name the specific file, route, component, action, table, or field involved and summarize in one line what it currently does
+- when the question depends on another doc (another `Work Order`, `Blueprint`, `FRD`, `PRD`, ADR, design doc, or GitHub issue), do not reference it by id alone; include a short inline paraphrase of the relevant part (1–3 sentences) so the user does not have to open it to understand the question
+- when the question references a sibling slice or prior decision, summarize what that slice or decision actually did and how it affects this one
+- when the question uses a domain term that is not yet defined in the current `Work Order`, define it briefly inline the first time it appears in the question batch
+- when proposing options, describe each option in product/user-visible terms, not only in technical shorthand; include the concrete consequence of choosing it
+- always cite sources with a repository-relative path alongside the code, not only an id, so the user can trace it if they want to
+
+#### Self-containment test (must pass for every question)
+
+Before including a question in the final batch, verify all of the following:
+
+1. the question names the exact object of the decision (screen, action, field, table, state, copy key, etc.), not just a category
+2. every doc reference has an inline paraphrase of the relevant part and a repository-relative path
+3. every code reference has an inline one-line description of the current behavior plus the path
+4. every domain term is defined inline at first use
+5. each option is described in user-visible or behavior-visible terms, followed by its consequence
+
+If any check fails, rewrite the question until all pass or drop it.
+
+#### Forbidden question shapes
+
+These shapes are never acceptable on their own and must be rewritten before being shown to the user. The examples below are written in English for documentation purposes; when the command runs, the actual wording is produced in Spanish, but the same forbidden patterns apply:
+
+- `How do we handle X per WO-03?`
+- `Review what FRD-04 defined and decide.`
+- `Same as BP-02, what applies here?`
+- `See issue #123 for context.`
+- `Do we follow the standard project pattern?` (must state what the pattern is)
+- `What stack do we use for this?` (stack is already fixed in `AGENTS.md §3`)
+
+#### Rewrite example
+
+The example below is written in English; at runtime the Spanish labels `Context / Decision / Options / Consequence / Recommended` are used instead.
+
+Bad (bare reference, no context):
+
+> Per WO-03, how do we handle order state here?
+
+Good (self-contained, paraphrased, with paths and options):
+
+> **Context.** `WO-03` (`docs/product/prd-01-collector-mvp/frd-05-order-payment-shipment/bp-01-order-domain-foundation/work-orders/wo-03-...md`) defined three order states: `DRAFT`, `ACTIVE`, `ARCHIVED`, where `ACTIVE` enables payments and shipments. This slice adds the cancel action from the order detail view.
+> **Decision.** Should cancellation produce a new terminal `CANCELLED` state, or reuse `ARCHIVED` with a reason?
+> **Options.**
+> - A. New terminal `CANCELLED` state (blocks payments/shipments; requires migration and its own badge in the list). *Recommended* for UI and reporting clarity.
+> - B. Reuse `ARCHIVED` with `cancellationReason` (no enum migration, but mixes cancellations with historical archives in the list).
+> **Consequence.** Choosing A requires updating `prisma/schema.prisma`, the list table, and filters; choosing B requires adjusting only queries and copy.
+
+If a question cannot be made self-contained without becoming too long, split it into a short context paragraph followed by the actual decision question.
+
+### Question structure
+
 For each important question, prefer this structure:
 
-1. the decision to make
-2. 2 to 4 concrete options
-3. your recommended option with a short rationale
-4. the tradeoff or consequence of the choice
+1. a short **Context** line or short paragraph that grounds the decision in the current product/system state and paraphrases any external references inline
+2. the decision to make, stated as a single concrete question
+3. 2 to 4 concrete options, each with a one-line product-level description and its consequence
+4. your recommended option with a short rationale
+5. the tradeoff or consequence of the choice
 
-If the answer can be inferred confidently from existing docs or current implementation, do not ask. Instead, state the inferred assumption and ask for confirmation only if the risk of being wrong is meaningful.
+If the answer can be inferred confidently from existing docs or current implementation, do not ask. Instead, state the inferred assumption with the same level of inline context described above and ask for confirmation only if the risk of being wrong is meaningful.
 
 ## Required areas to pressure-test
 
@@ -264,22 +361,27 @@ After discovery and before any file edits, return a proposal in Spanish with:
 1. `Current understanding`
 - concise restatement of the Work Order goal and what seems missing today
 
-2. `Open decisions`
+2. `Convention-driven assumptions (not asked)`
+- decisions inferred from `AGENTS.md`, `CLAUDE.md`, matching `.cursor/rules/*.mdc`, `docs/design/`, `docs/development/`, or applicable ADRs
+- one line per assumption with the applied convention and the owning file path
+- the user can still override any assumption, but these are not phrased as open questions
+
+3. `Open decisions`
 - the unresolved decisions grouped by role
 - explicitly separate `implementation-critical decisions still undefined` from lower-risk open questions
 
-3. `Recommended decisions`
+4. `Recommended decisions`
 - your recommended answers for each major unresolved area
 
-4. `Planned doc updates`
+5. `Planned doc updates`
 - what would change in the `Work Order`
 - what would need to change in the parent `Blueprint`
 - what would need to change in the parent `FRD`
 - what would need to change in the parent `PRD`
 - whether linked GitHub tracking should be updated too
 
-5. `Approval gate`
-- ask the user to confirm whether to apply the proposed decisions
+6. `Approval gate`
+- ask the user to confirm whether to apply the proposed decisions and the convention-driven assumptions
 - do not ask for approval until all implementation-critical undefined decisions are either resolved or explicitly deferred by the user
 
 Do not edit docs before this approval.
@@ -335,6 +437,8 @@ If the required GitHub Project or issue-body sync cannot be completed with avail
 - Do not leave critical ambiguity unresolved while pretending the `Work Order` is implementation-ready.
 - Do not overwrite existing intent in docs without reconciling it explicitly.
 - Do not treat infrastructure, storage, naming, error-recovery, or observability choices as “implementation details” when they are necessary to prevent downstream execution chaos; surface them during discovery at the correct doc layer.
+- Do not ask the user about any decision already defined by `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*.mdc`, `docs/tooling/cursor/rules.md`, `docs/design/`, `docs/development/`, or an applicable ADR. Apply the rule, state it as an inferred assumption with the owning file path, and move on.
+- Do not use bare document or code references in questions. Every `WO-NN`, `BP-NN`, `FRD-XX`, ADR id, issue number, or file path must be accompanied by an inline paraphrase of the relevant content so the question is self-contained.
 
 ## Final response format
 
@@ -342,9 +446,10 @@ If still in discovery and waiting on user answers, return in Spanish:
 
 1. `Work Order summary`
 2. `Work Order analyzed`
-3. `Questions by role`
-4. `Why these matter`
-5. `Next step`
+3. `Convention-driven assumptions (not asked)`
+4. `Questions by role`
+5. `Why these matter`
+6. `Next step`
 
 If approval was given and docs were updated, return in Spanish:
 
