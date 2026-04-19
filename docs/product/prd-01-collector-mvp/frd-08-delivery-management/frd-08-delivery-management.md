@@ -138,6 +138,7 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 ## Implementation Notes
 
 - This FRD depends on [`FRD-05`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md) for order items, delivery eligibility, and order completion derivation.
+- When a delivery mutation changes the status of any delivery (create, mark delivered, cancel, delete, reopen), this FRD's implementation is responsible for calling the pure `deriveOrderStatus` function defined in [`FRD-05 · BP-01 · WO-02`](../frd-05-order-payment-shipment/bp-01-order-domain-foundation/work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md) for each affected order, and persisting the resulting `OrderStatus` within the same transaction.
 - Delivery list and detail should also prefer expandable cards over rigid tables for parity with the order workspace and better mobile behavior.
 - Product grouping should surface the order identifier prominently because delivery selection spans multiple orders from one store.
 

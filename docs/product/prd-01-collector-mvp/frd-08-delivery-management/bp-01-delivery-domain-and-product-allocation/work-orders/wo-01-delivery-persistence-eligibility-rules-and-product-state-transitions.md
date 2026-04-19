@@ -23,6 +23,7 @@ Create the persistence and eligibility foundation for deliveries, including the 
 - eligibility queries by store
 - product-state transitions for arrived-at-store, in-transit, delivered, reopened, cancelled, and deleted flows
 - delete-versus-cancel rule boundaries
+- order status re-derivation: after any product-state transition, call `deriveOrderStatus` (from [`FRD-05 · BP-01 · WO-02`](../../../frd-05-order-payment-shipment/bp-01-order-domain-foundation/work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md)) for each affected order and persist the result within the same transaction
 
 ## Out of Scope
 
@@ -46,3 +47,4 @@ Create the persistence and eligibility foundation for deliveries, including the 
 - Eligible products exclude delivered products and products attached to another active delivery.
 - Cancel, delete, and reopen operations recalculate linked product states correctly.
 - Delivery persistence stores the required cost, date, and store boundary fields.
+- After any product-state transition, the parent order's status reflects the correct derived state (`OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`, or `COMPLETED`).

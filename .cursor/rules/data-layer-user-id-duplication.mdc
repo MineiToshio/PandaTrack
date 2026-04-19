@@ -1,0 +1,68 @@
+---
+description: When to duplicate userId on child records for authorization and query efficiency
+globs: "prisma/schema.prisma,src/queries/**/*.ts,src/lib/data/**/*.ts"
+alwaysApply: false
+---
+
+# userId duplication on child records — PandaTrack
+
+## Pattern
+
+Duplicate `userId` on child records when doing so avoids a join that would otherwise be required on every authorization check or high-frequency query.
+
+```prisma
+// ✅ Good: userId on child enables direct auth without joining Order
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  userId  String   // duplicated from Order — enables auth without join
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model OrderPayment {
+  id      String @id @default(cuid())
+  orderId String
+  userId  String   // duplicated from Order — enables auth without join
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+```
+
+## When to apply this pattern
+
+Apply `userId` duplication on a child record when **any** of the following is true:
+
+1. **Authorization checks are frequent and the join cost matters** — for example, delete or update operations on individual child records that must verify ownership before executing.
+2. **The child record may be queried independently** — that is, without always loading the parent first.
+3. **The parent table is large or write-heavy** — and joining back to it on every child read creates measurable overhead.
+4. **Sibling records in the same domain already follow the pattern** — keep the convention consistent within a domain to avoid mixed patterns that confuse readers.
+
+## When NOT to apply this pattern
+
+Do not duplicate `userId` when:
+
+- The child is always loaded as part of the parent (e.g., via Prisma `include`) and the parent already carries `userId`.
+- The data model guarantees the child is never accessed without the parent already being loaded.
+- The parent table is small and joins are negligible.
+- Duplication would create synchronization risk without a meaningful query benefit.
+
+## Consistency requirement
+
+Every query and mutation on child records with a duplicated `userId` **must** use that field for authorization — never skip the check and rely solely on the parent relation.
+
+```ts
+// ✅ Correct: filter by both orderId and userId
+await db.orderItem.delete({
+  where: { id: itemId, orderId, userId },
+});
+
+// ❌ Wrong: trusts orderId alone without verifying ownership
+await db.orderItem.delete({
+  where: { id: itemId, orderId },
+});
+```
+
+## Data integrity
+
+The `userId` on a child record must always match the `userId` on its parent. Enforce this at the mutation layer: when creating a child, copy `userId` from the parent record retrieved within the same transaction — never accept it as free user input.

@@ -26,6 +26,7 @@ Before implementing a task:
 Read these on every implementation because they define project-wide defaults:
 
 - `adr-decision-records.mdc`: Read when evaluating whether the change creates or updates a cross-feature architectural decision.
+- `data-layer-user-id-duplication.mdc`: Read when adding child Prisma models or writing query/mutation functions that operate on child records. It defines when to duplicate `userId` on child records for authorization and query efficiency.
 - `coding-standards.mdc`: Read for every coding task. It defines core implementation behavior, English-only code, Server Actions preference, reuse expectations, and general coding discipline.
 - `docs-and-standards.mdc`: Read for every non-trivial change. It defines when to update `docs/`, when to create or extend rules, and how to keep documentation aligned with implementation.
 - `github-tracking-sync.mdc`: Read when the task maps to a product doc, work order, epic, or slice. It defines how implementation must stay aligned with `docs/product` and mirrored GitHub tracking, including Epic sub-issue order matching Work Order sequence.
@@ -73,6 +74,7 @@ Read these on every implementation because they define project-wide defaults:
 
 - `role-full-stack-development.mdc`: Use when implementing server actions, route handlers, auth, integrations, persistence, or full-stack flows.
 - `prisma-data-layer.mdc`: Use when touching Prisma usage, repositories, query modules, or database access patterns.
+- `data-layer-user-id-duplication.mdc`: Use when adding new child Prisma models or writing mutations that operate on child records where authorization may require ownership verification.
 - `prisma-migration-workflow.mdc`: Use when changing `prisma/schema.prisma`, migrations, or database rollout flow.
 - `error-handling-validation.mdc`: Use when adding validation, boundary parsing, error handling, or safe logging.
 - `sentry-error-handling.mdc`: Use when capturing unexpected errors or adjusting monitoring behavior.
@@ -94,6 +96,7 @@ Read these on every implementation because they define project-wide defaults:
 | -------------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `adr-decision-records.mdc`             | ADR creation/update criteria                                         | Architecture or recurring technical decisions change                                                                                                                                     |
 | `coding-standards.mdc`                 | Core coding conventions and implementation defaults                  | Any code is written or changed                                                                                                                                                           |
+| `data-layer-user-id-duplication.mdc`   | When to duplicate `userId` on child records for auth and performance | Adding child Prisma models or writing child record mutations                                                                                                                             |
 | `docs-and-standards.mdc`               | Documentation and rule maintenance policy                            | Behavior, docs, standards, or undocumented product decisions change; keep documentation paths repository-relative                                                                        |
 | `english-code-only.mdc`                | English-only code and developer text                                 | Editing code, comments, tests, logs, or messages                                                                                                                                         |
 | `env-example.mdc`                      | `.env.example` synchronization                                       | New env vars are introduced or required                                                                                                                                                  |

@@ -44,7 +44,7 @@ Define the persistence, eligibility, and lifecycle rules that let one delivery g
   - output: persisted delivery plus recalculated product states
 - lifecycle contract:
   - input: mark delivered, reopen, cancel, delete, edit-product-membership
-  - output: updated delivery state and updated product states
+  - output: updated delivery state, updated product states, and re-derived order status for every affected order (via `deriveOrderStatus` from [`FRD-05 · BP-01 · WO-02`](../../frd-05-order-payment-shipment/bp-01-order-domain-foundation/work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md), persisted in the same transaction)
 
 ## Operational Priorities
 
@@ -56,6 +56,7 @@ Define the persistence, eligibility, and lifecycle rules that let one delivery g
 ## Dependencies
 
 - order-product model from [`FRD-05`](../../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md)
+- `deriveOrderStatus` pure function from [`FRD-05 · BP-01 · WO-02`](../../frd-05-order-payment-shipment/bp-01-order-domain-foundation/work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md) — must be called and result persisted within every delivery mutation that changes product delivery associations
 - user base-currency preference from [`FRD-07`](../../frd-07-user-settings/frd-07-user-settings.md)
 - private app route shell from [`FRD-03`](../../frd-03-collector-app-shell/frd-03-collector-app-shell.md)
 

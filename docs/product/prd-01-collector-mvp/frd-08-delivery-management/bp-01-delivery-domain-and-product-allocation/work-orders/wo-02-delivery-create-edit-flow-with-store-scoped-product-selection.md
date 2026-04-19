@@ -25,6 +25,7 @@ Implement the create and edit experience for deliveries, including store selecti
 - automatic preselection from source order
 - automatic arrived-at-store marking when newly selected
 - edit flow that can add or remove products
+- order status re-derivation: adding or removing products from a delivery changes the associated orders' status; `deriveOrderStatus` (from [`FRD-05 · BP-01 · WO-02`](../../../frd-05-order-payment-shipment/bp-01-order-domain-foundation/work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md)) must be called for each affected order and the result persisted within the create/edit transaction
 
 ## Out of Scope
 
@@ -48,3 +49,5 @@ Implement the create and edit experience for deliveries, including store selecti
 - Creating from an order preselects that order's eligible products.
 - Standalone create flow shows only stores with eligible products.
 - Product selection groups rows by source order and auto-marks newly selected products as arrived at store.
+- After creating a delivery with products from an order, that order's status updates to reflect the new delivery association (e.g. `OPEN` → `PARTIALLY_IN_TRANSIT` or `IN_TRANSIT`).
+- Removing a product from a delivery during edit recalculates the source order's status correctly.

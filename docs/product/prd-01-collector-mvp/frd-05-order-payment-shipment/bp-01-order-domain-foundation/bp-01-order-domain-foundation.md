@@ -9,7 +9,7 @@ children:
   - WO-01
   - WO-02
   - WO-03
-last_updated: 2026-04-03
+last_updated: 2026-04-18
 implementation_status: PLANNED
 ---
 
@@ -29,8 +29,9 @@ Define the persistence, state, and monetary contracts that make order and paymen
 
 ## Architecture Decisions
 
-- Currency should be a catalog table storing stable code and symbol only; localized names should be resolved in UI through the code.
+- Currency is not stored in a dedicated database table. The permitted currency set is the hardcoded allowlist `ALLOWED_COLLECTOR_BASE_CURRENCY_CODES` defined in `src/lib/catalog/collectorCountries.ts`, reusing the same catalog and Zod validator already in use by user settings. Localized currency names are resolved in the UI from the existing `currencies.{code}` i18n keys.
 - Exchange-rate context should be stored once per order in MVP so reporting and derived totals have one stable conversion basis.
+- Order status is derived, not directly editable, and exposes six states: `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`, `COMPLETED`, and `CANCELLED`. The pure function `deriveOrderStatus` (defined in WO-02) owns the derivation algorithm. Delivery mutations in [`FRD-08`](../../frd-08-delivery-management/frd-08-delivery-management.md) are responsible for calling it and persisting the result.
 - Order identifiers should be generated at persistence time using a deterministic date-based prefix plus a two-digit daily sequence.
 - Payment progress should be derived from payment records instead of duplicated into manually edited columns.
 - Order history should be append-oriented and human-readable, but individual entries may still be user-deleted.
@@ -41,11 +42,14 @@ Define the persistence, state, and monetary contracts that make order and paymen
 ## Contracts
 
 - currency contract:
-  - input: catalog currency code and symbol
-  - output: selectable currency option plus i18n-resolved label
+  - input: currency code validated against `ALLOWED_COLLECTOR_BASE_CURRENCY_CODES`
+  - output: selectable currency option with i18n-resolved label from `currencies.{code}`
 - order create contract:
   - input: store, order date, expected delivery range, currency, optional exchange rate, total cost, item rows
-  - output: persisted order with generated identifier and derived state
+  - output: persisted order with generated identifier and initial status `OPEN`
+- order state contract:
+  - input: item delivery associations (`ItemDeliveryState` per order item)
+  - output: derived `OrderStatus` via pure `deriveOrderStatus` function — six states: `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`, `COMPLETED`, `CANCELLED`; full algorithm in `work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md`
 - payment contract:
   - input: order id, payment amount, payment date
   - output: persisted payment row plus recalculated order payment summary

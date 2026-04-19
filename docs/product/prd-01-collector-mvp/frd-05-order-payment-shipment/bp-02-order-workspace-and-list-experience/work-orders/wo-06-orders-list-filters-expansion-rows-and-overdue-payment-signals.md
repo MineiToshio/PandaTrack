@@ -44,8 +44,13 @@ Implement the orders workspace list with URL-backed filters, expandable cards, o
 - `BP-02` list filter contract
 - `BP-02` expandable-card decision
 
+## Notes
+
+- The status filter must reflect all six order states: `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`, `COMPLETED`, and `CANCELLED`. Filter option labels must use their Spanish display names as defined in [`FRD-05 · BP-01 · WO-02`](../../bp-01-order-domain-foundation/work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md).
+
 ## E2E Acceptance Tests
 
 - Users can filter orders by date range, store, product type, status, and product-name text with URL-backed state.
+- The status filter exposes all six order states as selectable options.
 - Order cards expand to show items and payments only.
 - Overdue orders and delivered-but-unpaid orders are visually distinguishable in the list.

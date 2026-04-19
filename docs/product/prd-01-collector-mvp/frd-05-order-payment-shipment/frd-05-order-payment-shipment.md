@@ -8,7 +8,7 @@ parent: PRD-01
 children:
   - BP-01
   - BP-02
-last_updated: 2026-04-04
+last_updated: 2026-04-18
 source_features:
   - FEAT-0014
 implementation_status: PLANNED
@@ -106,7 +106,7 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 ## Business Rules
 
 - `BR-05-01`: `Open` is the initial order state.
-- `BR-05-02`: Order states for MVP are `OPEN`, `PARTIALLY_DELIVERED`, `COMPLETED`, and `CANCELLED`.
+- `BR-05-02`: Order states for MVP are `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`, `COMPLETED`, and `CANCELLED`. States are derived in priority order: `COMPLETED` → `PARTIALLY_DELIVERED` → `IN_TRANSIT` → `PARTIALLY_IN_TRANSIT` → `OPEN`. `CANCELLED` is set by the cancel mutation and does not re-derive. See WO-02 for the full derivation algorithm and `deriveOrderStatus` function contract.
 - `BR-05-03`: Order status is system-derived and must not be edited directly through a status field.
 - `BR-05-04`: The order item spreadsheet should prioritize keyboard entry and support row addition plus cell navigation.
 - `BR-05-05`: Unit price remains optional because some stores quote only a single order-level total.
@@ -117,6 +117,10 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - `BR-05-10`: Payments may be deleted and the paid-versus-remaining summary must recalculate immediately after deletion.
 - `BR-05-11`: Changing an order's store is allowed only while the order remains `OPEN` and has no associated deliveries.
 - `BR-05-12`: Cancelled orders remain visible in historical lists and filter results when the chosen filters include them.
+- `BR-05-15`: When an order is cancelled or deleted, its `OrderPayment` records are deleted. Delivery items are unlinked using the following cascade: if a linked delivery contains items from this order only, the delivery is deleted; if it contains items from other orders, only this order's items are removed and the delivery is preserved.
+- `BR-05-16`: Cancel and delete require a confirmation modal. The modal message must reflect current state: if payment records exist, mention they will be removed; if in-transit deliveries exist, mention that delivery links will be removed.
+- `BR-05-17`: An order in `CANCELLED` state may be returned to `OPEN` without preconditions. Payment records and delivery links that were removed during cancellation are not restored.
+- `BR-05-18`: Physical deletion of an order is blocked when at least one of its linked deliveries has status `DELIVERED`. In all other cases, deletion is permitted subject to `BR-05-16`.
 - `BR-05-13`: The `Needs currency update` indicator must represent reconciliation state against the collector's current base currency rather than a simple order-status proxy.
 - `BR-05-14`: Bulk reconciliation may apply one entered rate to all affected orders within the same currency pair, while preserving order-level manual edits when the user chooses to defer.
 
@@ -174,6 +178,7 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 ## Implementation Notes
 
 - This FRD consumes base-currency settings from [`FRD-07`](../frd-07-user-settings/frd-07-user-settings.md).
+- Order status derivation is owned by this FRD via the pure `deriveOrderStatus` function defined in [`BP-01 · WO-02`](bp-01-order-domain-foundation/work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md). The function takes item delivery associations as input and returns the computed `OrderStatus`. [`FRD-08`](../frd-08-delivery-management/frd-08-delivery-management.md) is responsible for invoking `deriveOrderStatus` and persisting the result whenever a delivery state change affects items linked to an order.
 - Recorded order totals, item prices, and payment rows remain denominated in the **order currency** (`FR-05-14`); changing the collector's base currency in settings does not rewrite stored order rows. Per-order exchange-rate context (`FR-05-16`, `BR-05-07`) is interpreted relative to the base currency **at the time the order was saved**, which matters for dashboard rollups ([`FR-06-13`](../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md#functional-requirements); [`FRD-06`](../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md)).
 - The orders list should expose filter label `Needs currency update`, chip label `Currency update needed`, and query-state parameter `fxStatus=needs_reconciliation` to keep UX and URL behavior consistent.
 - Store selection should reuse the existing shared searchable-select interaction pattern rather than invent a new picker.
@@ -191,10 +196,14 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - payment records store amount and date and may be deleted
 - discrepancy handling is a save-time modal, not a passive warning
 - order actions in detail view follow the pattern: primary action, secondary action, destructive actions in `More`
+- the order detail header displays store name and order date as the primary title; the human-readable identifier (`ORD-YYYYMMDD-NN`) appears as secondary metadata
+- a cancelled order may be reactivated to `OPEN`; payment records and delivery links removed during cancellation are not restored
+- cancel and delete apply the same delivery cascade: sole-owner deliveries are deleted; shared deliveries retain items from other orders
+- monetary amounts are stored as `Int` in minor currency units (cents × 100); `exchangeRate` uses `Decimal`
+- order currency is validated against the same hardcoded allowlist as the user's base currency preference (`ALLOWED_COLLECTOR_BASE_CURRENCY_CODES` in `src/lib/catalog/collectorCountries.ts`); no separate `Currency` database table exists
 
 ## Open Questions
 
-- whether the order detail header should also display the human-readable identifier as the primary title or as supporting metadata
 - whether future dashboard reporting will break delivery costs out separately from product spending or combine them into one spending signal
 - whether future post-MVP finance reporting should move exchange-rate context from order level to payment level
 
