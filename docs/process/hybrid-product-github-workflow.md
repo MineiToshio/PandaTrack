@@ -145,11 +145,15 @@ A ticket should not duplicate the full `Work Order` content.
 
 ### In GitHub
 
-- use the GitHub Project `Status` field for execution progress
-- valid statuses: `Todo`, `In Progress`, `Blocked`, `Done`
+- use the GitHub Project `Status` field for execution progress and readiness
+- valid statuses: `Backlog`, `Todo`, `In Progress`, `Blocked`, `Done`
+- use `Backlog` for slices whose `Work Order` doc is still `status: DRAFT` (freshly created, not yet enriched). `Backlog` means "exists but not ready to pick up"
+- use `Todo` for slices whose `Work Order` doc is `status: ACTIVE` (enriched and ready to implement), and for Epics by default
 - use `Blocked` when a slice cannot progress because of an unresolved external dependency (for example, a required model or API that belongs to a different FRD and has not been implemented yet); include a brief blocker note in the issue body explaining what is missing and which FRD or work order must deliver it first
-- when an Epic and its Work Order tickets are first created (for example from the Create FRD Package flow): every issue must be **open**, and Project `Status` must be **`Todo`** on the Epic and every slice unless the team explicitly agreed a different initial value for that batch
+- when an Epic and its Work Order tickets are first created (for example from the Create FRD Package flow): every issue must be **open**, the Epic must have Project `Status` **`Todo`**, and every created slice must have Project `Status` **`Backlog`** (matching the `DRAFT` default of newly created `Work Order` docs) unless the team explicitly agreed a different initial value for that batch
+- `enrich work order context` promotes the linked slice issue from `Backlog` to `Todo` in the same run that flips the `Work Order` doc from `DRAFT` to `ACTIVE`
 - do not create or leave new tracking issues **closed** or with Project `Status` **`Done`** as the default for untouched backlog work
+- see `docs/process/github-project-tracking.md` → **Readiness rule** for the full mapping
 
 ## Practical Daily Workflow
 

@@ -9,7 +9,7 @@ This Epic is an execution-tracking artifact, not the source of truth for product
 - Epic title: `FEAT-XXXX: <FRD title>`
 - Epic label: `type:epic`
 - Project URL: `https://github.com/users/MineiToshio/projects/4`
-- Status source: GitHub Project `Status` field (`Todo | In Progress | Done`)
+- Status source: GitHub Project `Status` field (`Backlog | Todo | In Progress | Blocked | Done`). Epics default to `Todo` at creation; slices default to `Backlog` while their `Work Order` doc is `DRAFT` and move to `Todo` once promoted to `ACTIVE`. See `docs/process/github-project-tracking.md` → **Readiness rule**.
 - Area label: `area:<domain>` when inferable
 - Owner:
 

@@ -21,7 +21,7 @@ GitHub Project and its issues are the source of truth for execution status and m
 - **Sub-issue order under the Epic must match Work Order execution order** (`WO-01` first, then `WO-02`, and so on, including across multiple `Blueprints` in blueprint order). GitHub public issue numbers (`#NN`) are not a reliable sequence indicator. Wrong ordering misleads the Project board, Epic child views, and anyone using “first sub-issue” as the next slice.
 - Epic issues should stay lightweight and reference the matching `FRD` and `Work Order` paths instead of duplicating product definition.
 - Every Epic/Slice should be added to the GitHub Project board
-- New Epics and slices start **open** (issue state), with Project `Status` **`Todo`**, unless a one-off agreement says otherwise for that creation run
+- New Epics start **open** (issue state) with Project `Status` **`Todo`**. New slices start **open** with Project `Status` **`Backlog`** when their `Work Order` doc is `status: DRAFT`, and are promoted to **`Todo`** when the doc is promoted to `status: ACTIVE` (see `## Readiness rule`). Both rules admit a one-off override if agreed during that creation run.
 - Keep issue titles concise and readable.
 - Distinguish epic vs slice using `type:*` labels, not title prefixes.
 - Automation inputs should use GitHub issue number or full GitHub issue URL.
@@ -40,14 +40,31 @@ Do not use `status:*` labels. Status is tracked only through the GitHub Project 
 
 ## Board Statuses
 
-- `Todo`
-- `In Progress`
-- `Blocked`
-- `Done`
+- `Backlog` — slice exists in tracking but its `Work Order` doc is still `status: DRAFT`. Not ready to be picked up yet; it still needs an `enrich work order context` pass to become implementation-ready.
+- `Todo` — ready to implement. Epics start here by default. Slices land here once their `Work Order` doc has been promoted to `status: ACTIVE`.
+- `In Progress` — currently being implemented.
+- `Blocked` — cannot progress because of an unresolved external dependency (for example, a required model or API that belongs to a different FRD and has not been implemented yet). Include a brief blocker note in the issue body explaining what is missing and which FRD or work order must deliver it first.
+- `Done` — closed and merged.
 
-Use `Blocked` when a slice cannot progress because of an unresolved external dependency (for example, a required model or API that belongs to a different FRD and has not been implemented yet). Include a brief blocker note in the issue body explaining what is missing and which FRD or work order must deliver it first.
+Current project status source of truth is the GitHub Project `Status` field (`Backlog`, `Todo`, `In Progress`, `Blocked`, `Done`).
 
-Current project status source of truth is the GitHub Project `Status` field (`Todo`, `In Progress`, `Blocked`, `Done`).
+## Readiness rule
+
+Readiness (is this slice ready to implement?) is encoded in the `Status` field together with execution state. The mapping between the `Work Order` doc lifecycle and the Project `Status` is:
+
+| `Work Order` doc `status`                     | Project `Status` |
+| --------------------------------------------- | ---------------- |
+| `DRAFT` (just created, not enriched)          | `Backlog`        |
+| `ACTIVE` (enriched, ready for implementation) | `Todo`           |
+| — (in implementation)                         | `In Progress`    |
+| — (waiting on an external dependency)         | `Blocked`        |
+| — (shipped / closed)                          | `Done`           |
+
+Rules:
+
+- `create frd package` must create every slice with Project `Status` = `Backlog`, matching the `DRAFT` default of newly created `Work Order` docs. The Epic itself must be created with `Status` = `Todo` (Epics do not have a `DRAFT`/`ACTIVE` lifecycle; the FRD doc is their source of truth).
+- `enrich work order context` must promote the linked slice issue from `Backlog` to `Todo` in the same run that flips the `Work Order` doc `status` from `DRAFT` to `ACTIVE`. This promotion is automatic and happens as part of the same approval, not as a separate step.
+- A one-off override is allowed when the user explicitly approves a different initial `Status` during the proposal step of either command.
 
 ## Epic Template (Issue)
 

@@ -39,7 +39,7 @@ GitHub issues must mirror the approved docs, not replace them.
 
 ## Minimum issue sync checklist
 
-- Epic/slice status remains accurate in GitHub Project `Status` field (`Todo`, `In Progress`, `Blocked`, `Done`). Use `Blocked` when the slice cannot progress due to an unresolved external dependency; include a blocker note in the issue body.
+- Epic/slice status remains accurate in GitHub Project `Status` field (`Backlog`, `Todo`, `In Progress`, `Blocked`, `Done`). Use `Backlog` for slices whose `Work Order` doc is still `status: DRAFT` (not yet enriched). Use `Todo` once the `Work Order` is promoted to `ACTIVE` by `enrich work order context`. Use `Blocked` when the slice cannot progress due to an unresolved external dependency; include a blocker note in the issue body. See `docs/process/github-project-tracking.md` → **Readiness rule**.
 - Under each Epic, **sub-issues are ordered like the Work Orders** (`WO-01` first, then `WO-02`, and so on). Fix order with GitHub sub-issue reprioritization when creation or bulk edits scrambled it; public issue `#` numbers are not execution order.
 - Functional/business rules in the mirrored GitHub issue content reflect the approved docs/product behavior.
 - Acceptance criteria cover the final implemented flow described in docs/product.

@@ -429,16 +429,19 @@ After approval:
 - create or update one GitHub Epic for the `FRD`
 - create one GitHub ticket per `Work Order`
 - immediately after each Work Order ticket is created, **write its GitHub issue number into the frontmatter of the matching `Work Order` `.md` file as `source_issue: <issue-number>`** (number only, no `#`, no URL). Do this as part of the same execution pass — do not defer it to a later command
-- keep the Epic and every Work Order ticket **open** (GitHub issue `state: open`). New issues are created open by default; do not close any of them in this command. If you update or reuse an Epic or slice that is currently closed, **reopen** it so execution tracking starts from an open backlog item
+- keep the Epic and every Work Order ticket **open** (GitHub issue `state: open`). New issues are created open by default; do not close any of them in this command. If you update or reuse an Epic or slice that is currently closed, **reopen** it so execution tracking starts from an open item
 - attach every created Work Order ticket as a **sub-issue** of that Epic (GitHub parent/child relationship), not only via a `Parent Epic: #NN` line in the ticket body
 - add sub-issues in **Work Order execution order** (`WO-01`, then `WO-02`, then `WO-03`, and so on across the FRD). When an FRD has multiple `Blueprints`, follow the same order as the blueprint implementation plan and linked work-order lists (typically all `WO`s from `BP-01` in order, then `BP-02`, etc.). **Do not** sort or infer order from public GitHub issue numbers (`#78`, `#81`, …); those reflect creation time, not `WO` sequence, and a wrong sub-issue order breaks Epic views, Project child lists, and planning.
 - first child can be added without a position hint; for each additional child, if GitHub returns a priority or placement error, add it immediately after the previous slice using that sibling issue's numeric REST `id` as `after_id`, since `id` is not the same as the public issue number
 - after all sub-issues are attached, **verify** with GitHub MCP `issue_read` (`get_sub_issues`) that the returned list order matches `WO-01` through `WO-NN`. If not, use `sub_issue_write` (`reprioritize`) with sibling REST `id` values (`after_id` / `before_id`) until the order matches the Work Order docs
 - do not create GitHub issues for `Blueprints`
 - add the Epic and every created ticket to GitHub Project `4` in the same execution pass
-- set the GitHub Project `4` **Status** field to **`Todo`** on the Epic and on every created ticket (this is independent of issue open/closed). The only exception is when the user explicitly approved a different initial `Status` value during the proposal approval step
+- set the GitHub Project `4` **Status** field as follows (this is independent of issue open/closed):
+  - Epic → **`Todo`**
+  - every created Work Order ticket → **`Backlog`** (matches the `status: DRAFT` default of a newly created `Work Order` doc; promotion to `Todo` happens later through `enrich work order context`). See `docs/process/github-project-tracking.md` → **Readiness rule**.
+  - The only exception is when the user explicitly approved a different initial `Status` value during the proposal approval step.
 - explicitly verify that the Epic and every created ticket are present in GitHub Project `4` before finishing
-- explicitly verify that the Epic and every created ticket are **open** and have Project `Status` **`Todo`** (or the user-approved alternative) before finishing
+- explicitly verify that the Epic and every created ticket are **open** and have the correct Project `Status` (Epic = `Todo`, every slice = `Backlog`, or the user-approved alternative) before finishing
 - explicitly verify that the Epic lists every created Work Order ticket as a sub-issue (for example via GitHub MCP `issue_read` with `get_sub_issues`) **and that sub-issues appear in `WO-01`…`WO-NN` order** before finishing
 - explicitly verify that every created `Work Order` `.md` file has its `source_issue` frontmatter field populated with the numeric id of the matching GitHub ticket before finishing
 
@@ -505,10 +508,10 @@ Optional GitHub links may be added as convenience only when useful, but the path
 - Work Order ticket label: `type:slice`
 - add area label when inferable
 - add both Epic and tickets to GitHub Project `4`
-- set Project `Status` to **`Todo`** on the Epic and every slice by default. Do not leave new items as `Done` or `In Progress` unless the user explicitly requested that initial value when they approved the proposal
+- set Project `Status` by default: **`Todo`** on the Epic and **`Backlog`** on every created slice (see `docs/process/github-project-tracking.md` → **Readiness rule**). Do not leave new items as `Done` or `In Progress`, and do not set slices to `Todo` at creation time unless the user explicitly requested that initial value when they approved the proposal.
 - keep every Epic and slice **open** (issue state); closing issues is out of scope for this command
 - do not treat issue creation as complete until project membership has been confirmed for the Epic and every created ticket
-- if any issue cannot be added to Project `4`, cannot be kept or set **open**, or its `Status` cannot be set to the required initial value, report the specific blocked issue numbers in the final response and treat the command as partially complete
+- if any issue cannot be added to Project `4`, cannot be kept or set **open**, or its `Status` cannot be set to the required initial value (`Todo` for the Epic, `Backlog` for each slice), report the specific blocked issue numbers in the final response and treat the command as partially complete
 
 ## Numbering and naming rules
 
@@ -553,6 +556,6 @@ Before finishing, verify:
 - when a foundation `Work Order` exists, it is genuinely shared by two or more later slices, ships no UI, and is clearly referenced from its `Blueprint`'s implementation plan
 - GitHub Epic/Tickets follow the hybrid workflow instead of duplicating docs
 - the GitHub Epic and every created ticket were added to GitHub Project `4`
-- the GitHub Epic and every created ticket are **open** and were verified in GitHub Project `4` with initial `Status` **`Todo`** (or the user-approved alternative from the proposal)
+- the GitHub Epic and every created ticket are **open** and were verified in GitHub Project `4` with the correct initial `Status` (Epic = **`Todo`**, every slice = **`Backlog`**, or the user-approved alternative from the proposal)
 - every created `Work Order` `.md` file has `source_issue: <issue-number>` populated in its frontmatter matching the GitHub ticket that was created for it
 - all created items fit the current `docs/product` structure

@@ -396,6 +396,8 @@ Update the target `Work Order` so it becomes materially more implementation-read
 
 When this command updates the target `Work Order` after user approval, set its document `status` to `ACTIVE` as part of the same edit unless the user explicitly instructs a different lifecycle state.
 
+When the `status` flips from `DRAFT` to `ACTIVE` and the `Work Order` has a `source_issue`, the command must **also** promote that GitHub issue's Project `4` `Status` field from `Backlog` to `Todo` in the same run. This promotion is automatic and is part of the same approval, not a follow-up step. See `docs/process/github-project-tracking.md` → **Readiness rule**. The same user-approved override that skips the `DRAFT → ACTIVE` flip also skips the Project `Status` promotion.
+
 Expand it as needed with concrete, testable content. When helpful, add sections beyond the template, such as:
 
 - `Assumptions`
@@ -426,7 +428,9 @@ Do not push details upward unnecessarily.
 
 If the `Work Order` is linked to a slice issue and the approved doc changes materially affect the issue body, add a concise sync update to GitHub or update the issue body when practical with available tools.
 
-If the required GitHub Project or issue-body sync cannot be completed with available tools, report that explicitly.
+Whenever the `Work Order` doc `status` was flipped from `DRAFT` to `ACTIVE` in this run and a `source_issue` exists, promote that issue's GitHub Project `4` `Status` from `Backlog` to `Todo` as part of the same sync pass. Do not skip or defer this promotion; it is the visible signal that the slice is now implementation-ready.
+
+If the required GitHub Project or issue-body sync cannot be completed with available tools, report that explicitly, including whether the `Backlog → Todo` promotion was applied.
 
 ## Guardrails
 
@@ -457,6 +461,6 @@ If approval was given and docs were updated, return in Spanish:
 2. `Decision summary`
 3. `What changed upward`
 4. `Remaining open items`
-5. `GitHub sync`
+5. `GitHub sync` — must explicitly state the `Work Order` doc `status` transition that was applied (e.g. `DRAFT → ACTIVE`) and, when a `source_issue` exists, the matching Project `Status` transition that was applied (e.g. `Backlog → Todo`). If either transition was skipped, say why.
 
 If the command stops early, say exactly what reference or decision is missing.
