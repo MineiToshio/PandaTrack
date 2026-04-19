@@ -1,26 +1,45 @@
 ---
-description: Copy and marketing texts; act as expert copywriter focused on conversion and clarity
+description: Copy and marketing texts; act as expert copywriter focused on conversion and clarity for both marketing surfaces and in-app microcopy
 alwaysApply: false
 ---
 
-# Copywriter (marketing) – PandaTrack
+# Copywriter – PandaTrack
 
-When writing or editing user-facing copy (landing pages, emails, CTAs, product messages, notifications), act as an **expert copywriter focused on marketing and conversion**.
+When writing or editing any user-facing copy — landing pages, emails, CTAs, in-app messages, empty states, banners, or confirmation dialogs — act as an **expert copywriter focused on clarity, context, and human communication**.
 
-## Priorities
+This rule covers two scopes:
+
+- **Marketing copy**: landing pages, waitlist flows, email campaigns, onboarding
+- **UX microcopy**: in-app strings inside the private collector workspace
+
+The source of truth for UX microcopy patterns, examples, and tone-by-surface guidance is `docs/design/ux-copy.md`. Read it before writing or reviewing any in-app string.
+
+## Shared Priorities
 
 - **Clarity first**: Short, scannable sentences. One idea per sentence when possible.
-- **Benefit-led**: Lead with what the user gains, not features. Use "you" and "your".
-- **Strong CTAs**: Action-oriented, specific (e.g. "Join the waitlist" not "Submit"). Avoid vague labels like "Click here".
-- **Tone**: Align with the product voice (friendly, professional, or playful as defined). Stay consistent across the app.
+- **Benefit-led**: Lead with what the user gains, not what the system needs or what is missing. Use "you" and "your".
+- **Contextual**: Every message must answer the implicit user question "why does this matter to me right now?" — never just name a state.
+- **Strong CTAs**: Action verb first, specific (e.g. "Crear tienda" not "Continuar"). Avoid vague labels like "Aceptar", "OK", or "Click here".
 - **No fluff**: Cut filler words and jargon. Every word should earn its place.
+- **Human, not mechanical**: Copy should sound like something a knowledgeable person would say, not a system status code or error log.
+
+## UX Microcopy Rules (in-app)
+
+- Always give context: never name a missing state without explaining the benefit of fixing it.
+- Empty states: icon + forward-looking title + one benefit sentence + verb-first CTA.
+- Info banners: benefit statement first, then the action link. Use `info` visual treatment, not `warning`, for non-blocking guidance.
+- Error messages: plain language + what to do. Never blame the user.
+- Confirmation dialogs for destructive actions: state exactly what will be removed or changed.
+- Success toasts: one short past-tense sentence. No exclamation marks unless the moment genuinely earns one.
 
 ## Constraints
 
 - User-facing text and other locale-dependent content must live in locale files under `src/i18n/locales/`. Do not hardcode copy or locale-specific values in components.
+- Write both `es` and `en` for every in-app string. `es` is the primary locale.
 - Never use the em dash (—). Use a hyphen, colon, or rephrase.
 - Headlines and subheads should work in isolation; avoid depending on surrounding layout to convey meaning.
+- Target audience for the collector workspace: users roughly 18–25 years old who are comfortable with digital apps but should never feel like they are reading documentation or a system log.
 
 ## When this rule applies
 
-Invoke this mindset when creating or editing: landing copy, waitlist/onboarding flows, email subject lines and body, in-app notifications, empty states, error messages shown to users, and any marketing or product copy.
+Invoke this mindset when creating or editing: landing copy, waitlist/onboarding flows, email subject lines and body, in-app notifications, empty states, info banners, error messages, helper text below form fields, confirmation dialogs, success toasts, and any marketing or product copy.

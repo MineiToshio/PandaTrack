@@ -81,7 +81,7 @@ UI components divide by 100 and format before display. A `unitPrice` of `0` is v
 
 `productTypeKey` is a foreign key to `StoreProductType.key` with `onDelete: Restrict`. This links the item to the global product type catalog already used by user preferences and store assignments. The displayed label is resolved in the UI from the i18n key `productTypes.{key}`, consistent with other surfaces that reference the catalog.
 
-When displaying product type options in the item form, the UI filters available types to those assigned to the order's store via `StoreProductTypeAssignment`.
+When displaying product type options in the item form, the UI shows the full global `StoreProductType` catalog. Filtering by the store's assigned types via `StoreProductTypeAssignment` is intentionally omitted: stores may carry product types that are not yet reflected in their recorded assignments, and the field is optional — the collector can always leave it blank.
 
 #### Position field
 
@@ -259,7 +259,7 @@ Module paths must be validated against `.cursor/rules/project-structure.mdc` and
 
 - The `Delivery` model will carry a `status` field that includes `IN_TRANSIT` and `DELIVERED` states, defined in [`FRD-08`](../../../../frd-08-delivery-management/frd-08-delivery-management.md). The derivation algorithm depends on these values being queryable at mutation time.
 - The `DeliveryOrderItem` join table is the authoritative link between deliveries and order items. The delivery association check for item deletion operates on this table.
-- `StoreProductType` keys are managed by the admin app and are globally consistent. The UI filters selectable types by `StoreProductTypeAssignment` for the order's store, but the stored key references the global catalog.
+- `StoreProductType` keys are managed by the admin app and are globally consistent. The stored key references the global catalog. The UI shows all catalog types without filtering by store assignment.
 
 ## Unit Tests
 

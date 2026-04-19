@@ -10,6 +10,7 @@ Read this file first, then open the matching topic document:
 
 - `docs/design/visual-foundations.md`: visual language, semantic design variables, typography, color, spacing, surfaces, radius, shadows, gradients
 - `docs/design/interface-patterns.md`: interaction states, navigation, content hierarchy, tabs, modals, right sidebars, motion, status patterns, responsive and accessibility rules
+- `docs/design/ux-copy.md`: voice, tone, and writing principles for in-app microcopy — empty states, info banners, error messages, helper text, confirmation dialogs, and CTAs
 
 ## Decision
 
@@ -56,6 +57,16 @@ Open `interface-patterns.md` when the task involves:
 - navigation patterns
 - motion and interactivity
 - responsive behavior
+
+Open `ux-copy.md` when the task involves:
+
+- writing or reviewing any user-facing string in the private collector workspace
+- empty states (icon, title, body, CTA)
+- info, warning, or error banners
+- confirmation dialogs for destructive actions
+- helper text below form fields
+- success toast copy
+- CTA labels
 
 ## Design Principles
 

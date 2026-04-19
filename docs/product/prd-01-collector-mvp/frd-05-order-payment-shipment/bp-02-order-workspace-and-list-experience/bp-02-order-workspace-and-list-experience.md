@@ -41,6 +41,11 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
 - order form contract:
   - input: order foundation data plus item rows
   - output: validated create or edit payload
+  - store field is the first input so the collector discovers a missing store before filling other data
+- store-creation redirect contract:
+  - when the collector triggers "Create store" from the store selector, the redirect carries `?returnTo=order-create` so the store creation flow can return the user to order create instead of the default store list
+  - if the collector typed a store name that yielded no results, the redirect also carries `&name={value}` to prefill the store name field
+  - after the store is saved, the collector is redirected to `/purchases/new?store={id}` with the new store preselected
 - detail action contract:
   - input: current order state and dependencies
   - output: available actions for create-delivery, edit, cancel, and delete
