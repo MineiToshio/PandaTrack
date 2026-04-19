@@ -126,6 +126,10 @@ Read these on every implementation because they define project-wide defaults:
 | `typescript-practices.mdc`             | TypeScript typing conventions                                        | TypeScript code or shared types change                                                                                                                                                   |
 | `validation-checklist.mdc`             | Final validation commands                                            | Final verification before completion                                                                                                                                                     |
 
+## Tooling references
+
+For Claude Code configuration (entry point, commands symlink, hooks wiring, permissions, MCP servers) see `docs/tooling/claude/setup.md`.
+
 ## Maintenance requirement
 
 Update this document in the same change when any of the following happens:

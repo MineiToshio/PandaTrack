@@ -26,7 +26,8 @@ async function main() {
   let raw = "";
   for await (const chunk of process.stdin) raw += chunk;
   const payload = JSON.parse(raw || "{}");
-  const command = payload.command;
+  // Claude Code passes tool_input.command; Cursor passes command directly
+  const command = payload.command ?? payload.tool_input?.command;
   const reason = requiresApproval(command);
 
   if (reason) {

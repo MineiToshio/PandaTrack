@@ -194,7 +194,19 @@ If a command cannot be run, state it explicitly and why.
 - Large client components when server components would work
 - New folders/files that duplicate an existing pattern
 
-## 11) Command-file enforcement for Codex
+## 11) Agent hooks
+
+Hooks run automatically during the agent loop to enforce formatting, block sensitive file reads, and require approval for destructive commands.
+
+Key points:
+
+- Scripts live in `.cursor/hooks/` — **single source of truth** for hook logic.
+- Cursor reads `.cursor/hooks.json`; Claude Code reads `.claude/settings.json`. Both point to the same scripts.
+- Do not duplicate hook logic. If you add or change a hook, update the script in `.cursor/hooks/`, register it in both config files, and update `docs/tooling/cursor/hooks.md`.
+
+See `docs/tooling/cursor/hooks.md` for the full reference (configured hooks, payload format, and how to add new ones).
+
+## 12) Command-file enforcement for Codex
 
 When the user references a file under `.cursor/commands/*.md`, treat that file as an execution contract, not as optional context.
 

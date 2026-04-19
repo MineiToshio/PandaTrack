@@ -1,29 +1,44 @@
-# Cursor hooks
+# Agent hooks
 
-Cursor hooks run custom scripts at specific points in the agent loop (Cmd+K / Agent Chat). They are configured in `.cursor/hooks.json` and run from the project root. Scripts live under `.cursor/hooks/` and are versioned with the repo so the whole team gets the same behavior.
+Hooks run custom scripts at specific points in the agent loop. The scripts live under `.cursor/hooks/` and are the **single source of truth** for hook logic — both Cursor and Claude Code reference these same files so behavior stays consistent across agents.
+
+## Configuration per agent
+
+| Agent           | Config file             | Hook events used                                                                                |
+| --------------- | ----------------------- | ----------------------------------------------------------------------------------------------- |
+| **Cursor**      | `.cursor/hooks.json`    | `afterFileEdit`, `beforeShellExecution`, `beforeReadFile`                                       |
+| **Claude Code** | `.claude/settings.json` | `PreToolUse` (Edit/Write), `PreToolUse` (Bash), `PreToolUse` (Read), `PostToolUse` (Edit/Write) |
+
+Both configs call the same scripts in `.cursor/hooks/`. The scripts handle both payload shapes: Cursor passes fields at the top level (`payload.file_path`, `payload.command`); Claude Code nests them under `payload.tool_input` (`payload.tool_input.file_path`, `payload.tool_input.command`). Each script reads whichever is present.
 
 ## Configured hooks
 
-| Hook                     | Script                     | Purpose                                                                                                                                                                                   |
-| ------------------------ | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **afterFileEdit**        | `format-after-edit.mjs`    | Runs Prettier on the file the agent just edited so formatting stays consistent. Fail-open: if Prettier fails (e.g. syntax error), the edit is not blocked.                                |
-| **beforeShellExecution** | `allow-shell.mjs`          | Allows most commands; requires user approval for destructive ones (e.g. `prisma db push --force-reset`, `npm run db-reset`, `git push --force`, `git reset --hard`) before they run.      |
-| **beforeReadFile**       | `block-sensitive-read.mjs` | Blocks the agent from reading sensitive files (`.env`, `.env.local`, `.env.*.local`, etc.) to avoid leaking secrets into the model context. Returns `permission: "deny"` for those paths. |
+| Script                     | Cursor event           | Claude Code event             | Purpose                                                                                                                                                                                                          |
+| -------------------------- | ---------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pre-code-edit.mjs`        | —                      | `PreToolUse` → `Edit\|Write`  | **Claude Code only.** When the target file is a code file (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.cjs`), injects a rules reminder into the model context. Non-code files pass through silently. Does not block. |
+| `format-after-edit.mjs`    | `afterFileEdit`        | `PostToolUse` → `Edit\|Write` | Runs Prettier on the file the agent just edited so formatting stays consistent. Fail-open: if Prettier fails (e.g. syntax error), the edit is not blocked.                                                       |
+| `allow-shell.mjs`          | `beforeShellExecution` | `PreToolUse` → `Bash`         | Allows most commands; requires user approval for destructive ones (e.g. `prisma db push --force-reset`, `npm run db-reset`, `git push --force`, `git reset --hard`) before they run.                             |
+| `block-sensitive-read.mjs` | `beforeReadFile`       | `PreToolUse` → `Read`         | Blocks the agent from reading sensitive files (`.env`, `.env.local`, `.env.*.local`, etc.) to avoid leaking secrets into the model context.                                                                      |
 
 ## Implementation details
 
-- Scripts are **ESM** (`.mjs`): they use `import` from `node:*` and run with Node’s native ES modules. This avoids `require()` and keeps the linter happy.
-- Hook input is JSON on stdin; output is JSON on stdout. See [Cursor Hooks docs](https://cursor.com/docs/agent/hooks) for each event’s schema.
-- For **beforeReadFile**, any file whose basename is `.env` or starts with `.env.` is blocked (plus an explicit list of common variants). `.env.example` is **not** blocked so the agent can still read it for reference.
+- Scripts are **ESM** (`.mjs`): they use `import` from `node:*` and run with Node's native ES modules.
+- Hook input is JSON on stdin; output is JSON on stdout.
+- Each script normalizes the payload with `payload.field ?? payload.tool_input?.field` to support both Cursor and Claude Code without duplication.
+- For **block-sensitive-read**, any file whose basename is `.env` or starts with `.env.` is blocked. `.env.example` is **not** blocked so the agent can still read it for reference.
 
 ## Adding or changing hooks
 
-1. Edit `.cursor/hooks.json`: add or update an entry under `hooks` with the event name and a `command` (e.g. `node .cursor/hooks/your-script.mjs`). Optional: `timeout`, `matcher`.
-2. Add the script under `.cursor/hooks/` (use `.mjs` and ESM `import` so the linter allows it). It must read JSON from stdin and write JSON to stdout (and use exit code `2` to block when the hook type supports it).
-3. Restart Cursor so the hooks service picks up changes.
-4. Use **Cursor Settings → Hooks** (and the Hooks output channel) to confirm hooks run and to debug errors.
+1. Write the logic in a new `.mjs` script under `.cursor/hooks/`. Read the payload from stdin; write `{ permission: "allow" | "deny" | "ask", ... }` to stdout. Normalize field access with `payload.field ?? payload.tool_input?.field`.
+2. Register the hook in the appropriate config files:
+   - If it applies to **both agents**: add to `.cursor/hooks.json` (Cursor event) and `.claude/settings.json` (Claude Code event).
+   - If it applies to **Claude Code only** (e.g. no matching Cursor event): add only to `.claude/settings.json`. Mark the Cursor event column as `—` in the table above.
+   - `.cursor/hooks.json` events: `afterFileEdit`, `beforeShellExecution`, `beforeReadFile`.
+   - `.claude/settings.json` events: `PreToolUse`, `PostToolUse` with a `matcher` pattern.
+3. Restart Cursor and reload the Claude Code session so the hooks service picks up changes.
+4. Use **Cursor Settings → Hooks** (and the Hooks output channel) or Claude Code's hook output to confirm the scripts run and to debug errors.
 
 ## References
 
-- [Cursor Hooks documentation](https://cursor.com/docs/agent/hooks) – events, schemas, and examples.
-- Project-level hooks run from the workspace root; use paths like `.cursor/hooks/script.mjs` in `hooks.json`.
+- [Cursor Hooks documentation](https://cursor.com/docs/agent/hooks)
+- [Claude Code hooks documentation](https://docs.anthropic.com/en/docs/claude-code/hooks)

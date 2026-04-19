@@ -13,7 +13,8 @@ async function main() {
   let raw = "";
   for await (const chunk of process.stdin) raw += chunk;
   const payload = JSON.parse(raw || "{}");
-  const filePath = payload.file_path;
+  // Claude Code passes tool_input.file_path; Cursor passes file_path directly
+  const filePath = payload.file_path ?? payload.tool_input?.file_path;
   if (!filePath || typeof filePath !== "string") process.exit(0);
 
   const projectRoot = process.env.CURSOR_PROJECT_DIR || process.cwd();
