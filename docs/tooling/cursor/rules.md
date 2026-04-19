@@ -54,10 +54,11 @@ Read these on every implementation because they define project-wide defaults:
 
 ### React, Next.js, and frontend structure
 
+- **`docs/design/README.md`** (not a cursor rule — a reference doc): **Read before any UI implementation.** It is the source of truth for the design system and contains a file selection guide: open `visual-foundations.md` for colors, typography, spacing, surfaces; open `interface-patterns.md` for layout, tabs, modals, sidebars, states, status chips, responsive; open `ux-copy.md` for any user-facing string. If a change introduces a new reusable visual rule, update the matching file in `docs/design/` in the same change.
 - `react-next-components.mdc`: Use when creating or refactoring React components, pages, layouts, hooks, client boundaries, or component composition. It also reinforces subtree reuse before creating parallel route-local components, and defines when loading UI, skeletons, and `next/dynamic` are appropriate (avoid fake client fallbacks for SSR-delivered UI).
 - `project-structure.mdc`: Use when deciding where files should live or when adding new route-level or shared modules, including `_components/share/` folders for route-subtree reuse and promotion from child pages when reuse appears.
 - `role-frontend-development.mdc`: Use when designing component APIs, extracting hooks, splitting components, or making maintainability decisions in frontend code.
-- `role-ui-ux-design.mdc`: Use when making layout, hierarchy, spacing, interaction, or flow decisions. It now requires consulting `docs/design/README.md` and the relevant file in `docs/design/` before introducing or changing reusable interface patterns.
+- `role-ui-ux-design.mdc`: Use when making layout, hierarchy, spacing, interaction, or flow decisions. Requires consulting `docs/design/README.md` and the relevant file in `docs/design/` before introducing or changing reusable interface patterns.
 - `ui-visual-consistency.mdc`: Use when adding or changing back/up navigation, form footer links that navigate away, or any control that must match an existing visual pattern in the same app area.
 - `responsive-design.mdc`: Use whenever UI can be affected by viewport changes, especially navigation, headers, cards, tables, forms, and dense layouts.
 - `tailwind-semantic-html.mdc`: Use whenever editing JSX or CSS classes so semantic elements and `cn()` are applied correctly.

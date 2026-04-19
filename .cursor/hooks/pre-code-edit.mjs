@@ -24,6 +24,7 @@ const RULES_REMINDER = [
   "  - project-structure.mdc",
   "  - validation-checklist.mdc",
   "Scenario rules (read when relevant):",
+  "  - docs/design/README.md → visual-foundations.md · interface-patterns.md · ux-copy.md (any UI/interface change)",
   "  - react-next-components.mdc · tailwind-semantic-html.mdc · theme-light-dark.mdc (UI changes)",
   "  - prisma-data-layer.mdc · prisma-migration-workflow.mdc (DB/schema changes)",
   "  - testing-strategy.mdc (any behavior change)",
