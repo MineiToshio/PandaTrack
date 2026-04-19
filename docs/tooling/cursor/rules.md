@@ -44,6 +44,7 @@ Read these on every implementation because they define project-wide defaults:
 - `product-doc-cross-frd-references.mdc`: Use when creating or editing `docs/product` text that cites another FRD's blueprint, work order, or `FR-XX-NN` requirement; also applies to **Create FRD Package** and **Enrich Work Order Context** command runs.
 - `docs-and-standards.mdc`: Use when behavior, architecture, `src/lib`, database shape, reusable process knowledge, or undocumented product decisions change. It requires proactive `docs/product` updates in the same change when shipped behavior is new, changed, or previously undocumented, and requires documentation paths to stay repository-relative instead of machine-specific absolute paths.
 - `quality-docs-cleanup.mdc`: Use when adding comments, JSDoc, utilities, cleanup, or lint-related exceptions.
+- **`docs/development/file-organization.md`** (not a cursor rule — a reference doc): Read before creating any new file, whether code or documentation. It defines which subfolder of `docs/` and `src/` each file type belongs in, the promotion rule, and common placement mistakes to avoid.
 
 ### Core coding and language
 

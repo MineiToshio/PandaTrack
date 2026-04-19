@@ -1,5 +1,7 @@
 # Documentation Index
 
+**Before creating any new file in this repository**, read [`docs/development/file-organization.md`](development/file-organization.md). It defines where each type of file belongs — both inside `docs/` and inside `src/`.
+
 Use this index to find documentation by domain.
 
 ## Product
@@ -24,6 +26,7 @@ Use this index to find documentation by domain.
 
 ## Development
 
+- `docs/development/file-organization.md`: where every type of file belongs — `docs/` folder structure and `src/` code placement quick-reference
 - `docs/development/i18n.md`: localization setup and conventions
 - `docs/development/og-images.md`: OG image conventions
 - `docs/development/posthog.md`: analytics implementation notes
