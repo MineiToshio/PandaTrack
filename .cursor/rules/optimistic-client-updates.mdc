@@ -1,0 +1,65 @@
+---
+description: Optimistic client updates for user-visible mutations — apply state changes locally in parallel with the server write so feedback is immediate and no second database fetch is required
+globs: "src/app/**/*.{ts,tsx},src/components/**/*.{ts,tsx}"
+alwaysApply: true
+---
+
+# Optimistic Client Updates – PandaTrack
+
+## Rule
+
+Every mutation dispatched from a Client Component that updates state the user is observing must apply the change to the local client state **in parallel** with the server write. The user must see the effect of their action immediately, without waiting for the server round-trip or a refetch.
+
+## Required pattern
+
+When the user performs a mutation (add, update, delete, toggle, reorder):
+
+1. Snapshot the current local state before dispatching.
+2. Apply the optimistic change to local state (`useState`, `useReducer`, `useOptimistic`).
+3. Dispatch the Server Action in parallel.
+4. On success, reconcile local state with the canonical shape returned by the Server Action (the Server Action must return the updated shape the UI needs).
+5. On failure, revert to the snapshot and surface the error with a toast and a retry affordance when applicable.
+
+The server write is always the authoritative source of truth. Optimistic UI never replaces server validation, authorization, or persistence.
+
+## Do not
+
+- **Do not** refetch the server after every mutation just to refresh the UI. Refetches are allowed only when the mutation's side effects cannot be computed locally (for example, a cascade that touches many records the client does not hold).
+- **Do not** block the UI on the Server Action response before showing the change.
+- **Do not** move the change to local state only after the server responds — this defeats the pattern.
+- **Do not** skip the revert logic. Silent failures erode trust in the UI.
+
+## Expected building blocks
+
+- `useOptimistic` when the mutation is a pure transformation of a list or record the component already owns.
+- Manual `useState` snapshot + revert when `useOptimistic` does not fit (nested state, cross-component updates, coordinated multi-field writes).
+- Server Action return shape: the Server Action must return the canonical updated record or summary so the client reconciles without a second query.
+- Toast-style error surface (`role="alert"` / `aria-live`) for the revert path.
+
+## Mutation types this applies to
+
+- create / delete / update on lists the user sees (payments, items, history entries, notes, tags, filters, etc.)
+- derived summaries the client can recompute locally (payment totals, counts, aggregates)
+- ordering / drag-and-drop reorders
+- toggle state (favorite, pin, archive, mark-read)
+- inline text edits (notes, titles, descriptions)
+
+## Permitted exceptions
+
+Skip the optimistic path only when one of these applies:
+
+- The mutation has side effects the client cannot predict (email delivery, third-party payment, external webhook).
+- The mutation requires server-computed values the client cannot derive safely (a generated identifier, an FX rate fetched at write time, a server-side timestamp the UI must display exactly).
+- The mutation is rare and high-stakes enough that waiting for confirmation is the better UX (irreversible destructive flows with no undo, financial settlement, legal acceptance).
+
+In those cases, show a clear in-flight state (spinner, disabled form) and wait for the server response before applying the change.
+
+## Review checklist
+
+Before merging a change that adds or modifies a client-side mutation:
+
+- [ ] Local state updates in parallel with the Server Action dispatch, not after its response.
+- [ ] The Server Action returns the shape needed to reconcile without a refetch.
+- [ ] A revert path exists for every failure branch the Server Action can produce.
+- [ ] The error surface is accessible (`role="alert"` / `aria-live="polite"`) and human-readable.
+- [ ] No `router.refresh()` or route-level refetch is used solely to update UI the client could have updated locally.

@@ -32,6 +32,7 @@ Read these on every implementation because they define project-wide defaults:
 - `github-tracking-sync.mdc`: Read when the task maps to a product doc, work order, epic, or slice. It defines how implementation must stay aligned with `docs/product` and mirrored GitHub tracking, including Epic sub-issue order matching Work Order sequence.
 - `icons.mdc`: Read whenever icons are added or changed.
 - `next-intl-translation-apis.mdc`: Read whenever translations are used or touched in React or server-side framework code.
+- `optimistic-client-updates.mdc`: Read whenever a Client Component dispatches a mutation that affects state the user is observing. It requires applying the change locally in parallel with the Server Action and reverting on failure, so the user gets immediate feedback without a second server fetch.
 - `testing-strategy.mdc`: Read for every change to decide required unit, integration, and E2E coverage.
 - `theme-light-dark.mdc`: Read whenever UI, styling, or visual assets are changed so both themes are handled.
 - `validation-checklist.mdc`: Read before finalizing any implementation to run the required checks in the correct order.
@@ -64,6 +65,7 @@ Read these on every implementation because they define project-wide defaults:
 - `tailwind-semantic-html.mdc`: Use whenever editing JSX or CSS classes so semantic elements and `cn()` are applied correctly.
 - `theme-light-dark.mdc`: Use for any UI or styling change that could break theme support.
 - `icons.mdc`: Use when adding or changing visual icons.
+- `optimistic-client-updates.mdc`: Use whenever a Client Component mutation updates visible state (lists, summaries, notes, toggles, reorders). Requires applying the change locally in parallel with the Server Action and reverting on failure — never waiting for a refetch to update the UI.
 
 ### Accessibility and copy
 
@@ -106,6 +108,7 @@ Read these on every implementation because they define project-wide defaults:
 | `github-tracking-sync.mdc`             | Sync docs/product with GitHub; Epic sub-issues follow `WO-01`… order | Work orders, epics, or scope are involved                                                                                                                                                |
 | `icons.mdc`                            | Approved icon sources                                                | Icons are added or changed                                                                                                                                                               |
 | `next-intl-translation-apis.mdc`       | next-intl API selection rules                                        | Translations are used in React or framework code                                                                                                                                         |
+| `optimistic-client-updates.mdc`        | Client mutations update local state in parallel with the server      | Any Client Component mutation that affects state the user is observing                                                                                                                   |
 | `posthog-events.mdc`                   | Event naming and tracking expectations                               | Meaningful user interactions change                                                                                                                                                      |
 | `product-doc-cross-frd-references.mdc` | Cross-FRD citations in product docs                                  | Editing `docs/product` with references across FRDs; Create FRD Package / Enrich Work Order Context                                                                                       |
 | `prisma-data-layer.mdc`                | Prisma data access boundaries                                        | Prisma, queries, repositories, or DB access change                                                                                                                                       |

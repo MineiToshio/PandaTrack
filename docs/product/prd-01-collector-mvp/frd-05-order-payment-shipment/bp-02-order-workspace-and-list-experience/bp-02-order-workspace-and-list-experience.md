@@ -9,7 +9,7 @@ children:
   - WO-04
   - WO-05
   - WO-06
-last_updated: 2026-04-03
+last_updated: 2026-04-19
 implementation_status: PLANNED
 ---
 
@@ -34,6 +34,11 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
 - The order create/edit form should place the item spreadsheet last so the user establishes the order context before entering many line items.
 - The order detail view should keep the private note editable outside full edit mode, matching the mental model already established in `Stores`.
 - Action overload should be reduced by using one primary action, one secondary action, and a `More` menu for destructive actions.
+- The detail-view action bar must adapt to the order status so collectors always see a meaningful primary action:
+  - `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`: primary `Create delivery` · secondary `Edit` · `More` with `Cancel` and `Delete`.
+  - `COMPLETED`: same layout as above; `Cancel` and `Delete` remain visible but disabled with a tooltip that explains the eligibility rule.
+  - `CANCELLED`: primary `Reactivate` · chevron menu with `Delete` only (edit is not offered on cancelled orders; reactivate first if the collector needs to mutate data).
+- The detail view should use a two-column layout on `lg` and above with the items and history in the left column and a sticky right rail carrying the financial summary, payment panel, and private note. On smaller breakpoints the right rail collapses into the normal document flow below the header.
 - Product-name search belongs inside the filter sidebar as one free-text filter rather than a global omnibox.
 
 ## Contracts
@@ -47,8 +52,9 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
   - if the collector typed a store name that yielded no results, the redirect also carries `&name={value}` to prefill the store name field
   - after the store is saved, the collector is redirected to `/purchases/new?store={id}` with the new store preselected
 - detail action contract:
-  - input: current order state and dependencies
-  - output: available actions for create-delivery, edit, cancel, and delete
+  - input: current order state, payment records, delivery associations, and feature-flag-style availability (for example whether the delivery-create flow is live)
+  - output: availability and disabled-state reasons for `Create delivery`, `Edit`, `Cancel`, `Delete`, and `Reactivate` so the UI can render each affordance enabled, disabled with tooltip, or hidden according to the status-driven action bar above
+  - shared eligibility rule: `Cancel` and `Delete` share the same block condition — at least one item linked to a non-cancelled delivery — and must surface the same unlink-first tooltip when disabled
 - list filter contract:
   - input: date range, store, product type, status, free-text product query
   - output: URL-canonical filter state plus result chips

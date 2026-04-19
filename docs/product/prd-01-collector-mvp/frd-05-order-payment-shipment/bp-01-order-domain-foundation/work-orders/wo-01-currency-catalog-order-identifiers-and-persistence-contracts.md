@@ -7,7 +7,7 @@ status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0014
-last_updated: 2026-04-18
+last_updated: 2026-04-19
 implementation_status: PLANNED
 ---
 
@@ -96,49 +96,49 @@ NOTE_UPDATED
 
 ### `Order` model fields
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `id` | `String @id @default(cuid())` | |
-| `storeId` | `String` | FK to `Store` |
-| `userId` | `String` | FK to `User` |
-| `humanReadableId` | `String @unique` | `ORD-YYYYMMDD-NN`, generated server-side |
-| `orderDate` | `DateTime` | Set by the user; distinct from `createdAt` |
-| `expectedDeliveryFrom` | `DateTime?` | Start of expected delivery range |
-| `expectedDeliveryTo` | `DateTime?` | End of expected delivery range |
-| `currencyCode` | `String` | Validated against `ALLOWED_COLLECTOR_BASE_CURRENCY_CODES` |
-| `exchangeRate` | `Decimal?` | Required only when `currencyCode` differs from `baseCurrencyCode` |
-| `totalCost` | `Int` | Minor units (cents × 100). Example: $25.50 → 2550 |
-| `note` | `String?` | User-authored private note; inline-editable |
-| `status` | `OrderStatus` | Default `OPEN`; system-derived |
-| `createdAt` | `DateTime @default(now())` | |
-| `updatedAt` | `DateTime @updatedAt` | |
+| Field                  | Type                          | Notes                                                             |
+| ---------------------- | ----------------------------- | ----------------------------------------------------------------- |
+| `id`                   | `String @id @default(cuid())` |                                                                   |
+| `storeId`              | `String`                      | FK to `Store`                                                     |
+| `userId`               | `String`                      | FK to `User`                                                      |
+| `humanReadableId`      | `String @unique`              | `ORD-YYYYMMDD-NN`, generated server-side                          |
+| `orderDate`            | `DateTime`                    | Set by the user; distinct from `createdAt`                        |
+| `expectedDeliveryFrom` | `DateTime?`                   | Start of expected delivery range                                  |
+| `expectedDeliveryTo`   | `DateTime?`                   | End of expected delivery range                                    |
+| `currencyCode`         | `String`                      | Validated against `ALLOWED_COLLECTOR_BASE_CURRENCY_CODES`         |
+| `exchangeRate`         | `Decimal?`                    | Required only when `currencyCode` differs from `baseCurrencyCode` |
+| `totalCost`            | `Int`                         | Minor units (cents × 100). Example: $25.50 → 2550                 |
+| `note`                 | `String?`                     | User-authored private note; inline-editable                       |
+| `status`               | `OrderStatus`                 | Default `OPEN`; system-derived                                    |
+| `createdAt`            | `DateTime @default(now())`    |                                                                   |
+| `updatedAt`            | `DateTime @updatedAt`         |                                                                   |
 
 Indexes: `storeId`, `userId`, `status`.
 
 ### `OrderPayment` model fields
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `id` | `String @id @default(cuid())` | |
-| `orderId` | `String` | FK to `Order`, cascade delete |
-| `userId` | `String` | FK to `User` |
-| `amount` | `Int` | Minor units (cents × 100). Example: $25.50 → 2550 |
-| `paymentDate` | `DateTime` | Set by the user |
-| `createdAt` | `DateTime @default(now())` | |
-| `updatedAt` | `DateTime @updatedAt` | |
+| Field         | Type                          | Notes                                             |
+| ------------- | ----------------------------- | ------------------------------------------------- |
+| `id`          | `String @id @default(cuid())` |                                                   |
+| `orderId`     | `String`                      | FK to `Order`, cascade delete                     |
+| `userId`      | `String`                      | FK to `User`                                      |
+| `amount`      | `Int`                         | Minor units (cents × 100). Example: $25.50 → 2550 |
+| `paymentDate` | `DateTime`                    | Set by the user                                   |
+| `createdAt`   | `DateTime @default(now())`    |                                                   |
+| `updatedAt`   | `DateTime @updatedAt`         |                                                   |
 
 Indexes: `orderId`, `userId`.
 
 ### `OrderHistory` model fields
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `id` | `String @id @default(cuid())` | |
-| `orderId` | `String` | FK to `Order`, cascade delete |
-| `userId` | `String` | FK to `User` |
-| `eventType` | `OrderHistoryEventType` | Determines the i18n key |
-| `metadata` | `Json @default("{}")` | Dynamic interpolation values for i18n |
-| `createdAt` | `DateTime @default(now())` | No `updatedAt`; entries are immutable |
+| Field       | Type                          | Notes                                 |
+| ----------- | ----------------------------- | ------------------------------------- |
+| `id`        | `String @id @default(cuid())` |                                       |
+| `orderId`   | `String`                      | FK to `Order`, cascade delete         |
+| `userId`    | `String`                      | FK to `User`                          |
+| `eventType` | `OrderHistoryEventType`       | Determines the i18n key               |
+| `metadata`  | `Json @default("{}")`         | Dynamic interpolation values for i18n |
+| `createdAt` | `DateTime @default(now())`    | No `updatedAt`; entries are immutable |
 
 Index: `orderId`.
 
@@ -147,6 +147,7 @@ Index: `orderId`.
 All monetary amounts (`Order.totalCost`, `OrderPayment.amount`) are stored as `Int` in minor currency units (cents × 100).
 
 Examples:
+
 - `$25.50 USD → 2550`
 - `S/. 100.00 PEN → 10000`
 
@@ -158,63 +159,81 @@ UI components are responsible for dividing by 100 and formatting before display.
 
 `OrderHistory` stores no human-readable description. The UI resolves display text by calling `t(eventType, metadata)` against the active locale. `metadata` carries the dynamic interpolation values the translation string needs.
 
-| eventType | metadata shape | Example text (ES) |
-|-----------|----------------|-------------------|
-| `ORDER_CREATED` | `{}` | "Orden creada" |
-| `ORDER_EDITED` | `{ "fields": ["totalCost", "orderDate"] }` | "Orden actualizada" |
-| `ORDER_CANCELLED` | `{}` | "Orden cancelada" |
-| `ORDER_REACTIVATED` | `{}` | "Orden reactivada" |
-| `PAYMENT_ADDED` | `{ "amount": 2550, "currencyCode": "USD" }` | "Pago de $25.50 USD registrado" |
-| `PAYMENT_DELETED` | `{ "amount": 2550, "currencyCode": "USD" }` | "Pago de $25.50 USD eliminado" |
-| `NOTE_UPDATED` | `{}` | "Nota actualizada" |
+| eventType           | metadata shape                              | Example text (ES)               |
+| ------------------- | ------------------------------------------- | ------------------------------- |
+| `ORDER_CREATED`     | `{}`                                        | "Orden creada"                  |
+| `ORDER_EDITED`      | `{ "fields": ["totalCost", "orderDate"] }`  | "Orden actualizada"             |
+| `ORDER_CANCELLED`   | `{}`                                        | "Orden cancelada"               |
+| `ORDER_REACTIVATED` | `{}`                                        | "Orden reactivada"              |
+| `PAYMENT_ADDED`     | `{ "amount": 2550, "currencyCode": "USD" }` | "Pago de $25.50 USD registrado" |
+| `PAYMENT_DELETED`   | `{ "amount": 2550, "currencyCode": "USD" }` | "Pago de $25.50 USD eliminado"  |
+| `NOTE_UPDATED`      | `{}`                                        | "Nota actualizada"              |
 
 One `ORDER_EDITED` entry is generated per edit session regardless of how many fields changed. `metadata.fields` lists the modified field names for reference. History entries for cancelled orders are preserved; entries are cascade-deleted only when the order is physically deleted.
 
 ## Delete and Cancel Contracts
 
-Delete and cancel follow identical cascade logic for deliveries. The difference is the outcome for the order record: delete removes it physically; cancel transitions it to `CANCELLED` and preserves it.
+Delete and cancel share the same eligibility rule and differ only in the outcome for the order record: delete removes it physically; cancel transitions it to `CANCELLED` and preserves it.
 
-### Delivery cascade (applies to both delete and cancel)
+### Shared eligibility rule
 
-For each delivery linked to the order's items via `DeliveryOrderItem`:
+Both operations are **blocked** when at least one `OrderItem` of the order is linked to a non-cancelled delivery (via `DeliveryOrderItem`). When the rule is not met:
 
-- If the delivery contains items from this order only → delete the delivery record entirely
-- If the delivery contains items from other orders → unlink only this order's items; the delivery remains with the other orders' items intact
+- The UI renders the affordance as disabled with a tooltip that instructs the collector to first unlink the affected items from their delivery.
+- The Server Action re-validates the rule server-side and rejects the mutation with a clear error code even if the client state was stale.
+
+Delivery links pointing to deliveries in `CANCELLED` state do not count as live links and do not block the operation.
+
+Because of this rule there is no delivery cascade: cancel and delete never mutate live delivery records.
 
 ### Delete rules
 
-An order may be physically deleted **unless** at least one of its linked deliveries has status `DELIVERED`.
+When eligibility is met, show a confirmation modal that:
 
-If deletion is permitted, show a confirmation modal. The message must reflect current state:
+- Names the order by its `humanReadableId` and store.
+- When payment records exist, states that those payments will be removed together with the order.
 
-- If payments exist: indicate that payment records will be removed
-- If in-transit deliveries exist: indicate that delivery links will be removed
-- Both conditions may appear together in one modal
+On confirm, the mutation executes atomically inside a single `prisma.$transaction`:
+
+1. Re-validate the shared eligibility rule.
+2. Delete all `OrderPayment` records for this order.
+3. Delete any residual `DeliveryOrderItem` rows that point to cancelled deliveries for this order's items.
+4. Delete `OrderHistory` entries for this order.
+5. Delete `OrderItem` rows for this order.
+6. Delete the `Order` row.
 
 ### Cancel rules
 
-Cancellation is always permitted regardless of payment or delivery state. Before transitioning to `CANCELLED`:
+When eligibility is met, show the same context-aware confirmation modal adapted for cancellation wording. The collector is informed that existing payment records for the order will be removed.
 
-1. Delete all `OrderPayment` records for this order
-2. Apply delivery cascade (unlink or delete deliveries per rules above)
-3. Append an `ORDER_CANCELLED` history entry
+On confirm, the mutation executes atomically inside a single `prisma.$transaction`:
 
-The UI must show the same context-aware confirmation modal as delete, adapted for cancellation wording.
+1. Re-validate the shared eligibility rule.
+2. Delete all `OrderPayment` records for this order.
+3. Update `Order.status` to `CANCELLED`.
+4. Append an `ORDER_CANCELLED` history entry.
+
+`OrderItem`, `OrderHistory`, and links to already-cancelled deliveries are preserved so the cancelled order keeps its historical record intact.
 
 ### Reactivation
 
-A `CANCELLED` order may be returned to `OPEN` without preconditions. Payment records and delivery links are not restored. An `ORDER_REACTIVATED` history entry is appended.
+A `CANCELLED` order may be returned to `OPEN` without preconditions via `reactivateOrder`. The mutation executes atomically:
+
+1. Update `Order.status` to `OPEN`.
+2. Append an `ORDER_REACTIVATED` history entry.
+
+Payment records removed during cancellation are not restored. Existing history entries (including `ORDER_CANCELLED`) are preserved so the lifecycle remains auditable.
 
 ## Module Structure
 
-| Path | Responsibility |
-|------|---------------|
-| `src/lib/data/orders/orderQueries.ts` | Read operations: get by id, list with filters |
-| `src/lib/data/orders/orderMutations.ts` | Create, edit, cancel, reactivate, delete |
-| `src/lib/data/orders/orderPaymentMutations.ts` | Add and delete payments |
-| `src/lib/data/orders/orderHistoryMutations.ts` | Append history entries |
-| `src/lib/orders/orderIdentifier.ts` | Identifier generation helper |
-| `src/lib/orders/orderValidation.ts` | Zod schemas for create, edit, cancel, delete |
+| Path                                           | Responsibility                                                                                        |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `src/lib/data/orders/orderQueries.ts`          | Read operations: get by id, list with filters                                                         |
+| `src/lib/data/orders/orderMutations.ts`        | Create, edit, cancel, reactivate, delete (delete and cancel share the eligibility rule defined above) |
+| `src/lib/data/orders/orderPaymentMutations.ts` | Add and delete payments                                                                               |
+| `src/lib/data/orders/orderHistoryMutations.ts` | Append history entries                                                                                |
+| `src/lib/orders/orderIdentifier.ts`            | Identifier generation helper                                                                          |
+| `src/lib/orders/orderValidation.ts`            | Zod schemas for create, edit, cancel, delete                                                          |
 
 All query and mutation functions accept `userId` as an explicit parameter and scope every database operation to that user.
 

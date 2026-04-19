@@ -9,7 +9,7 @@ children:
   - WO-01
   - WO-02
   - WO-03
-last_updated: 2026-04-18
+last_updated: 2026-04-19
 implementation_status: PLANNED
 ---
 
@@ -35,9 +35,10 @@ Define the persistence, state, and monetary contracts that make order and paymen
 - Order identifiers should be generated at persistence time using a deterministic date-based prefix plus a two-digit daily sequence.
 - Payment progress should be derived from payment records instead of duplicated into manually edited columns.
 - Order history should be append-oriented and human-readable, but individual entries may still be user-deleted.
-- Delete and cancel must remain separate operations:
-  - cancel preserves the order record and moves it to `CANCELLED`
-  - delete physically removes the order only when delete rules allow it
+- Delete and cancel must remain separate operations, but share one eligibility rule:
+  - both are blocked when any item is linked to a non-cancelled delivery; the collector must first unlink the item from its delivery to unblock the operation
+  - cancel preserves the order record, moves it to `CANCELLED`, and removes the order's payment records so balance reporting stays coherent
+  - delete physically removes the order and its payment records; there is no delivery cascade because the eligibility rule prevents deletion while live delivery links exist
 
 ## Contracts
 

@@ -8,7 +8,7 @@ parent: PRD-01
 children:
   - BP-01
   - BP-02
-last_updated: 2026-04-18
+last_updated: 2026-04-19
 source_features:
   - FEAT-0014
 implementation_status: PLANNED
@@ -87,8 +87,8 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - `FR-05-21`: The order detail view must expose one inline-editable private note field that can be saved without entering full order edit mode.
 - `FR-05-22`: The order detail view must expose an automatic history list that records major order mutations and allows deletion of individual history entries.
 - `FR-05-23`: The order detail view must expose `Create delivery` as the primary action, `Edit` as the secondary action, and `Cancel` plus `Delete` inside an action menu.
-- `FR-05-24`: An order may be physically deleted only when deletion rules allow it.
-- `FR-05-25`: An order may be cancelled without deleting its historical record.
+- `FR-05-24`: An order may be physically deleted only when none of its items is linked to a non-cancelled delivery. When the rule is not met, the delete affordance must be rendered as disabled with a tooltip that explains the collector must first unlink the affected items from their delivery.
+- `FR-05-25`: An order may be cancelled only when none of its items is linked to a non-cancelled delivery. When the rule is not met, the cancel affordance must be rendered as disabled with a tooltip that explains the collector must first unlink the affected items from their delivery. Cancelling an order moves it to `CANCELLED` without removing its historical record.
 - `FR-05-26`: The orders list must support filters for order-date range, store, product type, status, and free-text product-name matching.
 - `FR-05-27`: Orders list filters must persist in the URL and render removable chips in the same interaction pattern used by `Stores`.
 - `FR-05-28`: The orders list must sort by oldest order date first by default.
@@ -117,10 +117,10 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - `BR-05-10`: Payments may be deleted and the paid-versus-remaining summary must recalculate immediately after deletion.
 - `BR-05-11`: Changing an order's store is allowed only while the order remains `OPEN` and has no associated deliveries.
 - `BR-05-12`: Cancelled orders remain visible in historical lists and filter results when the chosen filters include them.
-- `BR-05-15`: When an order is cancelled or deleted, its `OrderPayment` records are deleted. Delivery items are unlinked using the following cascade: if a linked delivery contains items from this order only, the delivery is deleted; if it contains items from other orders, only this order's items are removed and the delivery is preserved.
-- `BR-05-16`: Cancel and delete require a confirmation modal. The modal message must reflect current state: if payment records exist, mention they will be removed; if in-transit deliveries exist, mention that delivery links will be removed.
-- `BR-05-17`: An order in `CANCELLED` state may be returned to `OPEN` without preconditions. Payment records and delivery links that were removed during cancellation are not restored.
-- `BR-05-18`: Physical deletion of an order is blocked when at least one of its linked deliveries has status `DELIVERED`. In all other cases, deletion is permitted subject to `BR-05-16`.
+- `BR-05-15`: When an order is cancelled, its `OrderPayment` records are deleted. Cancellation does not cascade into deliveries because cancellation is only permitted when no item is linked to a non-cancelled delivery (`FR-05-25`). Physical deletion follows the same eligibility rule (`FR-05-24`) and, when permitted, cascades payment records and any residual links to already-cancelled deliveries together with the order row.
+- `BR-05-16`: Cancel and delete require a confirmation modal. The modal must name the order and, when payment records exist, state that those payments will be removed as part of the operation. The modal never mentions delivery-link removal because the cancel/delete affordances are blocked when non-cancelled delivery links exist.
+- `BR-05-17`: An order in `CANCELLED` state may be returned to `OPEN` without preconditions. Payment records removed during cancellation are not restored.
+- `BR-05-18`: Physical deletion of an order is blocked whenever at least one of its items is linked to a non-cancelled delivery, matching the cancel eligibility rule. The collector must unlink the affected items from their delivery before deleting or cancelling the order.
 - `BR-05-13`: The `Needs currency update` indicator must represent reconciliation state against the collector's current base currency rather than a simple order-status proxy.
 - `BR-05-14`: Bulk reconciliation may apply one entered rate to all affected orders within the same currency pair, while preserving order-level manual edits when the user chooses to defer.
 
@@ -197,8 +197,8 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - discrepancy handling is a save-time modal, not a passive warning
 - order actions in detail view follow the pattern: primary action, secondary action, destructive actions in `More`
 - the order detail header displays store name and order date as the primary title; the human-readable identifier (`ORD-YYYYMMDD-NN`) appears as secondary metadata
-- a cancelled order may be reactivated to `OPEN`; payment records and delivery links removed during cancellation are not restored
-- cancel and delete apply the same delivery cascade: sole-owner deliveries are deleted; shared deliveries retain items from other orders
+- a cancelled order may be reactivated to `OPEN`; payment records removed during cancellation are not restored
+- cancel and delete share the same eligibility rule: both are blocked when any item is linked to a non-cancelled delivery, so the collector must unlink the item from its delivery before cancelling or deleting the order
 - monetary amounts are stored as `Int` in minor currency units (cents × 100); `exchangeRate` uses `Decimal`
 - order currency is validated against the same hardcoded allowlist as the user's base currency preference (`ALLOWED_COLLECTOR_BASE_CURRENCY_CODES` in `src/lib/catalog/collectorCountries.ts`); no separate `Currency` database table exists
 
