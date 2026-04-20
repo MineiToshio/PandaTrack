@@ -9,6 +9,7 @@ children:
   - WO-04
   - WO-05
   - WO-06
+  - WO-07
 last_updated: 2026-04-19
 implementation_status: PLANNED
 ---
@@ -58,8 +59,10 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
   - output: availability and disabled-state reasons for `Create delivery`, `Edit`, `Cancel`, `Delete`, and `Reactivate` so the UI can render each affordance enabled, disabled with tooltip, or hidden according to the status-driven action bar above
   - shared eligibility rule: `Cancel` and `Delete` share the same block condition — at least one item linked to a non-cancelled delivery — and must surface the same unlink-first tooltip when disabled
 - list filter contract:
-  - input: date range, store, product type, status, free-text product query
+  - input: date range, store, product type, status, free-text product query, `fxStatus` reconciliation flag
   - output: URL-canonical filter state plus result chips
+  - `fxStatus=needs_reconciliation` maps to `needsExchangeRateUpdate: true` in the Prisma query; handled by `parseOrderListingParams` in `src/app/[locale]/(app)/purchases/_utils/orderListingParams.ts`
+  - `FxReconciliationModal` at `src/components/modules/FxReconciliationModal.tsx` is the reconciliation entry point; triggered from the orders list banner and from the Settings currency-change confirmation
 
 ## Operational Priorities
 
@@ -104,10 +107,11 @@ flowchart LR
 - `WO-04` must happen first because the detail and list experiences both depend on the finalized form inputs and item-entry behavior.
 - After `WO-04`, `WO-05` and `WO-06` can progress in parallel.
 - `WO-05` should still reuse payment contracts from `BP-01 / WO-03` once they land.
-- `WO-07` covers `FR-05-36` through `FR-05-38` (the `Needs currency update` filter and bulk FX reconciliation flow) and is planned after FRD-07 base-currency settings are complete. It is explicitly out of scope for `WO-06`.
+- `WO-07` covers `FR-05-36` through `FR-05-38` (the `Needs currency update` filter and bulk FX reconciliation flow). It is explicitly out of scope for `WO-06` and depends on FRD-07 WO-05 being complete.
 
 ## Linked Work Orders
 
 - `work-orders/wo-04-order-create-and-edit-form-with-spreadsheet-style-item-entry.md`
 - `work-orders/wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md`
 - `work-orders/wo-06-orders-list-filters-expansion-rows-and-overdue-payment-signals.md`
+- `work-orders/wo-07-currency-reconciliation-filter-and-bulk-fx-reconciliation.md`

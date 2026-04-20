@@ -26,10 +26,12 @@ Implement the `Preferences` section of `/settings` so each collector can save op
 - Budget amount: **positive integer** only, **whole currency units**, validated **maximum** `999999999` (adjust only if product revises the cap).
 - Budget reset: **nullable day of month** `1`–`31`; `null` means reset on the **last calendar day** of each month; short months use the **last valid day** (`FR-07-25`, `FR-07-26`).
 - **Confirmation modal** (or equivalent blocking confirmation) when the user changes **base currency** from the last persisted value:
-  - explain the change affects orders impacting budget periods from current month onward,
-  - offer opening a bulk reconciliation wizard by currency pair (`USD->EUR`, `JPY->EUR`, etc.),
-  - explain that skipping reconciliation now means updating affected orders manually later (`FR-07-32`).
-- Affected-order detection for reconciliation must be based on **budget impact window**, not only order status: include any order that contributes from current month onward through recorded payments or pending obligations, including `COMPLETED` orders when they still impact those periods.
+  - explain the change affects orders from the current month onward,
+  - offer **"Guardar y actualizar tipos de cambio"** / **"Save and update exchange rates"** (primary): save preferences → mark eligible orders with `needsExchangeRateUpdate = true` → open `FxReconciliationModal` from `src/components/modules/FxReconciliationModal.tsx`,
+  - offer **"Guardar sin actualizar"** / **"Save without updating"** (secondary): save preferences → mark eligible orders → close; show informational toast directing the collector to the orders list,
+  - the two i18n keys to use are `currencyChangeModal.saveAndUpdate` and `currencyChangeModal.saveWithoutUpdating` (replacing the earlier `saveAndReconcile` / `saveSkip` keys in `SettingsPreferencesSection.tsx`),
+  - explain that skipping reconciliation now means those orders remain available for manual per-order updates (`FR-07-32`) and will appear in the orders list banner and `?fxStatus=needs_reconciliation` filter.
+- Affected-order detection: orders where `currencyCode !== newBaseCurrencyCode` AND `orderDate >= first day of the current month` AND `status != CANCELLED` AND `userId = session.userId`. Prior-month orders are preserved in the database but are outside the reconciliation scope and the dashboard rollup boundary for the new base currency.
 - **Single primary submit** for the whole `Preferences` form: **Save** stays **disabled** until the form is **dirty** vs last loaded server state; reverting all fields to initial values disables Save again. (Separate flows such as email change, password, or dedicated username save remain outside this form, per `WO-03` / `WO-04`.)
 - **PostHog** on preferences save attempt: emit success and failure with **which logical field groups changed** (booleans or enum flags, not raw monetary values or email-like PII) plus outcome. On failure, also capture with **Sentry**.
 - Register new event name(s) in `POSTHOG_EVENTS` and attach via the project's standard analytics pattern.
@@ -77,7 +79,7 @@ Implement the `Preferences` section of `/settings` so each collector can save op
 
 - Prefer **Server Actions** for persistence; validate with Zod at the boundary; revalidate settings paths after success.
 - Enforce **budget amount** as integer **≥ 1** when the user enters a budget (if the field is left empty, persist as no budget per optional-prefs model).
-- **Base currency change** on successful save after confirmation: mark relevant orders as requiring reconciliation to the new base currency and support grouped bulk update by currency pair.
+- **Base currency change** on successful save after confirmation: set `needsExchangeRateUpdate = true` on all eligible `Order` records (`currencyCode !== newBaseCurrencyCode` AND `orderDate >= first day of the current month` AND `status != CANCELLED`). When the collector chooses "Save and update exchange rates", the action completes and then opens `FxReconciliationModal` (owned by [**FRD-05 · BP-02 · WO-07**](../../../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-07-currency-reconciliation-filter-and-bulk-fx-reconciliation.md)). When the collector chooses "Save without updating", the orders are still marked and the modal is not opened.
 - Budget calculations in current/future periods must exclude non-reconciled affected orders and show an explicit warning until reconciliation is complete.
 - Budget reset and period cutoffs should be evaluated in user timezone when available, fallback to `UTC`.
 - Reuse i18n for country and product-type labels; add locale keys for preferences labels, helper text, and modal copy (no hardcoded user-facing strings in TS/TSX).
@@ -110,6 +112,7 @@ Implement the `Preferences` section of `/settings` so each collector can save op
 
 - User can save (or leave unset) country, base currency, preferred product types, and budget amount independently where valid.
 - User can choose month-end reset (`null` day) or a specific day `1`–`31`; a reset day beyond the month length resolves to the last day of that month.
-- When the user changes base currency and confirms, the flow allows bulk rate updates by currency pair for affected orders.
+- When the user changes base currency and confirms with "Save and update exchange rates", the flow opens `FxReconciliationModal` with the current-month eligible currency pairs; the collector can apply or skip each pair.
+- When the user confirms with "Save without updating", affected orders are marked (`needsExchangeRateUpdate = true`) and the orders list banner guides the collector to reconcile at their own pace.
 - If the user skips reconciliation, budget totals exclude affected non-reconciled orders and show a warning explaining that manual per-order updates are required to reach full accuracy.
 - Save remains disabled until a preference field changes from its loaded values; reverting disables Save again.
