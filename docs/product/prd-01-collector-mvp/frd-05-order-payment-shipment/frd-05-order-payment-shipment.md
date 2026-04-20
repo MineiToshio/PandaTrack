@@ -94,7 +94,7 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - `FR-05-28`: The orders list must sort by oldest order date first by default.
 - `FR-05-29`: Each order card in the list must show store identity, order date, status, expected delivery range, total cost, and payment progress.
 - `FR-05-30`: The orders list must visually indicate when an order has passed its expected delivery range without being completed.
-- `FR-05-31`: Each order card must expand to show order items and payment records.
+- `FR-05-31`: Each order card must expand to show the order items associated with the order. Payment progress is communicated through the collapsed card's paid-versus-total summary and percentage; individual payment records are accessible from the order detail view.
 - `FR-05-32`: Order status must be derived from fulfillment outcomes rather than directly edited by the user.
 - `FR-05-33`: Payment state must remain conceptually distinct from order fulfillment state.
 - `FR-05-34`: When all products linked to an order are delivered, the order must move to `COMPLETED` even if payment is still pending.
@@ -180,7 +180,7 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - This FRD consumes base-currency settings from [`FRD-07`](../frd-07-user-settings/frd-07-user-settings.md).
 - Order status derivation is owned by this FRD via the pure `deriveOrderStatus` function defined in [`BP-01 · WO-02`](bp-01-order-domain-foundation/work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md). The function takes item delivery associations as input and returns the computed `OrderStatus`. [`FRD-08`](../frd-08-delivery-management/frd-08-delivery-management.md) is responsible for invoking `deriveOrderStatus` and persisting the result whenever a delivery state change affects items linked to an order.
 - Recorded order totals, item prices, and payment rows remain denominated in the **order currency** (`FR-05-14`); changing the collector's base currency in settings does not rewrite stored order rows. Per-order exchange-rate context (`FR-05-16`, `BR-05-07`) is interpreted relative to the base currency **at the time the order was saved**, which matters for dashboard rollups ([`FR-06-13`](../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md#functional-requirements); [`FRD-06`](../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md)).
-- The orders list should expose filter label `Needs currency update`, chip label `Currency update needed`, and query-state parameter `fxStatus=needs_reconciliation` to keep UX and URL behavior consistent.
+- The orders list should expose filter label `Needs currency update`, chip label `Currency update needed`, and query-state parameter `fxStatus=needs_reconciliation` to keep UX and URL behavior consistent. The implementation of this filter (`FR-05-36`) and the bulk reconciliation flow (`FR-05-37`, `FR-05-38`) are deferred to a future `WO-07` under `BP-02`, planned after FRD-07 base-currency settings are complete.
 - Store selection should reuse the existing shared searchable-select interaction pattern rather than invent a new picker.
 - The order identifier format should remain stable across locales even if the human-readable date display changes.
 - Orders and deliveries should use expandable cards rather than dense tables because the card format better fits status signals, actions, and mobile layouts.

@@ -40,6 +40,8 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
   - `CANCELLED`: primary `Reactivate` · chevron menu with `Delete` only (edit is not offered on cancelled orders; reactivate first if the collector needs to mutate data).
 - The detail view should use a two-column layout on `lg` and above with the items and history in the left column and a sticky right rail carrying the financial summary, payment panel, and private note. On smaller breakpoints the right rail collapses into the normal document flow below the header.
 - Product-name search belongs inside the filter sidebar as one free-text filter rather than a global omnibox.
+- The orders list applies a default status filter of active orders (`OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`) when no filter state is present in the URL. This keeps the collector focused on orders that need attention without requiring manual setup on every visit. The URL reflects the default state after mount; the filter UI shows a grouped `Solo activas` chip that the collector can remove or replace with individual status selections. The `Restablecer` button navigates to `/purchases` with no params, re-applying the default.
+- The back link from the order detail page to the orders list uses a `?returnTo=` query parameter carrying the encoded previous list URL. This preserves the collector's filter and pagination state across the list → detail → list navigation cycle, consistent with the `?returnTo=order-create` redirect contract already used in the order create flow.
 
 ## Contracts
 
@@ -92,14 +94,17 @@ flowchart LR
   WO04["WO-04 Order Create and Edit Form With Spreadsheet-Style Item Entry"]
   WO05["WO-05 Order Detail View, Private Note, Payments Panel, and Action Menu"]
   WO06["WO-06 Orders List, Filters, Expansion Rows, and Overdue Payment Signals"]
+  WO07["WO-07 Currency Reconciliation Filter (planned — depends on FRD-07)"]
 
   WO04 --> WO05
   WO04 --> WO06
+  WO06 -.-> WO07
 ```
 
 - `WO-04` must happen first because the detail and list experiences both depend on the finalized form inputs and item-entry behavior.
 - After `WO-04`, `WO-05` and `WO-06` can progress in parallel.
 - `WO-05` should still reuse payment contracts from `BP-01 / WO-03` once they land.
+- `WO-07` covers `FR-05-36` through `FR-05-38` (the `Needs currency update` filter and bulk FX reconciliation flow) and is planned after FRD-07 base-currency settings are complete. It is explicitly out of scope for `WO-06`.
 
 ## Linked Work Orders
 
