@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { orderItemRowSchema, orderCreateSchema } from "../orderValidation";
+import {
+  orderItemRowSchema,
+  orderCreateSchema,
+  orderPaymentCreateSchema,
+  orderPaymentDeleteSchema,
+} from "../orderValidation";
 
 const VALID_CUID = "clxxxxxxxxxxxxxxxxxxxxxx0";
 
@@ -98,5 +103,76 @@ describe("orderCreateSchema exchangeRate validation", () => {
   it("accepts null exchangeRate", () => {
     const result = orderCreateSchema.safeParse({ ...baseInput, exchangeRate: null });
     expect(result.success).toBe(true);
+  });
+});
+
+describe("orderPaymentCreateSchema", () => {
+  const VALID_CUID = "clxxxxxxxxxxxxxxxxxxxxxx0";
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+
+  const validBase = { orderId: VALID_CUID, amount: 1000, paymentDate: yesterday };
+
+  it("accepts a valid payment", () => {
+    expect(orderPaymentCreateSchema.safeParse(validBase).success).toBe(true);
+  });
+
+  it("rejects amount of 0", () => {
+    const result = orderPaymentCreateSchema.safeParse({ ...validBase, amount: 0 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors.map((e) => e.message)).toContain("AMOUNT_TOO_LOW");
+    }
+  });
+
+  it("rejects negative amount", () => {
+    const result = orderPaymentCreateSchema.safeParse({ ...validBase, amount: -1 });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts amount of 1 (minimum valid)", () => {
+    expect(orderPaymentCreateSchema.safeParse({ ...validBase, amount: 1 }).success).toBe(true);
+  });
+
+  it("rejects a future paymentDate", () => {
+    const result = orderPaymentCreateSchema.safeParse({ ...validBase, paymentDate: tomorrow });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors.map((e) => e.message)).toContain("PAYMENT_DATE_IN_FUTURE");
+    }
+  });
+
+  it("accepts paymentDate of today", () => {
+    expect(orderPaymentCreateSchema.safeParse({ ...validBase, paymentDate: today }).success).toBe(true);
+  });
+
+  it("rejects orderId that is not a cuid", () => {
+    const result = orderPaymentCreateSchema.safeParse({ ...validBase, orderId: "not-a-cuid" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors.map((e) => e.message)).toContain("INVALID_ORDER_ID");
+    }
+  });
+});
+
+describe("orderPaymentDeleteSchema", () => {
+  const VALID_CUID = "clxxxxxxxxxxxxxxxxxxxxxx0";
+
+  it("accepts valid paymentId and orderId", () => {
+    expect(orderPaymentDeleteSchema.safeParse({ paymentId: VALID_CUID, orderId: VALID_CUID }).success).toBe(true);
+  });
+
+  it("rejects non-cuid paymentId", () => {
+    const result = orderPaymentDeleteSchema.safeParse({
+      paymentId: "bad-id",
+      orderId: VALID_CUID,
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors.map((e) => e.message)).toContain("INVALID_PAYMENT_ID");
+    }
   });
 });

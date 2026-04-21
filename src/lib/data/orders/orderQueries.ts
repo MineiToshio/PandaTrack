@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { deriveHasUnpaidBalance } from "@/lib/orders/orderState";
+import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
 import type { OrderStatus } from "../../../../generated/prisma/client";
 
 export type OrderItem = {
@@ -26,15 +27,20 @@ export type OrderListItem = {
   createdAt: Date;
 };
 
+export type OrderPayment = {
+  id: string;
+  amount: number;
+  paymentDate: Date;
+};
+
 export type OrderDetail = OrderListItem & {
   note: string | null;
   hasUnpaidBalance: boolean;
+  paidAmount: number;
+  remainingAmount: number;
+  paymentPercentage: number;
   items: OrderItem[];
-  payments: Array<{
-    id: string;
-    amount: number;
-    paymentDate: Date;
-  }>;
+  payments: OrderPayment[];
   history: Array<{
     id: string;
     eventType: string;
@@ -78,7 +84,7 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
       },
       payments: {
         select: { id: true, amount: true, paymentDate: true },
-        orderBy: { paymentDate: "asc" },
+        orderBy: [{ paymentDate: "desc" }, { createdAt: "desc" }],
       },
       history: {
         select: { id: true, eventType: true, metadata: true, createdAt: true },
@@ -89,7 +95,7 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
 
   if (!row) return null;
 
-  const paymentsSum = row.payments.reduce((sum, p) => sum + p.amount, 0);
+  const { paidAmount, remainingAmount, paymentPercentage } = calculatePaymentSummary(row.totalCost, row.payments);
 
   return {
     id: row.id,
@@ -105,7 +111,10 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
     note: row.note,
     status: row.status,
     createdAt: row.createdAt,
-    hasUnpaidBalance: deriveHasUnpaidBalance(row.totalCost, paymentsSum),
+    hasUnpaidBalance: deriveHasUnpaidBalance(row.totalCost, paidAmount),
+    paidAmount,
+    remainingAmount,
+    paymentPercentage,
     items: row.items,
     payments: row.payments,
     history: row.history,

@@ -7,8 +7,8 @@ status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0014
-last_updated: 2026-04-18
-implementation_status: PLANNED
+last_updated: 2026-04-20
+implementation_status: IMPLEMENTED
 ---
 
 # WO-03 Order Payments, Balances, and Payment Mutation Rules
@@ -54,22 +54,22 @@ Implement payment persistence and payment mutation rules so collectors can track
 ```ts
 addPaymentSchema = z.object({
   orderId: z.string().cuid(),
-  amount: z.number().int().min(1),           // minimum 1 minor unit; zero and negative blocked
+  amount: z.number().int().min(1), // minimum 1 minor unit; zero and negative blocked
   paymentDate: z.coerce.date().max(new Date()), // no future dates
-})
+});
 
 deletePaymentSchema = z.object({
   paymentId: z.string().cuid(),
-})
+});
 ```
 
 ### Dynamic mutation-level rules (enforced inside transaction)
 
-| Rule | Error code | Enforcement point |
-|------|-----------|-------------------|
-| `amount <= remainingAmount` | `EXCEEDS_BALANCE` | Inside `addPayment` transaction after reading current balance |
-| `paymentDate >= order.orderDate` | `DATE_BEFORE_ORDER` | Inside `addPayment` after fetching the order |
-| `payment.userId === session.userId` | `NOT_FOUND` | Inside `deletePayment` before any write (no ownership leak) |
+| Rule                                | Error code          | Enforcement point                                             |
+| ----------------------------------- | ------------------- | ------------------------------------------------------------- |
+| `amount <= remainingAmount`         | `EXCEEDS_BALANCE`   | Inside `addPayment` transaction after reading current balance |
+| `paymentDate >= order.orderDate`    | `DATE_BEFORE_ORDER` | Inside `addPayment` after fetching the order                  |
+| `payment.userId === session.userId` | `NOT_FOUND`         | Inside `deletePayment` before any write (no ownership leak)   |
 
 The balance check and insert must occur within the same `prisma.$transaction` to prevent TOCTOU races when concurrent payment submissions arrive.
 
@@ -78,9 +78,9 @@ The balance check and insert must occur within the same `prisma.$transaction` to
 Computed values are never persisted. The formula is:
 
 ```ts
-paidAmount       = sum(payments.map(p => p.amount))
-remainingAmount  = order.totalCost - paidAmount
-paymentPercentage = Math.floor((paidAmount / order.totalCost) * 100)
+paidAmount = sum(payments.map((p) => p.amount));
+remainingAmount = order.totalCost - paidAmount;
+paymentPercentage = Math.floor((paidAmount / order.totalCost) * 100);
 ```
 
 All values use the same minor-unit convention as `Order.totalCost` and `OrderPayment.amount` (cents × 100). `paymentPercentage` is an integer with no decimal places (floor division, not rounding).
@@ -128,12 +128,12 @@ These notes are consumed by [BP-02 · WO-05](../../bp-02-order-workspace-and-lis
 
 ## Module Structure
 
-| Path | Responsibility |
-|------|---------------|
-| `src/lib/data/orders/orderPaymentMutations.ts` | `addPayment` and `deletePayment` with full transaction contracts (path established in WO-01; implemented here) |
-| `src/lib/data/orders/orderQueries.ts` | Extend order detail query to include payment list and derived summary fields |
-| `src/lib/orders/orderValidation.ts` | `addPaymentSchema` and `deletePaymentSchema` (extends WO-01 base schemas) |
-| `src/lib/orders/paymentSummary.ts` | Pure `calculatePaymentSummary(totalCost, payments)` returning `paidAmount`, `remainingAmount`, `paymentPercentage` |
+| Path                                           | Responsibility                                                                                                     |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `src/lib/data/orders/orderPaymentMutations.ts` | `addPayment` and `deletePayment` with full transaction contracts (path established in WO-01; implemented here)     |
+| `src/lib/data/orders/orderQueries.ts`          | Extend order detail query to include payment list and derived summary fields                                       |
+| `src/lib/orders/orderValidation.ts`            | `addPaymentSchema` and `deletePaymentSchema` (extends WO-01 base schemas)                                          |
+| `src/lib/orders/paymentSummary.ts`             | Pure `calculatePaymentSummary(totalCost, payments)` returning `paidAmount`, `remainingAmount`, `paymentPercentage` |
 
 Module paths must be validated against `.cursor/rules/project-structure.mdc` and `.cursor/rules/prisma-data-layer.mdc` at implementation time.
 
@@ -141,42 +141,42 @@ Module paths must be validated against `.cursor/rules/project-structure.mdc` and
 
 ### `calculatePaymentSummary`
 
-| Scenario | Input | Expected |
-|----------|-------|----------|
-| No payments | `totalCost=10000, payments=[]` | `paidAmount=0, remaining=10000, pct=0` |
-| One partial payment | `totalCost=10000, payments=[3000]` | `paidAmount=3000, remaining=7000, pct=30` |
-| Multiple partial payments | `totalCost=10000, payments=[5000, 2000]` | `paidAmount=7000, remaining=3000, pct=70` |
-| Fully paid | `totalCost=10000, payments=[10000]` | `paidAmount=10000, remaining=0, pct=100` |
-| Percentage uses floor (no round-up) | `totalCost=10000, payments=[7350]` | `pct=73` |
+| Scenario                            | Input                                    | Expected                                  |
+| ----------------------------------- | ---------------------------------------- | ----------------------------------------- |
+| No payments                         | `totalCost=10000, payments=[]`           | `paidAmount=0, remaining=10000, pct=0`    |
+| One partial payment                 | `totalCost=10000, payments=[3000]`       | `paidAmount=3000, remaining=7000, pct=30` |
+| Multiple partial payments           | `totalCost=10000, payments=[5000, 2000]` | `paidAmount=7000, remaining=3000, pct=70` |
+| Fully paid                          | `totalCost=10000, payments=[10000]`      | `paidAmount=10000, remaining=0, pct=100`  |
+| Percentage uses floor (no round-up) | `totalCost=10000, payments=[7350]`       | `pct=73`                                  |
 
 ### `addPaymentSchema` (Zod)
 
-| Scenario | Expected |
-|----------|----------|
-| `amount=0` | Invalid |
-| `amount=-1` | Invalid |
-| `amount=1` | Valid |
-| `paymentDate` in the future | Invalid |
-| `paymentDate` = today | Valid |
-| `orderId` not a cuid | Invalid |
+| Scenario                    | Expected |
+| --------------------------- | -------- |
+| `amount=0`                  | Invalid  |
+| `amount=-1`                 | Invalid  |
+| `amount=1`                  | Valid    |
+| `paymentDate` in the future | Invalid  |
+| `paymentDate` = today       | Valid    |
+| `orderId` not a cuid        | Invalid  |
 
 ### Balance guardrail (mutation-level)
 
-| Scenario | Expected |
-|----------|----------|
-| `amount < remainingAmount` | Payment persisted |
-| `amount === remainingAmount` | Payment persisted (100% of remaining is valid) |
-| `amount > remainingAmount` | Rejected with `EXCEEDS_BALANCE` |
-| `remainingAmount === 0`, any `amount` | Rejected with `EXCEEDS_BALANCE` |
+| Scenario                              | Expected                                       |
+| ------------------------------------- | ---------------------------------------------- |
+| `amount < remainingAmount`            | Payment persisted                              |
+| `amount === remainingAmount`          | Payment persisted (100% of remaining is valid) |
+| `amount > remainingAmount`            | Rejected with `EXCEEDS_BALANCE`                |
+| `remainingAmount === 0`, any `amount` | Rejected with `EXCEEDS_BALANCE`                |
 
 ### `paymentDate` range (mutation-level)
 
-| Scenario | Expected |
-|----------|----------|
-| `paymentDate === order.orderDate` | Valid (boundary inclusive) |
-| `paymentDate < order.orderDate` | Rejected with `DATE_BEFORE_ORDER` |
-| `paymentDate === today` | Valid |
-| `paymentDate > today` | Rejected (Zod boundary) |
+| Scenario                          | Expected                          |
+| --------------------------------- | --------------------------------- |
+| `paymentDate === order.orderDate` | Valid (boundary inclusive)        |
+| `paymentDate < order.orderDate`   | Rejected with `DATE_BEFORE_ORDER` |
+| `paymentDate === today`           | Valid                             |
+| `paymentDate > today`             | Rejected (Zod boundary)           |
 
 ## E2E Acceptance Tests
 

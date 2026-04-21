@@ -106,7 +106,7 @@ export const orderReactivateSchema = z.object({
 export const orderPaymentCreateSchema = z.object({
   orderId: z.string().cuid({ message: "INVALID_ORDER_ID" }),
   amount: paymentAmountSchema,
-  paymentDate: z.coerce.date(),
+  paymentDate: z.coerce.date().refine((d) => d <= new Date(), { message: "PAYMENT_DATE_IN_FUTURE" }),
 });
 
 export const orderPaymentDeleteSchema = z.object({
