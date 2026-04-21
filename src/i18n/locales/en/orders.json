@@ -1,0 +1,7 @@
+{
+  "discrepancyModal": {
+    "keepEntered": "Keep entered total",
+    "useCalculated": "Use calculated total ({amount})",
+    "goBack": "Go back"
+  }
+}

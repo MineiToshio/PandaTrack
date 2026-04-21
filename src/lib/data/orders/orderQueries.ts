@@ -1,5 +1,15 @@
 import { prisma } from "@/lib/prisma";
+import { deriveHasUnpaidBalance } from "@/lib/orders/orderState";
 import type { OrderStatus } from "../../../../generated/prisma/client";
+
+export type OrderItem = {
+  id: string;
+  name: string;
+  quantity: number;
+  unitPrice: number | null;
+  productTypeKey: string | null;
+  position: number;
+};
 
 export type OrderListItem = {
   id: string;
@@ -18,6 +28,8 @@ export type OrderListItem = {
 
 export type OrderDetail = OrderListItem & {
   note: string | null;
+  hasUnpaidBalance: boolean;
+  items: OrderItem[];
   payments: Array<{
     id: string;
     amount: number;
@@ -53,6 +65,17 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
       note: true,
       status: true,
       createdAt: true,
+      items: {
+        select: {
+          id: true,
+          name: true,
+          quantity: true,
+          unitPrice: true,
+          productTypeKey: true,
+          position: true,
+        },
+        orderBy: { position: "asc" },
+      },
       payments: {
         select: { id: true, amount: true, paymentDate: true },
         orderBy: { paymentDate: "asc" },
@@ -65,6 +88,8 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
   });
 
   if (!row) return null;
+
+  const paymentsSum = row.payments.reduce((sum, p) => sum + p.amount, 0);
 
   return {
     id: row.id,
@@ -80,6 +105,8 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
     note: row.note,
     status: row.status,
     createdAt: row.createdAt,
+    hasUnpaidBalance: deriveHasUnpaidBalance(row.totalCost, paymentsSum),
+    items: row.items,
     payments: row.payments,
     history: row.history,
   };

@@ -127,6 +127,7 @@ model User {
   storeChangeRequests         StoreChangeRequest[]
   reviewedStoreChangeRequests StoreChangeRequest[]   @relation("StoreChangeRequestReviewer")
   orders                      Order[]
+  orderItems                  OrderItem[]
   orderPayments               OrderPayment[]
   orderHistory                OrderHistory[]
   preferredProductTypes       UserPreferredProductType[]
@@ -302,6 +303,7 @@ model StoreProductType {
   updatedAt   DateTime                  @updatedAt
   assignments StoreProductTypeAssignment[]
   userPreferences UserPreferredProductType[]
+  orderItems  OrderItem[]
 
   @@map("store_product_type")
 }
@@ -448,14 +450,23 @@ model Order {
 }
 
 model OrderItem {
-  id            String              @id @default(cuid())
-  orderId       String
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
-  order         Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  deliveryItems DeliveryOrderItem[]
+  id             String              @id @default(cuid())
+  orderId        String
+  userId         String
+  name           String
+  quantity       Int                 @default(1)
+  unitPrice      Int?
+  productTypeKey String?
+  position       Int
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  order          Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productType    StoreProductType?   @relation(fields: [productTypeKey], references: [key], onDelete: Restrict)
+  deliveryItems  DeliveryOrderItem[]
 
   @@index([orderId])
+  @@index([userId])
   @@map("order_item")
 }
 

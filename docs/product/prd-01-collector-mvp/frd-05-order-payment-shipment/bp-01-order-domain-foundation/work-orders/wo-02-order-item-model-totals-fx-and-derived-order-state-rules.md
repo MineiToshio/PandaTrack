@@ -8,7 +8,7 @@ parent: BP-01
 source_features:
   - FEAT-0014
 last_updated: 2026-04-18
-implementation_status: PLANNED
+implementation_status: IMPLEMENTED
 ---
 
 # WO-02 Order Item Model, Totals, FX, and Derived Order-State Rules
@@ -52,18 +52,18 @@ Implement the `OrderItem` Prisma model, total-cost derivation rules, discrepancy
 
 ### `OrderItem` model fields
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `id` | `String @id @default(cuid())` | |
-| `orderId` | `String` | FK to `Order`, cascade delete |
-| `userId` | `String` | FK to `User`, cascade delete — enables auth checks without joining `Order` |
-| `name` | `String` | Required. Display name for the item |
-| `quantity` | `Int @default(1)` | Required. Minimum 1 |
-| `unitPrice` | `Int?` | Optional. Minor units (cents × 100). Example: $25.50 → 2550 |
-| `productTypeKey` | `String?` | Optional. FK to `StoreProductType.key`, Restrict on delete |
-| `position` | `Int` | Display order within the order. Lower value = displayed first |
-| `createdAt` | `DateTime @default(now())` | |
-| `updatedAt` | `DateTime @updatedAt` | |
+| Field            | Type                          | Notes                                                                      |
+| ---------------- | ----------------------------- | -------------------------------------------------------------------------- |
+| `id`             | `String @id @default(cuid())` |                                                                            |
+| `orderId`        | `String`                      | FK to `Order`, cascade delete                                              |
+| `userId`         | `String`                      | FK to `User`, cascade delete — enables auth checks without joining `Order` |
+| `name`           | `String`                      | Required. Display name for the item                                        |
+| `quantity`       | `Int @default(1)`             | Required. Minimum 1                                                        |
+| `unitPrice`      | `Int?`                        | Optional. Minor units (cents × 100). Example: $25.50 → 2550                |
+| `productTypeKey` | `String?`                     | Optional. FK to `StoreProductType.key`, Restrict on delete                 |
+| `position`       | `Int`                         | Display order within the order. Lower value = displayed first              |
+| `createdAt`      | `DateTime @default(now())`    |                                                                            |
+| `updatedAt`      | `DateTime @updatedAt`         |                                                                            |
 
 Indexes: `orderId`, `userId`.
 
@@ -72,6 +72,7 @@ Indexes: `orderId`, `userId`.
 `unitPrice` follows the same minor-unit convention as `Order.totalCost` (WO-01): all values are `Int` representing cents × 100.
 
 Examples:
+
 - `$25.50 USD → 2550`
 - `S/. 100.00 PEN → 10000`
 
@@ -102,14 +103,14 @@ CANCELLED
 
 ### State definitions
 
-| State | Spanish display | Condition |
-|-------|----------------|-----------|
-| `OPEN` | Abierta | No items associated with any non-cancelled delivery |
-| `PARTIALLY_IN_TRANSIT` | En camino parcial | At least 1 item in an `IN_TRANSIT` delivery; at least 1 item with no active delivery |
-| `IN_TRANSIT` | En camino | All items associated with `IN_TRANSIT` deliveries; none delivered yet |
-| `PARTIALLY_DELIVERED` | Parcialmente entregada | At least 1 item in a `DELIVERED` delivery; not all items are delivered. Takes priority over `PARTIALLY_IN_TRANSIT` |
-| `COMPLETED` | Completada | All items associated with `DELIVERED` deliveries |
-| `CANCELLED` | Cancelada | Order was cancelled; state does not re-derive from delivery changes |
+| State                  | Spanish display        | Condition                                                                                                          |
+| ---------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `OPEN`                 | Abierta                | No items associated with any non-cancelled delivery                                                                |
+| `PARTIALLY_IN_TRANSIT` | En camino parcial      | At least 1 item in an `IN_TRANSIT` delivery; at least 1 item with no active delivery                               |
+| `IN_TRANSIT`           | En camino              | All items associated with `IN_TRANSIT` deliveries; none delivered yet                                              |
+| `PARTIALLY_DELIVERED`  | Parcialmente entregada | At least 1 item in a `DELIVERED` delivery; not all items are delivered. Takes priority over `PARTIALLY_IN_TRANSIT` |
+| `COMPLETED`            | Completada             | All items associated with `DELIVERED` deliveries                                                                   |
+| `CANCELLED`            | Cancelada              | Order was cancelled; state does not re-derive from delivery changes                                                |
 
 Items associated with `CANCELLED` deliveries are treated as having no active delivery for derivation purposes.
 
@@ -133,9 +134,7 @@ interface OrderItemState {
   deliveryState: ItemDeliveryState;
 }
 
-function deriveOrderStatus(
-  items: OrderItemState[]
-): Exclude<OrderStatus, "CANCELLED">
+function deriveOrderStatus(items: OrderItemState[]): Exclude<OrderStatus, "CANCELLED">;
 ```
 
 - The caller maps delivery records to `ItemDeliveryState` before calling this function.
@@ -149,7 +148,7 @@ The function lives in `src/lib/orders/orderState.ts`. State re-derivation trigge
 
 ```ts
 // Derived at query time — never persisted
-hasUnpaidBalance: order.totalCost > sum(order.payments.map(p => p.amount))
+hasUnpaidBalance: order.totalCost > sum(order.payments.map((p) => p.amount));
 ```
 
 This boolean must be included in any detail or list query that surfaces payment warnings. It is not a database column. WO-03 owns the payment sum calculation; this WO defines the field's meaning and shape.
@@ -160,8 +159,8 @@ This boolean must be included in any detail or list query that surfaces payment 
 
 ```ts
 itemizedTotal = items
-  .filter(item => item.unitPrice !== null)
-  .reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+  .filter((item) => item.unitPrice !== null)
+  .reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 ```
 
 `itemizedTotal` is derived in application code, never persisted. It uses integer arithmetic to avoid floating-point drift. It is only meaningful when at least one item has a `unitPrice`.
@@ -177,11 +176,11 @@ If either condition is false, the save proceeds without the modal.
 
 **Modal options and i18n keys:**
 
-| Action | i18n key | Copy ES | Copy EN |
-|--------|----------|---------|---------|
-| Keep entered total | `orders.discrepancyModal.keepEntered` | "Mantener el total ingresado" | "Keep entered total" |
-| Use calculated total | `orders.discrepancyModal.useCalculated` | "Usar el total calculado ({amount})" | "Use calculated total ({amount})" |
-| Go back without saving | `orders.discrepancyModal.goBack` | "Volver" | "Go back" |
+| Action                 | i18n key                                | Copy ES                              | Copy EN                           |
+| ---------------------- | --------------------------------------- | ------------------------------------ | --------------------------------- |
+| Keep entered total     | `orders.discrepancyModal.keepEntered`   | "Mantener el total ingresado"        | "Keep entered total"              |
+| Use calculated total   | `orders.discrepancyModal.useCalculated` | "Usar el total calculado ({amount})" | "Use calculated total ({amount})" |
+| Go back without saving | `orders.discrepancyModal.goBack`        | "Volver"                             | "Go back"                         |
 
 The modal body must display both the entered total and the calculated total formatted in the order's currency so the user can compare before deciding.
 
@@ -190,7 +189,7 @@ The modal body must display both the entered total and the calculated total form
 When `currencyCode !== user.baseCurrencyCode`, `exchangeRate` is required. Validation contract:
 
 ```ts
-exchangeRate: z.number().min(0.01).max(99999.99).multipleOf(0.01)
+exchangeRate: z.number().min(0.01).max(99999.99).multipleOf(0.01);
 ```
 
 - Minimum `0.01`: covers currencies worth more than the base (e.g. KWD/USD ≈ 3.26)
@@ -224,12 +223,12 @@ Item deletions performed during an edit session are **pending until the user sav
 
 ## Module Structure
 
-| Path | Responsibility |
-|------|---------------|
-| `src/lib/orders/orderState.ts` | Pure `deriveOrderStatus` function |
-| `src/lib/orders/orderValidation.ts` | Zod schemas including item rows and FX validation (extends WO-01 base schemas) |
-| `src/lib/data/orders/orderQueries.ts` | Extend with `hasUnpaidBalance` in detail query shape |
-| `src/lib/data/orders/orderMutations.ts` | Extend with item create, update, reorder, and delete operations |
+| Path                                    | Responsibility                                                                 |
+| --------------------------------------- | ------------------------------------------------------------------------------ |
+| `src/lib/orders/orderState.ts`          | Pure `deriveOrderStatus` function                                              |
+| `src/lib/orders/orderValidation.ts`     | Zod schemas including item rows and FX validation (extends WO-01 base schemas) |
+| `src/lib/data/orders/orderQueries.ts`   | Extend with `hasUnpaidBalance` in detail query shape                           |
+| `src/lib/data/orders/orderMutations.ts` | Extend with item create, update, reorder, and delete operations                |
 
 Module paths must be validated against `.cursor/rules/project-structure.mdc` and `.cursor/rules/prisma-data-layer.mdc` at implementation time, as the cursor rules are the authority on file placement.
 
@@ -265,25 +264,25 @@ Module paths must be validated against `.cursor/rules/project-structure.mdc` and
 
 ### `deriveOrderStatus`
 
-| Scenario | Input | Expected |
-|----------|-------|----------|
-| No items in any delivery | all `open` | `OPEN` |
-| 1 of 3 items in `IN_TRANSIT` delivery | 1 `in_transit`, 2 `open` | `PARTIALLY_IN_TRANSIT` |
-| All items in `IN_TRANSIT` deliveries | all `in_transit` | `IN_TRANSIT` |
-| 1 of 3 items in `DELIVERED` delivery | 1 `delivered`, 2 `open` | `PARTIALLY_DELIVERED` |
-| All items in `DELIVERED` deliveries | all `delivered` | `COMPLETED` |
-| Mix: 1 `delivered` + 1 `in_transit` + 1 `open` | mixed | `PARTIALLY_DELIVERED` |
-| Items with `CANCELLED` delivery treated as open | all remapped to `open` | `OPEN` |
-| Empty item list | `[]` | `OPEN` |
+| Scenario                                        | Input                    | Expected               |
+| ----------------------------------------------- | ------------------------ | ---------------------- |
+| No items in any delivery                        | all `open`               | `OPEN`                 |
+| 1 of 3 items in `IN_TRANSIT` delivery           | 1 `in_transit`, 2 `open` | `PARTIALLY_IN_TRANSIT` |
+| All items in `IN_TRANSIT` deliveries            | all `in_transit`         | `IN_TRANSIT`           |
+| 1 of 3 items in `DELIVERED` delivery            | 1 `delivered`, 2 `open`  | `PARTIALLY_DELIVERED`  |
+| All items in `DELIVERED` deliveries             | all `delivered`          | `COMPLETED`            |
+| Mix: 1 `delivered` + 1 `in_transit` + 1 `open`  | mixed                    | `PARTIALLY_DELIVERED`  |
+| Items with `CANCELLED` delivery treated as open | all remapped to `open`   | `OPEN`                 |
+| Empty item list                                 | `[]`                     | `OPEN`                 |
 
 ### `hasUnpaidBalance`
 
-| Scenario | Expected |
-|----------|----------|
-| `totalCost = 10000`, payments sum = `10000` | `false` |
-| `totalCost = 10000`, payments sum = `7000` | `true` |
-| `totalCost = 10000`, no payments | `true` |
-| `COMPLETED` order with payments sum < totalCost | `true` |
+| Scenario                                        | Expected |
+| ----------------------------------------------- | -------- |
+| `totalCost = 10000`, payments sum = `10000`     | `false`  |
+| `totalCost = 10000`, payments sum = `7000`      | `true`   |
+| `totalCost = 10000`, no payments                | `true`   |
+| `COMPLETED` order with payments sum < totalCost | `true`   |
 
 ### Item validation
 
