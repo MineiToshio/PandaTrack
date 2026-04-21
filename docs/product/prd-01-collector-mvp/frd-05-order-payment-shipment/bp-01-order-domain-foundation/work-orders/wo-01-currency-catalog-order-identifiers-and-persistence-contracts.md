@@ -8,7 +8,7 @@ parent: BP-01
 source_features:
   - FEAT-0014
 last_updated: 2026-04-19
-implementation_status: PLANNED
+implementation_status: IN_PROGRESS
 ---
 
 # WO-01 Currency Catalog, Order Identifiers, and Persistence Contracts

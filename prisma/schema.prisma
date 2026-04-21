@@ -13,6 +13,32 @@ datasource db {
   provider = "postgresql"
 }
 
+enum OrderStatus {
+  OPEN
+  PARTIALLY_IN_TRANSIT
+  IN_TRANSIT
+  PARTIALLY_DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderHistoryEventType {
+  ORDER_CREATED
+  ORDER_EDITED
+  ORDER_CANCELLED
+  ORDER_REACTIVATED
+  PAYMENT_ADDED
+  PAYMENT_DELETED
+  NOTE_UPDATED
+}
+
+enum DeliveryStatus {
+  PENDING
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+}
+
 enum StoreType {
   BUSINESS
   PERSON
@@ -101,6 +127,8 @@ model User {
   storeChangeRequests         StoreChangeRequest[]
   reviewedStoreChangeRequests StoreChangeRequest[]   @relation("StoreChangeRequestReviewer")
   orders                      Order[]
+  orderPayments               OrderPayment[]
+  orderHistory                OrderHistory[]
   preferredProductTypes       UserPreferredProductType[]
 
   @@index([preferredCountryCode])
@@ -393,17 +421,29 @@ model StoreChangeRequest {
 }
 
 model Order {
-  id        String      @id @default(cuid())
-  storeId   String
-  userId    String
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  store     Store       @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     OrderItem[]
+  id                   String                @id @default(cuid())
+  storeId              String
+  userId               String
+  humanReadableId      String                @unique
+  orderDate            DateTime
+  expectedDeliveryFrom DateTime?
+  expectedDeliveryTo   DateTime?
+  currencyCode         String
+  exchangeRate         Decimal?
+  totalCost            Int
+  note                 String?
+  status               OrderStatus           @default(OPEN)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  store                Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items                OrderItem[]
+  payments             OrderPayment[]
+  history              OrderHistory[]
 
   @@index([storeId])
   @@index([userId])
+  @@index([status])
   @@map("order")
 }
 
@@ -419,9 +459,40 @@ model OrderItem {
   @@map("order_item")
 }
 
+model OrderPayment {
+  id          String   @id @default(cuid())
+  orderId     String
+  userId      String
+  amount      Int
+  paymentDate DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([userId])
+  @@map("order_payment")
+}
+
+model OrderHistory {
+  id        String                @id @default(cuid())
+  orderId   String
+  userId    String
+  eventType OrderHistoryEventType
+  metadata  Json                  @default("{}")
+  createdAt DateTime              @default(now())
+  order     Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_history")
+}
+
 model Delivery {
   id         String              @id @default(cuid())
   storeId    String
+  status     DeliveryStatus      @default(PENDING)
   createdAt  DateTime            @default(now())
   updatedAt  DateTime            @updatedAt
   store      Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)

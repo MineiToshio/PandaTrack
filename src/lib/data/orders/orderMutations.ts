@@ -1,0 +1,227 @@
+import { prisma } from "@/lib/prisma";
+import { DeliveryStatus, OrderStatus } from "../../../../generated/prisma/client";
+import { generateOrderHumanReadableId } from "@/lib/orders/orderIdentifier";
+import { appendOrderHistoryEntry, OrderHistoryEventType } from "./orderHistoryMutations";
+import type { OrderCreateInput, OrderEditInput } from "@/lib/orders/orderValidation";
+
+type CreateOrderResult =
+  | { ok: true; orderId: string; humanReadableId: string }
+  | { ok: false; error: "STORE_NOT_FOUND" };
+
+type EditOrderResult = { ok: true } | { ok: false; error: "ORDER_NOT_FOUND" | "ORDER_NOT_EDITABLE" };
+
+type CancelOrderResult = { ok: true } | { ok: false; error: "ORDER_NOT_FOUND" | "HAS_LIVE_DELIVERY_LINKS" };
+
+type DeleteOrderResult = { ok: true } | { ok: false; error: "ORDER_NOT_FOUND" | "HAS_LIVE_DELIVERY_LINKS" };
+
+type ReactivateOrderResult = { ok: true } | { ok: false; error: "ORDER_NOT_FOUND" | "ORDER_NOT_CANCELLED" };
+
+async function hasLiveDeliveryLinks(orderId: string): Promise<boolean> {
+  const link = await prisma.deliveryOrderItem.findFirst({
+    where: {
+      orderItem: { orderId },
+      delivery: { status: { not: DeliveryStatus.CANCELLED } },
+    },
+    select: { deliveryId: true },
+  });
+  return link !== null;
+}
+
+export async function createOrder(userId: string, input: OrderCreateInput): Promise<CreateOrderResult> {
+  return prisma.$transaction(async (tx) => {
+    const store = await tx.store.findFirst({
+      where: { id: input.storeId },
+      select: { id: true },
+    });
+
+    if (!store) {
+      return { ok: false, error: "STORE_NOT_FOUND" };
+    }
+
+    const now = new Date();
+    const humanReadableId = await generateOrderHumanReadableId(tx, userId, now);
+
+    const order = await tx.order.create({
+      data: {
+        storeId: input.storeId,
+        userId,
+        humanReadableId,
+        orderDate: input.orderDate,
+        expectedDeliveryFrom: input.expectedDeliveryFrom ?? null,
+        expectedDeliveryTo: input.expectedDeliveryTo ?? null,
+        currencyCode: input.currencyCode,
+        exchangeRate: input.exchangeRate ?? null,
+        totalCost: input.totalCost,
+        note: input.note ?? null,
+        status: OrderStatus.OPEN,
+      },
+      select: { id: true, humanReadableId: true },
+    });
+
+    await appendOrderHistoryEntry({
+      tx,
+      orderId: order.id,
+      userId,
+      eventType: OrderHistoryEventType.ORDER_CREATED,
+    });
+
+    return { ok: true, orderId: order.id, humanReadableId: order.humanReadableId };
+  });
+}
+
+export async function editOrder(
+  orderId: string,
+  userId: string,
+  input: OrderEditInput,
+  changedFields: string[],
+): Promise<EditOrderResult> {
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.order.findFirst({
+      where: { id: orderId, userId },
+      select: { status: true },
+    });
+
+    if (!order) {
+      return { ok: false, error: "ORDER_NOT_FOUND" };
+    }
+
+    if (order.status === OrderStatus.CANCELLED) {
+      return { ok: false, error: "ORDER_NOT_EDITABLE" };
+    }
+
+    await tx.order.update({
+      where: { id: orderId },
+      data: {
+        ...(input.orderDate !== undefined ? { orderDate: input.orderDate } : {}),
+        ...(input.expectedDeliveryFrom !== undefined ? { expectedDeliveryFrom: input.expectedDeliveryFrom } : {}),
+        ...(input.expectedDeliveryTo !== undefined ? { expectedDeliveryTo: input.expectedDeliveryTo } : {}),
+        ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),
+        ...(input.exchangeRate !== undefined ? { exchangeRate: input.exchangeRate } : {}),
+        ...(input.totalCost !== undefined ? { totalCost: input.totalCost } : {}),
+        ...(input.note !== undefined ? { note: input.note } : {}),
+      },
+    });
+
+    const metadata = changedFields.length > 0 ? { fields: changedFields } : {};
+    await appendOrderHistoryEntry({
+      tx,
+      orderId,
+      userId,
+      eventType: OrderHistoryEventType.ORDER_EDITED,
+      metadata,
+    });
+
+    return { ok: true };
+  });
+}
+
+export async function cancelOrder(orderId: string, userId: string): Promise<CancelOrderResult> {
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.order.findFirst({
+      where: { id: orderId, userId },
+      select: { id: true },
+    });
+
+    if (!order) {
+      return { ok: false, error: "ORDER_NOT_FOUND" };
+    }
+
+    const liveLink = await tx.deliveryOrderItem.findFirst({
+      where: {
+        orderItem: { orderId },
+        delivery: { status: { not: DeliveryStatus.CANCELLED } },
+      },
+      select: { deliveryId: true },
+    });
+
+    if (liveLink) {
+      return { ok: false, error: "HAS_LIVE_DELIVERY_LINKS" };
+    }
+
+    await tx.orderPayment.deleteMany({ where: { orderId } });
+
+    await tx.order.update({
+      where: { id: orderId },
+      data: { status: OrderStatus.CANCELLED },
+    });
+
+    await appendOrderHistoryEntry({
+      tx,
+      orderId,
+      userId,
+      eventType: OrderHistoryEventType.ORDER_CANCELLED,
+    });
+
+    return { ok: true };
+  });
+}
+
+export async function reactivateOrder(orderId: string, userId: string): Promise<ReactivateOrderResult> {
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.order.findFirst({
+      where: { id: orderId, userId },
+      select: { status: true },
+    });
+
+    if (!order) {
+      return { ok: false, error: "ORDER_NOT_FOUND" };
+    }
+
+    if (order.status !== OrderStatus.CANCELLED) {
+      return { ok: false, error: "ORDER_NOT_CANCELLED" };
+    }
+
+    await tx.order.update({
+      where: { id: orderId },
+      data: { status: OrderStatus.OPEN },
+    });
+
+    await appendOrderHistoryEntry({
+      tx,
+      orderId,
+      userId,
+      eventType: OrderHistoryEventType.ORDER_REACTIVATED,
+    });
+
+    return { ok: true };
+  });
+}
+
+export async function deleteOrder(orderId: string, userId: string): Promise<DeleteOrderResult> {
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.order.findFirst({
+      where: { id: orderId, userId },
+      select: { id: true },
+    });
+
+    if (!order) {
+      return { ok: false, error: "ORDER_NOT_FOUND" };
+    }
+
+    const liveLink = await tx.deliveryOrderItem.findFirst({
+      where: {
+        orderItem: { orderId },
+        delivery: { status: { not: DeliveryStatus.CANCELLED } },
+      },
+      select: { deliveryId: true },
+    });
+
+    if (liveLink) {
+      return { ok: false, error: "HAS_LIVE_DELIVERY_LINKS" };
+    }
+
+    await tx.orderPayment.deleteMany({ where: { orderId } });
+
+    await tx.deliveryOrderItem.deleteMany({
+      where: { orderItem: { orderId } },
+    });
+
+    await tx.orderHistory.deleteMany({ where: { orderId } });
+    await tx.orderItem.deleteMany({ where: { orderId } });
+    await tx.order.delete({ where: { id: orderId } });
+
+    return { ok: true };
+  });
+}
+
+export { hasLiveDeliveryLinks };
