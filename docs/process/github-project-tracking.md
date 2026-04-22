@@ -105,6 +105,107 @@ Examples:
 
 Optional GitHub links may be added as convenience only when needed, but the path is the durable reference.
 
+## GitHub GraphQL API
+
+The GitHub MCP tools in this workspace operate on **issues** only (open, close, update body, read). They do **not** expose GitHub Projects v2 field updates. Any command that needs to set, change, or verify the **`Status`** column on Project `4` — or add a new issue to the project — must use the GraphQL API directly via `curl`.
+
+### Token
+
+The Personal Access Token (PAT) is **never stored in this repository**. To obtain it at runtime, check in order:
+
+1. **Shell environment** — look for `GITHUB_TOKEN` or `GH_TOKEN` in the current session.
+2. **Claude Code MCP config** — the GitHub MCP server entry in `~/.claude/settings.json` (global) or `.claude/settings.json` (project) may include an auth header or a `headersHelper` command. Read that config to locate the credential.
+3. **System keychain** — if neither of the above applies, retrieve the PAT from your password manager or system keychain.
+
+Never commit, echo, or paste the raw token value into chat output, repository files, or documentation.
+
+### Endpoint
+
+```
+POST https://api.github.com/graphql
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+### Stable IDs — Project #4
+
+These IDs are stable. Re-query only if a new `Status` option is added to the project.
+
+| Resource           | ID                               |
+| ------------------ | -------------------------------- |
+| Project            | `PVT_kwHOAkSmss4BRB1f`           |
+| Status field       | `PVTSSF_lAHOAkSmss4BRB1fzg--lrA` |
+| Backlog option     | `4baedf6e`                       |
+| Todo option        | `4ef2235b`                       |
+| In Progress option | `f69e5735`                       |
+| Blocked option     | `aee8310f`                       |
+| Done option        | `1cd4a97b`                       |
+
+### Common operations
+
+**Resolve the project item ID for an issue**
+
+```bash
+curl -s -X POST https://api.github.com/graphql \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query { repository(owner: \"MineiToshio\", name: \"PandaTrack\") { issue(number: ISSUE_NUMBER) { projectItems(first: 5) { nodes { id project { number } } } } } }"
+  }'
+```
+
+Use the `id` from the node where `project.number === 4`.
+
+**Update the Status field**
+
+```bash
+curl -s -X POST https://api.github.com/graphql \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "mutation { updateProjectV2ItemFieldValue(input: { projectId: \"PVT_kwHOAkSmss4BRB1f\", itemId: \"<ITEM_ID>\", fieldId: \"PVTSSF_lAHOAkSmss4BRB1fzg--lrA\", value: { singleSelectOptionId: \"<OPTION_ID>\" } }) { projectV2Item { id } } }"
+  }'
+```
+
+Replace `<OPTION_ID>` with the value from the stable IDs table above.
+
+**Get the issue node ID (needed to add an issue to the project)**
+
+```bash
+curl -s -X POST https://api.github.com/graphql \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query { repository(owner: \"MineiToshio\", name: \"PandaTrack\") { issue(number: ISSUE_NUMBER) { id } } }"
+  }'
+```
+
+**Add an issue to the project**
+
+```bash
+curl -s -X POST https://api.github.com/graphql \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "mutation { addProjectV2ItemById(input: { projectId: \"PVT_kwHOAkSmss4BRB1f\", contentId: \"<ISSUE_NODE_ID>\" }) { item { id } } }"
+  }'
+```
+
+**Verify the current Status of an issue in the project**
+
+```bash
+curl -s -X POST https://api.github.com/graphql \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query { repository(owner: \"MineiToshio\", name: \"PandaTrack\") { issue(number: ISSUE_NUMBER) { projectItems(first: 5) { nodes { project { number } fieldValues(first: 10) { nodes { ... on ProjectV2ItemFieldSingleSelectValue { name field { ... on ProjectV2SingleSelectField { name } } } } } } } } } }"
+  }'
+```
+
+### Error handling
+
+If a mutation returns permission or configuration errors, report the failure as a **Blocked requirement** in the command's final response. Do not claim the command completed successfully when a `Status` update failed. Other parts of the command (issue body updates, doc changes, checklist syncs) may still proceed and be reported as completed independently.
+
 ## Security Rules
 
 - Never commit PATs, OAuth tokens, or auth headers to the repository.

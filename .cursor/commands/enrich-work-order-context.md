@@ -396,7 +396,7 @@ Update the target `Work Order` so it becomes materially more implementation-read
 
 When this command updates the target `Work Order` after user approval, set its document `status` to `ACTIVE` as part of the same edit unless the user explicitly instructs a different lifecycle state.
 
-When the `status` flips from `DRAFT` to `ACTIVE` and the `Work Order` has a `source_issue`, the command must **also** promote that GitHub issue's Project `4` `Status` field from `Backlog` to `Todo` in the same run. This promotion is automatic and is part of the same approval, not a follow-up step. See `docs/process/github-project-tracking.md` → **Readiness rule**. The same user-approved override that skips the `DRAFT → ACTIVE` flip also skips the Project `Status` promotion.
+When the `status` flips from `DRAFT` to `ACTIVE` and the `Work Order` has a `source_issue`, the command must **also** promote that GitHub issue's Project `4` `Status` field from `Backlog` to `Todo` in the same run. This promotion is automatic and is part of the same approval, not a follow-up step. See `docs/process/github-project-tracking.md` → **Readiness rule** for the lifecycle mapping and → **GitHub GraphQL API** for the token, stable IDs, and `curl` patterns needed to execute this transition. The same user-approved override that skips the `DRAFT → ACTIVE` flip also skips the Project `Status` promotion.
 
 Expand it as needed with concrete, testable content. When helpful, add sections beyond the template, such as:
 

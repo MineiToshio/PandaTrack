@@ -98,6 +98,8 @@ Implement one GitHub slice ticket that mirrors a `Work Order`, using the hybrid 
 - Ensure the matching `Work Order` doc remains lifecycle-valid with `status: ACTIVE` when it is the current approved slice definition.
 - Update the matching `Work Order` `implementation_status` to `IN_PROGRESS` when implementation starts, unless it is already `IMPLEMENTED`.
 
+For token retrieval, stable IDs, and `curl` patterns to update the Project `4` `Status` field, see `docs/process/github-project-tracking.md` → **GitHub GraphQL API**.
+
 7. Validate
 - Run:
   - `npm run type-check`

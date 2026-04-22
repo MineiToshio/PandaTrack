@@ -440,6 +440,7 @@ After approval:
   - Epic → **`Todo`**
   - every created Work Order ticket → **`Backlog`** (matches the `status: DRAFT` default of a newly created `Work Order` doc; promotion to `Todo` happens later through `enrich work order context`). See `docs/process/github-project-tracking.md` → **Readiness rule**.
   - The only exception is when the user explicitly approved a different initial `Status` value during the proposal approval step.
+  - For token retrieval, stable IDs, and `curl` patterns to set these Status fields, see `docs/process/github-project-tracking.md` → **GitHub GraphQL API**.
 - explicitly verify that the Epic and every created ticket are present in GitHub Project `4` before finishing
 - explicitly verify that the Epic and every created ticket are **open** and have the correct Project `Status` (Epic = `Todo`, every slice = `Backlog`, or the user-approved alternative) before finishing
 - explicitly verify that the Epic lists every created Work Order ticket as a sub-issue (for example via GitHub MCP `issue_read` with `get_sub_issues`) **and that sub-issues appear in `WO-01`…`WO-NN` order** before finishing
