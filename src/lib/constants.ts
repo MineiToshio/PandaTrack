@@ -38,11 +38,18 @@ export const ROUTES = {
   stores: "/stores",
   storesNew: "/stores/new",
   purchases: "/purchases",
+  purchasesNew: "/purchases/new",
   payments: "/payments",
   shipments: "/shipments",
   budget: "/budget",
   settings: "/settings",
 } as const;
+
+/**
+ * `returnTo` query value: resume order creation after settings or `/stores/new`.
+ * Use with the `returnTo` search param (same key as `AUTH_RETURN_TO_PARAM`).
+ */
+export const RETURN_TO_ORDER_CREATE = "order-create";
 
 /** Query param for referral links (e.g. waitlist share). Value used in share/copy link. */
 export const REFERRAL_QUERY_KEY = "ref";
@@ -123,6 +130,13 @@ export const POSTHOG_EVENTS = {
     PROFILE_AVATAR_UPLOADED: "settings_profile_avatar_uploaded",
     PROFILE_AVATAR_REMOVED: "settings_profile_avatar_removed",
     PREFERENCES_SAVED: "settings_preferences_saved",
+  },
+  ORDER: {
+    CREATED: "order_created",
+    EDITED: "order_edited",
+    CREATE_DISCARDED: "order_create_discarded",
+    DISCREPANCY_MODAL_OPENED: "order_discrepancy_modal_opened",
+    DISCREPANCY_RESOLVED: "order_discrepancy_resolved",
   },
   STORE: {
     CREATED: "store_created",

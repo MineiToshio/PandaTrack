@@ -39,3 +39,14 @@ Use elements that convey meaning: `<button>` for actions, `<nav>` for navigation
 ```
 
 Choosing the right element improves accessibility and SEO.
+
+## Pointer cursor on clickable controls
+
+Browsers default `<button>` to `cursor: default` (unlike `<a href>`, which uses a pointer). The app sets **`cursor: pointer`** in `src/app/globals.css` inside `@layer base` for:
+
+- enabled `button` elements (not `disabled`, not `aria-disabled="true"`)
+- elements with `[role="button"]` that are not `aria-disabled="true"`
+
+The core **`Button`** component already includes `cursor-pointer` in `buttonVariants`. For raw `<button>` or `role="button"` controls, rely on the global base rule rather than repeating `cursor-pointer` on every instance.
+
+When a control needs a different cursor (for example **`cursor-grab`** / **`cursor-grabbing`** on drag handles), add those Tailwind utilities on the element; the **utilities layer** overrides the base rule.

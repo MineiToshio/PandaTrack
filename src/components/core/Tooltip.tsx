@@ -36,6 +36,12 @@ export type TooltipProps = {
    */
   liftAboveCardOverlay?: boolean;
   side?: "top" | "bottom";
+  /**
+   * Cross-axis alignment when this root sits in a parent `flex` row. Default `start` (maps to
+   * `self-start`) matches chips and dense toolbars; `center` lines the trigger up with an adjacent
+   * label in the same row.
+   */
+  alignSelfInFlexRow?: "start" | "center";
 };
 
 type TooltipCoords = { left: number; top: number };
@@ -56,6 +62,7 @@ export default function Tooltip({
   triggerClassName,
   liftAboveCardOverlay = false,
   side = "top",
+  alignSelfInFlexRow = "start",
 }: TooltipProps) {
   const tooltipId = useId();
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -125,7 +132,8 @@ export default function Tooltip({
     <div
       ref={wrapperRef}
       className={cn(
-        "relative inline-flex w-fit max-w-full shrink-0 flex-col items-center self-start",
+        "relative inline-flex w-fit max-w-full shrink-0 flex-col items-center",
+        alignSelfInFlexRow === "center" ? "self-center" : "self-start",
         liftAboveCardOverlay && "pointer-events-auto z-20",
       )}
       onMouseEnter={() => setOpen(true)}

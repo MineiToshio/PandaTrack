@@ -2,13 +2,25 @@ import { prisma } from "@/lib/prisma";
 import { DeliveryStatus, OrderStatus } from "../../../../generated/prisma/client";
 import { generateOrderHumanReadableId } from "@/lib/orders/orderIdentifier";
 import { appendOrderHistoryEntry, OrderHistoryEventType } from "./orderHistoryMutations";
+import { createOrderItems, replaceOrderItems } from "./orderItemMutations";
 import type { OrderCreateInput, OrderEditInput } from "@/lib/orders/orderValidation";
 
 type CreateOrderResult =
   | { ok: true; orderId: string; humanReadableId: string }
-  | { ok: false; error: "STORE_NOT_FOUND" };
+  | { ok: false; error: "STORE_NOT_FOUND" | "INVALID_PRODUCT_TYPE" };
 
-type EditOrderResult = { ok: true } | { ok: false; error: "ORDER_NOT_FOUND" | "ORDER_NOT_EDITABLE" };
+type EditOrderResult =
+  | { ok: true }
+  | {
+      ok: false;
+      error:
+        | "ORDER_NOT_FOUND"
+        | "ORDER_NOT_EDITABLE"
+        | "STORE_NOT_FOUND"
+        | "STORE_CHANGE_BLOCKED"
+        | "INVALID_PRODUCT_TYPE"
+        | "ITEM_HAS_LIVE_DELIVERY";
+    };
 
 type CancelOrderResult = { ok: true } | { ok: false; error: "ORDER_NOT_FOUND" | "HAS_LIVE_DELIVERY_LINKS" };
 
@@ -58,6 +70,13 @@ export async function createOrder(userId: string, input: OrderCreateInput): Prom
       select: { id: true, humanReadableId: true },
     });
 
+    if (input.items && input.items.length > 0) {
+      const itemResult = await createOrderItems(tx, order.id, userId, input.items);
+      if (!itemResult.ok) {
+        return { ok: false, error: "INVALID_PRODUCT_TYPE" };
+      }
+    }
+
     await appendOrderHistoryEntry({
       tx,
       orderId: order.id,
@@ -78,7 +97,7 @@ export async function editOrder(
   return prisma.$transaction(async (tx) => {
     const order = await tx.order.findFirst({
       where: { id: orderId, userId },
-      select: { status: true },
+      select: { status: true, storeId: true },
     });
 
     if (!order) {
@@ -89,9 +108,24 @@ export async function editOrder(
       return { ok: false, error: "ORDER_NOT_EDITABLE" };
     }
 
+    if (input.storeId !== undefined && input.storeId !== order.storeId) {
+      const hasDeliveries = await tx.deliveryOrderItem.findFirst({
+        where: { orderItem: { orderId } },
+        select: { deliveryId: true },
+      });
+      if (hasDeliveries || order.status !== OrderStatus.OPEN) {
+        return { ok: false, error: "STORE_CHANGE_BLOCKED" };
+      }
+      const store = await tx.store.findFirst({ where: { id: input.storeId }, select: { id: true } });
+      if (!store) {
+        return { ok: false, error: "STORE_NOT_FOUND" };
+      }
+    }
+
     await tx.order.update({
       where: { id: orderId },
       data: {
+        ...(input.storeId !== undefined ? { storeId: input.storeId } : {}),
         ...(input.orderDate !== undefined ? { orderDate: input.orderDate } : {}),
         ...(input.expectedDeliveryFrom !== undefined ? { expectedDeliveryFrom: input.expectedDeliveryFrom } : {}),
         ...(input.expectedDeliveryTo !== undefined ? { expectedDeliveryTo: input.expectedDeliveryTo } : {}),
@@ -101,6 +135,16 @@ export async function editOrder(
         ...(input.note !== undefined ? { note: input.note } : {}),
       },
     });
+
+    if (input.items !== undefined) {
+      const replaceResult = await replaceOrderItems(tx, orderId, userId, input.items);
+      if (!replaceResult.ok) {
+        if (replaceResult.error === "ITEM_HAS_LIVE_DELIVERY") {
+          return { ok: false, error: "ITEM_HAS_LIVE_DELIVERY" };
+        }
+        return { ok: false, error: "INVALID_PRODUCT_TYPE" };
+      }
+    }
 
     const metadata = changedFields.length > 0 ? { fields: changedFields } : {};
     await appendOrderHistoryEntry({

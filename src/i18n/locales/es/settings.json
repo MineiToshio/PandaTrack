@@ -8,6 +8,7 @@
   },
   "title": "Ajustes",
   "intro": "Gestiona tu perfil, datos de acceso y preferencias en un solo lugar.",
+  "returnToOrderCreate": "Volver al formulario de nueva orden",
   "profile": {
     "title": "Perfil",
     "username": {

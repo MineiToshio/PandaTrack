@@ -10,7 +10,7 @@ Read this file first, then open the matching topic document:
 
 - `docs/design/visual-foundations.md`: visual language, semantic design variables, typography, color, spacing, surfaces, radius, shadows, gradients
 - `docs/design/interface-patterns.md`: interaction states, navigation, content hierarchy, tabs, modals, right sidebars, motion, status patterns, responsive and accessibility rules
-- `docs/design/ux-copy.md`: voice, tone, and writing principles for in-app microcopy — empty states, info banners, error messages, helper text, confirmation dialogs, and CTAs
+- `docs/design/ux-copy.md`: voice, tone, and writing principles for in-app microcopy (empty states, info banners, error messages, helper text, confirmation dialogs, and CTAs)
 
 ## Decision
 

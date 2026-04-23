@@ -2,7 +2,8 @@
 
 import { useCallback, useId, useMemo, useRef, useState } from "react";
 import posthog from "posthog-js";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import Button from "@/components/core/Button/Button";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
@@ -12,7 +13,7 @@ import Typography from "@/components/core/Typography";
 import Modal from "@/components/modules/Modal/Modal";
 import { useToast } from "@/contexts/ToastContext";
 import { cn } from "@/lib/styles";
-import { POSTHOG_EVENTS } from "@/lib/constants";
+import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { ALLOWED_COLLECTOR_BASE_CURRENCY_CODES, COUNTRY_CODES } from "@/lib/catalog/collectorCountries";
 import { STORE_PRODUCT_TYPE_KEYS } from "@/lib/catalog/storeProductTypes";
 import { SETTINGS_SECTION_SURFACE_CLASSNAME } from "@/app/[locale]/(app)/settings/settingsSectionChrome";
@@ -29,6 +30,8 @@ type SettingsPreferencesSectionProps = {
   initialProductTypeKeys: string[];
   initialBudgetAmount: number | null;
   initialBudgetResetDayOfMonth: number | null;
+  /** When true, successful save navigates to order create (`/purchases/new`). */
+  redirectToOrderCreateAfterSave?: boolean;
 };
 
 type FormValues = {
@@ -190,8 +193,11 @@ export default function SettingsPreferencesSection({
   initialProductTypeKeys,
   initialBudgetAmount,
   initialBudgetResetDayOfMonth,
+  redirectToOrderCreateAfterSave = false,
 }: SettingsPreferencesSectionProps) {
   const t = useTranslations("settings.preferences");
+  const locale = useLocale();
+  const router = useRouter();
   const tErrors = useTranslations("settings.preferences.errors");
   const tCountries = useTranslations("countries");
   const tProductTypes = useTranslations("storeProductTypes");
@@ -342,6 +348,9 @@ export default function SettingsPreferencesSection({
       });
 
       addToast(t("success"));
+      if (redirectToOrderCreateAfterSave) {
+        router.push(`/${locale}${ROUTES.purchasesNew}`);
+      }
     },
     [
       buildPayload,
@@ -354,6 +363,9 @@ export default function SettingsPreferencesSection({
       tErrors,
       t,
       addToast,
+      redirectToOrderCreateAfterSave,
+      locale,
+      router,
     ],
   );
 

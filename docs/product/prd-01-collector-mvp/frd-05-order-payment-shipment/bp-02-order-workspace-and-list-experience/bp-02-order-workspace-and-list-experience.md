@@ -11,7 +11,7 @@ children:
   - WO-06
   - WO-07
 last_updated: 2026-04-19
-implementation_status: PLANNED
+implementation_status: IN_PROGRESS
 ---
 
 # BP-02 Order Workspace and List Experience

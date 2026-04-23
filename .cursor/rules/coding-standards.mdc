@@ -100,6 +100,7 @@ Prefer reusing existing building blocks so the app stays consistent and maintain
 - **Native form controls belong in core**: Do not paste a styled `<select>` (or duplicate `Input`-level classes on `<select>`) inside route `_components` or modules. Use **`src/components/core/Select`** and pass `error`, `className`, and `showChevron` when you need the custom chevron layout. If a new form primitive is needed app-wide, add or extend a **core** component instead of a route-local copy.
 - **Semantic HTML when no component fits**: If no core or module component matches the need, use the appropriate HTML element (`<p>`, `<button>`, `<nav>`, etc.) with the project’s Tailwind/semantic tokens. Do not create a one-off component when a simple element plus `className` is enough.
 - **Do not force reuse when purpose or design differs**: Reuse only when the use case and visual intent align. For example, use `Button` for primary/secondary CTAs, but a plain `<button>` or `<div>` with `role="button"` for a backdrop overlay that closes a drawer, or for custom controls that do not look or behave like app buttons.
+- **Pointer on actionable buttons**: Enabled native `<button>` and `[role="button"]` get `cursor: pointer` from `src/app/globals.css` (`@layer base`). Do not assume the browser default; if you need another cursor (e.g. drag handles), set it explicitly with a utility so it overrides base.
 
 ```tsx
 // ✅ Prefer: core component for body text

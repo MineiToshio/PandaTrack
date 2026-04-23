@@ -243,3 +243,14 @@ body {
     "Segoe UI",
     sans-serif;
 }
+
+/* Native <button> uses cursor: default in user-agent styles; match link-like affordance for actionable controls. */
+@layer base {
+  button:not(:disabled):not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}

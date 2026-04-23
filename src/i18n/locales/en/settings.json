@@ -8,6 +8,7 @@
   },
   "title": "Settings",
   "intro": "Manage your profile, sign-in details, and preferences in one place.",
+  "returnToOrderCreate": "Back to new order form",
   "profile": {
     "title": "Profile",
     "username": {

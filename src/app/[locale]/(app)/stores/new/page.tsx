@@ -9,6 +9,7 @@ import CreateStoreForm from "./_components/CreateStoreForm";
 
 type StoresNewPageProps = {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string>>;
 };
 
 export async function generateMetadata({ params }: StoresNewPageProps): Promise<Metadata> {
@@ -21,8 +22,9 @@ export async function generateMetadata({ params }: StoresNewPageProps): Promise<
   });
 }
 
-export default async function StoresNewPage({ params }: StoresNewPageProps) {
+export default async function StoresNewPage({ params, searchParams }: StoresNewPageProps) {
   const { locale } = await params;
+  const { returnTo } = await searchParams;
   await getTranslations({ locale, namespace: "stores" });
 
   const [countries, productTypes] = await Promise.all([
@@ -33,7 +35,7 @@ export default async function StoresNewPage({ params }: StoresNewPageProps) {
   return (
     <div className="text-foreground">
       <div className={APP_SHELL_FORM_RAIL_CLASSNAME}>
-        <CreateStoreForm countries={countries} productTypes={productTypes} />
+        <CreateStoreForm countries={countries} productTypes={productTypes} returnTo={returnTo} />
       </div>
     </div>
   );

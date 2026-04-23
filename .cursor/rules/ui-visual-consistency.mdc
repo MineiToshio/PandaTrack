@@ -29,6 +29,7 @@ Do not give the same semantic action different visual treatments on nearby flows
 - Prefer **semantic Tailwind tokens** (`text-text-title`, `bg-background`, `border-border`, etc.) per `theme-light-dark.mdc`.
 - Reuse **core** and **module** components for typography and controls before duplicating class stacks.
 - Keep **responsive** behavior consistent with `responsive-design.mdc` (no accidental overlap; sensible tap targets).
+- **Click affordance**: Enabled `<button>` and `[role="button"]` use a pointer cursor via global base styles in `globals.css`; icon-only and plain buttons should not rely on the browser’s default arrow for `<button>`.
 
 ## When this rule applies
 

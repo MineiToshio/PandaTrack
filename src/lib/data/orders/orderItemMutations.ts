@@ -227,28 +227,4 @@ export async function reorderOrderItems(
   });
 }
 
-/**
- * Derives itemized total from item quantity × unitPrice.
- * Returns null when no items have a unitPrice set.
- * Uses integer arithmetic to avoid floating-point drift.
- */
-export function deriveItemizedTotal(items: Array<{ quantity: number; unitPrice: number | null }>): number | null {
-  const priced = items.filter((i): i is { quantity: number; unitPrice: number } => i.unitPrice != null);
-  if (priced.length === 0) return null;
-  return priced.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
-}
-
-/**
- * Returns true when the discrepancy modal must be shown at save time.
- * Both conditions must hold: every item has a unitPrice AND itemizedTotal !== totalCost.
- */
-export function shouldShowDiscrepancyModal(
-  items: Array<{ quantity: number; unitPrice: number | null }>,
-  totalCost: number,
-): boolean {
-  if (items.length === 0) return false;
-  const allPriced = items.every((i) => i.unitPrice != null);
-  if (!allPriced) return false;
-  const itemizedTotal = deriveItemizedTotal(items);
-  return itemizedTotal !== null && itemizedTotal !== totalCost;
-}
+export { deriveItemizedTotal, shouldShowDiscrepancyModal } from "@/lib/orders/orderItemUtils";

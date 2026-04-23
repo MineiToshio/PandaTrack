@@ -37,7 +37,16 @@ export function buildCanonicalPath(locale: string, segment: PageCanonicalSegment
 
 export type BuildPageMetadataOptions = {
   locale: string;
-  namespace: "terms" | "privacy" | "landing" | "dashboard" | "appLayout" | "stores" | "storeListing" | "settings";
+  namespace:
+    | "terms"
+    | "privacy"
+    | "landing"
+    | "dashboard"
+    | "appLayout"
+    | "stores"
+    | "storeListing"
+    | "settings"
+    | "orders";
   pathSegment: PageCanonicalSegment;
   titleKey: string;
   descriptionKey?: string;

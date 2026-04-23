@@ -5,7 +5,7 @@ alwaysApply: false
 
 # Copywriter – PandaTrack
 
-When writing or editing any user-facing copy — landing pages, emails, CTAs, in-app messages, empty states, banners, or confirmation dialogs — act as an **expert copywriter focused on clarity, context, and human communication**.
+When writing or editing any user-facing copy (landing pages, emails, CTAs, in-app messages, empty states, banners, or confirmation dialogs), act as an **expert copywriter focused on clarity, context, and human communication**.
 
 This rule covers two scopes:
 
@@ -17,20 +17,32 @@ The source of truth for UX microcopy patterns, examples, and tone-by-surface gui
 ## Shared Priorities
 
 - **Clarity first**: Short, scannable sentences. One idea per sentence when possible.
-- **Benefit-led**: Lead with what the user gains, not what the system needs or what is missing. Use "you" and "your".
-- **Contextual**: Every message must answer the implicit user question "why does this matter to me right now?" — never just name a state.
-- **Strong CTAs**: Action verb first, specific (e.g. "Crear tienda" not "Continuar"). Avoid vague labels like "Aceptar", "OK", or "Click here".
+- **Benefit-led**: Lead with what the user gains, not what the system needs or what is missing. Use "you"/"your" and "we" for what PandaTrack does.
+- **Write for someone discovering the app**: Never assume the reader has seen other screens. Describe benefits as concrete outcomes they can picture now (e.g. "see how much you've spent in total", "ve cuánto llevas gastado en total"), not as references to features they haven't discovered yet (e.g. "see your dashboard and reports").
+- **Warm and supportive**: Sound like someone helping, not issuing instructions. Small words like "just" / "solo" and phrasings like "we'll do it for you" / "por ti" make tasks feel light.
+- **Contextual**: Every message must answer the implicit user question "why does this matter to me right now?", never just name a state.
+- **Strong CTAs**: Action verb first, specific (e.g. "Crear tienda" not "Continuar"). Avoid vague labels like "Aceptar", "OK", "Configurar ahora", or "Click here".
 - **No fluff**: Cut filler words and jargon. Every word should earn its place.
 - **Human, not mechanical**: Copy should sound like something a knowledgeable person would say, not a system status code or error log.
 
 ## UX Microcopy Rules (in-app)
 
-- Always give context: never name a missing state without explaining the benefit of fixing it.
+- Always give context: never name a missing state without explaining the benefit of fixing it, expressed as an outcome the user can picture even if it's their first screen.
+- Prefer tangible outcomes over feature names. "Ve cuánto llevas gastado en total" works for anyone; "Ve tu dashboard y reportes" only works for users who already know those exist.
 - Empty states: icon + forward-looking title + one benefit sentence + verb-first CTA.
 - Info banners: benefit statement first, then the action link. Use `info` visual treatment, not `warning`, for non-blocking guidance.
 - Error messages: plain language + what to do. Never blame the user.
 - Confirmation dialogs for destructive actions: state exactly what will be removed or changed.
 - Success toasts: one short past-tense sentence. No exclamation marks unless the moment genuinely earns one.
+
+### Reference example: base currency banner
+
+This is the canonical tone and structure for non-blocking info banners aimed at first-time users. Reuse the same pattern for similar opportunities (profile completion, budget setup, etc.).
+
+- ES: "Te mostramos cuánto llevas gastado en total, aunque compres en tiendas de distintos países. Solo elige tu moneda base y convertimos cada orden a esa moneda por ti." CTA: `Elegir moneda base →`
+- EN: "We'll show you how much you've spent in total, even when you buy from stores in different countries. Just choose your base currency and we'll convert each order to it for you." CTA: `Choose base currency →`
+
+Why it works: benefit stated as a concrete outcome (no assumed knowledge of dashboard/budget/reports), warm voice ("we'll", "por ti", "solo"), task framed as light, CTA is verb + specific object.
 
 ## Constraints
 

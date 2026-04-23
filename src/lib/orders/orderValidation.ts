@@ -68,8 +68,13 @@ export const orderCreateSchema = z
     }
   });
 
+export const orderItemEditRowSchema = orderItemRowSchema.extend({
+  id: z.string().cuid().optional(),
+});
+
 export const orderEditSchema = z
   .object({
+    storeId: z.string().cuid({ message: "INVALID_STORE_ID" }).optional(),
     orderDate: z.coerce.date().optional(),
     expectedDeliveryFrom: z.coerce.date().nullable().optional(),
     expectedDeliveryTo: z.coerce.date().nullable().optional(),
@@ -77,7 +82,7 @@ export const orderEditSchema = z
     exchangeRate: exchangeRateSchema.nullable().optional(),
     totalCost: totalCostSchema.optional(),
     note: z.string().max(2000).nullable().optional(),
-    items: z.array(orderItemRowSchema).optional(),
+    items: z.array(orderItemEditRowSchema).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.expectedDeliveryFrom && data.expectedDeliveryTo) {
@@ -121,6 +126,7 @@ export const orderItemDeleteSchema = z.object({
 
 export type OrderCreateInput = z.infer<typeof orderCreateSchema>;
 export type OrderEditInput = z.infer<typeof orderEditSchema>;
+export type OrderItemEditRowInput = z.infer<typeof orderItemEditRowSchema>;
 export type OrderCancelInput = z.infer<typeof orderCancelSchema>;
 export type OrderDeleteInput = z.infer<typeof orderDeleteSchema>;
 export type OrderReactivateInput = z.infer<typeof orderReactivateSchema>;

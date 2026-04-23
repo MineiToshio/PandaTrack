@@ -25,8 +25,7 @@ import Select from "@/components/core/Select";
 import Textarea from "@/components/core/Textarea";
 import Button from "@/components/core/Button/Button";
 import { cn } from "@/lib/styles";
-import { ROUTES } from "@/lib/constants";
-import { POSTHOG_EVENTS } from "@/lib/constants";
+import { POSTHOG_EVENTS, RETURN_TO_ORDER_CREATE, ROUTES } from "@/lib/constants";
 import posthog from "posthog-js";
 import { createStore, type CreateStoreResult } from "../_actions/createStore";
 import { getDuplicateCandidates, getDuplicateCandidatesForSubmit } from "../_actions/getDuplicateCandidates";
@@ -150,9 +149,10 @@ function DuplicateCandidatesList({ candidates, locale, tCountries }: DuplicateCa
 export type CreateStoreFormProps = {
   countries: { code: string }[];
   productTypes: { key: string }[];
+  returnTo?: string;
 };
 
-export default function CreateStoreForm({ countries, productTypes }: CreateStoreFormProps) {
+export default function CreateStoreForm({ countries, productTypes, returnTo }: CreateStoreFormProps) {
   const locale = useLocale();
   const router = useRouter();
   const t = useTranslations("stores");
@@ -400,8 +400,12 @@ export default function CreateStoreForm({ countries, productTypes }: CreateStore
       return;
     }
 
-    router.replace(`/${locale}${ROUTES.stores}/${createdStoreSlug}`);
-  }, [createdStoreSlug, locale, router]);
+    if (returnTo === RETURN_TO_ORDER_CREATE && state?.success === true && "storeId" in state) {
+      router.replace(`/${locale}${ROUTES.purchasesNew}?store=${state.storeId}`);
+    } else {
+      router.replace(`/${locale}${ROUTES.stores}/${createdStoreSlug}`);
+    }
+  }, [createdStoreSlug, locale, router, returnTo, state]);
 
   useEffect(() => {
     if (showConfirmDuplicate && duplicateModalCancelRef.current) {
