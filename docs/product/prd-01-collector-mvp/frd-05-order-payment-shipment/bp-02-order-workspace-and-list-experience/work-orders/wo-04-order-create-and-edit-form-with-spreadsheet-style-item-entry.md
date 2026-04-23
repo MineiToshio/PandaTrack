@@ -38,6 +38,9 @@ WO-04 does not include any Prisma migration. It consumes the modules and schemas
 - Exchange-rate field (conditional: only when order currency differs from base currency)
 - Non-blocking info banner when user has no base currency configured, with a settings deep link that preserves return context (`?returnTo=order-create`)
 - Spreadsheet-style item rows: name, quantity, unit price (optional), product type (optional)
+- Spreadsheet-style keyboard shortcuts standardized on `Ctrl + Shift` (literal `Ctrl` on both macOS and Windows — same keycap label on every platform) as the base combo for cell/row actions, plus `Alt + Shift + ↑/↓` for reorder (VSCode "move line" convention): `Ctrl + Shift + ↑/↓` vertical row navigation, `Ctrl + Shift + ←/→` adjacent-column navigation, `Ctrl + Shift + Enter` insert row below, `Ctrl + Shift + Backspace` delete row, `Alt + Shift + ↑/↓` reorder, plus existing `Tab` from last cell
+- Keyboard shortcut discoverability: help icon + tooltip next to the "Agregar artículo" button lists every shortcut
+- Product-type inheritance on new rows (new rows inherit the nearest preceding non-empty product type)
 - Drag-and-drop item reorder with keyboard accessibility
 - Total-cost entry and discrepancy modal (three-way decision)
 - Redirect to order detail after successful save
@@ -188,7 +191,45 @@ This reuses the same `returnTo` contract as the store-creation path; only the po
 - Mobile: drag handle always visible at `opacity-30` at rest, `opacity-100` when the row is being dragged or is active
 - Long-press on the row activates drag on touch devices
 
-**Keyboard navigation:** Tab from the last cell of the last row adds a new empty row (per WO-02).
+**Keyboard navigation (spreadsheet-style):** the grid exposes a full keyboard shortcut surface so collectors can enter a run of items without ever leaving the keyboard. All shortcuts are handled by a single unified `onKeyDown` on every cell input so coverage is uniform across the four columns.
+
+**Modifier standardization (cross-platform safe harbor):** every cell/row action uses `Ctrl + Shift` as the base combo — **literal Ctrl on both macOS and Windows** (`event.ctrlKey`, not `metaKey`). Reordering uses `Alt + Shift + ↑/↓` as an explicitly distinct combo (VSCode "move line" convention) to avoid stacking a third modifier on top of an already two-modifier chord, and because reorder is a power-user action that benefits from living in its own mnemonic space.
+
+**Why `Ctrl + Shift` (and not something simpler):** we iterated through every single-modifier option and each had a fatal OS-level or browser-level conflict:
+
+| Modifier attempt                       | Fatal conflict                                                                                                                                                                                                                             |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Alt` alone (Option on Mac)            | Firefox on macOS binds `Option + ←/→` to browser history back/forward, and some macOS configs scroll the page on `Option + ↑/↓`. Event is intercepted by the OS/browser before reaching our handler, so `preventDefault()` cannot save us. |
+| `Cmd/Ctrl` (`metaKey`/`ctrlKey`) alone | `Cmd + ←/→` is browser history on macOS; `Ctrl + ←/→` is "switch Space" on macOS Mission Control. Both eaten before the page.                                                                                                              |
+| `Ctrl` literal alone                   | Same Mission Control / Spaces binding on macOS (`Ctrl + arrows`, `Ctrl + ↑` = Mission Control).                                                                                                                                            |
+
+`Ctrl + Shift` is the first combo that is free of OS-level bindings on macOS **and** free of browser history shortcuts everywhere. Its only conflicts are _text-editing_ shortcuts inside inputs (`Ctrl + Shift + ←/→` = extend word selection on Windows, `Ctrl + Shift + Backspace` = delete previous word on some platforms) — those reach our handler and we override them cleanly with `preventDefault()`. The collector still has `Home` / `End` / double-click-to-select for word-level caret navigation.
+
+Ergonomic trade-off: `Ctrl + Shift + key` is three keys, one more than a single-modifier combo. We accepted this because reliability beats ergonomics when the simpler combos don't actually work everywhere.
+
+| Shortcut                                   | Behavior                                                                                                                                                                          |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Tab` / `Shift + Tab`                      | Horizontal cell-to-cell traversal (native browser focus order).                                                                                                                   |
+| `Tab` from last cell (Type) of last row    | Appends a new row (with inherited product type) and focuses its Name cell. Legacy behavior per WO-02.                                                                             |
+| `Ctrl + Shift + ↑` / `Ctrl + Shift + ↓`    | Moves focus to the **same column** of the previous / next row. Hard stop at the first / last row. Pre-selects destination text.                                                   |
+| `Ctrl + Shift + ←` / `Ctrl + Shift + →`    | Moves focus to the **previous** / **next** column of the current row, one step at a time (Name ↔ Qty ↔ Price ↔ Type). Pre-selects destination text. Hard stop at Name / Type.     |
+| `Ctrl + Shift + Enter`                     | Inserts a new row **below** the current row (with inherited product type) and focuses its Name cell.                                                                              |
+| `Ctrl + Shift + Backspace` (or `+ Delete`) | Deletes the current row and moves focus to the same column of the previous row (or next if first). Respects the "at least one row" rule — does nothing when only one row remains. |
+| `Alt + Shift + ↑` / `Alt + Shift + ↓`      | Reorders the current row up / down by one position, keeping focus on the exact same cell (VSCode "move line" convention).                                                         |
+
+Behavior notes:
+
+- Focused cell contents are re-selected after both vertical (`Ctrl + Shift + ↑/↓`) and horizontal (`Ctrl + Shift + ←/→`) navigation (`HTMLInputElement.select()`) so the collector can immediately start typing to replace the value — Excel-style "overwrite on move." Re-selection is intentionally skipped for row creation and reorder paths (focus moves but the existing value, if any, is preserved for editing).
+- The handler requires `ctrlKey && shiftKey && !metaKey && !altKey` for the core shortcuts — so `Cmd + Shift + key` (Mac) or `Ctrl + Alt + Shift + key` combos are **not** hijacked, preserving every native browser/OS chord that layers on top of `Shift`.
+- `Cmd/Ctrl + Backspace` (clear input to start of line on macOS) is **not** hijacked. All other native text-editing shortcuts (`Cmd/Ctrl + A`, `Cmd/Ctrl + Z`, `Shift + arrows` selection, etc.) are left untouched.
+
+**Discoverability — keyboard shortcut help:** a small `Keyboard` icon (from `lucide-react`) is placed immediately to the right of the **"Artículos" section heading** in the form, matching the inline-tooltip pattern already used by the currency and exchange-rate labels. Hovering or keyboard-focusing the icon opens a tooltip listing every shortcut in `<kbd>`-styled rows, rendered via the shared `Tooltip` component. The standalone React component lives at `src/app/[locale]/(app)/purchases/_components/share/OrderItemsShortcutsHelp.tsx`.
+
+- **Placement rationale:** the affordance is co-located with the section title because that is where the user's eye lands first when scanning the form, and it mirrors the existing currency/exchange-rate tooltip pattern — consistent with the rest of the form. An earlier placement next to the "Agregar artículo" footer button was rejected: it anchored discovery too close to the end of the scroll region, making the icon easy to miss on long orders and inconsistent with every other hint tooltip in this page.
+- **Mobile:** the entire help affordance is hidden via `hidden md:inline-flex` on breakpoints below `md`. Grid shortcuts require a physical keyboard, so touch-only devices (phones) don't get the icon. Tablets hitting the `md` breakpoint with a paired keyboard still see it.
+- **OS-aware key labels:** `Ctrl` and `Shift` are labeled identically on every OS (the physical keycap legend matches on Mac and Windows keyboards), so no detection is needed for the core shortcuts. The only OS-dependent label is the `Alt` key for the reorder shortcut, which renders as **"Option"** on macOS-family devices (Mac, iPad, iPhone, iPod) and as **"Alt"** on Windows / Linux. Detection lives in a local `useIsMac()` hook using a lazy `useState` initializer that reads `navigator.userAgent` and `navigator.platform`, defaulting to `false` on SSR to avoid hydration mismatches.
+- **Accessibility:** the trigger is a real `<button>` (inherited from `Tooltip`), reachable via `Tab`, labelled by `sr-only` text (`orders.form.itemsShortcutsHelpLabel`), and the tooltip panel is associated via `aria-describedby`. `Escape` closes the panel when opened via keyboard focus.
+- Content copy lives under `orders.form.itemsShortcuts*` in both Spanish and English translation catalogs.
 
 **Row minimum:** at least one item row is required before saving.
 
@@ -206,6 +247,14 @@ This reuses the same `returnTo` contract as the store-creation path; only the po
 - The inserted row is always the same empty row shape produced by `createEmptyRow` (quantity defaults to `1`). Position normalization at save time (WO-02) handles the renumbering; the grid does not need to reshuffle `position` on insert.
 
 **Product type select:** shows the full global `StoreProductType` catalog. Not filtered by the order's store assignment. Field is optional.
+
+**Product type inheritance on row creation:** every new item row inherits the product type of the nearest preceding row that has a non-empty `productTypeKey`. Because a collector typically logs several items of the same type in a single order (e.g. five manga volumes, then two art books), the sensible default is "same as previous" rather than empty.
+
+- Applies to **all four** row-creation paths, uniformly: the "Agregar artículo" footer button, `Tab` from the last cell of the last row, the between-rows `+` inserter, and the `Cmd/Ctrl + Enter` shortcut.
+- Algorithm (see `inheritProductTypeFromPrevious` in `src/lib/orders/orderItemUtils.ts`): starting from `insertIndex - 1`, walk the current rows backwards and copy the first non-empty `productTypeKey` found. If every preceding row has an empty type, the new row keeps its empty default.
+- Inheritance is **one-shot** at creation time — it seeds the new row but does not create a linked binding. The collector can freely change the type of the new row afterwards without affecting the source row, and vice versa.
+- Applies identically in both `create` and `edit` modes; the helper operates purely on the current client-side rows, so it works for pre-existing order rows loaded in edit mode the same way it works for rows added during the session.
+- The inheritance walk is strictly **backwards** (above → below). Rows above index 0 have no predecessor, so inserting at index 0 always produces an empty product type; new rows appended at the end pick up the last row's type if set.
 
 **Validation timing:** `name` and `quantity` validate on blur; `unitPrice` and `productTypeKey` validate at save time (per WO-02).
 
@@ -319,17 +368,40 @@ All event names are centralized in `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 
 ### Item spreadsheet — keyboard
 
-- Tabbing from the last cell of the last row adds a new empty row.
-- User can add multiple rows and navigate between cells without using the mouse.
+- `Tab` / `Shift + Tab` cycle through the four cells in visual order across rows; the user can fill and traverse the whole grid without touching the mouse.
+- `Tab` from the last cell (Type) of the last row appends a new row and focuses its Name cell.
+- `Ctrl + Shift + ↓` on any cell moves focus to the same column of the next row; the new input's existing text is pre-selected so typing replaces it. On the last row, `Ctrl + Shift + ↓` does nothing (hard stop).
+- `Ctrl + Shift + ↑` on any cell moves focus to the same column of the previous row; pre-selects text. Hard stop on the first row.
+- `Ctrl + Shift + ←` / `Ctrl + Shift + →` move focus to the previous / next column of the current row one step at a time (Name ↔ Qty ↔ Price ↔ Type); the destination text is pre-selected. On the first column `Ctrl + Shift + ←` does nothing; on the last column `Ctrl + Shift + →` does nothing.
+- `Ctrl + Shift + Enter` on any cell inserts a new row directly below the current row (seeded with the inherited product type) and moves focus to its Name cell.
+- `Ctrl + Shift + Backspace` (and `Ctrl + Shift + Delete`) on any cell deletes the current row and moves focus to the same column of the previous row; if the current row is the first, focus moves to the next row instead. Shortcut is a no-op when only one row exists.
+- `Alt + Shift + ↑` / `Alt + Shift + ↓` reorder the current row up / down by one position, keeping focus on the exact same cell.
+- When `Cmd/Meta` is pressed alongside `Ctrl + Shift`, none of the grid shortcuts fire — native browser/OS chords (for example `Cmd + Ctrl + Shift + 4` screenshot-to-clipboard on macOS) continue to work.
+
+### Item spreadsheet — shortcut discoverability
+
+- A `Keyboard` help icon is rendered to the right of the "Artículos" section heading (not next to the footer "Agregar artículo" button); it is focusable via `Tab`.
+- Hovering or keyboard-focusing the icon opens a tooltip that lists all grid shortcuts with localized descriptions, plus a reminder that Tab / Shift+Tab move between cells.
+- On macOS-family devices (Mac, iPad, iPhone) the modifier key is labeled **Option**; on Windows and Linux it is labeled **Alt**. Detection runs client-side after mount (SSR defaults to "Alt").
+- On breakpoints below `md` (phones) the icon is hidden entirely — shortcuts don't apply to touch-only input.
+- The tooltip supports `Escape` to close when opened via keyboard focus.
 
 ### Item spreadsheet — reorder
 
 - User drags an item row to a new position; the reordered list persists after save.
+- Keyboard reorder: focusing any cell of a row and pressing `Alt + Shift + ↑` / `Alt + Shift + ↓` moves the row by one position; the reordered list persists after save.
 
 ### Item spreadsheet — insert between rows
 
-- Hovering the gap between two item rows on desktop reveals the "+" inserter; clicking it adds a new empty row between those two items and moves focus to the name input of the new row.
-- The inserter is not rendered above the first row or below the last row; new rows at the end still use the "Agregar artículo" footer button or the Tab-from-last-cell shortcut.
+- Hovering the gap between two item rows on desktop reveals the "+" inserter; clicking it adds a new row between those two items (with product type inherited from the row above) and moves focus to the name input of the new row.
+- The inserter is not rendered above the first row or below the last row; new rows at the end still use the "Agregar artículo" footer button, the Tab-from-last-cell shortcut, or `Ctrl + Shift + Enter` on the last row.
+
+### Item spreadsheet — product type inheritance
+
+- Creating a new row via any of the four entry points (`Agregar artículo` button, `Tab` from last cell, `+` between-rows inserter, `Cmd/Ctrl + Enter`) seeds the new row's Type with the first non-empty `productTypeKey` found by walking the current rows backwards from the insertion point.
+- When no preceding row has a product type, the new row keeps Type empty (the current behavior before this rule was introduced).
+- Inheritance is one-shot: changing the Type of the new row afterwards does not affect the source row, and changing the source row's Type does not retroactively change the new row's Type.
+- Applies identically in create and edit modes.
 
 ### Item spreadsheet — delete block
 

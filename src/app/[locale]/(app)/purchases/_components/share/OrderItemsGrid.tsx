@@ -18,6 +18,7 @@ import Input from "@/components/core/Input";
 import Select from "@/components/core/Select";
 import Button from "@/components/core/Button/Button";
 import { cn } from "@/lib/styles";
+import { inheritProductTypeFromPrevious } from "@/lib/orders/orderItemUtils";
 
 export type ItemRow = {
   rowId: string;
@@ -28,10 +29,38 @@ export type ItemRow = {
   productTypeKey: string;
 };
 
+// Logical left-to-right column order inside an item row. Used by the
+// Ctrl+Shift+arrow navigation to compute focus targets.
+type ColumnKey = "name" | "qty" | "price" | "type";
+const COLUMN_ORDER: readonly ColumnKey[] = ["name", "qty", "price", "type"] as const;
+
+function cellInputId(column: ColumnKey, rowId: string): string {
+  return `item-${column}-${rowId}`;
+}
+
+function focusCell(column: ColumnKey, rowId: string, selectText = true) {
+  window.requestAnimationFrame(() => {
+    const el = document.getElementById(cellInputId(column, rowId));
+    if (!el) return;
+    el.focus();
+    if (selectText && el instanceof HTMLInputElement) {
+      try {
+        el.select();
+      } catch {
+        // Some input types (e.g. number) may throw on .select() in older browsers; safe to ignore.
+      }
+    }
+  });
+}
+
+type CellKeyDownContext = {
+  column: ColumnKey;
+  rowId: string;
+};
+
 type OrderItemRowProps = {
   row: ItemRow;
   index: number;
-  isLastRow: boolean;
   productTypeKeys: string[];
   tProductTypes: (key: string) => string;
   nameError?: string;
@@ -41,13 +70,12 @@ type OrderItemRowProps = {
   onUnitPriceChange: (rowId: string, value: string) => void;
   onProductTypeChange: (rowId: string, value: string) => void;
   onDelete: (rowId: string) => void;
-  onLastCellTab: () => void;
+  onCellKeyDown: (e: React.KeyboardEvent, ctx: CellKeyDownContext) => void;
 };
 
 function OrderItemRow({
   row,
   index,
-  isLastRow,
   productTypeKeys,
   tProductTypes,
   nameError,
@@ -57,7 +85,7 @@ function OrderItemRow({
   onUnitPriceChange,
   onProductTypeChange,
   onDelete,
-  onLastCellTab,
+  onCellKeyDown,
 }: OrderItemRowProps) {
   const t = useTranslations("orders.form");
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -68,13 +96,6 @@ function OrderItemRow({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-  };
-
-  const handleLastCellKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Tab" && !e.shiftKey && isLastRow) {
-      e.preventDefault();
-      onLastCellTab();
-    }
   };
 
   return (
@@ -116,11 +137,11 @@ function OrderItemRow({
 
       <div className="flex flex-col gap-2 p-3 md:contents">
         <div className="md:min-w-0 md:flex-1">
-          <label className="text-text-muted mb-0.5 block text-xs md:sr-only" htmlFor={`item-name-${row.rowId}`}>
+          <label className="text-text-muted mb-0.5 block text-xs md:sr-only" htmlFor={cellInputId("name", row.rowId)}>
             {t("itemNameLabel")}
           </label>
           <Input
-            id={`item-name-${row.rowId}`}
+            id={cellInputId("name", row.rowId)}
             type="text"
             value={row.name}
             placeholder={t("itemNamePlaceholder")}
@@ -128,6 +149,7 @@ function OrderItemRow({
             aria-invalid={!!nameError}
             aria-describedby={nameError ? `item-name-error-${row.rowId}` : undefined}
             onChange={(e) => onNameChange(row.rowId, e.target.value)}
+            onKeyDown={(e) => onCellKeyDown(e, { column: "name", rowId: row.rowId })}
             onBlur={() => {}}
           />
           {nameError && (
@@ -139,11 +161,11 @@ function OrderItemRow({
 
         <div className="flex gap-2 md:contents">
           <div className="md:w-20">
-            <label className="text-text-muted mb-0.5 block text-xs md:sr-only" htmlFor={`item-qty-${row.rowId}`}>
+            <label className="text-text-muted mb-0.5 block text-xs md:sr-only" htmlFor={cellInputId("qty", row.rowId)}>
               {t("itemQuantityLabel")}
             </label>
             <Input
-              id={`item-qty-${row.rowId}`}
+              id={cellInputId("qty", row.rowId)}
               type="number"
               min="1"
               step="1"
@@ -151,33 +173,38 @@ function OrderItemRow({
               error={!!quantityError}
               aria-invalid={!!quantityError}
               onChange={(e) => onQuantityChange(row.rowId, e.target.value)}
+              onKeyDown={(e) => onCellKeyDown(e, { column: "qty", rowId: row.rowId })}
             />
           </div>
 
           <div className="md:w-28">
-            <label className="text-text-muted mb-0.5 block text-xs md:sr-only" htmlFor={`item-price-${row.rowId}`}>
+            <label
+              className="text-text-muted mb-0.5 block text-xs md:sr-only"
+              htmlFor={cellInputId("price", row.rowId)}
+            >
               {t("itemUnitPriceLabel")}
             </label>
             <Input
-              id={`item-price-${row.rowId}`}
+              id={cellInputId("price", row.rowId)}
               type="number"
               min="0"
               step="0.01"
               value={row.unitPrice}
               placeholder={t("itemUnitPricePlaceholder")}
               onChange={(e) => onUnitPriceChange(row.rowId, e.target.value)}
+              onKeyDown={(e) => onCellKeyDown(e, { column: "price", rowId: row.rowId })}
             />
           </div>
 
           <div className="min-w-0 flex-1 md:w-36 md:flex-none">
-            <label className="text-text-muted mb-0.5 block text-xs md:sr-only" htmlFor={`item-type-${row.rowId}`}>
+            <label className="text-text-muted mb-0.5 block text-xs md:sr-only" htmlFor={cellInputId("type", row.rowId)}>
               {t("itemProductTypeLabel")}
             </label>
             <Select
-              id={`item-type-${row.rowId}`}
+              id={cellInputId("type", row.rowId)}
               value={row.productTypeKey}
               onChange={(e) => onProductTypeChange(row.rowId, e.target.value)}
-              onKeyDown={handleLastCellKeyDown}
+              onKeyDown={(e) => onCellKeyDown(e, { column: "type", rowId: row.rowId })}
             >
               <option value="">{t("itemProductTypePlaceholder")}</option>
               {productTypeKeys.map((key) => (
@@ -299,6 +326,34 @@ export default function OrderItemsGrid({
     [rows, onChange],
   );
 
+  // Build a new row seeded with the product type inherited from the nearest
+  // non-empty preceding row. `insertIndex` is where the new row will land
+  // (0..rows.length); the helper walks rows[insertIndex - 1] → rows[0].
+  const buildInheritedRow = useCallback(
+    (insertIndex: number): ItemRow => {
+      const fresh = createNewRow();
+      const inherited = inheritProductTypeFromPrevious(rows, insertIndex);
+      return inherited ? { ...fresh, productTypeKey: inherited } : fresh;
+    },
+    [rows, createNewRow],
+  );
+
+  const handleAddRow = useCallback(() => {
+    const newRow = buildInheritedRow(rows.length);
+    onChange([...rows, newRow]);
+    focusCell("name", newRow.rowId, false);
+  }, [rows, onChange, buildInheritedRow]);
+
+  const handleInsertRowAt = useCallback(
+    (index: number) => {
+      const newRow = buildInheritedRow(index);
+      const next = [...rows.slice(0, index), newRow, ...rows.slice(index)];
+      onChange(next);
+      focusCell("name", newRow.rowId, false);
+    },
+    [rows, onChange, buildInheritedRow],
+  );
+
   const handleDelete = useCallback(
     (rowId: string) => {
       const next = rows.filter((r) => r.rowId !== rowId);
@@ -307,32 +362,120 @@ export default function OrderItemsGrid({
     [rows, onChange],
   );
 
-  const focusRowName = useCallback((rowId: string) => {
-    window.requestAnimationFrame(() => {
-      const newInput = document.getElementById(`item-name-${rowId}`);
-      newInput?.focus();
-    });
-  }, []);
+  // Unified keyboard handler for all four cells of every row.
+  //
+  // Design decision: every functional shortcut uses `Ctrl + Shift` as the single
+  // base combo — literal Ctrl on both Mac and Windows (`event.ctrlKey`, NOT
+  // metaKey). Reason: this is the only combo that is free of OS-level bindings on
+  // macOS (Ctrl alone is taken by Mission Control / Spaces) and free of browser
+  // history conflicts on every major browser. `Alt` alone / Option alone triggered
+  // Firefox history back/forward on Mac and Mission Control scroll. `Cmd/Ctrl`
+  // alone conflicts with browser history nav. `Ctrl + Shift` is the safe harbor.
+  //
+  // Reordering uses `Alt + Shift + ↑/↓` (VSCode "move line" convention) as a
+  // deliberately distinct combo — this is an advanced, rarely used action so it
+  // earns its own key pattern rather than stacking a third modifier on top.
+  //
+  // Shortcut map (keep in sync with WO-04 "Item spreadsheet — keyboard"):
+  //   Tab                               last cell (type) of last row → append new row (legacy, no modifier)
+  //   Ctrl + Shift + ↑/↓                move focus to same column of previous / next row (hard stop at edges)
+  //   Ctrl + Shift + ←/→                move focus to the previous / next column in the current row
+  //   Ctrl + Shift + Enter              insert new row below the current row, focus its name cell
+  //   Ctrl + Shift + Backspace | Delete delete current row, move focus to same column of previous (or next if first)
+  //   Alt + Shift + ↑/↓                 reorder current row up / down one position, preserve focused cell
+  //
+  // Conflict trade-offs accepted:
+  //   - Ctrl + Shift + ←/→ overrides the native "extend word selection" text-editing shortcut.
+  //   - Ctrl + Shift + Backspace overrides "delete previous word" on some platforms.
+  //   - Alt + Shift + ↑/↓ overrides "extend selection by paragraph" on some browsers.
+  const handleCellKeyDown = useCallback(
+    (event: React.KeyboardEvent, ctx: CellKeyDownContext) => {
+      const key = event.key;
+      const shift = event.shiftKey;
+      // Literal Ctrl, NOT Cmd (metaKey). Ignore if Meta or Alt also pressed so we
+      // don't steal unrelated chords.
+      const ctrlShift = event.ctrlKey && shift && !event.metaKey && !event.altKey;
+      // Alt + Shift only, no Ctrl / no Meta.
+      const altShift = event.altKey && shift && !event.metaKey && !event.ctrlKey;
 
-  const handleAddRow = useCallback(() => {
-    const newRow = createNewRow();
-    onChange([...rows, newRow]);
-    focusRowName(newRow.rowId);
-  }, [rows, onChange, createNewRow, focusRowName]);
+      const index = rows.findIndex((r) => r.rowId === ctx.rowId);
+      if (index === -1) return;
+      const isLastRow = index === rows.length - 1;
 
-  const handleInsertRowAt = useCallback(
-    (index: number) => {
-      const newRow = createNewRow();
-      const next = [...rows.slice(0, index), newRow, ...rows.slice(index)];
-      onChange(next);
-      focusRowName(newRow.rowId);
+      // Tab on last cell of last row → append new row. No modifier.
+      if (
+        key === "Tab" &&
+        !shift &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        isLastRow &&
+        ctx.column === "type"
+      ) {
+        event.preventDefault();
+        const newRow = buildInheritedRow(rows.length);
+        onChange([...rows, newRow]);
+        focusCell("name", newRow.rowId, false);
+        return;
+      }
+
+      // Reorder: Alt + Shift + ↑/↓
+      if (altShift && (key === "ArrowUp" || key === "ArrowDown")) {
+        event.preventDefault();
+        const direction = key === "ArrowUp" ? -1 : 1;
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= rows.length) return;
+        onChange(arrayMove(rows, index, newIndex));
+        focusCell(ctx.column, ctx.rowId, false);
+        return;
+      }
+
+      // All other shortcuts below require Ctrl + Shift.
+      if (!ctrlShift) return;
+
+      if (key === "ArrowUp" || key === "ArrowDown") {
+        event.preventDefault();
+        const direction = key === "ArrowUp" ? -1 : 1;
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= rows.length) return;
+        focusCell(ctx.column, rows[newIndex].rowId);
+        return;
+      }
+
+      if (key === "ArrowLeft" || key === "ArrowRight") {
+        event.preventDefault();
+        const currentColumnIdx = COLUMN_ORDER.indexOf(ctx.column);
+        const direction = key === "ArrowLeft" ? -1 : 1;
+        const targetColumnIdx = currentColumnIdx + direction;
+        if (targetColumnIdx < 0 || targetColumnIdx >= COLUMN_ORDER.length) return;
+        focusCell(COLUMN_ORDER[targetColumnIdx], ctx.rowId);
+        return;
+      }
+
+      if (key === "Enter") {
+        event.preventDefault();
+        const insertIndex = index + 1;
+        const newRow = buildInheritedRow(insertIndex);
+        const next = [...rows.slice(0, insertIndex), newRow, ...rows.slice(insertIndex)];
+        onChange(next);
+        focusCell("name", newRow.rowId, false);
+        return;
+      }
+
+      if (key === "Backspace" || key === "Delete") {
+        event.preventDefault();
+        // "At least one row" invariant: never delete the last remaining row.
+        if (rows.length <= 1) return;
+        const next = rows.filter((_, i) => i !== index);
+        onChange(next);
+        const neighborIndex = index > 0 ? index - 1 : 0;
+        const neighbor = next[Math.min(neighborIndex, next.length - 1)];
+        if (neighbor) focusCell(ctx.column, neighbor.rowId);
+        return;
+      }
     },
-    [rows, onChange, createNewRow, focusRowName],
+    [rows, onChange, buildInheritedRow],
   );
-
-  const handleLastCellTab = useCallback(() => {
-    onChange([...rows, createNewRow()]);
-  }, [rows, onChange, createNewRow]);
 
   return (
     <div className="space-y-2">
@@ -356,7 +499,6 @@ export default function OrderItemsGrid({
                 <OrderItemRow
                   row={row}
                   index={index}
-                  isLastRow={index === rows.length - 1}
                   productTypeKeys={productTypeKeys}
                   tProductTypes={tProductTypes}
                   nameError={itemErrors[row.rowId]?.name}
@@ -366,7 +508,7 @@ export default function OrderItemsGrid({
                   onUnitPriceChange={(rowId, value) => updateRow(rowId, { unitPrice: value })}
                   onProductTypeChange={(rowId, value) => updateRow(rowId, { productTypeKey: value })}
                   onDelete={handleDelete}
-                  onLastCellTab={handleLastCellTab}
+                  onCellKeyDown={handleCellKeyDown}
                 />
               </div>
             ))}

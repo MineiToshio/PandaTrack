@@ -37,6 +37,7 @@ import DatePickerInput from "@/components/core/DatePickerInput";
 import DateRangePickerInput from "@/components/core/DateRangePickerInput";
 import DiscrepancyModal from "./DiscrepancyModal";
 import OrderItemsGrid, { createEmptyRow, type ItemRow } from "./OrderItemsGrid";
+import OrderItemsShortcutsHelp from "./OrderItemsShortcutsHelp";
 import OrderCurrencySelect from "./OrderCurrencySelect";
 import OrderStoreSelect from "./OrderStoreSelect";
 
@@ -381,7 +382,7 @@ export default function OrderForm({
         />
         {baseCurrencyCode === null && (
           <div className="bg-info/12 border-info/35 flex items-start gap-3 rounded-xl border p-4">
-            <Info size={16} className="text-info mt-0.5 shrink-0" aria-hidden />
+            <Info size={16} className="text-info mt-0.5 shrink-0 sm:mt-1" aria-hidden />
             <Typography size="sm" className="text-text-body">
               {tForm("baseCurrencyBannerText")}{" "}
               <Link
@@ -557,7 +558,10 @@ export default function OrderForm({
         )}
 
         <div className="space-y-3">
-          <h2 className="text-text-title text-base font-semibold">{tForm("itemsSectionTitle")}</h2>
+          <div className="flex items-center gap-1.5">
+            <h2 className="text-text-title text-base font-semibold">{tForm("itemsSectionTitle")}</h2>
+            <OrderItemsShortcutsHelp />
+          </div>
           {items.length === 0 && fieldErrors.items?.length && (
             <Typography size="xs" className="text-destructive" role="alert">
               {t("validation.itemsRequired")}

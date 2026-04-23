@@ -19,3 +19,22 @@ export function shouldShowDiscrepancyModal(
   const itemizedTotal = deriveItemizedTotal(items);
   return itemizedTotal !== null && itemizedTotal !== totalCost;
 }
+
+/**
+ * Walks backwards from `insertIndex - 1` through `rows` and returns the first
+ * non-empty `productTypeKey`. Returns "" when none is found.
+ *
+ * Used so that newly created item rows inherit the product type of the nearest
+ * preceding row (collectors usually log runs of items of the same type).
+ */
+export function inheritProductTypeFromPrevious(
+  rows: ReadonlyArray<{ productTypeKey: string }>,
+  insertIndex: number,
+): string {
+  const clamped = Math.min(insertIndex, rows.length);
+  for (let i = clamped - 1; i >= 0; i--) {
+    const key = rows[i]?.productTypeKey;
+    if (key) return key;
+  }
+  return "";
+}
