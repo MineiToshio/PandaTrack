@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { deriveHasUnpaidBalance } from "@/lib/orders/orderState";
 import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
-import type { OrderStatus } from "../../../../generated/prisma/client";
+import type { ItemDeliveryState } from "@/lib/orders/orderState";
+import { DeliveryStatus, type OrderStatus } from "../../../../generated/prisma/client";
 
 export type OrderItem = {
   id: string;
@@ -52,6 +53,28 @@ export type OrderDetail = OrderListItem & {
 export type OrderListFilters = {
   status?: OrderStatus;
   storeId?: string;
+};
+
+export type OrderItemWithDeliveryState = OrderItem & {
+  deliveryState: ItemDeliveryState;
+};
+
+export type OrderEligibility = {
+  canDelete: boolean;
+  canCancel: boolean;
+  blockReason?: "ITEMS_LINKED_TO_DELIVERY";
+};
+
+export type OrderFlags = {
+  hasPayments: boolean;
+  hasNonCancelledDeliveryLinks: boolean;
+};
+
+export type OrderDetailFull = Omit<OrderDetail, "items"> & {
+  store: { id: string; name: string; slug: string };
+  items: OrderItemWithDeliveryState[];
+  eligibility: OrderEligibility;
+  flags: OrderFlags;
 };
 
 export async function getOrderById(orderId: string, userId: string): Promise<OrderDetail | null> {
@@ -118,6 +141,113 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
     items: row.items,
     payments: row.payments,
     history: row.history,
+  };
+}
+
+function deriveItemDeliveryState(deliveryItems: Array<{ delivery: { status: DeliveryStatus } }>): ItemDeliveryState {
+  if (deliveryItems.length === 0) return "open";
+  const hasDelivered = deliveryItems.some((d) => d.delivery.status === DeliveryStatus.DELIVERED);
+  if (hasDelivered) return "delivered";
+  return "in_transit";
+}
+
+export async function getOrderDetail(orderId: string, userId: string): Promise<OrderDetailFull | null> {
+  const row = await prisma.order.findFirst({
+    where: { id: orderId, userId },
+    select: {
+      id: true,
+      humanReadableId: true,
+      storeId: true,
+      store: { select: { id: true, name: true, slug: true } },
+      orderDate: true,
+      expectedDeliveryFrom: true,
+      expectedDeliveryTo: true,
+      currencyCode: true,
+      exchangeRate: true,
+      totalCost: true,
+      note: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+      items: {
+        select: {
+          id: true,
+          name: true,
+          quantity: true,
+          unitPrice: true,
+          productTypeKey: true,
+          position: true,
+          deliveryItems: {
+            select: { delivery: { select: { status: true } } },
+            where: { delivery: { status: { not: DeliveryStatus.CANCELLED } } },
+          },
+        },
+        orderBy: { position: "asc" },
+      },
+      payments: {
+        select: { id: true, amount: true, paymentDate: true },
+        orderBy: [{ paymentDate: "desc" }, { createdAt: "desc" }],
+      },
+      history: {
+        select: { id: true, eventType: true, metadata: true, createdAt: true },
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  });
+
+  if (!row) return null;
+
+  const { paidAmount, remainingAmount, paymentPercentage } = calculatePaymentSummary(row.totalCost, row.payments);
+
+  const itemsWithState: OrderItemWithDeliveryState[] = row.items.map((item) => ({
+    id: item.id,
+    name: item.name,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+    productTypeKey: item.productTypeKey,
+    position: item.position,
+    deliveryState: deriveItemDeliveryState(item.deliveryItems),
+  }));
+
+  const hasNonCancelledDeliveryLinks = itemsWithState.some(
+    (item) => item.deliveryState === "in_transit" || item.deliveryState === "delivered",
+  );
+
+  const eligibility: OrderEligibility = {
+    canDelete: !hasNonCancelledDeliveryLinks,
+    canCancel: !hasNonCancelledDeliveryLinks,
+    blockReason: hasNonCancelledDeliveryLinks ? "ITEMS_LINKED_TO_DELIVERY" : undefined,
+  };
+
+  const flags: OrderFlags = {
+    hasPayments: row.payments.length > 0,
+    hasNonCancelledDeliveryLinks,
+  };
+
+  return {
+    id: row.id,
+    humanReadableId: row.humanReadableId,
+    storeId: row.storeId,
+    store: row.store,
+    storeName: row.store.name,
+    orderDate: row.orderDate,
+    expectedDeliveryFrom: row.expectedDeliveryFrom,
+    expectedDeliveryTo: row.expectedDeliveryTo,
+    currencyCode: row.currencyCode,
+    exchangeRate: row.exchangeRate ? Number(row.exchangeRate) : null,
+    totalCost: row.totalCost,
+    note: row.note,
+    status: row.status,
+    createdAt: row.createdAt,
+    hasUnpaidBalance: deriveHasUnpaidBalance(row.totalCost, paidAmount),
+    paidAmount,
+    remainingAmount,
+    paymentPercentage,
+    items: itemsWithState,
+    payments: row.payments,
+    history: row.history,
+    eligibility,
+    flags,
   };
 }
 

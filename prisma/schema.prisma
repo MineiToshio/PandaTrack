@@ -24,12 +24,9 @@ enum OrderStatus {
 
 enum OrderHistoryEventType {
   ORDER_CREATED
-  ORDER_EDITED
   ORDER_CANCELLED
   ORDER_REACTIVATED
-  PAYMENT_ADDED
-  PAYMENT_DELETED
-  NOTE_UPDATED
+  STATUS_CHANGED
 }
 
 enum DeliveryStatus {

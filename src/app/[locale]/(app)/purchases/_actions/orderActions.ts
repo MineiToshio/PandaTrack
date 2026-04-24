@@ -138,12 +138,8 @@ export async function editOrderAction(
     return { success: false, error: "validation", fieldErrors };
   }
 
-  const changedFields = Object.keys(parsed.data).filter(
-    (k) => parsed.data[k as keyof typeof parsed.data] !== undefined,
-  );
-
   try {
-    const result = await editOrder(orderId, userId, parsed.data, changedFields);
+    const result = await editOrder(orderId, userId, parsed.data);
     if (!result.ok) {
       return { success: false, error: result.error };
     }

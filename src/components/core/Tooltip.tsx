@@ -42,6 +42,11 @@ export type TooltipProps = {
    * label in the same row.
    */
   alignSelfInFlexRow?: "start" | "center";
+  /**
+   * Render the trigger wrapper as a `<div>` instead of `<button>`. Use when the child is already
+   * an interactive element (button, link) to avoid invalid nested interactive elements.
+   */
+  asDiv?: boolean;
 };
 
 type TooltipCoords = { left: number; top: number };
@@ -63,6 +68,7 @@ export default function Tooltip({
   liftAboveCardOverlay = false,
   side = "top",
   alignSelfInFlexRow = "start",
+  asDiv = false,
 }: TooltipProps) {
   const tooltipId = useId();
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -139,20 +145,36 @@ export default function Tooltip({
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={close}
     >
-      <button
-        type="button"
-        className={cn(
-          TRIGGER_FOCUS_RING_CLASSNAME,
-          "gap-inherit font-inherit inline-flex cursor-help items-center",
-          triggerClassName,
-        )}
-        aria-describedby={open ? tooltipId : undefined}
-        onFocus={() => setOpen(true)}
-        onBlur={close}
-        onKeyDown={handleTriggerKeyDown}
-      >
-        {children}
-      </button>
+      {asDiv ? (
+        <div
+          tabIndex={0}
+          className={cn(
+            TRIGGER_FOCUS_RING_CLASSNAME,
+            "gap-inherit font-inherit inline-flex cursor-help items-center",
+            triggerClassName,
+          )}
+          aria-describedby={open ? tooltipId : undefined}
+          onFocus={() => setOpen(true)}
+          onBlur={close}
+        >
+          {children}
+        </div>
+      ) : (
+        <button
+          type="button"
+          className={cn(
+            TRIGGER_FOCUS_RING_CLASSNAME,
+            "gap-inherit font-inherit inline-flex cursor-help items-center",
+            triggerClassName,
+          )}
+          aria-describedby={open ? tooltipId : undefined}
+          onFocus={() => setOpen(true)}
+          onBlur={close}
+          onKeyDown={handleTriggerKeyDown}
+        >
+          {children}
+        </button>
+      )}
       {open && coords ? (
         <Portal>
           <span

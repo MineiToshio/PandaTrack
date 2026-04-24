@@ -88,12 +88,7 @@ export async function createOrder(userId: string, input: OrderCreateInput): Prom
   });
 }
 
-export async function editOrder(
-  orderId: string,
-  userId: string,
-  input: OrderEditInput,
-  changedFields: string[],
-): Promise<EditOrderResult> {
+export async function editOrder(orderId: string, userId: string, input: OrderEditInput): Promise<EditOrderResult> {
   return prisma.$transaction(async (tx) => {
     const order = await tx.order.findFirst({
       where: { id: orderId, userId },
@@ -145,15 +140,6 @@ export async function editOrder(
         return { ok: false, error: "INVALID_PRODUCT_TYPE" };
       }
     }
-
-    const metadata = changedFields.length > 0 ? { fields: changedFields } : {};
-    await appendOrderHistoryEntry({
-      tx,
-      orderId,
-      userId,
-      eventType: OrderHistoryEventType.ORDER_EDITED,
-      metadata,
-    });
 
     return { ok: true };
   });
@@ -266,6 +252,60 @@ export async function deleteOrder(orderId: string, userId: string): Promise<Dele
 
     return { ok: true };
   });
+}
+
+type SaveOrderNoteResult =
+  | { ok: true; note: string | null; changed: boolean }
+  | { ok: false; error: "ORDER_NOT_FOUND" };
+
+export async function saveOrderNote(
+  orderId: string,
+  userId: string,
+  rawNote: string | null,
+): Promise<SaveOrderNoteResult> {
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.order.findFirst({
+      where: { id: orderId, userId },
+      select: { note: true },
+    });
+
+    if (!order) return { ok: false, error: "ORDER_NOT_FOUND" };
+
+    const newTrimmed = rawNote?.trim() ?? "";
+    const oldTrimmed = order.note?.trim() ?? "";
+
+    if (newTrimmed === oldTrimmed) {
+      return { ok: true, note: order.note, changed: false };
+    }
+
+    const persistedNote = newTrimmed.length > 0 ? newTrimmed : null;
+
+    await tx.order.update({
+      where: { id: orderId },
+      data: { note: persistedNote },
+    });
+
+    return { ok: true, note: persistedNote, changed: true };
+  });
+}
+
+type DeleteHistoryEntryResult = { ok: true } | { ok: false; error: "NOT_FOUND" };
+
+export async function deleteOrderHistoryEntry(
+  entryId: string,
+  orderId: string,
+  userId: string,
+): Promise<DeleteHistoryEntryResult> {
+  const entry = await prisma.orderHistory.findFirst({
+    where: { id: entryId, orderId, userId },
+    select: { id: true },
+  });
+
+  if (!entry) return { ok: false, error: "NOT_FOUND" };
+
+  await prisma.orderHistory.delete({ where: { id: entryId } });
+
+  return { ok: true };
 }
 
 export { hasLiveDeliveryLinks };

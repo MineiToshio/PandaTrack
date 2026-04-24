@@ -15,15 +15,17 @@ type AppPageHeroProps = {
 
 export default function AppPageHero({ eyebrow, title, description, aside, className }: AppPageHeroProps) {
   const main = (
-    <div className="space-y-2">
-      <span className="bg-primary/15 text-primary inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold">
-        <Sparkles className="size-3.5" aria-hidden />
-        {eyebrow}
-      </span>
-      <Heading as="h1" size="sm" className="text-text-title">
-        {title}
-      </Heading>
-      <Typography size="sm" className="text-text-muted max-w-2xl">
+    <div className="min-w-0">
+      <div className="space-y-2">
+        <span className="bg-primary/15 text-primary inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold">
+          <Sparkles className="size-3.5" aria-hidden />
+          {eyebrow}
+        </span>
+        <Heading as="h1" size="sm" className="text-text-title">
+          {title}
+        </Heading>
+      </div>
+      <Typography size="sm" className="text-text-muted mt-3.5 max-w-2xl sm:mt-4">
         {description}
       </Typography>
     </div>

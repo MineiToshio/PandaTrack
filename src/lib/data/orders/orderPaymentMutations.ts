@@ -1,7 +1,6 @@
 import type { Prisma } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { calculatePaymentSummary, type PaymentSummary } from "@/lib/orders/paymentSummary";
-import { appendOrderHistoryEntry, OrderHistoryEventType } from "./orderHistoryMutations";
 
 type PaymentRecord = {
   id: string;
@@ -71,14 +70,6 @@ export async function addOrderPayment({
       select: { id: true },
     });
 
-    await appendOrderHistoryEntry({
-      tx,
-      orderId,
-      userId,
-      eventType: OrderHistoryEventType.PAYMENT_ADDED,
-      metadata: { amount, currencyCode },
-    });
-
     const updatedPayments = await tx.orderPayment.findMany({
       where: { orderId, userId },
       select: { id: true, amount: true, paymentDate: true },
@@ -111,14 +102,6 @@ export async function deleteOrderPayment({
     }
 
     await tx.orderPayment.delete({ where: { id: paymentId } });
-
-    await appendOrderHistoryEntry({
-      tx,
-      orderId,
-      userId,
-      eventType: OrderHistoryEventType.PAYMENT_DELETED,
-      metadata: { amount: payment.amount, currencyCode: payment.order.currencyCode },
-    });
 
     const updatedPayments = await tx.orderPayment.findMany({
       where: { orderId, userId },
