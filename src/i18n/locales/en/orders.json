@@ -156,11 +156,6 @@
     },
     "history": {
       "sectionTitle": "History",
-      "deleteLabel": "Delete entry",
-      "deleteModalTitle": "Delete this entry?",
-      "deleteModalDescription": "This action cannot be undone.",
-      "deleteConfirm": "Delete",
-      "deleteCancel": "Cancel",
       "events": {
         "ORDER_CREATED": "Order created",
         "ORDER_EDITED": "Order edited",
@@ -184,6 +179,8 @@
     },
     "payments": {
       "sectionTitle": "Payments",
+      "listSectionTitle": "Recorded payments",
+      "summaryRegionAria": "Payment summary",
       "summaryPaid": "Paid",
       "summaryRemaining": "Remaining",
       "summaryProgress": "{pct}% paid",
@@ -194,7 +191,6 @@
       "emptyHelper": "When you pay in instalments, record it here to see what's left.",
       "emptyCta": "Record payment",
       "addCta": "+ Record payment",
-      "addTitle": "Record payment",
       "amountLabel": "Amount",
       "amountPlaceholder": "0.00",
       "amountExceedsBalance": "Amount exceeds the remaining balance ({remaining}).",

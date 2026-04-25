@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import Typography from "@/components/core/Typography";
+import SectionSurfaceCard from "@/components/modules/SectionSurfaceCard";
 import type { PaymentSummary } from "@/lib/orders/paymentSummary";
 import type { OrderStatus } from "../../../../../../../generated/prisma/client";
 
@@ -43,55 +44,69 @@ export default function OrderPaymentSummaryCard({
     ? new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(lastPaymentDate)
     : null;
 
+  const pct = Math.min(paymentPercentage, 100);
+
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-0.5">
-          <Typography size="xs" className="text-text-muted">
-            {t("detail.payments.summaryPaid")}
-          </Typography>
-          <Typography size="sm" className="text-text-body font-semibold tabular-nums">
-            {formatAmount(paidAmount, currencyCode, locale)}
-          </Typography>
-        </div>
-        {!isFullyPaid && (
-          <div className="space-y-0.5">
-            <Typography size="xs" className="text-text-muted">
-              {t("detail.payments.summaryRemaining")}
+    <SectionSurfaceCard title={t("detail.payments.summaryRegionAria")}>
+      <div className="border-border -mx-4 border-t pt-4 sm:-mx-5">
+        <div className={`grid gap-4 px-4 sm:px-5 ${isFullyPaid ? "grid-cols-1" : "grid-cols-2"}`}>
+          <div className="min-w-0 space-y-1">
+            <Typography as="span" size="2xs" className="text-text-muted block font-medium tracking-wider uppercase">
+              {t("detail.payments.summaryPaid")}
             </Typography>
-            <Typography size="sm" className="text-text-body font-semibold tabular-nums">
-              {formatAmount(remainingAmount, currencyCode, locale)}
-            </Typography>
+            <p className="text-success text-xl font-bold tabular-nums sm:text-2xl">
+              {formatAmount(paidAmount, currencyCode, locale)}
+            </p>
           </div>
-        )}
+          {!isFullyPaid && (
+            <div className="min-w-0 space-y-1 text-right">
+              <Typography as="span" size="2xs" className="text-text-muted block font-medium tracking-wider uppercase">
+                {t("detail.payments.summaryRemaining")}
+              </Typography>
+              <p className="text-accent text-xl font-bold tabular-nums sm:text-2xl">
+                {formatAmount(remainingAmount, currencyCode, locale)}
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="space-y-1">
-        <div className="bg-muted h-2 overflow-hidden rounded-full">
-          <div
-            className="bg-primary h-full rounded-full transition-all duration-300"
-            style={{ width: `${Math.min(paymentPercentage, 100)}%` }}
-            role="progressbar"
-            aria-valuenow={paymentPercentage}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={t("detail.payments.summaryProgress", { pct: paymentPercentage })}
-          />
+      <div className="space-y-2">
+        <div
+          className="bg-muted relative h-2.5 w-full overflow-hidden rounded-full"
+          role="progressbar"
+          aria-valuenow={paymentPercentage}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={t("detail.payments.summaryProgress", { pct: paymentPercentage })}
+        >
+          {pct > 0 && (
+            <div
+              className="absolute inset-y-0 left-0 flex items-center transition-[width] duration-300"
+              style={{ width: `${pct}%` }}
+            >
+              <span className="bg-success ring-surface-2 z-10 size-2.5 shrink-0 rounded-full ring-2" aria-hidden />
+              <div className="bg-success h-full min-h-2 flex-1 rounded-r-full" />
+            </div>
+          )}
         </div>
-        {isFullyPaid ? (
-          <Typography size="xs" className="text-success font-medium">
-            {t("detail.payments.summaryFullyPaid")}
-          </Typography>
-        ) : (
-          <Typography size="xs" className="text-text-muted">
-            {t("detail.payments.summaryProgress", { pct: paymentPercentage })}
-          </Typography>
-        )}
-        {lastPaymentLabel && (
-          <Typography size="xs" className="text-text-muted">
-            {t("detail.payments.summaryLastPayment", { date: lastPaymentLabel })}
-          </Typography>
-        )}
+
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+          {isFullyPaid ? (
+            <Typography size="2xs" className="text-success font-medium">
+              {t("detail.payments.summaryFullyPaid")}
+            </Typography>
+          ) : (
+            <Typography size="2xs" className="text-text-muted">
+              {t("detail.payments.summaryProgress", { pct: paymentPercentage })}
+            </Typography>
+          )}
+          {lastPaymentLabel && (
+            <Typography size="2xs" className="text-text-muted sm:text-right">
+              {t("detail.payments.summaryLastPayment", { date: lastPaymentLabel })}
+            </Typography>
+          )}
+        </div>
       </div>
 
       {showUnpaidBanner && (
@@ -99,6 +114,6 @@ export default function OrderPaymentSummaryCard({
           {t("detail.payments.unpaidBanner")}
         </div>
       )}
-    </div>
+    </SectionSurfaceCard>
   );
 }

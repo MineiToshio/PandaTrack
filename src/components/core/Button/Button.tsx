@@ -14,6 +14,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "primary", size, type = "button", onClick, posthogEvent, posthogProps, ...props }, ref) => {
+    const effectiveSize = variant === "link" ? "link" : size;
     const internalRef = useRef<HTMLButtonElement>(null);
     const resolvedRef = (node: HTMLButtonElement | null) => {
       internalRef.current = node;
@@ -49,11 +50,11 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={resolvedRef}
-        type={type}
-        className={cn(buttonVariants({ variant, size }), className)}
+        className={cn(buttonVariants({ variant, size: effectiveSize }), className)}
         onClick={handleClick}
         {...props}
         {...posthogDataAttributes}
+        type={type}
       >
         {showRipple &&
           ripples.map(({ id, x, y }) => (

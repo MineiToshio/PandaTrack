@@ -38,26 +38,29 @@ export default async function OrderItemsList({ orderId, items, currencyCode, loc
       ) : (
         <ul className="divide-border/50 divide-y" role="list">
           {items.map((item) => (
-            <li key={item.id} className="flex items-start justify-between gap-3 py-3">
-              <div className="min-w-0 flex-1">
-                <Typography size="sm" className="text-text-body font-medium">
-                  {item.name}
-                </Typography>
-                {item.productTypeKey && (
-                  <Typography size="xs" className="text-text-muted capitalize">
-                    {item.productTypeKey.replace(/_/g, " ")}
+            <li key={item.id} className="py-0">
+              <div className="hover:bg-muted/50 mx-1 flex items-start gap-4 rounded-lg px-2 py-3 transition-colors duration-200 sm:gap-5">
+                {/* Cap line width on wide viewports so qty/price sit near the name (not screen-far right). */}
+                <div className="w-0 max-w-xl min-w-0 flex-1 sm:max-w-2xl">
+                  <Typography size="sm" className="text-text-body font-medium">
+                    {item.name}
                   </Typography>
-                )}
-              </div>
-              <div className="text-text-muted flex shrink-0 flex-col items-end text-xs">
-                <span>{t("detail.items.quantity", { qty: item.quantity })}</span>
-                {item.unitPrice != null && (
-                  <span>
-                    {t("detail.items.unitPrice", {
-                      price: `${currencyCode} ${formatMinorUnits(item.unitPrice)}`,
-                    })}
-                  </span>
-                )}
+                  {item.productTypeKey && (
+                    <Typography size="xs" className="text-text-muted capitalize">
+                      {item.productTypeKey.replace(/_/g, " ")}
+                    </Typography>
+                  )}
+                </div>
+                <div className="text-text-muted flex shrink-0 flex-col items-end text-xs tabular-nums">
+                  <span>{t("detail.items.quantity", { qty: item.quantity })}</span>
+                  {item.unitPrice != null && (
+                    <span>
+                      {t("detail.items.unitPrice", {
+                        price: `${currencyCode} ${formatMinorUnits(item.unitPrice)}`,
+                      })}
+                    </span>
+                  )}
+                </div>
               </div>
             </li>
           ))}

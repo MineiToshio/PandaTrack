@@ -38,17 +38,16 @@ export default function OrderDetailContent({ order, locale, baseCurrencyCode }: 
         baseCurrencyCode={baseCurrencyCode}
       />
 
-      {/* Two-column layout: left = items + note + history; right = payments */}
+      {/* Two-column layout: left = items + note; right = payments + history (stacked, same card style) */}
       <div className="lg:grid lg:grid-cols-[1fr_360px] lg:items-start lg:gap-8">
         {/* Left column */}
         <div className="space-y-8">
           <OrderItemsList orderId={order.id} items={order.items} currencyCode={order.currencyCode} locale={locale} />
           <OrderNoteForm orderId={order.id} initialNote={order.note} locale={locale} />
-          <OrderHistoryList orderId={order.id} initialHistory={order.history} locale={locale} />
         </div>
 
-        {/* Right column (sticky on lg+) */}
-        <div className="mt-8 lg:sticky lg:top-[calc(var(--app-banner-offset,0px)+3.5rem+2rem)] lg:mt-0">
+        {/* Right column: payments + order history; sticky on lg+ */}
+        <div className="mt-8 space-y-4 lg:sticky lg:top-[calc(var(--app-banner-offset,0px)+3.5rem+2rem)] lg:mt-0">
           <OrderPaymentsPanel
             orderId={order.id}
             totalCost={order.totalCost}
@@ -60,6 +59,7 @@ export default function OrderDetailContent({ order, locale, baseCurrencyCode }: 
             orderDate={order.orderDate}
             locale={locale}
           />
+          <OrderHistoryList initialHistory={order.history} locale={locale} />
         </div>
       </div>
     </div>

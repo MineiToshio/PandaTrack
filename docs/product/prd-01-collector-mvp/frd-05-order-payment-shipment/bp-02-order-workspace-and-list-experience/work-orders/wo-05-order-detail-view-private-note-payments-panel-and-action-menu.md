@@ -7,7 +7,7 @@ status: ACTIVE
 parent: BP-02
 source_features:
   - FEAT-0014
-last_updated: 2026-04-23
+last_updated: 2026-04-24
 implementation_status: IMPLEMENTED
 ---
 
@@ -15,7 +15,7 @@ implementation_status: IMPLEMENTED
 
 ## Summary
 
-Build the order detail experience at `/purchases/[id]`: a status-aware header with action hierarchy, items list, automatic history with per-entry delete, inline-editable private note, and a payments panel that reuses the payment server mutations from [FRD-05 · BP-01 · WO-03](../../bp-01-order-domain-foundation/work-orders/wo-03-order-payments-balances-and-payment-mutation-rules.md). **As implemented (April 2026):** payments and note changes use optimistic or immediate local UI updates where applicable; order history records **lifecycle events only** (`ORDER_CREATED`, `ORDER_CANCELLED`, `ORDER_REACTIVATED`, and `STATUS_CHANGED` reserved for delivery-driven updates). Note and payment activity **do not** append history rows (see migration `20260423000000_simplify_order_history_event_types`). Cancel and reactivate refresh the page after a successful Server Action instead of reconciling a full detail payload on the client.
+Build the order detail experience at `/purchases/[id]`: a status-aware header with action hierarchy, items list, **read-only** automatic history, inline-editable private note, and a payments panel that reuses the payment server mutations from [FRD-05 · BP-01 · WO-03](../../bp-01-order-domain-foundation/work-orders/wo-03-order-payments-balances-and-payment-mutation-rules.md). **As implemented (April 2026):** payments and note changes use optimistic or immediate local UI updates where applicable; order history records **lifecycle events only** (`ORDER_CREATED`, `ORDER_CANCELLED`, `ORDER_REACTIVATED`, and `STATUS_CHANGED` reserved for delivery-driven updates). Note and payment activity **do not** append history rows (see migration `20260423000000_simplify_order_history_event_types`). The history panel is **read-only** (no per-entry delete in UI or `deleteOrderHistoryEntry` in `orderMutations.ts`). On desktop, history sits in the **right column** under the payments block, in a `SectionSurfaceCard` to match the payments list styling. Cancel and reactivate refresh the page after a successful Server Action instead of reconciling a full detail payload on the client. Opening the add-payment form scrolls the form into view (`scrollIntoView` + `scroll-mt-24`) so long payment lists do not hide the form.
 
 ## Prerequisites
 
@@ -26,7 +26,7 @@ This work order depends on the following slices being fully implemented before i
 - **FRD-05 · BP-01 · [WO-03](../../bp-01-order-domain-foundation/work-orders/wo-03-order-payments-balances-and-payment-mutation-rules.md)** — `addPayment` and `deletePayment` Server Actions, `calculatePaymentSummary`, detail-query extension for payments.
 - **FRD-05 · BP-02 · [WO-04](./wo-04-order-create-and-edit-form-with-spreadsheet-style-item-entry.md)** — create and edit routes (`/purchases/new`, `/purchases/[id]/edit`) so the detail view's `Edit` action has a target and the post-save redirect from WO-04 lands on this detail page.
 
-WO-05 extends `orderMutations.ts` with `reactivateOrder`, `saveOrderNote`, and `deleteOrderHistoryEntry`, and extends `getOrderDetail` with `eligibility` / `flags`. A follow-up migration **`20260423000000_simplify_order_history_event_types`** narrows `OrderHistoryEventType` to lifecycle (+ `STATUS_CHANGED`) and removes `NOTE_UPDATED`, `PAYMENT_ADDED`, `PAYMENT_DELETED`, and `ORDER_EDITED`; existing rows using removed types are deleted in that migration.
+WO-05 extends `orderMutations.ts` with `reactivateOrder` and `saveOrderNote`, and extends `getOrderDetail` with `eligibility` / `flags`. A follow-up migration **`20260423000000_simplify_order_history_event_types`** narrows `OrderHistoryEventType` to lifecycle (+ `STATUS_CHANGED`) and removes `NOTE_UPDATED`, `PAYMENT_ADDED`, `PAYMENT_DELETED`, and `ORDER_EDITED`; existing rows using removed types are deleted in that migration. **2026-04-24 update:** per-entry history delete (`deleteOrderHistoryEntry` and `orderHistoryActions.ts`) was removed; history is display-only in the app.
 
 ## In Scope
 
@@ -35,7 +35,7 @@ WO-05 extends `orderMutations.ts` with `reactivateOrder`, `saveOrderNote`, and `
 - `Create delivery` primary action disabled with tooltip until FRD-08 ships
 - Inline-editable private note (reuses visual treatment of `StoreNoteForm`; wired to `Order.note`; no `OrderHistory` row on save)
 - Payments panel: list, expandable add form, delete confirmation, optimistic summary recalculation
-- Automatic history list (read order) with per-entry delete
+- Automatic history list (read-only; no per-entry delete)
 - Cancel, delete, and reactivate flows with context-aware confirmation modals
 - Shared eligibility rule for cancel and delete: blocked when any item is linked to a non-cancelled delivery
 - Tooltip copy for all disabled states
@@ -123,34 +123,34 @@ src/app/[locale]/(app)/purchases/[id]/
     OrderItemsList.tsx             Server — renders items read-only in detail (editing happens in WO-04)
     OrderPaymentSummaryCard.tsx    Client — reconciles with Server Action returns
     OrderPaymentsPanel.tsx         Client — list + expandable form + optimistic list mutations
-    OrderPaymentForm.tsx           Client — useActionState(addPayment)
+    OrderPaymentForm.tsx           Client — `useState` + `addPaymentAction` (not `useActionState`)
     OrderPaymentRow.tsx            Client — delete confirmation
-    OrderNoteForm.tsx              Client — useActionState(saveOrderNote), optimistic local state
-    OrderHistoryList.tsx           Client — stateful list shell + delete callbacks
-    OrderHistoryRow.tsx            Client — per-row delete with optimistic removal
+    OrderNoteForm.tsx              Client — `useState` + `saveOrderNoteAction`, local draft / saved state
+    OrderHistoryList.tsx           Client — `SectionSurfaceCard` + map over `initialHistory` (read-only)
+    OrderHistoryRow.tsx            Client — event label + date (read-only)
     OrderDangerousActionModal.tsx  Client — cancel + delete + reactivate reuse
   _actions/
     orderNoteActions.ts            saveOrderNoteAction (clear note = save null / empty trim)
     orderLifecycleActions.ts       cancelOrderAction, deleteOrderAction, reactivateOrderAction
-    orderHistoryActions.ts         deleteOrderHistoryEntryAction
   _schemas/
     orderNoteSchema.ts
-    orderHistoryEntrySchema.ts
 ```
 
 Pure eligibility helpers live in `src/lib/orders/orderLifecycle.ts` (with Vitest coverage in `src/lib/orders/_tests/orderLifecycle.test.ts`). There is **no** `orderLifecycleSchema.ts` in the repo; actions validate via session + data-layer checks.
 
-`orderMutations.ts` (WO-01) includes `reactivateOrder`, `saveOrderNote`, `cancelOrder`, `deleteOrder`, and `deleteOrderHistoryEntry`. Payment Server Actions live in `orderPaymentActions.ts` and delegate to `orderPaymentMutations.ts`; they return `{ payments, paidAmount, remainingAmount, paymentPercentage }` for panel reconciliation.
+`orderMutations.ts` (WO-01) includes `reactivateOrder`, `saveOrderNote`, `cancelOrder`, and `deleteOrder` (no `deleteOrderHistoryEntry`). Payment Server Actions live in `orderPaymentActions.ts` and delegate to `orderPaymentMutations.ts`; they return `{ payments, paidAmount, remainingAmount, paymentPercentage }` for panel reconciliation.
 
 ## Layout
 
+The page header (`OrderSummaryHeader`, full width) sits above the two-column block.
+
 ### Desktop (≥ lg)
 
-Two-column grid: left column holds the page header, items list, and history list; the right column is sticky and holds the payment summary card, payment panel, and private note.
+Two-column grid `lg:grid-cols-[1fr_360px]`: **left** column — `OrderItemsList`, then `OrderNoteForm` (stacked with `space-y-8`). **Right** column — `OrderPaymentsPanel` (includes `OrderPaymentSummaryCard` + payment list and add form) and **below it** `OrderHistoryList`, both in a **sticky** container (`lg:sticky` with `space-y-4` between the payments section and the history card). The history list uses the same `SectionSurfaceCard` treatment as the payments list for visual consistency in the right rail.
 
 ### Tablet and mobile (< lg)
 
-Single-column stack: header → summary card → payment panel → note → items → history. The sticky right rail collapses into the natural document flow.
+Single-column flow: after the full-width header, the grid becomes one column. Order: **items** → **private note** → **payments panel** (summary + list) → **history** (the right-rail `mt-8` / sticky behavior collapses into normal document order).
 
 ### Header
 
@@ -213,12 +213,12 @@ Two sub-components: `OrderPaymentSummaryCard` (the three KPIs plus the progress 
 
 - Empty state: `Banknote` icon, title "Aún no registras pagos" / "No payments yet", helper text, CTA `+ Registrar pago` / `+ Record payment`.
 - Populated state: list of payment rows ordered by `paymentDate DESC` (tiebreaker `createdAt DESC`). Each row shows amount, date, and a trailing delete icon button.
-- CTA `+ Registrar pago` toggles the add-payment form **inline** below the list at all breakpoints (no bottom sheet in the current implementation).
+- CTA `+ Registrar pago` toggles the add-payment form **inline** below the list at all breakpoints (no bottom sheet in the current implementation). When the form opens, `OrderPaymentsPanel` runs `scrollIntoView` on the form container (smooth, `block: "start"`) and applies `scroll-mt-24` so long payment lists do not leave the form below the fold.
 - When `summary.remainingAmount === 0`, the CTA is hidden (WO-03 contract).
 
 ### Add payment form
 
-- Implemented as `OrderPaymentForm` using **React `useState`**, not `useActionState`.
+- Implemented as `OrderPaymentForm` using **React `useState`**, not `useActionState`. When **embedded** in the payments panel, the form does **not** repeat a “Registrar pago” / “Record payment” heading (the section header and CTA already provide context).
 - Fields: `amount` (money input, client validation against `remainingAmount`), `paymentDate` (date picker, default today, cannot be after today or before `order.orderDate` per server rules).
 - Submit calls `addPaymentAction` → `addOrderPayment`; returns `{ paidAmount, remainingAmount, paymentPercentage, payments }` on success for reconciliation.
 - Optimistic: the panel inserts a temporary row and recalculates summary, then reconciles or reverts on failure.
@@ -231,10 +231,10 @@ Two sub-components: `OrderPaymentSummaryCard` (the three KPIs plus the progress 
 
 ## Automatic History Panel
 
-- Renders the `history` array ordered `createdAt DESC`.
+- Rendered in the **right column** below `OrderPaymentsPanel`, as a **`SectionSurfaceCard`** titled with the localized “History” / “Historial” string (same card shell as the payments list for a consistent right-rail look).
+- Renders the `history` array ordered `createdAt DESC` (props: `initialHistory`, `locale`; no client state required for mutations).
 - **Event types in schema:** `ORDER_CREATED`, `ORDER_CANCELLED`, `ORDER_REACTIVATED`, `STATUS_CHANGED`. The UI/i18n may still contain legacy keys for removed types; rows for those types no longer exist after the simplification migration. `STATUS_CHANGED` is reserved for delivery-driven status transitions (FRD-08) when wired.
-- Each row resolves display text from `orders.detail.history.events.{eventType}` where defined.
-- Each row exposes a trailing delete control with a confirmation modal (`BR-05-09`). The parent list updates after the Server Action returns success (row removal is not optimistic in `OrderHistoryRow`; the action is awaited before `onDeleted`).
+- Each row resolves display text from `orders.detail.history.events.{eventType}` where defined. **Read-only:** there is **no** delete control, modal, or `deleteOrderHistoryEntry` Server Action.
 - Empty state: section hidden; in practice there is at least an `ORDER_CREATED` row for existing orders.
 
 ## Cancel, Delete, and Reactivate Flows
@@ -283,15 +283,14 @@ All copy lives in `src/i18n/locales/{locale}/orders.json` under the namespace `o
 
 Where `.cursor/rules/optimistic-client-updates.mdc` applies:
 
-| Mutation                  | Client behavior                                              | Server / revert                                                                                         |
-| ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
-| `saveOrderNote`           | Updates local note state on success only; no history row     | Error alert; draft unchanged relative to last save attempt                                              |
-| `addPayment`              | Optimistic insert + local summary recalc                     | Revert list + summary from snapshot on failure                                                          |
-| `deletePayment`           | Optimistic remove + local summary recalc                     | Revert on failure                                                                                       |
-| `deleteOrderHistoryEntry` | Parent removes row via `onDeleted` after successful action   | Error in modal; row stays                                                                               |
-| `cancelOrder`             | No optimistic detail merge — **full page reload** on success | Error in modal                                                                                          |
-| `reactivateOrder`         | **`window.location.reload()` runs after the action returns** | On server failure the reload may still run (no branching on `ok` in the action bar) — hardening backlog |
-| `deleteOrder`             | No optimistic UI — **redirect** on success                   | Error in modal                                                                                          |
+| Mutation          | Client behavior                                              | Server / revert                                                                                         |
+| ----------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| `saveOrderNote`   | Updates local note state on success only; no history row     | Error alert; draft unchanged relative to last save attempt                                              |
+| `addPayment`      | Optimistic insert + local summary recalc                     | Revert list + summary from snapshot on failure                                                          |
+| `deletePayment`   | Optimistic remove + local summary recalc                     | Revert on failure                                                                                       |
+| `cancelOrder`     | No optimistic detail merge — **full page reload** on success | Error in modal                                                                                          |
+| `reactivateOrder` | **`window.location.reload()` runs after the action returns** | On server failure the reload may still run (no branching on `ok` in the action bar) — hardening backlog |
+| `deleteOrder`     | No optimistic UI — **redirect** on success                   | Error in modal                                                                                          |
 
 ## Technical Notes
 
@@ -307,7 +306,7 @@ Where `.cursor/rules/optimistic-client-updates.mdc` applies:
 
 - `page.tsx` resolves `userId` from the active session only. `getOrderDetail` is always called with the scoped `userId`.
 - `notFound()` is used whenever the id does not exist or does not belong to the session user, to prevent enumeration.
-- Server Actions resolve the session server-side and scope mutations with `{ orderId, userId }` (`userId` never from the client). Note/payment/history actions use Zod where a schema exists; lifecycle actions rely on the data layer for validation.
+- Server Actions resolve the session server-side and scope mutations with `{ orderId, userId }` (`userId` never from the client). Note/payment actions use Zod where a schema exists; lifecycle actions rely on the data layer for validation. There is **no** history-entry delete action.
 - The shared delete/cancel eligibility rule is computed both in the query (for UI gating) and re-validated inside every destructive Server Action before any write (so a stale client cannot bypass the rule).
 - Confirmation modal copy is built client-side for fast feedback but the server re-validates eligibility and the true state of the order before mutating; stale client flags are caught on the server.
 - Destructive mutations run inside `prisma.$transaction` blocks owned by WO-01 so partial failures cannot leave inconsistent state.
@@ -331,7 +330,6 @@ Event names live under `POSTHOG_EVENTS.ORDER.*` in `src/lib/constants.ts`. **As 
 | `order_cancelled`               | `cancelOrder` returns success                               |
 | `order_deleted`                 | `deleteOrder` returns success                               |
 | `order_reactivated`             | `reactivateOrder` returns success                           |
-| `order_history_entry_deleted`   | `deleteOrderHistoryEntry` returns success                   |
 | `order_create_delivery_clicked` | User clicks `Create delivery`, including the disabled state |
 | `order_detail_more_menu_opened` | The `More` / chevron menu opens                             |
 
@@ -379,6 +377,7 @@ Server-side trim comparison lives in `saveOrderNote` (`orderMutations.ts`). Opti
 - Adding a payment exactly equal to `remainingAmount` completes the fully-paid state; the add CTA disappears.
 - Deleting a payment optimistically updates the summary and the list; the CTA reappears when `remainingAmount > 0`.
 - A future-dated payment or a payment before `order.orderDate` is rejected.
+- When there are enough payment rows that the add form would sit below the fold, choosing **+ Registrar pago** scrolls the form into view (smooth) so the amount/date fields and actions stay visible.
 
 ### Action bar
 
@@ -399,7 +398,7 @@ Server-side trim comparison lives in `saveOrderNote` (`orderMutations.ts`). Opti
 
 - `ORDER_CREATED` is the oldest entry for orders created under the new enum.
 - Lifecycle actions append **`ORDER_CANCELLED`** / **`ORDER_REACTIVATED`** as applicable. Notes and payments do **not** append rows.
-- Deleting a history entry removes it from the list after the Server Action succeeds; on failure the modal shows an error and the row remains.
+- The history list is read-only: users cannot delete individual history entries from the UI; there is no `order_history_entry_deleted` analytics event in `POSTHOG_EVENTS.ORDER` (removed 2026-04-24).
 
 ### Authorization
 

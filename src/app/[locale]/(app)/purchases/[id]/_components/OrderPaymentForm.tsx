@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
 import DatePickerInput from "@/components/core/DatePickerInput";
 import Typography from "@/components/core/Typography";
+import { cn } from "@/lib/styles";
 
 type OrderPaymentFormProps = {
   orderId: string;
@@ -16,6 +17,10 @@ type OrderPaymentFormProps = {
   locale: string;
   onCancel: () => void;
   onSubmit: (amount: number, paymentDate: Date) => Promise<{ ok: boolean; error?: string }>;
+  /**
+   * When set, omits the standalone bordered card; parent provides layout (e.g. inside `SectionSurfaceCard`).
+   */
+  embedded?: boolean;
 };
 
 function parseDecimalToMinorUnits(value: string): number | null {
@@ -43,10 +48,17 @@ export default function OrderPaymentForm({
   locale,
   onCancel,
   onSubmit,
+  embedded = false,
 }: OrderPaymentFormProps) {
   const t = useTranslations("orders");
   const today = new Date();
+  const amountInputRef = useRef<HTMLInputElement>(null);
   const [amountStr, setAmountStr] = useState("");
+
+  /** After the form mounts (user opened “Registrar pago”), move focus to amount — runs after DOM commit. */
+  useLayoutEffect(() => {
+    amountInputRef.current?.focus();
+  }, []);
   const [paymentDate, setPaymentDate] = useState<Date | null>(today);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,13 +97,21 @@ export default function OrderPaymentForm({
   }
 
   return (
-    <div className="border-border mt-2 rounded-xl border p-4">
-      <p className="text-text-title mb-4 text-sm font-semibold">{t("detail.payments.addTitle")}</p>
-
-      <div className="space-y-3">
+    <div className={cn(embedded ? "space-y-3" : "border-border mt-2 space-y-3 rounded-xl border p-4")}>
+      <form
+        className="space-y-3"
+        method="post"
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          void handleSubmit();
+        }}
+      >
         <div>
           <Label htmlFor="payment-amount">{t("detail.payments.amountLabel")}</Label>
           <Input
+            ref={amountInputRef}
             id="payment-amount"
             type="number"
             min="0.01"
@@ -141,14 +161,24 @@ export default function OrderPaymentForm({
         )}
 
         <div className="flex justify-end gap-2">
-          <Button variant="outline" size="md" onClick={onCancel} disabled={isPending}>
+          <Button type="button" variant="outline" size="md" onClick={onCancel} disabled={isPending}>
             {t("detail.payments.cancelAdd")}
           </Button>
-          <Button variant="primary" size="md" onClick={handleSubmit} disabled={!canSubmit || isPending}>
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            disabled={!canSubmit || isPending}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              void handleSubmit();
+            }}
+          >
             {isPending ? t("detail.payments.submittingPayment") : t("detail.payments.submitPayment")}
           </Button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

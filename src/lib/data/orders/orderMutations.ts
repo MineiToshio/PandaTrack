@@ -289,23 +289,4 @@ export async function saveOrderNote(
   });
 }
 
-type DeleteHistoryEntryResult = { ok: true } | { ok: false; error: "NOT_FOUND" };
-
-export async function deleteOrderHistoryEntry(
-  entryId: string,
-  orderId: string,
-  userId: string,
-): Promise<DeleteHistoryEntryResult> {
-  const entry = await prisma.orderHistory.findFirst({
-    where: { id: entryId, orderId, userId },
-    select: { id: true },
-  });
-
-  if (!entry) return { ok: false, error: "NOT_FOUND" };
-
-  await prisma.orderHistory.delete({ where: { id: entryId } });
-
-  return { ok: true };
-}
-
 export { hasLiveDeliveryLinks };

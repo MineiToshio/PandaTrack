@@ -156,11 +156,6 @@
     },
     "history": {
       "sectionTitle": "Historial",
-      "deleteLabel": "Eliminar registro",
-      "deleteModalTitle": "¿Eliminar este registro?",
-      "deleteModalDescription": "Esta acción no se puede deshacer.",
-      "deleteConfirm": "Eliminar",
-      "deleteCancel": "Cancelar",
       "events": {
         "ORDER_CREATED": "Orden creada",
         "ORDER_EDITED": "Orden editada",
@@ -184,6 +179,8 @@
     },
     "payments": {
       "sectionTitle": "Pagos",
+      "listSectionTitle": "Pagos realizados",
+      "summaryRegionAria": "Resumen de pago",
       "summaryPaid": "Pagado",
       "summaryRemaining": "Restante",
       "summaryProgress": "{pct}% pagado",
@@ -194,7 +191,6 @@
       "emptyHelper": "Cuando pagues en cuotas, regístralo aquí para ver cuánto te falta.",
       "emptyCta": "Registrar pago",
       "addCta": "+ Registrar pago",
-      "addTitle": "Registrar pago",
       "amountLabel": "Monto",
       "amountPlaceholder": "0.00",
       "amountExceedsBalance": "El monto supera el saldo pendiente ({remaining}).",

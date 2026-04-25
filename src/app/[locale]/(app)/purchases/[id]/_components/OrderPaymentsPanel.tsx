@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Banknote } from "lucide-react";
 import Button from "@/components/core/Button/Button";
 import Typography from "@/components/core/Typography";
-import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
+import SectionSurfaceCard from "@/components/modules/SectionSurfaceCard";
 import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
 import type { PaymentSummary } from "@/lib/orders/paymentSummary";
 import type { OrderStatus } from "../../../../../../../generated/prisma/client";
@@ -15,6 +14,23 @@ import OrderPaymentForm from "./OrderPaymentForm";
 import OrderPaymentSummaryCard from "./OrderPaymentSummaryCard";
 
 type PaymentRecord = { id: string; amount: number; paymentDate: Date };
+
+const PAYMENTS_LIST_HEADING_ID = "payments-list-heading";
+
+/**
+ * After a Server Action, Next may re-fetch RSC and reset scroll; devtools also show a short "Rendering" state.
+ * Restore window scroll and optionally move focus to the section title without scrolling the page.
+ */
+function stabilizePaymentsPanelAfterMutation(scrollY: number, focusHeading: boolean) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollY);
+      if (focusHeading) {
+        document.getElementById(PAYMENTS_LIST_HEADING_ID)?.focus({ preventScroll: true });
+      }
+    });
+  });
+}
 
 type OrderPaymentsPanelProps = {
   orderId: string;
@@ -44,6 +60,16 @@ export default function OrderPaymentsPanel({
   const [summary, setSummary] = useState<PaymentSummary>(initialSummary);
   const [hasUnpaidBalance, setHasUnpaidBalance] = useState(initialHasUnpaidBalance);
   const [showForm, setShowForm] = useState(false);
+  const paymentFormAnchorRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (!showForm) return;
+    paymentFormAnchorRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+      inline: "nearest",
+    });
+  }, [showForm]);
 
   function recalculate(updatedPayments: PaymentRecord[]) {
     const newSummary = calculatePaymentSummary(totalCost, updatedPayments);
@@ -54,6 +80,7 @@ export default function OrderPaymentsPanel({
   const lastPayment = payments.length > 0 ? payments[0] : null;
 
   async function handleAddPayment(amount: number, paymentDate: Date): Promise<{ ok: boolean; error?: string }> {
+    const scrollY = window.scrollY;
     const optimisticId = `optimistic-${Date.now()}`;
     const optimisticPayment: PaymentRecord = { id: optimisticId, amount, paymentDate };
 
@@ -76,16 +103,18 @@ export default function OrderPaymentsPanel({
       });
       setHasUnpaidBalance(result.remainingAmount > 0);
       setShowForm(false);
+      stabilizePaymentsPanelAfterMutation(scrollY, true);
       return { ok: true };
-    } else {
-      // revert
-      setPayments(payments);
-      recalculate(payments);
-      return { ok: false, error: result.error };
     }
+
+    setPayments(payments);
+    recalculate(payments);
+    stabilizePaymentsPanelAfterMutation(scrollY, false);
+    return { ok: false, error: result.error };
   }
 
   async function handleDeletePayment(paymentId: string): Promise<{ ok: boolean; error?: string }> {
+    const scrollY = window.scrollY;
     const previousPayments = payments;
 
     // optimistic remove
@@ -103,89 +132,103 @@ export default function OrderPaymentsPanel({
         paymentPercentage: result.paymentPercentage,
       });
       setHasUnpaidBalance(result.remainingAmount > 0);
+      stabilizePaymentsPanelAfterMutation(scrollY, false);
       return { ok: true };
-    } else {
-      // revert
-      setPayments(previousPayments);
-      recalculate(previousPayments);
-      return { ok: false, error: result.error };
     }
+
+    setPayments(previousPayments);
+    recalculate(previousPayments);
+    stabilizePaymentsPanelAfterMutation(scrollY, false);
+    return { ok: false, error: result.error };
   }
 
   const isFullyPaid = summary.paymentPercentage >= 100;
 
   return (
-    <section aria-labelledby="payments-panel-heading" className="space-y-4">
-      {/* Section header: title + add payment shortcut */}
-      <div className="flex items-center justify-between gap-2">
-        <SectionTitleWithAccent as="h2" id="payments-panel-heading">
-          {t("detail.payments.sectionTitle")}
-        </SectionTitleWithAccent>
-        {!isFullyPaid && !showForm && payments.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={() => setShowForm(true)}>
-            {t("detail.payments.addCta")}
-          </Button>
-        )}
+    <section className="space-y-4" aria-label={t("detail.payments.sectionTitle")}>
+      <div role="region" aria-label={t("detail.payments.summaryRegionAria")}>
+        <OrderPaymentSummaryCard
+          summary={summary}
+          hasUnpaidBalance={hasUnpaidBalance}
+          status={status}
+          currencyCode={currencyCode}
+          lastPaymentDate={lastPayment ? new Date(lastPayment.paymentDate) : null}
+          locale={locale}
+        />
       </div>
 
-      {/* Payment metrics */}
-      <OrderPaymentSummaryCard
-        summary={summary}
-        hasUnpaidBalance={hasUnpaidBalance}
-        status={status}
-        currencyCode={currencyCode}
-        lastPaymentDate={lastPayment ? new Date(lastPayment.paymentDate) : null}
-        locale={locale}
-      />
-
-      {/* Payment list or empty state */}
-      {payments.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-6 text-center">
-          <Banknote className="text-text-muted size-8" aria-hidden />
-          <div className="space-y-1">
-            <Typography size="sm" className="text-text-title font-medium">
-              {t("detail.payments.emptyTitle")}
-            </Typography>
-            <Typography size="xs" className="text-text-muted">
-              {t("detail.payments.emptyHelper")}
-            </Typography>
-          </div>
-          {!isFullyPaid && !showForm && (
-            <Button variant="secondary" size="md" onClick={() => setShowForm(true)}>
-              {t("detail.payments.emptyCta")}
+      <SectionSurfaceCard
+        title={t("detail.payments.listSectionTitle")}
+        titleId={PAYMENTS_LIST_HEADING_ID}
+        titleAs="h2"
+        headerEnd={
+          !isFullyPaid && !showForm ? (
+            <Button
+              type="button"
+              variant="link"
+              onClick={() => setShowForm(true)}
+              className="max-w-full shrink-0 text-end"
+            >
+              {t("detail.payments.addCta")}
             </Button>
+          ) : null
+        }
+      >
+        <div className="border-border -mx-4 border-t pt-4 sm:-mx-5">
+          {payments.length === 0 ? (
+            <div className="px-4 sm:px-5">
+              <div className="flex flex-col items-center gap-3 py-4 text-center">
+                <div className="space-y-1">
+                  <Typography size="sm" className="text-text-title font-medium">
+                    {t("detail.payments.emptyTitle")}
+                  </Typography>
+                  <Typography size="xs" className="text-text-muted">
+                    {t("detail.payments.emptyHelper")}
+                  </Typography>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <ul
+              className="divide-border/50 list-none divide-y px-4 sm:px-5"
+              role="list"
+              aria-labelledby={PAYMENTS_LIST_HEADING_ID}
+            >
+              {payments.map((payment) => (
+                <OrderPaymentRow
+                  key={payment.id}
+                  payment={payment}
+                  currencyCode={currencyCode}
+                  locale={locale}
+                  onDeleted={(id) => {
+                    const updated = payments.filter((p) => p.id !== id);
+                    setPayments(updated);
+                    recalculate(updated);
+                  }}
+                  onConfirmDelete={handleDeletePayment}
+                />
+              ))}
+            </ul>
+          )}
+
+          {showForm && (
+            <div ref={paymentFormAnchorRef} className="border-border scroll-mt-24 border-t pt-4">
+              <div className="px-4 sm:px-5">
+                <OrderPaymentForm
+                  orderId={orderId}
+                  currencyCode={currencyCode}
+                  remainingAmount={summary.remainingAmount}
+                  orderDate={orderDate}
+                  locale={locale}
+                  embedded
+                  onCancel={() => setShowForm(false)}
+                  onSubmit={handleAddPayment}
+                />
+              </div>
+            </div>
           )}
         </div>
-      ) : (
-        <ul className="divide-border/50 divide-y" role="list">
-          {payments.map((payment) => (
-            <OrderPaymentRow
-              key={payment.id}
-              payment={payment}
-              currencyCode={currencyCode}
-              locale={locale}
-              onDeleted={(id) => {
-                const updated = payments.filter((p) => p.id !== id);
-                setPayments(updated);
-                recalculate(updated);
-              }}
-              onConfirmDelete={handleDeletePayment}
-            />
-          ))}
-        </ul>
-      )}
-
-      {showForm && (
-        <OrderPaymentForm
-          orderId={orderId}
-          currencyCode={currencyCode}
-          remainingAmount={summary.remainingAmount}
-          orderDate={orderDate}
-          locale={locale}
-          onCancel={() => setShowForm(false)}
-          onSubmit={handleAddPayment}
-        />
-      )}
+      </SectionSurfaceCard>
     </section>
   );
 }
