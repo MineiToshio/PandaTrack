@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { History } from "lucide-react";
 import SectionSurfaceCard from "@/components/modules/SectionSurfaceCard";
 import OrderHistoryRow from "./OrderHistoryRow";
 
@@ -23,14 +24,18 @@ export default function OrderHistoryList({ initialHistory, locale }: OrderHistor
 
   return (
     <section aria-labelledby="order-history-heading">
-      <SectionSurfaceCard title={t("detail.history.sectionTitle")} titleId="order-history-heading" titleAs="h2">
-        <div className="border-border -mx-4 border-t pt-4 sm:-mx-5">
-          <ul className="divide-border/50 list-none divide-y px-4 sm:px-5" role="list">
-            {initialHistory.map((entry) => (
-              <OrderHistoryRow key={entry.id} entry={entry} locale={locale} />
-            ))}
-          </ul>
-        </div>
+      <SectionSurfaceCard
+        title={t("detail.history.sectionTitle")}
+        titleId="order-history-heading"
+        titleAs="h2"
+        icon={History}
+        iconClassName="text-warning"
+      >
+        <ul className="divide-border/50 list-none divide-y" role="list">
+          {initialHistory.map((entry) => (
+            <OrderHistoryRow key={entry.id} entry={entry} locale={locale} />
+          ))}
+        </ul>
       </SectionSurfaceCard>
     </section>
   );

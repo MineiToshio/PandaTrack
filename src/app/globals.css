@@ -226,6 +226,22 @@
   }
 }
 
+@keyframes order-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.order-item-animate {
+  opacity: 0;
+  animation: order-item-in 0.3s ease forwards;
+}
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 5rem;

@@ -2,6 +2,7 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { Receipt } from "lucide-react";
 import Button from "@/components/core/Button/Button";
 import Typography from "@/components/core/Typography";
 import SectionSurfaceCard from "@/components/modules/SectionSurfaceCard";
@@ -161,6 +162,8 @@ export default function OrderPaymentsPanel({
         title={t("detail.payments.listSectionTitle")}
         titleId={PAYMENTS_LIST_HEADING_ID}
         titleAs="h2"
+        icon={Receipt}
+        iconClassName="text-success"
         headerEnd={
           !isFullyPaid && !showForm ? (
             <Button
@@ -174,60 +177,52 @@ export default function OrderPaymentsPanel({
           ) : null
         }
       >
-        <div className="border-border -mx-4 border-t pt-4 sm:-mx-5">
-          {payments.length === 0 ? (
-            <div className="px-4 sm:px-5">
-              <div className="flex flex-col items-center gap-3 py-4 text-center">
-                <div className="space-y-1">
-                  <Typography size="sm" className="text-text-title font-medium">
-                    {t("detail.payments.emptyTitle")}
-                  </Typography>
-                  <Typography size="xs" className="text-text-muted">
-                    {t("detail.payments.emptyHelper")}
-                  </Typography>
-                </div>
-              </div>
+        {payments.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-4 text-center">
+            <div className="space-y-1">
+              <Typography size="sm" className="text-text-title font-medium">
+                {t("detail.payments.emptyTitle")}
+              </Typography>
+              <Typography size="xs" className="text-text-muted">
+                {t("detail.payments.emptyHelper")}
+              </Typography>
             </div>
-          ) : (
-            <ul
-              className="divide-border/50 list-none divide-y px-4 sm:px-5"
-              role="list"
-              aria-labelledby={PAYMENTS_LIST_HEADING_ID}
-            >
-              {payments.map((payment) => (
-                <OrderPaymentRow
-                  key={payment.id}
-                  payment={payment}
-                  currencyCode={currencyCode}
-                  locale={locale}
-                  onDeleted={(id) => {
-                    const updated = payments.filter((p) => p.id !== id);
-                    setPayments(updated);
-                    recalculate(updated);
-                  }}
-                  onConfirmDelete={handleDeletePayment}
-                />
-              ))}
-            </ul>
-          )}
+          </div>
+        ) : (
+          <ul className="divide-border/50 list-none divide-y" role="list" aria-labelledby={PAYMENTS_LIST_HEADING_ID}>
+            {payments.map((payment) => (
+              <OrderPaymentRow
+                key={payment.id}
+                payment={payment}
+                currencyCode={currencyCode}
+                locale={locale}
+                onDeleted={(id) => {
+                  const updated = payments.filter((p) => p.id !== id);
+                  setPayments(updated);
+                  recalculate(updated);
+                }}
+                onConfirmDelete={handleDeletePayment}
+              />
+            ))}
+          </ul>
+        )}
 
-          {showForm && (
-            <div ref={paymentFormAnchorRef} className="border-border scroll-mt-24 border-t pt-4">
-              <div className="px-4 sm:px-5">
-                <OrderPaymentForm
-                  orderId={orderId}
-                  currencyCode={currencyCode}
-                  remainingAmount={summary.remainingAmount}
-                  orderDate={orderDate}
-                  locale={locale}
-                  embedded
-                  onCancel={() => setShowForm(false)}
-                  onSubmit={handleAddPayment}
-                />
-              </div>
+        {showForm && (
+          <div ref={paymentFormAnchorRef} className="border-border -mx-4 scroll-mt-24 border-t pt-4 sm:-mx-5">
+            <div className="px-4 sm:px-5">
+              <OrderPaymentForm
+                orderId={orderId}
+                currencyCode={currencyCode}
+                remainingAmount={summary.remainingAmount}
+                orderDate={orderDate}
+                locale={locale}
+                embedded
+                onCancel={() => setShowForm(false)}
+                onSubmit={handleAddPayment}
+              />
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </SectionSurfaceCard>
     </section>
   );

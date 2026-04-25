@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { Wallet } from "lucide-react";
 import Typography from "@/components/core/Typography";
 import SectionSurfaceCard from "@/components/modules/SectionSurfaceCard";
 import type { PaymentSummary } from "@/lib/orders/paymentSummary";
@@ -47,28 +48,26 @@ export default function OrderPaymentSummaryCard({
   const pct = Math.min(paymentPercentage, 100);
 
   return (
-    <SectionSurfaceCard title={t("detail.payments.summaryRegionAria")}>
-      <div className="border-border -mx-4 border-t pt-4 sm:-mx-5">
-        <div className={`grid gap-4 px-4 sm:px-5 ${isFullyPaid ? "grid-cols-1" : "grid-cols-2"}`}>
-          <div className="min-w-0 space-y-1">
+    <SectionSurfaceCard title={t("detail.payments.summaryRegionAria")} icon={Wallet} iconClassName="text-primary">
+      <div className={`grid gap-4 ${isFullyPaid ? "grid-cols-1" : "grid-cols-2"}`}>
+        <div className="min-w-0 space-y-1">
+          <Typography as="span" size="2xs" className="text-text-muted block font-medium tracking-wider uppercase">
+            {t("detail.payments.summaryPaid")}
+          </Typography>
+          <p className="text-success text-xl font-bold tabular-nums sm:text-2xl">
+            {formatAmount(paidAmount, currencyCode, locale)}
+          </p>
+        </div>
+        {!isFullyPaid && (
+          <div className="min-w-0 space-y-1 text-right">
             <Typography as="span" size="2xs" className="text-text-muted block font-medium tracking-wider uppercase">
-              {t("detail.payments.summaryPaid")}
+              {t("detail.payments.summaryRemaining")}
             </Typography>
-            <p className="text-success text-xl font-bold tabular-nums sm:text-2xl">
-              {formatAmount(paidAmount, currencyCode, locale)}
+            <p className="text-accent text-xl font-bold tabular-nums sm:text-2xl">
+              {formatAmount(remainingAmount, currencyCode, locale)}
             </p>
           </div>
-          {!isFullyPaid && (
-            <div className="min-w-0 space-y-1 text-right">
-              <Typography as="span" size="2xs" className="text-text-muted block font-medium tracking-wider uppercase">
-                {t("detail.payments.summaryRemaining")}
-              </Typography>
-              <p className="text-accent text-xl font-bold tabular-nums sm:text-2xl">
-                {formatAmount(remainingAmount, currencyCode, locale)}
-              </p>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -85,8 +84,8 @@ export default function OrderPaymentSummaryCard({
               className="absolute inset-y-0 left-0 flex items-center transition-[width] duration-300"
               style={{ width: `${pct}%` }}
             >
+              <div className="bg-success h-full min-h-2 flex-1 rounded-l-full" />
               <span className="bg-success ring-surface-2 z-10 size-2.5 shrink-0 rounded-full ring-2" aria-hidden />
-              <div className="bg-success h-full min-h-2 flex-1 rounded-r-full" />
             </div>
           )}
         </div>
