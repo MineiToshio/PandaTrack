@@ -6,6 +6,7 @@ import { Trash2 } from "lucide-react";
 import Typography from "@/components/core/Typography";
 import Modal from "@/components/modules/Modal/Modal";
 import Button from "@/components/core/Button/Button";
+import { formatAmount } from "@/lib/currency";
 
 type PaymentRecord = { id: string; amount: number; paymentDate: Date };
 
@@ -16,18 +17,6 @@ type OrderPaymentRowProps = {
   onDeleted: (id: string) => void;
   onConfirmDelete: (paymentId: string) => Promise<{ ok: boolean; error?: string }>;
 };
-
-function formatAmount(amount: number, currencyCode: string, locale: string): string {
-  try {
-    return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency: currencyCode,
-      minimumFractionDigits: 2,
-    }).format(amount / 100);
-  } catch {
-    return `${currencyCode} ${(amount / 100).toFixed(2)}`;
-  }
-}
 
 export default function OrderPaymentRow({
   payment,

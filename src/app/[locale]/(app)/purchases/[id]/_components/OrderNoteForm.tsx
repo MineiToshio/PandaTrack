@@ -65,7 +65,7 @@ export default function OrderNoteForm({ orderId, initialNote, locale }: OrderNot
     >
       <section aria-labelledby="order-note-heading" className="space-y-3">
         <div className="space-y-1">
-          <Typography size="xs" className="text-text-muted">
+          <Typography size="sm" className="text-text-muted">
             {t("detail.note.description")}
           </Typography>
           {updatedAtLabel && (

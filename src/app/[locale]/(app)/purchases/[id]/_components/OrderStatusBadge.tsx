@@ -21,12 +21,12 @@ export default function OrderStatusBadge({ status, className }: OrderStatusBadge
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-sm font-semibold",
+        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium",
         STATUS_STYLES[status],
         className,
       )}
     >
-      <span className="size-2 shrink-0 rounded-full bg-current opacity-70" aria-hidden />
+      <span className="size-1.5 shrink-0 rounded-full bg-current opacity-70" aria-hidden />
       {t(`detail.status.${status}`)}
     </span>
   );

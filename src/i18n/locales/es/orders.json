@@ -132,9 +132,9 @@
       "CANCELLED": "Cancelada"
     },
     "unpaidPill": "Impago",
-    "metaOrderDate": "Orden: {date}",
-    "metaDelivery": "Entrega estimada: {from} – {to}",
-    "metaDeliveryFrom": "Entrega estimada desde: {from}",
+    "metaOrderDate": "{date}",
+    "metaDelivery": "{from} – {to}",
+    "metaDeliveryFrom": "{from}",
     "metaFxBadge": "1 {from} = {rate} {to}",
     "actions": {
       "createDelivery": "Crear entrega",
@@ -151,8 +151,12 @@
       "sectionTitle": "Artículos",
       "emptyWarning": "Esta orden no tiene artículos.",
       "emptyWarningCta": "Editar para agregar",
-      "quantity": "x{qty}",
-      "unitPrice": "{price} c/u"
+      "headerCount": "{count, plural, one {# artículo} other {# artículos}}",
+      "headerSummary": "{count, plural, one {# artículo} other {# artículos}} · {total}",
+      "statusInTransit": "En tránsito",
+      "statusDelivered": "Entregado",
+      "quantity": "×{qty}",
+      "priceWithUnit": "{unit} c/u · {total}"
     },
     "history": {
       "sectionTitle": "Historial",
@@ -168,8 +172,8 @@
     },
     "note": {
       "sectionTitle": "Nota privada",
-      "description": "Solo tú puedes ver esta nota.",
-      "placeholder": "Añade recordatorios, detalles del vendedor, tracking intermedio… (solo tú los ves)",
+      "description": "Usa esta nota para guardar detalles que quieras recordar de este pedido: acuerdos con la tienda, fechas importantes, instrucciones especiales, algo que pasó durante la compra o el contexto para retomarlo después.",
+      "placeholder": "Escribe una nota o un recordatorio para este pedido…",
       "lastUpdated": "Última actualización: {date}",
       "save": "Guardar nota",
       "saving": "Guardando...",

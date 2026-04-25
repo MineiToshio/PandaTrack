@@ -8,6 +8,7 @@ import Label from "@/components/core/Label";
 import DatePickerInput from "@/components/core/DatePickerInput";
 import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
+import { formatAmount } from "@/lib/currency";
 
 type OrderPaymentFormProps = {
   orderId: string;
@@ -27,18 +28,6 @@ function parseDecimalToMinorUnits(value: string): number | null {
   const parsed = parseFloat(value);
   if (isNaN(parsed) || parsed <= 0) return null;
   return Math.round(parsed * 100);
-}
-
-function formatAmount(amount: number, currencyCode: string, locale: string): string {
-  try {
-    return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency: currencyCode,
-      minimumFractionDigits: 2,
-    }).format(amount / 100);
-  } catch {
-    return `${currencyCode} ${(amount / 100).toFixed(2)}`;
-  }
 }
 
 export default function OrderPaymentForm({

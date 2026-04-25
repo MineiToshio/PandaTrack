@@ -6,6 +6,7 @@ import Typography from "@/components/core/Typography";
 import SectionSurfaceCard from "@/components/modules/SectionSurfaceCard";
 import type { PaymentSummary } from "@/lib/orders/paymentSummary";
 import type { OrderStatus } from "../../../../../../../generated/prisma/client";
+import { formatAmount } from "@/lib/currency";
 
 type OrderPaymentSummaryCardProps = {
   summary: PaymentSummary;
@@ -15,18 +16,6 @@ type OrderPaymentSummaryCardProps = {
   lastPaymentDate: Date | null;
   locale: string;
 };
-
-function formatAmount(amount: number, currencyCode: string, locale: string): string {
-  try {
-    return new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency: currencyCode,
-      minimumFractionDigits: 2,
-    }).format(amount / 100);
-  } catch {
-    return `${currencyCode} ${(amount / 100).toFixed(2)}`;
-  }
-}
 
 export default function OrderPaymentSummaryCard({
   summary,

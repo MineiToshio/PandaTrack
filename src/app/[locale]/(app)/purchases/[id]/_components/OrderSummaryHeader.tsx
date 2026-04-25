@@ -8,6 +8,7 @@ import AppPageHero from "@/components/modules/AppPageHero";
 import { ROUTES } from "@/lib/constants";
 import type { OrderDetailFull } from "@/lib/data/orders/orderQueries";
 import OrderStatusBadge from "./OrderStatusBadge";
+import OrderUnpaidPill from "./OrderUnpaidPill";
 import OrderActionBar from "./OrderActionBar";
 
 type OrderSummaryHeaderProps = {
@@ -102,6 +103,8 @@ export default async function OrderSummaryHeader({ order, locale, baseCurrencyCo
         }
         description={
           <span className="flex flex-wrap items-center gap-2">
+            <OrderStatusBadge status={order.status} />
+            {hasUnpaidAndCompleted && <OrderUnpaidPill label={t("detail.unpaidPill")} />}
             {metaItems.map(({ icon: Icon, label, variant }, i) => (
               <span key={i} className={STORE_HERO_META_PILL_CLASSNAME}>
                 <Icon className={cn("size-3.5 shrink-0", META_CHIP_ICON_CLASS[variant])} aria-hidden />
@@ -111,25 +114,18 @@ export default async function OrderSummaryHeader({ order, locale, baseCurrencyCo
           </span>
         }
         aside={
-          <div className="flex flex-wrap items-center gap-2">
-            <OrderStatusBadge status={order.status} />
-            {hasUnpaidAndCompleted && (
-              <span className="border-warning/40 bg-warning/15 text-warning inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium">
-                {t("detail.unpaidPill")}
-              </span>
-            )}
+          <div className="w-full md:w-auto">
+            <OrderActionBar
+              orderId={order.id}
+              status={order.status}
+              eligibility={order.eligibility}
+              flags={order.flags}
+              locale={locale}
+              humanReadableId={order.humanReadableId}
+              storeName={order.store.name}
+            />
           </div>
         }
-      />
-
-      <OrderActionBar
-        orderId={order.id}
-        status={order.status}
-        eligibility={order.eligibility}
-        flags={order.flags}
-        locale={locale}
-        humanReadableId={order.humanReadableId}
-        storeName={order.store.name}
       />
     </div>
   );

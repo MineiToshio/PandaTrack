@@ -187,6 +187,11 @@ export default function OrderPaymentsPanel({
                 {t("detail.payments.emptyHelper")}
               </Typography>
             </div>
+            {!isFullyPaid && !showForm && (
+              <Button type="button" variant="secondary" size="sm" onClick={() => setShowForm(true)}>
+                {t("detail.payments.addCta")}
+              </Button>
+            )}
           </div>
         ) : (
           <ul className="divide-border/50 list-none divide-y" role="list" aria-labelledby={PAYMENTS_LIST_HEADING_ID}>

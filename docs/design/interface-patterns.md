@@ -222,6 +222,7 @@ Use **`AppPageHero`** (`src/components/modules/AppPageHero.tsx`) for every authe
 
 - first-level areas still on placeholder copy (`/dashboard`, `/purchases`, `/purchases/pre-orders`, `/shipments`) via `AppPlaceholderPage`
 - `/settings`, `/stores` listing, `/stores/new`, `/stores/[slug]/edit`
+- `/purchases/[id]` (order detail)
 
 **Exception:** `/stores/[slug]` (store profile) uses a **rich profile hero** (logo, KPI row, actions, larger rounded surface) instead of `AppPageHero`, but it must reuse the same **`TINTED_SURFACE_GRADIENT_STOPS`** language and the same **`Heading` `h1` scale** (`size="sm"`) for the store name so it still feels like the same family.
 
@@ -229,9 +230,22 @@ Structure of `AppPageHero`:
 
 1. optional eyebrow pill (`text-xs`, `Sparkles`, primary-tinted chip)
 2. page title: `Heading` as `h1` with `size="sm"` and `text-text-title`
-3. one short supporting line: `Typography size="sm"` with `text-text-muted`
+3. one short supporting line: `Typography size="sm"` with `text-text-muted`; when a page has metadata chips (date, status, FX rate), render them as `STORE_HERO_META_PILL_CLASSNAME` spans inside this slot
 4. gradient border card wrapper: `rounded-2xl border bg-linear-to-br` plus `TINTED_SURFACE_GRADIENT_STOPS` from `src/lib/styles.ts` (aligned with store profile hero surfaces and landing section washes)
-5. optional `aside` prop on `AppPageHero` for a trailing column (flex row with wrap)
+5. optional `aside` prop on `AppPageHero` for **primary page actions** (edit, create, destructive-action dropdown); this is the top-right slot, always used for actionable controls, never for status badges
+
+#### `aside` vs. `description` slot rule
+
+This is the standard for all detail pages using `AppPageHero`:
+
+| Content type                                           | Where it goes                                         |
+| ------------------------------------------------------ | ----------------------------------------------------- |
+| Action buttons (edit, create, cancel, delete dropdown) | `aside` prop — top-right of the hero                  |
+| Status badge, unpaid/warning pill, metadata chips      | `description` prop — below the title, as inline pills |
+
+**Rationale:** users expect actionable controls in the top-right corner (standard F-pattern). Status and metadata are descriptive — they belong next to date and other context, not in the action slot. Mixing them inverts the visual hierarchy and buries the buttons.
+
+On mobile the `aside` wraps below the title thanks to `flex-wrap` on the hero. Wrap the `aside` content in `<div className="w-full md:w-auto">` so it spans full width when stacked on small screens.
 
 Rules:
 
@@ -502,6 +516,24 @@ Rules:
 - icon-only controls must have labels
 - secondary text must remain readable, not merely decorative
 - motion and glow treatments must never reduce the legibility of core content
+
+## Monetary Amount Display
+
+Use the shared `formatAmount` utility from `src/lib/currency.ts` for all monetary amounts shown to the user.
+
+**Format: `{amount} {ISO-code}`** — number first, currency code after.
+
+Examples: `43.000 CLP`, `888.50 USD`, `1.200 JPY`.
+
+Rules:
+
+- Number is always locale-formatted (thousands separator, decimal separator) using `Intl.NumberFormat` with `style: "decimal"`.
+- The ISO 4217 currency code follows, separated by a space.
+- Trailing zeros after the decimal are omitted (`43.000 CLP`, not `43.000,00 CLP`).
+- Never use currency symbols (`$`, `¥`, `€`) — they are ambiguous across countries.
+- Never hardcode `CurrencyCode + " " + amount` or `amount.toFixed(2)` inline. Always call `formatAmount`.
+
+Rationale: reading left-to-right, the number (the primary information) reaches the eye before the identifier. ISO codes are unambiguous, unlike symbols (`$` = CLP, ARS, USD, MXN...).
 
 ## Design System Usage Rules
 

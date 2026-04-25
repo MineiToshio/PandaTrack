@@ -132,9 +132,9 @@
       "CANCELLED": "Cancelled"
     },
     "unpaidPill": "Unpaid",
-    "metaOrderDate": "Order: {date}",
-    "metaDelivery": "Est. delivery: {from} – {to}",
-    "metaDeliveryFrom": "Est. delivery from: {from}",
+    "metaOrderDate": "{date}",
+    "metaDelivery": "{from} – {to}",
+    "metaDeliveryFrom": "{from}",
     "metaFxBadge": "1 {from} = {rate} {to}",
     "actions": {
       "createDelivery": "Create delivery",
@@ -151,8 +151,12 @@
       "sectionTitle": "Items",
       "emptyWarning": "This order has no items.",
       "emptyWarningCta": "Edit to add items",
-      "quantity": "x{qty}",
-      "unitPrice": "{price} each"
+      "headerCount": "{count, plural, one {# item} other {# items}}",
+      "headerSummary": "{count, plural, one {# item} other {# items}} · {total}",
+      "statusInTransit": "In transit",
+      "statusDelivered": "Delivered",
+      "quantity": "×{qty}",
+      "priceWithUnit": "{unit} each · {total}"
     },
     "history": {
       "sectionTitle": "History",
@@ -168,8 +172,8 @@
     },
     "note": {
       "sectionTitle": "Private note",
-      "description": "Only you can see this note.",
-      "placeholder": "Add reminders, seller notes, partial tracking… (only you see this)",
+      "description": "Use this note to keep details you want to remember about this order: agreements with the store, important dates, special instructions, something that happened during the purchase, or context you can return to later.",
+      "placeholder": "Write a note or reminder for this order…",
       "lastUpdated": "Last updated: {date}",
       "save": "Save note",
       "saving": "Saving...",

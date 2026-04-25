@@ -32,6 +32,7 @@ import {
 import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
 import { APP_SHELL_FORM_RAIL_CLASSNAME, POSTHOG_EVENTS, RETURN_TO_ORDER_CREATE, ROUTES } from "@/lib/constants";
 import { deriveItemizedTotal, shouldShowDiscrepancyModal } from "@/lib/orders/orderItemUtils";
+import { formatAmount } from "@/lib/currency";
 import type { OrderActionResult } from "../../_actions/orderActions";
 import DatePickerInput from "@/components/core/DatePickerInput";
 import DateRangePickerInput from "@/components/core/DateRangePickerInput";
@@ -83,15 +84,7 @@ function parseCentsFromDecimal(value: string): number | null {
 }
 
 function formatAmountDisplay(cents: number, currencyCode: string): string {
-  try {
-    return new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: currencyCode,
-      maximumFractionDigits: 2,
-    }).format(cents / 100);
-  } catch {
-    return `${currencyCode} ${(cents / 100).toFixed(2)}`;
-  }
+  return formatAmount(cents, currencyCode, undefined);
 }
 
 function getStoreDefaultCurrencyCode(store: StoreOption | null | undefined): string | null {

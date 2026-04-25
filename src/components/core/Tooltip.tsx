@@ -30,6 +30,8 @@ export type TooltipProps = {
   children: ReactNode;
   /** Classes for the focusable trigger (for example chip or pill styles). */
   triggerClassName?: string;
+  /** Classes for the outer wrapper div. Use to override width (e.g. `w-full md:w-auto`). */
+  className?: string;
   /**
    * Use on surfaces where a full-area link or overlay sits above siblings (for example store listing cards).
    * Restores pointer events and raises stacking order so the trigger can receive hover and focus.
@@ -65,6 +67,7 @@ export default function Tooltip({
   content,
   children,
   triggerClassName,
+  className,
   liftAboveCardOverlay = false,
   side = "top",
   alignSelfInFlexRow = "start",
@@ -141,6 +144,7 @@ export default function Tooltip({
         "relative inline-flex w-fit max-w-full shrink-0 flex-col items-center",
         alignSelfInFlexRow === "center" ? "self-center" : "self-start",
         liftAboveCardOverlay && "pointer-events-auto z-20",
+        className,
       )}
       onMouseEnter={() => setOpen(true)}
       onMouseLeave={close}
