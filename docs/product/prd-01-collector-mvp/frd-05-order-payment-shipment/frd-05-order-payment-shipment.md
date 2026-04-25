@@ -8,10 +8,10 @@ parent: PRD-01
 children:
   - BP-01
   - BP-02
-last_updated: 2026-04-19
+last_updated: 2026-04-24
 source_features:
   - FEAT-0014
-implementation_status: PLANNED
+implementation_status: IN_PROGRESS
 ---
 
 # FRD-05 Order and Payment Tracking
@@ -30,6 +30,7 @@ Give collectors one reliable place to record what they bought, what it cost, how
 
 ### Implemented
 
+- order detail at `/purchases/[id]` ([`BP-02 · WO-05`](bp-02-order-workspace-and-list-experience/work-orders/wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md)): two-column layout on `lg+` (items + private note left; payments + read-only history right, sticky rail), payments panel with optimistic updates, scroll-to-form when opening add-payment, private note; automatic order history is **read-only** (no per-entry delete; see `FR-05-22` / `BR-05-09` below).
 - private app navigation already exposes `Purchases` and `Pre-orders` entry points
 - [`FRD-07`](../frd-07-user-settings/frd-07-user-settings.md) already defines a user-level base currency preference that this domain can consume
 - store discovery and store detail flows already exist, which makes store selection a prerequisite rather than a parallel domain problem
@@ -85,7 +86,7 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - `FR-05-19`: The payment flow must prevent creating a payment whose amount exceeds the current remaining balance.
 - `FR-05-20`: The order detail view must show paid amount, remaining amount, and payment percentage.
 - `FR-05-21`: The order detail view must expose one inline-editable private note field that can be saved without entering full order edit mode.
-- `FR-05-22`: The order detail view must expose an automatic history list that records major order mutations and allows deletion of individual history entries.
+- `FR-05-22`: The order detail view must expose an automatic history list that records major order lifecycle events. **As implemented (2026-04-24):** the list is **read-only**; users cannot delete individual history entries from the UI (aligned with [`WO-05`](bp-02-order-workspace-and-list-experience/work-orders/wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md) and migration `20260423000000_simplify_order_history_event_types`).
 - `FR-05-23`: The order detail view must expose `Create delivery` as the primary action, `Edit` as the secondary action, and `Cancel` plus `Delete` inside an action menu.
 - `FR-05-24`: An order may be physically deleted only when none of its items is linked to a non-cancelled delivery. When the rule is not met, the delete affordance must be rendered as disabled with a tooltip that explains the collector must first unlink the affected items from their delivery.
 - `FR-05-25`: An order may be cancelled only when none of its items is linked to a non-cancelled delivery. When the rule is not met, the cancel affordance must be rendered as disabled with a tooltip that explains the collector must first unlink the affected items from their delivery. Cancelling an order moves it to `CANCELLED` without removing its historical record.
@@ -113,7 +114,7 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - `BR-05-06`: The discrepancy modal should appear only when every item has a unit price and the derived total differs from the manually entered total.
 - `BR-05-07`: One exchange-rate value per order is sufficient for MVP and applies to reporting derived from that order.
 - `BR-05-08`: Notes are user-authored free text and are separate from automatic history.
-- `BR-05-09`: Automatic history entries may be deleted by the owning user even though they represent system-generated events.
+- `BR-05-09`: Automatic history entries are system-owned audit-style records. **As implemented (2026-04-24):** the product does **not** offer per-entry delete for history on the order detail view; the collector cannot remove individual rows from the automatic history list.
 - `BR-05-10`: Payments may be deleted and the paid-versus-remaining summary must recalculate immediately after deletion.
 - `BR-05-11`: Changing an order's store is allowed only while the order remains `OPEN` and has no associated deliveries.
 - `BR-05-12`: Cancelled orders remain visible in historical lists and filter results when the chosen filters include them.

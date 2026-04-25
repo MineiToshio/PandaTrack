@@ -7,7 +7,7 @@ status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0014
-last_updated: 2026-04-19
+last_updated: 2026-04-24
 implementation_status: IMPLEMENTED
 ---
 
@@ -86,13 +86,12 @@ CANCELLED
 
 ```
 ORDER_CREATED
-ORDER_EDITED
 ORDER_CANCELLED
 ORDER_REACTIVATED
-PAYMENT_ADDED
-PAYMENT_DELETED
-NOTE_UPDATED
+STATUS_CHANGED
 ```
+
+Migration **`20260423000000_simplify_order_history_event_types`** narrowed the enum: removed `ORDER_EDITED`, `PAYMENT_ADDED`, `PAYMENT_DELETED`, and `NOTE_UPDATED`; added `STATUS_CHANGED` (reserved for delivery-driven status updates per FRD-08; see [`WO-05`](../../bp-02-order-workspace-and-list-experience/work-orders/wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md)). Existing DB rows with removed event types were deleted in that migration.
 
 ### `Order` model fields
 
@@ -159,17 +158,14 @@ UI components are responsible for dividing by 100 and formatting before display.
 
 `OrderHistory` stores no human-readable description. The UI resolves display text by calling `t(eventType, metadata)` against the active locale. `metadata` carries the dynamic interpolation values the translation string needs.
 
-| eventType           | metadata shape                              | Example text (ES)               |
-| ------------------- | ------------------------------------------- | ------------------------------- |
-| `ORDER_CREATED`     | `{}`                                        | "Orden creada"                  |
-| `ORDER_EDITED`      | `{ "fields": ["totalCost", "orderDate"] }`  | "Orden actualizada"             |
-| `ORDER_CANCELLED`   | `{}`                                        | "Orden cancelada"               |
-| `ORDER_REACTIVATED` | `{}`                                        | "Orden reactivada"              |
-| `PAYMENT_ADDED`     | `{ "amount": 2550, "currencyCode": "USD" }` | "Pago de $25.50 USD registrado" |
-| `PAYMENT_DELETED`   | `{ "amount": 2550, "currencyCode": "USD" }` | "Pago de $25.50 USD eliminado"  |
-| `NOTE_UPDATED`      | `{}`                                        | "Nota actualizada"              |
+| eventType           | metadata shape | Example text (ES)                        |
+| ------------------- | -------------- | ---------------------------------------- |
+| `ORDER_CREATED`     | `{}`           | "Orden creada"                           |
+| `ORDER_CANCELLED`   | `{}`           | "Orden cancelada"                        |
+| `ORDER_REACTIVATED` | `{}`           | "Orden reactivada"                       |
+| `STATUS_CHANGED`    | (TBD FRD-08)   | Reserved for delivery-driven transitions |
 
-One `ORDER_EDITED` entry is generated per edit session regardless of how many fields changed. `metadata.fields` lists the modified field names for reference. History entries for cancelled orders are preserved; entries are cascade-deleted only when the order is physically deleted.
+**Removed from enum (no longer persisted):** `ORDER_EDITED`, `PAYMENT_ADDED`, `PAYMENT_DELETED`, `NOTE_UPDATED` — do not use in new writes. The UI may still ship legacy translation keys for those strings; they are not produced by current mutations. Edits to an order and changes to the private note do **not** create `OrderHistory` rows. History entries for cancelled orders are preserved; rows are cascade-deleted when the order is physically deleted.
 
 ## Delete and Cancel Contracts
 

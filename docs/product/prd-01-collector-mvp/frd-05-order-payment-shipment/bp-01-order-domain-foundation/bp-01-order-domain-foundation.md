@@ -9,7 +9,7 @@ children:
   - WO-01
   - WO-02
   - WO-03
-last_updated: 2026-04-19
+last_updated: 2026-04-24
 implementation_status: PLANNED
 ---
 
@@ -34,7 +34,7 @@ Define the persistence, state, and monetary contracts that make order and paymen
 - Order status is derived, not directly editable, and exposes six states: `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`, `COMPLETED`, and `CANCELLED`. The pure function `deriveOrderStatus` (defined in WO-02) owns the derivation algorithm. Delivery mutations in [`FRD-08`](../../frd-08-delivery-management/frd-08-delivery-management.md) are responsible for calling it and persisting the result.
 - Order identifiers should be generated at persistence time using a deterministic date-based prefix plus a two-digit daily sequence.
 - Payment progress should be derived from payment records instead of duplicated into manually edited columns.
-- Order history should be append-oriented and human-readable, but individual entries may still be user-deleted.
+- Order history should be append-oriented and human-readable. **As implemented (2026-04-24):** the app does not expose per-entry user deletion of history rows on the order detail view (`deleteOrderHistoryEntry` removed); history remains a read-only audit trail in the UI. See [`FRD-05`](../frd-05-order-payment-shipment.md) `FR-05-22` / `BR-05-09` and [`BP-02 · WO-05`](../bp-02-order-workspace-and-list-experience/work-orders/wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md).
 - Delete and cancel must remain separate operations, but share one eligibility rule:
   - both are blocked when any item is linked to a non-cancelled delivery; the collector must first unlink the item from its delivery to unblock the operation
   - cancel preserves the order record, moves it to `CANCELLED`, and removes the order's payment records so balance reporting stays coherent
@@ -54,7 +54,7 @@ Define the persistence, state, and monetary contracts that make order and paymen
 - payment contract:
   - input: order id, payment amount, payment date
   - output: persisted payment row plus recalculated order payment summary (`paidAmount`, `remainingAmount`, `paymentPercentage`)
-  - transaction scope: balance verification, `OrderPayment` insert, and `PAYMENT_ADDED` history entry are atomic within a single `prisma.$transaction`; delete follows the same pattern with `PAYMENT_DELETED`
+  - transaction scope: balance verification and `OrderPayment` insert (or delete) run inside a single `prisma.$transaction` with **no** `OrderHistory` row for payment add/delete. Migration **`20260423000000_simplify_order_history_event_types`** removed `PAYMENT_ADDED` and `PAYMENT_DELETED` from the enum; payment activity is not mirrored as automatic history entries.
 - delete/cancel contract:
   - input: user intent plus current order dependencies
   - output: either cancelled order, deleted order, or rejected destructive action

@@ -10,7 +10,7 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-04-19
+last_updated: 2026-04-24
 implementation_status: IN_PROGRESS
 ---
 
@@ -39,7 +39,7 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
   - `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`: primary `Create delivery` · secondary `Edit` · `More` with `Cancel` and `Delete`.
   - `COMPLETED`: same layout as above; `Cancel` and `Delete` remain visible but disabled with a tooltip that explains the eligibility rule.
   - `CANCELLED`: primary `Reactivate` · chevron menu with `Delete` only (edit is not offered on cancelled orders; reactivate first if the collector needs to mutate data).
-- The detail view should use a two-column layout on `lg` and above with the items and history in the left column and a sticky right rail carrying the financial summary, payment panel, and private note. On smaller breakpoints the right rail collapses into the normal document flow below the header.
+- The detail view uses a two-column layout on `lg` and above: **left** column — order **items** list, then **private note** (`space-y-8`). **Right** column (sticky) — **payment summary + payment list/add form** (`OrderPaymentsPanel`), then **read-only order history** in a `SectionSurfaceCard` matching the payments card styling (`space-y-4` between the two). The page **header** spans full width above the grid. On smaller breakpoints the grid stacks: **header → items → note → payments → history** (no sticky rail; natural document order). See [`WO-05`](work-orders/wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md).
 - Product-name search belongs inside the filter sidebar as one free-text filter rather than a global omnibox.
 - The orders list applies a default status filter of active orders (`OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`) when no filter state is present in the URL. This keeps the collector focused on orders that need attention without requiring manual setup on every visit. The URL reflects the default state after mount; the filter UI shows a grouped `Solo activas` chip that the collector can remove or replace with individual status selections. The `Restablecer` button navigates to `/purchases` with no params, re-applying the default.
 - The back link from the order detail page to the orders list uses a `?returnTo=` query parameter carrying the encoded previous list URL. This preserves the collector's filter and pagination state across the list → detail → list navigation cycle, consistent with the `?returnTo=order-create` redirect contract already used in the order create flow.
