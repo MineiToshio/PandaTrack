@@ -156,7 +156,8 @@
       "statusInTransit": "En tránsito",
       "statusDelivered": "Entregado",
       "quantity": "×{qty}",
-      "priceWithUnit": "{unit} c/u · {total}"
+      "priceWithUnit": "{unit} c/u · {total}",
+      "unitContext": "×{qty} · {unit} c/u"
     },
     "history": {
       "sectionTitle": "Historial",

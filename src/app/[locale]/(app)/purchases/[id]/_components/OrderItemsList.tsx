@@ -25,13 +25,15 @@ export default async function OrderItemsList({ orderId, items, currencyCode, loc
 
   const headerEndNode =
     itemCount === 0 ? null : (
-      <span className="text-text-muted text-xs tabular-nums">
-        {hasAnyPrice
-          ? t("detail.items.headerSummary", {
-              count: itemCount,
-              total: formatAmount(totalMinorUnits, currencyCode, locale),
-            })
-          : t("detail.items.headerCount", { count: itemCount })}
+      <span className="flex items-baseline gap-1.5">
+        <span className="text-text-muted text-xs tabular-nums">
+          {t("detail.items.headerCount", { count: itemCount })}
+        </span>
+        {hasAnyPrice && (
+          <span className="text-text-title text-sm font-semibold tabular-nums">
+            {formatAmount(totalMinorUnits, currencyCode, locale)}
+          </span>
+        )}
       </span>
     );
 
@@ -63,7 +65,7 @@ export default async function OrderItemsList({ orderId, items, currencyCode, loc
                   {/* Left: name + status badge, then product type */}
                   <div className="w-0 max-w-xl min-w-0 flex-1 sm:max-w-2xl">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <Typography size="sm" as="span" className="text-text-body font-medium">
+                      <Typography size="sm" as="span" className="text-text-title font-medium">
                         {item.name}
                       </Typography>
                       {item.deliveryState === "in_transit" && (
@@ -84,17 +86,25 @@ export default async function OrderItemsList({ orderId, items, currencyCode, loc
                     )}
                   </div>
 
-                  {/* Right: quantity (prominent) + price info */}
-                  <div className="text-text-muted flex shrink-0 flex-col items-end tabular-nums">
-                    <span className="text-sm font-medium">{t("detail.items.quantity", { qty: item.quantity })}</span>
-                    {item.unitPrice != null && (
-                      <span className="text-xs">
-                        {item.quantity === 1
-                          ? formatAmount(item.unitPrice, currencyCode, locale)
-                          : t("detail.items.priceWithUnit", {
+                  {/* Right: price total (prominent) + unit context */}
+                  <div className="flex shrink-0 flex-col items-end tabular-nums">
+                    {item.unitPrice != null ? (
+                      <>
+                        <span className="text-text-title text-sm font-bold">
+                          {formatAmount(item.quantity * item.unitPrice, currencyCode, locale)}
+                        </span>
+                        {item.quantity > 1 && (
+                          <span className="text-text-muted text-xs">
+                            {t("detail.items.unitContext", {
+                              qty: item.quantity,
                               unit: formatAmount(item.unitPrice, currencyCode, locale),
-                              total: formatAmount(item.quantity * item.unitPrice, currencyCode, locale),
                             })}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-text-muted text-sm font-medium">
+                        {t("detail.items.quantity", { qty: item.quantity })}
                       </span>
                     )}
                   </div>

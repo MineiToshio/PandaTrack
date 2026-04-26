@@ -156,7 +156,8 @@
       "statusInTransit": "In transit",
       "statusDelivered": "Delivered",
       "quantity": "×{qty}",
-      "priceWithUnit": "{unit} each · {total}"
+      "priceWithUnit": "{unit} each · {total}",
+      "unitContext": "×{qty} · {unit} each"
     },
     "history": {
       "sectionTitle": "History",
