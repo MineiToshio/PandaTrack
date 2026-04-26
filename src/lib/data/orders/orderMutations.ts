@@ -255,7 +255,7 @@ export async function deleteOrder(orderId: string, userId: string): Promise<Dele
 }
 
 type SaveOrderNoteResult =
-  | { ok: true; note: string | null; changed: boolean }
+  | { ok: true; note: string | null; updatedAt: Date; changed: boolean }
   | { ok: false; error: "ORDER_NOT_FOUND" };
 
 export async function saveOrderNote(
@@ -266,7 +266,7 @@ export async function saveOrderNote(
   return prisma.$transaction(async (tx) => {
     const order = await tx.order.findFirst({
       where: { id: orderId, userId },
-      select: { note: true },
+      select: { note: true, updatedAt: true },
     });
 
     if (!order) return { ok: false, error: "ORDER_NOT_FOUND" };
@@ -275,17 +275,18 @@ export async function saveOrderNote(
     const oldTrimmed = order.note?.trim() ?? "";
 
     if (newTrimmed === oldTrimmed) {
-      return { ok: true, note: order.note, changed: false };
+      return { ok: true, note: order.note, updatedAt: order.updatedAt, changed: false };
     }
 
     const persistedNote = newTrimmed.length > 0 ? newTrimmed : null;
 
-    await tx.order.update({
+    const updatedOrder = await tx.order.update({
       where: { id: orderId },
       data: { note: persistedNote },
+      select: { updatedAt: true },
     });
 
-    return { ok: true, note: persistedNote, changed: true };
+    return { ok: true, note: persistedNote, updatedAt: updatedOrder.updatedAt, changed: true };
   });
 }
 

@@ -193,7 +193,9 @@ Behavior (as implemented):
 - Draft is local state initialized from `order.note ?? ""`; a parallel `savedNote` state tracks the last successful value for disable logic.
 - The `Save` button is disabled while `draft.trim() === (savedNote ?? "").trim()` (and while pending).
 - Submitting sends the trimmed string or `null` when empty to `saveOrderNoteAction` → `saveOrderNote` in `orderMutations.ts`. The server is a no-op when trimmed content is unchanged (`changed: false`); otherwise it updates `Order.note`.
-- On success, the client updates `savedNote` / `draft` and sets **"Last updated"** from the **client clock** after save (not from a server `updatedAt` field on the note).
+- When the order already has a private note, the panel shows **"Last updated"** using the persisted `Order.updatedAt` timestamp returned by the detail query.
+- On success, the client updates `savedNote` / `draft` and refreshes **"Last updated"** from the persisted `updatedAt` returned by `saveOrderNoteAction`, not from the client clock.
+- The **"Last updated"** line is rendered **below the textarea and above the save button/error area**, so the metadata stays attached to the editable field rather than the section intro.
 - **History:** no `OrderHistory` row is written for note changes; `NOTE_UPDATED` was removed from the enum (see migration above).
 - On failure, an inline `role="alert"` message shows the error string from i18n (`detail.note.errorSave`).
 

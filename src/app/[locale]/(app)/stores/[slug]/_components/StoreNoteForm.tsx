@@ -70,11 +70,6 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
         <Typography size="sm" className="text-text-muted">
           {t("detail.privateNote.description")}
         </Typography>
-        {updatedAtLabel && (
-          <Typography size="xs" className="text-text-muted">
-            {t("detail.privateNote.lastUpdated", { date: updatedAtLabel })}
-          </Typography>
-        )}
       </div>
 
       <form action={formAction} className="mt-5 space-y-4" aria-busy={isPending}>
@@ -96,9 +91,11 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
             placeholder={t("detail.privateNote.form.contentPlaceholder")}
             className="resize-y"
           />
-          <Typography size="xs" className="text-text-muted mt-1">
-            {t("detail.privateNote.form.helper")}
-          </Typography>
+          {updatedAtLabel && (
+            <Typography size="xs" className="text-text-muted mt-2">
+              {t("detail.privateNote.lastUpdated", { date: updatedAtLabel })}
+            </Typography>
+          )}
           {contentError && (
             <Typography size="xs" className="text-destructive mt-1" role="alert">
               {translateNoteError(t, contentError)}

@@ -69,7 +69,12 @@ export default function OrderDetailContent({ order, locale, baseCurrencyCode }: 
             <OrderItemsList orderId={order.id} items={order.items} currencyCode={order.currencyCode} locale={locale} />
           </div>
           <div className="order-3 lg:order-none">
-            <OrderNoteForm orderId={order.id} initialNote={order.note} locale={locale} />
+            <OrderNoteForm
+              orderId={order.id}
+              initialNote={order.note}
+              initialUpdatedAt={order.note ? order.updatedAt : null}
+              locale={locale}
+            />
           </div>
         </div>
       </div>

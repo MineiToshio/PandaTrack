@@ -12,17 +12,18 @@ import { saveOrderNoteAction } from "../_actions/orderNoteActions";
 type OrderNoteFormProps = {
   orderId: string;
   initialNote: string | null;
+  initialUpdatedAt: Date | null;
   locale: string;
 };
 
-export default function OrderNoteForm({ orderId, initialNote, locale }: OrderNoteFormProps) {
+export default function OrderNoteForm({ orderId, initialNote, initialUpdatedAt, locale }: OrderNoteFormProps) {
   const t = useTranslations("orders");
   const persistedNote = initialNote ?? "";
   const [draft, setDraft] = useState(persistedNote);
   const [savedNote, setSavedNote] = useState(initialNote);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(initialUpdatedAt);
 
   const draftTrimmed = draft.trim();
   const persistedTrimmed = (savedNote ?? "").trim();
@@ -45,7 +46,7 @@ export default function OrderNoteForm({ orderId, initialNote, locale }: OrderNot
     if (result.ok) {
       setSavedNote(result.note);
       setDraft(result.note ?? "");
-      setLastSavedAt(new Date());
+      setLastSavedAt(result.updatedAt);
     } else {
       setError(t("detail.note.errorSave"));
     }
@@ -68,24 +69,27 @@ export default function OrderNoteForm({ orderId, initialNote, locale }: OrderNot
           <Typography size="sm" className="text-text-muted">
             {t("detail.note.description")}
           </Typography>
+        </div>
+
+        <div className="mt-5">
+          <Textarea
+            id="order-private-note"
+            value={draft}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setDraft(e.target.value)}
+            rows={5}
+            maxLength={2000}
+            disabled={isPending}
+            aria-labelledby="order-note-heading"
+            placeholder={t("detail.note.placeholder")}
+            className="resize-y"
+          />
+
           {updatedAtLabel && (
-            <Typography size="xs" className="text-text-muted">
+            <Typography size="xs" className="text-text-muted mt-2">
               {t("detail.note.lastUpdated", { date: updatedAtLabel })}
             </Typography>
           )}
         </div>
-
-        <Textarea
-          id="order-private-note"
-          value={draft}
-          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setDraft(e.target.value)}
-          rows={5}
-          maxLength={2000}
-          disabled={isPending}
-          aria-labelledby="order-note-heading"
-          placeholder={t("detail.note.placeholder")}
-          className="resize-y"
-        />
 
         {error && (
           <Typography size="xs" className="text-destructive" role="alert">

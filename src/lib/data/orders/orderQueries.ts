@@ -36,6 +36,7 @@ export type OrderPayment = {
 
 export type OrderDetail = OrderListItem & {
   note: string | null;
+  updatedAt: Date;
   hasUnpaidBalance: boolean;
   paidAmount: number;
   remainingAmount: number;
@@ -94,6 +95,7 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
       note: true,
       status: true,
       createdAt: true,
+      updatedAt: true,
       items: {
         select: {
           id: true,
@@ -134,6 +136,7 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
     note: row.note,
     status: row.status,
     createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
     hasUnpaidBalance: deriveHasUnpaidBalance(row.totalCost, paidAmount),
     paidAmount,
     remainingAmount,
@@ -239,6 +242,7 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
     note: row.note,
     status: row.status,
     createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
     hasUnpaidBalance: deriveHasUnpaidBalance(row.totalCost, paidAmount),
     paidAmount,
     remainingAmount,

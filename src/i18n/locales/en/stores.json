@@ -198,11 +198,10 @@
     },
     "privateNote": {
       "title": "Your private note",
-      "description": "Only you can see this note. Use it for reminders, cautions, or follow-up details.",
+      "description": "Only you can see this note. It does not appear on the store's public profile. Use it for reminders, cautions, or follow-up details.",
       "lastUpdated": "Last updated: {date}",
       "form": {
         "contentPlaceholder": "Add a reminder or private context about this store.",
-        "helper": "This note is never shown in the public store profile.",
         "submitCta": "Save note",
         "updateCta": "Update note",
         "submitDisabledEmpty": "Add note text to enable saving.",

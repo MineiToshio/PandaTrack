@@ -198,11 +198,10 @@
     },
     "privateNote": {
       "title": "Tu nota privada",
-      "description": "Solo tú puedes ver esta nota. Úsala para recordatorios, alertas o detalles de seguimiento.",
+      "description": "Solo tú puedes ver esta nota. Esta no se muestra en el perfil público de la tienda. Úsala para recordatorios, alertas o detalles de seguimiento.",
       "lastUpdated": "Última actualización: {date}",
       "form": {
         "contentPlaceholder": "Añade un recordatorio o contexto privado sobre esta tienda.",
-        "helper": "Esta nota nunca se muestra en el perfil público de la tienda.",
         "submitCta": "Guardar nota",
         "updateCta": "Actualizar nota",
         "submitDisabledEmpty": "Escribe la nota para poder guardar.",

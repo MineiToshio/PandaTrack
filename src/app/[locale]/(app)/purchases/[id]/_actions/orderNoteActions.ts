@@ -7,7 +7,7 @@ import { POSTHOG_EVENTS } from "@/lib/constants";
 import { saveOrderNote } from "@/lib/data/orders/orderMutations";
 import { orderNoteSchema } from "../_schemas/orderNoteSchema";
 
-export type SaveOrderNoteResult = { ok: true; note: string | null } | { ok: false; error: string };
+export type SaveOrderNoteResult = { ok: true; note: string | null; updatedAt: Date } | { ok: false; error: string };
 
 export async function saveOrderNoteAction(orderId: string, rawNote: string | null): Promise<SaveOrderNoteResult> {
   const session = await getSession();
@@ -31,7 +31,7 @@ export async function saveOrderNoteAction(orderId: string, rawNote: string | nul
       await posthog.shutdown();
     }
 
-    return { ok: true, note: result.note };
+    return { ok: true, note: result.note, updatedAt: result.updatedAt };
   } catch (err) {
     Sentry.captureException(err);
     return { ok: false, error: "server_error" };

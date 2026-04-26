@@ -71,6 +71,7 @@ Relevant acceptance signals:
 - User can create and read a private note in authenticated context.
 - Private note content never appears on public store detail.
 - Reviews and private notes render as shared detail panels consistent with the order detail screen.
+- The store private-note intro explicitly states that only the signed-in user can see the note and that it never appears on the store's public profile; the **"Last updated"** line sits directly **below the textarea** instead of in the intro copy block.
 
 ## Status Note
 
