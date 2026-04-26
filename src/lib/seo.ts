@@ -46,7 +46,8 @@ export type BuildPageMetadataOptions = {
     | "stores"
     | "storeListing"
     | "settings"
-    | "orders";
+    | "orders"
+    | "orderListing";
   pathSegment: PageCanonicalSegment;
   titleKey: string;
   descriptionKey?: string;

@@ -250,9 +250,20 @@ On mobile the `aside` wraps below the title thanks to `flex-wrap` on the hero. W
 Rules:
 
 - the **document `h1`** for these screens lives in `AppPageHero` (or the store profile hero). The sticky shell bar title in `ContentHeader` is a **presentational** line (`p` with heading-like classes), not a second heading, so the outline stays one primary title per view
+- detail-route eyebrow pills are optional, not mandatory. Omit them when the breadcrumb plus `h1` already provide enough context and the pill would only repeat "Detail"
 - when the flow needs parent navigation (create/edit store), place `BackNavLink` (`appearance="pill"`) in a `space-y-3` stack **above** `AppPageHero`
 - keep `h1` typography aligned across routes that share this pattern
 - major sections below the hero use **`SectionTitleWithAccent`** (`as="h2"`), not a standalone `Heading` (see **Standard in-page section title**)
+
+#### Detail hero action cluster
+
+Collector detail screens with top-level actions (for example order detail and store detail) use one shared responsive pattern:
+
+- desktop: render the action cluster inline on the right edge of the hero, using labeled buttons with icons and soft elevation
+- mobile: stack the same actions below the descriptive content, full width, in the same order as desktop
+- avoid icon-only hero actions on mobile; labels improve clarity, touch confidence, and accessibility
+- preserve each screen's action hierarchy: primary action stays primary, supporting actions stay secondary, and destructive actions remain inside `More` when that workflow already exists
+- use matching height, spacing, and shadow treatment across sibling detail screens so the collector shell reads as one system even when the exact actions differ
 
 #### Store profile detail sections
 
@@ -515,6 +526,8 @@ Rules:
 - count indicators inside tags should feel integrated, not like detached circular bubbles
 
 **Store listing and store profile (public):** reuse `src/app/[locale]/(app)/stores/_components/share/storePublicChipClassnames.ts` for product-type, import-country, presence, and business-signal chips. **Store listing cards** use `STORE_LISTING_CARD_META_CHIP_CLASSNAME` for country and store type in the bottom row (`rounded-lg`, same rhythm as business-signal chips). **Store profile hero** keeps `STORE_HERO_META_PILL_CLASSNAME` (`rounded-full`, soft `bg-background/80`) for country and store type unchanged.
+
+**Collector listing cards and active-filter shells:** in `/stores` and `/purchases`, reuse `COLLECTOR_CARD_SURFACE_CLASSNAME` from `src/lib/styles.ts` so listing cards, active-filter containers, and detail panels share the same base surface (`bg-surface-2`, `border-border`, `rounded-2xl`, `shadow-sm`). Add spacing or hover behavior on top of that token set instead of redefining the surface ad hoc.
 
 ## Responsive Rules
 

@@ -7,8 +7,8 @@ import BackNavLink from "@/components/core/BackNavLink";
 import AppPageHero from "@/components/modules/AppPageHero";
 import { ROUTES } from "@/lib/constants";
 import type { OrderDetailFull } from "@/lib/data/orders/orderQueries";
-import OrderStatusBadge from "./OrderStatusBadge";
-import OrderUnpaidPill from "./OrderUnpaidPill";
+import OrderStatusBadge from "../../_components/share/OrderStatusBadge";
+import OrderUnpaidPill from "../../_components/share/OrderUnpaidPill";
 import OrderActionBar from "./OrderActionBar";
 
 type OrderSummaryHeaderProps = {
@@ -29,6 +29,7 @@ type OrderSummaryHeaderProps = {
   >;
   locale: string;
   baseCurrencyCode: string | null;
+  backHref?: string | null;
 };
 
 function formatDate(date: Date, locale: string) {
@@ -44,7 +45,12 @@ const META_CHIP_ICON_CLASS: Record<MetaChipVariant, string> = {
   fx: "text-highlight",
 };
 
-export default async function OrderSummaryHeader({ order, locale, baseCurrencyCode }: OrderSummaryHeaderProps) {
+export default async function OrderSummaryHeader({
+  order,
+  locale,
+  baseCurrencyCode,
+  backHref,
+}: OrderSummaryHeaderProps) {
   const t = await getTranslations({ locale, namespace: "orders" });
 
   const hasUnpaidAndCompleted = order.status === "COMPLETED" && order.hasUnpaidBalance;
@@ -86,12 +92,11 @@ export default async function OrderSummaryHeader({ order, locale, baseCurrencyCo
 
   return (
     <div className="space-y-5">
-      <BackNavLink href={`/${locale}${ROUTES.purchases}`} appearance="pill">
+      <BackNavLink href={backHref ?? `/${locale}${ROUTES.purchases}`} appearance="pill">
         {t("detail.backToList")}
       </BackNavLink>
 
       <AppPageHero
-        eyebrow={t("detail.heroEyebrow")}
         title={
           <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <span>{order.store.name}</span>
@@ -114,7 +119,7 @@ export default async function OrderSummaryHeader({ order, locale, baseCurrencyCo
           </span>
         }
         aside={
-          <div className="w-full md:w-auto">
+          <div className="w-full lg:w-auto">
             <OrderActionBar
               orderId={order.id}
               status={order.status}

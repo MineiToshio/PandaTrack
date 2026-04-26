@@ -9,7 +9,22 @@ import OrderDetailContent from "./_components/OrderDetailContent";
 
 type Props = {
   params: Promise<{ locale: string; id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+function safeRelativeReturnTo(raw: string | string[] | undefined): string | null {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (!value) return null;
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(value);
+  } catch {
+    return null;
+  }
+  if (!decoded.startsWith("/")) return null;
+  if (decoded.startsWith("//")) return null;
+  return decoded;
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
@@ -21,13 +36,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 }
 
-export default async function PurchasesDetailPage({ params }: Props) {
+export default async function PurchasesDetailPage({ params, searchParams }: Props) {
   const { locale, id } = await params;
   const session = await getSession();
   if (!session?.user?.id) redirect(`/${locale}/sign-in`);
   const userId = session.user.id;
 
   await getTranslations({ locale, namespace: "orders" });
+
+  const rawParams = await searchParams;
+  const backHref = safeRelativeReturnTo(rawParams.returnTo);
 
   const [order, user] = await Promise.all([
     getOrderDetail(id, userId),
@@ -36,5 +54,12 @@ export default async function PurchasesDetailPage({ params }: Props) {
 
   if (!order) notFound();
 
-  return <OrderDetailContent order={order} locale={locale} baseCurrencyCode={user?.baseCurrencyCode ?? null} />;
+  return (
+    <OrderDetailContent
+      order={order}
+      locale={locale}
+      baseCurrencyCode={user?.baseCurrencyCode ?? null}
+      backHref={backHref}
+    />
+  );
 }

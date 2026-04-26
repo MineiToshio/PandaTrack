@@ -5,6 +5,7 @@ import { DEFAULT_PUBLIC_STORE_PAGE_SIZE, getPublicStoresListingPage } from "@/qu
 import { listCountryCodes } from "@/queries/country";
 import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
 import { buildPageMetadata } from "@/lib/seo";
+import { APP_SHELL_FORM_RAIL_CLASSNAME } from "@/lib/constants";
 import { parseListingSearchParams } from "./_utils/listingParams";
 import StoreListingContent from "./_components/StoreListingContent";
 import AppPageHero from "@/components/modules/AppPageHero";
@@ -97,35 +98,37 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
   const buildPaginationHref = (targetPage: number) => createStoresPageHref(storesBasePath, rawParams, targetPage);
 
   return (
-    <div className="text-foreground space-y-6">
-      <AppPageHero
-        eyebrow={tListing("hero.eyebrow")}
-        title={tListing("hero.title")}
-        description={tListing("meta.description")}
-      />
-      <StoreListingFilters
-        locale={locale}
-        createStoreLabel={tStores("create.title")}
-        productTypeOptions={productTypeOptions}
-        countryOptions={countryOptions}
-        initialNameQuery={nameQuery ?? ""}
-        initialProductTypeKeys={productTypeKeys}
-        initialCountryCodes={countryCodes}
-        initialImportCountryCodes={importCountryCodes}
-        initialPresenceTypes={presenceTypes}
-        initialReceivesOrders={receivesOrders}
-        initialHasStock={hasStock}
-        totalStores={listingPage.totalCount}
-        showingFrom={showingFrom}
-        showingTo={showingTo}
-      />
-      <StoreListingContent locale={locale} stores={listingPage.items} />
-      <StoreListingPagination
-        locale={locale}
-        totalPages={listingPage.totalPages}
-        currentPage={listingPage.currentPage}
-        createPageHref={buildPaginationHref}
-      />
+    <div className="text-foreground">
+      <div className={`${APP_SHELL_FORM_RAIL_CLASSNAME} space-y-6`}>
+        <AppPageHero
+          eyebrow={tListing("hero.eyebrow")}
+          title={tListing("hero.title")}
+          description={tListing("meta.description")}
+        />
+        <StoreListingFilters
+          locale={locale}
+          createStoreLabel={tStores("create.title")}
+          productTypeOptions={productTypeOptions}
+          countryOptions={countryOptions}
+          initialNameQuery={nameQuery ?? ""}
+          initialProductTypeKeys={productTypeKeys}
+          initialCountryCodes={countryCodes}
+          initialImportCountryCodes={importCountryCodes}
+          initialPresenceTypes={presenceTypes}
+          initialReceivesOrders={receivesOrders}
+          initialHasStock={hasStock}
+          totalStores={listingPage.totalCount}
+          showingFrom={showingFrom}
+          showingTo={showingTo}
+        />
+        <StoreListingContent locale={locale} stores={listingPage.items} />
+        <StoreListingPagination
+          locale={locale}
+          totalPages={listingPage.totalPages}
+          currentPage={listingPage.currentPage}
+          createPageHref={buildPaginationHref}
+        />
+      </div>
     </div>
   );
 }

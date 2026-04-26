@@ -8,6 +8,7 @@ import {
   Building2,
   CircleAlert,
   ExternalLink,
+  Flag,
   Globe,
   Link2,
   Mail,
@@ -21,7 +22,13 @@ import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import { ROUTES } from "@/lib/constants";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
-import { cn, TINTED_SURFACE_GRADIENT_STOPS } from "@/lib/styles";
+import {
+  COLLECTOR_CARD_SURFACE_CLASSNAME,
+  cn,
+  DETAIL_HERO_ACTION_BUTTON_CLASSNAME,
+  DETAIL_HERO_ACTIONS_CLASSNAME,
+  TINTED_SURFACE_GRADIENT_STOPS,
+} from "@/lib/styles";
 import SectionSurfaceCard from "@/components/modules/SectionSurfaceCard";
 import type { PublicStoreReview, StoreDetail, StoreViewerNote, StoreViewerReview } from "@/queries/store";
 import type { EditableStore, StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
@@ -85,13 +92,9 @@ function getContactIcon(type: NonNullable<StoreDetail["contactChannels"]>[number
   return <Link2 className="size-4" aria-hidden />;
 }
 
-const DETAIL_SECTION_MATCHING_SURFACE_CLASSNAME = "border-border bg-surface-2 rounded-2xl border shadow-sm";
-const DETAIL_SECTION_PANEL_CLASSNAME =
-  "border-border bg-surface-2 flex flex-col gap-5 rounded-2xl border px-4 pt-3 pb-4 shadow-sm sm:px-5 sm:pt-3 sm:pb-5";
+const DETAIL_SECTION_PANEL_CLASSNAME = `${COLLECTOR_CARD_SURFACE_CLASSNAME} flex flex-col gap-5 px-4 pt-3 pb-4 sm:px-5 sm:pt-3 sm:pb-5`;
 
 const DETAIL_INSET_CARD_CLASSNAME = "border-border/70 bg-card rounded-2xl border shadow-sm";
-
-const STORE_DETAIL_HERO_ACTION_CLASSNAME = "border border-border/35 shadow-md hover:border-border/50 hover:shadow-lg";
 
 export default function StoreDetailContent({
   locale,
@@ -184,70 +187,76 @@ export default function StoreDetailContent({
               )}
 
               <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-3">
-                  <Heading as="h1" size="sm" className="text-text-title" id="store-detail-heading">
-                    {store.name}
-                  </Heading>
-                  <div className="flex shrink-0 items-center gap-1.5 pt-1 sm:gap-2">
-                    <StoreReportModal
-                      locale={locale}
-                      storeSlug={store.slug}
-                      existingReport={governanceViewerContext.openReport}
-                      triggerClassName={STORE_DETAIL_HERO_ACTION_CLASSNAME}
-                    />
-                    {canAccessEditRoute && (
-                      <Link
-                        href={`/${locale}${ROUTES.stores}/${editableStore.slug}/edit`}
-                        className={cn(
-                          buttonVariants({ variant: "secondary", size: "md" }),
-                          STORE_DETAIL_HERO_ACTION_CLASSNAME,
-                          "gap-1.5 max-lg:h-11 max-lg:min-w-11 max-lg:justify-center max-lg:px-0",
+                <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-4">
+                  <div className="min-w-0">
+                    <Heading as="h1" size="sm" className="text-text-title" id="store-detail-heading">
+                      {store.name}
+                    </Heading>
+
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className={STORE_HERO_META_PILL_CLASSNAME}>
+                        {storeCountryFlagEmoji ? (
+                          <CollectorCountryFlagEmoji countryCode={store.countryCode} className="shrink-0" />
+                        ) : (
+                          <MapPinned className="size-3.5 shrink-0" aria-hidden />
                         )}
-                      >
-                        <Pencil className="size-4 shrink-0" aria-hidden />
-                        <span className="max-lg:sr-only">{editModeLabel}</span>
-                      </Link>
+                        {tCountries(store.countryCode)}
+                      </span>
+                      <span className={STORE_HERO_META_PILL_CLASSNAME}>
+                        {store.status === "PENDING" ? (
+                          <CircleAlert className="text-warning size-3.5 shrink-0" aria-hidden />
+                        ) : (
+                          <BadgeCheck className="text-success size-3.5 shrink-0" aria-hidden />
+                        )}
+                        {store.status === "PENDING" ? tStores("detail.statusPending") : tStores("detail.statusApproved")}
+                      </span>
+                      <StoreReviewAggregateBadge />
+                    </div>
+
+                    {store.description ? (
+                      <Typography size="sm" className="text-text-body mt-4 max-w-3xl leading-relaxed">
+                        {store.description}
+                      </Typography>
+                    ) : (
+                      <Typography size="sm" className="text-text-muted mt-4">
+                        {tStores("detail.noDescription")}
+                      </Typography>
                     )}
                   </div>
-                </div>
 
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className={STORE_HERO_META_PILL_CLASSNAME}>
-                    {storeCountryFlagEmoji ? (
-                      <CollectorCountryFlagEmoji countryCode={store.countryCode} className="shrink-0" />
-                    ) : (
-                      <MapPinned className="size-3.5 shrink-0" aria-hidden />
-                    )}
-                    {tCountries(store.countryCode)}
-                  </span>
-                  <span className={STORE_HERO_META_PILL_CLASSNAME}>
-                    {store.status === "PENDING" ? (
-                      <CircleAlert className="text-warning size-3.5 shrink-0" aria-hidden />
-                    ) : (
-                      <BadgeCheck className="text-success size-3.5 shrink-0" aria-hidden />
-                    )}
-                    {store.status === "PENDING" ? tStores("detail.statusPending") : tStores("detail.statusApproved")}
-                  </span>
-                  <StoreReviewAggregateBadge />
+                  <div className="mt-4 lg:mt-0 lg:justify-self-end">
+                    <div className={DETAIL_HERO_ACTIONS_CLASSNAME}>
+                      <StoreReportModal
+                        locale={locale}
+                        storeSlug={store.slug}
+                        existingReport={governanceViewerContext.openReport}
+                        triggerClassName={DETAIL_HERO_ACTION_BUTTON_CLASSNAME}
+                        showTriggerLabel
+                        triggerIcon={<Flag className="size-4 shrink-0" aria-hidden />}
+                      />
+                      {canAccessEditRoute && (
+                        <Link
+                          href={`/${locale}${ROUTES.stores}/${editableStore.slug}/edit`}
+                          className={cn(
+                            buttonVariants({ variant: "secondary", size: "md" }),
+                            DETAIL_HERO_ACTION_BUTTON_CLASSNAME,
+                          )}
+                        >
+                          <Pencil className="size-4 shrink-0" aria-hidden />
+                          {editModeLabel}
+                        </Link>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-
-            {store.description ? (
-              <Typography size="sm" className="text-text-body mt-4 max-w-3xl leading-relaxed">
-                {store.description}
-              </Typography>
-            ) : (
-              <Typography size="sm" className="text-text-muted mt-4">
-                {tStores("detail.noDescription")}
-              </Typography>
-            )}
           </header>
         </section>
 
         {/* ── Status alerts ── */}
         {showStoreStatusCard && (
-          <div className={cn(DETAIL_SECTION_MATCHING_SURFACE_CLASSNAME, "mt-6 p-4 sm:p-4")}>
+          <div className={cn(COLLECTOR_CARD_SURFACE_CLASSNAME, "mt-6 p-4 sm:p-4")}>
             {isPendingReview && (
               <div className="flex items-start gap-2.5" role="note">
                 <CircleAlert className="text-warning mt-0.5 size-4 shrink-0" aria-hidden />

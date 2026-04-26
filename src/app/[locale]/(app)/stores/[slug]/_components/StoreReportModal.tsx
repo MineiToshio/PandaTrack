@@ -25,7 +25,9 @@ type StoreReportModalProps = {
   openRequestNonce?: number;
   /** Merged into the default trigger button (e.g. higher contrast on tinted hero backgrounds). */
   triggerClassName?: string;
-  renderTrigger?: (args: { openModal: () => void; label: string }) => ReactNode;
+  triggerLabelClassName?: string;
+  showTriggerLabel?: boolean;
+  triggerIcon?: ReactNode;
 };
 
 const REPORT_REASONS = ["SPAM", "DUPLICATE", "INCORRECT_INFO", "DOES_NOT_EXIST", "INAPPROPRIATE"] as const;
@@ -45,7 +47,9 @@ export default function StoreReportModal({
   hideTrigger = false,
   openRequestNonce = 0,
   triggerClassName,
-  renderTrigger,
+  triggerLabelClassName,
+  showTriggerLabel = false,
+  triggerIcon,
 }: StoreReportModalProps) {
   const t = useTranslations("stores");
   const [isOpen, setIsOpen] = useState(false);
@@ -117,9 +121,7 @@ export default function StoreReportModal({
 
   return (
     <>
-      {hideTrigger ? null : renderTrigger ? (
-        renderTrigger({ openModal, label: reportTriggerLabel })
-      ) : (
+      {hideTrigger ? null : (
         <Button
           type="button"
           variant="secondary"
@@ -127,8 +129,10 @@ export default function StoreReportModal({
           className={cn("gap-1.5 max-lg:h-11 max-lg:min-w-11 max-lg:justify-center max-lg:px-0", triggerClassName)}
           onClick={openModal}
         >
-          <Flag className="size-4 shrink-0" aria-hidden />
-          <span className="max-lg:sr-only">{reportTriggerLabel}</span>
+          {triggerIcon ?? <Flag className="size-4 shrink-0" aria-hidden />}
+          <span className={cn(showTriggerLabel ? undefined : "max-lg:sr-only", triggerLabelClassName)}>
+            {reportTriggerLabel}
+          </span>
         </Button>
       )}
 

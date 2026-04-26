@@ -7,8 +7,8 @@ status: ACTIVE
 parent: BP-02
 source_features:
   - FEAT-0014
-last_updated: 2026-04-19
-implementation_status: PLANNED
+last_updated: 2026-04-26
+implementation_status: IN_PROGRESS
 ---
 
 # WO-06 Orders List, Filters, Expansion Rows, and Overdue Payment Signals
@@ -134,18 +134,19 @@ Same drawer pattern as the Stores listing (`src/app/[locale]/(app)/stores/_compo
 - Trigger button positioned above the chip row
 - Filters: date range (from / to single date pickers), store (searchable select), product type (multi-select chips), status (multi-select chips exposing all six order states), free-text product name
 - `Aplicar filtros` / `Apply filters` updates the URL with all selected values
-- `Restablecer` / `Reset` inside the sidebar clears all sidebar selections and navigates to `/purchases`
+- `Restablecer` / `Reset` inside the sidebar clears all sidebar selections and navigates to the canonical default active-orders URL with the four explicit `status` params
 
 Status filter option labels use the Spanish display names defined in **FRD-05 · BP-01 · [WO-02](../../bp-01-order-domain-foundation/work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md)**. All six states are selectable: `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`, `COMPLETED`, `CANCELLED`.
 
 ### Filter chips
 
-- When the URL contains exactly the four `DEFAULT_ACTIVE_STATUSES` and no other status param: render one grouped chip `Solo activas` / `Active only`
+- When the URL contains exactly the four `DEFAULT_ACTIVE_STATUSES`: render one grouped chip `Solo activas` / `Active only`
 - When the URL contains any other status combination: render individual status chips, one per selected status
 - All other active filters (store, product type, date range, text query) render as individual removable chips
 - Removing the `Solo activas` chip removes all `?status=` params from the URL; other filters remain active; orders of all statuses are shown
 - Removing an individual filter chip removes only that param from the URL
-- `Restablecer` / `Reset` appears as a secondary action alongside the chips when any filter is active; clicking it navigates to `/purchases` and re-applies the default active view
+- `Restablecer` / `Reset` appears as a secondary action alongside the chips only when at least one non-default filter is active; the grouped `Solo activas` default chip alone does not show `Restablecer`
+- Opening the filter sidebar while `Solo activas` is applied shows the four active-status options checked inside the status group
 
 ### Order card — collapsed
 
@@ -396,13 +397,14 @@ All event names are added to `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 
 ### Default filter
 
-- Navigating to `/purchases` with no params shows only orders in `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, and `PARTIALLY_DELIVERED`. Orders in `COMPLETED` and `CANCELLED` are not visible.
+- Navigating to `/purchases` with no params redirects to the canonical orders-list URL with `status=OPEN`, `status=PARTIALLY_IN_TRANSIT`, `status=IN_TRANSIT`, and `status=PARTIALLY_DELIVERED`. Orders in `COMPLETED` and `CANCELLED` are not visible.
 - The `Solo activas` chip is visible; no individual status chips appear.
-- The URL reflects the default filter state after mount.
+- The URL remains explicit about the active statuses in the default view.
 
 ### Filter sidebar
 
 - Opening the filter sidebar shows all six status options, store select, product type, date range, and free-text name field.
+- When the default `Solo activas` view is active, the four active-status options are already checked in the sidebar.
 - Selecting specific statuses and applying replaces the `Solo activas` chip with individual status chips in the URL and in the chip row.
 - Applying a store filter adds a chip with the store name label.
 - Applying a date range adds `Desde` and `Hasta` chips.
@@ -413,6 +415,7 @@ All event names are added to `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 - Removing the `Solo activas` chip clears `?status=` from the URL; orders of all statuses appear; other active filters are preserved.
 - Removing an individual filter chip removes only that filter from the URL.
 - Clicking `Restablecer` navigates to `/purchases` and the list reverts to the default active-orders view.
+- When the chip row only contains the grouped `Solo activas` default chip, `Restablecer` is hidden because there is no additional filter state to clear.
 
 ### Card — collapsed
 

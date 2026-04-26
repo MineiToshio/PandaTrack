@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "title": "Órdenes",
+    "description": "Tu lista de compras: filtra, sigue pagos y entrega."
+  },
+  "hero": {
+    "eyebrow": "Tu espacio de trabajo",
+    "title": "Órdenes",
+    "description": "Revisa tus compras, controla los pagos y haz seguimiento de las entregas en un solo lugar.",
+    "newOrder": "Nueva orden"
+  },
+  "summary": {
+    "showing": "{total, plural, one {# orden} other {# órdenes}} en total · mostrando {start}-{end}",
+    "summaryEmpty": "0 órdenes"
+  },
+  "filters": {
+    "openButton": "Filtros",
+    "dialogTitle": "Filtrar órdenes",
+    "closeDialog": "Cerrar filtros",
+    "apply": "Aplicar filtros",
+    "reset": "Restablecer",
+    "nameLabel": "Buscar por producto",
+    "namePlaceholder": "Nombre del producto",
+    "storeLabel": "Tienda",
+    "storePlaceholder": "Todas las tiendas",
+    "productTypeLabel": "Tipo de producto",
+    "statusLabel": "Estado",
+    "dateFromLabel": "Desde",
+    "dateToLabel": "Hasta"
+  },
+  "chips": {
+    "soloActivas": "Solo activas",
+    "from": "Desde {date}",
+    "to": "Hasta {date}",
+    "store": "Tienda: {name}",
+    "remove": "Quitar filtro {label}"
+  },
+  "status": {
+    "OPEN": "Abierta",
+    "IN_TRANSIT": "En tránsito",
+    "PARTIALLY_IN_TRANSIT": "Parcialmente en tránsito",
+    "PARTIALLY_DELIVERED": "Parcialmente entregada",
+    "COMPLETED": "Completada",
+    "CANCELLED": "Cancelada"
+  },
+  "card": {
+    "expand": "Mostrar artículos",
+    "collapse": "Ocultar artículos",
+    "items": "{count, plural, one {# artículo} other {# artículos}}",
+    "paymentPercentage": "{pct}% pagado",
+    "paymentBarLabel": "Progreso de pago",
+    "delivery": "{from} – {to}",
+    "deliveryFrom": "Desde {from}",
+    "deliveryTo": "Hasta {to}",
+    "overdue": "Atrasada",
+    "unpaid": "Impago",
+    "itemsSectionTitle": "Artículos de la orden",
+    "itemQuantity": "× {quantity}",
+    "itemDelivery": {
+      "open": "Pendiente",
+      "in_transit": "En tránsito",
+      "delivered": "Entregado"
+    }
+  },
+  "empty": {
+    "noOrders": {
+      "title": "Todavía no tienes órdenes",
+      "description": "Registra tu primera compra y lleva el control de tus pedidos, pagos y entregas desde un solo lugar.",
+      "cta": "Nueva orden"
+    },
+    "noResults": {
+      "title": "No encontramos órdenes con esos filtros",
+      "description": "Prueba quitar algún filtro o restablecer la vista activa.",
+      "cta": "Restablecer"
+    }
+  },
+  "pagination": {
+    "navigationAriaLabel": "Paginación de órdenes",
+    "goToPageAriaLabel": "Ir a la página {page}",
+    "previous": "Anterior",
+    "next": "Siguiente"
+  }
+}

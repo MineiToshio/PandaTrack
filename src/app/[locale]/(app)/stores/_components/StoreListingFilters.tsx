@@ -11,7 +11,7 @@ import { useFocusScope } from "@/lib/a11y/useFocusScope";
 import { ROUTES } from "@/lib/constants";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
-import { cn } from "@/lib/styles";
+import { cn, COLLECTOR_CARD_SURFACE_CLASSNAME } from "@/lib/styles";
 import posthog from "posthog-js";
 import Typography from "@/components/core/Typography";
 import StoreMultiTagAutocomplete from "./share/StoreMultiTagAutocomplete";
@@ -270,7 +270,7 @@ export default function StoreListingFilters({
       </div>
 
       {hasActiveFilters && (
-        <div className="border-border/70 bg-background/70 rounded-2xl border p-3 sm:p-4">
+        <div className={cn(COLLECTOR_CARD_SURFACE_CLASSNAME, "p-3 sm:p-4")}>
           <div className="flex flex-wrap items-center gap-2.5">
             {!!activeFilters.nameQuery && (
               <button

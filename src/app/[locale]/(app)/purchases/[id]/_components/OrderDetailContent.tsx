@@ -1,6 +1,7 @@
 import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
 import { deriveHasUnpaidBalance } from "@/lib/orders/orderState";
 import type { OrderDetailFull } from "@/lib/data/orders/orderQueries";
+import SetHeaderTitle from "@/app/[locale]/(app)/_components/AppLayout/SetHeaderTitle";
 import OrderSummaryHeader from "./OrderSummaryHeader";
 import OrderItemsList from "./OrderItemsList";
 import OrderHistoryList from "./OrderHistoryList";
@@ -11,14 +12,16 @@ type OrderDetailContentProps = {
   order: OrderDetailFull;
   locale: string;
   baseCurrencyCode: string | null;
+  backHref?: string | null;
 };
 
-export default function OrderDetailContent({ order, locale, baseCurrencyCode }: OrderDetailContentProps) {
+export default function OrderDetailContent({ order, locale, baseCurrencyCode, backHref }: OrderDetailContentProps) {
   const summary = calculatePaymentSummary(order.totalCost, order.payments);
   const hasUnpaidBalance = deriveHasUnpaidBalance(order.totalCost, summary.paidAmount);
 
   return (
     <div className="space-y-8">
+      <SetHeaderTitle title={order.humanReadableId} />
       <OrderSummaryHeader
         order={{
           id: order.id,
@@ -36,6 +39,7 @@ export default function OrderDetailContent({ order, locale, baseCurrencyCode }: 
         }}
         locale={locale}
         baseCurrencyCode={baseCurrencyCode}
+        backHref={backHref}
       />
 
       {/* Mobile: flex column with explicit order so the visual sequence is

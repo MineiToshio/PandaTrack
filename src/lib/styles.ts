@@ -28,3 +28,23 @@ export const COLLECTOR_PRIMARY_SECTION_CLASSNAME =
  * Muted inset block for secondary content inside a section (email row, placeholders, compact card summaries).
  */
 export const COLLECTOR_MUTED_INSET_CLASSNAME = "border-border/55 bg-muted/32 rounded-xl border p-4" as const;
+
+/**
+ * Shared elevated card surface for collector detail panels, listing cards, and active-filter shells.
+ * Keeps the base fill, border, radius, and shadow aligned across the private app.
+ */
+export const COLLECTOR_CARD_SURFACE_CLASSNAME = "border-border bg-surface-2 rounded-2xl border shadow-sm" as const;
+
+/**
+ * Shared responsive layout for action clusters inside detail heroes.
+ * Mobile stacks actions vertically at full width; larger screens collapse to an inline row.
+ */
+export const DETAIL_HERO_ACTIONS_CLASSNAME =
+  "flex flex-col gap-2 lg:flex-row lg:flex-wrap lg:items-center lg:justify-end" as const;
+
+/**
+ * Shared button chrome for hero actions on tinted detail surfaces.
+ * Keeps tap targets comfortable on mobile and adds elevation separation from the gradient background.
+ */
+export const DETAIL_HERO_ACTION_BUTTON_CLASSNAME =
+  "min-h-11 w-full justify-center gap-1.5 shadow-md hover:shadow-lg lg:w-auto" as const;

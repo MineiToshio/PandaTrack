@@ -146,6 +146,12 @@ export const POSTHOG_EVENTS = {
     REACTIVATED: "order_reactivated",
     CREATE_DELIVERY_CLICKED: "order_create_delivery_clicked",
     DETAIL_MORE_MENU_OPENED: "order_detail_more_menu_opened",
+    LIST_FILTERED: "orders_list_filtered",
+    LIST_FILTER_CHIP_REMOVED: "orders_list_filter_chip_removed",
+    LIST_FILTERS_RESET: "orders_list_filters_reset",
+    LIST_CARD_EXPANDED: "orders_list_card_expanded",
+    LIST_CARD_COLLAPSED: "orders_list_card_collapsed",
+    LIST_PAGE_CHANGED: "orders_list_page_changed",
   },
   STORE: {
     CREATED: "store_created",

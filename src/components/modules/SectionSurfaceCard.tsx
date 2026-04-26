@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { SectionAccentBar } from "@/components/modules/SectionAccentBar";
-import { cn } from "@/lib/styles";
+import { cn, COLLECTOR_CARD_SURFACE_CLASSNAME } from "@/lib/styles";
 import type { LucideProps } from "lucide-react";
 
 /** Same look for all panel title modes (Resumen, listas, etc.): compact `text-sm` / `sm:text-base`, no h2/span drift. */
@@ -121,7 +121,8 @@ export default function SectionSurfaceCard(props: SectionSurfaceCardProps) {
   return (
     <div
       className={cn(
-        "border-border bg-surface-2 flex flex-col gap-3 rounded-2xl border px-4 pt-3 pb-4 shadow-sm sm:px-5 sm:pt-3 sm:pb-5",
+        COLLECTOR_CARD_SURFACE_CLASSNAME,
+        "flex flex-col gap-3 px-4 pt-3 pb-4 sm:px-5 sm:pt-3 sm:pb-5",
         className,
       )}
     >

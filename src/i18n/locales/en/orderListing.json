@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "title": "Orders",
+    "description": "Your purchase list: filter, track payments, and follow deliveries."
+  },
+  "hero": {
+    "eyebrow": "Collector workspace",
+    "title": "Orders",
+    "description": "Review your purchases, track payments, and follow deliveries from a single place.",
+    "newOrder": "New order"
+  },
+  "summary": {
+    "showing": "{total, plural, one {# order} other {# orders}} total · showing {start}-{end}",
+    "summaryEmpty": "0 orders"
+  },
+  "filters": {
+    "openButton": "Filters",
+    "dialogTitle": "Filter orders",
+    "closeDialog": "Close filters",
+    "apply": "Apply filters",
+    "reset": "Reset",
+    "nameLabel": "Search by product",
+    "namePlaceholder": "Product name",
+    "storeLabel": "Store",
+    "storePlaceholder": "All stores",
+    "productTypeLabel": "Product type",
+    "statusLabel": "Status",
+    "dateFromLabel": "From",
+    "dateToLabel": "To"
+  },
+  "chips": {
+    "soloActivas": "Active only",
+    "from": "From {date}",
+    "to": "To {date}",
+    "store": "Store: {name}",
+    "remove": "Remove filter {label}"
+  },
+  "status": {
+    "OPEN": "Open",
+    "IN_TRANSIT": "In transit",
+    "PARTIALLY_IN_TRANSIT": "Partially in transit",
+    "PARTIALLY_DELIVERED": "Partially delivered",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled"
+  },
+  "card": {
+    "expand": "Show items",
+    "collapse": "Hide items",
+    "items": "{count, plural, one {# item} other {# items}}",
+    "paymentPercentage": "{pct}% paid",
+    "paymentBarLabel": "Payment progress",
+    "delivery": "{from} – {to}",
+    "deliveryFrom": "From {from}",
+    "deliveryTo": "Until {to}",
+    "overdue": "Overdue",
+    "unpaid": "Unpaid",
+    "itemsSectionTitle": "Order items",
+    "itemQuantity": "× {quantity}",
+    "itemDelivery": {
+      "open": "Pending",
+      "in_transit": "In transit",
+      "delivered": "Delivered"
+    }
+  },
+  "empty": {
+    "noOrders": {
+      "title": "You have no orders yet",
+      "description": "Record your first purchase and keep track of your orders, payments, and deliveries in one place.",
+      "cta": "New order"
+    },
+    "noResults": {
+      "title": "No orders match those filters",
+      "description": "Try removing a filter or resetting back to the active view.",
+      "cta": "Reset"
+    }
+  },
+  "pagination": {
+    "navigationAriaLabel": "Orders pagination",
+    "goToPageAriaLabel": "Go to page {page}",
+    "previous": "Previous",
+    "next": "Next"
+  }
+}

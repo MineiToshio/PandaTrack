@@ -4,7 +4,7 @@ import { Box, Building2, Globe, Link2, Mail, MapPinned, Phone, Star, UserRound }
 import { siFacebook, siInstagram, siTiktok, siWhatsapp } from "simple-icons";
 import type { PublicStoreListingItem } from "@/queries/store";
 import { ROUTES } from "@/lib/constants";
-import { COLLECTOR_MUTED_INSET_CLASSNAME, cn } from "@/lib/styles";
+import { COLLECTOR_CARD_SURFACE_CLASSNAME, COLLECTOR_MUTED_INSET_CLASSNAME, cn } from "@/lib/styles";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
 import StoreEmptyCatalogTag from "./StoreEmptyCatalogTag";
@@ -147,7 +147,12 @@ export default function StoreListingContent({ locale, stores }: StoreListingCont
 
             return (
               <li key={store.slug}>
-                <article className="border-border/70 bg-background/90 hover:border-primary/60 hover:shadow-primary/15 group relative rounded-2xl border p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+                <article
+                  className={cn(
+                    COLLECTOR_CARD_SURFACE_CLASSNAME,
+                    "hover:border-primary/60 hover:shadow-primary/15 group relative p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
+                  )}
+                >
                   <Link
                     href={`/${locale}${ROUTES.stores}/${store.slug}`}
                     aria-label={store.name}

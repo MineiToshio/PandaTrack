@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import ContentHeader from "../ContentHeader";
+import { HeaderTitleProvider } from "../HeaderTitleContext";
+import SetHeaderTitle from "../SetHeaderTitle";
 
 const translationMap: Record<string, string> = {
   "nav.dashboard": "Dashboard",
@@ -63,5 +65,22 @@ describe("ContentHeader", () => {
     };
     expect(themeToggleProps.posthogEvent).toBe("app_shell_theme_changed");
     expect(themeToggleProps.posthogProps?.route).toBe("/en/purchases/pre-orders");
+  });
+
+  it("prefers the dynamic header title when a route overrides it", () => {
+    render(
+      <HeaderTitleProvider>
+        <SetHeaderTitle title="ORD-20260423-1" />
+        <ContentHeader
+          locale="en"
+          pathname="/en/purchases/some-order-id"
+          drawerOpen={false}
+          onOpenDrawer={vi.fn()}
+          burgerButtonRef={{ current: null }}
+        />
+      </HeaderTitleProvider>,
+    );
+
+    expect(screen.getByText("ORD-20260423-1")).toBeInTheDocument();
   });
 });

@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, MoreHorizontal, Pencil, RotateCcw, Truck } from "lucide-react";
 import Button from "@/components/core/Button/Button";
 import Tooltip from "@/components/core/Tooltip";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { cn } from "@/lib/styles";
+import { DETAIL_HERO_ACTION_BUTTON_CLASSNAME, DETAIL_HERO_ACTIONS_CLASSNAME } from "@/lib/styles";
 import type { OrderEligibility, OrderFlags } from "@/lib/data/orders/orderQueries";
 import type { OrderStatus } from "../../../../../../../generated/prisma/client";
 import OrderDangerousActionModal, { type DangerousAction } from "./OrderDangerousActionModal";
@@ -35,6 +36,7 @@ export default function OrderActionBar({
   humanReadableId,
   storeName,
 }: OrderActionBarProps) {
+  const router = useRouter();
   const t = useTranslations("orders");
   const [moreOpen, setMoreOpen] = useState(false);
   const [modal, setModal] = useState<ModalState>(null);
@@ -93,8 +95,7 @@ export default function OrderActionBar({
 
   return (
     <div className="relative">
-      {/* Single responsive layout: mobile stacks vertically, tablet (md+) side by side */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center">
+      <div className={DETAIL_HERO_ACTIONS_CLASSNAME}>
         {isCancelled ? (
           <>
             <Button
@@ -102,13 +103,13 @@ export default function OrderActionBar({
               size="md"
               onClick={handleReactivate}
               disabled={isReactivating}
-              className="w-full md:w-auto"
+              className={DETAIL_HERO_ACTION_BUTTON_CLASSNAME}
             >
+              <RotateCcw className="size-4 shrink-0" aria-hidden />
               {isReactivating ? "…" : t("detail.actions.reactivate")}
             </Button>
 
-            {/* Chevron menu for cancelled: Delete only */}
-            <div className="relative w-full md:w-auto">
+            <div className="relative w-full lg:w-auto">
               <Button
                 variant="secondary"
                 size="md"
@@ -116,9 +117,10 @@ export default function OrderActionBar({
                 aria-haspopup="menu"
                 aria-expanded={moreOpen}
                 aria-label={t("detail.actions.more")}
-                className="w-full md:w-auto"
+                className={DETAIL_HERO_ACTION_BUTTON_CLASSNAME}
               >
-                <ChevronDown className="size-4" aria-hidden />
+                <MoreHorizontal className="size-4 shrink-0" aria-hidden />
+                {t("detail.actions.more")}
               </Button>
               {moreOpen && (
                 <MoreMenu
@@ -136,13 +138,12 @@ export default function OrderActionBar({
           </>
         ) : (
           <>
-            {/* Crear entrega — full width on mobile, auto on tablet */}
             <Tooltip
               content={t("detail.actions.createDeliveryTooltip")}
               side="bottom"
               asDiv
-              className="w-full md:w-auto"
-              triggerClassName="w-full md:w-auto"
+              className="w-full lg:w-auto"
+              triggerClassName="w-full lg:w-auto"
             >
               <Button
                 variant="primary"
@@ -152,63 +153,98 @@ export default function OrderActionBar({
                 onClick={(e) => e.preventDefault()}
                 posthogEvent={POSTHOG_EVENTS.ORDER.CREATE_DELIVERY_CLICKED}
                 posthogProps={{ orderId, status }}
-                className="w-full md:w-auto"
+                className={DETAIL_HERO_ACTION_BUTTON_CLASSNAME}
               >
+                <Truck className="size-4 shrink-0" aria-hidden />
                 {t("detail.actions.createDelivery")}
               </Button>
             </Tooltip>
 
-            {/* Split button: Edit (navigate) + ChevronDown (more menu) */}
-            <div className="relative flex w-full md:w-auto">
-              {isActive && (
+            {isActive ? (
+              <div className="relative flex w-full lg:w-auto">
                 <Button
                   variant="secondary"
                   size="md"
                   onClick={() => {
-                    window.location.href = `/${locale}${ROUTES.purchases}/${orderId}/edit`;
+                    router.push(`/${locale}${ROUTES.purchases}/${orderId}/edit`);
                   }}
-                  className="flex-1 rounded-r-none border-r-0 active:scale-100 md:flex-initial"
+                  className="min-h-11 flex-1 justify-center gap-1.5 rounded-r-none border-r-0 shadow-md hover:shadow-lg lg:w-auto lg:flex-initial"
                 >
+                  <Pencil className="size-4 shrink-0" aria-hidden />
                   {t("detail.actions.edit")}
                 </Button>
-              )}
-              <Button
-                variant="secondary"
-                size="md"
-                onClick={(e) => openMoreMenu(e.currentTarget)}
-                aria-haspopup="menu"
-                aria-expanded={moreOpen}
-                aria-label={t("detail.actions.more")}
-                posthogEvent={POSTHOG_EVENTS.ORDER.DETAIL_MORE_MENU_OPENED}
-                posthogProps={{ orderId }}
-                className={cn(
-                  "active:scale-100",
-                  isActive ? "rounded-l-none px-3 md:px-2.5" : "flex-1 px-2.5 md:flex-initial",
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={(e) => openMoreMenu(e.currentTarget)}
+                  aria-haspopup="menu"
+                  aria-expanded={moreOpen}
+                  aria-label={t("detail.actions.more")}
+                  posthogEvent={POSTHOG_EVENTS.ORDER.DETAIL_MORE_MENU_OPENED}
+                  posthogProps={{ orderId }}
+                  className="min-h-11 w-12 justify-center rounded-l-none px-0 shadow-md hover:shadow-lg lg:w-auto lg:px-3"
+                >
+                  <ChevronDown className="size-4 shrink-0" aria-hidden />
+                </Button>
+                {moreOpen && (
+                  <MoreMenu
+                    t={t}
+                    showCancel={isActive}
+                    cancelTooltip={
+                      !eligibility.canCancel || isCompleted ? t("detail.actions.cancelDisabledTooltip") : undefined
+                    }
+                    deleteTooltip={
+                      !eligibility.canDelete || isCompleted ? t("detail.actions.deleteDisabledTooltip") : undefined
+                    }
+                    onCancel={() => {
+                      closeMoreMenu();
+                      setModal({ action: "cancel" });
+                    }}
+                    onDelete={() => {
+                      closeMoreMenu();
+                      setModal({ action: "delete" });
+                    }}
+                  />
                 )}
-              >
-                <ChevronDown className="size-4" aria-hidden />
-              </Button>
-              {moreOpen && (
-                <MoreMenu
-                  t={t}
-                  showCancel={isActive}
-                  cancelTooltip={
-                    !eligibility.canCancel || isCompleted ? t("detail.actions.cancelDisabledTooltip") : undefined
-                  }
-                  deleteTooltip={
-                    !eligibility.canDelete || isCompleted ? t("detail.actions.deleteDisabledTooltip") : undefined
-                  }
-                  onCancel={() => {
-                    closeMoreMenu();
-                    setModal({ action: "cancel" });
-                  }}
-                  onDelete={() => {
-                    closeMoreMenu();
-                    setModal({ action: "delete" });
-                  }}
-                />
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="relative w-full lg:w-auto">
+                <Button
+                  variant="secondary"
+                  size="md"
+                  onClick={(e) => openMoreMenu(e.currentTarget)}
+                  aria-haspopup="menu"
+                  aria-expanded={moreOpen}
+                  aria-label={t("detail.actions.more")}
+                  posthogEvent={POSTHOG_EVENTS.ORDER.DETAIL_MORE_MENU_OPENED}
+                  posthogProps={{ orderId }}
+                  className={DETAIL_HERO_ACTION_BUTTON_CLASSNAME}
+                >
+                  <MoreHorizontal className="size-4 shrink-0" aria-hidden />
+                  {t("detail.actions.more")}
+                </Button>
+                {moreOpen && (
+                  <MoreMenu
+                    t={t}
+                    showCancel={isActive}
+                    cancelTooltip={
+                      !eligibility.canCancel || isCompleted ? t("detail.actions.cancelDisabledTooltip") : undefined
+                    }
+                    deleteTooltip={
+                      !eligibility.canDelete || isCompleted ? t("detail.actions.deleteDisabledTooltip") : undefined
+                    }
+                    onCancel={() => {
+                      closeMoreMenu();
+                      setModal({ action: "cancel" });
+                    }}
+                    onDelete={() => {
+                      closeMoreMenu();
+                      setModal({ action: "delete" });
+                    }}
+                  />
+                )}
+              </div>
+            )}
           </>
         )}
       </div>

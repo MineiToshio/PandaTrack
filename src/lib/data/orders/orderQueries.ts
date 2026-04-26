@@ -255,6 +255,135 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
   };
 }
 
+export type OrdersListPageItem = {
+  id: string;
+  orderDate: Date;
+  expectedDeliveryFrom: Date | null;
+  expectedDeliveryTo: Date | null;
+  currencyCode: string;
+  totalCost: number;
+  status: OrderStatus;
+  store: { id: string; name: string; slug: string };
+  itemCount: number;
+  items: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    deliveryState: ItemDeliveryState;
+  }>;
+  paidAmount: number;
+  paymentPercentage: number;
+  hasUnpaidBalance: boolean;
+};
+
+export type OrdersListPageFilters = {
+  nameQuery?: string;
+  productTypeKeys?: string[];
+  storeId?: string;
+  statuses?: OrderStatus[];
+  dateFrom?: Date;
+  dateTo?: Date;
+  page: number;
+  pageSize: number;
+};
+
+export type OrdersListPageResult = {
+  orders: OrdersListPageItem[];
+  totalCount: number;
+  totalPages: number;
+  page: number;
+  pageSize: number;
+};
+
+export async function getOrdersList(userId: string, filters: OrdersListPageFilters): Promise<OrdersListPageResult> {
+  const { nameQuery, productTypeKeys, storeId, statuses, dateFrom, dateTo, page, pageSize } = filters;
+
+  const itemConditions: Array<Record<string, unknown>> = [];
+  if (nameQuery && nameQuery.trim()) {
+    itemConditions.push({ name: { contains: nameQuery.trim(), mode: "insensitive" } });
+  }
+  if (productTypeKeys && productTypeKeys.length > 0) {
+    itemConditions.push({ productTypeKey: { in: productTypeKeys } });
+  }
+
+  const where = {
+    userId,
+    ...(storeId ? { storeId } : {}),
+    ...(statuses && statuses.length > 0 ? { status: { in: statuses } } : {}),
+    ...(dateFrom || dateTo
+      ? {
+          orderDate: {
+            ...(dateFrom ? { gte: dateFrom } : {}),
+            ...(dateTo ? { lte: dateTo } : {}),
+          },
+        }
+      : {}),
+    ...(itemConditions.length > 0 ? { items: { some: { AND: itemConditions } } } : {}),
+  };
+
+  const [rows, totalCount] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      select: {
+        id: true,
+        orderDate: true,
+        expectedDeliveryFrom: true,
+        expectedDeliveryTo: true,
+        currencyCode: true,
+        totalCost: true,
+        status: true,
+        store: { select: { id: true, name: true, slug: true } },
+        items: {
+          select: {
+            id: true,
+            name: true,
+            quantity: true,
+            position: true,
+            deliveryItems: {
+              select: { delivery: { select: { status: true } } },
+              where: { delivery: { status: { not: DeliveryStatus.CANCELLED } } },
+            },
+          },
+          orderBy: { position: "asc" },
+        },
+        payments: { select: { amount: true } },
+      },
+      orderBy: { orderDate: "asc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.order.count({ where }),
+  ]);
+
+  const orders: OrdersListPageItem[] = rows.map((row) => {
+    const { paidAmount, paymentPercentage } = calculatePaymentSummary(row.totalCost, row.payments);
+    return {
+      id: row.id,
+      orderDate: row.orderDate,
+      expectedDeliveryFrom: row.expectedDeliveryFrom,
+      expectedDeliveryTo: row.expectedDeliveryTo,
+      currencyCode: row.currencyCode,
+      totalCost: row.totalCost,
+      status: row.status,
+      store: row.store,
+      itemCount: row.items.length,
+      items: row.items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        deliveryState: deriveItemDeliveryState(item.deliveryItems),
+      })),
+      paidAmount,
+      paymentPercentage,
+      hasUnpaidBalance: deriveHasUnpaidBalance(row.totalCost, paidAmount),
+    };
+  });
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  return { orders, totalCount, totalPages, page, pageSize };
+}
+
 export async function listOrders(userId: string, filters: OrderListFilters = {}): Promise<OrderListItem[]> {
   const rows = await prisma.order.findMany({
     where: {
