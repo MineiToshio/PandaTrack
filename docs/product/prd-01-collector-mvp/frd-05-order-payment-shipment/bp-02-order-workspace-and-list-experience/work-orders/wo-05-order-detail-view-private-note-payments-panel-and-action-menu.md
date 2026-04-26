@@ -7,7 +7,7 @@ status: ACTIVE
 parent: BP-02
 source_features:
   - FEAT-0014
-last_updated: 2026-04-24
+last_updated: 2026-04-25
 implementation_status: IMPLEMENTED
 ---
 
@@ -150,7 +150,7 @@ Two-column grid `lg:grid-cols-[1fr_360px]`: **left** column — `OrderItemsList`
 
 ### Tablet and mobile (< lg)
 
-Single-column flow: after the full-width header, the grid becomes one column. Order: **items** → **private note** → **payments panel** (summary + list) → **history** (the right-rail `mt-8` / sticky behavior collapses into normal document order).
+Single-column flow: after the full-width header, the grid becomes one column. Order: **items** → **payments panel** (summary + list) → **private note** → **history**. The payments panel is surfaced before the note on mobile because it is the most actionable section; the right-rail sticky behavior collapses into normal document flow. The layout uses CSS `order-N` properties on individual children (with a `contents`-display wrapper that dissolves on mobile so children become direct flex items of the outer column) so children participate in the outer flex column on mobile and regroup into the 2-column grid on desktop.
 
 ### Header
 
