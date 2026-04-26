@@ -213,7 +213,7 @@ export default function OrderForm({
   useEffect(() => {
     if (!state) return;
     if (state.success) {
-      router.push(`/${locale}${ROUTES.purchases}/${state.orderId}`);
+      router.push(`/${locale}${ROUTES.orders}/${state.orderId}`);
     }
   }, [state, locale, router]);
 
@@ -346,7 +346,7 @@ export default function OrderForm({
   );
 
   const backHref =
-    mode === "create" ? `/${locale}${ROUTES.purchases}` : `/${locale}${ROUTES.purchases}/${initialOrder?.id}`;
+    mode === "create" ? `/${locale}${ROUTES.orders}` : `/${locale}${ROUTES.orders}/${initialOrder?.id}`;
 
   const serverError = state?.success === false && "error" in state && state.error !== "validation" ? state.error : null;
 

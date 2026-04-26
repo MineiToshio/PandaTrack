@@ -20,7 +20,7 @@ import OrderListFilters from "./_components/OrderListFilters";
 import OrderListFilterChips from "./_components/OrderListFilterChips";
 import OrderListPagination from "./_components/OrderListPagination";
 
-type PurchasesPageProps = {
+type OrdersPageProps = {
   params: Promise<{ locale: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
@@ -44,18 +44,18 @@ function buildListUrl(
   return qs ? `${basePath}?${qs}` : basePath;
 }
 
-export async function generateMetadata({ params }: PurchasesPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: OrdersPageProps): Promise<Metadata> {
   const { locale } = await params;
   return buildPageMetadata({
     locale,
     namespace: "orderListing",
-    pathSegment: "purchases",
+    pathSegment: "orders",
     titleKey: "meta.title",
     descriptionKey: "meta.description",
   });
 }
 
-export default async function PurchasesPage({ params, searchParams }: PurchasesPageProps) {
+export default async function OrdersPage({ params, searchParams }: OrdersPageProps) {
   const { locale } = await params;
   const session = await getSession();
   if (!session?.user?.id) redirect(`/${locale}/sign-in`);
@@ -63,7 +63,7 @@ export default async function PurchasesPage({ params, searchParams }: PurchasesP
 
   const rawParams = await searchParams;
   const parsed = parseOrderListingParams(rawParams);
-  const basePath = `/${locale}${ROUTES.purchases}`;
+  const basePath = `/${locale}${ROUTES.orders}`;
   const dateFromIso = parsed.dateFrom ? parsed.dateFrom.toISOString().slice(0, 10) : undefined;
   const dateToIso = parsed.dateTo ? parsed.dateTo.toISOString().slice(0, 10) : undefined;
   const activeFilters = {

@@ -2,7 +2,7 @@
   "nav": {
     "dashboard": "Panel",
     "stores": "Tiendas",
-    "purchases": "Compras",
+    "purchases": "Pedidos",
     "preOrders": "Pre-reservas",
     "shipments": "Envíos",
     "settings": "Ajustes"
@@ -43,7 +43,7 @@
   "placeholder": "Contenido próximamente.",
   "pageHero": {
     "eyebrow": "Tu espacio de trabajo",
-    "purchasesDescription": "Aquí vivirán el historial de compras y el seguimiento de pedidos. Muy pronto.",
+    "purchasesDescription": "Aquí vivirán tu historial y el seguimiento de pedidos. Muy pronto.",
     "preOrdersDescription": "Aquí organizarás pre-reservas y pagos pendientes. Muy pronto.",
     "shipmentsDescription": "Aquí seguirás envíos y entregas parciales. Muy pronto."
   },

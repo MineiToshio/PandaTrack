@@ -42,7 +42,7 @@ export async function deleteOrderAction(orderId: string, locale: string): Promis
     posthog.capture({ distinctId: userId, event: POSTHOG_EVENTS.ORDER.DELETED, properties: { orderId } });
     await posthog.shutdown();
 
-    redirect(`/${locale}${ROUTES.purchases}`);
+    redirect(`/${locale}${ROUTES.orders}`);
   } catch (err) {
     if (err instanceof Error && err.message === "NEXT_REDIRECT") throw err;
     Sentry.captureException(err);

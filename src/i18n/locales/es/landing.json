@@ -1,24 +1,24 @@
 {
   "meta": {
     "title": "PandaTrack",
-    "description": "Tiendas, compras y envíos en un solo lugar. Tu centro de mando para coleccionables y compras."
+    "description": "Tiendas, pedidos y envíos en un solo lugar. Tu centro de mando para coleccionables y pedidos."
   },
   "ogEyebrow": "Para coleccionistas",
   "ogHeadline": "Tiendas, pedidos y envíos en un solo lugar.",
-  "ogSubline": "Registra compras, sigue preventas y envíos. Sin pedidos perdidos ni pagos por sorpresa.",
+  "ogSubline": "Registra pedidos, sigue preventas y envíos. Sin pedidos perdidos ni pagos por sorpresa.",
   "features": {
     "sectionTitle": "Todo tu coleccionismo, en un solo sistema",
-    "sectionSubtitle": "Descubre tiendas confiables, registra compras, controla preventas y sigue envíos, con un dashboard que te dice qué viene y qué falta pagar.",
+    "sectionSubtitle": "Descubre tiendas confiables, registra pedidos, controla preventas y sigue envíos, con un dashboard que te dice qué viene y qué falta pagar.",
     "cards": {
       "stores": {
         "title": "Tiendas confiables",
-        "description": "Descubre tiendas según tu tipo de colección y guarda tus favoritas en un solo lugar. Revisa referencias y feedback para comprar con más seguridad.",
+        "description": "Descubre tiendas según tu tipo de colección y guarda tus favoritas en un solo lugar. Revisa referencias y feedback para hacer pedidos con más seguridad.",
         "bullets": ["Descubre por tipo de producto", "Reviews de la comunidad"]
       },
       "purchases": {
-        "title": "Compras ordenadas",
-        "description": "Registra cada compra con tienda, items, fechas y notas sin complicarte. Mantén un historial limpio para saber qué compraste y cuándo.",
-        "bullets": ["Items por compra", "Estados y fechas"]
+        "title": "Pedidos ordenados",
+        "description": "Registra cada pedido con tienda, items, fechas y notas sin complicarte. Mantén un historial claro para saber qué pediste y cuándo.",
+        "bullets": ["Items por pedido", "Estados y fechas"]
       },
       "preorders": {
         "title": "Preventas sin sorpresas",
@@ -39,11 +39,11 @@
   },
   "userFit": {
     "title": "¿Es PandaTrack perfecto para mí?",
-    "subtitle": "Si coleccionar te encanta, pero el seguimiento de tus compras ya se volvió un caos… sí, esto es para ti.",
+    "subtitle": "Si coleccionar te encanta, pero el seguimiento de tus pedidos ya se volvió un caos… sí, esto es para ti.",
     "cards": {
       "card1": {
-        "title": "¿Dónde quedó esa compra?",
-        "description": "Compraste por Instagram, pagaste por WhatsApp y la confirmación llegó al correo… y ahora la compra quedó perdida entre chats y capturas. Si te pasó, ya sabes el estrés que es."
+        "title": "¿Dónde quedó ese pedido?",
+        "description": "Pediste por Instagram, pagaste por WhatsApp y la confirmación llegó al correo… y ahora el pedido quedó perdido entre chats y capturas. Si te pasó, ya sabes el estrés que es."
       },
       "card2": {
         "title": "¿Qué tengo en camino?",
@@ -75,8 +75,8 @@
   },
   "hero": {
     "eyebrow": "Control total de tu colección",
-    "title": "PandaTrack: tu centro de mando para compras y coleccionables",
-    "subtitle": "Registra tiendas, compras y envíos; mantén tu colección al día y guarda lo que quieres en tu wishlist. Todo en un solo lugar.",
+    "title": "PandaTrack: tu centro de mando para pedidos y coleccionables",
+    "subtitle": "Registra tiendas, pedidos y envíos; mantén tu colección al día y guarda lo que quieres en tu wishlist. Todo en un solo lugar.",
     "primaryCta": "Unirme a la lista de espera",
     "secondaryCta": "Ver características",
     "featuresTitle": "Todo lo que necesitas en un vistazo",
@@ -86,8 +86,8 @@
         "description": "Guarda tiendas, precios y referencias favoritas."
       },
       "purchases": {
-        "title": "Seguimiento de compras",
-        "description": "Lleva un historial claro de tus adquisiciones."
+        "title": "Seguimiento de pedidos",
+        "description": "Lleva un historial claro de lo que pediste."
       },
       "shipments": {
         "title": "Seguimiento de envíos",
@@ -104,7 +104,7 @@
     },
     "image": {
       "src": "/images/hero_es.webp",
-      "alt": "Dashboard de PandaTrack con compras, envíos, pagos y tiendas en un solo lugar",
+      "alt": "Dashboard de PandaTrack con pedidos, envíos, pagos y tiendas en un solo lugar",
       "disclaimer": "Prototipo inicial. La app final puede variar.",
       "title": "Vista general de PandaTrack",
       "description": "Aquí irá una imagen destacada de la app con métricas, colecciones y envíos.",
@@ -117,11 +117,12 @@
     "items": [
       {
         "question": "¿Qué es PandaTrack?",
-        "answer": "PandaTrack es una app web que concentra todas tus compras de coleccionables: tiendas, pedidos, preventas, envíos y pagos. Sin rebuscar entre chats o correos."
+        "answer": "PandaTrack es una app web que concentra todos tus pedidos de coleccionables: tiendas, pedidos, preventas, envíos y pagos. Sin rebuscar entre chats o correos."
+        
       },
       {
         "question": "¿Para quién es?",
-        "answer": "Para quienes compran en varias tiendas (Instagram, WhatsApp, webs) y quieren un solo lugar para ver qué compraron, qué viene en camino y qué falta pagar."
+        "answer": "Para quienes hacen pedidos en varias tiendas (Instagram, WhatsApp, webs) y quieren un solo lugar para ver qué pidieron, qué viene en camino y qué falta pagar."
       },
       {
         "question": "¿Por qué no usar solo el correo o una hoja?",
@@ -129,7 +130,7 @@
       },
       {
         "question": "¿Qué puedo seguir?",
-        "answer": "Tiendas donde compras, cada compra con ítems y fechas, preventas con adelantos y saldo pendiente, y envíos, incluso envíos parciales por pedido."
+        "answer": "Tiendas donde haces pedidos, cada pedido con ítems y fechas, preventas con adelantos y saldo pendiente, y envíos, incluso envíos parciales por pedido."
       },
       {
         "question": "¿Voy a ver qué me falta pagar?",
@@ -175,7 +176,7 @@
     "share": {
       "heading": "¡Listo! Ya estás en la lista.",
       "subtext": "¿Conoces a otro coleccionista? Compárteselo y ayúdanos a lanzar más rápido.",
-      "shareMessage": "Estoy en el waitlist de PandaTrack — una app para organizar compras, envíos y preventas de coleccionismo en un solo lugar. Únete aquí:",
+      "shareMessage": "Estoy en el waitlist de PandaTrack - una app para organizar pedidos, envíos y preventas de coleccionismo en un solo lugar. Únete aquí:",
       "shareButton": "Compartir",
       "copyLinkButton": "Copiar link",
       "copiedFeedback": "¡Copiado!",

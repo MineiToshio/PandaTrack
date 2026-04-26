@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildOrderListFilterUrl, type OrderListActiveFilters } from "../orderListingParams";
 
-const BASE_PATH = "/es/purchases";
+const BASE_PATH = "/es/orders";
 
 const DEFAULT_FILTERS: OrderListActiveFilters = {
   nameQuery: "  one piece  ",
@@ -16,7 +16,7 @@ const DEFAULT_FILTERS: OrderListActiveFilters = {
 describe("buildOrderListFilterUrl", () => {
   it("serializes the active filters into query params", () => {
     expect(buildOrderListFilterUrl(BASE_PATH, DEFAULT_FILTERS)).toBe(
-      "/es/purchases?q=one+piece&store=store-1&productType=manga&productType=figure&status=OPEN&status=IN_TRANSIT&dateFrom=2026-01-10&dateTo=2026-02-20",
+      "/es/orders?q=one+piece&store=store-1&productType=manga&productType=figure&status=OPEN&status=IN_TRANSIT&dateFrom=2026-01-10&dateTo=2026-02-20",
     );
   });
 
@@ -27,7 +27,7 @@ describe("buildOrderListFilterUrl", () => {
         appliedDefaultStatuses: true,
       }),
     ).toBe(
-      "/es/purchases?q=one+piece&store=store-1&productType=manga&productType=figure&status=OPEN&status=PARTIALLY_IN_TRANSIT&status=IN_TRANSIT&status=PARTIALLY_DELIVERED&dateFrom=2026-01-10&dateTo=2026-02-20",
+      "/es/orders?q=one+piece&store=store-1&productType=manga&productType=figure&status=OPEN&status=PARTIALLY_IN_TRANSIT&status=IN_TRANSIT&status=PARTIALLY_DELIVERED&dateFrom=2026-01-10&dateTo=2026-02-20",
     );
   });
 
@@ -38,7 +38,7 @@ describe("buildOrderListFilterUrl", () => {
         appliedDefaultStatuses: false,
       }),
     ).toBe(
-      "/es/purchases?q=one+piece&store=store-1&productType=manga&productType=figure&status=&dateFrom=2026-01-10&dateTo=2026-02-20",
+      "/es/orders?q=one+piece&store=store-1&productType=manga&productType=figure&status=&dateFrom=2026-01-10&dateTo=2026-02-20",
     );
   });
 

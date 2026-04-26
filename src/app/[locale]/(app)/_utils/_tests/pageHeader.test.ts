@@ -4,7 +4,7 @@ import { getBreadcrumbs, getPageHeader, getPrivateAppPathSegments, isFirstLevelP
 describe("getPrivateAppPathSegments", () => {
   it("returns segments after locale", () => {
     expect(getPrivateAppPathSegments("/es/dashboard")).toEqual(["dashboard"]);
-    expect(getPrivateAppPathSegments("/en/purchases/pre-orders")).toEqual(["purchases", "pre-orders"]);
+    expect(getPrivateAppPathSegments("/en/orders/pre-orders")).toEqual(["orders", "pre-orders"]);
   });
 
   it("returns empty when pathname has no segment after locale", () => {
@@ -17,13 +17,13 @@ describe("isFirstLevelPrivateRoute", () => {
   it("returns true for locale + single primary segment", () => {
     expect(isFirstLevelPrivateRoute("/es/dashboard")).toBe(true);
     expect(isFirstLevelPrivateRoute("/en/stores")).toBe(true);
-    expect(isFirstLevelPrivateRoute("/es/purchases")).toBe(true);
+    expect(isFirstLevelPrivateRoute("/es/orders")).toBe(true);
     expect(isFirstLevelPrivateRoute("/en/shipments")).toBe(true);
     expect(isFirstLevelPrivateRoute("/es/settings")).toBe(true);
   });
 
   it("returns false for nested routes", () => {
-    expect(isFirstLevelPrivateRoute("/es/purchases/pre-orders")).toBe(false);
+    expect(isFirstLevelPrivateRoute("/es/orders/pre-orders")).toBe(false);
     expect(isFirstLevelPrivateRoute("/en/stores/foo")).toBe(false);
   });
 
@@ -36,13 +36,13 @@ describe("isFirstLevelPrivateRoute", () => {
 describe("getBreadcrumbs", () => {
   it("returns empty for first-level routes", () => {
     expect(getBreadcrumbs("/es/dashboard", "es")).toEqual([]);
-    expect(getBreadcrumbs("/en/purchases", "en")).toEqual([]);
+    expect(getBreadcrumbs("/en/orders", "en")).toEqual([]);
   });
 
   it("returns only parent for nested segment (current page shown as title only)", () => {
-    const crumbs = getBreadcrumbs("/es/purchases/pre-orders", "es");
+    const crumbs = getBreadcrumbs("/es/orders/pre-orders", "es");
     expect(crumbs).toHaveLength(1);
-    expect(crumbs[0]).toEqual({ labelKey: "nav.purchases", href: "/es/purchases" });
+    expect(crumbs[0]).toEqual({ labelKey: "nav.purchases", href: "/es/orders" });
   });
 
   it("returns only parent for unknown nested segment (e.g. store slug)", () => {
@@ -67,7 +67,7 @@ describe("getPageHeader", () => {
   });
 
   it("returns parent breadcrumbs and current page title for nested routes", () => {
-    const header = getPageHeader("/en/purchases/pre-orders", "en");
+    const header = getPageHeader("/en/orders/pre-orders", "en");
     expect(header.isFirstLevel).toBe(false);
     expect(header.titleKey).toBe("nav.preOrders");
     expect(header.breadcrumbs).toHaveLength(1);

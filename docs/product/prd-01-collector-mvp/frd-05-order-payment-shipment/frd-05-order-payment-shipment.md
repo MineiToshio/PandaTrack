@@ -30,8 +30,8 @@ Give collectors one reliable place to record what they bought, what it cost, how
 
 ### Implemented
 
-- order detail at `/purchases/[id]` ([`BP-02 · WO-05`](bp-02-order-workspace-and-list-experience/work-orders/wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md)): two-column layout on `lg+` (items + private note left; payments + read-only history right, sticky rail), payments panel with optimistic updates, scroll-to-form when opening add-payment, private note; automatic order history is **read-only** (no per-entry delete; see `FR-05-22` / `BR-05-09` below).
-- private app navigation already exposes `Purchases` and `Pre-orders` entry points
+- order detail at `/orders/[id]` ([`BP-02 · WO-05`](bp-02-order-workspace-and-list-experience/work-orders/wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md)): two-column layout on `lg+` (items + private note left; payments + read-only history right, sticky rail), payments panel with optimistic updates, scroll-to-form when opening add-payment, private note; automatic order history is **read-only** (no per-entry delete; see `FR-05-22` / `BR-05-09` below).
+- private app navigation already exposes `Orders` and `Pre-orders` entry points
 - [`FRD-07`](../frd-07-user-settings/frd-07-user-settings.md) already defines a user-level base currency preference that this domain can consume
 - store discovery and store detail flows already exist, which makes store selection a prerequisite rather than a parallel domain problem
 

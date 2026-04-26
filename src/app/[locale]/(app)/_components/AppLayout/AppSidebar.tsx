@@ -26,7 +26,7 @@ type PrimaryNavItemId = Exclude<NavItemId, "settings">;
 const NAV_ICON_MAP: Record<PrimaryNavItemId, LucideIcon> = {
   dashboard: LayoutDashboard,
   stores: Store,
-  purchases: ShoppingBag,
+  orders: ShoppingBag,
   shipments: Package,
 };
 

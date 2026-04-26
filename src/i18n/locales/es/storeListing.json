@@ -19,7 +19,7 @@
     "country": "País",
     "presence": "Canales de venta",
     "importCountry": "País de importación",
-    "commerce": "Opciones de compra"
+    "commerce": "Modalidad de pedido"
   },
   "presence": {
     "ONLINE": "Tienda online",
@@ -44,11 +44,11 @@
     "noProductTypes": "Sin tipos de producto definidos",
     "importCountries": "Países de importación",
     "noImportCountries": "Sin países de importación",
-    "receivesOrdersYes": "Compras por pedido",
-    "receivesOrdersNo": "No ofrece compras por pedido",
+    "receivesOrdersYes": "Acepta pedidos",
+    "receivesOrdersNo": "No acepta pedidos",
     "hasStockYes": "Vende con stock",
     "hasStockNo": "No vende con stock",
-    "receivesOrdersTooltip": "Indica si la tienda tramita compras bajo pedido o encargo: puede gestionar el pedido aunque el artículo no esté en inventario fijo.",
+    "receivesOrdersTooltip": "Indica si la tienda acepta pedidos o encargos: puede gestionar el pedido aunque el artículo no esté en inventario fijo.",
     "hasStockTooltip": "Indica si la tienda vende desde inventario propio: artículos disponibles o rotación habitual, sin depender solo de encargos puntuales.",
     "storeTypeBusiness": "Negocio",
     "storeTypePerson": "Vendedor"

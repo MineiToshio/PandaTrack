@@ -31,12 +31,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return buildPageMetadata({
     locale,
     namespace: "orders",
-    pathSegment: "purchases",
+    pathSegment: "orders",
     titleKey: "detail.heroEyebrow",
   });
 }
 
-export default async function PurchasesDetailPage({ params, searchParams }: Props) {
+export default async function OrdersDetailPage({ params, searchParams }: Props) {
   const { locale, id } = await params;
   const session = await getSession();
   if (!session?.user?.id) redirect(`/${locale}/sign-in`);

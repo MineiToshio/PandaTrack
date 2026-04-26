@@ -1,12 +1,12 @@
 {
   "meta": {
     "title": "Orders",
-    "description": "Your purchase list: filter, track payments, and follow deliveries."
+    "description": "Your order list: filter, track payments, and follow deliveries."
   },
   "hero": {
     "eyebrow": "Collector workspace",
     "title": "Orders",
-    "description": "Review your purchases, track payments, and follow deliveries from a single place.",
+    "description": "Review your orders, track payments, and follow deliveries from a single place.",
     "newOrder": "New order"
   },
   "summary": {
@@ -65,7 +65,7 @@
   "empty": {
     "noOrders": {
       "title": "You have no orders yet",
-      "description": "Record your first purchase and keep track of your orders, payments, and deliveries in one place.",
+      "description": "Record your first order and keep track of your payments and deliveries in one place.",
       "cta": "New order"
     },
     "noResults": {

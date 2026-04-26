@@ -22,7 +22,7 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
 
 ## Runtime Components
 
-- order routes under `src/app/[locale]/(app)/purchases`
+- order routes under `src/app/[locale]/(app)/orders`
 - order detail route and route-level components
 - shared searchable select for store input
 - spreadsheet-style item-entry component
@@ -53,7 +53,7 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
 - store-creation redirect contract:
   - when the collector triggers "Create store" from the store selector, the redirect carries `?returnTo=order-create` so the store creation flow can return the user to order create instead of the default store list
   - if the collector typed a store name that yielded no results, the redirect also carries `&name={value}` to prefill the store name field
-  - after the store is saved, the collector is redirected to `/purchases/new?store={id}` with the new store preselected
+  - after the store is saved, the collector is redirected to `/orders/new?store={id}` with the new store preselected
 - detail action contract:
   - input: current order state, payment records, delivery associations, and feature-flag-style availability (for example whether the delivery-create flow is live)
   - output: availability and disabled-state reasons for `Create delivery`, `Edit`, `Cancel`, `Delete`, and `Reactivate` so the UI can render each affordance enabled, disabled with tooltip, or hidden according to the status-driven action bar above
@@ -61,7 +61,7 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
 - list filter contract:
   - input: date range, store, product type, status, free-text product query, `fxStatus` reconciliation flag
   - output: URL-canonical filter state plus result chips
-  - `fxStatus=needs_reconciliation` maps to `needsExchangeRateUpdate: true` in the Prisma query; handled by `parseOrderListingParams` in `src/app/[locale]/(app)/purchases/_utils/orderListingParams.ts`
+  - `fxStatus=needs_reconciliation` maps to `needsExchangeRateUpdate: true` in the Prisma query; handled by `parseOrderListingParams` in `src/app/[locale]/(app)/orders/_utils/orderListingParams.ts`
   - `FxReconciliationModal` at `src/components/modules/FxReconciliationModal.tsx` is the reconciliation entry point; triggered from the orders list banner and from the Settings currency-change confirmation
 
 ## Operational Priorities

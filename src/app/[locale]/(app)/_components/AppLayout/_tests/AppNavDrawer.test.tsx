@@ -7,7 +7,7 @@ import AppNavDrawer from "../AppNavDrawer";
 const translationMap: Record<string, string> = {
   "nav.dashboard": "Dashboard",
   "nav.stores": "Stores",
-  "nav.purchases": "Purchases",
+  "nav.purchases": "Orders",
   "nav.shipments": "Shipments",
   "drawer.openMenu": "Open menu",
   "drawer.closeMenu": "Close menu",
@@ -70,7 +70,7 @@ describe("AppNavDrawer", () => {
 
     expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Stores" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Purchases" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Orders" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Shipments" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
 

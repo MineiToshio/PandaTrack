@@ -77,7 +77,7 @@ src/components/modules/
                                               the orders list banner; receives eligible currency-pair
                                               groups as props and calls applyBulkExchangeRateAction
 
-src/app/[locale]/(app)/purchases/
+src/app/[locale]/(app)/orders/
   page.tsx                          Extended — resolves needsExchangeRateUpdate count for banner
                                               in parallel with getOrdersList via Promise.all
   _components/
@@ -91,7 +91,7 @@ src/app/[locale]/(app)/purchases/
                                                      getEligibleOrdersForReconciliation
 ```
 
-`applyBulkExchangeRateAction` lives in the purchases `_actions/` folder and delegates writes to `src/lib/data/orders/orderMutations.ts`. `getEligibleOrdersForReconciliation` is added to `src/lib/data/orders/orderQueries.ts`.
+`applyBulkExchangeRateAction` lives in the orders `_actions/` folder and delegates writes to `src/lib/data/orders/orderMutations.ts`. `getEligibleOrdersForReconciliation` is added to `src/lib/data/orders/orderQueries.ts`.
 
 ## UX Notes
 
@@ -111,7 +111,7 @@ Visual treatment: `info` variant (`bg-info/12 border border-info/35 rounded-xl`)
 
 Icon: `RefreshCw` from `lucide-react`
 
-Copy (ES): _"Tienes [N] [orden / órdenes] con el tipo de cambio desactualizado. Actualízalas para que tus reportes reflejen tu moneda base actual."_ · CTA: **"Actualizar tipos de cambio"**
+Copy (ES): _"Tienes [N] [pedido / pedidos] con el tipo de cambio desactualizado. Actualízalos para que tus reportes reflejen tu moneda base actual."_ · CTA: **"Actualizar tipos de cambio"**
 
 Copy (EN): _"You have [N] [order / orders] with an outdated exchange rate. Update them so your reports reflect your current base currency."_ · CTA: **"Update exchange rates"**
 
@@ -124,9 +124,9 @@ A simple, non-multi-step modal. It receives pre-fetched currency-pair groups as 
 Structure:
 
 1. **Title** (ES): "Actualizar tipos de cambio" · (EN): "Update exchange rates"
-2. **Description** (ES): "Ingresa el tipo de cambio actual para cada divisa. Se aplicará a todas las órdenes del grupo." · (EN): "Enter the current exchange rate for each currency. It will be applied to all orders in the group."
+2. **Description** (ES): "Ingresa el tipo de cambio actual para cada divisa. Se aplicará a todos los pedidos del grupo." · (EN): "Enter the current exchange rate for each currency. It will be applied to all orders in the group."
 3. **Per-group row:**
-   - Group label: e.g., `USD → PEN · 2 órdenes` / `USD → PEN · 2 orders`
+   - Group label: e.g., `USD → PEN · 2 pedidos` / `USD → PEN · 2 orders`
    - Exchange rate input: label `1 [fromCurrency] =`, placeholder `0.00`, suffix showing the target currency code
    - Inline validation error below each input when the value is out of range
 4. **Footer actions:**
@@ -144,7 +144,7 @@ Structure:
 When the displayed order has `needsExchangeRateUpdate = true`, show a `warning` badge next to the exchange rate in the financial summary section:
 
 - Icon: `AlertTriangle` from `lucide-react` (warning semantic color)
-- Tooltip / helper text (ES): _"El tipo de cambio está desactualizado. Edita la orden para actualizarlo."_ · (EN): _"Exchange rate is outdated. Edit the order to update it."_
+- Tooltip / helper text (ES): _"El tipo de cambio está desactualizado. Edita el pedido para actualizarlo."_ · (EN): _"Exchange rate is outdated. Edit the order to update it."_
 
 ### Order edit form indicator (WO-04 extension)
 
@@ -161,7 +161,7 @@ The WO-04 edit server action must set `needsExchangeRateUpdate = false` when a n
 After the collector confirms the currency change in Settings, the two save options are:
 
 - **"Guardar y actualizar tipos de cambio"** / **"Save and update exchange rates"** (primary): save preferences → mark eligible orders (`needsExchangeRateUpdate = true`) → open `FxReconciliationModal`
-- **"Guardar sin actualizar"** / **"Save without updating"** (secondary): save preferences → mark eligible orders → close modal, show toast: _"Preferencias guardadas. Puedes actualizar los tipos de cambio desde tu lista de órdenes cuando estés listo."_ / _"Preferences saved. You can update exchange rates from your orders list when you're ready."_
+- **"Guardar sin actualizar"** / **"Save without updating"** (secondary): save preferences → mark eligible orders → close modal, show toast: _"Preferencias guardadas. Puedes actualizar los tipos de cambio desde tu lista de pedidos cuando estés listo."_ / _"Preferences saved. You can update exchange rates from your orders list when you're ready."_
 
 The button copy in `SettingsPreferencesSection.tsx` must be updated (`currencyChangeModal.saveAndReconcile` → `currencyChangeModal.saveAndUpdate`, `currencyChangeModal.saveSkip` → `currencyChangeModal.saveWithoutUpdating`) alongside the corresponding locale keys.
 
@@ -233,7 +233,7 @@ Groups with no `exchangeRate` value are skipped without error.
 
 ### `parseOrderListingParams` extension
 
-`fxStatus` is added to the existing utility in `src/app/[locale]/(app)/purchases/_utils/orderListingParams.ts`:
+`fxStatus` is added to the existing utility in `src/app/[locale]/(app)/orders/_utils/orderListingParams.ts`:
 
 ```ts
 interface OrderListFilters {
@@ -285,7 +285,7 @@ All event names are added to `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 
 - Dashboard rollup logic (FRD-06) will treat the month of the base currency change as the boundary: orders from prior months remain in DB and are shown in order currency where needed, but are excluded from single-currency budget totals until FRD-06 defines the exact rollup rules.
 - The existing `Modal` core component (`src/components/core/`) is sufficient for `FxReconciliationModal`; no new modal primitive is needed.
-- Plural/singular copy for the banner (`orden` / `órdenes`, `order` / `orders`) is resolved from the count at render time using the existing next-intl plural API.
+- Plural/singular copy for the banner (`pedido` / `pedidos`, `order` / `orders`) is resolved from the count at render time using the existing next-intl plural API.
 
 ## Unit Tests
 
@@ -357,4 +357,4 @@ All event names are added to `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 
 - Changing base currency and clicking "Save and update exchange rates" saves preferences, marks eligible orders, and opens `FxReconciliationModal`
 - Clicking "Save without updating" saves preferences, marks eligible orders, closes the modal, and shows the informational toast
-- On next visit to `/purchases`, the banner reflects the marked orders
+- On next visit to `/orders`, the banner reflects the marked orders

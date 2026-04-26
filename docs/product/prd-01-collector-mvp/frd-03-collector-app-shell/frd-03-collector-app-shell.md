@@ -51,7 +51,7 @@ This FRD defines the private collector workspace shell that gives PandaTrack a s
 ## Business Rules
 
 - `BR-03-01`: Dashboard is the private starting point.
-- `BR-03-02`: `Pre-orders` stay conceptually grouped under purchases in MVP navigation.
+- `BR-03-02`: `Pre-orders` stay conceptually grouped under orders in MVP navigation.
 - `BR-03-03`: Shell clarity matters more than novelty.
 - `BR-03-04`: The content header owns page context, not primary account actions.
 - `BR-03-05`: Lower-shell account affordances should stay aligned between desktop sidebar and mobile drawer.

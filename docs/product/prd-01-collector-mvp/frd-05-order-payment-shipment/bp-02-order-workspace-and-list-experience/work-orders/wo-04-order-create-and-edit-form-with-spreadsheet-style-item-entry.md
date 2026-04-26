@@ -28,8 +28,8 @@ WO-04 does not include any Prisma migration. It consumes the modules and schemas
 
 ## In Scope
 
-- Create route at `purchases/new`
-- Edit route at `purchases/[id]/edit`
+- Create route at `orders/new`
+- Edit route at `orders/[id]/edit`
 - Searchable store selector with store-creation redirect path
 - Empty state when no stores exist in the system
 - Order date defaulting to current date
@@ -77,10 +77,10 @@ Two new packages must be added before implementation begins:
 
 | Route                           | File                                                  | Purpose      |
 | ------------------------------- | ----------------------------------------------------- | ------------ |
-| `/[locale]/purchases/new`       | `src/app/[locale]/(app)/purchases/new/page.tsx`       | Create order |
-| `/[locale]/purchases/[id]/edit` | `src/app/[locale]/(app)/purchases/[id]/edit/page.tsx` | Edit order   |
+| `/[locale]/orders/new`       | `src/app/[locale]/(app)/orders/new/page.tsx`       | Create order |
+| `/[locale]/orders/[id]/edit` | `src/app/[locale]/(app)/orders/[id]/edit/page.tsx` | Edit order   |
 
-Shared components between create and edit live in `src/app/[locale]/(app)/purchases/_components/share/`.
+Shared components between create and edit live in `src/app/[locale]/(app)/orders/_components/share/`.
 
 Date inputs are promoted to app-wide primitives and live in `src/components/core/`:
 
@@ -89,7 +89,7 @@ Date inputs are promoted to app-wide primitives and live in `src/components/core
 
 Both are thin wrappers around `react-day-picker` and are reusable across features (e.g., future payment-date and shipment-window pickers in FRD-05 BP-01).
 
-Server actions live in `src/app/[locale]/(app)/purchases/_actions/orderActions.ts` and call into `src/lib/data/orders/orderMutations.ts`.
+Server actions live in `src/app/[locale]/(app)/orders/_actions/orderActions.ts` and call into `src/lib/data/orders/orderMutations.ts`.
 
 ## Form Field Order
 
@@ -114,7 +114,7 @@ The private note field is not part of this form. It is inline-editable from the 
 - A **"+ Create store"** option always appears at the bottom of the dropdown list
 - When the search input has text and no results match, the option reads **"+ Create [typed name]"**
 - Both options redirect to `/stores/new?returnTo=order-create` (query value is the shared app constant `RETURN_TO_ORDER_CREATE` in `src/lib/constants.ts`, same as the settings banner — param name matches `AUTH_RETURN_TO_PARAM` / `returnTo`); the typed-name variant also appends `&name={value}` to prefill the store name field
-- After the store is created, the store creation flow redirects to `/purchases/new?store={id}`, which preselects the new store in the selector
+- After the store is created, the store creation flow redirects to `/orders/new?store={id}`, which preselects the new store in the selector
 
 ### Empty state (no stores in the system)
 
@@ -123,7 +123,7 @@ When the store list is empty, hide the form body and render a centered empty sta
 - Icon: `Store` from `lucide-react`
 - Title (ES): **"Primero, agrega una tienda"**
 - Title (EN): **"Start with a store"**
-- Body (ES): _"Para crear una orden necesitas al menos una tienda registrada. Agrega la primera y vuelve aquí cuando estés listo."_
+- Body (ES): _"Para crear un pedido necesitas al menos una tienda registrada. Agrega la primera y vuelve aquí cuando estés listo."_
 - Body (EN): _"To create an order, you'll need at least one store on record. Add your first one and come back when you're ready."_
 - CTA (ES): **"Crear tienda"** → `/stores/new`
 - CTA (EN): **"Create store"** → `/stores/new`
@@ -146,7 +146,7 @@ When the store list is empty, hide the form body and render a centered empty sta
   3. Otherwise, the currency is empty and remains required.
 - **Store change behavior:** every time the user picks a different store (or creates one), the currency field is overwritten with that store's country primary currency. The user can still manually override the currency afterwards for orders placed in a non-default currency (e.g., a US-based store invoicing in EUR).
 - **Edit mode:** the saved `currencyCode` of the order is always preserved on load, regardless of the current store's country. It is only overwritten if the user explicitly changes the store within the edit session.
-- The hint _"Auto-filled from the store's country. Change it if the order is in a different currency."_ / _"Se autocompleta según el país de la tienda. Cambiala si la orden es en otra moneda."_ sits directly beneath the currency select so the auto-fill behavior is never silent.
+- The hint _"Auto-filled from the store's country. Change it if the order is in a different currency."_ / _"Se autocompleta según el país de la tienda. Cámbiala si el pedido está en otra moneda."_ sits directly beneath the currency select so the auto-fill behavior is never silent.
 - `getUserStores` in `src/lib/data/stores/storeQueries.ts` must return `countryCode` alongside `id` and `name` so the form can compute the default currency client-side without a second round-trip.
 - Exchange rate field is hidden when `currencyCode === user.baseCurrencyCode` or when `baseCurrencyCode` is null.
 - Exchange rate appears dynamically when `currencyCode !== user.baseCurrencyCode` and `baseCurrencyCode` is set. It renders in its own full-width row below the dates (at half width on `sm` and up) to keep the store/currency row stable as the field toggles on and off.
@@ -158,8 +158,8 @@ When `user.baseCurrencyCode` is null, render a non-blocking `info` banner inside
 
 - Visual treatment: `info` variant (`bg-info/12 border border-info/35 rounded-xl`)
 - Icon: `Info` from `lucide-react`
-- Copy (ES): _"¿Compras en varias monedas? Configura tu moneda base y PandaTrack convertirá automáticamente cada orden para que puedas ver tu presupuesto en un solo lugar."_ Link: **"Configurar ahora →"** → `/[locale]/settings?returnTo=order-create` (value must match `RETURN_TO_ORDER_CREATE`; param key is `returnTo` / `AUTH_RETURN_TO_PARAM`).
-- Copy (EN): _"Buying in multiple currencies? Set your base currency and PandaTrack will automatically convert each order so you can see your full budget in one place."_ Link: **"Set it up now →"** → same URL shape with `?returnTo=order-create`.
+- Copy (ES): _"Te mostramos cuánto llevas gastado en total, aunque tengas pedidos en tiendas de distintos países. Solo elige tu moneda base y convertimos cada pedido a esa moneda por ti."_ Link: **"Elegir moneda base →"** → `/[locale]/settings?returnTo=order-create` (value must match `RETURN_TO_ORDER_CREATE`; param key is `returnTo` / `AUTH_RETURN_TO_PARAM`).
+- Copy (EN): _"We'll show you how much you've spent in total, even when you buy from stores in different countries. Just choose your base currency and we'll convert each order to it for you."_ Link: **"Choose base currency →"** → same URL shape with `?returnTo=order-create`.
 - The banner does not block saving. Orders created without a base currency will surface in the `Needs currency update` filter (`FR-05-36`) once the user later configures their base currency in Preferences.
 
 ### Settings round-trip (`returnTo=order-create` from order create)
@@ -168,14 +168,14 @@ When the collector opens Settings from the base-currency banner, the URL include
 
 **Settings page** (`src/app/[locale]/(app)/settings/page.tsx`):
 
-- If `searchParams.returnTo === RETURN_TO_ORDER_CREATE`, render a pill **`BackNavLink`** above the page hero (same chrome as the create-order header), linking to `/[locale]/purchases/new`.
-- Link label (ES): **"Volver al formulario de nueva orden"** · (EN): **"Back to new order form"** (`settings.returnToOrderCreate`).
+- If `searchParams.returnTo === RETURN_TO_ORDER_CREATE`, render a pill **`BackNavLink`** above the page hero (same chrome as the create-order header), linking to `/[locale]/orders/new`.
+- Link label (ES): **"Volver al formulario de nuevo pedido"** · (EN): **"Back to new order form"** (`settings.returnToOrderCreate`).
 
 **Preferences save** (`SettingsPreferencesSection`):
 
-- When that same `returnTo` value is active, a **successful** "Save preferences" (including after the currency-change confirmation modal) **`router.push`**es to `/[locale]/purchases/new` so the collector lands back on the new-order form after configuring base currency (or other preferences).
+- When that same `returnTo` value is active, a **successful** "Save preferences" (including after the currency-change confirmation modal) **`router.push`**es to `/[locale]/orders/new` so the collector lands back on the new-order form after configuring base currency (or other preferences).
 
-This reuses the same `returnTo` contract as the store-creation path; only the post-action destination differs (store create → `/purchases/new?store={id}`; settings save → `/purchases/new`).
+This reuses the same `returnTo` contract as the store-creation path; only the post-action destination differs (store create → `/orders/new?store={id}`; settings save → `/orders/new`).
 
 ### Item spreadsheet
 
@@ -223,7 +223,7 @@ Behavior notes:
 - The handler requires `ctrlKey && shiftKey && !metaKey && !altKey` for the core shortcuts — so `Cmd + Shift + key` (Mac) or `Ctrl + Alt + Shift + key` combos are **not** hijacked, preserving every native browser/OS chord that layers on top of `Shift`.
 - `Cmd/Ctrl + Backspace` (clear input to start of line on macOS) is **not** hijacked. All other native text-editing shortcuts (`Cmd/Ctrl + A`, `Cmd/Ctrl + Z`, `Shift + arrows` selection, etc.) are left untouched.
 
-**Discoverability — keyboard shortcut help:** a small `Keyboard` icon (from `lucide-react`) is placed immediately to the right of the **"Artículos" section heading** in the form, matching the inline-tooltip pattern already used by the currency and exchange-rate labels. Hovering or keyboard-focusing the icon opens a tooltip listing every shortcut in `<kbd>`-styled rows, rendered via the shared `Tooltip` component. The standalone React component lives at `src/app/[locale]/(app)/purchases/_components/share/OrderItemsShortcutsHelp.tsx`.
+**Discoverability — keyboard shortcut help:** a small `Keyboard` icon (from `lucide-react`) is placed immediately to the right of the **"Artículos" section heading** in the form, matching the inline-tooltip pattern already used by the currency and exchange-rate labels. Hovering or keyboard-focusing the icon opens a tooltip listing every shortcut in `<kbd>`-styled rows, rendered via the shared `Tooltip` component. The standalone React component lives at `src/app/[locale]/(app)/orders/_components/share/OrderItemsShortcutsHelp.tsx`.
 
 - **Placement rationale:** the affordance is co-located with the section title because that is where the user's eye lands first when scanning the form, and it mirrors the existing currency/exchange-rate tooltip pattern — consistent with the rest of the form. An earlier placement next to the "Agregar artículo" footer button was rejected: it anchored discovery too close to the end of the scroll region, making the icon easy to miss on long orders and inconsistent with every other hint tooltip in this page.
 - **Mobile:** the entire help affordance is hidden via `hidden md:inline-flex` on breakpoints below `md`. Grid shortcuts require a physical keyboard, so touch-only devices (phones) don't get the icon. Tablets hitting the `md` breakpoint with a paired keyboard still see it.
@@ -264,8 +264,8 @@ Appears only when every item has a non-null `unitPrice` AND `itemizedTotal !== t
 
 ### Post-save redirect
 
-- Create: redirect to `/purchases/[id]` + success toast "Orden creada" / "Order created"
-- Edit: redirect to `/purchases/[id]` + success toast "Orden guardada" / "Order saved"
+- Create: redirect to `/orders/[id]` + success toast "Pedido creado" / "Order created"
+- Edit: redirect to `/orders/[id]` + success toast "Pedido guardado" / "Order saved"
 
 ### Discard changes (edit mode only)
 
@@ -281,17 +281,17 @@ Does not apply to the create form.
 
 Both routes use `BackNavLink` (`appearance="pill"`) in a `space-y-3` stack above `AppPageHero`:
 
-- **Create** — back → `/purchases` · title (ES): "Nueva orden" · title (EN): "New order"
-- **Edit** — back → `/purchases/[id]` · title (ES): "Editar orden · [humanReadableId]" · title (EN): "Edit order · [humanReadableId]"
+- **Create** — back → `/orders` · title (ES): "Nuevo pedido" · title (EN): "New order"
+- **Edit** — back → `/orders/[id]` · title (ES): "Editar pedido · [humanReadableId]" · title (EN): "Edit order · [humanReadableId]"
 
 The form body uses `APP_SHELL_FORM_RAIL_CLASSNAME` to keep fields at a comfortable reading width.
 
 ## Technical Notes
 
 - All monetary inputs (total cost, unit price) are entered by the user as decimal values (e.g., "25.50") and converted to minor units (× 100) before passing to the data layer. Display paths divide by 100 and format before rendering.
-- The `returnTo=order-create` query value is centralized as `RETURN_TO_ORDER_CREATE` in `src/lib/constants.ts`. The store-creation flow reads it (via `searchParams` on `/stores/new`) so the client redirect after create goes to `/purchases/new?store={id}` instead of the default store detail/list.
+- The `returnTo=order-create` query value is centralized as `RETURN_TO_ORDER_CREATE` in `src/lib/constants.ts`. The store-creation flow reads it (via `searchParams` on `/stores/new`) so the client redirect after create goes to `/orders/new?store={id}` instead of the default store detail/list.
 - The order form builds store-create and settings links with the `returnTo` query key from `AUTH_RETURN_TO_PARAM` (`src/lib/auth/authRedirect.ts`) so the param name stays aligned with auth callbacks.
-- The settings page and `SettingsPreferencesSection` read the same `returnTo` value for the back link and post-save redirect to `/purchases/new` (see _Settings round-trip_ above).
+- The settings page and `SettingsPreferencesSection` read the same `returnTo` value for the back link and post-save redirect to `/orders/new` (see _Settings round-trip_ above).
 - Store list is fetched in the server component and passed as props to the `SearchSelect` client component — no separate API call needed.
 - `@dnd-kit/sortable` `position` normalization (consecutive integers from 1) is applied client-side before sending the save payload; raw client position arrays are not trusted server-side.
 - Item add and delete operations during an edit session are pending until the user explicitly saves. Discarding the edit abandons all pending item mutations without applying them.
@@ -335,17 +335,17 @@ All event names are centralized in `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 
 ### Create — happy path
 
-- User opens `/purchases/new` · selects a store · fills required fields · adds items · enters a total cost · saves → order is created and user lands on the detail page with a success toast.
+- User opens `/orders/new` · selects a store · fills required fields · adds items · enters a total cost · saves → order is created and user lands on the detail page with a success toast.
 - On create, order date prefills with today's date. Currency defaults to the selected store's country primary currency; when no store is selected yet, it falls back to `user.baseCurrencyCode` when configured.
 
 ### Empty state
 
-- User opens `/purchases/new` when no stores exist → sees "Primero, agrega una tienda" copy and "Crear tienda" CTA instead of the form.
+- User opens `/orders/new` when no stores exist → sees "Primero, agrega una tienda" copy and "Crear tienda" CTA instead of the form.
 
 ### Store-creation redirect
 
 - User searches for a store that does not exist and clicks "＋ Create [name]" → lands on `/stores/new` with the store name prefilled.
-- After creating the store, user is redirected to `/purchases/new` with the new store preselected in the selector.
+- After creating the store, user is redirected to `/orders/new` with the new store preselected in the selector.
 
 ### Exchange rate and currency
 
@@ -355,14 +355,14 @@ All event names are centralized in `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 
 ### Base currency banner → Settings → back to new order
 
-- From `/purchases/new`, the base-currency banner CTA navigates to `/settings?returnTo=order-create`.
-- On Settings, the pill back control **"Volver al formulario de nueva orden"** / **"Back to new order form"** is visible and targets `/purchases/new`.
-- Saving preferences successfully while that query context is active redirects to `/purchases/new` (user can also use the back link without saving).
+- From `/orders/new`, the base-currency banner CTA navigates to `/settings?returnTo=order-create`.
+- On Settings, the pill back control **"Volver al formulario de nuevo pedido"** / **"Back to new order form"** is visible and targets `/orders/new`.
+- Saving preferences successfully while that query context is active redirects to `/orders/new` (user can also use the back link without saving).
 
 ### Store-driven currency auto-fill
 
 - Selecting an Argentine store sets currency to `ARS`; selecting a Japanese store afterwards overwrites it to `JPY`.
-- After the store-creation redirect (`/purchases/new?store={id}`) lands on the form with a preselected store, the currency field is already populated with that store's country primary currency.
+- After the store-creation redirect (`/orders/new?store={id}`) lands on the form with a preselected store, the currency field is already populated with that store's country primary currency.
 - In edit mode, opening an order whose saved currency differs from the current store's country primary currency preserves the saved currency. Changing the store within the edit session overwrites the currency to match the new store's country primary currency.
 - After the store sets the currency automatically, manually changing the currency to a different allowed code does not revert on save, and the selected value is the one persisted.
 

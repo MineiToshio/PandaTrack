@@ -68,7 +68,7 @@ test.describe("App layout at mobile and tablet viewport", () => {
     const primaryNavigation = page.getByRole("navigation", { name: MAIN_NAVIGATION_LABEL_REGEX });
     await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Stores" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Purchases" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Orders" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Shipments" })).toBeVisible();
     await expect(primaryNavigation.getByRole("link", { name: "Settings" })).toHaveCount(0);
     await page.getByRole("button", { name: ACCOUNT_ACTIONS_LABEL_REGEX }).click();
@@ -133,11 +133,11 @@ test.describe("App layout header and breadcrumbs", () => {
     await signInAndLandOnDashboard(page);
 
     await page.goto("/en/purchases/pre-orders");
-    await expect(page).toHaveURL(/\/en\/purchases\/pre-orders/);
+    await expect(page).toHaveURL(/\/en\/orders\/pre-orders/);
 
     const breadcrumbNav = page.getByRole("navigation", { name: "Breadcrumb" });
     await expect(breadcrumbNav).toBeVisible();
-    await expect(breadcrumbNav.getByRole("link", { name: "Purchases" })).toBeVisible();
+    await expect(breadcrumbNav.getByRole("link", { name: "Orders" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Pre-orders", level: 1 })).toBeVisible();
   });
 });

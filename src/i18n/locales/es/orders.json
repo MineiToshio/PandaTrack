@@ -7,22 +7,22 @@
     "goBack": "Volver"
   },
   "create": {
-    "backToList": "Órdenes",
-    "heroEyebrow": "Nueva orden",
-    "title": "Nueva orden",
-    "heroDescription": "Registra una nueva compra con sus artículos, moneda y total.",
-    "submit": "Crear orden",
+    "backToList": "Pedidos",
+    "heroEyebrow": "Nuevo pedido",
+    "title": "Nuevo pedido",
+    "heroDescription": "Registra un nuevo pedido con sus artículos, moneda y total.",
+    "submit": "Crear pedido",
     "submitting": "Guardando...",
-    "successToast": "Orden creada"
+    "successToast": "Pedido creado"
   },
   "edit": {
-    "backToOrder": "Volver a la orden",
-    "heroEyebrow": "Editar orden",
-    "title": "Editar orden · {humanReadableId}",
-    "heroDescription": "Modifica los detalles de esta orden.",
+    "backToOrder": "Volver al pedido",
+    "heroEyebrow": "Editar pedido",
+    "title": "Editar pedido · {humanReadableId}",
+    "heroDescription": "Modifica los detalles de este pedido.",
     "submit": "Guardar cambios",
     "submitting": "Guardando...",
-    "successToast": "Orden guardada",
+    "successToast": "Pedido guardado",
     "discardTitle": "¿Salir sin guardar?",
     "discardMessage": "Los cambios que hiciste no se guardarán.",
     "discardConfirm": "Salir",
@@ -30,7 +30,7 @@
   },
   "emptyState": {
     "title": "Primero, agrega una tienda",
-    "description": "Para crear una orden necesitas al menos una tienda registrada. Agrega la primera y vuelve aquí cuando estés listo.",
+    "description": "Para crear un pedido necesitas al menos una tienda registrada. Agrega la primera y vuelve aquí cuando estés listo.",
     "cta": "Crear tienda"
   },
   "form": {
@@ -40,7 +40,7 @@
     "storeNoResults": "Sin resultados",
     "storeCreateOption": "+ Crear tienda",
     "storeCreateWithName": "+ Crear \"{name}\"",
-    "orderDateLabel": "Fecha de orden",
+    "orderDateLabel": "Fecha del pedido",
     "orderDatePlaceholder": "Seleccionar fecha",
     "deliveryRangeLabel": "Entrega estimada",
     "deliveryRangePlaceholder": "Seleccionar rango",
@@ -49,13 +49,13 @@
     "currencyPlaceholder": "Seleccionar moneda",
     "currencyClearLabel": "Quitar moneda",
     "currencyHintAriaLabel": "Más información sobre cómo se define la moneda",
-    "currencyStoreHint": "Se autocompleta según el país de la tienda. Cámbiala si la orden está en otra moneda.",
+    "currencyStoreHint": "Se autocompleta según el país de la tienda. Cámbiala si el pedido está en otra moneda.",
     "exchangeRateLabel": "Tipo de cambio",
     "exchangeRateHintAriaLabel": "Para qué sirve el tipo de cambio en PandaTrack",
-    "exchangeRateHint": "PandaTrack usa este número para pasar esta orden a tu moneda base. Así lo que ves al abrir la app y tu presupuesto se leen en la misma moneda. Escribe cuántas unidades de {to} equivalen a 1 {from}, con el tipo real con el que pagaste (banco o tarjeta).",
+    "exchangeRateHint": "PandaTrack usa este número para pasar este pedido a tu moneda base. Así lo que ves al abrir la app y tu presupuesto se leen en la misma moneda. Escribe cuántas unidades de {to} equivalen a 1 {from}, con el tipo real con el que pagaste (banco o tarjeta).",
     "exchangeRatePlaceholder": "0.00",
     "exchangeRateHelper": "{from} → {to}",
-    "baseCurrencyBannerText": "Te mostramos cuánto llevas gastado en total, aunque compres en tiendas de distintos países. Solo elige tu moneda base y convertimos cada orden a esa moneda por ti.",
+    "baseCurrencyBannerText": "Te mostramos cuánto llevas gastado en total, aunque tengas pedidos en tiendas de distintos países. Solo elige tu moneda base y convertimos cada pedido a esa moneda por ti.",
     "baseCurrencyBannerCta": "Elegir moneda base →",
     "itemsSectionTitle": "Artículos",
     "itemNameLabel": "Nombre",
@@ -97,7 +97,7 @@
   },
   "validation": {
     "storeRequired": "Selecciona una tienda",
-    "orderDateRequired": "Ingresa la fecha de la orden",
+    "orderDateRequired": "Ingresa la fecha del pedido",
     "currencyRequired": "Selecciona una moneda",
     "exchangeRateRequired": "Ingresa el tipo de cambio",
     "exchangeRateTooLow": "El tipo de cambio debe ser mayor a 0",
@@ -118,11 +118,11 @@
     "STORE_NOT_FOUND": "La tienda seleccionada no existe.",
     "INVALID_PRODUCT_TYPE": "Uno de los tipos de producto no es válido.",
     "ITEM_HAS_LIVE_DELIVERY": "Un artículo está vinculado a un envío activo y no puede eliminarse.",
-    "STORE_CHANGE_BLOCKED": "Solo puedes cambiar la tienda si la orden está abierta y sin envíos."
+    "STORE_CHANGE_BLOCKED": "Solo puedes cambiar la tienda si el pedido está abierto y sin envíos."
   },
   "detail": {
-    "backToList": "Órdenes",
-    "heroEyebrow": "Detalle de orden",
+    "backToList": "Pedidos",
+    "heroEyebrow": "Detalle del pedido",
     "status": {
       "OPEN": "Abierta",
       "IN_TRANSIT": "En tránsito",
@@ -138,18 +138,18 @@
     "metaFxBadge": "1 {from} = {rate} {to}",
     "actions": {
       "createDelivery": "Crear entrega",
-      "createDeliveryTooltip": "Próximamente: podrás crear entregas para esta orden.",
+      "createDeliveryTooltip": "Próximamente: podrás crear entregas para este pedido.",
       "edit": "Editar",
       "cancel": "Cancelar",
       "delete": "Eliminar",
       "reactivate": "Reactivar",
       "more": "Más acciones",
-      "cancelDisabledTooltip": "Esta orden tiene items asociados a una entrega. Desasócialos desde la entrega para poder cancelarla.",
-      "deleteDisabledTooltip": "No se puede eliminar esta orden porque tiene items asociados a una entrega. Desasócialos primero."
+      "cancelDisabledTooltip": "Este pedido tiene items asociados a una entrega. Desasócialos desde la entrega para poder cancelarlo.",
+      "deleteDisabledTooltip": "No se puede eliminar este pedido porque tiene items asociados a una entrega. Desasócialos primero."
     },
     "items": {
       "sectionTitle": "Artículos",
-      "emptyWarning": "Esta orden no tiene artículos.",
+      "emptyWarning": "Este pedido no tiene artículos.",
       "emptyWarningCta": "Editar para agregar",
       "headerCount": "{count, plural, one {# artículo} other {# artículos}}",
       "headerSummary": "{count, plural, one {# artículo} other {# artículos}} · {total}",
@@ -162,10 +162,10 @@
     "history": {
       "sectionTitle": "Historial",
       "events": {
-        "ORDER_CREATED": "Orden creada",
-        "ORDER_EDITED": "Orden editada",
-        "ORDER_CANCELLED": "Orden cancelada",
-        "ORDER_REACTIVATED": "Orden reactivada",
+        "ORDER_CREATED": "Pedido creado",
+        "ORDER_EDITED": "Pedido editado",
+        "ORDER_CANCELLED": "Pedido cancelado",
+        "ORDER_REACTIVATED": "Pedido reactivado",
         "PAYMENT_ADDED": "Pago de {amount} registrado",
         "PAYMENT_DELETED": "Pago de {amount} eliminado",
         "NOTE_UPDATED": "Nota privada actualizada"
@@ -173,7 +173,7 @@
     },
     "note": {
       "sectionTitle": "Nota privada",
-      "description": "Usa esta nota para guardar detalles que quieras recordar de este pedido: acuerdos con la tienda, fechas importantes, instrucciones especiales, algo que pasó durante la compra o el contexto para retomarlo después.",
+      "description": "Usa esta nota para guardar detalles que quieras recordar de este pedido: acuerdos con la tienda, fechas importantes, instrucciones especiales, algo que pasó durante el pedido o el contexto para retomarlo después.",
       "placeholder": "Escribe una nota o un recordatorio para este pedido…",
       "lastUpdated": "Última actualización: {date}",
       "save": "Guardar nota",
@@ -191,7 +191,7 @@
       "summaryProgress": "{pct}% pagado",
       "summaryLastPayment": "Último pago: {date}",
       "summaryFullyPaid": "Pagado al 100%",
-      "unpaidBanner": "Esta orden está completada pero tiene un saldo pendiente.",
+      "unpaidBanner": "Este pedido está completado pero tiene un saldo pendiente.",
       "emptyTitle": "Aún no registras pagos",
       "emptyHelper": "Cuando pagues en cuotas, regístralo aquí para ver cuánto te falta.",
       "emptyCta": "Registrar pago",
@@ -201,7 +201,7 @@
       "amountExceedsBalance": "El monto supera el saldo pendiente ({remaining}).",
       "dateLabel": "Fecha de pago",
       "datePlaceholder": "Seleccionar fecha",
-      "dateBeforeOrder": "La fecha no puede ser anterior a la fecha de orden.",
+      "dateBeforeOrder": "La fecha no puede ser anterior a la fecha del pedido.",
       "dateFuture": "La fecha no puede ser en el futuro.",
       "submitPayment": "Registrar",
       "submittingPayment": "Guardando...",
@@ -215,23 +215,23 @@
       "errorDelete": "No se pudo eliminar el pago. Intenta de nuevo."
     },
     "cancelModal": {
-      "title": "¿Cancelar esta orden?",
-      "descriptionBase": "Se cancelará la orden {id} de {store}.",
+      "title": "¿Cancelar este pedido?",
+      "descriptionBase": "Se cancelará el pedido {id} de {store}.",
       "descriptionPayments": " Los pagos registrados serán eliminados.",
-      "confirm": "Cancelar orden",
+      "confirm": "Cancelar pedido",
       "cancel": "Volver",
-      "errorGeneral": "No se pudo cancelar la orden. Intenta de nuevo.",
-      "errorLinkedDelivery": "Esta orden tiene items asociados a una entrega. Desasócialos primero."
+      "errorGeneral": "No se pudo cancelar el pedido. Intenta de nuevo.",
+      "errorLinkedDelivery": "Este pedido tiene items asociados a una entrega. Desasócialos primero."
     },
     "deleteModal": {
-      "title": "¿Eliminar esta orden?",
-      "descriptionBase": "Se eliminará permanentemente la orden {id} de {store}.",
+      "title": "¿Eliminar este pedido?",
+      "descriptionBase": "Se eliminará permanentemente el pedido {id} de {store}.",
       "descriptionPayments": " Los pagos registrados serán eliminados.",
-      "confirm": "Eliminar orden",
+      "confirm": "Eliminar pedido",
       "cancel": "Volver",
-      "errorGeneral": "No se pudo eliminar la orden. Intenta de nuevo.",
-      "errorLinkedDelivery": "Esta orden tiene items asociados a una entrega. Desasócialos primero."
+      "errorGeneral": "No se pudo eliminar el pedido. Intenta de nuevo.",
+      "errorLinkedDelivery": "Este pedido tiene items asociados a una entrega. Desasócialos primero."
     },
-    "reactivateToast": "Orden reactivada"
+    "reactivateToast": "Pedido reactivado"
   }
 }

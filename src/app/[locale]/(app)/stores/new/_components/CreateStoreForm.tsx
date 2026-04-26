@@ -401,7 +401,7 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
     }
 
     if (returnTo === RETURN_TO_ORDER_CREATE && state?.success === true && "storeId" in state) {
-      router.replace(`/${locale}${ROUTES.purchasesNew}?store=${state.storeId}`);
+      router.replace(`/${locale}${ROUTES.ordersNew}?store=${state.storeId}`);
     } else {
       router.replace(`/${locale}${ROUTES.stores}/${createdStoreSlug}`);
     }

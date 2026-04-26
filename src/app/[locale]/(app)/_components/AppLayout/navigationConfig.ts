@@ -1,6 +1,6 @@
 import { ROUTES } from "@/lib/constants";
 
-export type NavItemId = "dashboard" | "stores" | "purchases" | "shipments" | "settings";
+export type NavItemId = "dashboard" | "stores" | "orders" | "shipments" | "settings";
 
 export interface NavItem {
   id: NavItemId;
@@ -18,9 +18,9 @@ const NAV_ROUTE_ITEMS: NavItem[] = [
   },
   { id: "stores", pathSegment: "stores", href: (locale) => `/${locale}${ROUTES.stores}`, labelKey: "nav.stores" },
   {
-    id: "purchases",
-    pathSegment: "purchases",
-    href: (locale) => `/${locale}${ROUTES.purchases}`,
+    id: "orders",
+    pathSegment: "orders",
+    href: (locale) => `/${locale}${ROUTES.orders}`,
     labelKey: "nav.purchases",
   },
   {
@@ -37,7 +37,7 @@ const NAV_ROUTE_ITEMS: NavItem[] = [
   },
 ];
 
-const PRIMARY_NAV_ITEM_IDS: NavItemId[] = ["dashboard", "stores", "purchases", "shipments"];
+const PRIMARY_NAV_ITEM_IDS: NavItemId[] = ["dashboard", "stores", "orders", "shipments"];
 
 export function getPrivateAppNavItems(): NavItem[] {
   return NAV_ROUTE_ITEMS.filter((item) => PRIMARY_NAV_ITEM_IDS.includes(item.id));

@@ -92,7 +92,7 @@ export default async function OrderSummaryHeader({
 
   return (
     <div className="space-y-5">
-      <BackNavLink href={backHref ?? `/${locale}${ROUTES.purchases}`} appearance="pill">
+      <BackNavLink href={backHref ?? `/${locale}${ROUTES.orders}`} appearance="pill">
         {t("detail.backToList")}
       </BackNavLink>
 

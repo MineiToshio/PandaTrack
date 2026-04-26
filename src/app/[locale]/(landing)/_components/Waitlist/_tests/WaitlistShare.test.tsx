@@ -8,7 +8,7 @@ const translationMap = {
   heading: "You're on the list.",
   subtext: "Know another collector? Share PandaTrack and help us launch sooner.",
   shareMessage:
-    "I'm on the PandaTrack waitlist — an app to organize purchases, shipping, and pre-orders for collectibles in one place. Join here:",
+    "I'm on the PandaTrack waitlist - an app to organize orders, shipping, and pre-orders for collectibles in one place. Join here:",
   shareButton: "Share",
   copyLinkButton: "Copy link",
   copiedFeedback: "Copied!",

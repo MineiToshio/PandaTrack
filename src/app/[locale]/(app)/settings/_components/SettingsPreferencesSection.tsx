@@ -30,7 +30,7 @@ type SettingsPreferencesSectionProps = {
   initialProductTypeKeys: string[];
   initialBudgetAmount: number | null;
   initialBudgetResetDayOfMonth: number | null;
-  /** When true, successful save navigates to order create (`/purchases/new`). */
+  /** When true, successful save navigates to order create (`/orders/new`). */
   redirectToOrderCreateAfterSave?: boolean;
 };
 
@@ -349,7 +349,7 @@ export default function SettingsPreferencesSection({
 
       addToast(t("success"));
       if (redirectToOrderCreateAfterSave) {
-        router.push(`/${locale}${ROUTES.purchasesNew}`);
+        router.push(`/${locale}${ROUTES.ordersNew}`);
       }
     },
     [

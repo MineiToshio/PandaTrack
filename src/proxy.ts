@@ -6,6 +6,8 @@ import { ROUTES } from "@/lib/constants";
 import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
 import { routing } from "./i18n/routing";
 
+const LEGACY_PURCHASES_ROUTE_PREFIX = "/purchases";
+
 const handleI18nRouting = createMiddleware({
   ...routing,
   localeDetection: true,
@@ -13,7 +15,7 @@ const handleI18nRouting = createMiddleware({
 
 const PRIVATE_ROUTE_PREFIXES = [
   ROUTES.dashboard,
-  ROUTES.purchases,
+  ROUTES.orders,
   ROUTES.payments,
   ROUTES.shipments,
   ROUTES.budget,
@@ -40,6 +42,19 @@ function isPrivateLocalizedPath(localizedPath: string) {
 
 export default function proxy(request: NextRequest) {
   const localizedPathData = getLocalizedPath(request.nextUrl.pathname);
+
+  if (
+    localizedPathData &&
+    (localizedPathData.localizedPath === LEGACY_PURCHASES_ROUTE_PREFIX ||
+      localizedPathData.localizedPath.startsWith(`${LEGACY_PURCHASES_ROUTE_PREFIX}/`))
+  ) {
+    const redirectUrl = new URL(request.url);
+    redirectUrl.pathname = `/${localizedPathData.locale}${localizedPathData.localizedPath.replace(
+      LEGACY_PURCHASES_ROUTE_PREFIX,
+      ROUTES.orders,
+    )}`;
+    return NextResponse.redirect(redirectUrl, 308);
+  }
 
   if (localizedPathData && isPrivateLocalizedPath(localizedPathData.localizedPath)) {
     const sessionToken = getSessionCookie(request.headers);

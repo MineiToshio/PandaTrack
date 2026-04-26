@@ -201,7 +201,7 @@ export default function OrderListFilters({
             {t("filters.openButton")}
           </button>
           <Link
-            href={`/${locale}${ROUTES.purchasesNew}`}
+            href={`/${locale}${ROUTES.ordersNew}`}
             className={cn(buttonVariants({ variant: "primary" }), "min-h-11 rounded-xl px-5")}
           >
             {t("hero.newOrder")}

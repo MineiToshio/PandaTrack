@@ -21,8 +21,8 @@ export type PageCanonicalSegment =
   | "privacy"
   | "dashboard"
   | "stores"
-  | "purchases"
-  | "purchases/pre-orders"
+  | "orders"
+  | "orders/pre-orders"
   | "shipments"
   | "settings";
 

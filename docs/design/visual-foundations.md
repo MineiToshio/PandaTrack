@@ -80,7 +80,7 @@ Rules:
 
 - one dominant `h1` per screen; it must read as the strongest heading on the page (larger and heavier than in-page section `h2`s)
 - `lg` and `md` belong mostly to landing and high-visibility sections
-- on private-app pages that combine a top hero header with sibling section panels (for example `/settings`, `/stores`), use `Heading size="sm"` for the page `h1` and `Heading size="xs"` for each major section `h2`; do not shrink the `h1` with body utilities such as `text-base`, or section headings will visually outrank the page title
+- on private-app pages that combine a top hero header with sibling section panels, use `Heading size="sm"` for the page `h1` and `Heading size="xs"` for each major section `h2`; do not shrink the `h1` with body utilities such as `text-base`, or section headings will visually outrank the page title
 - titles inside modals, tab panels, and dense summary surfaces must still read as titles, not helper text
 
 ### Font Weights
@@ -176,6 +176,32 @@ Theme variables live in `src/app/globals.css`:
 | `warning`     | `#f59e0b` | `#d97706` | warnings and cautionary messaging       |
 | `info`        | `#38bdf8` | `#0ea5e9` | informational emphasis                  |
 
+### Applied semantic color patterns in collector UI
+
+Reuse these meanings before introducing new chip or badge colors.
+
+#### Store taxonomy and trust chips
+
+- product types: `primary` tint (`border-primary/15 bg-primary/8 text-primary`)
+- import countries: `success` tint (`border-success/15 bg-success/8`)
+- presence and online/offline reach: `info` tint (`border-info/15 bg-info/8`)
+- hero metadata pills: neutral `bg-background/80` surface with semantic icon color when needed
+
+#### Order state and finance chips
+
+- open state: `info`
+- in transit and partially in transit: `primary`
+- partially delivered: `highlight`
+- completed: `success`
+- unpaid or attention-needed financial state: `warning`
+- destructive or invalid state: `destructive`
+
+Rules:
+
+- use semantic tint plus label together - never rely on color alone to communicate meaning
+- keep the tint soft (`/8` to `/20` backgrounds, `/15` to `/40` borders) so chips stay readable in dense dark UI
+- prefer icon color to carry the strongest semantic cue inside neutral hero pills instead of tinting the whole pill
+
 ### Theme Rules
 
 - use semantic variables, not theme-blind colors
@@ -254,6 +280,33 @@ Common patterns:
 - `bg-muted/35`
 - `bg-background/70`
 - `bg-background/90`
+- `COLLECTOR_MUTED_INSET_CLASSNAME` from `src/lib/styles.ts` for compact secondary groups inside cards and listing modules
+
+#### Collector app surface family: listings and detail panels
+
+Use one shared panel family for:
+
+- entity listing cards
+- transaction listing cards
+- active-filter shells
+- profile detail sections
+- detail sections with repeated summary panels
+
+Base token set:
+
+- `COLLECTOR_CARD_SURFACE_CLASSNAME` from `src/lib/styles.ts`
+- `bg-surface-2`
+- `border-border`
+- `rounded-2xl`
+- `border`
+- `shadow-sm`
+
+Rules:
+
+- start from this shared surface for repeated app cards before adding page-specific chrome
+- add hover motion, inner separators, sticky positioning, or denser padding on top of the shared token set instead of redefining the base panel
+- use `COLLECTOR_MUTED_INSET_CLASSNAME` as the preferred second visual level inside these cards for grouped metadata, compact summaries, and nested read-only rows
+- when a detail panel needs a tighter inset card inside the main section, keep it neutral (`bg-card`, `border-border/70`, `rounded-2xl`, `shadow-sm`) so the outer section remains the dominant surface
 
 #### Repeated elevated panels on a washed background
 
@@ -367,6 +420,7 @@ Use only for marketing hero treatments, celebratory states, or standout showcase
 - in the private app, start with border and surface contrast before shadow
 - in dark theme, subtle shadows are acceptable when hierarchy is already clear
 - hover elevation should usually be one level stronger than resting elevation
+- selectable listing cards use this exact pattern: resting `shadow-sm`, hover `shadow-md` plus a light border emphasis and slight `-translate-y-0.5`
 
 ## Gradients
 

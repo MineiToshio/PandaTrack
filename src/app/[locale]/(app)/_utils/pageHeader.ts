@@ -2,14 +2,14 @@ import { ROUTES } from "@/lib/constants";
 import { getActiveNavItem, type NavItemId } from "@/app/[locale]/(app)/_components/AppLayout/navigationConfig";
 
 /** Path segments that identify the primary nav area (no locale). */
-const PRIMARY_SEGMENTS: NavItemId[] = ["dashboard", "stores", "purchases", "shipments", "settings"];
+const PRIMARY_SEGMENTS: NavItemId[] = ["dashboard", "stores", "orders", "shipments", "settings"];
 
 /**
  * Known nested path segments under each primary area. Maps segment string to i18n label key.
- * Used to build breadcrumbs and page title for nested routes (e.g. Purchases > Pre-orders).
+ * Used to build breadcrumbs and page title for nested routes (e.g. Orders > Pre-orders).
  */
 const NESTED_SEGMENT_LABELS: Partial<Record<NavItemId, Record<string, string>>> = {
-  purchases: {
+  orders: {
     "pre-orders": "nav.preOrders",
   },
   stores: {
@@ -31,7 +31,7 @@ export interface PageHeader {
 }
 
 /**
- * Returns path segments after the locale (e.g. ["dashboard"] or ["purchases", "pre-orders"]).
+ * Returns path segments after the locale (e.g. ["dashboard"] or ["orders", "pre-orders"]).
  * Assumes pathname starts with / and locale is the first segment.
  */
 export function getPrivateAppPathSegments(pathname: string): string[] {
@@ -88,7 +88,7 @@ function getNavLabelKeyForSegment(segment: NavItemId): string {
   const map: Record<NavItemId, string> = {
     dashboard: "nav.dashboard",
     stores: "nav.stores",
-    purchases: "nav.purchases",
+    orders: "nav.purchases",
     shipments: "nav.shipments",
     settings: "nav.settings",
   };

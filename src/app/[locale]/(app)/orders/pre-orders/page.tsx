@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: PreOrdersPageProps): Promise<
   return buildPageMetadata({
     locale,
     namespace: "appLayout",
-    pathSegment: "purchases/pre-orders",
+    pathSegment: "orders/pre-orders",
     titleKey: "nav.preOrders",
     descriptionKey: "meta.description",
   });

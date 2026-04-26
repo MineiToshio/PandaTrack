@@ -6,7 +6,7 @@ import SetHeaderTitle from "../SetHeaderTitle";
 
 const translationMap: Record<string, string> = {
   "nav.dashboard": "Dashboard",
-  "nav.purchases": "Purchases",
+  "nav.purchases": "Orders",
   "nav.preOrders": "Pre-orders",
   "drawer.openMenu": "Open menu",
   "accessibility.breadcrumbNavigation": "Breadcrumb",
@@ -20,7 +20,7 @@ vi.mock("next-intl", () => ({
 vi.mock("@/app/[locale]/(app)/_utils/pageHeader", () => ({
   getPageHeader: () => ({
     titleKey: "nav.preOrders",
-    breadcrumbs: [{ href: "/en/purchases", labelKey: "nav.purchases" }],
+    breadcrumbs: [{ href: "/en/orders", labelKey: "nav.purchases" }],
   }),
 }));
 
@@ -41,7 +41,7 @@ describe("ContentHeader", () => {
     render(
       <ContentHeader
         locale="en"
-        pathname="/en/purchases/pre-orders"
+        pathname="/en/orders/pre-orders"
         drawerOpen={false}
         onOpenDrawer={vi.fn()}
         burgerButtonRef={{ current: null }}
@@ -64,7 +64,7 @@ describe("ContentHeader", () => {
       posthogProps?: { route?: string };
     };
     expect(themeToggleProps.posthogEvent).toBe("app_shell_theme_changed");
-    expect(themeToggleProps.posthogProps?.route).toBe("/en/purchases/pre-orders");
+    expect(themeToggleProps.posthogProps?.route).toBe("/en/orders/pre-orders");
   });
 
   it("prefers the dynamic header title when a route overrides it", () => {
@@ -73,7 +73,7 @@ describe("ContentHeader", () => {
         <SetHeaderTitle title="ORD-20260423-1" />
         <ContentHeader
           locale="en"
-          pathname="/en/purchases/some-order-id"
+          pathname="/en/orders/some-order-id"
           drawerOpen={false}
           onOpenDrawer={vi.fn()}
           burgerButtonRef={{ current: null }}

@@ -55,7 +55,7 @@ export default function OrderCard({ order, locale, today, returnTo }: OrderCardP
     to: (vars) => t("card.deliveryTo", vars),
   });
 
-  const detailHref = `/${locale}${ROUTES.purchases}/${order.id}?returnTo=${encodeURIComponent(returnTo)}`;
+  const detailHref = `/${locale}${ROUTES.orders}/${order.id}?returnTo=${encodeURIComponent(returnTo)}`;
 
   const toggleExpanded = () => {
     const next = !isExpanded;

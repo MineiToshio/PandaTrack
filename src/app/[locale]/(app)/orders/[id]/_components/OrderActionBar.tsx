@@ -166,7 +166,7 @@ export default function OrderActionBar({
                   variant="secondary"
                   size="md"
                   onClick={() => {
-                    router.push(`/${locale}${ROUTES.purchases}/${orderId}/edit`);
+                    router.push(`/${locale}${ROUTES.orders}/${orderId}/edit`);
                   }}
                   className="min-h-11 flex-1 justify-center gap-1.5 rounded-r-none border-r-0 shadow-md hover:shadow-lg lg:w-auto lg:flex-initial"
                 >

@@ -167,7 +167,7 @@ Rules:
 - desktop trigger should read as a clean row, not a filled pill: keep the avatar unframed by default and let hover supply the surface feedback
 - desktop floating panel may be slightly wider than the trigger row when needed so legal links fit cleanly
 - place `Privacy Policy` and `Terms and Conditions` side by side in a compact footer row, using smaller text and a subtle separator dot
-- identity strip at the top of the menu panel should use `TINTED_SURFACE_GRADIENT_STOPS` from `src/lib/styles.ts` with `bg-linear-to-br` (same trio as `AppPageHero` and store detail hero)
+- identity strip at the top of the menu panel should use `TINTED_SURFACE_GRADIENT_STOPS` from `src/lib/styles.ts` with `bg-linear-to-br` so it stays aligned with the shared hero family
 - when the account menu is open, the trigger should remain visibly active with a stronger filled state than hover
 - keep the avatar anchor visually stable between collapsed-rail and expanded-sidebar states so expansion does not make the identity affordance appear to jump
 
@@ -198,7 +198,7 @@ Rules:
 
 ### Standard in-page section title (mandatory)
 
-Every **visible section title** under the screen’s primary title (the `h1` inside `AppPageHero`, the store profile hero, or equivalent) must use **`SectionTitleWithAccent`** from `src/components/modules/SectionTitleWithAccent.tsx`. It is the only approved row: vertical gradient accent bar plus title. Do **not** use a bare `Heading` for that row, and do **not** reimplement the bar with ad hoc markup.
+Every **visible section title** under the screen’s primary title (the `h1` inside `AppPageHero`, a rich profile hero, or equivalent) must use **`SectionTitleWithAccent`** from `src/components/modules/SectionTitleWithAccent.tsx`. It is the only approved row: vertical gradient accent bar plus title. Do **not** use a bare `Heading` for that row, and do **not** reimplement the bar with ad hoc markup.
 
 Rules:
 
@@ -214,24 +214,76 @@ Rules:
 
 All authenticated `(app)` routes share one **outer** content width and horizontal padding via `APP_SHELL_MAIN_CLASSNAME` on `<main>` in `AppLayout` (see `visual-foundations.md` layout containers). Listings, detail pages, and settings use the full width of that column. **Do not** add per-route `mx-auto max-w-4xl` / `max-w-6xl` wrappers that fight the shell.
 
-For **long forms and reading-heavy stacks** (store create, store edit, the main settings stack), wrap the relevant block in `APP_SHELL_FORM_RAIL_CLASSNAME` so fields stay at a comfortable measure while the page chrome still aligns with other routes.
+For **long forms and reading-heavy stacks**, wrap the relevant block in `APP_SHELL_FORM_RAIL_CLASSNAME` so fields stay at a comfortable measure while the page chrome still aligns with other routes.
+
+### Collector listing page recipe
+
+Use this recipe for collector listing pages:
+
+1. `AppPageHero` for context, title, and primary screen CTA
+2. compact summary row with total count and range currently shown
+3. filter entry point on the right, grouped with the create action
+4. optional active-filter shell directly above the results
+5. one vertical stack of repeated listing cards
+6. pagination at the bottom
+
+Rules:
+
+- keep the main stack at `space-y-6` inside `APP_SHELL_FORM_RAIL_CLASSNAME`; these screens intentionally read as a narrower task column rather than a full-bleed dashboard
+- the summary line belongs outside the filter shell, aligned with the action row, so users can scan count + actions before they decide to refine
+- active filters, when present, live in their own `COLLECTOR_CARD_SURFACE_CLASSNAME` shell above the results instead of inside every card or under the hero
+- result cards should remain a single-column vertical list with consistent `space-y-4`, not a masonry or dashboard grid
+
+#### Collector listing card anatomy
+
+Listing cards can vary by domain, but they should share this structure:
+
+1. full-card click target using an absolutely positioned `Link`
+2. content above the overlay with `pointer-events-none`
+3. top row: title on the left, status or trust indicators on the right
+4. middle row: dense metadata or grouped content
+5. bottom row: chips, progress, or expandable secondary detail
+6. optional local action restored with `pointer-events-auto` above the overlay
+
+Rules:
+
+- the card title is always `Heading size="xs"` and stays visually dominant over every badge or chip in the card
+- use hover as reinforcement only: border emphasis, slightly stronger shadow, and minimal lift
+- metadata density is created with typography, chip rhythm, and dividers before adding extra nested containers
+- when a card includes progressive disclosure, keep it inside the same surface with a top divider rather than opening a nested card
+
+#### Listing filter entry patterns
+
+Use one of these filter entry patterns depending on density:
+
+- button-triggered overlay panel plus active-filter shell in-page
+- right drawer for deeper refinement plus active-filter shell in-page
+
+Shared rules across both:
+
+- the trigger is a secondary button aligned with the create CTA
+- the active-filter shell reuses `COLLECTOR_CARD_SURFACE_CLASSNAME`
+- selected filter chips use filled `primary` treatment and expose a one-click remove affordance
+- filter controls keep comfortable height (`min-h-11`) and rounded-xl geometry
+- use a drawer or overlay when filters are multi-field and should not permanently consume vertical space in the list
 
 ### Private-app hero header (collector shell)
 
-Use **`AppPageHero`** (`src/components/modules/AppPageHero.tsx`) for every authenticated route that introduces a screen with a primary title, including:
+Use **`AppPageHero`** (`src/components/modules/AppPageHero.tsx`) for authenticated routes that introduce a screen with a primary title, especially:
 
-- first-level areas still on placeholder copy (`/dashboard`, `/purchases`, `/purchases/pre-orders`, `/shipments`) via `AppPlaceholderPage`
-- `/settings`, `/stores` listing, `/stores/new`, `/stores/[slug]/edit`
-- `/purchases/[id]` (order detail)
+- first-level areas that need a standard intro block
+- listing pages with one main CTA
+- create and edit flows
+- detail views that keep a compact hero and action cluster
 
-**Exception:** `/stores/[slug]` (store profile) uses a **rich profile hero** (logo, KPI row, actions) instead of `AppPageHero`, but it must reuse the same **outer hero chrome** as `AppPageHero`: `rounded-2xl`, `border-border/70`, `border`, `bg-linear-to-br`, `TINTED_SURFACE_GRADIENT_STOPS`, `shadow-sm`, and the same **`Heading` `h1` scale** (`size="sm"`) for the store name so it still feels like the same family.
+**Exception:** entity profile pages that need a **rich profile hero** (logo or avatar, KPI row, actions) may use a custom hero instead of `AppPageHero`, but they must reuse the same **outer hero chrome** as `AppPageHero`: `rounded-2xl`, `border-border/70`, `border`, `bg-linear-to-br`, `TINTED_SURFACE_GRADIENT_STOPS`, `shadow-sm`, and the same **`Heading` `h1` scale** (`size="sm"`) so they still feel like the same family.
 
 Structure of `AppPageHero`:
 
 1. optional eyebrow pill (`text-xs`, `Sparkles`, primary-tinted chip)
 2. page title: `Heading` as `h1` with `size="sm"` and `text-text-title`
 3. one short supporting line: `Typography size="sm"` with `text-text-muted`; when a page has metadata chips (date, status, FX rate), render them as `STORE_HERO_META_PILL_CLASSNAME` spans inside this slot
-4. gradient border card wrapper: `rounded-2xl border bg-linear-to-br` plus `TINTED_SURFACE_GRADIENT_STOPS` from `src/lib/styles.ts` (aligned with store profile hero surfaces and landing section washes)
+4. gradient border card wrapper: `rounded-2xl border bg-linear-to-br` plus `TINTED_SURFACE_GRADIENT_STOPS` from `src/lib/styles.ts` (aligned with the shared rich-hero family and landing section washes)
 5. optional `aside` prop on `AppPageHero` for **primary page actions** (edit, create, destructive-action dropdown); this is the top-right slot, always used for actionable controls, never for status badges
 
 #### `aside` vs. `description` slot rule
@@ -249,15 +301,15 @@ On mobile the `aside` wraps below the title thanks to `flex-wrap` on the hero. W
 
 Rules:
 
-- the **document `h1`** for these screens lives in `AppPageHero` (or the store profile hero). The sticky shell bar title in `ContentHeader` is a **presentational** line (`p` with heading-like classes), not a second heading, so the outline stays one primary title per view
+- the **document `h1`** for these screens lives in `AppPageHero` (or the rich profile hero variant). The sticky shell bar title in `ContentHeader` is a **presentational** line (`p` with heading-like classes), not a second heading, so the outline stays one primary title per view
 - detail-route eyebrow pills are optional, not mandatory. Omit them when the breadcrumb plus `h1` already provide enough context and the pill would only repeat "Detail"
 - when the flow needs parent navigation (create/edit store), place `BackNavLink` (`appearance="pill"`) in a `space-y-3` stack **above** `AppPageHero`
 - keep `h1` typography aligned across routes that share this pattern
-- major sections below the hero use **`SectionTitleWithAccent`** (`as="h2"`), not a standalone `Heading` (see **Standard in-page section title**)
+- major sections below the hero use **`SectionTitleWithAccent`** (`as="h2"`), not a standalone `Heading`, unless the page is intentionally using icon-led panel headers as its primary section language (see **Standard in-page section title** and detail panel patterns below)
 
 #### Detail hero action cluster
 
-Collector detail screens with top-level actions (for example order detail and store detail) use one shared responsive pattern:
+Collector detail screens with top-level actions use one shared responsive pattern:
 
 - desktop: render the action cluster inline on the right edge of the hero, using labeled buttons with icons and soft elevation
 - mobile: stack the same actions below the descriptive content, full width, in the same order as desktop
@@ -265,21 +317,50 @@ Collector detail screens with top-level actions (for example order detail and st
 - preserve each screen's action hierarchy: primary action stays primary, supporting actions stay secondary, and destructive actions remain inside `More` when that workflow already exists
 - use matching height, spacing, and shadow treatment across sibling detail screens so the collector shell reads as one system even when the exact actions differ
 
-#### Store profile detail sections
+#### Collector detail page family
 
-Store profile detail sections under `/stores/[slug]` use the same surface chrome as order detail panels: compact icon-led header when the section has a natural title, horizontal separators where needed, and one structured body area.
+Collector detail pages should generally choose one of these two complementary layouts:
+
+- split layout with a primary reading column and a sticky secondary rail
+- single main reading flow with compact summary surfaces and a responsive mid-page grid
+
+Use these patterns intentionally rather than mixing them.
+
+#### Split detail layout with sticky secondary rail
+
+Recommended structure:
+
+1. `BackNavLink`
+2. `AppPageHero` with entity identity, status, metadata, and top-level actions
+3. desktop two-column layout: left content column + sticky right rail
+4. mobile sequence that preserves the same priority order as desktop
 
 Rules:
 
+- the left column owns the long reading content
+- the right rail owns volatile or summary-heavy content
+- keep the right rail sticky only on large screens; on mobile it dissolves into the natural vertical order
+- section panels reuse `SectionSurfaceCard` with icon-led headers instead of accent-title rows
+- use inline row dividers and subtle hover fills for repeated records inside a section instead of nesting each row in another card
+- when a panel mixes summary and action, keep the action in `headerEnd` so the title row remains the scannable anchor
+
+#### Single-flow profile or entity detail sections
+
+Use the same surface chrome as other detail panels: compact icon-led header when the section has a natural title, horizontal separators where needed, and one structured body area.
+
+Rules:
+
+- keep the page in a single reading flow after the hero: status callout, compact summary, responsive paired sections, then full-width review and note sections
 - use `SectionSurfaceCard` for contact channels, addresses, reviews, and private note
 - when a combined store-detail panel has no natural umbrella title (for example product types + import countries, or the top block of profile facts), use the same surface styling as `SectionSurfaceCard` but omit the synthetic grouped heading
 - when two small related groups belong together (for example product types and import countries, or sales channels and shopping options), prefer sibling `SectionSurfaceCard` panels when each group can stand on its own clearly
 - product types and import countries can share a responsive two-column row on desktop when content is typically compact; stack them naturally on smaller screens
-- prefer a single main reading column for store detail when the top area starts to feel fragmented; avoid a competing metadata sidebar for low-priority facts
+- prefer a single main reading column when the top area starts to feel fragmented; avoid a competing metadata sidebar for low-priority facts
 - show sales channels and shopping options in one compact summary surface directly under the hero, without an extra section title, using small labels plus chips instead of full secondary panel headers
-- use Lucide icons in section headers and nested subsection titles instead of `SectionTitleWithAccent`, matching order detail's icon-led panel language
+- use inset cards for contact methods and addresses when each record needs its own affordance or structured three-line block, but keep them visually quieter than the outer section
+- use Lucide icons in section headers and nested subsection titles instead of `SectionTitleWithAccent` when the page's main section language is icon-led panels
 
-### Collector settings route (`/settings`)
+### Settings-style structured sections
 
 - page title block: `AppPageHero` with the same `h1` scale and supporting line as other collector routes (`visual-foundations.md` heading scale).
 - major section titles (Profile, Account, Preferences): `SectionTitleWithAccent` as `h2` (see **Standard in-page section title**).
@@ -525,9 +606,9 @@ Rules:
 - prefer `rounded-lg`, `rounded-xl`, or `rounded-2xl` depending on size and prominence
 - count indicators inside tags should feel integrated, not like detached circular bubbles
 
-**Store listing and store profile (public):** reuse `src/app/[locale]/(app)/stores/_components/share/storePublicChipClassnames.ts` for product-type, import-country, presence, and business-signal chips. **Store listing cards** use `STORE_LISTING_CARD_META_CHIP_CLASSNAME` for country and store type in the bottom row (`rounded-lg`, same rhythm as business-signal chips). **Store profile hero** keeps `STORE_HERO_META_PILL_CLASSNAME` (`rounded-full`, soft `bg-background/80`) for country and store type unchanged.
+**Public catalog and profile chips:** reuse `src/app/[locale]/(app)/stores/_components/share/storePublicChipClassnames.ts` for product-type, import-country, presence, and business-signal chips. Listing-card metadata uses `STORE_LISTING_CARD_META_CHIP_CLASSNAME` for compact bottom-row facts (`rounded-lg`, same rhythm as business-signal chips). Rich profile heroes keep `STORE_HERO_META_PILL_CLASSNAME` (`rounded-full`, soft `bg-background/80`) for neutral metadata pills.
 
-**Collector listing cards and active-filter shells:** in `/stores` and `/purchases`, reuse `COLLECTOR_CARD_SURFACE_CLASSNAME` from `src/lib/styles.ts` so listing cards, active-filter containers, and detail panels share the same base surface (`bg-surface-2`, `border-border`, `rounded-2xl`, `shadow-sm`). Add spacing or hover behavior on top of that token set instead of redefining the surface ad hoc.
+**Collector listing cards and active-filter shells:** reuse `COLLECTOR_CARD_SURFACE_CLASSNAME` from `src/lib/styles.ts` so listing cards, active-filter containers, and detail panels share the same base surface (`bg-surface-2`, `border-border`, `rounded-2xl`, `shadow-sm`). Add spacing or hover behavior on top of that token set instead of redefining the surface ad hoc.
 
 ## Responsive Rules
 

@@ -15,7 +15,7 @@ implementation_status: IMPLEMENTED
 
 ## Summary
 
-Build the order detail experience at `/purchases/[id]`: a status-aware header with action hierarchy, items list, **read-only** automatic history, inline-editable private note, and a payments panel that reuses the payment server mutations from [FRD-05 · BP-01 · WO-03](../../bp-01-order-domain-foundation/work-orders/wo-03-order-payments-balances-and-payment-mutation-rules.md). **As implemented (April 2026):** payments and note changes use optimistic or immediate local UI updates where applicable; order history records **lifecycle events only** (`ORDER_CREATED`, `ORDER_CANCELLED`, `ORDER_REACTIVATED`, and `STATUS_CHANGED` reserved for delivery-driven updates). Note and payment activity **do not** append history rows (see migration `20260423000000_simplify_order_history_event_types`). The history panel is **read-only** (no per-entry delete in UI or `deleteOrderHistoryEntry` in `orderMutations.ts`). On desktop, history sits in the **right column** under the payments block, in a `SectionSurfaceCard` to match the payments list styling. Cancel and reactivate refresh the page after a successful Server Action instead of reconciling a full detail payload on the client. Opening the add-payment form scrolls the form into view (`scrollIntoView` + `scroll-mt-24`) so long payment lists do not hide the form.
+Build the order detail experience at `/orders/[id]`: a status-aware header with action hierarchy, items list, **read-only** automatic history, inline-editable private note, and a payments panel that reuses the payment server mutations from [FRD-05 · BP-01 · WO-03](../../bp-01-order-domain-foundation/work-orders/wo-03-order-payments-balances-and-payment-mutation-rules.md). **As implemented (April 2026):** payments and note changes use optimistic or immediate local UI updates where applicable; order history records **lifecycle events only** (`ORDER_CREATED`, `ORDER_CANCELLED`, `ORDER_REACTIVATED`, and `STATUS_CHANGED` reserved for delivery-driven updates). Note and payment activity **do not** append history rows (see migration `20260423000000_simplify_order_history_event_types`). The history panel is **read-only** (no per-entry delete in UI or `deleteOrderHistoryEntry` in `orderMutations.ts`). On desktop, history sits in the **right column** under the payments block, in a `SectionSurfaceCard` to match the payments list styling. Cancel and reactivate refresh the page after a successful Server Action instead of reconciling a full detail payload on the client. Opening the add-payment form scrolls the form into view (`scrollIntoView` + `scroll-mt-24`) so long payment lists do not hide the form.
 
 ## Prerequisites
 
@@ -24,13 +24,13 @@ This work order depends on the following slices being fully implemented before i
 - **FRD-05 · BP-01 · [WO-01](../../bp-01-order-domain-foundation/work-orders/wo-01-currency-catalog-order-identifiers-and-persistence-contracts.md)** — Prisma schema for `Order`, `OrderPayment`, `OrderHistory`, `OrderStatus`, `OrderHistoryEventType`, the shared delete/cancel eligibility rule, and the module layout under `src/lib/data/orders/`.
 - **FRD-05 · BP-01 · [WO-02](../../bp-01-order-domain-foundation/work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md)** — `OrderItem` schema, `deriveOrderStatus`, `hasUnpaidBalance`, item deletion rules.
 - **FRD-05 · BP-01 · [WO-03](../../bp-01-order-domain-foundation/work-orders/wo-03-order-payments-balances-and-payment-mutation-rules.md)** — `addPayment` and `deletePayment` Server Actions, `calculatePaymentSummary`, detail-query extension for payments.
-- **FRD-05 · BP-02 · [WO-04](./wo-04-order-create-and-edit-form-with-spreadsheet-style-item-entry.md)** — create and edit routes (`/purchases/new`, `/purchases/[id]/edit`) so the detail view's `Edit` action has a target and the post-save redirect from WO-04 lands on this detail page.
+- **FRD-05 · BP-02 · [WO-04](./wo-04-order-create-and-edit-form-with-spreadsheet-style-item-entry.md)** — create and edit routes (`/orders/new`, `/orders/[id]/edit`) so the detail view's `Edit` action has a target and the post-save redirect from WO-04 lands on this detail page.
 
 WO-05 extends `orderMutations.ts` with `reactivateOrder` and `saveOrderNote`, and extends `getOrderDetail` with `eligibility` / `flags`. A follow-up migration **`20260423000000_simplify_order_history_event_types`** narrows `OrderHistoryEventType` to lifecycle (+ `STATUS_CHANGED`) and removes `NOTE_UPDATED`, `PAYMENT_ADDED`, `PAYMENT_DELETED`, and `ORDER_EDITED`; existing rows using removed types are deleted in that migration. **2026-04-24 update:** per-entry history delete (`deleteOrderHistoryEntry` and `orderHistoryActions.ts`) was removed; history is display-only in the app.
 
 ## In Scope
 
-- Detail route `purchases/[id]` with server-rendered initial state
+- Detail route `orders/[id]` with server-rendered initial state
 - Status-aware action bar: primary, secondary, and `More`/chevron menus per status
 - `Create delivery` primary action disabled with tooltip until FRD-08 ships
 - Inline-editable private note (reuses visual treatment of `StoreNoteForm`; wired to `Order.note`; no `OrderHistory` row on save)
@@ -75,7 +75,7 @@ WO-05 extends `orderMutations.ts` with `reactivateOrder` and `saveOrderNote`, an
 
 | Route                      | File                                             | Purpose                                                                                                  |
 | -------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| `/[locale]/purchases/[id]` | `src/app/[locale]/(app)/purchases/[id]/page.tsx` | Server-rendered detail page; resolves the session `userId` and fetches `getOrderDetail(orderId, userId)` |
+| `/[locale]/orders/[id]` | `src/app/[locale]/(app)/orders/[id]/page.tsx` | Server-rendered detail page; resolves the session `userId` and fetches `getOrderDetail(orderId, userId)` |
 
 If the order does not exist or does not belong to the session user, the page calls `notFound()` so Next.js renders the locale 404.
 
@@ -113,7 +113,7 @@ Delivery links to cancelled deliveries do not block the operation (WO-02 already
 Placement must be validated against `.cursor/rules/project-structure.mdc` and `.cursor/rules/react-next-components.mdc` at implementation time. The intended layout:
 
 ```
-src/app/[locale]/(app)/purchases/[id]/
+src/app/[locale]/(app)/orders/[id]/
   page.tsx
   _components/
     OrderDetailContent.tsx         Server — orchestrator, 2-col layout
@@ -154,7 +154,7 @@ Single-column flow: after the full-width header, the grid becomes one column. Or
 
 ### Header
 
-Uses `BackNavLink` (`appearance="pill"`) linking back to `/purchases`, followed by `AppPageHero`:
+Uses `BackNavLink` (`appearance="pill"`) linking back to `/orders`, followed by `AppPageHero`:
 
 - Title line: store name as primary emphasis, `humanReadableId` as secondary metadata.
 - Meta row: order date, expected delivery range, currency/FX badge when `exchangeRate` is present.
@@ -169,7 +169,7 @@ The action bar is a Client Component. It reads `status`, `eligibility`, and `fla
 
 | Status                                                              | Primary                                              | Secondary                       | More / chevron                                               |
 | ------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------- | ------------------------------------------------------------ |
-| `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED` | `Create delivery` (disabled, tooltip "Próximamente") | `Edit` → `/purchases/[id]/edit` | `Cancel` · `Delete`                                          |
+| `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED` | `Create delivery` (disabled, tooltip "Próximamente") | `Edit` → `/orders/[id]/edit` | `Cancel` · `Delete`                                          |
 | `COMPLETED`                                                         | `Create delivery` (disabled, tooltip "Próximamente") | `Edit` hidden                   | `Cancel` · `Delete` (both disabled with eligibility tooltip) |
 | `CANCELLED`                                                         | `Reactivate`                                         | —                               | `Delete` (enabled/disabled per eligibility)                  |
 
@@ -246,16 +246,16 @@ All three flows use `OrderDangerousActionModal`. The modal is a Client Component
 ### Cancel
 
 - Triggered from the `More` menu when `status !== "CANCELLED"` and `eligibility.canCancel === true` (and not blocked by `COMPLETED` UI rules — see action bar).
-- Modal title: "¿Cancelar esta orden?" / "Cancel this order?".
+- Modal title: "¿Cancelar este pedido?" / "Cancel this order?".
 - Body names the `humanReadableId` and store; if `flags.hasPayments`, it adds the payment-removal line (i18n `detail.cancelModal.descriptionPayments`).
 - On confirm, `cancelOrderAction` → `cancelOrder` re-validates live delivery links, deletes payments, sets status to `CANCELLED`, appends `ORDER_CANCELLED`, returns `{ ok: true }`. The UI then **`window.location.reload()`** to refresh server-rendered state (no client-side reconciled detail payload).
 
 ### Delete
 
 - Triggered from the `More` menu when `status !== "CANCELLED"` and `eligibility.canDelete === true`, or from the `CANCELLED` chevron menu.
-- Modal title: "¿Eliminar esta orden?" / "Delete this order?".
+- Modal title: "¿Eliminar este pedido?" / "Delete this order?".
 - Body names the `humanReadableId` and store; if `flags.hasPayments`, adds the payment-removal line.
-- On confirm, `deleteOrderAction` → `deleteOrder` re-validates and deletes payments, delivery links, history, items, and order. On success, **`redirect` to `/[locale]/purchases`** (success toast behavior depends on global redirect UX). On failure, the modal shows an error. When `eligibility.canDelete === false` or `COMPLETED`, menu items stay visible but disabled with tooltips.
+- On confirm, `deleteOrderAction` → `deleteOrder` re-validates and deletes payments, delivery links, history, items, and order. On success, **`redirect` to `/[locale]/orders`** (success toast behavior depends on global redirect UX). On failure, the modal shows an error. When `eligibility.canDelete === false` or `COMPLETED`, menu items stay visible but disabled with tooltips.
 
 ### Reactivate
 
@@ -267,10 +267,10 @@ All three flows use `OrderDangerousActionModal`. The modal is a Client Component
 
 | Situation                                                       | ES                                                                                                     | EN                                                                                            |
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| Cancel blocked (items linked to delivery)                       | "Esta orden tiene items asociados a una entrega. Desasócialos desde la entrega para poder cancelarla." | "This order has items linked to a delivery. Unlink them from the delivery before cancelling." |
-| Delete blocked (items linked to delivery)                       | "No se puede eliminar esta orden porque tiene items asociados a una entrega. Desasócialos primero."    | "This order can't be deleted because it has items linked to a delivery. Unlink them first."   |
+| Cancel blocked (items linked to delivery)                       | "Este pedido tiene items asociados a una entrega. Desasócialos desde la entrega para poder cancelarlo." | "This order has items linked to a delivery. Unlink them from the delivery before cancelling." |
+| Delete blocked (items linked to delivery)                       | "No se puede eliminar este pedido porque tiene items asociados a una entrega. Desasócialos primero."    | "This order can't be deleted because it has items linked to a delivery. Unlink them first."   |
 | Item-level remove blocked (in edit mode; referenced from WO-02) | "Este item está asociado a una entrega. Desasócialo desde la entrega para poder eliminarlo."           | "This item is linked to a delivery. Unlink it from the delivery before deleting it."          |
-| `Create delivery` (until FRD-08)                                | "Próximamente: podrás crear entregas para esta orden."                                                 | "Coming soon: you'll be able to create deliveries for this order."                            |
+| `Create delivery` (until FRD-08)                                | "Próximamente: podrás crear entregas para este pedido."                                                 | "Coming soon: you'll be able to create deliveries for this order."                            |
 
 All copy lives in `src/i18n/locales/{locale}/orders.json` under the namespace `orders.detail.*`.
 
@@ -279,7 +279,7 @@ All copy lives in `src/i18n/locales/{locale}/orders.json` under the namespace `o
 - **Note empty**: the card is visible with an empty textarea. Placeholder: "Añade recordatorios, detalles del vendedor, tracking intermedio… (solo tú los ves)" / "Add reminders, seller notes, partial tracking… (only you see this)". The `Save` button stays disabled until the user types.
 - **Payments empty**: `Banknote` icon, title "Aún no registras pagos" / "No payments yet", helper "Cuando pagues en cuotas, regístralo aquí para ver cuánto te falta." / "When you pay in instalments, record it here to see what's left.", CTA `+ Registrar pago`. CTA hidden if `summary.remainingAmount === 0`.
 - **History empty**: the section is hidden (defensive — always at least one `ORDER_CREATED` entry).
-- **Items empty**: defensive banner `warning` "Esta orden no tiene items. Edítala para agregar productos." / "This order has no items. Edit it to add products." with a link to `/purchases/[id]/edit`. WO-04 prevents this state in practice.
+- **Items empty**: defensive banner `warning` "Este pedido no tiene items. Edítalo para agregar productos." / "This order has no items. Edit it to add products." with a link to `/orders/[id]/edit`. WO-04 prevents this state in practice.
 
 ## Optimistic Updates
 
@@ -384,12 +384,12 @@ Server-side trim comparison lives in `saveOrderNote` (`orderMutations.ts`). Opti
 ### Action bar
 
 - `Create delivery` is rendered for every non-cancelled status but stays disabled until FRD-08 ships; hovering it shows the "Próximamente" tooltip.
-- `Edit` navigates to `/purchases/[id]/edit` for `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, and `PARTIALLY_DELIVERED`.
+- `Edit` navigates to `/orders/[id]/edit` for `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, and `PARTIALLY_DELIVERED`.
 - `Edit` is hidden when `status === "COMPLETED"` and when `status === "CANCELLED"`.
 - `Cancel` and `Delete` render disabled with the unlink-first tooltip when any item is linked to a non-cancelled delivery.
 - `Cancel` and `Delete` render disabled with the same tooltip when `status === "COMPLETED"`.
 - Confirming a `Cancel` on an eligible order runs the server mutation then **full page reload**; the user sees `CANCELLED`, empty payments, and updated history after reload.
-- Confirming a `Delete` on an eligible order redirects to `/purchases`.
+- Confirming a `Delete` on an eligible order redirects to `/orders`.
 - `Reactivate` on a `CANCELLED` order runs the server mutation (status `OPEN` + `ORDER_REACTIVATED` history) then **full page reload**.
 
 ### `COMPLETED` with unpaid balance
@@ -404,5 +404,5 @@ Server-side trim comparison lives in `saveOrderNote` (`orderMutations.ts`). Opti
 
 ### Authorization
 
-- Navigating to `/purchases/[id]` with an id that does not exist renders the Next.js 404 page.
+- Navigating to `/orders/[id]` with an id that does not exist renders the Next.js 404 page.
 - Navigating with an id that belongs to another user renders the Next.js 404 page (no distinguishing signal).

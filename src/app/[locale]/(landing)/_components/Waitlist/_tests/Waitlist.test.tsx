@@ -11,7 +11,7 @@ const { useActionStateMock } = vi.hoisted(() => ({
 
 const translationMap = {
   title: "Join the waitlist",
-  subtitle: "Track your collectibles from purchase to delivery.",
+  subtitle: "Track your collectibles from order to delivery.",
   cta: "Join now",
   error: "Something went wrong. Please try again.",
   "fields.email": "Email",

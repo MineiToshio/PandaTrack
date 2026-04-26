@@ -10,7 +10,7 @@
     "backToList": "Orders",
     "heroEyebrow": "New order",
     "title": "New order",
-    "heroDescription": "Record a new purchase with its items, currency, and total.",
+    "heroDescription": "Record a new order with its items, currency, and total.",
     "submit": "Create order",
     "submitting": "Saving...",
     "successToast": "Order created"
@@ -173,7 +173,7 @@
     },
     "note": {
       "sectionTitle": "Private note",
-      "description": "Use this note to keep details you want to remember about this order: agreements with the store, important dates, special instructions, something that happened during the purchase, or context you can return to later.",
+      "description": "Use this note to keep details you want to remember about this order: agreements with the store, important dates, special instructions, something that happened during the order, or context you can return to later.",
       "placeholder": "Write a note or reminder for this order…",
       "lastUpdated": "Last updated: {date}",
       "save": "Save note",

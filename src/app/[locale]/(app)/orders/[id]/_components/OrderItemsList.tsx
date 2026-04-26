@@ -52,7 +52,7 @@ export default async function OrderItemsList({ orderId, items, currencyCode, loc
             <Package className="mt-0.5 size-4 shrink-0" aria-hidden />
             <span>
               {t("detail.items.emptyWarning")}{" "}
-              <a href={`/${locale}${ROUTES.purchases}/${orderId}/edit`} className="underline underline-offset-2">
+              <a href={`/${locale}${ROUTES.orders}/${orderId}/edit`} className="underline underline-offset-2">
                 {t("detail.items.emptyWarningCta")}
               </a>
             </span>

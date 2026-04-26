@@ -19,7 +19,7 @@ export default async function OrderListEmptyState({ locale, variant }: OrderList
   const titleKey = isNoOrders ? "empty.noOrders.title" : "empty.noResults.title";
   const descKey = isNoOrders ? "empty.noOrders.description" : "empty.noResults.description";
   const ctaKey = isNoOrders ? "empty.noOrders.cta" : "empty.noResults.cta";
-  const href = isNoOrders ? `/${locale}${ROUTES.purchasesNew}` : `/${locale}${ROUTES.purchases}`;
+  const href = isNoOrders ? `/${locale}${ROUTES.ordersNew}` : `/${locale}${ROUTES.orders}`;
   const ctaVariant = isNoOrders ? "primary" : "secondary";
 
   return (

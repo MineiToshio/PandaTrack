@@ -1,21 +1,21 @@
 {
   "meta": {
-    "title": "Órdenes",
-    "description": "Tu lista de compras: filtra, sigue pagos y entrega."
+    "title": "Pedidos",
+    "description": "Tu lista de pedidos: filtra, sigue pagos y entregas."
   },
   "hero": {
     "eyebrow": "Tu espacio de trabajo",
-    "title": "Órdenes",
-    "description": "Revisa tus compras, controla los pagos y haz seguimiento de las entregas en un solo lugar.",
-    "newOrder": "Nueva orden"
+    "title": "Pedidos",
+    "description": "Revisa tus pedidos, controla los pagos y haz seguimiento de las entregas en un solo lugar.",
+    "newOrder": "Nuevo pedido"
   },
   "summary": {
-    "showing": "{total, plural, one {# orden} other {# órdenes}} en total · mostrando {start}-{end}",
-    "summaryEmpty": "0 órdenes"
+    "showing": "{total, plural, one {# pedido} other {# pedidos}} en total · mostrando {start}-{end}",
+    "summaryEmpty": "0 pedidos"
   },
   "filters": {
     "openButton": "Filtros",
-    "dialogTitle": "Filtrar órdenes",
+    "dialogTitle": "Filtrar pedidos",
     "closeDialog": "Cerrar filtros",
     "apply": "Aplicar filtros",
     "reset": "Restablecer",
@@ -54,7 +54,7 @@
     "deliveryTo": "Hasta {to}",
     "overdue": "Atrasada",
     "unpaid": "Impago",
-    "itemsSectionTitle": "Artículos de la orden",
+    "itemsSectionTitle": "Artículos del pedido",
     "itemQuantity": "× {quantity}",
     "itemDelivery": {
       "open": "Pendiente",
@@ -64,18 +64,18 @@
   },
   "empty": {
     "noOrders": {
-      "title": "Todavía no tienes órdenes",
-      "description": "Registra tu primera compra y lleva el control de tus pedidos, pagos y entregas desde un solo lugar.",
-      "cta": "Nueva orden"
+      "title": "Todavía no tienes pedidos",
+      "description": "Registra tu primer pedido y lleva el control de tus pagos y entregas desde un solo lugar.",
+      "cta": "Nuevo pedido"
     },
     "noResults": {
-      "title": "No encontramos órdenes con esos filtros",
+      "title": "No encontramos pedidos con esos filtros",
       "description": "Prueba quitar algún filtro o restablecer la vista activa.",
       "cta": "Restablecer"
     }
   },
   "pagination": {
-    "navigationAriaLabel": "Paginación de órdenes",
+    "navigationAriaLabel": "Paginación de pedidos",
     "goToPageAriaLabel": "Ir a la página {page}",
     "previous": "Anterior",
     "next": "Siguiente"

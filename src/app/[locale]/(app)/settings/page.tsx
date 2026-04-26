@@ -63,7 +63,7 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
       <div className={cn(APP_SHELL_FORM_RAIL_CLASSNAME, "space-y-6")}>
         <div className="space-y-3">
           {returnToOrderCreate ? (
-            <BackNavLink href={`/${locale}${ROUTES.purchasesNew}`}>{t("returnToOrderCreate")}</BackNavLink>
+            <BackNavLink href={`/${locale}${ROUTES.ordersNew}`}>{t("returnToOrderCreate")}</BackNavLink>
           ) : null}
           <AppPageHero eyebrow={t("hero.eyebrow")} title={t("title")} description={t("intro")} />
         </div>

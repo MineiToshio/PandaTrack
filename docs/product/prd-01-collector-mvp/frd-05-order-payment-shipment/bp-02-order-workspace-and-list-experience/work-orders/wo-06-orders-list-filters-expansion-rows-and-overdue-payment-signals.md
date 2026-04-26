@@ -15,7 +15,7 @@ implementation_status: IN_PROGRESS
 
 ## Summary
 
-Build the orders workspace list at `/purchases`: a paginated, URL-backed list of order cards with a filter sidebar, removable filter chips, a default active-orders view, expandable cards that reveal associated items, an overdue-delivery warning signal, and a payment-progress summary per card. This slice replaces the current placeholder page and becomes the collector's primary entry point for reviewing and acting on their order history.
+Build the orders workspace list at `/orders`: a paginated, URL-backed list of order cards with a filter sidebar, removable filter chips, a default active-orders view, expandable cards that reveal associated items, an overdue-delivery warning signal, and a payment-progress summary per card. This slice replaces the current placeholder page and becomes the collector's primary entry point for reviewing and acting on their order history.
 
 ## Prerequisites
 
@@ -24,13 +24,13 @@ This work order depends on the following slices being fully implemented before i
 - **FRD-05 · BP-01 · [WO-01](../../bp-01-order-domain-foundation/work-orders/wo-01-currency-catalog-order-identifiers-and-persistence-contracts.md)** — Prisma schema for `Order`, `OrderStatus`, `OrderHistory`, and the module layout under `src/lib/data/orders/`.
 - **FRD-05 · BP-01 · [WO-02](../../bp-01-order-domain-foundation/work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md)** — `OrderItem` schema and `deliveryState` derivation per item.
 - **FRD-05 · BP-01 · [WO-03](../../bp-01-order-domain-foundation/work-orders/wo-03-order-payments-balances-and-payment-mutation-rules.md)** — `OrderPayment` schema and `calculatePaymentSummary` for the aggregated paid amount used in the card.
-- **FRD-05 · BP-02 · [WO-04](./wo-04-order-create-and-edit-form-with-spreadsheet-style-item-entry.md)** — Create route `/purchases/new` so the empty-state CTA has a target.
+- **FRD-05 · BP-02 · [WO-04](./wo-04-order-create-and-edit-form-with-spreadsheet-style-item-entry.md)** — Create route `/orders/new` so the empty-state CTA has a target.
 
 WO-06 does not introduce any Prisma migration. It adds `getOrdersList` to the existing `orderQueries.ts` module and a `parseOrderListingParams` utility parallel to the Stores listing pattern.
 
 ## In Scope
 
-- Paginated orders list route at `/purchases`, replacing the current placeholder
+- Paginated orders list route at `/orders`, replacing the current placeholder
 - Filter sidebar (drawer, same pattern as Stores) with date range, store, product type, status, and free-text product-name filters
 - URL-backed filter state: `?q`, `?productType`, `?status`, `?store`, `?dateFrom`, `?dateTo`, `?page`
 - Default active-orders filter when no URL params are present
@@ -75,7 +75,7 @@ WO-06 does not introduce any Prisma migration. It adds `getOrdersList` to the ex
 
 | Route                 | File                                        | Purpose                               |
 | --------------------- | ------------------------------------------- | ------------------------------------- |
-| `/[locale]/purchases` | `src/app/[locale]/(app)/purchases/page.tsx` | Server-rendered paginated orders list |
+| `/[locale]/orders` | `src/app/[locale]/(app)/orders/page.tsx` | Server-rendered paginated orders list |
 
 The existing `page.tsx` currently renders `AppPlaceholderPage` and is replaced entirely by this slice.
 
@@ -84,7 +84,7 @@ The existing `page.tsx` currently renders `AppPlaceholderPage` and is replaced e
 Placement must be validated against `.cursor/rules/project-structure.mdc` and `.cursor/rules/react-next-components.mdc` at implementation time.
 
 ```
-src/app/[locale]/(app)/purchases/
+src/app/[locale]/(app)/orders/
   page.tsx                        Server — resolves session userId, parses URL params,
                                             applies default filter, fetches paginated list
   _components/
@@ -103,7 +103,7 @@ src/app/[locale]/(app)/purchases/
 
 ## Default Filter Behavior
 
-When the collector navigates to `/purchases` with no `?status=` params — including first-time access and navigation from the sidebar or any app-internal link — the page applies the active-orders default:
+When the collector navigates to `/orders` with no `?status=` params — including first-time access and navigation from the sidebar or any app-internal link — the page applies the active-orders default:
 
 ```ts
 export const DEFAULT_ACTIVE_STATUSES: OrderStatus[] = [
@@ -116,16 +116,16 @@ export const DEFAULT_ACTIVE_STATUSES: OrderStatus[] = [
 
 `parseOrderListingParams` returns `statuses: DEFAULT_ACTIVE_STATUSES` when no `status` param is present, so the default applies transparently to the query without a server redirect. The URL is made canonical on the client via `router.replace` on mount when the resolved filter state differs from what the URL shows, so shared or bookmarked URLs always reflect the active filter.
 
-`Restablecer` navigates to `/purchases` with no params, which re-applies the default on the next render.
+`Restablecer` navigates to `/orders` with no params, which re-applies the default on the next render.
 
 ## UX Notes
 
 ### Page header
 
-`AppPageHero` with no `BackNavLink` (purchases is a root-level workspace):
+`AppPageHero` with no `BackNavLink` (orders is a root-level workspace):
 
 - Title (ES): "Órdenes" · (EN): "Orders"
-- Primary action: `Button` → `/purchases/new` · (ES): "Nueva orden" · (EN): "New order"
+- Primary action: `Button` → `/orders/new` · (ES): "Nuevo pedido" · (EN): "New order"
 
 ### Filter sidebar
 
@@ -200,26 +200,26 @@ Multiple cards may be expanded simultaneously.
 **No orders (user has no orders at all):**
 
 - Icon: `ShoppingBag` from lucide-react
-- Title (ES): "Todavía no tienes órdenes" · (EN): "You have no orders yet"
-- Body (ES): "Registra tu primera compra y lleva el control de tus pedidos, pagos y entregas desde un solo lugar."
-- Body (EN): "Record your first purchase and keep track of your orders, payments, and deliveries in one place."
-- CTA (ES): "Nueva orden" · (EN): "New order" → `/purchases/new`
+- Title (ES): "Todavía no tienes pedidos" · (EN): "You have no orders yet"
+- Body (ES): "Registra tu primer pedido y lleva el control de tus pagos y entregas desde un solo lugar."
+- Body (EN): "Record your first order and keep track of your orders, payments, and deliveries in one place."
+- CTA (ES): "Nuevo pedido" · (EN): "New order" → `/orders/new`
 
 **No results matching active filters:**
 
 - Icon: `SearchX` from lucide-react
-- Title (ES): "No encontramos órdenes con esos filtros" · (EN): "No orders match those filters"
-- Action: `Restablecer` / `Reset` button → `/purchases`
+- Title (ES): "No encontramos pedidos con esos filtros" · (EN): "No orders match those filters"
+- Action: `Restablecer` / `Reset` button → `/orders`
 
 ### Back navigation from detail
 
 When rendering order card links, pass the current full list URL (including all active filter params and `?page=`) as a `?returnTo=` query param encoded on the detail link:
 
 ```
-/purchases/[id]?returnTo={encodeURIComponent(currentListUrl)}
+/orders/[id]?returnTo={encodeURIComponent(currentListUrl)}
 ```
 
-The order detail page (WO-05) reads `searchParams.returnTo` and uses it as the `BackNavLink` href, falling back to `/purchases` when absent. The `returnTo` value is validated to be a relative path before use to prevent open redirect from a crafted URL.
+The order detail page (WO-05) reads `searchParams.returnTo` and uses it as the `BackNavLink` href, falling back to `/orders` when absent. The `returnTo` value is validated to be a relative path before use to prevent open redirect from a crafted URL.
 
 ## Technical Notes
 
@@ -275,7 +275,7 @@ Items are ordered by `position ASC`. All order and item data is fetched for the 
 
 ### `parseOrderListingParams`
 
-Added to `src/app/[locale]/(app)/purchases/_utils/orderListingParams.ts`, mirroring the Stores pattern in `src/app/[locale]/(app)/stores/_utils/listingParams.ts`:
+Added to `src/app/[locale]/(app)/orders/_utils/orderListingParams.ts`, mirroring the Stores pattern in `src/app/[locale]/(app)/stores/_utils/listingParams.ts`:
 
 ```ts
 export const DEFAULT_ACTIVE_STATUSES: OrderStatus[] = [
@@ -397,7 +397,7 @@ All event names are added to `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 
 ### Default filter
 
-- Navigating to `/purchases` with no params redirects to the canonical orders-list URL with `status=OPEN`, `status=PARTIALLY_IN_TRANSIT`, `status=IN_TRANSIT`, and `status=PARTIALLY_DELIVERED`. Orders in `COMPLETED` and `CANCELLED` are not visible.
+- Navigating to `/orders` with no params redirects to the canonical orders-list URL with `status=OPEN`, `status=PARTIALLY_IN_TRANSIT`, `status=IN_TRANSIT`, and `status=PARTIALLY_DELIVERED`. Orders in `COMPLETED` and `CANCELLED` are not visible.
 - The `Solo activas` chip is visible; no individual status chips appear.
 - The URL remains explicit about the active statuses in the default view.
 
@@ -414,7 +414,7 @@ All event names are added to `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 
 - Removing the `Solo activas` chip clears `?status=` from the URL; orders of all statuses appear; other active filters are preserved.
 - Removing an individual filter chip removes only that filter from the URL.
-- Clicking `Restablecer` navigates to `/purchases` and the list reverts to the default active-orders view.
+- Clicking `Restablecer` navigates to `/orders` and the list reverts to the default active-orders view.
 - When the chip row only contains the grouped `Solo activas` default chip, `Restablecer` is hidden because there is no additional filter state to clear.
 
 ### Card — collapsed
@@ -435,7 +435,7 @@ All event names are added to `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 
 ### Empty states
 
-- A user with no orders sees the `ShoppingBag` empty state with "Todavía no tienes órdenes" and a "Nueva orden" CTA.
+- A user with no orders sees the `ShoppingBag` empty state with "Todavía no tienes pedidos" and a "Nuevo pedido" CTA.
 - A user with orders but active filters that match nothing sees the `SearchX` empty state with a `Restablecer` button.
 
 ### Pagination
@@ -446,7 +446,7 @@ All event names are added to `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 ### Back navigation
 
 - Navigating from a filtered list to an order card and using the detail page back link returns to the list with the same filters and page active.
-- Navigating directly to the detail page URL (no `?returnTo=`) shows `/purchases` as the back link destination.
+- Navigating directly to the detail page URL (no `?returnTo=`) shows `/orders` as the back link destination.
 
 ### Status filter — all six states
 
