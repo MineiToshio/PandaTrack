@@ -38,29 +38,39 @@ export default function OrderDetailContent({ order, locale, baseCurrencyCode }: 
         baseCurrencyCode={baseCurrencyCode}
       />
 
-      {/* Two-column layout: right column (payments) appears first on mobile for quick access;
-          explicit col/row placement restores left=items, right=payments on lg+ */}
-      <div className="lg:grid lg:grid-cols-[1fr_360px] lg:items-start lg:gap-8">
-        {/* Right column — first on mobile, second column on desktop */}
-        <div className="mb-6 space-y-6 lg:sticky lg:top-[calc(var(--app-banner-offset,0px)+3.5rem+2rem)] lg:col-start-2 lg:row-start-1 lg:mb-0">
-          <OrderPaymentsPanel
-            orderId={order.id}
-            totalCost={order.totalCost}
-            initialPayments={order.payments}
-            initialSummary={summary}
-            hasUnpaidBalance={hasUnpaidBalance}
-            status={order.status}
-            currencyCode={order.currencyCode}
-            orderDate={order.orderDate}
-            locale={locale}
-          />
-          <OrderHistoryList initialHistory={order.history} locale={locale} />
+      {/* Mobile: flex column with explicit order so the visual sequence is
+          items → payments → note → history. Desktop: 2-column grid where the
+          right wrapper groups payments + history into a single sticky block. */}
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_360px] lg:items-start lg:gap-8">
+        {/* Right column on desktop. `contents` on mobile dissolves the wrapper
+            so its children become direct flex items of the outer container. */}
+        <div className="contents lg:sticky lg:top-[calc(var(--app-banner-offset,0px)+3.5rem+2rem)] lg:col-start-2 lg:row-start-1 lg:block lg:space-y-6">
+          <div className="order-2 lg:order-none">
+            <OrderPaymentsPanel
+              orderId={order.id}
+              totalCost={order.totalCost}
+              initialPayments={order.payments}
+              initialSummary={summary}
+              hasUnpaidBalance={hasUnpaidBalance}
+              status={order.status}
+              currencyCode={order.currencyCode}
+              orderDate={order.orderDate}
+              locale={locale}
+            />
+          </div>
+          <div className="order-4 lg:order-none">
+            <OrderHistoryList initialHistory={order.history} locale={locale} />
+          </div>
         </div>
 
-        {/* Left column — second on mobile, first column on desktop */}
-        <div className="max-w-3xl space-y-6 lg:col-start-1 lg:row-start-1">
-          <OrderItemsList orderId={order.id} items={order.items} currencyCode={order.currencyCode} locale={locale} />
-          <OrderNoteForm orderId={order.id} initialNote={order.note} locale={locale} />
+        {/* Left column on desktop, also dissolved on mobile via `contents`. */}
+        <div className="contents lg:col-start-1 lg:row-start-1 lg:block lg:max-w-3xl lg:space-y-6">
+          <div className="order-1 lg:order-none">
+            <OrderItemsList orderId={order.id} items={order.items} currencyCode={order.currencyCode} locale={locale} />
+          </div>
+          <div className="order-3 lg:order-none">
+            <OrderNoteForm orderId={order.id} initialNote={order.note} locale={locale} />
+          </div>
         </div>
       </div>
     </div>
