@@ -410,7 +410,7 @@ export default function StoreDetailContent({
                 )}
               </div>
 
-              <hr className="border-border/30" />
+              <hr className="border-border" />
 
               <div aria-labelledby="section-import-countries">
                 <StoreDetailSubsectionTitle id="section-import-countries" icon={Globe} iconClassName="text-info">
@@ -552,7 +552,7 @@ export default function StoreDetailContent({
                 </div>
               </div>
 
-              <hr className="border-border/30" />
+              <hr className="border-border" />
 
               {/* Sales channels (sidebar: visible with sticky column on large screens) */}
               <div aria-labelledby="section-presence">
@@ -569,7 +569,7 @@ export default function StoreDetailContent({
                 </div>
               </div>
 
-              <hr className="border-border/30" />
+              <hr className="border-border" />
 
               {/* Business Signals */}
               <div>

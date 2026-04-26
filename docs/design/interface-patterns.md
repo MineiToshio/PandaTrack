@@ -262,7 +262,7 @@ Rules:
 
 - use `SectionSurfaceCard` for contact channels, addresses, reviews, and private note
 - when a combined store-detail panel has no natural umbrella title (for example product types + import countries, or the top block of profile facts), use the same surface styling as `SectionSurfaceCard` but omit the synthetic grouped heading
-- when two small related groups belong together (for example product types and import countries), keep them inside one shared surface and split the body with subtle `border-border/30` dividers
+- when two small related groups belong together (for example product types and import countries), keep them inside one shared surface and split the body with the same `border-border` divider used under `SectionSurfaceCard` headers
 - use Lucide icons in section headers and nested subsection titles instead of `SectionTitleWithAccent`, matching order detail's icon-led panel language
 - keep the right-column profile facts, sales channels, and shopping options in one shared panel; the latter two are subsections inside the same panel, not tiny standalone cards
 
