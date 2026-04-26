@@ -15,17 +15,18 @@ import {
   MapPinned,
   Pencil,
   Phone,
+  ShoppingBag,
   Store,
   UserRound,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { siFacebook, siInstagram, siTiktok, siWhatsapp } from "simple-icons";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
-import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
-import { STORE_SURFACE_CARD_CLASSNAME } from "../../_components/share/StoreSurfaceCard";
 import { ROUTES } from "@/lib/constants";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn, TINTED_SURFACE_GRADIENT_STOPS } from "@/lib/styles";
+import SectionSurfaceCard from "@/components/modules/SectionSurfaceCard";
 import type { PublicStoreReview, StoreDetail, StoreViewerNote, StoreViewerReview } from "@/queries/store";
 import type { EditableStore, StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
 import BackNavLink from "@/components/core/BackNavLink";
@@ -88,13 +89,39 @@ function getContactIcon(type: NonNullable<StoreDetail["contactChannels"]>[number
   return <Link2 className="size-4" aria-hidden />;
 }
 
+const DETAIL_SECTION_MATCHING_SURFACE_CLASSNAME = "border-border bg-surface-2 rounded-2xl border shadow-sm";
+const DETAIL_SECTION_PANEL_CLASSNAME =
+  "border-border bg-surface-2 flex flex-col gap-5 rounded-2xl border px-4 pt-3 pb-4 shadow-sm sm:px-5 sm:pt-3 sm:pb-5";
+
 const METRIC_CARD_SHELL_CLASSNAME = cn(
-  STORE_SURFACE_CARD_CLASSNAME,
-  "overflow-hidden rounded-2xl border-t-2 border-t-primary/45 p-0 sm:p-0",
+  DETAIL_SECTION_MATCHING_SURFACE_CLASSNAME,
+  "overflow-hidden border-t-2 border-t-primary/45 p-0",
 );
 
-/** Hero secondary actions: soft neutral edge + shadow so they read on the tinted hero without loud color. */
+const DETAIL_INSET_CARD_CLASSNAME = "border-border/70 bg-card rounded-2xl border shadow-sm";
+
 const STORE_DETAIL_HERO_ACTION_CLASSNAME = "border border-border/35 shadow-md hover:border-border/50 hover:shadow-lg";
+
+function StoreDetailSubsectionTitle({
+  id,
+  icon: Icon,
+  iconClassName,
+  children,
+}: {
+  id?: string;
+  icon: LucideIcon;
+  iconClassName: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <Icon className={cn("size-4 shrink-0", iconClassName)} aria-hidden />
+      <h3 id={id} className="text-text-title min-w-0 text-sm leading-tight font-semibold tracking-tight sm:text-base">
+        {children}
+      </h3>
+    </div>
+  );
+}
 
 function MetricCard({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
   return (
@@ -191,25 +218,14 @@ export default function StoreDetailContent({
       <div className="text-foreground">
         <BackNavLink href={`/${locale}${ROUTES.stores}`}>{tListing("backToListing")}</BackNavLink>
 
-        {/* ── Header (hero surface, matches pre-layout-refactor store detail) ── */}
         <section
           aria-labelledby="store-detail-heading"
           className={cn(
             TINTED_SURFACE_GRADIENT_STOPS,
-            "relative mt-6 overflow-hidden rounded-3xl bg-linear-to-br px-5 py-6 shadow-sm sm:px-8 sm:py-8",
+            "border-border/70 relative mt-6 overflow-hidden rounded-2xl border bg-linear-to-br p-5 shadow-sm sm:p-6",
             "animate-[hero-fade-in-up_460ms_ease-out_both] motion-reduce:animate-none",
           )}
         >
-          <div
-            className="bg-primary/30 absolute -top-20 right-0 size-44 animate-[hero-glow-pulse_6s_ease-in-out_infinite] rounded-full blur-3xl motion-reduce:animate-none"
-            aria-hidden
-          />
-          <div
-            className="bg-accent/30 absolute -bottom-20 -left-10 size-44 animate-[hero-glow-pulse_7s_ease-in-out_infinite] rounded-full blur-3xl motion-reduce:animate-none"
-            style={{ animationDelay: "420ms" }}
-            aria-hidden
-          />
-
           <header className="relative z-10">
             <div className="flex items-start gap-4 sm:gap-5">
               {isBusiness && store.logoUrl ? (
@@ -255,7 +271,7 @@ export default function StoreDetailContent({
                       <Link
                         href={`/${locale}${ROUTES.stores}/${editableStore.slug}/edit`}
                         className={cn(
-                          buttonVariants({ variant: "secondary", size: "sm" }),
+                          buttonVariants({ variant: "secondary", size: "md" }),
                           STORE_DETAIL_HERO_ACTION_CLASSNAME,
                           "gap-1.5 max-lg:h-11 max-lg:min-w-11 max-lg:justify-center max-lg:px-0",
                         )}
@@ -323,7 +339,7 @@ export default function StoreDetailContent({
 
         {/* ── Status alerts ── */}
         {showStoreStatusCard && (
-          <div className={cn(STORE_SURFACE_CARD_CLASSNAME, "mt-6 p-4 sm:p-4")}>
+          <div className={cn(DETAIL_SECTION_MATCHING_SURFACE_CLASSNAME, "mt-6 p-4 sm:p-4")}>
             {isPendingReview && (
               <div className="flex items-start gap-2.5" role="note">
                 <CircleAlert className="text-warning mt-0.5 size-4 shrink-0" aria-hidden />
@@ -371,11 +387,11 @@ export default function StoreDetailContent({
           {/* ── Main content ── */}
           <div className="space-y-5">
             {/* Catalog card: Product Types + Import Countries */}
-            <section className={cn(STORE_SURFACE_CARD_CLASSNAME, "space-y-5")}>
+            <section className={DETAIL_SECTION_PANEL_CLASSNAME}>
               <div aria-labelledby="section-product-types">
-                <SectionTitleWithAccent as="h2" id="section-product-types">
+                <StoreDetailSubsectionTitle id="section-product-types" icon={Box} iconClassName="text-highlight">
                   {tStores("detail.productTypesLabel")}
-                </SectionTitleWithAccent>
+                </StoreDetailSubsectionTitle>
                 {store.productTypeKeys.length > 0 ? (
                   <div className="mt-2.5 flex flex-wrap gap-2">
                     {store.productTypeKeys.map((productTypeKey) => (
@@ -397,9 +413,9 @@ export default function StoreDetailContent({
               <hr className="border-border/30" />
 
               <div aria-labelledby="section-import-countries">
-                <SectionTitleWithAccent as="h2" id="section-import-countries">
+                <StoreDetailSubsectionTitle id="section-import-countries" icon={Globe} iconClassName="text-info">
                   {tStores("detail.importCountriesLabel")}
-                </SectionTitleWithAccent>
+                </StoreDetailSubsectionTitle>
                 {store.importCountryCodes.length > 0 ? (
                   <div className="mt-2.5 flex flex-wrap gap-2">
                     {store.importCountryCodes.map((countryCode) => (
@@ -420,10 +436,13 @@ export default function StoreDetailContent({
             </section>
 
             {/* Contact Channels */}
-            <section className={STORE_SURFACE_CARD_CLASSNAME} aria-labelledby="section-contact">
-              <SectionTitleWithAccent as="h2" id="section-contact">
-                {tStores("create.contactChannelsLabel")}
-              </SectionTitleWithAccent>
+            <SectionSurfaceCard
+              title={tStores("create.contactChannelsLabel")}
+              titleAs="h2"
+              titleId="section-contact"
+              icon={Link2}
+              iconClassName="text-success"
+            >
               {isBusiness && contactChannelsCount > 0 ? (
                 <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
                   {store.contactChannels?.map((ch) => {
@@ -436,9 +455,12 @@ export default function StoreDetailContent({
                           href={href}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="group border-border/30 hover:border-primary/25 focus-visible:ring-ring flex items-center gap-3 rounded-xl border p-3 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                          className={cn(
+                            DETAIL_INSET_CARD_CLASSNAME,
+                            "group focus-visible:ring-ring hover:border-primary/30 flex items-center gap-3 p-3 transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                          )}
                         >
-                          <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg">
+                          <span className="bg-primary/12 text-primary border-border/50 flex size-9 shrink-0 items-center justify-center rounded-xl border">
                             {getContactIcon(ch.type)}
                           </span>
                           <span className="min-w-0 flex-1">
@@ -460,31 +482,34 @@ export default function StoreDetailContent({
                   {isBusiness ? tStores("detail.noContactChannels") : tStores("detail.notAvailableForStoreType")}
                 </Typography>
               )}
-            </section>
+            </SectionSurfaceCard>
 
             {/* Addresses */}
-            <section className={STORE_SURFACE_CARD_CLASSNAME} aria-labelledby="section-addresses">
-              <SectionTitleWithAccent as="h2" id="section-addresses">
-                {tStores("create.addressesLabel")}
-              </SectionTitleWithAccent>
+            <SectionSurfaceCard
+              title={tStores("create.addressesLabel")}
+              titleAs="h2"
+              titleId="section-addresses"
+              icon={MapPinned}
+              iconClassName="text-accent"
+            >
               {isBusiness && addressesCount > 0 ? (
                 <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
                   {store.addresses?.map((address, index) => (
                     <li key={`${address.countryCode}-${address.addressLine}-${index}`}>
-                      <div className="border-border/30 border-l-primary/25 rounded-xl border border-l-[3px] px-4 py-3">
+                      <div className={cn(DETAIL_INSET_CARD_CLASSNAME, "space-y-2.5 px-4 py-3")}>
                         <div className="flex items-center gap-2">
-                          <Store className="text-text-muted size-4 shrink-0" aria-hidden />
-                          <Typography size="sm" className="text-text-muted min-w-0 flex-1 font-semibold">
+                          <Store className="text-primary size-4 shrink-0" aria-hidden />
+                          <Typography size="sm" className="text-text-title min-w-0 flex-1 font-semibold">
                             {address.city
                               ? `${address.city}, ${tCountries(address.countryCode)}`
                               : tCountries(address.countryCode)}
                           </Typography>
                         </div>
-                        <Typography size="sm" className="text-text-muted mt-1">
+                        <Typography size="sm" className="text-text-body">
                           {address.addressLine}
                         </Typography>
                         {address.reference ? (
-                          <Typography size="xs" className="text-text-muted mt-1">
+                          <Typography size="xs" className="text-text-muted">
                             {address.reference}
                           </Typography>
                         ) : null}
@@ -497,15 +522,14 @@ export default function StoreDetailContent({
                   {isBusiness ? tStores("detail.noAddresses") : tStores("detail.notAvailableForStoreType")}
                 </Typography>
               )}
-            </section>
+            </SectionSurfaceCard>
           </div>
 
           {/* ── Sidebar ── */}
           <aside className="max-lg:order-first lg:sticky lg:top-24">
-            <div className={cn(STORE_SURFACE_CARD_CLASSNAME, "space-y-5")}>
+            <div className={DETAIL_SECTION_PANEL_CLASSNAME}>
               {/* Profile Summary */}
               <div>
-                <SectionTitleWithAccent as="h3">{tStores("detail.profileSummaryTitle")}</SectionTitleWithAccent>
                 <div className="divide-border/40 mt-2 divide-y">
                   <SidebarField label={tStores("detail.storeTypeLabel")}>
                     <span className="inline-flex items-center gap-1.5">
@@ -532,9 +556,9 @@ export default function StoreDetailContent({
 
               {/* Sales channels (sidebar: visible with sticky column on large screens) */}
               <div aria-labelledby="section-presence">
-                <SectionTitleWithAccent as="h3" id="section-presence">
+                <StoreDetailSubsectionTitle id="section-presence" icon={Globe} iconClassName="text-info">
                   {tStores("detail.presenceLabel")}
-                </SectionTitleWithAccent>
+                </StoreDetailSubsectionTitle>
                 <div className="mt-2.5 flex flex-wrap gap-2">
                   {store.presenceTypes.map((presenceType) => (
                     <span key={presenceType} className={STORE_PRESENCE_CHIP_CLASSNAME}>
@@ -549,7 +573,9 @@ export default function StoreDetailContent({
 
               {/* Business Signals */}
               <div>
-                <SectionTitleWithAccent as="h3">{tStores("detail.businessSignalsTitle")}</SectionTitleWithAccent>
+                <StoreDetailSubsectionTitle icon={ShoppingBag} iconClassName="text-highlight">
+                  {tStores("detail.businessSignalsTitle")}
+                </StoreDetailSubsectionTitle>
                 <div className="mt-3 flex flex-row flex-wrap items-start gap-2">
                   <StoreCommerceSignalPills
                     receivesOrders={store.receivesOrders}

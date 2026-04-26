@@ -6,7 +6,7 @@ title: Store Reviews and Private Notes
 status: ACTIVE
 parent: BP-01
 source_issue: 74
-last_updated: 2026-03-21
+last_updated: 2026-04-26
 implementation_status: IMPLEMENTED
 ---
 
@@ -27,6 +27,7 @@ Add the first trust-and-memory layer around stores through public reviews and pr
 - progressive review reveal in batches of 5 with a follow-up "show more" CTA when additional reviews exist
 - half-star `overallRating` input in `0.5` steps
 - public review comments that preserve line breaks when displayed
+- review and private-note sections visually align with the shared order detail panel pattern
 
 ## Out of Scope
 
@@ -69,6 +70,7 @@ Relevant acceptance signals:
 - User sees only the first 5 public reviews initially and can reveal 5 more per click until all reviews are visible.
 - User can create and read a private note in authenticated context.
 - Private note content never appears on public store detail.
+- Reviews and private notes render as shared detail panels consistent with the order detail screen.
 
 ## Status Note
 

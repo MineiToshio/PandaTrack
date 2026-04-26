@@ -5,7 +5,6 @@ import { buildPageMetadata } from "@/lib/seo";
 import { getSession } from "@/lib/auth/auth-server";
 import { getOrderDetail } from "@/lib/data/orders/orderQueries";
 import { prisma } from "@/lib/prisma";
-import { APP_SHELL_MAIN_CLASSNAME } from "@/lib/constants";
 import OrderDetailContent from "./_components/OrderDetailContent";
 
 type Props = {
@@ -37,9 +36,5 @@ export default async function PurchasesDetailPage({ params }: Props) {
 
   if (!order) notFound();
 
-  return (
-    <main className={APP_SHELL_MAIN_CLASSNAME}>
-      <OrderDetailContent order={order} locale={locale} baseCurrencyCode={user?.baseCurrencyCode ?? null} />
-    </main>
-  );
+  return <OrderDetailContent order={order} locale={locale} baseCurrencyCode={user?.baseCurrencyCode ?? null} />;
 }

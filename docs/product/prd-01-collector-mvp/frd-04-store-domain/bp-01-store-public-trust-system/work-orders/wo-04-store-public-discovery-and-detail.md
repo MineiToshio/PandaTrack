@@ -6,7 +6,7 @@ title: Store Public Discovery and Detail
 status: ACTIVE
 parent: BP-01
 source_issue: 73
-last_updated: 2026-04-03
+last_updated: 2026-04-26
 implementation_status: IMPLEMENTED
 ---
 
@@ -25,6 +25,7 @@ Ship the public store listing and detail experience, including search, filters, 
 - detail payload shaping
 - pending disclaimer
 - inactive warning
+- detail page visual alignment with order detail panels
 - search/filter analytics
 
 ## Out of Scope
@@ -71,6 +72,7 @@ Relevant acceptance criteria copied from the FRD:
 - Store detail route resolves at `/stores/[slug]`.
 - Pending stores show a disclaimer on detail.
 - Person-store detail hides contact and address sections.
+- Store detail sections use the same panel chrome as order detail sections so catalog, contact, address, and right-rail information feel like one authenticated app experience.
 
 ## Status Note
 

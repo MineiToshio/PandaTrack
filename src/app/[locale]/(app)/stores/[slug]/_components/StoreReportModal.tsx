@@ -123,7 +123,7 @@ export default function StoreReportModal({
         <Button
           type="button"
           variant="secondary"
-          size="sm"
+          size="md"
           className={cn("gap-1.5 max-lg:h-11 max-lg:min-w-11 max-lg:justify-center max-lg:px-0", triggerClassName)}
           onClick={openModal}
         >

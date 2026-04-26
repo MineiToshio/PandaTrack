@@ -2,12 +2,12 @@
 
 import { useActionState, useState, type ChangeEvent } from "react";
 import { useTranslations } from "next-intl";
+import { NotebookPen } from "lucide-react";
 import Button from "@/components/core/Button/Button";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import type { StoreViewerNote } from "@/queries/store";
-import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
-import StoreSurfaceCard from "../../_components/share/StoreSurfaceCard";
+import SectionSurfaceCard from "@/components/modules/SectionSurfaceCard";
 import { saveStoreNote } from "../_actions/saveStoreNote";
 
 type StoreNoteFormProps = {
@@ -59,11 +59,14 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
     : null;
 
   return (
-    <StoreSurfaceCard>
+    <SectionSurfaceCard
+      title={t("detail.privateNote.title")}
+      titleAs="h2"
+      titleId="store-private-note-heading"
+      icon={NotebookPen}
+      iconClassName="text-info"
+    >
       <div className="space-y-1">
-        <SectionTitleWithAccent as="h3" id="store-private-note-heading">
-          {t("detail.privateNote.title")}
-        </SectionTitleWithAccent>
         <Typography size="sm" className="text-text-muted">
           {t("detail.privateNote.description")}
         </Typography>
@@ -118,7 +121,7 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
         <Button
           type="submit"
           variant="secondary"
-          size="lg"
+          size="md"
           disabled={submitDisabled}
           aria-label={submitDisabledAriaLabel}
           className="w-full sm:w-auto"
@@ -130,6 +133,6 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
               : t("detail.privateNote.form.submitCta")}
         </Button>
       </form>
-    </StoreSurfaceCard>
+    </SectionSurfaceCard>
   );
 }

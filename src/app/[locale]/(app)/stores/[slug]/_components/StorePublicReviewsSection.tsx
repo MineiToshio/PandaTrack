@@ -1,6 +1,6 @@
 "use client";
 
-import { PenSquare, Trash2 } from "lucide-react";
+import { PenSquare, Star, Trash2 } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
@@ -9,19 +9,13 @@ import RatingStars from "@/components/core/RatingStars";
 import Typography from "@/components/core/Typography";
 import { Modal } from "@/components/modules/Modal";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { cn } from "@/lib/styles";
 import type { StoreViewerReview } from "@/queries/store";
-import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
-import StoreSurfaceCard from "../../_components/share/StoreSurfaceCard";
+import SectionSurfaceCard from "@/components/modules/SectionSurfaceCard";
 import { deleteStoreReview } from "../_actions/deleteStoreReview";
 import StoreReviewForm from "./StoreReviewForm";
 import { useStoreReviewsState } from "./StoreReviewsStateProvider";
 
 const REVIEWS_INCREMENT = 5;
-
-/** Matches `mt-5` on the list, empty state, and review form so spacing above/below the rating chip is even. */
-const REVIEWS_HEADER_RATING_GAP = "gap-5";
-const REVIEWS_TITLE_TO_RATING_SPACE = "space-y-5";
 
 type StoreReviewsWriteCtaProps = {
   onClick: () => void;
@@ -49,13 +43,11 @@ function StoreReviewsWriteCta({ onClick, variant = "outline" }: StoreReviewsWrit
 function StoreReviewsTitleBlock() {
   const t = useTranslations("stores");
   return (
-    <div className="space-y-1">
-      <SectionTitleWithAccent as="h2" id="section-store-reviews">
+    <div className="flex min-w-0 items-center gap-2">
+      <Star className="text-accent size-4 shrink-0" aria-hidden />
+      <h2 id="section-store-reviews" className="text-text-title text-sm leading-tight font-semibold sm:text-base">
         {t("detail.reviews.title")}
-      </SectionTitleWithAccent>
-      <Typography size="sm" className="text-text-muted">
-        {t("detail.reviews.description")}
-      </Typography>
+      </h2>
     </div>
   );
 }
@@ -154,25 +146,29 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
   const showWriteReviewCta = !hasViewerReview && !isComposerOpen;
 
   return (
-    <StoreSurfaceCard>
-      <div className={cn("flex flex-col lg:hidden", REVIEWS_HEADER_RATING_GAP)}>
-        <StoreReviewsTitleBlock />
-        <div className="flex min-w-0 flex-row flex-wrap items-center gap-3">
-          <StoreReviewsRatingSummary averageRating={averageRating} reviewCount={reviewCount} />
-          {showWriteReviewCta ? <StoreReviewsWriteCta variant="ghost" onClick={openCreateForm} /> : null}
-        </div>
+    <SectionSurfaceCard
+      headerStart={<StoreReviewsTitleBlock />}
+      headerEnd={
+        showWriteReviewCta ? (
+          <div className="hidden shrink-0 lg:block">
+            <StoreReviewsWriteCta variant="outline" onClick={openCreateForm} />
+          </div>
+        ) : null
+      }
+    >
+      <div className="space-y-3">
+        <Typography size="sm" className="text-text-muted max-w-2xl">
+          {t("detail.reviews.description")}
+        </Typography>
       </div>
 
-      <div className="hidden min-w-0 flex-col gap-4 lg:flex lg:flex-row lg:items-start lg:justify-between lg:gap-6">
-        <div className={cn("min-w-0 flex-1", REVIEWS_TITLE_TO_RATING_SPACE)}>
-          <StoreReviewsTitleBlock />
-          <div className="w-fit max-w-full">
-            <StoreReviewsRatingSummary averageRating={averageRating} reviewCount={reviewCount} />
-          </div>
+      <div className="flex min-w-0 flex-row flex-wrap items-center gap-3">
+        <div className="w-fit max-w-full">
+          <StoreReviewsRatingSummary averageRating={averageRating} reviewCount={reviewCount} />
         </div>
         {showWriteReviewCta ? (
-          <div className="shrink-0">
-            <StoreReviewsWriteCta variant="outline" onClick={openCreateForm} />
+          <div className="lg:hidden">
+            <StoreReviewsWriteCta variant="ghost" onClick={openCreateForm} />
           </div>
         ) : null}
       </div>
@@ -363,6 +359,6 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
           </Button>
         </div>
       )}
-    </StoreSurfaceCard>
+    </SectionSurfaceCard>
   );
 }

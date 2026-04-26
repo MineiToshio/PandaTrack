@@ -224,7 +224,7 @@ Use **`AppPageHero`** (`src/components/modules/AppPageHero.tsx`) for every authe
 - `/settings`, `/stores` listing, `/stores/new`, `/stores/[slug]/edit`
 - `/purchases/[id]` (order detail)
 
-**Exception:** `/stores/[slug]` (store profile) uses a **rich profile hero** (logo, KPI row, actions, larger rounded surface) instead of `AppPageHero`, but it must reuse the same **`TINTED_SURFACE_GRADIENT_STOPS`** language and the same **`Heading` `h1` scale** (`size="sm"`) for the store name so it still feels like the same family.
+**Exception:** `/stores/[slug]` (store profile) uses a **rich profile hero** (logo, KPI row, actions) instead of `AppPageHero`, but it must reuse the same **outer hero chrome** as `AppPageHero`: `rounded-2xl`, `border-border/70`, `border`, `bg-linear-to-br`, `TINTED_SURFACE_GRADIENT_STOPS`, `shadow-sm`, and the same **`Heading` `h1` scale** (`size="sm"`) for the store name so it still feels like the same family.
 
 Structure of `AppPageHero`:
 
@@ -253,6 +253,18 @@ Rules:
 - when the flow needs parent navigation (create/edit store), place `BackNavLink` (`appearance="pill"`) in a `space-y-3` stack **above** `AppPageHero`
 - keep `h1` typography aligned across routes that share this pattern
 - major sections below the hero use **`SectionTitleWithAccent`** (`as="h2"`), not a standalone `Heading` (see **Standard in-page section title**)
+
+#### Store profile detail sections
+
+Store profile detail sections under `/stores/[slug]` use the same surface chrome as order detail panels: compact icon-led header when the section has a natural title, horizontal separators where needed, and one structured body area.
+
+Rules:
+
+- use `SectionSurfaceCard` for contact channels, addresses, reviews, and private note
+- when a combined store-detail panel has no natural umbrella title (for example product types + import countries, or the top block of profile facts), use the same surface styling as `SectionSurfaceCard` but omit the synthetic grouped heading
+- when two small related groups belong together (for example product types and import countries), keep them inside one shared surface and split the body with subtle `border-border/30` dividers
+- use Lucide icons in section headers and nested subsection titles instead of `SectionTitleWithAccent`, matching order detail's icon-led panel language
+- keep the right-column profile facts, sales channels, and shopping options in one shared panel; the latter two are subsections inside the same panel, not tiny standalone cards
 
 ### Collector settings route (`/settings`)
 
