@@ -157,12 +157,23 @@ For OG image work:
 
 ## 8) Commands and validation checklist
 
-Before finalizing changes, run relevant checks:
+Before finalizing changes, always evaluate validation scope based on risk and run the relevant checks for the files and behavior you touched.
 
-1. `npm run test`
-2. `npm run type-check`
-3. `npm run lint`
-4. `npm run validate-build` (local validation: generates Prisma client and builds Next.js without applying migrations; use this instead of `npm run build` for agent/local checks)
+Use this default policy:
+
+1. **Docs/process/rules-only changes** (`.md`, `.mdc`, hook docs, repo process docs`)
+   No app validation commands are required.
+2. **Trivial low-risk content/presentational changes**
+   Examples: copy-only changes, translation text updates, spacing tweaks, color swaps, non-structural class changes, or static markup adjustments with no logic, routing, data, config, or contract impact.
+   Run the narrowest relevant check for the edited code files, usually `npm run lint` for TS/TSX/JS/JSX changes. Add manual verification when presentation is the main risk.
+3. **Behavioral or medium/high-risk changes**
+   Run the full standard validation sequence:
+   1. `npm run test`
+   2. `npm run type-check`
+   3. `npm run lint`
+   4. `npm run validate-build`
+
+Treat a change as **full-validation required** when it affects logic, reusable component APIs, routing, async behavior, server/client boundaries, data access, Prisma, validation schemas, config, dependencies, build behavior, or any critical workflow.
 
 Run `npm run test:e2e` whenever the affected workflow already has Playwright coverage, or when the change touches a critical user flow whose real behavior depends on routing, browser state, redirects, form submission, or cross-page transitions.
 
@@ -181,7 +192,7 @@ If a command cannot be run, state it explicitly and why.
 - Prefer small, reviewable diffs.
 - Start each implementation by identifying the applicable repository rules through `docs/tooling/cursor/rules.md` and enforcing them throughout the change.
 - When multiple rule files apply, satisfy all of them together and resolve ambiguity using the source-of-truth order above.
-- Do not finalize work until the relevant rule-driven requirements for implementation, docs, tests, accessibility, theming, analytics, and validation have been checked according to the task scope.
+- Do not finalize work until the relevant rule-driven requirements for implementation, docs, tests, accessibility, theming, analytics, and validation have been checked according to the task scope and risk level.
 - For UI work, ensure the result aligns with `docs/design/README.md` and the relevant file in `docs/design/`; if the implementation introduces a reusable visual rule not captured there, update the matching design document in the same change.
 - Treat documentation alignment as part of implementation completion, not as optional follow-up work. A task that changes product behavior is incomplete until the affected `docs/product` source-of-truth files have been reviewed and updated when needed.
 

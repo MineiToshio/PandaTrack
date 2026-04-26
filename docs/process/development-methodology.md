@@ -64,7 +64,7 @@ A feature moves through this sequence from concept to shipped:
 3. **Enrich** — Deepen each Work Order with implementation context before execution (data shapes, edge cases, dependency notes).
 4. **Implement** — Run the implementation agent (Claude Code or Codex) against a Work Order. The agent reads the FRD and Blueprint for context, executes the Work Order scope, and produces code, tests, i18n keys, analytics events, and documentation updates.
 5. **Review** — Run a second-pass review agent focused on bugs, regressions, and rule compliance.
-6. **Validate** — Run `npm run type-check`, `npm run lint`, `npm run validate-build`, and relevant tests. Verify against the Definition of Done.
+6. **Validate** — Choose validation scope by risk. Use no app validation for docs/rules-only changes, the narrowest relevant check for trivial low-risk edits, and full validation (`npm run test`, `npm run type-check`, `npm run lint`, `npm run validate-build`) plus relevant tests for behavioral or higher-risk changes. Verify against the Definition of Done.
 7. **Close** — Update GitHub Project Status. Confirm `docs/product` reflects final shipped behavior.
 
 The loop repeats per Work Order. An FRD is complete when all its Work Orders are `Done`.

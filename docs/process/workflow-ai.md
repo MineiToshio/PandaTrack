@@ -40,10 +40,11 @@ This workflow is optimized for building features with Codex and Cursor using a h
 
 ## 5) Validate and close
 
-1. Run required checks:
-   - `npm run type-check`
-   - `npm run lint`
-   - `npm run validate-build` for the affected scope (use `npm run build` only for deploy-style validation)
+1. Choose validation scope based on risk:
+   - docs/rules/process-only changes: no app validation commands required
+   - trivial low-risk UI/content edits: run the narrowest relevant check, usually `npm run lint`
+   - behavioral or higher-risk changes: run `npm run test`, `npm run type-check`, `npm run lint`, and `npm run validate-build`
+   - if the slice or feature is being closed as `Done`, satisfy the full Definition of Done validation gate (`npm run test`, `npm run type-check`, `npm run lint`, `npm run validate-build`)
 2. Run relevant automated tests for the affected scope when test infrastructure exists
 3. Validate DoD in `docs/process/definition-of-done.md`
 4. Update GitHub slice and epic statuses in Project

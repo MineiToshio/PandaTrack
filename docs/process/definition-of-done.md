@@ -5,9 +5,7 @@ Every feature must satisfy this checklist before being marked `Done`.
 
 ## Engineering quality
 
-- [ ] `npm run type-check` passes
-- [ ] `npm run lint` passes
-- [ ] `npm run validate-build` passes for the affected scope (or an equivalent scoped build check)
+- [ ] Full standard validation passes (`npm run test`, `npm run type-check`, `npm run lint`, `npm run validate-build`)
 - [ ] Required unit/integration/E2E tests for the change are added or explicitly not needed by risk
 - [ ] No dead code, unused imports, or commented-out obsolete code
 

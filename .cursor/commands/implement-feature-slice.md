@@ -101,10 +101,13 @@ Implement one GitHub slice ticket that mirrors a `Work Order`, using the hybrid 
 For token retrieval, stable IDs, and `curl` patterns to update the Project `4` `Status` field, see `docs/process/github-project-tracking.md` → **GitHub GraphQL API**.
 
 7. Validate
-- Run:
+- Choose validation scope using `.cursor/rules/validation-checklist.mdc`.
+- For behavioral or higher-risk implementation changes, run:
+  - `npm run test`
   - `npm run type-check`
   - `npm run lint`
-  - `npm run validate-build` (or minimal affected build check if preferred)
+  - `npm run validate-build`
+- For trivial low-risk edits inside the slice, run the narrowest relevant automated check instead, usually `npm run lint`.
 
 ## Delegation guardrails
 

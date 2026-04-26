@@ -43,9 +43,8 @@ Use this checklist for AI-assisted or manual review before merging feature chang
 - [ ] Test choice is justified by the change instead of skipped by default
 - [ ] Source docs and mirrored GitHub tickets state each test type as required or not required with a short reason
 - [ ] Edge/error tests exist for critical rules
-- [ ] `npm run type-check` passes
-- [ ] `npm run lint` passes
-- [ ] `npm run validate-build` passes for the affected scope (or an equivalent scoped build check)
+- [ ] Validation scope is appropriate for the risk of the change
+- [ ] Required automated checks for that scope pass
 
 ## Final documentation check
 

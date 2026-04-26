@@ -20,6 +20,12 @@ Both configs call the same scripts in `.cursor/hooks/`. The scripts handle both 
 | `allow-shell.mjs`          | `beforeShellExecution` | `PreToolUse` → `Bash`         | Allows most commands; requires user approval for destructive ones (e.g. `prisma db push --force-reset`, `npm run db-reset`, `git push --force`, `git reset --hard`) before they run.                             |
 | `block-sensitive-read.mjs` | `beforeReadFile`       | `PreToolUse` → `Read`         | Blocks the agent from reading sensitive files (`.env`, `.env.local`, `.env.*.local`, etc.) to avoid leaking secrets into the model context.                                                                      |
 
+## What hooks do not do
+
+- Hooks do **not** auto-run `npm run test`, `npm run type-check`, `npm run lint`, or `npm run validate-build` after every implementation.
+- Validation scope is a **rule and workflow decision**, not a shell hook side effect.
+- The repository standard is **risk-based validation**: trivial copy/presentational changes can use reduced validation, while behavioral or higher-risk changes still require the full validation pass.
+
 ## Implementation details
 
 - Scripts are **ESM** (`.mjs`): they use `import` from `node:*` and run with Node's native ES modules.

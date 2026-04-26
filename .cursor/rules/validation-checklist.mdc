@@ -5,7 +5,46 @@ alwaysApply: true
 
 # Validation checklist – PandaTrack
 
-When finalizing changes or running the validation checklist (e.g. after implementing a feature, before submitting), run these commands in order:
+When finalizing changes or running the validation checklist, always decide validation scope based on implementation risk before choosing commands.
+
+## Step 1: classify the change
+
+### No app validation required
+
+Use this when the change is limited to repository/process documentation or rules, for example:
+
+- `docs/**/*.md`
+- `.cursor/rules/*.mdc`
+- `AGENTS.md`
+- `docs/tooling/**/*.md`
+
+### Minimal validation
+
+Use this for trivial low-risk changes that do not alter behavior, contracts, routing, data flow, or build behavior, for example:
+
+- copy-only changes
+- translation text updates
+- spacing, color, or other presentational tweaks
+- static markup adjustments with no logic changes
+
+Run the narrowest relevant check for the edited code files. In most TS/TSX/JS/JSX UI edits, that means:
+
+1. `npm run lint`
+
+Add manual verification when presentation is the main risk.
+
+### Full standard validation
+
+Run the full sequence below when the change affects behavior or carries medium/high regression risk, including:
+
+- business logic, calculations, or conditions
+- reusable component APIs or shared utilities
+- routing, redirects, metadata, async rendering, or server/client boundaries
+- server actions, route handlers, Prisma, queries, schemas, or persistence
+- configuration, dependencies, environment handling, or build/runtime behavior
+- anything in a critical workflow where a regression would be costly
+
+Run these commands in order:
 
 1. `npm run test`
 2. `npm run type-check`

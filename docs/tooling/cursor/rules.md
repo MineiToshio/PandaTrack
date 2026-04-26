@@ -35,7 +35,7 @@ Read these on every implementation because they define project-wide defaults:
 - `optimistic-client-updates.mdc`: Read whenever a Client Component dispatches a mutation that affects state the user is observing. It requires applying the change locally in parallel with the Server Action and reverting on failure, so the user gets immediate feedback without a second server fetch.
 - `testing-strategy.mdc`: Read for every change to decide required unit, integration, and E2E coverage.
 - `theme-light-dark.mdc`: Read whenever UI, styling, or visual assets are changed so both themes are handled.
-- `validation-checklist.mdc`: Read before finalizing any implementation to run the required checks in the correct order.
+- `validation-checklist.mdc`: Read before finalizing any implementation to choose the correct validation scope and run the required checks in the correct order.
 
 ## Scenario-based rules
 
@@ -92,7 +92,7 @@ Read these on every implementation because they define project-wide defaults:
 ### Testing and validation
 
 - `testing-strategy.mdc`: Use to decide what automated tests are needed and which existing tests must be updated.
-- `validation-checklist.mdc`: Use before finalizing so the correct validation commands are run.
+- `validation-checklist.mdc`: Use before finalizing so the correct validation scope and commands are chosen.
 
 ## Rule inventory
 

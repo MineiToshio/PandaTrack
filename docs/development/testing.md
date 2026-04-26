@@ -190,11 +190,13 @@ When a change falls into this category, do not leave testing unspecified. Explic
 
 ## Relationship with automated checks
 
-Tests complement, but do not replace, the standard validation checklist:
+Tests complement, but do not replace, the validation checklist.
 
-1. `npm run type-check`
-2. `npm run lint`
-3. `npm run validate-build`
+Choose the validation scope by risk:
+
+1. docs/rules/process-only changes: no app validation commands
+2. trivial low-risk code edits: run the narrowest relevant check, usually `npm run lint`
+3. behavioral or higher-risk changes: run `npm run test`, `npm run type-check`, `npm run lint`, and `npm run validate-build`
 
 When test scripts exist for the affected scope, run the relevant automated tests as part of the same validation pass.
 

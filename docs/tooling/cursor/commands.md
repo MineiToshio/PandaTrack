@@ -36,8 +36,8 @@ Implements one slice issue from GitHub with minimal scoped changes and GitHub-sy
 3. Uses `docs/product` as the implementation contract and GitHub as the execution-tracking layer.
 4. Implements only that slice using the linked `Work Order` as the primary execution scope.
 5. Updates tracking to `In Progress` instead of `Done`, so manual verification can happen afterward.
-6. Runs validation checks and reports exit-criteria status.
-   - Use `npm run validate-build` for build validation (not `npm run build`; that one runs migrate deploy and is for the Vercel pipeline).
+6. Runs validation checks using the repository's risk-based validation policy and reports exit-criteria status.
+   - Use `npm run validate-build` for build validation when full validation is required (not `npm run build`; that one runs migrate deploy and is for the Vercel pipeline).
 7. Returns functional test steps and test cases so implementation can be manually verified.
 
 See `.cursor/commands/implement-feature-slice.md` for the full command behavior.
