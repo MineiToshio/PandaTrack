@@ -146,7 +146,7 @@ export default function OrderPaymentsPanel({
   const isFullyPaid = summary.paymentPercentage >= 100;
 
   return (
-    <section className="space-y-4" aria-label={t("detail.payments.sectionTitle")}>
+    <section className="space-y-6" aria-label={t("detail.payments.sectionTitle")}>
       <div role="region" aria-label={t("detail.payments.summaryRegionAria")}>
         <OrderPaymentSummaryCard
           summary={summary}
