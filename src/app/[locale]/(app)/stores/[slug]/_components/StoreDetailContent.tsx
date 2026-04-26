@@ -6,7 +6,6 @@ import {
   BadgeCheck,
   Box,
   Building2,
-  CalendarClock,
   CircleAlert,
   ExternalLink,
   Globe,
@@ -15,11 +14,8 @@ import {
   MapPinned,
   Pencil,
   Phone,
-  ShoppingBag,
   Store,
-  UserRound,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { siFacebook, siInstagram, siTiktok, siWhatsapp } from "simple-icons";
 import Heading from "@/components/core/Heading";
 import Typography from "@/components/core/Typography";
@@ -93,70 +89,9 @@ const DETAIL_SECTION_MATCHING_SURFACE_CLASSNAME = "border-border bg-surface-2 ro
 const DETAIL_SECTION_PANEL_CLASSNAME =
   "border-border bg-surface-2 flex flex-col gap-5 rounded-2xl border px-4 pt-3 pb-4 shadow-sm sm:px-5 sm:pt-3 sm:pb-5";
 
-const METRIC_CARD_SHELL_CLASSNAME = cn(
-  DETAIL_SECTION_MATCHING_SURFACE_CLASSNAME,
-  "overflow-hidden border-t-2 border-t-primary/45 p-0",
-);
-
 const DETAIL_INSET_CARD_CLASSNAME = "border-border/70 bg-card rounded-2xl border shadow-sm";
 
 const STORE_DETAIL_HERO_ACTION_CLASSNAME = "border border-border/35 shadow-md hover:border-border/50 hover:shadow-lg";
-
-function StoreDetailSubsectionTitle({
-  id,
-  icon: Icon,
-  iconClassName,
-  children,
-}: {
-  id?: string;
-  icon: LucideIcon;
-  iconClassName: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex min-w-0 items-center gap-2">
-      <Icon className={cn("size-4 shrink-0", iconClassName)} aria-hidden />
-      <h3 id={id} className="text-text-title min-w-0 text-sm leading-tight font-semibold tracking-tight sm:text-base">
-        {children}
-      </h3>
-    </div>
-  );
-}
-
-function MetricCard({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
-  return (
-    <div className={METRIC_CARD_SHELL_CLASSNAME}>
-      <div className="px-4 py-3.5">
-        <div className="text-text-muted flex items-center gap-1.5">
-          {icon}
-          <Typography as="span" size="2xs">
-            {label}
-          </Typography>
-        </div>
-        <Typography
-          as="span"
-          size="sm"
-          className="text-text-title mt-1.5 block text-2xl leading-none font-semibold tabular-nums sm:text-3xl"
-        >
-          {value}
-        </Typography>
-      </div>
-    </div>
-  );
-}
-
-function SidebarField({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-3 py-2.5">
-      <Typography as="span" size="2xs" className="text-text-muted shrink-0">
-        {label}
-      </Typography>
-      <Typography as="span" size="xs" className="text-text-body text-right font-medium">
-        {children}
-      </Typography>
-    </div>
-  );
-}
 
 export default function StoreDetailContent({
   locale,
@@ -184,13 +119,6 @@ export default function StoreDetailContent({
     governanceViewerContext.openReport != null;
   const showStoreStatusCard = isPendingReview || isInactive || hasGovernanceSummaryContent;
   const isBusiness = store.storeType === "BUSINESS";
-  const storeTypeLabel = isBusiness ? tStores("create.storeTypeBusiness") : tStores("create.storeTypePerson");
-  const storeTypeIcon = isBusiness ? (
-    <Building2 className="text-primary size-3.5 shrink-0" aria-hidden />
-  ) : (
-    <UserRound className="text-info size-3.5 shrink-0" aria-hidden />
-  );
-  const profileCreatedAt = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(store.createdAt);
   const receivesOrdersLabel =
     store.receivesOrders == null
       ? tStores("detail.receivesOrdersUnknown")
@@ -285,16 +213,20 @@ export default function StoreDetailContent({
 
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <span className={STORE_HERO_META_PILL_CLASSNAME}>
-                    {storeTypeIcon}
-                    {storeTypeLabel}
-                  </span>
-                  <span className={STORE_HERO_META_PILL_CLASSNAME}>
                     {storeCountryFlagEmoji ? (
                       <CollectorCountryFlagEmoji countryCode={store.countryCode} className="shrink-0" />
                     ) : (
                       <MapPinned className="size-3.5 shrink-0" aria-hidden />
                     )}
                     {tCountries(store.countryCode)}
+                  </span>
+                  <span className={STORE_HERO_META_PILL_CLASSNAME}>
+                    {store.status === "PENDING" ? (
+                      <CircleAlert className="text-warning size-3.5 shrink-0" aria-hidden />
+                    ) : (
+                      <BadgeCheck className="text-success size-3.5 shrink-0" aria-hidden />
+                    )}
+                    {store.status === "PENDING" ? tStores("detail.statusPending") : tStores("detail.statusApproved")}
                   </span>
                   <StoreReviewAggregateBadge />
                 </div>
@@ -312,30 +244,6 @@ export default function StoreDetailContent({
             )}
           </header>
         </section>
-
-        {/* ── Metric cards ── */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <MetricCard
-            icon={<Box className="size-3.5" aria-hidden />}
-            label={tStores("detail.productTypesLabel")}
-            value={store.productTypeKeys.length}
-          />
-          <MetricCard
-            icon={<Globe className="size-3.5" aria-hidden />}
-            label={tStores("detail.importCountriesLabel")}
-            value={store.importCountryCodes.length}
-          />
-          <MetricCard
-            icon={<Link2 className="size-3.5" aria-hidden />}
-            label={tStores("detail.contactChannelsCountLabel")}
-            value={contactChannelsCount}
-          />
-          <MetricCard
-            icon={<MapPinned className="size-3.5" aria-hidden />}
-            label={tStores("detail.addressesCountLabel")}
-            value={addressesCount}
-          />
-        </div>
 
         {/* ── Status alerts ── */}
         {showStoreStatusCard && (
@@ -382,184 +290,14 @@ export default function StoreDetailContent({
           </div>
         )}
 
-        {/* ── Two-column body ── */}
-        <div className="mt-6 grid items-start gap-5 lg:grid-cols-[1fr_300px] lg:gap-6 xl:grid-cols-[1fr_340px]">
-          {/* ── Main content ── */}
-          <div className="space-y-5">
-            {/* Catalog card: Product Types + Import Countries */}
-            <section className={DETAIL_SECTION_PANEL_CLASSNAME}>
-              <div aria-labelledby="section-product-types">
-                <StoreDetailSubsectionTitle id="section-product-types" icon={Box} iconClassName="text-highlight">
-                  {tStores("detail.productTypesLabel")}
-                </StoreDetailSubsectionTitle>
-                {store.productTypeKeys.length > 0 ? (
-                  <div className="mt-2.5 flex flex-wrap gap-2">
-                    {store.productTypeKeys.map((productTypeKey) => (
-                      <span key={productTypeKey} className={STORE_CATALOG_PRODUCT_TYPE_CHIP_CLASSNAME}>
-                        <Box className="size-3.5" aria-hidden />
-                        {tProductTypes(productTypeKey)}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-2.5">
-                    <StoreEmptyCatalogTag className="px-3 py-1.5">
-                      {tStores("detail.noProductTypes")}
-                    </StoreEmptyCatalogTag>
-                  </div>
-                )}
-              </div>
-
-              <hr className="border-border" />
-
-              <div aria-labelledby="section-import-countries">
-                <StoreDetailSubsectionTitle id="section-import-countries" icon={Globe} iconClassName="text-info">
-                  {tStores("detail.importCountriesLabel")}
-                </StoreDetailSubsectionTitle>
-                {store.importCountryCodes.length > 0 ? (
-                  <div className="mt-2.5 flex flex-wrap gap-2">
-                    {store.importCountryCodes.map((countryCode) => (
-                      <span key={countryCode} className={STORE_CATALOG_IMPORT_COUNTRY_CHIP_CLASSNAME}>
-                        <CollectorCountryFlagEmoji countryCode={countryCode} className="shrink-0" />
-                        {tCountries(countryCode)}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-2.5">
-                    <StoreEmptyCatalogTag className="px-3 py-1.5">
-                      {tStores("detail.noImportCountries")}
-                    </StoreEmptyCatalogTag>
-                  </div>
-                )}
-              </div>
-            </section>
-
-            {/* Contact Channels */}
-            <SectionSurfaceCard
-              title={tStores("create.contactChannelsLabel")}
-              titleAs="h2"
-              titleId="section-contact"
-              icon={Link2}
-              iconClassName="text-success"
-            >
-              {isBusiness && contactChannelsCount > 0 ? (
-                <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
-                  {store.contactChannels?.map((ch) => {
-                    const href = buildContactHref(ch.type, ch.value);
-                    if (!href) return null;
-
-                    return (
-                      <li key={`${ch.type}-${ch.value}`}>
-                        <a
-                          href={href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={cn(
-                            DETAIL_INSET_CARD_CLASSNAME,
-                            "group focus-visible:ring-ring hover:border-primary/30 flex items-center gap-3 p-3 transition-colors focus-visible:ring-2 focus-visible:outline-none",
-                          )}
-                        >
-                          <span className="bg-primary/12 text-primary border-border/50 flex size-9 shrink-0 items-center justify-center rounded-xl border">
-                            {getContactIcon(ch.type)}
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <Typography as="span" size="2xs" className="text-text-muted block">
-                              {ch.label ?? tStores(`contactChannelTypes.${ch.type}`)}
-                            </Typography>
-                            <Typography as="span" size="sm" className="text-text-body block truncate font-medium">
-                              {ch.value}
-                            </Typography>
-                          </span>
-                          <ExternalLink className="text-text-muted group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-                        </a>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <Typography size="sm" className="text-text-muted mt-2">
-                  {isBusiness ? tStores("detail.noContactChannels") : tStores("detail.notAvailableForStoreType")}
-                </Typography>
-              )}
-            </SectionSurfaceCard>
-
-            {/* Addresses */}
-            <SectionSurfaceCard
-              title={tStores("create.addressesLabel")}
-              titleAs="h2"
-              titleId="section-addresses"
-              icon={MapPinned}
-              iconClassName="text-accent"
-            >
-              {isBusiness && addressesCount > 0 ? (
-                <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
-                  {store.addresses?.map((address, index) => (
-                    <li key={`${address.countryCode}-${address.addressLine}-${index}`}>
-                      <div className={cn(DETAIL_INSET_CARD_CLASSNAME, "space-y-2.5 px-4 py-3")}>
-                        <div className="flex items-center gap-2">
-                          <Store className="text-primary size-4 shrink-0" aria-hidden />
-                          <Typography size="sm" className="text-text-title min-w-0 flex-1 font-semibold">
-                            {address.city
-                              ? `${address.city}, ${tCountries(address.countryCode)}`
-                              : tCountries(address.countryCode)}
-                          </Typography>
-                        </div>
-                        <Typography size="sm" className="text-text-body">
-                          {address.addressLine}
-                        </Typography>
-                        {address.reference ? (
-                          <Typography size="xs" className="text-text-muted">
-                            {address.reference}
-                          </Typography>
-                        ) : null}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <Typography size="sm" className="text-text-muted mt-2">
-                  {isBusiness ? tStores("detail.noAddresses") : tStores("detail.notAvailableForStoreType")}
-                </Typography>
-              )}
-            </SectionSurfaceCard>
-          </div>
-
-          {/* ── Sidebar ── */}
-          <aside className="max-lg:order-first lg:sticky lg:top-24">
-            <div className={DETAIL_SECTION_PANEL_CLASSNAME}>
-              {/* Profile Summary */}
-              <div>
-                <div className="divide-border/40 mt-2 divide-y">
-                  <SidebarField label={tStores("detail.storeTypeLabel")}>
-                    <span className="inline-flex items-center gap-1.5">
-                      {storeTypeIcon}
-                      {storeTypeLabel}
-                    </span>
-                  </SidebarField>
-                  <SidebarField label={tStores("detail.statusLabel")}>
-                    <span className="inline-flex items-center gap-1.5">
-                      <BadgeCheck className="text-success size-3.5" aria-hidden />
-                      {store.status === "PENDING" ? tStores("detail.statusPending") : tStores("detail.statusApproved")}
-                    </span>
-                  </SidebarField>
-                  <SidebarField label={tStores("detail.createdAtLabel")}>
-                    <span className="inline-flex items-center gap-1.5">
-                      <CalendarClock className="text-info size-3.5" aria-hidden />
-                      {profileCreatedAt}
-                    </span>
-                  </SidebarField>
-                </div>
-              </div>
-
-              <hr className="border-border" />
-
-              {/* Sales channels (sidebar: visible with sticky column on large screens) */}
-              <div aria-labelledby="section-presence">
-                <StoreDetailSubsectionTitle id="section-presence" icon={Globe} iconClassName="text-info">
+        <div className="mt-6 space-y-5">
+          <section className={DETAIL_SECTION_PANEL_CLASSNAME} aria-label={tStores("detail.quickSummaryLabel")}>
+            <div className="grid gap-4 md:grid-cols-2 md:gap-5">
+              <div className="space-y-2.5">
+                <Typography as="span" size="2xs" className="text-text-muted block uppercase tracking-[0.18em]">
                   {tStores("detail.presenceLabel")}
-                </StoreDetailSubsectionTitle>
-                <div className="mt-2.5 flex flex-wrap gap-2">
+                </Typography>
+                <div className="flex flex-wrap gap-2">
                   {store.presenceTypes.map((presenceType) => (
                     <span key={presenceType} className={STORE_PRESENCE_CHIP_CLASSNAME}>
                       <Globe className="size-3.5" aria-hidden />
@@ -569,14 +307,11 @@ export default function StoreDetailContent({
                 </div>
               </div>
 
-              <hr className="border-border" />
-
-              {/* Business Signals */}
-              <div>
-                <StoreDetailSubsectionTitle icon={ShoppingBag} iconClassName="text-highlight">
+              <div className="space-y-2.5">
+                <Typography as="span" size="2xs" className="text-text-muted block uppercase tracking-[0.18em]">
                   {tStores("detail.businessSignalsTitle")}
-                </StoreDetailSubsectionTitle>
-                <div className="mt-3 flex flex-row flex-wrap items-start gap-2">
+                </Typography>
+                <div className="flex flex-wrap gap-2">
                   <StoreCommerceSignalPills
                     receivesOrders={store.receivesOrders}
                     hasStock={store.hasStock}
@@ -588,7 +323,148 @@ export default function StoreDetailContent({
                 </div>
               </div>
             </div>
-          </aside>
+          </section>
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            <SectionSurfaceCard
+              title={tStores("detail.productTypesLabel")}
+              titleAs="h2"
+              titleId="section-product-types"
+              icon={Box}
+              iconClassName="text-highlight"
+              className="h-full"
+            >
+              {store.productTypeKeys.length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {store.productTypeKeys.map((productTypeKey) => (
+                    <span key={productTypeKey} className={STORE_CATALOG_PRODUCT_TYPE_CHIP_CLASSNAME}>
+                      <Box className="size-3.5" aria-hidden />
+                      {tProductTypes(productTypeKey)}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <StoreEmptyCatalogTag className="px-3 py-1.5">
+                    {tStores("detail.noProductTypes")}
+                  </StoreEmptyCatalogTag>
+                </div>
+              )}
+            </SectionSurfaceCard>
+
+            <SectionSurfaceCard
+              title={tStores("detail.importCountriesLabel")}
+              titleAs="h2"
+              titleId="section-import-countries"
+              icon={Globe}
+              iconClassName="text-info"
+              className="h-full"
+            >
+              {store.importCountryCodes.length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {store.importCountryCodes.map((countryCode) => (
+                    <span key={countryCode} className={STORE_CATALOG_IMPORT_COUNTRY_CHIP_CLASSNAME}>
+                      <CollectorCountryFlagEmoji countryCode={countryCode} className="shrink-0" />
+                      {tCountries(countryCode)}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <StoreEmptyCatalogTag className="px-3 py-1.5">
+                    {tStores("detail.noImportCountries")}
+                  </StoreEmptyCatalogTag>
+                </div>
+              )}
+            </SectionSurfaceCard>
+          </div>
+
+          <SectionSurfaceCard
+            title={tStores("create.contactChannelsLabel")}
+            titleAs="h2"
+            titleId="section-contact"
+            icon={Link2}
+            iconClassName="text-success"
+          >
+            {isBusiness && contactChannelsCount > 0 ? (
+              <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
+                {store.contactChannels?.map((ch) => {
+                  const href = buildContactHref(ch.type, ch.value);
+                  if (!href) return null;
+
+                  return (
+                    <li key={`${ch.type}-${ch.value}`}>
+                      <a
+                        href={href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={cn(
+                          DETAIL_INSET_CARD_CLASSNAME,
+                          "group focus-visible:ring-ring hover:border-primary/30 flex items-center gap-3 p-3 transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                        )}
+                      >
+                        <span className="bg-primary/12 text-primary border-border/50 flex size-9 shrink-0 items-center justify-center rounded-xl border">
+                          {getContactIcon(ch.type)}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <Typography as="span" size="2xs" className="text-text-muted block">
+                            {ch.label ?? tStores(`contactChannelTypes.${ch.type}`)}
+                          </Typography>
+                          <Typography as="span" size="sm" className="text-text-body block truncate font-medium">
+                            {ch.value}
+                          </Typography>
+                        </span>
+                        <ExternalLink className="text-text-muted group-hover:text-primary size-3.5 shrink-0 transition-colors" />
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <Typography size="sm" className="text-text-muted mt-2">
+                {isBusiness ? tStores("detail.noContactChannels") : tStores("detail.notAvailableForStoreType")}
+              </Typography>
+            )}
+          </SectionSurfaceCard>
+
+          <SectionSurfaceCard
+            title={tStores("create.addressesLabel")}
+            titleAs="h2"
+            titleId="section-addresses"
+            icon={MapPinned}
+            iconClassName="text-accent"
+          >
+            {isBusiness && addressesCount > 0 ? (
+              <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
+                {store.addresses?.map((address, index) => (
+                  <li key={`${address.countryCode}-${address.addressLine}-${index}`}>
+                    <div className={cn(DETAIL_INSET_CARD_CLASSNAME, "space-y-2.5 px-4 py-3")}>
+                      <div className="flex items-center gap-2">
+                        <Store className="text-primary size-4 shrink-0" aria-hidden />
+                        <Typography size="sm" className="text-text-title min-w-0 flex-1 font-semibold">
+                          {address.city
+                            ? `${address.city}, ${tCountries(address.countryCode)}`
+                            : tCountries(address.countryCode)}
+                        </Typography>
+                      </div>
+                      <Typography size="sm" className="text-text-body">
+                        {address.addressLine}
+                      </Typography>
+                      {address.reference ? (
+                        <Typography size="xs" className="text-text-muted">
+                          {address.reference}
+                        </Typography>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <Typography size="sm" className="text-text-muted mt-2">
+                {isBusiness ? tStores("detail.noAddresses") : tStores("detail.notAvailableForStoreType")}
+              </Typography>
+            )}
+          </SectionSurfaceCard>
         </div>
 
         {/* ── Reviews & Notes (full width) ── */}

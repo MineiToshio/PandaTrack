@@ -262,9 +262,11 @@ Rules:
 
 - use `SectionSurfaceCard` for contact channels, addresses, reviews, and private note
 - when a combined store-detail panel has no natural umbrella title (for example product types + import countries, or the top block of profile facts), use the same surface styling as `SectionSurfaceCard` but omit the synthetic grouped heading
-- when two small related groups belong together (for example product types and import countries), keep them inside one shared surface and split the body with the same `border-border` divider used under `SectionSurfaceCard` headers
+- when two small related groups belong together (for example product types and import countries, or sales channels and shopping options), prefer sibling `SectionSurfaceCard` panels when each group can stand on its own clearly
+- product types and import countries can share a responsive two-column row on desktop when content is typically compact; stack them naturally on smaller screens
+- prefer a single main reading column for store detail when the top area starts to feel fragmented; avoid a competing metadata sidebar for low-priority facts
+- show sales channels and shopping options in one compact summary surface directly under the hero, without an extra section title, using small labels plus chips instead of full secondary panel headers
 - use Lucide icons in section headers and nested subsection titles instead of `SectionTitleWithAccent`, matching order detail's icon-led panel language
-- keep the right-column profile facts, sales channels, and shopping options in one shared panel; the latter two are subsections inside the same panel, not tiny standalone cards
 
 ### Collector settings route (`/settings`)
 

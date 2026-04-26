@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-04-03
+last_updated: 2026-04-26
 source_features:
   - FEAT-0012
 implementation_status: IMPLEMENTED
@@ -23,10 +23,10 @@ It exists so collectors can:
 
 - discover sellers before buying
 - understand what kind of store a seller is
-- assess trust through public profile quality and, later, reviews
+- assess trust through public profile quality, moderation context, and community reviews
 - connect future orders, deliveries, and reminders to a stable seller identity
 
-This domain is already partially implemented in production code. This FRD reflects both:
+This domain is implemented in production code and continues to evolve. This FRD reflects both:
 
 - the current implemented behavior confirmed through reverse engineering of the codebase
 - the remaining planned behavior already represented in linked Work Orders and mirrored in GitHub tracking
@@ -50,16 +50,13 @@ It also defines how the listing layer behaves when upstream navigation chooses t
 - Inactive-store warning on detail page
 - Store report submission
 - Product-type request submission
+- Public review create, edit, and delete flows
+- Private store-note save flow
 - Approved-store change-request flow
 - Pending-store direct-edit permissions and route branching
+- Business logo upload and public-detail rendering for business stores
 - Store search/filter analytics events for listing and duplicate flows
-
-### Planned but not yet implemented
-
-- Public review create/edit flow
-- Private store notes
-- Business logo upload pipeline
-- Final analytics and error-handling hardening for remaining store flows
+- Store-detail single-column layout with a compact sales/shopping summary under the hero
 
 ## Terminology
 
@@ -85,7 +82,7 @@ As an authenticated collector, I want to add a store profile with duplicate prot
 
 ### US-03 Understand store trust context
 
-As a collector, I want to see moderation status, activity state, and later reviews so I can judge whether a store profile feels reliable.
+As a collector, I want to see moderation status, activity state, and community reviews so I can judge whether a store profile feels reliable.
 
 ### US-04 Hide sensitive fields for person sellers
 
@@ -124,6 +121,7 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - `FR-04-17`: Public detail must resolve through the canonical route `/{locale}/stores/[slug]`.
 - `FR-04-18`: Public detail must show a pending disclaimer for `PENDING` stores.
 - `FR-01-19`: Public detail must show an inactivity warning for inactive stores.
+- `FR-01-32`: Public detail should favor one main reading column, with sales channels and shopping options summarized directly under the hero before deeper catalog, contact, and address sections.
 
 ### Visibility rules
 
@@ -163,6 +161,7 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - `BR-01-16`: Store change requests persist only the changed fields and must be discarded or deleted when no effective diff remains.
 - `BR-01-17`: Store-country and store-type changes are not allowed through direct edit or change-request flows; store-type disputes must be raised through the report flow.
 - `BR-01-18`: Product-type request names are limited to 50 characters, and free-text governance context fields are limited to 500 characters.
+- `BR-01-19`: Store-detail metric counters for product-type count, import-country count, contact-channel count, and address count are not part of the implemented UI; the page prioritizes concrete values and actions instead of summary counts.
 
 ## State Model
 
@@ -262,7 +261,16 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - Then those values are treated with OR logic
 - And different filter families are combined with AND logic
 
-### `AC-01-08` Public reports-and-suggestions summary visibility
+### `AC-01-08` Detail page reading order
+
+- Given a public store-detail page
+- When the page loads
+- Then the hero shows identity context plus status and review summary
+- And a compact sales/shopping summary appears directly under the hero
+- And product types and import countries appear as sibling cards before contact channels and addresses
+- And the page avoids a competing metadata right rail for low-priority facts
+
+### `AC-01-09` Public reports-and-suggestions summary visibility
 
 - Given a public store-detail page with existing reports or change-request activity
 - When any visitor opens the `Reports and suggestions` summary UI
@@ -272,7 +280,7 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - And they can see summaries of pending or historical change requests
 - But they do not see requester identity or raw free-text report details from other users
 
-### `AC-01-09` Update open store report
+### `AC-01-10` Update open store report
 
 - Given an authenticated user who already has one open report for a store
 - When they reopen the report flow and submit new details
@@ -280,34 +288,34 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - And a second open report is not created
 - And the `Reports and suggestions` summary surfaces that same viewer report with its submitted date, selected reason, optional description, and an edit CTA that reopens the report form preloaded
 
-### `AC-01-10` Personalized pending change request summary
+### `AC-01-11` Personalized pending change request summary
 
 - Given an authenticated user who already has one pending change request for a store
 - When they open the `Reports and suggestions` summary UI
 - Then the personalized change-request panel shows the latest update timestamp, changed fields, optional comment, and a CTA to continue editing
 - And the aggregated community change summary remains visible as a separate block after the personalized panel
 
-### `AC-01-11` Re-report after resolution
+### `AC-01-12` Re-report after resolution
 
 - Given an authenticated user whose previous report for a store is already resolved
 - When they submit a new report for that same store
 - Then the system creates a new report record
 - And the earlier resolved report remains in history
 
-### `AC-01-12` Approved-store change request
+### `AC-01-13` Approved-store change request
 
 - Given an authenticated non-admin user on `/stores/[slug]/edit` for an approved store
 - When they submit one or more allowed field changes
 - Then the system persists only the changed fields as a store change request
 - And direct mutation of the approved store does not occur
 
-### `AC-01-13` No-op change request cleanup
+### `AC-01-14` No-op change request cleanup
 
 - Given an authenticated user with an open change request for a store
 - When they edit that request until it no longer differs from the persisted store
 - Then no effective change request remains stored for that user and store
 
-### `AC-01-14` Pending-store direct edit ownership
+### `AC-01-15` Pending-store direct edit ownership
 
 - Given a pending store
 - When the creator or an admin opens `/stores/[slug]/edit`
@@ -325,14 +333,11 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
   - `store_duplicate_suggestions_shown`
   - `store_duplicate_submit_modal_shown`
   - `store_searched`
+  - `store_review_write_clicked`
 
 ## Open Questions
 
-- Review fields are still not fully specified in product detail.
 - Moderation-state lifecycle and admin review tooling for governance records still need full downstream definition.
-- Product-type request payload and moderation rules still need implementation.
-- Approved-store change-request shape and edit-route behavior still need implementation.
-- Pending-store edit UX now has approved direction but still needs implementation.
 - Approved-store logo replacements must stage assets outside the live public object key until moderation applies them.
 
 ## Source Signals Used For Reverse Engineering

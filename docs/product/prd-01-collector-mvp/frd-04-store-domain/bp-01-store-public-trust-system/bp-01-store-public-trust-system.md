@@ -13,7 +13,7 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-04-02
+last_updated: 2026-04-26
 implementation_status: IMPLEMENTED
 ---
 
@@ -40,7 +40,7 @@ This blueprint supports at least the following FRD areas:
 - creation and moderation
 - discovery and detail
 - visibility rules
-- future trust and governance flows
+- trust, governance, and logo-storage flows
 
 ## Runtime Components
 
@@ -85,6 +85,9 @@ Current responsibilities:
 - create-store transaction write
 - store-detail read model assembly
 - business vs person visibility shaping
+- public reviews read model and viewer-first ordering
+- viewer-context reads for review and private note
+- logo URL persistence after successful upload
 
 Role:
 
@@ -125,6 +128,10 @@ Current responsibilities:
 - admin/non-admin status branching
 - PostHog instrumentation
 - duplicate-candidate action exposure for the form
+- public review save/delete actions
+- private-note save action
+- store-report and change-request action entry points
+- business-logo upload and cleanup orchestration
 
 Role:
 
@@ -147,6 +154,10 @@ Current responsibilities:
 - listing search/filter UX
 - detail-page trust and visibility UX
 - pending disclaimer and inactive warning rendering
+- compact post-hero summary for sales channels and shopping options
+- public review management and private-note editing on store detail
+- governance summary and report entry points on store detail
+- business-logo rendering in create, edit, listing duplicates, and business detail pages
 
 Role:
 
@@ -213,6 +224,23 @@ Role:
 - person stores omit those fields from the public payload
 - pending stores are shown with disclaimer
 - inactive stores are shown with warning
+- detail UI currently favors one main reading column
+- sales channels and shopping options are summarized in a compact surface directly under the hero
+- product types and import countries render as sibling cards on desktop and stack naturally on smaller screens
+- contact channels and addresses remain full titled sections below the catalog summary areas
+
+### Reviews and notes contract
+
+- public reviews are persisted and aggregated at the store level
+- when a signed-in viewer has a review, it is surfaced first in the public review list
+- review lists reveal more entries in increments instead of rendering every review immediately
+- one private note per signed-in viewer can be saved and edited from the detail page without entering full store edit mode
+
+### Logo contract
+
+- business stores may upload a logo during create and edit flows
+- successful uploads persist a final public `logoUrl` on the store row
+- approved-store edit flows stage pending logo uploads without replacing the public logo before moderation
 
 ## Architectural Decisions Already Visible
 
@@ -223,15 +251,6 @@ Role:
 - catalogs are seed-backed and displayed through i18n keys, not localized DB text
 
 ## Planned Extension Points
-
-### Reviews and notes
-
-Should extend:
-
-- data model layer
-- query layer
-- server action layer
-- detail UI and authenticated context entry points
 
 ### Governance flows
 
@@ -245,19 +264,9 @@ Should extend:
 - moderation-ready storage contracts
 - reusable modal and max-length field UX patterns shared with store forms
 
-### Logo upload
+### Remaining extension focus
 
-Should extend:
-
-- create-store form flow
-- edit-store form flow
-- in-memory image-editing UI boundary for crop/zoom confirmation before submit
-- server action layer
-- image-processing boundary
-- storage integration layer
-- query read model for logo reference
-
-Current logo-storage decision:
+Current logo-storage decision is already implemented:
 
 - use the shared assets bucket configured for the active environment
 - use the `store-logos/` asset route prefix for persisted business logos
@@ -271,13 +280,12 @@ Current logo-storage decision:
 - Public governance summary reads must avoid exposing requester identity or raw free-text report details to non-admin viewers.
 - Change-request persistence must stay diff-based; snapshot-style writes would make moderation review noisier and increase accidental drift.
 - Pending-store direct edits and approved-store change requests now share the same route shape, so permission checks must stay explicit at the action and query boundaries.
-- Cloudflare R2 integration is planned but not present in current store code paths.
+- Remaining store work should assume the logo upload path already exists and extend it carefully rather than replacing it.
 
 ## ADR Need
 
 Potential ADR candidates when the next store slice starts:
 
-- storage strategy for business logos
 - write-path design for review aggregate synchronization
 - permission boundary for pending direct edit vs approved change request
 - governance-summary read model for public vs admin audiences

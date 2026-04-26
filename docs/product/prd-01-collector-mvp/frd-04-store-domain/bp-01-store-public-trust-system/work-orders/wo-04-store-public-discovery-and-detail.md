@@ -26,13 +26,14 @@ Ship the public store listing and detail experience, including search, filters, 
 - pending disclaimer
 - inactive warning
 - detail page visual alignment with order detail panels
+- single-column detail reading order with compact post-hero sales/shopping summary
+- product-type and import-country section layout in the main content column
 - search/filter analytics
 
 ## Out of Scope
 
-- review submission UI
-- report flow
-- change request flow
+- review submission and private-note behavior on the same route remain owned by `WO-05`
+- governance submission flows beyond the detail-page entry points owned by `WO-06`
 - logo upload
 
 ## Requirements
@@ -56,6 +57,7 @@ Relevant acceptance criteria copied from the FRD:
 - `AC-01-05` Person-store visibility
 - `AC-01-06` Pending visibility and SEO
 - `AC-01-07` Listing filter logic
+- `AC-01-08` Detail page reading order
 
 ## Blueprints
 
@@ -72,7 +74,8 @@ Relevant acceptance criteria copied from the FRD:
 - Store detail route resolves at `/stores/[slug]`.
 - Pending stores show a disclaimer on detail.
 - Person-store detail hides contact and address sections.
-- Store detail sections use the same panel chrome as order detail sections so catalog, contact, address, and right-rail information feel like one authenticated app experience.
+- Store detail sections use the same panel chrome as order detail sections, but the page should favor a single main reading column: a compact sales/shopping summary under the hero, then catalog, contact, and address sections in natural vertical order instead of a competing right rail.
+- Store detail no longer shows metric-count cards for product types, import countries, contact channels, or addresses.
 
 ## Status Note
 
