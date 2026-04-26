@@ -92,7 +92,7 @@ export default function OrderPaymentsPanel({
     setPayments(optimisticList);
     recalculate(optimisticList);
 
-    const result = await addPaymentAction(orderId, amount, paymentDate, currencyCode);
+    const result = await addPaymentAction(orderId, amount, paymentDate);
 
     if (result.ok) {
       // reconcile with server response

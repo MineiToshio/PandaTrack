@@ -21,7 +21,6 @@ export async function addPaymentAction(
   orderId: string,
   amount: number,
   paymentDate: Date,
-  currencyCode: string,
 ): Promise<AddPaymentActionResult> {
   const session = await getSession();
   if (!session?.user?.id) return { ok: false, error: "unauthorized" };
@@ -31,7 +30,7 @@ export async function addPaymentAction(
   if (!parsed.success) return { ok: false, error: "validation" };
 
   try {
-    const result = await addOrderPayment({ orderId, userId, amount, paymentDate, currencyCode });
+    const result = await addOrderPayment({ orderId, userId, amount, paymentDate });
     if (!result.ok) return { ok: false, error: result.error };
 
     const posthog = getPostHogClient();

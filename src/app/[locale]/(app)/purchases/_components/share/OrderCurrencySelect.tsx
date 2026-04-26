@@ -143,8 +143,6 @@ export default function OrderCurrencySelect({
             type="button"
             id={id}
             disabled={disabled}
-            aria-required={ariaRequired}
-            aria-invalid={ariaInvalid}
             aria-haspopup="listbox"
             aria-expanded={isOpen}
             aria-controls={`${id}-options`}

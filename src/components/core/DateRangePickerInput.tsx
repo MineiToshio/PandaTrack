@@ -73,10 +73,6 @@ export default function DateRangePickerInput({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) setStep("from");
-  }, [isOpen]);
-
   const openPicker = () => {
     setStep("from");
     setIsOpen(true);

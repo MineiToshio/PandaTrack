@@ -17,7 +17,6 @@ type AddPaymentParams = {
   userId: string;
   amount: number;
   paymentDate: Date;
-  currencyCode: string;
 };
 
 type DeletePaymentParams = {
@@ -37,7 +36,6 @@ export async function addOrderPayment({
   userId,
   amount,
   paymentDate,
-  currencyCode,
 }: AddPaymentParams): Promise<AddPaymentResult> {
   return prisma.$transaction(async (tx) => {
     const order = await tx.order.findFirst({
