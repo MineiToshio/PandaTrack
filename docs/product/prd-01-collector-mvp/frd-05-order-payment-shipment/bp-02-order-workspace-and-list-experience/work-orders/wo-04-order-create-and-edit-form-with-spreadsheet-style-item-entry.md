@@ -75,8 +75,8 @@ Two new packages must be added before implementation begins:
 
 ## Routes
 
-| Route                           | File                                                  | Purpose      |
-| ------------------------------- | ----------------------------------------------------- | ------------ |
+| Route                        | File                                               | Purpose      |
+| ---------------------------- | -------------------------------------------------- | ------------ |
 | `/[locale]/orders/new`       | `src/app/[locale]/(app)/orders/new/page.tsx`       | Create order |
 | `/[locale]/orders/[id]/edit` | `src/app/[locale]/(app)/orders/[id]/edit/page.tsx` | Edit order   |
 
@@ -101,7 +101,7 @@ The form is a single page. Fields appear in this order:
 4. **Expected delivery range** — date range picker; both bounds optional
 5. **Exchange rate** — conditional; only visible when `currencyCode !== user.baseCurrencyCode` and `baseCurrencyCode` is not null. Rendered in its own row below the dates so it never pushes the currency field off the store row.
 6. **Items** — spreadsheet grid; at least one row required
-7. **Total cost** — required monetary input
+7. **Total cost** — required monetary input, rendered at half-width on `sm` and up (same two-column grid as Store/Currency and Date/Delivery range rows). A **Calcular / Calculate** button sits inline to the right of the input; clicking it sums `quantity × unitPrice` across all items that have a unit price and writes the result to the Total field. The button is disabled when no item has a unit price.
 
 The private note field is not part of this form. It is inline-editable from the order detail view (WO-05).
 
@@ -256,7 +256,7 @@ Behavior notes:
 - Applies identically in both `create` and `edit` modes; the helper operates purely on the current client-side rows, so it works for pre-existing order rows loaded in edit mode the same way it works for rows added during the session.
 - The inheritance walk is strictly **backwards** (above → below). Rows above index 0 have no predecessor, so inserting at index 0 always produces an empty product type; new rows appended at the end pick up the last row's type if set.
 
-**Validation timing:** `name` and `quantity` validate on blur; `unitPrice` and `productTypeKey` validate at save time (per WO-02).
+**Validation timing:** `name` and `quantity` validate on blur. `unitPrice` (when non-empty), `productTypeKey`, and `totalCost` validate client-side on save — errors appear immediately as field-level messages without a server round-trip. The server re-validates all fields via Zod as a security net. Client validation always runs first; server validation is the fallback, not the primary feedback path.
 
 ### Discrepancy modal
 
@@ -288,7 +288,9 @@ The form body uses `APP_SHELL_FORM_RAIL_CLASSNAME` to keep fields at a comfortab
 
 ## Technical Notes
 
-- All monetary inputs (total cost, unit price) are entered by the user as decimal values (e.g., "25.50") and converted to minor units (× 100) before passing to the data layer. Display paths divide by 100 and format before rendering.
+- All monetary inputs (total cost, unit price) use `type="text" inputMode="decimal"` — **not** `type="number"`. This prevents browser locale settings from rendering the value with a comma as decimal separator. The decimal separator standard across the app is always a period (`.`); see `docs/design/visual-foundations.md` — _"Number and currency formatting"_.
+- Input sanitization is applied on every `onChange` via `sanitizeDecimalInput` from `src/lib/decimalInput.ts`: strips non-numeric characters, enforces a single period, limits to two decimal digits. `isValidPositiveDecimal` from the same module validates on save.
+- Values are stored and submitted as dot-separated decimal strings (e.g. `"25.50"`) and converted to minor units (× 100) before passing to the data layer. Display paths divide by 100 and format via `formatAmount` in `src/lib/currency.ts` before rendering.
 - The `returnTo=order-create` query value is centralized as `RETURN_TO_ORDER_CREATE` in `src/lib/constants.ts`. The store-creation flow reads it (via `searchParams` on `/stores/new`) so the client redirect after create goes to `/orders/new?store={id}` instead of the default store detail/list.
 - The order form builds store-create and settings links with the `returnTo` query key from `AUTH_RETURN_TO_PARAM` (`src/lib/auth/authRedirect.ts`) so the param name stays aligned with auth callbacks.
 - The settings page and `SettingsPreferencesSection` read the same `returnTo` value for the back link and post-save redirect to `/orders/new` (see _Settings round-trip_ above).
