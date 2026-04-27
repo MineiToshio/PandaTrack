@@ -1,9 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
 import { buildPageMetadata } from "@/lib/seo";
 import { getSession } from "@/lib/auth/auth-server";
 import { getOrderDetail } from "@/lib/data/orders/orderQueries";
+import { ROUTES } from "@/lib/constants";
+import { safeRelativeReturnTo } from "@/lib/navigation/safeRelativeReturnTo";
 import { prisma } from "@/lib/prisma";
 import OrderDetailContent from "./_components/OrderDetailContent";
 
@@ -11,20 +14,6 @@ type Props = {
   params: Promise<{ locale: string; id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
-
-function safeRelativeReturnTo(raw: string | string[] | undefined): string | null {
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  if (!value) return null;
-  let decoded: string;
-  try {
-    decoded = decodeURIComponent(value);
-  } catch {
-    return null;
-  }
-  if (!decoded.startsWith("/")) return null;
-  if (decoded.startsWith("//")) return null;
-  return decoded;
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
@@ -46,6 +35,9 @@ export default async function OrdersDetailPage({ params, searchParams }: Props) 
 
   const rawParams = await searchParams;
   const backHref = safeRelativeReturnTo(rawParams.returnTo);
+  const detailHref = backHref
+    ? `/${locale}${ROUTES.orders}/${id}?${new URLSearchParams({ [AUTH_RETURN_TO_PARAM]: backHref }).toString()}`
+    : `/${locale}${ROUTES.orders}/${id}`;
 
   const [order, user] = await Promise.all([
     getOrderDetail(id, userId),
@@ -60,6 +52,7 @@ export default async function OrdersDetailPage({ params, searchParams }: Props) 
       locale={locale}
       baseCurrencyCode={user?.baseCurrencyCode ?? null}
       backHref={backHref}
+      detailHref={detailHref}
     />
   );
 }

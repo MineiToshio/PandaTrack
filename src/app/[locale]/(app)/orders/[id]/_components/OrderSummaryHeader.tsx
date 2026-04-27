@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { ArrowLeftRight, Calendar, Truck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { STORE_HERO_META_PILL_CLASSNAME } from "@/app/[locale]/(app)/stores/_components/share/storePublicChipClassnames";
+import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
 import { cn } from "@/lib/styles";
 import BackNavLink from "@/components/core/BackNavLink";
 import AppPageHero from "@/components/modules/AppPageHero";
@@ -30,6 +31,7 @@ type OrderSummaryHeaderProps = {
   locale: string;
   baseCurrencyCode: string | null;
   backHref?: string | null;
+  detailHref: string;
 };
 
 function formatDate(date: Date, locale: string) {
@@ -45,11 +47,14 @@ const META_CHIP_ICON_CLASS: Record<MetaChipVariant, string> = {
   fx: "text-highlight",
 };
 
+const STORE_RETURN_LABEL_PARAM = "returnLabel";
+
 export default async function OrderSummaryHeader({
   order,
   locale,
   baseCurrencyCode,
   backHref,
+  detailHref,
 }: OrderSummaryHeaderProps) {
   const t = await getTranslations({ locale, namespace: "orders" });
 
@@ -90,6 +95,11 @@ export default async function OrderSummaryHeader({
     });
   }
 
+  const storeHref = `/${locale}${ROUTES.stores}/${order.store.slug}?${new URLSearchParams({
+    [AUTH_RETURN_TO_PARAM]: detailHref,
+    [STORE_RETURN_LABEL_PARAM]: order.humanReadableId,
+  }).toString()}`;
+
   return (
     <div className="space-y-5">
       <BackNavLink href={backHref ?? `/${locale}${ROUTES.orders}`} appearance="pill">
@@ -128,6 +138,9 @@ export default async function OrderSummaryHeader({
               locale={locale}
               humanReadableId={order.humanReadableId}
               storeName={order.store.name}
+              storeHref={storeHref}
+              storeId={order.store.id}
+              storeSlug={order.store.slug}
             />
           </div>
         }

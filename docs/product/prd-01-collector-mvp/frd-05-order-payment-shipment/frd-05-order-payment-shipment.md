@@ -8,7 +8,7 @@ parent: PRD-01
 children:
   - BP-01
   - BP-02
-last_updated: 2026-04-24
+last_updated: 2026-04-26
 source_features:
   - FEAT-0014
 implementation_status: IN_PROGRESS
@@ -87,7 +87,7 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - `FR-05-20`: The order detail view must show paid amount, remaining amount, and payment percentage.
 - `FR-05-21`: The order detail view must expose one inline-editable private note field that can be saved without entering full order edit mode.
 - `FR-05-22`: The order detail view must expose an automatic history list that records major order lifecycle events. **As implemented (2026-04-24):** the list is **read-only**; users cannot delete individual history entries from the UI (aligned with [`WO-05`](bp-02-order-workspace-and-list-experience/work-orders/wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md) and migration `20260423000000_simplify_order_history_event_types`).
-- `FR-05-23`: The order detail view must expose `Create delivery` as the primary action, `Edit` as the secondary action, and `Cancel` plus `Delete` inside an action menu.
+- `FR-05-23`: The order detail view must expose `Create delivery` as the primary action plus one secondary affordance. That secondary affordance may be a split action composed of visible `Edit` plus a small overflow trigger that opens `View store`, `Cancel`, and `Delete` as appropriate for the order status.
 - `FR-05-24`: An order may be physically deleted only when none of its items is linked to a non-cancelled delivery. When the rule is not met, the delete affordance must be rendered as disabled with a tooltip that explains the collector must first unlink the affected items from their delivery.
 - `FR-05-25`: An order may be cancelled only when none of its items is linked to a non-cancelled delivery. When the rule is not met, the cancel affordance must be rendered as disabled with a tooltip that explains the collector must first unlink the affected items from their delivery. Cancelling an order moves it to `CANCELLED` without removing its historical record.
 - `FR-05-26`: The orders list must support filters for order-date range, store, product type, status, and free-text product-name matching.
@@ -196,8 +196,9 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - order note is one inline-editable textarea, not a list of note records
 - payment records store amount and date and may be deleted
 - discrepancy handling is a save-time modal, not a passive warning
-- order actions in detail view follow the pattern: primary action, secondary action, destructive actions in `More`
+- order actions in detail view follow the pattern: primary action plus a single `More` menu that groups secondary navigation and destructive actions
 - the order detail header displays store name and order date as the primary title; the human-readable identifier (`ORD-YYYYMMDD-NN`) appears as secondary metadata
+- when the collector opens store detail from order detail, the store page back link honors the encoded `?returnTo=` order-detail URL so the collector can return to the same order context instead of falling back to the store listing
 - a cancelled order may be reactivated to `OPEN`; payment records removed during cancellation are not restored
 - cancel and delete share the same eligibility rule: both are blocked when any item is linked to a non-cancelled delivery, so the collector must unlink the item from its delivery before cancelling or deleting the order
 - monetary amounts are stored as `Int` in minor currency units (cents × 100); `exchangeRate` uses `Decimal`

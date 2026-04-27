@@ -106,6 +106,19 @@ Base button patterns live in `src/components/core/Button/buttonVariants.ts`.
 - `outline`: lower-emphasis action with structural visibility
 - `ghost`: contextual or inline action
 
+### Detail hero action limit
+
+For detail-page hero headers, never place three standalone buttons side by side.
+
+Rules:
+
+- the visible action row must stop at **two** affordances maximum
+- prefer **one primary action + one `More` menu** when the screen needs more than two actions
+- when one secondary action is clearly dominant, prefer a **split secondary affordance**: a labeled secondary button plus a small adjacent overflow trigger that opens the remaining actions
+- if a contextual navigation action (for example `View store`) competes with edit or destructive actions, move it into the `More` menu instead of adding a third visible button
+- split buttons are allowed only when they still read as one secondary affordance, not as a third standalone action
+- this rule applies across mobile and desktop; wrapping to a second line does not justify keeping three visible buttons in the same hero
+
 ### Control sizing
 
 - use comfortable tap targets

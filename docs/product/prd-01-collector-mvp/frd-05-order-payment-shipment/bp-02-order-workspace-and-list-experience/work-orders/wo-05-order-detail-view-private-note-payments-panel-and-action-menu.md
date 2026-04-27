@@ -7,7 +7,7 @@ status: ACTIVE
 parent: BP-02
 source_features:
   - FEAT-0014
-last_updated: 2026-04-25
+last_updated: 2026-04-26
 implementation_status: IMPLEMENTED
 ---
 
@@ -15,7 +15,7 @@ implementation_status: IMPLEMENTED
 
 ## Summary
 
-Build the order detail experience at `/orders/[id]`: a status-aware header with action hierarchy, items list, **read-only** automatic history, inline-editable private note, and a payments panel that reuses the payment server mutations from [FRD-05 · BP-01 · WO-03](../../bp-01-order-domain-foundation/work-orders/wo-03-order-payments-balances-and-payment-mutation-rules.md). **As implemented (April 2026):** payments and note changes use optimistic or immediate local UI updates where applicable; order history records **lifecycle events only** (`ORDER_CREATED`, `ORDER_CANCELLED`, `ORDER_REACTIVATED`, and `STATUS_CHANGED` reserved for delivery-driven updates). Note and payment activity **do not** append history rows (see migration `20260423000000_simplify_order_history_event_types`). The history panel is **read-only** (no per-entry delete in UI or `deleteOrderHistoryEntry` in `orderMutations.ts`). On desktop, history sits in the **right column** under the payments block, in a `SectionSurfaceCard` to match the payments list styling. Cancel and reactivate refresh the page after a successful Server Action instead of reconciling a full detail payload on the client. Opening the add-payment form scrolls the form into view (`scrollIntoView` + `scroll-mt-24`) so long payment lists do not hide the form.
+Build the order detail experience at `/orders/[id]`: a status-aware header with action hierarchy, items list, **read-only** automatic history, inline-editable private note, and a payments panel that reuses the payment server mutations from [FRD-05 · BP-01 · WO-03](../../bp-01-order-domain-foundation/work-orders/wo-03-order-payments-balances-and-payment-mutation-rules.md). **As implemented (April 2026):** payments and note changes use optimistic or immediate local UI updates where applicable; order history records **lifecycle events only** (`ORDER_CREATED`, `ORDER_CANCELLED`, `ORDER_REACTIVATED`, and `STATUS_CHANGED` reserved for delivery-driven updates). Note and payment activity **do not** append history rows (see migration `20260423000000_simplify_order_history_event_types`). The history panel is **read-only** (no per-entry delete in UI or `deleteOrderHistoryEntry` in `orderMutations.ts`). On desktop, history sits in the **right column** under the payments block, in a `SectionSurfaceCard` to match the payments list styling. Cancel and reactivate refresh the page after a successful Server Action instead of reconciling a full detail payload on the client. Opening the add-payment form scrolls the form into view (`scrollIntoView` + `scroll-mt-24`) so long payment lists do not hide the form. The header keeps a maximum of two visible affordances: a primary action plus one secondary affordance. In active states that secondary affordance is a split pattern: visible `Edit` plus a small adjacent overflow trigger. `View store` lives inside that overflow menu and links to `/stores/[slug]?returnTo={encodedCurrentOrderDetailUrl}` so store detail can route the collector back to the same order context.
 
 ## Prerequisites
 
@@ -31,7 +31,8 @@ WO-05 extends `orderMutations.ts` with `reactivateOrder` and `saveOrderNote`, an
 ## In Scope
 
 - Detail route `orders/[id]` with server-rendered initial state
-- Status-aware action bar: primary, secondary, and `More`/chevron menus per status
+- Status-aware action bar: primary action plus one secondary affordance per status
+- `View store` menu action, with `?returnTo=` round-trip back to the current order detail URL
 - `Create delivery` primary action disabled with tooltip until FRD-08 ships
 - Inline-editable private note (reuses visual treatment of `StoreNoteForm`; wired to `Order.note`; no `OrderHistory` row on save)
 - Payments panel: list, expandable add form, delete confirmation, optimistic summary recalculation
@@ -76,8 +77,16 @@ WO-05 extends `orderMutations.ts` with `reactivateOrder` and `saveOrderNote`, an
 | Route                      | File                                             | Purpose                                                                                                  |
 | -------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
 | `/[locale]/orders/[id]` | `src/app/[locale]/(app)/orders/[id]/page.tsx` | Server-rendered detail page; resolves the session `userId` and fetches `getOrderDetail(orderId, userId)` |
+| `/[locale]/stores/[slug]?returnTo={encodedOrderDetailUrl}` | `src/app/[locale]/(app)/stores/[slug]/page.tsx` | Store-detail entry from order detail; preserves the current order URL for back navigation |
 
 If the order does not exist or does not belong to the session user, the page calls `notFound()` so Next.js renders the locale 404.
+
+## Navigation Contract
+
+- The order-detail page already accepts an optional `?returnTo=` pointing back to the orders list. That value must be sanitized to a relative path before being used as the order-page back link.
+- The `View store` menu action must build a store-detail URL that carries the current order-detail URL, including its own sanitized `?returnTo=` list state when present.
+- That same link also carries the visible order identifier so the store-detail `BackNavLink` label can read `Back to order {id}` instead of the generic listing label when the collector arrived from an order.
+- The store-detail page must sanitize its incoming `?returnTo=` and use it for the top `BackNavLink`; when absent or invalid, it falls back to `/[locale]/stores`.
 
 ## Detail Query Shape
 
@@ -119,7 +128,7 @@ src/app/[locale]/(app)/orders/[id]/
     OrderDetailContent.tsx         Server — orchestrator, 2-col layout
     OrderSummaryHeader.tsx         Server — store, humanReadableId, dates, status chip, unpaid pill
     OrderStatusBadge.tsx           Server — status chip localized
-    OrderActionBar.tsx             Client — primary/secondary + More/chevron, status-aware
+    OrderActionBar.tsx             Client — primary + More menu, status-aware
     OrderItemsList.tsx             Server — renders items read-only in detail (editing happens in WO-04)
     OrderPaymentSummaryCard.tsx    Client — reconciles with Server Action returns
     OrderPaymentsPanel.tsx         Client — list + expandable form + optimistic list mutations
@@ -167,17 +176,17 @@ The action bar is a Client Component. It reads `status`, `eligibility`, and `fla
 
 ### Status matrix
 
-| Status                                                              | Primary                                              | Secondary                       | More / chevron                                               |
-| ------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------- | ------------------------------------------------------------ |
-| `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED` | `Create delivery` (disabled, tooltip "Próximamente") | `Edit` → `/orders/[id]/edit` | `Cancel` · `Delete`                                          |
-| `COMPLETED`                                                         | `Create delivery` (disabled, tooltip "Próximamente") | `Edit` hidden                   | `Cancel` · `Delete` (both disabled with eligibility tooltip) |
-| `CANCELLED`                                                         | `Reactivate`                                         | —                               | `Delete` (enabled/disabled per eligibility)                  |
+| Status                                                              | Primary                                              | Secondary affordance                                         | Overflow / menu actions                               |
+| ------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------- |
+| `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED` | `Create delivery` (disabled, tooltip "Próximamente") | `Edit` → `/orders/[id]/edit` + adjacent overflow trigger     | `View store` · `Cancel` · `Delete`                    |
+| `COMPLETED`                                                         | `Create delivery` (disabled, tooltip "Próximamente") | `Edit` → `/orders/[id]/edit` + adjacent overflow trigger     | `View store` · `Cancel` · `Delete` (last two disabled) |
+| `CANCELLED`                                                         | `Reactivate`                                         | `More` button                                                | `View store` · `Delete` (enabled/disabled per eligibility) |
 
 When `eligibility.canCancel === false` or `eligibility.canDelete === false`, the item stays visible but is rendered disabled with the shared unlink-first tooltip.
 
 ### Mobile (< md)
 
-`Create delivery` renders full-width. `Edit` and the `More` trigger appear in a two-button row below. Reactivate in `CANCELLED` takes the full-width slot.
+`Create delivery` renders full-width. The second visible affordance is the split `Edit` + overflow pattern. Reactivate in `CANCELLED` takes the primary slot and pairs with a standalone `More` trigger because edit is not available in that state.
 
 ### Analytics hooks
 
@@ -333,6 +342,7 @@ Event names live under `POSTHOG_EVENTS.ORDER.*` in `src/lib/constants.ts`. **As 
 | `order_deleted`                 | `deleteOrder` returns success                               |
 | `order_reactivated`             | `reactivateOrder` returns success                           |
 | `order_create_delivery_clicked` | User clicks `Create delivery`, including the disabled state |
+| `order_view_store_clicked`      | User clicks the `View store` action inside the order-detail `More` menu |
 | `order_detail_more_menu_opened` | The `More` / chevron menu opens                             |
 
 ## Assumptions

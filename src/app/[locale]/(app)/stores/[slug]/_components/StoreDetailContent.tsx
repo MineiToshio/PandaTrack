@@ -61,6 +61,8 @@ type StoreDetailContentProps = {
   governanceViewerContext: StoreGovernanceViewerContext;
   canAccessEditRoute: boolean;
   canDirectlyEdit: boolean;
+  backHref?: string | null;
+  backOrderLabel?: string | null;
 };
 
 function SimpleIconSvg({ path, size = 16 }: { path: string; size?: number }) {
@@ -107,6 +109,8 @@ export default function StoreDetailContent({
   governanceViewerContext,
   canAccessEditRoute,
   canDirectlyEdit,
+  backHref,
+  backOrderLabel,
 }: StoreDetailContentProps) {
   const tStores = useTranslations("stores");
   const tCountries = useTranslations("countries");
@@ -138,6 +142,7 @@ export default function StoreDetailContent({
   const addressesCount = store.addresses?.length ?? 0;
   const storeCountryFlagEmoji = getCollectorCountryFlagEmoji(store.countryCode);
   const editModeLabel = canDirectlyEdit ? tStores("edit.direct.shortLabel") : tStores("edit.changeRequest.shortLabel");
+  const backLabel = backHref && backOrderLabel ? tListing("backToOrder", { orderId: backOrderLabel }) : tListing("backToListing");
 
   return (
     <StoreReviewsStateProvider
@@ -147,7 +152,7 @@ export default function StoreDetailContent({
       viewerReview={viewerReview}
     >
       <div className="text-foreground">
-        <BackNavLink href={`/${locale}${ROUTES.stores}`}>{tListing("backToListing")}</BackNavLink>
+        <BackNavLink href={backHref ?? `/${locale}${ROUTES.stores}`}>{backLabel}</BackNavLink>
 
         <section
           aria-labelledby="store-detail-heading"

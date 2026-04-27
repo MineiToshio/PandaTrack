@@ -9,6 +9,7 @@
     "title": "Directorio de tiendas"
   },
   "backToListing": "Volver al listado",
+  "backToOrder": "Volver al pedido {orderId}",
   "browseStores": "Ver tiendas",
   "searchPlaceholder": "Buscar por nombre de tienda",
   "searchButton": "Buscar",

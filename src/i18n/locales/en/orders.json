@@ -137,6 +137,7 @@
     "metaDeliveryFrom": "{from}",
     "metaFxBadge": "1 {from} = {rate} {to}",
     "actions": {
+      "viewStore": "View store",
       "createDelivery": "Create delivery",
       "createDeliveryTooltip": "Coming soon: you'll be able to create deliveries for this order.",
       "edit": "Edit",

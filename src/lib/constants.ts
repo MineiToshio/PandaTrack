@@ -145,6 +145,7 @@ export const POSTHOG_EVENTS = {
     DELETED: "order_deleted",
     REACTIVATED: "order_reactivated",
     CREATE_DELIVERY_CLICKED: "order_create_delivery_clicked",
+    VIEW_STORE_CLICKED: "order_view_store_clicked",
     DETAIL_MORE_MENU_OPENED: "order_detail_more_menu_opened",
     LIST_FILTERED: "orders_list_filtered",
     LIST_FILTER_CHIP_REMOVED: "orders_list_filter_chip_removed",

@@ -137,6 +137,7 @@
     "metaDeliveryFrom": "{from}",
     "metaFxBadge": "1 {from} = {rate} {to}",
     "actions": {
+      "viewStore": "Ver tienda",
       "createDelivery": "Crear entrega",
       "createDeliveryTooltip": "Próximamente: podrás crear entregas para este pedido.",
       "edit": "Editar",

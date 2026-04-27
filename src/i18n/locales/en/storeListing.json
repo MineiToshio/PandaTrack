@@ -9,6 +9,7 @@
     "title": "Stores directory"
   },
   "backToListing": "Back to stores",
+  "backToOrder": "Back to order {orderId}",
   "browseStores": "Browse stores",
   "searchPlaceholder": "Search by store name",
   "searchButton": "Search",

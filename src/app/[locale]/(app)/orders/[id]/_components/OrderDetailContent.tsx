@@ -13,9 +13,16 @@ type OrderDetailContentProps = {
   locale: string;
   baseCurrencyCode: string | null;
   backHref?: string | null;
+  detailHref: string;
 };
 
-export default function OrderDetailContent({ order, locale, baseCurrencyCode, backHref }: OrderDetailContentProps) {
+export default function OrderDetailContent({
+  order,
+  locale,
+  baseCurrencyCode,
+  backHref,
+  detailHref,
+}: OrderDetailContentProps) {
   const summary = calculatePaymentSummary(order.totalCost, order.payments);
   const hasUnpaidBalance = deriveHasUnpaidBalance(order.totalCost, summary.paidAmount);
 
@@ -40,6 +47,7 @@ export default function OrderDetailContent({ order, locale, baseCurrencyCode, ba
         locale={locale}
         baseCurrencyCode={baseCurrencyCode}
         backHref={backHref}
+        detailHref={detailHref}
       />
 
       {/* Mobile: flex column with explicit order so the visual sequence is

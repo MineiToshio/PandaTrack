@@ -10,7 +10,7 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-04-24
+last_updated: 2026-04-26
 implementation_status: IN_PROGRESS
 ---
 
@@ -34,15 +34,16 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
 - Orders should use expandable cards rather than a rigid table so the same surface can carry status chips, overdue signals, payment progress, and mobile-friendly expansion.
 - The order create/edit form should place the item spreadsheet last so the user establishes the order context before entering many line items.
 - The order detail view should keep the private note editable outside full edit mode, matching the mental model already established in `Stores`.
-- Action overload should be reduced by using one primary action, one secondary action, and a `More` menu for destructive actions.
+- Action overload should be reduced by using one primary action and one secondary affordance. When edit is the clearly dominant secondary task, that affordance should be a split pattern: visible `Edit` plus a small adjacent overflow trigger for the remaining actions.
 - The detail-view action bar must adapt to the order status so collectors always see a meaningful primary action:
-  - `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`: primary `Create delivery` · secondary `Edit` · `More` with `Cancel` and `Delete`.
-  - `COMPLETED`: same layout as above; `Cancel` and `Delete` remain visible but disabled with a tooltip that explains the eligibility rule.
-  - `CANCELLED`: primary `Reactivate` · chevron menu with `Delete` only (edit is not offered on cancelled orders; reactivate first if the collector needs to mutate data).
+  - `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`: primary `Create delivery` · visible `Edit` · overflow with `View store`, `Cancel`, and `Delete`.
+  - `COMPLETED`: same visible layout as above; overflow still includes `View store`, while `Cancel` and `Delete` remain visible but disabled with a tooltip that explains the eligibility rule.
+  - `CANCELLED`: primary `Reactivate` · `More` with `View store` and `Delete` only (edit is not offered on cancelled orders; reactivate first if the collector needs to mutate data).
 - The detail view uses a two-column layout on `lg` and above: **left** column — order **items** list, then **private note** (`space-y-8`). **Right** column (sticky) — **payment summary + payment list/add form** (`OrderPaymentsPanel`), then **read-only order history** in a `SectionSurfaceCard` matching the payments card styling (`space-y-4` between the two). The page **header** spans full width above the grid. On smaller breakpoints the grid stacks: **header → items → note → payments → history** (no sticky rail; natural document order). See [`WO-05`](work-orders/wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md).
 - Product-name search belongs inside the filter sidebar as one free-text filter rather than a global omnibox.
 - The orders list applies a default status filter of active orders (`OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`) when no filter state is present in the URL. This keeps the collector focused on orders that need attention without requiring manual setup on every visit. The route canonicalizes to an explicit query string with those four `status` params, the filter UI shows a grouped `Solo activas` chip, and the status options inside the filter sidebar remain checked to match the visible results. The `Restablecer` button returns to that explicit default active-orders URL and appears only when at least one filter beyond the default active view is currently applied.
 - The back link from the order detail page to the orders list uses a `?returnTo=` query parameter carrying the encoded previous list URL. This preserves the collector's filter and pagination state across the list → detail → list navigation cycle, consistent with the `?returnTo=order-create` redirect contract already used in the order create flow.
+- The order detail page exposes `View store` inside the `More` menu. That link passes the full current order-detail URL through `?returnTo=` to the store detail route so the store page back link can return the collector to the same order detail context.
 
 ## Contracts
 
@@ -56,7 +57,7 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
   - after the store is saved, the collector is redirected to `/orders/new?store={id}` with the new store preselected
 - detail action contract:
   - input: current order state, payment records, delivery associations, and feature-flag-style availability (for example whether the delivery-create flow is live)
-  - output: availability and disabled-state reasons for `Create delivery`, `Edit`, `Cancel`, `Delete`, and `Reactivate` so the UI can render each affordance enabled, disabled with tooltip, or hidden according to the status-driven action bar above
+  - output: availability and disabled-state reasons for `Create delivery`, `Edit`, `View store`, `Cancel`, `Delete`, and `Reactivate` so the UI can render each affordance enabled, disabled with tooltip, or hidden according to the status-driven action bar above
   - shared eligibility rule: `Cancel` and `Delete` share the same block condition — at least one item linked to a non-cancelled delivery — and must surface the same unlink-first tooltip when disabled
 - list filter contract:
   - input: date range, store, product type, status, free-text product query, `fxStatus` reconciliation flag

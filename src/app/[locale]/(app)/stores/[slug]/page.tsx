@@ -4,11 +4,15 @@ import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
 import { getPublicStoreReviews, getStoreBySlug, getStoreViewerContext } from "@/queries/store";
 import { getEditableStoreBySlug, getStoreGovernanceSummary, getStoreGovernanceViewerContext } from "@/queries/storeGovernance";
 import { buildStoreDetailMetadata } from "@/lib/seo";
+import { safeRelativeReturnTo } from "@/lib/navigation/safeRelativeReturnTo";
 import StoreDetailContent from "./_components/StoreDetailContent";
 
 type StoreDetailPageProps = {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+const STORE_RETURN_LABEL_PARAM = "returnLabel";
 
 export async function generateMetadata({ params }: StoreDetailPageProps) {
   const { locale, slug } = await params;
@@ -22,8 +26,12 @@ export async function generateMetadata({ params }: StoreDetailPageProps) {
   });
 }
 
-export default async function StoreDetailPage({ params }: StoreDetailPageProps) {
+export default async function StoreDetailPage({ params, searchParams }: StoreDetailPageProps) {
   const { locale, slug } = await params;
+  const resolvedSearchParams = await searchParams;
+  const backHref = safeRelativeReturnTo(resolvedSearchParams.returnTo);
+  const returnLabelRaw = resolvedSearchParams[STORE_RETURN_LABEL_PARAM];
+  const backOrderLabel = typeof returnLabelRaw === "string" && returnLabelRaw.trim() ? returnLabelRaw.trim() : null;
   const store = await getStoreBySlug(prisma, slug);
   const editableStore = await getEditableStoreBySlug(prisma, slug);
 
@@ -59,6 +67,8 @@ export default async function StoreDetailPage({ params }: StoreDetailPageProps) 
       governanceViewerContext={governanceViewerContext}
       canAccessEditRoute={canAccessEditRoute}
       canDirectlyEdit={canDirectlyEdit}
+      backHref={backHref}
+      backOrderLabel={backOrderLabel}
     />
   );
 }
