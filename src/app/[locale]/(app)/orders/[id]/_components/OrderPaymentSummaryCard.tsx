@@ -44,7 +44,7 @@ export default function OrderPaymentSummaryCard({
             {t("detail.payments.summaryPaid")}
           </Typography>
           <p className="text-success text-xl font-bold tabular-nums sm:text-2xl">
-            {formatAmount(paidAmount, currencyCode, locale)}
+            {formatAmount(paidAmount, currencyCode)}
           </p>
         </div>
         {!isFullyPaid && (
@@ -53,7 +53,7 @@ export default function OrderPaymentSummaryCard({
               {t("detail.payments.summaryRemaining")}
             </Typography>
             <p className="text-accent text-xl font-bold tabular-nums sm:text-2xl">
-              {formatAmount(remainingAmount, currencyCode, locale)}
+              {formatAmount(remainingAmount, currencyCode)}
             </p>
           </div>
         )}

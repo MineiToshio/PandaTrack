@@ -2,6 +2,33 @@
 
 This document defines PandaTrack's visual language: semantic design variables, typography, color, spacing, surfaces, radius, elevation, shadows, and gradients.
 
+## Number and currency formatting
+
+**Always use a period (`.`) as the decimal separator.** Never use a comma.
+
+### Monetary amounts
+
+- All monetary display goes through `formatAmount(minorUnits, currencyCode)` in `src/lib/currency.ts`.
+- That function forces `"en"` locale in `Intl.NumberFormat` so the decimal separator is always a period, regardless of the user's UI language.
+- Format pattern: `{amount} {code}` — value first, ISO code after (e.g. `888.50 USD`, `43,000 CLP`).
+- Pass the `locale` argument only for backward compatibility; it is intentionally ignored inside the function.
+
+### Decimal inputs (prices, payment amounts)
+
+- Use `type="text" inputMode="decimal"` for price and payment inputs — **not** `type="number"`.
+  - `type="number"` renders the value using the OS locale (comma in Spanish/European) which conflicts with the period standard.
+  - `type="text" inputMode="decimal"` keeps display under our control while still showing the numeric keyboard on mobile.
+- Store and read values as dot-separated strings (`"888.50"`); parse with `parseFloat` or `Math.round(parseFloat(v) * 100)`.
+- Apply `sanitizeDecimalInput` from `src/lib/decimalInput.ts` on every `onChange` — it strips non-numeric characters, keeps one period, and limits to two decimal digits.
+- Validate with `isValidPositiveDecimal` from the same module before submitting — rejects empty, zero, trailing-dot (`"25."`), and non-numeric values.
+- **Validation order**: client-side first (immediate field error, no server round-trip), server-side second (Zod schema as safety net against bypassed JS). Never rely on server validation alone for user-facing feedback.
+- **Never** format a number with `toLocaleString()` or `Intl.NumberFormat` without explicitly passing `"en"` as the locale.
+
+### Ratings and other decimals
+
+- Use `.toFixed(1)` or `.toFixed(2)` for display — these always produce period-separated output.
+- Do not pass them through `Intl.NumberFormat` with a non-`"en"` locale.
+
 ## Typography
 
 ### Font Families

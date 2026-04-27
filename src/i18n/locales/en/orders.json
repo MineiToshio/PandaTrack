@@ -71,6 +71,8 @@
     "addItemButton": "Add item",
     "totalCostLabel": "Total",
     "totalCostPlaceholder": "0.00",
+    "totalCostCalculateLabel": "Calculate",
+    "totalCostCalculateAriaLabel": "Calculate total from items",
     "itemsShortcutsTitle": "Keyboard shortcuts",
     "itemsShortcutsNavigate": "Move between rows",
     "itemsShortcutsMoveHoriz": "Move between columns",
@@ -104,12 +106,14 @@
     "exchangeRateTooHigh": "Exchange rate is too high",
     "exchangeRateInvalidPrecision": "Maximum 2 decimal places",
     "totalCostRequired": "Enter the total",
+    "totalCostInvalid": "Enter a valid amount (e.g. 25.99)",
     "totalCostTooLow": "Total must be greater than 0",
     "totalCostTooHigh": "Total is too high",
     "itemsRequired": "Add at least one item",
     "itemNameRequired": "Name is required",
     "itemNameTooLong": "Name is too long",
     "itemQuantityTooLow": "Minimum quantity is 1",
+    "unitPriceInvalid": "Invalid price (e.g. 9.99)",
     "deliveryToBeforeFrom": "End date must be after start date"
   },
   "error": {

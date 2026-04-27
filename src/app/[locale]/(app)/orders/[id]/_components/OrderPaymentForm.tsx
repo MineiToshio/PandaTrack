@@ -9,6 +9,7 @@ import DatePickerInput from "@/components/core/DatePickerInput";
 import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
 import { formatAmount } from "@/lib/currency";
+import { sanitizeDecimalInput } from "@/lib/decimalInput";
 
 type OrderPaymentFormProps = {
   orderId: string;
@@ -74,9 +75,7 @@ export default function OrderPaymentForm({
     setIsPending(false);
     if (!result.ok) {
       if (result.error === "EXCEEDS_BALANCE") {
-        setError(
-          t("detail.payments.amountExceedsBalance", { remaining: formatAmount(remainingAmount, currencyCode, locale) }),
-        );
+        setError(t("detail.payments.amountExceedsBalance", { remaining: formatAmount(remainingAmount, currencyCode) }));
       } else if (result.error === "DATE_BEFORE_ORDER") {
         setError(t("detail.payments.dateBeforeOrder"));
       } else {
@@ -102,12 +101,11 @@ export default function OrderPaymentForm({
           <Input
             ref={amountInputRef}
             id="payment-amount"
-            type="number"
-            min="0.01"
-            step="0.01"
+            type="text"
+            inputMode="decimal"
             placeholder={t("detail.payments.amountPlaceholder")}
             value={amountStr}
-            onChange={(e) => setAmountStr(e.target.value)}
+            onChange={(e) => setAmountStr(sanitizeDecimalInput(e.target.value))}
             disabled={isPending}
             error={amountExceedsBalance}
             aria-invalid={amountExceedsBalance}
@@ -116,7 +114,7 @@ export default function OrderPaymentForm({
           {amountExceedsBalance && (
             <Typography size="xs" className="text-destructive mt-1" role="alert">
               {t("detail.payments.amountExceedsBalance", {
-                remaining: formatAmount(remainingAmount, currencyCode, locale),
+                remaining: formatAmount(remainingAmount, currencyCode),
               })}
             </Typography>
           )}

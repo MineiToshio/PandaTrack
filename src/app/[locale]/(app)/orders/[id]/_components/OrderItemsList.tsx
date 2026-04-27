@@ -31,7 +31,7 @@ export default async function OrderItemsList({ orderId, items, currencyCode, loc
         </span>
         {hasAnyPrice && (
           <span className="text-text-title text-sm font-semibold tabular-nums">
-            {formatAmount(totalMinorUnits, currencyCode, locale)}
+            {formatAmount(totalMinorUnits, currencyCode)}
           </span>
         )}
       </span>
@@ -91,13 +91,13 @@ export default async function OrderItemsList({ orderId, items, currencyCode, loc
                     {item.unitPrice != null ? (
                       <>
                         <span className="text-text-title text-sm font-bold">
-                          {formatAmount(item.quantity * item.unitPrice, currencyCode, locale)}
+                          {formatAmount(item.quantity * item.unitPrice, currencyCode)}
                         </span>
                         {item.quantity > 1 && (
                           <span className="text-text-muted text-xs">
                             {t("detail.items.unitContext", {
                               qty: item.quantity,
-                              unit: formatAmount(item.unitPrice, currencyCode, locale),
+                              unit: formatAmount(item.unitPrice, currencyCode),
                             })}
                           </span>
                         )}

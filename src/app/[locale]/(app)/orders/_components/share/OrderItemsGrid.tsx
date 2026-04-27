@@ -18,6 +18,7 @@ import Input from "@/components/core/Input";
 import Select from "@/components/core/Select";
 import Button from "@/components/core/Button/Button";
 import { cn } from "@/lib/styles";
+import { sanitizeDecimalInput } from "@/lib/decimalInput";
 import { inheritProductTypeFromPrevious } from "@/lib/orders/orderItemUtils";
 
 export type ItemRow = {
@@ -65,6 +66,7 @@ type OrderItemRowProps = {
   tProductTypes: (key: string) => string;
   nameError?: string;
   quantityError?: string;
+  unitPriceError?: string;
   onNameChange: (rowId: string, value: string) => void;
   onQuantityChange: (rowId: string, value: string) => void;
   onUnitPriceChange: (rowId: string, value: string) => void;
@@ -80,6 +82,7 @@ function OrderItemRow({
   tProductTypes,
   nameError,
   quantityError,
+  unitPriceError,
   onNameChange,
   onQuantityChange,
   onUnitPriceChange,
@@ -186,14 +189,21 @@ function OrderItemRow({
             </label>
             <Input
               id={cellInputId("price", row.rowId)}
-              type="number"
-              min="0"
-              step="0.01"
+              type="text"
+              inputMode="decimal"
               value={row.unitPrice}
               placeholder={t("itemUnitPricePlaceholder")}
-              onChange={(e) => onUnitPriceChange(row.rowId, e.target.value)}
+              error={!!unitPriceError}
+              aria-invalid={!!unitPriceError}
+              aria-describedby={unitPriceError ? `item-price-error-${row.rowId}` : undefined}
+              onChange={(e) => onUnitPriceChange(row.rowId, sanitizeDecimalInput(e.target.value))}
               onKeyDown={(e) => onCellKeyDown(e, { column: "price", rowId: row.rowId })}
             />
+            {unitPriceError && (
+              <p id={`item-price-error-${row.rowId}`} className="text-destructive mt-0.5 text-xs" role="alert">
+                {unitPriceError}
+              </p>
+            )}
           </div>
 
           <div className="min-w-0 flex-1 md:w-36 md:flex-none">
@@ -236,7 +246,7 @@ type OrderItemsGridProps = {
   onChange: (rows: ItemRow[]) => void;
   productTypeKeys: string[];
   tProductTypes: (key: string) => string;
-  itemErrors?: Record<string, { name?: string; quantity?: string }>;
+  itemErrors?: Record<string, { name?: string; quantity?: string; unitPrice?: string }>;
   createNewRow: () => ItemRow;
 };
 
@@ -503,6 +513,7 @@ export default function OrderItemsGrid({
                   tProductTypes={tProductTypes}
                   nameError={itemErrors[row.rowId]?.name}
                   quantityError={itemErrors[row.rowId]?.quantity}
+                  unitPriceError={itemErrors[row.rowId]?.unitPrice}
                   onNameChange={(rowId, value) => updateRow(rowId, { name: value })}
                   onQuantityChange={(rowId, value) => updateRow(rowId, { quantity: value })}
                   onUnitPriceChange={(rowId, value) => updateRow(rowId, { unitPrice: value })}

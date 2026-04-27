@@ -108,7 +108,7 @@ export default function OrderCard({ order, locale, today, returnTo }: OrderCardP
               ·
             </span>
             <Typography size="xs" className="text-text-body font-semibold">
-              {formatAmount(order.totalCost, order.currencyCode, locale)}
+              {formatAmount(order.totalCost, order.currencyCode)}
             </Typography>
             <span className="text-text-muted/70" aria-hidden>
               ·

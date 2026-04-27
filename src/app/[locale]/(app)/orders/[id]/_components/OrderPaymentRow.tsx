@@ -50,7 +50,7 @@ export default function OrderPaymentRow({
       <li className="flex items-center justify-between gap-3 py-2.5">
         <div className="min-w-0 flex-1">
           <Typography size="sm" className="text-text-body font-medium tabular-nums">
-            {formatAmount(payment.amount, currencyCode, locale)}
+            {formatAmount(payment.amount, currencyCode)}
           </Typography>
           <Typography size="xs" className="text-text-muted">
             {dateLabel}

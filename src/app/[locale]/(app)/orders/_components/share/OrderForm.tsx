@@ -11,7 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Info } from "lucide-react";
+import { Calculator, Info } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -32,6 +32,7 @@ import {
 import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
 import { APP_SHELL_FORM_RAIL_CLASSNAME, POSTHOG_EVENTS, RETURN_TO_ORDER_CREATE, ROUTES } from "@/lib/constants";
 import { deriveItemizedTotal, shouldShowDiscrepancyModal } from "@/lib/orders/orderItemUtils";
+import { sanitizeDecimalInput, isValidPositiveDecimal } from "@/lib/decimalInput";
 import { formatAmount } from "@/lib/currency";
 import type { OrderActionResult } from "../../_actions/orderActions";
 import DatePickerInput from "@/components/core/DatePickerInput";
@@ -84,7 +85,7 @@ function parseCentsFromDecimal(value: string): number | null {
 }
 
 function formatAmountDisplay(cents: number, currencyCode: string): string {
-  return formatAmount(cents, currencyCode, undefined);
+  return formatAmount(cents, currencyCode);
 }
 
 function getStoreDefaultCurrencyCode(store: StoreOption | null | undefined): string | null {
@@ -178,7 +179,10 @@ export default function OrderForm({
     pendingHref: null,
   });
 
-  const [itemErrors, setItemErrors] = useState<Record<string, { name?: string; quantity?: string }>>({});
+  const [itemErrors, setItemErrors] = useState<
+    Record<string, { name?: string; quantity?: string; unitPrice?: string }>
+  >({});
+  const [clientTotalCostError, setClientTotalCostError] = useState<string | null>(null);
   const [isDirty, setIsDirty] = useState(false);
 
   const [state, formAction, isPending] = useActionState(action, null);
@@ -226,11 +230,26 @@ export default function OrderForm({
     [locale, router],
   );
 
+  const handleCalculateTotal = useCallback(() => {
+    const pricedItems = items
+      .filter((r) => r.unitPrice !== "")
+      .map((r) => ({
+        quantity: parseInt(r.quantity, 10) || 0,
+        unitPrice: parseCentsFromDecimal(r.unitPrice) ?? 0,
+      }));
+    const cents = deriveItemizedTotal(pricedItems);
+    if (cents === null) return;
+    setTotalCost(formatCents(cents));
+    markDirty();
+  }, [items, markDirty]);
+
+  const hasAnyPricedItem = useMemo(() => items.some((r) => r.unitPrice !== ""), [items]);
+
   const validateItems = useCallback((): boolean => {
-    const errors: Record<string, { name?: string; quantity?: string }> = {};
+    const errors: Record<string, { name?: string; quantity?: string; unitPrice?: string }> = {};
     let valid = true;
     for (const row of items) {
-      const rowErrors: { name?: string; quantity?: string } = {};
+      const rowErrors: { name?: string; quantity?: string; unitPrice?: string } = {};
       if (!row.name.trim()) {
         rowErrors.name = t("validation.itemNameRequired");
         valid = false;
@@ -238,6 +257,10 @@ export default function OrderForm({
       const qty = parseInt(row.quantity, 10);
       if (isNaN(qty) || qty < 1) {
         rowErrors.quantity = t("validation.itemQuantityTooLow");
+        valid = false;
+      }
+      if (row.unitPrice !== "" && !isValidPositiveDecimal(row.unitPrice)) {
+        rowErrors.unitPrice = t("validation.unitPriceInvalid");
         valid = false;
       }
       if (Object.keys(rowErrors).length > 0) errors[row.rowId] = rowErrors;
@@ -276,6 +299,16 @@ export default function OrderForm({
       if (!validateItems()) return;
       if (items.length === 0) return;
 
+      if (!totalCost.trim()) {
+        setClientTotalCostError(t("validation.totalCostRequired"));
+        return;
+      }
+      if (!isValidPositiveDecimal(totalCost)) {
+        setClientTotalCostError(t("validation.totalCostInvalid"));
+        return;
+      }
+      setClientTotalCostError(null);
+
       const fd = buildFormData(event.currentTarget);
 
       const pricedItems = items
@@ -307,7 +340,7 @@ export default function OrderForm({
 
       startTransition(() => formAction(fd));
     },
-    [validateItems, items, buildFormData, totalCost, formAction],
+    [validateItems, items, buildFormData, totalCost, formAction, t],
   );
 
   const handleDiscrepancyKeepEntered = useCallback(() => {
@@ -345,8 +378,7 @@ export default function OrderForm({
     [mode, isDirty, router],
   );
 
-  const backHref =
-    mode === "create" ? `/${locale}${ROUTES.orders}` : `/${locale}${ROUTES.orders}/${initialOrder?.id}`;
+  const backHref = mode === "create" ? `/${locale}${ROUTES.orders}` : `/${locale}${ROUTES.orders}/${initialOrder?.id}`;
 
   const serverError = state?.success === false && "error" in state && state.error !== "validation" ? state.error : null;
 
@@ -573,30 +605,46 @@ export default function OrderForm({
           />
         </div>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="order-total">
-            {tForm("totalCostLabel")} <span aria-hidden>*</span>
-          </Label>
-          <Input
-            id="order-total"
-            name="totalCost"
-            type="number"
-            min="0.01"
-            step="0.01"
-            value={totalCost}
-            placeholder={tForm("totalCostPlaceholder")}
-            error={!!fieldErrors.totalCost?.length}
-            aria-invalid={!!fieldErrors.totalCost?.length}
-            onChange={(e) => {
-              setTotalCost(e.target.value);
-              markDirty();
-            }}
-          />
-          {fieldErrors.totalCost?.[0] && (
-            <Typography size="xs" className="text-destructive" role="alert">
-              {t("validation.totalCostRequired")}
-            </Typography>
-          )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="order-total">
+              {tForm("totalCostLabel")} <span aria-hidden>*</span>
+            </Label>
+            <div className="flex items-stretch gap-2">
+              <Input
+                id="order-total"
+                name="totalCost"
+                type="text"
+                inputMode="decimal"
+                value={totalCost}
+                placeholder={tForm("totalCostPlaceholder")}
+                error={!!clientTotalCostError || !!fieldErrors.totalCost?.length}
+                aria-invalid={!!clientTotalCostError || !!fieldErrors.totalCost?.length}
+                onChange={(e) => {
+                  setTotalCost(sanitizeDecimalInput(e.target.value));
+                  setClientTotalCostError(null);
+                  markDirty();
+                }}
+                className="flex-1"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleCalculateTotal}
+                disabled={!hasAnyPricedItem}
+                aria-label={tForm("totalCostCalculateAriaLabel")}
+                className="shrink-0"
+              >
+                <Calculator className="size-4" aria-hidden />
+                <span className="hidden sm:inline">{tForm("totalCostCalculateLabel")}</span>
+              </Button>
+            </div>
+            {(clientTotalCostError ?? fieldErrors.totalCost?.[0]) && (
+              <Typography size="xs" className="text-destructive" role="alert">
+                {clientTotalCostError ?? t("validation.totalCostRequired")}
+              </Typography>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-3 pt-2">

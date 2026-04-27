@@ -1,14 +1,15 @@
 /**
- * Formats a minor-unit integer as a locale-aware decimal followed by the ISO currency code.
- * Example: formatAmount(4300000, "CLP", "es") → "43.000 CLP"
- *          formatAmount(88850, "USD", "en") → "888.50 USD"
+ * Formats a minor-unit integer as a decimal followed by the ISO currency code.
+ * Example: formatAmount(4300000, "CLP") → "43,000 CLP"
+ *          formatAmount(88850, "USD") → "888.50 USD"
  *
  * Pattern: {amount} {code} — value first, identifier after.
- * This is the canonical monetary display format for PandaTrack.
+ * Always uses period (.) as the decimal separator regardless of UI locale.
+ * See docs/design/visual-foundations.md — "Number and currency formatting".
  */
-export function formatAmount(minorUnits: number, currencyCode: string, locale: string | undefined): string {
+export function formatAmount(minorUnits: number, currencyCode: string): string {
   try {
-    const formatted = new Intl.NumberFormat(locale, {
+    const formatted = new Intl.NumberFormat("en", {
       style: "decimal",
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
