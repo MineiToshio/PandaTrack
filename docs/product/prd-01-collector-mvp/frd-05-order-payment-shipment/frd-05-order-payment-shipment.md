@@ -85,7 +85,7 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - `FR-05-18`: Each payment record must store amount and payment date.
 - `FR-05-19`: The payment flow must prevent creating a payment whose amount exceeds the current remaining balance.
 - `FR-05-20`: The order detail view must show paid amount, remaining amount, and payment percentage.
-- `FR-05-21`: The order detail view must expose one inline-editable private note field that can be saved without entering full order edit mode.
+- `FR-05-21`: The order detail view must expose one inline-editable private note field that can be saved without entering full order edit mode, including saving an empty value to clear the note.
 - `FR-05-22`: The order detail view must expose an automatic history list that records major order lifecycle events. **As implemented (2026-04-24):** the list is **read-only**; users cannot delete individual history entries from the UI (aligned with [`WO-05`](bp-02-order-workspace-and-list-experience/work-orders/wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md) and migration `20260423000000_simplify_order_history_event_types`).
 - `FR-05-23`: The order detail view must expose `Create delivery` as the primary action plus one secondary affordance. That secondary affordance may be a split action composed of visible `Edit` plus a small overflow trigger that opens `View store`, `Cancel`, and `Delete` as appropriate for the order status.
 - `FR-05-24`: An order may be physically deleted only when none of its items is linked to a non-cancelled delivery. When the rule is not met, the delete affordance must be rendered as disabled with a tooltip that explains the collector must first unlink the affected items from their delivery.

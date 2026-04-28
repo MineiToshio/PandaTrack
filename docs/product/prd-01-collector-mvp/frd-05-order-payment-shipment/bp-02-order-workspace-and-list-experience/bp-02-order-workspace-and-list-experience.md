@@ -33,7 +33,7 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
 
 - Orders should use expandable cards rather than a rigid table so the same surface can carry status chips, overdue signals, payment progress, and mobile-friendly expansion.
 - The order create/edit form should place the item spreadsheet last so the user establishes the order context before entering many line items.
-- The order detail view should keep the private note editable outside full edit mode, matching the mental model already established in `Stores`.
+- The order detail view should keep the private note editable outside full edit mode, matching the mental model already established in `Stores`, including clearing the note by saving an empty trimmed value.
 - Action overload should be reduced by using one primary action and one secondary affordance. When edit is the clearly dominant secondary task, that affordance should be a split pattern: visible `Edit` plus a small adjacent overflow trigger for the remaining actions.
 - The detail-view action bar must adapt to the order status so collectors always see a meaningful primary action:
   - `OPEN`, `PARTIALLY_IN_TRANSIT`, `IN_TRANSIT`, `PARTIALLY_DELIVERED`: primary `Create delivery` · visible `Edit` · overflow with `View store`, `Cancel`, and `Delete`.

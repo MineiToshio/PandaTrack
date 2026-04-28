@@ -13,7 +13,7 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-04-26
+last_updated: 2026-04-27
 implementation_status: IMPLEMENTED
 ---
 
@@ -235,6 +235,7 @@ Role:
 - when a signed-in viewer has a review, it is surfaced first in the public review list
 - review lists reveal more entries in increments instead of rendering every review immediately
 - one private note per signed-in viewer can be saved and edited from the detail page without entering full store edit mode
+- saving an empty trimmed store-note value clears the persisted note, matching the inline-note behavior used by order and delivery detail
 
 ### Logo contract
 

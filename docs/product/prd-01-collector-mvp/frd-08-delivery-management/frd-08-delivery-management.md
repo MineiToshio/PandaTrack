@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-04-19
+last_updated: 2026-04-27
 source_features:
   - FEAT-0015
 implementation_status: PLANNED
@@ -74,13 +74,13 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - `FR-08-16`: Delivery store options must include only stores that still have eligible products.
 - `FR-08-17`: Delivery product selection must show eligible products grouped by their source order.
 - `FR-08-18`: Products already delivered or already attached to another active delivery must not appear in delivery selection results.
-- `FR-08-19`: If a product is added to a delivery and was not previously marked as arrived at store, it must automatically become arrived at store.
+- `FR-08-19`: When a product is added to a delivery, it must automatically become `IN_TRANSIT` regardless of its prior state (`NONE` or `ARRIVED_AT_STORE`).
 - `FR-08-20`: A product may belong to only one delivery at a time.
 - `FR-08-21`: Marking a delivery as delivered must mark every associated product as delivered to the user.
-- `FR-08-22`: Reopening a delivered delivery must recalculate delivery-related product states so they are editable again.
+- `FR-08-22`: Reopening a delivered or cancelled delivery must recalculate delivery-related product states so they are editable again, restoring the detail view to an editable lifecycle state.
 - `FR-08-23`: Removing a product from a delivery during edit must recalculate that product's delivery-related state.
-- `FR-08-24`: Cancelling or deleting a delivery must return all of its still-unfulfilled products to `arrived at store`.
-- `FR-08-25`: Delivery detail must expose one inline-editable private note field that can be saved without entering full edit mode.
+- `FR-08-24`: Cancelling or deleting a delivery must return all of its still-unfulfilled products to `arrived at store`. Physical delete is allowed only while the delivery is `IN_TRANSIT` or `CANCELLED`; a `DELIVERED` delivery must be reopened first.
+- `FR-08-25`: Delivery detail must expose one inline-editable private note field that can be saved without entering full edit mode, including saving an empty value to clear the note.
 - `FR-08-26`: Delivery detail actions must follow the same action hierarchy as orders: one primary action, one secondary action, and destructive actions inside `More`.
 - `FR-08-27`: The deliveries list must support filters for store, product-name text, and date range.
 - `FR-08-28`: Deliveries list filters must persist in the URL and render removable chips in the same interaction pattern used by `Stores`.
@@ -95,10 +95,11 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - `BR-08-03`: Products that are already delivered or already attached to another active delivery are not eligible for new delivery selection and should not appear as disabled options.
 - `BR-08-04`: When a delivery is reopened, the collector may edit products, carrier, tracking, cost, and dates again.
 - `BR-08-05`: Delivery detail should not expose a separate automatic history timeline in MVP.
-- `BR-08-06`: Delivery note follows the same single-textarea private-note pattern as orders and stores.
+- `BR-08-06`: Delivery note follows the same single-textarea private-note pattern as orders and stores, including the ability to clear the note by saving an empty value.
 - `BR-08-07`: Cancel and delete remain separate:
   - cancel preserves the delivery record with `CANCELLED`
   - delete removes it physically when delete rules allow it
+  - delete must stay visible in the detail action menu so the collector can discover the rule, but a `DELIVERED` delivery cannot be deleted until it is reopened
 
 ## Acceptance Criteria
 
@@ -119,8 +120,8 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 ### `AC-08-03`
 
 - Given a collector adds a product to a delivery
-- When that product was not previously marked as arrived at store
-- Then it becomes arrived at store automatically
+- When that product was in state `NONE` or `ARRIVED_AT_STORE`
+- Then it becomes `IN_TRANSIT` automatically
 
 ### `AC-08-04`
 
@@ -140,6 +141,8 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - When a delivery mutation changes the status of any delivery (create, mark delivered, cancel, delete, reopen), this FRD's implementation is responsible for calling the pure `deriveOrderStatus` function defined in [`FRD-05 · BP-01 · WO-02`](../frd-05-order-payment-shipment/bp-01-order-domain-foundation/work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md) for each affected order, and persisting the resulting `OrderStatus` within the same transaction.
 - Delivery list and detail should also prefer expandable cards over rigid tables for parity with the order workspace and better mobile behavior.
 - Product grouping should surface the order identifier prominently because delivery selection spans multiple orders from one store.
+- In delivery detail, that source-order grouping is traceability context rather than the primary content hierarchy: the collector is still reading one delivery first, then the origin of its products.
+- Delivery routes in the collector app use `/deliveries`, not `/shipments`. Deleting a delivery from detail returns the collector to the deliveries list.
 
 ## Confirmed
 
@@ -149,6 +152,10 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - multiple active deliveries per store are allowed
 - ineligible products should disappear from selection rather than showing as disabled rows
 - delivery detail uses one private note and no automatic history timeline in MVP
+- delivery detail uses these visible lifecycle actions by status:
+  - `IN_TRANSIT`: primary `Mark delivered`, visible secondary `Edit`, overflow `Cancel` and `Delete`
+  - `DELIVERED`: primary `Reopen`, with additional actions in secondary / overflow chrome
+  - `CANCELLED`: primary `Reopen`, overflow `Delete`
 
 ## Open Questions
 

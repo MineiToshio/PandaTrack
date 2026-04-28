@@ -6,7 +6,7 @@ title: Store Reviews and Private Notes
 status: ACTIVE
 parent: BP-01
 source_issue: 74
-last_updated: 2026-04-26
+last_updated: 2026-04-27
 implementation_status: IMPLEMENTED
 ---
 
@@ -69,6 +69,7 @@ Relevant acceptance signals:
 - User sees their own review first (even when it is not among the most recently updated reviews) and can reopen the composer from its edit button.
 - User sees only the first 5 public reviews initially and can reveal 5 more per click until all reviews are visible.
 - User can create and read a private note in authenticated context.
+- User can clear an existing private note by saving an empty value, using the same inline-note behavior as order and delivery detail.
 - Private note content never appears on public store detail.
 - Reviews and private notes render as shared detail panels consistent with the order detail screen.
 - The store private-note intro explicitly states that only the signed-in user can see the note and that it never appears on the store's public profile; the **"Last updated"** line sits directly **below the textarea** instead of in the intro copy block.

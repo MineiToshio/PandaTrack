@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-04-26
+last_updated: 2026-04-27
 source_features:
   - FEAT-0012
 implementation_status: IMPLEMENTED
@@ -134,7 +134,7 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 
 - `FR-01-24`: Users must be able to create or edit one public review per store, and public store-detail review lists must show an initial batch of 5 reviews and allow users to reveal 5 additional reviews per action when more are available. When the signed-in viewer already has a public review for that store, that review must always appear first in the ordered list and must always count toward each batch size; remaining slots are filled with the most recently updated reviews from other users.
 - `FR-01-25`: Store-level aggregate trust fields must be persisted instead of recalculated on every read.
-- `FR-01-26`: Users must be able to save private notes on stores.
+- `FR-01-26`: Users must be able to save private notes on stores, including saving an empty value to clear an existing note without entering a full edit flow.
 - `FR-01-27`: Authenticated users must be able to create and update one open report per store using one supported reason plus optional free-text context, and they may create a new report for that same store after the earlier report is resolved.
 - `FR-01-28`: Authenticated users must be able to request new product types from store create and store edit flows.
 - `FR-01-29`: Approved stores must support change requests instead of direct edits by normal users, and each authenticated user may keep only one open change request per store.

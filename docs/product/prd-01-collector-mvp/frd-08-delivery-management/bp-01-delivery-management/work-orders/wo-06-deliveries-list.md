@@ -25,7 +25,7 @@ Implement the deliveries workspace list with expandable cards that group product
 
 ## In Scope
 
-- deliveries list route under `src/app/[locale]/(app)/shipments`
+- deliveries list route under `src/app/[locale]/(app)/deliveries`
 - list query for deliveries with their grouped products
 - expandable delivery cards, patterned after orders for visual parity
 - summary metadata per card: store, delivery date, expected arrival range, status, carrier, tracking

@@ -13,7 +13,7 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-04-19
+last_updated: 2026-04-27
 implementation_status: PLANNED
 ---
 
@@ -30,7 +30,7 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
 - shared eligibility query (products by store, excluding ineligible)
 - shared product-state transition helpers (arrived-at-store, in-transit, delivered)
 - `deriveOrderStatus` integration wrapper (calls the pure function from [`FRD-05 · BP-01 · WO-02`](../../frd-05-order-payment-shipment/bp-01-order-domain-foundation/work-orders/wo-02-order-item-model-totals-fx-and-derived-order-state-rules.md) within the same transaction as any delivery mutation)
-- delivery routes under `src/app/[locale]/(app)/shipments`
+- delivery routes under `src/app/[locale]/(app)/deliveries`
 - delivery detail route and route-level components
 - delivery create and edit routes (single form, mode-aware)
 - expandable delivery cards in the list
@@ -45,9 +45,14 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
 - Product delivery state is recalculated from delivery actions. There are no manual repair steps.
 - Cancel and delete stay separate: cancel preserves the delivery with `CANCELLED`, delete removes the record entirely where delete rules allow it.
 - Reopen is explicit so delivered shipments can be corrected without inventing a second "edit after delivered" mode.
-- Delivery detail uses expandable cards, one inline-editable private note, and no automatic history timeline in MVP, for visual and interaction parity with orders.
+- Reopen is also the primary visible recovery action for cancelled deliveries, so the collector can return the record to an editable state before making further corrections.
+- Delivery detail uses grouped source-order sections, one private note section, and no automatic history timeline in MVP, for visual and interaction parity with orders.
+- Source-order grouping in delivery detail exists for traceability of product origin, but the delivery remains the primary visual subject of the page.
 - Product-name search remains a list-filter concern rather than a separate top-level search surface.
 - Every delivery mutation that changes product-to-delivery associations (create, edit, mark delivered, reopen, cancel, delete) must call `deriveOrderStatus` for every affected order and persist the result within the same transaction.
+- The detail-action hierarchy should reuse the existing order-detail split secondary pattern: a labeled secondary action plus an adjacent overflow trigger for additional actions.
+- Delivery private notes follow the same inline-note rule as orders and stores: saving an empty trimmed value clears the stored note.
+- Delete is discoverable but state-gated: a `DELIVERED` delivery keeps the `Delete` affordance visible, but the action is blocked with explanatory feedback until the collector reopens the delivery. Physical delete always requires a confirmation modal and returns to the deliveries list on success.
 
 ## Contracts
 
@@ -60,9 +65,16 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
 - lifecycle contract
   - input: `markDelivered`, `reopen`, `cancel`, `delete`, `updatePrivateNote`, and `updateProductMembership` (from edit)
   - output: updated delivery state, updated product states, and re-derived `OrderStatus` for every affected order
+- detail action chrome contract
+  - `IN_TRANSIT`: primary `Mark delivered`, visible `Edit`, overflow `Cancel` and `Delete`
+  - `DELIVERED`: primary `Reopen`; additional actions remain in the secondary / overflow affordances
+  - `CANCELLED`: primary `Reopen`, overflow `Delete`
+  - `Delete` remains visible in `DELIVERED` but is disabled until the collector reopens the delivery
 - detail read contract
   - input: delivery id
   - output: delivery summary, grouped products by source order, current lifecycle state, action availability flags, and the private note value
+  - grouped source-order sections are expanded by default in the read-only detail view
+  - tracking is rendered as a link only when the persisted value is already a valid absolute URL
 - list filter contract
   - input: store, product-name text, date range
   - output: URL-canonical filter state and removable chips patterned after `Stores`
@@ -75,6 +87,7 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
 - easy correction flows (edit and reopen)
 - visual parity with orders
 - filter persistence through the URL
+- canonical collector route naming under `/deliveries`
 
 ## Dependencies
 
@@ -90,6 +103,7 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
 - delete and cancel semantics can confuse users if the state rollback is not visible enough in the UI
 - grouped product cards can become visually noisy if order identifiers and eligibility signals are not compact
 - reopening delivered shipments can create misleading UI if action affordances do not reflect the new editable state immediately
+- re-implementing the split secondary plus overflow pattern separately in each detail screen would create inconsistent action hierarchy and duplicate accessibility work
 
 ## Extension Points
 
