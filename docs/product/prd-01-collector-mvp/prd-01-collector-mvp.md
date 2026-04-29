@@ -14,7 +14,7 @@ children:
   - FRD-06
   - FRD-07
   - FRD-08
-last_updated: 2026-04-04
+last_updated: 2026-04-29
 ---
 
 # PRD-01 PandaTrack Collector MVP
@@ -33,7 +33,7 @@ This PRD covers:
 
 ## Product Summary
 
-PandaTrack helps collectors organize orders, payments, shipments, reminders, and store trust context in one place.
+PandaTrack helps collectors organize orders, payments, deliveries, reminders, and store trust context in one place.
 
 This PRD begins after the pre-release phase has already delivered a public landing, localization, SEO, legal pages, analytics, and observability.
 
@@ -47,7 +47,7 @@ This creates predictable problems:
 
 - users lose visibility into what they ordered and from which store
 - users forget what is fully paid vs partially paid
-- users miss follow-ups on late or silent shipments
+- users miss follow-ups on late or silent deliveries
 - users struggle to estimate upcoming spending
 - users lack a trustworthy store layer when buying repeatedly from the same seller
 
@@ -59,7 +59,7 @@ Deliver a collector-first system that makes it easy to:
 - understand the product through a dashboard-first shell
 - understand current order status
 - understand payment obligations
-- track shipments and partial deliveries
+- track deliveries and partial deliveries
 - evaluate stores before buying again
 - receive timely reminders in-app and by email
 - use one dashboard as the main decision surface
@@ -98,7 +98,7 @@ A collector with lower order volume who still wants:
 3. Store discovery and trust signals
 4. Order tracking
 5. Payment tracking
-6. Shipment tracking
+6. Delivery tracking
 7. Dashboard clarity
 8. Reminders and alerts
 9. User settings required to support the above
@@ -201,7 +201,7 @@ A collector with lower order volume who still wants:
 - Users understand where they are and what to do next from the collector shell.
 - Users can track active orders without depending on memory or chat history.
 - Users can distinguish order status from payment status clearly.
-- Users can identify late or risk-prone shipments quickly.
+- Users can identify late or risk-prone deliveries quickly.
 - Users can see budget and upcoming payment pressure in their own base currency.
 - Users can evaluate store trust before placing another order.
 - Dashboard answers the highest-priority collector questions quickly.

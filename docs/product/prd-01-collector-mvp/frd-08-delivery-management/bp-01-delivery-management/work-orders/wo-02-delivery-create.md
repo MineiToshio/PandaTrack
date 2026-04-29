@@ -8,7 +8,7 @@ parent: BP-01
 source_features:
   - FEAT-0015
 source_issue: 98
-last_updated: 2026-04-27
+last_updated: 2026-04-28
 implementation_status: PLANNED
 ---
 
@@ -29,6 +29,7 @@ This slice delivers a demo-able create flow that persists a new delivery, marks 
 - create-delivery from order entry point: the create view opens with store prefilled and the eligible products of that source order preselected
 - standalone create-delivery flow: store selector that only lists stores with at least one eligible product, followed by the grouped product selector
 - store-scoped product selection grouped by source order, using the eligibility helper from `WO-01`
+- minimum-one-product invariant on save: a new delivery must include at least one selected product
 - delivery date (required, prefilled with today, past-or-current only)
 - delivery cost (required, `0` allowed), delivery currency (default to user base currency when present)
 - exchange-rate input when delivery currency differs from the user base currency
@@ -113,6 +114,8 @@ Transaction:
 Output: { deliveryId }
 ```
 
+The mutation must reject any create attempt whose final `productIds` set is empty. A delivery without products is invalid and must never be persisted.
+
 ### Server Action
 
 Located at `src/app/[locale]/(app)/deliveries/new/_actions/createDeliveryAction.ts`. Validates session, calls `createDelivery`, handles expected errors (one-store violation, no eligible products), captures unexpected errors with Sentry.
@@ -182,6 +185,7 @@ Sentry scope: wrap the `createDelivery` call in the Server Action with `withScop
 - Newly selected products that were not previously `IN_TRANSIT` become `IN_TRANSIT` automatically when the delivery is saved.
 - After creating a delivery that includes products from an order, that order's `OrderStatus` updates to reflect the new delivery association (for example `OPEN` → `PARTIALLY_IN_TRANSIT` or `IN_TRANSIT`).
 - A delivery cannot be created with products from more than one store.
+- A delivery cannot be created with zero selected products.
 - Delivery currency defaults to the user base currency when present and requires an exchange-rate input when it differs.
 
 ## Analytics

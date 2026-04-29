@@ -13,7 +13,7 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-04-27
+last_updated: 2026-04-29
 implementation_status: PLANNED
 ---
 
@@ -44,11 +44,16 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
 - Eligibility is query-driven: ineligible products never appear in the selector instead of being shown as disabled options.
 - Product delivery state is recalculated from delivery actions. There are no manual repair steps.
 - Cancel and delete stay separate: cancel preserves the delivery with `CANCELLED`, delete removes the record entirely where delete rules allow it.
-- Reopen is explicit so delivered shipments can be corrected without inventing a second "edit after delivered" mode.
+- Reopen is explicit so delivered deliveries can be corrected without inventing a second "edit after delivered" mode.
 - Reopen is also the primary visible recovery action for cancelled deliveries, so the collector can return the record to an editable state before making further corrections.
 - Delivery detail uses grouped source-order sections, one private note section, and no automatic history timeline in MVP, for visual and interaction parity with orders.
 - Source-order grouping in delivery detail exists for traceability of product origin, but the delivery remains the primary visual subject of the page.
 - Product-name search remains a list-filter concern rather than a separate top-level search surface.
+- The deliveries list opens in an active-deliveries default state: when no filter params are present, the route canonicalizes to an explicit `status=IN_TRANSIT` query, the sidebar shows that status selected, and the chip row reflects the same visible default.
+- Deliveries list filtering uses two distinct date concepts instead of one combined date control: `deliveryDate` uses a manual range, while `expectedArrival` supports both a manual range and collector-oriented presets (`Overdue`, `Due today`, `Next 7 days`, `Next 14 days`, `This month`).
+- Expected-arrival presets and manual expected-arrival ranges are mutually exclusive within the same filter block. Choosing a preset updates the visible calendar range; manually editing that range clears the preset.
+- Expected-arrival manual range filtering uses interval-overlap semantics: a delivery matches when any portion of its expected-arrival range overlaps the user-selected filter range.
+- The deliveries detail back link should reuse the same `?returnTo=` pattern already established by orders so the collector can return from detail to the same filtered deliveries list state.
 - Every delivery mutation that changes product-to-delivery associations (create, edit, mark delivered, reopen, cancel, delete) must call `deriveOrderStatus` for every affected order and persist the result within the same transaction.
 - The detail-action hierarchy should reuse the existing order-detail split secondary pattern: a labeled secondary action plus an adjacent overflow trigger for additional actions.
 - Delivery private notes follow the same inline-note rule as orders and stores: saving an empty trimmed value clears the stored note.
@@ -61,7 +66,9 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
   - output: eligible products grouped by source order, excluding products that are already delivered or already attached to another active delivery
 - create/edit contract
   - input: store, delivery date, expected arrival range, cost, currency, optional FX, optional carrier, optional tracking, selected product ids
+  - invariant: both create and edit require at least one selected product at save time; a delivery with zero linked products is invalid and must not be persisted
   - output: persisted delivery, recalculated product states, and re-derived `OrderStatus` for every affected order
+  - edit-specific guard: if the delivery is no longer in an editable lifecycle state, edit must redirect back to detail with feedback telling the collector to reopen first
 - lifecycle contract
   - input: `markDelivered`, `reopen`, `cancel`, `delete`, `updatePrivateNote`, and `updateProductMembership` (from edit)
   - output: updated delivery state, updated product states, and re-derived `OrderStatus` for every affected order
@@ -75,13 +82,25 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
   - output: delivery summary, grouped products by source order, current lifecycle state, action availability flags, and the private note value
   - grouped source-order sections are expanded by default in the read-only detail view
   - tracking is rendered as a link only when the persisted value is already a valid absolute URL
+- deliveries list contract
+  - route: `/{locale}/deliveries`
+  - visible primary action: `New delivery`, following the same collector-listing hero pattern used by orders and stores
+  - output: paginated delivery cards sorted from oldest date to newest by default
+  - each card shows store, delivery date, expected arrival range, status, carrier, and tracking
+  - tracking is rendered as a link only when the persisted value is already a valid absolute URL; otherwise it renders as plain text
+  - card expansion renders a flat product list only; it does not group by source order and does not show source-order secondary metadata in this slice
 - list filter contract
-  - input: store, product-name text, date range
+  - input: status, one store, product-name text, `deliveryDate` range, `expectedArrival` manual range or preset
   - output: URL-canonical filter state and removable chips patterned after `Stores`
+  - default state: `status=IN_TRANSIT` is applied and materialized in the URL when no filter params are present
+  - product-name query matches any included product by substring, case-insensitive and accent-insensitive
+  - expected-arrival manual range matches by interval overlap rather than full containment
+  - `OVERDUE` expected-arrival preset is an active-follow-up shortcut and must keep the visible status-filter state aligned to active deliveries
 
 ## Operational Priorities
 
 - strict one-store boundary per delivery
+- minimum-one-product invariant for every persisted delivery
 - safe and centralized product-state recalculation
 - predictable eligibility
 - easy correction flows (edit and reopen)
@@ -99,17 +118,18 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
 ## Risks
 
 - reopen and edit flows can create inconsistent product states if the recalculation logic is not centralized in shared helpers consumed by every mutation
+- stale edit submissions can create hidden partial saves if eligibility and lifecycle status are not revalidated atomically at save time
 - eligibility queries can become expensive if grouped order-product loading is not shaped carefully
 - delete and cancel semantics can confuse users if the state rollback is not visible enough in the UI
 - grouped product cards can become visually noisy if order identifiers and eligibility signals are not compact
-- reopening delivered shipments can create misleading UI if action affordances do not reflect the new editable state immediately
+- reopening delivered deliveries can create misleading UI if action affordances do not reflect the new editable state immediately
 - re-implementing the split secondary plus overflow pattern separately in each detail screen would create inconsistent action hierarchy and duplicate accessibility work
 
 ## Extension Points
 
 - future carrier integrations
 - future delivery-cost analytics
-- future shipment milestones beyond `IN_TRANSIT` and `DELIVERED`
+- future delivery milestones beyond `IN_TRANSIT` and `DELIVERED`
 - future dashboard deep links and saved filtered views
 - future delivery history timeline if collector demand justifies it
 

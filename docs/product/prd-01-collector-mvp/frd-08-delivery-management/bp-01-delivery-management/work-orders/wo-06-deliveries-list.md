@@ -3,12 +3,12 @@ id: WO-06
 type: WORK_ORDER
 slug: deliveries-list
 title: Deliveries List
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0015
 source_issue: 102
-last_updated: 2026-04-19
+last_updated: 2026-04-29
 implementation_status: PLANNED
 ---
 
@@ -16,7 +16,7 @@ implementation_status: PLANNED
 
 ## Summary
 
-Implement the deliveries workspace list with expandable cards that group products by delivery, summary metadata (store, date, expected arrival range, status, carrier, tracking), and the default oldest-to-newest sort. No filters in this slice; filters land in [`WO-07`](wo-07-deliveries-list-filters.md).
+Implement the deliveries workspace list with expandable cards, summary metadata (store, date, expected arrival range, status, carrier, tracking), pagination, and the default oldest-to-newest sort. Expanded cards show a flat product list for that delivery. No filters in this slice; filters land in [`WO-07`](wo-07-deliveries-list-filters.md).
 
 ## Prerequisites
 
@@ -26,15 +26,17 @@ Implement the deliveries workspace list with expandable cards that group product
 ## In Scope
 
 - deliveries list route under `src/app/[locale]/(app)/deliveries`
-- list query for deliveries with their grouped products
+- visible primary create action for new deliveries, following the same listing-surface pattern used by orders and stores
+- paginated list query for deliveries with their product rows
 - expandable delivery cards, patterned after orders for visual parity
 - summary metadata per card: store, delivery date, expected arrival range, status, carrier, tracking
-- expansion surface per card showing the products included in that delivery
+- expansion surface per card showing the products included in that delivery as one flat list
+- tracking rendered as a clickable link only when the persisted value is a valid absolute URL; otherwise rendered as plain text
 - default sort: oldest to newest
 - empty, loading, and error states
 - link from each card into the delivery detail view (`WO-03`)
 - PostHog analytics events for list view and card expansion
-- automated tests covering the list path (at minimum one E2E that lists existing deliveries and expands a card to show its products)
+- automated tests covering the list path (at minimum one E2E that lists existing deliveries, expands a card to show its products, and opens the delivery detail view)
 
 ## Out of Scope
 
@@ -47,16 +49,32 @@ Implement the deliveries workspace list with expandable cards that group product
 ## Requirements
 
 - `FR-08-29`, `FR-08-30`, `FR-08-31`
+- `FR-08-32`, `FR-08-33`
 
 ## Blueprints
 
-- [`BP-01`](../bp-01-delivery-management.md) — expandable-card decision, list query contract
+- [`BP-01`](../bp-01-delivery-management.md) — expandable-card decision, deliveries-list contract, and tracking-link rendering rule
+
+## UX Notes
+
+- The page hero exposes a visible primary `New delivery` action using the same collector-workspace listing pattern already established by orders and stores.
+- Card expansion prioritizes scannability over traceability in this slice: products render as a flat list, without grouping or secondary source-order metadata.
+- Tracking values open in a new tab only when the stored value is already a valid absolute URL. Non-URL values remain visible as plain text instead of showing a broken link affordance.
+
+## Technical Notes
+
+- The list should follow the same pagination pattern already used by the collector workspace order and store listings rather than rendering one unbounded feed.
+- The list query should return the minimal card payload needed for the collapsed view plus the flat product rows used by expansion.
+- The detail link from each card is part of this slice's acceptance path, not an optional later enhancement.
 
 ## E2E Acceptance Tests
 
 - The deliveries list renders the existing deliveries sorted from oldest to newest by default.
+- The deliveries list exposes a visible primary action to create a new delivery.
 - Each delivery card shows store, delivery date, expected arrival range, status, carrier, and tracking.
-- A card expands to show the products grouped under that delivery.
+- A card expands to show the products included in that delivery as one flat list.
+- Tracking opens in a new tab only when the stored value is a valid absolute URL; otherwise the value is rendered as plain text.
+- The list paginates with the same collector-workspace interaction pattern used by orders and stores.
 - Clicking into a delivery opens the detail view from [`WO-03`](wo-03-delivery-detail-read-only.md).
 
 ## Analytics
