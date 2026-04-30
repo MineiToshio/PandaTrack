@@ -73,6 +73,7 @@ Read these on every implementation because they define project-wide defaults:
 - `role-copywriting-marketing.mdc`: Use when writing or editing user-facing copy such as landing text, CTAs, emails, empty states, and notifications.
 - `next-intl-translation-apis.mdc`: Use when wiring translation APIs into components or framework functions.
 - `english-code-only.mdc`: Use alongside copy work to keep code in English while keeping user-facing text in locale files.
+- **`docs/product/glossary.md`** (not a cursor rule — a reference doc): Source of truth for canonical product terminology across `es` and `en`. Read before writing or editing any user-facing copy, identifier, or product doc that references `pedido` ↔ `order`, `entrega` ↔ `delivery`, `tienda` ↔ `store`, etc. Add new product concepts to it in the same change that introduces them.
 
 ### Data, backend, integrations, and environment
 

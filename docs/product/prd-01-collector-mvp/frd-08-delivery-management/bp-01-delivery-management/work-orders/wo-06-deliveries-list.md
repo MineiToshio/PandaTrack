@@ -8,7 +8,7 @@ parent: BP-01
 source_features:
   - FEAT-0015
 source_issue: 102
-last_updated: 2026-04-29
+last_updated: 2026-04-30
 implementation_status: PLANNED
 ---
 
@@ -16,7 +16,7 @@ implementation_status: PLANNED
 
 ## Summary
 
-Implement the deliveries workspace list with expandable cards, summary metadata (store, date, expected arrival range, status, carrier, tracking), pagination, and the default oldest-to-newest sort. Expanded cards show a flat product list for that delivery. No filters in this slice; filters land in [`WO-07`](wo-07-deliveries-list-filters.md).
+Implement the deliveries workspace list with expandable cards, summary metadata (store, shipping date, expected arrival range, status, carrier, tracking, received date when delivered), pagination, and the default oldest-to-newest sort. Expanded cards show a flat product list for that delivery. No filters in this slice; filters land in [`WO-07`](wo-07-deliveries-list-filters.md).
 
 ## Prerequisites
 
@@ -29,7 +29,7 @@ Implement the deliveries workspace list with expandable cards, summary metadata 
 - visible primary create action for new deliveries, following the same listing-surface pattern used by orders and stores
 - paginated list query for deliveries with their product rows
 - expandable delivery cards, patterned after orders for visual parity
-- summary metadata per card: store, delivery date, expected arrival range, status, carrier, tracking
+- summary metadata per card: store, shipping date, expected arrival range, status, carrier, tracking, received date when delivered
 - expansion surface per card showing the products included in that delivery as one flat list
 - tracking rendered as a clickable link only when the persisted value is a valid absolute URL; otherwise rendered as plain text
 - default sort: oldest to newest
@@ -71,7 +71,7 @@ Implement the deliveries workspace list with expandable cards, summary metadata 
 
 - The deliveries list renders the existing deliveries sorted from oldest to newest by default.
 - The deliveries list exposes a visible primary action to create a new delivery.
-- Each delivery card shows store, delivery date, expected arrival range, status, carrier, and tracking.
+- Each delivery card shows store, shipping date, expected arrival range, status, carrier, and tracking. Delivered cards also show received date.
 - A card expands to show the products included in that delivery as one flat list.
 - Tracking opens in a new tab only when the stored value is a valid absolute URL; otherwise the value is rendered as plain text.
 - The list paginates with the same collector-workspace interaction pattern used by orders and stores.

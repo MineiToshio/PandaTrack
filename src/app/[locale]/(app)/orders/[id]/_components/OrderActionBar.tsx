@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Ban, ChevronDown, MoreHorizontal, Pencil, RotateCcw, Store, Trash2, Truck } from "lucide-react";
 import Button from "@/components/core/Button/Button";
+import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import Tooltip from "@/components/core/Tooltip";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { cn } from "@/lib/styles";
 import { DETAIL_HERO_ACTION_BUTTON_CLASSNAME, DETAIL_HERO_ACTIONS_CLASSNAME } from "@/lib/styles";
 import type { OrderEligibility, OrderFlags } from "@/lib/data/orders/orderQueries";
 import type { OrderStatus } from "../../../../../../../generated/prisma/client";
@@ -155,27 +157,15 @@ export default function OrderActionBar({
           </>
         ) : (
           <>
-            <Tooltip
-              content={t("detail.actions.createDeliveryTooltip")}
-              side="bottom"
-              asDiv
-              className="w-full lg:w-auto"
-              triggerClassName="w-full lg:w-auto"
+            <Link
+              href={`/${locale}${ROUTES.deliveriesNew}?sourceOrderId=${orderId}`}
+              data-ph-event={POSTHOG_EVENTS.ORDER.CREATE_DELIVERY_CLICKED}
+              data-ph-props={JSON.stringify({ orderId, status })}
+              className={cn(buttonVariants({ variant: "primary", size: "md" }), DETAIL_HERO_ACTION_BUTTON_CLASSNAME)}
             >
-              <Button
-                variant="primary"
-                size="md"
-                tabIndex={0}
-                aria-disabled="true"
-                onClick={(e) => e.preventDefault()}
-                posthogEvent={POSTHOG_EVENTS.ORDER.CREATE_DELIVERY_CLICKED}
-                posthogProps={{ orderId, status }}
-                className={DETAIL_HERO_ACTION_BUTTON_CLASSNAME}
-              >
-                <Truck className="size-4 shrink-0" aria-hidden />
-                {t("detail.actions.createDelivery")}
-              </Button>
-            </Tooltip>
+              <Truck className="size-4 shrink-0" aria-hidden />
+              {t("detail.actions.createDelivery")}
+            </Link>
 
             <div className="relative flex w-full lg:w-auto">
               <Button

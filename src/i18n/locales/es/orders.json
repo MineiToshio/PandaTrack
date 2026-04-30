@@ -7,7 +7,7 @@
     "goBack": "Volver"
   },
   "create": {
-    "backToList": "Pedidos",
+    "backToList": "Volver a pedidos",
     "heroEyebrow": "Nuevo pedido",
     "title": "Nuevo pedido",
     "heroDescription": "Registra un nuevo pedido con sus artículos, moneda y total.",
@@ -34,6 +34,7 @@
     "cta": "Crear tienda"
   },
   "form": {
+    "detailsSectionTitle": "Detalles del pedido",
     "storeLabel": "Tienda",
     "storePlaceholder": "Buscar tienda...",
     "storeClearLabel": "Quitar tienda",
@@ -42,7 +43,7 @@
     "storeCreateWithName": "+ Crear \"{name}\"",
     "orderDateLabel": "Fecha del pedido",
     "orderDatePlaceholder": "Seleccionar fecha",
-    "deliveryRangeLabel": "Entrega estimada",
+    "deliveryRangeLabel": "Entrega estimada (opcional)",
     "deliveryRangePlaceholder": "Seleccionar rango",
     "deliveryRangeClearLabel": "Quitar rango",
     "currencyLabel": "Moneda",

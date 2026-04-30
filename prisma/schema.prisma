@@ -30,10 +30,16 @@ enum OrderHistoryEventType {
 }
 
 enum DeliveryStatus {
-  PENDING
   IN_TRANSIT
   DELIVERED
   CANCELLED
+}
+
+enum OrderItemDeliveryState {
+  NONE
+  ARRIVED_AT_STORE
+  IN_TRANSIT
+  DELIVERED
 }
 
 enum StoreType {
@@ -128,6 +134,7 @@ model User {
   orderPayments               OrderPayment[]
   orderHistory                OrderHistory[]
   preferredProductTypes       UserPreferredProductType[]
+  deliveries                  Delivery[]
 
   @@index([preferredCountryCode])
   @@map("user")
@@ -447,20 +454,21 @@ model Order {
 }
 
 model OrderItem {
-  id             String              @id @default(cuid())
-  orderId        String
-  userId         String
-  name           String
-  quantity       Int                 @default(1)
-  unitPrice      Int?
-  productTypeKey String?
-  position       Int
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  order          Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  productType    StoreProductType?   @relation(fields: [productTypeKey], references: [key], onDelete: Restrict)
-  deliveryItems  DeliveryOrderItem[]
+  id                String                 @id @default(cuid())
+  orderId           String
+  userId            String
+  name              String
+  quantity          Int                    @default(1)
+  unitPrice         Int?
+  productTypeKey    String?
+  position          Int
+  deliveryState     OrderItemDeliveryState @default(NONE)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  order             Order                  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productType       StoreProductType?      @relation(fields: [productTypeKey], references: [key], onDelete: Restrict)
+  deliveryItems     DeliveryOrderItem[]
 
   @@index([orderId])
   @@index([userId])
@@ -498,15 +506,29 @@ model OrderHistory {
 }
 
 model Delivery {
-  id         String              @id @default(cuid())
-  storeId    String
-  status     DeliveryStatus      @default(PENDING)
-  createdAt  DateTime            @default(now())
-  updatedAt  DateTime            @updatedAt
-  store      Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  orderItems DeliveryOrderItem[]
+  id                  String              @id @default(cuid())
+  humanReadableId     String              @unique
+  storeId             String
+  userId              String
+  status              DeliveryStatus      @default(IN_TRANSIT)
+  deliveryDate        DateTime
+  expectedArrivalFrom DateTime?
+  expectedArrivalTo   DateTime?
+  cost                Int
+  currencyCode        String
+  exchangeRate        Decimal?
+  carrier             String?
+  trackingNumber      String?
+  note                String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  store               Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderItems          DeliveryOrderItem[]
 
   @@index([storeId])
+  @@index([userId])
+  @@index([status])
   @@map("delivery")
 }
 

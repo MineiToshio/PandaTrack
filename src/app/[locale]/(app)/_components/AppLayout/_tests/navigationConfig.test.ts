@@ -6,7 +6,7 @@ describe("getPrivateAppPathSegment", () => {
     expect(getPrivateAppPathSegment("/es/dashboard")).toBe("dashboard");
     expect(getPrivateAppPathSegment("/en/stores")).toBe("stores");
     expect(getPrivateAppPathSegment("/es/orders")).toBe("orders");
-    expect(getPrivateAppPathSegment("/en/shipments")).toBe("shipments");
+    expect(getPrivateAppPathSegment("/en/deliveries")).toBe("deliveries");
     expect(getPrivateAppPathSegment("/es/settings")).toBe("settings");
   });
 
@@ -40,7 +40,7 @@ describe("getPrivateAppNavItems", () => {
   it("returns the collector primary nav items in order without settings", () => {
     const items = getPrivateAppNavItems();
     expect(items).toHaveLength(4);
-    expect(items.map((i) => i.id)).toEqual(["dashboard", "stores", "orders", "shipments"]);
+    expect(items.map((i) => i.id)).toEqual(["dashboard", "stores", "orders", "deliveries"]);
   });
 
   it("returns items with href that include locale and route", () => {

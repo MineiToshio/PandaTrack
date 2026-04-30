@@ -99,9 +99,9 @@ describe("resendVerificationEmail", () => {
     sendVerificationEmailMock.mockResolvedValueOnce({ ok: true });
     const expectedResult = { success: true } satisfies ResendVerificationEmailResult;
 
-    await expect(resendVerificationEmail({ locale: "en", returnTo: "/shipments" })).resolves.toEqual(expectedResult);
+    await expect(resendVerificationEmail({ locale: "en", returnTo: "/deliveries" })).resolves.toEqual(expectedResult);
 
-    expect(resolveAuthCallbackURLMock).toHaveBeenCalledWith("en", "/shipments");
+    expect(resolveAuthCallbackURLMock).toHaveBeenCalledWith("en", "/deliveries");
     expect(sendVerificationEmailMock).toHaveBeenCalledWith("blocked@example.com", "/en/dashboard", requestHeaders);
   });
 });

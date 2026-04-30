@@ -103,7 +103,7 @@ export default function ShellAccountMenu({
   const secondaryName = user.name?.trim() && user.name.trim() !== displayName ? user.name.trim() : null;
 
   useEffect(() => {
-    if (!open || surface !== "desktop") return;
+    if (!open) return;
 
     const handlePointerDown = (event: PointerEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
@@ -124,7 +124,7 @@ export default function ShellAccountMenu({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open, surface]);
+  }, [open]);
 
   const handleToggle = () => {
     const nextOpen = !open;
@@ -177,10 +177,10 @@ export default function ShellAccountMenu({
         <div
           id={`shell-account-menu-${surface}`}
           className={cn(
-            "border-border bg-popover overflow-hidden border shadow-xl",
+            "border-border bg-popover absolute bottom-full left-0 z-20 mb-3 overflow-hidden border shadow-xl",
             surface === "desktop"
-              ? "absolute bottom-full left-0 z-20 mb-3 w-max max-w-[calc(100vw-2rem)] min-w-[18.5rem] rounded-[1.75rem]"
-              : "mt-2 rounded-2xl",
+              ? "w-max max-w-[calc(100vw-2rem)] min-w-[18.5rem] rounded-[1.75rem]"
+              : "right-0 rounded-2xl",
           )}
         >
           <div className={cn(TINTED_SURFACE_GRADIENT_STOPS, "flex items-center gap-3 bg-linear-to-br px-4 py-4")}>

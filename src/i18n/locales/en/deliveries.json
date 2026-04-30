@@ -1,0 +1,81 @@
+{
+  "create": {
+    "backToOrder": "Back to order",
+    "backToDeliveries": "Back to deliveries",
+    "heroEyebrow": "New delivery",
+    "title": "New delivery",
+    "heroDescriptionFromOrder": "Create a delivery from {orderId}. Eligible products from this order are preselected.",
+    "heroDescriptionStandalone": "Choose a store, select eligible products, and track the delivery from store to arrival.",
+    "baseCurrencyBanner": "Choose a base currency to make delivery costs easier to compare across currencies.",
+    "baseCurrencyCta": "Choose base currency",
+    "basicsSectionTitle": "Delivery basics",
+    "productsSectionTitle": "Products",
+    "costSectionTitle": "Cost",
+    "trackingSectionTitle": "Carrier and tracking",
+    "selectStoreFirst": "Choose a store to see eligible products.",
+    "noProductsForStore": "{storeName} has no eligible products right now.",
+    "thisStore": "This store",
+    "refreshLink": "Refresh eligible products",
+    "submit": "Create delivery",
+    "submitting": "Creating..."
+  },
+  "form": {
+    "storeLabel": "Store",
+    "storePlaceholder": "Select store",
+    "deliveryDateLabel": "Shipping date",
+    "deliveryDatePlaceholder": "Select date",
+    "expectedArrivalLabel": "Expected arrival (optional)",
+    "expectedArrivalPlaceholder": "Select range",
+    "expectedArrivalClearLabel": "Clear range",
+    "selectOrder": "Select all",
+    "unselectOrder": "Clear order",
+    "productQuantity": "Quantity: {quantity}",
+    "costLabel": "Cost",
+    "costPlaceholder": "0.00",
+    "currencyLabel": "Currency",
+    "currencyPlaceholder": "Select currency",
+    "exchangeRateLabel": "Exchange rate",
+    "exchangeRatePlaceholder": "0.00",
+    "exchangeRateHelper": "{from} to {to}",
+    "carrierLabel": "Carrier (optional)",
+    "carrierPlaceholder": "Carrier name",
+    "trackingLabel": "Tracking (optional)",
+    "trackingPlaceholder": "Tracking number or URL"
+  },
+  "validation": {
+    "storeRequired": "Select a store.",
+    "productsRequired": "Select at least one product.",
+    "costInvalid": "Enter a valid cost. Use 0.00 when there is no delivery cost.",
+    "currencyRequired": "Select a currency.",
+    "exchangeRateRequired": "Enter a valid exchange rate.",
+    "arrivalToBeforeFrom": "End date must be after start date."
+  },
+  "error": {
+    "server_error": "An unexpected error occurred. Please try again.",
+    "unauthorized": "You need to be signed in to continue.",
+    "STORE_NOT_FOUND": "The selected store does not exist.",
+    "NO_PRODUCTS_SELECTED": "Select at least one product.",
+    "PRODUCTS_FROM_DIFFERENT_STORE": "All products in a delivery must come from the selected store.",
+    "PRODUCT_NOT_ELIGIBLE": "One or more products are no longer eligible. Refresh and try again."
+  },
+  "empty": {
+    "title": "No eligible products",
+    "description": "There are no order products ready for a new delivery.",
+    "body": "Current products are either already delivered, already in another delivery, or not available yet. Create a new order to register available products.",
+    "cta": "Create order"
+  },
+  "detail": {
+    "metaTitle": "Delivery detail",
+    "backToCreate": "Create another delivery",
+    "heroEyebrow": "Delivery created",
+    "title": "{humanReadableId}",
+    "stubDescription": "This delivery was created. The full read-only detail view arrives in the next delivery slice.",
+    "summaryTitle": "Summary",
+    "deliveryDate": "Shipping date: {date}"
+  },
+  "list": {
+    "eyebrow": "Collector workspace",
+    "title": "Deliveries",
+    "description": "Delivery list and filters will be added in a later slice."
+  }
+}

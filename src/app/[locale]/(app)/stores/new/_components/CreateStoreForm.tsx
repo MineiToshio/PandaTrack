@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Building2, Globe, Plus, UserRound } from "lucide-react";
+import { Box, Building2, Globe, Link2, MapPinned, Plus, Store, UserRound } from "lucide-react";
 import {
   type ChangeEvent,
   type FormEvent,
@@ -491,7 +491,12 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
       )}
 
       <form ref={formRef} className="space-y-5" onSubmit={handleFormSubmit}>
-        <StoreFormSectionCard eyebrow={tCreate("basicsEyebrow")} title={tCreate("basicsTitle")}>
+        <StoreFormSectionCard
+          eyebrow={tCreate("basicsEyebrow")}
+          title={tCreate("basicsTitle")}
+          icon={Store}
+          iconClassName="text-primary"
+        >
           <div className="space-y-3">
             <Label>{tCreate("storeTypeLabel")}</Label>
             <ToggleChoiceGroup
@@ -618,7 +623,12 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
           </div>
         </StoreFormSectionCard>
 
-        <StoreFormSectionCard eyebrow={tCreate("commercialEyebrow")} title={tCreate("commercialTitle")}>
+        <StoreFormSectionCard
+          eyebrow={tCreate("commercialEyebrow")}
+          title={tCreate("commercialTitle")}
+          icon={Box}
+          iconClassName="text-highlight"
+        >
           <div className="space-y-3">
             <Label>{tCreate("presenceLabel")}</Label>
             <div
@@ -698,6 +708,8 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
             <StoreFormSectionCard
               eyebrow={tCreate("businessEyebrow")}
               title={tCreate("contactChannelsLabel")}
+              icon={Link2}
+              iconClassName="text-success"
               action={
                 <Button type="button" variant="secondary" size="sm" onClick={handleAddContactChannel}>
                   <Plus size={16} className="mr-1" aria-hidden />
@@ -751,6 +763,8 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
             <StoreFormSectionCard
               eyebrow={tCreate("businessEyebrow")}
               title={tCreate("addressesLabel")}
+              icon={MapPinned}
+              iconClassName="text-accent"
               action={
                 <Button type="button" variant="secondary" size="sm" onClick={handleAddAddress}>
                   <Plus size={16} className="mr-1" aria-hidden />

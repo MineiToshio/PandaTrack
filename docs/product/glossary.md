@@ -1,0 +1,39 @@
+# Glossary
+
+This document is the canonical glossary of product terminology used across PandaTrack. Both languages are canonical: every team-facing surface must use these exact terms.
+
+If a term you need is not listed here, add it before introducing inconsistent wording in code, copy, or documentation.
+
+## How to use this glossary
+
+- **Source of truth.** When the product code, copy, or documentation references one of the concepts below, use the exact term in the column for that locale. Do not introduce synonyms.
+- **Applies to.** UX copy (`src/i18n/locales/**`), in-product labels, marketing copy, product docs (`docs/product/**`), GitHub issues, FRDs, work orders, ADRs, and PR descriptions.
+- **Locale-paired.** When a string exists in both `es` and `en`, use the matching pair from this table. Do not translate between the two using a thesaurus; use this glossary.
+- **Code identifiers.** Code identifiers (variables, types, files, routes) follow the **English** column. Repository code is English-only per `english-code-only.mdc`.
+- **Update process.** When introducing a new product concept, add the term here in the same change that introduces it. When a term is renamed, update existing strings, identifiers, and docs in the same change and remove the old term.
+
+## Approved terms
+
+| Concept                                                      | Spanish (es)    | English (en)      | Notes                                                                                                                                       |
+| ------------------------------------------------------------ | --------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| A purchase placed at a store, with one or more items.        | **pedido**      | **order**         | Never use `orden` (es) or `purchase` (en) in user-facing copy or new code. Existing identifiers using `purchase` are legacy; do not extend. |
+| A shipment of one or more order items reaching the user.     | **entrega**     | **delivery**      | Never use `envío` (es) or `shipment` (en). Replaces the previous `shipments` route, copy, and identifiers.                                  |
+| A merchant or person where pedidos are placed.               | **tienda**      | **store**         | Use even when the seller is an individual (`PERSON` store type).                                                                            |
+| A line item inside a pedido.                                 | **producto**    | **product**       | Avoid `artículo` / `item` in user-facing copy when referring to an order line; reserve `item` for generic UI lists.                         |
+| A pedido with payments tracked over time before fulfillment. | **pre-reserva** | **pre-order**     | Hyphenated form in English. Spanish form uses `pre-reserva` (with hyphen) consistently.                                                     |
+| A monetary movement against a pedido.                        | **pago**        | **payment**       |                                                                                                                                             |
+| The user's currency for total roll-ups across stores.        | **moneda base** | **base currency** |                                                                                                                                             |
+| The currency a pedido is denominated in.                     | **moneda**      | **currency**      |                                                                                                                                             |
+
+## Anti-patterns to avoid
+
+- `orden` / `órdenes` (es) — always use `pedido` / `pedidos`.
+- `envío` / `envíos` (es) — always use `entrega` / `entregas`.
+- `shipment` / `shipments` (en) — always use `delivery` / `deliveries`. Marketing copy that references the broader concept of physical shipping is the only allowed exception, but keep the in-app feature name as `delivery`.
+- Mixing `purchase` and `order` in the same surface. New work should standardize on `order`.
+
+## Cross-references
+
+- UX voice and writing rules: `docs/design/ux-copy.md`.
+- Repository implementation rules that depend on this glossary: `.cursor/rules/role-copywriting-marketing.mdc`, `.cursor/rules/english-code-only.mdc`.
+- Locale files: `src/i18n/locales/{es,en}/*.json`.

@@ -53,7 +53,7 @@ describe("authRedirect", () => {
     });
 
     it("builds verification status and confirm links with sanitized callbacks", () => {
-      const statusHref = new URL(buildVerificationStatusHref("en", "/es/shipments"), "https://pandatrack.local");
+      const statusHref = new URL(buildVerificationStatusHref("en", "/es/deliveries"), "https://pandatrack.local");
       const confirmHref = new URL(
         buildVerificationConfirmHref("en", "token-123", "/sign-in"),
         "https://pandatrack.local",

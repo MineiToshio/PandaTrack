@@ -4,7 +4,7 @@
     "stores": "Tiendas",
     "purchases": "Pedidos",
     "preOrders": "Pre-reservas",
-    "shipments": "Envíos",
+    "deliveries": "Entregas",
     "settings": "Ajustes"
   },
   "breadcrumb": {
@@ -44,8 +44,7 @@
   "pageHero": {
     "eyebrow": "Tu espacio de trabajo",
     "purchasesDescription": "Aquí vivirán tu historial y el seguimiento de pedidos. Muy pronto.",
-    "preOrdersDescription": "Aquí organizarás pre-reservas y pagos pendientes. Muy pronto.",
-    "shipmentsDescription": "Aquí seguirás envíos y entregas parciales. Muy pronto."
+    "preOrdersDescription": "Aquí organizarás pre-reservas y pagos pendientes. Muy pronto."
   },
   "meta": {
     "description": "Espacio de trabajo del coleccionista PandaTrack."

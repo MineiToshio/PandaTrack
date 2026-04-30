@@ -2,7 +2,7 @@ import { ROUTES } from "@/lib/constants";
 import { getActiveNavItem, type NavItemId } from "@/app/[locale]/(app)/_components/AppLayout/navigationConfig";
 
 /** Path segments that identify the primary nav area (no locale). */
-const PRIMARY_SEGMENTS: NavItemId[] = ["dashboard", "stores", "orders", "shipments", "settings"];
+const PRIMARY_SEGMENTS: NavItemId[] = ["dashboard", "stores", "orders", "deliveries", "settings"];
 
 /**
  * Known nested path segments under each primary area. Maps segment string to i18n label key.
@@ -89,7 +89,7 @@ function getNavLabelKeyForSegment(segment: NavItemId): string {
     dashboard: "nav.dashboard",
     stores: "nav.stores",
     orders: "nav.purchases",
-    shipments: "nav.shipments",
+    deliveries: "nav.deliveries",
     settings: "nav.settings",
   };
   return map[segment] ?? "nav.dashboard";

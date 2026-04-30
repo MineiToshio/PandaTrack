@@ -8,7 +8,7 @@ parent: BP-01
 source_features:
   - FEAT-0015
 source_issue: 99
-last_updated: 2026-04-27
+last_updated: 2026-04-30
 implementation_status: PLANNED
 ---
 
@@ -28,7 +28,7 @@ Detail mutations (inline note edit, mark delivered, reopen, cancel, delete) live
 ## In Scope
 
 - delivery detail route and route-level layout
-- delivery summary header: store, delivery identifier, delivery date, expected arrival range, status, cost, currency, optional carrier, optional tracking
+- delivery summary header: store, delivery identifier, shipping date, expected arrival range, status, received date when delivered, cost, currency, optional carrier, optional tracking
 - one functional `Edit` entry point in the header that routes to `WO-05`; no other live actions in this slice
 - grouped products section: products grouped by source order, each group open by default
 - product rows that show product name, quantity, and product type when present
@@ -79,7 +79,8 @@ Detail mutations (inline note edit, mark delivered, reopen, cancel, delete) live
 
 ## E2E Acceptance Tests
 
-- Opening a delivery shows its summary header with store, delivery identifier, date, status, cost, currency, carrier, tracking, and expected arrival range as applicable.
+- Opening a delivery shows its summary header with store, delivery identifier, shipping date, status, cost, currency, carrier, tracking, and expected arrival range as applicable.
+- A delivered delivery shows the received date once `WO-04` has captured it through the mark-delivered action.
 - The grouped products section lists the products of the delivery grouped by source order, with every group expanded by default and the order identifier visible for each group.
 - Each product row shows name, quantity, and product type when present.
 - The private note section is always visible in this slice; when a note exists it is displayed read-only, and when it does not exist the empty placeholder is shown.

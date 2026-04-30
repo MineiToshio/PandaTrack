@@ -11,7 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Calculator, Info } from "lucide-react";
+import { Calculator, ClipboardList, Info, ShoppingBag } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -23,7 +23,8 @@ import Input from "@/components/core/Input";
 import Typography from "@/components/core/Typography";
 import Tooltip from "@/components/core/Tooltip";
 import Button from "@/components/core/Button/Button";
-import { cn } from "@/lib/styles";
+import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
+import { COLLECTOR_FORM_SECTION_CLASSNAME, cn } from "@/lib/styles";
 import {
   ALLOWED_COLLECTOR_BASE_CURRENCY_CODES,
   PRIMARY_CURRENCY_BY_COUNTRY,
@@ -428,224 +429,227 @@ export default function OrderForm({
       )}
 
       <form ref={formRef} className="space-y-6" onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="order-store">
-              {tForm("storeLabel")} <span aria-hidden>*</span>
-            </Label>
-            <OrderStoreSelect
-              id="order-store"
-              stores={storeOptions}
-              value={storeId}
-              onChange={(next) => {
-                setStoreId(next);
-                const derivedCurrency = resolveStoreCurrency(next);
-                if (derivedCurrency) {
-                  setCurrencyCode(derivedCurrency);
-                }
-                markDirty();
-              }}
-              placeholder={tForm("storePlaceholder")}
-              clearLabel={tForm("storeClearLabel")}
-              noResultsLabel={tForm("storeNoResults")}
-              createLabel={tForm("storeCreateOption")}
-              createWithNameLabel={(name) => tForm("storeCreateWithName", { name })}
-              onCreateStore={handleStoreCreate}
-              error={!!fieldErrors.storeId?.length}
-            />
-            {fieldErrors.storeId?.[0] && (
-              <Typography size="xs" className="text-destructive mt-1" role="alert">
-                {t("validation.storeRequired")}
-              </Typography>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1.5">
-              <Label htmlFor="order-currency" spacing="tight" className="mb-0">
-                {tForm("currencyLabel")} <span aria-hidden>*</span>
-              </Label>
-              <Tooltip
-                content={tForm("currencyStoreHint")}
-                side="top"
-                alignSelfInFlexRow="center"
-                triggerClassName="text-text-muted hover:text-foreground -m-0.5 rounded p-0.5"
-              >
-                <span className="inline-flex items-center">
-                  <span className="sr-only">{tForm("currencyHintAriaLabel")}</span>
-                  <Info className="size-4 shrink-0" aria-hidden />
-                </span>
-              </Tooltip>
-            </div>
-            <OrderCurrencySelect
-              id="order-currency"
-              options={currencyListOptions}
-              value={currencyCode}
-              onChange={(next) => {
-                setCurrencyCode(next);
-                markDirty();
-              }}
-              placeholder={tForm("currencyPlaceholder")}
-              clearLabel={tForm("currencyClearLabel")}
-              noResultsLabel={tForm("storeNoResults")}
-              error={!!fieldErrors.currencyCode?.length}
-              aria-invalid={!!fieldErrors.currencyCode?.length}
-              aria-required
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="order-date">
-              {tForm("orderDateLabel")} <span aria-hidden>*</span>
-            </Label>
-            <DatePickerInput
-              id="order-date"
-              value={orderDate}
-              onChange={(d) => {
-                setOrderDate(d);
-                markDirty();
-              }}
-              placeholder={tForm("orderDatePlaceholder")}
-              locale={locale}
-              error={!!fieldErrors.orderDate?.length}
-              disableFuture
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="delivery-range">{tForm("deliveryRangeLabel")}</Label>
-            <DateRangePickerInput
-              id="delivery-range"
-              from={deliveryFrom}
-              to={deliveryTo}
-              onChange={(from, to) => {
-                setDeliveryFrom(from);
-                setDeliveryTo(to);
-                markDirty();
-              }}
-              placeholder={tForm("deliveryRangePlaceholder")}
-              clearLabel={tForm("deliveryRangeClearLabel")}
-              locale={locale}
-              error={!!fieldErrors.expectedDeliveryTo?.length}
-            />
-            {fieldErrors.expectedDeliveryTo?.[0] && (
-              <Typography size="xs" className="text-destructive" role="alert">
-                {t("validation.deliveryToBeforeFrom")}
-              </Typography>
-            )}
-          </div>
-        </div>
-
-        {showExchangeRate && (
+        <section className={cn(COLLECTOR_FORM_SECTION_CLASSNAME, "space-y-4")} aria-labelledby="order-details-title">
+          <SectionTitleWithAccent id="order-details-title" as="h2" icon={ClipboardList} iconClassName="text-primary">
+            {tForm("detailsSectionTitle")}
+          </SectionTitleWithAccent>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
+              <Label htmlFor="order-store">{tForm("storeLabel")}</Label>
+              <OrderStoreSelect
+                id="order-store"
+                stores={storeOptions}
+                value={storeId}
+                onChange={(next) => {
+                  setStoreId(next);
+                  const derivedCurrency = resolveStoreCurrency(next);
+                  if (derivedCurrency) {
+                    setCurrencyCode(derivedCurrency);
+                  }
+                  markDirty();
+                }}
+                placeholder={tForm("storePlaceholder")}
+                clearLabel={tForm("storeClearLabel")}
+                noResultsLabel={tForm("storeNoResults")}
+                createLabel={tForm("storeCreateOption")}
+                createWithNameLabel={(name) => tForm("storeCreateWithName", { name })}
+                onCreateStore={handleStoreCreate}
+                error={!!fieldErrors.storeId?.length}
+              />
+              {fieldErrors.storeId?.[0] && (
+                <Typography size="xs" className="text-destructive mt-1" role="alert">
+                  {t("validation.storeRequired")}
+                </Typography>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
               <div className="flex items-center gap-1.5">
-                <Label htmlFor="order-exchange-rate" spacing="tight" className="mb-0">
-                  {tForm("exchangeRateLabel")} <span aria-hidden>*</span>
+                <Label htmlFor="order-currency" spacing="tight" className="mb-0">
+                  {tForm("currencyLabel")}
                 </Label>
                 <Tooltip
-                  content={tForm("exchangeRateHint", {
-                    from: currencyCode,
-                    to: baseCurrencyCode!,
-                  })}
+                  content={tForm("currencyStoreHint")}
                   side="top"
                   alignSelfInFlexRow="center"
                   triggerClassName="text-text-muted hover:text-foreground -m-0.5 rounded p-0.5"
                 >
                   <span className="inline-flex items-center">
-                    <span className="sr-only">{tForm("exchangeRateHintAriaLabel")}</span>
+                    <span className="sr-only">{tForm("currencyHintAriaLabel")}</span>
                     <Info className="size-4 shrink-0" aria-hidden />
                   </span>
                 </Tooltip>
               </div>
-              <Input
-                id="order-exchange-rate"
-                name="exchangeRate"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={exchangeRate}
-                placeholder={tForm("exchangeRatePlaceholder")}
-                error={!!fieldErrors.exchangeRate?.length}
-                aria-invalid={!!fieldErrors.exchangeRate?.length}
-                onChange={(e) => {
-                  setExchangeRate(e.target.value);
+              <OrderCurrencySelect
+                id="order-currency"
+                options={currencyListOptions}
+                value={currencyCode}
+                onChange={(next) => {
+                  setCurrencyCode(next);
                   markDirty();
                 }}
+                placeholder={tForm("currencyPlaceholder")}
+                clearLabel={tForm("currencyClearLabel")}
+                noResultsLabel={tForm("storeNoResults")}
+                error={!!fieldErrors.currencyCode?.length}
+                aria-invalid={!!fieldErrors.currencyCode?.length}
+                aria-required
               />
-              <Typography size="xs" className="text-text-muted">
-                {tForm("exchangeRateHelper", { from: currencyCode, to: baseCurrencyCode! })}
-              </Typography>
             </div>
           </div>
-        )}
 
-        <div className="space-y-3">
-          <div className="flex items-center gap-1.5">
-            <h2 className="text-text-title text-base font-semibold">{tForm("itemsSectionTitle")}</h2>
-            <OrderItemsShortcutsHelp />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="order-date">{tForm("orderDateLabel")}</Label>
+              <DatePickerInput
+                id="order-date"
+                value={orderDate}
+                onChange={(d) => {
+                  setOrderDate(d);
+                  markDirty();
+                }}
+                placeholder={tForm("orderDatePlaceholder")}
+                locale={locale}
+                error={!!fieldErrors.orderDate?.length}
+                disableFuture
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="delivery-range">{tForm("deliveryRangeLabel")}</Label>
+              <DateRangePickerInput
+                id="delivery-range"
+                from={deliveryFrom}
+                to={deliveryTo}
+                onChange={(from, to) => {
+                  setDeliveryFrom(from);
+                  setDeliveryTo(to);
+                  markDirty();
+                }}
+                placeholder={tForm("deliveryRangePlaceholder")}
+                clearLabel={tForm("deliveryRangeClearLabel")}
+                locale={locale}
+                error={!!fieldErrors.expectedDeliveryTo?.length}
+              />
+              {fieldErrors.expectedDeliveryTo?.[0] && (
+                <Typography size="xs" className="text-destructive" role="alert">
+                  {t("validation.deliveryToBeforeFrom")}
+                </Typography>
+              )}
+            </div>
           </div>
-          {items.length === 0 && fieldErrors.items?.length && (
-            <Typography size="xs" className="text-destructive" role="alert">
-              {t("validation.itemsRequired")}
-            </Typography>
+
+          {showExchangeRate && (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Label htmlFor="order-exchange-rate" spacing="tight" className="mb-0">
+                    {tForm("exchangeRateLabel")}
+                  </Label>
+                  <Tooltip
+                    content={tForm("exchangeRateHint", {
+                      from: currencyCode,
+                      to: baseCurrencyCode!,
+                    })}
+                    side="top"
+                    alignSelfInFlexRow="center"
+                    triggerClassName="text-text-muted hover:text-foreground -m-0.5 rounded p-0.5"
+                  >
+                    <span className="inline-flex items-center">
+                      <span className="sr-only">{tForm("exchangeRateHintAriaLabel")}</span>
+                      <Info className="size-4 shrink-0" aria-hidden />
+                    </span>
+                  </Tooltip>
+                </div>
+                <Input
+                  id="order-exchange-rate"
+                  name="exchangeRate"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={exchangeRate}
+                  placeholder={tForm("exchangeRatePlaceholder")}
+                  error={!!fieldErrors.exchangeRate?.length}
+                  aria-invalid={!!fieldErrors.exchangeRate?.length}
+                  onChange={(e) => {
+                    setExchangeRate(e.target.value);
+                    markDirty();
+                  }}
+                />
+                <Typography size="xs" className="text-text-muted">
+                  {tForm("exchangeRateHelper", { from: currencyCode, to: baseCurrencyCode! })}
+                </Typography>
+              </div>
+            </div>
           )}
-          <OrderItemsGrid
-            rows={items}
-            onChange={(next) => {
-              setItems(next);
-              markDirty();
-            }}
-            productTypeKeys={productTypeKeys}
-            tProductTypes={(key) => tProductTypes(key as never)}
-            itemErrors={itemErrors}
-            createNewRow={() => createEmptyRow(nextRowId())}
-          />
-        </div>
+        </section>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="order-total">
-              {tForm("totalCostLabel")} <span aria-hidden>*</span>
-            </Label>
-            <div className="flex items-stretch gap-2">
-              <Input
-                id="order-total"
-                name="totalCost"
-                type="text"
-                inputMode="decimal"
-                value={totalCost}
-                placeholder={tForm("totalCostPlaceholder")}
-                error={!!clientTotalCostError || !!fieldErrors.totalCost?.length}
-                aria-invalid={!!clientTotalCostError || !!fieldErrors.totalCost?.length}
-                onChange={(e) => {
-                  setTotalCost(sanitizeDecimalInput(e.target.value));
-                  setClientTotalCostError(null);
-                  markDirty();
-                }}
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleCalculateTotal}
-                disabled={!hasAnyPricedItem}
-                aria-label={tForm("totalCostCalculateAriaLabel")}
-                className="shrink-0"
-              >
-                <Calculator className="size-4" aria-hidden />
-                <span className="hidden sm:inline">{tForm("totalCostCalculateLabel")}</span>
-              </Button>
+        <section className={cn(COLLECTOR_FORM_SECTION_CLASSNAME, "space-y-4")} aria-labelledby="order-items-title">
+          <div className="space-y-3">
+            <div className="flex items-center gap-1.5">
+              <SectionTitleWithAccent id="order-items-title" as="h2" icon={ShoppingBag} iconClassName="text-highlight">
+                {tForm("itemsSectionTitle")}
+              </SectionTitleWithAccent>
+              <OrderItemsShortcutsHelp />
             </div>
-            {(clientTotalCostError ?? fieldErrors.totalCost?.[0]) && (
+            {items.length === 0 && fieldErrors.items?.length && (
               <Typography size="xs" className="text-destructive" role="alert">
-                {clientTotalCostError ?? t("validation.totalCostRequired")}
+                {t("validation.itemsRequired")}
               </Typography>
             )}
+            <OrderItemsGrid
+              rows={items}
+              onChange={(next) => {
+                setItems(next);
+                markDirty();
+              }}
+              productTypeKeys={productTypeKeys}
+              tProductTypes={(key) => tProductTypes(key as never)}
+              itemErrors={itemErrors}
+              createNewRow={() => createEmptyRow(nextRowId())}
+            />
           </div>
-        </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="order-total">{tForm("totalCostLabel")}</Label>
+              <div className="flex items-stretch gap-2">
+                <Input
+                  id="order-total"
+                  name="totalCost"
+                  type="text"
+                  inputMode="decimal"
+                  value={totalCost}
+                  placeholder={tForm("totalCostPlaceholder")}
+                  error={!!clientTotalCostError || !!fieldErrors.totalCost?.length}
+                  aria-invalid={!!clientTotalCostError || !!fieldErrors.totalCost?.length}
+                  onChange={(e) => {
+                    setTotalCost(sanitizeDecimalInput(e.target.value));
+                    setClientTotalCostError(null);
+                    markDirty();
+                  }}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleCalculateTotal}
+                  disabled={!hasAnyPricedItem}
+                  aria-label={tForm("totalCostCalculateAriaLabel")}
+                  className="shrink-0"
+                >
+                  <Calculator className="size-4" aria-hidden />
+                  <span className="hidden sm:inline">{tForm("totalCostCalculateLabel")}</span>
+                </Button>
+              </div>
+              {(clientTotalCostError ?? fieldErrors.totalCost?.[0]) && (
+                <Typography size="xs" className="text-destructive" role="alert">
+                  {clientTotalCostError ?? t("validation.totalCostRequired")}
+                </Typography>
+              )}
+            </div>
+          </div>
+        </section>
 
         <div className="flex flex-wrap gap-3 pt-2">
           <Button type="submit" variant="primary" disabled={isPending}>

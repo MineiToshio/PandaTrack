@@ -1,0 +1,81 @@
+{
+  "create": {
+    "backToOrder": "Volver al pedido",
+    "backToDeliveries": "Volver a entregas",
+    "heroEyebrow": "Nueva entrega",
+    "title": "Nueva entrega",
+    "heroDescriptionFromOrder": "Crea una entrega desde {orderId}. Los productos elegibles de este pedido quedan preseleccionados.",
+    "heroDescriptionStandalone": "Elige una tienda, selecciona productos elegibles y registra la entrega hasta su llegada.",
+    "baseCurrencyBanner": "Elige una moneda base para comparar mejor los costos de entrega entre monedas.",
+    "baseCurrencyCta": "Elegir moneda base",
+    "basicsSectionTitle": "Datos de la entrega",
+    "productsSectionTitle": "Productos",
+    "costSectionTitle": "Costo",
+    "trackingSectionTitle": "Courier y seguimiento",
+    "selectStoreFirst": "Elige una tienda para ver productos elegibles.",
+    "noProductsForStore": "{storeName} no tiene productos elegibles por ahora.",
+    "thisStore": "Esta tienda",
+    "refreshLink": "Actualizar productos elegibles",
+    "submit": "Crear entrega",
+    "submitting": "Creando..."
+  },
+  "form": {
+    "storeLabel": "Tienda",
+    "storePlaceholder": "Seleccionar tienda",
+    "deliveryDateLabel": "Fecha de envío",
+    "deliveryDatePlaceholder": "Seleccionar fecha",
+    "expectedArrivalLabel": "Llegada estimada (opcional)",
+    "expectedArrivalPlaceholder": "Seleccionar rango",
+    "expectedArrivalClearLabel": "Quitar rango",
+    "selectOrder": "Seleccionar todo",
+    "unselectOrder": "Limpiar pedido",
+    "productQuantity": "Cantidad: {quantity}",
+    "costLabel": "Costo",
+    "costPlaceholder": "0.00",
+    "currencyLabel": "Moneda",
+    "currencyPlaceholder": "Seleccionar moneda",
+    "exchangeRateLabel": "Tipo de cambio",
+    "exchangeRatePlaceholder": "0.00",
+    "exchangeRateHelper": "{from} a {to}",
+    "carrierLabel": "Courier (opcional)",
+    "carrierPlaceholder": "Nombre del courier",
+    "trackingLabel": "Seguimiento (opcional)",
+    "trackingPlaceholder": "Numero o URL de seguimiento"
+  },
+  "validation": {
+    "storeRequired": "Selecciona una tienda.",
+    "productsRequired": "Selecciona al menos un producto.",
+    "costInvalid": "Ingresa un costo valido. Usa 0.00 si no hay costo de entrega.",
+    "currencyRequired": "Selecciona una moneda.",
+    "exchangeRateRequired": "Ingresa un tipo de cambio valido.",
+    "arrivalToBeforeFrom": "La fecha de fin debe ser posterior a la de inicio."
+  },
+  "error": {
+    "server_error": "Ocurrio un error inesperado. Intenta de nuevo.",
+    "unauthorized": "Necesitas iniciar sesion para continuar.",
+    "STORE_NOT_FOUND": "La tienda seleccionada no existe.",
+    "NO_PRODUCTS_SELECTED": "Selecciona al menos un producto.",
+    "PRODUCTS_FROM_DIFFERENT_STORE": "Todos los productos de una entrega deben venir de la tienda seleccionada.",
+    "PRODUCT_NOT_ELIGIBLE": "Uno o mas productos ya no son elegibles. Actualiza e intenta de nuevo."
+  },
+  "empty": {
+    "title": "Sin productos elegibles",
+    "description": "No hay productos de pedidos disponibles para una nueva entrega.",
+    "body": "Los productos actuales ya estan entregados, ya estan en otra entrega o aun no estan disponibles. Crea un nuevo pedido para registrar productos disponibles.",
+    "cta": "Crear pedido"
+  },
+  "detail": {
+    "metaTitle": "Detalle de entrega",
+    "backToCreate": "Crear otra entrega",
+    "heroEyebrow": "Entrega creada",
+    "title": "{humanReadableId}",
+    "stubDescription": "Esta entrega fue creada. La vista completa de detalle llega en el siguiente slice de entregas.",
+    "summaryTitle": "Resumen",
+    "deliveryDate": "Fecha de envío: {date}"
+  },
+  "list": {
+    "eyebrow": "Workspace del coleccionista",
+    "title": "Entregas",
+    "description": "La lista de entregas y filtros se agregara en un slice posterior."
+  }
+}

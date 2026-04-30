@@ -39,8 +39,9 @@ export const ROUTES = {
   storesNew: "/stores/new",
   orders: "/orders",
   ordersNew: "/orders/new",
+  deliveries: "/deliveries",
+  deliveriesNew: "/deliveries/new",
   payments: "/payments",
-  shipments: "/shipments",
   budget: "/budget",
   settings: "/settings",
 } as const;
@@ -153,6 +154,10 @@ export const POSTHOG_EVENTS = {
     LIST_CARD_EXPANDED: "orders_list_card_expanded",
     LIST_CARD_COLLAPSED: "orders_list_card_collapsed",
     LIST_PAGE_CHANGED: "orders_list_page_changed",
+  },
+  DELIVERY: {
+    CREATE_FLOW_OPENED: "delivery_create_flow_opened",
+    CREATED: "delivery_created",
   },
   STORE: {
     CREATED: "store_created",

@@ -8,8 +8,8 @@ parent: BP-01
 source_features:
   - FEAT-0015
 source_issue: 97
-last_updated: 2026-04-27
-implementation_status: IN_PROGRESS
+last_updated: 2026-04-29
+implementation_status: IMPLEMENTED
 ---
 
 # WO-01 Delivery Foundation
@@ -85,7 +85,7 @@ Persisted on `OrderItem.deliveryState`. Represents the three product milestones 
 | `storeId`             | `String`                              | FK to `Store`, cascade delete. One delivery belongs to exactly one store (`FR-08-01`).                                                      |
 | `userId`              | `String`                              | FK to `User`, cascade delete. Duplicated from the parent store context for direct auth without join (`data-layer-user-id-duplication.mdc`). |
 | `status`              | `DeliveryStatus @default(IN_TRANSIT)` | Always `IN_TRANSIT` at creation. Never edited directly (`FR-08-12`).                                                                        |
-| `deliveryDate`        | `DateTime`                            | Required. Past or current dates only (`FR-08-05`).                                                                                          |
+| `deliveryDate`        | `DateTime`                            | Required shipping date. Past or current dates only (`FR-08-05`).                                                                            |
 | `expectedArrivalFrom` | `DateTime?`                           | Optional start of expected arrival range (`FR-08-10`).                                                                                      |
 | `expectedArrivalTo`   | `DateTime?`                           | Optional end of expected arrival range (`FR-08-10`).                                                                                        |
 | `cost`                | `Int`                                 | Required, including `0` (`FR-08-06`). Minor units (cents × 100), same convention as `Order.totalCost`.                                      |
@@ -136,7 +136,7 @@ Defined in `src/lib/deliveries/deliveryValidation.ts`. Consumed by WO-02 through
 | Field                 | Validation                                                                                                 |
 | --------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `storeId`             | `cuid()`                                                                                                   |
-| `deliveryDate`        | `date`, must be ≤ today (`FR-08-05`)                                                                       |
+| `deliveryDate`        | shipping date, must be ≤ today (`FR-08-05`)                                                                |
 | `expectedArrivalFrom` | `date?`                                                                                                    |
 | `expectedArrivalTo`   | `date?`, must be ≥ `expectedArrivalFrom` when both provided                                                |
 | `cost`                | `int`, `min(0)`, `max(999_999_999)`                                                                        |

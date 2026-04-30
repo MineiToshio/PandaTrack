@@ -76,6 +76,20 @@ The label should describe the action, not just confirm it.
 
 Exception: "Cancel" and "Leave" are acceptable for cancel/back actions where the object is implicit from context.
 
+### Required vs optional field labels
+
+Forms use a single, consistent convention across the app: required is the default and is unmarked; optional fields are explicitly tagged. Do not mix asterisks and "optional" tags within or across forms.
+
+- Required field label: the field name only. No asterisk, no "required".
+  - Good (es): `"costLabel": "Costo"`
+  - Good (en): `"costLabel": "Cost"`
+- Optional field label: append `(opcional)` (es) / `(optional)` (en) to the translation string itself.
+  - Good (es): `"expectedArrivalLabel": "Llegada estimada (opcional)"`
+  - Good (en): `"expectedArrivalLabel": "Expected arrival (optional)"`
+- Bad: `"Costo *"`, `"Cost *"`, `"Costo (requerido)"`, mixing asterisks for required with `(opcional)` for optional in the same screen.
+
+See `interface-patterns.md` → "Form field required vs optional labeling" for the matching component-level rule.
+
 ### Keep helper text functional
 
 Helper text below a field should answer "why does this field exist or what should I put here?", not repeat the label.
@@ -147,3 +161,11 @@ One short sentence. Past tense. No exclamation marks unless the moment is genuin
 - `es` is the primary locale; when in doubt about tone, write `es` first.
 - Keep the same sentence length and structure across locales. Do not over-explain in one locale and under-explain in the other.
 - All copy lives in `src/i18n/locales/{locale}/` JSON files. Never hardcode user-facing strings in components.
+
+## Product Terminology
+
+The product glossary is the source of truth for the canonical names of product concepts in both `es` and `en`. Read it before writing copy or naming any product-related UI string, identifier, or documentation entry.
+
+- Glossary: `docs/product/glossary.md`.
+- Required pairs include `pedido` ↔ `order` (never `orden` / `purchase`) and `entrega` ↔ `delivery` (never `envío` / `shipment`).
+- Add new concepts to the glossary in the same change that introduces them.

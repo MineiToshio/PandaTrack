@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { buildPageMetadata } from "@/lib/seo";
 import { getSession } from "@/lib/auth/auth-server";
 import { redirect } from "next/navigation";
-import { getUserStores } from "@/lib/data/stores/storeQueries";
+import { getOrderableStores } from "@/lib/data/stores/storeQueries";
 import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
 import { prisma } from "@/lib/prisma";
 import { createOrderAction } from "../_actions/orderActions";
@@ -33,7 +33,7 @@ export default async function OrdersNewPage({ params }: Props) {
   await getTranslations({ locale, namespace: "orders" });
 
   const [stores, productTypeRows, user] = await Promise.all([
-    getUserStores(userId),
+    getOrderableStores(),
     listActiveStoreProductTypeKeys(prisma),
     prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } }),
   ]);

@@ -1,6 +1,11 @@
 import type { OrderStatus } from "../../../generated/prisma/client";
 
-export type ItemDeliveryState = "open" | "in_transit" | "delivered";
+/**
+ * Product-level delivery milestone used for display purposes.
+ * "arrived_at_store" and "open" both map to "open" for order-status derivation
+ * — see mapToItemDeliveryState in src/lib/deliveries/deliveryState.ts.
+ */
+export type ItemDeliveryState = "open" | "arrived_at_store" | "in_transit" | "delivered";
 
 export interface OrderItemState {
   itemId: string;

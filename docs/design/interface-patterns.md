@@ -221,7 +221,18 @@ Rules:
 - Typography and spacing inside the component are fixed (`Heading` `size="xs"`, `tracking-tighter`, shared with `visual-foundations.md`).
 - **Do not** use `SectionTitleWithAccent` for **transient overlay chrome** (drawer, sheet, or flyout **header row**). Those titles belong to a narrow panel, not the main page column; use compact **`Typography`** (or the modal/drawer’s built-in title treatment) instead.
 
-**Store create/edit steps:** **`StoreFormSectionCard`** renders the optional step **eyebrow** (`Typography` muted, e.g. “Step 1”) on the line above **`SectionTitleWithAccent`** (`as="h3"`) for the card title, so wizard sections match the same accent title row as the rest of the shell.
+**Icon-led variant for forms and detail panels:** `SectionTitleWithAccent` accepts an `icon` (Lucide component) plus `iconClassName` that replaces the gradient accent bar with a small colored icon. Use this variant on **create / edit forms** and on detail-page panels where each section already represents a distinct concept. Default to the gradient bar when no per-section concept is being communicated. Within a flow, **reuse the same icon and color** in the form section title and the matching detail panel so a section reads identically across create, edit, and read views (e.g. delivery “Tracking” uses `MapPinned` + `text-info` in both the create form and the detail). Allowed icon colors are the semantic theme tokens (`text-primary`, `text-highlight`, `text-success`, `text-info`, `text-warning`, `text-accent`); do not use raw color values.
+
+**Store create/edit steps:** **`StoreFormSectionCard`** renders the optional step **eyebrow** (`Typography` muted, e.g. “Step 1”) on the line above **`SectionTitleWithAccent`** (`as="h3"`) for the card title, so wizard sections match the same accent title row as the rest of the shell. The card forwards `icon` and `iconClassName` to the title row so each step gets its own concept icon.
+
+### Form field required vs optional labeling (mandatory)
+
+All collector forms (`stores/new`, `stores/[slug]/edit`, `orders/new`, `orders/[id]/edit`, `deliveries/new`) follow the **same** required/optional convention so users do not have to re-learn each form:
+
+- **Required is the default.** Required fields show **only the field name** in the `Label`. Do **not** add an asterisk (`*`), the word "required", or any other required marker next to the label.
+- **Optional fields** must show the suffix `(opcional)` (es) / `(optional)` (en) appended to the label string in the i18n file (e.g. `"deliveryRangeLabel": "Entrega estimada (opcional)"`). Do not implement this with a separate inline `<span>` next to the label — the suffix lives in the translation so it stays correct in both locales and matches the existing store form pattern.
+- Validation, accessibility, and `required` HTML semantics are still driven by the form schema and `aria-invalid`; the visual label only communicates which fields are _not_ required.
+- Every form section must have a visible section title via `SectionTitleWithAccent` (or `StoreFormSectionCard`), even when the section has only one or two fields. Do not ship anonymous sections.
 
 ### Collector shell content width
 
@@ -377,7 +388,8 @@ Rules:
 
 - page title block: `AppPageHero` with the same `h1` scale and supporting line as other collector routes (`visual-foundations.md` heading scale).
 - major section titles (Profile, Account, Preferences): `SectionTitleWithAccent` as `h2` (see **Standard in-page section title**).
-- stack major sections (Profile, Account, Preferences) as **sibling** level-1 surfaces with **identical** chrome: use `COLLECTOR_PRIMARY_SECTION_CLASSNAME` from `src/lib/styles.ts` (re-exported as `SETTINGS_SECTION_SURFACE_CLASSNAME` in `settingsSectionChrome.ts`). Store create/edit step cards use the same class via `StoreFormSectionCard`. Do not invent a third panel treatment for equivalent blocks.
+- stack major sections (Profile, Account, Preferences) as **sibling** level-1 surfaces with **identical** chrome: use `COLLECTOR_PRIMARY_SECTION_CLASSNAME` from `src/lib/styles.ts` (re-exported as `SETTINGS_SECTION_SURFACE_CLASSNAME` in `settingsSectionChrome.ts`). Do not invent a third panel treatment for equivalent blocks.
+- creation/edit form sections (orders, stores, deliveries) use `COLLECTOR_FORM_SECTION_CLASSNAME` from `src/lib/styles.ts` for solid `bg-card` chrome. `StoreFormSectionCard` wraps it. Apply this class to every step card across the three forms so they share the same look and feel.
 - inset rows and placeholders inside those sections (email block, “coming soon” copy): use `COLLECTOR_MUTED_INSET_CLASSNAME` from `src/lib/styles.ts` instead of one-off `bg-muted/32` stacks.
 - rely on the shared shell main column (`APP_SHELL_MAIN_CLASSNAME`); use `space-y-8` between the hero and major sections only (no extra page-level `max-w-6xl` or horizontal padding wrapper).
 - dense copy inside sections: prefer `Typography size="sm"` for placeholders and primary read values; use `Typography size="xs"` for field labels and subsection captions.

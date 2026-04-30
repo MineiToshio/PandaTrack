@@ -13,7 +13,7 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-04-29
+last_updated: 2026-04-30
 implementation_status: PLANNED
 ---
 
@@ -50,7 +50,7 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
 - Source-order grouping in delivery detail exists for traceability of product origin, but the delivery remains the primary visual subject of the page.
 - Product-name search remains a list-filter concern rather than a separate top-level search surface.
 - The deliveries list opens in an active-deliveries default state: when no filter params are present, the route canonicalizes to an explicit `status=IN_TRANSIT` query, the sidebar shows that status selected, and the chip row reflects the same visible default.
-- Deliveries list filtering uses two distinct date concepts instead of one combined date control: `deliveryDate` uses a manual range, while `expectedArrival` supports both a manual range and collector-oriented presets (`Overdue`, `Due today`, `Next 7 days`, `Next 14 days`, `This month`).
+- Deliveries list filtering uses two distinct date concepts instead of one combined date control: shipping date (`Delivery.deliveryDate`) uses a manual range, while `expectedArrival` supports both a manual range and collector-oriented presets (`Overdue`, `Due today`, `Next 7 days`, `Next 14 days`, `This month`).
 - Expected-arrival presets and manual expected-arrival ranges are mutually exclusive within the same filter block. Choosing a preset updates the visible calendar range; manually editing that range clears the preset.
 - Expected-arrival manual range filtering uses interval-overlap semantics: a delivery matches when any portion of its expected-arrival range overlaps the user-selected filter range.
 - The deliveries detail back link should reuse the same `?returnTo=` pattern already established by orders so the collector can return from detail to the same filtered deliveries list state.
@@ -58,6 +58,7 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
 - The detail-action hierarchy should reuse the existing order-detail split secondary pattern: a labeled secondary action plus an adjacent overflow trigger for additional actions.
 - Delivery private notes follow the same inline-note rule as orders and stores: saving an empty trimmed value clears the stored note.
 - Delete is discoverable but state-gated: a `DELIVERED` delivery keeps the `Delete` affordance visible, but the action is blocked with explanatory feedback until the collector reopens the delivery. Physical delete always requires a confirmation modal and returns to the deliveries list on success.
+- `Delivery.deliveryDate` is presented to collectors as the shipping date. The actual received date is captured by the mark-delivered flow and is required when moving a delivery to `DELIVERED`.
 
 ## Contracts
 
@@ -65,13 +66,14 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
   - input: store id, (optional) source order id for preselection
   - output: eligible products grouped by source order, excluding products that are already delivered or already attached to another active delivery
 - create/edit contract
-  - input: store, delivery date, expected arrival range, cost, currency, optional FX, optional carrier, optional tracking, selected product ids
+  - input: store, shipping date, expected arrival range, cost, currency, optional FX, optional carrier, optional tracking, selected product ids
   - invariant: both create and edit require at least one selected product at save time; a delivery with zero linked products is invalid and must not be persisted
   - output: persisted delivery, recalculated product states, and re-derived `OrderStatus` for every affected order
   - edit-specific guard: if the delivery is no longer in an editable lifecycle state, edit must redirect back to detail with feedback telling the collector to reopen first
 - lifecycle contract
-  - input: `markDelivered`, `reopen`, `cancel`, `delete`, `updatePrivateNote`, and `updateProductMembership` (from edit)
+  - input: `markDelivered` with required received date, `reopen`, `cancel`, `delete`, `updatePrivateNote`, and `updateProductMembership` (from edit)
   - output: updated delivery state, updated product states, and re-derived `OrderStatus` for every affected order
+  - mark-delivered guard: received date is required, must be past or current, and is persisted with the delivered state
 - detail action chrome contract
   - `IN_TRANSIT`: primary `Mark delivered`, visible `Edit`, overflow `Cancel` and `Delete`
   - `DELIVERED`: primary `Reopen`; additional actions remain in the secondary / overflow affordances
@@ -79,18 +81,18 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
   - `Delete` remains visible in `DELIVERED` but is disabled until the collector reopens the delivery
 - detail read contract
   - input: delivery id
-  - output: delivery summary, grouped products by source order, current lifecycle state, action availability flags, and the private note value
+  - output: delivery summary, grouped products by source order, current lifecycle state, action availability flags, received date when delivered, and the private note value
   - grouped source-order sections are expanded by default in the read-only detail view
   - tracking is rendered as a link only when the persisted value is already a valid absolute URL
 - deliveries list contract
   - route: `/{locale}/deliveries`
   - visible primary action: `New delivery`, following the same collector-listing hero pattern used by orders and stores
   - output: paginated delivery cards sorted from oldest date to newest by default
-  - each card shows store, delivery date, expected arrival range, status, carrier, and tracking
+  - each card shows store, shipping date, expected arrival range, status, carrier, and tracking; delivered cards also show received date
   - tracking is rendered as a link only when the persisted value is already a valid absolute URL; otherwise it renders as plain text
   - card expansion renders a flat product list only; it does not group by source order and does not show source-order secondary metadata in this slice
 - list filter contract
-  - input: status, one store, product-name text, `deliveryDate` range, `expectedArrival` manual range or preset
+  - input: status, one store, product-name text, shipping-date range, `expectedArrival` manual range or preset
   - output: URL-canonical filter state and removable chips patterned after `Stores`
   - default state: `status=IN_TRANSIT` is applied and materialized in the URL when no filter params are present
   - product-name query matches any included product by substring, case-insensitive and accent-insensitive

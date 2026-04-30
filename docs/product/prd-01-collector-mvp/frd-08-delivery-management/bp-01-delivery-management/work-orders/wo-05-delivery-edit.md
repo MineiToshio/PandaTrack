@@ -8,7 +8,7 @@ parent: BP-01
 source_features:
   - FEAT-0015
 source_issue: 101
-last_updated: 2026-04-28
+last_updated: 2026-04-30
 implementation_status: PLANNED
 ---
 
@@ -16,7 +16,7 @@ implementation_status: PLANNED
 
 ## Summary
 
-Implement the delivery edit flow: modify the product membership (add or remove eligible products), change carrier, tracking, delivery date, expected arrival range, cost, currency, and FX. Every edit that changes product-to-delivery associations re-derives `OrderStatus` for each affected order within the same transaction.
+Implement the delivery edit flow: modify the product membership (add or remove eligible products), change carrier, tracking, shipping date, expected arrival range, cost, currency, and FX. Every edit that changes product-to-delivery associations re-derives `OrderStatus` for each affected order within the same transaction.
 
 Edit is a separate slice from create because the invariants differ: create persists a new delivery from zero; edit must reconcile changes against an existing delivery, handle a discard-changes confirmation when there are unsaved edits, and recalculate product states when memberships change.
 
@@ -33,7 +33,7 @@ This slice also defines the edit-time guardrails that keep the delivery lifecycl
 - product membership changes: add eligible products from the same store; remove currently linked products
 - minimum-one-product invariant on save: the edited delivery must still contain at least one product
 - recalculation of product delivery state whenever membership changes: newly added products become arrived at store when they were not already there; removed products are returned to arrived-at-store when still unfulfilled
-- carrier, tracking, delivery date, expected arrival range, cost, currency, and FX editing
+- carrier, tracking, shipping date, expected arrival range, cost, currency, and FX editing
 - discard-changes confirmation when there are unsaved edits
 - `deriveOrderStatus` invocation within the edit transaction for every affected order
 - redirect back to the same delivery detail route after a successful edit

@@ -14,6 +14,8 @@ This rule covers two scopes:
 
 The source of truth for UX microcopy patterns, examples, and tone-by-surface guidance is `docs/design/ux-copy.md`. Read it before writing or reviewing any in-app string.
 
+The source of truth for product terminology in both `es` and `en` is `docs/product/glossary.md` (e.g. `pedido` ↔ `order`, `entrega` ↔ `delivery`). Use the exact terms from the glossary in every locale file, marketing surface, and code identifier. When introducing a new product concept, add it to the glossary in the same change.
+
 ## Shared Priorities
 
 - **Clarity first**: Short, scannable sentences. One idea per sentence when possible.

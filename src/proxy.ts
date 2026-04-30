@@ -16,8 +16,8 @@ const handleI18nRouting = createMiddleware({
 const PRIVATE_ROUTE_PREFIXES = [
   ROUTES.dashboard,
   ROUTES.orders,
+  ROUTES.deliveries,
   ROUTES.payments,
-  ROUTES.shipments,
   ROUTES.budget,
 ] as const;
 

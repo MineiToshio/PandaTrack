@@ -25,6 +25,13 @@ export const COLLECTOR_PRIMARY_SECTION_CLASSNAME =
   "border-border/70 bg-background/80 shadow-sm ring-primary/10 rounded-2xl border p-4 ring-1 ring-inset sm:p-6" as const;
 
 /**
+ * Shared section panel for collector creation/edit forms (orders, stores, deliveries).
+ * Solid `bg-card` keeps form steps visually consistent across the private app.
+ */
+export const COLLECTOR_FORM_SECTION_CLASSNAME =
+  "border-border bg-card rounded-2xl border p-4 shadow-sm sm:p-5" as const;
+
+/**
  * Muted inset block for secondary content inside a section (email row, placeholders, compact card summaries).
  */
 export const COLLECTOR_MUTED_INSET_CLASSNAME = "border-border/55 bg-muted/32 rounded-xl border p-4" as const;

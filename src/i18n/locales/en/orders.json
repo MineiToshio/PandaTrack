@@ -7,7 +7,7 @@
     "goBack": "Go back"
   },
   "create": {
-    "backToList": "Orders",
+    "backToList": "Back to orders",
     "heroEyebrow": "New order",
     "title": "New order",
     "heroDescription": "Record a new order with its items, currency, and total.",
@@ -34,6 +34,7 @@
     "cta": "Create store"
   },
   "form": {
+    "detailsSectionTitle": "Order details",
     "storeLabel": "Store",
     "storePlaceholder": "Search stores...",
     "storeClearLabel": "Clear store",
@@ -42,7 +43,7 @@
     "storeCreateWithName": "+ Create \"{name}\"",
     "orderDateLabel": "Order date",
     "orderDatePlaceholder": "Select date",
-    "deliveryRangeLabel": "Expected delivery",
+    "deliveryRangeLabel": "Expected delivery (optional)",
     "deliveryRangePlaceholder": "Select range",
     "deliveryRangeClearLabel": "Clear range",
     "currencyLabel": "Currency",

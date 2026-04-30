@@ -233,19 +233,30 @@ Reference for what each table and attribute is for, where it is used, and why it
 
 ### `order_item`
 
-**Purpose:** Single line item in an order. Can be linked to one or more deliveries (split shipments) via `delivery_order_item`.
+**Purpose:** Single line item in an order. Can be linked to deliveries via `delivery_order_item` and carries the product-level delivery milestone used for order-status derivation.
 
 - **orderId** – Order this item belongs to.
+- **userId** – Duplicated owner id for direct authorization checks on item-level mutations.
+- **name / quantity / unitPrice / productTypeKey / position** – Product details and ordering within the source order.
+- **deliveryState** – Product delivery milestone: NONE, ARRIVED_AT_STORE, IN_TRANSIT, or DELIVERED. Delivery mutations maintain this value and order status is re-derived from it.
 
 ### `delivery`
 
-**Purpose:** A shipment from a store. One delivery can contain items from multiple orders of that store (e.g. one parcel with several orders). Used for shipment tracking and “what’s in this parcel”.
+**Purpose:** A store-scoped delivery. One delivery can contain items from multiple orders of that same store. Used for delivery create, lifecycle actions, tracking fields, cost, and "what is in this parcel" context.
 
 - **storeId** – Store that ships this delivery.
+- **userId** – Owner id for direct authorization checks.
+- **humanReadableId** – Collector-facing identifier generated as `DLV-YYYYMMDD-NN`.
+- **status** – Delivery lifecycle state: IN_TRANSIT, DELIVERED, or CANCELLED.
+- **deliveryDate** – Required shipping date; create flow defaults to today and allows past or current dates.
+- **expectedArrivalFrom / expectedArrivalTo** – Optional expected arrival window.
+- **cost / currencyCode / exchangeRate** – Required delivery cost and currency, with optional FX context when it differs from the user base currency.
+- **carrier / trackingNumber** – Optional free-text tracking fields.
+- **note** – Optional private note, edited by later delivery-detail actions.
 
 ### `delivery_order_item`
 
-**Purpose:** Which order items are in which delivery. Enables split shipments: one order’s items can be in several deliveries, and one delivery can have items from several orders of the same store.
+**Purpose:** Which order items are in which delivery. A delivery can have items from several orders of the same store. A product may be attached to only one active delivery at a time; delivery mutations enforce that eligibility rule.
 
 - **deliveryId / orderItemId** – Composite PK; this order item is included in this delivery.
 

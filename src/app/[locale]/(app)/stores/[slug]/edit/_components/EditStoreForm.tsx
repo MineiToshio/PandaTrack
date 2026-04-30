@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Globe, Plus } from "lucide-react";
+import { Box, Globe, Link2, MapPinned, MessageSquare, Plus, Store } from "lucide-react";
 import { type FormEvent, startTransition, useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import posthog from "posthog-js";
@@ -274,7 +274,12 @@ export default function EditStoreForm({
         <input type="hidden" name="storeType" value={store.storeType} />
         <input type="hidden" name="countryCode" value={store.countryCode} />
 
-        <StoreFormSectionCard eyebrow={t("edit.identityEyebrow")} title={t("edit.identityTitle")}>
+        <StoreFormSectionCard
+          eyebrow={t("edit.identityEyebrow")}
+          title={t("edit.identityTitle")}
+          icon={Store}
+          iconClassName="text-primary"
+        >
           <div>
             <Label htmlFor="edit-store-name">{t("create.nameLabel")}</Label>
             <Input
@@ -358,7 +363,12 @@ export default function EditStoreForm({
           ) : null}
         </StoreFormSectionCard>
 
-        <StoreFormSectionCard eyebrow={t("edit.catalogEyebrow")} title={t("edit.catalogTitle")}>
+        <StoreFormSectionCard
+          eyebrow={t("edit.catalogEyebrow")}
+          title={t("edit.catalogTitle")}
+          icon={Box}
+          iconClassName="text-highlight"
+        >
           <div className="space-y-3">
             <Label>{t("create.presenceLabel")}</Label>
             <ToggleChoiceGroup
@@ -422,6 +432,8 @@ export default function EditStoreForm({
             <StoreFormSectionCard
               eyebrow={t("edit.contactEyebrow")}
               title={t("create.contactChannelsLabel")}
+              icon={Link2}
+              iconClassName="text-success"
               action={
                 <Button type="button" variant="secondary" size="sm" onClick={handleAddContactChannel}>
                   <Plus size={16} className="mr-1" aria-hidden />
@@ -481,6 +493,8 @@ export default function EditStoreForm({
             <StoreFormSectionCard
               eyebrow={t("edit.addressEyebrow")}
               title={t("create.addressesLabel")}
+              icon={MapPinned}
+              iconClassName="text-accent"
               action={
                 <Button type="button" variant="secondary" size="sm" onClick={handleAddAddress}>
                   <Plus size={16} className="mr-1" aria-hidden />
@@ -541,7 +555,12 @@ export default function EditStoreForm({
         )}
 
         {!canDirectlyEdit && (
-          <StoreFormSectionCard eyebrow={t("edit.commentEyebrow")} title={t("edit.commentTitle")}>
+          <StoreFormSectionCard
+            eyebrow={t("edit.commentEyebrow")}
+            title={t("edit.commentTitle")}
+            icon={MessageSquare}
+            iconClassName="text-info"
+          >
             <div>
               <Label htmlFor="edit-change-request-comment">{t("edit.commentLabel")}</Label>
               <Textarea

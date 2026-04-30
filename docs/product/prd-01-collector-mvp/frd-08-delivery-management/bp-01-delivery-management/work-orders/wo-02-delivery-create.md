@@ -8,8 +8,8 @@ parent: BP-01
 source_features:
   - FEAT-0015
 source_issue: 98
-last_updated: 2026-04-28
-implementation_status: PLANNED
+last_updated: 2026-04-30
+implementation_status: IMPLEMENTED
 ---
 
 # WO-02 Delivery Create
@@ -30,7 +30,7 @@ This slice delivers a demo-able create flow that persists a new delivery, marks 
 - standalone create-delivery flow: store selector that only lists stores with at least one eligible product, followed by the grouped product selector
 - store-scoped product selection grouped by source order, using the eligibility helper from `WO-01`
 - minimum-one-product invariant on save: a new delivery must include at least one selected product
-- delivery date (required, prefilled with today, past-or-current only)
+- shipping date (required, prefilled with today, past-or-current only; stored as `Delivery.deliveryDate`)
 - delivery cost (required, `0` allowed), delivery currency (default to user base currency when present)
 - exchange-rate input when delivery currency differs from the user base currency
 - optional expected arrival date range
@@ -38,7 +38,7 @@ This slice delivers a demo-able create flow that persists a new delivery, marks 
 - automatic promotion of newly selected products to `IN_TRANSIT` when the delivery is saved (regardless of their prior state)
 - create mutation and server action, including the `deriveOrderStatus` call for every affected order within the same transaction
 - new `getStoresWithEligibleProducts` query in `src/lib/data/deliveries/deliveryQueries.ts`
-- stub detail page at `src/app/[locale]/(app)/deliveries/[id]/page.tsx` (shows `humanReadableId` and delivery date; replaced by WO-03)
+- stub detail page at `src/app/[locale]/(app)/deliveries/[id]/page.tsx` (shows `humanReadableId` and shipping date; replaced by WO-03)
 - redirect to `/deliveries/[id]` after a successful create
 - PostHog analytics events for the create flow
 - automated tests covering the create path (unit where it makes sense, plus at least one E2E path that creates a delivery and verifies the affected orders' status is re-derived)
@@ -106,7 +106,7 @@ The following stubs from `WO-01` are filled in by this slice:
 Input: DeliveryCreateInput (from deliveryValidation.ts) + userId
 Transaction:
   1. Validate all productIds belong to orders with storeId === input.storeId (one-store boundary)
-  2. Generate humanReadableId via generateHumanReadableId(userId, deliveryDate)
+  2. Generate humanReadableId via generateHumanReadableId(userId, deliveryDate), where `deliveryDate` is the shipping date
   3. Create Delivery record
   4. Create DeliveryOrderItem rows for each productId
   5. Set deliveryState = IN_TRANSIT for all selected items (getNextItemDeliveryState("create"))
@@ -122,7 +122,7 @@ Located at `src/app/[locale]/(app)/deliveries/new/_actions/createDeliveryAction.
 
 ### Stub detail page
 
-`src/app/[locale]/(app)/deliveries/[id]/page.tsx` — Server Component. Fetches `Delivery.humanReadableId` and `Delivery.deliveryDate` for the authenticated user, renders a minimal confirmation. Returns 404 if the delivery does not belong to the user. WO-03 replaces the full content while keeping the route and auth pattern.
+`src/app/[locale]/(app)/deliveries/[id]/page.tsx` — Server Component. Fetches `Delivery.humanReadableId` and `Delivery.deliveryDate` for the authenticated user, renders it as shipping date, and renders a minimal confirmation. Returns 404 if the delivery does not belong to the user. WO-03 replaces the full content while keeping the route and auth pattern.
 
 ### OrderActionBar wiring
 

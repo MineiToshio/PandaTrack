@@ -27,7 +27,7 @@ const NAV_ICON_MAP: Record<PrimaryNavItemId, LucideIcon> = {
   dashboard: LayoutDashboard,
   stores: Store,
   orders: ShoppingBag,
-  shipments: Package,
+  deliveries: Package,
 };
 
 type LucideIcon = React.ComponentType<{ className?: string }>;
@@ -41,7 +41,14 @@ type AppSidebarProps = {
   storesHref?: string;
 };
 
-export default function AppSidebar({ locale, currentUser, signOutLabel, expanded, onToggle, storesHref }: AppSidebarProps) {
+export default function AppSidebar({
+  locale,
+  currentUser,
+  signOutLabel,
+  expanded,
+  onToggle,
+  storesHref,
+}: AppSidebarProps) {
   const pathname = usePathname();
   const t = useTranslations("appLayout");
   const [floatingOpen, setFloatingOpen] = useState(false);
@@ -114,7 +121,12 @@ export default function AppSidebar({ locale, currentUser, signOutLabel, expanded
                 label={t("account.triggerLabel", { username: currentUser.username })}
                 onOpen={handleRailEnter}
               />
-              <IconButton Icon={PanelLeftOpen} variant="outline" aria-label={t("sidebar.expand")} onClick={handleToggle} />
+              <IconButton
+                Icon={PanelLeftOpen}
+                variant="outline"
+                aria-label={t("sidebar.expand")}
+                onClick={handleToggle}
+              />
             </div>
           </div>
         )}
@@ -236,8 +248,7 @@ function RailIcons({
         const Icon = NAV_ICON_MAP[item.id as PrimaryNavItemId];
         const isActive = activeItem.id === item.id;
         const href = item.id === "stores" && storesHref != null ? storesHref : item.href(locale);
-        const storesHrefKind =
-          item.id === "stores" ? (href.includes("?") ? "preference_filters" : "plain") : undefined;
+        const storesHrefKind = item.id === "stores" ? (href.includes("?") ? "preference_filters" : "plain") : undefined;
         return (
           <Link
             key={item.id}

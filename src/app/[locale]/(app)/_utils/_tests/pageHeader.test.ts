@@ -18,7 +18,7 @@ describe("isFirstLevelPrivateRoute", () => {
     expect(isFirstLevelPrivateRoute("/es/dashboard")).toBe(true);
     expect(isFirstLevelPrivateRoute("/en/stores")).toBe(true);
     expect(isFirstLevelPrivateRoute("/es/orders")).toBe(true);
-    expect(isFirstLevelPrivateRoute("/en/shipments")).toBe(true);
+    expect(isFirstLevelPrivateRoute("/en/deliveries")).toBe(true);
     expect(isFirstLevelPrivateRoute("/es/settings")).toBe(true);
   });
 

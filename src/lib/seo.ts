@@ -22,8 +22,8 @@ export type PageCanonicalSegment =
   | "dashboard"
   | "stores"
   | "orders"
+  | "deliveries"
   | "orders/pre-orders"
-  | "shipments"
   | "settings";
 
 /**
@@ -47,7 +47,8 @@ export type BuildPageMetadataOptions = {
     | "storeListing"
     | "settings"
     | "orders"
-    | "orderListing";
+    | "orderListing"
+    | "deliveries";
   pathSegment: PageCanonicalSegment;
   titleKey: string;
   descriptionKey?: string;

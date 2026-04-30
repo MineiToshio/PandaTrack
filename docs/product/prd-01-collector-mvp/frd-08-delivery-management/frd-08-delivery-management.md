@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-04-29
+last_updated: 2026-04-30
 source_features:
   - FEAT-0015
 implementation_status: PLANNED
@@ -60,8 +60,8 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - `FR-08-02`: A delivery may contain products from multiple orders of the same store.
 - `FR-08-03`: Products from different stores must never appear in the same delivery.
 - `FR-08-04`: A delivery must contain at least one product when it is created or saved through edit.
-- `FR-08-05`: A delivery must require a delivery date and prefill it with the current date on create.
-- `FR-08-06`: Delivery date selection must allow only past or current dates.
+- `FR-08-05`: A delivery must require a shipping date and prefill it with the current date on create.
+- `FR-08-06`: Shipping date selection must allow only past or current dates.
 - `FR-08-07`: A delivery must support a required delivery cost, including `0`.
 - `FR-08-08`: A delivery must support a delivery currency selected by the user.
 - `FR-08-09`: Delivery currency must default to the user's base currency when present.
@@ -77,7 +77,7 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - `FR-08-19`: Products already delivered or already attached to another active delivery must not appear in delivery selection results.
 - `FR-08-20`: When a product is added to a delivery, it must automatically become `IN_TRANSIT` regardless of its prior state (`NONE` or `ARRIVED_AT_STORE`).
 - `FR-08-21`: A product may belong to only one delivery at a time.
-- `FR-08-22`: Marking a delivery as delivered must mark every associated product as delivered to the user.
+- `FR-08-22`: Marking a delivery as delivered must require the collector to select the received date, then mark every associated product as delivered to the user.
 - `FR-08-23`: Reopening a delivered or cancelled delivery must recalculate delivery-related product states so they are editable again, restoring the detail view to an editable lifecycle state.
 - `FR-08-24`: Removing a product from a delivery during edit must recalculate that product's delivery-related state.
 - `FR-08-25`: Cancelling or deleting a delivery must return all of its still-unfulfilled products to `arrived at store`. Physical delete is allowed only while the delivery is `IN_TRANSIT` or `CANCELLED`; a `DELIVERED` delivery must be reopened first.
@@ -86,7 +86,7 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - `FR-08-28`: The deliveries list must support filters for store, product-name text, and date range.
 - `FR-08-29`: Deliveries list filters must persist in the URL and render removable chips in the same interaction pattern used by `Stores`.
 - `FR-08-30`: The deliveries list must sort from oldest date to newest by default and paginate with the same collector-workspace pattern used by the order and store lists.
-- `FR-08-31`: Each delivery card in the list must show store, delivery date, expected arrival range, status, carrier, and tracking. Tracking should render as a link only when the stored value is already a valid absolute URL; otherwise it should render as plain text.
+- `FR-08-31`: Each delivery card in the list must show store, shipping date, expected arrival range, status, carrier, and tracking. Delivered cards must also show the received date. Tracking should render as a link only when the stored value is already a valid absolute URL; otherwise it should render as plain text.
 - `FR-08-32`: Each delivery card must expand to show the products included in that delivery as one flat list, without source-order grouping.
 - `FR-08-33`: The deliveries list must expose a visible primary action to create a new delivery, following the collector-workspace listing pattern used by orders and stores.
 
@@ -130,6 +130,7 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - Given a collector marks a delivery as delivered
 - When the operation succeeds
 - Then all products linked to that delivery become delivered
+- And the selected received date is saved on the delivery
 
 ### `AC-08-05`
 
@@ -147,6 +148,8 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - In delivery detail, that source-order grouping is traceability context rather than the primary content hierarchy: the collector is still reading one delivery first, then the origin of its products.
 - In the deliveries list, tracking is rendered as a link only when the persisted value is already a valid absolute URL. Otherwise it remains plain text.
 - Delivery routes in the collector app use `/{locale}/deliveries`. Deleting a delivery from detail returns the collector to the deliveries list.
+- In UI copy, `Delivery.deliveryDate` is presented as shipping date. It is the date the shipment is created/sent, not the date the collector receives it.
+- The received date is captured only by the mark-delivered flow, is required for that action, and must allow only past or current dates.
 
 ## Confirmed
 

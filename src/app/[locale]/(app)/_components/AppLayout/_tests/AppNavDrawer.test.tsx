@@ -8,7 +8,7 @@ const translationMap: Record<string, string> = {
   "nav.dashboard": "Dashboard",
   "nav.stores": "Stores",
   "nav.purchases": "Orders",
-  "nav.shipments": "Shipments",
+  "nav.deliveries": "Deliveries",
   "drawer.openMenu": "Open menu",
   "drawer.closeMenu": "Close menu",
   "drawer.preferencesAriaLabel": "Preferences and account",
@@ -71,7 +71,7 @@ describe("AppNavDrawer", () => {
     expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Stores" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Orders" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Shipments" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Deliveries" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
 
     expect(screen.getByRole("region", { name: "Preferences and account" })).toBeInTheDocument();

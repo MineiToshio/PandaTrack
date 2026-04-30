@@ -23,7 +23,7 @@ const NAV_ICON_MAP: Record<PrimaryNavItemId, React.ComponentType<{ className?: s
   dashboard: LayoutDashboard,
   stores: Store,
   orders: ShoppingBag,
-  shipments: Package,
+  deliveries: Package,
 };
 
 const TABLET_BREAKPOINT_PX = 768;

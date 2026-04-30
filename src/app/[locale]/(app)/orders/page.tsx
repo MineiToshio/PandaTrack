@@ -5,7 +5,7 @@ import { buildPageMetadata } from "@/lib/seo";
 import { getSession } from "@/lib/auth/auth-server";
 import { prisma } from "@/lib/prisma";
 import { getOrdersList } from "@/lib/data/orders/orderQueries";
-import { getUserStores } from "@/lib/data/stores/storeQueries";
+import { getOrderableStores } from "@/lib/data/stores/storeQueries";
 import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
 import AppPageHero from "@/components/modules/AppPageHero";
 import { APP_SHELL_FORM_RAIL_CLASSNAME, ROUTES } from "@/lib/constants";
@@ -96,7 +96,7 @@ export default async function OrdersPage({ params, searchParams }: OrdersPagePro
       page: parsed.page,
       pageSize: ORDER_LIST_PAGE_SIZE,
     }),
-    getUserStores(userId),
+    getOrderableStores(),
     listActiveStoreProductTypeKeys(prisma),
     getTranslations({ locale, namespace: "orderListing" }),
   ]);
@@ -138,12 +138,7 @@ export default async function OrdersPage({ params, searchParams }: OrdersPagePro
           }}
         />
 
-        <OrderListFilterChips
-          locale={locale}
-          basePath={basePath}
-          filters={activeFilters}
-          storesById={storesById}
-        />
+        <OrderListFilterChips locale={locale} basePath={basePath} filters={activeFilters} storesById={storesById} />
 
         <OrderListContent
           locale={locale}
