@@ -25,6 +25,19 @@ If a term you need is not listed here, add it before introducing inconsistent wo
 | The user's currency for total roll-ups across stores.        | **moneda base** | **base currency** |                                                                                                                                             |
 | The currency a pedido is denominated in.                     | **moneda**      | **currency**      |                                                                                                                                             |
 
+## Domain rules tied to terminology
+
+### Producto / product is an atomic shippable unit
+
+Each `producto` (a line inside a `pedido`) represents **one shippable unit**, even when its `cantidad` (quantity) is greater than `1`. The data model treats `producto` as atomic for fulfillment: every `producto` is either fully included in a given `entrega` or not included at all. Fractional fulfillment of a single `producto` across multiple `entrega`s is **not supported**.
+
+Consequences for product surfaces:
+
+- When a user expects different units of the same SKU to arrive in separate `entrega`s, they must enter each unit as a **separate `producto`** with `cantidad = 1` at the time of `pedido` creation. Quantity greater than `1` should be reserved for units that will arrive together.
+- The `entrega` create flow must not expose a quantity selector per `producto`; the checkbox represents the entire `producto`.
+- The order form must surface this rule contextually (e.g. an inline tooltip near the products section) when at least one `producto` in the form has `cantidad` greater than `1`, so the user has the chance to split before saving.
+- If the product later needs partial fulfillment, that is a schema change (adding `quantity` to `DeliveryOrderItem`) tracked in `frd-05` and `frd-08`, not a UI tweak.
+
 ## Anti-patterns to avoid
 
 - `orden` / `órdenes` (es) — always use `pedido` / `pedidos`.

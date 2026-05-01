@@ -73,6 +73,7 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - `FR-05-06`: An order must support one or more order items.
 - `FR-05-07`: Each order item must store name and quantity.
 - `FR-05-08`: Each order item quantity must default to `1` and must be required.
+- `FR-05-08a`: Each order item is an **atomic shippable unit**: it is either fully included in an `entrega` or not included at all. Fractional fulfillment of a single order item across multiple `entrega`s is not supported in the MVP. Collectors who expect units of the same SKU to arrive in separate `entrega`s must register them as separate order items with `quantity = 1`. Quantity greater than `1` is reserved for units that will arrive together. The order form must surface this rule contextually (for example a tooltip in the products section) when at least one order item has `quantity > 1`, so the collector has the chance to split before saving. See `docs/product/glossary.md` for the canonical statement of the rule and the upgrade path if partial fulfillment is later prioritized.
 - `FR-05-09`: Each order item may store an optional unit price.
 - `FR-05-10`: Each order item may store an optional product type selected from the shared catalog.
 - `FR-05-11`: Each order must store a required total cost.

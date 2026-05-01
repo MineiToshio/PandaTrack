@@ -29,12 +29,12 @@ This slice delivers a demo-able create flow that persists a new delivery, marks 
 - create-delivery from order entry point: the create view opens with store prefilled and the eligible products of that source order preselected
 - standalone create-delivery flow: store selector that only lists stores with at least one eligible product, followed by the grouped product selector
 - store-scoped product selection grouped by source order, using the eligibility helper from `WO-01`
+- in-section product-name search input that filters the already-loaded eligible products in place: case- and accent-insensitive matching, source-order groups with no matches hidden, no-results empty state replacing the product list when nothing matches, query reset when the collector switches stores. Filtering is entirely client-side and does not refetch eligible products.
 - minimum-one-product invariant on save: a new delivery must include at least one selected product
 - shipping date (required, prefilled with today, past-or-current only; stored as `Delivery.deliveryDate`)
 - delivery cost (required, `0` allowed), delivery currency (default to user base currency when present)
 - exchange-rate input when delivery currency differs from the user base currency
 - optional expected arrival date range
-- optional carrier and optional tracking free-text fields
 - automatic promotion of newly selected products to `IN_TRANSIT` when the delivery is saved (regardless of their prior state)
 - create mutation and server action, including the `deriveOrderStatus` call for every affected order within the same transaction
 - new `getStoresWithEligibleProducts` query in `src/lib/data/deliveries/deliveryQueries.ts`
@@ -55,6 +55,7 @@ This slice delivers a demo-able create flow that persists a new delivery, marks 
 
 - `FR-08-04` through `FR-08-11`
 - `FR-08-14` through `FR-08-20`
+- `FR-08-34`
 - `BR-08-02`, `BR-08-03`
 
 ## Blueprints
@@ -83,8 +84,8 @@ The following stubs from `WO-01` are filled in by this slice:
 
 ### Routes
 
-| Path                                             | Purpose                                  |
-| ------------------------------------------------ | ---------------------------------------- |
+| Path                                              | Purpose                                  |
+| ------------------------------------------------- | ---------------------------------------- |
 | `src/app/[locale]/(app)/deliveries/new/page.tsx`  | Create delivery page (both entry points) |
 | `src/app/[locale]/(app)/deliveries/[id]/page.tsx` | Stub detail page (replaced by WO-03)     |
 
@@ -147,8 +148,9 @@ In `src/app/[locale]/(app)/orders/[id]/_components/OrderActionBar.tsx`, the "Cre
 
 - Flat list with non-interactive group header rows per source order (shows `humanReadableId` + `orderDate`).
 - Checkbox row per product showing: product name, quantity.
-- A "select all in this order" convenience toggle on each group header.
+- A "select all in this order" convenience toggle on each group header. When a search query is active, the toggle operates over the visible (filtered) products of that group only.
 - Empty selector state: shown when `getEligibleProductsForStore` returns no products (edge case if another delivery was created concurrently — show inline error and refresh link).
+- Product-name search input rendered in the section header opposite the title. Filtering is client-side over the already-loaded eligible products, case- and accent-insensitive (reuses the shared `foldSearchText` helper). Source-order groups whose products no longer match the query are hidden, and a no-results empty state replaces the product list when nothing matches the current query. The query resets when the collector switches stores so search context never leaks across stores.
 
 ### Exchange rate field
 
@@ -187,6 +189,7 @@ Sentry scope: wrap the `createDelivery` call in the Server Action with `withScop
 - A delivery cannot be created with products from more than one store.
 - A delivery cannot be created with zero selected products.
 - Delivery currency defaults to the user base currency when present and requires an exchange-rate input when it differs.
+- Typing a query in the product-search input filters the visible products case- and accent-insensitively (for example, "nino" finds "Niño"). Source-order groups whose products no longer match the query are hidden. When the query matches nothing across the whole store, the product list is replaced by a no-results empty state. Switching the store resets the query and restores the unfiltered eligible products for the new store.
 
 ## Analytics
 

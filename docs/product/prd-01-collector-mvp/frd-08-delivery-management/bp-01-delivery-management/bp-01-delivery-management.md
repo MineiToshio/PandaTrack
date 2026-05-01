@@ -66,10 +66,11 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
   - input: store id, (optional) source order id for preselection
   - output: eligible products grouped by source order, excluding products that are already delivered or already attached to another active delivery
 - create/edit contract
-  - input: store, shipping date, expected arrival range, cost, currency, optional FX, optional carrier, optional tracking, selected product ids
+  - input: store, shipping date, expected arrival range, cost, currency, optional FX, selected product ids
   - invariant: both create and edit require at least one selected product at save time; a delivery with zero linked products is invalid and must not be persisted
   - output: persisted delivery, recalculated product states, and re-derived `OrderStatus` for every affected order
   - edit-specific guard: if the delivery is no longer in an editable lifecycle state, edit must redirect back to detail with feedback telling the collector to reopen first
+  - product-selector search: an in-section product-name search input filters the already-loaded eligible products in place. Matching is case- and accent-insensitive, source-order groups with no matches are hidden, and a no-results empty state replaces the product list when nothing matches the current query. Filtering is entirely client-side and never refetches eligible products. The query resets when the collector switches stores.
 - lifecycle contract
   - input: `markDelivered` with required received date, `reopen`, `cancel`, `delete`, `updatePrivateNote`, and `updateProductMembership` (from edit)
   - output: updated delivery state, updated product states, and re-derived `OrderStatus` for every affected order
@@ -83,13 +84,11 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
   - input: delivery id
   - output: delivery summary, grouped products by source order, current lifecycle state, action availability flags, received date when delivered, and the private note value
   - grouped source-order sections are expanded by default in the read-only detail view
-  - tracking is rendered as a link only when the persisted value is already a valid absolute URL
 - deliveries list contract
   - route: `/{locale}/deliveries`
   - visible primary action: `New delivery`, following the same collector-listing hero pattern used by orders and stores
   - output: paginated delivery cards sorted from oldest date to newest by default
-  - each card shows store, shipping date, expected arrival range, status, carrier, and tracking; delivered cards also show received date
-  - tracking is rendered as a link only when the persisted value is already a valid absolute URL; otherwise it renders as plain text
+  - each card shows store, shipping date, expected arrival range, and status; delivered cards also show received date
   - card expansion renders a flat product list only; it does not group by source order and does not show source-order secondary metadata in this slice
 - list filter contract
   - input: status, one store, product-name text, shipping-date range, `expectedArrival` manual range or preset

@@ -435,11 +435,7 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
     <div className="space-y-6">
       <div className="space-y-3">
         <BackNavLink href={`/${locale}${ROUTES.stores}`}>{tCreate("backToList")}</BackNavLink>
-        <AppPageHero
-          eyebrow={tCreate("heroEyebrow")}
-          title={tCreate("title")}
-          description={tCreate("heroDescription")}
-        />
+        <AppPageHero eyebrowIcon={Store} title={tCreate("title")} description={tCreate("heroDescription")} />
       </div>
 
       {showConfirmDuplicate && (

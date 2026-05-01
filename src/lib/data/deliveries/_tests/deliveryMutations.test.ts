@@ -200,8 +200,6 @@ describe("createDelivery", () => {
     cost: 0,
     currencyCode: "USD",
     exchangeRate: null,
-    carrier: null,
-    trackingNumber: null,
     productIds: ["item-1", "item-2"],
   };
 

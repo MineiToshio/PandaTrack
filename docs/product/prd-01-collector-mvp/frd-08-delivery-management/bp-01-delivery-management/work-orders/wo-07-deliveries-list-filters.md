@@ -48,7 +48,6 @@ This slice is separate from the list because the filter behavior now includes UR
 ## Out of Scope
 
 - list rendering itself (covered in [`WO-06`](wo-06-deliveries-list.md))
-- carrier-performance analytics or other advanced surfacing
 - dashboard filters
 
 ## Requirements
@@ -100,7 +99,7 @@ The route canonicalizes to the explicit query string rather than leaving the def
 - The deliveries list should open focused on follow-up work, not historical browsing. For that reason, the default list state is one active-status chip for `IN_TRANSIT` rather than an unfiltered all-status view.
 - The status filter still allows the collector to broaden the view beyond `IN_TRANSIT`, but the no-param route should always land on active deliveries first.
 - Store uses single selection only. This keeps the filter aligned with the one-delivery-one-store domain rule and avoids widening the slice into multi-store comparison behavior.
-- Product-name search is scoped to products included in each delivery, not to store name, carrier, or tracking fields.
+- Product-name search is scoped to products included in each delivery, not to store name.
 - The date UI is split into two blocks because the two date concepts answer different collector questions:
   - `Shipping date` answers when the delivery was sent or registered as shipped.
   - `Expected arrival` answers when the collector expects the package to arrive.

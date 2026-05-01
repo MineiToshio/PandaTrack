@@ -517,8 +517,6 @@ model Delivery {
   cost                Int
   currencyCode        String
   exchangeRate        Decimal?
-  carrier             String?
-  trackingNumber      String?
   note                String?
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt

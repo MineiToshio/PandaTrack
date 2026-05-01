@@ -242,7 +242,7 @@ Reference for what each table and attribute is for, where it is used, and why it
 
 ### `delivery`
 
-**Purpose:** A store-scoped delivery. One delivery can contain items from multiple orders of that same store. Used for delivery create, lifecycle actions, tracking fields, cost, and "what is in this parcel" context.
+**Purpose:** A store-scoped delivery. One delivery can contain items from multiple orders of that same store. Used for delivery create, lifecycle actions, cost, and "what is in this parcel" context.
 
 - **storeId** – Store that ships this delivery.
 - **userId** – Owner id for direct authorization checks.
@@ -251,7 +251,6 @@ Reference for what each table and attribute is for, where it is used, and why it
 - **deliveryDate** – Required shipping date; create flow defaults to today and allows past or current dates.
 - **expectedArrivalFrom / expectedArrivalTo** – Optional expected arrival window.
 - **cost / currencyCode / exchangeRate** – Required delivery cost and currency, with optional FX context when it differs from the user base currency.
-- **carrier / trackingNumber** – Optional free-text tracking fields.
 - **note** – Optional private note, edited by later delivery-detail actions.
 
 ### `delivery_order_item`

@@ -60,8 +60,6 @@ export async function createDeliveryAction(
     cost: parseDecimalToMinorUnits(typeof formData.get("cost") === "string" ? String(formData.get("cost")) : null),
     currencyCode,
     exchangeRate,
-    carrier: getOptionalString(formData.get("carrier")),
-    trackingNumber: getOptionalString(formData.get("trackingNumber")),
     productIds: parseProductIds(formData.get("productIds")),
   };
 
@@ -120,8 +118,6 @@ export async function createDeliveryAction(
         hasExpectedArrivalTo: Boolean(parsed.data.expectedArrivalTo),
         currencyCode: parsed.data.currencyCode,
         hasExchangeRate: parsed.data.exchangeRate != null,
-        hasCarrier: Boolean(parsed.data.carrier),
-        hasTrackingNumber: Boolean(parsed.data.trackingNumber),
         sourceOrderId,
       });
       Sentry.captureException(error);

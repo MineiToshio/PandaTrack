@@ -59,6 +59,8 @@
     "baseCurrencyBannerText": "Te mostramos cuánto llevas gastado en total, aunque tengas pedidos en tiendas de distintos países. Solo elige tu moneda base y convertimos cada pedido a esa moneda por ti.",
     "baseCurrencyBannerCta": "Elegir moneda base →",
     "itemsSectionTitle": "Artículos",
+    "itemsSplitDeliveryHint": "Si crees que algunos productos pueden llegar en entregas separadas, mejor agrégalos como productos individuales con cantidad 1. Cada producto se entrega completo o no se entrega; no se puede partir su cantidad entre varias entregas.",
+    "itemsSplitDeliveryHintAriaLabel": "Sobre productos con cantidad mayor a uno",
     "itemNameLabel": "Nombre",
     "itemNamePlaceholder": "Nombre del artículo",
     "itemQuantityLabel": "Cant.",

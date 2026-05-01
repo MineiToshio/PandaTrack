@@ -47,7 +47,7 @@ This slice establishes the primary / secondary / `More` menu hierarchy used by d
 
 ## Out of Scope
 
-- delivery edit flow covered in [`WO-05`](wo-05-delivery-edit.md) (changing products, carrier, tracking, cost, dates is a different surface)
+- delivery edit flow covered in [`WO-05`](wo-05-delivery-edit.md) (changing products, cost, dates is a different surface)
 - deliveries list and filters (covered in `WO-06`, `WO-07`)
 - automatic history timeline (out of scope for MVP per `BR-08-05`)
 
@@ -79,7 +79,7 @@ This slice establishes the primary / secondary / `More` menu hierarchy used by d
 
 - PostHog events per action: `delivery_note_saved`, `delivery_marked_delivered`, `delivery_reopened`, `delivery_cancelled`, `delivery_deleted` (final event names to be finalized under [`posthog-events`](../../../../../.cursor/rules/posthog-events.mdc) conventions)
 - Each event includes delivery status before/after and counts of affected orders and products
-- The delivered event includes whether a received date was set, but does not include free-text tracking or note values.
+- The delivered event includes whether a received date was set, but does not include the free-text note value.
 
 ## Notes
 

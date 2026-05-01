@@ -5,8 +5,6 @@ const MAX_DELIVERY_COST = 999_999_999;
 const MIN_EXCHANGE_RATE = 0.01;
 const MAX_EXCHANGE_RATE = 99_999.99;
 const MAX_NOTE_LENGTH = 2000;
-const MAX_CARRIER_LENGTH = 255;
-const MAX_TRACKING_LENGTH = 500;
 
 const currencyCodeSchema = z
   .string()
@@ -49,8 +47,6 @@ export const deliveryCreateSchema = z
     cost: deliveryCostSchema,
     currencyCode: currencyCodeSchema,
     exchangeRate: exchangeRateSchema.nullable().optional(),
-    carrier: z.string().max(MAX_CARRIER_LENGTH).nullable().optional(),
-    trackingNumber: z.string().max(MAX_TRACKING_LENGTH).nullable().optional(),
     productIds: z.array(z.string().cuid({ message: "INVALID_PRODUCT_ID" })).min(1, { message: "NO_PRODUCTS_SELECTED" }),
   })
   .superRefine(expectedArrivalRefinement);
@@ -67,8 +63,6 @@ export const deliveryEditSchema = z
     cost: deliveryCostSchema.optional(),
     currencyCode: currencyCodeSchema.optional(),
     exchangeRate: exchangeRateSchema.nullable().optional(),
-    carrier: z.string().max(MAX_CARRIER_LENGTH).nullable().optional(),
-    trackingNumber: z.string().max(MAX_TRACKING_LENGTH).nullable().optional(),
     productIds: z
       .array(z.string().cuid({ message: "INVALID_PRODUCT_ID" }))
       .min(1, { message: "NO_PRODUCTS_SELECTED" })

@@ -60,6 +60,7 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - `FR-08-02`: A delivery may contain products from multiple orders of the same store.
 - `FR-08-03`: Products from different stores must never appear in the same delivery.
 - `FR-08-04`: A delivery must contain at least one product when it is created or saved through edit.
+- `FR-08-04a`: Each order product is treated as an **atomic shippable unit** and is either fully included in this `entrega` or not included at all. The create and edit flows must not expose a per-product quantity selector; the selection control is a single boolean per order product. Collectors who expect units of the same SKU to arrive separately must split them at order creation time per [`FR-05-08a`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md). The canonical rule and the upgrade path for future partial fulfillment live in `docs/product/glossary.md`.
 - `FR-08-05`: A delivery must require a shipping date and prefill it with the current date on create.
 - `FR-08-06`: Shipping date selection must allow only past or current dates.
 - `FR-08-07`: A delivery must support a required delivery cost, including `0`.
@@ -67,7 +68,6 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - `FR-08-09`: Delivery currency must default to the user's base currency when present.
 - `FR-08-10`: When delivery currency differs from the user's base currency, the delivery flow must require one exchange-rate value for reporting.
 - `FR-08-11`: A delivery must support an expected arrival date range.
-- `FR-08-12`: Carrier and tracking fields must be optional free text.
 - `FR-08-13`: Delivery state must be derived from lifecycle actions rather than edited directly through a free status field.
 - `FR-08-14`: Delivery states for MVP must include `IN_TRANSIT`, `DELIVERED`, and `CANCELLED`.
 - `FR-08-15`: The create-delivery flow must support starting from an order with store and eligible products preselected.
@@ -86,16 +86,17 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - `FR-08-28`: The deliveries list must support filters for store, product-name text, and date range.
 - `FR-08-29`: Deliveries list filters must persist in the URL and render removable chips in the same interaction pattern used by `Stores`.
 - `FR-08-30`: The deliveries list must sort from oldest date to newest by default and paginate with the same collector-workspace pattern used by the order and store lists.
-- `FR-08-31`: Each delivery card in the list must show store, shipping date, expected arrival range, status, carrier, and tracking. Delivered cards must also show the received date. Tracking should render as a link only when the stored value is already a valid absolute URL; otherwise it should render as plain text.
+- `FR-08-31`: Each delivery card in the list must show store, shipping date, expected arrival range, and status. Delivered cards must also show the received date.
 - `FR-08-32`: Each delivery card must expand to show the products included in that delivery as one flat list, without source-order grouping.
 - `FR-08-33`: The deliveries list must expose a visible primary action to create a new delivery, following the collector-workspace listing pattern used by orders and stores.
+- `FR-08-34`: The delivery product selector must expose an in-section product-name search input that filters the already-loaded eligible products in place. Matching must be case-insensitive and accent-insensitive. Source-order groups with no matching products must be hidden, and when no products match the current query the section must show an empty-state message instead of the product list. Filtering must be entirely client-side and must not refetch eligible products.
 
 ## Business Rules
 
 - `BR-08-01`: Delivery is a separate domain from orders because it can group products from multiple orders within one store.
 - `BR-08-02`: `arrived at store`, `in transit`, and `delivered to user` are separate product milestones.
 - `BR-08-03`: Products that are already delivered or already attached to another active delivery are not eligible for new delivery selection and should not appear as disabled options.
-- `BR-08-04`: When a delivery is reopened, the collector may edit products, carrier, tracking, cost, and dates again.
+- `BR-08-04`: When a delivery is reopened, the collector may edit products, cost, and dates again.
 - `BR-08-05`: Delivery detail should not expose a separate automatic history timeline in MVP.
 - `BR-08-06`: Delivery note follows the same single-textarea private-note pattern as orders and stores, including the ability to clear the note by saving an empty value.
 - `BR-08-07`: Cancel and delete remain separate:
@@ -146,7 +147,6 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - The deliveries list should expose a visible primary create action and reuse the same pagination pattern already established by the collector workspace order and store listings.
 - Deliveries-list expansion should optimize for scannability in this MVP slice: products render as a flat list without source-order grouping or source-order secondary metadata.
 - In delivery detail, that source-order grouping is traceability context rather than the primary content hierarchy: the collector is still reading one delivery first, then the origin of its products.
-- In the deliveries list, tracking is rendered as a link only when the persisted value is already a valid absolute URL. Otherwise it remains plain text.
 - Delivery routes in the collector app use `/{locale}/deliveries`. Deleting a delivery from detail returns the collector to the deliveries list.
 - In UI copy, `Delivery.deliveryDate` is presented as shipping date. It is the date the shipment is created/sent, not the date the collector receives it.
 - The received date is captured only by the mark-delivered flow, is required for that action, and must allow only past or current dates.
@@ -167,7 +167,7 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 ## Open Questions
 
 - whether delivery costs should later appear as a separate dashboard series or merge into one broader spending summary
-- whether future delivery analytics should expose carrier performance by store
+- whether post-MVP delivery workflows should reintroduce carrier and tracking-number capture if integrated with deep-link tracking, courier-reliability analytics, or arrival alerts
 - whether post-MVP delivery workflows should support attachments such as screenshots or labels
 
 ## Out of Scope

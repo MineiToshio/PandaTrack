@@ -10,11 +10,7 @@ export type CreateDeliveryResult =
   | { ok: true; deliveryId: string; productCount: number; orderCount: number }
   | {
       ok: false;
-      error:
-        | "STORE_NOT_FOUND"
-        | "NO_PRODUCTS_SELECTED"
-        | "PRODUCTS_FROM_DIFFERENT_STORE"
-        | "PRODUCT_NOT_ELIGIBLE";
+      error: "STORE_NOT_FOUND" | "NO_PRODUCTS_SELECTED" | "PRODUCTS_FROM_DIFFERENT_STORE" | "PRODUCT_NOT_ELIGIBLE";
     };
 
 /**
@@ -64,108 +60,108 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
     return { ok: false, error: "NO_PRODUCTS_SELECTED" };
   }
 
-  return prisma.$transaction<CreateDeliveryResult>(async (tx) => {
-    const store = await tx.store.findFirst({
-      where: { id: input.storeId },
-      select: { id: true },
-    });
+  return prisma
+    .$transaction<CreateDeliveryResult>(async (tx) => {
+      const store = await tx.store.findFirst({
+        where: { id: input.storeId },
+        select: { id: true },
+      });
 
-    if (!store) {
-      return { ok: false, error: "STORE_NOT_FOUND" };
-    }
+      if (!store) {
+        return { ok: false, error: "STORE_NOT_FOUND" };
+      }
 
-    const selectedItems = await tx.orderItem.findMany({
-      where: {
-        id: { in: uniqueProductIds },
-        userId,
-      },
-      select: {
-        id: true,
-        orderId: true,
-        deliveryState: true,
-        order: {
-          select: {
-            storeId: true,
-            userId: true,
+      const selectedItems = await tx.orderItem.findMany({
+        where: {
+          id: { in: uniqueProductIds },
+          userId,
+        },
+        select: {
+          id: true,
+          orderId: true,
+          deliveryState: true,
+          order: {
+            select: {
+              storeId: true,
+              userId: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (selectedItems.length !== uniqueProductIds.length) {
-      return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
-    }
+      if (selectedItems.length !== uniqueProductIds.length) {
+        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
+      }
 
-    const hasDifferentStore = selectedItems.some(
-      (item) => item.order.storeId !== input.storeId || item.order.userId !== userId,
-    );
-    if (hasDifferentStore) {
-      return { ok: false, error: "PRODUCTS_FROM_DIFFERENT_STORE" };
-    }
+      const hasDifferentStore = selectedItems.some(
+        (item) => item.order.storeId !== input.storeId || item.order.userId !== userId,
+      );
+      if (hasDifferentStore) {
+        return { ok: false, error: "PRODUCTS_FROM_DIFFERENT_STORE" };
+      }
 
-    const eligibleStates: OrderItemDeliveryState[] = [
-      OrderItemDeliveryState.NONE,
-      OrderItemDeliveryState.ARRIVED_AT_STORE,
-    ];
-    const hasIneligibleProduct = selectedItems.some((item) => !eligibleStates.includes(item.deliveryState));
-    if (hasIneligibleProduct) {
-      return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
-    }
+      const eligibleStates: OrderItemDeliveryState[] = [
+        OrderItemDeliveryState.NONE,
+        OrderItemDeliveryState.ARRIVED_AT_STORE,
+      ];
+      const hasIneligibleProduct = selectedItems.some((item) => !eligibleStates.includes(item.deliveryState));
+      if (hasIneligibleProduct) {
+        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
+      }
 
-    const humanReadableId = await generateDeliveryHumanReadableId(tx, userId, input.deliveryDate);
-    const delivery = await tx.delivery.create({
-      data: {
-        humanReadableId,
-        storeId: input.storeId,
-        userId,
-        status: DeliveryStatus.IN_TRANSIT,
-        deliveryDate: input.deliveryDate,
-        expectedArrivalFrom: input.expectedArrivalFrom ?? null,
-        expectedArrivalTo: input.expectedArrivalTo ?? null,
-        cost: input.cost,
-        currencyCode: input.currencyCode,
-        exchangeRate: input.exchangeRate ?? null,
-        carrier: input.carrier?.trim() || null,
-        trackingNumber: input.trackingNumber?.trim() || null,
-      },
-      select: { id: true },
-    });
+      const humanReadableId = await generateDeliveryHumanReadableId(tx, userId, input.deliveryDate);
+      const delivery = await tx.delivery.create({
+        data: {
+          humanReadableId,
+          storeId: input.storeId,
+          userId,
+          status: DeliveryStatus.IN_TRANSIT,
+          deliveryDate: input.deliveryDate,
+          expectedArrivalFrom: input.expectedArrivalFrom ?? null,
+          expectedArrivalTo: input.expectedArrivalTo ?? null,
+          cost: input.cost,
+          currencyCode: input.currencyCode,
+          exchangeRate: input.exchangeRate ?? null,
+        },
+        select: { id: true },
+      });
 
-    const stateUpdate = await tx.orderItem.updateMany({
-      where: {
-        id: { in: uniqueProductIds },
-        userId,
-        deliveryState: { in: eligibleStates },
-      },
-      data: { deliveryState: getNextItemDeliveryState("create") },
-    });
+      const stateUpdate = await tx.orderItem.updateMany({
+        where: {
+          id: { in: uniqueProductIds },
+          userId,
+          deliveryState: { in: eligibleStates },
+        },
+        data: { deliveryState: getNextItemDeliveryState("create") },
+      });
 
-    if (stateUpdate.count !== uniqueProductIds.length) {
-      throw new Error("DELIVERY_PRODUCT_CONCURRENT_STATE_CHANGE");
-    }
+      if (stateUpdate.count !== uniqueProductIds.length) {
+        throw new Error("DELIVERY_PRODUCT_CONCURRENT_STATE_CHANGE");
+      }
 
-    await tx.deliveryOrderItem.createMany({
-      data: uniqueProductIds.map((orderItemId) => ({
+      await tx.deliveryOrderItem.createMany({
+        data: uniqueProductIds.map((orderItemId) => ({
+          deliveryId: delivery.id,
+          orderItemId,
+        })),
+      });
+
+      const orderIds = selectedItems.map((item) => item.orderId);
+      await persistDerivedOrderStatuses(tx, orderIds);
+
+      return {
+        ok: true,
         deliveryId: delivery.id,
-        orderItemId,
-      })),
+        productCount: uniqueProductIds.length,
+        orderCount: new Set(orderIds).size,
+      };
+    })
+    .catch((error: unknown) => {
+      if (error instanceof Error && error.message === "DELIVERY_PRODUCT_CONCURRENT_STATE_CHANGE") {
+        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
+      }
+      throw error;
     });
-
-    const orderIds = selectedItems.map((item) => item.orderId);
-    await persistDerivedOrderStatuses(tx, orderIds);
-
-    return {
-      ok: true,
-      deliveryId: delivery.id,
-      productCount: uniqueProductIds.length,
-      orderCount: new Set(orderIds).size,
-    };
-  }).catch((error: unknown) => {
-    if (error instanceof Error && error.message === "DELIVERY_PRODUCT_CONCURRENT_STATE_CHANGE") {
-      return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
-    }
-    throw error;
-  });
 }
 
 // ---------------------------------------------------------------------------

@@ -245,6 +245,7 @@ export default function OrderForm({
   }, [items, markDirty]);
 
   const hasAnyPricedItem = useMemo(() => items.some((r) => r.unitPrice !== ""), [items]);
+  const hasAnyMultiQuantityItem = useMemo(() => items.some((r) => parseInt(r.quantity, 10) > 1), [items]);
 
   const validateItems = useCallback((): boolean => {
     const errors: Record<string, { name?: string; quantity?: string; unitPrice?: string }> = {};
@@ -398,7 +399,7 @@ export default function OrderForm({
           {mode === "create" ? tMode("backToList") : tMode("backToOrder")}
         </BackNavLink>
         <AppPageHero
-          eyebrow={tMode("heroEyebrow")}
+          eyebrowIcon={ClipboardList}
           title={
             mode === "edit" && initialOrder
               ? tMode("title", { humanReadableId: initialOrder.humanReadableId })
@@ -591,6 +592,19 @@ export default function OrderForm({
                 {tForm("itemsSectionTitle")}
               </SectionTitleWithAccent>
               <OrderItemsShortcutsHelp />
+              {hasAnyMultiQuantityItem && (
+                <Tooltip
+                  content={tForm("itemsSplitDeliveryHint")}
+                  side="top"
+                  alignSelfInFlexRow="center"
+                  triggerClassName="text-text-muted hover:text-foreground -m-0.5 rounded p-0.5"
+                >
+                  <span className="inline-flex items-center">
+                    <span className="sr-only">{tForm("itemsSplitDeliveryHintAriaLabel")}</span>
+                    <Info className="size-4 shrink-0" aria-hidden />
+                  </span>
+                </Tooltip>
+              )}
             </div>
             {items.length === 0 && fieldErrors.items?.length && (
               <Typography size="xs" className="text-destructive" role="alert">

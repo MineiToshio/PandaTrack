@@ -16,7 +16,7 @@ implementation_status: PLANNED
 
 ## Summary
 
-Implement the delivery edit flow: modify the product membership (add or remove eligible products), change carrier, tracking, shipping date, expected arrival range, cost, currency, and FX. Every edit that changes product-to-delivery associations re-derives `OrderStatus` for each affected order within the same transaction.
+Implement the delivery edit flow: modify the product membership (add or remove eligible products), change shipping date, expected arrival range, cost, currency, and FX. Every edit that changes product-to-delivery associations re-derives `OrderStatus` for each affected order within the same transaction.
 
 Edit is a separate slice from create because the invariants differ: create persists a new delivery from zero; edit must reconcile changes against an existing delivery, handle a discard-changes confirmation when there are unsaved edits, and recalculate product states when memberships change.
 
@@ -33,7 +33,7 @@ This slice also defines the edit-time guardrails that keep the delivery lifecycl
 - product membership changes: add eligible products from the same store; remove currently linked products
 - minimum-one-product invariant on save: the edited delivery must still contain at least one product
 - recalculation of product delivery state whenever membership changes: newly added products become arrived at store when they were not already there; removed products are returned to arrived-at-store when still unfulfilled
-- carrier, tracking, shipping date, expected arrival range, cost, currency, and FX editing
+- shipping date, expected arrival range, cost, currency, and FX editing
 - discard-changes confirmation when there are unsaved edits
 - `deriveOrderStatus` invocation within the edit transaction for every affected order
 - redirect back to the same delivery detail route after a successful edit
@@ -53,6 +53,7 @@ This slice also defines the edit-time guardrails that keep the delivery lifecycl
 
 - `FR-08-04` through `FR-08-11`
 - `FR-08-16`, `FR-08-17`, `FR-08-19`, `FR-08-20`, `FR-08-23`
+- `FR-08-34`
 - `BR-08-02`, `BR-08-03`
 
 ## Blueprints
@@ -64,6 +65,7 @@ This slice also defines the edit-time guardrails that keep the delivery lifecycl
 - The edit route returns to the same delivery detail screen after a successful save so the collector can immediately verify the updated delivery contents and metadata.
 - The unsaved-changes confirmation should reuse the existing form pattern already established in the private app, adapted to delivery copy and routing.
 - Removing products during edit is allowed only while at least one product remains selected. The edit flow must not become a hidden shortcut for creating an empty delivery record.
+- Edit reuses the create form's product selector, including the in-section product-name search input. Filtering remains client-side over the already-loaded eligible products and follows the same case- and accent-insensitive matching defined for create.
 
 ## Technical Notes
 
@@ -89,7 +91,7 @@ This slice also defines the edit-time guardrails that keep the delivery lifecycl
 - Editing a delivery cannot be saved with zero selected products; the collector remains in the form and sees clear validation feedback.
 - Editing a delivery to add a newly eligible product marks that product as arrived at store when it was not previously there and re-derives the source order's `OrderStatus` accordingly.
 - Editing a delivery to remove a product returns that product to arrived-at-store when it is still unfulfilled and re-derives the source order's `OrderStatus` accordingly.
-- Changing carrier, tracking, dates, cost, currency, or FX persists the change without affecting product state or order status.
+- Changing dates, cost, currency, or FX persists the change without affecting product state or order status.
 - Saving a valid edit returns the collector to the same delivery detail route and the updated values are visible there.
 - Discarding edits returns the delivery to its previous state and the collector is warned before losing unsaved changes.
 - A delivery's one-store boundary is preserved: eligible products from other stores are not offered in the edit selector.

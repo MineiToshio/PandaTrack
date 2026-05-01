@@ -59,6 +59,8 @@
     "baseCurrencyBannerText": "We'll show you how much you've spent in total, even when you buy from stores in different countries. Just choose your base currency and we'll convert each order to it for you.",
     "baseCurrencyBannerCta": "Choose base currency →",
     "itemsSectionTitle": "Items",
+    "itemsSplitDeliveryHint": "If you think some products may arrive in separate deliveries, register them as individual products with quantity 1 instead. Each product ships fully or not at all; its quantity cannot be split across multiple deliveries.",
+    "itemsSplitDeliveryHintAriaLabel": "About products with quantity greater than one",
     "itemNameLabel": "Name",
     "itemNamePlaceholder": "Item name",
     "itemQuantityLabel": "Qty.",
