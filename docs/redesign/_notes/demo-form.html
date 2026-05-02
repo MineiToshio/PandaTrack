@@ -1,0 +1,1371 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PandaTrack — Demo formulario "Nueva tienda" (4 direcciones)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400;1,9..144,500&family=Sora:wght@400;500;600;800&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ─────────── reset y básicos */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; }
+  body { margin: 0; font-family: 'Inter', system-ui, sans-serif; color: #111; background: #f5f5f7; }
+  button, input, textarea, select { font: inherit; }
+  button { cursor: pointer; border: 0; background: transparent; }
+  input, textarea, select { color: inherit; background: transparent; border: 0; outline: 0; }
+
+  /* ─────────── chrome del demo */
+  .demo-chrome { padding: 32px 16px 8px; max-width: 1200px; margin: 0 auto; }
+  .demo-title { font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: #555; margin: 0 0 16px; font-weight: 600; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+  .tab { padding: 10px 16px; border-radius: 999px; background: #fff; color: #444; font-size: 14px; font-weight: 500; border: 1px solid #e3e3e6; transition: all 150ms; }
+  .tab:hover { background: #f0f0f3; }
+  .tab[aria-selected="true"] { background: #111; color: #fff; border-color: #111; }
+  .panel { display: none; }
+  .panel[data-active] { display: block; }
+
+  /* ─────────── stage común */
+  .stage {
+    border-radius: 24px; overflow: hidden; border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 24px 48px -16px rgba(0,0,0,0.08); margin: 0 auto 48px; max-width: 1100px;
+  }
+  .stage-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: #fafafc; border-bottom: 1px solid rgba(0,0,0,0.06);
+    font-size: 12px; color: #666;
+  }
+  .stage-bar .row { display: flex; align-items: center; gap: 10px; }
+  .stage-bar .dots { display: flex; gap: 6px; }
+  .stage-bar .dot { width: 10px; height: 10px; border-radius: 50%; background: #d1d1d6; }
+  .stage-bar .url { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #888; }
+  .toggle { display: inline-flex; gap: 4px; padding: 3px; border-radius: 999px; background: #ececef; font-size: 11px; }
+  .toggle button { padding: 4px 10px; border-radius: 999px; color: #555; transition: all 150ms; }
+  .toggle button[aria-pressed="true"] { background: #fff; color: #111; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+
+  /* ════════════════════════════════════════ DIRECCIÓN 1 — BENTO EDITORIAL ════════════════════════════════════════ */
+  [data-dir="bento"] {
+    --bg: oklch(98.5% 0.005 250); --surface: oklch(100% 0 0); --surface-elev: oklch(99% 0.004 250);
+    --border: oklch(91% 0.008 250); --border-strong: oklch(82% 0.012 250);
+    --text-1: oklch(18% 0.018 260); --text-2: oklch(46% 0.018 260); --text-3: oklch(60% 0.014 260);
+    --accent: oklch(55% 0.16 270); --accent-fg: #fff;
+    --success: oklch(54% 0.14 158); --warning: oklch(70% 0.15 75); --destructive: oklch(54% 0.21 25);
+    --shadow-1: 0 1px 2px rgba(20, 22, 30, 0.04);
+    --shadow-2: 0 4px 12px rgba(20, 22, 30, 0.06), 0 1px 2px rgba(20,22,30,0.04);
+    --font-body: 'Inter', system-ui, sans-serif; --font-display: 'Fraunces', serif; --font-mono: 'JetBrains Mono', monospace;
+  }
+  [data-dir="bento"][data-mode="dark"] {
+    --bg: oklch(13.5% 0.012 260); --surface: oklch(17% 0.014 260); --surface-elev: oklch(20.5% 0.016 260);
+    --border: rgba(255,255,255,0.07); --border-strong: rgba(255,255,255,0.14);
+    --text-1: oklch(96% 0.005 250); --text-2: oklch(74% 0.012 250); --text-3: oklch(56% 0.012 250);
+    --accent: oklch(72% 0.15 270); --accent-fg: oklch(15% 0.06 270);
+    --success: oklch(74% 0.15 158); --warning: oklch(82% 0.14 75); --destructive: oklch(70% 0.18 25);
+    --shadow-1: 0 0 0 1px rgba(255,255,255,0.04);
+    --shadow-2: 0 0 0 1px rgba(255,255,255,0.07), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  /* ════════════════════════════════════════ DIRECCIÓN 2 — NEON DROP FLOOR ════════════════════════════════════════ */
+  [data-dir="neon"] {
+    --bg: oklch(98% 0.012 320); --surface: oklch(95.5% 0.018 320); --surface-elev: #ffffff;
+    --border: oklch(88% 0.012 320); --border-strong: oklch(20% 0.04 320);
+    --text-1: oklch(20% 0.04 320); --text-2: oklch(48% 0.04 320); --text-3: oklch(62% 0.025 320);
+    --magenta: oklch(60% 0.24 340); --cyan: oklch(70% 0.18 215); --lime: oklch(82% 0.21 130);
+    --accent: var(--magenta); --accent-fg: #fff;
+    --success: oklch(56% 0.16 152); --warning: oklch(70% 0.17 70); --destructive: oklch(56% 0.22 22);
+    --gradient: linear-gradient(118deg, oklch(78% 0.16 215 / 0.18), oklch(70% 0.22 340 / 0.20), oklch(82% 0.21 130 / 0.16));
+    --offset: 4px 4px 0 var(--border-strong);
+    --font-body: 'Sora', system-ui, sans-serif; --font-display: 'Sora', system-ui, sans-serif; --font-mono: 'JetBrains Mono', monospace;
+  }
+  [data-dir="neon"][data-mode="dark"] {
+    --bg: oklch(11% 0.025 295); --surface: oklch(15% 0.03 295); --surface-elev: oklch(19% 0.034 295);
+    --border: rgba(180, 130, 255, 0.10); --border-strong: rgba(180, 130, 255, 0.32);
+    --text-1: oklch(96% 0.012 320); --text-2: oklch(74% 0.025 320); --text-3: oklch(56% 0.02 320);
+    --magenta: oklch(74% 0.21 340); --cyan: oklch(82% 0.16 215); --lime: oklch(86% 0.22 130);
+    --accent: var(--magenta); --accent-fg: oklch(15% 0.06 340);
+    --gradient: linear-gradient(118deg, oklch(45% 0.18 215 / 0.30), oklch(40% 0.22 340 / 0.32), oklch(50% 0.18 130 / 0.22));
+    --offset: 0 0 0 1.5px var(--cyan), 4px 4px 0 0 var(--magenta);
+  }
+
+  /* ════════════════════════════════════════ DIRECCIÓN 3 — SOFT GARDEN ════════════════════════════════════════ */
+  [data-dir="garden"] {
+    --bg: oklch(98.5% 0.012 85); --surface: oklch(100% 0 0); --surface-elev: oklch(99% 0.008 85);
+    --border: oklch(91% 0.012 85); --border-strong: oklch(82% 0.018 85);
+    --text-1: oklch(22% 0.025 35); --text-2: oklch(48% 0.022 35); --text-3: oklch(62% 0.018 35);
+    --accent: oklch(68% 0.18 25); --accent-fg: #fff;
+    --success: oklch(60% 0.14 152); --warning: oklch(72% 0.16 75); --destructive: oklch(56% 0.20 25);
+    --cat-figures: oklch(72% 0.17 350); --cat-vinyl: oklch(70% 0.16 280); --cat-manga: oklch(74% 0.16 50);
+    --cat-anime: oklch(72% 0.18 195); --cat-cards: oklch(74% 0.17 130); --cat-plush: oklch(76% 0.13 35);
+    --shadow-1: 0 2px 8px rgba(224, 103, 62, 0.06);
+    --shadow-2: 0 8px 24px rgba(224, 103, 62, 0.10), 0 2px 6px rgba(34,27,25,0.04);
+    --font-body: 'Plus Jakarta Sans', system-ui, sans-serif; --font-display: 'Fraunces', serif; --font-mono: 'JetBrains Mono', monospace;
+  }
+  [data-dir="garden"][data-mode="dark"] {
+    --bg: oklch(16% 0.022 35); --surface: oklch(20% 0.024 35); --surface-elev: oklch(24% 0.026 35);
+    --border: rgba(255, 220, 200, 0.10); --border-strong: rgba(255, 220, 200, 0.20);
+    --text-1: oklch(96% 0.012 85); --text-2: oklch(76% 0.018 85); --text-3: oklch(58% 0.018 85);
+    --accent: oklch(78% 0.16 25); --accent-fg: oklch(18% 0.05 25);
+    --shadow-1: 0 0 0 1px rgba(255,220,200,0.06);
+    --shadow-2: inset 0 1px 0 rgba(255,220,200,0.06), 0 0 32px -16px oklch(78% 0.16 25 / 0.18);
+  }
+
+  /* ─────────── superficie común */
+  .surface {
+    background: var(--bg); color: var(--text-1); font-family: var(--font-body);
+    transition: background 200ms, color 200ms;
+    min-height: 720px;
+  }
+  .num { font-variant-numeric: tabular-nums; }
+  .eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-3); font-weight: 500; margin: 0; }
+  .meta { color: var(--text-2); font-size: 13px; }
+  .small { color: var(--text-3); font-size: 12px; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .between { display: flex; align-items: center; justify-content: space-between; }
+
+  /* ─────────────────────────── DIRECCIÓN 1 — Bento Editorial · formulario */
+  .bento-form { display: grid; grid-template-columns: 1fr 320px; gap: 32px; padding: 32px 40px 120px; max-width: 1100px; margin: 0 auto; }
+  .bento-main { min-width: 0; }
+  .bento-aside { position: sticky; top: 16px; align-self: start; }
+  .bento-back { color: var(--text-2); font-size: 13px; padding: 6px 0; display: inline-flex; align-items: center; gap: 6px; }
+  .bento-back:hover { color: var(--text-1); }
+  .bento-h1 {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 44px; line-height: 1.05; letter-spacing: -0.02em; margin: 12px 0 6px;
+  }
+  .bento-progress { display: flex; gap: 10px; margin: 18px 0 32px; align-items: center; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); }
+  .bento-progress-bar { flex: 1; height: 2px; background: var(--border); border-radius: 999px; overflow: hidden; }
+  .bento-progress-bar > i { display: block; height: 100%; width: 33.33%; background: var(--accent); transition: width 280ms cubic-bezier(0.2, 0, 0, 1); }
+  .bento-section { margin-bottom: 28px; }
+  .bento-section-title { font-size: 13px; font-weight: 600; color: var(--text-2); margin: 0 0 14px; letter-spacing: 0.02em; }
+  .bento-field { margin-bottom: 18px; }
+  .bento-label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; color: var(--text-2); margin-bottom: 6px; }
+  .bento-label .opt { color: var(--text-3); font-weight: 400; font-size: 12px; }
+  .bento-input, .bento-textarea, .bento-select {
+    width: 100%; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: 8px; color: var(--text-1); font-size: 14px; transition: border 150ms, box-shadow 150ms;
+  }
+  .bento-input:focus, .bento-textarea:focus, .bento-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 20%, transparent); }
+  .bento-textarea { min-height: 84px; resize: vertical; font-family: inherit; }
+  .bento-help { font-size: 12px; color: var(--text-3); margin-top: 6px; display: flex; gap: 6px; }
+  .bento-help[data-tone="warn"] { color: var(--warning); }
+  .bento-pillgroup { display: inline-flex; gap: 4px; padding: 3px; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 999px; }
+  .bento-pillgroup button { padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--text-2); transition: all 150ms; }
+  .bento-pillgroup button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+  .bento-checks { display: flex; flex-wrap: wrap; gap: 8px; }
+  .bento-check {
+    display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px;
+    border: 1px solid var(--border-strong); border-radius: 999px; font-size: 13px; cursor: pointer;
+    color: var(--text-2); transition: all 150ms; user-select: none;
+  }
+  .bento-check[data-on="true"] { background: color-mix(in oklch, var(--accent) 14%, transparent); border-color: var(--accent); color: var(--accent); }
+  .bento-check input { display: none; }
+  .bento-check::before { content: ''; width: 14px; height: 14px; border: 1.5px solid currentColor; border-radius: 4px; opacity: 0.5; }
+  .bento-check[data-on="true"]::before { background: currentColor; opacity: 1; }
+  .bento-toggle { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; }
+  .bento-toggle .toggle-switch { width: 36px; height: 20px; background: var(--border-strong); border-radius: 999px; position: relative; transition: background 150ms; flex-shrink: 0; }
+  .bento-toggle[data-on="true"] .toggle-switch { background: var(--accent); }
+  .bento-toggle .toggle-switch::after { content: ''; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: transform 150ms; }
+  .bento-toggle[data-on="true"] .toggle-switch::after { transform: translateX(16px); }
+  .bento-row-inputs { display: grid; grid-template-columns: 160px 1fr auto; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border); }
+  .bento-row-inputs:last-of-type { border-bottom: 0; }
+  .bento-row-inputs button.del { color: var(--text-3); padding: 6px; font-size: 12px; }
+  .bento-add { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); font-weight: 500; font-size: 13px; padding: 8px 0; }
+  .bento-logo {
+    display: flex; align-items: center; gap: 14px; padding: 14px; border: 1px dashed var(--border-strong);
+    border-radius: 12px; cursor: pointer; transition: all 150ms;
+  }
+  .bento-logo:hover { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 4%, transparent); }
+  .bento-logo-icon { width: 56px; height: 56px; border-radius: 10px; background: color-mix(in oklch, var(--accent) 14%, transparent); display: flex; align-items: center; justify-content: center; color: var(--accent); }
+  .bento-aside-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: var(--shadow-1); }
+  .bento-summary-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed var(--border); font-size: 13px; }
+  .bento-summary-row:last-of-type { border-bottom: 0; }
+  .bento-summary-row .lbl { color: var(--text-3); }
+  .bento-summary-row .val { color: var(--text-1); font-weight: 500; }
+  .bento-footer {
+    position: sticky; bottom: 0; z-index: 5; background: var(--surface);
+    border-top: 1px solid var(--border); padding: 14px 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    backdrop-filter: blur(20px); background: color-mix(in oklch, var(--surface) 80%, transparent);
+  }
+  .bento-foot-meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); letter-spacing: 0.08em; text-transform: uppercase; }
+  .bento-cta-primary { padding: 10px 20px; background: var(--accent); color: var(--accent-fg); border-radius: 8px; font-weight: 600; font-size: 14px; }
+  .bento-cta-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px color-mix(in oklch, var(--accent) 40%, transparent); }
+  .bento-cta-ghost { padding: 10px 16px; color: var(--text-2); border-radius: 8px; font-weight: 500; font-size: 14px; }
+  .bento-cta-ghost:hover { background: var(--border); }
+
+  /* ─────────────────────────── DIRECCIÓN 2 — Neon Drop Floor · formulario */
+  .neon-bg { position: relative; overflow: hidden; }
+  .neon-bg::before { content: ''; position: absolute; inset: -40px; background: var(--gradient); filter: blur(80px); z-index: 0; opacity: 0.7; pointer-events: none; }
+  .neon-form { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; padding: 32px 24px 140px; }
+  .neon-back { font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; color: var(--cyan); padding: 6px 0; }
+  .neon-eyebrow { color: var(--cyan); font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; margin: 16px 0 6px; }
+  .neon-h1 {
+    font-family: var(--font-display); font-weight: 800; font-size: 56px; line-height: 1; letter-spacing: -0.03em;
+    background: linear-gradient(96deg, var(--cyan), var(--magenta), var(--lime));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin: 0 0 8px;
+  }
+  [data-dir="neon"][data-mode="light"] .neon-h1 { background: linear-gradient(96deg, oklch(50% 0.16 215), oklch(50% 0.20 340), oklch(60% 0.16 130)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .neon-steps { display: flex; gap: 8px; margin: 20px 0 32px; flex-wrap: wrap; }
+  .neon-step {
+    display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px;
+    border: 1.5px solid var(--border-strong); border-radius: 8px; font-family: var(--font-mono);
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: var(--text-2);
+    background: var(--surface-elev);
+  }
+  .neon-step[data-current="true"] { color: var(--accent-fg); background: var(--magenta); border-color: var(--border-strong); box-shadow: var(--offset); }
+  .neon-step[data-done="true"] { color: var(--lime); border-color: var(--lime); }
+  .neon-card {
+    background: var(--surface-elev); border: 1.5px solid var(--border-strong);
+    border-radius: 12px; box-shadow: var(--offset); padding: 24px; margin-bottom: 20px;
+  }
+  .neon-section-title {
+    font-family: var(--font-mono); font-weight: 700; font-size: 12px;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-1);
+    margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1.5px solid var(--border-strong);
+  }
+  .neon-field { margin-bottom: 16px; }
+  .neon-label {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-1); font-weight: 600; margin-bottom: 6px;
+  }
+  .neon-required { color: var(--magenta); font-weight: 700; }
+  .neon-optional { color: var(--text-3); font-weight: 500; }
+  .neon-input, .neon-textarea, .neon-select {
+    width: 100%; padding: 12px 14px; background: var(--bg);
+    border: 1.5px solid var(--border-strong); border-radius: 6px;
+    color: var(--text-1); font-size: 14px; font-family: var(--font-body);
+    transition: all 150ms;
+  }
+  .neon-input:focus, .neon-textarea:focus, .neon-select:focus {
+    outline: 0; border-color: var(--cyan); box-shadow: 0 0 0 3px color-mix(in oklch, var(--cyan) 30%, transparent), 4px 4px 0 var(--cyan);
+    transform: translate(-1px, -1px);
+  }
+  .neon-textarea { min-height: 96px; resize: vertical; }
+  .neon-help { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); margin-top: 8px; }
+  .neon-help[data-tone="warn"] { color: var(--warning); }
+  .neon-help[data-tone="ok"] { color: var(--lime); }
+  .neon-pillgroup { display: inline-flex; padding: 0; gap: 6px; }
+  .neon-pillgroup button {
+    padding: 10px 18px; border-radius: 6px; border: 1.5px solid var(--border-strong);
+    font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+    color: var(--text-1); background: var(--surface-elev); transition: all 120ms;
+  }
+  .neon-pillgroup button:hover { transform: translate(-1px, -1px); box-shadow: var(--offset); }
+  .neon-pillgroup button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); box-shadow: var(--offset); transform: translate(-1px, -1px); }
+  .neon-checks { display: flex; flex-wrap: wrap; gap: 8px; }
+  .neon-check {
+    padding: 10px 16px; border: 1.5px solid var(--border-strong); border-radius: 6px;
+    font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+    color: var(--text-2); cursor: pointer; transition: all 120ms; background: var(--surface-elev);
+  }
+  .neon-check input { display: none; }
+  .neon-check[data-on="true"] { background: color-mix(in oklch, var(--cyan) 24%, transparent); color: var(--cyan); border-color: var(--cyan); box-shadow: 2px 2px 0 var(--cyan); }
+  .neon-check:hover { transform: translate(-1px, -1px); }
+  .neon-toggle {
+    display: flex; align-items: center; justify-content: space-between; padding: 14px 16px;
+    border: 1.5px solid var(--border-strong); border-radius: 8px; background: var(--bg);
+    font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: 12px; font-weight: 600;
+  }
+  .neon-toggle-switch { width: 44px; height: 22px; background: var(--text-3); border-radius: 999px; position: relative; transition: all 150ms; flex-shrink: 0; }
+  .neon-toggle[data-on="true"] .neon-toggle-switch { background: var(--lime); }
+  .neon-toggle-switch::after { content: ''; position: absolute; left: 2px; top: 2px; width: 18px; height: 18px; background: #fff; border-radius: 50%; transition: transform 150ms; }
+  .neon-toggle[data-on="true"] .neon-toggle-switch::after { transform: translateX(22px); }
+  .neon-rowdyn { display: grid; grid-template-columns: 140px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1.5px dashed var(--border-strong); }
+  .neon-rowdyn:last-of-type { border-bottom: 0; }
+  .neon-rowdyn .del { color: var(--magenta); font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px; }
+  .neon-add {
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px;
+    border: 1.5px dashed var(--cyan); border-radius: 6px; color: var(--cyan);
+    font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+    margin-top: 10px;
+  }
+  .neon-add:hover { background: color-mix(in oklch, var(--cyan) 12%, transparent); }
+  .neon-logo {
+    display: flex; align-items: center; gap: 16px; padding: 20px;
+    border: 1.5px dashed var(--border-strong); border-radius: 8px;
+    font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; font-weight: 700;
+  }
+  .neon-logo:hover { border-color: var(--cyan); background: color-mix(in oklch, var(--cyan) 8%, transparent); }
+  .neon-logo-icon {
+    width: 56px; height: 56px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--cyan), var(--magenta));
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: 26px;
+    box-shadow: 0 0 24px color-mix(in oklch, var(--magenta) 40%, transparent);
+  }
+  .neon-footer {
+    position: sticky; bottom: 0; z-index: 5;
+    background: var(--bg); border-top: 1.5px solid var(--border-strong);
+    padding: 16px 24px; display: flex; align-items: center; justify-content: space-between;
+    backdrop-filter: blur(20px); background: color-mix(in oklch, var(--bg) 88%, transparent);
+  }
+  .neon-foot-meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); letter-spacing: 0.08em; text-transform: uppercase; }
+  .neon-cta-primary {
+    padding: 12px 22px; background: var(--magenta); color: #fff; border: 1.5px solid var(--border-strong);
+    border-radius: 8px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; font-size: 12px;
+    box-shadow: var(--offset); transition: all 120ms;
+  }
+  .neon-cta-primary:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--border-strong); }
+  [data-dir="neon"][data-mode="dark"] .neon-cta-primary:hover { box-shadow: 0 0 0 1.5px var(--cyan), 5px 5px 0 0 var(--magenta); }
+  .neon-cta-ghost {
+    padding: 12px 16px; color: var(--text-1); font-family: var(--font-mono); text-transform: uppercase;
+    letter-spacing: 0.08em; font-weight: 700; font-size: 12px; border-radius: 6px;
+  }
+  .neon-cta-ghost:hover { background: var(--surface-elev); }
+
+  /* ─────────────────────────── DIRECCIÓN 3 — Soft Garden · formulario */
+  .garden-form { max-width: 920px; margin: 0 auto; padding: 32px 24px 140px; display: grid; grid-template-columns: 1fr 280px; gap: 32px; position: relative; }
+  .garden-main { min-width: 0; }
+  .garden-aside { position: sticky; top: 16px; align-self: start; }
+  .garden-back { color: var(--accent); font-size: 13px; padding: 6px 0; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+  .garden-h1 {
+    font-family: var(--font-display); font-style: italic; font-weight: 500;
+    font-size: 44px; line-height: 1.05; letter-spacing: -0.015em;
+    margin: 12px 0 6px;
+  }
+  .garden-sub { color: var(--text-2); font-size: 16px; margin: 0 0 28px; }
+  .garden-steps { display: flex; align-items: center; gap: 12px; margin: 20px 0 32px; }
+  .garden-step { display: inline-flex; align-items: center; gap: 8px; }
+  .garden-step .dot { width: 28px; height: 28px; border-radius: 50%; background: var(--surface); border: 2px solid var(--border-strong); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--text-2); }
+  .garden-step[data-current="true"] .dot { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 18%, transparent); }
+  .garden-step[data-done="true"] .dot { background: var(--success); color: #fff; border-color: var(--success); }
+  .garden-step .lbl { font-size: 13px; color: var(--text-2); font-weight: 500; }
+  .garden-step[data-current="true"] .lbl { color: var(--text-1); font-weight: 600; }
+  .garden-line { flex: 1; height: 2px; background: var(--border); border-radius: 999px; }
+  .garden-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+    box-shadow: var(--shadow-1); padding: 24px; margin-bottom: 18px;
+  }
+  .garden-section-title { font-family: var(--font-display); font-style: italic; font-size: 22px; font-weight: 500; margin: 0 0 6px; }
+  .garden-section-help { color: var(--text-2); font-size: 14px; margin: 0 0 18px; }
+  .garden-field { margin-bottom: 18px; }
+  .garden-label { display: flex; justify-content: space-between; font-size: 14px; font-weight: 500; color: var(--text-1); margin-bottom: 6px; }
+  .garden-label .opt { color: var(--text-3); font-weight: 400; font-size: 12px; }
+  .garden-input, .garden-textarea, .garden-select {
+    width: 100%; padding: 12px 14px; background: var(--surface-elev); border: 1px solid var(--border-strong);
+    border-radius: 14px; color: var(--text-1); font-size: 15px; transition: all 200ms;
+  }
+  .garden-input:focus, .garden-textarea:focus, .garden-select:focus { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 18%, transparent); }
+  .garden-textarea { min-height: 100px; resize: vertical; font-family: inherit; }
+  .garden-help { font-size: 12px; color: var(--text-3); margin-top: 6px; }
+  .garden-help[data-tone="ok"] { color: var(--success); }
+  .garden-help[data-tone="warn"] { color: var(--warning); }
+  .garden-cards2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .garden-choice {
+    padding: 18px; border: 2px solid var(--border-strong); border-radius: 18px;
+    cursor: pointer; transition: all 200ms; background: var(--surface-elev);
+  }
+  .garden-choice[data-on="true"] { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 8%, transparent); box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 14%, transparent); }
+  .garden-choice .icon { width: 40px; height: 40px; border-radius: 12px; background: color-mix(in oklch, var(--accent) 16%, transparent); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 12px; }
+  .garden-choice strong { display: block; font-size: 15px; margin-bottom: 2px; }
+  .garden-choice .small { display: block; }
+  .garden-cats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .garden-cat-card {
+    padding: 14px; border: 2px solid var(--border-strong); border-radius: 16px; cursor: pointer;
+    background: var(--surface-elev); transition: all 200ms; display: flex; align-items: center; gap: 10px;
+  }
+  .garden-cat-card[data-on="true"] { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 8%, transparent); }
+  .garden-cat-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; color: #fff; }
+  .garden-cat-card strong { font-size: 13px; }
+  .garden-cat-card .small { font-size: 11px; }
+  .garden-toggle {
+    display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+    border: 2px solid var(--border-strong); border-radius: 16px; background: var(--surface-elev); cursor: pointer; transition: all 200ms;
+  }
+  .garden-toggle[data-on="true"] { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 8%, transparent); }
+  .garden-toggle-switch { width: 44px; height: 24px; background: var(--border-strong); border-radius: 999px; position: relative; transition: background 200ms; flex-shrink: 0; }
+  .garden-toggle[data-on="true"] .garden-toggle-switch { background: var(--accent); }
+  .garden-toggle-switch::after { content: ''; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; background: #fff; border-radius: 50%; transition: transform 200ms cubic-bezier(0.2, 0, 0, 1); }
+  .garden-toggle[data-on="true"] .garden-toggle-switch::after { transform: translateX(20px); }
+  .garden-rowdyn { display: grid; grid-template-columns: 140px 1fr auto; gap: 10px; padding: 12px; background: var(--surface-elev); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 8px; align-items: center; }
+  .garden-add {
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px;
+    border: 1.5px dashed var(--accent); border-radius: 999px; color: var(--accent); font-weight: 500; font-size: 13px;
+  }
+  .garden-add:hover { background: color-mix(in oklch, var(--accent) 8%, transparent); }
+  .garden-logo {
+    display: flex; align-items: center; gap: 14px; padding: 18px;
+    border: 2px dashed var(--border-strong); border-radius: 18px; cursor: pointer; transition: all 200ms;
+  }
+  .garden-logo:hover { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 6%, transparent); }
+  .garden-logo-icon { width: 56px; height: 56px; border-radius: 16px; background: radial-gradient(circle at 35% 30%, oklch(95% 0.04 85), oklch(70% 0.10 35)); display: flex; align-items: center; justify-content: center; font-size: 28px; box-shadow: 0 4px 12px color-mix(in oklch, var(--accent) 30%, transparent); }
+  .garden-helper {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 22px;
+    padding: 18px; box-shadow: var(--shadow-1); position: relative;
+  }
+  .garden-helper-mascot {
+    width: 56px; height: 56px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, oklch(95% 0.04 85), oklch(70% 0.10 35));
+    display: flex; align-items: center; justify-content: center; font-size: 30px; margin-bottom: 12px;
+    box-shadow: 0 6px 18px color-mix(in oklch, var(--accent) 32%, transparent);
+  }
+  .garden-helper-bubble { background: color-mix(in oklch, var(--accent) 10%, transparent); padding: 12px 14px; border-radius: 14px; border-top-left-radius: 4px; font-size: 13px; line-height: 1.5; color: var(--text-1); }
+  .garden-footer {
+    position: sticky; bottom: 0; z-index: 5;
+    background: color-mix(in oklch, var(--bg) 78%, transparent); backdrop-filter: blur(24px) saturate(180%);
+    border-top: 1px solid var(--border); padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-radius: 22px 22px 0 0;
+  }
+  .garden-foot-meta { font-size: 13px; color: var(--text-2); font-weight: 500; }
+  .garden-cta-primary { padding: 12px 22px; background: var(--accent); color: var(--accent-fg); border-radius: 16px; font-weight: 600; font-size: 14px; transition: all 200ms; }
+  .garden-cta-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px color-mix(in oklch, var(--accent) 40%, transparent); }
+  .garden-cta-ghost { padding: 12px 18px; color: var(--text-2); font-weight: 500; font-size: 14px; border-radius: 12px; }
+  .garden-cta-ghost:hover { background: var(--border); color: var(--text-1); }
+
+  /* ════════════════════════════════════════ DIRECCIÓN 4 — BENTO ATELIER ════════════════════════════════════════ */
+  [data-dir="atelier"] {
+    --bg: oklch(98.5% 0.006 250); --surface: oklch(100% 0 0); --surface-elev: oklch(99% 0.005 250);
+    --surface-warm: oklch(98% 0.012 35);
+    --border: oklch(91% 0.008 250); --border-strong: oklch(82% 0.012 250);
+    --text-1: oklch(18% 0.018 260); --text-2: oklch(42% 0.020 260); --text-3: oklch(50% 0.018 260);
+    --accent: oklch(56% 0.18 268); --accent-fg: #fff;
+    --accent-warm: oklch(68% 0.16 30);
+    --accent-cool: oklch(68% 0.13 195);
+    --success: oklch(58% 0.15 152); --warning: oklch(70% 0.16 75); --destructive: oklch(54% 0.21 25);
+    --cat-figures: oklch(70% 0.16 350); --cat-vinyl: oklch(68% 0.16 285); --cat-manga: oklch(72% 0.16 50);
+    --cat-anime: oklch(70% 0.16 195); --cat-cards: oklch(72% 0.17 130); --cat-plush: oklch(74% 0.13 35);
+    --shadow-1: 0 1px 2px rgba(20, 22, 30, 0.04);
+    --shadow-2: 0 4px 12px rgba(20, 22, 30, 0.06), 0 1px 2px rgba(20,22,30,0.04);
+    --shadow-3: 0 12px 24px rgba(20, 22, 30, 0.10);
+    --font-body: 'Inter', system-ui, sans-serif; --font-display: 'Inter', system-ui, sans-serif; --font-mono: 'JetBrains Mono', monospace;
+  }
+  [data-dir="atelier"][data-mode="dark"] {
+    --bg: oklch(13.5% 0.014 260); --surface: oklch(17% 0.016 260); --surface-elev: oklch(20.5% 0.018 260);
+    --surface-warm: oklch(19% 0.022 30);
+    --border: rgba(255,255,255,0.07); --border-strong: rgba(255,255,255,0.14);
+    --text-1: oklch(96% 0.005 250); --text-2: oklch(76% 0.014 250); --text-3: oklch(64% 0.014 250);
+    --accent: oklch(74% 0.16 268); --accent-fg: oklch(15% 0.06 268);
+    --accent-warm: oklch(78% 0.15 30); --accent-cool: oklch(78% 0.12 195);
+    --success: oklch(74% 0.16 152); --warning: oklch(82% 0.15 75); --destructive: oklch(70% 0.18 25);
+    --cat-figures: oklch(80% 0.14 350); --cat-vinyl: oklch(80% 0.14 285); --cat-manga: oklch(82% 0.14 50);
+    --cat-anime: oklch(82% 0.14 195); --cat-cards: oklch(82% 0.15 130); --cat-plush: oklch(82% 0.12 35);
+    --shadow-1: 0 0 0 1px rgba(255,255,255,0.04);
+    --shadow-2: 0 0 0 1px rgba(255,255,255,0.07), inset 0 1px 0 rgba(255,255,255,0.04);
+    --shadow-3: 0 0 0 1px rgba(255,255,255,0.10), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 32px -16px oklch(74% 0.16 268 / 0.30);
+  }
+
+  /* ── form layout */
+  .atelier-form { display: grid; grid-template-columns: 1fr 320px; gap: 28px; padding: 32px 36px 120px; max-width: 1100px; margin: 0 auto; position: relative; }
+  .atelier-main { min-width: 0; }
+  .atelier-aside { position: sticky; top: 16px; align-self: start; display: flex; flex-direction: column; gap: 12px; }
+  .atelier-back { color: var(--text-2); font-size: 13px; padding: 6px 0; display: inline-flex; align-items: center; gap: 6px; }
+  .atelier-back:hover { color: var(--text-1); }
+  .atelier-h1 {
+    font-family: var(--font-display); font-style: normal; font-weight: 700;
+    font-size: 44px; line-height: 1.0; letter-spacing: -0.03em; margin: 12px 0 6px;
+  }
+  .atelier-sub { color: var(--text-2); font-size: 15px; margin: 0 0 22px; max-width: 540px; }
+  .atelier-eyebrow-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-cool); margin-right: 6px; vertical-align: 2px; }
+
+  /* ── step indicator (circles + numbers + labels, heredado de Soft Garden) */
+  .atelier-steps { display: flex; align-items: center; gap: 10px; margin: 22px 0 28px; }
+  .atelier-step { display: inline-flex; align-items: center; gap: 8px; }
+  .atelier-step .dot {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--surface); border: 2px solid var(--border-strong);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: var(--text-2);
+    transition: all 200ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  .atelier-step[data-current="true"] .dot {
+    background: var(--accent); color: var(--accent-fg); border-color: var(--accent);
+    box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 16%, transparent);
+  }
+  .atelier-step[data-done="true"] .dot { background: var(--success); color: #fff; border-color: var(--success); }
+  .atelier-step .lbl { font-size: 13px; color: var(--text-2); font-weight: 500; }
+  .atelier-step[data-current="true"] .lbl { color: var(--text-1); font-weight: 600; }
+  .atelier-step[data-done="true"] .lbl { color: var(--success); }
+  .atelier-line { flex: 1; height: 2px; background: var(--border); border-radius: 999px; }
+  .atelier-line[data-done="true"] { background: var(--success); }
+
+  /* ── section cards (cada sección con su contenedor delimitado) */
+  .atelier-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 22px 24px; margin-bottom: 14px; box-shadow: var(--shadow-1);
+    transition: all 150ms;
+  }
+  .atelier-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-2); }
+  .atelier-card-header { margin-bottom: 16px; }
+  .atelier-card-eyebrow {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.10em; text-transform: uppercase;
+    color: var(--text-3); font-weight: 500; margin: 0 0 4px;
+  }
+  .atelier-card-title {
+    font-family: var(--font-display); font-weight: 700; font-style: normal;
+    font-size: 19px; letter-spacing: -0.015em; margin: 0; color: var(--text-1);
+  }
+  .atelier-card-help { color: var(--text-2); font-size: 13px; margin: 4px 0 0; }
+  .atelier-card-warm { background: var(--surface-warm); border-color: color-mix(in oklch, var(--accent-warm) 24%, var(--border)); }
+
+  /* ── big choice cards (heredado de Soft Garden, sin metáfora) */
+  .atelier-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .atelier-choice {
+    padding: 18px; border: 2px solid var(--border-strong); border-radius: 14px;
+    cursor: pointer; transition: all 200ms; background: var(--surface-elev); text-align: left;
+  }
+  .atelier-choice[data-on="true"] {
+    border-color: var(--accent); background: color-mix(in oklch, var(--accent) 6%, var(--surface-elev));
+    box-shadow: 0 0 0 4px color-mix(in oklch, var(--accent) 12%, transparent);
+  }
+  .atelier-choice:hover:not([data-on="true"]) { transform: translateY(-1px); border-color: var(--accent); }
+  .atelier-choice .icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: color-mix(in oklch, var(--accent) 14%, transparent);
+    display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 12px;
+  }
+  .atelier-choice[data-on="true"] .icon { background: color-mix(in oklch, var(--accent) 22%, transparent); }
+  .atelier-choice strong { display: block; font-size: 15px; margin-bottom: 4px; color: var(--text-1); font-weight: 600; }
+  .atelier-choice .small { display: block; font-size: 12px; color: var(--text-2); }
+
+  /* ── form fields */
+  .atelier-field { margin-bottom: 16px; }
+  .atelier-field:last-child { margin-bottom: 0; }
+  .atelier-label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 500; color: var(--text-2); margin-bottom: 6px; }
+  .atelier-label .opt { color: var(--text-3); font-weight: 400; font-size: 12px; }
+  .atelier-input, .atelier-textarea, .atelier-select {
+    width: 100%; padding: 10px 12px; background: var(--surface-elev); border: 1px solid var(--border-strong);
+    border-radius: 8px; color: var(--text-1); font-size: 14px; font-family: var(--font-body);
+    transition: all 150ms;
+  }
+  .atelier-input:focus, .atelier-textarea:focus, .atelier-select:focus {
+    outline: 0; border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 20%, transparent);
+  }
+  .atelier-textarea { min-height: 84px; resize: vertical; }
+  .atelier-help { font-size: 12px; color: var(--text-3); margin-top: 6px; }
+  .atelier-help[data-tone="warn"] { color: var(--warning); }
+  .atelier-help[data-tone="ok"] { color: var(--success); }
+
+  /* ── chips de categorías (icono Lucide, sin color cromático) */
+  .atelier-cat-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .atelier-cat-chip {
+    display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px;
+    border: 1.5px solid var(--border-strong); border-radius: 999px; font-size: 13px; font-weight: 500;
+    color: var(--text-2); cursor: pointer; transition: all 150ms; background: var(--surface-elev); user-select: none;
+  }
+  .atelier-cat-chip:hover { border-color: var(--accent); color: var(--text-1); }
+  .atelier-cat-chip input { display: none; }
+  .atelier-cat-chip[data-on="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: color-mix(in oklch, var(--accent) 10%, transparent);
+  }
+  .atelier-cat-chip .cat-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--accent-cool);
+  }
+  .atelier-cat-chip[data-on="true"] .cat-icon { color: var(--accent); }
+
+  /* ── presence chips */
+  .atelier-checks { display: flex; flex-wrap: wrap; gap: 8px; }
+  .atelier-check {
+    display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px;
+    border: 1.5px solid var(--border-strong); border-radius: 10px; font-size: 13px; cursor: pointer;
+    color: var(--text-2); transition: all 150ms; user-select: none; font-weight: 500; background: var(--surface-elev);
+  }
+  .atelier-check[data-on="true"] {
+    background: color-mix(in oklch, var(--accent) 10%, transparent);
+    border-color: var(--accent); color: var(--accent);
+  }
+  .atelier-check input { display: none; }
+  .atelier-check::before { content: ''; width: 14px; height: 14px; border: 1.5px solid currentColor; border-radius: 4px; opacity: 0.5; }
+  .atelier-check[data-on="true"]::before { background: currentColor; opacity: 1; }
+
+  /* ── toggles */
+  .atelier-toggle {
+    display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+    border: 1px solid var(--border); border-radius: 12px; cursor: pointer; transition: all 150ms;
+    background: var(--surface-elev);
+  }
+  .atelier-toggle[data-on="true"] { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 6%, var(--surface-elev)); }
+  .atelier-toggle-switch { width: 36px; height: 20px; background: var(--border-strong); border-radius: 999px; position: relative; transition: background 150ms; flex-shrink: 0; }
+  .atelier-toggle[data-on="true"] .atelier-toggle-switch { background: var(--accent); }
+  .atelier-toggle-switch::after { content: ''; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: transform 150ms; }
+  .atelier-toggle[data-on="true"] .atelier-toggle-switch::after { transform: translateX(16px); }
+
+  /* ── logo upload */
+  .atelier-logo {
+    display: flex; align-items: center; gap: 14px; padding: 14px;
+    border: 1.5px dashed var(--border-strong); border-radius: 12px; cursor: pointer; transition: all 150ms;
+    background: var(--surface-elev);
+  }
+  .atelier-logo:hover { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 4%, var(--surface-elev)); }
+  .atelier-logo-icon {
+    width: 56px; height: 56px; border-radius: 12px;
+    background: color-mix(in oklch, var(--accent) 14%, var(--surface-elev));
+    border: 1px solid color-mix(in oklch, var(--accent) 28%, var(--border));
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent); font-size: 24px;
+  }
+
+  /* ── aside cards (resumen + atajos + Pan) */
+  .atelier-aside-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; box-shadow: var(--shadow-1); }
+  /* Receta unificada: label = text-2, value = text-1 weight 500. Misma para Resumen y Atajos */
+  .atelier-summary-row, .atelier-shortcut {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 0; font-size: 13px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .atelier-summary-row:last-of-type, .atelier-shortcut:last-of-type { border-bottom: 0; }
+  .atelier-summary-row .lbl, .atelier-shortcut .lbl { color: var(--text-2); font-weight: 400; }
+  .atelier-summary-row .val { color: var(--text-1); font-weight: 500; }
+  .atelier-shortcut kbd {
+    font-family: var(--font-mono); font-size: 11px; padding: 3px 7px; border-radius: 5px;
+    background: var(--surface-elev); border: 1px solid var(--border-strong);
+    color: var(--text-1); font-weight: 500;
+    box-shadow: 0 1px 0 var(--border);
+  }
+
+  /* ── Pan assistant aside card */
+  .atelier-pan-card {
+    background: linear-gradient(135deg, color-mix(in oklch, var(--accent-cool) 8%, var(--surface)), var(--surface));
+    border: 1px solid color-mix(in oklch, var(--accent-cool) 24%, var(--border));
+    border-radius: 14px; padding: 16px; box-shadow: var(--shadow-1);
+  }
+  .atelier-pan-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .atelier-pan-glyph {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: color-mix(in oklch, var(--accent-cool) 20%, var(--surface));
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--accent-cool);
+  }
+  .atelier-pan-glyph svg { width: 24px; height: 24px; }
+  .atelier-pan-name { font-size: 13px; font-weight: 600; color: var(--text-1); }
+  .atelier-pan-name .small { display: block; font-weight: 400; color: var(--text-3); font-size: 11px; }
+  .atelier-pan-collapse { margin-left: auto; padding: 4px 8px; color: var(--text-3); font-size: 14px; line-height: 1; cursor: pointer; }
+  .atelier-pan-message {
+    background: color-mix(in oklch, var(--accent-cool) 10%, transparent);
+    padding: 10px 12px; border-radius: 12px; border-top-left-radius: 4px;
+    font-size: 13px; line-height: 1.5; color: var(--text-1);
+  }
+
+  /* ── footer sticky */
+  .atelier-footer {
+    position: sticky; bottom: 0; z-index: 5;
+    background: color-mix(in oklch, var(--surface) 80%, transparent); backdrop-filter: blur(20px);
+    border-top: 1px solid var(--border); padding: 14px 36px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .atelier-foot-meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-3); letter-spacing: 0.08em; text-transform: uppercase; }
+  .atelier-cta-primary { padding: 10px 20px; background: var(--accent); color: var(--accent-fg); border-radius: 10px; font-weight: 600; font-size: 14px; transition: all 150ms; }
+  .atelier-cta-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px color-mix(in oklch, var(--accent) 40%, transparent); }
+  .atelier-cta-ghost { padding: 10px 16px; color: var(--text-2); border-radius: 8px; font-weight: 500; font-size: 14px; }
+  .atelier-cta-ghost:hover { background: var(--border); color: var(--text-1); }
+
+  /* ── responsive */
+  @media (max-width: 880px) {
+    .bento-form, .garden-form, .atelier-form { grid-template-columns: 1fr; }
+    .bento-aside, .garden-aside, .atelier-aside { position: static; order: 2; flex-direction: row; flex-wrap: wrap; }
+    .atelier-aside > * { flex: 1; min-width: 240px; }
+    .garden-cats { grid-template-columns: 1fr 1fr; }
+    .garden-cards2, .atelier-choices { grid-template-columns: 1fr; }
+    .neon-h1 { font-size: 38px; }
+    .bento-h1 { font-size: 34px; }
+    .garden-h1 { font-size: 34px; }
+    .atelier-h1 { font-size: 34px; }
+    .bento-row-inputs, .neon-rowdyn, .garden-rowdyn { grid-template-columns: 1fr; }
+    .atelier-steps { gap: 4px; }
+    .atelier-line { max-width: 24px; }
+  }
+
+  .demo-foot { max-width: 1100px; margin: 0 auto 64px; padding: 0 16px; color: #666; font-size: 13px; line-height: 1.6; }
+  .demo-foot code { font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.05); padding: 1px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="demo-chrome">
+  <p class="demo-title">PandaTrack · Demo Sesión 1 · Formulario "Nueva tienda" · 3 direcciones</p>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-target="bento">1 · Bento Editorial</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="neon">2 · Neon Drop Floor</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="garden">3 · Soft Garden</button>
+    <button class="tab" role="tab" aria-selected="false" data-target="atelier">4 · Bento Atelier ✨</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════ DIRECCIÓN 1 — BENTO EDITORIAL ════════════════════════════════════════ -->
+<section class="panel" data-active id="panel-bento">
+  <div class="stage">
+    <div class="stage-bar">
+      <div class="row"><div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span class="url">pandatrack.app/stores/new</span></div>
+      <div class="toggle" role="group" aria-label="Tema Bento">
+        <button data-mode-btn="light" data-dir-target="bento" aria-pressed="false">Light</button>
+        <button data-mode-btn="dark"  data-dir-target="bento" aria-pressed="true">Dark</button>
+      </div>
+    </div>
+
+    <div class="surface" data-dir="bento" data-mode="dark">
+      <div class="bento-form">
+
+        <!-- main column -->
+        <div class="bento-main">
+          <a class="bento-back" href="#">← Tiendas</a>
+          <p class="eyebrow" style="margin-top:14px">Nueva tienda</p>
+          <h1 class="bento-h1">Identidad</h1>
+          <p class="meta" style="max-width: 540px">Lo básico para empezar. Podrás agregar canales y direcciones en el siguiente paso.</p>
+
+          <div class="bento-progress">
+            <span>01 · Identidad</span>
+            <div class="bento-progress-bar"><i></i></div>
+            <span class="num">1/3</span>
+          </div>
+
+          <div class="bento-section">
+            <h2 class="bento-section-title">Tipo</h2>
+            <div class="bento-pillgroup" role="group">
+              <button aria-pressed="true">Negocio</button>
+              <button aria-pressed="false">Persona</button>
+            </div>
+          </div>
+
+          <div class="bento-section">
+            <h2 class="bento-section-title">Datos</h2>
+            <div class="bento-field">
+              <div class="bento-label"><span>Nombre</span><span class="opt">requerido</span></div>
+              <input class="bento-input" value="Mercado X" />
+              <p class="bento-help" data-tone="warn">⚠ Encontramos 2 tiendas similares: <a href="#" style="color:var(--accent); text-decoration:none">"Mercado MX"</a>, <a href="#" style="color:var(--accent); text-decoration:none">"Mercado XX"</a></p>
+            </div>
+            <div class="bento-field">
+              <div class="bento-label"><span>Descripción</span><span class="opt">opcional · 0/2000</span></div>
+              <textarea class="bento-textarea" placeholder="Una línea corta sobre la tienda…"></textarea>
+            </div>
+            <div class="bento-field">
+              <div class="bento-label"><span>País</span><span class="opt">requerido</span></div>
+              <select class="bento-select"><option>México</option><option>Argentina</option><option>Colombia</option></select>
+            </div>
+          </div>
+
+          <div class="bento-section">
+            <h2 class="bento-section-title">Logo</h2>
+            <div class="bento-logo">
+              <span class="bento-logo-icon">📷</span>
+              <div>
+                <strong style="font-size:14px">Subir imagen</strong>
+                <div class="small">PNG o JPG · cuadrada · máx 2 MB</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bento-section">
+            <h2 class="bento-section-title">Presencia</h2>
+            <div class="bento-checks">
+              <label class="bento-check" data-on="true">Online <input type="checkbox" checked /></label>
+              <label class="bento-check" data-on="false">Física <input type="checkbox" /></label>
+            </div>
+          </div>
+
+          <div class="bento-section">
+            <h2 class="bento-section-title">¿Qué vende?</h2>
+            <div class="bento-checks">
+              <label class="bento-check" data-on="true">Figures <input type="checkbox" checked /></label>
+              <label class="bento-check" data-on="true">Vinyls <input type="checkbox" checked /></label>
+              <label class="bento-check" data-on="false">Mangas <input type="checkbox" /></label>
+              <label class="bento-check" data-on="false">Anime merch <input type="checkbox" /></label>
+              <label class="bento-check" data-on="false">Trading cards <input type="checkbox" /></label>
+              <label class="bento-check" data-on="false">Plush <input type="checkbox" /></label>
+            </div>
+          </div>
+
+          <div class="bento-section">
+            <h2 class="bento-section-title">Operativa</h2>
+            <div class="bento-toggle" data-on="true" style="margin-bottom:8px">
+              <span class="toggle-switch"></span>
+              <div><strong style="font-size:14px">Recibe pedidos</strong><div class="small">Permite recibir pre-órdenes</div></div>
+            </div>
+            <div class="bento-toggle" data-on="false">
+              <span class="toggle-switch"></span>
+              <div><strong style="font-size:14px">Tiene stock</strong><div class="small">Vende producto que ya tiene</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- aside summary -->
+        <aside class="bento-aside">
+          <div class="bento-aside-card">
+            <p class="eyebrow" style="margin-bottom:12px">Resumen</p>
+            <div class="bento-summary-row"><span class="lbl">Tipo</span><span class="val">Negocio</span></div>
+            <div class="bento-summary-row"><span class="lbl">Nombre</span><span class="val">Mercado X</span></div>
+            <div class="bento-summary-row"><span class="lbl">País</span><span class="val">México</span></div>
+            <div class="bento-summary-row"><span class="lbl">Productos</span><span class="val">2 tipos</span></div>
+            <div class="bento-summary-row"><span class="lbl">Estado al crear</span><span class="val" style="color: var(--warning)">Pendiente</span></div>
+          </div>
+          <div class="bento-aside-card" style="margin-top:12px">
+            <p class="eyebrow" style="margin-bottom:8px">Atajos</p>
+            <p class="small" style="margin:0">⌘ + Enter para continuar<br>Esc para cancelar</p>
+          </div>
+        </aside>
+
+      </div>
+
+      <!-- footer sticky -->
+      <div class="bento-footer">
+        <span class="bento-foot-meta">Borrador autoguardado · hace 4s</span>
+        <div class="row" style="gap:8px">
+          <button class="bento-cta-ghost">Cancelar</button>
+          <button class="bento-cta-primary">Continuar →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════ DIRECCIÓN 2 — NEON DROP FLOOR ════════════════════════════════════════ -->
+<section class="panel" id="panel-neon">
+  <div class="stage">
+    <div class="stage-bar">
+      <div class="row"><div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span class="url">pandatrack.app/stores/new</span></div>
+      <div class="toggle" role="group" aria-label="Tema Neon">
+        <button data-mode-btn="light" data-dir-target="neon" aria-pressed="false">Light</button>
+        <button data-mode-btn="dark"  data-dir-target="neon" aria-pressed="true">Dark</button>
+      </div>
+    </div>
+
+    <div class="surface neon-bg" data-dir="neon" data-mode="dark">
+      <div class="neon-form">
+
+        <a class="neon-back" href="#">← BACK · STORES</a>
+        <p class="neon-eyebrow">⚡ NEW STORE · STEP 01 / 03</p>
+        <h1 class="neon-h1">CREA TU TIENDA.</h1>
+        <p class="meta" style="font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; font-size: 12px; max-width: 600px;">Identidad → canales → revisión. Lo básico primero.</p>
+
+        <div class="neon-steps">
+          <div class="neon-step" data-current="true">[01] IDENTIDAD</div>
+          <div class="neon-step">[02] CANALES</div>
+          <div class="neon-step">[03] REVISIÓN</div>
+        </div>
+
+        <!-- Tipo + nombre -->
+        <div class="neon-card">
+          <h2 class="neon-section-title">⊹ Tipo de tienda</h2>
+          <div class="neon-pillgroup">
+            <button aria-pressed="true">[ NEGOCIO ]</button>
+            <button aria-pressed="false">[ PERSONA ]</button>
+          </div>
+        </div>
+
+        <div class="neon-card">
+          <h2 class="neon-section-title">⊹ Identidad</h2>
+
+          <div class="neon-field">
+            <label class="neon-label"><span>Nombre <span class="neon-required">*</span></span><span class="neon-optional">REQUIRED</span></label>
+            <input class="neon-input" value="Mercado X" />
+            <p class="neon-help" data-tone="warn">⚠ POSIBLE DUPE · "MERCADO MX" · "MERCADO XX"</p>
+          </div>
+
+          <div class="neon-field">
+            <label class="neon-label"><span>Descripción</span><span class="neon-optional">OPT · 0/2000</span></label>
+            <textarea class="neon-textarea" placeholder="Una línea corta…"></textarea>
+          </div>
+
+          <div class="neon-field">
+            <label class="neon-label"><span>País <span class="neon-required">*</span></span><span class="neon-optional">REQUIRED</span></label>
+            <select class="neon-select"><option>MÉXICO</option><option>ARGENTINA</option><option>COLOMBIA</option></select>
+          </div>
+
+          <div class="neon-field">
+            <label class="neon-label"><span>Logo</span><span class="neon-optional">OPT</span></label>
+            <div class="neon-logo">
+              <span class="neon-logo-icon">📷</span>
+              <div>
+                <strong style="display:block; font-size:13px">DRAG / CLICK / DROP</strong>
+                <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-3); letter-spacing: 0.06em;">PNG · JPG · MAX 2MB</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Presencia + categorías -->
+        <div class="neon-card">
+          <h2 class="neon-section-title">⊹ Presencia</h2>
+          <div class="neon-checks" style="margin-bottom: 20px;">
+            <label class="neon-check" data-on="true">[✓] ONLINE <input type="checkbox" checked /></label>
+            <label class="neon-check" data-on="false">[ ] FÍSICA <input type="checkbox" /></label>
+          </div>
+
+          <h2 class="neon-section-title">⊹ Categorías</h2>
+          <div class="neon-checks">
+            <label class="neon-check" data-on="true">[✓] FIGURES <input type="checkbox" checked /></label>
+            <label class="neon-check" data-on="true">[✓] VINYLS <input type="checkbox" checked /></label>
+            <label class="neon-check" data-on="false">[ ] MANGAS <input type="checkbox" /></label>
+            <label class="neon-check" data-on="false">[ ] ANIME <input type="checkbox" /></label>
+            <label class="neon-check" data-on="false">[ ] CARDS <input type="checkbox" /></label>
+            <label class="neon-check" data-on="false">[ ] PLUSH <input type="checkbox" /></label>
+          </div>
+        </div>
+
+        <!-- Operativa toggles -->
+        <div class="neon-card">
+          <h2 class="neon-section-title">⊹ Operativa</h2>
+          <div class="neon-toggle" data-on="true" style="margin-bottom: 10px;">
+            <div><strong>RECIBE PRE-ORDERS</strong><div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-3); letter-spacing: 0.06em; margin-top: 4px;">DROPS, PRE-VENTAS, RESERVAS</div></div>
+            <span class="neon-toggle-switch"></span>
+          </div>
+          <div class="neon-toggle" data-on="false">
+            <div><strong>TIENE STOCK</strong><div style="font-family: var(--font-mono); font-size: 10px; color: var(--text-3); letter-spacing: 0.06em; margin-top: 4px;">PRODUCTO READY-TO-SHIP</div></div>
+            <span class="neon-toggle-switch"></span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- footer -->
+      <div class="neon-footer">
+        <span class="neon-foot-meta">▌ DRAFT · AUTOSAVED 4s ago</span>
+        <div class="row" style="gap: 8px;">
+          <button class="neon-cta-ghost">CANCEL</button>
+          <button class="neon-cta-primary">CONTINUE →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════ DIRECCIÓN 3 — SOFT GARDEN ════════════════════════════════════════ -->
+<section class="panel" id="panel-garden">
+  <div class="stage">
+    <div class="stage-bar">
+      <div class="row"><div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span class="url">pandatrack.app/stores/new</span></div>
+      <div class="toggle" role="group" aria-label="Tema Garden">
+        <button data-mode-btn="light" data-dir-target="garden" aria-pressed="true">Light</button>
+        <button data-mode-btn="dark"  data-dir-target="garden" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+
+    <div class="surface" data-dir="garden" data-mode="light">
+      <div class="garden-form">
+
+        <!-- main -->
+        <div class="garden-main">
+          <a class="garden-back" href="#">← Volver al jardín</a>
+          <p class="eyebrow" style="margin-top:14px">🌱 Sembrar tienda</p>
+          <h1 class="garden-h1">Sembremos una tienda.</h1>
+          <p class="garden-sub">Cuéntanos quién es. Lo demás lo vamos puliendo en los siguientes pasos.</p>
+
+          <div class="garden-steps">
+            <div class="garden-step" data-current="true"><span class="dot">1</span><span class="lbl">Identidad</span></div>
+            <span class="garden-line"></span>
+            <div class="garden-step"><span class="dot">2</span><span class="lbl">Canales</span></div>
+            <span class="garden-line"></span>
+            <div class="garden-step"><span class="dot">3</span><span class="lbl">Listo</span></div>
+          </div>
+
+          <!-- Tipo -->
+          <div class="garden-card">
+            <h2 class="garden-section-title">¿Quién es?</h2>
+            <p class="garden-section-help">Elige una para que sepamos qué información pedirte.</p>
+            <div class="garden-cards2">
+              <div class="garden-choice" data-on="true">
+                <div class="icon">🏪</div>
+                <strong>Negocio</strong>
+                <span class="small">Una tienda con marca, redes y direcciones</span>
+              </div>
+              <div class="garden-choice" data-on="false">
+                <div class="icon">👤</div>
+                <strong>Persona</strong>
+                <span class="small">Una persona que vende — amigo, vendedor, scout</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Datos -->
+          <div class="garden-card">
+            <h2 class="garden-section-title">¿Cómo se llama?</h2>
+            <p class="garden-section-help">El nombre que usarás para encontrarla rápido.</p>
+
+            <div class="garden-field">
+              <label class="garden-label"><span>Nombre</span><span class="opt">requerido</span></label>
+              <input class="garden-input" value="Mercado X" />
+              <p class="garden-help" data-tone="warn">🌿 Encontramos 2 tiendas parecidas. Si no es ninguna, sigue: <a href="#" style="color: var(--accent)">Mercado MX</a> · <a href="#" style="color: var(--accent)">Mercado XX</a></p>
+            </div>
+
+            <div class="garden-field">
+              <label class="garden-label"><span>¿Algo que recordar de ella?</span><span class="opt">opcional</span></label>
+              <textarea class="garden-textarea" placeholder="Atiende rápido, mejor por DM, tarda 2 semanas en envíos…"></textarea>
+            </div>
+
+            <div class="garden-field">
+              <label class="garden-label"><span>País</span><span class="opt">requerido</span></label>
+              <select class="garden-select"><option>🇲🇽 México</option><option>🇦🇷 Argentina</option><option>🇨🇴 Colombia</option></select>
+            </div>
+
+            <div class="garden-field">
+              <label class="garden-label"><span>Logo o foto</span><span class="opt">opcional</span></label>
+              <div class="garden-logo">
+                <span class="garden-logo-icon">📷</span>
+                <div>
+                  <strong style="font-size:14px">Sube una imagen</strong>
+                  <div class="small">PNG o JPG · cuadrada · máx 2 MB</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Categorías -->
+          <div class="garden-card">
+            <h2 class="garden-section-title">¿Qué siembra?</h2>
+            <p class="garden-section-help">Las categorías que vende. Puedes elegir varias.</p>
+            <div class="garden-cats">
+              <div class="garden-cat-card" data-on="true">
+                <span class="garden-cat-avatar" style="background: var(--cat-figures);">🌷</span>
+                <div><strong>Figures</strong><div class="small">Lila la lucha</div></div>
+              </div>
+              <div class="garden-cat-card" data-on="true">
+                <span class="garden-cat-avatar" style="background: var(--cat-vinyl);">💿</span>
+                <div><strong>Vinyls</strong><div class="small">Virgilio</div></div>
+              </div>
+              <div class="garden-cat-card" data-on="false">
+                <span class="garden-cat-avatar" style="background: var(--cat-manga);">📚</span>
+                <div><strong>Mangas</strong><div class="small">Mango</div></div>
+              </div>
+              <div class="garden-cat-card" data-on="false">
+                <span class="garden-cat-avatar" style="background: var(--cat-anime);">✨</span>
+                <div><strong>Anime</strong><div class="small">Aria</div></div>
+              </div>
+              <div class="garden-cat-card" data-on="false">
+                <span class="garden-cat-avatar" style="background: var(--cat-cards);">🃏</span>
+                <div><strong>Cards</strong><div class="small">Tato</div></div>
+              </div>
+              <div class="garden-cat-card" data-on="false">
+                <span class="garden-cat-avatar" style="background: var(--cat-plush);">🧸</span>
+                <div><strong>Plush</strong><div class="small">Pánfilo</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Operativa -->
+          <div class="garden-card">
+            <h2 class="garden-section-title">¿Cómo trabaja?</h2>
+            <div class="garden-toggle" data-on="true" style="margin-bottom: 10px">
+              <span class="garden-toggle-switch"></span>
+              <div><strong style="font-size:14px">Recibe pre-órdenes</strong><div class="small">Permite reservas y pagos por adelantado</div></div>
+            </div>
+            <div class="garden-toggle" data-on="false">
+              <span class="garden-toggle-switch"></span>
+              <div><strong style="font-size:14px">Tiene stock listo</strong><div class="small">Vende productos que ya tiene en mano</div></div>
+            </div>
+          </div>
+
+          <!-- Presencia -->
+          <div class="garden-card">
+            <h2 class="garden-section-title">¿Dónde la encuentras?</h2>
+            <p class="garden-section-help">Puedes elegir las dos.</p>
+            <div class="garden-cards2">
+              <div class="garden-choice" data-on="true">
+                <div class="icon">🌐</div>
+                <strong>Online</strong>
+                <span class="small">Tiene web, redes o vende por DM</span>
+              </div>
+              <div class="garden-choice" data-on="false">
+                <div class="icon">📍</div>
+                <strong>Física</strong>
+                <span class="small">Tiene local físico que puedes visitar</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Helper aside con mascot -->
+        <aside class="garden-aside">
+          <div class="garden-helper">
+            <span class="garden-helper-mascot">🐼</span>
+            <p style="margin: 0 0 10px; font-size: 14px; font-weight: 600;">El panda dice…</p>
+            <div class="garden-helper-bubble">
+              Si no estás seguro de algún dato, déjalo vacío. Después podrás editarlo desde la tienda. 🌿
+            </div>
+            <hr style="border: 0; border-top: 1px dashed var(--border); margin: 16px 0;" />
+            <p class="eyebrow" style="margin-bottom: 10px;">Tu tienda hasta ahora</p>
+            <p style="margin: 0; font-size: 13px; line-height: 1.7;">
+              <strong>Mercado X</strong><br>
+              <span class="small">Negocio · México</span><br>
+              <span class="small">2 categorías</span><br>
+              <span class="small">Recibe pre-órdenes</span>
+            </p>
+          </div>
+        </aside>
+
+      </div>
+
+      <!-- footer glass -->
+      <div class="garden-footer">
+        <span class="garden-foot-meta">🌱 Borrador guardado · hace 4s</span>
+        <div class="row" style="gap: 8px;">
+          <button class="garden-cta-ghost">Cancelar</button>
+          <button class="garden-cta-primary">Listo, sigamos →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════ DIRECCIÓN 4 — BENTO ATELIER ════════════════════════════════════════ -->
+<section class="panel" id="panel-atelier">
+  <div class="stage">
+    <div class="stage-bar">
+      <div class="row"><div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div><span class="url">pandatrack.app/stores/new</span></div>
+      <div class="toggle" role="group" aria-label="Tema Atelier">
+        <button data-mode-btn="light" data-dir-target="atelier" aria-pressed="false">Light</button>
+        <button data-mode-btn="dark"  data-dir-target="atelier" aria-pressed="true">Dark</button>
+      </div>
+    </div>
+
+    <div class="surface" data-dir="atelier" data-mode="dark">
+      <div class="atelier-form">
+
+        <!-- main column -->
+        <div class="atelier-main">
+          <a class="atelier-back" href="#">← Tiendas</a>
+          <p class="eyebrow" style="margin-top:14px">Nueva tienda</p>
+          <h1 class="atelier-h1">Identidad</h1>
+          <p class="atelier-sub">Lo básico para empezar. Podrás agregar canales y direcciones en el siguiente paso.</p>
+
+          <!-- Step indicator (heredado de Soft Garden) -->
+          <div class="atelier-steps">
+            <div class="atelier-step" data-current="true"><span class="dot">1</span><span class="lbl">Identidad</span></div>
+            <span class="atelier-line"></span>
+            <div class="atelier-step"><span class="dot">2</span><span class="lbl">Canales</span></div>
+            <span class="atelier-line"></span>
+            <div class="atelier-step"><span class="dot">3</span><span class="lbl">Listo</span></div>
+          </div>
+
+          <!-- Card 1: Tipo (big choice cards con Lucide) -->
+          <div class="atelier-card">
+            <div class="atelier-card-header">
+              <p class="atelier-card-eyebrow">01 · Tipo</p>
+              <h2 class="atelier-card-title">Tipo de tienda</h2>
+              <p class="atelier-card-help">Elige una para que sepamos qué información pedirte.</p>
+            </div>
+            <div class="atelier-choices">
+              <button class="atelier-choice" data-on="true">
+                <span class="icon"><!-- store -->
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2 2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12a2 2 0 0 1-2-2V7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/></svg>
+                </span>
+                <strong>Negocio</strong>
+                <span class="small">Una tienda con marca, redes y direcciones</span>
+              </button>
+              <button class="atelier-choice" data-on="false">
+                <span class="icon"><!-- user -->
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <strong>Persona</strong>
+                <span class="small">Una persona vendiendo — amigo, scout, vendedor</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Card 2: Identidad (sin tinte cálido) -->
+          <div class="atelier-card">
+            <div class="atelier-card-header">
+              <p class="atelier-card-eyebrow">02 · Datos</p>
+              <h2 class="atelier-card-title">Identidad</h2>
+              <p class="atelier-card-help">Cómo se llama y dónde opera.</p>
+            </div>
+
+            <div class="atelier-field">
+              <label class="atelier-label"><span>Nombre</span><span class="opt">requerido</span></label>
+              <input class="atelier-input" value="Mercado X" />
+              <p class="atelier-help" data-tone="warn">
+                <span style="display: inline-flex; align-items: center; gap: 4px; vertical-align: -2px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+                Hey, hay 2 tiendas parecidas. ¿Es alguna? <a href="#" style="color: var(--accent); text-decoration: none">Mercado MX</a> · <a href="#" style="color: var(--accent); text-decoration: none">Mercado XX</a>
+              </p>
+            </div>
+
+            <div class="atelier-field">
+              <label class="atelier-label"><span>Descripción</span><span class="opt">opcional · 0/2000</span></label>
+              <textarea class="atelier-textarea" placeholder="Una línea corta sobre la tienda…"></textarea>
+            </div>
+
+            <div class="atelier-field">
+              <label class="atelier-label"><span>País</span><span class="opt">requerido</span></label>
+              <select class="atelier-select"><option>México</option><option>Argentina</option><option>Colombia</option><option>Perú</option></select>
+            </div>
+
+            <div class="atelier-field">
+              <label class="atelier-label"><span>Logo</span><span class="opt">opcional</span></label>
+              <div class="atelier-logo">
+                <span class="atelier-logo-icon"><!-- camera -->
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                </span>
+                <div>
+                  <strong style="font-size:14px; display:block; color: var(--text-1)">Sube una imagen</strong>
+                  <div class="small" style="color: var(--text-3)">PNG o JPG · cuadrada · máx 2 MB. Si no la subes, usamos la inicial.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Categorías (chips con icono Lucide, sin color cromático) -->
+          <div class="atelier-card">
+            <div class="atelier-card-header">
+              <p class="atelier-card-eyebrow">03 · Categorías</p>
+              <h2 class="atelier-card-title">¿Qué vende?</h2>
+              <p class="atelier-card-help">Mínimo una. Puedes elegir varias.</p>
+            </div>
+            <div class="atelier-cat-chips">
+              <label class="atelier-cat-chip" data-on="true">
+                <span class="cat-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M8.3 10a.7.7 0 0 1-.626-1.079L11.4 3a.7.7 0 0 1 1.198-.043L16.3 8.9a.7.7 0 0 1-.572 1.1Z"/><rect x="3" y="14" width="7" height="7" rx="1"/><circle cx="17.5" cy="17.5" r="3.5"/></svg></span>
+                Figures
+                <input type="checkbox" checked />
+              </label>
+              <label class="atelier-cat-chip" data-on="true">
+                <span class="cat-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="2"/></svg></span>
+                Vinyl
+                <input type="checkbox" checked />
+              </label>
+              <label class="atelier-cat-chip" data-on="false">
+                <span class="cat-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
+                Manga
+                <input type="checkbox" />
+              </label>
+              <label class="atelier-cat-chip" data-on="false">
+                <span class="cat-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg></span>
+                Anime merch
+                <input type="checkbox" />
+              </label>
+              <label class="atelier-cat-chip" data-on="false">
+                <span class="cat-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="14" x="3" y="3" rx="2"/><path d="M4 21h1"/><path d="M9 21h1"/><path d="M14 21h1"/><path d="M19 21h1"/></svg></span>
+                Trading cards
+                <input type="checkbox" />
+              </label>
+              <label class="atelier-cat-chip" data-on="false">
+                <span class="cat-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4 7.55 4.24"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
+                Plush
+                <input type="checkbox" />
+              </label>
+            </div>
+          </div>
+
+          <!-- Card 4: Operativa -->
+          <div class="atelier-card">
+            <div class="atelier-card-header">
+              <p class="atelier-card-eyebrow">04 · Operativa</p>
+              <h2 class="atelier-card-title">¿Cómo trabaja?</h2>
+            </div>
+            <div class="atelier-toggle" data-on="true" style="margin-bottom: 8px;">
+              <span class="atelier-toggle-switch"></span>
+              <div><strong style="font-size:14px; display:block">Recibe pre-órdenes</strong><div class="small" style="color: var(--text-2); font-size: 12px;">Permite reservas y pagos por adelantado</div></div>
+            </div>
+            <div class="atelier-toggle" data-on="false">
+              <span class="atelier-toggle-switch"></span>
+              <div><strong style="font-size:14px; display:block">Tiene stock listo</strong><div class="small" style="color: var(--text-2); font-size: 12px;">Vende productos que ya tiene en mano</div></div>
+            </div>
+          </div>
+
+          <!-- Card 5: Presencia -->
+          <div class="atelier-card">
+            <div class="atelier-card-header">
+              <p class="atelier-card-eyebrow">05 · Presencia</p>
+              <h2 class="atelier-card-title">¿Dónde la encuentras?</h2>
+              <p class="atelier-card-help">Puedes elegir las dos.</p>
+            </div>
+            <div class="atelier-checks">
+              <label class="atelier-check" data-on="true">Online <input type="checkbox" checked /></label>
+              <label class="atelier-check" data-on="false">Física <input type="checkbox" /></label>
+            </div>
+          </div>
+        </div>
+
+        <!-- aside: resumen + atajos (sin Pan, queda como FRD aparte) -->
+        <aside class="atelier-aside">
+
+          <!-- Resumen -->
+          <div class="atelier-aside-card">
+            <p class="eyebrow" style="margin-bottom: 12px">Resumen</p>
+            <div class="atelier-summary-row"><span class="lbl">Tipo</span><span class="val">Negocio</span></div>
+            <div class="atelier-summary-row"><span class="lbl">Nombre</span><span class="val">Mercado X</span></div>
+            <div class="atelier-summary-row"><span class="lbl">País</span><span class="val">México</span></div>
+            <div class="atelier-summary-row"><span class="lbl">Categorías</span><span class="val">2 tipos</span></div>
+            <div class="atelier-summary-row"><span class="lbl">Estado al crear</span><span class="val" style="color: var(--warning)">Pendiente</span></div>
+          </div>
+
+          <!-- Atajos -->
+          <div class="atelier-aside-card">
+            <p class="eyebrow" style="margin-bottom: 10px">Atajos</p>
+            <div class="atelier-shortcut"><span class="lbl">Continuar</span><kbd>⌘ + Enter</kbd></div>
+            <div class="atelier-shortcut"><span class="lbl">Cancelar</span><kbd>Esc</kbd></div>
+            <div class="atelier-shortcut"><span class="lbl">Buscar</span><kbd>⌘ + K</kbd></div>
+          </div>
+
+        </aside>
+
+      </div>
+
+      <!-- footer sticky -->
+      <div class="atelier-footer">
+        <span class="atelier-foot-meta">▌ Guardado, hace 4s</span>
+        <div class="row" style="gap:8px">
+          <button class="atelier-cta-ghost">Cancelar</button>
+          <button class="atelier-cta-primary">Sigamos →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="demo-foot">
+  <p>Demo del formulario <strong>"Nueva tienda"</strong> · paso 1 de 3 · 4 direcciones · El contrato funcional es el mismo (campos, tipos, validaciones, multi-step) — sólo cambia el cómo. <strong>Dirección 4 · Bento Atelier ✨</strong> en su versión sobria post-feedback: <em>section cards</em> con jerarquía visual clara (eyebrow neutro + title funcional + help), <em>step indicator con círculos numerados</em>, <em>big choice cards</em> con <strong>íconos Lucide</strong> (store/user) y descripción, <em>chips de categoría con ícono Lucide</em> (no color cromático — el active se pinta sólo en indigo), sidebar con <em>resumen + atajos</em> únicamente. El asistente conversacional queda fuera del rediseño visual y se trata como FRD aparte. Sin emojis decorativos, sin tinte cálido en cards, sin avatares categóricos.</p>
+</div>
+
+<script>
+  // ── tabs
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.panel');
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(x => x.setAttribute('aria-selected', x === t ? 'true' : 'false'));
+    const target = t.dataset.target;
+    panels.forEach(p => {
+      if (p.id === 'panel-' + target) p.setAttribute('data-active', '');
+      else p.removeAttribute('data-active');
+    });
+  }));
+
+  // ── theme toggle por dirección
+  document.querySelectorAll('[data-mode-btn]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.modeBtn;
+      const target = btn.dataset.dirTarget;
+      const surface = document.querySelector(`[data-dir="${target}"]`);
+      if (surface) surface.setAttribute('data-mode', mode);
+      btn.parentElement.querySelectorAll('button').forEach(b => {
+        b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+      });
+    });
+  });
+
+  // ── interactive toggles (visual feedback)
+  document.querySelectorAll('[data-on]').forEach(el => {
+    const interactiveClasses = ['garden-choice', 'garden-toggle', 'garden-cat-card', 'bento-toggle', 'neon-toggle', 'atelier-choice', 'atelier-toggle'];
+    if (el.tagName === 'LABEL' || interactiveClasses.some(c => el.classList.contains(c))) {
+      el.addEventListener('click', () => {
+        // single-select para choice cards (Negocio/Persona)
+        if (el.classList.contains('atelier-choice') || el.classList.contains('garden-choice')) {
+          const siblings = el.parentElement.querySelectorAll('.atelier-choice, .garden-choice');
+          siblings.forEach(s => s.setAttribute('data-on', 'false'));
+          el.setAttribute('data-on', 'true');
+          return;
+        }
+        const cur = el.getAttribute('data-on') === 'true';
+        el.setAttribute('data-on', cur ? 'false' : 'true');
+      });
+    }
+  });
+
+  // ── pillgroup toggle (single select)
+  document.querySelectorAll('.bento-pillgroup, .neon-pillgroup').forEach(g => {
+    g.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      g.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+    });
+  });
+
+</script>
+
+</body>
+</html>
