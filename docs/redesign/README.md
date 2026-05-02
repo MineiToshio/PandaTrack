@@ -6,7 +6,7 @@ owner: Sergio Minei
 
 > **Estado actual:** S1-S4 ✅ done en modelo "todo en docs". **Plan revisado post-S4** (ver [`methodology.md`](./methodology.md)): cada sesión a partir de ahora tiene **Fase A (docs) + Fase B (implementación inmediata)** con gate humano en el medio. Todo va a branch `redesign`. Dashboard fuera de scope. Última sesión (S13) reemplaza `docs/design/` con el sistema final.
 >
-> **S4 Fase B completada ✅ (2026-05-02).** MonoCode · StoreAvatar · StatusChip · Input · Button implementados en `src/components/core/`. i18n namespace `components` creado. Tests unitarios para StatusChip (28 casos) y Button (13 casos). Validación completa: type-check ✅ lint ✅ test ✅ validate-build ✅.
+> **S4 Fase B completada (ambos batches) ✅ (2026-05-02).** Primer batch: MonoCode · StoreAvatar · StatusChip · Input · Button. Segundo batch: Eyebrow · Kbd · HelperText · ErrorMessage · Avatar · Label · Textarea · Select · IconButton · Checkbox · Switch · Radio · Combobox · DateInput · DateRangeInput. 20 atoms en `src/components/core/`. i18n completo. 388 tests ✅, build limpio ✅.
 >
 > **Próxima sesión: 🟡 S5 — Navegación y layouts** (foundational A+B, 1 conversación). App shell, sidebar collapsable + push, header con breadcrumbs + theme + lang toggle, mobile tab bar.
 >
@@ -167,6 +167,7 @@ Detalle completo en [`methodology.md`](./methodology.md). Resumen de las reglas 
 | 03B | Implementación de tokens en `src/` (Fase B)     | B-only           | ✅ done    |
 | 04  | Componentes core — specs (Fase A)               | foundational     | ✅ done    |
 | 04B | Implementación de atoms (Fase B, primer batch)  | B-only           | ✅ done    |
+| 04B | Implementación de atoms (Fase B, segundo batch) | B-only           | ✅ done    |
 | 05  | Navegación y layouts (app shell)                | foundational A+B | ⏳ pending |
 | 06  | Módulo Tiendas (crear / lista / detalle)        | módulo           | ⏳ pending |
 | 07  | Módulo Órdenes (crear-editar / lista / detalle) | módulo           | ⏳ pending |
@@ -242,7 +243,8 @@ Detalle completo en [`methodology.md`](./methodology.md). Resumen de las reglas 
   - **18 objeciones de red team** evaluadas, **0 bloqueantes pendientes**. 4 mayores resueltas con cambios al spec (Toast `Z` vs undo nativo, Combobox tap accidental "Crear nueva tienda", StatusChip info runtime fallback, migración legacy `text-white` registrada para S12). 8 menores aceptadas con riesgo controlado.
   - **13 gaps abiertos** registrados con sesión destino: S5 (4 — ProgressBar, Pagination, VerifyEmailBanner, TabBar; tokens `--detail-sidebar-w`, `--drawer-w-narrow/-wide`, `--motion-shell-push`), S6 (3), S9 (1 — Skeleton), S12 (5 — lint rules, audit cross-paleta, migración legacy).
 - **S3 Fase B — ✅ done (2026-05-02, con correctivo):** tokens Velvet + light/dark aplicados en `src/`. Solo Velvet vive en la app — las 4 paletas alternativas (Lilac, Plum, Lagoon, Forest) quedan solo en el demo HTML y en docs como referencia futura. Sin palette switching en la app.
-- **S4 Fase B — ✅ done (2026-05-02):** 5 atoms implementados en `src/components/core/`: `<MonoCode>`, `<StoreAvatar>`, `<StatusChip>`, `<Input>`, `<Button>`. Namespace `components` i18n creado (es + en). Tests unitarios: StatusChip 28/28 ✅, Button 13/13 ✅. Build limpio.
+- **S4 Fase B primer batch — ✅ done (2026-05-02):** 5 atoms implementados: `<MonoCode>`, `<StoreAvatar>`, `<StatusChip>`, `<Input>`, `<Button>`. Namespace `components` i18n creado (es + en). StatusChip 28/28 ✅, Button 13/13 ✅.
+- **S4 Fase B segundo batch — ✅ done (2026-05-02):** 15 atoms implementados: `<Eyebrow>`, `<Kbd>`, `<HelperText>`, `<ErrorMessage>`, `<Avatar>`, `<Label>`, `<Textarea>`, `<Select>` (dual-mode), `<IconButton>`, `<Checkbox>`, `<Switch>`, `<Radio>`, `<Combobox>`, `<DateInput>`, `<DateRangeInput>`. i18n expandido: label, avatar, select, combobox, dateInput, dateRangeInput. 5 test files nuevos (Checkbox 16, Switch 15, Combobox 19, DateInput 13, DateRangeInput 7). Total suite: 388 tests ✅. Build limpio. Conflictos documentados en `_notes/s4b-batch-2-conflicts.md`.
 - **Siguiente paso del subproyecto:**
   1. **S5 — Navegación y layouts** (foundational A+B en una conversación). App shell, sidebar collapsable + push, header con breadcrumbs + theme + lang toggle, mobile tab bar.
   2. Después: módulos en orden Tiendas → Órdenes → Entregas (S6 → S7 → S8), cada uno como sesión de módulo con 2 conversaciones (Fase A iterativa + Fase B con Handoff brief).

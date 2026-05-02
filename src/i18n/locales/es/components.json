@@ -16,6 +16,45 @@
       "label": "Cargando"
     }
   },
+  "label": {
+    "optional": "opcional"
+  },
+  "avatar": {
+    "fallbackAlt": "Avatar de {name}",
+    "status": {
+      "online": "En línea",
+      "offline": "Desconectado"
+    },
+    "imageLoadError": "No pudimos cargar el avatar"
+  },
+  "select": {
+    "placeholder": {
+      "default": "Elegí una opción",
+      "currency": "Moneda",
+      "country": "País"
+    },
+    "empty": "Sin opciones todavía.",
+    "triggerAria": {
+      "collapsed": "Abrir lista",
+      "expanded": "Cerrar lista"
+    }
+  },
+  "combobox": {
+    "searchPlaceholder": "Buscar…",
+    "noResults": "Sin resultados.",
+    "selected": "{count, plural, one {# seleccionado} other {# seleccionados}}"
+  },
+  "dateInput": {
+    "placeholder": "Elegí una fecha",
+    "clear": "Limpiar fecha"
+  },
+  "dateRangeInput": {
+    "placeholderFrom": "Desde",
+    "placeholderTo": "Hasta",
+    "error": {
+      "toAfterFrom": "La fecha «Hasta» tiene que ser posterior a «Desde»."
+    }
+  },
   "statusChip": {
     "orderStatus": {
       "OPEN": "Abierto",

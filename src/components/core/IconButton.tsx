@@ -1,80 +1,118 @@
 "use client";
 
-import { ButtonHTMLAttributes, MouseEvent, forwardRef } from "react";
-import { cva, VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/styles";
-import { LucideIcon } from "lucide-react";
-import { getPosthogDataAttributes, PosthogTrackingProps } from "@/lib/analytics/posthogDataAttributes";
+import { getPosthogDataAttributes, type PosthogTrackingProps } from "@/lib/analytics/posthogDataAttributes";
+import { Loader2, type LucideIcon } from "lucide-react";
+import { forwardRef, type ButtonHTMLAttributes, type MouseEvent, type ReactNode } from "react";
 
-export const iconButtonVariants = cva(
-  "disabled:pointer-events-none disabled:opacity-50 transition-colors cursor-pointer h-8 w-8 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-  {
-    variants: {
-      variant: {
-        standard:
-          "flex items-center justify-center rounded-md border border-transparent text-foreground hover:bg-muted hover:border-border",
-        outline:
-          "border flex justify-center items-center rounded-lg bg-muted text-foreground border-border hover:bg-surface-2 disabled:text-muted disabled:bg-muted",
-      },
-      size: {
-        sm: "h-9 w-9",
-        md: "h-10 w-10",
-        lg: "h-12 w-12",
-      },
-    },
-    defaultVariants: {
-      variant: "standard",
-      size: "md",
-    },
-  },
-);
+export type IconButtonVariant = "primary" | "secondary" | "ghost" | "destructive-ghost" | "outline" | "standard";
+export type IconButtonSize = "sm" | "md" | "lg";
+export type IconButtonShape = "square" | "pill";
 
-type IconButtonProps = VariantProps<typeof iconButtonVariants> & {
-  Icon: LucideIcon;
-  className?: string;
-  iconClassName?: string;
-} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className" | "children"> &
-  PosthogTrackingProps;
+export type IconButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
+  PosthogTrackingProps & {
+    /** Preferred: ReactNode icon (e.g. <Trash2 size={16} />). */
+    icon?: ReactNode;
+    /** Legacy backward-compat: LucideIcon component reference. Prefer `icon`. */
+    Icon?: LucideIcon;
+    /** Accessible label — always required for icon-only buttons. */
+    "aria-label": string;
+    variant?: IconButtonVariant;
+    size?: IconButtonSize;
+    shape?: IconButtonShape;
+    loading?: boolean;
+    /** Legacy backward-compat: class forwarded to the icon element when using Icon prop. */
+    iconClassName?: string;
+  };
+
+const SIZE_MAP: Record<IconButtonSize, { box: string; iconSize: number }> = {
+  sm: { box: "h-8 w-8", iconSize: 14 },
+  md: { box: "h-10 w-10", iconSize: 16 },
+  lg: { box: "h-12 w-12", iconSize: 20 },
+};
+
+const VARIANT_CLASSES: Record<IconButtonVariant, string> = {
+  primary:
+    "[background:var(--accent)] [color:var(--text-on-accent)] hover:[background:color-mix(in_oklch,var(--accent)_92%,transparent)]",
+  secondary:
+    "bg-[var(--surface)] [border:1px_solid_var(--border)] [color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
+  ghost:
+    "[color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
+  "destructive-ghost":
+    "[color:var(--destructive-chip-text)] hover:[background:color-mix(in_oklch,var(--destructive)_var(--state-hover-mix),transparent)]",
+  // Legacy aliases kept for backward compatibility
+  outline:
+    "bg-[var(--surface)] [border:1px_solid_var(--border)] [color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
+  standard:
+    "[color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
+};
 
 const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
   (
     {
+      icon,
       Icon,
       className,
-      iconClassName,
-      variant,
-      size,
+      iconClassName: _iconClassName,
+      variant = "ghost",
+      size = "md",
+      shape = "square",
+      loading = false,
       disabled,
       onClick,
       type,
       posthogEvent,
       posthogProps,
-      ...buttonProps
+      ...rest
     },
     ref,
   ) => {
-    const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
-      e.stopPropagation();
-      e.preventDefault();
-      onClick?.(e);
-    };
-
-    const iconSizeClassName = size === "lg" ? "h-6 w-6" : size === "sm" ? "h-4 w-4" : "h-5 w-5";
+    const { box, iconSize } = SIZE_MAP[size];
     const posthogDataAttributes = getPosthogDataAttributes(posthogEvent, posthogProps);
+
+    const resolvedIcon = loading ? (
+      <Loader2
+        size={iconSize}
+        aria-hidden="true"
+        className="animate-spin"
+        style={{ animationDuration: "calc(var(--motion-base) * 4)", animationTimingFunction: "linear" }}
+      />
+    ) : icon ? (
+      icon
+    ) : Icon ? (
+      <Icon size={iconSize} aria-hidden="true" />
+    ) : null;
+
+    function handleClick(e: MouseEvent<HTMLButtonElement>) {
+      e.stopPropagation();
+      onClick?.(e);
+    }
 
     return (
       <button
         ref={ref}
         type={type ?? "button"}
-        className={cn("group/icon-button", iconButtonVariants({ variant, size }), className)}
+        disabled={disabled || loading}
+        aria-busy={loading ? "true" : undefined}
         onClick={handleClick}
-        disabled={disabled}
-        {...buttonProps}
+        className={cn(
+          "relative inline-flex flex-shrink-0 cursor-pointer items-center justify-center",
+          "transition-[background-color,color] [transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
+          "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
+          "focus-visible:[outline-color:var(--focus-ring)]",
+          // tap target ≥44×44 on mobile via ::before pseudo
+          "before:absolute before:[inset:-6px] before:content-['']",
+          shape === "square" ? "rounded-[var(--radius-md)]" : "rounded-[var(--radius-pill)]",
+          box,
+          VARIANT_CLASSES[variant],
+          // Disabled — no opacity (ADR 0001 D3)
+          (disabled || loading) && "pointer-events-none [color:var(--text-muted)]",
+          className,
+        )}
+        {...rest}
         {...posthogDataAttributes}
       >
-        <Icon
-          className={cn("text-foreground group-hover/icon-button:text-foreground", iconSizeClassName, iconClassName)}
-        />
+        {resolvedIcon}
       </button>
     );
   },

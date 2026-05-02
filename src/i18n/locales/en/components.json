@@ -16,6 +16,45 @@
       "label": "Loading"
     }
   },
+  "label": {
+    "optional": "optional"
+  },
+  "avatar": {
+    "fallbackAlt": "Avatar for {name}",
+    "status": {
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "imageLoadError": "Failed to load avatar"
+  },
+  "select": {
+    "placeholder": {
+      "default": "Choose an option",
+      "currency": "Currency",
+      "country": "Country"
+    },
+    "empty": "No options yet.",
+    "triggerAria": {
+      "collapsed": "Open list",
+      "expanded": "Close list"
+    }
+  },
+  "combobox": {
+    "searchPlaceholder": "Search…",
+    "noResults": "No results.",
+    "selected": "{count, plural, one {# selected} other {# selected}}"
+  },
+  "dateInput": {
+    "placeholder": "Choose a date",
+    "clear": "Clear date"
+  },
+  "dateRangeInput": {
+    "placeholderFrom": "From",
+    "placeholderTo": "To",
+    "error": {
+      "toAfterFrom": "\"To\" date must come after \"From\"."
+    }
+  },
   "statusChip": {
     "orderStatus": {
       "OPEN": "Open",
