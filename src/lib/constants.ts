@@ -1,7 +1,7 @@
 export const APP_NAME = "PandaTrack";
 export const EMAIL_FROM_NAME = APP_NAME;
 
-export const THEME_STORAGE_KEY = "theme";
+export const THEME_STORAGE_KEY = "pandatrack-theme";
 
 /** Local storage key for private app sidebar expanded/collapsed preference. */
 export const APP_SHELL_SIDEBAR_STORAGE_KEY = "appShellSidebarExpanded";
