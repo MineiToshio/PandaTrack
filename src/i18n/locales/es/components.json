@@ -1,0 +1,47 @@
+{
+  "button": {
+    "loading": {
+      "label": "Cargando"
+    },
+    "commonLabels": {
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "delete": "Eliminar",
+      "retry": "Dale otra vez"
+    }
+  },
+  "input": {
+    "loading": {
+      "label": "Cargando"
+    }
+  },
+  "statusChip": {
+    "orderStatus": {
+      "OPEN": "Abierto",
+      "PARTIALLY_IN_TRANSIT": "Parcialmente en camino",
+      "IN_TRANSIT": "En camino",
+      "PARTIALLY_DELIVERED": "Llegó parcialmente",
+      "COMPLETED": "Completo",
+      "CANCELLED": "Cancelado"
+    },
+    "deliveryStatus": {
+      "IN_TRANSIT": "En camino",
+      "DELIVERED": "Llegó",
+      "CANCELLED": "Cancelada",
+      "overdue": "Atrasada {days, plural, one {# día} other {# días}}"
+    },
+    "itemDeliveryState": {
+      "NONE": "Pendiente en tienda",
+      "ARRIVED_AT_STORE": "Listo en tienda",
+      "IN_TRANSIT": "En camino",
+      "DELIVERED": "Entregado"
+    },
+    "derived": {
+      "paid": "Pagado",
+      "partial": "{pct}% pagado",
+      "unpaid": "Sin pagar",
+      "overdue": "Atrasado {days, plural, one {# día} other {# días}}"
+    }
+  }
+}

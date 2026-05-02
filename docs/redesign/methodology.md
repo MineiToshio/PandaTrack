@@ -180,6 +180,29 @@ Estas reglas aplican a **todas las sesiones de implementación (Fase B)** y debe
 
 3. **Theme toggle (light/dark) sí está activo.** Esa parte sí se implementa: `data-theme`, `setTheme/getTheme`, persistencia en `localStorage["pandatrack-theme"]`, inferencia inicial de `prefers-color-scheme`. Solo light y dark, sin `system` (ADR 0003 D2).
 
+## 6.ter Workflow obligatorio de cursor rules (cross-sesión)
+
+Cada sesión de implementación (Fase B) **debe** seguir el workflow definido en `docs/tooling/cursor/rules.md` antes de tocar código:
+
+1. Leer `docs/tooling/cursor/rules.md` (índice operacional).
+2. Identificar las reglas que aplican al alcance de la sesión:
+   - **Always-read baseline** (siempre): `coding-standards.mdc`, `english-code-only.mdc`, `validation-checklist.mdc`, `theme-light-dark.mdc`, `testing-strategy.mdc`, `docs-and-standards.mdc`.
+   - **Scenario-based** según lo que toque la sesión (ver tabla §"Scenario-based rules" del índice).
+3. Leer cada `.cursor/rules/*.mdc` identificada.
+4. Listar en chat (antes de implementar) las reglas leídas y cómo se van a aplicar.
+5. Tratar las reglas como **constraints inviolables**, no sugerencias.
+6. Re-chequear si el alcance cambia durante la sesión (ej. UI + backend, implementación + docs).
+
+Si una regla no está en el índice pero la sesión la necesita, el agente la propone para sumar al índice como parte del cierre.
+
+**El coordinador embebe este workflow como Paso 0.5 obligatorio en cada prompt de Fase B.** El agente no avanza a implementación hasta que listó las reglas en chat.
+
+**Reglas de referencia adicionales** (no son `.mdc` pero son fuente de verdad):
+
+- `docs/development/file-organization.md` — qué subfolder usar.
+- `docs/design/README.md` y archivos en `docs/design/` — sistema de diseño actual (queda deprecated cuando S13 cierre, pero hasta entonces sigue vigente para cosas no cubiertas por `docs/redesign/`).
+- `docs/product/glossary.md` — terminología canónica ES↔EN.
+
 ## 7. Regla dura: funcionalidades intocables
 
 **Cambios visuales / de patrón / de orden / de control (input ↔ select)** → el agente los aplica en la propuesta directamente, los justifica.
