@@ -334,6 +334,48 @@ Si una regla no está en el índice pero la sesión la necesita, el agente la pr
 
 Cualquier sesión de módulo (S6, S7, S8, S10) debe leer el FRD/Blueprint/Work Order correspondiente antes de proponer y debe listar explícitamente las funcionalidades preservadas en el doc.
 
+### 7.alpha Modificaciones fuera de `docs/redesign/` requieren flag previo
+
+**Contexto.** Durante S6 Fase A, el agente modificó dos archivos fuera del subproyecto sin flaggearlo: `.cursor/rules/icons.mdc` (refuerzo de regla, aprobado post-facto) y `docs/product/.../frd-04-store-domain.md` (4 requirements + 2 reglas de negocio nuevos, aprobados post-facto vía ADR 0009). Aunque ambos casos terminaron bien, el patrón es riesgoso porque mete cambios cross-cutting silenciosos.
+
+**Regla.** Cualquier agente del subproyecto que necesite modificar archivos fuera de `docs/redesign/` debe **flaggear el cambio en chat antes de aplicarlo y esperar aprobación humana explícita**.
+
+Aplica a todo lo siguiente:
+
+- `.cursor/rules/*.mdc` — reglas del repo cross-agent.
+- `docs/product/**` — FRDs, Blueprints, Work Orders, glossary.
+- `docs/development/**`, `docs/tooling/**` — docs de proceso.
+- `src/**` durante **Fase A** — esta fase es solo docs / HTML, no código.
+- `prisma/**` — schema y migrations.
+- `package.json`, configuración del repo.
+- Cualquier otro archivo del repo no contenido en `docs/redesign/`.
+
+**Excepción única:** durante **Fase B de implementación**, el agente puede modificar `src/`, `prisma/`, locales y archivos relacionados con el alcance acordado en el handoff brief, sin flag adicional. Eso es lo que la sesión está autorizada a hacer.
+
+**Formato del flag obligatorio antes de aplicar:**
+
+```
+═══════════════════════════════════════
+FLAG — CAMBIO FUERA DE docs/redesign/
+
+Archivo a modificar: <path>
+Tipo de cambio: <descripción>
+Motivación: <por qué surge desde esta sesión>
+Riesgo: <qué impacta>
+Alternativa si lo descartás: <qué hago en su lugar>
+
+¿Aplico / lo descarto / lo postergo a un ADR formal?
+═══════════════════════════════════════
+```
+
+**Si el agente aplica un cambio fuera de `docs/redesign/` sin flag previo**, el coordinador (o el humano) debe:
+
+1. Detectarlo (review del `git status` antes de cada commit).
+2. Decidir aceptar / revertir / formalizar con ADR retroactivo.
+3. Anotar en `_notes/cross-cutting-changes.md` como "violación procesal" para tracking.
+
+Esto NO es para penalizar al agente — es para mantener trazabilidad cuando el subproyecto toca cosas externas.
+
 ## 7.bis Paralelización para acelerar tiempo calendario
 
 El subproyecto es secuencial por dependencias reales (sin tokens no hay atoms, sin atoms no hay layouts, sin layouts no hay módulos). Pero hay una oportunidad limpia para acelerar tiempo calendario sin generar inconsistencias:
@@ -361,6 +403,58 @@ Cada vez que se cierre una sesión y se vaya a iniciar la siguiente, el coordina
 - Qué sigue (sesión próxima + tipo + modelo recomendado).
 - Qué falta hasta cerrar el subproyecto (sesiones pendientes con orden).
 - Si hay paralelización posible activa (qué Fase A se puede iterar en otra conversación).
+
+## 7.quater Cambios cross-cutting durante una sesión (cross-sesión)
+
+Durante cualquier sesión (módulo o foundational) el agente puede detectar que algo del subproyecto **fuera de su scope actual** necesita cambiar. Ejemplo: estás en S6 implementando Tiendas y descubrís que el `<Modal>` necesita más variantes, o que el sidebar necesita una sección nueva.
+
+### Cuatro tipos de cambios
+
+| Tipo                                          | Ejemplo                                                     | Procedimiento                                                                           |
+| --------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **1 — Trivial / cosmético**                   | Padding de un chip, color de un border que está mal por 2px | Inline en sesión actual + nota en session log + actualizar spec del componente afectado |
+| **2 — Cambio mayor de componente core**       | API o behavior de Modal, Toast, FilterDrawer, etc.          | ADR + mini-sesión correctiva separada (numerar **M0X** si es del catálogo S4)           |
+| **3 — Cambio del shell / layout**             | Sidebar, Header, MobileTabBar, FAB, Breadcrumbs             | ADR + mini-sesión "S5.1, S5.2..." dedicada                                              |
+| **4 — Cambio de token / sistema visual base** | Valor de token, regla de uso de acento, jerarquía visual    | ADR + mini-sesión "S3-B.1, S3-B.2..." dedicada                                          |
+
+### Proceso operativo (los 4 pasos)
+
+```
+1. PAUSAR la sesión actual mentalmente.
+
+2. CLASIFICAR el cambio (tipos 1/2/3/4).
+
+3. DECIDIR urgencia:
+   ¿Bloquea la sesión actual?  → Ejecutar mini-sesión AHORA (paralela
+                                  o secuencial según ancho de banda)
+   ¿No bloquea?                → Registrar en backlog, ejecutar después
+
+4. EJECUTAR según tipo y REGISTRAR en `_notes/cross-cutting-changes.md`.
+```
+
+### Numeración de mini-sesiones correctivas
+
+Para preservar orden cronológico sin romper la numeración principal:
+
+- **M0X** — Mejoras al catálogo de componentes (M01 Modal, M02 Toast, etc.).
+- **SN.X** — Revisiones de una sesión previa (S5.1 = primera revisión del shell, S3-B.1 = primera revisión de tokens, etc.).
+
+Cada mini-sesión tiene su session log en `sessions/M0X-<nombre>.md` o `sessions/0N.X-<nombre>.md`.
+
+### Registro obligatorio
+
+Toda mini-sesión correctiva tipo 2/3/4 se registra en `_notes/cross-cutting-changes.md` con:
+
+- ID (M0X o SN.X).
+- Fecha.
+- Descripción.
+- Tipo (1/2/3/4).
+- ADR asociado.
+- Status (`🟡 abierto` / `✅ aplicado`).
+
+### Trigger de paralelización
+
+Las mini-sesiones correctivas son ideales para correr en paralelo a una sesión principal en curso (Fase A iterativa de un módulo, mientras el agente espera feedback humano). Ver §7.bis.
 
 ## 8. Coordinación
 

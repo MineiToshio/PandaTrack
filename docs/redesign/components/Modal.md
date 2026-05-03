@@ -2,12 +2,13 @@
 title: Modal
 tier: 3
 status: spec — no implementado
-last_updated: 2026-05-02
+last_updated: 2026-05-03
 session: 04-components
 adrs:
   - ADR 0001 D4 (toast neutral-undo cohabita por encima — `--z-toast` 90 > `--z-modal` 80)
   - ADR 0001 D6 (delete pedido entero requiere confirm modal previo)
   - ADR 0006 (icon+label contract — los CTAs siempre llevan label, ningún CTA color-only)
+  - ADR 0008 (Modal Enhancement — Semantic Depth: icon-circle tonal, backdrop blur, spring animation, radius 20px)
 ---
 
 # Modal
@@ -37,18 +38,38 @@ type ModalAction = {
   loading?: boolean;
 };
 
+type ModalTone = "default" | "destructive" | "warning" | "info";
+
 type ModalProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Título visible — obligatorio. Aria-labelledby lo apunta. */
   title: string;
-  /** Subtexto opcional debajo del título en `--text-secondary`. */
-  description?: string;
+  /**
+   * Texto corto debajo del título en `--text-secondary` (ADR 0008).
+   * Se muestra en el header, en la misma zona del icon-circle.
+   * Antes llamado `description` — alias deprecado, eliminar en S12.
+   */
+  subtitle?: string;
+  /**
+   * Ícono de Lucide a mostrar en el header dentro del icon-circle 48px (ADR 0008).
+   * Requerido cuando se usa `tone`. Sin `icon`, el header muestra solo título + close.
+   */
+  icon?: React.ComponentType<{ className?: string }>;
+  /**
+   * Tono semántico del icon-circle (ADR 0008). Determina fondo + color del ícono.
+   * - `"destructive"` → rojo (confirm de delete, acciones irreversibles)
+   * - `"warning"`     → ámbar (reportes, alertas, discrepancias)
+   * - `"info"`        → azul (informativos, estados, ayuda)
+   * - `"default"`     → accent (forms, listas, acciones neutras)
+   * Default: `"default"`.
+   */
+  tone?: ModalTone;
   /** Cuerpo del modal. */
   children: ReactNode;
   /**
    * Tamaño:
-   *   `md` → `--modal-max-w` (512px)
+   *   `md` → 460px (ADR 0008 — antes 512px)
    *   `lg` → `--modal-max-w-lg` (768px)
    * Default `md`.
    */
@@ -72,42 +93,46 @@ Reglas TS:
 
 ## Variants / Sizes
 
-| Variant (`size`) | Uso                                                                                                              | Tokens consumidos                                                                                       |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `md` (default)   | Confirm de delete/cancel/reactivate, modal de discrepancia, "Descartar cambios"                                  | `--surface-elevated`, `--radius-xl`, `--elevation-3`, `--modal-max-w` (512px)                            |
-| `lg`             | Forms multi-step embebidos, configuraciones extensas con preview lado a lado                                     | mismos + `--modal-max-w-lg` (768px)                                                                     |
+| Variant (`size`) | Uso                                                                             | Tokens consumidos                                                                   |
+| ---------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `md` (default)   | Confirm de delete/cancel/reactivate, modal de discrepancia, "Descartar cambios" | `--surface-elevated`, `--radius-2xl` (20px), `--modal-max-w` (460px) — ver ADR 0008 |
+| `lg`             | Forms multi-step embebidos, configuraciones extensas con preview lado a lado    | mismos + `--modal-max-w-lg` (768px)                                                 |
 
 En `< --breakpoint-md`, ambos sizes degradan a `<Sheet size="md">` (o `lg` si el contenido lo justifica — el componente lo decide por size prop).
 
 ## Estados visuales
 
+> **ADR 0008 (2026-05-03):** estructura visual actualizada. Overlay unificado con `backdrop-filter: blur(8px)`. Header con icon-circle 48px tonal. Footer con `border-top`. `border-radius: 20px`. Spring animation. Ver `decisions/0008-modal-enhancement.md`.
+
 ### Desktop (`≥ --breakpoint-md`)
 
-| Estado     | Receta CSS (light)                                                                                                                                                                                                                                                                                                                                            | Receta CSS (dark) | Notas                                                                                                                                                                          |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Backdrop   | `position: fixed; inset: 0; background: var(--surface-overlay); z-index: var(--z-modal-backdrop);`                                                                                                                                                                                                                                                            | mismo             | `--z-modal-backdrop` = 70. Fade-in con `--motion-base` `--ease-emphasis`. Click dismiss si `dismissible`.                                                                       |
-| Container  | `position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--surface-elevated); border-radius: var(--radius-xl); box-shadow: var(--elevation-3); z-index: var(--z-modal); max-width: <size>; width: calc(100vw - var(--space-8)); max-height: calc(100vh - var(--space-8)); display: flex; flex-direction: column;`            | mismo             | Centrado absoluto. Tope de ancho según size. Tope de alto evita que el modal se salga del viewport.                                                                            |
-| Header     | `display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-6) var(--space-6) var(--space-4); border-bottom: 1px solid var(--border);`                                                                                                                                                                                                  | mismo             | `<h2>` consume `--text-subtitle` + `--text-primary`. Description en `--text-body` + `--text-secondary`. Close `<IconButton>` `x` en esquina top-right si `dismissible`.       |
-| Body       | `flex: 1; overflow-y: auto; padding: var(--space-5) var(--space-6);`                                                                                                                                                                                                                                                                                          | mismo             | Scroll independiente cuando el contenido excede `max-height`.                                                                                                                  |
-| Footer     | `display: flex; justify-content: flex-end; gap: var(--space-2); padding: var(--space-4) var(--space-6) var(--space-6); border-top: 1px solid var(--border); background: var(--surface);`                                                                                                                                                                       | mismo             | Footer sticky por estructura. Slight tinte distinto (`--surface`) para diferenciarse del body. Tertiary a la izquierda extrema (ver Edge case #1).                              |
-| Enter      | `transform: translate(-50%, -50%) scale(0.96); opacity: 0;` → `scale(1); opacity: 1;` con `--motion-base` `--ease-out-expressive`. Backdrop fade `0 → 1`.                                                                                                                                                                                                       | mismo             | Scale + opacity simultáneo — sensación de "aterrizaje".                                                                                                                       |
-| Exit       | `scale(1) opacity(1)` → `scale(0.96) opacity(0)` con `--motion-fast` `--ease-emphasis`. Backdrop fade `1 → 0`.                                                                                                                                                                                                                                                  | mismo             | Más rápido al salir.                                                                                                                                                            |
-| Scroll-lock | `body { overflow: hidden; padding-right: <scrollbar-width>; }` mientras open                                                                                                                                                                                                                                                                                  | mismo             | Evita layout shift por desaparición de scrollbar.                                                                                                                              |
+| Estado      | Receta CSS (light)                                                                                                                                                                                                                                                                                                         | Receta CSS (dark)                                                                                                                                              | Notas                                                                                                                                                                                               |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Overlay     | `position: fixed; inset: 0; z-index: var(--z-modal); display: flex; align-items: center; justify-content: center; padding: 16px; background: oklch(12% 0.010 50 / 0.35); backdrop-filter: blur(8px);`                                                                                                                      | `background: oklch(4% 0.015 265 / 0.62); backdrop-filter: blur(8px);` (resto igual)                                                                            | Overlay único = backdrop + contenedor. `--z-modal` = 80. Click en overlay dismiss si `dismissible`. `backdrop-filter` requiere `-webkit-backdrop-filter` alias en Safari.                           |
+| Card        | `background: var(--surface-elevated); border: 1px solid var(--border-strong); border-radius: 20px; overflow: hidden; width: 100%; max-width: <size>; max-height: calc(100vh - 80px); display: flex; flex-direction: column;` + `box-shadow: 0 14px 28px oklch(20% 0.020 50 / 0.10), 0 2px 6px oklch(20% 0.020 50 / 0.06);` | `box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 1px var(--border-strong), 0 0 24px color-mix(in oklch, var(--accent) 5%, transparent);` (resto igual) | `border-radius: 20px` = `--radius-2xl`. Card es hijo directo del overlay flex — se centra por el flex del overlay, no por `transform: translate(-50%,-50%)`.                                        |
+| Header      | `display: flex; align-items: flex-start; gap: 16px; padding: 24px 24px 0;`                                                                                                                                                                                                                                                 | mismo                                                                                                                                                          | Fila: [icon-circle 48px] + [header-text: [row: `<h2>` + close] + [`<p subtitle>`]]. Sin `border-bottom` — la separación visual la da el padding generoso.                                           |
+| Icon circle | `width: 48px; height: 48px; border-radius: 24px; display: flex; align-items: center; justify-content: center;` + tone background (ver tabla tones)                                                                                                                                                                         | mismo (los tones ya incluyen `var(--surface-elevated)` en el mix, funciona en dark)                                                                            | Ícono interior: 20px, `stroke-width: 1.75`. Presente solo cuando `icon` prop está definida. Sin `icon` → header vuelve a layout simple [title + close].                                             |
+| Tones       | `tone-destructive`: `background: color-mix(in oklch, var(--destructive) 14%, var(--surface-elevated)); color: var(--destructive);` / `tone-warning`: `…var(--warning)…` / `tone-info`: `…var(--info)…` / `tone-default`: `…var(--accent)…`                                                                                 | mismo                                                                                                                                                          | El 14% de mezcla da un fondo tonal suave. ADR 0006 cumplido: el ícono lleva siempre `title` como label de a11y + el texto del header actúa como label visible.                                      |
+| Body        | `flex: 1; overflow-y: auto; padding: 16px 24px 4px;`                                                                                                                                                                                                                                                                       | mismo                                                                                                                                                          | Scroll independiente cuando el contenido excede `max-height`.                                                                                                                                       |
+| Footer      | `display: flex; justify-content: flex-end; gap: 8px; padding: 12px 24px 20px; border-top: 1px solid var(--border);`                                                                                                                                                                                                        | mismo                                                                                                                                                          | Sin `background: var(--surface)` diferencial — el footer usa el mismo `--surface-elevated` de la card. El divider `border-top` es la separación visual. Tertiary a la izquierda (ver Edge case #1). |
+| Enter card  | `opacity: 0; transform: scale(0.96);` → `opacity: 1; transform: scale(1);` con `animation: modal-spring 280ms linear(0, 0.5, 0.85, 0.97, 1) both`                                                                                                                                                                          | mismo                                                                                                                                                          | Spring sintético — equivale a `--ease-out-expressive` con peso de aterrizaje. Overlay: `opacity: 0 → 1` con `200ms cubic-bezier(0.2, 0, 0, 1)`.                                                     |
+| Exit card   | `opacity: 1; transform: scale(1);` → `opacity: 0; transform: scale(0.96);` con `--motion-fast` `--ease-emphasis`                                                                                                                                                                                                           | mismo                                                                                                                                                          | Más rápido al salir. Overlay: `opacity: 1 → 0`.                                                                                                                                                     |
+| Scroll-lock | `body { overflow: hidden; padding-right: <scrollbar-width>; }` mientras open                                                                                                                                                                                                                                               | mismo                                                                                                                                                          | Evita layout shift por desaparición de scrollbar.                                                                                                                                                   |
 
 ### Mobile (`< --breakpoint-md`) — fallback a `<Sheet>`
 
-El componente compose `<Sheet size="md">` (o `lg` si el modal está en `lg`). Drag handle visible, slide-up desde abajo, mismo backdrop, mismos handlers. El layout de header/body/footer del modal se reusa dentro del sheet. Footer queda sticky al fondo del sheet.
+El componente compose `<Sheet size="md">` (o `lg` si el modal está en `lg`). Drag handle visible, slide-up desde abajo, mismo overlay con `backdrop-filter: blur(8px)` (Sheet también usa blur — ADR 0008 extendido a mobile), mismos handlers. El layout de header/body/footer del modal se reusa dentro del sheet. Footer queda sticky al fondo del sheet.
 
 ## Mobile vs desktop
 
-| Aspecto              | `< --breakpoint-md` (mobile)                                                              | `≥ --breakpoint-md` (desktop)                                                                       |
-| -------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Forma                | Bottom sheet (composición con `<Sheet>`)                                                  | Modal centered absoluto                                                                             |
-| Animación            | Slide-up vertical (`<Sheet>`)                                                             | Scale 0.96 → 1 + fade                                                                               |
-| Drag-to-dismiss      | Sí (heredado de `<Sheet>`)                                                                | No — solo Esc, backdrop click, close button                                                          |
-| Padding interno      | `--space-5` body, `--space-4` `--space-5` footer                                          | `--space-5` `--space-6` body, `--space-4` `--space-6` footer                                        |
-| Tope de ancho        | `100vw`                                                                                   | `var(--modal-max-w)` (md) o `var(--modal-max-w-lg)` (lg)                                            |
-| Footer layout        | Stack vertical `fullWidth` botones, primary arriba                                        | Side-by-side, primary a la derecha extrema                                                          |
+| Aspecto         | `< --breakpoint-md` (mobile)                       | `≥ --breakpoint-md` (desktop)                                |
+| --------------- | -------------------------------------------------- | ------------------------------------------------------------ |
+| Forma           | Bottom sheet (composición con `<Sheet>`)           | Modal centered absoluto                                      |
+| Animación       | Slide-up vertical (`<Sheet>`)                      | Scale 0.96 → 1 + fade                                        |
+| Drag-to-dismiss | Sí (heredado de `<Sheet>`)                         | No — solo Esc, backdrop click, close button                  |
+| Padding interno | `--space-5` body, `--space-4` `--space-5` footer   | `--space-5` `--space-6` body, `--space-4` `--space-6` footer |
+| Tope de ancho   | `100vw`                                            | `var(--modal-max-w)` (md) o `var(--modal-max-w-lg)` (lg)     |
+| Footer layout   | Stack vertical `fullWidth` botones, primary arriba | Side-by-side, primary a la derecha extrema                   |
 
 ## Accesibilidad
 
@@ -127,32 +152,32 @@ El componente compose `<Sheet size="md">` (o `lg` si el modal está en `lg`). Dr
 
 ## Motion
 
-| Qué se anima        | Token de duración                            | Token de easing            | Notas                                                                                                                |
-| ------------------- | -------------------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Enter container     | `--motion-base` (280ms)                      | `--ease-out-expressive`    | Scale 0.96 → 1 + opacity 0 → 1 (desktop). Slide vertical en mobile (heredado de `<Sheet>`).                            |
-| Exit container      | `--motion-fast` (150ms)                      | `--ease-emphasis`          | Scale 1 → 0.96 + opacity 1 → 0.                                                                                      |
-| Backdrop fade       | `--motion-base` enter / `--motion-fast` exit | `--ease-emphasis`          | `opacity 0 ↔ 1`.                                                                                                     |
-| `prefers-reduced-motion` | `--motion-fast`                         | `--ease-emphasis`          | Sin scale, sin slide. Solo opacity.                                                                                  |
+| Qué se anima             | Token de duración                            | Token de easing         | Notas                                                                                       |
+| ------------------------ | -------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------- |
+| Enter container          | `--motion-base` (280ms)                      | `--ease-out-expressive` | Scale 0.96 → 1 + opacity 0 → 1 (desktop). Slide vertical en mobile (heredado de `<Sheet>`). |
+| Exit container           | `--motion-fast` (150ms)                      | `--ease-emphasis`       | Scale 1 → 0.96 + opacity 1 → 0.                                                             |
+| Backdrop fade            | `--motion-base` enter / `--motion-fast` exit | `--ease-emphasis`       | `opacity 0 ↔ 1`.                                                                            |
+| `prefers-reduced-motion` | `--motion-fast`                              | `--ease-emphasis`       | Sin scale, sin slide. Solo opacity.                                                         |
 
 ## Copy default + i18n
 
-| Clave i18n sugerida                                | Valor ES (voice glossary aplicado)                            |
-| -------------------------------------------------- | ------------------------------------------------------------- |
-| `components.modal.close`                           | "Cerrar"                                                      |
-| `components.modal.discrepancy.title`               | "Tu suma no cuadra con el total. ¿Cuál dejamos?"              |
-| `components.modal.discrepancy.summedFromItems`     | "Tu suma"                                                     |
-| `components.modal.discrepancy.enteredTotal`        | "Lo que ingresaste"                                           |
-| `components.modal.discrepancy.useEntered`          | "Usar ingresado"                                              |
-| `components.modal.discrepancy.useSummed`           | "Usar calculado"                                              |
-| `components.modal.discrepancy.back`                | "Volver"                                                      |
-| `components.modal.confirmDelete.title`             | "¿Borrar este pedido?"                                        |
-| `components.modal.confirmDelete.description`       | "No se puede deshacer."                                       |
-| `components.modal.confirmDelete.cta`               | "Eliminar"                                                    |
-| `components.modal.confirmDelete.cancel`            | "Cancelar"                                                    |
-| `components.modal.discardChanges.title`            | "¿Descartar cambios?"                                         |
-| `components.modal.discardChanges.description`      | "Lo que escribiste se va."                                    |
-| `components.modal.discardChanges.cta`              | "Descartar"                                                   |
-| `components.modal.discardChanges.cancel`           | "Volver"                                                      |
+| Clave i18n sugerida                            | Valor ES (voice glossary aplicado)               |
+| ---------------------------------------------- | ------------------------------------------------ |
+| `components.modal.close`                       | "Cerrar"                                         |
+| `components.modal.discrepancy.title`           | "Tu suma no cuadra con el total. ¿Cuál dejamos?" |
+| `components.modal.discrepancy.summedFromItems` | "Tu suma"                                        |
+| `components.modal.discrepancy.enteredTotal`    | "Lo que ingresaste"                              |
+| `components.modal.discrepancy.useEntered`      | "Usar ingresado"                                 |
+| `components.modal.discrepancy.useSummed`       | "Usar calculado"                                 |
+| `components.modal.discrepancy.back`            | "Volver"                                         |
+| `components.modal.confirmDelete.title`         | "¿Borrar este pedido?"                           |
+| `components.modal.confirmDelete.description`   | "No se puede deshacer."                          |
+| `components.modal.confirmDelete.cta`           | "Eliminar"                                       |
+| `components.modal.confirmDelete.cancel`        | "Cancelar"                                       |
+| `components.modal.discardChanges.title`        | "¿Descartar cambios?"                            |
+| `components.modal.discardChanges.description`  | "Lo que escribiste se va."                       |
+| `components.modal.discardChanges.cta`          | "Descartar"                                      |
+| `components.modal.discardChanges.cancel`       | "Volver"                                         |
 
 EN se deja para S12.
 
@@ -180,7 +205,7 @@ EN se deja para S12.
 1. **Modal sin `title`**: rompe a11y (no hay `aria-labelledby`). Obligatorio por TS.
 2. **Modal con CTA destructive sin confirm previo**: el modal mismo es el confirm — no debería abrir otro modal anidado. Si necesitás doble confirm, replantear UX.
 3. **Modal `lg` con poco contenido**: rompe la jerarquía visual. Usar `md` por default; `lg` solo si el contenido lo justifica (preview lado a lado, lista larga).
-4. **Backdrop sin `--surface-overlay`**: rompe la consistencia. El token tiene alpha calibrada cross-mode.
+4. **Overlay con alpha arbitraria**: no usar valores de opacidad random para el backdrop. Usar los oklch literales calibrados de ADR 0008: `oklch(12% 0.010 50 / 0.35)` light, `oklch(4% 0.015 265 / 0.62)` dark. `--surface-overlay` fue eliminado en M01 (ver implicancias ADR 0008).
 5. **Esc deshabilitado sin razón crítica**: viola WCAG 2.1.2. Solo `dismissible: false` durante mutaciones en flight con confirm explícito.
 6. **Focus trap sin return focus**: rompe la continuidad keyboard.
 7. **Modales anidados (modal sobre modal)**: prohibido. Si el flujo lo necesita, usar wizard interno o replantear.
@@ -242,23 +267,24 @@ EN se deja para S12.
 
 ## Tokens consumidos
 
-- `--surface`, `--surface-elevated`, `--surface-overlay`
-- `--text-primary`, `--text-secondary`
-- `--border`
-- `--radius-xl`
-- `--elevation-3`
-- `--modal-max-w`, `--modal-max-w-lg`
-- `--space-1`, `--space-2`, `--space-4`, `--space-5`, `--space-6`, `--space-8`
+- `--surface-elevated`, `--border-strong`, `--border`
+- `--text-primary`, `--text-secondary`, `--text-muted`
+- `--radius-2xl` (20px — confirmar en tokens.md al inicio de S12)
+- `--modal-max-w` (460px para `md`), `--modal-max-w-lg` (768px para `lg`)
+- `--accent`, `--destructive`, `--warning`, `--info` (tones del icon-circle)
 - `--motion-fast`, `--motion-base`
 - `--ease-emphasis`, `--ease-out-expressive`
-- `--z-modal`, `--z-modal-backdrop`
-- `--text-subtitle`, `--text-body`
+- `--z-modal` (80)
 - `--breakpoint-md`
+- Valores hardcoded aprobados (ADR 0008): backdrop oklch literales, spring easing `linear(0, 0.5, 0.85, 0.97, 1)`, icon-circle `color-mix` 14%
+
+Tokens **eliminados** vs S4: `--surface-overlay`, `--radius-xl`, `--elevation-3`, `--z-modal-backdrop`, `--space-*` (reemplazados por literales calibrados del demo — se formalizarán en S12).
 
 ## ADRs aplicables
 
-- [ADR 0001 — S2 closure decisions](../decisions/0001-s2-closure-decisions.md): D4 (toast cohabita por encima — el confirm delete dispara toast neutral-undo 8s post-cierre del modal), D6 (irreversibles requieren confirm modal previo).
-- [ADR 0006 — Color blindness icon-label contract](../decisions/0006-color-blindness-icon-label-contract.md): los CTAs siempre llevan label de texto — ningún CTA es color-only.
+- [ADR 0001 — S2 closure decisions](../decisions/0001-s2-closure-decisions.md): D4 (toast cohabita por encima — `--z-toast: 90 > --z-modal: 80`; el confirm delete dispara toast neutral-undo 8s post-cierre del modal), D6 (irreversibles requieren confirm modal previo).
+- [ADR 0006 — Color blindness icon-label contract](../decisions/0006-color-blindness-icon-label-contract.md): los CTAs siempre llevan label de texto — ningún CTA es color-only. El icon-circle del header cumple: el ícono es decorativo (aria-hidden), la semántica la da el `title` del modal.
+- [ADR 0008 — Modal Enhancement · Semantic Depth](../decisions/0008-modal-enhancement.md): overlay unificado con blur, icon-circle 48px tonal, border-radius 20px, footer border-top, spring animation. Referencia visual: secciones `m01-vb-*` del demo HTML.
 
 ## Dependencias
 

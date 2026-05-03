@@ -11,3 +11,5 @@ Use two icon sources depending on the use case:
 - **Simple Icons** (`simple-icons`): Brand icons only (TikTok, Instagram, GitHub, etc.). See [simple-icons](https://github.com/simple-icons/simple-icons).
 
 When rendering a Simple Icon in JSX, use the icon’s `path` inside an `<svg>` with `viewBox="0 0 24 24"` and `fill="currentColor"` so it matches text color.
+
+**No emojis in UI.** Never use emoji characters as UI decoration, status indicators, or mascots in application screens. Use Lucide Icons or Simple Icons for all visual indicators.

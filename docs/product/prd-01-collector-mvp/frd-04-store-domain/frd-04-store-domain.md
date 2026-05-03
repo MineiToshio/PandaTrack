@@ -129,6 +129,8 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - `FR-01-21`: Person stores must not expose logo, public contact channels, or public addresses.
 - `FR-01-22`: Business-store detail payloads must include public contact and address data when present.
 - `FR-01-23`: Person-store detail payloads must omit those fields from the public payload.
+- `FR-04-33`: Person stores must support a `private` visibility flag at creation time. When enabled, the store is visible only to its creator; it does not appear in the public listing, public search results, or any other user's view. Private person stores retain all collector functionality for their creator (orders, deliveries, reviews, notes).
+- `FR-04-34`: The private visibility flag is only available for `PERSON`-type stores. Business stores are always public.
 
 ### Trust and governance
 
@@ -150,6 +152,8 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - `BR-01-05`: Approved stores are public and SEO-indexable.
 - `BR-01-06`: Inactive stores remain publicly viewable but must surface a warning.
 - `BR-01-07`: Review publication does not require a linked order in MVP, and public review sections progressively disclose long review lists in 5-review increments instead of rendering the full list by default.
+- `BR-04-20`: Pending stores support the same user interactions as approved stores — any authenticated user may write reviews, annotate orders, annotate deliveries, save notes, report, or suggest changes on a pending store. The only behavioral difference for pending stores is the moderation disclaimer shown on the detail page and the absence of SEO indexing.
+- `BR-04-21`: Private person stores are excluded from all public listing and search surfaces. They remain accessible via their direct URL only to their creator.
 - `BR-01-08`: Duplicate submit warnings are triggered only for same-country stores at or above the configured similarity threshold.
 - `BR-01-09`: Same-name stores in different countries do not trigger the submit modal.
 - `BR-01-10`: Store creation currently redirects directly to the created detail route after success.
@@ -334,6 +338,10 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
   - `store_duplicate_submit_modal_shown`
   - `store_searched`
   - `store_review_write_clicked`
+
+## Planned Enhancements
+
+- `FR-04-33` / `FR-04-34` (private person stores): The `private` visibility flag for person stores is a confirmed V1 feature. Requires schema field addition (`isPrivate` boolean on `Store`), creation-form UI (toggle shown only when type is `PERSON`), and listing/search exclusion logic. No equivalent flag exists for business stores.
 
 ## Open Questions
 
