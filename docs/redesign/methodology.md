@@ -180,6 +180,129 @@ Estas reglas aplican a **todas las sesiones de implementación (Fase B)** y debe
 
 3. **Theme toggle (light/dark) sí está activo.** Esa parte sí se implementa: `data-theme`, `setTheme/getTheme`, persistencia en `localStorage["pandatrack-theme"]`, inferencia inicial de `prefers-color-scheme`. Solo light y dark, sin `system` (ADR 0003 D2).
 
+## 6.quater El demo HTML como borrador visual base (cross-sesión)
+
+El demo HTML en [`_notes/demo-screens.html`](./_notes/demo-screens.html) es el **borrador visual base** del subproyecto. Cumple un rol específico que se aclara acá para evitar confusiones:
+
+### Qué es el demo
+
+- Un **draft visual completo** de las pantallas críticas, con paletas vivas (Velvet + 4 alternativas), light + dark, responsive.
+- La encarnación visual de la dirección Atelier: densidad, eyebrows mono, accent tints, micro-decoradores, vibe coleccionista cálida pero seria.
+- El estándar mínimo de "personalidad visual" que cualquier implementación debe heredar.
+
+### Qué NO es el demo
+
+- **No es contrato pixel-perfect.** La implementación no tiene que ser idéntica al demo.
+- **No es completo.** El demo deliberadamente omite filtros completos, paginación, estados empty/loading/error, validaciones, datos reales, accesibilidad, edge cases. Todo eso lo agrega la implementación.
+- **No es la única fuente.** El FRD/Blueprint/Work Orders son la fuente funcional; el demo es la fuente visual base.
+
+### Regla vinculante
+
+Cualquier implementación de Fase B (módulo o foundational) cuya pantalla equivalente exista en el demo debe **ser claramente reconocible como descendiente del demo**:
+
+1. **Hereda la vibe visual.** Densidad, paleta aplicada con personalidad, eyebrows mono uppercase, accent tints en avatares e icon-tiles, micro-decoradores, calidez Atelier. **Esto no se negocia.**
+2. **Agrega lo que el demo no muestra.** Filtros, paginación, estados, datos reales, validaciones, accesibilidad, edge cases — toda la sustancia funcional que el demo simplifica.
+3. **Adapta cuando los datos o el flujo lo exigen.** La adaptación se nota como evolución del demo, no como ruptura.
+
+### Prueba cualitativa al cerrar Fase B
+
+Alguien que vio solo el demo y entra a la implementación final debe sentir que entró a **"la versión completa de lo mismo"**, no a una app distinta. Si la respuesta probable es "esto no parece lo del demo" → la Fase B falló y se itera.
+
+### Cómo se aplica en cada prompt de Fase B
+
+- **Paso 0 obligatorio:** abrir y revisar el demo HTML. Identificar qué pantalla(s) del demo corresponden a la sección a implementar.
+- **Plan corto:** explicitar qué elementos de vibe visual del demo se van a heredar (paleta aplicada, densidad, accent tints, eyebrows, micro-decoradores).
+- **Auto-check al cierre:** comparar mentalmente la implementación contra el demo. Si la respuesta a "¿se ve como descendiente del demo?" es no, no cerrar.
+
+### Cuándo el demo no aplica
+
+Pantallas o componentes que el demo no cubre (ej. estados de loading detallados, modales de confirm muy específicos, edge cases de forms) usan los **patrones del demo** (tokens, eyebrows, accent uses, microdetalles) como guía indirecta — no requieren correspondencia 1:1.
+
+## 6.quinquies HTML-first iteration para sesiones de módulo (cross-sesión)
+
+**Contexto.** El primer intento de S6 (Stores) falló parcialmente porque el spec markdown de Fase A no transmitió la vibe visual del demo. Codex implementó "técnicamente correcto pero estéticamente plano". El costo fue alto: una sesión completa de Codex perdida + horas de iteración para revertir.
+
+**Lección.** Iterar visualmente en React es caro (cada iteración cuesta tokens significativos por re-render mental, refactor, validación). Iterar visualmente en HTML extendiendo el demo es barato (tokens chicos, feedback humano inmediato visualmente).
+
+### Regla vinculante para sesiones de módulo (S6, S7, S8, S10)
+
+Cada Fase A de módulo se descompone en cuatro sub-fases:
+
+#### Fase A.0 — Investigación
+
+El agente lee:
+
+- FRD + Blueprint + Work Orders del módulo en `docs/product/`.
+- Implementación actual del módulo en `src/`.
+- ADRs aplicables.
+- Specs de componentes core ya disponibles (`docs/redesign/components/`).
+- Tokens y reglas vivas (`tokens.md`, `methodology.md`).
+
+#### Fase A.1 — Extensión del demo HTML
+
+El agente extiende `docs/redesign/_notes/demo-screens.html` con:
+
+- Las pantallas del módulo (si ya existen en el demo, las refactorea con el nuevo entendimiento del FRD).
+- **Variantes faltantes que el demo original no muestra:**
+  - Filtros expandidos (drawer abierto con secciones reales).
+  - Paginación con datos dummy realistas.
+  - Estados empty / loading / error.
+  - Validaciones inline de forms (success post-blur, error inline).
+  - Edge cases visuales acordados con el FRD.
+- **Datos dummy realistas** (no "Lorem ipsum" — usar nombres de tiendas reales del nicho coleccionista, países, categorías, etc.).
+- Variantes mobile + desktop completas en cada pantalla nueva.
+- Respeta toda la infraestructura del demo: tokens CSS existentes, componentes HTML existentes, paletas, theme toggle.
+
+Al terminar, devuelve al humano: **"demo extendido en `_notes/demo-screens.html`. Abrí el archivo en el browser y revisá las pantallas X, Y, Z. Iterá conmigo hasta aprobación visual."**
+
+#### Fase A.2 — Iteración visual del HTML
+
+El humano abre el HTML, ve las pantallas, decide. Itera con el agente:
+
+- "No me gusta que la card tenga X, cambiala por Y."
+- "Falta mostrar el contador de Z."
+- "El estado empty de esta pantalla se ve frío, agregale la mascota sleeping."
+
+El agente edita `_notes/demo-screens.html` y devuelve "iteración Nº lista, abrí de nuevo y revisá".
+
+**Cero React durante esta sub-fase.** Tokens chicos por iteración (decenas de líneas de HTML+CSS por turno). Feedback humano inmediato y visual.
+
+#### Fase A.3 — Aprobación visual + spec markdown
+
+Cuando el humano dice "aprobado visualmente", el agente:
+
+1. Escribe el spec markdown en `docs/redesign/screens/<screen>.md` describiendo el HTML aprobado (qué + cómo + tokens + componentes consumidos + estados).
+2. Escribe el doc maestro en `docs/redesign/modules/<module>.md` con la lista de funcionalidades preservadas (mapeadas al FRD) + cambios visuales aplicados + cambios de UX propuestos pendientes de aprobación funcional.
+3. Itera el doc maestro con el humano si hay cambios funcionales que aprobar/rechazar (los cambios visuales ya están aprobados — solo quedan los funcionales).
+4. Cuando humano aprueba todo, escribe la sección **"Handoff a Fase B"** en el doc maestro.
+5. Cierra Fase A.
+
+El spec markdown queda **subordinado al HTML aprobado** — el HTML es la fuente de verdad visual, el markdown es la fuente de verdad funcional + el contrato técnico de implementación.
+
+#### Fase B — Implementación React
+
+El agente abre el HTML aprobado **en cada paso de implementación** como referencia visual concreta + el handoff brief como contrato funcional. Implementa React. Cero ambigüedad visual porque el HTML es la verdad pixel-perfect-ish (no exacto, pero la vibe es vinculante).
+
+### Trade-off económico
+
+| Modelo         | Costo si sale bien   | Costo si falla                                   |
+| -------------- | -------------------- | ------------------------------------------------ |
+| Sin HTML-first | X                    | 2X-3X (rehacer React caro)                       |
+| Con HTML-first | X + 30% (HTML extra) | X + 30% (HTML aprobado, React siempre sale bien) |
+
+El 30% del HTML-first se paga siempre. El 100%+ del re-trabajo React se paga solo si falla. Empíricamente con S6 ya falló una vez, entonces el HTML-first ya pagó su costo.
+
+### Cuándo NO aplica
+
+- **Sesiones foundational chicas** (S9 estados transversales, S11 motion choreography): el demo HTML existente cubre los patrones; extenderlo agrega poco. Estas sesiones pueden saltar Fase A.1+A.2 y trabajar directo con specs markdown + el demo existente como referencia.
+- **S12 (audit final)** y **S13 (reemplazo `docs/design/`)**: meta-trabajo, no requiere visual.
+
+### Convención del HTML
+
+El `_notes/demo-screens.html` es **el único** HTML del subproyecto. No se crean HTMLs separados. Cuando un módulo extiende el demo, las pantallas nuevas se suman al mismo archivo siguiendo la convención existente (sections con `id="<screen>"`, navegación lateral, paletas, theme toggle reusados).
+
+Cualquier convención del demo está documentada en `docs/redesign/_notes/demo-screens-readme.md` — el agente debe respetarla.
+
 ## 6.ter Workflow obligatorio de cursor rules (cross-sesión)
 
 Cada sesión de implementación (Fase B) **debe** seguir el workflow definido en `docs/tooling/cursor/rules.md` antes de tocar código:
