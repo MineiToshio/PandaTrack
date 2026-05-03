@@ -81,6 +81,7 @@
   --container-max-w-prose: 42rem;
   --fab-size: 3.5rem;
   --fab-offset: 1rem;
+  --mobile-tab-bar-h: 4rem;
 
   /* Radius */
   --radius-xs: 0.25rem;
@@ -106,6 +107,7 @@
   --z-sidebar: 20;
   --z-header: 30;
   --z-mascot: 35;
+  --z-fab: 38;
   --z-popover: 40;
   --z-drawer: 50;
   --z-sheet: 60;
@@ -523,6 +525,26 @@
 .order-item-animate {
   opacity: 0;
   animation: order-item-in 0.3s ease forwards;
+}
+
+@keyframes progress-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.animate-progress-indeterminate {
+  animation: progress-indeterminate var(--motion-slow) var(--ease-emphasis) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-progress-indeterminate {
+    animation: none;
+    width: 50% !important;
+  }
 }
 
 /* ───────────────────────────────────────────────────────────

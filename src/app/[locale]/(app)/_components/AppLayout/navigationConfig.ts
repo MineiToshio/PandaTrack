@@ -43,6 +43,10 @@ export function getPrivateAppNavItems(): NavItem[] {
   return NAV_ROUTE_ITEMS.filter((item) => PRIMARY_NAV_ITEM_IDS.includes(item.id));
 }
 
+export function getAllNavItems(): NavItem[] {
+  return NAV_ROUTE_ITEMS;
+}
+
 /**
  * Returns the path segment (single segment) for a private app pathname like "/es/dashboard" or "/en/stores".
  * Used to highlight active nav and to derive page title. Returns undefined if pathname does not match a known segment.

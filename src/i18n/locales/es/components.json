@@ -55,6 +55,26 @@
       "toAfterFrom": "La fecha «Hasta» tiene que ser posterior a «Desde»."
     }
   },
+  "pagination": {
+    "ariaLabel": "Paginación",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "page": "Página {page}",
+    "loadMore": "Cargar más",
+    "loading": "Cargando",
+    "loadedOf": "{loaded} de {total}"
+  },
+  "mascotBubble": {
+    "contextMenu": {
+      "open": "Abrir menú de mascota",
+      "hide": "Ocultar mascota",
+      "theme": "Cambiar tema",
+      "settings": "Configuración"
+    },
+    "altSleeping": "Felix dormido",
+    "altCelebrating": "Felix festejando",
+    "altIdle": "Felix"
+  },
   "statusChip": {
     "orderStatus": {
       "OPEN": "Abierto",

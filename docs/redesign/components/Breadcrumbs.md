@@ -1,7 +1,7 @@
 ---
 title: Breadcrumbs
 tier: 3
-status: spec — no implementado
+status: spec — S5 (ready for implementation)
 last_updated: 2026-05-02
 session: 04-components
 adrs:
@@ -179,6 +179,14 @@ Sample paths típicos:
 ## Dependencias
 
 Composible dentro del shell header (S5). Compone [`./MonoCode.md`](./MonoCode.md) cuando el label es un identificador (`PT-XXXXXX`). Compone [`./Tooltip.md`](./Tooltip.md) cuando un label se trunca.
+
+## Notas para S5 (implementación)
+
+1. Implementar como `src/components/core/Breadcrumbs.tsx` — Client Component (`"use client"`) solo para el estado de expand/collapse del ellipsis.
+2. El `AppShell` genera el array `items` vía helper `getBreadcrumbItems(pathname, locale)` en `src/app/[locale]/(app)/_utils/breadcrumbItems.ts`. El `Header` recibe los `items` ya resueltos como prop.
+3. El `HeaderTitleContext` existente en `HeaderTitleContext.tsx` provee override del label del item hoja (ej. nombre de tienda, `humanId` del pedido). El helper `getBreadcrumbItems` debe integrarse con ese contexto.
+4. Para labels que son identificadores de código (`PT-XXXXXX`), componer `<MonoCode>` internamente con `--text-secondary`.
+5. Tests: renderizado correcto de items, `aria-current="page"` en el último item, expand/collapse del ellipsis en mobile.
 
 ## Notas para S12 (implementación)
 

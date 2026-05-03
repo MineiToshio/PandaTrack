@@ -33,7 +33,14 @@
   "accessibility": {
     "mainNavigation": "Main navigation",
     "breadcrumbNavigation": "Breadcrumb",
-    "languageNavigation": "Language"
+    "languageNavigation": "Language",
+    "primarySidebar": "Primary sidebar"
+  },
+  "mobileTabBar": {
+    "today": "Today",
+    "orders": "Orders",
+    "stores": "Stores",
+    "settings": "Settings"
   },
   "error": {
     "title": "Something went wrong",

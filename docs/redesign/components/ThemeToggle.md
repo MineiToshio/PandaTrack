@@ -1,7 +1,7 @@
 ---
 title: ThemeToggle
 tier: 3
-status: spec — no implementado
+status: spec — S5 (ready for implementation)
 last_updated: 2026-05-02
 session: 04-components
 adrs:
@@ -48,42 +48,42 @@ Reglas TS:
 
 ## Variants / Sizes
 
-| Variant   | Uso                                                                                                                                                               | Tokens consumidos                                                                                                                                                                       |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `compact` | Header del shell `(app)` (ADR 0003 D4). IconButton circular 40×40 desktop / 44×44 mobile (tap target). Ícono `sun` (cuando el modo activo es `light`) o `moon` (cuando es `dark`). Click toggle inmediato. | `--surface-elevated`, `--text-primary`, `--border`, `--focus-ring`, `--state-hover-mix`, `--state-pressed-mix`, `--radius-pill`, `--motion-fast`, `--ease-emphasis`                       |
-| `full`    | Settings → preferences. Label "Apariencia" + descripción + RadioGroup horizontal con dos `<Radio>` (Light / Dark), cada uno con preview pequeño + ícono Lucide.    | `--surface`, `--text-primary`, `--text-secondary`, `--text-muted`, `--border-strong`, `--accent` (estado seleccionado del Radio), `--radius-lg`, `--space-4`, `--space-6`, `--text-body` |
+| Variant   | Uso                                                                                                                                                                                                        | Tokens consumidos                                                                                                                                                                        |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compact` | Header del shell `(app)` (ADR 0003 D4). IconButton circular 40×40 desktop / 44×44 mobile (tap target). Ícono `sun` (cuando el modo activo es `light`) o `moon` (cuando es `dark`). Click toggle inmediato. | `--surface-elevated`, `--text-primary`, `--border`, `--focus-ring`, `--state-hover-mix`, `--state-pressed-mix`, `--radius-pill`, `--motion-fast`, `--ease-emphasis`                      |
+| `full`    | Settings → preferences. Label "Apariencia" + descripción + RadioGroup horizontal con dos `<Radio>` (Light / Dark), cada uno con preview pequeño + ícono Lucide.                                            | `--surface`, `--text-primary`, `--text-secondary`, `--text-muted`, `--border-strong`, `--accent` (estado seleccionado del Radio), `--radius-lg`, `--space-4`, `--space-6`, `--text-body` |
 
 ## Estados visuales
 
 ### `compact` (header)
 
-| Estado          | Receta CSS (light)                                                                                                                                                                                                                                  | Receta CSS (dark)                                                                                                  | Notas                                                                                                                                |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `default`       | `width: 2.75rem; height: 2.75rem; background: transparent; color: var(--text-primary); border: 1px solid transparent; border-radius: var(--radius-pill);`                                                                                          | mismo                                                                                                              | El icon-button no tiene background propio en idle — gana superficie sólo en hover.                                                    |
-| `hover`         | overlay `background-color: color-mix(in oklch, var(--text-primary) var(--state-hover-mix), transparent);` (mix=6%)                                                                                                                                  | mix=8%                                                                                                             | Aplicado vía `::after` con `border-radius: inherit`.                                                                                  |
-| `pressed`       | overlay con `--state-pressed-mix` (12%)                                                                                                                                                                                                              | 14%                                                                                                                | `:active`.                                                                                                                            |
-| `focus-visible` | `outline: 2px solid var(--focus-ring); outline-offset: 2px;`                                                                                                                                                                                         | mismo                                                                                                              | Sólo en `:focus-visible` (no en click puro).                                                                                          |
-| `pressed-state` | `aria-pressed="true"` cuando el modo activo es el contrario al "destino" del toggle. Visualmente igual que `default` — la diferencia la comunica el cambio de ícono `sun` ↔ `moon`.                                                                  | mismo                                                                                                              | El estado lo lee el SR vía `aria-pressed`. Nunca usar background `--accent` (rompe la jerarquía del header).                          |
-| `disabled`      | (no aplica — el toggle siempre está disponible)                                                                                                                                                                                                       | mismo                                                                                                              |                                                                                                                                       |
+| Estado          | Receta CSS (light)                                                                                                                                                                  | Receta CSS (dark) | Notas                                                                                                        |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------ |
+| `default`       | `width: 2.75rem; height: 2.75rem; background: transparent; color: var(--text-primary); border: 1px solid transparent; border-radius: var(--radius-pill);`                           | mismo             | El icon-button no tiene background propio en idle — gana superficie sólo en hover.                           |
+| `hover`         | overlay `background-color: color-mix(in oklch, var(--text-primary) var(--state-hover-mix), transparent);` (mix=6%)                                                                  | mix=8%            | Aplicado vía `::after` con `border-radius: inherit`.                                                         |
+| `pressed`       | overlay con `--state-pressed-mix` (12%)                                                                                                                                             | 14%               | `:active`.                                                                                                   |
+| `focus-visible` | `outline: 2px solid var(--focus-ring); outline-offset: 2px;`                                                                                                                        | mismo             | Sólo en `:focus-visible` (no en click puro).                                                                 |
+| `pressed-state` | `aria-pressed="true"` cuando el modo activo es el contrario al "destino" del toggle. Visualmente igual que `default` — la diferencia la comunica el cambio de ícono `sun` ↔ `moon`. | mismo             | El estado lo lee el SR vía `aria-pressed`. Nunca usar background `--accent` (rompe la jerarquía del header). |
+| `disabled`      | (no aplica — el toggle siempre está disponible)                                                                                                                                     | mismo             |                                                                                                              |
 
 ### `full` (settings)
 
-| Estado          | Receta CSS (light)                                                                                                                                                                                                                                                                                                            | Receta CSS (dark) | Notas                                                                                                                                                |
-| --------------- | -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `default`       | label "Apariencia" en `--text-primary` con `--text-body` `--font-weight-medium-body`; descripción opcional en `--text-secondary` `--text-caption`; RadioGroup horizontal con `gap: var(--space-4)` entre las dos opciones                                                                                                       | mismo             | Cada `<Radio>` envuelto en card 144×96px con preview swatch (mini-bento de 6 sub-rectángulos en colores del modo) + ícono `sun`/`moon` + label texto. |
-| `option idle`   | card `background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);`                                                                                                                                                                                                                          | mismo             | Hover overlay 6% / 8% (light/dark) sobre el card.                                                                                                    |
-| `option selected` | bg `color-mix(in oklch, var(--accent) 14%, var(--surface)); border: 1px solid color-mix(in oklch, var(--accent) 28%, var(--surface));`                                                                                                                                                                                       | mismo patrón      | Patrón canónico de selected (`tokens.md §1.6`).                                                                                                       |
-| `focus-visible` | `outline: 2px solid var(--focus-ring); outline-offset: 2px;` aplicado al card focused (no al input radio interno; el card es el control).                                                                                                                                                                                     | mismo             |                                                                                                                                                      |
-| `disabled`      | `color: var(--text-muted); border-color: var(--border); background: var(--surface);` + `pointer-events: none`                                                                                                                                                                                                                  | mismo             | Sin opacity. (Se reserva para casos futuros de "tema forzado por preferencia parental" — no aplica MVP).                                              |
+| Estado            | Receta CSS (light)                                                                                                                                                                                                        | Receta CSS (dark) | Notas                                                                                                                                                 |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `default`         | label "Apariencia" en `--text-primary` con `--text-body` `--font-weight-medium-body`; descripción opcional en `--text-secondary` `--text-caption`; RadioGroup horizontal con `gap: var(--space-4)` entre las dos opciones | mismo             | Cada `<Radio>` envuelto en card 144×96px con preview swatch (mini-bento de 6 sub-rectángulos en colores del modo) + ícono `sun`/`moon` + label texto. |
+| `option idle`     | card `background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);`                                                                                                                      | mismo             | Hover overlay 6% / 8% (light/dark) sobre el card.                                                                                                     |
+| `option selected` | bg `color-mix(in oklch, var(--accent) 14%, var(--surface)); border: 1px solid color-mix(in oklch, var(--accent) 28%, var(--surface));`                                                                                    | mismo patrón      | Patrón canónico de selected (`tokens.md §1.6`).                                                                                                       |
+| `focus-visible`   | `outline: 2px solid var(--focus-ring); outline-offset: 2px;` aplicado al card focused (no al input radio interno; el card es el control).                                                                                 | mismo             |                                                                                                                                                       |
+| `disabled`        | `color: var(--text-muted); border-color: var(--border); background: var(--surface);` + `pointer-events: none`                                                                                                             | mismo             | Sin opacity. (Se reserva para casos futuros de "tema forzado por preferencia parental" — no aplica MVP).                                              |
 
 ## Mobile vs desktop
 
-| Aspecto           | `< --breakpoint-md` (mobile)                                                                                                                       | `≥ --breakpoint-md` (desktop)                                                                                            |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
-| `compact` size    | 44×44 (tap target inviolable)                                                                                                                      | 40×40 (densidad mayor)                                                                                                    |
-| `compact` ubicación | Header sticky mobile (junto a `<LangToggle>`, derecha del breadcrumb truncado).                                                                   | Header sticky desktop (mismo cluster derecho del header).                                                                 |
-| `compact` tooltip | No se muestra en mobile (sin hover) — se confía en el ícono y el `aria-pressed`.                                                                   | Tooltip on hover/focus con copy `tooltip.light` o `tooltip.dark` según próximo destino.                                  |
-| `full` layout     | Card stack vertical: cada Radio ocupa full-width con label horizontal (preview a la izquierda, label a la derecha).                                | Card grid horizontal: dos Radio side-by-side, gap `--space-4`. Preview centrado arriba, label debajo.                     |
+| Aspecto             | `< --breakpoint-md` (mobile)                                                                                        | `≥ --breakpoint-md` (desktop)                                                                         |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `compact` size      | 44×44 (tap target inviolable)                                                                                       | 40×40 (densidad mayor)                                                                                |
+| `compact` ubicación | Header sticky mobile (junto a `<LangToggle>`, derecha del breadcrumb truncado).                                     | Header sticky desktop (mismo cluster derecho del header).                                             |
+| `compact` tooltip   | No se muestra en mobile (sin hover) — se confía en el ícono y el `aria-pressed`.                                    | Tooltip on hover/focus con copy `tooltip.light` o `tooltip.dark` según próximo destino.               |
+| `full` layout       | Card stack vertical: cada Radio ocupa full-width con label horizontal (preview a la izquierda, label a la derecha). | Card grid horizontal: dos Radio side-by-side, gap `--space-4`. Preview centrado arriba, label debajo. |
 
 ## Accesibilidad
 
@@ -105,24 +105,24 @@ Reglas TS:
 
 ## Motion
 
-| Qué se anima                       | Token de duración    | Token de easing      | Notas                                                                                                                          |
-| ---------------------------------- | -------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| State layer del IconButton         | `--motion-fast`      | `--ease-emphasis`    | Hover/active fade.                                                                                                              |
-| Cambio de ícono `sun` ↔ `moon`     | `--motion-fast`      | `--ease-emphasis`    | Cross-fade (no rotation, no scale). El swap visual es instantáneo de leer.                                                      |
-| Cambio de tema global              | `--motion-fast`      | `--ease-emphasis`    | Las propiedades `background-color` y `color` interpolan vía CSS transitions globales declaradas en `tokens-css.md`.             |
-| Focus ring                         | `--motion-fast`      | `--ease-emphasis`    | Aparición instantánea en `:focus-visible`.                                                                                      |
-| `full` Radio selected transition   | `--motion-fast`      | `--ease-emphasis`    | bg + border interpolan suave.                                                                                                   |
+| Qué se anima                     | Token de duración | Token de easing   | Notas                                                                                                               |
+| -------------------------------- | ----------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------- |
+| State layer del IconButton       | `--motion-fast`   | `--ease-emphasis` | Hover/active fade.                                                                                                  |
+| Cambio de ícono `sun` ↔ `moon`   | `--motion-fast`   | `--ease-emphasis` | Cross-fade (no rotation, no scale). El swap visual es instantáneo de leer.                                          |
+| Cambio de tema global            | `--motion-fast`   | `--ease-emphasis` | Las propiedades `background-color` y `color` interpolan vía CSS transitions globales declaradas en `tokens-css.md`. |
+| Focus ring                       | `--motion-fast`   | `--ease-emphasis` | Aparición instantánea en `:focus-visible`.                                                                          |
+| `full` Radio selected transition | `--motion-fast`   | `--ease-emphasis` | bg + border interpolan suave.                                                                                       |
 
 ## Copy default + i18n
 
-| Clave i18n sugerida                       | Valor ES (voice glossary aplicado) |
-| ----------------------------------------- | ---------------------------------- |
-| `components.themeToggle.label`            | "Apariencia"                       |
-| `components.themeToggle.description`      | "Elegí el tema para tu sesión."    |
-| `components.themeToggle.light`            | "Claro"                            |
-| `components.themeToggle.dark`             | "Oscuro"                           |
-| `components.themeToggle.tooltip.light`    | "Cambiar a modo claro"             |
-| `components.themeToggle.tooltip.dark`     | "Cambiar a modo oscuro"            |
+| Clave i18n sugerida                    | Valor ES (voice glossary aplicado) |
+| -------------------------------------- | ---------------------------------- |
+| `components.themeToggle.label`         | "Apariencia"                       |
+| `components.themeToggle.description`   | "Elegí el tema para tu sesión."    |
+| `components.themeToggle.light`         | "Claro"                            |
+| `components.themeToggle.dark`          | "Oscuro"                           |
+| `components.themeToggle.tooltip.light` | "Cambiar a modo claro"             |
+| `components.themeToggle.tooltip.dark`  | "Cambiar a modo oscuro"            |
 
 EN se deja para S12. Notas: "Apariencia" es el label canónico (alineado con Vercel, Linear, Stripe Dashboard); evita "Tema" porque colisiona con tema visual del sistema vs themes de "skin" en otras apps. La descripción en `--text-secondary` aparece sólo en `variant="full"`.
 
@@ -202,6 +202,14 @@ EN se deja para S12. Notas: "Apariencia" es el label canónico (alineado con Ver
 - `<RadioGroup>` y `<Radio>` ([`Radio.md`](./Radio.md)) — base del `full`.
 - Tooltip (sub-agente δ Tier 3) — `compact` desktop hover/focus.
 - Lucide icons: `sun`, `moon`.
+
+## Notas para S5 (implementación)
+
+1. Crear `src/components/core/ThemeToggle.tsx` extrayendo la lógica del componente existente en `src/app/[locale]/(landing)/_components/Menu/ThemeToggle.tsx`. Implementar `variant="compact"` únicamente — `variant="full"` (pantalla Settings) se difiere a la sesión de Settings.
+2. El componente debe importar `setTheme()` / `getTheme()` desde `src/lib/theme.ts` (ya existe). Verificar que no haya acoplamiento al route group `(landing)`.
+3. En el nuevo `Header.tsx` (`src/components/modules/Header/Header.tsx`), importar desde `src/components/core/ThemeToggle` — nunca desde `(landing)`. Esta corrección elimina la violación de project-structure detectada en `ContentHeader.tsx`.
+4. PostHog: instrumentar con `POSTHOG_EVENTS.APP_SHELL.THEME_CHANGED` (`{ from, to, source: "header" }`). Centralizar el nombre del evento en `src/lib/constants.ts` si no existe.
+5. Tests: toggle cambia `aria-pressed`, escribe `localStorage["pandatrack-theme"]`, ícono alterna `sun` ↔ `moon`.
 
 ## Notas para S12 (implementación)
 

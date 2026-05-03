@@ -33,7 +33,14 @@
   "accessibility": {
     "mainNavigation": "Navegación principal",
     "breadcrumbNavigation": "Ruta de navegación",
-    "languageNavigation": "Selector de idioma"
+    "languageNavigation": "Selector de idioma",
+    "primarySidebar": "Barra lateral principal"
+  },
+  "mobileTabBar": {
+    "today": "Hoy",
+    "orders": "Pedidos",
+    "stores": "Tiendas",
+    "settings": "Ajustes"
   },
   "error": {
     "title": "Algo salió mal",

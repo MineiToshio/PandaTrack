@@ -4,11 +4,11 @@ last_updated: 2026-05-02
 owner: Sergio Minei
 ---
 
-> **Estado actual:** S1-S4 ✅ done en modelo "todo en docs". **Plan revisado post-S4** (ver [`methodology.md`](./methodology.md)): cada sesión a partir de ahora tiene **Fase A (docs) + Fase B (implementación inmediata)** con gate humano en el medio. Todo va a branch `redesign`. Dashboard fuera de scope. Última sesión (S13) reemplaza `docs/design/` con el sistema final.
+> **Estado actual:** S1-S5 ✅ done. **Plan revisado post-S4** (ver [`methodology.md`](./methodology.md)): cada sesión tiene **Fase A (docs) + Fase B (implementación inmediata)** con gate humano en el medio. Todo va a branch `redesign`. Dashboard fuera de scope. Última sesión (S13) reemplaza `docs/design/` con el sistema final.
 >
-> **S4 Fase B completada (ambos batches) ✅ (2026-05-02).** Primer batch: MonoCode · StoreAvatar · StatusChip · Input · Button. Segundo batch: Eyebrow · Kbd · HelperText · ErrorMessage · Avatar · Label · Textarea · Select · IconButton · Checkbox · Switch · Radio · Combobox · DateInput · DateRangeInput. 20 atoms en `src/components/core/`. i18n completo. 388 tests ✅, build limpio ✅.
+> **S5 Fase B completada ✅ (2026-05-02).** App shell PUSH sidebar · Header con breadcrumbs + core toggles · MobileTabBar con FAB elevado central · MascotBubble idle · ProgressBar · Pagination · FAB · useSidebarState shared hook · AppLayout refactorizado. i18n completo. 388 tests ✅, build limpio ✅. Ver [`sessions/05-app-shell.md`](./sessions/05-app-shell.md).
 >
-> **Próxima sesión: 🟡 S5 — Navegación y layouts** (foundational A+B, 1 conversación). App shell, sidebar collapsable + push, header con breadcrumbs + theme + lang toggle, mobile tab bar.
+> **Próxima sesión: 🟡 S6 — Assets y sprites** (mascota, ilustraciones, OG images, favicon). Sprite sheet Felix, OG image templates con Velvet palette.
 >
 > - **6 wireframes lo-fi** en `screens/`.
 > - **7 ADRs cerrados:** [`0001`](./decisions/0001-s2-closure-decisions.md) (19 decisiones de cierre S2), [`0002`](./decisions/0002-status-chip-mapping.md) (mapeo de enums Prisma a chips), [`0003`](./decisions/0003-demo-decisions.md) (8 decisiones del demo: Velvet, theme sin `system`, sidebar push, header con breadcrumbs, wizard accordion, sidebar derecha, filter drawer), [`0004`](./decisions/0004-categorical-palette-removal.md) (paleta categórica eliminada), [`0005`](./decisions/0005-dashboard-microstat-icon-tile.md) (icon-tile + cifra neutra), [`0006`](./decisions/0006-color-blindness-icon-label-contract.md) (contrato ícono+label), [`0007`](./decisions/0007-text-muted-outdoor-code-mono-reassignment.md) (code mono en `--text-secondary`).

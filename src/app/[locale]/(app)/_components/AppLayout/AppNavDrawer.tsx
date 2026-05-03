@@ -82,6 +82,7 @@ export default function AppNavDrawer({
   return (
     <div
       ref={drawerRootRef}
+      id="app-nav-drawer"
       className="fixed inset-0 z-50 lg:hidden"
       role="dialog"
       aria-modal="true"
