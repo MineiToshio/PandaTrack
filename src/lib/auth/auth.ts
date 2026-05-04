@@ -4,7 +4,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
-import { getAppBaseUrl } from "@/lib/app-url";
+import { getAppBaseUrl, getPublicSiteUrl } from "@/lib/app-url";
 import { handlePasswordRecoveryRequest } from "@/lib/auth/authPasswordRecovery";
 import { buildVerificationConfirmHref, getLocaleSegment } from "@/lib/auth/authRedirect";
 import { buildAuthVerificationEmail } from "@/lib/auth/authVerificationEmail";
@@ -49,8 +49,8 @@ export const auth = betterAuth({
     },
   },
   secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: getAppBaseUrl(),
-  trustedOrigins: [getAppBaseUrl()],
+  baseURL: getPublicSiteUrl(),
+  trustedOrigins: [...new Set([getAppBaseUrl(), getPublicSiteUrl()])],
   /**
    * Load session user from the database on each request so server actions that update `user.email`
    * (immediate email change) are visible to the next Better Auth call in the same flow without stale
