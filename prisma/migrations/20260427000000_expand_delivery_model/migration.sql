@@ -46,6 +46,21 @@ ALTER TABLE "delivery" ADD COLUMN "carrier" TEXT;
 ALTER TABLE "delivery" ADD COLUMN "trackingNumber" TEXT;
 ALTER TABLE "delivery" ADD COLUMN "note" TEXT;
 
+-- Step 4b: Populate userId from associated order items for existing rows.
+UPDATE "delivery" d
+SET "userId" = (
+  SELECT o."userId"
+  FROM "delivery_order_item" doi
+  JOIN "order_item" oi ON doi."orderItemId" = oi.id
+  JOIN "order" o ON oi."orderId" = o.id
+  WHERE doi."deliveryId" = d.id
+  LIMIT 1
+)
+WHERE d."userId" = '';
+
+-- Remove deliveries that have no order items to resolve userId from.
+DELETE FROM "delivery" WHERE "userId" = '';
+
 -- Step 5: Add foreign key and index for userId on delivery.
 ALTER TABLE "delivery" ADD CONSTRAINT "delivery_userId_fkey"
   FOREIGN KEY ("userId") REFERENCES "user"("id")
