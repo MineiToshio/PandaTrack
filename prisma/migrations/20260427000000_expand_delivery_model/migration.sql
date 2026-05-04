@@ -9,9 +9,14 @@ ALTER TYPE "DeliveryStatus" RENAME TO "DeliveryStatus_old";
 
 CREATE TYPE "DeliveryStatus" AS ENUM ('IN_TRANSIT', 'DELIVERED', 'CANCELLED');
 
+-- Drop the column default before the type change (it references DeliveryStatus_old).
+ALTER TABLE "delivery" ALTER COLUMN "status" DROP DEFAULT;
+
 ALTER TABLE "delivery"
   ALTER COLUMN "status" TYPE "DeliveryStatus"
     USING "status"::text::"DeliveryStatus";
+
+ALTER TABLE "delivery" ALTER COLUMN "status" SET DEFAULT 'IN_TRANSIT';
 
 DROP TYPE "DeliveryStatus_old";
 
