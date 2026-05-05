@@ -1,9 +1,10 @@
 ---
-title: Modal
+title: Modal — componente canónico único
 tier: 3
-status: spec — no implementado
-last_updated: 2026-05-03
-session: 04-components
+status: implementado · canónico (ADR 0008)
+last_updated: 2026-05-05
+session: 04-components · M01
+implementation: src/components/modules/Modal/Modal.tsx
 adrs:
   - ADR 0001 D4 (toast neutral-undo cohabita por encima — `--z-toast` 90 > `--z-modal` 80)
   - ADR 0001 D6 (delete pedido entero requiere confirm modal previo)
@@ -11,7 +12,28 @@ adrs:
   - ADR 0008 (Modal Enhancement — Semantic Depth: icon-circle tonal, backdrop blur, spring animation, radius 20px)
 ---
 
-# Modal
+# Modal — componente canónico único
+
+> ⚠️ **HAY UN SOLO COMPONENTE MODAL EN LA APP.** Implementación viva
+> en `src/components/modules/Modal/Modal.tsx`. Cualquier confirm,
+> alert, dialog, overlay de decisión, modal con form, prompt
+> destructivo, reporte, alerta de duplicados o decisión multi-CTA en
+> PandaTrack debe consumir este componente.
+>
+> **Prohibido:**
+>
+> - Crear modals nuevos con Portal + div + backdrop ad-hoc.
+> - Copiar el patrón visual de modals viejos del demo HTML (los
+>   selectores `.report-modal*` del demo ya fueron mapeados al
+>   pattern canónico, pero la fuente de verdad es este componente,
+>   no el demo).
+>
+> Si te falta una capability (un nuevo `tone`, un nuevo `size`, un
+> layout slot adicional), extender este componente in-place en su
+> archivo. Nunca forkear.
+>
+> Refuerzo a nivel sistema: `.cursor/rules/modal-canonical-pattern.mdc`
+> con `alwaysApply: true`.
 
 ## Propósito
 

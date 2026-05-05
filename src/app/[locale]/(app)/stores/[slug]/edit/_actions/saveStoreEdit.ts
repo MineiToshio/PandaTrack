@@ -63,9 +63,6 @@ export async function saveStoreEdit(
     }))
     .filter((channel) => channel.type.trim().length > 0);
 
-  const addressCountryCodes = formData
-    .getAll("addressCountryCode")
-    .filter((value): value is string => typeof value === "string");
   const addressCities = formData.getAll("addressCity").filter((value): value is string => typeof value === "string");
   const addressAddressLines = formData
     .getAll("addressAddressLine")
@@ -75,12 +72,11 @@ export async function saveStoreEdit(
     .filter((value): value is string => typeof value === "string");
   const addresses: EditableAddressInput[] = addressAddressLines
     .map((addressLine, index) => ({
-      countryCode: addressCountryCodes[index] ?? "",
       city: addressCities[index] || undefined,
       addressLine,
       reference: addressReferences[index] || undefined,
     }))
-    .filter((address) => address.addressLine.trim().length > 0 && address.countryCode.length === 2);
+    .filter((address) => address.addressLine.trim().length > 0);
   const logoFileValue = formData.get("logoFile");
   const logoFile = logoFileValue instanceof File && logoFileValue.size > 0 ? logoFileValue : null;
   const logoCropArea = parseStoreLogoCropArea({

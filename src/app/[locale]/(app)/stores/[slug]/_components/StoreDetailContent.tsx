@@ -249,13 +249,9 @@ export default function StoreDetailContent({
                 <div className="flex flex-col">
                   {store.addresses?.map((address, index) => (
                     <ChannelRow
-                      key={`${address.countryCode}-${address.addressLine}-${index}`}
+                      key={`${address.addressLine}-${index}`}
                       icon={<MapPin size={14} aria-hidden="true" />}
-                      label={
-                        address.city
-                          ? `${address.city}, ${tCountries(address.countryCode)}`
-                          : tCountries(address.countryCode)
-                      }
+                      label={address.city ?? tCountries(store.countryCode)}
                       value={address.reference ? `${address.addressLine} · ${address.reference}` : address.addressLine}
                     />
                   ))}

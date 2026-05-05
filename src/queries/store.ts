@@ -32,7 +32,6 @@ export interface ContactChannelInput {
 }
 
 export interface AddressInput {
-  countryCode: string;
   city?: string | null;
   addressLine: string;
   reference?: string | null;
@@ -148,7 +147,6 @@ export interface StoreDetail {
   contactChannels?: Array<{ type: StoreContactChannelType; value: string; label?: string | null }>;
   /** Only for BUSINESS stores; public addresses only. */
   addresses?: Array<{
-    countryCode: string;
     city?: string | null;
     addressLine: string;
     reference?: string | null;
@@ -424,7 +422,6 @@ export async function createStore(db: PrismaClient, input: CreateStoreInput): Pr
       ...(addresses.length > 0 && {
         addresses: {
           create: addresses.map((a, i) => ({
-            countryCode: a.countryCode,
             city: a.city?.trim() || null,
             addressLine: a.addressLine.trim(),
             reference: a.reference?.trim() || null,
@@ -499,7 +496,6 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
       addresses: {
         where: { isPublic: true },
         select: {
-          countryCode: true,
           city: true,
           addressLine: true,
           reference: true,
@@ -547,7 +543,6 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
         label: ch.label,
       })),
       addresses: store.addresses.map((a) => ({
-        countryCode: a.countryCode,
         city: a.city,
         addressLine: a.addressLine,
         reference: a.reference,

@@ -19,7 +19,7 @@
     "countryPlaceholder": "Select country",
     "presenceLabel": "Sales channels",
     "presenceOnline": "Online store",
-    "presencePhysical": "Physical location",
+    "presencePhysical": "Physical store",
     "productTypesLabel": "Product types",
     "hasStockLabel": "Sells from stock",
     "receivesOrdersLabel": "Overseas buying for you",
@@ -438,6 +438,7 @@
     "create": {
       "step1": {
         "eyebrow": "STEP 1 · TYPE",
+        "shortLabel": "Type",
         "title": "What kind of store is this?",
         "helper": "This changes the next fields.",
         "businessLabel": "Business",
@@ -450,25 +451,49 @@
       },
       "step2": {
         "eyebrow": "STEP 2 · IDENTITY",
+        "shortLabel": "Identity",
         "title": "Identity",
         "helper": "What it's called and where it is."
       },
       "step3": {
         "eyebrow": "STEP 3 · CATEGORIES",
-        "title": "Categories and presence",
-        "helper": "What it sells and where it exists."
+        "shortLabel": "Categories",
+        "title": "What do they sell?",
+        "helper": "What it sells and where it exists.",
+        "productTypesHelper": "At least one category.",
+        "presenceLabel": "Presence",
+        "presenceHelper": "Where the store operates. Contact channels go in the next step.",
+        "importHelper": "Where does this store import or source products from? Helps collectors filter by origin.",
+        "hasStockLabel": "Has stock",
+        "receivesOrdersLabel": "Accepts pre-orders"
       },
       "step4": {
         "eyebrow": "STEP 4 · CHANNELS",
-        "title": "Contact channels",
-        "helper": "How to reach the store."
+        "shortLabel": "Channels",
+        "title": "How to contact?",
+        "helper": "Optional — you can add or edit this later."
       },
       "step5": {
         "eyebrow": "STEP 5 · DONE",
+        "shortLabel": "Done",
         "title": "Review and confirm",
-        "helper": "Verify the data before creating."
+        "helper": "When you confirm, it goes under review and becomes public once approved.",
+        "subhelper": "If we find a similar store, we'll ask you before creating."
+      },
+      "aside": {
+        "typeLabel": "Type",
+        "nameLabel": "Name",
+        "countryLabel": "Country",
+        "categoriesLabel": "Categories",
+        "presenceLabel": "Presence",
+        "importLabel": "Imports from",
+        "channelsLabel": "Channels",
+        "addressesLabel": "Addresses",
+        "statusLabel": "Status",
+        "statusPending": "Pending"
       },
       "stepperLabel": "Form steps",
+      "countryNoResults": "No country matches.",
       "continue": "Continue",
       "back": "Back",
       "submit": "Create store",
@@ -486,7 +511,10 @@
       },
       "channels": {
         "addButton": "Add",
-        "helper": "Choose the channel type and paste the value.",
+        "helper": "Choose the channel type and paste the value (URL, handle, email or number).",
+        "edit": "Edit",
+        "save": "Save",
+        "cancel": "Cancel",
         "remove": "Remove"
       },
       "duplicate": {

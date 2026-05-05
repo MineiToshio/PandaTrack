@@ -36,20 +36,18 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
     }))
     .filter((ch) => ch.type.trim().length > 0);
 
-  const addressCountryCodes = formData.getAll("addressCountryCode").filter((v): v is string => typeof v === "string");
   const addressCities = formData.getAll("addressCity").filter((v): v is string => typeof v === "string");
   const addressAddressLines = formData.getAll("addressAddressLine").filter((v): v is string => typeof v === "string");
   const addressReferences = formData.getAll("addressReference").filter((v): v is string => typeof v === "string");
   const addressIsPrimaries = formData.getAll("addressIsPrimary").filter((v): v is string => typeof v === "string");
   const addresses = addressAddressLines
     .map((addressLine, i) => ({
-      countryCode: addressCountryCodes[i] ?? "",
       city: addressCities[i] || undefined,
       addressLine,
       reference: addressReferences[i] || undefined,
       isPrimary: addressIsPrimaries.includes(String(i)) ? true : undefined,
     }))
-    .filter((a) => a.addressLine.trim().length > 0 && a.countryCode.length === 2);
+    .filter((a) => a.addressLine.trim().length > 0);
 
   const raw = {
     name: formData.get("name") ?? undefined,
@@ -116,11 +114,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
     };
   }
 
-  const allCountryCodes = [
-    input.countryCode,
-    ...(input.addresses?.map((a) => a.countryCode) ?? []),
-    ...(input.importCountries ?? []),
-  ].filter(Boolean);
+  const allCountryCodes = [input.countryCode, ...(input.importCountries ?? [])].filter(Boolean);
   const uniqueCountryCodes = [...new Set(allCountryCodes)];
 
   const [countriesExist, productTypesExist] = await Promise.all([

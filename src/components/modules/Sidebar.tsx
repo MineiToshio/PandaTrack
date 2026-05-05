@@ -82,7 +82,7 @@ export default function Sidebar({
     <aside
       aria-label={t("accessibility.primarySidebar")}
       className={cn(
-        "border-border bg-surface fixed left-0 hidden flex-col border-r transition-[width] duration-[var(--motion-base)] ease-[var(--ease-out-expressive)] motion-reduce:transition-none lg:flex",
+        "border-border bg-surface-elevated fixed left-0 hidden flex-col border-r transition-[width] duration-[var(--motion-base)] ease-[var(--ease-out-expressive)] motion-reduce:transition-none lg:flex",
         // Hover-expand floats over content: lift above header (z-30) so it covers header zone too.
         !expanded && floatingOpen ? "z-40 shadow-[var(--elevation-3)]" : "z-20",
       )}

@@ -1,6 +1,7 @@
 "use client";
 
-import { Box, Globe, Plus } from "lucide-react";
+import { Globe, Plus, Store } from "lucide-react";
+import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { type FormEvent, startTransition, useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import posthog from "posthog-js";
@@ -19,16 +20,13 @@ import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { STORE_LOGO_MAX_SOURCE_SIZE_MB } from "@/lib/store/logoShared";
 import type { EditableStore, EditableStoreInput, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
 import StoreAddressList from "../../../_components/share/StoreAddressList";
-import StoreContactChannelList, {
-  STORE_CONTACT_CHANNEL_TYPES,
-  type StoreContactChannelType,
-} from "../../../_components/share/StoreContactChannelList";
-import StoreEmptyStateBox from "../../../_components/share/StoreEmptyStateBox";
+import { type StoreContactChannelType } from "../../../_components/share/StoreContactChannelList";
+import StoreContactChannelEditor from "../../../_components/share/StoreContactChannelEditor";
 import StoreLogoField, { type StoreLogoSubmission } from "../../../_components/share/StoreLogoField/StoreLogoField";
 import CollectorCountryFlagEmoji from "../../../_components/share/CollectorCountryFlagEmoji";
 import MultiTagAutocomplete from "@/components/core/MultiTagAutocomplete";
 import StoreProductTypeRequestModal from "../../../_components/share/StoreProductTypeRequestModal";
-import StoreToggleSwitch from "../../../_components/share/StoreToggleSwitch";
+import InlineSwitch from "../../../_components/share/InlineSwitch";
 import ToggleChoiceGroup from "@/components/core/ToggleChoiceGroup";
 import { saveStoreEdit, type SaveStoreEditResult } from "../_actions/saveStoreEdit";
 
@@ -74,29 +72,16 @@ export default function EditStoreForm({
   const [receivesOrders, setReceivesOrders] = useState(Boolean(initialValues.receivesOrders));
   const [isPrivate, setIsPrivate] = useState(Boolean(initialValues.isPrivate));
   const [comment, setComment] = useState(existingChangeRequest?.comment ?? "");
-  const [contactChannelRows, setContactChannelRows] = useState<number[]>(
-    initialValues.contactChannels?.map((_, index) => index + 1) ?? [],
-  );
-  const [contactChannelTypeByRowId, setContactChannelTypeByRowId] = useState<
-    Partial<Record<number, StoreContactChannelType>>
+  const [contactChannelEntries, setContactChannelEntries] = useState<
+    Array<{ id: number; type: StoreContactChannelType; value: string }>
   >(
-    Object.fromEntries(
-      (initialValues.contactChannels ?? []).map((channel, index) => [
-        index + 1,
-        channel.type as StoreContactChannelType,
-      ]),
-    ),
-  );
-  const [contactChannelValuesByRowId, setContactChannelValuesByRowId] = useState<Record<number, string>>(
-    Object.fromEntries((initialValues.contactChannels ?? []).map((channel, index) => [index + 1, channel.value])),
-  );
-  const [contactChannelLabelsByRowId, setContactChannelLabelsByRowId] = useState<Record<number, string>>(
-    Object.fromEntries((initialValues.contactChannels ?? []).map((channel, index) => [index + 1, channel.label ?? ""])),
+    (initialValues.contactChannels ?? []).map((channel, index) => ({
+      id: index + 1,
+      type: channel.type as StoreContactChannelType,
+      value: channel.value,
+    })),
   );
   const [addressRows, setAddressRows] = useState<number[]>(initialValues.addresses?.map((_, index) => index + 1) ?? []);
-  const [addressCountryByRowId, setAddressCountryByRowId] = useState<Record<number, string>>(
-    Object.fromEntries((initialValues.addresses ?? []).map((address, index) => [index + 1, address.countryCode])),
-  );
   const [addressCityByRowId, setAddressCityByRowId] = useState<Record<number, string>>(
     Object.fromEntries((initialValues.addresses ?? []).map((address, index) => [index + 1, address.city ?? ""])),
   );
@@ -107,7 +92,7 @@ export default function EditStoreForm({
     Object.fromEntries((initialValues.addresses ?? []).map((address, index) => [index + 1, address.reference ?? ""])),
   );
 
-  const nextContactRowIdRef = useRef(contactChannelRows.length + 1);
+  const nextContactRowIdRef = useRef(contactChannelEntries.length + 1);
   const nextAddressRowIdRef = useRef(addressRows.length + 1);
   const formRef = useRef<HTMLFormElement | null>(null);
 
@@ -137,18 +122,21 @@ export default function EditStoreForm({
 
   const productTypeOptions = useMemo(
     () =>
-      productTypes.map((productType) => ({
-        value: productType.key,
-        label: tProductTypes(productType.key),
-        icon: <Box aria-hidden />,
-      })),
+      productTypes.map((productType) => {
+        const Icon = getStoreProductTypeIcon(productType.key);
+        return {
+          value: productType.key,
+          label: tProductTypes(productType.key),
+          icon: <Icon aria-hidden />,
+        };
+      }),
     [productTypes, tProductTypes],
   );
 
   const presenceOptions = useMemo(
     () => [
+      { value: "PHYSICAL", label: t("create.presencePhysical"), icon: <Store aria-hidden /> },
       { value: "ONLINE", label: t("create.presenceOnline"), icon: <Globe aria-hidden /> },
-      { value: "PHYSICAL", label: t("create.presencePhysical"), icon: <Globe aria-hidden /> },
     ],
     [t],
   );
@@ -157,47 +145,18 @@ export default function EditStoreForm({
   const serverError = state?.success === false ? state.error : null;
   const modeKey = canDirectlyEdit ? "edit.direct" : "edit.changeRequest";
 
-  const handleAddContactChannel = () => {
-    const nextId = nextContactRowIdRef.current;
-    nextContactRowIdRef.current += 1;
-    setContactChannelRows((previous) => [...previous, nextId]);
-    setContactChannelTypeByRowId((previous) => ({ ...previous, [nextId]: STORE_CONTACT_CHANNEL_TYPES[0] }));
-    setContactChannelValuesByRowId((previous) => ({ ...previous, [nextId]: "" }));
-    setContactChannelLabelsByRowId((previous) => ({ ...previous, [nextId]: "" }));
-  };
-
   const handleAddAddress = () => {
     const nextId = nextAddressRowIdRef.current;
     nextAddressRowIdRef.current += 1;
     setAddressRows((previous) => [...previous, nextId]);
   };
 
-  const handleRemoveContactChannel = (rowId: number) => {
-    setContactChannelRows((previous) => previous.filter((item) => item !== rowId));
-    setContactChannelTypeByRowId((previous) => {
-      const next = { ...previous };
-      delete next[rowId];
-      return next;
-    });
-    setContactChannelValuesByRowId((previous) => {
-      const next = { ...previous };
-      delete next[rowId];
-      return next;
-    });
-    setContactChannelLabelsByRowId((previous) => {
-      const next = { ...previous };
-      delete next[rowId];
-      return next;
-    });
+  const handleRemoveContactChannel = (id: number) => {
+    setContactChannelEntries((previous) => previous.filter((entry) => entry.id !== id));
   };
 
   const handleRemoveAddress = (rowId: number) => {
     setAddressRows((previous) => previous.filter((item) => item !== rowId));
-    setAddressCountryByRowId((previous) => {
-      const next = { ...previous };
-      delete next[rowId];
-      return next;
-    });
     setAddressCityByRowId((previous) => {
       const next = { ...previous };
       delete next[rowId];
@@ -215,13 +174,11 @@ export default function EditStoreForm({
     });
   };
 
-  const getContactChannelTypeForRow = (rowId: number) =>
-    contactChannelTypeByRowId[rowId] ?? STORE_CONTACT_CHANNEL_TYPES[0];
-
-  const getContactChannelValueError = (rowIndex: number) =>
-    fieldErrors[`contactChannels.${rowIndex}.value`]?.[0] ?? fieldErrors[`contactChannels.${rowIndex}`]?.[0] ?? null;
-  const getContactChannelLabelError = (rowIndex: number) =>
-    fieldErrors[`contactChannels.${rowIndex}.label`]?.[0] ?? null;
+  const contactChannelGenericError = useMemo(() => {
+    if (fieldErrors.contactChannels?.[0]) return fieldErrors.contactChannels[0];
+    const firstKey = Object.keys(fieldErrors).find((key) => key.startsWith("contactChannels."));
+    return firstKey ? (fieldErrors[firstKey]?.[0] ?? null) : null;
+  }, [fieldErrors]);
 
   const handleSubmit = (formData: FormData) => {
     startTransition(() => {
@@ -439,19 +396,15 @@ export default function EditStoreForm({
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <StoreToggleSwitch label={t("create.hasStockLabel")} checked={hasStock} onChange={setHasStock} />
-                  <StoreToggleSwitch
-                    label={t("create.receivesOrdersLabel")}
+                <div className="flex flex-wrap gap-6">
+                  <InlineSwitch label={tRedesign("step3.hasStockLabel")} checked={hasStock} onChange={setHasStock} />
+                  <InlineSwitch
+                    label={tRedesign("step3.receivesOrdersLabel")}
                     checked={receivesOrders}
                     onChange={setReceivesOrders}
                   />
                   {store.storeType === "PERSON" && (
-                    <StoreToggleSwitch
-                      label={tRedesign("step1.privateLabel")}
-                      checked={isPrivate}
-                      onChange={setIsPrivate}
-                    />
+                    <InlineSwitch label={tRedesign("step1.privateLabel")} checked={isPrivate} onChange={setIsPrivate} />
                   )}
                 </div>
 
@@ -480,100 +433,71 @@ export default function EditStoreForm({
                 primaryAction={{ label: tRedesign("continue") }}
                 secondaryAction={{ label: tRedesign("back") }}
                 summary={
-                  contactChannelRows.length + addressRows.length > 0
-                    ? `${contactChannelRows.length + addressRows.length}`
+                  contactChannelEntries.length + addressRows.length > 0
+                    ? `${contactChannelEntries.length + addressRows.length}`
                     : undefined
                 }
               >
                 <div className="space-y-5">
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label>{t("create.contactChannelsLabel")}</Label>
-                      <Button type="button" variant="secondary" size="sm" onClick={handleAddContactChannel}>
-                        <Plus size={16} className="mr-1" aria-hidden />
-                        {t("create.addContactChannel")}
-                      </Button>
-                    </div>
-                    {contactChannelRows.length === 0 ? (
-                      <StoreEmptyStateBox message={t("create.noContactChannels")} />
-                    ) : (
-                      <StoreContactChannelList
-                        idPrefix="edit-contact-channel"
-                        rows={contactChannelRows.map((rowId, rowIndex) => ({
-                          rowId,
-                          rowIndex,
-                          type: getContactChannelTypeForRow(rowId),
-                          value: contactChannelValuesByRowId[rowId] ?? "",
-                          label: contactChannelLabelsByRowId[rowId] ?? "",
-                          typeError: fieldErrors[`contactChannels.${rowIndex}.type`]?.[0] ?? undefined,
-                          valueError: getContactChannelValueError(rowIndex) ?? undefined,
-                          labelError: getContactChannelLabelError(rowIndex) ?? undefined,
-                        }))}
-                        typeInputName="contactChannelType"
-                        valueInputName="contactChannelValue"
-                        labelInputName="contactChannelLabel"
-                        typeLabel={t("create.contactChannelType")}
-                        valueLabel={t("create.contactChannelValue")}
-                        labelLabel={t("create.contactChannelLabel")}
-                        removeLabel={t("create.remove")}
-                        optionLabel={(type) => tChannelTypes(type)}
-                        valuePlaceholder={(type) => t(`create.contactChannelPlaceholder.${type}` as never)}
-                        onTypeChange={(rowId, nextType) => {
-                          setContactChannelTypeByRowId((previous) => ({ ...previous, [rowId]: nextType }));
-                        }}
-                        onValueChange={(rowId, nextValue) => {
-                          setContactChannelValuesByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
-                        }}
-                        onLabelChange={(rowId, nextValue) => {
-                          setContactChannelLabelsByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
-                        }}
-                        onRemove={handleRemoveContactChannel}
-                        renderValueError={renderError}
-                        renderLabelError={renderError}
-                      />
+                    <Label>{t("create.contactChannelsLabel")}</Label>
+                    <StoreContactChannelEditor
+                      entries={contactChannelEntries}
+                      onAdd={({ type, value }) => {
+                        const nextId = nextContactRowIdRef.current;
+                        nextContactRowIdRef.current += 1;
+                        setContactChannelEntries((previous) => [...previous, { id: nextId, type, value }]);
+                      }}
+                      onUpdate={(id, next) =>
+                        setContactChannelEntries((previous) =>
+                          previous.map((entry) => (entry.id === id ? { ...entry, ...next } : entry)),
+                        )
+                      }
+                      onRemove={handleRemoveContactChannel}
+                      typeInputName="contactChannelType"
+                      valueInputName="contactChannelValue"
+                      labels={{
+                        typeLabel: t("create.contactChannelType"),
+                        valueLabel: t("create.contactChannelValue"),
+                        helper: tRedesign("channels.helper"),
+                        addButton: tRedesign("channels.addButton"),
+                        edit: tRedesign("channels.edit"),
+                        save: tRedesign("channels.save"),
+                        cancel: tRedesign("channels.cancel"),
+                        remove: t("create.remove"),
+                        optionLabel: (type) => tChannelTypes(type),
+                        valuePlaceholder: (type) => t(`create.contactChannelPlaceholder.${type}` as never),
+                      }}
+                    />
+                    {contactChannelGenericError && (
+                      <Typography size="xs" className="text-destructive mt-1" role="alert">
+                        {contactChannelGenericError}
+                      </Typography>
                     )}
                   </div>
 
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label>{t("create.addressesLabel")}</Label>
-                      <Button type="button" variant="secondary" size="sm" onClick={handleAddAddress}>
-                        <Plus size={16} className="mr-1" aria-hidden />
-                        {t("create.addAddress")}
-                      </Button>
-                    </div>
-                    {addressRows.length === 0 ? (
-                      <StoreEmptyStateBox message={t("create.noAddresses")} />
-                    ) : (
+                    <Label>{t("create.addressesLabel")}</Label>
+                    {addressRows.length > 0 && (
                       <StoreAddressList
                         idPrefix="edit-address"
                         rows={addressRows.map((rowId, rowIndex) => ({
                           rowId,
                           rowIndex,
-                          countryCode: addressCountryByRowId[rowId] ?? "",
                           city: addressCityByRowId[rowId] ?? "",
                           addressLine: addressLineByRowId[rowId] ?? "",
                           reference: addressReferenceByRowId[rowId] ?? "",
-                          countryError: fieldErrors[`addresses.${rowIndex}.countryCode`]?.[0] ?? undefined,
                           cityError: fieldErrors[`addresses.${rowIndex}.city`]?.[0] ?? undefined,
                           addressLineError: fieldErrors[`addresses.${rowIndex}.addressLine`]?.[0] ?? undefined,
                           referenceError: fieldErrors[`addresses.${rowIndex}.reference`]?.[0] ?? undefined,
                         }))}
-                        countryOptions={countryOptions}
-                        emptyCountryLabel="-"
-                        countryLabel={t("create.addressCountry")}
                         cityLabel={t("create.addressCity")}
                         addressLineLabel={t("create.addressLine")}
                         referenceLabel={t("create.addressReference")}
-                        countryInputName="addressCountryCode"
                         cityInputName="addressCity"
                         addressLineInputName="addressAddressLine"
                         referenceInputName="addressReference"
                         removeLabel={t("create.remove")}
-                        rowLabel={(index) => t("create.addressItemLabel", { index: index + 1 })}
-                        onCountryChange={(rowId, nextValue) => {
-                          setAddressCountryByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
-                        }}
                         onCityChange={(rowId, nextValue) => {
                           setAddressCityByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
                         }}
@@ -584,12 +508,20 @@ export default function EditStoreForm({
                           setAddressReferenceByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
                         }}
                         onRemove={handleRemoveAddress}
-                        renderCountryError={renderError}
                         renderCityError={renderError}
                         renderAddressLineError={renderError}
                         renderReferenceError={renderError}
                       />
                     )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleAddAddress}
+                      leadingIcon={<Plus size={13} aria-hidden />}
+                    >
+                      {t("create.addAddress")}
+                    </Button>
                   </div>
                 </div>
               </WizardStep>
@@ -660,8 +592,8 @@ export default function EditStoreForm({
                         value={selectedImportCountries.map((code) => tCountries(code)).join(" · ")}
                       />
                     )}
-                    {store.storeType === "BUSINESS" && contactChannelRows.length > 0 && (
-                      <SummaryRow label={t("create.contactChannelsLabel")} value={`${contactChannelRows.length}`} />
+                    {store.storeType === "BUSINESS" && contactChannelEntries.length > 0 && (
+                      <SummaryRow label={t("create.contactChannelsLabel")} value={`${contactChannelEntries.length}`} />
                     )}
                     {store.storeType === "BUSINESS" && addressRows.length > 0 && (
                       <SummaryRow label={t("create.addressesLabel")} value={`${addressRows.length}`} />

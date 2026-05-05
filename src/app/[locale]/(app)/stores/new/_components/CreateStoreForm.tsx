@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertTriangle, Box, Building2, Check, Globe, Plus, UserRound } from "lucide-react";
+import { AlertTriangle, Building2, Check, Clock, Globe, Plus, Store, User } from "lucide-react";
+import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import {
   type ChangeEvent,
   type FormEvent,
@@ -20,12 +21,12 @@ import Typography from "@/components/core/Typography";
 import Eyebrow from "@/components/core/Eyebrow";
 import Label from "@/components/core/Label";
 import Input from "@/components/core/Input";
-import Select from "@/components/core/Select";
+import SearchableSelect from "@/components/core/SearchableSelect";
 import Textarea from "@/components/core/Textarea";
 import Button from "@/components/core/Button/Button";
 import Modal from "@/components/modules/Modal/Modal";
-import { WizardAccordion, WizardStep } from "@/components/modules/WizardAccordion";
-import type { StepperStep } from "@/components/core/Stepper";
+import { WizardAccordion, WizardStep, type WizardAccordionHandle } from "@/components/modules/WizardAccordion";
+import Stepper, { type StepperStep } from "@/components/core/Stepper";
 import BackNavLink from "@/components/core/BackNavLink";
 import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS, RETURN_TO_ORDER_CREATE, ROUTES } from "@/lib/constants";
@@ -35,18 +36,16 @@ import { getDuplicateCandidates, getDuplicateCandidatesForSubmit } from "../_act
 import { SIMILARITY_THRESHOLD_PERCENT } from "@/lib/store/duplicateMatch";
 import { STORE_LOGO_MAX_SOURCE_SIZE_MB } from "@/lib/store/logoShared";
 import StoreAddressList from "../../_components/share/StoreAddressList";
-import StoreContactChannelList, {
-  STORE_CONTACT_CHANNEL_TYPES,
-  type StoreContactChannelType,
-} from "../../_components/share/StoreContactChannelList";
-import StoreEmptyStateBox from "../../_components/share/StoreEmptyStateBox";
+import { type StoreContactChannelType } from "../../_components/share/StoreContactChannelList";
+import StoreContactChannelEditor from "../../_components/share/StoreContactChannelEditor";
+import InlineSwitch from "../../_components/share/InlineSwitch";
 import StoreLogoField, { type StoreLogoSubmission } from "../../_components/share/StoreLogoField/StoreLogoField";
 import CollectorCountryFlagEmoji from "../../_components/share/CollectorCountryFlagEmoji";
 import MultiTagAutocomplete from "@/components/core/MultiTagAutocomplete";
 import StoreProductTypeRequestModal from "../../_components/share/StoreProductTypeRequestModal";
-import StoreToggleSwitch from "../../_components/share/StoreToggleSwitch";
 import DuplicateAlertInline from "../../_components/share/DuplicateAlertInline";
 import ToggleChoiceGroup from "@/components/core/ToggleChoiceGroup";
+import Chip from "@/components/core/Chip";
 
 type DuplicateCandidate = { id: string; name: string; slug: string; countryCode: string; logoUrl: string | null };
 
@@ -79,11 +78,6 @@ const resolveFirstErrorElement = (form: HTMLFormElement, fieldKey: string): HTML
     const [, indexRaw, property] = fieldKey.split(".");
     const index = Number(indexRaw);
     if (!Number.isInteger(index)) return form.querySelector('[name="addressAddressLine"]');
-
-    if (property === "countryCode") {
-      const countryElements = form.querySelectorAll('[name="addressCountryCode"]');
-      return (countryElements[index] as HTMLElement | undefined) ?? null;
-    }
 
     if (property === "city") {
       const cityElements = form.querySelectorAll('[name="addressCity"]');
@@ -172,10 +166,9 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
   const [presenceTypes, setPresenceTypes] = useState<Array<"ONLINE" | "PHYSICAL">>(["ONLINE"]);
   const [selectedProductTypeKeys, setSelectedProductTypeKeys] = useState<string[]>([]);
   const [selectedImportCountries, setSelectedImportCountries] = useState<string[]>([]);
-  const [contactChannelRows, setContactChannelRows] = useState<number[]>([]);
-  const [contactChannelTypeByRowId, setContactChannelTypeByRowId] = useState<
-    Partial<Record<number, StoreContactChannelType>>
-  >({});
+  const [contactChannelEntries, setContactChannelEntries] = useState<
+    Array<{ id: number; type: StoreContactChannelType; value: string }>
+  >([]);
   const [addressRows, setAddressRows] = useState<number[]>([]);
   const [logoSubmission, setLogoSubmission] = useState<StoreLogoSubmission>({
     action: "keep",
@@ -197,6 +190,9 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
   const [showConfirmDuplicate, setShowConfirmDuplicate] = useState(false);
   const pendingFormDataRef = useRef<FormData | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
+  const wizardRef = useRef<WizardAccordionHandle | null>(null);
+  const [activeStep, setActiveStep] = useState(1);
+  const [doneStepsArr, setDoneStepsArr] = useState<number[]>([]);
 
   const fetchCandidates = useCallback(async (query: string) => {
     const trimmedQuery = query.trim();
@@ -236,54 +232,45 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
 
   const storeTypeOptions = useMemo(
     () => [
-      { value: "BUSINESS", label: tCreate("storeTypeBusiness"), icon: <Building2 aria-hidden /> },
-      { value: "PERSON", label: tCreate("storeTypePerson"), icon: <UserRound aria-hidden /> },
+      {
+        value: "BUSINESS",
+        label: tCreateRedesign("step1.businessLabel"),
+        description: tCreateRedesign("step1.businessDesc"),
+        icon: <Store aria-hidden />,
+      },
+      {
+        value: "PERSON",
+        label: tCreateRedesign("step1.personLabel"),
+        description: tCreateRedesign("step1.personDesc"),
+        icon: <User aria-hidden />,
+      },
     ],
-    [tCreate],
+    [tCreateRedesign],
   );
 
   const presenceOptions = useMemo(
     () => [
+      { value: "PHYSICAL", label: tCreate("presencePhysical"), icon: <Store aria-hidden /> },
       { value: "ONLINE", label: tCreate("presenceOnline"), icon: <Globe aria-hidden /> },
-      { value: "PHYSICAL", label: tCreate("presencePhysical"), icon: <Globe aria-hidden /> },
     ],
     [tCreate],
   );
 
   const productTypeOptions = useMemo(
     () =>
-      productTypes.map((productType) => ({
-        value: productType.key,
-        label: tProductTypes(productType.key),
-        icon: <Box aria-hidden />,
-      })),
+      productTypes.map((productType) => {
+        const Icon = getStoreProductTypeIcon(productType.key);
+        return {
+          value: productType.key,
+          label: tProductTypes(productType.key),
+          icon: <Icon aria-hidden />,
+        };
+      }),
     [productTypes, tProductTypes],
   );
 
-  const handleAddContactChannel = () => {
-    const nextId = nextContactRowIdRef.current;
-    const defaultType = STORE_CONTACT_CHANNEL_TYPES[contactChannelRows.length % STORE_CONTACT_CHANNEL_TYPES.length];
-    nextContactRowIdRef.current += 1;
-    setContactChannelRows((previous) => [...previous, nextId]);
-    setContactChannelTypeByRowId((previous) => ({
-      ...previous,
-      [nextId]: defaultType,
-    }));
-  };
-
-  const handleRemoveContactChannel = (rowId: number) => {
-    setContactChannelRows((previous) => previous.filter((item) => item !== rowId));
-    setContactChannelTypeByRowId((previous) => {
-      const next = { ...previous };
-      delete next[rowId];
-      return next;
-    });
-  };
-
-  const getContactChannelTypeForRow = (rowId: number, rowIndex: number): StoreContactChannelType => {
-    return (
-      contactChannelTypeByRowId[rowId] ?? STORE_CONTACT_CHANNEL_TYPES[rowIndex % STORE_CONTACT_CHANNEL_TYPES.length]
-    );
+  const handleRemoveContactChannel = (id: number) => {
+    setContactChannelEntries((previous) => previous.filter((entry) => entry.id !== id));
   };
 
   const getContactChannelPlaceholder = (type: StoreContactChannelType) => {
@@ -364,25 +351,21 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
 
   const success = state?.success === true;
   const createdStoreSlug = success && "slug" in state ? state.slug : null;
-  const fieldErrors = state?.success === false && "fieldErrors" in state ? (state.fieldErrors ?? {}) : {};
+  const fieldErrors = useMemo(
+    () => (state?.success === false && "fieldErrors" in state ? (state.fieldErrors ?? {}) : {}),
+    [state],
+  );
   const serverError = state?.success === false && "error" in state ? state.error : null;
   const firstErrorKey = Object.keys(fieldErrors)[0];
   const hasPresenceError = !!fieldErrors.presenceTypes?.length;
   const hasProductTypeError = !!fieldErrors.productTypeKeys?.length;
   const logoError = fieldErrors.logo?.[0] ?? null;
 
-  const getContactChannelValueError = (rowIndex: number) => {
-    return (
-      fieldErrors[`contactChannels.${rowIndex}.value`]?.[0] ??
-      fieldErrors[`contactChannels.${rowIndex}`]?.[0] ??
-      fieldErrors.contactChannels?.[0] ??
-      null
-    );
-  };
-
-  const getContactChannelTypeError = (rowIndex: number) => {
-    return fieldErrors[`contactChannels.${rowIndex}.type`]?.[0] ?? null;
-  };
+  const contactChannelGenericError = useMemo(() => {
+    if (fieldErrors.contactChannels?.[0]) return fieldErrors.contactChannels[0];
+    const firstKey = Object.keys(fieldErrors).find((key) => key.startsWith("contactChannels."));
+    return firstKey ? (fieldErrors[firstKey]?.[0] ?? null) : null;
+  }, [fieldErrors]);
 
   useEffect(() => {
     if (state?.success !== false || !firstErrorKey || !formRef.current) {
@@ -428,20 +411,28 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
   const stepperSteps: StepperStep[] = useMemo(() => {
     if (storeType === "BUSINESS") {
       return [
-        { n: 1, label: tCreateRedesign("step1.eyebrow") },
-        { n: 2, label: tCreateRedesign("step2.eyebrow") },
-        { n: 3, label: tCreateRedesign("step3.eyebrow") },
-        { n: 4, label: tCreateRedesign("step4.eyebrow") },
-        { n: 5, label: tCreateRedesign("step5.eyebrow") },
+        { n: 1, label: tCreateRedesign("step1.shortLabel") },
+        { n: 2, label: tCreateRedesign("step2.shortLabel") },
+        { n: 3, label: tCreateRedesign("step3.shortLabel") },
+        { n: 4, label: tCreateRedesign("step4.shortLabel") },
+        { n: 5, label: tCreateRedesign("step5.shortLabel") },
       ];
     }
     return [
-      { n: 1, label: tCreateRedesign("step1.eyebrow") },
-      { n: 2, label: tCreateRedesign("step2.eyebrow") },
-      { n: 3, label: tCreateRedesign("step3.eyebrow") },
-      { n: 4, label: tCreateRedesign("step5.eyebrow") },
+      { n: 1, label: tCreateRedesign("step1.shortLabel") },
+      { n: 2, label: tCreateRedesign("step2.shortLabel") },
+      { n: 3, label: tCreateRedesign("step3.shortLabel") },
+      { n: 4, label: tCreateRedesign("step5.shortLabel") },
     ];
   }, [storeType, tCreateRedesign]);
+
+  const totalSteps = stepperSteps.length;
+  const maxAllowedStep = useMemo(() => {
+    if (doneStepsArr.length === 0) return 1;
+    let maxDone = 0;
+    for (const s of doneStepsArr) if (s > maxDone) maxDone = s;
+    return Math.min(maxDone + 1, totalSteps);
+  }, [doneStepsArr, totalSteps]);
 
   if (success) {
     return (
@@ -458,43 +449,50 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
   // Step 3 needs at least one product type and at least one presence type.
   const step3Valid = selectedProductTypeKeys.length > 0 && presenceTypes.length > 0;
   const reviewStepN = storeType === "BUSINESS" ? 5 : 4;
+  const handleStepperClick = (n: number) => wizardRef.current?.activate(n);
 
   const renderReviewSummary = () => (
-    <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      <SummaryRow
-        label={tCreate("storeTypeLabel")}
-        value={storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
-      />
-      {storeType === "PERSON" && isPrivate && <SummaryRow label={tCreateRedesign("step1.privateLabel")} value="✓" />}
-      <SummaryRow label={tCreate("nameLabel")} value={nameValue || "—"} />
-      <SummaryRow label={tCreate("countryLabel")} value={countryCode ? tCountries(countryCode) : "—"} />
-      <SummaryRow
-        label={tCreate("presenceLabel")}
-        value={
-          presenceTypes
-            .map((p) =>
-              tCreate(`presence${p === "ONLINE" ? "Online" : "Physical"}` as "presenceOnline" | "presencePhysical"),
-            )
-            .join(" · ") || "—"
-        }
-      />
-      <SummaryRow
-        label={tCreate("productTypesLabel")}
-        value={selectedProductTypeKeys.map((k) => tProductTypes(k)).join(" · ") || "—"}
-      />
-      {selectedImportCountries.length > 0 && (
-        <SummaryRow
-          label={tCreate("importCountriesLabel")}
-          value={selectedImportCountries.map((code) => tCountries(code)).join(" · ")}
+    <div className="rounded-[var(--radius-lg)] p-4 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
+      <dl className="grid [grid-template-columns:auto_1fr] items-baseline [gap:6px_16px] [font-size:var(--text-body)]">
+        <ReviewRow
+          label={tCreateRedesign("aside.typeLabel")}
+          value={storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
         />
-      )}
-      {storeType === "BUSINESS" && contactChannelRows.length > 0 && (
-        <SummaryRow label={tCreate("contactChannelsLabel")} value={`${contactChannelRows.length}`} />
-      )}
-      {storeType === "BUSINESS" && addressRows.length > 0 && (
-        <SummaryRow label={tCreate("addressesLabel")} value={`${addressRows.length}`} />
-      )}
-    </dl>
+        {storeType === "PERSON" && isPrivate && <ReviewRow label={tCreateRedesign("step1.privateLabel")} value="✓" />}
+        <ReviewRow label={tCreateRedesign("aside.nameLabel")} value={nameValue || "—"} />
+        <ReviewRow label={tCreateRedesign("aside.countryLabel")} value={countryCode ? tCountries(countryCode) : "—"} />
+        <ReviewSeparator />
+        <ReviewRow
+          label={tCreateRedesign("aside.categoriesLabel")}
+          value={selectedProductTypeKeys.map((k) => tProductTypes(k)).join(", ") || "—"}
+        />
+        <ReviewRow
+          label={tCreateRedesign("aside.presenceLabel")}
+          value={
+            presenceTypes
+              .map((p) =>
+                tCreate(`presence${p === "ONLINE" ? "Online" : "Physical"}` as "presenceOnline" | "presencePhysical"),
+              )
+              .join(", ") || "—"
+          }
+        />
+        {selectedImportCountries.length > 0 && (
+          <ReviewRow
+            label={tCreateRedesign("aside.importLabel")}
+            value={selectedImportCountries.map((code) => tCountries(code)).join(", ")}
+          />
+        )}
+        {storeType === "BUSINESS" && (contactChannelEntries.length > 0 || addressRows.length > 0) && (
+          <ReviewSeparator />
+        )}
+        {storeType === "BUSINESS" && contactChannelEntries.length > 0 && (
+          <ReviewRow label={tCreateRedesign("aside.channelsLabel")} value={`${contactChannelEntries.length}`} />
+        )}
+        {storeType === "BUSINESS" && addressRows.length > 0 && (
+          <ReviewRow label={tCreateRedesign("aside.addressesLabel")} value={`${addressRows.length}`} />
+        )}
+      </dl>
+    </div>
   );
 
   return (
@@ -533,8 +531,27 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
         {hasStock && <input type="hidden" name="hasStock" value="on" />}
         {receivesOrders && <input type="hidden" name="receivesOrders" value="on" />}
 
+        {/* Stepper spans the full grid width so the dots align across both columns */}
+        <div className="lg:col-span-2">
+          <Stepper
+            steps={stepperSteps}
+            activeStep={activeStep}
+            doneSteps={doneStepsArr}
+            onStepClick={handleStepperClick}
+            ariaLabel={tCreateRedesign("stepperLabel")}
+          />
+        </div>
+
         <div className="min-w-0">
-          <WizardAccordion startStep={1} steps={stepperSteps} stepperAriaLabel={tCreateRedesign("stepperLabel")}>
+          <WizardAccordion
+            ref={wizardRef}
+            startStep={1}
+            showStepper={false}
+            gated
+            scrollOnAdvance
+            onStepChange={setActiveStep}
+            onDoneStepsChange={setDoneStepsArr}
+          >
             {/* ── Step 1: Tipo ── */}
             <WizardStep
               n={1}
@@ -542,6 +559,7 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
               title={tCreateRedesign("step1.title")}
               primaryAction={{ label: tCreateRedesign("continue") }}
               summary={storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
+              disabled={1 > maxAllowedStep}
             >
               <div className="space-y-4">
                 <Typography size="xs" className="text-text-muted">
@@ -567,15 +585,44 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                 </div>
 
                 {storeType === "PERSON" && (
-                  <div className="space-y-2 pt-4 [border-top:1px_solid_var(--border)]">
-                    <StoreToggleSwitch
-                      label={tCreateRedesign("step1.privateLabel")}
-                      checked={isPrivate}
-                      onChange={setIsPrivate}
-                    />
-                    <Typography size="xs" className="text-text-muted [line-height:1.5]">
-                      {tCreateRedesign("step1.privateHelper")}
-                    </Typography>
+                  <div className="pt-4 [border-top:1px_solid_var(--border)]">
+                    <div className="flex items-start gap-3">
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={isPrivate}
+                        aria-labelledby="store-private-label"
+                        onClick={() => setIsPrivate(!isPrivate)}
+                        className={cn(
+                          "relative mt-0.5 h-[22px] w-[38px] flex-shrink-0 cursor-pointer rounded-full transition-colors",
+                          "focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:2px]",
+                          isPrivate ? "[background:var(--accent)]" : "[background:var(--border-strong)]",
+                        )}
+                      >
+                        <span
+                          aria-hidden="true"
+                          style={{ transform: isPrivate ? "translateX(16px)" : undefined }}
+                          className={cn(
+                            "absolute top-[2px] left-[2px] h-[18px] w-[18px] rounded-full transition-transform",
+                            "[box-shadow:0_1px_3px_rgba(0,0,0,0.15)] [background:var(--surface)]",
+                          )}
+                        />
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <div
+                          id="store-private-label"
+                          className="[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
+                        >
+                          {tCreateRedesign("step1.privateLabel")}{" "}
+                          <span className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-regular)] [color:var(--text-muted)]">
+                            {tCreateRedesign("step1.privateBadge")}
+                          </span>
+                        </div>
+                        <Typography size="xs" className="mt-1 [line-height:1.5] [color:var(--text-muted)]">
+                          {tCreateRedesign("step1.privateHelper")}
+                        </Typography>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -589,9 +636,13 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
               primaryAction={{ label: tCreateRedesign("continue"), disabled: !step2Valid }}
               secondaryAction={{ label: tCreateRedesign("back") }}
               summary={nameValue && countryCode ? `${nameValue} · ${tCountries(countryCode)}` : undefined}
+              disabled={2 > maxAllowedStep}
             >
+              <Typography size="xs" className="text-text-muted mb-4">
+                {tCreateRedesign("step2.helper")}
+              </Typography>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="md:col-span-2">
+                <div>
                   <Label htmlFor="store-name">{tCreate("nameLabel")}</Label>
                   <Input
                     id="store-name"
@@ -611,7 +662,32 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                       {tValidation(fieldErrors.name[0] as "nameRequired" | "nameTooLong")}
                     </Typography>
                   )}
-                  {!showConfirmDuplicate && (
+                </div>
+
+                <div>
+                  <Label htmlFor="store-country">{tCreate("countryLabel")}</Label>
+                  <SearchableSelect
+                    id="store-country"
+                    name="countryCode"
+                    required
+                    options={countryOptions}
+                    value={countryCode}
+                    onChange={setCountryCode}
+                    placeholder={tCreate("countryPlaceholder")}
+                    clearLabel={tCreate("remove")}
+                    noResultsLabel={tCreateRedesign("countryNoResults")}
+                    aria-invalid={!!fieldErrors.countryCode?.length}
+                    error={!!fieldErrors.countryCode?.length}
+                  />
+                  {fieldErrors.countryCode?.[0] && (
+                    <Typography size="xs" className="text-destructive mt-1" role="alert">
+                      {tValidation("countryInvalid")}
+                    </Typography>
+                  )}
+                </div>
+
+                {!showConfirmDuplicate && duplicateCandidates.length > 0 && (
+                  <div className="md:col-span-2">
                     <DuplicateAlertInline
                       candidates={duplicateCandidates}
                       locale={locale}
@@ -621,48 +697,9 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                         viewStore: tCreateRedesign("duplicate.viewStore"),
                         countryName: (code) => tCountries(code),
                       }}
-                      className="mt-2"
                     />
-                  )}
-                </div>
-
-                <div>
-                  <Label htmlFor="store-country">{tCreate("countryLabel")}</Label>
-                  <Select
-                    id="store-country"
-                    name="countryCode"
-                    required
-                    value={countryCode}
-                    onChange={(event) => setCountryCode(event.target.value)}
-                    aria-invalid={!!fieldErrors.countryCode?.length}
-                    error={!!fieldErrors.countryCode?.length}
-                  >
-                    <option value="">{tCreate("countryPlaceholder")}</option>
-                    {countries.map((country) => (
-                      <option key={country.code} value={country.code}>
-                        {tCountries(country.code)}
-                      </option>
-                    ))}
-                  </Select>
-                  {fieldErrors.countryCode?.[0] && (
-                    <Typography size="xs" className="text-destructive mt-1" role="alert">
-                      {tValidation("countryInvalid")}
-                    </Typography>
-                  )}
-                </div>
-
-                <div className="md:col-span-2">
-                  <Label htmlFor="store-description">{tCreate("descriptionLabel")}</Label>
-                  <Textarea
-                    id="store-description"
-                    name="description"
-                    value={descriptionValue}
-                    onChange={(event) => setDescriptionValue(event.target.value)}
-                    placeholder={tCreate("descriptionPlaceholder")}
-                    rows={3}
-                    maxLength={2000}
-                  />
-                </div>
+                  </div>
+                )}
 
                 {storeType === "BUSINESS" && (
                   <div className="md:col-span-2">
@@ -696,6 +733,19 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                     />
                   </div>
                 )}
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="store-description">{tCreate("descriptionLabel")}</Label>
+                  <Textarea
+                    id="store-description"
+                    name="description"
+                    value={descriptionValue}
+                    onChange={(event) => setDescriptionValue(event.target.value)}
+                    placeholder={tCreate("descriptionPlaceholder")}
+                    rows={3}
+                    maxLength={2000}
+                  />
+                </div>
               </div>
             </WizardStep>
 
@@ -713,10 +763,14 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                     : `${selectedProductTypeKeys.length}`
                   : undefined
               }
+              disabled={3 > maxAllowedStep}
             >
               <div className="space-y-5">
                 <div className="space-y-3">
                   <Label>{tCreate("productTypesLabel")}</Label>
+                  <Typography size="sm" className="[color:var(--text-muted)]">
+                    {tCreateRedesign("step3.productTypesHelper")}
+                  </Typography>
                   <div
                     data-field="productTypeKeys"
                     className={cn(hasProductTypeError && "border-destructive rounded-lg border p-2")}
@@ -740,7 +794,10 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                 </div>
 
                 <div className="space-y-3">
-                  <Label>{tCreate("presenceLabel")}</Label>
+                  <Label>{tCreateRedesign("step3.presenceLabel")}</Label>
+                  <Typography size="sm" className="[color:var(--text-muted)]">
+                    {tCreateRedesign("step3.presenceHelper")}
+                  </Typography>
                   <div
                     data-field="presenceTypes"
                     className={cn(hasPresenceError && "border-destructive rounded-lg border p-2")}
@@ -761,17 +818,11 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <StoreToggleSwitch label={tCreate("hasStockLabel")} checked={hasStock} onChange={setHasStock} />
-                  <StoreToggleSwitch
-                    label={tCreate("receivesOrdersLabel")}
-                    checked={receivesOrders}
-                    onChange={setReceivesOrders}
-                  />
-                </div>
-
                 <div className="space-y-3">
                   <Label htmlFor="import-countries-input">{tCreate("importCountriesLabel")}</Label>
+                  <Typography size="sm" className="[color:var(--text-muted)]">
+                    {tCreateRedesign("step3.importHelper")}
+                  </Typography>
                   <MultiTagAutocomplete
                     id="import-countries-input"
                     options={countryOptions}
@@ -781,6 +832,19 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                     inputName="importCountries"
                     helperText={tCreate("importCountriesHelper")}
                     removeItemAriaLabel={(itemLabel) => `${tCreate("remove")} ${itemLabel}`}
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-6">
+                  <InlineSwitch
+                    label={tCreateRedesign("step3.hasStockLabel")}
+                    checked={hasStock}
+                    onChange={setHasStock}
+                  />
+                  <InlineSwitch
+                    label={tCreateRedesign("step3.receivesOrdersLabel")}
+                    checked={receivesOrders}
+                    onChange={setReceivesOrders}
                   />
                 </div>
               </div>
@@ -795,87 +859,65 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                 primaryAction={{ label: tCreateRedesign("continue") }}
                 secondaryAction={{ label: tCreateRedesign("back") }}
                 summary={
-                  contactChannelRows.length + addressRows.length > 0
-                    ? `${contactChannelRows.length + addressRows.length}`
+                  contactChannelEntries.length + addressRows.length > 0
+                    ? `${contactChannelEntries.length + addressRows.length}`
                     : undefined
                 }
+                disabled={4 > maxAllowedStep}
               >
+                <Typography size="xs" className="text-text-muted mb-4">
+                  {tCreateRedesign("step4.helper")}
+                </Typography>
                 <div className="space-y-5">
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label>{tCreate("contactChannelsLabel")}</Label>
-                      <Button type="button" variant="secondary" size="sm" onClick={handleAddContactChannel}>
-                        <Plus size={16} className="mr-1" aria-hidden />
-                        {tCreate("addContactChannel")}
-                      </Button>
-                    </div>
-                    {contactChannelRows.length === 0 ? (
-                      <StoreEmptyStateBox message={tCreate("noContactChannels")} />
-                    ) : (
-                      <StoreContactChannelList
-                        idPrefix="contact-channel"
-                        rows={contactChannelRows.map((rowId, rowIndex) => ({
-                          rowId,
-                          rowIndex,
-                          type: getContactChannelTypeForRow(rowId, rowIndex),
-                          typeError: getContactChannelTypeError(rowIndex) ?? undefined,
-                          valueError: getContactChannelValueError(rowIndex) ?? undefined,
-                        }))}
-                        typeInputName="contactChannelType"
-                        valueInputName="contactChannelValue"
-                        typeLabel={tCreate("contactChannelType")}
-                        valueLabel={tCreate("contactChannelValue")}
-                        removeLabel={tCreate("remove")}
-                        optionLabel={(type) => tChannelTypes(type)}
-                        valuePlaceholder={getContactChannelPlaceholder}
-                        onTypeChange={(rowId, nextType) => {
-                          setContactChannelTypeByRowId((previous) => ({
-                            ...previous,
-                            [rowId]: nextType,
-                          }));
-                        }}
-                        onRemove={handleRemoveContactChannel}
-                        renderValueError={(errorKey) =>
-                          tValidation(
-                            errorKey as
-                              | "contactValueRequired"
-                              | "contactValueInvalidWebsite"
-                              | "contactValueInvalidWhatsApp"
-                              | "contactValueInvalidInstagram"
-                              | "contactValueInvalidFacebook"
-                              | "contactValueInvalidTikTok"
-                              | "contactValueInvalidEmail"
-                              | "contactValueInvalidPhone",
-                          )
-                        }
-                      />
+                    <Label>{tCreate("contactChannelsLabel")}</Label>
+                    <StoreContactChannelEditor
+                      entries={contactChannelEntries}
+                      onAdd={({ type, value }) => {
+                        const nextId = nextContactRowIdRef.current;
+                        nextContactRowIdRef.current += 1;
+                        setContactChannelEntries((previous) => [...previous, { id: nextId, type, value }]);
+                      }}
+                      onUpdate={(id, next) =>
+                        setContactChannelEntries((previous) =>
+                          previous.map((entry) => (entry.id === id ? { ...entry, ...next } : entry)),
+                        )
+                      }
+                      onRemove={handleRemoveContactChannel}
+                      typeInputName="contactChannelType"
+                      valueInputName="contactChannelValue"
+                      labels={{
+                        typeLabel: tCreate("contactChannelType"),
+                        valueLabel: tCreate("contactChannelValue"),
+                        helper: tCreateRedesign("channels.helper"),
+                        addButton: tCreateRedesign("channels.addButton"),
+                        edit: tCreateRedesign("channels.edit"),
+                        save: tCreateRedesign("channels.save"),
+                        cancel: tCreateRedesign("channels.cancel"),
+                        remove: tCreate("remove"),
+                        optionLabel: (type) => tChannelTypes(type),
+                        valuePlaceholder: getContactChannelPlaceholder,
+                      }}
+                    />
+                    {contactChannelGenericError && (
+                      <Typography size="xs" className="text-destructive mt-1" role="alert">
+                        {contactChannelGenericError}
+                      </Typography>
                     )}
                   </div>
 
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label>{tCreate("addressesLabel")}</Label>
-                      <Button type="button" variant="secondary" size="sm" onClick={handleAddAddress}>
-                        <Plus size={16} className="mr-1" aria-hidden />
-                        {tCreate("addAddress")}
-                      </Button>
-                    </div>
-                    {addressRows.length === 0 ? (
-                      <StoreEmptyStateBox message={tCreate("noAddresses")} />
-                    ) : (
+                    <Label>{tCreate("addressesLabel")}</Label>
+                    {addressRows.length > 0 && (
                       <StoreAddressList
                         idPrefix="address"
                         rows={addressRows.map((rowId, rowIndex) => ({
                           rowId,
                           rowIndex,
                         }))}
-                        countryOptions={countryOptions}
-                        emptyCountryLabel={tCreate("countryPlaceholder")}
-                        countryLabel={tCreate("addressCountry")}
                         cityLabel={tCreate("addressCity")}
                         addressLineLabel={tCreate("addressLine")}
                         referenceLabel={tCreate("addressReference")}
-                        countryInputName="addressCountryCode"
                         cityInputName="addressCity"
                         addressLineInputName="addressAddressLine"
                         referenceInputName="addressReference"
@@ -883,6 +925,15 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                         onRemove={handleRemoveAddress}
                       />
                     )}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleAddAddress}
+                      leadingIcon={<Plus size={13} aria-hidden />}
+                    >
+                      {tCreate("addAddress")}
+                    </Button>
                   </div>
                 </div>
               </WizardStep>
@@ -897,17 +948,26 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                 label: isPending ? tCreate("submitting") : tCreateRedesign("submit"),
                 onClick: triggerSubmit,
                 loading: isPending,
+                leadingIcon: <Check size={14} aria-hidden="true" />,
+                trailingIcon: null,
               }}
               secondaryAction={{ label: tCreateRedesign("back") }}
               autoAdvance={false}
+              disabled={reviewStepN > maxAllowedStep}
             >
+              <Typography size="xs" className="text-text-muted">
+                {tCreateRedesign("step5.helper")}
+              </Typography>
+              <Typography size="xs" className="text-text-muted mt-1 mb-4">
+                {tCreateRedesign("step5.subhelper")}
+              </Typography>
               <div className="space-y-4">
                 <Eyebrow as="p">{tCreateRedesign("summaryEyebrow")}</Eyebrow>
                 {renderReviewSummary()}
               </div>
             </WizardStep>
           </WizardAccordion>
-          <div className="mt-4 flex items-center gap-1.5 [font-size:var(--text-caption)] [color:var(--text-muted)]">
+          <div className="mt-5 flex items-center gap-1.5 pt-3.5 [font-size:var(--text-caption)] [color:var(--text-muted)] [border-top:1px_solid_var(--border)]">
             <Check size={12} aria-hidden="true" className="[color:var(--success)]" />
             <span>{tCreateRedesign("autosave")}</span>
           </div>
@@ -915,27 +975,51 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
 
         {/* ── Aside Resumen sticky ── */}
         <aside className="lg:[position:sticky] lg:[top:calc(var(--header-h-desktop,4rem)_+_var(--space-4,1rem))] lg:self-start">
-          <div className="rounded-[var(--radius-xl)] p-4 [background:var(--surface-elevated)] [border:1px_solid_var(--border)] md:p-5">
+          <div className="rounded-[var(--radius-xl)] p-4 [box-shadow:var(--shadow-2)] [background:var(--surface-elevated)] [border:1px_solid_var(--border)] md:p-5">
             <Eyebrow as="p">{tCreateRedesign("summaryEyebrow")}</Eyebrow>
             <dl className="mt-3 flex flex-col">
               <AsideSummaryRow
-                label={tCreate("storeTypeLabel")}
+                label={tCreateRedesign("aside.typeLabel")}
                 value={storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
               />
-              <AsideSummaryRow label={tCreate("nameLabel")} value={nameValue || "—"} muted={!nameValue} />
+              <AsideSummaryRow label={tCreateRedesign("aside.nameLabel")} value={nameValue || "—"} muted={!nameValue} />
               <AsideSummaryRow
-                label={tCreate("countryLabel")}
-                value={countryCode ? tCountries(countryCode) : "—"}
+                label={tCreateRedesign("aside.countryLabel")}
+                value={countryCode || "—"}
                 muted={!countryCode}
               />
               <AsideSummaryRow
-                label={tCreate("productTypesLabel")}
+                label={tCreateRedesign("aside.categoriesLabel")}
                 value={selectedProductTypeKeys.length > 0 ? `${selectedProductTypeKeys.length}` : "—"}
                 muted={selectedProductTypeKeys.length === 0}
               />
+              {storeType === "BUSINESS" && (
+                <AsideSummaryRow
+                  label={tCreateRedesign("aside.channelsLabel")}
+                  value={`${contactChannelEntries.length}`}
+                  muted={contactChannelEntries.length === 0}
+                />
+              )}
+              {storeType === "BUSINESS" && (
+                <AsideSummaryRow
+                  label={tCreateRedesign("aside.addressesLabel")}
+                  value={`${addressRows.length}`}
+                  muted={addressRows.length === 0}
+                />
+              )}
               {storeType === "PERSON" && isPrivate && (
                 <AsideSummaryRow label={tCreateRedesign("step1.privateLabel")} value="✓" />
               )}
+              <div className="flex items-center justify-between gap-3 py-2 [border-top:1px_solid_var(--border)]">
+                <dt className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">
+                  {tCreateRedesign("aside.statusLabel")}
+                </dt>
+                <dd>
+                  <Chip variant="info" icon={<Clock size={11} aria-hidden="true" />} size="sm">
+                    {tCreateRedesign("aside.statusPending")}
+                  </Chip>
+                </dd>
+              </div>
             </dl>
           </div>
         </aside>
@@ -944,24 +1028,26 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
   );
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
+function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col gap-0.5 rounded-[var(--radius-md)] p-3 [background:var(--surface)] [border:1px_solid_var(--border)]">
-      <dt>
-        <Eyebrow as="span">{label}</Eyebrow>
-      </dt>
-      <dd className="[font-size:var(--text-body)] [color:var(--text-primary)]">{value}</dd>
-    </div>
+    <>
+      <dt className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{label}</dt>
+      <dd className="[font-weight:var(--font-weight-medium)] [color:var(--text-primary)]">{value}</dd>
+    </>
   );
+}
+
+function ReviewSeparator() {
+  return <div aria-hidden="true" className="[grid-column:1/-1] my-1 h-px [background:var(--border)]" />;
 }
 
 function AsideSummaryRow({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-1.5 [border-bottom:1px_dashed_var(--border)] last:[border-bottom:0]">
-      <dt className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{label}</dt>
+    <div className="flex items-center justify-between gap-3 py-2 [border-top:1px_solid_var(--border)] first:[border-top:0]">
+      <dt className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">{label}</dt>
       <dd
         className={cn(
-          "[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)]",
+          "text-right [font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)]",
           muted ? "[color:var(--text-muted)]" : "[color:var(--text-primary)]",
         )}
       >

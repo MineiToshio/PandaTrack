@@ -45,7 +45,7 @@ export default function Stepper({
 
   return (
     <nav aria-label={ariaLabel ?? "Steps"} className={cn("w-full", className)}>
-      <ol className="flex items-center gap-2 overflow-x-auto md:gap-3" role="list">
+      <ol className="flex items-start gap-0 px-1 py-[18px] pb-6" role="list">
         {steps.map((step, index) => {
           const state = getStepState(step.n, activeStep, doneSet);
           const isLast = index === steps.length - 1;
@@ -61,49 +61,65 @@ export default function Stepper({
             );
 
           const bulletClass = cn(
-            "inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full transition-colors md:h-8 md:w-8",
+            "inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full transition-colors",
             state === "todo" &&
-              "[background:var(--surface)] [border:1px_solid_var(--border-strong)] [color:var(--text-muted)]",
+              "[background:var(--surface-elevated)] [border:1.5px_solid_var(--border-strong)] [color:var(--text-muted)]",
             state === "active" &&
-              "[background:var(--accent)] [border:1px_solid_var(--accent)] [color:var(--text-on-accent)]",
+              "[background:var(--accent)] [border:1.5px_solid_var(--accent)] [color:var(--text-on-accent)]",
+            state === "active" && "shadow-[0_0_0_4px_color-mix(in_oklch,var(--accent)_18%,transparent)]",
             state === "done" &&
-              "[background:color-mix(in_oklch,var(--success)_18%,var(--surface))] [border:1px_solid_var(--success)] [color:var(--success)]",
+              "[background:var(--success)] [border:1.5px_solid_var(--success)] [color:var(--text-on-accent)]",
           );
 
           const labelClass = cn(
-            "hidden whitespace-nowrap text-xs md:inline",
+            "block whitespace-nowrap text-xs",
             state === "active" && "[color:var(--text-primary)] [font-weight:var(--font-weight-semibold)]",
-            state !== "active" && "[color:var(--text-secondary)]",
+            state === "done" && "[color:var(--text-secondary)]",
+            state === "todo" && "[color:var(--text-muted)]",
           );
 
-          const connectorClass = cn(
-            "h-px flex-1 self-center",
-            doneSet.has(step.n) ? "[background:var(--success)]" : "[background:var(--border)]",
+          // Connector: horizontal line from center of current bullet to center of next.
+          // Sits at vertical level of bullet center (top: ~14px = bullet h/2).
+          // Drawn as ::after on the inner column, but here implemented as a sibling absolute element.
+          const connectorBg = doneSet.has(step.n) ? "[background:var(--success)]" : "[background:var(--border-strong)]";
+
+          const stepInner = (
+            <>
+              <span className={bulletClass}>{bulletContent}</span>
+              <span className={labelClass}>{step.label}</span>
+            </>
           );
 
           return (
-            <li key={step.n} className={cn("flex flex-shrink-0 items-center gap-2 md:gap-3", !isLast && "md:flex-1")}>
+            <li
+              key={step.n}
+              className="relative flex flex-1 flex-col items-center gap-2"
+              aria-current={state === "active" ? "step" : undefined}
+            >
+              {!isLast && (
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "pointer-events-none absolute top-[14px] left-1/2 h-[1.5px] w-full -translate-y-1/2",
+                    connectorBg,
+                  )}
+                />
+              )}
               {isClickable ? (
                 <button
                   type="button"
                   onClick={() => onStepClick?.(step.n)}
-                  aria-current={state === "active" ? "step" : undefined}
                   aria-label={`Step ${step.n}: ${step.label}`}
                   className={cn(
-                    "flex items-center gap-2 rounded-full p-0.5",
-                    "[outline:none] focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:2px]",
+                    "relative z-[1] flex flex-col items-center gap-2 bg-transparent",
+                    "[outline:none] focus-visible:rounded-md focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:4px]",
                   )}
                 >
-                  <span className={bulletClass}>{bulletContent}</span>
-                  <span className={labelClass}>{step.label}</span>
+                  {stepInner}
                 </button>
               ) : (
-                <div className="flex items-center gap-2" aria-current={state === "active" ? "step" : undefined}>
-                  <span className={bulletClass}>{bulletContent}</span>
-                  <span className={labelClass}>{step.label}</span>
-                </div>
+                <div className="relative z-[1] flex flex-col items-center gap-2">{stepInner}</div>
               )}
-              {!isLast && <span aria-hidden="true" className={cn(connectorClass, "hidden md:block")} />}
             </li>
           );
         })}

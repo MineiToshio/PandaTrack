@@ -92,13 +92,46 @@ const SIZE_MAX_WIDTH: Record<ModalSize, string> = {
 };
 
 /**
- * Modal canónico (ADR 0008 — Semantic Depth).
- * - Backdrop blur(8px) con tints calibrados light/dark.
- * - Icon-circle 48px tonal (default/destructive/warning/info).
- * - Border-radius 20px, footer con border-top.
- * - Spring enter (280ms linear stops) + opacity exit fast.
- * - API extendida: subtitle/icon/tone/primaryAction/secondaryAction/tertiaryAction/size/dismissible.
- * - Mantiene compatibilidad con consumidores legacy (isOpen/onClose/description/closeButtonLabel).
+ * # Modal — canonical component (ADR 0008 · Semantic Depth)
+ *
+ * **THIS IS THE ONLY MODAL COMPONENT IN THE APP.** Any confirm dialog,
+ * destructive prompt, info overlay, form-in-modal, or decision overlay
+ * across PandaTrack MUST consume this component. Do not create new modal
+ * components. Do not roll a dialog from scratch with a portal + div.
+ * Do not copy the visual from legacy modals you may find in the demo
+ * HTML — those have been mapped to this same canonical pattern.
+ *
+ * If you need behavior this component does not yet support, extend it
+ * here (add a prop, a tone, a size) — do not fork it.
+ *
+ * ## Visual contract (Semantic Depth)
+ * - Backdrop `blur(8px)` with light/dark calibrated tints.
+ * - Icon-circle 48px tonal (default `--accent`, destructive, warning, info).
+ * - Border-radius 20px (`--radius-2xl`), footer with `border-top`.
+ * - Spring enter (`280ms linear stops`) + opacity exit fast.
+ * - `prefers-reduced-motion` → fade only, no scale.
+ * - Focus trap, Esc to close, backdrop click to close (when `dismissible`).
+ *
+ * ## API summary
+ * - Required: `isOpen`, `onClose`, `title`.
+ * - Visual: `icon` + `tone` (header), `size` (`md` 460px / `lg` 768px),
+ *   `subtitle` (or legacy `description`).
+ * - Actions: `primaryAction`, `secondaryAction`, `tertiaryAction`.
+ * - Behavior: `dismissible` (default `true`), `role` (`dialog` | `alertdialog`).
+ * - Backward-compat aliases preserved: `description`, `closeOnBackdropClick`,
+ *   `closeButtonLabel`.
+ *
+ * ## When to use which `tone`
+ * - `default` — informational, neutral confirm, form modal.
+ * - `destructive` — irreversible action (delete, cancel order, remove store).
+ * - `warning` — caution / non-destructive but sensitive (report, flag, dispute).
+ * - `info` — explanatory / decision with multiple non-destructive paths.
+ *
+ * ## Related
+ * - Spec: `docs/redesign/components/Modal.md`
+ * - ADR: `docs/redesign/decisions/0008-modal-enhancement.md`
+ * - Mobile counterpart: `Sheet` (same Semantic Depth language for bottom sheets).
+ * - Cursor rule: `.cursor/rules/modal-canonical-pattern.mdc` (alwaysApply).
  */
 export default function Modal({
   isOpen,

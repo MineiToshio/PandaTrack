@@ -31,6 +31,7 @@ Read these on every implementation because they define project-wide defaults:
 - `docs-and-standards.mdc`: Read for every non-trivial change. It defines when to update `docs/`, when to create or extend rules, and how to keep documentation aligned with implementation.
 - `github-tracking-sync.mdc`: Read when the task maps to a product doc, work order, epic, or slice. It defines how implementation must stay aligned with `docs/product` and mirrored GitHub tracking, including Epic sub-issue order matching Work Order sequence.
 - `icons.mdc`: Read whenever icons are added or changed.
+- `modal-canonical-pattern.mdc`: Read whenever a Modal, Sheet, confirm dialog, or any modal-like overlay is created, fixed, or audited. Locks the canonical Semantic Depth pattern (ADR 0008) and explicitly warns against copying legacy modals that still live inside the demo HTML.
 - `next-intl-translation-apis.mdc`: Read whenever translations are used or touched in React or server-side framework code.
 - `optimistic-client-updates.mdc`: Read whenever a Client Component dispatches a mutation that affects state the user is observing. It requires applying the change locally in parallel with the Server Action and reverting on failure, so the user gets immediate feedback without a second server fetch.
 - `testing-strategy.mdc`: Read for every change to decide required unit, integration, and E2E coverage.

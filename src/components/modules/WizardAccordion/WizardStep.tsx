@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, ChevronUp } from "lucide-react";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import Button from "@/components/core/Button/Button";
 import { cn } from "@/lib/styles";
@@ -18,6 +18,10 @@ export type WizardStepAction = {
   onClick?: () => void;
   loading?: boolean;
   disabled?: boolean;
+  /** Override the default leading icon. Pass `null` to remove it. */
+  leadingIcon?: ReactNode | null;
+  /** Override the default trailing icon. Pass `null` to remove it. */
+  trailingIcon?: ReactNode | null;
 };
 
 export type WizardStepProps = {
@@ -46,6 +50,8 @@ export type WizardStepProps = {
    * Set to `false` when the body is heavy and you want to lazy-mount it.
    */
   keepBodyMounted?: boolean;
+  /** When true, the collapsed header is not clickable (used for gated wizards). */
+  disabled?: boolean;
   className?: string;
 };
 
@@ -60,6 +66,7 @@ export default function WizardStep({
   autoAdvance = true,
   autoBack = true,
   keepBodyMounted = true,
+  disabled = false,
   className,
 }: WizardStepProps) {
   const ctx = useWizardAccordion();
@@ -87,14 +94,14 @@ export default function WizardStep({
     state === "todo" && "[background:var(--surface)] [border:1px_solid_var(--border-strong)] [color:var(--text-muted)]",
     state === "active" && "[background:var(--accent)] [border:1px_solid_var(--accent)] [color:var(--text-on-accent)]",
     state === "done" &&
-      "[background:color-mix(in_oklch,var(--success)_18%,var(--surface))] [border:1px_solid_var(--success)] [color:var(--success)]",
+      "[background:color-mix(in_oklch,var(--success)_15%,transparent)] [border:1px_solid_var(--success)] [color:var(--success)]",
   );
 
   const cardClass = cn(
     "[border-radius:var(--radius-xl)] overflow-hidden",
-    "[background:var(--surface-elevated)]",
+    "[background:var(--surface)]",
     state === "active"
-      ? "[border:1px_solid_var(--border-strong)] [box-shadow:0_1px_2px_oklch(20%_0.020_50/0.05),0_8px_18px_oklch(20%_0.020_50/0.05)]"
+      ? "[border:1px_solid_color-mix(in_oklch,var(--accent)_32%,var(--border-strong))] [box-shadow:0_0_0_3px_color-mix(in_oklch,var(--accent)_10%,transparent)]"
       : "[border:1px_solid_var(--border)]",
     className,
   );
@@ -112,7 +119,7 @@ export default function WizardStep({
   };
 
   const handleHeaderClick = () => {
-    if (isActive) return;
+    if (isActive || disabled) return;
     ctx.activate(n);
   };
 
@@ -120,7 +127,7 @@ export default function WizardStep({
 
   return (
     <li className="contents">
-      <section id={generatedId} aria-labelledby={headingId} className={cardClass}>
+      <section id={generatedId} data-wizard-step={n} aria-labelledby={headingId} className={cardClass}>
         {isActive ? (
           <header className="flex items-start gap-3 px-4 pt-4 md:px-5 md:pt-5">
             <span className={bulletClass}>
@@ -141,6 +148,9 @@ export default function WizardStep({
                 {title}
               </h3>
             </div>
+            <span className="mt-1 flex-shrink-0 [color:var(--text-muted)]" aria-hidden="true">
+              <ChevronUp size={16} />
+            </span>
           </header>
         ) : (
           <button
@@ -148,10 +158,12 @@ export default function WizardStep({
             onClick={handleHeaderClick}
             aria-expanded={false}
             aria-controls={bodyId}
+            disabled={disabled}
             className={cn(
               "flex w-full items-start gap-3 px-4 py-4 text-left md:px-5 md:py-5",
               "[outline:none] focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:-2px]",
-              "hover:[background:color-mix(in_oklch,var(--text-primary)_3%,transparent)]",
+              !disabled && "hover:[background:color-mix(in_oklch,var(--text-primary)_3%,transparent)]",
+              disabled && "cursor-not-allowed opacity-60",
             )}
           >
             <span className={bulletClass}>
@@ -177,6 +189,9 @@ export default function WizardStep({
                 </span>
               )}
             </div>
+            <span className="mt-1 flex-shrink-0 [color:var(--text-muted)]" aria-hidden="true">
+              <ChevronRight size={16} />
+            </span>
           </button>
         )}
         {showBody && (
@@ -185,7 +200,7 @@ export default function WizardStep({
             ref={bodyRef}
             hidden={!isActive}
             aria-hidden={!isActive}
-            className="flex flex-col gap-4 px-4 pt-4 pb-4 md:px-5 md:pt-5 md:pb-5"
+            className="flex flex-col gap-4 pt-4 pr-4 pb-4 pl-[3.5rem] md:pt-5 md:pr-5 md:pb-5 md:pl-[3.75rem]"
           >
             {children}
             {(primaryAction || secondaryAction) && (
@@ -211,6 +226,12 @@ export default function WizardStep({
                     onClick={handlePrimary}
                     loading={primaryAction.loading}
                     disabled={primaryAction.disabled}
+                    leadingIcon={primaryAction.leadingIcon ?? undefined}
+                    trailingIcon={
+                      primaryAction.trailingIcon === null
+                        ? undefined
+                        : (primaryAction.trailingIcon ?? <ArrowRight size={14} aria-hidden="true" />)
+                    }
                     fullWidth
                     className="md:w-auto"
                   >

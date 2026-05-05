@@ -16,7 +16,6 @@ export type EditableContactChannelInput = {
 };
 
 export type EditableAddressInput = {
-  countryCode: string;
   city?: string | null;
   addressLine: string;
   reference?: string | null;
@@ -133,15 +132,12 @@ function normalizeEditableStoreInput(input: EditableStoreInput, storeType: Store
     storeType === "BUSINESS"
       ? (input.addresses ?? [])
           .map((address) => ({
-            countryCode: address.countryCode,
             city: normalizeNullableString(address.city),
             addressLine: address.addressLine.trim(),
             reference: normalizeNullableString(address.reference),
           }))
-          .filter((address) => address.countryCode.length === 2 && address.addressLine.length > 0)
+          .filter((address) => address.addressLine.length > 0)
           .sort((left, right) => {
-            const countryCompare = left.countryCode.localeCompare(right.countryCode);
-            if (countryCompare !== 0) return countryCompare;
             const cityCompare = (left.city ?? "").localeCompare(right.city ?? "");
             if (cityCompare !== 0) return cityCompare;
             return left.addressLine.localeCompare(right.addressLine);
@@ -180,7 +176,7 @@ function mapStoreToEditableStore(store: {
   productTypeAssignments: Array<{ productTypeKey: string }>;
   importCountries: Array<{ countryCode: string }>;
   contactChannels: Array<{ type: StoreContactChannelType; value: string; label: string | null }>;
-  addresses: Array<{ countryCode: string; city: string | null; addressLine: string; reference: string | null }>;
+  addresses: Array<{ city: string | null; addressLine: string; reference: string | null }>;
 }): EditableStore {
   return {
     id: store.id,
@@ -217,14 +213,11 @@ function mapStoreToEditableStore(store: {
       }),
     addresses: store.addresses
       .map((address) => ({
-        countryCode: address.countryCode,
         city: address.city,
         addressLine: address.addressLine,
         reference: address.reference,
       }))
       .sort((left, right) => {
-        const countryCompare = left.countryCode.localeCompare(right.countryCode);
-        if (countryCompare !== 0) return countryCompare;
         const cityCompare = (left.city ?? "").localeCompare(right.city ?? "");
         if (cityCompare !== 0) return cityCompare;
         return left.addressLine.localeCompare(right.addressLine);
@@ -307,7 +300,6 @@ export async function getEditableStoreBySlug(db: PrismaClient, slug: string): Pr
       },
       addresses: {
         select: {
-          countryCode: true,
           city: true,
           addressLine: true,
           reference: true,
@@ -587,7 +579,6 @@ export async function updateStoreEditableFields(
             tx.storeAddress.createMany({
               data: normalizedInput.addresses.map((address, index) => ({
                 storeId: store.id,
-                countryCode: address.countryCode,
                 city: address.city ?? null,
                 addressLine: address.addressLine,
                 reference: address.reference ?? null,

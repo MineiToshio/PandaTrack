@@ -128,7 +128,6 @@ const contactChannelSchema = z
   });
 
 const addressSchema = z.object({
-  countryCode: z.string().length(2).toUpperCase(),
   city: z.string().max(100).trim().optional().nullable(),
   addressLine: z.string().min(1, "addressLineRequired").max(300).trim(),
   reference: z.string().max(200).trim().optional().nullable(),

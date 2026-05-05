@@ -19,7 +19,7 @@
     "countryPlaceholder": "Selecciona país",
     "presenceLabel": "Canales de venta",
     "presenceOnline": "Tienda online",
-    "presencePhysical": "Con local",
+    "presencePhysical": "Tienda física",
     "productTypesLabel": "Tipos de producto",
     "hasStockLabel": "Venta con stock",
     "receivesOrdersLabel": "Acepta pedidos",
@@ -438,6 +438,7 @@
     "create": {
       "step1": {
         "eyebrow": "PASO 1 · TIPO",
+        "shortLabel": "Tipo",
         "title": "¿Qué tipo de tienda es?",
         "helper": "Esto cambia los campos siguientes.",
         "businessLabel": "Negocio",
@@ -450,25 +451,49 @@
       },
       "step2": {
         "eyebrow": "PASO 2 · IDENTIDAD",
+        "shortLabel": "Identidad",
         "title": "Identidad",
         "helper": "Cómo se llama y dónde está."
       },
       "step3": {
         "eyebrow": "PASO 3 · CATEGORÍAS",
-        "title": "Categorías y presencia",
-        "helper": "Qué vende y dónde se encuentra."
+        "shortLabel": "Categorías",
+        "title": "¿Qué venden?",
+        "helper": "Qué vende y dónde se encuentra.",
+        "productTypesHelper": "Mínimo una categoría.",
+        "presenceLabel": "Presencia",
+        "presenceHelper": "Dónde opera la tienda. Los canales de contacto van en el paso siguiente.",
+        "importHelper": "¿Desde dónde importa o consigue productos esta tienda? Ayuda a coleccionistas a filtrar por origen.",
+        "hasStockLabel": "Tiene stock",
+        "receivesOrdersLabel": "Recibe pre-órdenes"
       },
       "step4": {
         "eyebrow": "PASO 4 · CANALES",
-        "title": "Canales de contacto",
-        "helper": "Cómo se contacta a la tienda."
+        "shortLabel": "Canales",
+        "title": "¿Cómo se contacta?",
+        "helper": "Opcional — puedes agregar o editar esto después."
       },
       "step5": {
         "eyebrow": "PASO 5 · LISTO",
+        "shortLabel": "Listo",
         "title": "Revisa y confirma",
-        "helper": "Verifica los datos antes de crear."
+        "helper": "Cuando confirmes, queda en revisión y aparece pública al aprobarse.",
+        "subhelper": "Si encontramos una tienda parecida, te preguntamos antes de crear."
+      },
+      "aside": {
+        "typeLabel": "Tipo",
+        "nameLabel": "Nombre",
+        "countryLabel": "País",
+        "categoriesLabel": "Categorías",
+        "presenceLabel": "Presencia",
+        "importLabel": "Importa de",
+        "channelsLabel": "Canales",
+        "addressesLabel": "Direcciones",
+        "statusLabel": "Estado",
+        "statusPending": "Pendiente"
       },
       "stepperLabel": "Pasos del formulario",
+      "countryNoResults": "Ningún país coincide.",
       "continue": "Continuar",
       "back": "Atrás",
       "submit": "Crear tienda",
@@ -486,7 +511,10 @@
       },
       "channels": {
         "addButton": "Agregar",
-        "helper": "Elige el tipo de canal y pega el valor.",
+        "helper": "Elige el tipo de canal y pega el valor (URL, handle, email o número).",
+        "edit": "Editar",
+        "save": "Guardar",
+        "cancel": "Cancelar",
         "remove": "Quitar"
       },
       "duplicate": {

@@ -94,8 +94,8 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           maxLength={maxLength}
           onChange={handleChange}
           className={cn(
-            "w-full rounded-[var(--radius-md)] bg-[var(--surface)]",
-            "[font-family:var(--font-sans)] [border:1px_solid_var(--border)]",
+            "w-full rounded-[var(--radius-md)] bg-[var(--surface-elevated)]",
+            "[font-family:var(--font-sans)] [border:1px_solid_var(--border-strong)]",
             "[font-size:var(--text-body)] [line-height:var(--text-body--line-height)]",
             "[color:var(--text-primary)] [caret-color:var(--accent)]",
             "px-[var(--space-4)] py-[var(--space-3)]",
