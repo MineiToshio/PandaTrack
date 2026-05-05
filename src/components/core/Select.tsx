@@ -89,14 +89,15 @@ const NativeSelect = forwardRef<HTMLSelectElement, SelectNativeProps>(function N
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        "w-full cursor-pointer rounded-[var(--radius-md)] bg-[var(--surface-elevated)]",
-        "[font-family:var(--font-sans)] [color:var(--text-primary)] [border:1px_solid_var(--border-strong)]",
-        "transition-[border-color] outline-none",
-        "[transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
-        "focus-visible:[border-color:var(--border-strong)]",
+        "w-full cursor-pointer rounded-[var(--radius-md)]",
+        "[border-width:1px] [border-style:solid] [font-family:var(--font-sans)] [color:var(--text-primary)]",
+        "outline-none",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
         "focus-visible:[outline-color:var(--focus-ring)]",
-        hasError && "[border-color:color-mix(in_oklch,var(--destructive)_60%,var(--border-strong))]",
+        // Border + background depend on error state. Emit only one rule per state.
+        !hasError && "[border-color:var(--border-strong)] bg-[var(--surface-elevated)]",
+        hasError &&
+          "[border-color:var(--destructive)] [background:color-mix(in_oklch,var(--destructive)_5%,var(--surface-elevated))]",
         (disabled || loading) && "pointer-events-none [border-color:var(--border)] [color:var(--text-muted)]",
         showChevron ? "appearance-none pr-10" : "block",
         SIZE_CLASSES[size],
@@ -274,16 +275,18 @@ function ControlledSelect({
         onKeyDown={handleTriggerKeyDown}
         className={cn(
           "flex w-full items-center justify-between gap-[var(--space-2)]",
-          "rounded-[var(--radius-md)] bg-[var(--surface-elevated)]",
-          "[border:1px_solid_var(--border-strong)]",
+          "rounded-[var(--radius-md)]",
+          "[border-width:1px] [border-style:solid]",
           "[font-family:var(--font-sans)] [color:var(--text-primary)]",
           "cursor-pointer text-left",
-          "transition-[border-color] [transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
-          "focus-visible:[border-color:var(--accent)]",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
           "focus-visible:[outline-color:var(--focus-ring)]",
-          open && "[border-color:var(--accent)]",
-          hasError && "[border-color:color-mix(in_oklch,var(--destructive)_60%,var(--border-strong))]",
+          // Border + background depend on error state. Emit only one rule per state.
+          !hasError &&
+            "[border-color:var(--border-strong)] bg-[var(--surface-elevated)] focus-visible:[border-color:var(--accent)]",
+          !hasError && open && "[border-color:var(--accent)]",
+          hasError &&
+            "[border-color:var(--destructive)] [background:color-mix(in_oklch,var(--destructive)_5%,var(--surface-elevated))]",
           (disabled || loading) && "pointer-events-none [border-color:var(--border)] opacity-60",
           SIZE_CLASSES[size],
         )}

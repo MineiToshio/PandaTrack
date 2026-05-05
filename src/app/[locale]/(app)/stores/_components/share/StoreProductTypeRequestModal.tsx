@@ -33,11 +33,13 @@ export function StoreProductTypeRequestChip({ onOpen }: { onOpen: () => void }) 
       type="button"
       onClick={onOpen}
       className={cn(
-        "border-border bg-background text-text-body focus-visible:ring-ring inline-flex min-h-10 max-w-full cursor-pointer items-center gap-1.5 rounded-xl border border-dashed px-4 text-left text-sm transition",
-        "hover:border-primary/50 hover:bg-muted/25 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+        "inline-flex max-w-full cursor-pointer items-center gap-2 rounded-[var(--radius-pill)] px-3 py-1.5 text-left text-[13px] transition",
+        "[color:var(--text-secondary)] [background:var(--surface-elevated)] [border:1.5px_dashed_var(--border-strong)]",
+        "hover:[border-color:color-mix(in_oklch,var(--accent)_50%,var(--border-strong))]",
+        "focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:2px]",
       )}
     >
-      <Plus className="size-3.5 shrink-0" aria-hidden />
+      <Plus className="size-3.5 shrink-0 [color:var(--accent-cool)]" aria-hidden />
       <span className="min-w-0 whitespace-normal">{t("governance.productTypeRequest.chipCta")}</span>
     </button>
   );

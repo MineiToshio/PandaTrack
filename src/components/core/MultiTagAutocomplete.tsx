@@ -173,26 +173,25 @@ export default function MultiTagAutocomplete({
           : null}
         <div
           className={cn(
-            "flex min-h-10 w-full flex-wrap items-center gap-1 rounded-[var(--radius-md)] px-2 py-1",
-            "[background:var(--surface)] [border:1px_solid_var(--border)]",
-            "has-[:focus-visible]:[border-color:var(--border-strong)]",
-            "has-[:focus-visible]:outline has-[:focus-visible]:outline-2",
-            "has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:[outline-color:var(--focus-ring)]",
+            "flex min-h-[2.75rem] w-full flex-wrap items-center gap-1.5 rounded-[var(--radius-md)] px-2 py-1.5 @md:min-h-[2.5rem]",
+            "[background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]",
+            "has-[:focus-visible]:[border-color:var(--accent)]",
+            "has-[:focus-visible]:[box-shadow:0_0_0_3px_color-mix(in_oklch,var(--accent)_15%,transparent)]",
           )}
         >
           {showSearchIcon && (
             <Search size={16} aria-hidden="true" className="ml-1 flex-shrink-0 [color:var(--text-muted)]" />
           )}
           {selectedOptions.map((option) => (
-            <Chip key={option.value} variant="accent">
+            <Chip key={option.value} variant="neutral" size="sm">
               {renderOptionContent(option)}
               <button
                 type="button"
                 onClick={() => removeOption(option.value)}
-                className="cursor-pointer rounded p-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:[outline-color:var(--focus-ring)]"
+                className="cursor-pointer rounded p-0.5 [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:[outline-color:var(--focus-ring)]"
                 aria-label={removeItemAriaLabel(option.label)}
               >
-                <X size={12} aria-hidden />
+                <X size={11} aria-hidden />
               </button>
             </Chip>
           ))}
@@ -222,7 +221,7 @@ export default function MultiTagAutocomplete({
         {availableOptions.length > 0 ? (
           <ul
             id={`${id}-options`}
-            className="absolute top-full right-0 left-0 z-10 mt-1 max-h-52 overflow-auto rounded-[var(--radius-md)] p-1 [box-shadow:var(--elevation-2)] [background:var(--surface-elevated)] [border:1px_solid_var(--border)]"
+            className="absolute top-full right-0 left-0 z-50 mt-1 max-h-52 overflow-auto rounded-[var(--radius-md)] p-1 [box-shadow:var(--shadow-3)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]"
             role="listbox"
           >
             {availableOptions.map((option, index) => (

@@ -145,10 +145,14 @@ export default function SearchableSelect({
       {name ? <input type="hidden" name={name} value={value} /> : null}
       <div
         className={cn(
-          "flex min-h-11 w-full items-center rounded-[var(--radius-md)] text-sm transition-colors md:min-h-10",
-          "[background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]",
-          "focus-within:[border-color:var(--accent)] focus-within:[box-shadow:0_0_0_3px_color-mix(in_oklch,var(--accent)_15%,transparent)]",
-          error && "[border-color:var(--destructive)]",
+          "flex w-full items-center rounded-[var(--radius-md)] text-sm",
+          "min-h-[2.75rem] @md:min-h-[2.5rem]",
+          "[border-width:1px] [border-style:solid]",
+          // Border + background + focus glow depend on error state. Emit only one rule per state.
+          !error &&
+            "[border-color:var(--border-strong)] [background:var(--surface-elevated)] focus-within:[border-color:var(--accent)] focus-within:[box-shadow:0_0_0_3px_color-mix(in_oklch,var(--accent)_15%,transparent)]",
+          error &&
+            "[border-color:var(--destructive)] [background:color-mix(in_oklch,var(--destructive)_5%,var(--surface-elevated))] focus-within:[box-shadow:0_0_0_3px_color-mix(in_oklch,var(--destructive)_15%,transparent)]",
           disabled && "cursor-not-allowed opacity-50",
         )}
       >
@@ -160,7 +164,7 @@ export default function SearchableSelect({
             aria-haspopup="listbox"
             aria-expanded={isOpen}
             aria-controls={`${id}-options`}
-            className="flex min-h-10 min-w-0 flex-1 items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 text-left text-sm [color:var(--text-primary)] focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:-1px] disabled:cursor-not-allowed"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-[var(--radius-md)] px-[var(--space-4)] py-[var(--space-3)] text-left text-sm [color:var(--text-primary)] focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:-1px] disabled:cursor-not-allowed"
             onClick={handleOpenList}
             onKeyDown={(e) => {
               if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
@@ -192,7 +196,7 @@ export default function SearchableSelect({
             value={isOpen ? query : ""}
             placeholder={!selected ? placeholder : ""}
             disabled={disabled}
-            className="min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-sm [color:var(--text-primary)] placeholder:[color:var(--text-muted)] focus:outline-none disabled:cursor-not-allowed"
+            className="min-w-0 flex-1 border-0 bg-transparent px-[var(--space-4)] py-[var(--space-3)] text-sm [color:var(--text-primary)] placeholder:[color:var(--text-muted)] focus:outline-none disabled:cursor-not-allowed"
             onChange={(e) => {
               setQuery(e.target.value);
               setIsOpen(true);
@@ -227,7 +231,7 @@ export default function SearchableSelect({
         <ul
           id={`${id}-options`}
           role="listbox"
-          className="absolute top-full right-0 left-0 z-10 mt-1 max-h-52 overflow-auto rounded-[var(--radius-md)] p-1 [box-shadow:var(--shadow-3)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]"
+          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-52 overflow-auto rounded-[var(--radius-md)] [border-width:1px] [border-style:solid] [border-color:var(--border-strong)] p-1 [box-shadow:var(--shadow-3)] [background:var(--surface-elevated)]"
         >
           {filtered.length === 0 && <li className="px-2 py-2 text-sm [color:var(--text-muted)]">{noResultsLabel}</li>}
           {filtered.map((opt, idx) => (

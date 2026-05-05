@@ -227,8 +227,14 @@ export default function EditStoreForm({
 
   const reviewStepN = store.storeType === "BUSINESS" ? 4 : 3;
 
-  const step1Valid = name.trim().length > 0;
-  const step2Valid = selectedProductTypeKeys.length > 0 && presenceTypes.length > 0;
+  const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+  const clearClientError = (field: string) =>
+    setClientErrors((prev) => {
+      if (!(field in prev)) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
 
   return (
     <div className="space-y-4">
@@ -256,14 +262,30 @@ export default function EditStoreForm({
         {store.storeType === "PERSON" && isPrivate && <input type="hidden" name="isPrivate" value="on" />}
 
         <div className="min-w-0">
-          <WizardAccordion startStep={1} steps={stepperSteps} stepperAriaLabel={tRedesign("stepperLabel")}>
+          <WizardAccordion
+            startStep={1}
+            steps={stepperSteps}
+            stepperAriaLabel={tRedesign("stepperLabel")}
+            gated
+            scrollOnAdvance
+          >
             {/* ── Step 1: Identidad ── */}
             <WizardStep
               n={1}
               eyebrow={tRedesign("step2.eyebrow")}
               title={tRedesign("step2.title")}
-              primaryAction={{ label: tRedesign("continue"), disabled: !step1Valid }}
+              primaryAction={{ label: tRedesign("continue") }}
               summary={name || undefined}
+              hasError={Boolean(clientErrors.name)}
+              validate={() => {
+                const next: Record<string, string> = {};
+                if (!name.trim()) next.name = "nameRequired";
+                setClientErrors((prev) => ({
+                  ...Object.fromEntries(Object.entries(prev).filter(([k]) => k !== "name")),
+                  ...next,
+                }));
+                return Object.keys(next).length === 0;
+              }}
             >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
@@ -357,7 +379,7 @@ export default function EditStoreForm({
               n={2}
               eyebrow={tRedesign("step3.eyebrow")}
               title={tRedesign("step3.title")}
-              primaryAction={{ label: tRedesign("continue"), disabled: !step2Valid }}
+              primaryAction={{ label: tRedesign("continue") }}
               secondaryAction={{ label: tRedesign("back") }}
               summary={
                 selectedProductTypeKeys.length > 0
@@ -366,6 +388,19 @@ export default function EditStoreForm({
                     : `${selectedProductTypeKeys.length}`
                   : undefined
               }
+              hasError={Boolean(clientErrors.productTypeKeys || clientErrors.presenceTypes)}
+              validate={() => {
+                const next: Record<string, string> = {};
+                if (selectedProductTypeKeys.length === 0) next.productTypeKeys = "productTypeRequired";
+                if (presenceTypes.length === 0) next.presenceTypes = "presenceRequired";
+                setClientErrors((prev) => ({
+                  ...Object.fromEntries(
+                    Object.entries(prev).filter(([k]) => !["productTypeKeys", "presenceTypes"].includes(k)),
+                  ),
+                  ...next,
+                }));
+                return Object.keys(next).length === 0;
+              }}
             >
               <div className="space-y-5">
                 <div className="space-y-3">

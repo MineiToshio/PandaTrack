@@ -94,18 +94,19 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           maxLength={maxLength}
           onChange={handleChange}
           className={cn(
-            "w-full rounded-[var(--radius-md)] bg-[var(--surface-elevated)]",
-            "[font-family:var(--font-sans)] [border:1px_solid_var(--border-strong)]",
+            "w-full rounded-[var(--radius-md)]",
+            "[border-width:1px] [border-style:solid] [font-family:var(--font-sans)]",
             "[font-size:var(--text-body)] [line-height:var(--text-body--line-height)]",
             "[color:var(--text-primary)] [caret-color:var(--accent)]",
             "px-[var(--space-4)] py-[var(--space-3)]",
-            "transition-[border-color] outline-none",
-            "[transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
+            "outline-none",
             "placeholder:[color:var(--text-muted)]",
-            "focus-visible:[border-color:var(--border-strong)]",
             "focus-visible:outline focus-visible:outline-2",
             "focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]",
-            hasError && "[border-color:color-mix(in_oklch,var(--destructive)_60%,var(--border-strong))]",
+            // Border + background depend on error state. Emit only one rule so there is no conflict to resolve.
+            !hasError && "[border-color:var(--border-strong)] bg-[var(--surface-elevated)]",
+            hasError &&
+              "[border-color:var(--destructive)] [background:color-mix(in_oklch,var(--destructive)_5%,var(--surface-elevated))]",
             disabled && "pointer-events-none [border-color:var(--border)] [color:var(--text-muted)]",
             "@md:resize-vertical resize-none",
             loading && "pointer-events-none",

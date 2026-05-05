@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Globe, Plus, SlidersHorizontal, Store } from "lucide-react";
+import { Globe, Plus, SlidersHorizontal, Store, X } from "lucide-react";
 import posthog from "posthog-js";
 import { useCallback, useMemo, useState, useTransition } from "react";
 import Button from "@/components/core/Button/Button";
@@ -230,6 +230,150 @@ export default function StoreListingFilters({
     });
   }, []);
 
+  const pushFiltered = useCallback(
+    (values: ListingFilterValues, query: string) => {
+      const params = buildSearchParams({ nameQuery: query, values, sortBy });
+      const queryString = params.toString();
+      router.push(queryString ? `${pathname}?${queryString}` : pathname);
+    },
+    [pathname, router, sortBy],
+  );
+
+  const removeFilter = useCallback(
+    (
+      action:
+        | { kind: "query" }
+        | { kind: "productType"; value: string }
+        | { kind: "country"; value: string }
+        | { kind: "importCountry"; value: string }
+        | { kind: "presence"; value: string }
+        | { kind: "flag"; value: string },
+    ) => {
+      const current: ListingFilterValues = {
+        productTypeKeys: initialProductTypeKeys,
+        countryCodes: initialCountryCodes,
+        importCountryCodes: initialImportCountryCodes,
+        presenceTypes: initialPresenceTypes,
+        flags: initialFlags,
+      };
+      let nextQuery = nameQuery;
+      let nextValues: ListingFilterValues = current;
+      switch (action.kind) {
+        case "query":
+          nextQuery = "";
+          setNameQuery("");
+          break;
+        case "productType":
+          nextValues = { ...current, productTypeKeys: current.productTypeKeys.filter((v) => v !== action.value) };
+          break;
+        case "country":
+          nextValues = { ...current, countryCodes: current.countryCodes.filter((v) => v !== action.value) };
+          break;
+        case "importCountry":
+          nextValues = {
+            ...current,
+            importCountryCodes: current.importCountryCodes.filter((v) => v !== action.value),
+          };
+          break;
+        case "presence":
+          nextValues = { ...current, presenceTypes: current.presenceTypes.filter((v) => v !== action.value) };
+          break;
+        case "flag":
+          nextValues = { ...current, flags: current.flags.filter((v) => v !== action.value) };
+          break;
+      }
+      setDraftValues(nextValues);
+      pushFiltered(nextValues, nextQuery);
+    },
+    [
+      initialProductTypeKeys,
+      initialCountryCodes,
+      initialImportCountryCodes,
+      initialPresenceTypes,
+      initialFlags,
+      nameQuery,
+      pushFiltered,
+    ],
+  );
+
+  const handleClearAll = useCallback(() => {
+    setNameQuery("");
+    setDraftValues({
+      productTypeKeys: [],
+      countryCodes: [],
+      importCountryCodes: [],
+      presenceTypes: [],
+      flags: [],
+    });
+    pushFiltered({ productTypeKeys: [], countryCodes: [], importCountryCodes: [], presenceTypes: [], flags: [] }, "");
+  }, [pushFiltered]);
+
+  type ActiveChip = { key: string; label: string; onRemove: () => void };
+
+  const activeChips: ActiveChip[] = useMemo(() => {
+    const chips: ActiveChip[] = [];
+    if (initialNameQuery.trim()) {
+      chips.push({
+        key: "query",
+        label: `"${initialNameQuery.trim()}"`,
+        onRemove: () => removeFilter({ kind: "query" }),
+      });
+    }
+    initialProductTypeKeys.forEach((key) => {
+      chips.push({
+        key: `productType-${key}`,
+        label: tProductTypes(key),
+        onRemove: () => removeFilter({ kind: "productType", value: key }),
+      });
+    });
+    initialPresenceTypes.forEach((value) => {
+      chips.push({
+        key: `presence-${value}`,
+        label:
+          value === "PHYSICAL"
+            ? tStores("redesign.filter.presencePhysical")
+            : tStores("redesign.filter.presenceOnline"),
+        onRemove: () => removeFilter({ kind: "presence", value }),
+      });
+    });
+    initialCountryCodes.forEach((code) => {
+      chips.push({
+        key: `country-${code}`,
+        label: tCountries(code),
+        onRemove: () => removeFilter({ kind: "country", value: code }),
+      });
+    });
+    initialImportCountryCodes.forEach((code) => {
+      chips.push({
+        key: `importCountry-${code}`,
+        label: `${tStores("redesign.filter.importCountry")}: ${tCountries(code)}`,
+        onRemove: () => removeFilter({ kind: "importCountry", value: code }),
+      });
+    });
+    initialFlags.forEach((flag) => {
+      chips.push({
+        key: `flag-${flag}`,
+        label:
+          flag === FLAGS_RECEIVES_ORDERS
+            ? tStores("redesign.filter.receivesOrders")
+            : tStores("redesign.filter.hasStock"),
+        onRemove: () => removeFilter({ kind: "flag", value: flag }),
+      });
+    });
+    return chips;
+  }, [
+    initialNameQuery,
+    initialProductTypeKeys,
+    initialPresenceTypes,
+    initialCountryCodes,
+    initialImportCountryCodes,
+    initialFlags,
+    tProductTypes,
+    tCountries,
+    tStores,
+    removeFilter,
+  ]);
+
   const newStoreHref = `/${locale}${ROUTES.stores}/new`;
 
   return (
@@ -289,6 +433,29 @@ export default function StoreListingFilters({
           </Button>
         </div>
       </div>
+      {activeChips.length > 0 && (
+        <div className="-mx-1 flex flex-wrap items-center gap-2 px-1">
+          {activeChips.map((chip) => (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={chip.onRemove}
+              aria-label={`${tStores("redesign.filter.clear")} ${chip.label}`}
+              className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[12px] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_10%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--accent)_28%,transparent)] hover:[background:color-mix(in_oklch,var(--accent)_18%,transparent)] focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:2px]"
+            >
+              <span className="whitespace-nowrap">{chip.label}</span>
+              <X size={12} aria-hidden />
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={handleClearAll}
+            className="inline-flex items-center gap-1 px-2 text-[12px] [color:var(--text-muted)] hover:[color:var(--text-primary)] hover:underline focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:2px]"
+          >
+            {tStores("redesign.filter.clear")}
+          </button>
+        </div>
+      )}
       <FilterDrawer
         open={drawerOpen}
         onOpenChange={setDrawerOpen}

@@ -44,7 +44,10 @@ export default function Pill({ selected, icon, children, className, type = "butt
       {...rest}
     >
       {icon != null && (
-        <span aria-hidden="true" className="flex items-center">
+        <span
+          aria-hidden="true"
+          className={cn("flex items-center", selected ? "[color:var(--accent)]" : "[color:var(--accent-cool)]")}
+        >
           {icon}
         </span>
       )}

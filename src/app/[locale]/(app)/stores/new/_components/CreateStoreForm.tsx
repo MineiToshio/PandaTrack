@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Building2, Check, Clock, Globe, Plus, Store, User } from "lucide-react";
+import { AlertCircle, AlertTriangle, Building2, Check, Clock, Globe, Plus, Store, User } from "lucide-react";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import {
   type ChangeEvent,
@@ -163,7 +163,7 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
   const [isPrivate, setIsPrivate] = useState(false);
   const [hasStock, setHasStock] = useState(false);
   const [receivesOrders, setReceivesOrders] = useState(false);
-  const [presenceTypes, setPresenceTypes] = useState<Array<"ONLINE" | "PHYSICAL">>(["ONLINE"]);
+  const [presenceTypes, setPresenceTypes] = useState<Array<"ONLINE" | "PHYSICAL">>([]);
   const [selectedProductTypeKeys, setSelectedProductTypeKeys] = useState<string[]>([]);
   const [selectedImportCountries, setSelectedImportCountries] = useState<string[]>([]);
   const [contactChannelEntries, setContactChannelEntries] = useState<
@@ -193,6 +193,17 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
   const wizardRef = useRef<WizardAccordionHandle | null>(null);
   const [activeStep, setActiveStep] = useState(1);
   const [doneStepsArr, setDoneStepsArr] = useState<number[]>([]);
+  const [erroredStepsArr, setErroredStepsArr] = useState<number[]>([]);
+  const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+  const clearClientError = useCallback((field: string) => {
+    setClientErrors((prev) => {
+      if (!(field in prev)) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  }, []);
 
   const fetchCandidates = useCallback(async (query: string) => {
     const trimmedQuery = query.trim();
@@ -444,10 +455,6 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
     );
   }
 
-  // Step 2 needs a non-empty trimmed name and a country.
-  const step2Valid = nameValue.trim().length > 0 && countryCode.length === 2;
-  // Step 3 needs at least one product type and at least one presence type.
-  const step3Valid = selectedProductTypeKeys.length > 0 && presenceTypes.length > 0;
   const reviewStepN = storeType === "BUSINESS" ? 5 : 4;
   const handleStepperClick = (n: number) => wizardRef.current?.activate(n);
 
@@ -537,6 +544,7 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
             steps={stepperSteps}
             activeStep={activeStep}
             doneSteps={doneStepsArr}
+            erroredSteps={erroredStepsArr}
             onStepClick={handleStepperClick}
             ariaLabel={tCreateRedesign("stepperLabel")}
           />
@@ -551,6 +559,7 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
             scrollOnAdvance
             onStepChange={setActiveStep}
             onDoneStepsChange={setDoneStepsArr}
+            onErroredStepsChange={setErroredStepsArr}
           >
             {/* ── Step 1: Tipo ── */}
             <WizardStep
@@ -633,56 +642,85 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
               n={2}
               eyebrow={tCreateRedesign("step2.eyebrow")}
               title={tCreateRedesign("step2.title")}
-              primaryAction={{ label: tCreateRedesign("continue"), disabled: !step2Valid }}
+              primaryAction={{ label: tCreateRedesign("continue") }}
               secondaryAction={{ label: tCreateRedesign("back") }}
               summary={nameValue && countryCode ? `${nameValue} · ${tCountries(countryCode)}` : undefined}
               disabled={2 > maxAllowedStep}
+              hasError={Boolean(clientErrors.name || clientErrors.countryCode)}
+              validate={() => {
+                const next: Record<string, string> = {};
+                if (!nameValue.trim()) next.name = "nameRequired";
+                if (countryCode.length !== 2) next.countryCode = "countryInvalid";
+                setClientErrors((prev) => ({
+                  ...Object.fromEntries(Object.entries(prev).filter(([k]) => !["name", "countryCode"].includes(k))),
+                  ...next,
+                }));
+                return Object.keys(next).length === 0;
+              }}
             >
               <Typography size="xs" className="text-text-muted mb-4">
                 {tCreateRedesign("step2.helper")}
               </Typography>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <Label htmlFor="store-name">{tCreate("nameLabel")}</Label>
+                  <Label
+                    htmlFor="store-name"
+                    className={cn((fieldErrors.name?.length || clientErrors.name) && "[color:var(--destructive)]")}
+                  >
+                    {tCreate("nameLabel")}
+                  </Label>
                   <Input
                     id="store-name"
                     name="name"
                     type="text"
                     value={nameValue}
-                    onChange={handleNameChange}
+                    onChange={(event) => {
+                      handleNameChange(event);
+                      clearClientError("name");
+                    }}
                     onBlur={handleNameBlur}
                     placeholder={tCreate("namePlaceholder")}
                     required
                     maxLength={200}
-                    error={!!fieldErrors.name?.length}
-                    aria-invalid={!!fieldErrors.name?.length}
+                    error={!!fieldErrors.name?.length || !!clientErrors.name}
+                    aria-invalid={!!fieldErrors.name?.length || !!clientErrors.name}
                   />
-                  {fieldErrors.name?.[0] && (
-                    <Typography size="xs" className="text-destructive mt-1" role="alert">
-                      {tValidation(fieldErrors.name[0] as "nameRequired" | "nameTooLong")}
-                    </Typography>
+                  {(fieldErrors.name?.[0] || clientErrors.name) && (
+                    <FieldErrorMsg>
+                      {fieldErrors.name?.[0]
+                        ? tValidation(fieldErrors.name[0] as "nameRequired" | "nameTooLong")
+                        : tValidation(clientErrors.name as "nameRequired" | "nameTooLong")}
+                    </FieldErrorMsg>
                   )}
                 </div>
 
                 <div>
-                  <Label htmlFor="store-country">{tCreate("countryLabel")}</Label>
+                  <Label
+                    htmlFor="store-country"
+                    className={cn(
+                      (fieldErrors.countryCode?.length || clientErrors.countryCode) && "[color:var(--destructive)]",
+                    )}
+                  >
+                    {tCreate("countryLabel")}
+                  </Label>
                   <SearchableSelect
                     id="store-country"
                     name="countryCode"
                     required
                     options={countryOptions}
                     value={countryCode}
-                    onChange={setCountryCode}
+                    onChange={(value) => {
+                      setCountryCode(value);
+                      clearClientError("countryCode");
+                    }}
                     placeholder={tCreate("countryPlaceholder")}
                     clearLabel={tCreate("remove")}
                     noResultsLabel={tCreateRedesign("countryNoResults")}
-                    aria-invalid={!!fieldErrors.countryCode?.length}
-                    error={!!fieldErrors.countryCode?.length}
+                    aria-invalid={!!fieldErrors.countryCode?.length || !!clientErrors.countryCode}
+                    error={!!fieldErrors.countryCode?.length || !!clientErrors.countryCode}
                   />
-                  {fieldErrors.countryCode?.[0] && (
-                    <Typography size="xs" className="text-destructive mt-1" role="alert">
-                      {tValidation("countryInvalid")}
-                    </Typography>
+                  {(fieldErrors.countryCode?.[0] || clientErrors.countryCode) && (
+                    <FieldErrorMsg>{tValidation("countryInvalid")}</FieldErrorMsg>
                   )}
                 </div>
 
@@ -754,7 +792,7 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
               n={3}
               eyebrow={tCreateRedesign("step3.eyebrow")}
               title={tCreateRedesign("step3.title")}
-              primaryAction={{ label: tCreateRedesign("continue"), disabled: !step3Valid }}
+              primaryAction={{ label: tCreateRedesign("continue") }}
               secondaryAction={{ label: tCreateRedesign("back") }}
               summary={
                 selectedProductTypeKeys.length > 0
@@ -764,57 +802,95 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                   : undefined
               }
               disabled={3 > maxAllowedStep}
+              hasError={Boolean(clientErrors.productTypeKeys || clientErrors.presenceTypes)}
+              validate={() => {
+                const next: Record<string, string> = {};
+                if (selectedProductTypeKeys.length === 0) next.productTypeKeys = "productTypeRequired";
+                if (presenceTypes.length === 0) next.presenceTypes = "presenceRequired";
+                setClientErrors((prev) => ({
+                  ...Object.fromEntries(
+                    Object.entries(prev).filter(([k]) => !["productTypeKeys", "presenceTypes"].includes(k)),
+                  ),
+                  ...next,
+                }));
+                return Object.keys(next).length === 0;
+              }}
             >
               <div className="space-y-5">
                 <div className="space-y-3">
-                  <Label>{tCreate("productTypesLabel")}</Label>
+                  <Label
+                    className={cn(
+                      (hasProductTypeError || clientErrors.productTypeKeys) && "[color:var(--destructive)]",
+                    )}
+                  >
+                    {tCreate("productTypesLabel")}
+                  </Label>
                   <Typography size="sm" className="[color:var(--text-muted)]">
                     {tCreateRedesign("step3.productTypesHelper")}
                   </Typography>
                   <div
                     data-field="productTypeKeys"
-                    className={cn(hasProductTypeError && "border-destructive rounded-lg border p-2")}
+                    className={cn(
+                      (hasProductTypeError || clientErrors.productTypeKeys) &&
+                        "rounded-lg p-2 [border:1px_solid_var(--destructive)]",
+                    )}
                   >
                     <ToggleChoiceGroup
                       mode="multiple"
                       options={productTypeOptions}
                       selectedValues={selectedProductTypeKeys}
-                      onChange={setSelectedProductTypeKeys}
+                      onChange={(next) => {
+                        setSelectedProductTypeKeys(next);
+                        if (next.length > 0) clearClientError("productTypeKeys");
+                      }}
                       formName="productTypeKeys"
                       trailingSlot={
                         <StoreProductTypeRequestModal locale={locale} source="create" triggerVariant="chip" />
                       }
                     />
                   </div>
-                  {fieldErrors.productTypeKeys?.[0] && (
-                    <Typography size="xs" className="text-destructive mt-1" role="alert">
-                      {tValidation(fieldErrors.productTypeKeys[0] as "productTypeRequired" | "productTypeInvalid")}
-                    </Typography>
+                  {(fieldErrors.productTypeKeys?.[0] || clientErrors.productTypeKeys) && (
+                    <FieldErrorMsg>
+                      {tValidation(
+                        (fieldErrors.productTypeKeys?.[0] ?? clientErrors.productTypeKeys) as
+                          | "productTypeRequired"
+                          | "productTypeInvalid",
+                      )}
+                    </FieldErrorMsg>
                   )}
                 </div>
 
                 <div className="space-y-3">
-                  <Label>{tCreateRedesign("step3.presenceLabel")}</Label>
+                  <Label
+                    className={cn((hasPresenceError || clientErrors.presenceTypes) && "[color:var(--destructive)]")}
+                  >
+                    {tCreateRedesign("step3.presenceLabel")}
+                  </Label>
                   <Typography size="sm" className="[color:var(--text-muted)]">
                     {tCreateRedesign("step3.presenceHelper")}
                   </Typography>
                   <div
                     data-field="presenceTypes"
-                    className={cn(hasPresenceError && "border-destructive rounded-lg border p-2")}
+                    className={cn(
+                      (hasPresenceError || clientErrors.presenceTypes) &&
+                        "rounded-lg p-2 [border:1px_solid_var(--destructive)]",
+                    )}
                   >
                     <ToggleChoiceGroup
                       mode="multiple"
                       options={presenceOptions}
                       selectedValues={presenceTypes}
-                      onChange={(values) => setPresenceTypes(values as Array<"ONLINE" | "PHYSICAL">)}
+                      onChange={(values) => {
+                        const next = values as Array<"ONLINE" | "PHYSICAL">;
+                        setPresenceTypes(next);
+                        if (next.length > 0) clearClientError("presenceTypes");
+                      }}
                       formName="presenceTypes"
                       itemClassName="min-h-11"
                     />
                   </div>
-                  {fieldErrors.presenceTypes?.[0] && (
-                    <Typography size="xs" className="text-destructive mt-1" role="alert">
-                      {tValidation("presenceRequired")}
-                    </Typography>
+                  {(fieldErrors.presenceTypes?.[0] || clientErrors.presenceTypes) && (
+                    <FieldErrorMsg>{tValidation("presenceRequired")}</FieldErrorMsg>
                   )}
                 </div>
 
@@ -1034,6 +1110,15 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
       <dt className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{label}</dt>
       <dd className="[font-weight:var(--font-weight-medium)] [color:var(--text-primary)]">{value}</dd>
     </>
+  );
+}
+
+function FieldErrorMsg({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] [color:var(--destructive)]" role="alert">
+      <AlertCircle size={13} aria-hidden />
+      <span>{children}</span>
+    </p>
   );
 }
 

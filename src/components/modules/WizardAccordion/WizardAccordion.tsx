@@ -25,6 +25,8 @@ export type WizardAccordionProps = {
   onStepChange?: (n: number) => void;
   /** Notifies the parent when the set of done steps changes. */
   onDoneStepsChange?: (steps: number[]) => void;
+  /** Notifies the parent when the set of errored steps changes. */
+  onErroredStepsChange?: (steps: number[]) => void;
   /**
    * Optional explicit step list. When provided, the accordion renders a `<Stepper>` at the top
    * and uses `steps.length` as `totalSteps` (overriding the children-count fallback).
@@ -67,6 +69,7 @@ const WizardAccordion = forwardRef<WizardAccordionHandle, WizardAccordionProps>(
     initialDoneSteps = [],
     onStepChange,
     onDoneStepsChange,
+    onErroredStepsChange,
     steps,
     showStepper,
     stepperAriaLabel,
@@ -84,19 +87,32 @@ const WizardAccordion = forwardRef<WizardAccordionHandle, WizardAccordionProps>(
   const initialClamped = Math.min(Math.max(startStep, 1), Math.max(totalSteps, 1));
   const [activeStep, setActiveStep] = useState<number>(initialClamped);
   const [doneSteps, setDoneSteps] = useState<Set<number>>(() => new Set(initialDoneSteps));
+  const [erroredSteps, setErroredSteps] = useState<Set<number>>(() => new Set());
 
   const onStepChangeRef = useRef(onStepChange);
   const onDoneStepsChangeRef = useRef(onDoneStepsChange);
+  const onErroredStepsChangeRef = useRef(onErroredStepsChange);
   const doneStepsRef = useRef(doneSteps);
   const activeStepRef = useRef(activeStep);
   const isFirstStepRender = useRef(true);
   const isFirstDoneRender = useRef(true);
+  const isFirstErroredRender = useRef(true);
   useEffect(() => {
     onStepChangeRef.current = onStepChange;
   }, [onStepChange]);
   useEffect(() => {
     onDoneStepsChangeRef.current = onDoneStepsChange;
   }, [onDoneStepsChange]);
+  useEffect(() => {
+    onErroredStepsChangeRef.current = onErroredStepsChange;
+  }, [onErroredStepsChange]);
+  useEffect(() => {
+    if (isFirstErroredRender.current) {
+      isFirstErroredRender.current = false;
+      return;
+    }
+    onErroredStepsChangeRef.current?.(Array.from(erroredSteps));
+  }, [erroredSteps]);
   useEffect(() => {
     doneStepsRef.current = doneSteps;
     if (isFirstDoneRender.current) {
@@ -156,13 +172,38 @@ const WizardAccordion = forwardRef<WizardAccordionHandle, WizardAccordionProps>(
     [totalSteps, scrollOnAdvance, scrollStepIntoView],
   );
 
+  const reportValidation = useCallback((n: number, isValid: boolean) => {
+    if (isValid) {
+      setErroredSteps((prev) => {
+        if (!prev.has(n)) return prev;
+        const next = new Set(prev);
+        next.delete(n);
+        return next;
+      });
+    } else {
+      setErroredSteps((prev) => (prev.has(n) ? prev : new Set([...prev, n])));
+      // Remove the failed step (and any later steps) from doneSteps so the user can't skip ahead.
+      setDoneSteps((prev) => {
+        const next = new Set<number>();
+        prev.forEach((s) => {
+          if (s < n) next.add(s);
+        });
+        if (next.size === prev.size) return prev;
+        doneStepsRef.current = next;
+        return next;
+      });
+    }
+  }, []);
+
   const goBack = useCallback(
     (n: number) => {
       const target = Math.max(1, n - 1);
-      activate(target);
+      // Going back is always allowed, even when the current step has errors.
+      // Bypass `activate`'s gating to make this work.
+      if (activeStepRef.current !== target) setActiveStep(target);
       if (scrollOnAdvance) scrollStepIntoView(target);
     },
-    [activate, scrollOnAdvance, scrollStepIntoView],
+    [scrollOnAdvance, scrollStepIntoView],
   );
 
   useImperativeHandle(ref, () => ({ activate }), [activate]);
@@ -171,12 +212,14 @@ const WizardAccordion = forwardRef<WizardAccordionHandle, WizardAccordionProps>(
     () => ({
       activeStep,
       doneSteps,
+      erroredSteps,
       totalSteps,
       activate,
       markDoneAndAdvance,
       goBack,
+      reportValidation,
     }),
-    [activeStep, doneSteps, totalSteps, activate, markDoneAndAdvance, goBack],
+    [activeStep, doneSteps, erroredSteps, totalSteps, activate, markDoneAndAdvance, goBack, reportValidation],
   );
 
   const shouldShowStepper = showStepper ?? Boolean(steps);
@@ -190,6 +233,7 @@ const WizardAccordion = forwardRef<WizardAccordionHandle, WizardAccordionProps>(
             steps={steps}
             activeStep={activeStep}
             doneSteps={doneStepsArray}
+            erroredSteps={Array.from(erroredSteps)}
             onStepClick={activate}
             ariaLabel={stepperAriaLabel}
           />

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Check, ChevronRight, ChevronUp } from "lucide-react";
+import { ArrowRight, Check, ChevronRight, ChevronUp, X } from "lucide-react";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import Button from "@/components/core/Button/Button";
 import { cn } from "@/lib/styles";
@@ -41,6 +41,12 @@ export type WizardStepProps = {
   secondaryAction?: WizardStepAction;
   /** When true, primary advances using `markDoneAndAdvance(n)`. Default `true`. */
   autoAdvance?: boolean;
+  /**
+   * Optional pre-advance validator. Called after `primaryAction.onClick` and before auto-advance.
+   * Return `false` to block the advance — typically the caller will set local error state to render
+   * inline error messages on fields with missing data.
+   */
+  validate?: () => boolean;
   /** When true, secondary calls `goBack(n)` after running its `onClick`. Default `true`. */
   autoBack?: boolean;
   /**
@@ -52,6 +58,8 @@ export type WizardStepProps = {
   keepBodyMounted?: boolean;
   /** When true, the collapsed header is not clickable (used for gated wizards). */
   disabled?: boolean;
+  /** When true, the step bullet renders with the destructive palette (active step has errors). */
+  hasError?: boolean;
   className?: string;
 };
 
@@ -64,9 +72,11 @@ export default function WizardStep({
   primaryAction,
   secondaryAction,
   autoAdvance = true,
+  validate,
   autoBack = true,
   keepBodyMounted = true,
   disabled = false,
+  hasError = false,
   className,
 }: WizardStepProps) {
   const ctx = useWizardAccordion();
@@ -76,8 +86,15 @@ export default function WizardStep({
   const bodyRef = useRef<HTMLDivElement>(null);
 
   const isActive = ctx.activeStep === n;
-  const isDone = ctx.doneSteps.has(n) && !isActive;
-  const state: "todo" | "active" | "done" = isActive ? "active" : isDone ? "done" : "todo";
+  const isErrored = ctx.erroredSteps.has(n) || (isActive && hasError);
+  const isDone = ctx.doneSteps.has(n) && !isActive && !isErrored;
+  const state: "todo" | "active" | "done" | "errored" = isActive
+    ? "active"
+    : isDone
+      ? "done"
+      : isErrored
+        ? "errored"
+        : "todo";
 
   useEffect(() => {
     if (!isActive) return;
@@ -92,13 +109,17 @@ export default function WizardStep({
   const bulletClass = cn(
     "inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full",
     state === "todo" && "[background:var(--surface)] [border:1px_solid_var(--border-strong)] [color:var(--text-muted)]",
-    state === "active" && "[background:var(--accent)] [border:1px_solid_var(--accent)] [color:var(--text-on-accent)]",
+    state === "active" &&
+      !isErrored &&
+      "[background:var(--accent)] [border:1px_solid_var(--accent)] [color:var(--text-on-accent)]",
+    (state === "errored" || (state === "active" && isErrored)) &&
+      "[background:color-mix(in_oklch,var(--destructive)_10%,transparent)] [border:1px_solid_var(--destructive)] [color:var(--destructive)]",
     state === "done" &&
       "[background:color-mix(in_oklch,var(--success)_15%,transparent)] [border:1px_solid_var(--success)] [color:var(--success)]",
   );
 
   const cardClass = cn(
-    "[border-radius:var(--radius-xl)] overflow-hidden",
+    "[border-radius:var(--radius-xl)]",
     "[background:var(--surface)]",
     state === "active"
       ? "[border:1px_solid_color-mix(in_oklch,var(--accent)_32%,var(--border-strong))] [box-shadow:0_0_0_3px_color-mix(in_oklch,var(--accent)_10%,transparent)]"
@@ -109,6 +130,11 @@ export default function WizardStep({
   const handlePrimary = () => {
     if (!primaryAction || primaryAction.disabled || primaryAction.loading) return;
     primaryAction.onClick?.();
+    if (validate) {
+      const isValid = validate();
+      ctx.reportValidation(n, isValid);
+      if (!isValid) return;
+    }
     if (autoAdvance) ctx.markDoneAndAdvance(n);
   };
 
@@ -133,6 +159,8 @@ export default function WizardStep({
             <span className={bulletClass}>
               {state === "done" ? (
                 <Check size={14} aria-hidden="true" />
+              ) : isErrored ? (
+                <X size={14} aria-hidden="true" />
               ) : (
                 <span className="text-xs font-semibold">{n}</span>
               )}
@@ -169,6 +197,8 @@ export default function WizardStep({
             <span className={bulletClass}>
               {state === "done" ? (
                 <Check size={14} aria-hidden="true" />
+              ) : isErrored ? (
+                <X size={14} aria-hidden="true" />
               ) : (
                 <span className="text-xs font-semibold">{n}</span>
               )}

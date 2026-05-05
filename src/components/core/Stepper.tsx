@@ -1,6 +1,6 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { cn } from "@/lib/styles";
 
 export type StepperStep = {
@@ -12,7 +12,7 @@ export type StepperStep = {
   description?: string;
 };
 
-export type StepperState = "todo" | "active" | "done";
+export type StepperState = "todo" | "active" | "done" | "errored";
 
 export type StepperProps = {
   steps: StepperStep[];
@@ -20,6 +20,8 @@ export type StepperProps = {
   activeStep: number;
   /** Steps already completed (1-indexed). */
   doneSteps?: number[];
+  /** Steps with validation errors (1-indexed). Renders the destructive palette + X icon. */
+  erroredSteps?: number[];
   /** Click on a step bullet — used for free navigation (ADR 0001 D12 OC3). */
   onStepClick?: (n: number) => void;
   /** Localized name for the navigation landmark. */
@@ -27,7 +29,13 @@ export type StepperProps = {
   className?: string;
 };
 
-function getStepState(n: number, activeStep: number, doneSteps: ReadonlySet<number>): StepperState {
+function getStepState(
+  n: number,
+  activeStep: number,
+  doneSteps: ReadonlySet<number>,
+  erroredSteps: ReadonlySet<number>,
+): StepperState {
+  if (erroredSteps.has(n)) return "errored";
   if (n === activeStep) return "active";
   if (doneSteps.has(n)) return "done";
   return "todo";
@@ -37,23 +45,27 @@ export default function Stepper({
   steps,
   activeStep,
   doneSteps = [],
+  erroredSteps = [],
   onStepClick,
   ariaLabel,
   className,
 }: StepperProps) {
   const doneSet = new Set(doneSteps);
+  const errorSet = new Set(erroredSteps);
 
   return (
     <nav aria-label={ariaLabel ?? "Steps"} className={cn("w-full", className)}>
       <ol className="flex items-start gap-0 px-1 py-[18px] pb-6" role="list">
         {steps.map((step, index) => {
-          const state = getStepState(step.n, activeStep, doneSet);
+          const state = getStepState(step.n, activeStep, doneSet, errorSet);
           const isLast = index === steps.length - 1;
           const isClickable = Boolean(onStepClick);
 
           const bulletContent =
             state === "done" ? (
               <Check size={14} aria-hidden="true" />
+            ) : state === "errored" ? (
+              <X size={14} aria-hidden="true" />
             ) : (
               <span className="[font-family:var(--font-mono)] [font-size:0.75rem] [line-height:1] [font-weight:var(--font-weight-semibold)]">
                 {step.n}
@@ -69,12 +81,15 @@ export default function Stepper({
             state === "active" && "shadow-[0_0_0_4px_color-mix(in_oklch,var(--accent)_18%,transparent)]",
             state === "done" &&
               "[background:var(--success)] [border:1.5px_solid_var(--success)] [color:var(--text-on-accent)]",
+            state === "errored" &&
+              "[background:var(--destructive)] [border:1.5px_solid_var(--destructive)] [color:var(--text-on-accent)]",
           );
 
           const labelClass = cn(
             "block whitespace-nowrap text-xs",
             state === "active" && "[color:var(--text-primary)] [font-weight:var(--font-weight-semibold)]",
             state === "done" && "[color:var(--text-secondary)]",
+            state === "errored" && "[color:var(--destructive)] [font-weight:var(--font-weight-semibold)]",
             state === "todo" && "[color:var(--text-muted)]",
           );
 

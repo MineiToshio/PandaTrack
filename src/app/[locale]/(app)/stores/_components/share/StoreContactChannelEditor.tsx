@@ -1,8 +1,9 @@
 "use client";
 
 import { Check, Pencil, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Button from "@/components/core/Button/Button";
+import Select from "@/components/core/Select";
 import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
 import { getStoreContactChannelIcon } from "@/lib/catalog/storeContactChannelIcons";
@@ -84,6 +85,15 @@ export default function StoreContactChannelEditor({
     setEditingValue("");
   };
 
+  const channelTypeOptions = useMemo(
+    () =>
+      STORE_CONTACT_CHANNEL_TYPES.map((type) => ({
+        value: type,
+        label: labels.optionLabel(type),
+      })),
+    [labels],
+  );
+
   return (
     <div className="space-y-3">
       {typeInputName
@@ -107,18 +117,15 @@ export default function StoreContactChannelEditor({
                   idx > 0 && "[border-top:1px_solid_var(--border)]",
                 )}
               >
-                <select
-                  value={editingType}
-                  onChange={(event) => setEditingType(event.target.value as StoreContactChannelType)}
-                  aria-label={labels.typeLabel}
-                  className="min-h-9 flex-shrink-0 rounded-[var(--radius-md)] px-2 text-[12.5px] [color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]"
-                >
-                  {STORE_CONTACT_CHANNEL_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {labels.optionLabel(type)}
-                    </option>
-                  ))}
-                </select>
+                <div className="w-[150px] flex-shrink-0">
+                  <Select
+                    value={editingType}
+                    onChange={(value) => setEditingType(value as StoreContactChannelType)}
+                    options={channelTypeOptions}
+                    aria-label={labels.typeLabel}
+                    size="sm"
+                  />
+                </div>
                 <input
                   type="text"
                   value={editingValue}
@@ -187,18 +194,15 @@ export default function StoreContactChannelEditor({
           {labels.helper}
         </Typography>
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={pendingType}
-            onChange={(event) => setPendingType(event.target.value as StoreContactChannelType)}
-            aria-label={labels.typeLabel}
-            className="min-h-9 flex-shrink-0 rounded-[var(--radius-md)] px-2 text-[12.5px] [color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]"
-          >
-            {STORE_CONTACT_CHANNEL_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {labels.optionLabel(type)}
-              </option>
-            ))}
-          </select>
+          <div className="w-[150px] flex-shrink-0">
+            <Select
+              value={pendingType}
+              onChange={(value) => setPendingType(value as StoreContactChannelType)}
+              options={channelTypeOptions}
+              aria-label={labels.typeLabel}
+              size="sm"
+            />
+          </div>
           <input
             type="text"
             value={pendingValue}
