@@ -243,6 +243,16 @@ Los pares "decorativos" (`--border` sobre `--surface`) no requieren cumplir 3:1 
 
 ## 6. Ajustes aplicados durante el audit
 
+> **Actualización post-S3 (S3-B.1, 2026-05-04):** 5 de los ajustes de la tabla fueron **revertidos** porque la implementación en `src/` se desviaba visualmente del demo HTML y el humano priorizó la coincidencia visual sobre el AA matemático estricto contra el accent puro. Los valores vigentes en `globals.css` y `tokens.md` ahora son los del demo HTML literal:
+>
+> - Velvet `--border` light → `oklch(85% 0.024 285)` (revertido al valor del demo).
+> - Velvet `--border-strong` light → `oklch(74% 0.030 285)` (revertido).
+> - Velvet `--border` dark → `rgba(200, 200, 255, 0.07)` (revertido).
+> - Velvet `--border-strong` dark → `rgba(200, 200, 255, 0.14)` (revertido).
+> - Velvet `--text-on-accent` dark → `oklch(99% 0 0)` blanco puro (revertido — pasa de 8.23:1 con texto oscuro a 2.55:1 con blanco contra `--accent` brillante; la app prioriza patrón visual del demo sobre AA matemático contra accent puro).
+>
+> El único ajuste que **sigue vigente** en Velvet es `--text-muted` light (L=0.46) por AA estricto sobre body text. Para Lilac/Plum/Lagoon/Forest la tabla sigue siendo la fuente histórica — esas paletas no se aplicaron en `src/` (solo Velvet). Detalle del revert en `_notes/cross-cutting-changes.md` S3-B.1.
+
 | Token / par                                          | Demo HTML                    | Ajuste aplicado                                            | Razón                                                                                                                                                                |
 | ---------------------------------------------------- | ---------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Velvet `--text-muted` light                          | L=0.54                       | L=0.46                                                     | Demo daba 4.13:1 sobre `--background` (FAIL 4.5). L=0.46 → 5.81:1.                                                                                                   |

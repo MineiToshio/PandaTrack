@@ -1,292 +1,44 @@
 import { useTranslations } from "next-intl";
-import Link from "next/link";
-import { Box, Building2, Globe, Link2, Mail, MapPinned, Phone, Star, UserRound } from "lucide-react";
-import { siFacebook, siInstagram, siTiktok, siWhatsapp } from "simple-icons";
 import type { PublicStoreListingItem } from "@/queries/store";
-import { ROUTES } from "@/lib/constants";
-import { COLLECTOR_CARD_SURFACE_CLASSNAME, COLLECTOR_MUTED_INSET_CLASSNAME, cn } from "@/lib/styles";
-import Heading from "@/components/core/Heading";
-import Typography from "@/components/core/Typography";
-import StoreEmptyCatalogTag from "./StoreEmptyCatalogTag";
-import CollectorCountryFlagEmoji from "./share/CollectorCountryFlagEmoji";
-import {
-  STORE_CATALOG_IMPORT_COUNTRY_CHIP_CLASSNAME,
-  STORE_CATALOG_PRODUCT_TYPE_CHIP_CLASSNAME,
-  STORE_LISTING_CARD_META_CHIP_CLASSNAME,
-  STORE_PRESENCE_CHIP_CLASSNAME,
-} from "./share/storePublicChipClassnames";
-import StoreCommerceSignalPills from "./share/StoreCommerceSignalPills";
-import { getCollectorCountryFlagEmoji } from "@/lib/catalog/collectorCountries";
-
-const MAX_CONTACT_CHANNELS = 4;
-
-function SimpleIconSvg({ path }: { path: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" width={14} height={14} aria-hidden="true">
-      <path d={path} />
-    </svg>
-  );
-}
-
-function buildContactHref(
-  type: PublicStoreListingItem["contactChannels"][number]["type"],
-  value: string,
-): string | null {
-  const trimmedValue = value.trim();
-  if (!trimmedValue) {
-    return null;
-  }
-
-  if (type === "EMAIL") {
-    return `mailto:${trimmedValue}`;
-  }
-
-  if (type === "PHONE") {
-    return `tel:${trimmedValue}`;
-  }
-
-  return trimmedValue;
-}
-
-function StoreListingContactChannelLinks({
-  storeSlug,
-  channels,
-  tStores,
-}: {
-  storeSlug: string;
-  channels: PublicStoreListingItem["contactChannels"];
-  tStores: ReturnType<typeof useTranslations<"stores">>;
-}) {
-  if (channels.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="pointer-events-auto relative z-20 flex shrink-0 items-center gap-1.5">
-      {channels.slice(0, MAX_CONTACT_CHANNELS).map((channel) => {
-        const href = buildContactHref(channel.type, channel.value);
-        if (!href) {
-          return null;
-        }
-
-        const icon =
-          channel.type === "INSTAGRAM" ? (
-            <SimpleIconSvg path={siInstagram.path} />
-          ) : channel.type === "WHATSAPP" ? (
-            <SimpleIconSvg path={siWhatsapp.path} />
-          ) : channel.type === "FACEBOOK" ? (
-            <SimpleIconSvg path={siFacebook.path} />
-          ) : channel.type === "TIKTOK" ? (
-            <SimpleIconSvg path={siTiktok.path} />
-          ) : channel.type === "EMAIL" ? (
-            <Mail className="size-3.5" aria-hidden />
-          ) : channel.type === "PHONE" ? (
-            <Phone className="size-3.5" aria-hidden />
-          ) : (
-            <Link2 className="size-3.5" aria-hidden />
-          );
-
-        return (
-          <a
-            key={`${storeSlug}-${channel.type}-${channel.value}`}
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={tStores(`contactChannelTypes.${channel.type}`)}
-            title={tStores(`contactChannelTypes.${channel.type}`)}
-            className="text-text-muted hover:text-primary focus-visible:ring-ring inline-flex size-6 items-center justify-center rounded-full transition-colors focus-visible:ring-2 focus-visible:outline-none"
-          >
-            {icon}
-          </a>
-        );
-      })}
-    </div>
-  );
-}
+import StoreCard from "./share/StoreCard";
 
 export type StoreListingContentProps = {
   locale: string;
   stores: PublicStoreListingItem[];
+  /** Map of store slug → total viewer order count. Only populated for authenticated viewers. */
+  viewerOrderCountsBySlug?: Record<string, number>;
 };
 
-export default function StoreListingContent({ locale, stores }: StoreListingContentProps) {
-  const t = useTranslations("storeListing");
-  const tStores = useTranslations("stores");
-  const tProductTypes = useTranslations("storeProductTypes");
+/**
+ * Grid of public stores rendered with the redesigned `StoreCard` (S6).
+ * Empty state is rendered by the parent `StoresPage` when `stores.length === 0`.
+ */
+export default function StoreListingContent({ locale, stores, viewerOrderCountsBySlug }: StoreListingContentProps) {
+  const tListing = useTranslations("storeListing");
   const tCountries = useTranslations("countries");
-
-  const showEmptyState = stores.length === 0;
-  const getStoreTypeLabel = (storeType: PublicStoreListingItem["storeType"]) =>
-    storeType === "BUSINESS" ? t("cards.storeTypeBusiness") : t("cards.storeTypePerson");
+  const tProductTypes = useTranslations("storeProductTypes");
 
   return (
-    <div className="space-y-6">
-      {showEmptyState && (
-        <div className="border-border/70 bg-background/70 rounded-2xl border border-dashed p-8 text-center">
-          <Typography size="md" className="text-text-muted">
-            {t("empty")}
-          </Typography>
-        </div>
-      )}
-
-      {!showEmptyState && (
-        <ul className="space-y-4" role="list">
-          {stores.map((store) => {
-            const receivesOrdersLabel =
-              store.receivesOrders == null
-                ? tStores("detail.receivesOrdersUnknown")
-                : store.receivesOrders
-                  ? t("cards.receivesOrdersYes")
-                  : t("cards.receivesOrdersNo");
-            const hasStockLabel =
-              store.hasStock == null
-                ? tStores("detail.hasStockUnknown")
-                : store.hasStock
-                  ? t("cards.hasStockYes")
-                  : t("cards.hasStockNo");
-
-            return (
-              <li key={store.slug}>
-                <article
-                  className={cn(
-                    COLLECTOR_CARD_SURFACE_CLASSNAME,
-                    "hover:border-primary/60 hover:shadow-primary/15 group relative p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
-                  )}
-                >
-                  <Link
-                    href={`/${locale}${ROUTES.stores}/${store.slug}`}
-                    aria-label={store.name}
-                    className="focus-visible:ring-ring absolute inset-0 z-10 rounded-2xl focus-visible:ring-2 focus-visible:outline-none"
-                  />
-                  <div className="pointer-events-none space-y-3.5">
-                    <div className="space-y-3">
-                      <div className="space-y-1.5">
-                        <div className="flex w-full min-w-0 flex-wrap items-start gap-x-3 gap-y-2">
-                          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
-                            <Heading
-                              as="h3"
-                              size="xs"
-                              className="text-text-title line-clamp-2 max-w-full min-w-0 shrink leading-snug"
-                            >
-                              {store.name}
-                            </Heading>
-                            <StoreListingContactChannelLinks
-                              storeSlug={store.slug}
-                              channels={store.contactChannels}
-                              tStores={tStores}
-                            />
-                          </div>
-                          {(store.averageRating != null || store.reviewCount > 0) && (
-                            <div className="text-text-muted flex shrink-0 items-center gap-1.5 text-sm">
-                              <Star className="text-primary size-4 shrink-0 fill-current" aria-hidden />
-                              {store.averageRating != null && (
-                                <span className="font-semibold tabular-nums">{store.averageRating.toFixed(1)}</span>
-                              )}
-                              {store.reviewCount > 0 && (
-                                <span className="whitespace-nowrap">
-                                  {t("ratingCount", { count: store.reviewCount })}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className={cn(COLLECTOR_MUTED_INSET_CLASSNAME, "space-y-3 p-3")}>
-                        <div className="space-y-1.5">
-                          <Typography size="2xs" className="text-text-muted block font-medium">
-                            {t("cards.productTypes")}
-                          </Typography>
-                          {store.productTypeKeys.length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
-                              {store.productTypeKeys.map((productTypeKey) => (
-                                <span
-                                  key={`${store.slug}-${productTypeKey}`}
-                                  className={STORE_CATALOG_PRODUCT_TYPE_CHIP_CLASSNAME}
-                                >
-                                  <Box className="size-3.5 shrink-0" aria-hidden />
-                                  {tProductTypes(productTypeKey)}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <StoreEmptyCatalogTag>{t("cards.noProductTypes")}</StoreEmptyCatalogTag>
-                          )}
-                        </div>
-
-                        <div className="grid gap-2 sm:grid-cols-2">
-                          <div className="space-y-1.5">
-                            <Typography size="2xs" className="text-text-muted block font-medium">
-                              {t("filters.presence")}
-                            </Typography>
-                            <div className="flex flex-wrap gap-2">
-                              {store.presenceTypes.map((presenceType) => (
-                                <span key={`${store.slug}-${presenceType}`} className={STORE_PRESENCE_CHIP_CLASSNAME}>
-                                  <Globe className="size-3.5 shrink-0" aria-hidden />
-                                  <span>{t(`presence.${presenceType}`)}</span>
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="space-y-1.5">
-                            <Typography size="2xs" className="text-text-muted block font-medium">
-                              {t("cards.importCountries")}
-                            </Typography>
-                            {store.importCountryCodes.length > 0 ? (
-                              <div className="flex flex-wrap gap-2">
-                                {store.importCountryCodes.map((countryCode) => (
-                                  <span
-                                    key={`${store.slug}-import-${countryCode}`}
-                                    className={STORE_CATALOG_IMPORT_COUNTRY_CHIP_CLASSNAME}
-                                  >
-                                    <CollectorCountryFlagEmoji countryCode={countryCode} className="shrink-0" />
-                                    <span>{tCountries(countryCode)}</span>
-                                  </span>
-                                ))}
-                              </div>
-                            ) : (
-                              <StoreEmptyCatalogTag>{t("cards.noImportCountries")}</StoreEmptyCatalogTag>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 pt-2.5">
-                      <span className={STORE_LISTING_CARD_META_CHIP_CLASSNAME}>
-                        {getCollectorCountryFlagEmoji(store.countryCode) ? (
-                          <CollectorCountryFlagEmoji countryCode={store.countryCode} className="shrink-0" />
-                        ) : (
-                          <MapPinned className="size-3.5 shrink-0" aria-hidden />
-                        )}
-                        <span className="min-w-0 truncate">{tCountries(store.countryCode)}</span>
-                      </span>
-                      <span className={STORE_LISTING_CARD_META_CHIP_CLASSNAME}>
-                        {store.storeType === "BUSINESS" ? (
-                          <Building2 className="text-primary size-3.5 shrink-0" aria-hidden />
-                        ) : (
-                          <UserRound className="text-info size-3.5 shrink-0" aria-hidden />
-                        )}
-                        <span>{getStoreTypeLabel(store.storeType)}</span>
-                      </span>
-                      <StoreCommerceSignalPills
-                        receivesOrders={store.receivesOrders}
-                        hasStock={store.hasStock}
-                        receivesOrdersLabel={receivesOrdersLabel}
-                        hasStockLabel={hasStockLabel}
-                        receivesOrdersTooltip={t("cards.receivesOrdersTooltip")}
-                        hasStockTooltip={t("cards.hasStockTooltip")}
-                        liftAboveCardOverlay
-                      />
-                    </div>
-                  </div>
-                </article>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
+    <ul className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3" role="list">
+      {stores.map((store) => (
+        <li key={store.slug}>
+          <StoreCard
+            store={store}
+            locale={locale}
+            labels={{
+              importCountriesLabel: tListing("s6.importCountriesLabel"),
+              noImportCountries: tListing("s6.noImportCountries"),
+              countryName: (code) => tCountries(code),
+              productTypeLabel: (key) => tProductTypes(key),
+              ratingCount: (count) => tListing("ratingCount", { count }),
+              ratingFallback: tListing("s6.card.ratingFallback"),
+              ariaLabel: (name) => tListing("s6.card.ariaLabel", { name }),
+              ordersForViewerLabel: tListing("s6.card.ordersForViewerLabel"),
+            }}
+            viewerOrderCount={viewerOrderCountsBySlug?.[store.slug]}
+          />
+        </li>
+      ))}
+    </ul>
   );
 }

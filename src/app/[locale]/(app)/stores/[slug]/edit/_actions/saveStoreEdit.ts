@@ -101,6 +101,7 @@ export async function saveStoreEdit(
     productTypeKeys: formData.getAll("productTypeKeys").filter((value): value is string => typeof value === "string"),
     hasStock: formData.get("hasStock") === "on" ? true : undefined,
     receivesOrders: formData.get("receivesOrders") === "on" ? true : undefined,
+    isPrivate: formData.get("isPrivate") === "on" ? true : undefined,
     contactChannels,
     addresses,
     importCountries: formData
@@ -233,6 +234,7 @@ export async function saveStoreEdit(
         productTypeKeys: parsed.data.productTypeKeys,
         hasStock: parsed.data.hasStock,
         receivesOrders: parsed.data.receivesOrders,
+        isPrivate: parsed.data.isPrivate,
         contactChannels: parsed.data.contactChannels,
         addresses: parsed.data.addresses,
         importCountries: parsed.data.importCountries,
@@ -272,6 +274,7 @@ export async function saveStoreEdit(
         productTypeKeys: parsed.data.productTypeKeys,
         hasStock: parsed.data.hasStock,
         receivesOrders: parsed.data.receivesOrders,
+        isPrivate: parsed.data.isPrivate,
         contactChannels: parsed.data.contactChannels,
         addresses: parsed.data.addresses,
         importCountries: parsed.data.importCountries,

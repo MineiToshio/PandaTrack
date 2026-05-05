@@ -1,8 +1,8 @@
 ---
 title: Input
 tier: 1
-status: spec — no implementado
-last_updated: 2026-05-02
+status: implementado
+last_updated: 2026-05-03
 session: 04-components
 adrs:
   - ADR 0001 D2 (field-as-attribute para inputs pre-llenados — no usar `disabled` simulando bloqueo)
@@ -88,34 +88,34 @@ type InputProps = InputTextProps | InputNumberProps | InputPasswordProps;
 
 ## Variants / Sizes
 
-| Variant (`size`) | Uso                                                                 | Tokens consumidos                                                |
-| ---------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `sm`             | Inputs de cabecera dentro de tabla, edición inline densa            | `--space-2 --space-3` padding, `--text-caption`, height `2rem`   |
-| `md` (default)   | Form fields estándar (orders, deliveries, settings)                 | `--space-3 --space-4` padding, `--text-body`, height `2.5rem`    |
-| `lg`             | Inputs hero (search global, comboboxes principales del wizard)      | `--space-3 --space-4` padding, `--text-body-lg`, height `2.75rem` |
+| Variant (`size`) | Uso                                                            | Tokens consumidos                                                 |
+| ---------------- | -------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `sm`             | Inputs de cabecera dentro de tabla, edición inline densa       | `--space-2 --space-3` padding, `--text-caption`, height `2rem`    |
+| `md` (default)   | Form fields estándar (orders, deliveries, settings)            | `--space-3 --space-4` padding, `--text-body`, height `2.5rem`     |
+| `lg`             | Inputs hero (search global, comboboxes principales del wizard) | `--space-3 --space-4` padding, `--text-body-lg`, height `2.75rem` |
 
 Tipo del input (`type`):
 
-| `type`     | Uso                                                              | Notas                                                                          |
-| ---------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `text`     | Default — username, displayName, item name, item search          | —                                                                              |
-| `number`   | Cantidad, monto, exchangeRate, budgetAmount                      | `font-variant-numeric: tabular-nums` activado por default (decálogo §9).        |
-| `email`    | Auth, settings · email                                           | `autoComplete="email"`, `inputMode="email"`.                                   |
-| `password` | Auth, settings · contraseña                                      | Toggle eye/eye-off Lucide (`revealable`); `autoComplete="current-password"`.   |
-| `search`   | Search de tienda (combobox), search de productos en `delivery-create` | Leading icon `search` Lucide. Submit con Enter dispara filtro.            |
-| `tel`      | (futuro) confirmación 2FA por SMS                                | `inputMode="tel"`.                                                             |
-| `url`      | Link de tracking opcional (no MVP)                               | `inputMode="url"`.                                                             |
+| `type`     | Uso                                                                   | Notas                                                                        |
+| ---------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `text`     | Default — username, displayName, item name, item search               | —                                                                            |
+| `number`   | Cantidad, monto, exchangeRate, budgetAmount                           | `font-variant-numeric: tabular-nums` activado por default (decálogo §9).     |
+| `email`    | Auth, settings · email                                                | `autoComplete="email"`, `inputMode="email"`.                                 |
+| `password` | Auth, settings · contraseña                                           | Toggle eye/eye-off Lucide (`revealable`); `autoComplete="current-password"`. |
+| `search`   | Search de tienda (combobox), search de productos en `delivery-create` | Leading icon `search` Lucide. Submit con Enter dispara filtro.               |
+| `tel`      | (futuro) confirmación 2FA por SMS                                     | `inputMode="tel"`.                                                           |
+| `url`      | Link de tracking opcional (no MVP)                                    | `inputMode="url"`.                                                           |
 
 ## Estados visuales
 
-| Estado     | Receta CSS (light)                                                                                                                                 | Receta CSS (dark)                                                                                                                                 | Notas                                                                                                                                  |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| `default`  | `background: var(--surface); border: 1px solid var(--border); color: var(--text-primary); border-radius: var(--radius-md);`                         | mismo                                                                                                                                              | Padding `var(--space-3) var(--space-4)`. Min-height `2.75rem` mobile / `2.5rem` (`md`) desktop para tap target ≥44 mobile.              |
-| `focus`    | `border-color: var(--border-strong); outline: 2px solid var(--focus-ring); outline-offset: 2px;`                                                   | mismo                                                                                                                                              | El `outline` reemplaza box-shadow para no chocar con elevación. Caret usa `caret-color: var(--accent)`.                                |
-| `filled`   | mismo que `default`; el valor en `--text-primary` indica completitud                                                                               | mismo                                                                                                                                              | No se cambia el border al "completar".                                                                                                 |
-| `error`    | `border-color: color-mix(in oklch, var(--destructive) 60%, var(--border-strong));`                                                                 | mismo, usando `--destructive` dark                                                                                                                 | El mensaje de error se renderiza con `<ErrorMessage>` debajo.                                                                          |
-| `disabled` | `color: var(--text-muted); border-color: var(--border); pointer-events: none;`                                                                     | mismo                                                                                                                                              | Sin `opacity` (ADR 0001 D3). Si el bloqueo viene de prefill, usar `field-as-attribute` (ADR 0001 D2) en lugar de `disabled`.            |
-| `loading`  | mismo `default` + spinner `loader-2` Lucide en slot trailing animado `--motion-base` infinito linear                                                | mismo                                                                                                                                              | El input mantiene foco; `aria-busy="true"` en el wrapper.                                                                              |
+| Estado     | Receta CSS (light)                                                                                                          | Receta CSS (dark)                  | Notas                                                                                                                        |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `default`  | `background: var(--surface); border: 1px solid var(--border); color: var(--text-primary); border-radius: var(--radius-md);` | mismo                              | Padding `var(--space-3) var(--space-4)`. Min-height `2.75rem` mobile / `2.5rem` (`md`) desktop para tap target ≥44 mobile.   |
+| `focus`    | `border-color: var(--border-strong); outline: 2px solid var(--focus-ring); outline-offset: 2px;`                            | mismo                              | El `outline` reemplaza box-shadow para no chocar con elevación. Caret usa `caret-color: var(--accent)`.                      |
+| `filled`   | mismo que `default`; el valor en `--text-primary` indica completitud                                                        | mismo                              | No se cambia el border al "completar".                                                                                       |
+| `error`    | `border-color: color-mix(in oklch, var(--destructive) 60%, var(--border-strong));`                                          | mismo, usando `--destructive` dark | El mensaje de error se renderiza con `<ErrorMessage>` debajo.                                                                |
+| `disabled` | `color: var(--text-muted); border-color: var(--border); pointer-events: none;`                                              | mismo                              | Sin `opacity` (ADR 0001 D3). Si el bloqueo viene de prefill, usar `field-as-attribute` (ADR 0001 D2) en lugar de `disabled`. |
+| `loading`  | mismo `default` + spinner `loader-2` Lucide en slot trailing animado `--motion-base` infinito linear                        | mismo                              | El input mantiene foco; `aria-busy="true"` en el wrapper.                                                                    |
 
 Receta base (CSS):
 
@@ -138,7 +138,9 @@ Receta base (CSS):
 }
 
 @media (min-width: 48rem) {
-  .input--md { min-height: 2.5rem; }
+  .input--md {
+    min-height: 2.5rem;
+  }
 }
 
 .input:focus-visible {
@@ -191,18 +193,18 @@ Receta base (CSS):
 
 ## Copy default + i18n
 
-| Clave i18n sugerida                            | Valor ES                                  |
-| ---------------------------------------------- | ----------------------------------------- |
-| `components.input.placeholder.search`          | "Buscar"                                  |
-| `components.input.placeholder.email`           | "tu@email.com"                            |
-| `components.input.placeholder.amount`          | "Pongan un número, e.g. 123,45"           |
-| `components.input.placeholder.username`        | "@tuusuario"                              |
-| `components.input.passwordToggle.show`         | "Ver contraseña"                          |
-| `components.input.passwordToggle.hide`         | "Ocultar contraseña"                      |
-| `components.input.counter.format`              | "{current} / {max}"                       |
-| `components.input.loading.aria`                | "Buscando…"                               |
-| `components.input.search.clearAria`            | "Limpiar búsqueda"                        |
-| `components.input.required.marker`             | "obligatorio"                             |
+| Clave i18n sugerida                     | Valor ES                        |
+| --------------------------------------- | ------------------------------- |
+| `components.input.placeholder.search`   | "Buscar"                        |
+| `components.input.placeholder.email`    | "tu@email.com"                  |
+| `components.input.placeholder.amount`   | "Pongan un número, e.g. 123,45" |
+| `components.input.placeholder.username` | "@tuusuario"                    |
+| `components.input.passwordToggle.show`  | "Ver contraseña"                |
+| `components.input.passwordToggle.hide`  | "Ocultar contraseña"            |
+| `components.input.counter.format`       | "{current} / {max}"             |
+| `components.input.loading.aria`         | "Buscando…"                     |
+| `components.input.search.clearAria`     | "Limpiar búsqueda"              |
+| `components.input.required.marker`      | "obligatorio"                   |
 
 ## Edge cases
 
@@ -301,3 +303,33 @@ Receta base (CSS):
 4. La librería de spinner `loader-2` se importa directo de `lucide-react`; no envolver en componente intermedio.
 5. Pendiente decidir si `prefix`/`suffix` aceptan `ReactNode` o solo `string`; este spec los limita a `string` para evitar abuso.
 6. La validación remota (debounce 300ms en username) la orquesta el form padre, no el `<Input>`.
+
+## Componente relacionado: `<SearchInput>`
+
+`<SearchInput>` es un componente separado de `<Input>` (en `src/components/core/SearchInput.tsx`) porque su layout es estructuralmente diferente: combina un campo de texto con un botón submit accent adyacente (no un slot trailing intercambiable). No usa `type="search"` de `<Input>`.
+
+**Cuándo usar cada uno:**
+
+| Componente              | Caso de uso                                                                                                           |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `<Input type="search">` | Campo de búsqueda inline sin submit button visible (submit solo via Enter).                                           |
+| `<SearchInput>`         | Campo de búsqueda con botón submit visible (Search icon → Loader2 en loading). Ej. toolbar del directorio de tiendas. |
+
+**API de `SearchInput`:**
+
+```ts
+type SearchInputProps = {
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: (value: string) => void;
+  isLoading?: boolean;
+  placeholder?: string;
+  searchLabel?: string; // aria-label para el landmark role="search". Default "Buscar".
+  disabled?: boolean;
+  className?: string;
+  inputClassName?: string;
+  size?: "sm" | "md" | "lg"; // Default "md"
+};
+```
+
+**Comportamiento:** submit se dispara en click del botón accent O en `Enter` sobre el input. El botón muestra `<Loader2 className="animate-spin">` cuando `isLoading=true` y `aria-busy="true"`. Mobile tap target mínimo 44×44 en el botón. Envuelve todo en `<div role="search" aria-label={searchLabel}>`.

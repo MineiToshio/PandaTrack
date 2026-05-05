@@ -18,7 +18,7 @@ import { ALLOWED_COLLECTOR_BASE_CURRENCY_CODES, COUNTRY_CODES } from "@/lib/cata
 import { STORE_PRODUCT_TYPE_KEYS } from "@/lib/catalog/storeProductTypes";
 import { SETTINGS_SECTION_SURFACE_CLASSNAME } from "@/app/[locale]/(app)/settings/settingsSectionChrome";
 import { savePreferencesAction } from "@/app/[locale]/(app)/settings/_actions/preferencesActions";
-import StoreMultiTagAutocomplete from "@/app/[locale]/(app)/stores/_components/share/StoreMultiTagAutocomplete";
+import MultiTagAutocomplete from "@/components/core/MultiTagAutocomplete";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                        */
@@ -452,7 +452,7 @@ export default function SettingsPreferencesSection({
                 {t("productTypes.helper")}
               </Typography>
             </div>
-            <StoreMultiTagAutocomplete
+            <MultiTagAutocomplete
               id={productTypesId}
               options={productTypeOptions}
               selectedValues={productTypeKeys}

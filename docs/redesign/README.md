@@ -8,6 +8,8 @@ owner: Sergio Minei
 >
 > **S5 Fase B completada ✅ (2026-05-02).** App shell PUSH sidebar · Header con breadcrumbs + core toggles · MobileTabBar con FAB elevado central · MascotBubble idle · ProgressBar · Pagination · FAB · useSidebarState shared hook · AppLayout refactorizado. i18n completo. 388 tests ✅, build limpio ✅. Ver [`sessions/05-app-shell.md`](./sessions/05-app-shell.md).
 >
+> **S6 Fase B completada ✅ (2026-05-03).** Migration Prisma `Store.isPrivate` aplicada. Componentes core nuevos: Card · SectionCard · Stepper · MicroStat. Componentes modules nuevos: Sheet · EmptyState · FilterDrawer · DetailSidebar · WizardAccordion + WizardStep. Modal refactorizado a ADR 0008 Semantic Depth (con backward compat). 5 componentes propios del módulo (StoreCard · StoreHero · ReviewRow · DuplicateAlertInline · ReportReasonPicker). 3 pantallas refactorizadas (lista con FilterDrawer + grid responsive · detalle con StoreHero + 404-guard private · wizard con `isPrivate` switch). Schemas Zod + queries + server actions actualizadas con FR-04-33/34 (ADR 0009). i18n completo es+en. 411 tests ✅, lint 0 errores, build ✅. Ver [`sessions/06-stores-impl.md`](./sessions/06-stores-impl.md).
+>
 > **⚠️ S6 revertido (2026-05-02).** El primer intento de S6 (Fase A docs + Fase B implementación con Codex) falló: el spec de Fase A se desvió deliberadamente del demo HTML (propuso Linear-style denso en lugar del grid de cards bonitas del demo) y la implementación quedó plana, con el banner viejo `<AppPageHero>` no eliminado, sin cablear los componentes nuevos en las páginas, y wizard sin stepper visual. Causa raíz: el demo HTML no era contrato visual vinculante. Resuelto a nivel sistema en `methodology.md` §6.quater (demo como borrador visual base) y §6.quinquies (HTML-first iteration para módulos).
 >
 > **Próxima sesión: 🟡 S6 — Módulo Tiendas (Fase A con HTML-first iteration)** — Sonnet 4.6 / Alto, conversación nueva, en Claude Code (créditos renovados). El agente extiende el demo HTML con las 3 pantallas de Stores + variantes faltantes (filtros completos, paginación, estados, datos dummy realistas), itera con humano hasta aprobación visual, después produce spec markdown + handoff brief.
@@ -172,9 +174,9 @@ Detalle completo en [`methodology.md`](./methodology.md). Resumen de las reglas 
 | 04  | Componentes core — specs (Fase A)               | foundational     | ✅ done    |
 | 04B | Implementación de atoms (Fase B, primer batch)  | B-only           | ✅ done    |
 | 04B | Implementación de atoms (Fase B, segundo batch) | B-only           | ✅ done    |
-| 05  | Navegación y layouts (app shell)                | foundational A+B | ⏳ pending |
-| 06  | Módulo Tiendas (crear / lista / detalle)        | módulo           | ⏳ pending |
-| 07  | Módulo Órdenes (crear-editar / lista / detalle) | módulo           | ⏳ pending |
+| 05  | Navegación y layouts (app shell)                | foundational A+B | ✅ done    |
+| 06  | Módulo Tiendas (crear / lista / detalle)        | módulo           | ✅ done    |
+| 07  | Módulo Órdenes (crear-editar / lista / detalle) | módulo           | 🟡 next    |
 | 08  | Módulo Entregas (crear / lista / detalle)       | módulo           | ⏳ pending |
 | 09  | Estados transversales (empty / loading / error) | foundational A+B | ⏳ pending |
 | 10  | Onboarding + Landing                            | módulo           | ⏳ pending |
@@ -192,7 +194,7 @@ Detalle completo en [`methodology.md`](./methodology.md). Resumen de las reglas 
 
 ## Estado actual
 
-- Sesión vigente: **Sesión 4 — Componentes core** ✅ done el 2026-05-02.
+- Sesión vigente: **S7 — Módulo Órdenes · Fase A** 🟡 en iteración (demo HTML A.1 completo, pendiente A.2 revisión humana).
 - S1 (Research + Auditoría + 4 direcciones) cerrada con rev 1 + rev 2.
 - S2 produjo 6 wireframes lo-fi, red team, plan de 5 validaciones humanas, y **ADR 0001** (19 decisiones).
 - S3 produjo `tokens.md` (Velvet default + 4 alternativas), `tokens-css.md` (mapping Tailwind v4), audit de contraste 188/188 AA, red team 15 objeciones / 0 bloqueantes, y **ADR 0004** (eliminación de paleta categórica).

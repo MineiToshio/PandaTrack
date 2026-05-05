@@ -128,6 +128,8 @@
     "inactiveWarningTitle": "Store no longer active",
     "inactiveWarningMessage": "This store is no longer operating. The information is kept for reference only.",
     "noDescription": "This store does not have a description yet.",
+    "averageRatingLabel": "Average rating",
+    "reviewCountLabel": "Reviews",
     "countryLabel": "Country",
     "productTypesLabel": "Product types",
     "noProductTypes": "No product types have been set.",
@@ -375,5 +377,141 @@
     "validation_failed": "Please check the fields and try again.",
     "create_failed": "Could not create the store. Please try again.",
     "logoUploadFailed": "Could not upload the logo. Please try again."
+  },
+  "redesign": {
+    "filter": {
+      "title": "Filter stores",
+      "categories": "Categories sold",
+      "presence": "Presence",
+      "country": "Store country",
+      "importCountry": "Imports from",
+      "other": "Other",
+      "receivesOrders": "Accepts pre-orders",
+      "hasStock": "Has stock",
+      "presencePhysical": "Physical store",
+      "presenceOnline": "Online store",
+      "countrySearchPlaceholder": "Any country…",
+      "importCountrySearchPlaceholder": "Country of origin…",
+      "clear": "Clear",
+      "apply": "Apply",
+      "applyWithCount": "Apply ({count} results)"
+    },
+    "detail": {
+      "back": "Stores",
+      "reviewsTitle": "Reviews",
+      "categoriesTitle": "Categories and imports",
+      "channelsTitle": "Contact channels",
+      "addressesTitle": "Addresses",
+      "reviewsAll": "See all {count} reviews",
+      "writeReviewPlaceholder": "What do you think of this store?",
+      "publishReview": "Publish review",
+      "privateNotePlaceholder": "Your notes about this store.",
+      "noteSaved": "Saved {time} ago",
+      "reportButton": "Report store",
+      "pendingDisclaimer": "Under review. Visible in the app; not indexed in search engines.",
+      "flaggedDisclaimer": "Store with pending reports. Proceed with caution.",
+      "privateBadge": "Private — only you can see this",
+      "presence": {
+        "physical": "Physical store",
+        "online": "Online store"
+      },
+      "hasStock": "Has stock",
+      "acceptsPreorders": "Accepts pre-orders",
+      "importsFrom": "Imports from",
+      "ratingFallback": "No reviews yet"
+    },
+    "report": {
+      "title": "Report store",
+      "subtitle": "Why do you want to report {name}?",
+      "reasons": {
+        "INCORRECT_INFO": "Incorrect info",
+        "SPAM": "Possible scam or fraud",
+        "INAPPROPRIATE": "Inappropriate content",
+        "DUPLICATE": "Duplicate store",
+        "DOES_NOT_EXIST": "Does not exist"
+      },
+      "contextLabel": "Additional context",
+      "contextOptional": "(optional)",
+      "submit": "Send report",
+      "cancel": "Cancel"
+    },
+    "create": {
+      "step1": {
+        "eyebrow": "STEP 1 · TYPE",
+        "title": "What kind of store is this?",
+        "helper": "This changes the next fields.",
+        "businessLabel": "Business",
+        "businessDesc": "A store with brand, channels, and addresses.",
+        "personLabel": "Person",
+        "personDesc": "Someone selling — friend, scout, individual seller.",
+        "privateLabel": "Private profile",
+        "privateBadge": "(Person only)",
+        "privateHelper": "Only you can see it. Does not appear in the public directory or search. Ideal for tracking individual collectors or private contacts without public visibility."
+      },
+      "step2": {
+        "eyebrow": "STEP 2 · IDENTITY",
+        "title": "Identity",
+        "helper": "What it's called and where it is."
+      },
+      "step3": {
+        "eyebrow": "STEP 3 · CATEGORIES",
+        "title": "Categories and presence",
+        "helper": "What it sells and where it exists."
+      },
+      "step4": {
+        "eyebrow": "STEP 4 · CHANNELS",
+        "title": "Contact channels",
+        "helper": "How to reach the store."
+      },
+      "step5": {
+        "eyebrow": "STEP 5 · DONE",
+        "title": "Review and confirm",
+        "helper": "Verify the data before creating."
+      },
+      "stepperLabel": "Form steps",
+      "continue": "Continue",
+      "back": "Back",
+      "submit": "Create store",
+      "autosave": "Saved in this browser",
+      "summaryEyebrow": "Summary",
+      "requestCategory": "Request new category",
+      "categoryRequest": {
+        "title": "Request new category",
+        "helper": "Can't find the category you're looking for? Suggest a name and explain why it should be included.",
+        "nameLabel": "Category name",
+        "namePlaceholder": "E.g. Nendoroids, Trading Cards, Gashapon…",
+        "reasonLabel": "Reason",
+        "reasonPlaceholder": "Why should this category be added? Describe what types of products it covers and why it's different from existing ones.",
+        "submit": "Send request"
+      },
+      "channels": {
+        "addButton": "Add",
+        "helper": "Choose the channel type and paste the value.",
+        "remove": "Remove"
+      },
+      "duplicate": {
+        "eyebrow": "Similar stores found",
+        "title": "Is it any of these?",
+        "viewStore": "View store",
+        "createAnyway": "Create anyway",
+        "cancel": "Cancel"
+      },
+      "logo": {
+        "title": "Upload logo",
+        "reframe": "Reframe",
+        "remove": "Remove",
+        "save": "Save logo"
+      }
+    },
+    "toast": {
+      "created": "Store created — pending review",
+      "createdApproved": "Store created"
+    },
+    "edit": {
+      "title": "Edit store"
+    },
+    "validationErrors": {
+      "isPrivateOnlyPerson": "Private profile is only valid for Person stores."
+    }
   }
 }

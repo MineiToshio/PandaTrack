@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Building2, Globe, Link2, MapPinned, Plus, Store, UserRound } from "lucide-react";
+import { AlertTriangle, Box, Building2, Check, Globe, Plus, UserRound } from "lucide-react";
 import {
   type ChangeEvent,
   type FormEvent,
@@ -17,13 +17,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Typography from "@/components/core/Typography";
-import AppPageHero from "@/components/modules/AppPageHero";
-import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
+import Eyebrow from "@/components/core/Eyebrow";
 import Label from "@/components/core/Label";
 import Input from "@/components/core/Input";
 import Select from "@/components/core/Select";
 import Textarea from "@/components/core/Textarea";
 import Button from "@/components/core/Button/Button";
+import Modal from "@/components/modules/Modal/Modal";
+import { WizardAccordion, WizardStep } from "@/components/modules/WizardAccordion";
+import type { StepperStep } from "@/components/core/Stepper";
+import BackNavLink from "@/components/core/BackNavLink";
 import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS, RETURN_TO_ORDER_CREATE, ROUTES } from "@/lib/constants";
 import posthog from "posthog-js";
@@ -31,19 +34,18 @@ import { createStore, type CreateStoreResult } from "../_actions/createStore";
 import { getDuplicateCandidates, getDuplicateCandidatesForSubmit } from "../_actions/getDuplicateCandidates";
 import { SIMILARITY_THRESHOLD_PERCENT } from "@/lib/store/duplicateMatch";
 import { STORE_LOGO_MAX_SOURCE_SIZE_MB } from "@/lib/store/logoShared";
-import BackNavLink from "@/components/core/BackNavLink";
 import StoreAddressList from "../../_components/share/StoreAddressList";
 import StoreContactChannelList, {
   STORE_CONTACT_CHANNEL_TYPES,
   type StoreContactChannelType,
 } from "../../_components/share/StoreContactChannelList";
 import StoreEmptyStateBox from "../../_components/share/StoreEmptyStateBox";
-import StoreFormSectionCard from "../../_components/share/StoreFormSectionCard";
 import StoreLogoField, { type StoreLogoSubmission } from "../../_components/share/StoreLogoField/StoreLogoField";
 import CollectorCountryFlagEmoji from "../../_components/share/CollectorCountryFlagEmoji";
-import StoreMultiTagAutocomplete from "../../_components/share/StoreMultiTagAutocomplete";
+import MultiTagAutocomplete from "@/components/core/MultiTagAutocomplete";
 import StoreProductTypeRequestModal from "../../_components/share/StoreProductTypeRequestModal";
 import StoreToggleSwitch from "../../_components/share/StoreToggleSwitch";
+import DuplicateAlertInline from "../../_components/share/DuplicateAlertInline";
 import ToggleChoiceGroup from "@/components/core/ToggleChoiceGroup";
 
 type DuplicateCandidate = { id: string; name: string; slug: string; countryCode: string; logoUrl: string | null };
@@ -157,12 +159,14 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
   const router = useRouter();
   const t = useTranslations("stores");
   const tCreate = useTranslations("stores.create");
+  const tCreateRedesign = useTranslations("stores.redesign.create");
   const tValidation = useTranslations("stores.validation");
   const tCountries = useTranslations("countries");
   const tProductTypes = useTranslations("storeProductTypes");
   const tChannelTypes = useTranslations("stores.contactChannelTypes");
 
   const [storeType, setStoreType] = useState<"BUSINESS" | "PERSON">("BUSINESS");
+  const [isPrivate, setIsPrivate] = useState(false);
   const [hasStock, setHasStock] = useState(false);
   const [receivesOrders, setReceivesOrders] = useState(false);
   const [presenceTypes, setPresenceTypes] = useState<Array<"ONLINE" | "PHYSICAL">>(["ONLINE"]);
@@ -187,11 +191,12 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
   );
 
   const [nameValue, setNameValue] = useState("");
+  const [descriptionValue, setDescriptionValue] = useState("");
+  const [countryCode, setCountryCode] = useState("");
   const [duplicateCandidates, setDuplicateCandidates] = useState<DuplicateCandidate[]>([]);
   const [showConfirmDuplicate, setShowConfirmDuplicate] = useState(false);
   const pendingFormDataRef = useRef<FormData | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
-  const duplicateModalCancelRef = useRef<HTMLButtonElement | null>(null);
 
   const fetchCandidates = useCallback(async (query: string) => {
     const trimmedQuery = query.trim();
@@ -299,8 +304,8 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
     const submittedName = formData.get("name");
     const submittedCountry = formData.get("countryCode");
     const nameToValidate = typeof submittedName === "string" ? submittedName.trim() : "";
-    const countryCode = typeof submittedCountry === "string" ? submittedCountry : "";
-    const submitCandidates = await getDuplicateCandidatesForSubmit(nameToValidate, countryCode);
+    const submittedCountryCode = typeof submittedCountry === "string" ? submittedCountry : "";
+    const submitCandidates = await getDuplicateCandidatesForSubmit(nameToValidate, submittedCountryCode);
     if (submitCandidates.length > 0) {
       setDuplicateCandidates(submitCandidates);
       setShowConfirmDuplicate(true);
@@ -308,7 +313,7 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
       posthog.capture(POSTHOG_EVENTS.STORE.DUPLICATE_SUBMIT_MODAL_SHOWN, {
         candidate_count: submitCandidates.length,
         name_query: nameToValidate,
-        country_code: countryCode,
+        country_code: submittedCountryCode,
       });
       return;
     }
@@ -351,6 +356,10 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
     }
 
     await handleSubmit(nextFormData);
+  };
+
+  const triggerSubmit = () => {
+    formRef.current?.requestSubmit();
   };
 
   const success = state?.success === true;
@@ -407,12 +416,6 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
     }
   }, [createdStoreSlug, locale, router, returnTo, state]);
 
-  useEffect(() => {
-    if (showConfirmDuplicate && duplicateModalCancelRef.current) {
-      duplicateModalCancelRef.current.focus();
-    }
-  }, [showConfirmDuplicate]);
-
   const renderLogoError = (errorKey: string) => {
     return tValidation.has(errorKey)
       ? tValidation(errorKey as never)
@@ -420,6 +423,25 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
         ? t(`error.${errorKey}` as never)
         : t("error.create_failed");
   };
+
+  // Wizard step list. For PERSON the "Channels" step is omitted (no contact channels / addresses).
+  const stepperSteps: StepperStep[] = useMemo(() => {
+    if (storeType === "BUSINESS") {
+      return [
+        { n: 1, label: tCreateRedesign("step1.eyebrow") },
+        { n: 2, label: tCreateRedesign("step2.eyebrow") },
+        { n: 3, label: tCreateRedesign("step3.eyebrow") },
+        { n: 4, label: tCreateRedesign("step4.eyebrow") },
+        { n: 5, label: tCreateRedesign("step5.eyebrow") },
+      ];
+    }
+    return [
+      { n: 1, label: tCreateRedesign("step1.eyebrow") },
+      { n: 2, label: tCreateRedesign("step2.eyebrow") },
+      { n: 3, label: tCreateRedesign("step3.eyebrow") },
+      { n: 4, label: tCreateRedesign("step5.eyebrow") },
+    ];
+  }, [storeType, tCreateRedesign]);
 
   if (success) {
     return (
@@ -431,54 +453,72 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="space-y-3">
-        <BackNavLink href={`/${locale}${ROUTES.stores}`}>{tCreate("backToList")}</BackNavLink>
-        <AppPageHero eyebrowIcon={Store} title={tCreate("title")} description={tCreate("heroDescription")} />
-      </div>
+  // Step 2 needs a non-empty trimmed name and a country.
+  const step2Valid = nameValue.trim().length > 0 && countryCode.length === 2;
+  // Step 3 needs at least one product type and at least one presence type.
+  const step3Valid = selectedProductTypeKeys.length > 0 && presenceTypes.length > 0;
+  const reviewStepN = storeType === "BUSINESS" ? 5 : 4;
 
-      {showConfirmDuplicate && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="duplicate-dialog-title"
-          aria-describedby="duplicate-dialog-desc"
-        >
-          <button
-            type="button"
-            className="bg-background/70 absolute inset-0 backdrop-blur-sm"
-            onClick={handleCancelDuplicateConfirm}
-            aria-hidden
-            tabIndex={-1}
-          />
-          <div className="border-border bg-background relative z-10 w-full max-w-lg rounded-xl border p-6 shadow-xl">
-            <SectionTitleWithAccent as="h3" id="duplicate-dialog-title" className="mb-2">
-              {t("duplicate.submitModalTitle")}
-            </SectionTitleWithAccent>
-            <Typography id="duplicate-dialog-desc" size="sm" className="text-text-body mb-4">
-              {t("duplicate.submitModalDescription", { percent: SIMILARITY_THRESHOLD_PERCENT })}
-            </Typography>
-            <div className="mb-6">
-              <DuplicateCandidatesList candidates={duplicateCandidates} locale={locale} tCountries={tCountries} />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="primary" onClick={handleConfirmCreateAnyway} type="button">
-                {t("duplicate.confirmCreate")}
-              </Button>
-              <Button
-                ref={duplicateModalCancelRef}
-                variant="secondary"
-                onClick={handleCancelDuplicateConfirm}
-                type="button"
-              >
-                {t("duplicate.cancel")}
-              </Button>
-            </div>
-          </div>
-        </div>
+  const renderReviewSummary = () => (
+    <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <SummaryRow
+        label={tCreate("storeTypeLabel")}
+        value={storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
+      />
+      {storeType === "PERSON" && isPrivate && <SummaryRow label={tCreateRedesign("step1.privateLabel")} value="✓" />}
+      <SummaryRow label={tCreate("nameLabel")} value={nameValue || "—"} />
+      <SummaryRow label={tCreate("countryLabel")} value={countryCode ? tCountries(countryCode) : "—"} />
+      <SummaryRow
+        label={tCreate("presenceLabel")}
+        value={
+          presenceTypes
+            .map((p) =>
+              tCreate(`presence${p === "ONLINE" ? "Online" : "Physical"}` as "presenceOnline" | "presencePhysical"),
+            )
+            .join(" · ") || "—"
+        }
+      />
+      <SummaryRow
+        label={tCreate("productTypesLabel")}
+        value={selectedProductTypeKeys.map((k) => tProductTypes(k)).join(" · ") || "—"}
+      />
+      {selectedImportCountries.length > 0 && (
+        <SummaryRow
+          label={tCreate("importCountriesLabel")}
+          value={selectedImportCountries.map((code) => tCountries(code)).join(" · ")}
+        />
       )}
+      {storeType === "BUSINESS" && contactChannelRows.length > 0 && (
+        <SummaryRow label={tCreate("contactChannelsLabel")} value={`${contactChannelRows.length}`} />
+      )}
+      {storeType === "BUSINESS" && addressRows.length > 0 && (
+        <SummaryRow label={tCreate("addressesLabel")} value={`${addressRows.length}`} />
+      )}
+    </dl>
+  );
+
+  return (
+    <div className="space-y-4">
+      <BackNavLink href={`/${locale}${ROUTES.stores}`}>{tCreate("backToList")}</BackNavLink>
+
+      <Modal
+        isOpen={showConfirmDuplicate}
+        onClose={handleCancelDuplicateConfirm}
+        title={t("duplicate.submitModalTitle")}
+        subtitle={t("duplicate.submitModalDescription", { percent: SIMILARITY_THRESHOLD_PERCENT })}
+        icon={<AlertTriangle size={20} aria-hidden="true" />}
+        tone="warning"
+        primaryAction={{
+          label: t("duplicate.confirmCreate"),
+          onClick: handleConfirmCreateAnyway,
+        }}
+        secondaryAction={{
+          label: t("duplicate.cancel"),
+          onClick: handleCancelDuplicateConfirm,
+        }}
+      >
+        <DuplicateCandidatesList candidates={duplicateCandidates} locale={locale} tCountries={tCountries} />
+      </Modal>
 
       {serverError && (
         <Typography size="sm" className="text-destructive" role="alert">
@@ -486,324 +526,447 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
         </Typography>
       )}
 
-      <form ref={formRef} className="space-y-5" onSubmit={handleFormSubmit}>
-        <StoreFormSectionCard
-          eyebrow={tCreate("basicsEyebrow")}
-          title={tCreate("basicsTitle")}
-          icon={Store}
-          iconClassName="text-primary"
-        >
-          <div className="space-y-3">
-            <Label>{tCreate("storeTypeLabel")}</Label>
-            <ToggleChoiceGroup
-              mode="single"
-              appearance="tile"
-              formName="storeType"
-              options={storeTypeOptions}
-              value={storeType}
-              onChange={(value) => {
-                const nextStoreType = value as "BUSINESS" | "PERSON";
-                setStoreType(nextStoreType);
-                if (nextStoreType === "PERSON") {
-                  setLogoSubmission({
-                    action: "keep",
-                    file: null,
-                    cropArea: null,
-                  });
-                }
-              }}
-            />
-          </div>
+      <form ref={formRef} onSubmit={handleFormSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        {/* Hidden inputs for fields not always present in the active step's DOM */}
+        <input type="hidden" name="storeType" value={storeType} />
+        {storeType === "PERSON" && isPrivate && <input type="hidden" name="isPrivate" value="on" />}
+        {hasStock && <input type="hidden" name="hasStock" value="on" />}
+        {receivesOrders && <input type="hidden" name="receivesOrders" value="on" />}
 
-          <div>
-            <Label htmlFor="store-name">{tCreate("nameLabel")}</Label>
-            <Input
-              id="store-name"
-              name="name"
-              type="text"
-              value={nameValue}
-              onChange={handleNameChange}
-              onBlur={handleNameBlur}
-              placeholder={tCreate("namePlaceholder")}
-              required
-              maxLength={200}
-              error={!!fieldErrors.name?.length}
-              aria-invalid={!!fieldErrors.name?.length}
-              aria-describedby={duplicateCandidates.length > 0 ? "duplicate-suggestions" : undefined}
-            />
-            {fieldErrors.name?.[0] && (
-              <Typography size="xs" className="text-destructive mt-1" role="alert">
-                {tValidation(fieldErrors.name[0] as "nameRequired" | "nameTooLong")}
-              </Typography>
-            )}
-            {duplicateCandidates.length > 0 && !showConfirmDuplicate && (
-              <div
-                id="duplicate-suggestions"
-                className="border-primary/35 bg-primary/8 ring-primary/20 mt-2 rounded-xl border p-3.5 shadow-sm ring-1"
-                role="status"
-              >
-                <Typography size="xs" className="text-text-title mb-1.5 font-semibold">
-                  {t("duplicate.suggestionsTitle")}
+        <div className="min-w-0">
+          <WizardAccordion startStep={1} steps={stepperSteps} stepperAriaLabel={tCreateRedesign("stepperLabel")}>
+            {/* ── Step 1: Tipo ── */}
+            <WizardStep
+              n={1}
+              eyebrow={tCreateRedesign("step1.eyebrow")}
+              title={tCreateRedesign("step1.title")}
+              primaryAction={{ label: tCreateRedesign("continue") }}
+              summary={storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
+            >
+              <div className="space-y-4">
+                <Typography size="xs" className="text-text-muted">
+                  {tCreateRedesign("step1.helper")}
                 </Typography>
-                <Typography size="2xs" className="text-text-muted mb-2">
-                  {t("duplicate.suggestionsDescription")}
-                </Typography>
-                <DuplicateCandidatesList candidates={duplicateCandidates} locale={locale} tCountries={tCountries} />
+                <div className="space-y-3">
+                  <Label>{tCreate("storeTypeLabel")}</Label>
+                  <ToggleChoiceGroup
+                    mode="single"
+                    appearance="tile"
+                    options={storeTypeOptions}
+                    value={storeType}
+                    onChange={(value) => {
+                      const nextStoreType = value as "BUSINESS" | "PERSON";
+                      setStoreType(nextStoreType);
+                      if (nextStoreType === "PERSON") {
+                        setLogoSubmission({ action: "keep", file: null, cropArea: null });
+                      } else {
+                        setIsPrivate(false);
+                      }
+                    }}
+                  />
+                </div>
+
+                {storeType === "PERSON" && (
+                  <div className="space-y-2 pt-4 [border-top:1px_solid_var(--border)]">
+                    <StoreToggleSwitch
+                      label={tCreateRedesign("step1.privateLabel")}
+                      checked={isPrivate}
+                      onChange={setIsPrivate}
+                    />
+                    <Typography size="xs" className="text-text-muted [line-height:1.5]">
+                      {tCreateRedesign("step1.privateHelper")}
+                    </Typography>
+                  </div>
+                )}
               </div>
+            </WizardStep>
+
+            {/* ── Step 2: Identidad ── */}
+            <WizardStep
+              n={2}
+              eyebrow={tCreateRedesign("step2.eyebrow")}
+              title={tCreateRedesign("step2.title")}
+              primaryAction={{ label: tCreateRedesign("continue"), disabled: !step2Valid }}
+              secondaryAction={{ label: tCreateRedesign("back") }}
+              summary={nameValue && countryCode ? `${nameValue} · ${tCountries(countryCode)}` : undefined}
+            >
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <Label htmlFor="store-name">{tCreate("nameLabel")}</Label>
+                  <Input
+                    id="store-name"
+                    name="name"
+                    type="text"
+                    value={nameValue}
+                    onChange={handleNameChange}
+                    onBlur={handleNameBlur}
+                    placeholder={tCreate("namePlaceholder")}
+                    required
+                    maxLength={200}
+                    error={!!fieldErrors.name?.length}
+                    aria-invalid={!!fieldErrors.name?.length}
+                  />
+                  {fieldErrors.name?.[0] && (
+                    <Typography size="xs" className="text-destructive mt-1" role="alert">
+                      {tValidation(fieldErrors.name[0] as "nameRequired" | "nameTooLong")}
+                    </Typography>
+                  )}
+                  {!showConfirmDuplicate && (
+                    <DuplicateAlertInline
+                      candidates={duplicateCandidates}
+                      locale={locale}
+                      labels={{
+                        eyebrow: tCreateRedesign("duplicate.eyebrow"),
+                        title: tCreateRedesign("duplicate.title"),
+                        viewStore: tCreateRedesign("duplicate.viewStore"),
+                        countryName: (code) => tCountries(code),
+                      }}
+                      className="mt-2"
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="store-country">{tCreate("countryLabel")}</Label>
+                  <Select
+                    id="store-country"
+                    name="countryCode"
+                    required
+                    value={countryCode}
+                    onChange={(event) => setCountryCode(event.target.value)}
+                    aria-invalid={!!fieldErrors.countryCode?.length}
+                    error={!!fieldErrors.countryCode?.length}
+                  >
+                    <option value="">{tCreate("countryPlaceholder")}</option>
+                    {countries.map((country) => (
+                      <option key={country.code} value={country.code}>
+                        {tCountries(country.code)}
+                      </option>
+                    ))}
+                  </Select>
+                  {fieldErrors.countryCode?.[0] && (
+                    <Typography size="xs" className="text-destructive mt-1" role="alert">
+                      {tValidation("countryInvalid")}
+                    </Typography>
+                  )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <Label htmlFor="store-description">{tCreate("descriptionLabel")}</Label>
+                  <Textarea
+                    id="store-description"
+                    name="description"
+                    value={descriptionValue}
+                    onChange={(event) => setDescriptionValue(event.target.value)}
+                    placeholder={tCreate("descriptionPlaceholder")}
+                    rows={3}
+                    maxLength={2000}
+                  />
+                </div>
+
+                {storeType === "BUSINESS" && (
+                  <div className="md:col-span-2">
+                    <StoreLogoField
+                      id="store-logo"
+                      copy={{
+                        label: t("logo.label"),
+                        helper: t("logo.helper"),
+                        emptyTitle: t("logo.emptyTitle"),
+                        emptyDescription: t("logo.emptyDescription"),
+                        uploadCta: t("logo.uploadCta"),
+                        editCta: t("logo.editCta"),
+                        replaceCta: t("logo.replaceCta"),
+                        removeCta: t("logo.removeCta"),
+                        editorTitle: t("logo.editorTitle"),
+                        editorDescription: t("logo.editorDescription"),
+                        zoomLabel: t("logo.zoomLabel"),
+                        editorCancel: t("logo.editorCancel"),
+                        editorConfirm: t("logo.editorConfirm"),
+                        acceptedFormats: t("logo.acceptedFormats"),
+                        maxSize: t("logo.maxSize", { size: STORE_LOGO_MAX_SOURCE_SIZE_MB }),
+                      }}
+                      error={logoError}
+                      renderError={renderLogoError}
+                      onChange={setLogoSubmission}
+                      onRemove={() =>
+                        posthog.capture(POSTHOG_EVENTS.STORE.LOGO_REMOVED, {
+                          flow: "create",
+                        })
+                      }
+                    />
+                  </div>
+                )}
+              </div>
+            </WizardStep>
+
+            {/* ── Step 3: Categorías y presencia ── */}
+            <WizardStep
+              n={3}
+              eyebrow={tCreateRedesign("step3.eyebrow")}
+              title={tCreateRedesign("step3.title")}
+              primaryAction={{ label: tCreateRedesign("continue"), disabled: !step3Valid }}
+              secondaryAction={{ label: tCreateRedesign("back") }}
+              summary={
+                selectedProductTypeKeys.length > 0
+                  ? selectedProductTypeKeys.length === 1
+                    ? tProductTypes(selectedProductTypeKeys[0])
+                    : `${selectedProductTypeKeys.length}`
+                  : undefined
+              }
+            >
+              <div className="space-y-5">
+                <div className="space-y-3">
+                  <Label>{tCreate("productTypesLabel")}</Label>
+                  <div
+                    data-field="productTypeKeys"
+                    className={cn(hasProductTypeError && "border-destructive rounded-lg border p-2")}
+                  >
+                    <ToggleChoiceGroup
+                      mode="multiple"
+                      options={productTypeOptions}
+                      selectedValues={selectedProductTypeKeys}
+                      onChange={setSelectedProductTypeKeys}
+                      formName="productTypeKeys"
+                      trailingSlot={
+                        <StoreProductTypeRequestModal locale={locale} source="create" triggerVariant="chip" />
+                      }
+                    />
+                  </div>
+                  {fieldErrors.productTypeKeys?.[0] && (
+                    <Typography size="xs" className="text-destructive mt-1" role="alert">
+                      {tValidation(fieldErrors.productTypeKeys[0] as "productTypeRequired" | "productTypeInvalid")}
+                    </Typography>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <Label>{tCreate("presenceLabel")}</Label>
+                  <div
+                    data-field="presenceTypes"
+                    className={cn(hasPresenceError && "border-destructive rounded-lg border p-2")}
+                  >
+                    <ToggleChoiceGroup
+                      mode="multiple"
+                      options={presenceOptions}
+                      selectedValues={presenceTypes}
+                      onChange={(values) => setPresenceTypes(values as Array<"ONLINE" | "PHYSICAL">)}
+                      formName="presenceTypes"
+                      itemClassName="min-h-11"
+                    />
+                  </div>
+                  {fieldErrors.presenceTypes?.[0] && (
+                    <Typography size="xs" className="text-destructive mt-1" role="alert">
+                      {tValidation("presenceRequired")}
+                    </Typography>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <StoreToggleSwitch label={tCreate("hasStockLabel")} checked={hasStock} onChange={setHasStock} />
+                  <StoreToggleSwitch
+                    label={tCreate("receivesOrdersLabel")}
+                    checked={receivesOrders}
+                    onChange={setReceivesOrders}
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="import-countries-input">{tCreate("importCountriesLabel")}</Label>
+                  <MultiTagAutocomplete
+                    id="import-countries-input"
+                    options={countryOptions}
+                    selectedValues={selectedImportCountries}
+                    onChange={setSelectedImportCountries}
+                    placeholder={tCreate("importCountriesPlaceholder")}
+                    inputName="importCountries"
+                    helperText={tCreate("importCountriesHelper")}
+                    removeItemAriaLabel={(itemLabel) => `${tCreate("remove")} ${itemLabel}`}
+                  />
+                </div>
+              </div>
+            </WizardStep>
+
+            {/* ── Step 4: Canales (BUSINESS only) ── */}
+            {storeType === "BUSINESS" && (
+              <WizardStep
+                n={4}
+                eyebrow={tCreateRedesign("step4.eyebrow")}
+                title={tCreateRedesign("step4.title")}
+                primaryAction={{ label: tCreateRedesign("continue") }}
+                secondaryAction={{ label: tCreateRedesign("back") }}
+                summary={
+                  contactChannelRows.length + addressRows.length > 0
+                    ? `${contactChannelRows.length + addressRows.length}`
+                    : undefined
+                }
+              >
+                <div className="space-y-5">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>{tCreate("contactChannelsLabel")}</Label>
+                      <Button type="button" variant="secondary" size="sm" onClick={handleAddContactChannel}>
+                        <Plus size={16} className="mr-1" aria-hidden />
+                        {tCreate("addContactChannel")}
+                      </Button>
+                    </div>
+                    {contactChannelRows.length === 0 ? (
+                      <StoreEmptyStateBox message={tCreate("noContactChannels")} />
+                    ) : (
+                      <StoreContactChannelList
+                        idPrefix="contact-channel"
+                        rows={contactChannelRows.map((rowId, rowIndex) => ({
+                          rowId,
+                          rowIndex,
+                          type: getContactChannelTypeForRow(rowId, rowIndex),
+                          typeError: getContactChannelTypeError(rowIndex) ?? undefined,
+                          valueError: getContactChannelValueError(rowIndex) ?? undefined,
+                        }))}
+                        typeInputName="contactChannelType"
+                        valueInputName="contactChannelValue"
+                        typeLabel={tCreate("contactChannelType")}
+                        valueLabel={tCreate("contactChannelValue")}
+                        removeLabel={tCreate("remove")}
+                        optionLabel={(type) => tChannelTypes(type)}
+                        valuePlaceholder={getContactChannelPlaceholder}
+                        onTypeChange={(rowId, nextType) => {
+                          setContactChannelTypeByRowId((previous) => ({
+                            ...previous,
+                            [rowId]: nextType,
+                          }));
+                        }}
+                        onRemove={handleRemoveContactChannel}
+                        renderValueError={(errorKey) =>
+                          tValidation(
+                            errorKey as
+                              | "contactValueRequired"
+                              | "contactValueInvalidWebsite"
+                              | "contactValueInvalidWhatsApp"
+                              | "contactValueInvalidInstagram"
+                              | "contactValueInvalidFacebook"
+                              | "contactValueInvalidTikTok"
+                              | "contactValueInvalidEmail"
+                              | "contactValueInvalidPhone",
+                          )
+                        }
+                      />
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>{tCreate("addressesLabel")}</Label>
+                      <Button type="button" variant="secondary" size="sm" onClick={handleAddAddress}>
+                        <Plus size={16} className="mr-1" aria-hidden />
+                        {tCreate("addAddress")}
+                      </Button>
+                    </div>
+                    {addressRows.length === 0 ? (
+                      <StoreEmptyStateBox message={tCreate("noAddresses")} />
+                    ) : (
+                      <StoreAddressList
+                        idPrefix="address"
+                        rows={addressRows.map((rowId, rowIndex) => ({
+                          rowId,
+                          rowIndex,
+                        }))}
+                        countryOptions={countryOptions}
+                        emptyCountryLabel={tCreate("countryPlaceholder")}
+                        countryLabel={tCreate("addressCountry")}
+                        cityLabel={tCreate("addressCity")}
+                        addressLineLabel={tCreate("addressLine")}
+                        referenceLabel={tCreate("addressReference")}
+                        countryInputName="addressCountryCode"
+                        cityInputName="addressCity"
+                        addressLineInputName="addressAddressLine"
+                        referenceInputName="addressReference"
+                        removeLabel={tCreate("remove")}
+                        onRemove={handleRemoveAddress}
+                      />
+                    )}
+                  </div>
+                </div>
+              </WizardStep>
             )}
-          </div>
 
-          <div>
-            <Label htmlFor="store-description">{tCreate("descriptionLabel")}</Label>
-            <Textarea
-              id="store-description"
-              name="description"
-              placeholder={tCreate("descriptionPlaceholder")}
-              rows={3}
-              maxLength={2000}
-            />
-          </div>
-
-          {storeType === "BUSINESS" ? (
-            <StoreLogoField
-              id="store-logo"
-              copy={{
-                label: t("logo.label"),
-                helper: t("logo.helper"),
-                emptyTitle: t("logo.emptyTitle"),
-                emptyDescription: t("logo.emptyDescription"),
-                uploadCta: t("logo.uploadCta"),
-                editCta: t("logo.editCta"),
-                replaceCta: t("logo.replaceCta"),
-                removeCta: t("logo.removeCta"),
-                editorTitle: t("logo.editorTitle"),
-                editorDescription: t("logo.editorDescription"),
-                zoomLabel: t("logo.zoomLabel"),
-                editorCancel: t("logo.editorCancel"),
-                editorConfirm: t("logo.editorConfirm"),
-                acceptedFormats: t("logo.acceptedFormats"),
-                maxSize: t("logo.maxSize", { size: STORE_LOGO_MAX_SOURCE_SIZE_MB }),
+            {/* ── Step 5 (BUSINESS) / Step 4 (PERSON): Listo ── */}
+            <WizardStep
+              n={reviewStepN}
+              eyebrow={tCreateRedesign("step5.eyebrow")}
+              title={tCreateRedesign("step5.title")}
+              primaryAction={{
+                label: isPending ? tCreate("submitting") : tCreateRedesign("submit"),
+                onClick: triggerSubmit,
+                loading: isPending,
               }}
-              error={logoError}
-              renderError={renderLogoError}
-              onChange={setLogoSubmission}
-              onRemove={() =>
-                posthog.capture(POSTHOG_EVENTS.STORE.LOGO_REMOVED, {
-                  flow: "create",
-                })
-              }
-            />
-          ) : null}
-
-          <div className="space-y-3">
-            <Label>{tCreate("countryLabel")}</Label>
-            <Select
-              id="store-country"
-              name="countryCode"
-              required
-              aria-invalid={!!fieldErrors.countryCode?.length}
-              error={!!fieldErrors.countryCode?.length}
+              secondaryAction={{ label: tCreateRedesign("back") }}
+              autoAdvance={false}
             >
-              <option value="">{tCreate("countryPlaceholder")}</option>
-              {countries.map((country) => (
-                <option key={country.code} value={country.code}>
-                  {tCountries(country.code)}
-                </option>
-              ))}
-            </Select>
-            {fieldErrors.countryCode?.[0] && (
-              <Typography size="xs" className="text-destructive mt-1" role="alert">
-                {tValidation("countryInvalid")}
-              </Typography>
-            )}
+              <div className="space-y-4">
+                <Eyebrow as="p">{tCreateRedesign("summaryEyebrow")}</Eyebrow>
+                {renderReviewSummary()}
+              </div>
+            </WizardStep>
+          </WizardAccordion>
+          <div className="mt-4 flex items-center gap-1.5 [font-size:var(--text-caption)] [color:var(--text-muted)]">
+            <Check size={12} aria-hidden="true" className="[color:var(--success)]" />
+            <span>{tCreateRedesign("autosave")}</span>
           </div>
-        </StoreFormSectionCard>
-
-        <StoreFormSectionCard
-          eyebrow={tCreate("commercialEyebrow")}
-          title={tCreate("commercialTitle")}
-          icon={Box}
-          iconClassName="text-highlight"
-        >
-          <div className="space-y-3">
-            <Label>{tCreate("presenceLabel")}</Label>
-            <div
-              data-field="presenceTypes"
-              className={cn(hasPresenceError && "border-destructive rounded-lg border p-2")}
-            >
-              <ToggleChoiceGroup
-                mode="multiple"
-                options={presenceOptions}
-                selectedValues={presenceTypes}
-                onChange={(values) => setPresenceTypes(values as Array<"ONLINE" | "PHYSICAL">)}
-                formName="presenceTypes"
-                itemClassName="min-h-11"
-              />
-            </div>
-            {fieldErrors.presenceTypes?.[0] && (
-              <Typography size="xs" className="text-destructive mt-1" role="alert">
-                {tValidation("presenceRequired")}
-              </Typography>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <StoreToggleSwitch
-              label={tCreate("hasStockLabel")}
-              checked={hasStock}
-              onChange={setHasStock}
-              name="hasStock"
-            />
-            <StoreToggleSwitch
-              label={tCreate("receivesOrdersLabel")}
-              checked={receivesOrders}
-              onChange={setReceivesOrders}
-              name="receivesOrders"
-            />
-          </div>
-
-          <div className="space-y-3">
-            <Label>{tCreate("productTypesLabel")}</Label>
-            <div
-              data-field="productTypeKeys"
-              className={cn(hasProductTypeError && "border-destructive rounded-lg border p-2")}
-            >
-              <ToggleChoiceGroup
-                mode="multiple"
-                options={productTypeOptions}
-                selectedValues={selectedProductTypeKeys}
-                onChange={setSelectedProductTypeKeys}
-                formName="productTypeKeys"
-                trailingSlot={<StoreProductTypeRequestModal locale={locale} source="create" triggerVariant="chip" />}
-              />
-            </div>
-            {fieldErrors.productTypeKeys?.[0] && (
-              <Typography size="xs" className="text-destructive mt-1" role="alert">
-                {tValidation(fieldErrors.productTypeKeys[0] as "productTypeRequired" | "productTypeInvalid")}
-              </Typography>
-            )}
-          </div>
-
-          <div className="space-y-3">
-            <Label htmlFor="import-countries-input">{tCreate("importCountriesLabel")}</Label>
-            <StoreMultiTagAutocomplete
-              id="import-countries-input"
-              options={countryOptions}
-              selectedValues={selectedImportCountries}
-              onChange={setSelectedImportCountries}
-              placeholder={tCreate("importCountriesPlaceholder")}
-              inputName="importCountries"
-              helperText={tCreate("importCountriesHelper")}
-              removeItemAriaLabel={(itemLabel) => `${tCreate("remove")} ${itemLabel}`}
-            />
-          </div>
-        </StoreFormSectionCard>
-
-        {storeType === "BUSINESS" && (
-          <section className="space-y-5">
-            <StoreFormSectionCard
-              eyebrow={tCreate("businessEyebrow")}
-              title={tCreate("contactChannelsLabel")}
-              icon={Link2}
-              iconClassName="text-success"
-              action={
-                <Button type="button" variant="secondary" size="sm" onClick={handleAddContactChannel}>
-                  <Plus size={16} className="mr-1" aria-hidden />
-                  {tCreate("addContactChannel")}
-                </Button>
-              }
-            >
-              {contactChannelRows.length === 0 ? (
-                <StoreEmptyStateBox message={tCreate("noContactChannels")} />
-              ) : (
-                <StoreContactChannelList
-                  idPrefix="contact-channel"
-                  rows={contactChannelRows.map((rowId, rowIndex) => ({
-                    rowId,
-                    rowIndex,
-                    type: getContactChannelTypeForRow(rowId, rowIndex),
-                    typeError: getContactChannelTypeError(rowIndex) ?? undefined,
-                    valueError: getContactChannelValueError(rowIndex) ?? undefined,
-                  }))}
-                  typeInputName="contactChannelType"
-                  valueInputName="contactChannelValue"
-                  typeLabel={tCreate("contactChannelType")}
-                  valueLabel={tCreate("contactChannelValue")}
-                  removeLabel={tCreate("remove")}
-                  optionLabel={(type) => tChannelTypes(type)}
-                  valuePlaceholder={getContactChannelPlaceholder}
-                  onTypeChange={(rowId, nextType) => {
-                    setContactChannelTypeByRowId((previous) => ({
-                      ...previous,
-                      [rowId]: nextType,
-                    }));
-                  }}
-                  onRemove={handleRemoveContactChannel}
-                  renderValueError={(errorKey) =>
-                    tValidation(
-                      errorKey as
-                        | "contactValueRequired"
-                        | "contactValueInvalidWebsite"
-                        | "contactValueInvalidWhatsApp"
-                        | "contactValueInvalidInstagram"
-                        | "contactValueInvalidFacebook"
-                        | "contactValueInvalidTikTok"
-                        | "contactValueInvalidEmail"
-                        | "contactValueInvalidPhone",
-                    )
-                  }
-                />
-              )}
-            </StoreFormSectionCard>
-
-            <StoreFormSectionCard
-              eyebrow={tCreate("businessEyebrow")}
-              title={tCreate("addressesLabel")}
-              icon={MapPinned}
-              iconClassName="text-accent"
-              action={
-                <Button type="button" variant="secondary" size="sm" onClick={handleAddAddress}>
-                  <Plus size={16} className="mr-1" aria-hidden />
-                  {tCreate("addAddress")}
-                </Button>
-              }
-            >
-              {addressRows.length === 0 ? (
-                <StoreEmptyStateBox message={tCreate("noAddresses")} />
-              ) : (
-                <StoreAddressList
-                  idPrefix="address"
-                  rows={addressRows.map((rowId, rowIndex) => ({
-                    rowId,
-                    rowIndex,
-                  }))}
-                  countryOptions={countryOptions}
-                  emptyCountryLabel={tCreate("countryPlaceholder")}
-                  countryLabel={tCreate("addressCountry")}
-                  cityLabel={tCreate("addressCity")}
-                  addressLineLabel={tCreate("addressLine")}
-                  referenceLabel={tCreate("addressReference")}
-                  countryInputName="addressCountryCode"
-                  cityInputName="addressCity"
-                  addressLineInputName="addressAddressLine"
-                  referenceInputName="addressReference"
-                  removeLabel={tCreate("remove")}
-                  onRemove={handleRemoveAddress}
-                />
-              )}
-            </StoreFormSectionCard>
-          </section>
-        )}
-
-        <div className="flex flex-wrap gap-3">
-          <Button type="submit" variant="primary" disabled={isPending}>
-            {isPending ? tCreate("submitting") : tCreate("submit")}
-          </Button>
-          <BackNavLink appearance="button" href={`/${locale}${ROUTES.stores}`}>
-            {tCreate("backToList")}
-          </BackNavLink>
         </div>
+
+        {/* ── Aside Resumen sticky ── */}
+        <aside className="lg:[position:sticky] lg:[top:calc(var(--header-h-desktop,4rem)_+_var(--space-4,1rem))] lg:self-start">
+          <div className="rounded-[var(--radius-xl)] p-4 [background:var(--surface-elevated)] [border:1px_solid_var(--border)] md:p-5">
+            <Eyebrow as="p">{tCreateRedesign("summaryEyebrow")}</Eyebrow>
+            <dl className="mt-3 flex flex-col">
+              <AsideSummaryRow
+                label={tCreate("storeTypeLabel")}
+                value={storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
+              />
+              <AsideSummaryRow label={tCreate("nameLabel")} value={nameValue || "—"} muted={!nameValue} />
+              <AsideSummaryRow
+                label={tCreate("countryLabel")}
+                value={countryCode ? tCountries(countryCode) : "—"}
+                muted={!countryCode}
+              />
+              <AsideSummaryRow
+                label={tCreate("productTypesLabel")}
+                value={selectedProductTypeKeys.length > 0 ? `${selectedProductTypeKeys.length}` : "—"}
+                muted={selectedProductTypeKeys.length === 0}
+              />
+              {storeType === "PERSON" && isPrivate && (
+                <AsideSummaryRow label={tCreateRedesign("step1.privateLabel")} value="✓" />
+              )}
+            </dl>
+          </div>
+        </aside>
       </form>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5 rounded-[var(--radius-md)] p-3 [background:var(--surface)] [border:1px_solid_var(--border)]">
+      <dt>
+        <Eyebrow as="span">{label}</Eyebrow>
+      </dt>
+      <dd className="[font-size:var(--text-body)] [color:var(--text-primary)]">{value}</dd>
+    </div>
+  );
+}
+
+function AsideSummaryRow({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-1.5 [border-bottom:1px_dashed_var(--border)] last:[border-bottom:0]">
+      <dt className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{label}</dt>
+      <dd
+        className={cn(
+          "[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)]",
+          muted ? "[color:var(--text-muted)]" : "[color:var(--text-primary)]",
+        )}
+      >
+        {value}
+      </dd>
     </div>
   );
 }

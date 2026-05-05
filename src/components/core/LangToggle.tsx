@@ -1,5 +1,6 @@
 "use client";
 
+import { Languages } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -7,8 +8,6 @@ import { cn } from "@/lib/styles";
 import { routing } from "@/i18n/routing";
 import { getPosthogDataAttributes } from "@/lib/analytics/posthogDataAttributes";
 import type { Locale } from "@/types/locale";
-
-const MIN_TOUCH_TARGET_PX = 44;
 
 type LangToggleProps = {
   className?: string;
@@ -18,6 +17,11 @@ type LangToggleProps = {
   getPosthogProps?: (targetLocale: Locale) => Record<string, unknown>;
 };
 
+/**
+ * Compact mono-uppercase language toggle button (`.lang-toggle` from `_notes/demo-screens.html`).
+ * Single button that links to the same path under the alternate locale, displaying the CURRENT
+ * locale code (so the user knows what they have, and clicking switches).
+ */
 export default function LangToggle({
   className,
   onNavigate,
@@ -32,51 +36,31 @@ export default function LangToggle({
   const alternateLocale = (routing.locales.find((l) => l !== locale) ?? locale) as Locale;
   const alternateHref =
     pathname.replace(new RegExp(`^/${locale}(?=/|$)`), `/${alternateLocale}`) || `/${alternateLocale}`;
+  const alternateLabel = alternateLocale === "en" ? t("ariaEn") : t("ariaEs");
+  const visibleLabel = locale === "en" ? t("en") : t("es");
+  const dataAttrs = getPosthogDataAttributes(
+    posthogEvent,
+    getPosthogProps ? getPosthogProps(alternateLocale) : undefined,
+  );
 
   return (
-    <nav
-      aria-label={ariaLabel ?? t("label")}
-      className={cn("font-secondary text-text-body flex items-center gap-0.5 text-sm", className)}
+    <Link
+      href={alternateHref}
+      onClick={onNavigate}
+      aria-label={ariaLabel ?? alternateLabel}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-[8px] px-2 py-1 transition-colors",
+        "[background:transparent] [border:1px_solid_var(--border)]",
+        "[font-family:var(--font-mono)] [font-size:12px] [letter-spacing:0.04em]",
+        "[color:var(--text-secondary)]",
+        "hover:[color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]",
+        "[outline:none] focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:2px]",
+        className,
+      )}
+      {...dataAttrs}
     >
-      {routing.locales.map((loc, index) => {
-        const isCurrent = loc === locale;
-        const label = loc === "en" ? t("en") : t("es");
-        const localeAriaLabel = loc === "en" ? t("ariaEn") : t("ariaEs");
-        const posthogDataAttributes = getPosthogDataAttributes(
-          posthogEvent,
-          getPosthogProps ? getPosthogProps(loc as Locale) : undefined,
-        );
-
-        return (
-          <span key={loc} className="flex items-center gap-0.5">
-            {index > 0 ? (
-              <span aria-hidden className="text-text-muted px-0.5">
-                |
-              </span>
-            ) : null}
-            {isCurrent ? (
-              <span
-                aria-current="true"
-                className="text-foreground flex items-center justify-center py-2 font-semibold"
-                style={{ minHeight: MIN_TOUCH_TARGET_PX, minWidth: MIN_TOUCH_TARGET_PX }}
-              >
-                {label}
-              </span>
-            ) : (
-              <Link
-                href={alternateHref}
-                aria-label={localeAriaLabel}
-                onClick={onNavigate}
-                className="hover:text-text-title focus-visible:ring-ring focus-visible:ring-offset-background flex items-center justify-center rounded-md py-2 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                style={{ minHeight: MIN_TOUCH_TARGET_PX, minWidth: MIN_TOUCH_TARGET_PX }}
-                {...posthogDataAttributes}
-              >
-                {label}
-              </Link>
-            )}
-          </span>
-        );
-      })}
-    </nav>
+      <Languages size={12} aria-hidden="true" />
+      {visibleLabel}
+    </Link>
   );
 }

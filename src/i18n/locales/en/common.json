@@ -6,6 +6,7 @@
     "ariaEs": "Switch to Spanish"
   },
   "themeToggle": {
+    "label": "Theme",
     "switchToLight": "Switch to light mode",
     "switchToDark": "Switch to dark mode"
   },

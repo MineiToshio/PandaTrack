@@ -14,9 +14,11 @@ export const buttonVariants = cva(
     "relative isolate inline-flex items-center justify-center gap-2",
     "rounded-[var(--radius-md)] font-medium",
     "[font-family:var(--font-sans)] [font-weight:var(--font-weight-medium-body)]",
-    // Transitions
-    "transition-[background-color,color,border-color,outline-color,box-shadow]",
+    // Transitions — includes transform for hover lift
+    "transition-[background-color,color,border-color,outline-color,box-shadow,transform]",
     "[transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
+    // Reduced motion: disable transform (keep color transitions)
+    "motion-reduce:transition-[background-color,color,border-color,outline-color,box-shadow]",
     // Focus
     "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
     "focus-visible:[outline-color:var(--focus-ring)]",
@@ -38,24 +40,36 @@ export const buttonVariants = cva(
         primary: [
           "[background:var(--accent)] [color:var(--text-on-accent)] shadow-[var(--elevation-1)]",
           "hover:after:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
+          "hover:-translate-y-px hover:shadow-[var(--elevation-2)]",
+          "motion-reduce:hover:translate-y-0 motion-reduce:hover:shadow-[var(--elevation-1)]",
           "active:after:[background:color-mix(in_oklch,var(--text-primary)_var(--state-pressed-mix),transparent)]",
+          "active:translate-y-0 active:shadow-[var(--elevation-1)]",
         ],
         secondary: [
           "[background:var(--surface-elevated)] [color:var(--text-primary)] [border:1px_solid_var(--border-strong)]",
           "hover:after:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
+          "hover:-translate-y-px hover:shadow-[var(--elevation-2)]",
+          "motion-reduce:hover:translate-y-0 motion-reduce:hover:shadow-none",
           "active:after:[background:color-mix(in_oklch,var(--text-primary)_var(--state-pressed-mix),transparent)]",
+          "active:translate-y-0 active:shadow-none",
         ],
         ghost: [
-          "bg-transparent [color:var(--text-primary)] [border:1px_solid_transparent]",
+          "bg-transparent [color:var(--text-primary)] [border:1px_solid_var(--border-strong)]",
           "hover:after:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
+          "hover:-translate-y-px",
+          "motion-reduce:hover:translate-y-0",
           "active:after:[background:color-mix(in_oklch,var(--text-primary)_var(--state-pressed-mix),transparent)]",
+          "active:translate-y-0",
         ],
         // Kept for backward compatibility — visually equivalent to secondary with accent border
         outline: [
           "[background:var(--surface-elevated)] [color:var(--text-primary)]",
           "[border:1px_solid_color-mix(in_oklch,var(--accent)_40%,var(--border))]",
           "hover:after:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
+          "hover:-translate-y-px hover:shadow-[var(--elevation-2)]",
+          "motion-reduce:hover:translate-y-0 motion-reduce:hover:shadow-none",
           "active:after:[background:color-mix(in_oklch,var(--text-primary)_var(--state-pressed-mix),transparent)]",
+          "active:translate-y-0 active:shadow-none",
         ],
         // Kept for backward compatibility — inline hyperlink style
         link: [
@@ -67,12 +81,18 @@ export const buttonVariants = cva(
         destructive: [
           "[background:var(--destructive)] [color:var(--text-on-accent)] shadow-[var(--elevation-1)]",
           "hover:after:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
+          "hover:-translate-y-px hover:shadow-[var(--elevation-2)]",
+          "motion-reduce:hover:translate-y-0 motion-reduce:hover:shadow-[var(--elevation-1)]",
           "active:after:[background:color-mix(in_oklch,var(--text-primary)_var(--state-pressed-mix),transparent)]",
+          "active:translate-y-0 active:shadow-[var(--elevation-1)]",
         ],
         "destructive-ghost": [
           "bg-transparent [color:var(--destructive)] [border:1px_solid_transparent]",
           "hover:after:[background:color-mix(in_oklch,var(--destructive)_var(--state-hover-mix),transparent)]",
+          "hover:-translate-y-px",
+          "motion-reduce:hover:translate-y-0",
           "active:after:[background:color-mix(in_oklch,var(--destructive)_var(--state-pressed-mix),transparent)]",
+          "active:translate-y-0",
         ],
       },
       size: {

@@ -1,66 +1,128 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { useEffect, useId, useRef, useEffectEvent } from "react";
 import { X } from "lucide-react";
-import Heading from "@/components/core/Heading";
+import { useEffect, useId, useRef, type ReactElement, type ReactNode } from "react";
+import Button from "@/components/core/Button/Button";
+import IconButton from "@/components/core/IconButton";
 import Portal from "@/components/core/Portal";
-import Typography from "@/components/core/Typography";
-import { cn, TINTED_SURFACE_GRADIENT_STOPS, TINTED_SURFACE_GRADIENT_TOP_WASH } from "@/lib/styles";
+import { cn } from "@/lib/styles";
 import { FOCUS_OPTIONS_NO_SCROLL, getFocusableElements } from "@/lib/a11y/focusable";
 
 export type ModalRole = "dialog" | "alertdialog";
 
+export type ModalTone = "default" | "destructive" | "warning" | "info";
+export type ModalSize = "md" | "lg";
+
+export type ModalAction = {
+  label: string;
+  onClick: () => void;
+  /** Only meaningful for `primaryAction`. Defaults to `primary`. */
+  variant?: "primary" | "destructive";
+  loading?: boolean;
+  disabled?: boolean;
+};
+
 export type ModalProps = {
-  /** Whether the modal is visible. */
+  /** Visible state. */
   isOpen: boolean;
-  /** Called when the modal should close (backdrop click, Escape key, or explicit close action). */
+  /** Called when the modal must close (Esc, backdrop click, close button, programmatic). */
   onClose: () => void;
-  /** Modal title. Required for accessibility (aria-labelledby). */
+  /** Title — required for accessibility. */
   title: string;
-  /** Optional description under the title. Used for aria-describedby when provided. */
+  /**
+   * Optional secondary line under the title (semantic-depth subtitle).
+   * Replaces the legacy `description` prop in the new visual treatment.
+   */
+  subtitle?: string | ReactNode;
+  /** Backward-compatible alias for `subtitle` for existing consumers. */
   description?: string | ReactNode;
-  /** Content rendered below the title/description (e.g. actions or custom body). */
-  children: React.ReactNode;
-  /** Role: "dialog" for general dialogs, "alertdialog" for confirmations that require a choice. */
+  /** Body content. */
+  children?: ReactNode;
+  /**
+   * Optional Lucide icon rendered inside a tonal icon-circle (48px) at the start of the header.
+   * Pair with `tone` to choose semantic color. Without an icon, the header collapses to title + close.
+   */
+  icon?: ReactElement;
+  /** Semantic tone for the icon-circle. Default `default` (accent). */
+  tone?: ModalTone;
+  /** Width preset: `md` (460px) | `lg` (768px). Default `md`. */
+  size?: ModalSize;
+  /** Primary CTA in the footer. */
+  primaryAction?: ModalAction;
+  /** Secondary CTA in the footer (aligned to the left of primary). */
+  secondaryAction?: { label: string; onClick: () => void; disabled?: boolean };
+  /** Tertiary CTA placed on the far left of the footer (e.g. "Back"). */
+  tertiaryAction?: { label: string; onClick: () => void; disabled?: boolean };
+  /** ARIA role: `dialog` | `alertdialog`. Default `dialog`. */
   role?: ModalRole;
-  /** When true, clicking the backdrop calls onClose. Default true for dialog, often false for alertdialog. */
+  /**
+   * When false, disables Esc + backdrop click + close button.
+   * Default `true`. Backward-compatible alias `closeOnBackdropClick` keeps prior behavior.
+   */
+  dismissible?: boolean;
+  /** @deprecated Use `dismissible`. Backward-compat. */
   closeOnBackdropClick?: boolean;
-  /** Ref to focus when the modal opens. If not set, the first focusable element in the panel receives focus. */
+  /** Initial focus override. */
   initialFocusRef?: React.RefObject<HTMLElement | null>;
-  /** Ref to focus when the modal closes. */
+  /** Return focus override. */
   returnFocusRef?: React.RefObject<HTMLElement | null>;
-  /** Optional class name for the content panel. */
+  /** Optional class on the modal panel. */
   className?: string;
-  /** Optional class name for the scrollable body region below the modal header. */
+  /** Optional class on the scrollable body. */
   bodyClassName?: string;
-  /** Optional id for the title element (for aria-labelledby). Auto-generated if not provided. */
+  /** Optional id on the title node (for aria-labelledby). */
   titleId?: string;
-  /** Optional id for the description element (for aria-describedby). Auto-generated if not provided. */
+  /** Optional id on the subtitle node. */
   descriptionId?: string;
-  /** Accessible label for the optional close button. */
+  /** Accessible label for the close button. Default "Close". */
   closeButtonLabel?: string;
 };
 
+const TONE_ICON_CLASSES: Record<ModalTone, string> = {
+  default: "[background:color-mix(in_oklch,var(--accent)_14%,var(--surface-elevated))] [color:var(--accent)]",
+  destructive:
+    "[background:color-mix(in_oklch,var(--destructive)_14%,var(--surface-elevated))] [color:var(--destructive)]",
+  warning: "[background:color-mix(in_oklch,var(--warning)_14%,var(--surface-elevated))] [color:var(--warning)]",
+  info: "[background:color-mix(in_oklch,var(--info)_14%,var(--surface-elevated))] [color:var(--info)]",
+};
+
+const SIZE_MAX_WIDTH: Record<ModalSize, string> = {
+  md: "460px",
+  lg: "768px",
+};
+
 /**
- * Reusable modal with backdrop, focus management, and Escape key support.
- * Use for confirmations, forms, or any overlay that requires user attention.
+ * Modal canónico (ADR 0008 — Semantic Depth).
+ * - Backdrop blur(8px) con tints calibrados light/dark.
+ * - Icon-circle 48px tonal (default/destructive/warning/info).
+ * - Border-radius 20px, footer con border-top.
+ * - Spring enter (280ms linear stops) + opacity exit fast.
+ * - API extendida: subtitle/icon/tone/primaryAction/secondaryAction/tertiaryAction/size/dismissible.
+ * - Mantiene compatibilidad con consumidores legacy (isOpen/onClose/description/closeButtonLabel).
  */
 export default function Modal({
   isOpen,
   onClose,
   title,
+  subtitle,
   description,
   children,
+  icon,
+  tone = "default",
+  size = "md",
+  primaryAction,
+  secondaryAction,
+  tertiaryAction,
   role = "dialog",
-  closeOnBackdropClick = true,
+  dismissible,
+  closeOnBackdropClick,
   initialFocusRef,
   returnFocusRef,
   className,
   bodyClassName,
   titleId: titleIdProp,
   descriptionId: descriptionIdProp,
-  closeButtonLabel,
+  closeButtonLabel = "Close",
 }: ModalProps) {
   const generatedTitleId = useId();
   const generatedDescriptionId = useId();
@@ -68,168 +130,196 @@ export default function Modal({
   const descriptionId = descriptionIdProp ?? generatedDescriptionId;
   const panelRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<Element | null>(null);
-  const onCloseEvent = useEffectEvent(onClose);
+
+  const isDismissible = dismissible ?? closeOnBackdropClick ?? true;
+  const subtitleNode = subtitle ?? description;
+  const hasSubtitle = subtitleNode != null && subtitleNode !== "";
+  const hasFooter = Boolean(primaryAction || secondaryAction || tertiaryAction);
 
   useEffect(() => {
     if (!isOpen) return;
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onCloseEvent();
+    previousActiveElementRef.current = document.activeElement ?? null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const focusInitial = () => {
+      const explicit = initialFocusRef?.current;
+      if (explicit) {
+        explicit.focus(FOCUS_OPTIONS_NO_SCROLL);
         return;
       }
+      const panel = panelRef.current;
+      if (!panel) return;
+      const focusables = getFocusableElements(panel);
+      const target = focusables[0] ?? panel;
+      target.focus(FOCUS_OPTIONS_NO_SCROLL);
+    };
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isDismissible) {
+        event.preventDefault();
+        onClose();
+        return;
+      }
       if (event.key !== "Tab" || !panelRef.current) return;
-
-      const focusableElements = getFocusableElements(panelRef.current);
-      if (focusableElements.length === 0) {
+      const focusables = getFocusableElements(panelRef.current);
+      if (focusables.length === 0) {
         event.preventDefault();
         panelRef.current.focus(FOCUS_OPTIONS_NO_SCROLL);
         return;
       }
-
-      const firstFocusable = focusableElements[0];
-      const lastFocusable = focusableElements[focusableElements.length - 1];
-      const activeElement = document.activeElement;
-
-      if (event.shiftKey && activeElement === firstFocusable) {
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && active === first) {
         event.preventDefault();
-        lastFocusable.focus(FOCUS_OPTIONS_NO_SCROLL);
-      } else if (!event.shiftKey && activeElement === lastFocusable) {
+        last.focus(FOCUS_OPTIONS_NO_SCROLL);
+      } else if (!event.shiftKey && active === last) {
         event.preventDefault();
-        firstFocusable.focus(FOCUS_OPTIONS_NO_SCROLL);
+        first.focus(FOCUS_OPTIONS_NO_SCROLL);
       }
     };
 
+    focusInitial();
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const returnFocusNode = returnFocusRef?.current ?? null;
-    previousActiveElementRef.current = document.activeElement ?? null;
-
-    const focusTarget = initialFocusRef?.current ?? panelRef.current;
-    if (focusTarget) {
-      if (initialFocusRef?.current) {
-        initialFocusRef.current.focus(FOCUS_OPTIONS_NO_SCROLL);
-      } else {
-        const firstFocusable = getFocusableElements(focusTarget)[0];
-        if (firstFocusable) {
-          firstFocusable.focus(FOCUS_OPTIONS_NO_SCROLL);
-        } else {
-          focusTarget.focus(FOCUS_OPTIONS_NO_SCROLL);
-        }
-      }
-    }
 
     return () => {
-      const node = (returnFocusRef != null ? returnFocusNode : previousActiveElementRef.current) as HTMLElement | null;
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      const node = (returnFocusRef?.current ?? previousActiveElementRef.current) as HTMLElement | null;
       if (node && typeof node.focus === "function") {
         node.focus(FOCUS_OPTIONS_NO_SCROLL);
       }
     };
-  }, [isOpen, initialFocusRef, returnFocusRef]);
+  }, [isOpen, isDismissible, initialFocusRef, returnFocusRef, onClose]);
 
   if (!isOpen) return null;
 
   const handleBackdropClick = () => {
-    if (closeOnBackdropClick) onClose();
+    if (isDismissible) onClose();
   };
 
   return (
     <Portal>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        role={role}
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={description != null && description !== "" ? descriptionId : undefined}
+        className={cn(
+          "fixed inset-0 z-[var(--z-modal,80)] flex items-center justify-center p-4",
+          "[backdrop-filter:blur(8px)] [-webkit-backdrop-filter:blur(8px)] [background:oklch(12%_0.010_50/0.35)]",
+          "dark:[background:oklch(4%_0.015_265/0.62)]",
+          "motion-safe:animate-[modal-fade_200ms_cubic-bezier(0.2,0,0,1)_both]",
+        )}
+        onClick={handleBackdropClick}
+        role="presentation"
       >
-        <button
-          type="button"
-          className="from-background/82 via-background/64 to-background/82 absolute inset-0 bg-linear-to-br backdrop-blur-md"
-          onClick={handleBackdropClick}
-          aria-hidden
-          tabIndex={-1}
-        />
         <div
           ref={panelRef}
+          role={role}
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-describedby={hasSubtitle ? descriptionId : undefined}
           tabIndex={-1}
           className={cn(
-            "border-border/70 bg-card/95 text-foreground relative z-10 w-full max-w-xl overflow-hidden rounded-[28px] border shadow-[0_32px_90px_-40px_rgba(15,23,42,0.6)] backdrop-blur",
+            "relative flex max-h-[calc(100vh-80px)] w-full flex-col overflow-hidden [outline:none]",
+            "[border-radius:20px] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]",
+            "[box-shadow:0_14px_28px_oklch(20%_0.020_50/0.10),0_2px_6px_oklch(20%_0.020_50/0.06)]",
+            "dark:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.04),0_0_0_1px_var(--border-strong),0_0_24px_color-mix(in_oklch,var(--accent)_5%,transparent)]",
+            "motion-safe:animate-[modal-spring_280ms_linear(0,0.5,0.85,0.97,1)_both]",
+            "motion-reduce:animate-[modal-fade_200ms_ease-out_both]",
             className,
           )}
-          role="document"
+          style={{ maxWidth: SIZE_MAX_WIDTH[size] }}
+          onClick={(event) => event.stopPropagation()}
         >
-          <div
-            className={cn(
-              TINTED_SURFACE_GRADIENT_TOP_WASH,
-              "pointer-events-none absolute inset-x-0 top-0 h-[min(52%,18rem)] min-h-44 bg-linear-to-b sm:min-h-52",
+          <header className="flex items-start gap-4 px-6 pt-6 pb-0">
+            {icon && (
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "inline-flex h-12 w-12 flex-shrink-0 items-center justify-center [border-radius:24px]",
+                  TONE_ICON_CLASSES[tone],
+                )}
+              >
+                {icon}
+              </span>
             )}
-            aria-hidden
-          />
-          <div
-            className="bg-primary/10 pointer-events-none absolute -top-10 right-0 size-32 rounded-full blur-3xl sm:size-36"
-            aria-hidden
-          />
-          <div
-            className="bg-highlight/10 pointer-events-none absolute top-24 -left-10 size-28 rounded-full blur-3xl sm:top-28 sm:size-32"
-            aria-hidden
-          />
-
-          <div className="relative flex max-h-[min(85vh,48rem)] flex-col">
-            <div className="border-border flex items-start justify-between gap-4 border-b px-5 py-5 sm:px-6 sm:py-6">
-              <div className="min-w-0 flex-1 space-y-2">
-                <span
-                  className={cn(
-                    "inline-flex h-2 w-16 shrink-0 rounded-full bg-linear-to-r",
-                    TINTED_SURFACE_GRADIENT_STOPS,
-                  )}
-                  aria-hidden
-                />
-                <div className="space-y-2">
-                  <Heading
-                    as="h2"
-                    id={titleId}
-                    size="xs"
-                    className="text-text-title text-xl leading-tight font-semibold tracking-tight sm:text-2xl"
-                  >
-                    {title}
-                  </Heading>
-                  {description != null && description !== "" ? (
-                    typeof description === "string" ? (
-                      <Typography id={descriptionId} size="xs" className="text-text-body w-full leading-6">
-                        {description}
-                      </Typography>
-                    ) : (
-                      <div id={descriptionId} className="text-text-body w-full text-xs leading-6 sm:text-sm">
-                        {description}
-                      </div>
-                    )
-                  ) : null}
-                </div>
-              </div>
-
-              {closeButtonLabel ? (
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="border-border bg-background/82 text-text-muted hover:border-foreground/55 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background active:border-foreground/65 inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                  aria-label={closeButtonLabel}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start gap-3">
+                <h2
+                  id={titleId}
+                  className="flex-1 [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
                 >
-                  <X className="size-4" aria-hidden />
-                </button>
-              ) : null}
+                  {title}
+                </h2>
+                {isDismissible && (
+                  <IconButton
+                    aria-label={closeButtonLabel}
+                    size="sm"
+                    variant="ghost"
+                    icon={<X size={18} aria-hidden="true" />}
+                    onClick={onClose}
+                  />
+                )}
+              </div>
+              {hasSubtitle && (
+                <p
+                  id={descriptionId}
+                  className="mt-1 [font-size:var(--text-body)] [line-height:1.5] [color:var(--text-secondary)]"
+                >
+                  {subtitleNode}
+                </p>
+              )}
             </div>
-
-            <div className={cn("overflow-y-auto px-5 py-5 sm:px-6 sm:py-6", bodyClassName)}>{children}</div>
-          </div>
+          </header>
+          {children != null && children !== false && (
+            <div className={cn("flex-1 overflow-y-auto px-6 pt-4 pb-1", bodyClassName)}>{children}</div>
+          )}
+          {hasFooter && (
+            <footer className="flex items-center justify-between gap-2 px-6 pt-3 pb-5 [border-top:1px_solid_var(--border)]">
+              <div>
+                {tertiaryAction && (
+                  <Button variant="ghost" size="sm" onClick={tertiaryAction.onClick} disabled={tertiaryAction.disabled}>
+                    {tertiaryAction.label}
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {secondaryAction && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={secondaryAction.onClick}
+                    disabled={secondaryAction.disabled}
+                  >
+                    {secondaryAction.label}
+                  </Button>
+                )}
+                {primaryAction && (
+                  <Button
+                    variant={primaryAction.variant === "destructive" ? "destructive" : "primary"}
+                    size="sm"
+                    onClick={primaryAction.onClick}
+                    loading={primaryAction.loading}
+                    disabled={primaryAction.disabled}
+                  >
+                    {primaryAction.label}
+                  </Button>
+                )}
+              </div>
+            </footer>
+          )}
         </div>
       </div>
+      <style>{`
+        @keyframes modal-spring {
+          from { opacity: 0; transform: scale(0.96); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes modal-fade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
     </Portal>
   );
 }

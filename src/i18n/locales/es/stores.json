@@ -128,6 +128,8 @@
     "inactiveWarningTitle": "Tienda sin actividad",
     "inactiveWarningMessage": "Esta tienda ya no está en actividad. La información se mantiene solo como referencia.",
     "noDescription": "Esta tienda no tiene descripción todavía.",
+    "averageRatingLabel": "Calificación promedio",
+    "reviewCountLabel": "Reseñas",
     "countryLabel": "País",
     "productTypesLabel": "Tipos de producto",
     "noProductTypes": "No se han definido tipos de producto.",
@@ -375,5 +377,141 @@
     "validation_failed": "Revisa los campos e inténtalo de nuevo.",
     "create_failed": "No se pudo crear la tienda. Inténtalo de nuevo.",
     "logoUploadFailed": "No se pudo subir el logo. Inténtalo otra vez."
+  },
+  "redesign": {
+    "filter": {
+      "title": "Filtrar tiendas",
+      "categories": "Categorías que vende",
+      "presence": "Presencia",
+      "country": "País de la tienda",
+      "importCountry": "Importa desde",
+      "other": "Otros",
+      "receivesOrders": "Recibe pre-órdenes",
+      "hasStock": "Tiene stock",
+      "presencePhysical": "Tienda física",
+      "presenceOnline": "Tienda online",
+      "countrySearchPlaceholder": "Cualquier país…",
+      "importCountrySearchPlaceholder": "País de origen…",
+      "clear": "Limpiar",
+      "apply": "Aplicar",
+      "applyWithCount": "Aplicar ({count} resultados)"
+    },
+    "detail": {
+      "back": "Tiendas",
+      "reviewsTitle": "Reseñas",
+      "categoriesTitle": "Categorías e importaciones",
+      "channelsTitle": "Canales de contacto",
+      "addressesTitle": "Direcciones",
+      "reviewsAll": "Ver todas las {count} reseñas",
+      "writeReviewPlaceholder": "¿Qué opinas de esta tienda?",
+      "publishReview": "Publicar reseña",
+      "privateNotePlaceholder": "Apuntes sobre esta tienda.",
+      "noteSaved": "Guardada hace {time}",
+      "reportButton": "Reportar tienda",
+      "pendingDisclaimer": "En revisión. Visible en la app; no indexable en buscadores.",
+      "flaggedDisclaimer": "Tienda con reportes pendientes. Procede con precaución.",
+      "privateBadge": "Privada — solo tú la ves",
+      "presence": {
+        "physical": "Tienda física",
+        "online": "Tienda online"
+      },
+      "hasStock": "Tiene stock",
+      "acceptsPreorders": "Acepta pre-órdenes",
+      "importsFrom": "Importa desde",
+      "ratingFallback": "Sin reseñas"
+    },
+    "report": {
+      "title": "Reportar tienda",
+      "subtitle": "¿Por qué quieres reportar {name}?",
+      "reasons": {
+        "INCORRECT_INFO": "Info incorrecta",
+        "SPAM": "Posible estafa o fraude",
+        "INAPPROPRIATE": "Contenido inapropiado",
+        "DUPLICATE": "Tienda duplicada",
+        "DOES_NOT_EXIST": "No existe"
+      },
+      "contextLabel": "Contexto adicional",
+      "contextOptional": "(opcional)",
+      "submit": "Enviar reporte",
+      "cancel": "Cancelar"
+    },
+    "create": {
+      "step1": {
+        "eyebrow": "PASO 1 · TIPO",
+        "title": "¿Qué tipo de tienda es?",
+        "helper": "Esto cambia los campos siguientes.",
+        "businessLabel": "Negocio",
+        "businessDesc": "Una tienda con marca, redes y direcciones.",
+        "personLabel": "Persona",
+        "personDesc": "Alguien vendiendo — amigo, scout, vendedor.",
+        "privateLabel": "Perfil privado",
+        "privateBadge": "(solo para Persona)",
+        "privateHelper": "Solo tú puedes verlo. No aparece en el directorio público ni en búsquedas. Ideal para registrar coleccionistas o contactos privados sin visibilidad pública."
+      },
+      "step2": {
+        "eyebrow": "PASO 2 · IDENTIDAD",
+        "title": "Identidad",
+        "helper": "Cómo se llama y dónde está."
+      },
+      "step3": {
+        "eyebrow": "PASO 3 · CATEGORÍAS",
+        "title": "Categorías y presencia",
+        "helper": "Qué vende y dónde se encuentra."
+      },
+      "step4": {
+        "eyebrow": "PASO 4 · CANALES",
+        "title": "Canales de contacto",
+        "helper": "Cómo se contacta a la tienda."
+      },
+      "step5": {
+        "eyebrow": "PASO 5 · LISTO",
+        "title": "Revisa y confirma",
+        "helper": "Verifica los datos antes de crear."
+      },
+      "stepperLabel": "Pasos del formulario",
+      "continue": "Continuar",
+      "back": "Atrás",
+      "submit": "Crear tienda",
+      "autosave": "Guardado en este navegador",
+      "summaryEyebrow": "Resumen",
+      "requestCategory": "Solicitar nueva categoría",
+      "categoryRequest": {
+        "title": "Solicitar nueva categoría",
+        "helper": "¿No encuentras la categoría que buscas? Sugiere un nombre y explica por qué debería incluirse.",
+        "nameLabel": "Nombre de la categoría",
+        "namePlaceholder": "Ej: Nendoroids, Trading Cards, Gashapon…",
+        "reasonLabel": "Motivo",
+        "reasonPlaceholder": "¿Por qué debería agregarse esta categoría? Describe qué tipo de productos cubre y por qué es distinta a las existentes.",
+        "submit": "Enviar solicitud"
+      },
+      "channels": {
+        "addButton": "Agregar",
+        "helper": "Elige el tipo de canal y pega el valor.",
+        "remove": "Quitar"
+      },
+      "duplicate": {
+        "eyebrow": "Tiendas similares encontradas",
+        "title": "¿Es alguna de estas?",
+        "viewStore": "Ver tienda",
+        "createAnyway": "Crear de todos modos",
+        "cancel": "Cancelar"
+      },
+      "logo": {
+        "title": "Subir logo",
+        "reframe": "Reencuadrar",
+        "remove": "Quitar",
+        "save": "Guardar logo"
+      }
+    },
+    "toast": {
+      "created": "Tienda creada — pendiente de revisión",
+      "createdApproved": "Tienda creada"
+    },
+    "edit": {
+      "title": "Editar tienda"
+    },
+    "validationErrors": {
+      "isPrivateOnlyPerson": "El perfil privado solo aplica a tiendas tipo Persona."
+    }
   }
 }

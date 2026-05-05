@@ -1,43 +1,51 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Search, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
+import Chip from "@/components/core/Chip";
 import { foldSearchText } from "@/lib/strings/foldSearchText";
 import { cn } from "@/lib/styles";
-import Chip from "@/components/core/Chip";
 
-type StoreMultiTagAutocompleteOption = {
+export type MultiTagAutocompleteOption = {
   value: string;
-  /** Plain text for filtering, keyboard resolution, and accessible names (no decorative emoji). */
+  /** Plain text for filtering and accessible names (no decorative emoji). */
   label: string;
   /** Optional visual prefix (e.g. flag emoji). Not used for search matching. */
   leadingDecoration?: ReactNode;
 };
 
-type StoreMultiTagAutocompleteProps = {
+export type MultiTagAutocompleteProps = {
   id: string;
-  options: StoreMultiTagAutocompleteOption[];
+  options: MultiTagAutocompleteOption[];
   selectedValues: string[];
   onChange: (values: string[]) => void;
   placeholder: string;
+  /** If provided, hidden inputs are rendered for each selected value (form submission). */
   inputName?: string;
-  removeItemAriaLabel: (itemLabel: string) => string;
+  /** Returns the accessible label for a remove button given the item label. */
+  removeItemAriaLabel?: (itemLabel: string) => string;
   helperText?: string;
+  /**
+   * When true, renders a Search icon prefix inside the input box.
+   * Default `false` — pass `true` for filter-drawer-style usage.
+   */
+  showSearchIcon?: boolean;
   className?: string;
 };
 
-export default function StoreMultiTagAutocomplete({
+export default function MultiTagAutocomplete({
   id,
   options,
   selectedValues,
   onChange,
   placeholder,
   inputName,
-  removeItemAriaLabel,
+  removeItemAriaLabel = (label) => `Remove ${label}`,
   helperText,
+  showSearchIcon = false,
   className,
-}: StoreMultiTagAutocompleteProps) {
+}: MultiTagAutocompleteProps) {
   const [query, setQuery] = useState("");
   const [activeOptionIndex, setActiveOptionIndex] = useState(-1);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -46,18 +54,18 @@ export default function StoreMultiTagAutocomplete({
     () =>
       selectedValues
         .map((value) => options.find((option) => option.value === value))
-        .filter(Boolean) as StoreMultiTagAutocompleteOption[],
+        .filter(Boolean) as MultiTagAutocompleteOption[],
     [options, selectedValues],
   );
 
   const availableOptions = useMemo(() => {
     const foldedQuery = foldSearchText(query);
-    const unselectedOptions = options.filter((option) => !selectedValues.includes(option.value));
+    const unselected = options.filter((option) => !selectedValues.includes(option.value));
 
     if (!isDropdownOpen) return [];
-    if (!foldedQuery) return unselectedOptions;
+    if (!foldedQuery) return unselected;
 
-    return unselectedOptions.filter(
+    return unselected.filter(
       (option) =>
         foldSearchText(option.label).includes(foldedQuery) || foldSearchText(option.value).includes(foldedQuery),
     );
@@ -70,10 +78,8 @@ export default function StoreMultiTagAutocomplete({
     return activeOptionIndex;
   }, [activeOptionIndex, availableOptions.length]);
 
-  const renderOptionContent = (option: StoreMultiTagAutocompleteOption) => {
-    if (option.leadingDecoration == null) {
-      return option.label;
-    }
+  const renderOptionContent = (option: MultiTagAutocompleteOption) => {
+    if (option.leadingDecoration == null) return option.label;
     return (
       <span className="inline-flex items-center gap-1">
         <span className="inline-flex shrink-0 items-center">{option.leadingDecoration}</span>
@@ -85,19 +91,15 @@ export default function StoreMultiTagAutocomplete({
   const resolveBestOption = (rawValue: string) => {
     const foldedInput = foldSearchText(rawValue);
     if (!foldedInput) return null;
-
-    const unselectedOptions = options.filter((option) => !selectedValues.includes(option.value));
-
-    const byValue = unselectedOptions.find((option) => foldSearchText(option.value) === foldedInput);
+    const unselected = options.filter((option) => !selectedValues.includes(option.value));
+    const byValue = unselected.find((option) => foldSearchText(option.value) === foldedInput);
     if (byValue) return byValue;
-
-    const byLabel = unselectedOptions.find((option) => foldSearchText(option.label) === foldedInput);
+    const byLabel = unselected.find((option) => foldSearchText(option.label) === foldedInput);
     if (byLabel) return byLabel;
-
-    return unselectedOptions.find((option) => foldSearchText(option.label).startsWith(foldedInput)) ?? null;
+    return unselected.find((option) => foldSearchText(option.label).startsWith(foldedInput)) ?? null;
   };
 
-  const appendOption = (option: StoreMultiTagAutocompleteOption) => {
+  const appendOption = (option: MultiTagAutocompleteOption) => {
     if (selectedValues.includes(option.value)) return;
     onChange([...selectedValues, option.value]);
     setQuery("");
@@ -117,9 +119,9 @@ export default function StoreMultiTagAutocomplete({
         return;
       }
       if (availableOptions.length === 0) return;
-      setActiveOptionIndex((previous) => {
-        const normalizedPrevious = previous < 0 ? 0 : Math.min(previous, availableOptions.length - 1);
-        return (normalizedPrevious + 1) % availableOptions.length;
+      setActiveOptionIndex((prev) => {
+        const norm = prev < 0 ? 0 : Math.min(prev, availableOptions.length - 1);
+        return (norm + 1) % availableOptions.length;
       });
       return;
     }
@@ -131,9 +133,9 @@ export default function StoreMultiTagAutocomplete({
         return;
       }
       if (availableOptions.length === 0) return;
-      setActiveOptionIndex((previous) => {
-        const normalizedPrevious = previous < 0 ? 0 : Math.min(previous, availableOptions.length - 1);
-        return normalizedPrevious <= 0 ? availableOptions.length - 1 : normalizedPrevious - 1;
+      setActiveOptionIndex((prev) => {
+        const norm = prev < 0 ? 0 : Math.min(prev, availableOptions.length - 1);
+        return norm <= 0 ? availableOptions.length - 1 : norm - 1;
       });
       return;
     }
@@ -145,16 +147,14 @@ export default function StoreMultiTagAutocomplete({
         appendOption(activeOption);
         return;
       }
-
-      const bestOption = resolveBestOption(query);
-      if (bestOption) appendOption(bestOption);
+      const best = resolveBestOption(query);
+      if (best) appendOption(best);
       return;
     }
 
     if (event.key === "Backspace" && query.trim().length === 0 && selectedValues.length > 0) {
       event.preventDefault();
-      const lastValue = selectedValues[selectedValues.length - 1];
-      removeOption(lastValue);
+      removeOption(selectedValues[selectedValues.length - 1]);
       return;
     }
 
@@ -171,17 +171,28 @@ export default function StoreMultiTagAutocomplete({
         {inputName
           ? selectedValues.map((value) => <input key={value} type="hidden" name={inputName} value={value} />)
           : null}
-        <div className="border-input bg-background focus-within:ring-ring flex min-h-10 w-full flex-wrap items-center gap-1 rounded-md border px-2 py-1 focus-within:ring-2 focus-within:ring-offset-2 focus-within:outline-none">
+        <div
+          className={cn(
+            "flex min-h-10 w-full flex-wrap items-center gap-1 rounded-[var(--radius-md)] px-2 py-1",
+            "[background:var(--surface)] [border:1px_solid_var(--border)]",
+            "has-[:focus-visible]:[border-color:var(--border-strong)]",
+            "has-[:focus-visible]:outline has-[:focus-visible]:outline-2",
+            "has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:[outline-color:var(--focus-ring)]",
+          )}
+        >
+          {showSearchIcon && (
+            <Search size={16} aria-hidden="true" className="ml-1 flex-shrink-0 [color:var(--text-muted)]" />
+          )}
           {selectedOptions.map((option) => (
-            <Chip key={option.value} className="inline-flex items-center gap-1 px-2 py-1 text-sm">
+            <Chip key={option.value} variant="accent">
               {renderOptionContent(option)}
               <button
                 type="button"
                 onClick={() => removeOption(option.value)}
-                className="focus-visible:ring-ring cursor-pointer rounded p-0.5 focus-visible:ring-2 focus-visible:outline-none"
+                className="cursor-pointer rounded p-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:[outline-color:var(--focus-ring)]"
                 aria-label={removeItemAriaLabel(option.label)}
               >
-                <X size={14} aria-hidden />
+                <X size={12} aria-hidden />
               </button>
             </Chip>
           ))}
@@ -197,12 +208,10 @@ export default function StoreMultiTagAutocomplete({
             onKeyDown={handleInputKeyDown}
             onFocus={() => setIsDropdownOpen(true)}
             onBlur={() => {
-              window.setTimeout(() => {
-                setIsDropdownOpen(false);
-              }, 0);
+              window.setTimeout(() => setIsDropdownOpen(false), 0);
             }}
             placeholder={placeholder}
-            className="text-foreground placeholder:text-muted-foreground h-8 min-w-[140px] flex-1 border-0 bg-transparent px-1 text-sm focus:outline-none"
+            className="h-8 min-w-[140px] flex-1 border-0 bg-transparent px-1 [font-size:var(--text-caption)] [color:var(--text-primary)] [caret-color:var(--accent)] placeholder:[color:var(--text-muted)] focus:outline-none"
             aria-autocomplete="list"
             aria-expanded={availableOptions.length > 0}
             aria-haspopup="listbox"
@@ -213,23 +222,27 @@ export default function StoreMultiTagAutocomplete({
         {availableOptions.length > 0 ? (
           <ul
             id={`${id}-options`}
-            className="border-border bg-background absolute top-full right-0 left-0 z-10 mt-1 max-h-52 overflow-auto rounded-md border p-1 shadow-lg"
+            className="absolute top-full right-0 left-0 z-10 mt-1 max-h-52 overflow-auto rounded-[var(--radius-md)] p-1 [box-shadow:var(--elevation-2)] [background:var(--surface-elevated)] [border:1px_solid_var(--border)]"
             role="listbox"
           >
-            {availableOptions.map((option, optionIndex) => (
+            {availableOptions.map((option, index) => (
               <li key={option.value}>
                 <button
-                  id={`${id}-option-${optionIndex}`}
+                  id={`${id}-option-${index}`}
                   type="button"
                   onClick={() => appendOption(option)}
                   onMouseDown={(event) => event.preventDefault()}
-                  onMouseEnter={() => setActiveOptionIndex(optionIndex)}
+                  onMouseEnter={() => setActiveOptionIndex(index)}
                   className={cn(
-                    "text-foreground hover:bg-muted focus-visible:ring-ring w-full cursor-pointer rounded px-2 py-2 text-left text-sm focus-visible:ring-2 focus-visible:outline-none",
-                    safeActiveOptionIndex === optionIndex && "bg-muted",
+                    "w-full cursor-pointer rounded-[var(--radius-sm)] px-2 py-2 text-left",
+                    "[font-size:var(--text-caption)] [color:var(--text-primary)]",
+                    "hover:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
+                    "focus-visible:outline focus-visible:outline-2 focus-visible:[outline-color:var(--focus-ring)]",
+                    safeActiveOptionIndex === index &&
+                      "[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
                   )}
                   role="option"
-                  aria-selected={safeActiveOptionIndex === optionIndex}
+                  aria-selected={safeActiveOptionIndex === index}
                 >
                   {renderOptionContent(option)}
                 </button>
@@ -238,7 +251,7 @@ export default function StoreMultiTagAutocomplete({
           </ul>
         ) : null}
       </div>
-      {helperText ? <p className="text-text-muted text-xs">{helperText}</p> : null}
+      {helperText ? <p className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{helperText}</p> : null}
     </div>
   );
 }

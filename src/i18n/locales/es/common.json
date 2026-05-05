@@ -6,6 +6,7 @@
     "ariaEs": "Cambiar a español"
   },
   "themeToggle": {
+    "label": "Tema",
     "switchToLight": "Cambiar a modo claro",
     "switchToDark": "Cambiar a modo oscuro"
   },

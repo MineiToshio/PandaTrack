@@ -279,9 +279,180 @@ Cuando el humano dice "aprobado visualmente", el agente:
 
 El spec markdown queda **subordinado al HTML aprobado** — el HTML es la fuente de verdad visual, el markdown es la fuente de verdad funcional + el contrato técnico de implementación.
 
+##### Cobertura completa de specs de Fase A módulo
+
+**Contexto.** Durante S6 se detectó que los specs de Fase A se sesgaban a "describir el visual" pero el rediseño SIEMPRE genera **cambios comportamentales** (autosave, debounce, optimistic updates, atajos, gestos, validación post-blur, etc.). Si la Fase A no los captura explícitamente, Fase B improvisa o copia el comportamiento viejo del FRD, generando inconsistencia.
+
+Los specs de Fase A módulo deben ser **autosuficientes para implementación**. Un agente de Fase B leyendo solo `modules/<name>.md` + `screens/*.md` + `components/*.md` debe poder implementar el módulo completo **sin volver al FRD original** salvo casos puntuales.
+
+###### Estructura obligatoria del spec de pantalla
+
+Cada `screens/<screen>.md` debe incluir como secciones obligatorias:
+
+1. **Layout** — estructura visual referenciando el HTML aprobado (anchor del demo).
+2. **Componentes consumidos** — tabla con cada componente + spec + props clave.
+3. **Datos consumidos** — qué viene del modelo (Prisma) + qué query.
+4. **Server actions invocadas** — link a `_actions/` actuales o nuevas.
+5. **Estados visuales** — default / loading / empty / error / variantes específicas.
+6. **Comportamiento e interacción** — **sección crítica nueva**, ver desglose abajo.
+7. **Validaciones** — Zod + reglas post-blur.
+8. **i18n keys propuestas** — tabla con clave + ES + slot.
+9. **Accesibilidad** — focus management, ARIA, keyboard.
+10. **Edge cases acordados** — lista enumerada con comportamiento esperado.
+11. **Anti-patrones** — qué no hacer + por qué.
+12. **Notas para Fase B** — info técnica adicional.
+
+###### Sección "Comportamiento e interacción" — qué debe cubrir
+
+Esta sección documenta TODO lo que la pantalla hace cuando el usuario interactúa, incluyendo cosas que el FRD no necesariamente especifica pero que el rediseño introduce. Items obligatorios a evaluar:
+
+- **Estados interactivos** — hover, focus, active, disabled, loading. Qué cambia visualmente y qué CSS state activa.
+- **Triggers de eventos** — qué pasa con click, type, blur, scroll, submit. Especialmente importante para campos editables.
+- **Autosave / debounce / throttle** — si aplica, especificar:
+  - Trigger (typing, blur, intervalo).
+  - Tiempo de debounce (ej. 300ms sin cambios).
+  - Indicador visual (ej. "Guardado hace X" en `--text-muted`).
+  - Manejo de errores (retry, toast).
+- **Optimistic updates** — si la mutación afecta state visible, especificar update local + revert si server falla. Aplicar `optimistic-client-updates.mdc`.
+- **Atajos de teclado** — `⌘K`, `Esc`, `Z` para undo, navegación con flechas, etc.
+- **Gestos mobile** — swipe (izquierda / derecha), long-press, pull-to-refresh, drag-to-reorder.
+- **Validación inline** — cuándo se dispara (post-blur, on-submit), cómo se muestra el error, dónde se enfoca el cursor en caso de error de submit.
+- **Confirmaciones** — cuándo se requiere modal de confirm vs cuándo se aplica directo (lifecycle por reversibilidad — ADR 0001 D6).
+- **Loading states** — spinners, skeletons, disabled state durante mutación.
+- **Empty states** — qué se muestra cuando no hay datos, qué CTA si aplica, mascota si aplica.
+- **Focus management** — qué se enfoca al abrir un modal/sheet, al cerrar, al cambiar de paso de wizard, después de submit exitoso.
+- **Keyboard shortcuts** que conviven con browser defaults (ej. `Z` para undo conflicta con `Cmd+Z` nativo — documentar resolución).
+
+Si un comportamiento del rediseño **difiere del FRD original** (ej. nota con autosave en lugar de botón guardar), documentar:
+
+- Comportamiento original (1 línea).
+- Comportamiento nuevo propuesto.
+- Razón del cambio.
+- Si requiere actualización del FRD: SÍ (con ADR) / NO (es solo comportamiento, FR sigue siendo el mismo).
+
+###### Estructura obligatoria del doc maestro
+
+Cada `modules/<name>.md` debe incluir, además de las secciones ya formalizadas en §6.quinquies (funcionalidades preservadas, cambios visuales, componentes propios, etc.), una **sección nueva obligatoria**:
+
+**"Cambios de comportamiento e interacción aplicados"**
+
+Tabla con cada cambio comportamental detectado durante la iteración:
+
+| Comportamiento           | Pantalla / componente | Original (FRD)         | Nuevo (rediseño)                                         | Razón                                                      | Requiere ADR?                      |
+| ------------------------ | --------------------- | ---------------------- | -------------------------------------------------------- | ---------------------------------------------------------- | ---------------------------------- |
+| Autosave de nota privada | store-detail sidebar  | Botón "Guardar" manual | Autosave 300ms post-cambio + indicator "Guardado hace X" | Reduce fricción, alinea con apps modernas (Notion, Linear) | No (FR no cambia, solo el trigger) |
+| Validación de form       | wizard creación       | On-change inmediata    | Post-blur + on-submit                                    | Principle §3 (validación que ayuda no que regaña)          | No                                 |
+| Cancelar pedido          | order-detail acciones | Confirm modal genérico | Toast neutral-undo 8s                                    | ADR 0001 D4 + D6 (reversibilidad)                          | No (ya hay ADR)                    |
+
+Si algún cambio requiere ADR (cambia funcionalidad, no solo comportamiento), levantarlo durante Fase A y resolverlo antes de cerrar el doc maestro.
+
+###### Sección obligatoria en Handoff brief
+
+Además del inventario de componentes core consumidos + cláusula de spec vigente, agregar:
+
+**"Comportamiento crítico para Fase B"**
+
+Lista de comportamientos no obvios que la implementación debe respetar. Sirve como checklist explícita para el agente de Fase B. Ejemplo:
+
+```
+- Autosave de nota: debounce 300ms, indicator "Guardado hace Xs"
+  con `Date.now() - lastSavedAt`. Sin spinner durante typing.
+  En error, toast destructive con CTA "Reintentar".
+- Wizard step navigation: bolitas clickeables hacia atrás siempre.
+  Hacia adelante solo si paso actual está válido.
+- Filter drawer apply: optimistic update del listado + URL params,
+  sin esperar server. Revert si server falla con toast warning.
+- Swipe izquierda en row mobile: revela acciones rápidas con
+  `--accent` indigo. Cancelable con tap fuera del row.
+```
+
+###### Trigger del agente de Fase A
+
+Durante la iteración del HTML (Fase A.2), el agente debe **proactivamente** identificar comportamientos donde el rediseño difiere del FRD original. No esperar a que el humano los pida. Si el HTML muestra un campo de texto con auto-resize, el agente pregunta: "¿hacemos autosave de este campo? ¿con qué debounce? ¿qué indicator visual?".
+
 #### Fase B — Implementación React
 
 El agente abre el HTML aprobado **en cada paso de implementación** como referencia visual concreta + el handoff brief como contrato funcional. Implementa React. Cero ambigüedad visual porque el HTML es la verdad pixel-perfect-ish (no exacto, pero la vibe es vinculante).
+
+##### Cinco mecanismos obligatorios de Fase B
+
+**Contexto.** Durante S6 Fase B se detectó que la implementación quedaba incompleta y con discrepancias visuales vs el HTML del demo. Causa raíz: el agente avanzaba sin checklist activa, sin verificación visual incremental, sin reportes de progreso intermedio y sin auditoría comparativa final. El esfuerzo / thinking budget no era el problema — la metodología sí.
+
+Toda Fase B de módulo (S6, S7, S8, S10) y toda Fase B foundational compleja (S5, S11) **debe** incluir estos cinco mecanismos. El coordinador los embebe en cada prompt de Fase B.
+
+**1. TodoWrite granular obligatorio.**
+
+El agente usa `TodoWrite` con un item por unidad de trabajo:
+
+- Cada componente core pull-based (1 item).
+- Cada componente propio del módulo (1 item).
+- Cada pantalla refactorizada (1 item).
+- Migration Prisma (1 item).
+- Cada server action ajustado (1 item).
+- Cada query ajustado (1 item).
+- i18n keys (1 item agregable).
+- Tests por componente con branching / discriminated union (1 item por componente con tests).
+- Auditoría comparativa final (1 item).
+
+El item activo está siempre en `in_progress`. Los completados pasan a `completed` en el mismo turno en que se cierran. Sin TodoWrite el agente pierde track y deja items sin terminar.
+
+**2. Verificación visual incremental contra HTML del demo.**
+
+Después de implementar **cada pantalla completa** (no cada componente — cada pantalla refactorizada), el agente:
+
+1. Abre el HTML del demo en el anchor correspondiente (ej. `#s6-stores-list-default`).
+2. Lista los elementos visuales clave del HTML (estructura, accent chips, hover states, eyebrows mono, bordes con `--radius-*`, micro-decoradores, etc.).
+3. Compara con su implementación React.
+4. Lista gaps visuales (elementos del HTML que la implementación no tiene o tiene distinto).
+5. Itera la implementación hasta cerrar gaps significativos.
+6. Solo cuando la coincidencia visual es razonable, marca la pantalla como `completed` en TodoWrite y avanza.
+
+**3. Reportes incrementales en chat (no solo al final).**
+
+Cada vez que el agente cierra un grupo de items (un componente core + sus tests, o una pantalla refactorizada con su verificación visual), devuelve un mini-update ≤80 palabras:
+
+```
+PROGRESO: [X de Y items]
+Acabo de cerrar: [item]
+Verificación visual vs HTML: [pass / gap arreglado]
+Validación local: [type-check pass / pendiente / falla]
+Siguiente: [próximo item]
+```
+
+Esto permite al humano detectar desviaciones temprano e interrumpir si hace falta.
+
+**4. Auditoría comparativa exhaustiva antes de cerrar.**
+
+Antes de marcar la Fase B como cerrada, el agente ejecuta auditoría sistemática contra el handoff brief del módulo (`modules/<name>.md §12`):
+
+| Item del handoff                             | Verificación                                           | Resultado           |
+| -------------------------------------------- | ------------------------------------------------------ | ------------------- |
+| A. Inventario de componentes core consumidos | Cada uno tiene consumidor real en `src/`?              | ✅/❌ por item      |
+| B. Componentes propios del módulo            | Cada uno implementado en path correcto?                | ✅/❌ por item      |
+| C. Pantallas                                 | Cada anchor del demo HTML tiene contraparte funcional? | ✅/❌ por anchor    |
+| D. Funcionalidades preservadas               | Cada FR mapeado funciona?                              | ✅/❌ por FR        |
+| E. Decisiones cerradas durante iteración     | Cada una aplicada?                                     | ✅/❌ por decisión  |
+| F. Edge cases acordados                      | Cubiertos?                                             | ✅/❌ por edge case |
+| G. Copy aprobada                             | Agregada a i18n?                                       | ✅/❌               |
+| H. Anti-patrones                             | Evitados?                                              | ✅/❌               |
+
+Si cualquier item está ❌ o ⚠️, el agente lo arregla antes de cerrar.
+
+**5. Gate de cierre estricto.**
+
+La Fase B NO está cerrada hasta que TODOS los siguientes son ✅:
+
+- TodoWrite: 100% de items en `completed`.
+- Auditoría comparativa (mecanismo 4): 0 gaps.
+- Validación: `npm run type-check` ✅, `npm run lint` ✅, `npm run test` ✅, `npm run validate-build` ✅.
+- Verificación visual de cada pantalla refactorizada vs HTML del demo: 0 gaps significativos.
+- Reporte final con cobertura del handoff brief expresada en % explícito (debe ser 100% o cerca).
+
+Si algo no llega a ✅, el agente no reporta cierre — sigue trabajando hasta que llegue.
+
+##### Por qué subir el thinking / esfuerzo NO resuelve esto
+
+Esfuerzo extra ayuda en problemas de razonamiento abierto (decisiones difíciles, debugging de race conditions, refactor con múltiples constraints en tensión). Para implementación de specs claras, el esfuerzo extra raramente cambia el output. Lo que falla cuando hay implementación incompleta es **ejecución sistemática y verificación**, no profundidad de razonamiento. Las 5 correcciones atacan eso directamente.
 
 ### Trade-off económico
 
@@ -302,6 +473,20 @@ El 30% del HTML-first se paga siempre. El 100%+ del re-trabajo React se paga sol
 El `_notes/demo-screens.html` es **el único** HTML del subproyecto. No se crean HTMLs separados. Cuando un módulo extiende el demo, las pantallas nuevas se suman al mismo archivo siguiendo la convención existente (sections con `id="<screen>"`, navegación lateral, paletas, theme toggle reusados).
 
 Cualquier convención del demo está documentada en `docs/redesign/_notes/demo-screens-readme.md` — el agente debe respetarla.
+
+## 6.sexties Troubleshooting de renderizado CSS (cross-sesión)
+
+Cuando un color, borde, o estilo "no se ve bien" a pesar de que el token parece estar asignado correctamente, consultar:
+
+**`docs/redesign/_notes/troubleshooting-css-rendering.md`**
+
+Cubre dos patrones de bug documentados durante el subproyecto:
+
+1. **Cascade override silencioso (Bug #1):** shorthand Tailwind (`[border:1px_solid]`) en una clase base sobreescribe longhand (`[border-color:var(--token)]`) en una clase de estado porque Tailwind v4 genera ambas reglas con la misma especificidad. Solución: nunca dividir shorthand/longhand entre base y estado — poner el shorthand completo directamente en la clase de estado.
+
+2. **OKLCH vs rgba en dark mode (Bug #2):** tokens definidos con `oklch(L% C H / alpha)` en `globals.css` dan un resultado visualmente diferente al `rgba(r, g, b, alpha)` del demo HTML. Para tokens donde la coincidencia visual exacta con el demo es prioritaria, usar el literal rgba del demo.
+
+El agente debe revisar este doc **antes de intentar re-asignar un token** cuando un estilo no se renderiza como se espera.
 
 ## 6.ter Workflow obligatorio de cursor rules (cross-sesión)
 

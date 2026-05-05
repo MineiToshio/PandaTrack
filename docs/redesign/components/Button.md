@@ -1,8 +1,8 @@
 ---
 title: Button
 tier: 1
-status: spec — no implementado
-last_updated: 2026-05-02
+status: implementado
+last_updated: 2026-05-03
 session: 04-components
 adrs:
   - ADR 0001 D4 (toast neutral-undo CTA ghost en `--accent` + atajo `Z`)
@@ -22,12 +22,7 @@ Atom de acción primaria del sistema. Compone CTA primarios, acciones secundaria
 ```ts
 import type { ReactNode, ButtonHTMLAttributes, AnchorHTMLAttributes } from "react";
 
-type ButtonVariant =
-  | "primary"
-  | "secondary"
-  | "ghost"
-  | "destructive"
-  | "destructive-ghost";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive" | "destructive-ghost";
 
 type ButtonSize = "sm" | "md" | "lg";
 
@@ -83,23 +78,23 @@ Reglas TS:
 
 ### Variants
 
-| Variant             | Uso                                                                                                                       | Tokens consumidos                                                                                                                                                                                                                                              |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `primary`           | CTA principal de la pantalla. **Una sola instancia visible por viewport** (decálogo §2 — una pantalla, una decisión).     | bg `--accent`, text `var(--text-on-accent)`, `--elevation-1`, `--radius-md`, `--font-weight-medium-body`, `--focus-ring`                                                                                                                                       |
-| `secondary`         | Acción complementaria de jerarquía media (ej. "Cancelar" junto a "Confirmar", "Atrás" en wizard).                          | bg `--surface-elevated`, text `--text-primary`, border `1px solid var(--border-strong)`, `--radius-md`, `--font-weight-medium-body`                                                                                                                            |
-| `ghost`             | Acción reversible dentro de sidebar/cluster, link que se ve como botón, items del cluster Acciones (ADR 0001 D6).           | bg `transparent`, text `--text-primary`, `--radius-md`, `--font-weight-medium-body`                                                                                                                                                                            |
-| `destructive`       | Confirmación final de operación irreversible (ej. modal "Eliminar pedido" → botón "Eliminar"). Nunca expuesta sin confirm. | bg `--destructive`, text `var(--text-on-accent)`, `--elevation-1`, `--radius-md`                                                                                                                                                                               |
-| `destructive-ghost` | Acción destructiva reversible dentro de sidebar (ej. "Cancelar pedido"). Las irreversibles van en overflow `[···]` (D6).   | bg `transparent`, text `--destructive`, `--radius-md`                                                                                                                                                                                                          |
+| Variant             | Uso                                                                                                                        | Tokens consumidos                                                                                                                   |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `primary`           | CTA principal de la pantalla. **Una sola instancia visible por viewport** (decálogo §2 — una pantalla, una decisión).      | bg `--accent`, text `var(--text-on-accent)`, `--elevation-1`, `--radius-md`, `--font-weight-medium-body`, `--focus-ring`            |
+| `secondary`         | Acción complementaria de jerarquía media (ej. "Cancelar" junto a "Confirmar", "Atrás" en wizard).                          | bg `--surface-elevated`, text `--text-primary`, border `1px solid var(--border-strong)`, `--radius-md`, `--font-weight-medium-body` |
+| `ghost`             | Acción reversible dentro de sidebar/cluster, link que se ve como botón, items del cluster Acciones (ADR 0001 D6).          | bg `transparent`, text `--text-primary`, `--radius-md`, `--font-weight-medium-body`                                                 |
+| `destructive`       | Confirmación final de operación irreversible (ej. modal "Eliminar pedido" → botón "Eliminar"). Nunca expuesta sin confirm. | bg `--destructive`, text `var(--text-on-accent)`, `--elevation-1`, `--radius-md`                                                    |
+| `destructive-ghost` | Acción destructiva reversible dentro de sidebar (ej. "Cancelar pedido"). Las irreversibles van en overflow `[···]` (D6).   | bg `transparent`, text `--destructive`, `--radius-md`                                                                               |
 
 Nota sobre `destructive`: el contraste de `var(--text-on-accent)` (oscuro en dark) sobre `--destructive` (light L=0.54 / dark L=0.70) cumple ≥4.5:1 cross-paleta (ver `_notes/s3-contrast-audit.md`). Se prefiere `--text-on-accent` antes que blanco hardcoded para mantener la regla cross-paleta.
 
 ### Sizes
 
-| Size | Height (mobile / desktop) | Padding-x      | Tipografía       | Gap interno    | Ícono leading/trailing | Uso                                                              |
-| ---- | ------------------------- | -------------- | ---------------- | -------------- | ---------------------- | ---------------------------------------------------------------- |
-| `sm` | `2rem`                    | `var(--space-3)` | `--text-caption` | `var(--space-1_5)` | `1rem` (16)            | Toolbars densos, filtros, paginación, "Cargar más" en lista mobile. |
-| `md` | `2.75rem` mobile / `2.5rem` desktop | `var(--space-4)` | `--text-body`    | `var(--space-2)`   | `1rem` (16)            | Default. CTA primarios, ghosts de sidebar, footer wizard.        |
-| `lg` | `3rem`                    | `var(--space-5)` | `--text-body-lg` | `var(--space-2)`   | `1.125rem` (18)        | Hero del dashboard, CTA principal de empty state.                |
+| Size | Height (mobile / desktop)           | Padding-x        | Tipografía       | Gap interno        | Ícono leading/trailing | Uso                                                                 |
+| ---- | ----------------------------------- | ---------------- | ---------------- | ------------------ | ---------------------- | ------------------------------------------------------------------- |
+| `sm` | `2rem`                              | `var(--space-3)` | `--text-caption` | `var(--space-1_5)` | `1rem` (16)            | Toolbars densos, filtros, paginación, "Cargar más" en lista mobile. |
+| `md` | `2.75rem` mobile / `2.5rem` desktop | `var(--space-4)` | `--text-body`    | `var(--space-2)`   | `1rem` (16)            | Default. CTA primarios, ghosts de sidebar, footer wizard.           |
+| `lg` | `3rem`                              | `var(--space-5)` | `--text-body-lg` | `var(--space-2)`   | `1.125rem` (18)        | Hero del dashboard, CTA principal de empty state.                   |
 
 Las heights se materializan via `min-height` (no `height` fijo) para que el padding no comprima el texto. Mobile bumpea `md` a `2.75rem` para garantizar tap target ≥44×44 (Comportamientos transversales §1 del shared brief).
 
@@ -109,58 +104,58 @@ Cada receta es un overlay sobre la base de la variant. El state layer es un pseu
 
 ### `primary`
 
-| Estado          | Receta CSS (light)                                                                                                                                                                       | Receta CSS (dark)                                                                                                                       | Notas                                                                                                  |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `default`       | `background: var(--accent); color: var(--text-on-accent); box-shadow: var(--elevation-1);`                                                                                              | mismo (los valores de los tokens cambian via `:root[data-theme]`)                                                                       | `--text-on-accent` en dark es **oscuro** (L=15%). Nunca usar `text-white`.                              |
-| `hover`         | overlay `background-color: color-mix(in oklch, var(--text-primary) var(--state-hover-mix), transparent);` (mix=6%)                                                                       | overlay con mix=8%                                                                                                                       | Aplicado via `::after`. La transición usa `--motion-fast` `--ease-emphasis`.                            |
-| `pressed`       | overlay con `--state-pressed-mix` (12%)                                                                                                                                                  | overlay con `--state-pressed-mix` (14%)                                                                                                  | `:active`. Reemplaza el overlay de hover.                                                              |
-| `focus-visible` | `outline: 2px solid var(--focus-ring); outline-offset: 2px;`                                                                                                                              | mismo                                                                                                                                    | Sólo en `:focus-visible` (no en click puro). El outline-offset asegura que el ring no se trague el borde. |
-| `disabled`      | `color: var(--text-muted); border: 1px solid var(--border); background: var(--surface-elevated); pointer-events: none; box-shadow: none;`                                                | mismo                                                                                                                                    | **Sin opacity.** El primary disabled cae a la receta neutral. ADR 0001 D3.                              |
-| `loading`       | leadingIcon → `<Loader2>` rotando; texto inalterado; `aria-busy="true"`; `pointer-events: none`; `min-width` se mantiene del estado anterior (`width: var(--btn-locked-width)`).         | mismo                                                                                                                                    | El ancho se preserva snapshot-eando antes de entrar a loading. Ver §Notas para S12.                     |
+| Estado          | Receta CSS (light)                                                                                                                                                               | Receta CSS (dark)                                                 | Notas                                                                                                     |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `default`       | `background: var(--accent); color: var(--text-on-accent); box-shadow: var(--elevation-1);`                                                                                       | mismo (los valores de los tokens cambian via `:root[data-theme]`) | `--text-on-accent` en dark es **oscuro** (L=15%). Nunca usar `text-white`.                                |
+| `hover`         | overlay `background-color: color-mix(in oklch, var(--text-primary) var(--state-hover-mix), transparent);` (mix=6%)                                                               | overlay con mix=8%                                                | Aplicado via `::after`. La transición usa `--motion-fast` `--ease-emphasis`.                              |
+| `pressed`       | overlay con `--state-pressed-mix` (12%)                                                                                                                                          | overlay con `--state-pressed-mix` (14%)                           | `:active`. Reemplaza el overlay de hover.                                                                 |
+| `focus-visible` | `outline: 2px solid var(--focus-ring); outline-offset: 2px;`                                                                                                                     | mismo                                                             | Sólo en `:focus-visible` (no en click puro). El outline-offset asegura que el ring no se trague el borde. |
+| `disabled`      | `color: var(--text-muted); border: 1px solid var(--border); background: var(--surface-elevated); pointer-events: none; box-shadow: none;`                                        | mismo                                                             | **Sin opacity.** El primary disabled cae a la receta neutral. ADR 0001 D3.                                |
+| `loading`       | leadingIcon → `<Loader2>` rotando; texto inalterado; `aria-busy="true"`; `pointer-events: none`; `min-width` se mantiene del estado anterior (`width: var(--btn-locked-width)`). | mismo                                                             | El ancho se preserva snapshot-eando antes de entrar a loading. Ver §Notas para S12.                       |
 
 ### `secondary`
 
-| Estado          | Receta CSS (light)                                                                                                                                                                                                  | Receta CSS (dark)                                                                                              | Notas                                            |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `default`       | `background: var(--surface-elevated); color: var(--text-primary); border: 1px solid var(--border-strong);`                                                                                                          | mismo                                                                                                          | Border `--border-strong` es funcional ≥3:1.       |
-| `hover`         | overlay mix=6%                                                                                                                                                                                                      | overlay mix=8%                                                                                                 |                                                  |
-| `pressed`       | overlay mix=12%                                                                                                                                                                                                     | overlay mix=14%                                                                                                |                                                  |
-| `focus-visible` | `outline: 2px solid var(--focus-ring); outline-offset: 2px;`                                                                                                                                                        | mismo                                                                                                          |                                                  |
-| `disabled`      | `color: var(--text-muted); border-color: var(--border); background: var(--surface);`                                                                                                                                | mismo                                                                                                          | Sin opacity. Border se relaja a `--border`.       |
-| `loading`       | igual que primary                                                                                                                                                                                                   | igual                                                                                                          |                                                  |
+| Estado          | Receta CSS (light)                                                                                         | Receta CSS (dark) | Notas                                       |
+| --------------- | ---------------------------------------------------------------------------------------------------------- | ----------------- | ------------------------------------------- |
+| `default`       | `background: var(--surface-elevated); color: var(--text-primary); border: 1px solid var(--border-strong);` | mismo             | Border `--border-strong` es funcional ≥3:1. |
+| `hover`         | overlay mix=6%                                                                                             | overlay mix=8%    |                                             |
+| `pressed`       | overlay mix=12%                                                                                            | overlay mix=14%   |                                             |
+| `focus-visible` | `outline: 2px solid var(--focus-ring); outline-offset: 2px;`                                               | mismo             |                                             |
+| `disabled`      | `color: var(--text-muted); border-color: var(--border); background: var(--surface);`                       | mismo             | Sin opacity. Border se relaja a `--border`. |
+| `loading`       | igual que primary                                                                                          | igual             |                                             |
 
 ### `ghost`
 
-| Estado          | Receta CSS (light)                                                                                                          | Receta CSS (dark) | Notas                                                                                                                  |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `default`       | `background: transparent; color: var(--text-primary); border: 1px solid transparent;`                                       | mismo             | Border transparente reservado para alinear height con `secondary` cuando conviven.                                      |
-| `hover`         | overlay mix=6%                                                                                                              | overlay mix=8%    |                                                                                                                        |
-| `pressed`       | overlay mix=12%                                                                                                             | overlay mix=14%   |                                                                                                                        |
-| `focus-visible` | `outline: 2px solid var(--focus-ring); outline-offset: 2px;`                                                                | mismo             |                                                                                                                        |
-| `disabled`      | `color: var(--text-muted);`                                                                                                 | mismo             | Sin opacity. La superficie sigue transparente — el muted comunica el bloqueo.                                           |
-| `loading`       | igual que primary                                                                                                           | igual             |                                                                                                                        |
+| Estado          | Receta CSS (light)                                                                    | Receta CSS (dark) | Notas                                                                              |
+| --------------- | ------------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------- |
+| `default`       | `background: transparent; color: var(--text-primary); border: 1px solid transparent;` | mismo             | Border transparente reservado para alinear height con `secondary` cuando conviven. |
+| `hover`         | overlay mix=6%                                                                        | overlay mix=8%    |                                                                                    |
+| `pressed`       | overlay mix=12%                                                                       | overlay mix=14%   |                                                                                    |
+| `focus-visible` | `outline: 2px solid var(--focus-ring); outline-offset: 2px;`                          | mismo             |                                                                                    |
+| `disabled`      | `color: var(--text-muted);`                                                           | mismo             | Sin opacity. La superficie sigue transparente — el muted comunica el bloqueo.      |
+| `loading`       | igual que primary                                                                     | igual             |                                                                                    |
 
 ### `destructive`
 
-| Estado          | Receta CSS (light)                                                                                                            | Receta CSS (dark) | Notas                                                                                            |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------ |
-| `default`       | `background: var(--destructive); color: var(--text-on-accent); box-shadow: var(--elevation-1);`                              | mismo             | `--text-on-accent` cross-paleta. Nunca `text-white` aunque "se vea bien" en light.                |
-| `hover`         | overlay mix=6%                                                                                                                | overlay mix=8%    |                                                                                                  |
-| `pressed`       | overlay mix=12%                                                                                                               | overlay mix=14%   |                                                                                                  |
-| `focus-visible` | `outline: 2px solid var(--focus-ring); outline-offset: 2px;`                                                                  | mismo             | El ring usa el `--focus-ring` global (accent), no el destructive — es el mismo significante visual. |
-| `disabled`      | igual que primary disabled                                                                                                    | mismo             | Sin opacity.                                                                                     |
-| `loading`       | igual que primary                                                                                                             | igual             |                                                                                                  |
+| Estado          | Receta CSS (light)                                                                              | Receta CSS (dark) | Notas                                                                                               |
+| --------------- | ----------------------------------------------------------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------- |
+| `default`       | `background: var(--destructive); color: var(--text-on-accent); box-shadow: var(--elevation-1);` | mismo             | `--text-on-accent` cross-paleta. Nunca `text-white` aunque "se vea bien" en light.                  |
+| `hover`         | overlay mix=6%                                                                                  | overlay mix=8%    |                                                                                                     |
+| `pressed`       | overlay mix=12%                                                                                 | overlay mix=14%   |                                                                                                     |
+| `focus-visible` | `outline: 2px solid var(--focus-ring); outline-offset: 2px;`                                    | mismo             | El ring usa el `--focus-ring` global (accent), no el destructive — es el mismo significante visual. |
+| `disabled`      | igual que primary disabled                                                                      | mismo             | Sin opacity.                                                                                        |
+| `loading`       | igual que primary                                                                               | igual             |                                                                                                     |
 
 ### `destructive-ghost`
 
-| Estado          | Receta CSS (light)                                                                                                                            | Receta CSS (dark) | Notas                                                                                          |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------- |
-| `default`       | `background: transparent; color: var(--destructive); border: 1px solid transparent;`                                                          | mismo (`--destructive` cambia via theme) | El texto destructive cumple ≥4.5:1 sobre `--surface` y `--surface-elevated` cross-paleta.     |
-| `hover`         | `background-color: color-mix(in oklch, var(--destructive) 6%, transparent);`                                                                 | `color-mix(... 8%, transparent)` | Hover usa el tinte del propio destructive (no el state layer neutro), refuerza la advertencia. |
-| `pressed`       | `color-mix(in oklch, var(--destructive) 12%, transparent)`                                                                                    | `color-mix(... 14%, transparent)` |                                                                                                |
-| `focus-visible` | `outline: 2px solid var(--focus-ring); outline-offset: 2px;`                                                                                  | mismo             |                                                                                                |
-| `disabled`      | `color: var(--text-muted);`                                                                                                                   | mismo             |                                                                                                |
-| `loading`       | igual que primary                                                                                                                             | igual             |                                                                                                |
+| Estado          | Receta CSS (light)                                                                   | Receta CSS (dark)                        | Notas                                                                                          |
+| --------------- | ------------------------------------------------------------------------------------ | ---------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `default`       | `background: transparent; color: var(--destructive); border: 1px solid transparent;` | mismo (`--destructive` cambia via theme) | El texto destructive cumple ≥4.5:1 sobre `--surface` y `--surface-elevated` cross-paleta.      |
+| `hover`         | `background-color: color-mix(in oklch, var(--destructive) 6%, transparent);`         | `color-mix(... 8%, transparent)`         | Hover usa el tinte del propio destructive (no el state layer neutro), refuerza la advertencia. |
+| `pressed`       | `color-mix(in oklch, var(--destructive) 12%, transparent)`                           | `color-mix(... 14%, transparent)`        |                                                                                                |
+| `focus-visible` | `outline: 2px solid var(--focus-ring); outline-offset: 2px;`                         | mismo                                    |                                                                                                |
+| `disabled`      | `color: var(--text-muted);`                                                          | mismo                                    |                                                                                                |
+| `loading`       | igual que primary                                                                    | igual                                    |                                                                                                |
 
 ### Receta base (CSS pseudo-elemento para state layers)
 
@@ -180,7 +175,35 @@ Cada receta es un overlay sobre la base de la variant. El state layer es un pseu
     background-color var(--motion-fast) var(--ease-emphasis),
     color var(--motion-fast) var(--ease-emphasis),
     border-color var(--motion-fast) var(--ease-emphasis),
-    outline-color var(--motion-fast) var(--ease-emphasis);
+    outline-color var(--motion-fast) var(--ease-emphasis),
+    box-shadow var(--motion-fast) var(--ease-emphasis),
+    transform var(--motion-fast) var(--ease-emphasis);
+}
+
+/* Hover lift — primary, secondary, destructive, outline variants */
+.button:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elevation-2);
+}
+
+/* Ghost / destructive-ghost: lift without shadow (transparent background) */
+.button[data-variant="ghost"]:hover,
+.button[data-variant="destructive-ghost"]:hover {
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+/* Reset on :active so the button "sinks" back on press */
+.button:active {
+  transform: translateY(0);
+  box-shadow: var(--elevation-1); /* solid variants; ghost: none */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button:hover,
+  .button:active {
+    transform: none;
+  }
 }
 
 .button::after {
@@ -221,7 +244,9 @@ Cada receta es un overlay sobre la base de la variant. El state layer es un pseu
 }
 
 @keyframes button-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 ```
 
@@ -229,13 +254,13 @@ Cada receta es un overlay sobre la base de la variant. El state layer es un pseu
 
 ## Mobile vs desktop
 
-| Aspecto                  | `< --breakpoint-md` (mobile)                                                                                                                                                | `≥ --breakpoint-md` (desktop)                                                                                                |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Altura `md`              | `2.75rem` (44px) — tap target inviolable                                                                                                                                    | `2.5rem` (40px) — densidad mayor                                                                                              |
-| `kbd` slot                | Oculto via `display: none` en `< --breakpoint-md`. El nodo se mantiene en el DOM por SR, marcado `aria-hidden="true"` en mobile.                                              | Visible alineado a la derecha del texto, con `margin-inline-start: auto` cuando comparte fila con texto + íconos.             |
-| Cluster del sidebar (D6) | Stack vertical (mobile colapsa el sidebar al pie del detalle) — botones `fullWidth`.                                                                                          | Botones de ancho natural alineados verticalmente dentro del sidebar.                                                          |
-| `fullWidth`              | Recomendado en footer de wizard, modal confirm.                                                                                                                              | Opcional; default natural.                                                                                                    |
-| Cluster primary+secondary| Stack vertical, primary arriba (orden visual prioritario). En modal de confirm destructivo, "Cancelar" puede quedar arriba para reducir riesgo de touch accidental en bordes. | Side-by-side con primary a la derecha en modal/dialog, "Cancelar" a la izquierda (Linear/GitHub convergente).                  |
+| Aspecto                   | `< --breakpoint-md` (mobile)                                                                                                                                                  | `≥ --breakpoint-md` (desktop)                                                                                     |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Altura `md`               | `2.75rem` (44px) — tap target inviolable                                                                                                                                      | `2.5rem` (40px) — densidad mayor                                                                                  |
+| `kbd` slot                | Oculto via `display: none` en `< --breakpoint-md`. El nodo se mantiene en el DOM por SR, marcado `aria-hidden="true"` en mobile.                                              | Visible alineado a la derecha del texto, con `margin-inline-start: auto` cuando comparte fila con texto + íconos. |
+| Cluster del sidebar (D6)  | Stack vertical (mobile colapsa el sidebar al pie del detalle) — botones `fullWidth`.                                                                                          | Botones de ancho natural alineados verticalmente dentro del sidebar.                                              |
+| `fullWidth`               | Recomendado en footer de wizard, modal confirm.                                                                                                                               | Opcional; default natural.                                                                                        |
+| Cluster primary+secondary | Stack vertical, primary arriba (orden visual prioritario). En modal de confirm destructivo, "Cancelar" puede quedar arriba para reducir riesgo de touch accidental en bordes. | Side-by-side con primary a la derecha en modal/dialog, "Cancelar" a la izquierda (Linear/GitHub convergente).     |
 
 ## Accesibilidad
 
@@ -256,24 +281,26 @@ Cada receta es un overlay sobre la base de la variant. El state layer es un pseu
 
 ## Motion
 
-| Qué se anima              | Token de duración                       | Token de easing       | Notas                                                                                              |
-| ------------------------- | --------------------------------------- | --------------------- | -------------------------------------------------------------------------------------------------- |
-| State layer (`::after`)   | `--motion-fast` (150ms)                 | `--ease-emphasis`     | `background-color`. Se enciende en hover/active.                                                    |
-| Focus ring               | `--motion-fast`                         | `--ease-emphasis`     | `outline-color`. Aparición instantánea en `:focus-visible`.                                         |
-| Color/border transitions  | `--motion-fast`                         | `--ease-emphasis`     | `color`, `border-color`, `background-color` cuando cambian de variant programáticamente.            |
+| Qué se anima             | Token de duración                       | Token de easing          | Notas                                                                                               |
+| ------------------------ | --------------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------- |
+| State layer (`::after`)  | `--motion-fast` (150ms)                 | `--ease-emphasis`        | `background-color`. Se enciende en hover/active.                                                    |
+| Hover lift (`transform`) | `--motion-fast`                         | `--ease-emphasis`        | `translateY(-1px)` en hover. Reset a `0` en `:active`. Desactivado bajo `prefers-reduced-motion`.   |
+| Hover shadow             | `--motion-fast`                         | `--ease-emphasis`        | `--elevation-1` → `--elevation-2` en hover para variantes sólidas. Ghost: sin shadow scale.         |
+| Focus ring               | `--motion-fast`                         | `--ease-emphasis`        | `outline-color`. Aparición instantánea en `:focus-visible`.                                         |
+| Color/border transitions | `--motion-fast`                         | `--ease-emphasis`        | `color`, `border-color`, `background-color` cuando cambian de variant programáticamente.            |
 | Spinner loading          | `calc(var(--motion-base) * 4)` (1120ms) | `linear` (rotación pura) | Rotación `360deg` infinita. Linear es lo correcto para spinners — los easing curvos generan jitter. |
-| `prefers-reduced-motion` | `--motion-fast`                         | `--ease-emphasis`     | Spinner se desactiva (`animation: none`) y se confía en el texto sr-only "Cargando".                |
+| `prefers-reduced-motion` | n/a                                     | n/a                      | Lift + spinner desactivados. Color transitions siguen via `--motion-fast`.                          |
 
 ## Copy default + i18n
 
-| Clave i18n sugerida                       | Valor ES (voice glossary aplicado) |
-| ----------------------------------------- | ---------------------------------- |
-| `components.button.loading.label`         | "Cargando"                         |
-| `components.button.commonLabels.confirm`  | "Confirmar"                        |
-| `components.button.commonLabels.cancel`   | "Cancelar"                         |
-| `components.button.commonLabels.save`     | "Guardar"                          |
-| `components.button.commonLabels.delete`   | "Eliminar"                         |
-| `components.button.commonLabels.retry`    | "Dale otra vez"                    |
+| Clave i18n sugerida                      | Valor ES (voice glossary aplicado) |
+| ---------------------------------------- | ---------------------------------- |
+| `components.button.loading.label`        | "Cargando"                         |
+| `components.button.commonLabels.confirm` | "Confirmar"                        |
+| `components.button.commonLabels.cancel`  | "Cancelar"                         |
+| `components.button.commonLabels.save`    | "Guardar"                          |
+| `components.button.commonLabels.delete`  | "Eliminar"                         |
+| `components.button.commonLabels.retry`   | "Dale otra vez"                    |
 
 EN se deja para S12. Las claves `commonLabels.*` son utilities que el sistema puede consumir cuando un consumer no provee `children` explícito (ej. confirm modal genérico). Cualquier copy custom siempre debe pasar por `useTranslations()` — nunca hardcodear strings ES en TSX (regla de `english-code-only.mdc` + `next-intl-translation-apis.mdc`).
 

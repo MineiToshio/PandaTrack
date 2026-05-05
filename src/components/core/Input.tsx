@@ -89,8 +89,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             "flex items-center gap-[var(--space-2)]",
             "min-h-[2.75rem] w-full",
             "px-[var(--space-4)] py-[var(--space-3)]",
-            "rounded-[var(--radius-md)] bg-[var(--surface)]",
-            "[border:1px_solid_var(--border)]",
+            "rounded-[var(--radius-md)] bg-[var(--surface-elevated)]",
+            "[border:1px_solid_var(--border-strong)]",
             "transition-[border-color] [transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
             // Focus-within shows the ring — the inner input triggers this
             "has-[:focus-visible]:[border-color:var(--border-strong)]",

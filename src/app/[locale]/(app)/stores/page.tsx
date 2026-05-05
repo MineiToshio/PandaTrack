@@ -1,14 +1,22 @@
+import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { Sparkles } from "lucide-react";
 import type { Metadata } from "next";
+import EmptyState from "@/components/modules/EmptyState";
+import Button from "@/components/core/Button/Button";
+import { getSession } from "@/lib/auth/auth-server";
 import { prisma } from "@/lib/prisma";
-import { DEFAULT_PUBLIC_STORE_PAGE_SIZE, getPublicStoresListingPage } from "@/queries/store";
+import {
+  DEFAULT_PUBLIC_STORE_PAGE_SIZE,
+  getPublicStoresListingPage,
+  getViewerOrderCountsByStoreSlugs,
+} from "@/queries/store";
 import { listCountryCodes } from "@/queries/country";
 import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
 import { buildPageMetadata } from "@/lib/seo";
-import { APP_SHELL_FORM_RAIL_CLASSNAME } from "@/lib/constants";
+import { ROUTES } from "@/lib/constants";
 import { parseListingSearchParams } from "./_utils/listingParams";
 import StoreListingContent from "./_components/StoreListingContent";
-import AppPageHero from "@/components/modules/AppPageHero";
 import StoreListingFilters from "./_components/StoreListingFilters";
 import StoreListingPagination from "./_components/StoreListingPagination";
 
@@ -74,7 +82,8 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
     page,
   } = parseListingSearchParams(rawParams);
 
-  const [listingPage, productTypeOptions, countryOptions] = await Promise.all([
+  const [session, listingPage, productTypeOptions, countryOptions] = await Promise.all([
+    getSession(),
     getPublicStoresListingPage(prisma, {
       nameQuery,
       productTypeKeys: productTypeKeys.length > 0 ? productTypeKeys : undefined,
@@ -90,24 +99,23 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
     listCountryCodes(prisma),
   ]);
 
-  const tStores = await getTranslations({ locale, namespace: "stores" });
-  const tListing = await getTranslations({ locale, namespace: "storeListing" });
-  const showingFrom = listingPage.totalCount === 0 ? 0 : (listingPage.currentPage - 1) * listingPage.pageSize + 1;
-  const showingTo = Math.min(listingPage.currentPage * listingPage.pageSize, listingPage.totalCount);
+  const viewerOrderCountsBySlug =
+    session?.user?.id && listingPage.items.length > 0
+      ? await getViewerOrderCountsByStoreSlugs(
+          prisma,
+          session.user.id,
+          listingPage.items.map((s) => s.slug),
+        )
+      : undefined;
+
   const storesBasePath = `/${locale}/stores`;
   const buildPaginationHref = (targetPage: number) => createStoresPageHref(storesBasePath, rawParams, targetPage);
 
   return (
     <div className="text-foreground">
-      <div className={`${APP_SHELL_FORM_RAIL_CLASSNAME} space-y-6`}>
-        <AppPageHero
-          eyebrow={tListing("hero.eyebrow")}
-          title={tListing("hero.title")}
-          description={tListing("meta.description")}
-        />
+      <div className="space-y-6">
         <StoreListingFilters
           locale={locale}
-          createStoreLabel={tStores("create.title")}
           productTypeOptions={productTypeOptions}
           countryOptions={countryOptions}
           initialNameQuery={nameQuery ?? ""}
@@ -118,17 +126,63 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
           initialReceivesOrders={receivesOrders}
           initialHasStock={hasStock}
           totalStores={listingPage.totalCount}
-          showingFrom={showingFrom}
-          showingTo={showingTo}
         />
-        <StoreListingContent locale={locale} stores={listingPage.items} />
-        <StoreListingPagination
-          locale={locale}
-          totalPages={listingPage.totalPages}
-          currentPage={listingPage.currentPage}
-          createPageHref={buildPaginationHref}
-        />
+        {listingPage.totalCount === 0 ? (
+          <StoresEmptyState
+            locale={locale}
+            hasFilters={Boolean(
+              nameQuery ||
+              productTypeKeys.length > 0 ||
+              countryCodes.length > 0 ||
+              importCountryCodes.length > 0 ||
+              presenceTypes.length > 0 ||
+              receivesOrders ||
+              hasStock,
+            )}
+          />
+        ) : (
+          <>
+            <StoreListingContent
+              locale={locale}
+              stores={listingPage.items}
+              viewerOrderCountsBySlug={viewerOrderCountsBySlug}
+            />
+            <StoreListingPagination
+              locale={locale}
+              totalPages={listingPage.totalPages}
+              currentPage={listingPage.currentPage}
+              createPageHref={buildPaginationHref}
+            />
+          </>
+        )}
       </div>
     </div>
+  );
+}
+
+function StoresEmptyState({ locale, hasFilters }: { locale: string; hasFilters: boolean }) {
+  const tListing = useTranslations("storeListing");
+  const clearHref = `/${locale}${ROUTES.stores}`;
+
+  return (
+    <EmptyState
+      visual={
+        <span
+          aria-hidden="true"
+          className="inline-flex h-16 w-16 items-center justify-center rounded-full [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_14%,var(--surface-elevated))]"
+        >
+          <Sparkles size={28} aria-hidden="true" />
+        </span>
+      }
+      title={hasFilters ? tListing("s6.empty.title") : tListing("empty")}
+      subtitle={hasFilters ? tListing("s6.empty.subtitle") : undefined}
+      actions={
+        hasFilters ? (
+          <Button as="a" href={clearHref} variant="ghost" size="sm">
+            {tListing("s6.empty.clearFilters")}
+          </Button>
+        ) : null
+      }
+    />
   );
 }

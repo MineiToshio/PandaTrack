@@ -1,13 +1,12 @@
 "use client";
 
-import { useActionState, useState, type ChangeEvent } from "react";
+import { Check, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { NotebookPen } from "lucide-react";
-import Button from "@/components/core/Button/Button";
+import { useEffect, useRef, useState, useTransition, type ChangeEvent } from "react";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
+import { cn } from "@/lib/styles";
 import type { StoreViewerNote } from "@/queries/store";
-import SectionSurfaceCard from "@/components/modules/SectionSurfaceCard";
 import { saveStoreNote } from "../_actions/saveStoreNote";
 
 type StoreNoteFormProps = {
@@ -16,120 +15,131 @@ type StoreNoteFormProps = {
   existingNote: StoreViewerNote | null;
 };
 
+const AUTOSAVE_DEBOUNCE_MS = 800;
+
 function translateNoteError(t: ReturnType<typeof useTranslations>, errorKey: string) {
   return t.has(`detail.privateNote.form.errors.${errorKey}`)
     ? t(`detail.privateNote.form.errors.${errorKey}`)
     : t("error.validation_failed");
 }
 
+type SaveState =
+  | { kind: "idle"; lastSavedAt: Date | null }
+  | { kind: "saving" }
+  | { kind: "saved"; at: Date }
+  | { kind: "error"; message: string };
+
+/**
+ * Autosaving private note (matches `_notes/demo-screens.html` aside note pattern):
+ *   - Textarea live-bound to local state
+ *   - Debounced save 800ms after last keystroke (or on blur)
+ *   - Inline indicator below: check + "Guardada hace Xm" / spinner + "Guardando…" / error
+ *   - No manual save button
+ *
+ * Optimistic-by-design: the textarea reflects user input immediately; persistence is implicit.
+ */
 export default function StoreNoteForm({ locale, storeSlug, existingNote }: StoreNoteFormProps) {
   const t = useTranslations("stores");
-  const [state, formAction, isPending] = useActionState(saveStoreNote, null);
-  const persistedContent = existingNote?.content ?? "";
-  const [draftContent, setDraftContent] = useState(persistedContent);
+  const [draftContent, setDraftContent] = useState(existingNote?.content ?? "");
+  const [saveState, setSaveState] = useState<SaveState>({
+    kind: "idle",
+    lastSavedAt: existingNote?.updatedAt ?? null,
+  });
+  const [, startTransition] = useTransition();
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPersistedRef = useRef<string>(existingNote?.content ?? "");
 
-  const handleDraftChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    setDraftContent(event.target.value);
+  const persist = (value: string) => {
+    if (value === lastPersistedRef.current) return;
+    setSaveState({ kind: "saving" });
+    const formData = new FormData();
+    formData.set("slug", storeSlug);
+    formData.set("locale", locale);
+    formData.set("content", value);
+    startTransition(async () => {
+      const result = await saveStoreNote(null, formData);
+      if (result?.success === false) {
+        const errorKey =
+          ("error" in result && result.error) || (result.fieldErrors?.content?.[0] ?? "validation_failed");
+        setSaveState({ kind: "error", message: translateNoteError(t, errorKey) });
+        return;
+      }
+      lastPersistedRef.current = value;
+      setSaveState({ kind: "saved", at: new Date() });
+    });
   };
 
-  const persistedNormalized = persistedContent.trim();
-  const draftNormalized = draftContent.trim();
-  const canSubmit = draftNormalized.length > 0 && draftNormalized !== persistedNormalized;
-  const submitDisabled = isPending || !canSubmit;
-  const submitCtaVisible = existingNote
-    ? t("detail.privateNote.form.updateCta")
-    : t("detail.privateNote.form.submitCta");
-  const submitDisabledAriaLabel =
-    !isPending && !canSubmit
-      ? `${submitCtaVisible}. ${
-          draftNormalized.length === 0
-            ? t("detail.privateNote.form.submitDisabledEmpty")
-            : t("detail.privateNote.form.submitDisabledUnchanged")
-        }`
-      : undefined;
+  const scheduleSave = (value: string) => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => persist(value), AUTOSAVE_DEBOUNCE_MS);
+  };
 
-  const fieldErrors = state?.success === false ? state.fieldErrors : undefined;
-  const contentError = fieldErrors?.content?.[0];
-  const formError = state?.success === false && "error" in state && state.error ? state.error : null;
-  const updatedAtLabel = existingNote
-    ? new Intl.DateTimeFormat(locale, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(existingNote.updatedAt)
-    : null;
+  const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    const next = event.target.value;
+    setDraftContent(next);
+    scheduleSave(next);
+  };
+
+  const handleBlur = () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    persist(draftContent);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
+
+  const renderIndicator = () => {
+    if (saveState.kind === "saving") {
+      return (
+        <span className="inline-flex items-center gap-1.5 [color:var(--text-muted)]">
+          <Loader2 size={12} aria-hidden="true" className="animate-spin" />
+          <span>{t("detail.privateNote.form.submitting")}</span>
+        </span>
+      );
+    }
+    if (saveState.kind === "error") {
+      return (
+        <span className="[color:var(--destructive)]" role="alert">
+          {saveState.message}
+        </span>
+      );
+    }
+    const savedAt = saveState.kind === "saved" ? saveState.at : saveState.lastSavedAt;
+    if (!savedAt) {
+      return <span className="[color:var(--text-muted)]">{t("detail.privateNote.description")}</span>;
+    }
+    const formatted = new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(savedAt);
+    return (
+      <span className="inline-flex items-center gap-1.5 [color:var(--text-muted)]">
+        <Check size={12} aria-hidden="true" className="[color:var(--success)]" />
+        <span>{t("detail.privateNote.lastUpdated", { date: formatted })}</span>
+      </span>
+    );
+  };
 
   return (
-    <SectionSurfaceCard
-      title={t("detail.privateNote.title")}
-      titleAs="h2"
-      titleId="store-private-note-heading"
-      icon={NotebookPen}
-      iconClassName="text-info"
-    >
-      <div className="space-y-1">
-        <Typography size="sm" className="text-text-muted">
-          {t("detail.privateNote.description")}
-        </Typography>
-      </div>
-
-      <form action={formAction} className="mt-5 space-y-4" aria-busy={isPending}>
-        <input type="hidden" name="slug" value={storeSlug} />
-        <input type="hidden" name="locale" value={locale} />
-
-        <div>
-          <Textarea
-            id="store-private-note"
-            name="content"
-            value={draftContent}
-            onChange={handleDraftChange}
-            rows={6}
-            maxLength={2000}
-            disabled={isPending}
-            error={Boolean(contentError)}
-            aria-invalid={Boolean(contentError)}
-            aria-labelledby="store-private-note-heading"
-            placeholder={t("detail.privateNote.form.contentPlaceholder")}
-            className="resize-y"
-          />
-          {updatedAtLabel && (
-            <Typography size="xs" className="text-text-muted mt-2">
-              {t("detail.privateNote.lastUpdated", { date: updatedAtLabel })}
-            </Typography>
-          )}
-          {contentError && (
-            <Typography size="xs" className="text-destructive mt-1" role="alert">
-              {translateNoteError(t, contentError)}
-            </Typography>
-          )}
-        </div>
-
-        {state?.success && (
-          <Typography size="xs" className="text-text-body" role="status" aria-live="polite">
-            {t("detail.privateNote.form.success")}
-          </Typography>
-        )}
-
-        {formError && (
-          <Typography size="xs" className="text-destructive" role="alert">
-            {translateNoteError(t, formError)}
-          </Typography>
-        )}
-
-        <Button
-          type="submit"
-          variant="secondary"
-          size="md"
-          disabled={submitDisabled}
-          aria-label={submitDisabledAriaLabel}
-          className="w-full sm:w-auto"
-        >
-          {isPending
-            ? t("detail.privateNote.form.submitting")
-            : existingNote
-              ? t("detail.privateNote.form.updateCta")
-              : t("detail.privateNote.form.submitCta")}
-        </Button>
-      </form>
-    </SectionSurfaceCard>
+    <div className="flex flex-col gap-2">
+      <Typography size="xs" className="text-text-muted">
+        {t("detail.privateNote.description")}
+      </Typography>
+      <Textarea
+        id="store-private-note"
+        name="content"
+        value={draftContent}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        rows={4}
+        maxLength={2000}
+        placeholder={t("detail.privateNote.form.contentPlaceholder")}
+        className={cn("resize-y")}
+      />
+      <div className="[font-size:12px]">{renderIndicator()}</div>
+    </div>
   );
 }

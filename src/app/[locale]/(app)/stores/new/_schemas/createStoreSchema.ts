@@ -135,7 +135,7 @@ const addressSchema = z.object({
   isPrimary: z.boolean().optional(),
 });
 
-export const createStoreSchema = z.object({
+export const createStoreShape = {
   name: z.string().min(1, "nameRequired").max(200, "nameTooLong").trim(),
   description: z.string().max(2000).trim().optional().nullable(),
   storeType: storeTypeEnum,
@@ -144,11 +144,30 @@ export const createStoreSchema = z.object({
   productTypeKeys: z.array(z.string().min(1)).min(1, "productTypeRequired"),
   hasStock: z.boolean().optional().nullable(),
   receivesOrders: z.boolean().optional().nullable(),
+  isPrivate: z.boolean().optional().default(false),
   contactChannels: z.array(contactChannelSchema).optional().default([]),
   addresses: z.array(addressSchema).optional().default([]),
   importCountries: z.array(z.string().length(2).toUpperCase()).optional().default([]),
   logoAction: storeLogoActionSchema.default("keep"),
   logoCropArea: storeLogoCropAreaSchema.optional().nullable(),
-});
+} as const;
+
+const createStoreBaseSchema = z.object(createStoreShape);
+
+/** Refinement enforcing FR-04-33 / FR-04-34 (ADR 0009) — `isPrivate` is only valid for PERSON. */
+export const refinePrivateOnlyPerson = (
+  input: { isPrivate?: boolean | null; storeType: "BUSINESS" | "PERSON" },
+  ctx: z.RefinementCtx,
+) => {
+  if (input.isPrivate && input.storeType !== "PERSON") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["isPrivate"],
+      message: "isPrivateOnlyPerson",
+    });
+  }
+};
+
+export const createStoreSchema = createStoreBaseSchema.superRefine(refinePrivateOnlyPerson);
 
 export type CreateStoreInput = z.infer<typeof createStoreSchema>;

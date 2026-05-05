@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { APP_SHELL_FORM_RAIL_CLASSNAME } from "@/lib/constants";
 import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -38,17 +37,15 @@ export default async function EditStorePage({ params }: EditStorePageProps) {
 
   return (
     <div className="text-foreground">
-      <div className={APP_SHELL_FORM_RAIL_CLASSNAME}>
-        <EditStoreForm
-          locale={locale}
-          store={store}
-          countries={countries}
-          productTypes={productTypes}
-          initialValues={initialValues}
-          canDirectlyEdit={canDirectlyEdit}
-          existingChangeRequest={viewerContext.openChangeRequest}
-        />
-      </div>
+      <EditStoreForm
+        locale={locale}
+        store={store}
+        countries={countries}
+        productTypes={productTypes}
+        initialValues={initialValues}
+        canDirectlyEdit={canDirectlyEdit}
+        existingChangeRequest={viewerContext.openChangeRequest}
+      />
     </div>
   );
 }

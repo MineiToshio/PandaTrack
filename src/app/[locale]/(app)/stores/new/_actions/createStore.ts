@@ -60,6 +60,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
     productTypeKeys: formData.getAll("productTypeKeys").filter((v): v is string => typeof v === "string"),
     hasStock: formData.get("hasStock") === "on" ? true : undefined,
     receivesOrders: formData.get("receivesOrders") === "on" ? true : undefined,
+    isPrivate: formData.get("isPrivate") === "on" ? true : undefined,
     contactChannels: contactChannels as { type: string; value: string; label?: string }[],
     addresses,
     importCountries: formData
@@ -85,6 +86,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
     productTypeKeys: raw.productTypeKeys,
     hasStock: raw.hasStock,
     receivesOrders: raw.receivesOrders,
+    isPrivate: raw.isPrivate,
     contactChannels: raw.contactChannels,
     addresses: raw.addresses,
     importCountries: raw.importCountries,
@@ -205,6 +207,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
         approvedByUserId: isAdmin ? session.user.id : null,
         hasStock: input.hasStock ?? null,
         receivesOrders: input.receivesOrders ?? null,
+        isPrivate: input.storeType === "PERSON" ? Boolean(input.isPrivate) : false,
         contactChannels: input.storeType === "BUSINESS" ? input.contactChannels : [],
         addresses: input.storeType === "BUSINESS" ? input.addresses : [],
         importCountries: input.importCountries?.length ? input.importCountries : undefined,

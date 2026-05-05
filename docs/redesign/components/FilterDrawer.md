@@ -1,9 +1,9 @@
 ---
 title: FilterDrawer
 tier: 3
-status: spec — no implementado
-last_updated: 2026-05-02
-session: 04-components
+status: implementado
+last_updated: 2026-05-03
+session: M03-filterdrawer-revamp
 adrs:
   - ADR 0003 D8 (filter drawer unificado mobile sheet / desktop drawer)
   - ADR 0002 (enums de filtros — orderStatus / deliveryStatus)
@@ -14,16 +14,18 @@ adrs:
 
 ## Propósito
 
-Drawer único de filtros para listas — bottom sheet en mobile, drawer derecho en desktop. Aplica a [`/orders`](../screens/orders-list.md), `/deliveries` y `/stores`. Configurable de forma declarativa con secciones tipadas (pills, pills-search, icon-pills, date-range, switches). Footer sticky con conteo de resultados en vivo y CTAs `Limpiar` / `Aplicar`. Respeta los enums vinculantes de [ADR 0002](../decisions/0002-status-chip-mapping.md) para filtros de estado.
+Drawer único de filtros para listas — bottom sheet en mobile, drawer derecho en desktop. Aplica a [`/orders`](../screens/orders-list.md), `/deliveries` y `/stores`. Configurable de forma declarativa con secciones tipadas (pills, pills-search, autocomplete, switches). Footer sticky con conteo de resultados en vivo y CTAs `Limpiar` / `Aplicar`. Respeta los enums vinculantes de [ADR 0002](../decisions/0002-status-chip-mapping.md) para filtros de estado.
 
 ## API TypeScript
 
 ```ts
+// — implementado en src/components/modules/FilterDrawer/FilterDrawer.tsx —
+
 type FilterPillsSection = {
   id: string;
   label: string;
   type: "pills";
-  options: Array<{ value: string; label: string }>;
+  options: Array<{ value: string; label: string; icon?: ReactNode }>;
   /** Default `true`. Si `false`, pills funcionan como single-select (radio-like). */
   multi?: boolean;
 };
@@ -33,107 +35,124 @@ type FilterPillsSearchSection = {
   label: string;
   type: "pills-search";
   options: Array<{ value: string; label: string }>;
-  /** Placeholder del search inline. Default voice glossary. */
+  /** Placeholder del search inline. */
   placeholder?: string;
 };
 
-type FilterIconPillsSection = {
+/**
+ * Para listas largas (ej. países). Los seleccionados se muestran como chips
+ * removibles encima del campo de búsqueda. Las opciones no seleccionadas se
+ * muestran como pills filtrables debajo del input. No usa un popover.
+ */
+type FilterAutocompleteSection = {
   id: string;
   label: string;
-  type: "icon-pills";
-  options: Array<{
-    value: string;
-    label: string;
-    /** Nombre del ícono Lucide (ej. `disc`, `book-open`). El componente resuelve a ReactNode. */
-    icon: string;
-  }>;
-};
-
-type FilterDateRangeSection = {
-  id: string;
-  label: string;
-  type: "date-range";
+  type: "autocomplete";
+  options: Array<{ value: string; label: string }>;
+  /** Placeholder del input de búsqueda. */
+  placeholder?: string;
+  /** Mensaje cuando la búsqueda no tiene resultados. Default "No matches." */
+  emptyMessage?: string;
 };
 
 type FilterSwitchesSection = {
   id: string;
   label: string;
   type: "switches";
-  options: Array<{ value: string; label: string }>;
+  options: Array<{ value: string; label: string; helper?: string }>;
+};
+
+/**
+ * Inline multi-tag autocomplete: selected values appear as chips inside the
+ * input box (not below it). Click/focus opens a dropdown; typing filters options;
+ * selecting appends a chip inline; X on each chip removes it.
+ * Deliberately diverges from the HTML demo (which shows chips below the input) —
+ * explicit human UX decision (2026-05-03) based on preferred legacy pattern.
+ */
+type FilterTagAutocompleteSection = {
+  id: string;
+  label: string;
+  type: "tag-autocomplete";
+  options: Array<{ value: string; label: string; leadingDecoration?: ReactNode }>;
+  placeholder?: string;
 };
 
 type FilterSection =
   | FilterPillsSection
   | FilterPillsSearchSection
-  | FilterIconPillsSection
-  | FilterDateRangeSection
-  | FilterSwitchesSection;
+  | FilterAutocompleteSection
+  | FilterSwitchesSection
+  | FilterTagAutocompleteSection;
 
-type FilterConfig = {
-  sections: FilterSection[];
-};
+type FilterDrawerValues = Record<string, unknown>;
 
 type FilterDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Título del drawer ("Filtrar pedidos", "Filtrar entregas", "Filtrar tiendas"). */
   title: string;
-  config: FilterConfig;
+  sections: FilterSection[];
   /** Estado controlado: `{[sectionId]: unknown}` — el shape depende del tipo de sección. */
-  values: Record<string, unknown>;
-  onChange: (values: Record<string, unknown>) => void;
+  values: FilterDrawerValues;
+  onChange: (values: FilterDrawerValues) => void;
   /** Cierra y commitea el filtro al consumer. */
   onApply: () => void;
   /** Vacía todas las secciones. */
   onClear: () => void;
   /** Conteo de resultados actuales. Se actualiza en vivo conforme `values` cambia. */
-  resultsCount: number;
+  resultsCount?: number;
+  /** Labels localizados para los CTAs del footer. */
+  applyLabel?: string;
+  clearLabel?: string;
+  closeLabel?: string;
+  applyCountLabel?: (count: number) => string;
 };
 ```
 
 ### Shape de `values` por tipo de sección
 
-| `type`           | Shape de `values[id]`                                        |
-| ---------------- | ------------------------------------------------------------ |
-| `pills`          | `string[]` (multi) o `string \| null` (single)               |
-| `pills-search`   | `string[]`                                                   |
-| `icon-pills`     | `string[]`                                                   |
-| `date-range`     | `{ from: string \| null; to: string \| null }` (ISO YYYY-MM-DD) |
-| `switches`       | `string[]` (ids de switches en `on`)                         |
+| `type`             | Shape de `values[id]`                          |
+| ------------------ | ---------------------------------------------- |
+| `pills`            | `string[]` (multi) o `string \| null` (single) |
+| `pills-search`     | `string[]`                                     |
+| `autocomplete`     | `string[]` (values seleccionados)              |
+| `switches`         | `string[]` (ids de switches en `on`)           |
+| `tag-autocomplete` | `string[]` (values seleccionados)              |
 
 ## Variants / Sizes
 
-| Variant (responsive) | Uso                                                                   | Tokens consumidos                                                                                        |
-| -------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Bottom sheet (`< md`) | Mobile filter sheet con drag handle y slide vertical.                 | `--sheet-max-h`, `--radius-2xl` arriba, `--z-sheet`, `--motion-base`, `--ease-out-expressive`.            |
-| Side drawer (`≥ md`)  | Desktop drawer derecho ancho `--drawer-w` (440px).                    | `--drawer-w`, `--radius-xl` izq, `--z-drawer`, `--elevation-2`, `--motion-base`, `--ease-out-expressive`. |
+| Variant (responsive)  | Uso                                                                                              | Tokens consumidos                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| Bottom sheet (`< md`) | Mobile filter sheet con drag handle y slide vertical.                                            | `--sheet-max-h`, `--radius-2xl` arriba, `--z-sheet`, `--motion-base`, `--ease-out-expressive`. |
+| Side drawer (`≥ md`)  | Desktop drawer derecho ancho `--drawer-w` (440px). Bordes **100% rectos** (sin `border-radius`). | `--drawer-w`, `--z-drawer`, `--elevation-2`, `--motion-base`, `--ease-out-expressive`.         |
 
 No hay variant cromática — el drawer mantiene fondo `--surface-elevated` en ambos modos.
 
 ## Estados visuales
 
-| Estado            | Receta CSS (light)                                                                                                                                                       | Receta CSS (dark)                                                                                                                                          | Notas                                                                                                                              |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Backdrop          | `background: var(--surface-overlay); position: fixed; inset: 0; z-index: var(--z-modal-backdrop);` *(reutiliza scrim modal porque el drawer es modal)*                  | mismo                                                                                                                                                       | Click en backdrop → `onOpenChange(false)`.                                                                                          |
-| Sheet (mobile)    | `background: var(--surface-elevated); border-radius: var(--radius-2xl) var(--radius-2xl) 0 0; max-height: var(--sheet-max-h); box-shadow: var(--elevation-3);`            | mismo + composición de `--elevation-3` dark                                                                                                                 | Drag handle 4×40 `--text-muted` `--radius-pill` arriba con padding `--space-2`.                                                     |
-| Drawer (desktop)  | `background: var(--surface-elevated); border-radius: var(--radius-xl) 0 0 var(--radius-xl); width: var(--drawer-w); height: 100vh; box-shadow: var(--elevation-2);`        | mismo + composición dark                                                                                                                                    | Anclado a la derecha, slide horizontal.                                                                                             |
-| Header            | `padding: var(--space-4) var(--space-5); display: flex; align-items: center; gap: var(--space-3); border-bottom: 1px solid var(--border);`                                | mismo                                                                                                                                                       | Ícono Lucide `sliders-horizontal` 20×20 en `--text-secondary` + título `--text-subtitle` en `--text-primary`. IconButton `x` a la derecha. |
-| Body              | `padding: var(--space-4) var(--space-5); overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: var(--space-6);`                                          | mismo                                                                                                                                                       | Cada sección tiene su propio header eyebrow + control.                                                                              |
-| Footer (sticky)   | `padding: var(--space-3) var(--space-5); border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: var(--space-3); background: var(--surface-elevated);` | mismo                                                                                                                                                       | Ghost `Limpiar` izq, primary `Aplicar (N resultados)` der.                                                                          |
-| Pill idle         | StatusChip `neutral`: `background: var(--surface); border: 1px solid var(--border-strong); color: var(--text-secondary);`                                                  | mismo                                                                                                                                                       | Tap target ≥ 44×44 mobile.                                                                                                          |
-| Pill selected     | `background: color-mix(in oklch, var(--accent) var(--state-selected-bg-mix), var(--surface)); border: 1px solid color-mix(in oklch, var(--accent) var(--state-selected-border-mix), var(--surface)); color: var(--accent);` | mismo                                                                                                                                                       | Patrón `state-selected` de tokens-css §4.                                                                                            |
-| Icon-pill (idle)  | mismo `pill idle` + ícono Lucide 16×16 en `--accent-cool` leading + label `--text-secondary`. **`--accent-cool` requiere label adyacente** (ADR 0006).                     | mismo                                                                                                                                                       | El ícono nunca aparece sin label.                                                                                                    |
-| Icon-pill (selected) | mismo `pill selected` + ícono mantiene su color `--accent-cool`                                                                                                          | mismo                                                                                                                                                       | El selected state lo da el bg+border, no el color del ícono.                                                                         |
-| Switch row        | `display: flex; align-items: center; justify-content: space-between; padding: var(--space-2) 0;` con `<Switch>` Tier 1 + `<Label>` Tier 1                                | mismo                                                                                                                                                       | Tap target del switch ≥ 44×44.                                                                                                       |
-| Date-range row    | Dos `<DateInput>` Tier 1 lado a lado con label `Desde` / `Hasta` arriba                                                                                                   | mismo                                                                                                                                                       | En mobile `< xs` se stackea vertical.                                                                                                |
-| Pills-search input | `<Input variant="search">` Tier 1 + lista filtrable de pills debajo                                                                                                       | mismo                                                                                                                                                       | Filtro case-insensitive sobre `label`.                                                                                                |
-| Disabled (state)  | `color: var(--text-muted); border-color: var(--border); pointer-events: none;` (sin `opacity`)                                                                            | mismo                                                                                                                                                       | ADR 0001 D3.                                                                                                                          |
-| Focus visible     | `outline: 2px solid var(--focus-ring); outline-offset: 2px;` en cualquier control interactivo                                                                             | mismo                                                                                                                                                       | —                                                                                                                                    |
+| Estado               | Receta CSS (light)                                                                                                                                                                                                          | Receta CSS (dark)                           | Notas                                                                                                                                                                  |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backdrop             | `background: var(--surface-overlay); position: fixed; inset: 0; z-index: var(--z-modal-backdrop);` _(reutiliza scrim modal porque el drawer es modal)_                                                                      | mismo                                       | Click en backdrop → `onOpenChange(false)`.                                                                                                                             |
+| Sheet (mobile)       | `background: var(--surface-elevated); border-radius: 20px 20px 0 0; border-top: 1px solid var(--border-strong); max-height: 92svh; box-shadow: var(--elevation-3);`                                                         | mismo + composición de `--elevation-3` dark | Top corners redondeados (20px), bottom corners **rectos**. Solo borde top. Drag handle 4×40 en `--border-strong` arriba.                                               |
+| Drawer (desktop)     | `background: var(--surface-elevated); border-radius: 0; border-left: 1px solid var(--border-strong); width: var(--drawer-w); height: 100vh; box-shadow: var(--elevation-2);`                                                | mismo + composición dark                    | **Totalmente rectangular** (0 radius). Solo borde izquierdo. Decisión M03-fix: humano prefiere bordes rectos en el panel exterior.                                     |
+| Header               | `padding: var(--space-4) var(--space-5); display: flex; align-items: center; gap: var(--space-3); border-bottom: 1px solid var(--border);`                                                                                  | mismo                                       | Ícono Lucide `sliders-horizontal` 18×18 en **`--accent`** (M03) + título `--text-subtitle` en `--text-primary`. `<IconButton>` `x` a la derecha en `--text-secondary`. |
+| Body                 | `padding: var(--space-4) var(--space-5); overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: var(--space-6);`                                                                                            | mismo                                       | Cada sección tiene su propio header eyebrow + control.                                                                                                                 |
+| Footer (sticky)      | `padding: var(--space-3) var(--space-5); border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: var(--space-3); background: var(--surface-elevated);`                                     | mismo                                       | Ghost `Limpiar` izq, primary `Aplicar (N resultados)` der.                                                                                                             |
+| Pill idle            | `background: var(--surface-elevated); border: 1px solid var(--border-strong); color: var(--text-secondary); font-size: var(--text-caption); padding: 5px 10px; border-radius: var(--radius-pill);`                          | mismo                                       | Tap target ≥ 44×44 mobile.                                                                                                                                             |
+| Pill selected        | `background: color-mix(in oklch, var(--accent) var(--state-selected-bg-mix), var(--surface)); border: 1px solid color-mix(in oklch, var(--accent) var(--state-selected-border-mix), var(--surface)); color: var(--accent);` | mismo                                       | Base `--surface` (no `transparent`) para coherencia cross-theme dark.                                                                                                  |
+| Icon-pill (idle)     | mismo `pill idle` + ícono `--accent-cool` leading. **Requiere label adyacente** (ADR 0006).                                                                                                                                 | mismo                                       | El ícono nunca aparece sin label.                                                                                                                                      |
+| Icon-pill (selected) | mismo `pill selected` + ícono mantiene `--accent-cool`                                                                                                                                                                      | mismo                                       | El selected state lo da bg+border, no el color del ícono.                                                                                                              |
+| Autocomplete chips   | `<Chip variant="accent">` con botón X interno. Fila encima del input de búsqueda.                                                                                                                                           | mismo                                       | X llama a `removeAutocompleteValue`. Chip usa API post-M02.                                                                                                            |
+| Autocomplete input   | `<Input type="search">` con `leadingIcon={<Search>}`. Filtra opciones disponibles en tiempo real case-insensitive.                                                                                                          | mismo                                       | Opciones ya seleccionadas no aparecen como pills.                                                                                                                      |
+| Switch row           | `display: flex; align-items: center; justify-content: space-between; padding: var(--space-2) 0;` con `<Switch>` Tier 1                                                                                                      | mismo                                       | Tap target del switch ≥ 44×44.                                                                                                                                         |
+| Pills-search input   | `<Input type="search">` Tier 1 + lista filtrable de pills debajo                                                                                                                                                            | mismo                                       | Filtro case-insensitive sobre `label`.                                                                                                                                 |
+| Disabled (state)     | `color: var(--text-muted); border-color: var(--border); pointer-events: none;` (sin `opacity`)                                                                                                                              | mismo                                       | ADR 0001 D3.                                                                                                                                                           |
+| Focus visible        | `outline: 2px solid var(--focus-ring); outline-offset: 2px;` en cualquier control interactivo                                                                                                                               | mismo                                       | —                                                                                                                                                                      |
 
 ## Mobile vs desktop
 
-- **`< --breakpoint-md`:** bottom sheet con drag handle 4×40 (`--text-muted`, `--radius-pill`) en el header. Slide vertical `translateY(100%) → translateY(0)` con `--motion-base` `--ease-out-expressive`. `max-height: var(--sheet-max-h)` (92svh). `z-index: var(--z-sheet)`. Cierre por swipe down si la posición de scroll del body está en top, o por click en backdrop. El header sticky superior del sheet absorbe el drag handle.
-- **`≥ --breakpoint-md`:** drawer derecho width `--drawer-w` (440px). Slide horizontal `translateX(100%) → translateX(0)` con `--motion-base` `--ease-out-expressive`. `border-radius: var(--radius-xl) 0 0 var(--radius-xl)`. `z-index: var(--z-drawer)`. Sin drag handle; cierre via X, Esc o click en backdrop.
+- **`< --breakpoint-md`:** bottom sheet. Drag handle `4px × 36px` en `--border-strong` visible encima del header. `border-radius: 20px 20px 0 0` (solo top corners). `border-top: 1px solid var(--border-strong)`. `max-height: 92svh`. Animación `translateY(100%) → translateY(0)`. Cierre via X, Esc o click en backdrop.
+- **`≥ --breakpoint-md`:** drawer derecho `440px`. **Completamente rectangular** (`border-radius: 0`). `border-left: 1px solid var(--border-strong)`. Sin drag handle. Animación `translateX(100%) → translateX(0)`. Cierre via X, Esc o click en backdrop. _Decisión M03-fix (2026-05-03): humano prefiere bordes rectos en el panel exterior del drawer._
 
 El `config` es idéntico en ambos breakpoints — sólo cambia el chrome. La cantidad y orden de secciones se preserva.
 
@@ -166,21 +185,21 @@ El `config` es idéntico en ambos breakpoints — sólo cambia el chrome. La can
 
 ## Copy default + i18n
 
-| Clave i18n sugerida                                  | Valor ES (voice glossary aplicado)         |
-| ---------------------------------------------------- | ------------------------------------------ |
-| `components.filterDrawer.title.orders`               | "Filtrar pedidos"                          |
-| `components.filterDrawer.title.deliveries`           | "Filtrar entregas"                         |
-| `components.filterDrawer.title.stores`               | "Filtrar tiendas"                          |
-| `components.filterDrawer.actions.clear`              | "Limpiar"                                  |
-| `components.filterDrawer.actions.apply`              | "Aplicar ({count} resultados)"             |
-| `components.filterDrawer.actions.applyZero`          | "Aplicar (sin resultados)"                 |
-| `components.filterDrawer.actions.close`              | "Cerrar"                                   |
-| `components.filterDrawer.search.placeholder`         | "Buscar"                                   |
-| `components.filterDrawer.dateRange.from`             | "Desde"                                    |
-| `components.filterDrawer.dateRange.to`               | "Hasta"                                    |
-| `components.filterDrawer.aria.dialog`                | "Filtros"                                  |
-| `components.filterDrawer.aria.resultsLive`           | "{count} resultados"                       |
-| `components.filterDrawer.empty.search`               | "Nada con eso. Probá otro término."        |
+| Clave i18n sugerida                          | Valor ES (voice glossary aplicado)  |
+| -------------------------------------------- | ----------------------------------- |
+| `components.filterDrawer.title.orders`       | "Filtrar pedidos"                   |
+| `components.filterDrawer.title.deliveries`   | "Filtrar entregas"                  |
+| `components.filterDrawer.title.stores`       | "Filtrar tiendas"                   |
+| `components.filterDrawer.actions.clear`      | "Limpiar"                           |
+| `components.filterDrawer.actions.apply`      | "Aplicar ({count} resultados)"      |
+| `components.filterDrawer.actions.applyZero`  | "Aplicar (sin resultados)"          |
+| `components.filterDrawer.actions.close`      | "Cerrar"                            |
+| `components.filterDrawer.search.placeholder` | "Buscar"                            |
+| `components.filterDrawer.dateRange.from`     | "Desde"                             |
+| `components.filterDrawer.dateRange.to`       | "Hasta"                             |
+| `components.filterDrawer.aria.dialog`        | "Filtros"                           |
+| `components.filterDrawer.aria.resultsLive`   | "{count} resultados"                |
+| `components.filterDrawer.empty.search`       | "Nada con eso. Probá otro término." |
 
 EN se deja para S12.
 

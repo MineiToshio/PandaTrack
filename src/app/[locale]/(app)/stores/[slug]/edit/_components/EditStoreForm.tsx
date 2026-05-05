@@ -1,30 +1,32 @@
 "use client";
 
-import { Box, Globe, Link2, MapPinned, MessageSquare, Plus, Store } from "lucide-react";
+import { Box, Globe, Plus } from "lucide-react";
 import { type FormEvent, startTransition, useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import posthog from "posthog-js";
 import Button from "@/components/core/Button/Button";
+import Eyebrow from "@/components/core/Eyebrow";
 import FieldCharacterCount from "@/components/core/FieldCharacterCount";
 import Input from "@/components/core/Input";
-import AppPageHero from "@/components/modules/AppPageHero";
 import Label from "@/components/core/Label";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
+import BackNavLink from "@/components/core/BackNavLink";
+import type { StepperStep } from "@/components/core/Stepper";
+import { WizardAccordion, WizardStep } from "@/components/modules/WizardAccordion";
+import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { STORE_LOGO_MAX_SOURCE_SIZE_MB } from "@/lib/store/logoShared";
 import type { EditableStore, EditableStoreInput, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
-import BackNavLink from "@/components/core/BackNavLink";
 import StoreAddressList from "../../../_components/share/StoreAddressList";
 import StoreContactChannelList, {
   STORE_CONTACT_CHANNEL_TYPES,
   type StoreContactChannelType,
 } from "../../../_components/share/StoreContactChannelList";
 import StoreEmptyStateBox from "../../../_components/share/StoreEmptyStateBox";
-import StoreFormSectionCard from "../../../_components/share/StoreFormSectionCard";
 import StoreLogoField, { type StoreLogoSubmission } from "../../../_components/share/StoreLogoField/StoreLogoField";
 import CollectorCountryFlagEmoji from "../../../_components/share/CollectorCountryFlagEmoji";
-import StoreMultiTagAutocomplete from "../../../_components/share/StoreMultiTagAutocomplete";
+import MultiTagAutocomplete from "@/components/core/MultiTagAutocomplete";
 import StoreProductTypeRequestModal from "../../../_components/share/StoreProductTypeRequestModal";
 import StoreToggleSwitch from "../../../_components/share/StoreToggleSwitch";
 import ToggleChoiceGroup from "@/components/core/ToggleChoiceGroup";
@@ -50,6 +52,7 @@ export default function EditStoreForm({
   existingChangeRequest,
 }: EditStoreFormProps) {
   const t = useTranslations("stores");
+  const tRedesign = useTranslations("stores.redesign.create");
   const tCountries = useTranslations("countries");
   const tProductTypes = useTranslations("storeProductTypes");
   const tChannelTypes = useTranslations("stores.contactChannelTypes");
@@ -69,6 +72,7 @@ export default function EditStoreForm({
   const [selectedImportCountries, setSelectedImportCountries] = useState(initialValues.importCountries ?? []);
   const [hasStock, setHasStock] = useState(Boolean(initialValues.hasStock));
   const [receivesOrders, setReceivesOrders] = useState(Boolean(initialValues.receivesOrders));
+  const [isPrivate, setIsPrivate] = useState(Boolean(initialValues.isPrivate));
   const [comment, setComment] = useState(existingChangeRequest?.comment ?? "");
   const [contactChannelRows, setContactChannelRows] = useState<number[]>(
     initialValues.contactChannels?.map((_, index) => index + 1) ?? [],
@@ -105,6 +109,7 @@ export default function EditStoreForm({
 
   const nextContactRowIdRef = useRef(contactChannelRows.length + 1);
   const nextAddressRowIdRef = useRef(addressRows.length + 1);
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   const [state, formAction, isPending] = useActionState(
     async (_prev: SaveStoreEditResult | null, formData: FormData) => saveStoreEdit(_prev, formData),
@@ -233,7 +238,6 @@ export default function EditStoreForm({
 
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     const nextFormData = new FormData(event.currentTarget);
     if (store.storeType === "BUSINESS") {
       nextFormData.set("logoAction", logoSubmission.action);
@@ -247,19 +251,36 @@ export default function EditStoreForm({
     } else {
       nextFormData.set("logoAction", "keep");
     }
-
     handleSubmit(nextFormData);
   };
 
+  const triggerSubmit = () => formRef.current?.requestSubmit();
+
+  const stepperSteps: StepperStep[] = useMemo(() => {
+    const baseSteps: StepperStep[] = [
+      { n: 1, label: tRedesign("step2.eyebrow") },
+      { n: 2, label: tRedesign("step3.eyebrow") },
+    ];
+    if (store.storeType === "BUSINESS") {
+      baseSteps.push({ n: 3, label: tRedesign("step4.eyebrow") });
+    }
+    baseSteps.push({ n: store.storeType === "BUSINESS" ? 4 : 3, label: tRedesign("step5.eyebrow") });
+    return baseSteps;
+  }, [store.storeType, tRedesign]);
+
+  const reviewStepN = store.storeType === "BUSINESS" ? 4 : 3;
+
+  const step1Valid = name.trim().length > 0;
+  const step2Valid = selectedProductTypeKeys.length > 0 && presenceTypes.length > 0;
+
   return (
-    <div className="space-y-6">
-      <div className="space-y-3">
-        <BackNavLink href={`/${locale}${ROUTES.stores}/${store.slug}`}>{t("edit.backToDetail")}</BackNavLink>
-        <AppPageHero
-          eyebrow={t(`${modeKey}.shortLabel`)}
-          title={t(`${modeKey}.title`, { storeName: store.name })}
-          description={t(`${modeKey}.description`)}
-        />
+    <div className="space-y-4">
+      <BackNavLink href={`/${locale}${ROUTES.stores}/${store.slug}`}>{t("edit.backToDetail")}</BackNavLink>
+      <div>
+        <Eyebrow as="p">{t(`${modeKey}.shortLabel` as never)}</Eyebrow>
+        <p className="mt-1 [font-size:var(--text-body)] [color:var(--text-secondary)]">
+          {t(`${modeKey}.description` as never)}
+        </p>
       </div>
 
       {serverError && (
@@ -268,331 +289,440 @@ export default function EditStoreForm({
         </Typography>
       )}
 
-      <form className="space-y-5" onSubmit={handleFormSubmit}>
+      <form ref={formRef} onSubmit={handleFormSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <input type="hidden" name="slug" value={store.slug} />
         <input type="hidden" name="locale" value={locale} />
         <input type="hidden" name="storeType" value={store.storeType} />
         <input type="hidden" name="countryCode" value={store.countryCode} />
+        {hasStock && <input type="hidden" name="hasStock" value="on" />}
+        {receivesOrders && <input type="hidden" name="receivesOrders" value="on" />}
+        {store.storeType === "PERSON" && isPrivate && <input type="hidden" name="isPrivate" value="on" />}
 
-        <StoreFormSectionCard
-          eyebrow={t("edit.identityEyebrow")}
-          title={t("edit.identityTitle")}
-          icon={Store}
-          iconClassName="text-primary"
-        >
-          <div>
-            <Label htmlFor="edit-store-name">{t("create.nameLabel")}</Label>
-            <Input
-              id="edit-store-name"
-              name="name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              maxLength={200}
-              error={Boolean(fieldErrors.name?.[0])}
-              aria-invalid={Boolean(fieldErrors.name?.[0])}
-            />
-            <div className="mt-1 flex items-center justify-between gap-3">
-              <Typography size="xs" className="text-text-muted">
-                {t("edit.immutableFieldsHelper", {
-                  storeType:
-                    store.storeType === "BUSINESS" ? t("create.storeTypeBusiness") : t("create.storeTypePerson"),
-                  country: tCountries(store.countryCode),
-                })}
-              </Typography>
-              <Typography size="xs" className="text-text-muted">
-                <FieldCharacterCount currentLength={name.length} maxLength={200} />
-              </Typography>
-            </div>
-            {fieldErrors.name?.[0] && (
-              <Typography size="xs" className="text-destructive mt-1" role="alert">
-                {renderError(fieldErrors.name[0])}
-              </Typography>
-            )}
-          </div>
-
-          <div>
-            <Label htmlFor="edit-store-description">{t("create.descriptionLabel")}</Label>
-            <Textarea
-              id="edit-store-description"
-              name="description"
-              rows={4}
-              value={description}
-              onChange={(event) => setDescription(event.target.value)}
-              maxLength={2000}
-              className="resize-y"
-            />
-            <div className="mt-1 flex justify-end">
-              <Typography size="xs" className="text-text-muted">
-                <FieldCharacterCount currentLength={description.length} maxLength={2000} />
-              </Typography>
-            </div>
-          </div>
-
-          {store.storeType === "BUSINESS" ? (
-            <StoreLogoField
-              id="edit-store-logo"
-              initialLogoUrl={initialValues.logoUrl ?? null}
-              copy={{
-                label: t("logo.label"),
-                helper: t("logo.helper"),
-                emptyTitle: t("logo.emptyTitle"),
-                emptyDescription: t("logo.emptyDescription"),
-                uploadCta: t("logo.uploadCta"),
-                editCta: t("logo.editCta"),
-                replaceCta: t("logo.replaceCta"),
-                removeCta: t("logo.removeCta"),
-                editorTitle: t("logo.editorTitle"),
-                editorDescription: t("logo.editorDescription"),
-                zoomLabel: t("logo.zoomLabel"),
-                editorCancel: t("logo.editorCancel"),
-                editorConfirm: t("logo.editorConfirm"),
-                acceptedFormats: t("logo.acceptedFormats"),
-                maxSize: t("logo.maxSize", { size: STORE_LOGO_MAX_SOURCE_SIZE_MB }),
-              }}
-              error={fieldErrors.logo?.[0] ?? null}
-              renderError={renderError}
-              onChange={setLogoSubmission}
-              onRemove={() =>
-                posthog.capture(POSTHOG_EVENTS.STORE.LOGO_REMOVED, {
-                  flow: "edit",
-                  mode: canDirectlyEdit ? "direct" : "change_request",
-                  store_slug: store.slug,
-                })
-              }
-            />
-          ) : null}
-        </StoreFormSectionCard>
-
-        <StoreFormSectionCard
-          eyebrow={t("edit.catalogEyebrow")}
-          title={t("edit.catalogTitle")}
-          icon={Box}
-          iconClassName="text-highlight"
-        >
-          <div className="space-y-3">
-            <Label>{t("create.presenceLabel")}</Label>
-            <ToggleChoiceGroup
-              mode="multiple"
-              options={presenceOptions}
-              selectedValues={presenceTypes}
-              onChange={(values) => setPresenceTypes(values as Array<"ONLINE" | "PHYSICAL">)}
-              formName="presenceTypes"
-            />
-            {fieldErrors.presenceTypes?.[0] && (
-              <Typography size="xs" className="text-destructive" role="alert">
-                {renderError(fieldErrors.presenceTypes[0])}
-              </Typography>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <StoreToggleSwitch
-              label={t("create.hasStockLabel")}
-              checked={hasStock}
-              onChange={setHasStock}
-              name="hasStock"
-            />
-            <StoreToggleSwitch
-              label={t("create.receivesOrdersLabel")}
-              checked={receivesOrders}
-              onChange={setReceivesOrders}
-              name="receivesOrders"
-            />
-          </div>
-
-          <div className="space-y-3">
-            <Label>{t("create.productTypesLabel")}</Label>
-            <ToggleChoiceGroup
-              mode="multiple"
-              options={productTypeOptions}
-              selectedValues={selectedProductTypeKeys}
-              onChange={setSelectedProductTypeKeys}
-              formName="productTypeKeys"
-              trailingSlot={<StoreProductTypeRequestModal locale={locale} source="edit" triggerVariant="chip" />}
-            />
-          </div>
-
-          <div className="space-y-3">
-            <Label htmlFor="edit-import-countries">{t("create.importCountriesLabel")}</Label>
-            <StoreMultiTagAutocomplete
-              id="edit-import-countries"
-              options={countryOptions}
-              selectedValues={selectedImportCountries}
-              onChange={setSelectedImportCountries}
-              placeholder={t("create.importCountriesPlaceholder")}
-              inputName="importCountries"
-              helperText={t("create.importCountriesHelper")}
-              removeItemAriaLabel={(itemLabel) => `${t("create.remove")} ${itemLabel}`}
-            />
-          </div>
-        </StoreFormSectionCard>
-
-        {store.storeType === "BUSINESS" && (
-          <section className="space-y-5">
-            <StoreFormSectionCard
-              eyebrow={t("edit.contactEyebrow")}
-              title={t("create.contactChannelsLabel")}
-              icon={Link2}
-              iconClassName="text-success"
-              action={
-                <Button type="button" variant="secondary" size="sm" onClick={handleAddContactChannel}>
-                  <Plus size={16} className="mr-1" aria-hidden />
-                  {t("create.addContactChannel")}
-                </Button>
-              }
+        <div className="min-w-0">
+          <WizardAccordion startStep={1} steps={stepperSteps} stepperAriaLabel={tRedesign("stepperLabel")}>
+            {/* ── Step 1: Identidad ── */}
+            <WizardStep
+              n={1}
+              eyebrow={tRedesign("step2.eyebrow")}
+              title={tRedesign("step2.title")}
+              primaryAction={{ label: tRedesign("continue"), disabled: !step1Valid }}
+              summary={name || undefined}
             >
-              {contactChannelRows.length === 0 ? (
-                <StoreEmptyStateBox message={t("create.noContactChannels")} />
-              ) : (
-                <StoreContactChannelList
-                  idPrefix="edit-contact-channel"
-                  rows={contactChannelRows.map((rowId, rowIndex) => ({
-                    rowId,
-                    rowIndex,
-                    type: getContactChannelTypeForRow(rowId),
-                    value: contactChannelValuesByRowId[rowId] ?? "",
-                    label: contactChannelLabelsByRowId[rowId] ?? "",
-                    typeError: fieldErrors[`contactChannels.${rowIndex}.type`]?.[0] ?? undefined,
-                    valueError: getContactChannelValueError(rowIndex) ?? undefined,
-                    labelError: getContactChannelLabelError(rowIndex) ?? undefined,
-                  }))}
-                  typeInputName="contactChannelType"
-                  valueInputName="contactChannelValue"
-                  labelInputName="contactChannelLabel"
-                  typeLabel={t("create.contactChannelType")}
-                  valueLabel={t("create.contactChannelValue")}
-                  labelLabel={t("create.contactChannelLabel")}
-                  removeLabel={t("create.remove")}
-                  optionLabel={(type) => tChannelTypes(type)}
-                  valuePlaceholder={(type) => t(`create.contactChannelPlaceholder.${type}` as never)}
-                  onTypeChange={(rowId, nextType) => {
-                    setContactChannelTypeByRowId((previous) => ({
-                      ...previous,
-                      [rowId]: nextType,
-                    }));
-                  }}
-                  onValueChange={(rowId, nextValue) => {
-                    setContactChannelValuesByRowId((previous) => ({
-                      ...previous,
-                      [rowId]: nextValue,
-                    }));
-                  }}
-                  onLabelChange={(rowId, nextValue) => {
-                    setContactChannelLabelsByRowId((previous) => ({
-                      ...previous,
-                      [rowId]: nextValue,
-                    }));
-                  }}
-                  onRemove={handleRemoveContactChannel}
-                  renderValueError={renderError}
-                  renderLabelError={renderError}
-                />
-              )}
-            </StoreFormSectionCard>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <Label htmlFor="edit-store-name">{t("create.nameLabel")}</Label>
+                  <Input
+                    id="edit-store-name"
+                    name="name"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    maxLength={200}
+                    error={Boolean(fieldErrors.name?.[0])}
+                    aria-invalid={Boolean(fieldErrors.name?.[0])}
+                  />
+                  <div className="mt-1 flex items-center justify-between gap-3">
+                    <Typography size="xs" className="text-text-muted">
+                      {t("edit.immutableFieldsHelper", {
+                        storeType:
+                          store.storeType === "BUSINESS" ? t("create.storeTypeBusiness") : t("create.storeTypePerson"),
+                        country: tCountries(store.countryCode),
+                      })}
+                    </Typography>
+                    <Typography size="xs" className="text-text-muted">
+                      <FieldCharacterCount currentLength={name.length} maxLength={200} />
+                    </Typography>
+                  </div>
+                  {fieldErrors.name?.[0] && (
+                    <Typography size="xs" className="text-destructive mt-1" role="alert">
+                      {renderError(fieldErrors.name[0])}
+                    </Typography>
+                  )}
+                </div>
 
-            <StoreFormSectionCard
-              eyebrow={t("edit.addressEyebrow")}
-              title={t("create.addressesLabel")}
-              icon={MapPinned}
-              iconClassName="text-accent"
-              action={
-                <Button type="button" variant="secondary" size="sm" onClick={handleAddAddress}>
-                  <Plus size={16} className="mr-1" aria-hidden />
-                  {t("create.addAddress")}
-                </Button>
-              }
-            >
-              {addressRows.length === 0 ? (
-                <StoreEmptyStateBox message={t("create.noAddresses")} />
-              ) : (
-                <StoreAddressList
-                  idPrefix="edit-address"
-                  rows={addressRows.map((rowId, rowIndex) => ({
-                    rowId,
-                    rowIndex,
-                    countryCode: addressCountryByRowId[rowId] ?? "",
-                    city: addressCityByRowId[rowId] ?? "",
-                    addressLine: addressLineByRowId[rowId] ?? "",
-                    reference: addressReferenceByRowId[rowId] ?? "",
-                    countryError: fieldErrors[`addresses.${rowIndex}.countryCode`]?.[0] ?? undefined,
-                    cityError: fieldErrors[`addresses.${rowIndex}.city`]?.[0] ?? undefined,
-                    addressLineError: fieldErrors[`addresses.${rowIndex}.addressLine`]?.[0] ?? undefined,
-                    referenceError: fieldErrors[`addresses.${rowIndex}.reference`]?.[0] ?? undefined,
-                  }))}
-                  countryOptions={countryOptions}
-                  emptyCountryLabel="-"
-                  countryLabel={t("create.addressCountry")}
-                  cityLabel={t("create.addressCity")}
-                  addressLineLabel={t("create.addressLine")}
-                  referenceLabel={t("create.addressReference")}
-                  countryInputName="addressCountryCode"
-                  cityInputName="addressCity"
-                  addressLineInputName="addressAddressLine"
-                  referenceInputName="addressReference"
-                  removeLabel={t("create.remove")}
-                  rowLabel={(index) => t("create.addressItemLabel", { index: index + 1 })}
-                  onCountryChange={(rowId, nextValue) => {
-                    setAddressCountryByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
-                  }}
-                  onCityChange={(rowId, nextValue) => {
-                    setAddressCityByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
-                  }}
-                  onAddressLineChange={(rowId, nextValue) => {
-                    setAddressLineByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
-                  }}
-                  onReferenceChange={(rowId, nextValue) => {
-                    setAddressReferenceByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
-                  }}
-                  onRemove={handleRemoveAddress}
-                  renderCountryError={renderError}
-                  renderCityError={renderError}
-                  renderAddressLineError={renderError}
-                  renderReferenceError={renderError}
-                />
-              )}
-            </StoreFormSectionCard>
-          </section>
-        )}
+                <div className="md:col-span-2">
+                  <Label htmlFor="edit-store-description">{t("create.descriptionLabel")}</Label>
+                  <Textarea
+                    id="edit-store-description"
+                    name="description"
+                    rows={4}
+                    value={description}
+                    onChange={(event) => setDescription(event.target.value)}
+                    maxLength={2000}
+                    className="resize-y"
+                  />
+                  <div className="mt-1 flex justify-end">
+                    <Typography size="xs" className="text-text-muted">
+                      <FieldCharacterCount currentLength={description.length} maxLength={2000} />
+                    </Typography>
+                  </div>
+                </div>
 
-        {!canDirectlyEdit && (
-          <StoreFormSectionCard
-            eyebrow={t("edit.commentEyebrow")}
-            title={t("edit.commentTitle")}
-            icon={MessageSquare}
-            iconClassName="text-info"
-          >
-            <div>
-              <Label htmlFor="edit-change-request-comment">{t("edit.commentLabel")}</Label>
-              <Textarea
-                id="edit-change-request-comment"
-                name="comment"
-                rows={4}
-                value={comment}
-                onChange={(event) => setComment(event.target.value)}
-                maxLength={500}
-                className="mt-1 resize-y"
-              />
-              <div className="mt-1 flex items-center justify-between gap-3">
-                <Typography size="xs" className="text-text-muted">
-                  {t("edit.commentHelper")}
-                </Typography>
-                <Typography size="xs" className="text-text-muted">
-                  <FieldCharacterCount currentLength={comment.length} maxLength={500} />
-                </Typography>
+                {store.storeType === "BUSINESS" && (
+                  <div className="md:col-span-2">
+                    <StoreLogoField
+                      id="edit-store-logo"
+                      initialLogoUrl={initialValues.logoUrl ?? null}
+                      copy={{
+                        label: t("logo.label"),
+                        helper: t("logo.helper"),
+                        emptyTitle: t("logo.emptyTitle"),
+                        emptyDescription: t("logo.emptyDescription"),
+                        uploadCta: t("logo.uploadCta"),
+                        editCta: t("logo.editCta"),
+                        replaceCta: t("logo.replaceCta"),
+                        removeCta: t("logo.removeCta"),
+                        editorTitle: t("logo.editorTitle"),
+                        editorDescription: t("logo.editorDescription"),
+                        zoomLabel: t("logo.zoomLabel"),
+                        editorCancel: t("logo.editorCancel"),
+                        editorConfirm: t("logo.editorConfirm"),
+                        acceptedFormats: t("logo.acceptedFormats"),
+                        maxSize: t("logo.maxSize", { size: STORE_LOGO_MAX_SOURCE_SIZE_MB }),
+                      }}
+                      error={fieldErrors.logo?.[0] ?? null}
+                      renderError={renderError}
+                      onChange={setLogoSubmission}
+                      onRemove={() =>
+                        posthog.capture(POSTHOG_EVENTS.STORE.LOGO_REMOVED, {
+                          flow: "edit",
+                          mode: canDirectlyEdit ? "direct" : "change_request",
+                          store_slug: store.slug,
+                        })
+                      }
+                    />
+                  </div>
+                )}
               </div>
-            </div>
-          </StoreFormSectionCard>
-        )}
+            </WizardStep>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Button type="submit" variant="primary" disabled={isPending}>
-            {isPending ? t(`${modeKey}.submitting`) : t(`${modeKey}.submitCta`)}
-          </Button>
-          <BackNavLink appearance="button" href={`/${locale}${ROUTES.stores}/${store.slug}`}>
-            {t("edit.cancelCta")}
-          </BackNavLink>
+            {/* ── Step 2: Categorías y presencia ── */}
+            <WizardStep
+              n={2}
+              eyebrow={tRedesign("step3.eyebrow")}
+              title={tRedesign("step3.title")}
+              primaryAction={{ label: tRedesign("continue"), disabled: !step2Valid }}
+              secondaryAction={{ label: tRedesign("back") }}
+              summary={
+                selectedProductTypeKeys.length > 0
+                  ? selectedProductTypeKeys.length === 1
+                    ? tProductTypes(selectedProductTypeKeys[0])
+                    : `${selectedProductTypeKeys.length}`
+                  : undefined
+              }
+            >
+              <div className="space-y-5">
+                <div className="space-y-3">
+                  <Label>{t("create.productTypesLabel")}</Label>
+                  <ToggleChoiceGroup
+                    mode="multiple"
+                    options={productTypeOptions}
+                    selectedValues={selectedProductTypeKeys}
+                    onChange={setSelectedProductTypeKeys}
+                    formName="productTypeKeys"
+                    trailingSlot={<StoreProductTypeRequestModal locale={locale} source="edit" triggerVariant="chip" />}
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <Label>{t("create.presenceLabel")}</Label>
+                  <ToggleChoiceGroup
+                    mode="multiple"
+                    options={presenceOptions}
+                    selectedValues={presenceTypes}
+                    onChange={(values) => setPresenceTypes(values as Array<"ONLINE" | "PHYSICAL">)}
+                    formName="presenceTypes"
+                  />
+                  {fieldErrors.presenceTypes?.[0] && (
+                    <Typography size="xs" className="text-destructive" role="alert">
+                      {renderError(fieldErrors.presenceTypes[0])}
+                    </Typography>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <StoreToggleSwitch label={t("create.hasStockLabel")} checked={hasStock} onChange={setHasStock} />
+                  <StoreToggleSwitch
+                    label={t("create.receivesOrdersLabel")}
+                    checked={receivesOrders}
+                    onChange={setReceivesOrders}
+                  />
+                  {store.storeType === "PERSON" && (
+                    <StoreToggleSwitch
+                      label={tRedesign("step1.privateLabel")}
+                      checked={isPrivate}
+                      onChange={setIsPrivate}
+                    />
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="edit-import-countries">{t("create.importCountriesLabel")}</Label>
+                  <MultiTagAutocomplete
+                    id="edit-import-countries"
+                    options={countryOptions}
+                    selectedValues={selectedImportCountries}
+                    onChange={setSelectedImportCountries}
+                    placeholder={t("create.importCountriesPlaceholder")}
+                    inputName="importCountries"
+                    helperText={t("create.importCountriesHelper")}
+                    removeItemAriaLabel={(itemLabel) => `${t("create.remove")} ${itemLabel}`}
+                  />
+                </div>
+              </div>
+            </WizardStep>
+
+            {/* ── Step 3: Canales (BUSINESS only) ── */}
+            {store.storeType === "BUSINESS" && (
+              <WizardStep
+                n={3}
+                eyebrow={tRedesign("step4.eyebrow")}
+                title={tRedesign("step4.title")}
+                primaryAction={{ label: tRedesign("continue") }}
+                secondaryAction={{ label: tRedesign("back") }}
+                summary={
+                  contactChannelRows.length + addressRows.length > 0
+                    ? `${contactChannelRows.length + addressRows.length}`
+                    : undefined
+                }
+              >
+                <div className="space-y-5">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>{t("create.contactChannelsLabel")}</Label>
+                      <Button type="button" variant="secondary" size="sm" onClick={handleAddContactChannel}>
+                        <Plus size={16} className="mr-1" aria-hidden />
+                        {t("create.addContactChannel")}
+                      </Button>
+                    </div>
+                    {contactChannelRows.length === 0 ? (
+                      <StoreEmptyStateBox message={t("create.noContactChannels")} />
+                    ) : (
+                      <StoreContactChannelList
+                        idPrefix="edit-contact-channel"
+                        rows={contactChannelRows.map((rowId, rowIndex) => ({
+                          rowId,
+                          rowIndex,
+                          type: getContactChannelTypeForRow(rowId),
+                          value: contactChannelValuesByRowId[rowId] ?? "",
+                          label: contactChannelLabelsByRowId[rowId] ?? "",
+                          typeError: fieldErrors[`contactChannels.${rowIndex}.type`]?.[0] ?? undefined,
+                          valueError: getContactChannelValueError(rowIndex) ?? undefined,
+                          labelError: getContactChannelLabelError(rowIndex) ?? undefined,
+                        }))}
+                        typeInputName="contactChannelType"
+                        valueInputName="contactChannelValue"
+                        labelInputName="contactChannelLabel"
+                        typeLabel={t("create.contactChannelType")}
+                        valueLabel={t("create.contactChannelValue")}
+                        labelLabel={t("create.contactChannelLabel")}
+                        removeLabel={t("create.remove")}
+                        optionLabel={(type) => tChannelTypes(type)}
+                        valuePlaceholder={(type) => t(`create.contactChannelPlaceholder.${type}` as never)}
+                        onTypeChange={(rowId, nextType) => {
+                          setContactChannelTypeByRowId((previous) => ({ ...previous, [rowId]: nextType }));
+                        }}
+                        onValueChange={(rowId, nextValue) => {
+                          setContactChannelValuesByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
+                        }}
+                        onLabelChange={(rowId, nextValue) => {
+                          setContactChannelLabelsByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
+                        }}
+                        onRemove={handleRemoveContactChannel}
+                        renderValueError={renderError}
+                        renderLabelError={renderError}
+                      />
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>{t("create.addressesLabel")}</Label>
+                      <Button type="button" variant="secondary" size="sm" onClick={handleAddAddress}>
+                        <Plus size={16} className="mr-1" aria-hidden />
+                        {t("create.addAddress")}
+                      </Button>
+                    </div>
+                    {addressRows.length === 0 ? (
+                      <StoreEmptyStateBox message={t("create.noAddresses")} />
+                    ) : (
+                      <StoreAddressList
+                        idPrefix="edit-address"
+                        rows={addressRows.map((rowId, rowIndex) => ({
+                          rowId,
+                          rowIndex,
+                          countryCode: addressCountryByRowId[rowId] ?? "",
+                          city: addressCityByRowId[rowId] ?? "",
+                          addressLine: addressLineByRowId[rowId] ?? "",
+                          reference: addressReferenceByRowId[rowId] ?? "",
+                          countryError: fieldErrors[`addresses.${rowIndex}.countryCode`]?.[0] ?? undefined,
+                          cityError: fieldErrors[`addresses.${rowIndex}.city`]?.[0] ?? undefined,
+                          addressLineError: fieldErrors[`addresses.${rowIndex}.addressLine`]?.[0] ?? undefined,
+                          referenceError: fieldErrors[`addresses.${rowIndex}.reference`]?.[0] ?? undefined,
+                        }))}
+                        countryOptions={countryOptions}
+                        emptyCountryLabel="-"
+                        countryLabel={t("create.addressCountry")}
+                        cityLabel={t("create.addressCity")}
+                        addressLineLabel={t("create.addressLine")}
+                        referenceLabel={t("create.addressReference")}
+                        countryInputName="addressCountryCode"
+                        cityInputName="addressCity"
+                        addressLineInputName="addressAddressLine"
+                        referenceInputName="addressReference"
+                        removeLabel={t("create.remove")}
+                        rowLabel={(index) => t("create.addressItemLabel", { index: index + 1 })}
+                        onCountryChange={(rowId, nextValue) => {
+                          setAddressCountryByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
+                        }}
+                        onCityChange={(rowId, nextValue) => {
+                          setAddressCityByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
+                        }}
+                        onAddressLineChange={(rowId, nextValue) => {
+                          setAddressLineByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
+                        }}
+                        onReferenceChange={(rowId, nextValue) => {
+                          setAddressReferenceByRowId((previous) => ({ ...previous, [rowId]: nextValue }));
+                        }}
+                        onRemove={handleRemoveAddress}
+                        renderCountryError={renderError}
+                        renderCityError={renderError}
+                        renderAddressLineError={renderError}
+                        renderReferenceError={renderError}
+                      />
+                    )}
+                  </div>
+                </div>
+              </WizardStep>
+            )}
+
+            {/* ── Step 4 (BUSINESS) / Step 3 (PERSON): Listo ── */}
+            <WizardStep
+              n={reviewStepN}
+              eyebrow={tRedesign("step5.eyebrow")}
+              title={tRedesign("step5.title")}
+              primaryAction={{
+                label: isPending ? t(`${modeKey}.submitting` as never) : t(`${modeKey}.submitCta` as never),
+                onClick: triggerSubmit,
+                loading: isPending,
+              }}
+              secondaryAction={{ label: tRedesign("back") }}
+              autoAdvance={false}
+            >
+              <div className="space-y-4">
+                {!canDirectlyEdit && (
+                  <div>
+                    <Label htmlFor="edit-change-request-comment">{t("edit.commentLabel")}</Label>
+                    <Textarea
+                      id="edit-change-request-comment"
+                      name="comment"
+                      rows={4}
+                      value={comment}
+                      onChange={(event) => setComment(event.target.value)}
+                      maxLength={500}
+                      className="mt-1 resize-y"
+                    />
+                    <div className="mt-1 flex items-center justify-between gap-3">
+                      <Typography size="xs" className="text-text-muted">
+                        {t("edit.commentHelper")}
+                      </Typography>
+                      <Typography size="xs" className="text-text-muted">
+                        <FieldCharacterCount currentLength={comment.length} maxLength={500} />
+                      </Typography>
+                    </div>
+                  </div>
+                )}
+
+                <div className="rounded-[var(--radius-md)] p-3 [background:var(--surface)] [border:1px_solid_var(--border)]">
+                  <Eyebrow as="p">{tRedesign("summaryEyebrow")}</Eyebrow>
+                  <dl className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <SummaryRow label={t("create.nameLabel")} value={name || "—"} />
+                    <SummaryRow
+                      label={t("create.presenceLabel")}
+                      value={
+                        presenceTypes
+                          .map((p) =>
+                            t(
+                              `create.presence${p === "ONLINE" ? "Online" : "Physical"}` as
+                                | "create.presenceOnline"
+                                | "create.presencePhysical",
+                            ),
+                          )
+                          .join(" · ") || "—"
+                      }
+                    />
+                    <SummaryRow
+                      label={t("create.productTypesLabel")}
+                      value={selectedProductTypeKeys.map((k) => tProductTypes(k)).join(" · ") || "—"}
+                    />
+                    {selectedImportCountries.length > 0 && (
+                      <SummaryRow
+                        label={t("create.importCountriesLabel")}
+                        value={selectedImportCountries.map((code) => tCountries(code)).join(" · ")}
+                      />
+                    )}
+                    {store.storeType === "BUSINESS" && contactChannelRows.length > 0 && (
+                      <SummaryRow label={t("create.contactChannelsLabel")} value={`${contactChannelRows.length}`} />
+                    )}
+                    {store.storeType === "BUSINESS" && addressRows.length > 0 && (
+                      <SummaryRow label={t("create.addressesLabel")} value={`${addressRows.length}`} />
+                    )}
+                  </dl>
+                </div>
+              </div>
+            </WizardStep>
+          </WizardAccordion>
         </div>
+
+        {/* ── Aside Resumen sticky ── */}
+        <aside className="lg:[position:sticky] lg:[top:calc(var(--header-h-desktop,4rem)_+_var(--space-4,1rem))] lg:self-start">
+          <div className="rounded-[var(--radius-xl)] p-4 [background:var(--surface-elevated)] [border:1px_solid_var(--border)] md:p-5">
+            <Eyebrow as="p">{tRedesign("summaryEyebrow")}</Eyebrow>
+            <dl className="mt-3 flex flex-col">
+              <AsideSummaryRow
+                label={t("create.storeTypeLabel")}
+                value={store.storeType === "BUSINESS" ? t("create.storeTypeBusiness") : t("create.storeTypePerson")}
+              />
+              <AsideSummaryRow label={t("create.nameLabel")} value={name || "—"} muted={!name} />
+              <AsideSummaryRow label={t("create.countryLabel")} value={tCountries(store.countryCode)} />
+              <AsideSummaryRow
+                label={t("create.productTypesLabel")}
+                value={selectedProductTypeKeys.length > 0 ? `${selectedProductTypeKeys.length}` : "—"}
+                muted={selectedProductTypeKeys.length === 0}
+              />
+              {store.storeType === "PERSON" && isPrivate && (
+                <AsideSummaryRow label={tRedesign("step1.privateLabel")} value="✓" />
+              )}
+            </dl>
+          </div>
+        </aside>
       </form>
+    </div>
+  );
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <dt>
+        <Eyebrow as="span">{label}</Eyebrow>
+      </dt>
+      <dd className="[font-size:var(--text-body)] [color:var(--text-primary)]">{value}</dd>
+    </div>
+  );
+}
+
+function AsideSummaryRow({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-1.5 [border-bottom:1px_dashed_var(--border)] last:[border-bottom:0]">
+      <dt className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{label}</dt>
+      <dd
+        className={cn(
+          "[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)]",
+          muted ? "[color:var(--text-muted)]" : "[color:var(--text-primary)]",
+        )}
+      >
+        {value}
+      </dd>
     </div>
   );
 }

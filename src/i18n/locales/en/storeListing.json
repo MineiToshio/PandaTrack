@@ -39,6 +39,39 @@
   },
   "ratingCount": "{count, plural, one {# review} other {# reviews}}",
   "pendingBadge": "Pending review",
+  "s6": {
+    "hero": {
+      "eyebrow": "DIRECTORY",
+      "title": "Where to buy",
+      "subtitle": "Stores curated by the community. Filter by country or category."
+    },
+    "toolbar": {
+      "searchPlaceholder": "Search by name…",
+      "filter": "Filter",
+      "new": "New store",
+      "sortLabel": "Sort by"
+    },
+    "sort": {
+      "topRated": "Top rated",
+      "alphabetical": "Alphabetical A–Z",
+      "newest": "Newest"
+    },
+    "count": "{count, plural, one {# store} other {# stores}}",
+    "importCountriesLabel": "Imports from ·",
+    "noImportCountries": "No declared import countries",
+    "loadMore": "Load more",
+    "empty": {
+      "title": "No results",
+      "subtitle": "Try other filters or broaden your search.",
+      "clearFilters": "Clear filters"
+    },
+    "card": {
+      "ariaLabel": "View detail of {name}",
+      "ratingFallback": "No reviews yet",
+      "ordersForViewer": "{count, plural, one {# of your orders} other {# of your orders}}",
+      "ordersForViewerLabel": "your orders"
+    }
+  },
   "cards": {
     "country": "Country",
     "productTypes": "Product types",

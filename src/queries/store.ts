@@ -117,6 +117,7 @@ export interface CreateStoreInput {
   approvedByUserId?: string | null;
   hasStock?: boolean | null;
   receivesOrders?: boolean | null;
+  isPrivate?: boolean;
   contactChannels?: ContactChannelInput[];
   addresses?: AddressInput[];
   importCountries?: string[];
@@ -131,6 +132,8 @@ export interface StoreDetail {
   storeType: "BUSINESS" | "PERSON";
   countryCode: string;
   isActive: boolean;
+  isPrivate: boolean;
+  createdByUserId: string;
   createdAt: Date;
   receivesOrders: boolean | null;
   hasStock: boolean | null;
@@ -255,6 +258,7 @@ function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prism
   return {
     visibility: "PUBLIC",
     status: { in: ["PENDING", "APPROVED"] },
+    isPrivate: false,
     ...(trimmedName && {
       name: { contains: trimmedName, mode: "insensitive" },
     }),
@@ -400,6 +404,7 @@ export async function createStore(db: PrismaClient, input: CreateStoreInput): Pr
       approvedAt: input.status === "APPROVED" ? new Date() : null,
       hasStock: input.hasStock ?? null,
       receivesOrders: input.receivesOrders ?? null,
+      isPrivate: input.isPrivate === true && input.storeType === "PERSON" ? true : false,
       presences: {
         create: presenceTypes.map((presenceType) => ({ presenceType })),
       },
@@ -460,6 +465,8 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
       storeType: true,
       countryCode: true,
       isActive: true,
+      isPrivate: true,
+      createdByUserId: true,
       createdAt: true,
       receivesOrders: true,
       hasStock: true,
@@ -518,6 +525,8 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
     storeType: store.storeType,
     countryCode: store.countryCode,
     isActive: store.isActive,
+    isPrivate: store.isPrivate,
+    createdByUserId: store.createdByUserId,
     createdAt: store.createdAt,
     receivesOrders: store.receivesOrders,
     hasStock: store.hasStock,
@@ -919,4 +928,29 @@ export async function upsertStoreNote(db: PrismaClient, input: UpsertStoreNoteIn
       updatedAt: note.updatedAt,
     };
   });
+}
+
+/**
+ * Returns a map of store slug → total order count for the given viewer.
+ * Only stores present in `slugs` are included; stores with zero orders are omitted.
+ * Counts all orders regardless of status (OPEN, COMPLETED, CANCELLED…).
+ */
+export async function getViewerOrderCountsByStoreSlugs(
+  db: PrismaClient,
+  userId: string,
+  slugs: string[],
+): Promise<Record<string, number>> {
+  if (slugs.length === 0) return {};
+
+  const orders = await db.order.findMany({
+    where: { userId, store: { slug: { in: slugs } } },
+    select: { store: { select: { slug: true } } },
+  });
+
+  const result: Record<string, number> = {};
+  for (const o of orders) {
+    const slug = o.store.slug;
+    result[slug] = (result[slug] ?? 0) + 1;
+  }
+  return result;
 }

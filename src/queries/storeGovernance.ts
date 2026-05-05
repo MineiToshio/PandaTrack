@@ -30,6 +30,7 @@ export type EditableStoreInput = {
   productTypeKeys: string[];
   hasStock?: boolean | null;
   receivesOrders?: boolean | null;
+  isPrivate?: boolean;
   contactChannels?: EditableContactChannelInput[];
   addresses?: EditableAddressInput[];
   importCountries?: string[];
@@ -47,6 +48,7 @@ export type EditableStore = {
   createdByUserId: string;
   hasStock: boolean | null;
   receivesOrders: boolean | null;
+  isPrivate: boolean;
   presenceTypes: StorePresenceType[];
   productTypeKeys: string[];
   importCountryCodes: string[];
@@ -92,6 +94,7 @@ export type EditableStoreDiff = Partial<{
   productTypeKeys: string[];
   hasStock: boolean | null;
   receivesOrders: boolean | null;
+  isPrivate: boolean;
   contactChannels: EditableContactChannelInput[];
   addresses: EditableAddressInput[];
   importCountries: string[];
@@ -153,6 +156,7 @@ function normalizeEditableStoreInput(input: EditableStoreInput, storeType: Store
     productTypeKeys: uniqueSorted(input.productTypeKeys),
     hasStock: input.hasStock ?? null,
     receivesOrders: input.receivesOrders ?? null,
+    isPrivate: storeType === "PERSON" ? Boolean(input.isPrivate) : false,
     contactChannels: normalizedContactChannels,
     addresses: normalizedAddresses,
     importCountries: uniqueSorted((input.importCountries ?? []).filter((countryCode) => countryCode.length === 2)),
@@ -171,6 +175,7 @@ function mapStoreToEditableStore(store: {
   createdByUserId: string;
   hasStock: boolean | null;
   receivesOrders: boolean | null;
+  isPrivate: boolean;
   presences: Array<{ presenceType: StorePresenceType }>;
   productTypeAssignments: Array<{ productTypeKey: string }>;
   importCountries: Array<{ countryCode: string }>;
@@ -189,7 +194,10 @@ function mapStoreToEditableStore(store: {
     createdByUserId: store.createdByUserId,
     hasStock: store.hasStock,
     receivesOrders: store.receivesOrders,
-    presenceTypes: store.presences.map((presence) => presence.presenceType).sort((left, right) => left.localeCompare(right)),
+    isPrivate: store.isPrivate,
+    presenceTypes: store.presences
+      .map((presence) => presence.presenceType)
+      .sort((left, right) => left.localeCompare(right)),
     productTypeKeys: store.productTypeAssignments
       .map((assignment) => assignment.productTypeKey)
       .sort((left, right) => left.localeCompare(right)),
@@ -230,13 +238,16 @@ function buildEditableStoreDiff(existing: EditableStore, input: Required<Editabl
   if (existing.name !== input.name) diff.name = input.name;
   if ((existing.description ?? null) !== input.description) diff.description = input.description;
   if ((existing.logoUrl ?? null) !== input.logoUrl) diff.logoUrl = input.logoUrl;
-  if (JSON.stringify(existing.presenceTypes) !== JSON.stringify(input.presenceTypes)) diff.presenceTypes = input.presenceTypes;
+  if (JSON.stringify(existing.presenceTypes) !== JSON.stringify(input.presenceTypes))
+    diff.presenceTypes = input.presenceTypes;
   if (JSON.stringify(existing.productTypeKeys) !== JSON.stringify(input.productTypeKeys)) {
     diff.productTypeKeys = input.productTypeKeys;
   }
   if ((existing.hasStock ?? null) !== input.hasStock) diff.hasStock = input.hasStock;
   if ((existing.receivesOrders ?? null) !== input.receivesOrders) diff.receivesOrders = input.receivesOrders;
-  if (JSON.stringify(existing.contactChannels) !== JSON.stringify(input.contactChannels)) diff.contactChannels = input.contactChannels;
+  if (existing.isPrivate !== input.isPrivate) diff.isPrivate = input.isPrivate;
+  if (JSON.stringify(existing.contactChannels) !== JSON.stringify(input.contactChannels))
+    diff.contactChannels = input.contactChannels;
   if (JSON.stringify(existing.addresses) !== JSON.stringify(input.addresses)) diff.addresses = input.addresses;
   if (JSON.stringify(existing.importCountryCodes) !== JSON.stringify(input.importCountries)) {
     diff.importCountries = input.importCountries;
@@ -257,6 +268,7 @@ export function mergeEditableStoreWithChangeRequest(
     productTypeKeys: changeRequest?.productTypeKeys ?? store.productTypeKeys,
     hasStock: changeRequest?.hasStock ?? store.hasStock,
     receivesOrders: changeRequest?.receivesOrders ?? store.receivesOrders,
+    isPrivate: changeRequest?.isPrivate ?? store.isPrivate,
     contactChannels: changeRequest?.contactChannels ?? store.contactChannels,
     addresses: changeRequest?.addresses ?? store.addresses,
     importCountries: changeRequest?.importCountries ?? store.importCountryCodes,
@@ -282,6 +294,7 @@ export async function getEditableStoreBySlug(db: PrismaClient, slug: string): Pr
       createdByUserId: true,
       hasStock: true,
       receivesOrders: true,
+      isPrivate: true,
       presences: { select: { presenceType: true } },
       productTypeAssignments: { select: { productTypeKey: true } },
       importCountries: { select: { countryCode: true } },
@@ -306,37 +319,40 @@ export async function getEditableStoreBySlug(db: PrismaClient, slug: string): Pr
   return store ? mapStoreToEditableStore(store) : null;
 }
 
-export async function getStoreGovernanceSummary(
-  db: PrismaClient,
-  storeId: string,
-): Promise<StoreGovernanceSummary> {
-  const [reportCountsRows, totalReports, openReports, changeRequestCountsRows, totalChangeRequests, recentChangeRequests] =
-    await Promise.all([
-      db.storeReport.groupBy({
-        by: ["reason"],
-        where: { storeId },
-        _count: { _all: true },
-      }),
-      db.storeReport.count({ where: { storeId } }),
-      db.storeReport.count({ where: { storeId, status: "OPEN" } }),
-      db.storeChangeRequest.groupBy({
-        by: ["status"],
-        where: { storeId },
-        _count: { _all: true },
-      }),
-      db.storeChangeRequest.count({ where: { storeId } }),
-      db.storeChangeRequest.findMany({
-        where: { storeId },
-        orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
-        take: 5,
-        select: {
-          id: true,
-          status: true,
-          changes: true,
-          updatedAt: true,
-        },
-      }),
-    ]);
+export async function getStoreGovernanceSummary(db: PrismaClient, storeId: string): Promise<StoreGovernanceSummary> {
+  const [
+    reportCountsRows,
+    totalReports,
+    openReports,
+    changeRequestCountsRows,
+    totalChangeRequests,
+    recentChangeRequests,
+  ] = await Promise.all([
+    db.storeReport.groupBy({
+      by: ["reason"],
+      where: { storeId },
+      _count: { _all: true },
+    }),
+    db.storeReport.count({ where: { storeId } }),
+    db.storeReport.count({ where: { storeId, status: "OPEN" } }),
+    db.storeChangeRequest.groupBy({
+      by: ["status"],
+      where: { storeId },
+      _count: { _all: true },
+    }),
+    db.storeChangeRequest.count({ where: { storeId } }),
+    db.storeChangeRequest.findMany({
+      where: { storeId },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      take: 5,
+      select: {
+        id: true,
+        status: true,
+        changes: true,
+        updatedAt: true,
+      },
+    }),
+  ]);
 
   const reportCountMap = new Map(reportCountsRows.map((row) => [row.reason, row._count._all]));
   const changeRequestCountMap = new Map(changeRequestCountsRows.map((row) => [row.status, row._count._all]));
@@ -509,6 +525,7 @@ export async function updateStoreEditableFields(
         logoUrl: normalizedInput.logoUrl,
         hasStock: normalizedInput.hasStock,
         receivesOrders: normalizedInput.receivesOrders,
+        isPrivate: normalizedInput.isPrivate,
       },
       select: { id: true, slug: true },
     });

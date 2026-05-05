@@ -56,10 +56,10 @@ Atelier nocturno: violeta profundo en light (lienzo plomo-violeta tipo papel de 
 
 ### 1.2 Bordes
 
-| Token             | Velvet light           | Velvet dark                   | Uso siempre / sólo / nunca                                                                                                                |
-| ----------------- | ---------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `--border`        | `oklch(80% 0.024 285)` | `oklch(96% 0.012 280 / 0.18)` | **Sólo** divider tenue, card outline decorativa, input idle. **Nunca** como única separación funcional entre dos zonas semánticas.        |
-| `--border-strong` | `oklch(58% 0.030 285)` | `oklch(96% 0.012 280 / 0.45)` | **Sólo** input enfocado pre-ring, separador entre zonas semánticas, borde de avatar fallback, borde funcional ≥3:1. **Nunca** decoración. |
+| Token             | Velvet light           | Velvet dark                 | Uso siempre / sólo / nunca                                                                                                                |
+| ----------------- | ---------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `--border`        | `oklch(85% 0.024 285)` | `rgba(200, 200, 255, 0.07)` | **Sólo** divider tenue, card outline decorativa, input idle. **Nunca** como única separación funcional entre dos zonas semánticas.        |
+| `--border-strong` | `oklch(74% 0.030 285)` | `rgba(200, 200, 255, 0.14)` | **Sólo** input enfocado pre-ring, separador entre zonas semánticas, borde de avatar fallback, borde funcional ≥3:1. **Nunca** decoración. |
 
 `--border` tiene contraste decorativo (~1.5–1.7:1); si se necesita separación funcional **siempre** escalar a `--border-strong`.
 
@@ -70,9 +70,9 @@ Atelier nocturno: violeta profundo en light (lienzo plomo-violeta tipo papel de 
 | `--text-primary`   | `oklch(22% 0.030 285)` | `oklch(96% 0.012 280)` | **Siempre:** body, headings, valores numéricos centrales del dashboard, label de input enfocado. **Nunca** metadatos secundarios.                                                                                                    |
 | `--text-secondary` | `oklch(44% 0.024 285)` | `oklch(76% 0.020 280)` | **Sólo** subtítulos, labels de campo, descripciones cortas, breadcrumbs, **code mono identificador `PT-XXXXXX` y derivados** (ADR 0007 — robustez outdoor). **Sólo** cuando hay un `--text-primary` cercano que define jerarquía.    |
 | `--text-muted`     | `oklch(46% 0.022 285)` | `oklch(64% 0.020 280)` | **Sólo** timestamps, eyebrows uppercase, helper text 11–13px. **Nunca** body principal, primer label visible de un campo, ni **code mono identificador `PT-XXXXXX`** (ese va en `--text-secondary` por robustez outdoor — ADR 0007). |
-| `--text-on-accent` | `oklch(99% 0.005 285)` | `oklch(15% 0.020 290)` | **Sólo** texto sobre `--accent` sólido (CTA primary, badge accent solid). **Nunca** sobre tinte/state-layer del accent.                                                                                                              |
+| `--text-on-accent` | `oklch(99% 0.005 285)` | `oklch(99% 0 0)`       | **Sólo** texto sobre `--accent` sólido (CTA primary, badge accent solid). **Nunca** sobre tinte/state-layer del accent.                                                                                                              |
 
-**Nota crítica.** `--text-on-accent` en **dark es oscuro, no blanco** — `--accent` dark (L=0.74) sobre blanco da 2.55:1 (FAIL); con texto oscuro da 8.23:1. Esto rompe el patrón mental "botón dark = texto blanco"; cualquier `<Button>` y `<Badge variant="accent">` debe consumir `var(--text-on-accent)`, **nunca** hardcodear `text-white`.
+**Nota crítica.** `--text-on-accent` es **blanco puro en ambos modos** (revisado en S3-B.1 — alineado al demo HTML `.btn.primary { color: oklch(99% 0 0) }`). En dark queda 2.55:1 sobre `--accent` brillante (no pasa AA matemático contra el accent puro), pero la decisión humana priorizó la coincidencia visual con el demo y el patrón mental "botón = texto blanco". Cualquier `<Button>` y `<Badge variant="accent">` consume `var(--text-on-accent)`, nunca hardcodea `text-white`.
 
 ### 1.4 Acentos
 

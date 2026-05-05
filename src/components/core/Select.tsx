@@ -1,10 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/styles";
-import { Check, ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2, X } from "lucide-react";
 import { forwardRef, useId, useRef, useState, type ReactNode } from "react";
 
-// ─── New S4 controlled types ───────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export type SelectOption = {
   value: string;
@@ -20,14 +20,15 @@ export type SelectGroup = {
 
 export type SelectSize = "sm" | "md" | "lg";
 
-// Controlled (new S4 API) — used when `options` prop is provided.
 export type SelectControlledProps = {
   id?: string;
   name?: string;
   value: string | null | undefined;
   onChange: (value: string) => void;
+  onClear?: () => void;
   options: SelectOption[] | SelectGroup[];
   placeholder?: string;
+  clearLabel?: string;
   helperText?: string;
   error?: string | boolean;
   disabled?: boolean;
@@ -42,8 +43,6 @@ export type SelectControlledProps = {
 };
 
 // Native (legacy API) — used when `children` prop is provided.
-// Preserved for backward compatibility; custom popover is S12 work.
-// Omit native `size` (number, visible rows) to avoid collision with our design-system size.
 export type SelectNativeProps = Omit<React.SelectHTMLAttributes<HTMLSelectElement>, "size"> & {
   error?: boolean | string;
   showChevron?: boolean;
@@ -59,7 +58,7 @@ function isControlled(props: SelectProps): props is SelectControlledProps {
   return "options" in props && props.options !== undefined;
 }
 
-// ─── Helper ───────────────────────────���───────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function isGrouped(options: SelectOption[] | SelectGroup[]): options is SelectGroup[] {
   return options.length > 0 && "heading" in options[0];
@@ -71,9 +70,9 @@ function flatOptions(options: SelectOption[] | SelectGroup[]): SelectOption[] {
 }
 
 const SIZE_CLASSES: Record<SelectSize, string> = {
-  sm: "min-h-[2rem] px-[var(--space-3)] py-[var(--space-2)] [font-size:var(--text-caption)]",
-  md: "min-h-[2.75rem] @md:min-h-[2.5rem] px-[var(--space-4)] py-[var(--space-3)] [font-size:var(--text-body)]",
-  lg: "min-h-[2.75rem] px-[var(--space-4)] py-[var(--space-3)] [font-size:var(--text-body-lg)]",
+  sm: "min-h-8 px-[var(--space-3)] [font-size:var(--text-caption)] [line-height:var(--text-caption--line-height)]",
+  md: "min-h-11 md:min-h-10 px-[var(--space-4)] [font-size:var(--text-body)] [line-height:var(--text-body--line-height)]",
+  lg: "min-h-12 px-[var(--space-5)] [font-size:var(--text-body-lg)] [line-height:var(--text-body-lg--line-height)]",
 };
 
 // ─── Native select (legacy mode) ──────────────────────────────────────────────
@@ -90,8 +89,8 @@ const NativeSelect = forwardRef<HTMLSelectElement, SelectNativeProps>(function N
       ref={ref}
       disabled={disabled || loading}
       className={cn(
-        "w-full cursor-pointer rounded-[var(--radius-md)] bg-[var(--surface)]",
-        "[font-family:var(--font-sans)] [color:var(--text-primary)] [border:1px_solid_var(--border)]",
+        "w-full cursor-pointer rounded-[var(--radius-md)] bg-[var(--surface-elevated)]",
+        "[font-family:var(--font-sans)] [color:var(--text-primary)] [border:1px_solid_var(--border-strong)]",
         "transition-[border-color] outline-none",
         "[transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
         "focus-visible:[border-color:var(--border-strong)]",
@@ -134,15 +133,17 @@ const NativeSelect = forwardRef<HTMLSelectElement, SelectNativeProps>(function N
   );
 });
 
-// ─── Controlled select (new S4 mode) ─────────────────────────────────────────
+// ─── Controlled select (custom dropdown, no search) ───────────────────────────
 
 function ControlledSelect({
   id,
   name,
   value,
   onChange,
+  onClear,
   options,
   placeholder,
+  clearLabel = "Clear",
   helperText,
   error,
   disabled,
@@ -154,8 +155,8 @@ function ControlledSelect({
   className,
 }: SelectControlledProps) {
   const [open, setOpen] = useState(false);
-  const [typeBuffer, setTypeBuffer] = useState("");
-  const typeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const uid = useId();
   const triggerId = id ?? uid;
@@ -167,82 +168,80 @@ function ControlledSelect({
   const errorMessage = typeof error === "string" ? error : undefined;
   const flat = flatOptions(options);
   const selectedOption = flat.find((o) => o.value === value) ?? null;
-  const [activeIndex, setActiveIndex] = useState<number>(() => {
-    const idx = flat.findIndex((o) => o.value === value);
-    return idx >= 0 ? idx : 0;
-  });
 
-  function openPopover() {
+  function openDropdown() {
     if (disabled || loading) return;
     setOpen(true);
-    const idx = flat.findIndex((o) => o.value === value);
-    setActiveIndex(idx >= 0 ? idx : 0);
+    setActiveIndex(-1);
   }
 
-  function closePopover() {
+  function closeDropdown() {
     setOpen(false);
-    triggerRef.current?.focus();
+    setActiveIndex(-1);
   }
 
   function selectOption(opt: SelectOption) {
     if (opt.disabled) return;
     onChange(opt.value);
-    closePopover();
+    closeDropdown();
+    triggerRef.current?.focus();
   }
 
-  function handleTriggerKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
-      e.preventDefault();
-      openPopover();
+  function handleTriggerClick() {
+    if (open) {
+      closeDropdown();
+    } else {
+      openDropdown();
     }
   }
 
-  function handleListKeyDown(e: React.KeyboardEvent) {
-    const enabledIndices = flat.map((o, i) => (o.disabled ? -1 : i)).filter((i) => i >= 0);
-    const currentPos = enabledIndices.indexOf(activeIndex);
+  function handleTriggerKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
+    if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
+      e.preventDefault();
+      openDropdown();
+    } else if (e.key === "Escape") {
+      closeDropdown();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      openDropdown();
+    }
+  }
 
+  function handleListKeyDown(e: React.KeyboardEvent<HTMLUListElement>) {
+    const safeActive = flat.length === 0 || activeIndex < 0 ? -1 : Math.min(activeIndex, flat.length - 1);
     switch (e.key) {
-      case "ArrowDown": {
+      case "ArrowDown":
         e.preventDefault();
-        const next = enabledIndices[(currentPos + 1) % enabledIndices.length];
-        setActiveIndex(next ?? activeIndex);
+        setActiveIndex((prev) => (Math.max(prev, 0) + 1) % flat.length);
         break;
-      }
-      case "ArrowUp": {
+      case "ArrowUp":
         e.preventDefault();
-        const prev = enabledIndices[(currentPos - 1 + enabledIndices.length) % enabledIndices.length];
-        setActiveIndex(prev ?? activeIndex);
+        setActiveIndex((prev) => {
+          const current = prev <= 0 ? flat.length : prev;
+          return current - 1;
+        });
         break;
-      }
-      case "Home":
+      case "Enter": {
         e.preventDefault();
-        setActiveIndex(enabledIndices[0] ?? activeIndex);
-        break;
-      case "End":
-        e.preventDefault();
-        setActiveIndex(enabledIndices[enabledIndices.length - 1] ?? activeIndex);
-        break;
-      case "Enter":
-      case " ": {
-        e.preventDefault();
-        const opt = flat[activeIndex];
+        const idx = safeActive >= 0 ? safeActive : 0;
+        const opt = flat[idx];
         if (opt && !opt.disabled) selectOption(opt);
         break;
       }
       case "Escape":
-      case "Tab":
-        closePopover();
+        e.preventDefault();
+        closeDropdown();
+        triggerRef.current?.focus();
         break;
-      default: {
-        if (e.key.length === 1) {
-          const next = typeBuffer + e.key.toLowerCase();
-          setTypeBuffer(next);
-          if (typeTimerRef.current) clearTimeout(typeTimerRef.current);
-          typeTimerRef.current = setTimeout(() => setTypeBuffer(""), 500);
-          const match = flat.findIndex((o) => !o.disabled && o.label.toLowerCase().startsWith(next));
-          if (match >= 0) setActiveIndex(match);
-        }
-      }
+      case "Tab":
+        closeDropdown();
+        break;
+    }
+  }
+
+  function handleContainerBlur(e: React.FocusEvent) {
+    if (!containerRef.current?.contains(e.relatedTarget as Node | null)) {
+      closeDropdown();
     }
   }
 
@@ -252,8 +251,12 @@ function ControlledSelect({
       : selectedOption.label
     : placeholder;
 
+  const ariaDescribedBy = errorMessage ? errorId : helperText ? helperId : undefined;
+
   return (
-    <div className={cn("relative w-full", className)}>
+    <div ref={containerRef} className={cn("relative w-full", className)} onBlur={handleContainerBlur}>
+      {name && <input type="hidden" name={name} value={value ?? ""} readOnly />}
+
       <button
         ref={triggerRef}
         id={triggerId}
@@ -264,30 +267,59 @@ function ControlledSelect({
         aria-controls={listboxId}
         aria-required={required ? "true" : undefined}
         aria-invalid={hasError ? "true" : undefined}
-        aria-describedby={errorMessage ? errorId : helperText ? helperId : undefined}
+        aria-describedby={ariaDescribedBy}
         aria-busy={loading ? "true" : undefined}
         disabled={disabled}
-        name={name}
-        onClick={() => (open ? closePopover() : openPopover())}
+        onClick={handleTriggerClick}
         onKeyDown={handleTriggerKeyDown}
         className={cn(
           "flex w-full items-center justify-between gap-[var(--space-2)]",
-          "rounded-[var(--radius-md)] bg-[var(--surface)]",
-          "[border:1px_solid_var(--border)]",
+          "rounded-[var(--radius-md)] bg-[var(--surface-elevated)]",
+          "[border:1px_solid_var(--border-strong)]",
           "[font-family:var(--font-sans)] [color:var(--text-primary)]",
           "cursor-pointer text-left",
           "transition-[border-color] [transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
-          "focus-visible:[border-color:var(--border-strong)]",
+          "focus-visible:[border-color:var(--accent)]",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
           "focus-visible:[outline-color:var(--focus-ring)]",
+          open && "[border-color:var(--accent)]",
           hasError && "[border-color:color-mix(in_oklch,var(--destructive)_60%,var(--border-strong))]",
-          open && "[border-color:var(--border-strong)]",
-          (disabled || loading) && "pointer-events-none [border-color:var(--border)] [color:var(--text-muted)]",
+          (disabled || loading) && "pointer-events-none [border-color:var(--border)] opacity-60",
           SIZE_CLASSES[size],
         )}
       >
-        <span className={cn(!selectedOption && "[color:var(--text-muted)]")}>{triggerLabel}</span>
-        <span className="flex flex-shrink-0 items-center [color:var(--text-muted)]">
+        <span className={cn("truncate", !selectedOption && "[color:var(--text-muted)]")}>{triggerLabel}</span>
+        <span className="flex shrink-0 items-center gap-[var(--space-1)] [color:var(--text-muted)]">
+          {selectedOption && onClear && !loading && (
+            <span
+              role="button"
+              tabIndex={0}
+              aria-label={clearLabel}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClear();
+                closeDropdown();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onClear();
+                  closeDropdown();
+                }
+              }}
+              className={cn(
+                "rounded-sm p-0.5",
+                "[color:var(--text-muted)] hover:[color:var(--text-primary)]",
+                "transition-colors [transition-duration:var(--motion-fast)]",
+                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1",
+                "focus-visible:[outline-color:var(--focus-ring)]",
+              )}
+            >
+              <X size={14} aria-hidden="true" />
+            </span>
+          )}
           {loading ? (
             <Loader2
               size={16}
@@ -309,69 +341,73 @@ function ControlledSelect({
       </button>
 
       {open && (
-        <>
-          <div className="fixed inset-0 z-[39]" onClick={closePopover} aria-hidden="true" />
-          <ul
-            id={listboxId}
-            role="listbox"
-            aria-required={required ? "true" : undefined}
-            onKeyDown={handleListKeyDown}
-            tabIndex={-1}
-            className={cn(
-              "absolute top-full left-0 z-[var(--z-popover)] mt-1 w-full",
-              "overflow-y-auto rounded-[var(--radius-lg)]",
-              "bg-[var(--surface-elevated)] [border:1px_solid_var(--border)]",
-              "[box-shadow:var(--elevation-2)]",
-              "max-h-[18rem] p-[var(--space-1)]",
-              "outline-none",
-            )}
-          >
-            {flat.length === 0 && (
-              <li className="px-[var(--space-3)] py-[var(--space-2)] [font-size:var(--text-caption)] [color:var(--text-muted)]">
-                No options yet.
-              </li>
-            )}
-            {isGrouped(options)
-              ? options.map((group) => (
-                  <li key={group.heading} role="presentation">
-                    <span
-                      className={cn(
-                        "block px-[var(--space-3)] py-[var(--space-1)]",
-                        "[font-family:var(--font-mono)] [font-size:var(--text-eyebrow)]",
-                        "[letter-spacing:var(--text-eyebrow--letter-spacing)] uppercase",
-                        "[color:var(--text-muted)]",
-                      )}
-                    >
-                      {group.heading}
-                    </span>
-                    <ul role="group">
-                      {group.options.map((opt) => (
+        <ul
+          id={listboxId}
+          role="listbox"
+          aria-required={required ? "true" : undefined}
+          tabIndex={-1}
+          onKeyDown={handleListKeyDown}
+          className={cn(
+            "absolute top-full left-0 z-[var(--z-popover)] mt-1 w-full",
+            "rounded-[var(--radius-lg)]",
+            "bg-[var(--surface-elevated)] [border:1px_solid_var(--border)]",
+            "[box-shadow:var(--elevation-2)]",
+            "max-h-[14rem] overflow-y-auto p-[var(--space-1)] outline-none",
+          )}
+        >
+          {flat.length === 0 && (
+            <li
+              role="presentation"
+              className="px-[var(--space-3)] py-[var(--space-2)] [font-size:var(--text-caption)] [color:var(--text-muted)]"
+            >
+              No options.
+            </li>
+          )}
+          {isGrouped(options)
+            ? (options as SelectGroup[]).map((group) => (
+                <li key={group.heading} role="presentation">
+                  <span
+                    className={cn(
+                      "block px-[var(--space-3)] py-[var(--space-1)]",
+                      "[font-family:var(--font-mono)] [font-size:var(--text-eyebrow)]",
+                      "[letter-spacing:var(--text-eyebrow--letter-spacing)] uppercase",
+                      "[color:var(--text-muted)]",
+                    )}
+                  >
+                    {group.heading}
+                  </span>
+                  <ul role="group">
+                    {group.options.map((opt) => {
+                      const flatIdx = flat.indexOf(opt);
+                      return (
                         <OptionItem
                           key={opt.value}
+                          id={`${listboxId}-${flatIdx}`}
                           option={opt}
                           isSelected={opt.value === value}
-                          isActive={flat.indexOf(opt) === activeIndex}
+                          isActive={activeIndex === flatIdx}
                           onSelect={() => selectOption(opt)}
-                          onHover={() => setActiveIndex(flat.indexOf(opt))}
+                          onHover={() => setActiveIndex(flatIdx)}
                           renderOption={renderOption}
                         />
-                      ))}
-                    </ul>
-                  </li>
-                ))
-              : (options as SelectOption[]).map((opt, idx) => (
-                  <OptionItem
-                    key={opt.value}
-                    option={opt}
-                    isSelected={opt.value === value}
-                    isActive={idx === activeIndex}
-                    onSelect={() => selectOption(opt)}
-                    onHover={() => setActiveIndex(idx)}
-                    renderOption={renderOption}
-                  />
-                ))}
-          </ul>
-        </>
+                      );
+                    })}
+                  </ul>
+                </li>
+              ))
+            : (options as SelectOption[]).map((opt, idx) => (
+                <OptionItem
+                  key={opt.value}
+                  id={`${listboxId}-${idx}`}
+                  option={opt}
+                  isSelected={opt.value === value}
+                  isActive={activeIndex === idx}
+                  onSelect={() => selectOption(opt)}
+                  onHover={() => setActiveIndex(idx)}
+                  renderOption={renderOption}
+                />
+              ))}
+        </ul>
       )}
 
       {errorMessage && (
@@ -394,6 +430,7 @@ function ControlledSelect({
 }
 
 function OptionItem({
+  id,
   option,
   isSelected,
   isActive,
@@ -401,6 +438,7 @@ function OptionItem({
   onHover,
   renderOption,
 }: {
+  id: string;
   option: SelectOption;
   isSelected: boolean;
   isActive: boolean;
@@ -410,9 +448,11 @@ function OptionItem({
 }) {
   return (
     <li
+      id={id}
       role="option"
       aria-selected={isSelected}
       aria-disabled={option.disabled ? "true" : undefined}
+      onMouseDown={(e) => e.preventDefault()}
       onClick={option.disabled ? undefined : onSelect}
       onMouseEnter={onHover}
       className={cn(
@@ -423,18 +463,12 @@ function OptionItem({
         isActive &&
           !option.disabled &&
           "[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
-        isSelected && "[background:color-mix(in_oklch,var(--accent)_var(--state-selected-bg-mix),var(--surface))]",
         option.disabled && "pointer-events-none [color:var(--text-muted)]",
       )}
     >
       <span className="flex-1">{renderOption ? renderOption(option) : option.label}</span>
       {option.description && (
         <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{option.description}</span>
-      )}
-      {isSelected && (
-        <span className="flex flex-shrink-0 items-center [color:var(--accent)]">
-          <Check size={14} aria-hidden="true" />
-        </span>
       )}
     </li>
   );

@@ -204,6 +204,7 @@ model Store {
   status              StoreStatus               @default(PENDING)
   visibility          StoreVisibility           @default(PUBLIC)
   isActive            Boolean                   @default(true)
+  isPrivate           Boolean                   @default(false)
   hasStock            Boolean?
   receivesOrders      Boolean?
   countryCode         String
@@ -235,6 +236,7 @@ model Store {
   @@index([status])
   @@index([visibility])
   @@index([isActive])
+  @@index([isPrivate])
   @@index([status, visibility, isActive])
   @@map("store")
 }

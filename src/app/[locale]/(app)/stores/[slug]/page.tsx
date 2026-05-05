@@ -2,7 +2,11 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
 import { getPublicStoreReviews, getStoreBySlug, getStoreViewerContext } from "@/queries/store";
-import { getEditableStoreBySlug, getStoreGovernanceSummary, getStoreGovernanceViewerContext } from "@/queries/storeGovernance";
+import {
+  getEditableStoreBySlug,
+  getStoreGovernanceSummary,
+  getStoreGovernanceViewerContext,
+} from "@/queries/storeGovernance";
 import { buildStoreDetailMetadata } from "@/lib/seo";
 import { safeRelativeReturnTo } from "@/lib/navigation/safeRelativeReturnTo";
 import StoreDetailContent from "./_components/StoreDetailContent";
@@ -41,6 +45,12 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
 
   const session = await getSession();
   const isAdmin = getIsAdmin(session);
+
+  // BR-04-21 (ADR 0009): private person stores are accessible only to their creator (or admins).
+  // Return 404 (not 403) so the existence is not exposed to other users.
+  if (store.isPrivate && !isAdmin && store.createdByUserId !== session?.user?.id) {
+    notFound();
+  }
   const [reviews, viewerContext, governanceSummary, governanceViewerContext] = await Promise.all([
     session?.user?.id ? getPublicStoreReviews(prisma, store.id, session.user.id, store.reviewCount) : [],
     session?.user?.id ? getStoreViewerContext(prisma, store.id, session.user.id) : { review: null, note: null },
@@ -52,7 +62,8 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
 
   const canAccessEditRoute = session?.user?.id != null;
   const canDirectlyEdit = Boolean(
-    session?.user?.id && (isAdmin || (editableStore.status === "PENDING" && editableStore.createdByUserId === session.user.id)),
+    session?.user?.id &&
+    (isAdmin || (editableStore.status === "PENDING" && editableStore.createdByUserId === session.user.id)),
   );
 
   return (

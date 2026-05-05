@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 export type EyebrowSize = "sm" | "md";
 export type EyebrowTone = "muted" | "accent";
-export type EyebrowTag = "span" | "p" | "h2" | "h3" | "h4";
+export type EyebrowTag = "span" | "p" | "h2" | "h3" | "h4" | "legend";
 
 export type EyebrowProps = {
   children: ReactNode;

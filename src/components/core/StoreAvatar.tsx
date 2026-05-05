@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Store } from "lucide-react";
+import { Store, User } from "lucide-react";
 import { cn } from "@/lib/styles";
 import type { CSSProperties } from "react";
 
@@ -18,6 +18,8 @@ export type StoreAvatarProps = (
   | { store: { name: string; logo: StoreLogo } }
 ) & {
   size: StoreAvatarSize;
+  /** When true, renders a User icon with muted tint instead of the letter monogram. For PERSON-type stores. */
+  isPerson?: boolean;
   /** Surface context hint for future token adjustments. Default `auto`. */
   surfaceContext?: "auto" | "elevated";
   className?: string;
@@ -39,6 +41,14 @@ const ICON_SIZES: Record<StoreAvatarSize, number> = {
   56: 25,
 };
 
+/** Maps size to Person icon size — slightly smaller than the generic store placeholder. */
+const PERSON_ICON_SIZES: Record<StoreAvatarSize, number> = {
+  24: 10,
+  32: 13,
+  40: 17,
+  56: 22,
+};
+
 /** Extracts first Unicode letter from a store name. Returns `""` when none found. */
 function getStoreInitial(name: string): string {
   const match = name.trim().match(/\p{L}/u);
@@ -53,6 +63,7 @@ function getStoreInitial(name: string): string {
 export default function StoreAvatar({
   store,
   size,
+  isPerson = false,
   surfaceContext: _surfaceContext = "auto",
   className,
 }: StoreAvatarProps) {
@@ -93,6 +104,25 @@ export default function StoreAvatar({
             sizes={`${size}px`}
           />
         </span>
+      </span>
+    );
+  }
+
+  // PERSON stores: muted tint + User icon regardless of whether a letter is available
+  if (isPerson) {
+    return (
+      <span
+        className={cn(baseContainerClass)}
+        style={{
+          ...containerStyle,
+          background: "color-mix(in oklch, var(--text-muted) 12%, var(--surface-elevated))",
+          border: "1px solid var(--border)",
+          color: "var(--text-muted)",
+        }}
+        role="img"
+        aria-label={store.name}
+      >
+        <User size={PERSON_ICON_SIZES[size]} aria-hidden="true" />
       </span>
     );
   }
