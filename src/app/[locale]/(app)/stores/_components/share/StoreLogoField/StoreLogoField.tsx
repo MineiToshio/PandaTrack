@@ -2,7 +2,7 @@
 
 import "react-easy-crop/react-easy-crop.css";
 
-import { Building2, ImagePlus, Pencil, Upload, X } from "lucide-react";
+import { Building2, Pencil, Upload, X } from "lucide-react";
 import Image from "next/image";
 import { type ChangeEvent, type DragEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useFocusScope } from "@/lib/a11y/useFocusScope";
@@ -32,7 +32,6 @@ type StoreLogoFieldCopy = {
   emptyDescription: string;
   uploadCta: string;
   editCta: string;
-  replaceCta: string;
   removeCta: string;
   editorTitle: string;
   editorDescription: string;
@@ -55,6 +54,11 @@ type StoreLogoFieldProps = {
 };
 
 const ACCEPTED_FILE_TYPES = STORE_LOGO_ACCEPTED_MIME_TYPES.join(",");
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 const DEFAULT_CROP: Point = { x: 0, y: 0 };
 const DEFAULT_ZOOM = 1;
 const DEFAULT_SUBMISSION: StoreLogoSubmission = {
@@ -274,8 +278,8 @@ export default function StoreLogoField({
           onDrop={handleDrop}
           onDragOver={(event) => event.preventDefault()}
         >
-          <span className="relative size-12 flex-shrink-0 overflow-hidden rounded-[var(--radius-md)]">
-            <Image src={previewUrl} alt="" fill sizes="48px" className="object-cover" unoptimized />
+          <span className="relative size-[150px] flex-shrink-0 overflow-hidden rounded-[var(--radius-md)]">
+            <Image src={previewUrl} alt="" fill sizes="150px" className="object-cover" unoptimized />
           </span>
           <div className="min-w-0 flex-1">
             <Typography
@@ -284,25 +288,23 @@ export default function StoreLogoField({
             >
               {submission.file?.name ?? copy.label}
             </Typography>
-            <Typography size="xs" className="[color:var(--text-muted)]">
-              {copy.acceptedFormats}
-            </Typography>
-          </div>
-          <div className="flex flex-shrink-0 items-center gap-1">
-            {canEditPreview ? (
-              <Button type="button" variant="ghost" size="sm" onClick={handleEdit} disabled={disabled}>
-                <Pencil size={14} aria-hidden />
-                {copy.editCta}
+            {submission.file != null && (
+              <Typography size="xs" className="[color:var(--text-muted)]">
+                {formatFileSize(submission.file.size)}
+              </Typography>
+            )}
+            <div className="mt-2 flex items-center gap-1">
+              {canEditPreview ? (
+                <Button type="button" variant="ghost" size="sm" onClick={handleEdit} disabled={disabled}>
+                  <Pencil size={14} aria-hidden />
+                  {copy.editCta}
+                </Button>
+              ) : null}
+              <Button type="button" variant="ghost" size="sm" onClick={handleRemove} disabled={disabled}>
+                <X size={14} aria-hidden />
+                {copy.removeCta}
               </Button>
-            ) : null}
-            <Button type="button" variant="ghost" size="sm" onClick={openFileDialog} disabled={disabled}>
-              <ImagePlus size={14} aria-hidden />
-              {copy.replaceCta}
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={handleRemove} disabled={disabled}>
-              <X size={14} aria-hidden />
-              {copy.removeCta}
-            </Button>
+            </div>
           </div>
         </div>
       ) : (

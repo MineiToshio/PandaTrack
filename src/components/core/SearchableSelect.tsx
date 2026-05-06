@@ -146,7 +146,7 @@ export default function SearchableSelect({
       <div
         className={cn(
           "flex w-full items-center rounded-[var(--radius-md)] text-sm",
-          "min-h-[2.75rem] @md:min-h-[2.5rem]",
+          "h-[2.875rem]",
           "[border-width:1px] [border-style:solid]",
           // Border + background + focus glow depend on error state. Emit only one rule per state.
           !error &&

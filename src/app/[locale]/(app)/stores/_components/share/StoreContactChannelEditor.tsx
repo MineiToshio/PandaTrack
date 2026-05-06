@@ -1,8 +1,9 @@
 "use client";
 
-import { Check, Pencil, Plus, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { AlertCircle, Check, Pencil, Plus, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import Button from "@/components/core/Button/Button";
+import Input from "@/components/core/Input";
 import Select from "@/components/core/Select";
 import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
@@ -20,12 +21,14 @@ type Labels = {
   valueLabel: string;
   helper: string;
   addButton: string;
+  addChannel: string;
   edit: string;
   save: string;
   cancel: string;
   remove: string;
   optionLabel: (type: StoreContactChannelType) => string;
   valuePlaceholder: (type: StoreContactChannelType) => string;
+  validationError?: (errorKey: string) => string;
 };
 
 export type StoreContactChannelEditorProps = {
@@ -37,13 +40,43 @@ export type StoreContactChannelEditorProps = {
   typeInputName?: string;
   valueInputName?: string;
   labels: Labels;
+  onFormOpenChange?: (open: boolean) => void;
 };
 
-/**
- * Display + inline-edit + inline-add channels editor used by both the create
- * and edit store wizards. Renders one read-only row per entry with edit/remove
- * controls, plus a compact form below to add new entries.
- */
+function validateChannelValue(type: StoreContactChannelType, value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return "required";
+
+  switch (type) {
+    case "INSTAGRAM":
+      if (!/instagram\.com\//.test(trimmed)) return "INSTAGRAM";
+      return null;
+    case "WHATSAPP":
+      if (!/^https?:\/\/(www\.)?wa\.me\//.test(trimmed) && !/^\+[1-9][\d\s\-()]{6,18}$/.test(trimmed))
+        return "WHATSAPP";
+      return null;
+    case "EMAIL":
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return "EMAIL";
+      return null;
+    case "PHONE":
+      if (!/^\+[1-9][\d\s\-()]{6,18}$/.test(trimmed)) return "PHONE";
+      return null;
+    case "FACEBOOK":
+      if (!/(facebook\.com|fb\.com)\//.test(trimmed)) return "FACEBOOK";
+      return null;
+    case "TIKTOK":
+      if (!/tiktok\.com\//.test(trimmed)) return "TIKTOK";
+      return null;
+    case "WEBSITE":
+      if (!/^https?:\/\//.test(trimmed)) return "WEBSITE";
+      return null;
+    case "OTHER":
+      return null;
+    default:
+      return null;
+  }
+}
+
 export default function StoreContactChannelEditor({
   entries,
   onAdd,
@@ -52,37 +85,72 @@ export default function StoreContactChannelEditor({
   typeInputName,
   valueInputName,
   labels,
+  onFormOpenChange,
 }: StoreContactChannelEditorProps) {
   const [pendingType, setPendingType] = useState<StoreContactChannelType>(STORE_CONTACT_CHANNEL_TYPES[0]);
   const [pendingValue, setPendingValue] = useState("");
+  const [pendingError, setPendingError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingType, setEditingType] = useState<StoreContactChannelType>(STORE_CONTACT_CHANNEL_TYPES[0]);
   const [editingValue, setEditingValue] = useState("");
+  const [editingError, setEditingError] = useState<string | null>(null);
+
+  useEffect(() => {
+    onFormOpenChange?.(showForm);
+  }, [showForm, onFormOpenChange]);
+
+  const handleOpenForm = () => {
+    setPendingType(STORE_CONTACT_CHANNEL_TYPES[0]);
+    setPendingValue("");
+    setPendingError(null);
+    setShowForm(true);
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setPendingValue("");
+    setPendingError(null);
+  };
 
   const handleAdd = () => {
     const trimmed = pendingValue.trim();
-    if (!trimmed) return;
+    const error = validateChannelValue(pendingType, trimmed);
+    if (error) {
+      setPendingError(error);
+      return;
+    }
     onAdd({ type: pendingType, value: trimmed });
     setPendingValue("");
+    setPendingError(null);
+    setShowForm(false);
   };
 
   const handleStartEdit = (entry: ContactChannelEntry) => {
     setEditingId(entry.id);
     setEditingType(entry.type);
     setEditingValue(entry.value);
+    setEditingError(null);
   };
 
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditingValue("");
+    setEditingError(null);
   };
 
   const handleSaveEdit = () => {
     const trimmed = editingValue.trim();
     if (!trimmed || editingId == null) return;
+    const error = validateChannelValue(editingType, trimmed);
+    if (error) {
+      setEditingError(error);
+      return;
+    }
     onUpdate(editingId, { type: editingType, value: trimmed });
     setEditingId(null);
     setEditingValue("");
+    setEditingError(null);
   };
 
   const channelTypeOptions = useMemo(
@@ -93,6 +161,17 @@ export default function StoreContactChannelEditor({
       })),
     [labels],
   );
+
+  const renderValidationError = (errorKey: string) => {
+    const msg = labels.validationError?.(errorKey);
+    if (!msg) return null;
+    return (
+      <p className="mt-1.5 flex items-center gap-1.5 text-[12px] [color:var(--destructive)]" role="alert">
+        <AlertCircle size={13} aria-hidden />
+        {msg}
+      </p>
+    );
+  };
 
   return (
     <div className="space-y-3">
@@ -106,6 +185,7 @@ export default function StoreContactChannelEditor({
             <input key={`hidden-value-${entry.id}`} type="hidden" name={valueInputName} value={entry.value} />
           ))
         : null}
+
       {entries.length > 0 && (
         <div className="overflow-hidden rounded-[var(--radius-lg)] [border:1px_solid_var(--border)]">
           {entries.map((entry, idx) =>
@@ -113,48 +193,54 @@ export default function StoreContactChannelEditor({
               <div
                 key={entry.id}
                 className={cn(
-                  "flex flex-wrap items-center gap-2 px-3 py-2.5 [background:var(--surface-elevated)]",
+                  "flex flex-wrap items-start gap-2 px-3 py-2.5 [background:var(--surface-elevated)]",
                   idx > 0 && "[border-top:1px_solid_var(--border)]",
                 )}
               >
-                <div className="w-[150px] flex-shrink-0">
-                  <Select
-                    value={editingType}
-                    onChange={(value) => setEditingType(value as StoreContactChannelType)}
-                    options={channelTypeOptions}
-                    aria-label={labels.typeLabel}
-                    size="sm"
-                  />
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="w-[150px] flex-shrink-0">
+                    <Select
+                      value={editingType}
+                      onChange={(value) => setEditingType(value as StoreContactChannelType)}
+                      options={channelTypeOptions}
+                      aria-label={labels.typeLabel}
+                    />
+                  </div>
+                  <div className="min-w-[120px] flex-1">
+                    <Input
+                      type="text"
+                      value={editingValue}
+                      onChange={(event) => {
+                        setEditingValue(event.target.value);
+                        setEditingError(null);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          handleSaveEdit();
+                        } else if (event.key === "Escape") {
+                          handleCancelEdit();
+                        }
+                      }}
+                      placeholder={labels.valuePlaceholder(editingType)}
+                      aria-label={labels.valueLabel}
+                      error={!!editingError}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={handleSaveEdit}
+                    disabled={!editingValue.trim()}
+                    leadingIcon={<Check size={14} aria-hidden />}
+                  >
+                    {labels.save}
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={handleCancelEdit}>
+                    {labels.cancel}
+                  </Button>
                 </div>
-                <input
-                  type="text"
-                  value={editingValue}
-                  onChange={(event) => setEditingValue(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      handleSaveEdit();
-                    } else if (event.key === "Escape") {
-                      handleCancelEdit();
-                    }
-                  }}
-                  placeholder={labels.valuePlaceholder(editingType)}
-                  aria-label={labels.valueLabel}
-                  className="min-h-9 min-w-[120px] flex-1 rounded-[var(--radius-md)] px-3 text-sm [color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] placeholder:[color:var(--text-muted)]"
-                />
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  onClick={handleSaveEdit}
-                  disabled={!editingValue.trim()}
-                  leadingIcon={<Check size={13} aria-hidden />}
-                >
-                  {labels.save}
-                </Button>
-                <Button type="button" variant="ghost" size="sm" onClick={handleCancelEdit}>
-                  {labels.cancel}
-                </Button>
+                {editingError && renderValidationError(editingError)}
               </div>
             ) : (
               <div
@@ -189,46 +275,78 @@ export default function StoreContactChannelEditor({
           )}
         </div>
       )}
-      <div className="rounded-[var(--radius-lg)] p-3 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
-        <Typography size="xs" className="mb-2.5 [color:var(--text-muted)]">
-          {labels.helper}
-        </Typography>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="w-[150px] flex-shrink-0">
-            <Select
-              value={pendingType}
-              onChange={(value) => setPendingType(value as StoreContactChannelType)}
-              options={channelTypeOptions}
-              aria-label={labels.typeLabel}
-              size="sm"
-            />
+
+      {showForm ? (
+        <div className="rounded-[var(--radius-lg)] p-3 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
+          <div className="mb-2.5 flex items-center justify-between gap-2">
+            <Typography size="xs" className="[color:var(--text-muted)]">
+              {labels.helper}
+            </Typography>
+            <button
+              type="button"
+              onClick={handleCancelForm}
+              aria-label={labels.cancel}
+              className="flex size-6 flex-shrink-0 items-center justify-center rounded [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:[outline:2px_solid_var(--focus-ring)]"
+            >
+              <X size={14} aria-hidden />
+            </button>
           </div>
-          <input
-            type="text"
-            value={pendingValue}
-            onChange={(event) => setPendingValue(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                handleAdd();
-              }
-            }}
-            placeholder={labels.valuePlaceholder(pendingType)}
-            aria-label={labels.valueLabel}
-            className="min-h-9 min-w-[120px] flex-1 rounded-[var(--radius-md)] px-3 text-sm [color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] placeholder:[color:var(--text-muted)]"
-          />
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            onClick={handleAdd}
-            disabled={!pendingValue.trim()}
-            leadingIcon={<Plus size={13} aria-hidden />}
-          >
-            {labels.addButton}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="w-[150px] flex-shrink-0">
+              <Select
+                value={pendingType}
+                onChange={(value) => {
+                  setPendingType(value as StoreContactChannelType);
+                  setPendingError(null);
+                }}
+                options={channelTypeOptions}
+                aria-label={labels.typeLabel}
+              />
+            </div>
+            <div className="min-w-[120px] flex-1">
+              <Input
+                type="text"
+                value={pendingValue}
+                onChange={(event) => {
+                  setPendingValue(event.target.value);
+                  setPendingError(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    handleAdd();
+                  } else if (event.key === "Escape") {
+                    handleCancelForm();
+                  }
+                }}
+                placeholder={labels.valuePlaceholder(pendingType)}
+                aria-label={labels.valueLabel}
+                error={!!pendingError}
+              />
+            </div>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleAdd}
+              disabled={!pendingValue.trim()}
+              leadingIcon={<Plus size={14} aria-hidden />}
+            >
+              {labels.addButton}
+            </Button>
+          </div>
+          {pendingError && renderValidationError(pendingError)}
         </div>
-      </div>
+      ) : (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={handleOpenForm}
+          leadingIcon={<Plus size={13} aria-hidden />}
+        >
+          {labels.addChannel}
+        </Button>
+      )}
     </div>
   );
 }

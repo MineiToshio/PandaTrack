@@ -109,7 +109,6 @@
     "emptyDescription": "Choose a PNG, JPG, JPEG, or WebP file. We will open the crop editor before anything is uploaded.",
     "uploadCta": "Click or drop an image",
     "editCta": "Edit",
-    "replaceCta": "Replace",
     "removeCta": "Remove",
     "editorTitle": "Adjust logo framing",
     "editorDescription": "Move the image inside the square frame and use zoom to keep the most important part visible.",
@@ -465,7 +464,8 @@
         "presenceHelper": "Where the store operates. Contact channels go in the next step.",
         "importHelper": "Where does this store import or source products from? Helps collectors filter by origin.",
         "hasStockLabel": "Has stock",
-        "receivesOrdersLabel": "Accepts pre-orders"
+        "receivesOrdersLabel": "Accepts pre-orders",
+        "stockSectionLabel": "Commerce behavior"
       },
       "step4": {
         "eyebrow": "STEP 4 · CHANNELS",
@@ -515,7 +515,19 @@
         "edit": "Edit",
         "save": "Save",
         "cancel": "Cancel",
-        "remove": "Remove"
+        "remove": "Remove",
+        "addChannel": "Add channel",
+        "formOpenWarning": "There's an unsaved channel. Add it or cancel before continuing.",
+        "validationError": {
+          "required": "Value is required.",
+          "INSTAGRAM": "Enter a valid Instagram URL (https://instagram.com/...).",
+          "WHATSAPP": "Use a wa.me/... link or an international number (+51...).",
+          "EMAIL": "Enter a valid email address (user@domain.com).",
+          "PHONE": "Use international format (+51 999 999 999).",
+          "FACEBOOK": "Enter a valid Facebook URL (https://facebook.com/...).",
+          "TIKTOK": "Enter a valid TikTok URL (https://tiktok.com/@...).",
+          "WEBSITE": "Enter a valid URL starting with https://..."
+        }
       },
       "duplicate": {
         "eyebrow": "Similar stores found",
@@ -529,6 +541,9 @@
         "reframe": "Reframe",
         "remove": "Remove",
         "save": "Save logo"
+      },
+      "addresses": {
+        "formOpenWarning": "There's an unsaved address. Add it or cancel before continuing."
       }
     },
     "toast": {

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, AlertTriangle, Building2, Check, Clock, Globe, Plus, Store, User } from "lucide-react";
+import { AlertCircle, AlertTriangle, Building2, Check, Clock, Globe, Plus, Store, User, X } from "lucide-react";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import {
   type ChangeEvent,
@@ -169,7 +169,14 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
   const [contactChannelEntries, setContactChannelEntries] = useState<
     Array<{ id: number; type: StoreContactChannelType; value: string }>
   >([]);
-  const [addressRows, setAddressRows] = useState<number[]>([]);
+  const [isChannelFormOpen, setIsChannelFormOpen] = useState(false);
+  const [addressData, setAddressData] = useState<
+    Array<{ id: number; city: string; addressLine: string; reference: string }>
+  >([]);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [pendingCity, setPendingCity] = useState("");
+  const [pendingAddressLine, setPendingAddressLine] = useState("");
+  const [pendingReference, setPendingReference] = useState("");
   const [logoSubmission, setLogoSubmission] = useState<StoreLogoSubmission>({
     action: "keep",
     file: null,
@@ -288,14 +295,42 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
     return tCreate(`contactChannelPlaceholder.${type}`);
   };
 
-  const handleAddAddress = () => {
+  const handleConfirmAddress = () => {
+    const trimmedLine = pendingAddressLine.trim();
+    if (!trimmedLine) return;
     const nextId = nextAddressRowIdRef.current;
     nextAddressRowIdRef.current += 1;
-    setAddressRows((previous) => [...previous, nextId]);
+    setAddressData((prev) => [
+      ...prev,
+      { id: nextId, city: pendingCity.trim(), addressLine: trimmedLine, reference: pendingReference.trim() },
+    ]);
+    setPendingCity("");
+    setPendingAddressLine("");
+    setPendingReference("");
+    setShowAddressForm(false);
+  };
+
+  const handleCancelAddressForm = () => {
+    setShowAddressForm(false);
+    setPendingCity("");
+    setPendingAddressLine("");
+    setPendingReference("");
   };
 
   const handleRemoveAddress = (rowId: number) => {
-    setAddressRows((previous) => previous.filter((item) => item !== rowId));
+    setAddressData((prev) => prev.filter((row) => row.id !== rowId));
+  };
+
+  const handleAddressCity = (rowId: number, value: string) => {
+    setAddressData((prev) => prev.map((row) => (row.id === rowId ? { ...row, city: value } : row)));
+  };
+
+  const handleAddressLine = (rowId: number, value: string) => {
+    setAddressData((prev) => prev.map((row) => (row.id === rowId ? { ...row, addressLine: value } : row)));
+  };
+
+  const handleAddressReference = (rowId: number, value: string) => {
+    setAddressData((prev) => prev.map((row) => (row.id === rowId ? { ...row, reference: value } : row)));
   };
 
   const handleSubmit = async (formData: FormData) => {
@@ -489,14 +524,46 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
             value={selectedImportCountries.map((code) => tCountries(code)).join(", ")}
           />
         )}
-        {storeType === "BUSINESS" && (contactChannelEntries.length > 0 || addressRows.length > 0) && (
+        {storeType === "BUSINESS" && (contactChannelEntries.length > 0 || addressData.length > 0) && (
           <ReviewSeparator />
         )}
         {storeType === "BUSINESS" && contactChannelEntries.length > 0 && (
-          <ReviewRow label={tCreateRedesign("aside.channelsLabel")} value={`${contactChannelEntries.length}`} />
+          <>
+            <dt className="pt-0.5 [font-size:var(--text-caption)] [color:var(--text-muted)]">
+              {tCreateRedesign("aside.channelsLabel")}
+            </dt>
+            <dd className="space-y-2">
+              {contactChannelEntries.map((entry) => (
+                <div key={entry.id}>
+                  <div className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
+                    {tChannelTypes(entry.type)}
+                  </div>
+                  <div className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] break-all [color:var(--text-primary)]">
+                    {entry.value}
+                  </div>
+                </div>
+              ))}
+            </dd>
+          </>
         )}
-        {storeType === "BUSINESS" && addressRows.length > 0 && (
-          <ReviewRow label={tCreateRedesign("aside.addressesLabel")} value={`${addressRows.length}`} />
+        {storeType === "BUSINESS" && addressData.length > 0 && (
+          <>
+            <dt className="pt-0.5 [font-size:var(--text-caption)] [color:var(--text-muted)]">
+              {tCreateRedesign("aside.addressesLabel")}
+            </dt>
+            <dd className="space-y-2">
+              {addressData.map((addr) => (
+                <div
+                  key={addr.id}
+                  className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)]"
+                >
+                  {addr.city && <div>{addr.city}</div>}
+                  <div>{addr.addressLine}</div>
+                  {addr.reference && <div className="[color:var(--text-muted)]">{addr.reference}</div>}
+                </div>
+              ))}
+            </dd>
+          </>
         )}
       </dl>
     </div>
@@ -750,7 +817,6 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                         emptyDescription: t("logo.emptyDescription"),
                         uploadCta: t("logo.uploadCta"),
                         editCta: t("logo.editCta"),
-                        replaceCta: t("logo.replaceCta"),
                         removeCta: t("logo.removeCta"),
                         editorTitle: t("logo.editorTitle"),
                         editorDescription: t("logo.editorDescription"),
@@ -911,17 +977,20 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                   />
                 </div>
 
-                <div className="flex flex-wrap gap-6">
-                  <InlineSwitch
-                    label={tCreateRedesign("step3.hasStockLabel")}
-                    checked={hasStock}
-                    onChange={setHasStock}
-                  />
-                  <InlineSwitch
-                    label={tCreateRedesign("step3.receivesOrdersLabel")}
-                    checked={receivesOrders}
-                    onChange={setReceivesOrders}
-                  />
+                <div className="space-y-3">
+                  <Label>{tCreateRedesign("step3.stockSectionLabel")}</Label>
+                  <div className="flex flex-wrap gap-6">
+                    <InlineSwitch
+                      label={tCreateRedesign("step3.hasStockLabel")}
+                      checked={hasStock}
+                      onChange={setHasStock}
+                    />
+                    <InlineSwitch
+                      label={tCreateRedesign("step3.receivesOrdersLabel")}
+                      checked={receivesOrders}
+                      onChange={setReceivesOrders}
+                    />
+                  </div>
                 </div>
               </div>
             </WizardStep>
@@ -935,11 +1004,23 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                 primaryAction={{ label: tCreateRedesign("continue") }}
                 secondaryAction={{ label: tCreateRedesign("back") }}
                 summary={
-                  contactChannelEntries.length + addressRows.length > 0
-                    ? `${contactChannelEntries.length + addressRows.length}`
+                  contactChannelEntries.length + addressData.length > 0
+                    ? `${contactChannelEntries.length + addressData.length}`
                     : undefined
                 }
                 disabled={4 > maxAllowedStep}
+                validate={() => {
+                  const next: Record<string, string> = {};
+                  if (isChannelFormOpen) next.channelFormOpen = "channelFormOpen";
+                  if (showAddressForm) next.addressFormOpen = "addressFormOpen";
+                  setClientErrors((prev) => ({
+                    ...Object.fromEntries(
+                      Object.entries(prev).filter(([k]) => !["channelFormOpen", "addressFormOpen"].includes(k)),
+                    ),
+                    ...next,
+                  }));
+                  return Object.keys(next).length === 0;
+                }}
               >
                 <Typography size="xs" className="text-text-muted mb-4">
                   {tCreateRedesign("step4.helper")}
@@ -962,17 +1043,20 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                       onRemove={handleRemoveContactChannel}
                       typeInputName="contactChannelType"
                       valueInputName="contactChannelValue"
+                      onFormOpenChange={setIsChannelFormOpen}
                       labels={{
                         typeLabel: tCreate("contactChannelType"),
                         valueLabel: tCreate("contactChannelValue"),
                         helper: tCreateRedesign("channels.helper"),
                         addButton: tCreateRedesign("channels.addButton"),
+                        addChannel: tCreateRedesign("channels.addChannel"),
                         edit: tCreateRedesign("channels.edit"),
                         save: tCreateRedesign("channels.save"),
                         cancel: tCreateRedesign("channels.cancel"),
                         remove: tCreate("remove"),
                         optionLabel: (type) => tChannelTypes(type),
                         valuePlaceholder: getContactChannelPlaceholder,
+                        validationError: (key) => tCreateRedesign(`channels.validationError.${key}` as never) ?? key,
                       }}
                     />
                     {contactChannelGenericError && (
@@ -980,16 +1064,22 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                         {contactChannelGenericError}
                       </Typography>
                     )}
+                    {clientErrors.channelFormOpen && (
+                      <FieldErrorMsg>{tCreateRedesign("channels.formOpenWarning")}</FieldErrorMsg>
+                    )}
                   </div>
 
                   <div className="space-y-3">
                     <Label>{tCreate("addressesLabel")}</Label>
-                    {addressRows.length > 0 && (
+                    {addressData.length > 0 && (
                       <StoreAddressList
                         idPrefix="address"
-                        rows={addressRows.map((rowId, rowIndex) => ({
-                          rowId,
+                        rows={addressData.map((row, rowIndex) => ({
+                          rowId: row.id,
                           rowIndex,
+                          city: row.city,
+                          addressLine: row.addressLine,
+                          reference: row.reference,
                         }))}
                         cityLabel={tCreate("addressCity")}
                         addressLineLabel={tCreate("addressLine")}
@@ -999,17 +1089,95 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                         referenceInputName="addressReference"
                         removeLabel={tCreate("remove")}
                         onRemove={handleRemoveAddress}
+                        onCityChange={handleAddressCity}
+                        onAddressLineChange={handleAddressLine}
+                        onReferenceChange={handleAddressReference}
+                        rowLabel={(rowIndex) => tCreate("addressItemLabel", { index: rowIndex + 1 })}
                       />
                     )}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleAddAddress}
-                      leadingIcon={<Plus size={13} aria-hidden />}
-                    >
-                      {tCreate("addAddress")}
-                    </Button>
+                    {showAddressForm ? (
+                      <div className="rounded-[var(--radius-lg)] p-3 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
+                        <div className="mb-2.5 flex items-center justify-between gap-2">
+                          <Typography size="xs" className="[color:var(--text-muted)]">
+                            {tCreateRedesign("step4.helper")}
+                          </Typography>
+                          <button
+                            type="button"
+                            onClick={handleCancelAddressForm}
+                            aria-label={tCreateRedesign("channels.cancel")}
+                            className="flex size-6 flex-shrink-0 items-center justify-center rounded [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:[outline:2px_solid_var(--focus-ring)]"
+                          >
+                            <X size={14} aria-hidden />
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                          <div>
+                            <Label htmlFor="pending-address-city" className="text-xs">
+                              {tCreate("addressCity")}
+                            </Label>
+                            <Input
+                              id="pending-address-city"
+                              type="text"
+                              value={pendingCity}
+                              onChange={(e) => setPendingCity(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="pending-address-line" className="text-xs">
+                              {tCreate("addressLine")}
+                            </Label>
+                            <Input
+                              id="pending-address-line"
+                              type="text"
+                              value={pendingAddressLine}
+                              onChange={(e) => setPendingAddressLine(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleConfirmAddress();
+                                }
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <Label htmlFor="pending-address-reference" className="text-xs">
+                            {tCreate("addressReference")}
+                          </Label>
+                          <Input
+                            id="pending-address-reference"
+                            type="text"
+                            value={pendingReference}
+                            onChange={(e) => setPendingReference(e.target.value)}
+                          />
+                        </div>
+                        <div className="mt-3 flex justify-end">
+                          <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            onClick={handleConfirmAddress}
+                            disabled={!pendingAddressLine.trim()}
+                            leadingIcon={<Plus size={13} aria-hidden />}
+                          >
+                            {tCreateRedesign("channels.addButton")}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowAddressForm(true)}
+                        leadingIcon={<Plus size={13} aria-hidden />}
+                      >
+                        {tCreate("addAddress")}
+                      </Button>
+                    )}
+                    {clientErrors.addressFormOpen && (
+                      <FieldErrorMsg>{tCreateRedesign("addresses.formOpenWarning")}</FieldErrorMsg>
+                    )}
                   </div>
                 </div>
               </WizardStep>
@@ -1079,8 +1247,8 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
               {storeType === "BUSINESS" && (
                 <AsideSummaryRow
                   label={tCreateRedesign("aside.addressesLabel")}
-                  value={`${addressRows.length}`}
-                  muted={addressRows.length === 0}
+                  value={`${addressData.length}`}
+                  muted={addressData.length === 0}
                 />
               )}
               {storeType === "PERSON" && isPrivate && (

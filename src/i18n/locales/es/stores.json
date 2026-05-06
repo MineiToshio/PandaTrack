@@ -109,7 +109,6 @@
     "emptyDescription": "Elige un archivo PNG, JPG, JPEG o WebP. Abriremos el editor de recorte antes de subir cualquier archivo.",
     "uploadCta": "Haz clic o suelta una imagen",
     "editCta": "Editar",
-    "replaceCta": "Reemplazar",
     "removeCta": "Quitar",
     "editorTitle": "Ajusta el encuadre del logo",
     "editorDescription": "Mueve la imagen dentro del marco cuadrado y usa el zoom para dejar visible la parte más importante.",
@@ -465,7 +464,8 @@
         "presenceHelper": "Dónde opera la tienda. Los canales de contacto van en el paso siguiente.",
         "importHelper": "¿Desde dónde importa o consigue productos esta tienda? Ayuda a coleccionistas a filtrar por origen.",
         "hasStockLabel": "Tiene stock",
-        "receivesOrdersLabel": "Recibe pre-órdenes"
+        "receivesOrdersLabel": "Recibe pre-órdenes",
+        "stockSectionLabel": "Comportamiento comercial"
       },
       "step4": {
         "eyebrow": "PASO 4 · CANALES",
@@ -515,7 +515,19 @@
         "edit": "Editar",
         "save": "Guardar",
         "cancel": "Cancelar",
-        "remove": "Quitar"
+        "remove": "Quitar",
+        "addChannel": "Añadir canal",
+        "formOpenWarning": "Hay un canal sin agregar. Agrégalo o cancela antes de continuar.",
+        "validationError": {
+          "required": "El valor es obligatorio.",
+          "INSTAGRAM": "Ingresa una URL de Instagram válida (https://instagram.com/...).",
+          "WHATSAPP": "Usa un enlace wa.me/... o un número internacional (+51...).",
+          "EMAIL": "Ingresa un email válido (usuario@dominio.com).",
+          "PHONE": "Usa formato internacional (+51 999 999 999).",
+          "FACEBOOK": "Ingresa una URL de Facebook válida (https://facebook.com/...).",
+          "TIKTOK": "Ingresa una URL de TikTok válida (https://tiktok.com/@...).",
+          "WEBSITE": "Ingresa una URL válida que empiece con https://..."
+        }
       },
       "duplicate": {
         "eyebrow": "Tiendas similares encontradas",
@@ -529,6 +541,9 @@
         "reframe": "Reencuadrar",
         "remove": "Quitar",
         "save": "Guardar logo"
+      },
+      "addresses": {
+        "formOpenWarning": "Hay una dirección sin agregar. Agrégala o cancela antes de continuar."
       }
     },
     "toast": {

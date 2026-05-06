@@ -87,7 +87,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         <div
           className={cn(
             "flex items-center gap-[var(--space-2)]",
-            "min-h-[2.75rem] w-full",
+            "h-[2.875rem] w-full",
             "px-[var(--space-4)] py-[var(--space-3)]",
             "rounded-[var(--radius-md)]",
             "[border-width:1px] [border-style:solid]",
@@ -100,7 +100,6 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               "[border-color:var(--destructive)] [background:color-mix(in_oklch,var(--destructive)_5%,var(--surface-elevated))]",
             // Disabled — no opacity (ADR 0001 D3)
             disabled && "pointer-events-none [border-color:var(--border)] [color:var(--text-muted)]",
-            "@md:min-h-[2.5rem]",
           )}
           aria-busy={loading ? "true" : undefined}
         >

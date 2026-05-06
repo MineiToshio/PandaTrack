@@ -348,7 +348,6 @@ export default function EditStoreForm({
                         emptyDescription: t("logo.emptyDescription"),
                         uploadCta: t("logo.uploadCta"),
                         editCta: t("logo.editCta"),
-                        replaceCta: t("logo.replaceCta"),
                         removeCta: t("logo.removeCta"),
                         editorTitle: t("logo.editorTitle"),
                         editorDescription: t("logo.editorDescription"),
@@ -496,12 +495,14 @@ export default function EditStoreForm({
                         valueLabel: t("create.contactChannelValue"),
                         helper: tRedesign("channels.helper"),
                         addButton: tRedesign("channels.addButton"),
+                        addChannel: tRedesign("channels.addChannel"),
                         edit: tRedesign("channels.edit"),
                         save: tRedesign("channels.save"),
                         cancel: tRedesign("channels.cancel"),
                         remove: t("create.remove"),
                         optionLabel: (type) => tChannelTypes(type),
                         valuePlaceholder: (type) => t(`create.contactChannelPlaceholder.${type}` as never),
+                        validationError: (key) => tRedesign(`channels.validationError.${key}` as never) ?? key,
                       }}
                     />
                     {contactChannelGenericError && (

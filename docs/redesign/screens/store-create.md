@@ -83,8 +83,8 @@ Sección de países de importación:
 
 **Logo (solo BUSINESS):** aparece como sección separada después de presencia.
 
-- **Sin logo** (`#s6-store-create-step-2-identity`): zona de drop/upload con icono `upload-cloud`, texto "Subir logo" + helper de formato. Link "Subir logo" que lleva a `#s6-store-create-logo-upload`.
-- **Con logo** (`#s6-store-create-step-2-logo-set`): thumbnail 72px × 72px con inicial del nombre sobre tint accent + nombre del archivo + dimensiones + acciones "Reencuadrar" (ghost, lleva a `#s6-store-create-logo-upload`) y "Quitar" (ghost, color `--destructive`).
+- **Sin logo** (`#s6-store-create-step-2-identity`): zona de drop/upload con icono `Building2`, texto "Subir logo" + helper de formato + pill "Subir" con Upload icon. Acepta drag & drop o click. Lleva al editor de recorte (`#s6-store-create-logo-upload`) cuando se selecciona un archivo.
+- **Con logo** (`#s6-store-create-step-2-logo-set`): thumbnail **150×150px** del logo recortado dentro de la misma tarjeta. A la derecha: nombre del archivo (`submission.file.name`) + peso (`formatFileSize(submission.file.size)`). Bajo la info: botones ghost sm "Edit" (solo cuando el archivo es editable en la sesión actual) y "Remove". Sin botón "Reencuadrar" separado — la edición se hace desde el mismo botón "Edit".
 
 **Estado de error** (`#s6-store-create-step-2-error`): `ErrorMessage` inline bajo el campo Nombre con tono destructive. El campo tiene borde en `--destructive`. `HelperText` ([spec](../components/HelperText.md)) en rojo.
 
@@ -102,6 +102,13 @@ Sección "Presencia" con label igual (14px bold): pills Tienda física / Tienda 
 
 Sección "Países de importación": label igual + combobox multi-select.
 
+**Sección "Comportamiento comercial"** (label 14px bold, `step3.stockSectionLabel`): agrupa los dos switches de comportamiento:
+
+- **Tiene stock disponible** (`Switch`): indica si la tienda gestiona stock en tiempo real.
+- **Recibe preórdenes** (`Switch`): indica si acepta pedidos en preventa.
+
+Los dos switches deben ir bajo este encabezado — sin él flotan visualmente desconectados del resto del paso.
+
 CTA: `Button` primary "Continuar →".
 
 ## 6. Modal: solicitar nueva categoría (`#s6-store-create-category-request`)
@@ -115,19 +122,50 @@ Body: párrafo helper + dos campos sin contenedor extra:
 
 Footer: "Cancelar" (ghost) + "Enviar solicitud" (primary + icono send). El modal cierra al cancelar o al enviar. Dispatch `Toast` ([spec](../components/Toast.md)) de confirmación post-envío.
 
-## 7. Paso 4 — Canales (`#s6-store-create-step-4-channels`)
+## 7. Paso 4 — Canales y direcciones (`#s6-store-create-step-4-channels`)
 
 Eyebrow: `PASO 4 · CANALES`. Label de sección 14px bold.
 
-**Canales existentes:** lista de `.channel-row` dentro de contenedor bordeado (border radius 10px, overflow hidden). Cada fila: icono del tipo + label + value + `IconButton` "Quitar" (icono x, 13px). Separados por `border-bottom` entre filas.
+### Canales de contacto
 
-**Agregar nuevo:** panel separado con surface + border + radius. Helper text + fila flex con:
+**Canales existentes:** lista dentro de contenedor bordeado (border radius lg, overflow hidden). Cada fila: icono del tipo (`--accent-cool`) + label muted + value + botón Editar (Pencil 13px) + botón Quitar (X 13px). Separados por `border-top` entre filas.
 
-- `Select` ([spec](../components/Select.md)) de tipo de canal (Sitio web, Instagram, TikTok, Email, WhatsApp…).
-- `Input` de valor con placeholder adaptado al tipo.
-- `Button` primary sm "Agregar" (icono plus).
+**Modo edición de fila**: inline dentro del mismo contenedor. Select de tipo (150px) + Input de valor (flex-1) + Button primary "Guardar" (Check icon) + Button ghost "Cancelar".
 
-El paso es opcional (sin canales también avanza).
+**Agregar canal:** por defecto el formulario de agregar está **colapsado**. Se muestra solo el botón ghost sm "Añadir canal" (Plus icon). Al hacer click:
+
+- Aparece tarjeta con `[background:var(--surface-elevated)]` + `[border:1px_solid_var(--border)]`.
+- Esquina superior derecha: botón X que cancela sin agregar.
+- Fila: `Select` de tipo (150px, fijo) + `Input` de valor (flex-1) + `Button` primary "Agregar" (Plus icon).
+- Error de validación inline bajo el input si el valor no cumple las reglas del tipo.
+
+**Validación por tipo** (L06 en `_notes/learnings-implementation.md`):
+
+| Tipo      | Regla                                                    |
+| --------- | -------------------------------------------------------- |
+| INSTAGRAM | Debe contener `instagram.com/`                           |
+| FACEBOOK  | Debe contener `facebook.com/` o `fb.com/`                |
+| TIKTOK    | Debe contener `tiktok.com/`                              |
+| WEBSITE   | Debe empezar con `https://`                              |
+| WHATSAPP  | URL `wa.me/` o número con `+` seguido de dígitos         |
+| EMAIL     | Regex básico `user@domain.tld`                           |
+| PHONE     | `+` seguido de dígitos (con espacios/guiones permitidos) |
+| OTHER     | Cualquier valor no vacío                                 |
+
+**Bloqueo de avance:** si el formulario de agregar canal está abierto cuando el usuario intenta avanzar al paso 5, el wizard muestra el error `channels.formOpenWarning` y no avanza.
+
+### Direcciones
+
+**Patrón staged-add** (L05 en `_notes/learnings-implementation.md`): nunca se inserta una fila vacía de inmediato.
+
+1. Botón ghost sm "Añadir dirección" (Plus icon) abre el formulario pending.
+2. El formulario tiene tres campos: Ciudad (Input), Dirección (Input), Referencia (Input opcional).
+3. Click "Agregar" confirma la entrada y cierra el formulario. X cancela sin agregar.
+4. Las entradas confirmadas se muestran en `StoreAddressList` encima del botón/formulario.
+
+**Bloqueo de avance:** análogo al de canales — si el formulario de dirección está abierto, el wizard no avanza y muestra `addresses.formOpenWarning`.
+
+El paso es opcional en su totalidad (sin canales ni direcciones también avanza si los formularios están cerrados).
 
 CTA: `Button` primary "Continuar →".
 
@@ -154,6 +192,21 @@ El modal de duplicado bloquea el submit hasta resolución (BR-01-08). Tiendas en
 Eyebrow: `PASO 5 · LISTO`. Título "Revisa y confirma."
 
 Resumen de todos los campos del wizard en modo read-only (pares label/value con icono de edición por sección). Checkbox de aceptación de términos. CTA final: `Button` primary "Crear tienda".
+
+**Canales:** por cada `ContactChannelEntry`, renderizar:
+
+- `<dt>`: nombre del tipo (ej. "Instagram") en `text-muted`.
+- `<dd>`: URL o valor real truncado con `truncate`.
+
+Nunca mostrar conteos ("1 canal"). Siempre datos reales. Ver L09 en `_notes/learnings-implementation.md`.
+
+**Direcciones:** por cada dirección confirmada, renderizar en stack vertical:
+
+- Ciudad.
+- Línea de dirección.
+- Referencia (si existe).
+
+Separación visual entre entradas. Nunca mostrar "1 dirección".
 
 Estado en aside Resumen: chip `info` "Pendiente" con icono clock (para users normales).
 

@@ -4,11 +4,13 @@ last_updated: 2026-05-02
 owner: Sergio Minei
 ---
 
-> **Estado actual:** S1-S5 ✅ done. **Plan revisado post-S4** (ver [`methodology.md`](./methodology.md)): cada sesión tiene **Fase A (docs) + Fase B (implementación inmediata)** con gate humano en el medio. Todo va a branch `redesign`. Dashboard fuera de scope. Última sesión (S13) reemplaza `docs/design/` con el sistema final.
+> **Estado actual:** S1-S6 ✅ done · M04 ✅ done. **Plan revisado post-S4** (ver [`methodology.md`](./methodology.md)): cada sesión tiene **Fase A (docs) + Fase B (implementación inmediata)** con gate humano en el medio. Todo va a branch `redesign`. Dashboard fuera de scope. Última sesión (S13) reemplaza `docs/design/` con el sistema final.
 >
 > **S5 Fase B completada ✅ (2026-05-02).** App shell PUSH sidebar · Header con breadcrumbs + core toggles · MobileTabBar con FAB elevado central · MascotBubble idle · ProgressBar · Pagination · FAB · useSidebarState shared hook · AppLayout refactorizado. i18n completo. 388 tests ✅, build limpio ✅. Ver [`sessions/05-app-shell.md`](./sessions/05-app-shell.md).
 >
 > **S6 Fase B completada ✅ (2026-05-03).** Migration Prisma `Store.isPrivate` aplicada. Componentes core nuevos: Card · SectionCard · Stepper · MicroStat. Componentes modules nuevos: Sheet · EmptyState · FilterDrawer · DetailSidebar · WizardAccordion + WizardStep. Modal refactorizado a ADR 0008 Semantic Depth (con backward compat). 5 componentes propios del módulo (StoreCard · StoreHero · ReviewRow · DuplicateAlertInline · ReportReasonPicker). 3 pantallas refactorizadas (lista con FilterDrawer + grid responsive · detalle con StoreHero + 404-guard private · wizard con `isPrivate` switch). Schemas Zod + queries + server actions actualizadas con FR-04-33/34 (ADR 0009). i18n completo es+en. 411 tests ✅, lint 0 errores, build ✅. Ver [`sessions/06-stores-impl.md`](./sessions/06-stores-impl.md).
+>
+> **M04 correctiva completada ✅ (2026-05-05).** Wizard form polish: CSS `transition: border-color` eliminada de todos los campos (error border ahora visible) · Logo preview 150px + filename + filesize · Canales colapsados por defecto + validación por tipo + bloqueo de avance · Direcciones: patrón staged-add con estado controlado completo · Step 3: encabezado "Comportamiento comercial" · Step 5: contenido real en review (no conteos). 10 aprendizajes registrados en `_notes/learnings-implementation.md`. Ver [`sessions/M04-wizard-form-polish.md`](./sessions/M04-wizard-form-polish.md).
 >
 > **⚠️ S6 revertido (2026-05-02).** El primer intento de S6 (Fase A docs + Fase B implementación con Codex) falló: el spec de Fase A se desvió deliberadamente del demo HTML (propuso Linear-style denso en lugar del grid de cards bonitas del demo) y la implementación quedó plana, con el banner viejo `<AppPageHero>` no eliminado, sin cablear los componentes nuevos en las páginas, y wizard sin stepper visual. Causa raíz: el demo HTML no era contrato visual vinculante. Resuelto a nivel sistema en `methodology.md` §6.quater (demo como borrador visual base) y §6.quinquies (HTML-first iteration para módulos).
 >
@@ -149,6 +151,8 @@ Subproyecto de rediseño visual y de experiencia COMPLETO de PandaTrack para una
 | `sessions/03-tokens.md`                                       | Cierre de S3: tokens dual-mode + audit contraste + paletas alternativas + 4 ADRs (0004-0007).                                                                                                                                                            |
 | `sessions/04-components.md`                                   | Cierre de S4: 47 componentes core specceados + audit + red team + gaps.                                                                                                                                                                                  |
 | `sessions/M01-modal-enhancement.md`                           | **M01 correctiva** — Modal Enhancement: research, 3 versiones × 6 casos en demo HTML, Version B aprobada, ADR 0008 creado.                                                                                                                               |
+| `sessions/M04-wizard-form-polish.md`                          | **M04 correctiva** — Wizard form polish: transición border-color, logo preview 150px, channels colapsados+validación+bloqueo, addresses staged-add, step 3 label, step 5 review real. 10 aprendizajes en `_notes/learnings-implementation.md`.           |
+| `_notes/learnings-implementation.md`                          | **post-S6/M04** — 10 aprendizajes L01–L10: patrones rotos y reglas aplicables en sesiones futuras (CSS transitions, Tailwind shorthand, h- fijo, demo HTML gaps, staged add, validación de tipo, next-intl variables, API compartida, review, sección).  |
 | `methodology.md`                                              | **Post-S4** — Metodología de ejecución del subproyecto desde S5 en adelante (Fase A + Fase B por sesión, branch `redesign`, dashboard fuera de scope, guía de modelo + thinking).                                                                        |
 
 ## Metodología post-S4 (lectura obligatoria)
@@ -176,6 +180,7 @@ Detalle completo en [`methodology.md`](./methodology.md). Resumen de las reglas 
 | 04B | Implementación de atoms (Fase B, segundo batch) | B-only           | ✅ done    |
 | 05  | Navegación y layouts (app shell)                | foundational A+B | ✅ done    |
 | 06  | Módulo Tiendas (crear / lista / detalle)        | módulo           | ✅ done    |
+| M04 | Wizard form polish (create-store)               | correctiva       | ✅ done    |
 | 07  | Módulo Órdenes (crear-editar / lista / detalle) | módulo           | 🟡 next    |
 | 08  | Módulo Entregas (crear / lista / detalle)       | módulo           | ⏳ pending |
 | 09  | Estados transversales (empty / loading / error) | foundational A+B | ⏳ pending |
@@ -194,7 +199,7 @@ Detalle completo en [`methodology.md`](./methodology.md). Resumen de las reglas 
 
 ## Estado actual
 
-- Sesión vigente: **S7 — Módulo Órdenes · Fase A** 🟡 en iteración (demo HTML A.1 completo, pendiente A.2 revisión humana).
+- Sesión vigente: **S7 — Módulo Órdenes · Fase A** 🟡 próxima (M04 cerrada; commit + gate visual humano pendiente antes de iniciar S7).
 - S1 (Research + Auditoría + 4 direcciones) cerrada con rev 1 + rev 2.
 - S2 produjo 6 wireframes lo-fi, red team, plan de 5 validaciones humanas, y **ADR 0001** (19 decisiones).
 - S3 produjo `tokens.md` (Velvet default + 4 alternativas), `tokens-css.md` (mapping Tailwind v4), audit de contraste 188/188 AA, red team 15 objeciones / 0 bloqueantes, y **ADR 0004** (eliminación de paleta categórica).
