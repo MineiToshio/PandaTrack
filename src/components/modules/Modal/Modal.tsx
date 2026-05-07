@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useId, useRef, type ReactElement, type ReactNode } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, type ReactElement, type ReactNode } from "react";
 import Button from "@/components/core/Button/Button";
 import IconButton from "@/components/core/IconButton";
 import Portal from "@/components/core/Portal";
@@ -86,6 +86,14 @@ const TONE_ICON_CLASSES: Record<ModalTone, string> = {
   info: "[background:color-mix(in_oklch,var(--info)_14%,var(--surface-elevated))] [color:var(--info)]",
 };
 
+/** CSS custom property name for each tone — used for inline gradient/ring styles. */
+const TONE_COLOR_VAR: Record<ModalTone, string> = {
+  default: "var(--accent)",
+  destructive: "var(--destructive)",
+  warning: "var(--warning)",
+  info: "var(--info)",
+};
+
 const SIZE_MAX_WIDTH: Record<ModalSize, string> = {
   md: "460px",
   lg: "768px",
@@ -163,6 +171,12 @@ export default function Modal({
   const descriptionId = descriptionIdProp ?? generatedDescriptionId;
   const panelRef = useRef<HTMLDivElement>(null);
   const previousActiveElementRef = useRef<Element | null>(null);
+  // Stable ref so onClose never appears in the useEffect deps — prevents
+  // the effect from re-running (and re-focusing) on every parent re-render.
+  const onCloseRef = useRef(onClose);
+  useLayoutEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   const isDismissible = dismissible ?? closeOnBackdropClick ?? true;
   const subtitleNode = subtitle ?? description;
@@ -192,7 +206,7 @@ export default function Modal({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && isDismissible) {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (event.key !== "Tab" || !panelRef.current) return;
@@ -225,7 +239,7 @@ export default function Modal({
         node.focus(FOCUS_OPTIONS_NO_SCROLL);
       }
     };
-  }, [isOpen, isDismissible, initialFocusRef, returnFocusRef, onClose]);
+  }, [isOpen, isDismissible, initialFocusRef, returnFocusRef]);
 
   if (!isOpen) return null;
 
@@ -264,7 +278,16 @@ export default function Modal({
           style={{ maxWidth: SIZE_MAX_WIDTH[size] }}
           onClick={(event) => event.stopPropagation()}
         >
-          <header className="flex items-start gap-4 px-6 pt-6 pb-0">
+          <header className={cn("flex items-start gap-4 px-6 pt-6 pb-0", icon && "relative")}>
+            {icon && (
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background: `radial-gradient(ellipse 160% 120% at -10% -20%, color-mix(in oklch, ${TONE_COLOR_VAR[tone]} 9%, transparent) 0%, transparent 65%)`,
+                }}
+                aria-hidden="true"
+              />
+            )}
             {icon && (
               <span
                 aria-hidden="true"
@@ -272,28 +295,20 @@ export default function Modal({
                   "inline-flex h-12 w-12 flex-shrink-0 items-center justify-center [border-radius:24px]",
                   TONE_ICON_CLASSES[tone],
                 )}
+                style={{
+                  boxShadow: `0 0 0 5px color-mix(in oklch, ${TONE_COLOR_VAR[tone]} 11%, transparent)`,
+                }}
               >
                 {icon}
               </span>
             )}
             <div className="min-w-0 flex-1">
-              <div className="flex items-start gap-3">
-                <h2
-                  id={titleId}
-                  className="flex-1 [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
-                >
-                  {title}
-                </h2>
-                {isDismissible && (
-                  <IconButton
-                    aria-label={closeButtonLabel}
-                    size="sm"
-                    variant="ghost"
-                    icon={<X size={18} aria-hidden="true" />}
-                    onClick={onClose}
-                  />
-                )}
-              </div>
+              <h2
+                id={titleId}
+                className="[font-size:1.125rem] [line-height:1.3] [font-weight:var(--font-weight-semibold)] [letter-spacing:-0.01em] [color:var(--text-primary)]"
+              >
+                {title}
+              </h2>
               {hasSubtitle && (
                 <p
                   id={descriptionId}
@@ -303,6 +318,16 @@ export default function Modal({
                 </p>
               )}
             </div>
+            {isDismissible && (
+              <IconButton
+                aria-label={closeButtonLabel}
+                size="sm"
+                variant="ghost"
+                icon={<X size={18} aria-hidden="true" />}
+                onClick={onClose}
+                className="-mt-0.5 flex-shrink-0"
+              />
+            )}
           </header>
           {children != null && children !== false && (
             <div className={cn("flex-1 overflow-y-auto px-6 pt-4 pb-1", bodyClassName)}>{children}</div>
@@ -320,7 +345,7 @@ export default function Modal({
                 {secondaryAction && (
                   <Button
                     variant="secondary"
-                    size="sm"
+                    size="md"
                     onClick={secondaryAction.onClick}
                     disabled={secondaryAction.disabled}
                   >
@@ -330,7 +355,7 @@ export default function Modal({
                 {primaryAction && (
                   <Button
                     variant={primaryAction.variant === "destructive" ? "destructive" : "primary"}
-                    size="sm"
+                    size="md"
                     onClick={primaryAction.onClick}
                     loading={primaryAction.loading}
                     disabled={primaryAction.disabled}

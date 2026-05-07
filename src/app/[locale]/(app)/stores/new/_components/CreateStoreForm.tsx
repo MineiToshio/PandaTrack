@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, AlertTriangle, Building2, Check, Clock, Globe, Plus, Store, User, X } from "lucide-react";
+import { AlertCircle, AlertTriangle, Building2, Check, Clock, Globe, Plus, Store, User } from "lucide-react";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import {
   type ChangeEvent,
@@ -35,7 +35,7 @@ import { createStore, type CreateStoreResult } from "../_actions/createStore";
 import { getDuplicateCandidates, getDuplicateCandidatesForSubmit } from "../_actions/getDuplicateCandidates";
 import { SIMILARITY_THRESHOLD_PERCENT } from "@/lib/store/duplicateMatch";
 import { STORE_LOGO_MAX_SOURCE_SIZE_MB } from "@/lib/store/logoShared";
-import StoreAddressList from "../../_components/share/StoreAddressList";
+import StoreAddressEditor, { type StoreAddressEditorHandle } from "../../_components/share/StoreAddressEditor";
 import { type StoreContactChannelType } from "../../_components/share/StoreContactChannelList";
 import StoreContactChannelEditor, {
   type StoreContactChannelEditorHandle,
@@ -175,16 +175,14 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
   const [addressData, setAddressData] = useState<
     Array<{ id: number; city: string; addressLine: string; reference: string }>
   >([]);
-  const [showAddressForm, setShowAddressForm] = useState(false);
-  const [pendingCity, setPendingCity] = useState("");
-  const [pendingAddressLine, setPendingAddressLine] = useState("");
-  const [pendingReference, setPendingReference] = useState("");
+  const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
   const [logoSubmission, setLogoSubmission] = useState<StoreLogoSubmission>({
     action: "keep",
     file: null,
     cropArea: null,
   });
   const channelEditorRef = useRef<StoreContactChannelEditorHandle | null>(null);
+  const addressEditorRef = useRef<StoreAddressEditorHandle | null>(null);
   const nextContactRowIdRef = useRef(1);
   const nextAddressRowIdRef = useRef(1);
 
@@ -298,42 +296,18 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
     return tCreate(`contactChannelPlaceholder.${type}`);
   };
 
-  const handleConfirmAddress = () => {
-    const trimmedLine = pendingAddressLine.trim();
-    if (!trimmedLine) return;
+  const handleAddAddress = (entry: { city: string; addressLine: string; reference: string }) => {
     const nextId = nextAddressRowIdRef.current;
     nextAddressRowIdRef.current += 1;
-    setAddressData((prev) => [
-      ...prev,
-      { id: nextId, city: pendingCity.trim(), addressLine: trimmedLine, reference: pendingReference.trim() },
-    ]);
-    setPendingCity("");
-    setPendingAddressLine("");
-    setPendingReference("");
-    setShowAddressForm(false);
+    setAddressData((prev) => [...prev, { id: nextId, ...entry }]);
   };
 
-  const handleCancelAddressForm = () => {
-    setShowAddressForm(false);
-    setPendingCity("");
-    setPendingAddressLine("");
-    setPendingReference("");
+  const handleUpdateAddress = (rowId: number, next: { city: string; addressLine: string; reference: string }) => {
+    setAddressData((prev) => prev.map((row) => (row.id === rowId ? { ...row, ...next } : row)));
   };
 
   const handleRemoveAddress = (rowId: number) => {
     setAddressData((prev) => prev.filter((row) => row.id !== rowId));
-  };
-
-  const handleAddressCity = (rowId: number, value: string) => {
-    setAddressData((prev) => prev.map((row) => (row.id === rowId ? { ...row, city: value } : row)));
-  };
-
-  const handleAddressLine = (rowId: number, value: string) => {
-    setAddressData((prev) => prev.map((row) => (row.id === rowId ? { ...row, addressLine: value } : row)));
-  };
-
-  const handleAddressReference = (rowId: number, value: string) => {
-    setAddressData((prev) => prev.map((row) => (row.id === rowId ? { ...row, reference: value } : row)));
   };
 
   const handleSubmit = async (formData: FormData) => {
@@ -560,9 +534,8 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                   key={addr.id}
                   className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)]"
                 >
-                  {addr.city && <div>{addr.city}</div>}
-                  <div>{addr.addressLine}</div>
-                  {addr.reference && <div className="[color:var(--text-muted)]">{addr.reference}</div>}
+                  {addr.city && <div className="[color:var(--text-muted)]">{addr.city}</div>}
+                  <div>{addr.reference ? `${addr.addressLine} · ${addr.reference}` : addr.addressLine}</div>
                 </div>
               ))}
             </dd>
@@ -1014,7 +987,7 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                 validate={() => {
                   const next: Record<string, string> = {};
                   if (isChannelFormOpen) next.channelFormOpen = "channelFormOpen";
-                  if (showAddressForm) next.addressFormOpen = "addressFormOpen";
+                  if (isAddressFormOpen) next.addressFormOpen = "addressFormOpen";
                   setClientErrors((prev) => ({
                     ...Object.fromEntries(
                       Object.entries(prev).filter(([k]) => !["channelFormOpen", "addressFormOpen"].includes(k)),
@@ -1034,7 +1007,7 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                       {!isChannelFormOpen && (
                         <Button
                           type="button"
-                          variant="secondary"
+                          variant="tonal"
                           size="sm"
                           onClick={() => channelEditorRef.current?.openForm()}
                           leadingIcon={<Plus size={13} aria-hidden />}
@@ -1089,112 +1062,42 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <Label>{tCreate("addressesLabel")}</Label>
-                      {!showAddressForm && (
+                      {!isAddressFormOpen && (
                         <Button
                           type="button"
-                          variant="secondary"
+                          variant="tonal"
                           size="sm"
-                          onClick={() => setShowAddressForm(true)}
+                          onClick={() => addressEditorRef.current?.openForm()}
                           leadingIcon={<Plus size={13} aria-hidden />}
                         >
                           {tCreate("addAddress")}
                         </Button>
                       )}
                     </div>
-                    {addressData.length > 0 && (
-                      <StoreAddressList
-                        idPrefix="address"
-                        rows={addressData.map((row, rowIndex) => ({
-                          rowId: row.id,
-                          rowIndex,
-                          city: row.city,
-                          addressLine: row.addressLine,
-                          reference: row.reference,
-                        }))}
-                        cityLabel={tCreate("addressCity")}
-                        addressLineLabel={tCreate("addressLine")}
-                        referenceLabel={tCreate("addressReference")}
-                        cityInputName="addressCity"
-                        addressLineInputName="addressAddressLine"
-                        referenceInputName="addressReference"
-                        removeLabel={tCreate("remove")}
-                        onRemove={handleRemoveAddress}
-                        onCityChange={handleAddressCity}
-                        onAddressLineChange={handleAddressLine}
-                        onReferenceChange={handleAddressReference}
-                        rowLabel={(rowIndex) => tCreate("addressItemLabel", { index: rowIndex + 1 })}
-                      />
-                    )}
-                    {showAddressForm && (
-                      <div className="rounded-[var(--radius-lg)] p-3 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
-                        <div className="mb-2.5 flex items-center justify-between gap-2">
-                          <Typography size="xs" className="[color:var(--text-muted)]">
-                            {tCreateRedesign("step4.helper")}
-                          </Typography>
-                          <button
-                            type="button"
-                            onClick={handleCancelAddressForm}
-                            aria-label={tCreateRedesign("channels.cancel")}
-                            className="flex size-6 flex-shrink-0 items-center justify-center rounded [color:var(--text-muted)] hover:[color:var(--text-primary)] focus-visible:[outline:2px_solid_var(--focus-ring)]"
-                          >
-                            <X size={14} aria-hidden />
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                          <div>
-                            <Label htmlFor="pending-address-city" className="text-xs">
-                              {tCreate("addressCity")}
-                            </Label>
-                            <Input
-                              id="pending-address-city"
-                              type="text"
-                              value={pendingCity}
-                              onChange={(e) => setPendingCity(e.target.value)}
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="pending-address-line" className="text-xs">
-                              {tCreate("addressLine")}
-                            </Label>
-                            <Input
-                              id="pending-address-line"
-                              type="text"
-                              value={pendingAddressLine}
-                              onChange={(e) => setPendingAddressLine(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  handleConfirmAddress();
-                                }
-                              }}
-                            />
-                          </div>
-                        </div>
-                        <div className="mt-3">
-                          <Label htmlFor="pending-address-reference" className="text-xs">
-                            {tCreate("addressReference")}
-                          </Label>
-                          <Input
-                            id="pending-address-reference"
-                            type="text"
-                            value={pendingReference}
-                            onChange={(e) => setPendingReference(e.target.value)}
-                          />
-                        </div>
-                        <div className="mt-3 flex justify-end">
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={handleConfirmAddress}
-                            disabled={!pendingAddressLine.trim()}
-                            leadingIcon={<Plus size={13} aria-hidden />}
-                            className="h-[2.875rem]"
-                          >
-                            {tCreateRedesign("channels.addButton")}
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                    <StoreAddressEditor
+                      ref={addressEditorRef}
+                      hideTrigger
+                      entries={addressData}
+                      onAdd={handleAddAddress}
+                      onUpdate={handleUpdateAddress}
+                      onRemove={handleRemoveAddress}
+                      cityInputName="addressCity"
+                      addressLineInputName="addressAddressLine"
+                      referenceInputName="addressReference"
+                      onFormOpenChange={setIsAddressFormOpen}
+                      labels={{
+                        cityLabel: tCreate("addressCity"),
+                        addressLineLabel: tCreate("addressLine"),
+                        referenceLabel: tCreate("addressReference"),
+                        helper: tCreateRedesign("addresses.helper"),
+                        addButton: tCreateRedesign("channels.addButton"),
+                        addAddress: tCreate("addAddress"),
+                        edit: tCreateRedesign("channels.edit"),
+                        save: tCreateRedesign("channels.save"),
+                        cancel: tCreateRedesign("channels.cancel"),
+                        remove: tCreateRedesign("channels.remove"),
+                      }}
+                    />
                     {clientErrors.addressFormOpen && (
                       <FieldErrorMsg>{tCreateRedesign("addresses.formOpenWarning")}</FieldErrorMsg>
                     )}

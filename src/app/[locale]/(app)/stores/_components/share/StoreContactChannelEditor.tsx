@@ -237,7 +237,7 @@ const StoreContactChannelEditor = forwardRef<StoreContactChannelEditorHandle, St
                     </div>
                     <Button
                       type="button"
-                      variant="primary"
+                      variant="tonal"
                       onClick={handleSaveEdit}
                       disabled={!editingValue.trim()}
                       leadingIcon={<Check size={14} aria-hidden />}
@@ -337,7 +337,7 @@ const StoreContactChannelEditor = forwardRef<StoreContactChannelEditorHandle, St
               </div>
               <Button
                 type="button"
-                variant="secondary"
+                variant="tonal"
                 onClick={handleAdd}
                 disabled={!pendingValue.trim()}
                 leadingIcon={<Plus size={14} aria-hidden />}

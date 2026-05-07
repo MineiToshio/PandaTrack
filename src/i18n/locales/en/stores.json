@@ -543,7 +543,8 @@
         "save": "Save logo"
       },
       "addresses": {
-        "formOpenWarning": "There's an unsaved address. Add it or cancel before continuing."
+        "formOpenWarning": "There's an unsaved address. Add it or cancel before continuing.",
+        "helper": "City, street address, and optional reference."
       }
     },
     "toast": {

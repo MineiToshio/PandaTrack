@@ -543,7 +543,8 @@
         "save": "Guardar logo"
       },
       "addresses": {
-        "formOpenWarning": "Hay una dirección sin agregar. Agrégala o cancela antes de continuar."
+        "formOpenWarning": "Hay una dirección sin agregar. Agrégala o cancela antes de continuar.",
+        "helper": "Ciudad, dirección y referencia opcional."
       }
     },
     "toast": {

@@ -5,17 +5,15 @@ import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import posthog from "posthog-js";
 import Button from "@/components/core/Button/Button";
-import FieldCharacterCount from "@/components/core/FieldCharacterCount";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import Modal from "@/components/modules/Modal/Modal";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import {
-  saveStoreProductTypeRequest,
-  type SaveStoreProductTypeRequestResult,
-} from "../../_actions/saveStoreProductTypeRequest";
+import { useToast } from "@/contexts/ToastContext";
+import { saveStoreProductTypeRequest } from "../../_actions/saveStoreProductTypeRequest";
+import { storeProductTypeRequestSchema } from "../../_schemas/storeProductTypeRequestSchema";
 import { cn } from "@/lib/styles";
 
 type StoreProductTypeRequestModalProps = {
@@ -57,16 +55,26 @@ export default function StoreProductTypeRequestModal({
   triggerVariant = "default",
 }: StoreProductTypeRequestModalProps) {
   const t = useTranslations("stores");
+  const { addToast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
-  const [state, setState] = useState<SaveStoreProductTypeRequestResult | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [suggestedName, setSuggestedName] = useState("");
   const [reason, setReason] = useState("");
 
-  const fieldErrors = state?.success === false ? state.fieldErrors : undefined;
+  // Clears the error for a single field when the user starts editing it.
+  const clearFieldError = (key: string) => {
+    setFieldErrors((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
 
   const openModal = () => {
+    setFieldErrors({});
     setIsOpen(true);
     posthog.capture(POSTHOG_EVENTS.STORE.PRODUCT_TYPE_REQUEST_OPENED, {
       source,
@@ -80,16 +88,43 @@ export default function StoreProductTypeRequestModal({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsPending(true);
+    // Stop the event from bubbling through the React tree to any outer <form>
+    // (e.g. the store-creation wizard). React portals still propagate synthetic
+    // submit events through the React component hierarchy, so without this the
+    // wizard form action would fire every time this modal form is submitted.
+    event.stopPropagation();
 
+    // Client-side validation first — show errors immediately without a round-trip.
+    const clientResult = storeProductTypeRequestSchema.safeParse({
+      locale,
+      source,
+      suggestedName,
+      reason: reason.trim() || null,
+    });
+
+    if (!clientResult.success) {
+      const errors: Record<string, string[]> = {};
+      for (const issue of clientResult.error.issues) {
+        const key = issue.path.length > 0 ? issue.path.map(String).join(".") : "form";
+        errors[key] = [...(errors[key] ?? []), issue.message];
+      }
+      setFieldErrors(errors);
+      return;
+    }
+
+    setIsPending(true);
     const formData = new FormData(event.currentTarget);
     const result = await saveStoreProductTypeRequest(null, formData);
-    setState(result);
     setIsPending(false);
 
     if (result.success) {
       setSuggestedName("");
       setReason("");
+      setFieldErrors({});
+      addToast(t("governance.productTypeRequest.success"), { variant: "success" });
+      setIsOpen(false);
+    } else {
+      setFieldErrors(result.fieldErrors ?? {});
     }
   };
 
@@ -110,7 +145,6 @@ export default function StoreProductTypeRequestModal({
         isOpen={isOpen}
         onClose={closeModal}
         title={t("governance.productTypeRequest.title")}
-        description={t("governance.productTypeRequest.description")}
         icon={<Tag size={20} aria-hidden="true" />}
         closeButtonLabel={t("governance.productTypeRequest.cancelCta")}
         primaryAction={{
@@ -129,84 +163,71 @@ export default function StoreProductTypeRequestModal({
           <input type="hidden" name="locale" value={locale} />
           <input type="hidden" name="source" value={source} />
 
+          <Typography size="sm" className="[line-height:1.5] [color:var(--text-secondary)]">
+            {t("governance.productTypeRequest.description")}
+          </Typography>
+
           <div className="space-y-2">
-            <Label htmlFor={`product-type-request-name-${source}`} className="text-text-title">
+            <Label
+              htmlFor={`product-type-request-name-${source}`}
+              className={fieldErrors.suggestedName?.[0] ? "[color:var(--destructive)]" : "text-text-title"}
+            >
               {t("governance.productTypeRequest.nameLabel")}
             </Label>
             <Input
               id={`product-type-request-name-${source}`}
               name="suggestedName"
               value={suggestedName}
-              onChange={(event) => setSuggestedName(event.target.value)}
+              onChange={(event) => {
+                setSuggestedName(event.target.value);
+                clearFieldError("suggestedName");
+              }}
               maxLength={50}
-              error={Boolean(fieldErrors?.suggestedName?.[0])}
-              aria-invalid={Boolean(fieldErrors?.suggestedName?.[0])}
+              error={Boolean(fieldErrors.suggestedName?.[0])}
+              aria-invalid={Boolean(fieldErrors.suggestedName?.[0])}
               className="h-11 rounded-xl"
             />
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <Typography size="xs" className="text-text-muted min-w-0 flex-1">
-                {t("governance.productTypeRequest.nameHelper")}
-              </Typography>
-              <Typography size="xs" className="text-text-muted shrink-0 tabular-nums">
-                <FieldCharacterCount currentLength={suggestedName.length} maxLength={50} />
-              </Typography>
-            </div>
-            {fieldErrors?.suggestedName?.[0] && (
+            {fieldErrors.suggestedName?.[0] ? (
               <Typography size="xs" className="text-destructive" role="alert">
                 {translateError(t, fieldErrors.suggestedName[0])}
+              </Typography>
+            ) : (
+              <Typography size="xs" className="text-text-muted">
+                {t("governance.productTypeRequest.nameHelper")}
               </Typography>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`product-type-request-reason-${source}`} className="text-text-title">
+            <Label
+              htmlFor={`product-type-request-reason-${source}`}
+              className={fieldErrors.reason?.[0] ? "[color:var(--destructive)]" : "text-text-title"}
+            >
               {t("governance.productTypeRequest.reasonLabel")}
             </Label>
             <Textarea
               id={`product-type-request-reason-${source}`}
               name="reason"
-              rows={4}
+              minRows={4}
               value={reason}
-              onChange={(event) => setReason(event.target.value)}
+              onChange={(event) => {
+                setReason(event.target.value);
+                clearFieldError("reason");
+              }}
               maxLength={500}
-              error={Boolean(fieldErrors?.reason?.[0])}
-              aria-invalid={Boolean(fieldErrors?.reason?.[0])}
-              className="min-h-32 resize-y rounded-xl px-4 py-3"
+              error={Boolean(fieldErrors.reason?.[0])}
+              aria-invalid={Boolean(fieldErrors.reason?.[0])}
             />
-            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <Typography size="xs" className="text-text-muted min-w-0 flex-1">
-                {t("governance.productTypeRequest.reasonHelper")}
-              </Typography>
-              <Typography size="xs" className="text-text-muted shrink-0 tabular-nums">
-                <FieldCharacterCount currentLength={reason.length} maxLength={500} />
-              </Typography>
-            </div>
-            {fieldErrors?.reason?.[0] && (
+            {fieldErrors.reason?.[0] ? (
               <Typography size="xs" className="text-destructive" role="alert">
                 {translateError(t, fieldErrors.reason[0])}
               </Typography>
+            ) : (
+              <Typography size="xs" className="text-text-muted">
+                {t("governance.productTypeRequest.reasonHelper")}
+              </Typography>
             )}
           </div>
-
-          {state?.success && (
-            <Typography
-              size="xs"
-              className="bg-primary/8 text-text-body border-primary/12 rounded-xl border px-4 py-3"
-              role="status"
-            >
-              {t("governance.productTypeRequest.success")}
-            </Typography>
-          )}
-
-          {state?.success === false && state.error && (
-            <Typography
-              size="xs"
-              className="bg-destructive/8 text-destructive border-destructive/20 rounded-xl border px-4 py-3"
-              role="alert"
-            >
-              {translateError(t, state.error)}
-            </Typography>
-          )}
         </form>
       </Modal>
     </>

@@ -77,6 +77,20 @@ export const buttonVariants = cva(
           "hover:[color:var(--accent)] underline-offset-4 hover:underline",
           "disabled:[color:var(--text-muted)]",
         ],
+        /**
+         * Tonal accent — soft accent background (12 %) with accent-colored text.
+         * Use for additive / in-section actions ("Add channel", "Add address")
+         * that need accent-color energy without competing with the primary CTA.
+         * Matches the visual language of the logo-upload pill.
+         */
+        tonal: [
+          "[background:color-mix(in_oklch,var(--accent)_12%,transparent)] [color:var(--accent)]",
+          "hover:after:[background:color-mix(in_oklch,var(--accent)_var(--state-hover-mix),transparent)]",
+          "hover:-translate-y-px",
+          "motion-reduce:hover:translate-y-0",
+          "active:after:[background:color-mix(in_oklch,var(--accent)_var(--state-pressed-mix),transparent)]",
+          "active:translate-y-0",
+        ],
         // New S4 variants
         destructive: [
           "[background:var(--destructive)] [color:var(--text-on-accent)] shadow-[var(--elevation-1)]",

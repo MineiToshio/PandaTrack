@@ -40,3 +40,46 @@ In development you may use `console.log` / `console.error` with discretion. In p
 ## Security
 
 Validate input on both client and server. Do not expose sensitive environment variables in code that is sent to the client.
+
+## Form field error visual pattern (mandatory — redesign)
+
+Every form field that shows a validation error must apply all three of the following simultaneously. Partial application (e.g. only a red border without a red label) is not acceptable.
+
+### Three-part error state
+
+| Layer | Rule |
+|---|---|
+| **Label** | Apply `[color:var(--destructive)]` to `<Label>`. The label must turn red when its field is invalid. |
+| **Control** | Pass `error={true}` and `aria-invalid="true"` to `<Input>`, `<Textarea>`, or `<Select>`. The `error` prop applies the red border; do not add border color by hand. |
+| **Message** | Show a translated error string in `[color:var(--destructive)]` with `role="alert"`. When an error is present, the helper text must not appear simultaneously — the error replaces it in the same slot. |
+
+### Clear-on-interaction (mandatory)
+
+As soon as the user edits a field, that field's error clears immediately. Other untouched fields keep their error state.
+
+Use a `Record<string, string[]>` state and a `clearFieldError` helper:
+
+```tsx
+const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+
+const clearFieldError = (key: string) => {
+  setFieldErrors((prev) => {
+    if (!(key in prev)) return prev;
+    const next = { ...prev };
+    delete next[key];
+    return next;
+  });
+};
+
+// Per-control onChange:
+onChange={(e) => {
+  setValue(e.target.value);
+  clearFieldError("fieldName");
+}}
+```
+
+Reset `setFieldErrors({})` when the form is re-opened or reset so stale errors do not bleed into a fresh session.
+
+### Source of truth
+
+Full visual spec: `docs/design/interface-patterns.md` → "Field error state" and "Clear-on-interaction".

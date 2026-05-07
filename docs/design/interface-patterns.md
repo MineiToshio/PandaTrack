@@ -129,6 +129,42 @@ Rules:
 
 Use shared form controls before custom markup. Keep labels, helper text, validation, and spacing consistent.
 
+#### Field error state (mandatory visual standard)
+
+When a form field has a validation error, apply all three of these changes simultaneously:
+
+1. **Label turns destructive** — apply `[color:var(--destructive)]` to the `<Label>`. Do not leave the label in its normal color when its field is invalid.
+2. **Control border turns destructive** — pass `error={true}` (and `aria-invalid="true"`) to the `Input`, `Textarea`, or `Select`. The control's `error` prop is responsible for the red border; do not add border color manually.
+3. **Error message replaces helper text** — show the translated error string in `[color:var(--destructive)]` with `role="alert"`. When an error is present, the helper text must not appear at the same time; the error replaces it in the same vertical slot.
+
+#### Clear-on-interaction (mandatory)
+
+As soon as the user starts editing a field with an error, that field's error must clear immediately — label returns to its normal color, border returns to normal, and the error message disappears (helper text reappears). Adjacent fields that the user has not touched yet keep their error state unchanged.
+
+Implementation pattern:
+
+```tsx
+// Manage field errors as a plain record so individual fields can be cleared:
+const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+
+const clearFieldError = (key: string) => {
+  setFieldErrors((prev) => {
+    if (!(key in prev)) return prev;
+    const next = { ...prev };
+    delete next[key];
+    return next;
+  });
+};
+
+// In each control's onChange:
+onChange={(e) => {
+  setValue(e.target.value);
+  clearFieldError("fieldName");
+}}
+```
+
+Apply `setFieldErrors({})` when the form is reset or re-opened so stale errors never bleed across sessions.
+
 ### Toggle choice groups (chip and tile)
 
 Use `src/components/core/ToggleChoiceGroup.tsx` when the user picks one or many options via `aria-pressed` toggle buttons that share one visual language:
