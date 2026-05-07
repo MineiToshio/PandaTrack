@@ -18,7 +18,8 @@ import StoreReportModal from "./StoreReportModal";
 
 type GovernanceTab = "reports" | "suggestions";
 
-const FLAT_DETAIL_ROW_CLASSNAME = "grid gap-2 border-t border-border/55 pt-3 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4";
+const FLAT_DETAIL_ROW_CLASSNAME =
+  "grid gap-2 border-t border-border/55 pt-3 sm:grid-cols-[11rem_minmax(0,1fr)] sm:gap-4";
 
 type StoreGovernanceSummaryModalProps = {
   locale: string;
@@ -84,8 +85,7 @@ export default function StoreGovernanceSummaryModal({
     [summary.changeRequestCounts],
   );
 
-  const defaultTab: GovernanceTab =
-    viewerOpenReport != null || summary.totalReports > 0 ? "reports" : "suggestions";
+  const defaultTab: GovernanceTab = viewerOpenReport != null || summary.totalReports > 0 ? "reports" : "suggestions";
 
   const handleOpenReportEditor = () => {
     setIsOpen(false);
@@ -138,8 +138,10 @@ export default function StoreGovernanceSummaryModal({
         onClose={() => setIsOpen(false)}
         title={t("governance.summary.title")}
         description={t("governance.summary.description")}
+        icon={<Scale size={20} aria-hidden="true" />}
+        tone="warning"
+        size="lg"
         closeButtonLabel={t("governance.report.cancelCta")}
-        className="max-w-3xl"
         bodyClassName="overflow-hidden px-0 pt-4 pb-0 sm:px-0 sm:pt-4 sm:pb-0"
       >
         <div className="flex max-h-[min(62vh,34rem)] min-h-0 flex-col">
@@ -164,7 +166,9 @@ export default function StoreGovernanceSummaryModal({
                       icon={<Flag className="size-4" aria-hidden />}
                       iconClassName="text-warning border-warning/18 bg-warning/10"
                       title={t("governance.summary.yourReportTitle")}
-                      description={t("governance.summary.yourReportSubmitted", { date: viewerReportCreatedLabel ?? "" })}
+                      description={t("governance.summary.yourReportSubmitted", {
+                        date: viewerReportCreatedLabel ?? "",
+                      })}
                       trailing={
                         <Button
                           type="button"
@@ -245,7 +249,12 @@ export default function StoreGovernanceSummaryModal({
                 ) : null}
               </section>
             ) : (
-              <section id="tabpanel-suggestions" role="tabpanel" aria-labelledby="tab-suggestions" className="space-y-4">
+              <section
+                id="tabpanel-suggestions"
+                role="tabpanel"
+                aria-labelledby="tab-suggestions"
+                className="space-y-4"
+              >
                 {viewerOpenChangeRequest ? (
                   <SubsectionPanel className="border-primary/18 bg-primary/6">
                     <SubsectionHeading
@@ -379,13 +388,7 @@ export default function StoreGovernanceSummaryModal({
   );
 }
 
-function SubsectionPanel({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+function SubsectionPanel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <section
       className={cn("border-border/55 bg-background/72 space-y-4 rounded-2xl border px-4 py-4 shadow-sm", className)}
@@ -413,7 +416,7 @@ function SubsectionHeading({
       <div className="flex min-w-0 items-start gap-3">
         <div
           className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-2xl border border-border/60",
+            "border-border/60 flex size-10 shrink-0 items-center justify-center rounded-2xl border",
             iconClassName,
           )}
         >

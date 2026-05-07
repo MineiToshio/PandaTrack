@@ -1,7 +1,7 @@
 "use client";
 
-import { Plus } from "lucide-react";
-import { useState } from "react";
+import { Plus, Tag } from "lucide-react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import posthog from "posthog-js";
 import Button from "@/components/core/Button/Button";
@@ -57,6 +57,7 @@ export default function StoreProductTypeRequestModal({
   triggerVariant = "default",
 }: StoreProductTypeRequestModalProps) {
   const t = useTranslations("stores");
+  const formRef = useRef<HTMLFormElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [state, setState] = useState<SaveStoreProductTypeRequestResult | null>(null);
@@ -110,10 +111,21 @@ export default function StoreProductTypeRequestModal({
         onClose={closeModal}
         title={t("governance.productTypeRequest.title")}
         description={t("governance.productTypeRequest.description")}
+        icon={<Tag size={20} aria-hidden="true" />}
         closeButtonLabel={t("governance.productTypeRequest.cancelCta")}
-        className="max-w-2xl"
+        primaryAction={{
+          label: t("governance.productTypeRequest.submitCta"),
+          onClick: () => formRef.current?.requestSubmit(),
+          loading: isPending,
+          disabled: isPending,
+        }}
+        secondaryAction={{
+          label: t("governance.productTypeRequest.cancelCta"),
+          onClick: closeModal,
+          disabled: isPending,
+        }}
       >
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
           <input type="hidden" name="locale" value={locale} />
           <input type="hidden" name="source" value={source} />
 
@@ -195,21 +207,6 @@ export default function StoreProductTypeRequestModal({
               {translateError(t, state.error)}
             </Typography>
           )}
-
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={isPending}
-              onClick={closeModal}
-              className="min-h-11 px-5"
-            >
-              {t("governance.productTypeRequest.cancelCta")}
-            </Button>
-            <Button type="submit" variant="primary" disabled={isPending} className="min-h-11 px-5">
-              {isPending ? t("governance.productTypeRequest.submitting") : t("governance.productTypeRequest.submitCta")}
-            </Button>
-          </div>
         </form>
       </Modal>
     </>

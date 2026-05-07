@@ -1,7 +1,7 @@
 "use client";
 
 import { PenSquare, Star, Trash2 } from "lucide-react";
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
 import IconButton from "@/components/core/IconButton";
@@ -92,7 +92,6 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
   const [reviewIdToDelete, setReviewIdToDelete] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const cancelDeleteRef = useRef<HTMLButtonElement>(null);
   const hasViewerReview = viewerReview != null;
   const visibleReviews = reviews.slice(0, visibleReviewCount);
   const remainingReviewCount = Math.max(0, reviews.length - visibleReviewCount);
@@ -190,36 +189,23 @@ export default function StorePublicReviewsSection({ locale, storeSlug }: StorePu
         onClose={closeDeleteModal}
         title={t("detail.reviews.form.deleteConfirmModalTitle")}
         description={t("detail.reviews.form.deleteConfirmModalDescription")}
+        icon={<Trash2 size={20} aria-hidden="true" />}
+        tone="destructive"
         role="alertdialog"
-        closeOnBackdropClick={false}
-        initialFocusRef={cancelDeleteRef}
-        closeButtonLabel={t("detail.reviews.form.cancelCta")}
-        className="max-w-xl"
-      >
-        <div className="space-y-5">
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <Button
-              ref={cancelDeleteRef}
-              type="button"
-              variant="secondary"
-              onClick={closeDeleteModal}
-              disabled={isPending}
-              className="min-h-11 px-5"
-            >
-              {t("detail.reviews.form.cancelCta")}
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={handleConfirmDeleteReview}
-              disabled={isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 min-h-11 px-5"
-            >
-              {t("detail.reviews.form.deleteConfirmCta")}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        dismissible={false}
+        primaryAction={{
+          label: t("detail.reviews.form.deleteConfirmCta"),
+          onClick: handleConfirmDeleteReview,
+          variant: "destructive",
+          loading: isPending,
+          disabled: isPending,
+        }}
+        secondaryAction={{
+          label: t("detail.reviews.form.cancelCta"),
+          onClick: closeDeleteModal,
+          disabled: isPending,
+        }}
+      />
 
       {deleteError && (
         <Typography size="sm" className="text-destructive mt-3" role="alert">

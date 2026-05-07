@@ -37,7 +37,9 @@ import { SIMILARITY_THRESHOLD_PERCENT } from "@/lib/store/duplicateMatch";
 import { STORE_LOGO_MAX_SOURCE_SIZE_MB } from "@/lib/store/logoShared";
 import StoreAddressList from "../../_components/share/StoreAddressList";
 import { type StoreContactChannelType } from "../../_components/share/StoreContactChannelList";
-import StoreContactChannelEditor from "../../_components/share/StoreContactChannelEditor";
+import StoreContactChannelEditor, {
+  type StoreContactChannelEditorHandle,
+} from "../../_components/share/StoreContactChannelEditor";
 import InlineSwitch from "../../_components/share/InlineSwitch";
 import StoreLogoField, { type StoreLogoSubmission } from "../../_components/share/StoreLogoField/StoreLogoField";
 import CollectorCountryFlagEmoji from "../../_components/share/CollectorCountryFlagEmoji";
@@ -182,6 +184,7 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
     file: null,
     cropArea: null,
   });
+  const channelEditorRef = useRef<StoreContactChannelEditorHandle | null>(null);
   const nextContactRowIdRef = useRef(1);
   const nextAddressRowIdRef = useRef(1);
 
@@ -952,7 +955,6 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                         if (next.length > 0) clearClientError("presenceTypes");
                       }}
                       formName="presenceTypes"
-                      itemClassName="min-h-11"
                     />
                   </div>
                   {(fieldErrors.presenceTypes?.[0] || clientErrors.presenceTypes) && (
@@ -1027,8 +1029,23 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                 </Typography>
                 <div className="space-y-5">
                   <div className="space-y-3">
-                    <Label>{tCreate("contactChannelsLabel")}</Label>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>{tCreate("contactChannelsLabel")}</Label>
+                      {!isChannelFormOpen && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => channelEditorRef.current?.openForm()}
+                          leadingIcon={<Plus size={13} aria-hidden />}
+                        >
+                          {tCreateRedesign("channels.addChannel")}
+                        </Button>
+                      )}
+                    </div>
                     <StoreContactChannelEditor
+                      ref={channelEditorRef}
+                      hideTrigger
                       entries={contactChannelEntries}
                       onAdd={({ type, value }) => {
                         const nextId = nextContactRowIdRef.current;
@@ -1070,7 +1087,20 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                   </div>
 
                   <div className="space-y-3">
-                    <Label>{tCreate("addressesLabel")}</Label>
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>{tCreate("addressesLabel")}</Label>
+                      {!showAddressForm && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setShowAddressForm(true)}
+                          leadingIcon={<Plus size={13} aria-hidden />}
+                        >
+                          {tCreate("addAddress")}
+                        </Button>
+                      )}
+                    </div>
                     {addressData.length > 0 && (
                       <StoreAddressList
                         idPrefix="address"
@@ -1095,7 +1125,7 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                         rowLabel={(rowIndex) => tCreate("addressItemLabel", { index: rowIndex + 1 })}
                       />
                     )}
-                    {showAddressForm ? (
+                    {showAddressForm && (
                       <div className="rounded-[var(--radius-lg)] p-3 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
                         <div className="mb-2.5 flex items-center justify-between gap-2">
                           <Typography size="xs" className="[color:var(--text-muted)]">
@@ -1154,26 +1184,16 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                         <div className="mt-3 flex justify-end">
                           <Button
                             type="button"
-                            variant="primary"
-                            size="sm"
+                            variant="secondary"
                             onClick={handleConfirmAddress}
                             disabled={!pendingAddressLine.trim()}
                             leadingIcon={<Plus size={13} aria-hidden />}
+                            className="h-[2.875rem]"
                           >
                             {tCreateRedesign("channels.addButton")}
                           </Button>
                         </div>
                       </div>
-                    ) : (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowAddressForm(true)}
-                        leadingIcon={<Plus size={13} aria-hidden />}
-                      >
-                        {tCreate("addAddress")}
-                      </Button>
                     )}
                     {clientErrors.addressFormOpen && (
                       <FieldErrorMsg>{tCreateRedesign("addresses.formOpenWarning")}</FieldErrorMsg>

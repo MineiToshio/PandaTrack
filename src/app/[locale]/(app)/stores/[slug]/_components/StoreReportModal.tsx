@@ -58,6 +58,7 @@ export default function StoreReportModal({
   const [reason, setReason] = useState<ReportReason | "">(existingReport?.reason ?? "");
   const [details, setDetails] = useState(existingReport?.details ?? "");
   const lastOpenRequestNonceRef = useRef(openRequestNonce);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const fieldErrors = state?.success === false ? state.fieldErrors : undefined;
   const reasonFieldInvalid = Boolean(fieldErrors?.reason?.[0]);
@@ -141,10 +142,22 @@ export default function StoreReportModal({
         onClose={closeModal}
         title={t("governance.report.title")}
         description={t("governance.report.description")}
+        icon={<Flag size={20} aria-hidden="true" />}
+        tone="warning"
         closeButtonLabel={t("governance.report.cancelCta")}
-        className="max-w-2xl"
+        primaryAction={{
+          label: t("governance.report.submitCta"),
+          onClick: () => formRef.current?.requestSubmit(),
+          loading: isPending,
+          disabled: isPending,
+        }}
+        secondaryAction={{
+          label: t("governance.report.cancelCta"),
+          onClick: closeModal,
+          disabled: isPending,
+        }}
       >
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
           <input type="hidden" name="slug" value={storeSlug} />
           <input type="hidden" name="locale" value={locale} />
 
@@ -228,21 +241,6 @@ export default function StoreReportModal({
               {translateError(t, state.error)}
             </Typography>
           )}
-
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={isPending}
-              onClick={closeModal}
-              className="min-h-11 px-5"
-            >
-              {t("governance.report.cancelCta")}
-            </Button>
-            <Button type="submit" variant="primary" disabled={isPending} className="min-h-11 px-5">
-              {isPending ? t("governance.report.submitting") : t("governance.report.submitCta")}
-            </Button>
-          </div>
         </form>
       </Modal>
     </>
