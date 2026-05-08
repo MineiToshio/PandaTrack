@@ -925,6 +925,54 @@ export async function upsertStoreNote(db: PrismaClient, input: UpsertStoreNoteIn
   });
 }
 
+export type ViewerStoreActivity = {
+  /** Total number of orders the viewer has placed at this store. */
+  ordersTotal: number;
+  /** Orders that are not in a terminal state (excludes COMPLETED and CANCELLED). */
+  ordersActive: number;
+  /** Total spend grouped by currency. Empty array when the viewer has no orders. */
+  totalSpentByCurrency: Array<{ currencyCode: string; totalMinorUnits: number }>;
+};
+
+/**
+ * Aggregates the viewer's order activity at a single store for the detail-page sidebar:
+ * total orders, active orders, and total spend grouped by currency.
+ *
+ * Only orders owned by `userId` at `storeId` are counted. Returns zeroed totals
+ * when the viewer has not placed any order at this store.
+ */
+export async function getViewerStoreActivity(
+  db: PrismaClient,
+  userId: string,
+  storeId: string,
+): Promise<ViewerStoreActivity> {
+  const orders = await db.order.findMany({
+    where: { userId, storeId },
+    select: { status: true, currencyCode: true, totalCost: true },
+  });
+
+  if (orders.length === 0) {
+    return { ordersTotal: 0, ordersActive: 0, totalSpentByCurrency: [] };
+  }
+
+  let ordersActive = 0;
+  const spendByCurrency = new Map<string, number>();
+  for (const order of orders) {
+    if (order.status !== "COMPLETED" && order.status !== "CANCELLED") {
+      ordersActive += 1;
+    }
+    const prev = spendByCurrency.get(order.currencyCode) ?? 0;
+    spendByCurrency.set(order.currencyCode, prev + order.totalCost);
+  }
+
+  // Sort currencies by spend descending so the dominant currency renders first.
+  const totalSpentByCurrency = Array.from(spendByCurrency.entries())
+    .map(([currencyCode, totalMinorUnits]) => ({ currencyCode, totalMinorUnits }))
+    .sort((a, b) => b.totalMinorUnits - a.totalMinorUnits);
+
+  return { ordersTotal: orders.length, ordersActive, totalSpentByCurrency };
+}
+
 /**
  * Returns a map of store slug → total order count for the given viewer.
  * Only stores present in `slugs` are included; stores with zero orders are omitted.

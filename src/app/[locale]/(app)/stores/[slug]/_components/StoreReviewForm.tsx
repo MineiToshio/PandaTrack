@@ -111,11 +111,6 @@ export default function StoreReviewForm({
         <Typography size="sm" className="text-text-muted">
           {t("detail.reviews.form.description")}
         </Typography>
-        {updatedAtLabel && (
-          <Typography size="xs" className="text-text-muted">
-            {t("detail.reviews.form.lastUpdated", { date: updatedAtLabel })}
-          </Typography>
-        )}
       </div>
 
       <div>
@@ -165,6 +160,11 @@ export default function StoreReviewForm({
         {commentError && (
           <Typography size="xs" className="text-destructive mt-1" role="alert">
             {translateReviewError(t, commentError)}
+          </Typography>
+        )}
+        {updatedAtLabel && (
+          <Typography size="xs" className="text-text-muted mt-1.5">
+            {t("detail.reviews.form.lastUpdated", { date: updatedAtLabel })}
           </Typography>
         )}
       </div>

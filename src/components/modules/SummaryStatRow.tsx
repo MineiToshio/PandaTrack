@@ -9,19 +9,18 @@ export type SummaryStatRowProps = {
 
 /**
  * Label/value row for sidebar summary blocks (detail asides, dashboards, mini-cards).
- * Visual contract aligned with `_notes/demo-screens.html § .summary-row` — dashed
- * separator between rows handled by `border-bottom` so list containers don't draw it.
- *
- * Use inside any vertical "Resumen" block where rows are read as a glanceable list
- * of named numbers/values.
+ * Visual contract aligned with `_notes/demo-screens.html § .summary-row`:
+ *   - 13.5px font, same size on label and value (no visual mismatch).
+ *   - Label: `--text-secondary`. Value: `font-weight: 500` and tabular nums.
+ *   - Solid `border-top` between consecutive rows — first row has no rule above,
+ *     and there is never a stray rule under the last row even when followed by
+ *     other elements (CTAs, captions) in the same parent container.
  */
 export default function SummaryStatRow({ label, value }: SummaryStatRowProps) {
   return (
-    <div className="flex items-center justify-between gap-3 py-1.5 [border-bottom:1px_dashed_var(--border)] last:[border-bottom:0]">
-      <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{label}</span>
-      <span className="[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)] [font-variant-numeric:tabular-nums]">
-        {value}
-      </span>
+    <div className="flex items-center justify-between gap-3 py-2 [font-size:13.5px] [border-top:1px_solid_var(--border)] [&:first-of-type]:[border-top:0]">
+      <span className="[color:var(--text-secondary)]">{label}</span>
+      <span className="[font-weight:500] [color:var(--text-primary)] [font-variant-numeric:tabular-nums]">{value}</span>
     </div>
   );
 }

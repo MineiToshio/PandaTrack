@@ -120,8 +120,8 @@
     "detailAlt": "{storeName} logo"
   },
   "detail": {
-    "pendingDisclaimerTitle": "Store pending review",
-    "pendingDisclaimerMessage": "This profile was created by the community and has not been verified by our team yet. Please review the information with caution.",
+    "pendingDisclaimerTitle": "Store under review",
+    "pendingDisclaimerMessage": "This store was created by the community and has not been verified by our team yet. Please review the information with caution.",
     "governanceAlertTitle": "Reports and suggestions",
     "governanceAlertMessage": "This store has public reports or change requests. Open the summary to review the community input.",
     "inactiveWarningTitle": "Store no longer active",
@@ -158,6 +158,7 @@
       "noComment": "No public comment was added.",
       "anonymousAuthor": "Collector",
       "yourReviewBadge": "Your review",
+      "youLabel": "You",
       "ratingBadge": "{rating}/5",
       "form": {
         "eyebrow": "Your review",
@@ -251,6 +252,10 @@
       "yourPendingChangeRequestEditCta": "Continue editing",
       "communityChangeRequestTitle": "Community change summary",
       "communityChangeRequestUpdated": "Updated on {date}",
+      "yourReportEyebrow": "Your report",
+      "communityPrivacyNote": "Details from other reports aren't publicly visible.",
+      "modifiedFieldsLabel": "Modified fields",
+      "pendingCountChip": "{count, plural, one {# pending} other {# pending}}",
       "empty": "There are no reports or suggestions available for this store yet.",
       "noChangedFields": "No field changes available.",
       "changeRequestStatuses": {
@@ -417,7 +422,38 @@
       "hasStock": "Has stock",
       "acceptsPreorders": "Accepts pre-orders",
       "importsFrom": "Imports from",
-      "ratingFallback": "No reviews yet"
+      "ratingFallback": "No reviews yet",
+      "personChip": "Person",
+      "personNote": "Person profiles don't show contact channels or addresses publicly.",
+      "pendingChip": "Under review",
+      "addressDefaultLabel": "Main store",
+      "aside": {
+        "resumen": "Your orders here",
+        "acciones": "Actions",
+        "notaPrivada": "Your private note",
+        "notaPrivadaHelper": "Only you can see this.",
+        "ordersTotalLabel": "Orders logged",
+        "ordersActiveLabel": "Active orders",
+        "totalSpentLabel": "Total billed",
+        "viewLinkedOrders": "View linked orders",
+        "noOrdersYet": "No orders at this store yet."
+      },
+      "actions": {
+        "anotarPedido": "Log order here",
+        "suggestChanges": "Suggest changes",
+        "editStore": "Edit store",
+        "reportStore": "Report store"
+      },
+      "governanceBanner": {
+        "summary": "This store has {reportCount, plural, =0 {no reports} one {# report} other {# reports}} and {changeRequestCount, plural, =0 {no change requests} one {# change request} other {# change requests}} pending.",
+        "viewSummary": "View summary"
+      },
+      "reviewsHeader": {
+        "totalCount": "{count, plural, =0 {no reviews yet} one {# review} other {# reviews}}",
+        "noAverage": "—",
+        "viewAll": "See all {count, plural, one {# review} other {# reviews}}",
+        "beTheFirst": "Be the first to review this store."
+      }
     },
     "report": {
       "title": "Report store",

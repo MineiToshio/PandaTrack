@@ -112,7 +112,8 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
     }
     const savedAt = saveState.kind === "saved" ? saveState.at : saveState.lastSavedAt;
     if (!savedAt) {
-      return <span className="[color:var(--text-muted)]">{t("detail.privateNote.description")}</span>;
+      // No save yet — keep the row collapsed so the description above the textarea isn't duplicated.
+      return null;
     }
     const formatted = new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(savedAt);
     return (
@@ -122,6 +123,8 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
       </span>
     );
   };
+
+  const indicator = renderIndicator();
 
   return (
     <div className="flex flex-col gap-2">
@@ -139,7 +142,7 @@ export default function StoreNoteForm({ locale, storeSlug, existingNote }: Store
         placeholder={t("detail.privateNote.form.contentPlaceholder")}
         className={cn("resize-y")}
       />
-      <div className="[font-size:12px]">{renderIndicator()}</div>
+      {indicator && <div className="[font-size:12px]">{indicator}</div>}
     </div>
   );
 }

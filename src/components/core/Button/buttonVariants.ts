@@ -101,7 +101,9 @@ export const buttonVariants = cva(
           "active:translate-y-0 active:shadow-[var(--elevation-1)]",
         ],
         "destructive-ghost": [
-          "bg-transparent [color:var(--destructive)] [border:1px_solid_transparent]",
+          // Destructive-tinted outline matches `_notes/demo-screens.html § .btn.destructive-ghost`:
+          //   border-color: color-mix(in oklch, var(--destructive) 28%, transparent)
+          "bg-transparent [color:var(--destructive)] [border:1px_solid_color-mix(in_oklch,var(--destructive)_28%,transparent)]",
           "hover:after:[background:color-mix(in_oklch,var(--destructive)_var(--state-hover-mix),transparent)]",
           "hover:-translate-y-px",
           "motion-reduce:hover:translate-y-0",

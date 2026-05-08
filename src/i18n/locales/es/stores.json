@@ -120,8 +120,8 @@
     "detailAlt": "Logo de {storeName}"
   },
   "detail": {
-    "pendingDisclaimerTitle": "Tienda pendiente de revisión",
-    "pendingDisclaimerMessage": "Este perfil fue creado por la comunidad y todavía no ha sido verificado por el equipo. Te recomendamos revisar la información con precaución.",
+    "pendingDisclaimerTitle": "Tienda en revisión",
+    "pendingDisclaimerMessage": "Esta tienda fue creada por la comunidad y aún no ha sido verificada por el equipo. Te recomendamos revisar la información con precaución.",
     "governanceAlertTitle": "Reportes y sugerencias",
     "governanceAlertMessage": "Esta tienda tiene reportes o solicitudes de cambio registradas. Abre el resumen para revisar los aportes de la comunidad.",
     "inactiveWarningTitle": "Tienda sin actividad",
@@ -158,6 +158,7 @@
       "noComment": "No se agregó un comentario público.",
       "anonymousAuthor": "Coleccionista",
       "yourReviewBadge": "Tu reseña",
+      "youLabel": "Tú",
       "ratingBadge": "{rating}/5",
       "form": {
         "eyebrow": "Tu reseña",
@@ -251,6 +252,10 @@
       "yourPendingChangeRequestEditCta": "Seguir editando",
       "communityChangeRequestTitle": "Resumen de cambios de la comunidad",
       "communityChangeRequestUpdated": "Actualizado el {date}",
+      "yourReportEyebrow": "Tu reporte",
+      "communityPrivacyNote": "Los detalles de otros reportes no son visibles públicamente.",
+      "modifiedFieldsLabel": "Campos modificados",
+      "pendingCountChip": "{count, plural, one {# pendiente} other {# pendientes}}",
       "empty": "Todavía no hay reportes ni sugerencias disponibles para esta tienda.",
       "noChangedFields": "No hay campos cambiados disponibles.",
       "changeRequestStatuses": {
@@ -417,7 +422,38 @@
       "hasStock": "Tiene stock",
       "acceptsPreorders": "Acepta pre-órdenes",
       "importsFrom": "Importa desde",
-      "ratingFallback": "Sin reseñas"
+      "ratingFallback": "Sin reseñas",
+      "personChip": "Persona",
+      "personNote": "Los perfiles de persona no muestran canales de contacto ni direcciones públicamente.",
+      "pendingChip": "En revisión",
+      "addressDefaultLabel": "Tienda principal",
+      "aside": {
+        "resumen": "Tus pedidos aquí",
+        "acciones": "Acciones",
+        "notaPrivada": "Tu nota privada",
+        "notaPrivadaHelper": "Solo tú la ves.",
+        "ordersTotalLabel": "Pedidos anotados",
+        "ordersActiveLabel": "Pedidos activos",
+        "totalSpentLabel": "Total facturado",
+        "viewLinkedOrders": "Ver pedidos vinculados",
+        "noOrdersYet": "Aún no hay pedidos en esta tienda."
+      },
+      "actions": {
+        "anotarPedido": "Anotar pedido aquí",
+        "suggestChanges": "Sugerir cambios",
+        "editStore": "Editar tienda",
+        "reportStore": "Reportar tienda"
+      },
+      "governanceBanner": {
+        "summary": "Esta tienda tiene {reportCount, plural, =0 {sin reportes} one {# reporte} other {# reportes}} y {changeRequestCount, plural, =0 {sin solicitudes} one {# solicitud} other {# solicitudes}} de cambio pendientes.",
+        "viewSummary": "Ver resumen"
+      },
+      "reviewsHeader": {
+        "totalCount": "{count, plural, =0 {sin reseñas aún} one {# reseña} other {# reseñas}}",
+        "noAverage": "—",
+        "viewAll": "Ver todas las {count, plural, one {# reseña} other {# reseñas}}",
+        "beTheFirst": "Sé el primero en reseñar esta tienda."
+      }
     },
     "report": {
       "title": "Reportar tienda",

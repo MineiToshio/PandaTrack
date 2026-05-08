@@ -5,16 +5,18 @@ import { startTransition, useCallback, useEffect, useRef, useState } from "react
 import { useTranslations } from "next-intl";
 import { Flag } from "lucide-react";
 import posthog from "posthog-js";
+import { type VariantProps } from "class-variance-authority";
 import Button from "@/components/core/Button/Button";
+import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import FieldCharacterCount from "@/components/core/FieldCharacterCount";
 import Label from "@/components/core/Label";
-import Select from "@/components/core/Select";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import Modal from "@/components/modules/Modal/Modal";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import type { StoreGovernanceViewerContext } from "@/queries/storeGovernance";
+import ReportReasonPicker from "../../_components/share/ReportReasonPicker";
 import { saveStoreReport, type SaveStoreReportResult } from "../_actions/saveStoreReport";
 
 type StoreReportModalProps = {
@@ -23,6 +25,8 @@ type StoreReportModalProps = {
   existingReport: StoreGovernanceViewerContext["openReport"];
   hideTrigger?: boolean;
   openRequestNonce?: number;
+  /** Variant of the trigger button. Defaults to `secondary`. */
+  triggerVariant?: NonNullable<VariantProps<typeof buttonVariants>["variant"]>;
   /** Merged into the default trigger button (e.g. higher contrast on tinted hero backgrounds). */
   triggerClassName?: string;
   triggerLabelClassName?: string;
@@ -46,6 +50,7 @@ export default function StoreReportModal({
   existingReport,
   hideTrigger = false,
   openRequestNonce = 0,
+  triggerVariant = "secondary",
   triggerClassName,
   triggerLabelClassName,
   showTriggerLabel = false,
@@ -90,9 +95,7 @@ export default function StoreReportModal({
     });
   }, [openRequestNonce, openModal]);
 
-  const handleReasonChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const nextValue = event.target.value as ReportReason | "";
-    setReason(nextValue);
+  const clearReasonError = () => {
     setState((prev) => {
       if (!prev || prev.success !== false || !prev.fieldErrors?.reason) return prev;
       const nextFieldErrors = { ...prev.fieldErrors };
@@ -102,6 +105,11 @@ export default function StoreReportModal({
       }
       return { ...prev, fieldErrors: nextFieldErrors };
     });
+  };
+
+  const handleReasonChange = (nextValue: string) => {
+    setReason(nextValue as ReportReason);
+    clearReasonError();
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -120,14 +128,24 @@ export default function StoreReportModal({
     setIsPending(false);
   };
 
+  const reasonOptions = REPORT_REASONS.map((value) => ({
+    value,
+    label: t(`governance.report.reasonOptions.${value}`),
+  }));
+
   return (
     <>
       {hideTrigger ? null : (
         <Button
           type="button"
-          variant="secondary"
+          variant={triggerVariant}
           size="md"
-          className={cn("gap-1.5 max-lg:h-11 max-lg:min-w-11 max-lg:justify-center max-lg:px-0", triggerClassName)}
+          className={cn(
+            "gap-1.5",
+            // Icon-only collapse on small screens — only when caller doesn't want the label visible.
+            !showTriggerLabel && "max-lg:h-11 max-lg:min-w-11 max-lg:justify-center max-lg:px-0",
+            triggerClassName,
+          )}
           onClick={openModal}
         >
           {triggerIcon ?? <Flag className="size-4 shrink-0" aria-hidden />}
@@ -162,32 +180,22 @@ export default function StoreReportModal({
           <input type="hidden" name="locale" value={locale} />
 
           <div className="space-y-2">
-            <Label htmlFor="store-report-reason" className="text-text-title">
-              {t("governance.report.reasonLabel")}
-            </Label>
-            <Select
-              id="store-report-reason"
-              name="reason"
-              value={reason}
+            <Label className="text-text-title">{t("governance.report.reasonLabel")}</Label>
+            <ReportReasonPicker
+              value={reason || null}
               onChange={handleReasonChange}
-              aria-invalid={reasonFieldInvalid}
-              aria-required
-              error={reasonFieldInvalid}
-              showChevron
-              className="bg-background/90 h-11 rounded-xl"
-            >
-              <option value="" disabled>
-                {t("governance.report.reasonPlaceholder")}
-              </option>
-              {REPORT_REASONS.map((option) => (
-                <option key={option} value={option}>
-                  {t(`governance.report.reasonOptions.${option}`)}
-                </option>
-              ))}
-            </Select>
+              options={reasonOptions}
+              ariaLabel={t("governance.report.reasonLabel")}
+              name="reason"
+            />
             {fieldErrors?.reason?.[0] && (
               <Typography size="xs" className="text-destructive" role="alert">
                 {translateError(t, fieldErrors.reason[0])}
+              </Typography>
+            )}
+            {reasonFieldInvalid && !fieldErrors?.reason?.[0] && (
+              <Typography size="xs" className="text-destructive" role="alert">
+                {translateError(t, "reasonRequired")}
               </Typography>
             )}
           </div>

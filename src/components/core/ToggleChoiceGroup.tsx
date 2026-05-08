@@ -25,6 +25,11 @@ type ToggleChoiceGroupShared = {
   appearance?: "chip" | "tile";
   /** Rendered after option buttons (e.g. auxiliary chip actions). */
   trailingSlot?: ReactNode;
+  /**
+   * When true, all option buttons are non-interactive and hidden inputs are still emitted
+   * so the current value continues to submit with the parent form.
+   */
+  disabled?: boolean;
 };
 
 export type ToggleChoiceGroupProps =
@@ -62,9 +67,10 @@ function pressedButtonClass(appearance: NonNullable<ToggleChoiceGroupShared["app
 
 export default function ToggleChoiceGroup(props: ToggleChoiceGroupProps) {
   const appearance = props.appearance ?? "chip";
-  const { options, className, formName, itemClassName, trailingSlot } = props;
+  const { options, className, formName, itemClassName, trailingSlot, disabled } = props;
 
   const handleClick = (optionValue: string) => {
+    if (disabled) return;
     if (props.mode === "single") {
       props.onChange(optionValue);
       return;
@@ -102,8 +108,14 @@ export default function ToggleChoiceGroup(props: ToggleChoiceGroupProps) {
             key={option.value}
             type="button"
             aria-pressed={selected}
+            disabled={disabled}
             onClick={() => handleClick(option.value)}
-            className={cn(BUTTON_CLASS[appearance], pressedButtonClass(appearance, selected), itemClassName)}
+            className={cn(
+              BUTTON_CLASS[appearance],
+              pressedButtonClass(appearance, selected),
+              itemClassName,
+              disabled && "cursor-not-allowed opacity-60",
+            )}
           >
             {option.icon ? (
               appearance === "tile" ? (
