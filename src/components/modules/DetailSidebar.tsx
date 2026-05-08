@@ -57,7 +57,7 @@ export default function DetailSidebar({
       aria-label={ariaLabel}
       className={cn(
         "flex flex-col gap-4",
-        "md:[position:sticky] md:[top:calc(var(--header-h-desktop,4rem)_+_var(--space-4,1rem))] md:gap-6",
+        "md:[position:sticky] md:[top:calc(var(--app-banner-offset,0px)_+_var(--header-h-desktop,4rem)_+_var(--space-4,1rem))] md:gap-6",
         className,
       )}
     >

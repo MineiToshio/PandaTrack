@@ -1040,6 +1040,7 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                         helper: tCreateRedesign("channels.helper"),
                         addButton: tCreateRedesign("channels.addButton"),
                         addChannel: tCreateRedesign("channels.addChannel"),
+                        empty: tCreateRedesign("channels.empty"),
                         edit: tCreateRedesign("channels.edit"),
                         save: tCreateRedesign("channels.save"),
                         cancel: tCreateRedesign("channels.cancel"),
@@ -1092,6 +1093,7 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
                         helper: tCreateRedesign("addresses.helper"),
                         addButton: tCreateRedesign("channels.addButton"),
                         addAddress: tCreate("addAddress"),
+                        empty: tCreateRedesign("addresses.empty"),
                         edit: tCreateRedesign("channels.edit"),
                         save: tCreateRedesign("channels.save"),
                         cancel: tCreateRedesign("channels.cancel"),
@@ -1134,14 +1136,10 @@ export default function CreateStoreForm({ countries, productTypes, returnTo }: C
               </div>
             </WizardStep>
           </WizardAccordion>
-          <div className="mt-5 flex items-center gap-1.5 pt-3.5 [font-size:var(--text-caption)] [color:var(--text-muted)] [border-top:1px_solid_var(--border)]">
-            <Check size={12} aria-hidden="true" className="[color:var(--success)]" />
-            <span>{tCreateRedesign("autosave")}</span>
-          </div>
         </div>
 
         {/* ── Aside Resumen sticky ── */}
-        <aside className="lg:[position:sticky] lg:[top:calc(var(--header-h-desktop,4rem)_+_var(--space-4,1rem))] lg:self-start">
+        <aside className="lg:[position:sticky] lg:[top:calc(var(--app-banner-offset,0px)_+_var(--header-h-desktop,4rem)_+_var(--space-4,1rem))] lg:self-start">
           <div className="rounded-[var(--radius-xl)] p-4 [box-shadow:var(--shadow-2)] [background:var(--surface-elevated)] [border:1px_solid_var(--border)] md:p-5">
             <Eyebrow as="p">{tCreateRedesign("summaryEyebrow")}</Eyebrow>
             <dl className="mt-3 flex flex-col">

@@ -642,7 +642,7 @@ export default function EditStoreForm({
         </div>
 
         {/* ── Aside Resumen sticky ── */}
-        <aside className="lg:[position:sticky] lg:[top:calc(var(--header-h-desktop,4rem)_+_var(--space-4,1rem))] lg:self-start">
+        <aside className="lg:[position:sticky] lg:[top:calc(var(--app-banner-offset,0px)_+_var(--header-h-desktop,4rem)_+_var(--space-4,1rem))] lg:self-start">
           <div className="rounded-[var(--radius-xl)] p-4 [background:var(--surface-elevated)] [border:1px_solid_var(--border)] md:p-5">
             <Eyebrow as="p">{tRedesign("summaryEyebrow")}</Eyebrow>
             <dl className="mt-3 flex flex-col">

@@ -2,13 +2,13 @@
 
 import "react-easy-crop/react-easy-crop.css";
 
-import { Building2, Pencil, Upload, X } from "lucide-react";
+import { Building2, Crop, Pencil, Upload, X } from "lucide-react";
 import Image from "next/image";
-import { type ChangeEvent, type DragEvent, useEffect, useId, useMemo, useRef, useState } from "react";
-import { useFocusScope } from "@/lib/a11y/useFocusScope";
+import { type ChangeEvent, type DragEvent, useEffect, useMemo, useRef, useState } from "react";
 import Cropper, { type Area, type Point } from "react-easy-crop";
 import Button from "@/components/core/Button/Button";
 import Label from "@/components/core/Label";
+import Modal from "@/components/modules/Modal/Modal";
 import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
 import {
@@ -88,8 +88,6 @@ export default function StoreLogoField({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [confirmedCrop, setConfirmedCrop] = useState<Point>(DEFAULT_CROP);
   const [confirmedZoom, setConfirmedZoom] = useState(DEFAULT_ZOOM);
-  const editorDescriptionId = useId();
-  const editorPanelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     onChange(submission);
@@ -209,12 +207,6 @@ export default function StoreLogoField({
     resetEditorState();
   };
 
-  useFocusScope({
-    active: Boolean(editorImageUrl),
-    rootRef: editorPanelRef,
-    onClose: handleEditorCancel,
-  });
-
   const handleEditorConfirm = async () => {
     if (!editorFile || !editorImageUrl || !croppedAreaPixels) {
       setEditorError("logoMalformed");
@@ -293,15 +285,27 @@ export default function StoreLogoField({
                 {formatFileSize(submission.file.size)}
               </Typography>
             )}
-            <div className="mt-2 flex items-center gap-1">
+            <div className="mt-2 flex items-center gap-2">
               {canEditPreview ? (
-                <Button type="button" variant="ghost" size="sm" onClick={handleEdit} disabled={disabled}>
-                  <Pencil size={14} aria-hidden />
+                <Button
+                  type="button"
+                  variant="tonal"
+                  size="sm"
+                  onClick={handleEdit}
+                  disabled={disabled}
+                  leadingIcon={<Pencil size={13} aria-hidden />}
+                >
                   {copy.editCta}
                 </Button>
               ) : null}
-              <Button type="button" variant="ghost" size="sm" onClick={handleRemove} disabled={disabled}>
-                <X size={14} aria-hidden />
+              <Button
+                type="button"
+                variant="tonal"
+                size="sm"
+                onClick={handleRemove}
+                disabled={disabled}
+                leadingIcon={<X size={13} aria-hidden />}
+              >
                 {copy.removeCta}
               </Button>
             </div>
@@ -362,72 +366,46 @@ export default function StoreLogoField({
         </Typography>
       )}
 
-      {editorImageUrl ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm [background:color-mix(in_oklch,#000_60%,transparent)]"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={`${id}-editor-title`}
-          aria-describedby={editorDescriptionId}
-        >
-          <div
-            ref={editorPanelRef}
-            tabIndex={-1}
-            className="w-full max-w-2xl space-y-5 rounded-[var(--radius-xl)] p-5 [box-shadow:var(--shadow-3)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]"
-          >
-            <div className="space-y-2">
-              <Typography
-                id={`${id}-editor-title`}
-                size="sm"
-                className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
-              >
-                {copy.editorTitle}
-              </Typography>
-              <Typography id={editorDescriptionId} size="xs" className="[color:var(--text-muted)]">
-                {copy.editorDescription}
-              </Typography>
-            </div>
-
-            <div className="relative h-80 overflow-hidden rounded-[var(--radius-lg)] [background:var(--surface)]">
-              <Cropper
-                image={editorImageUrl}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                cropShape="rect"
-                showGrid={false}
-                objectFit="contain"
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={handleCropComplete}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor={`${id}-zoom`}>{copy.zoomLabel}</Label>
-              <input
-                id={`${id}-zoom`}
-                type="range"
-                min={1}
-                max={3}
-                step={0.05}
-                value={zoom}
-                onChange={(event) => setZoom(Number(event.target.value))}
-                className="w-full [accent-color:var(--accent)]"
-              />
-            </div>
-
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={handleEditorCancel}>
-                {copy.editorCancel}
-              </Button>
-              <Button type="button" variant="primary" onClick={handleEditorConfirm}>
-                {copy.editorConfirm}
-              </Button>
-            </div>
+      <Modal
+        isOpen={Boolean(editorImageUrl)}
+        onClose={handleEditorCancel}
+        title={copy.editorTitle}
+        subtitle={copy.editorDescription}
+        icon={<Crop size={20} aria-hidden="true" />}
+        size="lg"
+        primaryAction={{ label: copy.editorConfirm, onClick: handleEditorConfirm }}
+        secondaryAction={{ label: copy.editorCancel, onClick: handleEditorCancel }}
+      >
+        <div className="space-y-4">
+          <div className="relative h-80 overflow-hidden rounded-[var(--radius-lg)] [background:var(--surface)]">
+            <Cropper
+              image={editorImageUrl ?? ""}
+              crop={crop}
+              zoom={zoom}
+              aspect={1}
+              cropShape="rect"
+              showGrid={false}
+              objectFit="contain"
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={handleCropComplete}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${id}-zoom`}>{copy.zoomLabel}</Label>
+            <input
+              id={`${id}-zoom`}
+              type="range"
+              min={1}
+              max={3}
+              step={0.05}
+              value={zoom}
+              onChange={(event) => setZoom(Number(event.target.value))}
+              className="w-full [accent-color:var(--accent)]"
+            />
           </div>
         </div>
-      ) : null}
+      </Modal>
     </div>
   );
 }

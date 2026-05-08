@@ -29,6 +29,8 @@ type Labels = {
   optionLabel: (type: StoreContactChannelType) => string;
   valuePlaceholder: (type: StoreContactChannelType) => string;
   validationError?: (errorKey: string) => string;
+  /** Shown inside a bordered container when there are no entries and the add form is closed. */
+  empty?: string;
 };
 
 export type StoreContactChannelEditorHandle = {
@@ -193,6 +195,12 @@ const StoreContactChannelEditor = forwardRef<StoreContactChannelEditorHandle, St
               <input key={`hidden-value-${entry.id}`} type="hidden" name={valueInputName} value={entry.value} />
             ))
           : null}
+
+        {entries.length === 0 && !showForm && labels.empty && (
+          <div className="flex items-center justify-center rounded-[var(--radius-lg)] px-4 py-5 [border:1px_solid_var(--border)]">
+            <p className="text-xs [color:var(--text-muted)]">{labels.empty}</p>
+          </div>
+        )}
 
         {entries.length > 0 && (
           <div className="overflow-hidden rounded-[var(--radius-lg)] [border:1px_solid_var(--border)]">

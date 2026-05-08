@@ -497,7 +497,6 @@
       "continue": "Continuar",
       "back": "Atrás",
       "submit": "Crear tienda",
-      "autosave": "Guardado en este navegador",
       "summaryEyebrow": "Resumen",
       "requestCategory": "Solicitar nueva categoría",
       "categoryRequest": {
@@ -517,6 +516,7 @@
         "cancel": "Cancelar",
         "remove": "Quitar",
         "addChannel": "Añadir canal",
+        "empty": "Aún no hay canales de contacto.",
         "formOpenWarning": "Hay un canal sin agregar. Agrégalo o cancela antes de continuar.",
         "validationError": {
           "required": "El valor es obligatorio.",
@@ -543,6 +543,7 @@
         "save": "Guardar logo"
       },
       "addresses": {
+        "empty": "Aún no hay direcciones.",
         "formOpenWarning": "Hay una dirección sin agregar. Agrégala o cancela antes de continuar.",
         "helper": "Ciudad, dirección y referencia opcional."
       }

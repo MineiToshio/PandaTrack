@@ -497,7 +497,6 @@
       "continue": "Continue",
       "back": "Back",
       "submit": "Create store",
-      "autosave": "Saved in this browser",
       "summaryEyebrow": "Summary",
       "requestCategory": "Request new category",
       "categoryRequest": {
@@ -517,6 +516,7 @@
         "cancel": "Cancel",
         "remove": "Remove",
         "addChannel": "Add channel",
+        "empty": "No contact channels added yet.",
         "formOpenWarning": "There's an unsaved channel. Add it or cancel before continuing.",
         "validationError": {
           "required": "Value is required.",
@@ -543,6 +543,7 @@
         "save": "Save logo"
       },
       "addresses": {
+        "empty": "No addresses added yet.",
         "formOpenWarning": "There's an unsaved address. Add it or cancel before continuing.",
         "helper": "City, street address, and optional reference."
       }

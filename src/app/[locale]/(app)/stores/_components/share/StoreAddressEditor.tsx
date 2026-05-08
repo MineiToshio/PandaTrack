@@ -32,6 +32,8 @@ type Labels = {
   save: string;
   cancel: string;
   remove: string;
+  /** Shown inside a bordered container when there are no entries and the add form is closed. */
+  empty?: string;
 };
 
 export type StoreAddressEditorHandle = {
@@ -158,6 +160,13 @@ const StoreAddressEditor = forwardRef<StoreAddressEditorHandle, StoreAddressEdit
             <input key={`hidden-ref-${entry.id}`} type="hidden" name={referenceInputName} value={entry.reference} />
           ))
         : null}
+
+      {/* Empty state */}
+      {entries.length === 0 && !showForm && labels.empty && (
+        <div className="flex items-center justify-center rounded-[var(--radius-lg)] px-4 py-5 [border:1px_solid_var(--border)]">
+          <p className="text-xs [color:var(--text-muted)]">{labels.empty}</p>
+        </div>
+      )}
 
       {/* Saved entries list */}
       {entries.length > 0 && (
