@@ -120,10 +120,10 @@ export default function WizardStep({
 
   const cardClass = cn(
     "[border-radius:var(--radius-xl)]",
-    "[background:var(--surface)]",
+    "[background:var(--surface-elevated)]",
     state === "active"
       ? "[border:1px_solid_color-mix(in_oklch,var(--accent)_32%,var(--border-strong))] [box-shadow:0_0_0_3px_color-mix(in_oklch,var(--accent)_10%,transparent)]"
-      : "[border:1px_solid_var(--border)]",
+      : "[border:1px_solid_var(--border)] [box-shadow:inset_0_0_0_1px_color-mix(in_oklch,var(--accent)_10%,transparent)]",
     className,
   );
 
