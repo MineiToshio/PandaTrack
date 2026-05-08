@@ -18,7 +18,9 @@ import { ROUTES } from "@/lib/constants";
 import { parseListingSearchParams } from "./_utils/listingParams";
 import StoreListingContent from "./_components/StoreListingContent";
 import StoreListingFilters from "./_components/StoreListingFilters";
+import StoreListingGridWrapper from "./_components/StoreListingGridWrapper";
 import StoreListingPagination from "./_components/StoreListingPagination";
+import StoreListingShell from "./_components/StoreListingShell";
 
 type StoresPageProps = {
   params: Promise<{ locale: string }>;
@@ -113,49 +115,53 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
 
   return (
     <div className="text-foreground">
-      <div className="space-y-6">
-        <StoreListingFilters
-          locale={locale}
-          productTypeOptions={productTypeOptions}
-          countryOptions={countryOptions}
-          initialNameQuery={nameQuery ?? ""}
-          initialProductTypeKeys={productTypeKeys}
-          initialCountryCodes={countryCodes}
-          initialImportCountryCodes={importCountryCodes}
-          initialPresenceTypes={presenceTypes}
-          initialReceivesOrders={receivesOrders}
-          initialHasStock={hasStock}
-          totalStores={listingPage.totalCount}
-        />
-        {listingPage.totalCount === 0 ? (
-          <StoresEmptyState
+      <StoreListingShell>
+        <div className="space-y-6">
+          <StoreListingFilters
             locale={locale}
-            hasFilters={Boolean(
-              nameQuery ||
-              productTypeKeys.length > 0 ||
-              countryCodes.length > 0 ||
-              importCountryCodes.length > 0 ||
-              presenceTypes.length > 0 ||
-              receivesOrders ||
-              hasStock,
-            )}
+            productTypeOptions={productTypeOptions}
+            countryOptions={countryOptions}
+            initialNameQuery={nameQuery ?? ""}
+            initialProductTypeKeys={productTypeKeys}
+            initialCountryCodes={countryCodes}
+            initialImportCountryCodes={importCountryCodes}
+            initialPresenceTypes={presenceTypes}
+            initialReceivesOrders={receivesOrders}
+            initialHasStock={hasStock}
+            totalStores={listingPage.totalCount}
           />
-        ) : (
-          <>
-            <StoreListingContent
-              locale={locale}
-              stores={listingPage.items}
-              viewerOrderCountsBySlug={viewerOrderCountsBySlug}
-            />
-            <StoreListingPagination
-              locale={locale}
-              totalPages={listingPage.totalPages}
-              currentPage={listingPage.currentPage}
-              createPageHref={buildPaginationHref}
-            />
-          </>
-        )}
-      </div>
+          <StoreListingGridWrapper>
+            {listingPage.totalCount === 0 ? (
+              <StoresEmptyState
+                locale={locale}
+                hasFilters={Boolean(
+                  nameQuery ||
+                  productTypeKeys.length > 0 ||
+                  countryCodes.length > 0 ||
+                  importCountryCodes.length > 0 ||
+                  presenceTypes.length > 0 ||
+                  receivesOrders ||
+                  hasStock,
+                )}
+              />
+            ) : (
+              <>
+                <StoreListingContent
+                  locale={locale}
+                  stores={listingPage.items}
+                  viewerOrderCountsBySlug={viewerOrderCountsBySlug}
+                />
+                <StoreListingPagination
+                  locale={locale}
+                  totalPages={listingPage.totalPages}
+                  currentPage={listingPage.currentPage}
+                  createPageHref={buildPaginationHref}
+                />
+              </>
+            )}
+          </StoreListingGridWrapper>
+        </div>
+      </StoreListingShell>
     </div>
   );
 }

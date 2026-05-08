@@ -14,7 +14,7 @@ import {
 import { generateStoreSlug } from "@/lib/store/slug";
 
 const DEFAULT_DUPLICATE_CANDIDATES_LIMIT = 5;
-export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = 10;
+export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = 12;
 const DEFAULT_PUBLIC_STORE_REVIEW_LIMIT = 10;
 
 export interface DuplicateCandidate {

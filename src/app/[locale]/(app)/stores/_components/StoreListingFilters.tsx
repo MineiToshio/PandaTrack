@@ -1,10 +1,10 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Globe, Plus, SlidersHorizontal, Store, X } from "lucide-react";
 import posthog from "posthog-js";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Button from "@/components/core/Button/Button";
 import Eyebrow from "@/components/core/Eyebrow";
 import SearchInput from "@/components/core/SearchInput";
@@ -13,6 +13,7 @@ import FilterDrawer, { type FilterDrawerValues, type FilterSection } from "@/com
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import CollectorCountryFlagEmoji from "./share/CollectorCountryFlagEmoji";
+import { useStoreListingNavigation } from "./StoreListingPendingContext";
 
 type StoreListingFiltersProps = {
   locale: string;
@@ -71,8 +72,8 @@ export default function StoreListingFilters({
   initialHasStock,
   totalStores,
 }: StoreListingFiltersProps) {
-  const router = useRouter();
   const pathname = usePathname();
+  const { navigate, isPending } = useStoreListingNavigation();
   const tListing = useTranslations("storeListing");
   const tStores = useTranslations("stores");
   const tProductTypes = useTranslations("storeProductTypes");
@@ -81,8 +82,6 @@ export default function StoreListingFilters({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [nameQuery, setNameQuery] = useState(initialNameQuery);
   const [sortBy, setSortBy] = useState<string>("topRated");
-  const [isSearchPending, startSearchTransition] = useTransition();
-
   const sortOptions = useMemo(
     () => [
       { value: "topRated", label: tListing("s6.sort.topRated") },
@@ -190,9 +189,7 @@ export default function StoreListingFilters({
     const stateValues = valuesAsState(draftValues);
     const params = buildSearchParams({ nameQuery: query, values: stateValues, sortBy });
     const queryString = params.toString();
-    startSearchTransition(() => {
-      router.push(queryString ? `${pathname}?${queryString}` : pathname);
-    });
+    navigate(queryString ? `${pathname}?${queryString}` : pathname);
   };
 
   const handleSortChange = (value: string) => {
@@ -200,7 +197,7 @@ export default function StoreListingFilters({
     const stateValues = valuesAsState(draftValues);
     const params = buildSearchParams({ nameQuery, values: stateValues, sortBy: value });
     const queryString = params.toString();
-    router.push(queryString ? `${pathname}?${queryString}` : pathname);
+    navigate(queryString ? `${pathname}?${queryString}` : pathname);
   };
 
   const handleApply = useCallback(() => {
@@ -216,9 +213,9 @@ export default function StoreListingFilters({
     });
     const params = buildSearchParams({ nameQuery, values: stateValues, sortBy });
     const queryString = params.toString();
-    router.push(queryString ? `${pathname}?${queryString}` : pathname);
+    navigate(queryString ? `${pathname}?${queryString}` : pathname);
     setDrawerOpen(false);
-  }, [draftValues, nameQuery, sortBy, pathname, router]);
+  }, [draftValues, nameQuery, sortBy, pathname, navigate]);
 
   const handleClear = useCallback(() => {
     setDraftValues({
@@ -234,9 +231,9 @@ export default function StoreListingFilters({
     (values: ListingFilterValues, query: string) => {
       const params = buildSearchParams({ nameQuery: query, values, sortBy });
       const queryString = params.toString();
-      router.push(queryString ? `${pathname}?${queryString}` : pathname);
+      navigate(queryString ? `${pathname}?${queryString}` : pathname);
     },
-    [pathname, router, sortBy],
+    [pathname, navigate, sortBy],
   );
 
   const removeFilter = useCallback(
@@ -398,7 +395,7 @@ export default function StoreListingFilters({
             value={nameQuery}
             onChange={setNameQuery}
             onSubmit={handleSearchSubmit}
-            isLoading={isSearchPending}
+            isLoading={isPending}
             placeholder={tListing("s6.toolbar.searchPlaceholder")}
             searchLabel={tListing("s6.toolbar.searchPlaceholder")}
           />
