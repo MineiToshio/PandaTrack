@@ -85,9 +85,12 @@ export default function WizardStep({
   const bodyId = `${generatedId}-body`;
   const bodyRef = useRef<HTMLDivElement>(null);
 
-  const isActive = ctx.activeStep === n;
+  const isAllOpen = ctx.layout === "all-open";
+  // In all-open layout there is no notion of an active step — every body is visible
+  // and the bullet defaults to its neutral "todo" appearance unless explicitly errored.
+  const isActive = !isAllOpen && ctx.activeStep === n;
   const isErrored = ctx.erroredSteps.has(n) || (isActive && hasError);
-  const isDone = ctx.doneSteps.has(n) && !isActive && !isErrored;
+  const isDone = !isAllOpen && ctx.doneSteps.has(n) && !isActive && !isErrored;
   const state: "todo" | "active" | "done" | "errored" = isActive
     ? "active"
     : isDone
@@ -123,7 +126,9 @@ export default function WizardStep({
     "[background:var(--surface-elevated)]",
     state === "active"
       ? "[border:1px_solid_color-mix(in_oklch,var(--accent)_32%,var(--border-strong))] [box-shadow:0_0_0_3px_color-mix(in_oklch,var(--accent)_10%,transparent)]"
-      : "[border:1px_solid_var(--border)] [box-shadow:inset_0_0_0_1px_color-mix(in_oklch,var(--accent)_10%,transparent)]",
+      : isErrored
+        ? "[border:1px_solid_var(--destructive)] [box-shadow:inset_0_0_0_1px_color-mix(in_oklch,var(--destructive)_10%,transparent)]"
+        : "[border:1px_solid_var(--border)] [box-shadow:inset_0_0_0_1px_color-mix(in_oklch,var(--accent)_10%,transparent)]",
     className,
   );
 
@@ -149,33 +154,59 @@ export default function WizardStep({
     ctx.activate(n);
   };
 
-  const showBody = isActive || keepBodyMounted;
+  const showBody = isAllOpen || isActive || keepBodyMounted;
+  const bodyHidden = !isAllOpen && !isActive;
+
+  // Shared header content (bullet + eyebrow + title) — rendered identically in all
+  // three header variants below to keep the visual rhythm consistent.
+  const headerInner = (
+    <>
+      <span className={bulletClass}>
+        {state === "done" ? (
+          <Check size={14} aria-hidden="true" />
+        ) : isErrored ? (
+          <X size={14} aria-hidden="true" />
+        ) : (
+          <span className="text-xs font-semibold">{n}</span>
+        )}
+      </span>
+      <div className="min-w-0 flex-1">
+        <span className="block [font-family:var(--font-mono)] [font-size:var(--text-eyebrow)] [font-weight:var(--font-weight-mono)] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
+          {eyebrow}
+        </span>
+        {isAllOpen || isActive ? (
+          <h3
+            id={headingId}
+            className="mt-0.5 [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
+          >
+            {title}
+          </h3>
+        ) : (
+          <span
+            id={headingId}
+            className="mt-0.5 block [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
+          >
+            {title}
+          </span>
+        )}
+        {!isAllOpen && summary && state === "done" && (
+          <span className="mt-1 block truncate [font-size:var(--text-body)] [color:var(--text-secondary)]">
+            {summary}
+          </span>
+        )}
+      </div>
+    </>
+  );
 
   return (
     <li className="contents">
       <section id={generatedId} data-wizard-step={n} aria-labelledby={headingId} className={cardClass}>
-        {isActive ? (
+        {isAllOpen ? (
+          // Static anchor header — no toggle, no chevron, no hover affordance.
+          <header className="flex items-start gap-3 px-4 pt-4 md:px-5 md:pt-5">{headerInner}</header>
+        ) : isActive ? (
           <header className="flex items-start gap-3 px-4 pt-4 md:px-5 md:pt-5">
-            <span className={bulletClass}>
-              {state === "done" ? (
-                <Check size={14} aria-hidden="true" />
-              ) : isErrored ? (
-                <X size={14} aria-hidden="true" />
-              ) : (
-                <span className="text-xs font-semibold">{n}</span>
-              )}
-            </span>
-            <div className="min-w-0 flex-1">
-              <span className="block [font-family:var(--font-mono)] [font-size:var(--text-eyebrow)] [font-weight:var(--font-weight-mono)] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
-                {eyebrow}
-              </span>
-              <h3
-                id={headingId}
-                className="mt-0.5 [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
-              >
-                {title}
-              </h3>
-            </div>
+            {headerInner}
             <span className="mt-1 flex-shrink-0 [color:var(--text-muted)]" aria-hidden="true">
               <ChevronUp size={16} />
             </span>
@@ -194,31 +225,7 @@ export default function WizardStep({
               disabled && "cursor-not-allowed opacity-60",
             )}
           >
-            <span className={bulletClass}>
-              {state === "done" ? (
-                <Check size={14} aria-hidden="true" />
-              ) : isErrored ? (
-                <X size={14} aria-hidden="true" />
-              ) : (
-                <span className="text-xs font-semibold">{n}</span>
-              )}
-            </span>
-            <div className="min-w-0 flex-1">
-              <span className="block [font-family:var(--font-mono)] [font-size:var(--text-eyebrow)] [font-weight:var(--font-weight-mono)] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
-                {eyebrow}
-              </span>
-              <span
-                id={headingId}
-                className="mt-0.5 block [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
-              >
-                {title}
-              </span>
-              {summary && state === "done" && (
-                <span className="mt-1 block truncate [font-size:var(--text-body)] [color:var(--text-secondary)]">
-                  {summary}
-                </span>
-              )}
-            </div>
+            {headerInner}
             <span className="mt-1 flex-shrink-0 [color:var(--text-muted)]" aria-hidden="true">
               <ChevronRight size={16} />
             </span>
@@ -228,12 +235,14 @@ export default function WizardStep({
           <div
             id={bodyId}
             ref={bodyRef}
-            hidden={!isActive}
-            aria-hidden={!isActive}
+            hidden={bodyHidden}
+            aria-hidden={bodyHidden}
             className="flex flex-col gap-4 pt-4 pr-4 pb-4 pl-[3.5rem] md:pt-5 md:pr-5 md:pb-5 md:pl-[3.75rem]"
           >
             {children}
-            {(primaryAction || secondaryAction) && (
+            {/* Per-step primary/secondary buttons only render in wizard layout — in
+                all-open the parent owns a single submit footer outside the wizard. */}
+            {!isAllOpen && (primaryAction || secondaryAction) && (
               <div className="flex flex-col-reverse gap-2 pt-4 [border-top:1px_solid_var(--border)] md:flex-row md:items-center md:justify-end md:gap-3">
                 {secondaryAction && (
                   <Button

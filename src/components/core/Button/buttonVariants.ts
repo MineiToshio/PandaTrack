@@ -38,7 +38,10 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary: [
-          "[background:var(--accent)] [color:var(--text-on-accent)] shadow-[var(--elevation-1)]",
+          // Transparent 1px border preserves border-box parity with bordered variants
+          // (secondary, ghost, outline) so primary + ghost CTAs at the same `size` render
+          // at exactly the same outer height/width.
+          "[background:var(--accent)] [color:var(--text-on-accent)] [border:1px_solid_transparent] shadow-[var(--elevation-1)]",
           "hover:after:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
           "hover:-translate-y-px hover:shadow-[var(--elevation-2)]",
           "motion-reduce:hover:translate-y-0 motion-reduce:hover:shadow-[var(--elevation-1)]",
@@ -93,7 +96,8 @@ export const buttonVariants = cva(
         ],
         // New S4 variants
         destructive: [
-          "[background:var(--destructive)] [color:var(--text-on-accent)] shadow-[var(--elevation-1)]",
+          // See `primary` note: transparent border keeps border-box parity with bordered variants.
+          "[background:var(--destructive)] [color:var(--text-on-accent)] [border:1px_solid_transparent] shadow-[var(--elevation-1)]",
           "hover:after:[background:color-mix(in_oklch,var(--text-primary)_var(--state-hover-mix),transparent)]",
           "hover:-translate-y-px hover:shadow-[var(--elevation-2)]",
           "motion-reduce:hover:translate-y-0 motion-reduce:hover:shadow-[var(--elevation-1)]",

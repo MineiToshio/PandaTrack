@@ -733,25 +733,32 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
           </>
         )}
 
-        {/* Stepper spans the full grid width so the dots align across both columns */}
-        <div className="lg:col-span-2">
-          <Stepper
-            steps={stepperSteps}
-            activeStep={activeStep}
-            doneSteps={doneStepsArr}
-            erroredSteps={erroredStepsArr}
-            onStepClick={handleStepperClick}
-            ariaLabel={tCreateRedesign("stepperLabel")}
-          />
-        </div>
+        {/* Stepper spans the full grid width so the dots align across both columns.
+            Hidden in edit modes — they use the all-open layout where there is no notion
+            of an active step to highlight. */}
+        {!isEditMode && (
+          <div className="lg:col-span-2">
+            <Stepper
+              steps={stepperSteps}
+              activeStep={activeStep}
+              doneSteps={doneStepsArr}
+              erroredSteps={erroredStepsArr}
+              onStepClick={handleStepperClick}
+              ariaLabel={tCreateRedesign("stepperLabel")}
+            />
+          </div>
+        )}
 
         <div className="min-w-0">
           <WizardAccordion
             ref={wizardRef}
             startStep={1}
             showStepper={false}
-            gated
-            scrollOnAdvance
+            // Edit modes use `all-open` so users can scan and edit any field directly,
+            // without progressive disclosure that's only useful for first-time creation.
+            layout={isEditMode ? "all-open" : "wizard"}
+            gated={!isEditMode}
+            scrollOnAdvance={!isEditMode}
             onStepChange={setActiveStep}
             onDoneStepsChange={setDoneStepsArr}
             onErroredStepsChange={setErroredStepsArr}
@@ -1311,6 +1318,8 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
                 </Typography>
               )}
               <div className="space-y-4">
+                <Eyebrow as="p">{tCreateRedesign("summaryEyebrow")}</Eyebrow>
+                {renderReviewSummary()}
                 {isChangeRequestMode && (
                   <div>
                     <Label htmlFor="store-change-request-comment">{tEdit("commentLabel")}</Label>
@@ -1328,11 +1337,34 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
                     />
                   </div>
                 )}
-                <Eyebrow as="p">{tCreateRedesign("summaryEyebrow")}</Eyebrow>
-                {renderReviewSummary()}
               </div>
             </WizardStep>
           </WizardAccordion>
+
+          {/* Edit-mode submit footer — replaces the per-step primary/secondary buttons
+              that the all-open layout intentionally hides. Lives after all step bodies
+              so users can scan/edit anything before committing. Uses `md` size since
+              these are the form's primary CTA controls and deserve more visual weight
+              than per-step navigation buttons. */}
+          {isEditMode && (
+            <div className="mt-6 flex flex-col-reverse gap-2 md:flex-row md:items-center md:justify-end md:gap-3">
+              <Button as="a" href={backHref} variant="ghost" size="md" className="md:w-auto" fullWidth>
+                {backLabel}
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                onClick={triggerSubmit}
+                loading={isPending}
+                leadingIcon={<Check size={16} aria-hidden="true" />}
+                fullWidth
+                className="md:w-auto"
+              >
+                {submitLabel}
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* ── Aside Resumen sticky ── */}

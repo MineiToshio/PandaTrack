@@ -71,7 +71,7 @@ export default function StoreGovernanceSummaryModal({
   );
 
   // Aggregate community change-request fields across recent pending requests so the
-  // single "Solicitudes de cambio" panel can summarize "Campos modificados: …".
+  // community panel can summarize "Campos modificados: …".
   const communityChangeFields = useMemo(() => {
     const seen = new Set<string>();
     summary.recentChangeRequests.forEach((req) => {
@@ -86,7 +86,18 @@ export default function StoreGovernanceSummaryModal({
     return formatRelativeShort(locale, new Date(newest.updatedAt));
   }, [locale, summary.recentChangeRequests]);
 
-  const hasCommunityChangeRequests = summary.totalChangeRequests > 0;
+  // The chip should reflect *pending* requests specifically, not the all-status total
+  // which would silently include resolved/rejected ones. Approved/rejected requests
+  // are historical and don't belong in a "pending" callout.
+  const pendingChangeRequestsCount = useMemo(
+    () => summary.changeRequestCounts.find((item) => item.status === "PENDING")?.count ?? 0,
+    [summary.changeRequestCounts],
+  );
+
+  const hasCommunityChangeRequests = pendingChangeRequestsCount > 0;
+  // The community section's pending count includes the viewer's own request when present,
+  // so we surface that fact in the caption instead of letting the user infer it.
+  const communityIncludesViewerChangeRequest = viewerOpenChangeRequest != null && hasCommunityChangeRequests;
   const hasAnyContent =
     viewerOpenReport != null ||
     summary.totalReports > 0 ||
@@ -239,71 +250,80 @@ export default function StoreGovernanceSummaryModal({
               </SectionGroup>
             )}
 
-            {/* ─── Solicitudes de cambio ────────────────────────────────── */}
-            {(viewerOpenChangeRequest || hasCommunityChangeRequests) && (
+            {/* ─── Tu solicitud de cambio ───────────────────────────────── */}
+            {viewerOpenChangeRequest && (
               <SectionGroup
                 icon={<GitPullRequestArrow size={14} aria-hidden="true" />}
+                eyebrow={t("governance.summary.yourChangeRequestEyebrow")}
+              >
+                <div className="space-y-2.5 rounded-[10px] px-3.5 py-3 [background:color-mix(in_oklch,var(--accent)_6%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--accent)_18%,transparent)]">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:500] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_12%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--accent)_25%,transparent)]">
+                      {t("governance.summary.yourPendingChangeRequestStatus")}
+                    </span>
+                    {viewerChangeUpdatedLabel && (
+                      <span className="shrink-0 [font-size:11px] [color:var(--text-muted)]">
+                        {viewerChangeUpdatedLabel}
+                      </span>
+                    )}
+                  </div>
+                  <p className="m-0 [font-size:13px] [line-height:1.5] [color:var(--text-secondary)]">
+                    <span className="[font-weight:500] [color:var(--text-primary)]">
+                      {t("governance.summary.modifiedFieldsLabel")}:
+                    </span>{" "}
+                    {viewerChangeFieldKeys.length > 0
+                      ? viewerChangeFieldKeys
+                          .map((fieldKey) => t(`governance.summary.fieldLabels.${fieldKey}`))
+                          .join(", ")
+                      : t("governance.summary.noChangedFields")}
+                  </p>
+                  <Link
+                    href={storeEditHref}
+                    className={cn(
+                      buttonVariants({ variant: "ghost", size: "sm" }),
+                      "text-accent hover:bg-accent/10 inline-flex gap-1.5 self-start",
+                    )}
+                    {...continueChangeRequestPhAttrs}
+                  >
+                    <Pencil size={11} aria-hidden />
+                    <span>{t("governance.summary.yourPendingChangeRequestEditCta")}</span>
+                  </Link>
+                </div>
+              </SectionGroup>
+            )}
+
+            {/* ─── Solicitudes de cambio de la comunidad ────────────────── */}
+            {hasCommunityChangeRequests && (
+              <SectionGroup
+                icon={<Users size={14} aria-hidden="true" />}
                 eyebrow={t("governance.summary.changeRequestSectionTitle")}
               >
-                {viewerOpenChangeRequest && (
-                  <div className="space-y-2.5 rounded-[10px] px-3.5 py-3 [background:color-mix(in_oklch,var(--accent)_6%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--accent)_18%,transparent)]">
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:500] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_12%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--accent)_25%,transparent)]">
-                        {t("governance.summary.yourPendingChangeRequestStatus")}
+                <div className="space-y-2.5 rounded-[10px] px-3.5 py-3 [background:var(--surface)] [border:1px_solid_var(--border)]">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:500] [color:var(--info)] [background:color-mix(in_oklch,var(--info)_12%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--info)_25%,transparent)]">
+                      {t("governance.summary.pendingCountChip", { count: pendingChangeRequestsCount })}
+                    </span>
+                    {mostRecentChangeUpdatedLabel && (
+                      <span className="shrink-0 [font-size:11px] [color:var(--text-muted)]">
+                        {mostRecentChangeUpdatedLabel}
                       </span>
-                      {viewerChangeUpdatedLabel && (
-                        <span className="shrink-0 [font-size:11px] [color:var(--text-muted)]">
-                          {viewerChangeUpdatedLabel}
-                        </span>
-                      )}
-                    </div>
+                    )}
+                  </div>
+                  {communityChangeFields.length > 0 && (
                     <p className="m-0 [font-size:13px] [line-height:1.5] [color:var(--text-secondary)]">
                       <span className="[font-weight:500] [color:var(--text-primary)]">
                         {t("governance.summary.modifiedFieldsLabel")}:
                       </span>{" "}
-                      {viewerChangeFieldKeys.length > 0
-                        ? viewerChangeFieldKeys
-                            .map((fieldKey) => t(`governance.summary.fieldLabels.${fieldKey}`))
-                            .join(", ")
-                        : t("governance.summary.noChangedFields")}
+                      {communityChangeFields
+                        .map((fieldKey) => t(`governance.summary.fieldLabels.${fieldKey}`))
+                        .join(", ")}
                     </p>
-                    <Link
-                      href={storeEditHref}
-                      className={cn(
-                        buttonVariants({ variant: "ghost", size: "sm" }),
-                        "text-accent hover:bg-accent/10 inline-flex gap-1.5 self-start",
-                      )}
-                      {...continueChangeRequestPhAttrs}
-                    >
-                      <Pencil size={11} aria-hidden />
-                      <span>{t("governance.summary.yourPendingChangeRequestEditCta")}</span>
-                    </Link>
-                  </div>
-                )}
-
-                {hasCommunityChangeRequests && (
-                  <div className="space-y-2.5 rounded-[10px] px-3.5 py-3 [background:var(--surface)] [border:1px_solid_var(--border)]">
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:500] [color:var(--info)] [background:color-mix(in_oklch,var(--info)_12%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--info)_25%,transparent)]">
-                        {t("governance.summary.pendingCountChip", { count: summary.totalChangeRequests })}
-                      </span>
-                      {mostRecentChangeUpdatedLabel && (
-                        <span className="shrink-0 [font-size:11px] [color:var(--text-muted)]">
-                          {mostRecentChangeUpdatedLabel}
-                        </span>
-                      )}
-                    </div>
-                    {communityChangeFields.length > 0 && (
-                      <p className="m-0 [font-size:13px] [line-height:1.5] [color:var(--text-secondary)]">
-                        <span className="[font-weight:500] [color:var(--text-primary)]">
-                          {t("governance.summary.modifiedFieldsLabel")}:
-                        </span>{" "}
-                        {communityChangeFields
-                          .map((fieldKey) => t(`governance.summary.fieldLabels.${fieldKey}`))
-                          .join(", ")}
-                      </p>
-                    )}
-                  </div>
+                  )}
+                </div>
+                {communityIncludesViewerChangeRequest && (
+                  <p className="m-0 mt-2 [font-size:11.5px] [color:var(--text-muted)]">
+                    {t("governance.summary.includesYourChangeRequest")}
+                  </p>
                 )}
               </SectionGroup>
             )}

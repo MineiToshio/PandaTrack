@@ -14,7 +14,7 @@ import {
 } from "react";
 import Stepper, { type StepperStep } from "@/components/core/Stepper";
 import { cn } from "@/lib/styles";
-import { WizardAccordionContext, type WizardAccordionContextValue } from "./WizardContext";
+import { WizardAccordionContext, type WizardAccordionContextValue, type WizardLayout } from "./WizardContext";
 
 export type WizardAccordionProps = {
   /** 1-indexed initial active step. Default `1`. */
@@ -44,6 +44,13 @@ export type WizardAccordionProps = {
   gated?: boolean;
   /** When true, scrolls the next step into view after advancing. Default `false`. */
   scrollOnAdvance?: boolean;
+  /**
+   * Layout mode. Default `"wizard"` (single active step).
+   * Use `"all-open"` for editing flows where the user wants to see and modify every
+   * section without progressive disclosure — every step body stays expanded and
+   * the per-step submit/back buttons are not rendered (parent owns the submit footer).
+   */
+  layout?: WizardLayout;
   /** Children — list of `<WizardStep>` nodes. */
   children: ReactNode;
   /** Optional className on the wrapping list. */
@@ -75,6 +82,7 @@ const WizardAccordion = forwardRef<WizardAccordionHandle, WizardAccordionProps>(
     stepperAriaLabel,
     gated = false,
     scrollOnAdvance = false,
+    layout = "wizard",
     children,
     className,
   },
@@ -214,15 +222,17 @@ const WizardAccordion = forwardRef<WizardAccordionHandle, WizardAccordionProps>(
       doneSteps,
       erroredSteps,
       totalSteps,
+      layout,
       activate,
       markDoneAndAdvance,
       goBack,
       reportValidation,
     }),
-    [activeStep, doneSteps, erroredSteps, totalSteps, activate, markDoneAndAdvance, goBack, reportValidation],
+    [activeStep, doneSteps, erroredSteps, totalSteps, layout, activate, markDoneAndAdvance, goBack, reportValidation],
   );
 
-  const shouldShowStepper = showStepper ?? Boolean(steps);
+  // The stepper is meaningless without a single "active step", so hide it in all-open layout.
+  const shouldShowStepper = layout === "all-open" ? false : (showStepper ?? Boolean(steps));
   const doneStepsArray = useMemo(() => Array.from(doneSteps), [doneSteps]);
 
   return (
