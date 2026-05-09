@@ -278,7 +278,7 @@ Cada entrada:
 
 - **Origen:** S6 — toolbar con sort select de 48px y otros controles de 44px.
 - **Causa raíz:** `Select.SIZE_CLASSES.md` incluía `py-[var(--space-3)]`. Button/SearchInput no tienen `py` — solo `min-h-11 md:min-h-10` + `flex items-center`.
-- **Solución:** quitar `py` del Select, agregar `[line-height:var(--text-...--line-height)]`.
+- **Solución:** quitar `py` del Select, agregar `[line-height:var(--text-{size}--line-height)]` (donde `{size}` es el token de texto correspondiente, p. ej. `caption`, `body`).
 - **Regla derivada:** para alinear altura entre controles del repo, usar `min-h-* + items-center + line-height`. Nunca `py` vertical. Si un control mide más que sus pares con mismo `size`, sospechar `py` redundante.
 - **Dónde vive:** PLAYBOOK §3 Patrones (Toolbar).
 - **Cross-módulo:** sí. Cualquier toolbar mixto.

@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@source not "../../docs/**";
+@source not "../../.cursor/**";
+@source not "../../*.md";
 
 /* ═══════════════════════════════════════════════════════════
    PANDATRACK DESIGN SYSTEM
