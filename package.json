@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "prisma generate && (prisma migrate resolve --rolled-back \"20260427000000_expand_delivery_model\" || true) && prisma migrate deploy && next build",
     "validate-build": "prisma generate && next build --webpack",
     "start": "next start",
     "test": "vitest run",
