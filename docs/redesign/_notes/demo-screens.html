@@ -4319,7 +4319,7 @@
           <i data-lucide="search"></i>
           <input class="input" type="text" placeholder="Buscar entrega o tienda…" />
         </div>
-        <button class="btn ghost" data-open-filters="deliveries"><i data-lucide="sliders-horizontal"></i> Filtrar</button>
+        <button class="btn ghost" data-open-filters="deliveries" style="background:color-mix(in oklch,var(--accent) 10%,transparent);color:var(--accent);border-color:color-mix(in oklch,var(--accent) 28%,transparent);"><i data-lucide="sliders-horizontal"></i> Filtrar <span style="background:var(--accent);color:var(--text-on-accent);font-size:10px;font-weight:700;border-radius:999px;padding:1px 5px;margin-left:2px;">2</span></button>
         <a href="#delivery-create" class="btn primary" data-screen-link="delivery-create"><i data-lucide="plus"></i> Anotar entrega</a>
       </div>
 
@@ -6423,10 +6423,15 @@
         <p class="text-secondary" style="margin:0 0 20px;">Tiendas curadas por la comunidad. Filtra por país o categoría.</p>
         <div class="orders-toolbar">
           <div class="orders-search"><i data-lucide="search"></i><input class="input" type="text" placeholder="Buscar tienda…" /></div>
-          <button class="btn ghost"><i data-lucide="sliders-horizontal"></i> Filtrar</button>
+          <button class="btn ghost" style="background:color-mix(in oklch,var(--accent) 10%,transparent);color:var(--accent);border-color:color-mix(in oklch,var(--accent) 28%,transparent);"><i data-lucide="sliders-horizontal"></i> Filtrar <span style="background:var(--accent);color:var(--text-on-accent);font-size:10px;font-weight:700;border-radius:999px;padding:1px 5px;margin-left:2px;">3</span></button>
           <button class="btn primary"><i data-lucide="plus"></i> Nueva tienda</button>
         </div>
-        <div class="stores-grid" style="margin-top:16px;">
+        <div class="orders-filter-chips" role="list" style="margin-top:8px;">
+          <span class="filter-chip">Vinyl <i data-lucide="x"></i></span>
+          <span class="filter-chip">Colombia <i data-lucide="x"></i></span>
+          <span class="filter-chip">Importa desde Japón <i data-lucide="x"></i></span>
+        </div>
+        <div class="stores-grid" style="margin-top:12px;">
           <div class="store-card"><div class="store-card-head"><div class="store-avatar s56">A</div><div><div class="store-card-name">Akiba Records</div><div class="store-card-meta"><i data-lucide="map-pin"></i> Tokyo, JP</div></div></div></div>
           <div class="store-card"><div class="store-card-head"><div class="store-avatar s56">M</div><div><div class="store-card-name">Mandarake</div><div class="store-card-meta"><i data-lucide="map-pin"></i> Shibuya, JP</div></div></div></div>
           <div class="store-card"><div class="store-card-head"><div class="store-avatar s56">P</div><div><div class="store-card-name">Pop Mart Bogotá</div><div class="store-card-meta"><i data-lucide="map-pin"></i> Bogotá, CO</div></div></div></div>

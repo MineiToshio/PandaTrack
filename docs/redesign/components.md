@@ -41,6 +41,7 @@ owner: Sergio Minei
 
 - [`components/Button.md`](./components/Button.md) — variants `primary | secondary | ghost | destructive | destructive-ghost`, sizes sm/md/lg, loading con ancho preservado, `as: 'button' | 'a'` discriminated union. Auditoría legacy `text-white` flaggeada.
 - [`components/IconButton.md`](./components/IconButton.md) — icon-only con `label` obligatorio (TypeScript rechaza sin él). `shape: 'pill' | 'square'`.
+- [`components/FilterTriggerButton.md`](./components/FilterTriggerButton.md) — trigger canónico del `FilterDrawer` cross-app. Estado active (fondo tinted accent + badge count) cuando `appliedCount ≥ 1`. Variants `label` (toolbar) e `icon-only` (topbar mobile). Regla: count = chips visibles, búsqueda excluida. (M05)
 - `Pill` — atomic toggle pill estilo `.filter-pill` del demo HTML. Idle/selected via prop `selected`. Caller controla semántica (role/aria-checked) via spread props. Consumido por FilterDrawer y futuros filtros cross-app (M04, sin spec individual).
 
 ### Tier 2 — Molecules (composición de atoms + tokens)

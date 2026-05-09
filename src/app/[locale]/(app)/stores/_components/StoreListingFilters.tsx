@@ -2,10 +2,11 @@
 
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Globe, Plus, SlidersHorizontal, Store, X } from "lucide-react";
+import { Globe, Plus, Store, X } from "lucide-react";
 import posthog from "posthog-js";
 import { useCallback, useMemo, useState } from "react";
 import Button from "@/components/core/Button/Button";
+import FilterTriggerButton from "@/components/core/FilterTriggerButton/FilterTriggerButton";
 import Eyebrow from "@/components/core/Eyebrow";
 import SearchInput from "@/components/core/SearchInput";
 import Select from "@/components/core/Select";
@@ -371,6 +372,17 @@ export default function StoreListingFilters({
     removeFilter,
   ]);
 
+  // Drawer-only applied count — excludes search query chip (rule: search doesn't increment badge)
+  const drawerAppliedCount = useMemo(
+    () =>
+      initialProductTypeKeys.length +
+      initialPresenceTypes.length +
+      initialCountryCodes.length +
+      initialImportCountryCodes.length +
+      initialFlags.length,
+    [initialProductTypeKeys, initialPresenceTypes, initialCountryCodes, initialImportCountryCodes, initialFlags],
+  );
+
   const newStoreHref = `/${locale}${ROUTES.stores}/new`;
 
   return (
@@ -401,15 +413,11 @@ export default function StoreListingFilters({
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="ghost"
-            size="md"
-            leadingIcon={<SlidersHorizontal size={16} aria-hidden="true" />}
+          <FilterTriggerButton
+            appliedCount={drawerAppliedCount}
             onClick={() => setDrawerOpen(true)}
-            className="[background:var(--surface-elevated)]"
-          >
-            {tListing("s6.toolbar.filter")}
-          </Button>
+            label={tListing("s6.toolbar.filter")}
+          />
           <Select
             id="store-sort"
             aria-label={tListing("s6.toolbar.sortLabel")}

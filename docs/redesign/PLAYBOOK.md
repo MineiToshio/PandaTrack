@@ -159,6 +159,35 @@ Wrapper `surface-elevated` + badge mono `↳ DESDE PT-XXXXXX` + valor + link gho
 
 Row de chips con `<X>` para remover individual. Visible arriba del listado. Patrón cross-módulo.
 
+### Filter trigger button con applied count (M05)
+
+Usar `<FilterTriggerButton>` (`src/components/core/FilterTriggerButton/FilterTriggerButton.tsx`) en cualquier listado con `FilterDrawer`. Reglas vinculantes:
+
+1. **count = chips visibles** arriba del listado (1 chip = 1 unidad, no granular).
+2. **Solo filtros del drawer cuentan.** La búsqueda (search input) no incrementa el badge ni activa el estado pintado.
+3. **Mobile icon-only:** usar `variant="icon-only"` con `aria-label` cuando el botón vive en el topbar del shell.
+
+```tsx
+// Label variant (toolbar desktop + mobile in-toolbar)
+<FilterTriggerButton
+  appliedCount={drawerAppliedCount}  // excludes search query
+  onClick={() => setDrawerOpen(true)}
+  label={t("toolbar.filter")}
+/>
+
+// Icon-only variant (topbar mobile)
+<FilterTriggerButton
+  variant="icon-only"
+  appliedCount={drawerAppliedCount}
+  onClick={() => setDrawerOpen(true)}
+  aria-label={t("toolbar.filterIconLabel")}
+/>
+```
+
+El `drawerAppliedCount` se deriva sumando las longitudes de los arrays de filtros del drawer (product types, countries, presence, flags, etc.) — nunca incluir el query string.
+
+Spec completo: `docs/redesign/components/FilterTriggerButton.md`. Demo visual: `#s7-orders-list-filters-open` (count=1) y `#s7-orders-list-empty-filtered` (count=3).
+
 ## 4. Anti-patterns explícitos (NO hacer)
 
 - ❌ `<select>` HTML nativo. Usar `<Select>` o `<Combobox>`.
