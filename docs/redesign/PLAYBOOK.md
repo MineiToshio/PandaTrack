@@ -201,6 +201,7 @@ Spec completo: `docs/redesign/components/FilterTriggerButton.md`. Demo visual: `
 - ❌ Mezclar visualmente paletas (Velvet en `src/` solamente; las alternativas viven solo en demo y docs).
 - ❌ Usar `<select>` nativo aunque sea para 3 opciones — usar Select con buscador integrado.
 - ❌ Cerrar drawer/modal al hacer click outside cuando ocupa una superficie grande (FilterDrawer no cierra outside). Solo X y Esc.
+- ❌ `<input type="checkbox">` para opciones boolean en UI. **Por defecto usar `<Switch>`** (`src/components/core/Switch.tsx`). El Checkbox se reserva para: selección múltiple de ítems con estado indeterminate, aceptación de términos/condiciones, bulk-select en tablas. Si dudás, elegí toggle.
 
 ## 5. Workflow obligatorio antes de implementar UI
 
@@ -324,6 +325,80 @@ Reglas accionables descubiertas implementando Stores. Aplican a todos los módul
 - **`data-scroll-behavior="smooth"` en `<html>` para Next.js** (L048). Si `globals.css` tiene `scroll-behavior: smooth`, agregar el attribute a TODOS los `<html>` (root layout + global-error). Sin esto, Next emite warnings en cada navegación.
 - **`replace_all` sobre style strings compartidos: extender `old_string`** (L057). Antes de `replace_all:true` sobre un style en HTML, escanear todas las instancias para verificar estructura interna idéntica. Si difiere, extender `old_string` con contenido adyacente único.
 - **PostToolUse formatter: re-Read si zona estructural** (L052). Tras aviso "PostToolUse hook modified … after your edit (likely a formatter)", si el siguiente Edit apunta a zona estructural (imports, types, prettier-sensitive), hacer Read previo.
+
+### 9.11 Patrones de lista tabular (S7 — módulo Pedidos)
+
+Descubiertos en S7-A.2. Aplican a cualquier módulo con lista tabular expandible.
+
+- **Expand chevron: anclado al top; en desktop es columna de grid** (L059). En mobile (`position: absolute`): `top: <padding-top>px; transform: none` — NUNCA `top: 50%; transform: translateY(-50%)`. Al expandir, `top: 50%` se desplaza al centro de la altura total, sacando el chevron de su línea de referencia. En desktop (`≥ 1024px`): el chevron es un hijo normal del grid (7ª columna ~28px), `position: static; align-self: start; justify-self: center`. Esto lo alinea bajo su header correspondiente y elimina el `padding-right` reservado para el overlay absoluto.
+
+- **Orden y alineación de columnas en tabla de pedidos** (L060). Canónico cross-app para cualquier lista tabular:
+  - **Orden de columnas:** Avatar → Nombre/Entidad → Conteo → **Estado** → **Total** → % Pago → Chevron. El Total va inmediatamente antes de % Pago para que las dos columnas de "dinero" queden juntas. Estado va antes de Total porque el chip contextualiza el monto.
+  - Avatar / imagen: columna fija (~36px), sin header text.
+  - Nombre / entidad principal: `text-align: left`.
+  - Conteo (Productos): `text-align: left` con `color: var(--text-secondary)`.
+  - Estado (chip): `text-align: left` (viene ANTES del Total).
+  - Monto total: `text-align: right` + clase `num` (tabular-nums). Columna contigua a % Pago.
+  - Barra de progreso + %: `justify-content: flex-start` (NO `flex-end`). La **barra** define la arista izquierda fija; el número va después con `min-width: 3.2ch; text-align: right; display: inline-block` para tener ancho fijo independiente de los dígitos. Sin esto, distintos porcentajes (0%, 33%, 100%) producen barras con X de inicio variable.
+
+- **Headers de tabla: todos centrados excepto la columna de texto principal** (L063). En cualquier cabecera de lista tabular, usar `text-align: center` en todos los `> *`, luego sobrescribir con `text-align: left` solo la columna de entidad principal (Pedido/Tienda, Nombre, etc.). La columna de avatar/icono y la del chevron no llevan texto. Esto da simetría visual a las columnas numéricas y de estado sin confundir la jerarquía.
+
+- **Íconos de tipo de producto en items expandidos** (L061). La columna `.item-icon` de cada ítem en la vista expandida muestra el ícono del **tipo de producto**, no un ícono genérico. Mapping canónico en `src/lib/catalog/storeProductTypeIcons.ts` (`getStoreProductTypeIcon`): vinilo → `Disc3`, figura → `Shapes`, manga → `BookOpen`, anime goods → `Sparkles`, cards → `GalleryThumbnails`, plush → `Package`. Si el tipo es desconocido: `Tag` como fallback. El subtipo del ítem también puede mostrarse como `<small>` bajo el nombre para reforzar el tipo.
+
+- **Paginación de lista: canónico = Stores list** (L062). Referencia: `s6-stores-list-default` demo anchor. Estructura:
+  - Mobile: único botón "Cargar más" centrado (`load-more-wrap`).
+  - Desktop (`≥ 1024px`): botones individuales `«`, `‹`, números de página, `›`, `»` + `<span>` de conteo con `margin-left: 8px` ("X pedidos · Y por página"). Los `<span>` tipo texto sin botón están prohibidos para los controles de nav.
+  - Página activa: `background: color-mix(in oklch, var(--accent) 12%, transparent); border-color: var(--accent); color: var(--accent); font-weight: 600; aria-current="page"`.
+  - Encima de la paginación: `<div>` con conteo legible "Mostrando A–B de N pedidos" a `font-size: 12px; color: var(--text-muted); text-align: center`.
+  - `gap: 4px` entre botones (NO `gap: 12px`).
+
+### 9.12 Patrones de FilterDrawer — booleans y autocomplete de entidades (S7)
+
+Descubiertos en S7-A.2. Aplican a cualquier FilterDrawer del módulo Pedidos y a futuros módulos.
+
+- **Toggle (Switch) siempre por defecto; Checkbox como excepción justificada** (L064). Para cualquier opción boolean en FilterDrawer, forms y settings: usar `filter-switch-row` + `button.switch` en demo HTML, y `<Switch>` de `src/components/core/Switch.tsx` en implementación. Checkbox (`<Checkbox>`) solo para: (a) selección múltiple de ítems con estado indeterminate, (b) aceptación de T&C / confirmación de acuerdo, (c) bulk-select en tablas. Si dudás, elegí toggle.
+
+- **Filtro de entidad (tienda, usuario, etc.) = `MultiTagAutocomplete`, no pills preset** (S7-A.2). El filtro por tienda en el drawer de pedidos usa `src/components/core/MultiTagAutocomplete.tsx`. Los chips de ítems seleccionados aparecen **dentro** del contenedor bordeado junto al input — no debajo de él. El `FilterDrawer` ya soporta `type: "tag-autocomplete"` en sus secciones; Fase B solo pasa la config con la lista de tiendas del usuario como `options`. Anti-patrón: NO renderizar el chip en un `<div>` separado debajo del `<input>` — eso contradice el componente canónico y confunde la implementación.
+
+### 9.13 Mapping canónico de íconos de estado y pago — módulo Orders (S7)
+
+Descubierto en S7-A.2 (L065). El ícono de estado es **siempre el mismo** en cualquier superficie: filter pill, chip de fila, chip de detalle, mobile card. El ícono en filter pills **siempre tiene color**: `var(--accent-cool)` en idle, `var(--accent)` cuando activo. CSS del demo: `.filter-pill svg { color: var(--accent-cool) }`.
+
+**Estado del pedido:**
+
+| Estado                 | Ícono Lucide     | `StatusChip` / chip color |
+| ---------------------- | ---------------- | ------------------------- |
+| Activas (filtro grupo) | `activity`       | — (solo en filter pill)   |
+| Abierto                | `clock`          | neutral                   |
+| En camino              | `truck`          | info                      |
+| Parcialmente en camino | `truck`          | info                      |
+| Completo               | `package-check`  | success                   |
+| Cancelado              | `ban`            | neutral                   |
+| Atrasado (N días)      | `alert-triangle` | warning                   |
+
+**Estado de pago:**
+
+| Estado de pago  | Ícono Lucide     | `StatusChip` / chip color |
+| --------------- | ---------------- | ------------------------- |
+| Pagado          | `check-circle`   | success                   |
+| Pago parcial    | `circle-dot`     | warning / neutral         |
+| Impago          | `x-circle`       | warning                   |
+| Atrasado (pago) | `alert-triangle` | warning                   |
+| Saldo pendiente | `alert-triangle` | warning                   |
+
+Anti-patrón: ❌ no usar `package` para "En camino" ni `check-circle` para "Completo" — confunden la semántica de "paquete físico" con "estado de orden", y "pagado" con "entregado".
+
+**Criterio de búsqueda en toolbar de lista:** campo de texto busca por `código de pedido` (PT-XXXXXX, match exacto o prefijo) **OR** `nombre de producto` (substring sobre `OrderItem.name`). **"Tienda" no va en el buscador** — vive exclusivamente en el FilterDrawer como `tag-autocomplete`. Tener tienda en ambos lugares crea estado conflictivo y duplica el filtrado. Placeholder: `"Código o producto (PT-000123, Evangelion OST…)"`.
+
+**Opciones de ordenamiento de lista (módulo Orders):**
+
+| Opción        | Descripción                                 | Por defecto |
+| ------------- | ------------------------------------------- | ----------- |
+| Más recientes | `createdAt DESC`                            | ✓           |
+| Más antiguas  | `createdAt ASC`                             |             |
+| Tienda A–Z    | `store.name ASC`                            |             |
+| % Pago: menor | `paymentPercent ASC` (deudas primero)       |             |
+| Total: mayor  | `totalAmount DESC` (monto más alto primero) |             |
 
 ## Referencias
 

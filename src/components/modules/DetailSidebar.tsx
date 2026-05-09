@@ -78,10 +78,7 @@ export default function DetailSidebar({
         </Card>
       )}
       {notaPrivada != null && (
-        // `outlined` (surface, no elevation) so the inner textarea — which uses
-        // `--surface-elevated` — visually stands out against the card body, matching
-        // the HTML demo where the private note card is non-elevated.
-        <Card variant="outlined" padding="md" as="section" aria-label={merged.notaPrivada}>
+        <Card variant="elevated" padding="md" as="section" aria-label={merged.notaPrivada}>
           <Eyebrow as="h2" className="mb-3">
             {merged.notaPrivadaEyebrow}
           </Eyebrow>

@@ -238,7 +238,7 @@ El agente lee:
 - Specs de componentes core ya disponibles (`docs/redesign/components/`).
 - Tokens y reglas vivas (`tokens.md`, `methodology.md`).
 
-#### Fase A.1 — Extensión del demo HTML
+#### Fase A.1 — Extensión del demo HTML + bootstrap del spec
 
 El agente extiende `docs/redesign/_notes/demo-screens.html` con:
 
@@ -253,9 +253,16 @@ El agente extiende `docs/redesign/_notes/demo-screens.html` con:
 - Variantes mobile + desktop completas en cada pantalla nueva.
 - Respeta toda la infraestructura del demo: tokens CSS existentes, componentes HTML existentes, paletas, theme toggle.
 
-Al terminar, devuelve al humano: **"demo extendido en `_notes/demo-screens.html`. Abrí el archivo en el browser y revisá las pantallas X, Y, Z. Iterá conmigo hasta aprobación visual."**
+**En paralelo, bootstrappea los specs markdown** con estructura mínima (no esperan a A.3):
 
-#### Fase A.2 — Iteración visual del HTML
+- `docs/redesign/screens/<screen>.md` por cada pantalla con: frontmatter, layout (referenciando los anchors del demo), componentes consumidos (tabla con `<ComponentName>` + spec link + props clave), datos consumidos (modelo Prisma + query), estados visuales conocidos, y stubs marcados `// PENDING A.2/A.3` para las secciones que se completan después (comportamiento e interacción, validaciones, i18n, accesibilidad detallada, edge cases, anti-patrones).
+- `docs/redesign/modules/<module>.md` (doc maestro) con: frontmatter, resumen ejecutivo (1 párrafo), tabla de pantallas + anchors, lista inicial de funcionalidades preservadas (mapping al FRD), y stubs `// PENDING A.2/A.3` para cambios visuales aplicados, cambios de comportamiento, propuestas funcionales `P-SX-NN`, componentes propios del módulo, y handoff brief.
+
+El spec inicial es **el contrato técnico que viaja con el HTML**, no una formalización post-hoc. Su función en A.1 es: dejar visible qué componentes se asume consumir, qué pantallas existen, y qué estados se piensan cubrir — para que el humano lo audite junto con el HTML desde la primera ronda.
+
+Al terminar, devuelve al humano: **"demo extendido en `_notes/demo-screens.html` + specs bootstrappeados en `screens/<screen>.md` y `modules/<module>.md`. Abrí el HTML en el browser, leé los specs en paralelo, y revisá las pantallas X, Y, Z. Iterá conmigo hasta aprobación visual — los specs se actualizan en cada iteración estructural."**
+
+#### Fase A.2 — Iteración visual del HTML + actualización quirúrgica del spec
 
 El humano abre el HTML, ve las pantallas, decide. Itera con el agente:
 
@@ -263,21 +270,26 @@ El humano abre el HTML, ve las pantallas, decide. Itera con el agente:
 - "Falta mostrar el contador de Z."
 - "El estado empty de esta pantalla se ve frío, agregale la mascota sleeping."
 
-El agente edita `_notes/demo-screens.html` y devuelve "iteración Nº lista, abrí de nuevo y revisá".
+El agente edita `_notes/demo-screens.html` y, **en el mismo turno**, actualiza los specs markdown afectados según este criterio:
 
-**Cero React durante esta sub-fase.** Tokens chicos por iteración (decenas de líneas de HTML+CSS por turno). Feedback humano inmediato y visual.
+- **Cambios estructurales** (componente nuevo, sección nueva, pantalla nueva, estado nuevo, comportamiento nuevo, token cambiado, prop cambiada) → actualizar `screens/<screen>.md` y/o `modules/<module>.md` correspondiente en el mismo turno. Reflejar en la tabla de componentes consumidos, en estados visuales, en notas de comportamiento, etc.
+- **Cambios cosméticos puros** (color de un border que ya estaba, padding ajustado, gap entre elementos, tamaño de fuente dentro de un componente ya documentado) → solo HTML, sin tocar el spec. Mencionarlo en el mensaje de cierre del turno para que el humano sepa que el spec sigue vigente.
 
-#### Fase A.3 — Aprobación visual + spec markdown
+Devuelve "iteración Nº lista. HTML: [resumen]. Specs actualizados: [paths o 'ninguno — solo cosmético']". Si en una ronda dudás si el cambio es estructural o cosmético, tratá como estructural (actualizá el spec, el costo extra es bajo).
 
-Cuando el humano dice "aprobado visualmente", el agente:
+**Cero React durante esta sub-fase.** Tokens chicos por iteración (decenas de líneas de HTML+CSS+spec por turno). Feedback humano inmediato y visual.
 
-1. Escribe el spec markdown en `docs/redesign/screens/<screen>.md` describiendo el HTML aprobado (qué + cómo + tokens + componentes consumidos + estados).
-2. Escribe el doc maestro en `docs/redesign/modules/<module>.md` con la lista de funcionalidades preservadas (mapeadas al FRD) + cambios visuales aplicados + cambios de UX propuestos pendientes de aprobación funcional.
-3. Itera el doc maestro con el humano si hay cambios funcionales que aprobar/rechazar (los cambios visuales ya están aprobados — solo quedan los funcionales).
-4. Cuando humano aprueba todo, escribe la sección **"Handoff a Fase B"** en el doc maestro.
-5. Cierra Fase A.
+#### Fase A.3 — Aprobación visual + completar specs + handoff
 
-El spec markdown queda **subordinado al HTML aprobado** — el HTML es la fuente de verdad visual, el markdown es la fuente de verdad funcional + el contrato técnico de implementación.
+Cuando el humano dice "aprobado visualmente", los specs ya existen y están en sync con el HTML (bootstrappeados en A.1, actualizados quirúrgicamente en cada iteración estructural de A.2). En A.3 el agente NO arranca de cero — completa los stubs marcados `// PENDING A.2/A.3` que quedaron pendientes:
+
+1. **Completá los specs de pantalla** (`docs/redesign/screens/<screen>.md`) con las secciones que requieren visión completa post-iteración: comportamiento e interacción detallado (tabla obligatoria — ver §"Cobertura completa de specs" abajo), validaciones Zod + reglas post-blur, i18n keys propuestas (clave + ES + slot), accesibilidad (focus management, ARIA, keyboard), edge cases acordados, anti-patrones surgidos durante la iteración, notas para Fase B.
+2. **Completá el doc maestro** (`docs/redesign/modules/<module>.md`) con: tabla "Cambios visuales aplicados en Fase A (aprobados)", tabla "Cambios de comportamiento e interacción aplicados", "Propuestas de cambio funcional" `P-SX-NN` con decisión humana pendiente, inventario de componentes consumidos (descripción de USO no replicación de spec — L043), cláusula de spec vigente (mini-sesiones cross-cutting abiertas que afecten al módulo — L045).
+3. **Iterá el doc maestro con el humano** si hay cambios funcionales `P-SX-NN` que aprobar/rechazar (los visuales ya están aprobados).
+4. Cuando humano apruebe todo, escribí la sección **"Handoff a Fase B"** en el doc maestro con: archivos a crear/modificar, componentes a consumir, tokens a usar, decisiones cerradas, edge cases, copy aprobada (i18n), anti-patrones, preguntas abiertas, validación esperada, **comportamiento crítico para Fase B**.
+5. Cerrá Fase A.
+
+El spec markdown sigue siendo **el contrato técnico** y va de la mano del HTML aprobado: el HTML es la fuente de verdad visual, el markdown es la fuente de verdad funcional + comportamental + estructural.
 
 ##### Cobertura completa de specs de Fase A módulo
 

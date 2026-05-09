@@ -1304,7 +1304,7 @@
 
     .orders-table-head {
       display: none;
-      grid-template-columns: 36px 1.6fr 1.4fr 1fr 1fr 0.6fr;
+      grid-template-columns: 36px 1.4fr 0.8fr 1.4fr 0.9fr 110px 28px;
       gap: 12px;
       padding: 8px 12px;
       font-size: 11px;
@@ -1315,6 +1315,9 @@
       border-bottom: 1px solid var(--border);
     }
     @media (min-width: 1024px) { .orders-table-head { display: grid; } }
+    /* All header labels centered; Pedido/Tienda stays left (primary label column) */
+    .orders-table-head > * { text-align: center; }
+    .orders-table-head > :nth-child(2) { text-align: left; }
 
     .order-row {
       display: grid;
@@ -1328,7 +1331,7 @@
       transition: background 150ms cubic-bezier(0.2, 0, 0, 1), transform 280ms cubic-bezier(0.2, 0, 0, 1);
     }
     @media (min-width: 1024px) {
-      .order-row { grid-template-columns: 36px 1.6fr 1.4fr 1fr 1fr 0.6fr; padding: 10px 12px; }
+      .order-row { grid-template-columns: 36px 1.4fr 0.8fr 1.4fr 0.9fr 110px 28px; padding: 10px 12px; }
     }
     .order-row + .order-row { border-top: 1px solid var(--border); border-radius: 0; }
     .order-row:hover { background: color-mix(in oklch, var(--text-primary) var(--state-hover), transparent); }
@@ -1342,12 +1345,13 @@
     .order-row .col-product .count { color: var(--text-primary); font-weight: 500; }
 
     /* Expand/collapse de items dentro de cada row */
+    /* Mobile: chevron overlays the 2-col mobile grid as an absolute element */
     .order-row { padding-right: 36px; }
     .order-row .expand-toggle {
       position: absolute;
       right: 8px;
-      top: 50%;
-      transform: translateY(-50%);
+      top: 10px; /* anchored to top — stays on first content line even when expanded */
+      transform: none;
       width: 24px;
       height: 24px;
       border-radius: 6px;
@@ -1356,7 +1360,12 @@
       color: var(--text-muted);
       display: grid;
       place-items: center;
-      transition: background 150ms cubic-bezier(0.2, 0, 0, 1), transform 280ms cubic-bezier(0.2, 0, 0, 1);
+      transition: background 150ms cubic-bezier(0.2, 0, 0, 1);
+    }
+    /* Desktop: chevron becomes the 7th grid column — aligned under % Pago header */
+    @media (min-width: 1024px) {
+      .order-row { padding-right: 0; }
+      .order-row .expand-toggle { position: static; align-self: start; justify-self: center; }
     }
     .order-row .expand-toggle svg { width: 14px; height: 14px; transition: transform 280ms cubic-bezier(0.2, 0, 0, 1); }
     .order-row.is-expanded .expand-toggle svg { transform: rotate(180deg); }
@@ -1387,16 +1396,24 @@
     .order-items-inner .item-row .item-name { padding: 0; }
     .order-items-inner .item-row .item-qty { text-align: right; }
     .order-items-inner .item-row .item-price { text-align: right; }
-    .order-row .col-total { display: none; font-weight: 500; font-size: 14px; }
+    .order-row .col-total { display: none; font-weight: 500; font-size: 14px; text-align: right; }
     @media (min-width: 1024px) { .order-row .col-total { display: block; } }
     .order-row .col-status { display: none; }
     @media (min-width: 1024px) { .order-row .col-status { display: block; } }
     .order-row .col-progress {
       display: flex;
       align-items: center;
+      justify-content: flex-start; /* bar defines the left edge — consistent across all rows */
       gap: 8px;
     }
-    .order-row .col-progress small { color: var(--text-muted); font-size: 12px; }
+    .order-row .col-progress small {
+      color: var(--text-muted);
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      min-width: 3.2ch;
+      text-align: right;
+      display: inline-block;
+    }
     /* Mobile-specific second line */
     .order-row .mobile-extra { grid-column: 2; display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
     @media (min-width: 1024px) { .order-row .mobile-extra { display: none; } }
@@ -1405,8 +1422,9 @@
     @media (min-width: 1024px) {
       .load-more-wrap { display: none; }
     }
-    .desktop-pagination { display: none; align-items: center; justify-content: center; gap: 12px; padding: 16px; color: var(--text-muted); font-size: 13px; }
+    .desktop-pagination { display: none; align-items: center; justify-content: center; gap: 4px; padding: 16px; color: var(--text-muted); font-size: 13px; }
     @media (min-width: 1024px) { .desktop-pagination { display: flex; } }
+    .desktop-pagination .page-active { background: color-mix(in oklch,var(--accent) 12%,transparent); border-color: var(--accent); color: var(--accent); font-weight: 600; }
 
     /* ─────────────────────────────────────────────────────────────
        Order detail
@@ -2066,7 +2084,7 @@
       cursor: pointer;
       transition: all 150ms cubic-bezier(0.2, 0, 0, 1);
     }
-    .filter-pill svg { width: 13px; height: 13px; }
+    .filter-pill svg { width: 13px; height: 13px; color: var(--accent-cool); }
     .filter-pill.is-active {
       background: color-mix(in oklch, var(--accent) 12%, transparent);
       border-color: var(--accent);
@@ -3221,8 +3239,9 @@
           <div></div>
           <div>Pedido / Tienda</div>
           <div>Productos</div>
-          <div>Total</div>
           <div>Estado</div>
+          <div>Total</div>
+          <div>% Pago</div>
           <div></div>
         </div>
 
@@ -3231,8 +3250,8 @@
             <div class="store-avatar s32">M</div>
             <div class="col-store"><strong>Mercado MX</strong><small>PT-002418 · 12 abr 26</small></div>
             <div class="col-product"><span class="count num">3</span> productos</div>
-            <div class="col-total num">$1.240,00</div>
             <div class="col-status"><span class="chip info"><i data-lucide="package"></i> Parcialmente en camino</span></div>
+            <div class="col-total num">$1.240,00</div>
             <div class="col-progress"><div class="progress-mini" style="width: 60px; height: 3px; background: color-mix(in oklch, var(--text-primary) 8%, transparent); border-radius: 999px; overflow: hidden;"><span style="display: block; height: 100%; width: 60%; background: var(--accent);"></span></div><small class="num">60%</small></div>
             <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="chip info"><i data-lucide="package"></i> Parcialmente en camino</span><span class="text-muted" style="font-size: 12px;">3 productos · $1.240,00 · 60%</span></div></div>
             <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
@@ -3250,8 +3269,8 @@
             <div class="store-avatar s32">S</div>
             <div class="col-store"><strong>Surugaya</strong><small>PT-002417 · 09 abr 26</small></div>
             <div class="col-product"><span class="count num">5</span> productos</div>
-            <div class="col-total num">¥18.400</div>
             <div class="col-status"><span class="chip success"><i data-lucide="check-circle"></i> Completo</span></div>
+            <div class="col-total num">¥18.400</div>
             <div class="col-progress"><div style="width: 60px; height: 3px; background: var(--success); border-radius: 999px;"></div><small class="num">100%</small></div>
             <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center;"><span class="chip success"><i data-lucide="check-circle"></i> Completo</span><span class="text-muted" style="font-size: 12px;">5 productos · ¥18.400</span></div></div>
             <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
@@ -3268,8 +3287,8 @@
             <div class="store-avatar s32">A</div>
             <div class="col-store"><strong>AmiAmi</strong><small>PT-002416 · 02 abr 26</small></div>
             <div class="col-product"><span class="count num">2</span> productos</div>
-            <div class="col-total num">$89,50</div>
             <div class="col-status"><span class="chip warning"><i data-lucide="alert-circle"></i> Atrasado 3d</span></div>
+            <div class="col-total num">$89,50</div>
             <div class="col-progress"><div style="width: 60px; height: 3px; background: color-mix(in oklch, var(--text-primary) 8%, transparent); border-radius: 999px; overflow: hidden;"><span style="display: block; height: 100%; width: 40%; background: var(--accent);"></span></div><small class="num">40%</small></div>
             <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center;"><span class="chip warning"><i data-lucide="alert-circle"></i> Atrasado 3d</span><span class="text-muted" style="font-size: 12px;">2 productos · $89,50</span></div></div>
             <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
@@ -3285,8 +3304,8 @@
             <div class="store-avatar s32">C</div>
             <div class="col-store"><strong>CDJapan</strong><small>PT-002415 · 28 mar 26</small></div>
             <div class="col-product"><span class="count num">2</span> productos</div>
-            <div class="col-total num">¥6.200</div>
             <div class="col-status"><span class="chip neutral"><i data-lucide="clock"></i> Abierto</span></div>
+            <div class="col-total num">¥6.200</div>
             <div class="col-progress"><div style="width: 60px; height: 3px; background: color-mix(in oklch, var(--text-primary) 8%, transparent); border-radius: 999px;"></div><small class="num">0%</small></div>
             <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center;"><span class="chip neutral"><i data-lucide="clock"></i> Abierto</span><span class="text-muted" style="font-size: 12px;">2 productos · ¥6.200</span></div></div>
             <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
@@ -3302,8 +3321,8 @@
             <div class="store-avatar s32">H</div>
             <div class="col-store"><strong>HMV Japan</strong><small>PT-002414 · 25 mar 26</small></div>
             <div class="col-product"><span class="count num">1</span> producto</div>
-            <div class="col-total num">¥4.800</div>
             <div class="col-status"><span class="chip info"><i data-lucide="package"></i> En camino</span></div>
+            <div class="col-total num">¥4.800</div>
             <div class="col-progress"><div style="width: 60px; height: 3px; background: color-mix(in oklch, var(--text-primary) 8%, transparent); border-radius: 999px; overflow: hidden;"><span style="display: block; height: 100%; width: 80%; background: var(--accent);"></span></div><small class="num">80%</small></div>
             <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center;"><span class="chip info"><i data-lucide="package"></i> En camino</span><span class="text-muted" style="font-size: 12px;">1 producto · ¥4.800 · 80%</span></div></div>
             <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
@@ -3318,8 +3337,8 @@
             <div class="store-avatar s32">e</div>
             <div class="col-store"><strong>eBay JP</strong><small>PT-002413 · 20 mar 26</small></div>
             <div class="col-product"><span class="count num">12</span> productos</div>
-            <div class="col-total num">$32,00</div>
             <div class="col-status"><span class="chip success"><i data-lucide="check-circle"></i> Completo</span></div>
+            <div class="col-total num">$32,00</div>
             <div class="col-progress"><div style="width: 60px; height: 3px; background: var(--success); border-radius: 999px;"></div><small class="num">100%</small></div>
             <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center;"><span class="chip success"><i data-lucide="check-circle"></i> Completo</span><span class="text-muted" style="font-size: 12px;">12 productos · $32,00</span></div></div>
             <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
@@ -4333,8 +4352,9 @@
           <div></div>
           <div>Entrega / Tienda</div>
           <div>Productos</div>
-          <div>Costo</div>
           <div>Estado</div>
+          <div>Costo</div>
+          <div>Llegada est.</div>
           <div></div>
         </div>
 
@@ -4342,8 +4362,8 @@
           <div class="store-avatar s32">A</div>
           <div class="col-store"><strong>AmiAmi</strong><small>PT-DEL-9301 · 28 abr 26</small></div>
           <div class="col-product"><span class="count num">3</span> productos</div>
-          <div class="col-total num">$24,80</div>
           <div class="col-status"><span class="chip info"><i data-lucide="truck"></i> En camino</span></div>
+          <div class="col-total num">$24,80</div>
           <div class="col-progress text-muted" style="font-size: 12px;">llega 4–8 may</div>
           <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="chip info"><i data-lucide="truck"></i> En camino</span><span class="text-muted" style="font-size: 12px;">3 productos · $24,80</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
@@ -4361,8 +4381,8 @@
           <div class="store-avatar s32">H</div>
           <div class="col-store"><strong>HMV Japan</strong><small>PT-DEL-9298 · 25 abr 26</small></div>
           <div class="col-product"><span class="count num">2</span> productos</div>
-          <div class="col-total num">¥3.200</div>
           <div class="col-status"><span class="chip info"><i data-lucide="truck"></i> En camino</span></div>
+          <div class="col-total num">¥3.200</div>
           <div class="col-progress text-muted" style="font-size: 12px;">llega 6 may</div>
           <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="chip info"><i data-lucide="truck"></i> En camino</span><span class="text-muted" style="font-size: 12px;">2 productos · ¥3.200</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
@@ -4379,8 +4399,8 @@
           <div class="store-avatar s32">T</div>
           <div class="col-store"><strong>TCG.cl</strong><small>PT-DEL-9272 · 22 abr 26</small></div>
           <div class="col-product"><span class="count num">12</span> productos</div>
-          <div class="col-total num">$8,40</div>
           <div class="col-status"><span class="chip info"><i data-lucide="truck"></i> En camino</span></div>
+          <div class="col-total num">$8,40</div>
           <div class="col-progress text-muted" style="font-size: 12px;">llega 3 may</div>
           <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="chip info"><i data-lucide="truck"></i> En camino</span><span class="text-muted" style="font-size: 12px;">12 productos · $8,40</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
@@ -4396,8 +4416,8 @@
           <div class="store-avatar s32">S</div>
           <div class="col-store"><strong>Surugaya</strong><small>PT-DEL-9265 · 15 abr 26</small></div>
           <div class="col-product"><span class="count num">5</span> productos</div>
-          <div class="col-total num">¥1.800</div>
           <div class="col-status"><span class="chip success"><i data-lucide="check-circle"></i> Llegó</span></div>
+          <div class="col-total num">¥1.800</div>
           <div class="col-progress text-muted" style="font-size: 12px;">28 abr</div>
           <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="chip success"><i data-lucide="check-circle"></i> Llegó</span><span class="text-muted" style="font-size: 12px;">5 productos · ¥1.800</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
@@ -4415,8 +4435,8 @@
           <div class="store-avatar s32">M</div>
           <div class="col-store"><strong>Mercado MX</strong><small>PT-DEL-9241 · 09 abr 26</small></div>
           <div class="col-product"><span class="count num">1</span> producto</div>
-          <div class="col-total num">$12,00</div>
           <div class="col-status"><span class="chip info"><i data-lucide="package"></i> En camino</span></div>
+          <div class="col-total num">$12,00</div>
           <div class="col-progress text-muted" style="font-size: 12px;">esperada 5 may</div>
           <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="chip info"><i data-lucide="package"></i> En camino</span><span class="text-muted" style="font-size: 12px;">1 producto · $12,00</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
@@ -4432,8 +4452,8 @@
           <div class="store-avatar s32">e</div>
           <div class="col-store"><strong>eBay JP</strong><small>PT-DEL-9220 · 02 abr 26</small></div>
           <div class="col-product"><span class="count num">2</span> productos</div>
-          <div class="col-total num">$18,50</div>
           <div class="col-status"><span class="chip warning"><i data-lucide="alert-circle"></i> Atrasada 2d</span></div>
+          <div class="col-total num">$18,50</div>
           <div class="col-progress text-muted" style="font-size: 12px;">esperada 29 abr</div>
           <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="chip warning"><i data-lucide="alert-circle"></i> Atrasada 2d</span><span class="text-muted" style="font-size: 12px;">2 productos · $18,50</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
@@ -8691,9 +8711,16 @@
       <div class="orders-toolbar">
         <div class="orders-search">
           <i data-lucide="search"></i>
-          <input class="input" type="search" placeholder="Buscar pedido, código o tienda…" aria-label="Buscar pedidos" />
+          <input class="input" type="search" placeholder="Código o producto (PT-000123, Evangelion OST…)" aria-label="Buscar pedidos" />
         </div>
         <button class="btn ghost"><i data-lucide="sliders-horizontal"></i> Filtrar</button>
+        <select class="input" style="min-width:148px;width:auto;" aria-label="Ordenar por">
+          <option selected>Más recientes</option>
+          <option>Más antiguas</option>
+          <option>Tienda A–Z</option>
+          <option>% Pago: menor</option>
+          <option>Total: mayor</option>
+        </select>
         <a href="#s7-order-create-step-1" class="btn primary" data-screen-link="s7-order-create-step-1"><i data-lucide="plus"></i> Nuevo pedido</a>
       </div>
 
@@ -8713,8 +8740,9 @@
           <div></div>
           <div>Pedido / Tienda</div>
           <div>Productos</div>
-          <div>Total</div>
           <div>Estado</div>
+          <div>Total</div>
+          <div>% Pago</div>
           <div></div>
         </div>
 
@@ -8723,10 +8751,10 @@
           <div class="store-avatar s32">S</div>
           <div class="col-store"><strong>Solaris Books &amp; Records</strong><small>PT-000123 · 28 abr 26</small></div>
           <div class="col-product"><span class="count num">4</span> productos</div>
+          <div class="col-status"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span></div>
           <div class="col-total num">$1.240,00 USD</div>
-          <div class="col-status"><span class="chip info"><i data-lucide="package"></i> Parcialmente en camino</span></div>
           <div class="col-progress"><div class="progress-mini" style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:60%;background:var(--accent);"></span></div><small class="num">60%</small></div>
-          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip info"><i data-lucide="package"></i> Parcialmente en camino</span><span class="text-muted" style="font-size:12px;">4 productos · $1.240,00 · 60%</span></div></div>
+          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span><span class="text-muted" style="font-size:12px;">4 productos · $1.240,00 · 60%</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
           <div class="order-items">
             <div class="order-items-inner">
@@ -8744,8 +8772,8 @@
           <div class="store-avatar s32">A</div>
           <div class="col-store"><strong>Anime Corner Europe</strong><small>PT-000118 · 12 mar 26</small></div>
           <div class="col-product"><span class="count num">2</span> productos</div>
-          <div class="col-total num">€320,00</div>
           <div class="col-status"><span class="chip warning"><i data-lucide="alert-triangle"></i> Atrasado 8d</span></div>
+          <div class="col-total num">€320,00</div>
           <div class="col-progress"><div class="progress-mini" style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;"></div><small class="num">0%</small></div>
           <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;"><span class="chip warning"><i data-lucide="alert-triangle"></i> Atrasado 8d</span><span class="text-muted" style="font-size:12px;">2 productos · €320,00 · Impago</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
@@ -8763,16 +8791,17 @@
           <div class="store-avatar s32">H</div>
           <div class="col-store"><strong>HMV Japan</strong><small>PT-000115 · 5 feb 26</small></div>
           <div class="col-product"><span class="count num">6</span> productos</div>
+          <div class="col-status"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span></div>
           <div class="col-total num">¥24.500</div>
-          <div class="col-status"><span class="chip info"><i data-lucide="package"></i> Parcialmente en camino</span></div>
           <div class="col-progress"><div class="progress-mini" style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:33%;background:var(--warning);"></span></div><small class="num">33%</small></div>
-          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;"><span class="chip info"><i data-lucide="package"></i> Parcialmente en camino</span><span class="text-muted" style="font-size:12px;">6 productos · ¥24.500</span></div></div>
+          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span><span class="text-muted" style="font-size:12px;">6 productos · ¥24.500</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
           <div class="order-items">
             <div class="order-items-inner">
-              <div class="item-row"><div class="item-icon"><i data-lucide="disc-3"></i></div><div class="item-name">Spirited Away OST (2LP)</div><span class="item-qty">×1</span><span class="item-price num">¥4.200</span></div>
-              <div class="item-row"><div class="item-icon"><i data-lucide="disc-3"></i></div><div class="item-name">Princess Mononoke OST</div><span class="item-qty">×1</span><span class="item-price num">¥3.800</span></div>
-              <div class="item-row" style="color:var(--text-muted);font-size:12px;"><div></div><div>+ 4 más…</div></div>
+              <div class="item-row"><div class="item-icon"><i data-lucide="disc-3"></i></div><div class="item-name">Spirited Away OST (2LP)<small>Vinilo</small></div><span class="item-qty">×1</span><span class="item-price num">¥4.200</span></div>
+              <div class="item-row"><div class="item-icon"><i data-lucide="disc-3"></i></div><div class="item-name">Princess Mononoke OST<small>Vinilo</small></div><span class="item-qty">×1</span><span class="item-price num">¥3.800</span></div>
+              <div class="item-row"><div class="item-icon"><i data-lucide="book-open"></i></div><div class="item-name">Nausicaä del Valle del Viento Vol. 1<small>Manga</small></div><span class="item-qty">×1</span><span class="item-price num">¥880</span></div>
+              <div class="item-row" style="color:var(--text-muted);font-size:12px;"><div></div><div>+ 3 más…</div></div>
               <div style="margin-top:10px;"><a href="#s7-order-detail-active" class="btn link sm" data-screen-link="s7-order-detail-active">Abrir detalle <i data-lucide="arrow-right"></i></a></div>
             </div>
           </div>
@@ -8783,16 +8812,16 @@
           <div class="store-avatar s32">T</div>
           <div class="col-store"><strong>Tower Records Shibuya</strong><small>PT-000109 · 18 ene 26</small></div>
           <div class="col-product"><span class="count num">3</span> productos</div>
-          <div class="col-total num">$540,00 USD</div>
           <div class="col-status"><span class="chip success"><i data-lucide="check-circle"></i> Pagado</span></div>
+          <div class="col-total num">$540,00 USD</div>
           <div class="col-progress"><div style="width:60px;height:3px;background:var(--success);border-radius:999px;"></div><small class="num">100%</small></div>
           <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;"><span class="chip success"><i data-lucide="check-circle"></i> Pagado</span><span class="text-muted" style="font-size:12px;">3 productos · $540,00</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
           <div class="order-items">
             <div class="order-items-inner">
-              <div class="item-row"><div class="item-icon"><i data-lucide="disc-3"></i></div><div class="item-name">Cowboy Bebop OST (reissue)</div><span class="item-qty">×1</span><span class="item-price num">$180,00</span></div>
-              <div class="item-row"><div class="item-icon"><i data-lucide="disc-3"></i></div><div class="item-name">Yoko Kanno — Tank!</div><span class="item-qty">×1</span><span class="item-price num">$180,00</span></div>
-              <div class="item-row"><div class="item-icon"><i data-lucide="disc-3"></i></div><div class="item-name">Macross Plus OST</div><span class="item-qty">×1</span><span class="item-price num">$180,00</span></div>
+              <div class="item-row"><div class="item-icon"><i data-lucide="disc-3"></i></div><div class="item-name">Cowboy Bebop OST (reissue)<small>Vinilo</small></div><span class="item-qty">×1</span><span class="item-price num">$180,00</span></div>
+              <div class="item-row"><div class="item-icon"><i data-lucide="shapes"></i></div><div class="item-name">Spike Spiegel Nendoroid<small>Figura</small></div><span class="item-qty">×1</span><span class="item-price num">$240,00</span></div>
+              <div class="item-row"><div class="item-icon"><i data-lucide="disc-3"></i></div><div class="item-name">Macross Plus OST<small>Vinilo</small></div><span class="item-qty">×1</span><span class="item-price num">$120,00</span></div>
               <div style="margin-top:10px;"><a href="#s7-order-detail-active" class="btn link sm" data-screen-link="s7-order-detail-active">Abrir detalle <i data-lucide="arrow-right"></i></a></div>
             </div>
           </div>
@@ -8803,10 +8832,10 @@
           <div class="store-avatar s32">D</div>
           <div class="col-store"><strong>Disk Union Shinjuku</strong><small>PT-000101 · 3 nov 25</small></div>
           <div class="col-product"><span class="count num">5</span> productos</div>
+          <div class="col-status"><span class="chip success"><i data-lucide="package-check"></i> Completo</span></div>
           <div class="col-total num">¥18.400</div>
-          <div class="col-status"><span class="chip success"><i data-lucide="check-circle"></i> Completo</span></div>
           <div class="col-progress"><div style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:80%;background:var(--warning);"></span></div><small class="num">80%</small></div>
-          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;"><span class="chip success"><i data-lucide="check-circle"></i> Completo</span><span class="text-muted" style="font-size:12px;">5 productos · ¥18.400 · 80%</span></div></div>
+          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;"><span class="chip success"><i data-lucide="package-check"></i> Completo</span><span class="text-muted" style="font-size:12px;">5 productos · ¥18.400 · 80%</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
           <div class="order-items">
             <div class="order-items-inner">
@@ -8817,15 +8846,21 @@
           </div>
         </div>
 
+        <div style="font-size:12px;color:var(--text-muted);text-align:center;margin:12px 0 0;">Mostrando 1–5 de 6 pedidos</div>
         <div class="load-more-wrap">
           <button class="btn ghost" id="s7-load-more-btn"><i data-lucide="chevron-down"></i> Cargar más</button>
         </div>
         <div class="desktop-pagination">
-          <span>« ‹</span><span>Página 1 de 2 · 30 por página</span><span>› »</span>
+          <button class="btn ghost sm" aria-label="Primera página">«</button>
+          <button class="btn ghost sm" aria-label="Página anterior">‹</button>
+          <button class="btn ghost sm page-active" aria-current="page">1</button>
+          <button class="btn ghost sm">2</button>
+          <button class="btn ghost sm" aria-label="Página siguiente">›</button>
+          <button class="btn ghost sm" aria-label="Última página">»</button>
+          <span style="font-size:12px;color:var(--text-muted);margin-left:8px;">6 pedidos · 30 por página</span>
         </div>
       </div>
       <!-- END table -->
-      </nav>
     </div>
   </div>
 </section>
@@ -8849,16 +8884,18 @@
     <div class="app-content">
       <div class="app-topbar"><h2 id="s7-orders-list-filters-open-title">Pedidos</h2><div class="app-topbar-spacer"></div><span class="text-muted" style="font-size:13px;">5 activos · 1 cerrado</span></div>
       <div class="orders-toolbar">
-        <div class="orders-search"><i data-lucide="search"></i><input class="input" type="search" placeholder="Buscar pedido, código o tienda…" /></div>
-        <button class="btn ghost" style="background:color-mix(in oklch,var(--accent) 10%,transparent);color:var(--accent);border-color:color-mix(in oklch,var(--accent) 28%,transparent);"><i data-lucide="sliders-horizontal"></i> Filtrar <span style="background:var(--accent);color:var(--text-on-accent);font-size:10px;font-weight:700;border-radius:999px;padding:1px 5px;">1</span></button>
+        <div class="orders-search"><i data-lucide="search"></i><input class="input" type="search" placeholder="Código o producto (PT-000123, Evangelion OST…)" /></div>
+        <button class="btn ghost" style="background:color-mix(in oklch,var(--accent) 10%,transparent);color:var(--accent);border-color:color-mix(in oklch,var(--accent) 28%,transparent);"><i data-lucide="sliders-horizontal"></i> Filtrar <span style="background:var(--accent);color:var(--text-on-accent);font-size:10px;font-weight:700;border-radius:999px;padding:1px 5px;">2</span></button>
+        <select class="input" style="min-width:148px;width:auto;" aria-label="Ordenar por"><option selected>Más recientes</option><option>Más antiguas</option><option>Tienda A–Z</option><option>% Pago: menor</option><option>Total: mayor</option></select>
         <button class="btn primary"><i data-lucide="plus"></i> Nuevo pedido</button>
+
       </div>
-      <div class="orders-filter-chips"><span class="filter-chip">Solo activas <i data-lucide="x"></i></span></div>
+      <div class="orders-filter-chips"><span class="filter-chip">Solo activas <i data-lucide="x"></i></span><span class="filter-chip">Solaris Books &amp; Records <i data-lucide="x"></i></span></div>
       <div class="card" style="padding:4px;">
-        <div class="orders-table-head" role="row"><div></div><div>Pedido / Tienda</div><div>Productos</div><div>Total</div><div>Estado</div><div></div></div>
-        <div class="order-row"><div class="store-avatar s32">S</div><div class="col-store"><strong>Solaris Books &amp; Records</strong><small>PT-000123 · 28 abr 26</small></div><div class="col-product"><span class="count num">4</span> productos</div><div class="col-total num">$1.240,00</div><div class="col-status"><span class="chip info"><i data-lucide="package"></i> Parcialmente en camino</span></div><div class="col-progress"><div style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:60%;background:var(--accent);"></span></div><small class="num">60%</small></div></div>
-        <div class="order-row"><div class="store-avatar s32">A</div><div class="col-store"><strong>Anime Corner Europe</strong><small>PT-000118 · 12 mar 26</small></div><div class="col-product"><span class="count num">2</span> productos</div><div class="col-total num">€320,00</div><div class="col-status"><span class="chip warning"><i data-lucide="alert-triangle"></i> Atrasado 8d</span></div><div class="col-progress"><div style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;"></div><small class="num">0%</small></div></div>
-        <div class="order-row"><div class="store-avatar s32">H</div><div class="col-store"><strong>HMV Japan</strong><small>PT-000115 · 5 feb 26</small></div><div class="col-product"><span class="count num">6</span> productos</div><div class="col-total num">¥24.500</div><div class="col-status"><span class="chip info"><i data-lucide="package"></i> Parcialmente en camino</span></div><div class="col-progress"><div style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:33%;background:var(--warning);"></span></div><small class="num">33%</small></div></div>
+        <div class="orders-table-head" role="row"><div></div><div>Pedido / Tienda</div><div>Productos</div><div>Estado</div><div>Total</div><div>% Pago</div><div></div></div>
+        <div class="order-row"><div class="store-avatar s32">A</div><div class="col-store"><strong>Anime Corner Europe</strong><small>PT-000118 · 12 mar 26</small></div><div class="col-product"><span class="count num">2</span> productos</div><div class="col-status"><span class="chip warning"><i data-lucide="alert-triangle"></i> Atrasado 8d</span></div><div class="col-total num">€320,00</div><div class="col-progress"><div style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;"></div><small class="num">0%</small></div></div>
+        <div class="order-row"><div class="store-avatar s32">S</div><div class="col-store"><strong>Solaris Books &amp; Records</strong><small>PT-000123 · 28 abr 26</small></div><div class="col-product"><span class="count num">4</span> productos</div><div class="col-status"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span></div><div class="col-total num">$1.240,00</div><div class="col-progress"><div style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:60%;background:var(--accent);"></span></div><small class="num">60%</small></div></div>
+        <div class="order-row"><div class="store-avatar s32">H</div><div class="col-store"><strong>HMV Japan</strong><small>PT-000115 · 5 feb 26</small></div><div class="col-product"><span class="count num">6</span> productos</div><div class="col-status"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span></div><div class="col-total num">¥24.500</div><div class="col-progress"><div style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:33%;background:var(--warning);"></span></div><small class="num">33%</small></div></div>
       </div>
     </div>
   </div>
@@ -8874,31 +8911,29 @@
         <div class="filter-section">
           <h4>Estado</h4>
           <div class="filter-pills">
-            <button class="filter-pill is-active" type="button" aria-pressed="true">Activas</button>
-            <button class="filter-pill" type="button" aria-pressed="false">Abierto</button>
-            <button class="filter-pill" type="button" aria-pressed="false">En camino</button>
-            <button class="filter-pill" type="button" aria-pressed="false">Completo</button>
-            <button class="filter-pill" type="button" aria-pressed="false">Cancelado</button>
+            <button class="filter-pill is-active" type="button" aria-pressed="true"><i data-lucide="activity"></i> Activas</button>
+            <button class="filter-pill" type="button" aria-pressed="false"><i data-lucide="clock"></i> Abierto</button>
+            <button class="filter-pill" type="button" aria-pressed="false"><i data-lucide="truck"></i> En camino</button>
+            <button class="filter-pill" type="button" aria-pressed="false"><i data-lucide="package-check"></i> Completo</button>
+            <button class="filter-pill" type="button" aria-pressed="false"><i data-lucide="ban"></i> Cancelado</button>
           </div>
         </div>
         <div class="filter-section">
           <h4>Pago</h4>
           <div class="filter-pills">
-            <button class="filter-pill" type="button" aria-pressed="false">Pagado</button>
-            <button class="filter-pill" type="button" aria-pressed="false">Pago parcial</button>
-            <button class="filter-pill" type="button" aria-pressed="false">Impago</button>
-            <button class="filter-pill" type="button" aria-pressed="false">Atrasado</button>
+            <button class="filter-pill" type="button" aria-pressed="false"><i data-lucide="check-circle"></i> Pagado</button>
+            <button class="filter-pill" type="button" aria-pressed="false"><i data-lucide="circle-dot"></i> Pago parcial</button>
+            <button class="filter-pill" type="button" aria-pressed="false"><i data-lucide="x-circle"></i> Impago</button>
+            <button class="filter-pill" type="button" aria-pressed="false"><i data-lucide="alert-triangle"></i> Atrasado</button>
           </div>
         </div>
         <div class="filter-section">
           <h4>Tienda</h4>
-          <div class="orders-search" style="margin-bottom:10px;"><i data-lucide="search"></i><input class="input" type="search" placeholder="Buscar tienda…" aria-label="Filtrar por tienda" /></div>
-          <div class="filter-pills">
-            <button class="filter-pill is-active" type="button" aria-pressed="true">Solaris Books</button>
-            <button class="filter-pill" type="button" aria-pressed="false">HMV Japan</button>
-            <button class="filter-pill" type="button" aria-pressed="false">Tower Records</button>
-            <button class="filter-pill" type="button" aria-pressed="false">Disk Union</button>
-            <button class="filter-pill" type="button" aria-pressed="false">Akiba Records</button>
+          <!-- MultiTagAutocomplete: tags inside the input box, matching MultiTagAutocomplete.tsx -->
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;min-height:2.5rem;background:var(--surface-elevated);border:1px solid var(--border-strong);border-radius:var(--radius-md);padding:6px 8px;" role="group" aria-label="Filtrar por tienda">
+            <i data-lucide="search" style="width:14px;height:14px;color:var(--text-muted);flex-shrink:0;" aria-hidden="true"></i>
+            <span class="chip neutral" style="padding:2px 8px;gap:4px;font-size:12px;white-space:nowrap;">Solaris Books &amp; Records <button type="button" style="cursor:pointer;border:0;background:0;padding:0 0 0 2px;color:var(--text-muted);line-height:0;vertical-align:middle;" aria-label="Quitar Solaris Books &amp; Records"><i data-lucide="x" style="width:10px;height:10px;"></i></button></span>
+            <input type="text" placeholder="Buscar tienda…" style="border:0;background:transparent;outline:none;font-size:13px;color:var(--text-primary);min-width:80px;flex:1;height:26px;" aria-label="Buscar otra tienda" autocomplete="off" />
           </div>
         </div>
         <div class="filter-section">
@@ -8910,10 +8945,9 @@
         </div>
         <div class="filter-section">
           <h4>Tipo de cambio</h4>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--text-secondary);">
-            <input type="checkbox" style="width:16px;height:16px;accent-color:var(--accent);" />
-            Solo con actualización pendiente
-          </label>
+          <div class="filter-switches">
+            <div class="filter-switch-row"><span>Solo con actualización pendiente</span><button class="switch" aria-pressed="false" aria-label="Solo con actualización pendiente"></button></div>
+          </div>
         </div>
       </div>
       <div class="filter-drawer-footer">
@@ -8948,8 +8982,9 @@
         <div class="app-topbar-spacer"></div>
       </div>
       <div class="orders-toolbar">
-        <div class="orders-search"><i data-lucide="search"></i><input class="input" type="search" placeholder="Buscar por tienda o producto…" /></div>
+        <div class="orders-search"><i data-lucide="search"></i><input class="input" type="search" placeholder="Código o producto (PT-000123, Evangelion OST…)" /></div>
         <button class="btn ghost"><i data-lucide="sliders-horizontal"></i> Filtrar</button>
+        <select class="input" style="min-width:148px;width:auto;" aria-label="Ordenar por"><option selected>Más recientes</option><option>Más antiguas</option><option>Tienda A–Z</option><option>% Pago: menor</option><option>Total: mayor</option></select>
         <a href="#s7-order-create-step-1" class="btn primary" data-screen-link="s7-order-create-step-1"><i data-lucide="plus"></i> Nuevo pedido</a>
       </div>
       <div class="s7-empty" aria-label="Sin pedidos">
@@ -8986,8 +9021,9 @@
         <div class="app-topbar-spacer"></div>
       </div>
       <div class="orders-toolbar">
-        <div class="orders-search"><i data-lucide="search"></i><input class="input" type="search" placeholder="Buscar por tienda o producto…" value="vinyl import" /></div>
+        <div class="orders-search"><i data-lucide="search"></i><input class="input" type="search" placeholder="Código o producto (PT-000123, Evangelion OST…)" value="vinyl import" /></div>
         <button class="btn ghost" style="background:color-mix(in oklch,var(--accent) 10%,transparent);color:var(--accent);border-color:color-mix(in oklch,var(--accent) 28%,transparent);"><i data-lucide="sliders-horizontal"></i> Filtrar <span style="background:var(--accent);color:var(--text-on-accent);font-size:10px;font-weight:700;border-radius:999px;padding:1px 5px;margin-left:2px;">3</span></button>
+        <select class="input" style="min-width:148px;width:auto;" aria-label="Ordenar por"><option selected>Más recientes</option><option>Más antiguas</option><option>Tienda A–Z</option><option>% Pago: menor</option><option>Total: mayor</option></select>
         <a href="#s7-order-create-step-1" class="btn primary" data-screen-link="s7-order-create-step-1"><i data-lucide="plus"></i> Nuevo pedido</a>
       </div>
       <div class="orders-filter-chips">
@@ -9039,7 +9075,7 @@
                 <div class="name">Solaris Books &amp; Records</div>
                 <div style="display:flex;gap:10px;align-items:center;margin-top:4px;flex-wrap:wrap;">
                   <span class="id">PT-000123</span>
-                  <span class="chip info"><i data-lucide="package"></i> Parcialmente en camino</span>
+                  <span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span>
                 </div>
               </div>
             </div>
@@ -9282,8 +9318,8 @@
                 <div class="name">Disk Union Shinjuku</div>
                 <div style="display:flex;gap:10px;align-items:center;margin-top:4px;flex-wrap:wrap;">
                   <span class="id">PT-000101</span>
-                  <span class="chip success"><i data-lucide="check-circle"></i> Completo</span>
-                  <span class="chip warning"><i data-lucide="alert-circle"></i> Saldo pendiente</span>
+                  <span class="chip success"><i data-lucide="package-check"></i> Completo</span>
+                  <span class="chip warning"><i data-lucide="alert-triangle"></i> Saldo pendiente</span>
                 </div>
               </div>
             </div>
@@ -10086,8 +10122,9 @@
         <div class="app-topbar-spacer"></div>
       </div>
       <div class="orders-toolbar">
-        <div class="orders-search"><i data-lucide="search"></i><input class="input" type="search" placeholder="Buscar pedido, código o tienda…" disabled /></div>
+        <div class="orders-search"><i data-lucide="search"></i><input class="input" type="search" placeholder="Código o producto (PT-000123, Evangelion OST…)" disabled /></div>
         <button class="btn ghost" disabled><i data-lucide="sliders-horizontal"></i> Filtrar</button>
+        <select class="input" style="min-width:148px;width:auto;" aria-label="Ordenar por" disabled><option selected>Más recientes</option><option>Más antiguas</option><option>Tienda A–Z</option><option>% Pago: menor</option><option>Total: mayor</option></select>
         <button class="btn primary" disabled><i data-lucide="plus"></i> Nuevo pedido</button>
       </div>
       <!-- Skeleton cards -->
@@ -10192,8 +10229,8 @@
                 <div class="name">Anime Corner Europe</div>
                 <div style="display:flex;gap:10px;align-items:center;margin-top:4px;flex-wrap:wrap;">
                   <span class="id">PT-000118</span>
-                  <span class="chip info"><i data-lucide="package"></i> En camino</span>
-                  <span class="chip warning"><i data-lucide="clock"></i> Atrasado 12d</span>
+                  <span class="chip info"><i data-lucide="truck"></i> En camino</span>
+                  <span class="chip warning"><i data-lucide="alert-triangle"></i> Atrasado 12d</span>
                 </div>
               </div>
             </div>
@@ -10317,8 +10354,8 @@
                 <div class="name">HMV Japan</div>
                 <div style="display:flex;gap:10px;align-items:center;margin-top:4px;flex-wrap:wrap;">
                   <span class="id">PT-000115</span>
-                  <span class="chip info"><i data-lucide="package"></i> Parcialmente en camino</span>
-                  <span class="s7-impago-pill"><i data-lucide="alert-circle"></i> Pago parcial</span>
+                  <span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span>
+                  <span class="s7-impago-pill"><i data-lucide="circle-dot"></i> Pago parcial</span>
                 </div>
               </div>
             </div>
@@ -10616,7 +10653,7 @@
             <span class="num" style="font-size:14px;font-weight:700;flex-shrink:0;">$1.240</span>
           </div>
           <div class="s7-card-chips">
-            <span class="chip info"><i data-lucide="package"></i> Parcialmente en camino</span>
+            <span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span>
           </div>
           <div class="s7-progress" aria-label="60% pagado"><div class="s7-progress-fill" style="width:60%;"></div></div>
           <div class="s7-card-meta"><span>4 productos</span><span class="s7-meta-dot">·</span><span>60% pagado</span></div>
@@ -10634,7 +10671,7 @@
             <span class="num" style="font-size:14px;font-weight:700;flex-shrink:0;">€320</span>
           </div>
           <div class="s7-card-chips">
-            <span class="chip warning"><i data-lucide="clock"></i> Atrasado 12d</span>
+            <span class="chip warning"><i data-lucide="alert-triangle"></i> Atrasado 12d</span>
           </div>
           <div class="s7-card-meta"><span>2 productos</span><span class="s7-meta-dot">·</span><span style="color:var(--warning);">Impago</span></div>
         </div>
@@ -10651,8 +10688,8 @@
             <span class="num" style="font-size:14px;font-weight:700;flex-shrink:0;">¥24.500</span>
           </div>
           <div class="s7-card-chips">
-            <span class="chip info"><i data-lucide="package"></i> Parcialmente en camino</span>
-            <span class="s7-impago-pill"><i data-lucide="alert-circle"></i> Pago parcial</span>
+            <span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span>
+            <span class="s7-impago-pill"><i data-lucide="circle-dot"></i> Pago parcial</span>
           </div>
           <div class="s7-progress" aria-label="33% pagado"><div class="s7-progress-fill" style="width:33%;background:var(--warning);"></div></div>
           <div class="s7-card-meta"><span>6 productos</span><span class="s7-meta-dot">·</span><span>33% pagado</span></div>
@@ -10709,7 +10746,7 @@
               <div class="name">Solaris Books &amp; Records</div>
               <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap;">
                 <span class="id">PT-000123</span>
-                <span class="chip info"><i data-lucide="package"></i> En camino</span>
+                <span class="chip info"><i data-lucide="truck"></i> En camino</span>
               </div>
             </div>
           </div>
@@ -11621,8 +11658,8 @@
         <div class="store-avatar s32">${m.letter}</div>
         <div class="col-store"><strong>${m.name}</strong><small>${m.code} · ${m.date}</small></div>
         <div class="col-product"><i data-lucide="${m.icon}"></i> ${m.cat}</div>
-        <div class="col-total num">${m.total}</div>
         <div class="col-status"><span class="chip ${m.chip}"><i data-lucide="${m.chip === 'success' ? 'check-circle' : (m.chip === 'info' ? 'clock' : '')}"></i> ${m.chipText}</span></div>
+        <div class="col-total num">${m.total}</div>
         <div class="col-progress"><div style="width: 60px; height: 3px; background: ${m.pct === 100 ? 'var(--success)' : 'color-mix(in oklch, var(--text-primary) 8%, transparent)'}; border-radius: 999px; overflow: hidden;"><span style="display: block; height: 100%; width: ${m.pct}%; background: var(--accent);"></span></div><small class="num">${m.pct}%</small></div>
         <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center;"><span class="chip ${m.chip}">${m.chipText}</span><span class="text-muted" style="font-size: 12px;">${m.total}</span></div></div>
       `;

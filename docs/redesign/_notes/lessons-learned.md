@@ -1,6 +1,6 @@
 ---
 title: Lecciones aprendidas — subproyecto rediseño
-last_updated: 2026-05-05
+last_updated: 2026-05-09
 status: vivo
 owner: Sergio Minei
 ---
@@ -570,6 +570,107 @@ Cada entrada:
 - **Regla derivada:** cualquier test de componente que use Portal (Modal, Sheet, FilterDrawer, DetailSidebar floating, Toast) debe usar `screen.*` queries.
 - **Dónde vive:** PLAYBOOK §6 Auto-audit + spec de cada componente con Portal.
 - **Cross-módulo:** sí.
+
+---
+
+## L059 — Expand chevron: top fijo en mobile, columna de grid en desktop
+
+- **Origen:** S7-A.2 — al expandir una fila de pedido, el chevron se desplazaba al centro de la altura total (fila + items). En A.2 segunda ronda, se detectó además que con `position: absolute` el chevron flotaba fuera de la columna % Pago hacia el extremo derecho de la fila, rompiendo la alineación con su header.
+- **Causa raíz (mobile):** `top: 50%; transform: translateY(-50%)` calcula el 50% sobre la altura del padre completo que crece con expand.
+- **Causa raíz (desktop):** `position: absolute; right: 8px` extrae el chevron del flujo del grid, haciéndolo flotar al borde derecho en lugar de quedar alineado bajo su header de columna.
+- **Solución:** Mobile — `position: absolute; top: <padding-top>px; transform: none`. Desktop (`≥ 1024px`) — `position: static; align-self: start; justify-self: center` como 7ª columna del grid (~28px). Eliminar `padding-right` de la fila en desktop.
+- **Regla derivada:** En filas expandibles, mobile usa absolute con `top` fijo; desktop convierte el chevron en hijo de grid propio, alineado exactamente bajo su header. NUNCA `top: 50%` en ningún breakpoint.
+- **Dónde vive:** PLAYBOOK §9.11 (L059). Aplicar a cualquier lista tabular con expand/collapse.
+- **Cross-módulo:** sí.
+
+---
+
+## L060 — Alineación de columnas en lista tabular: canónico
+
+- **Origen:** S7-A.2 (primera ronda) — columnas de Total y % Pago sin alineación, header de barra vacío. S7-A.2 (segunda ronda) — con `justify-content: flex-end` la barra flotaba a la derecha con X de inicio variable según el número de dígitos del porcentaje, rompiendo la alineación entre filas. S7-A.2 (tercera ronda) — el orden Total | Estado resultaba semánticamente incorrecto: Total derecha-alineado dejaba hueco visual antes de Estado, y el monto quedaba lejos del % Pago que lo contextualiza.
+- **Causa raíz (flex-end):** `flex-end` hace que sea el número (1-3 dígitos) quien determine la posición de la barra, no la barra misma.
+- **Causa raíz (orden de columnas):** Estado antes de Total es la lectura natural: el chip describe la situación, el monto la cuantifica. Total adyacente a % Pago agrupa la información monetaria.
+- **Solución:** `justify-content: flex-start` + `min-width: 3.2ch` en el número. Orden canónico de columnas: Avatar → Nombre → Conteo → **Estado → Total** → % Pago → Chevron.
+- **Regla derivada:** Barra usa `flex-start`. Estado va ANTES de Total. Total va contiguo a % Pago. NUNCA `flex-end` en col-progress.
+- **Dónde vive:** PLAYBOOK §9.11 (L060).
+- **Cross-módulo:** sí.
+
+---
+
+## L061 — Íconos de tipo de producto en items expandidos
+
+- **Origen:** S7-A.2 — todos los ítems usaban `disc-3` genérico, sin distinguir por tipo de producto.
+- **Causa raíz:** Al escribir demo data de prueba se usa siempre el mismo ícono en lugar de mapearlo al tipo.
+- **Solución:** El `.item-icon` refleja el tipo de producto del ítem usando el mismo mapping que `storeProductTypeIcons.ts`. Demostrar variedad en el demo (al menos un ítem de tipo diferente por orden).
+- **Regla derivada:** En cualquier lista de ítems de orden, el ícono = tipo de producto. No ícono genérico.
+- **Dónde vive:** PLAYBOOK §9.11 (L061). Implementación: `getStoreProductTypeIcon(item.productType)`.
+- **Cross-módulo:** sí — también aplica a detalle de orden, entregas.
+
+---
+
+## L062 — Paginación de lista: botones individuales, no span texto
+
+- **Origen:** S7-A.2 — la lista de pedidos usaba `<span>« ‹</span>` como texto plano, mientras que la lista de tiendas ya tenía botones individuales con `aria-label` y estado activo visual.
+- **Causa raíz:** El primer borrador de la lista de pedidos usó texto simple sin copiar el patrón canónico de Stores.
+- **Solución:** Estandarizar en el patrón Stores: botones individuales `«`, `‹`, números de página, `›`, `»`, conteo aparte. `gap: 4px` entre botones.
+- **Regla derivada:** Stores list (`s6-stores-list-default`) es la referencia canónica de paginación. Siempre copiar esa estructura — nunca inventar variante nueva sin ADR.
+- **Dónde vive:** PLAYBOOK §9.11 (L062).
+- **Cross-módulo:** sí.
+
+---
+
+## L063 — Headers de tabla: todos centrados excepto la columna de texto principal
+
+- **Origen:** S7-A.2 segunda ronda — los headers tenían alineaciones inconsistentes: algunos `text-align: right` (Total, % Pago), el de Estado sin alineación explícita, y Pedido/Tienda a la izquierda. El resultado visual era heterogéneo y no reforzaba la estructura columnar.
+- **Causa raíz:** Los overrides por `nth-child` individuales son frágiles y dan resultados dispares. No hay convención de partida que cubra todos los headers.
+- **Solución:** `text-align: center` en `.orders-table-head > *` (todos), luego un único override `text-align: left` para `:nth-child(2)` (columna de entidad principal). Los headers de columnas numéricas y de estado quedan centrados sobre su contenido.
+- **Regla derivada:** En cualquier cabecera de lista tabular — todos los headers centrados de base, solo el header de la entidad principal (nombre, orden, tienda) queda alineado a la izquierda. La columna de avatar y la del chevron no llevan texto.
+- **Dónde vive:** PLAYBOOK §9.11 (L063).
+- **Cross-módulo:** sí.
+
+---
+
+## L064 — Toggle (Switch) siempre por defecto; Checkbox solo como excepción justificada
+
+- **Origen:** S7-A.2 — el filtro "Solo con actualización pendiente" en el drawer de pedidos usaba `<input type="checkbox">` inline; el humano pidió cambiarlo a toggle y generalizó la regla.
+- **Síntoma:** checkbox nativo con `accent-color` en un contexto donde el patrón Switch ya existe y es visualmente más consistente con el sistema de diseño.
+- **Causa raíz:** sin regla explícita, el agente eligió `<input type="checkbox">` por ser el elemento HTML nativo más simple para un boolean. El sistema ya tiene `<Switch>` y `filter-switch-row` canónicos.
+- **Solución aplicada:** reemplazado por `filter-switch-row` + `<button class="switch">` en el demo. En implementación: usar `<Switch>` de `src/components/core/Switch.tsx`.
+- **Regla derivada:** **Por defecto, usar toggle (`<Switch>`) para cualquier opción boolean** en formularios, filtros, settings y cualquier superficie UI. El checkbox (`<Checkbox>`) se reserva para: (a) selección múltiple de ítems en una lista donde el estado tri-state (indeterminate) tiene sentido, (b) términos y condiciones / confirmación de acuerdo donde la semántica "marcar para aceptar" es necesaria, (c) bulk-select en tablas. Si dudás entre toggle y checkbox: toggle.
+- **Dónde vive ahora:** PLAYBOOK §4 Anti-patterns + §9.12.
+- **Verificable por:** grep de `<input type="checkbox"` en `src/` — deben quedar solo en casos justificados con comentario inline.
+- **Cross-módulo:** sí. Aplica a FilterDrawer switches, settings, forms, cualquier boolean UI.
+
+---
+
+## L065 — Íconos semánticos de estado y pago: mapping canónico + color siempre activo
+
+- **Origen:** S7-A.2 — los filter pills de Estado y Pago se añadieron sin ícono; los ícono de "Parcialmente en camino" en rows usaban `package` (inconsistente con el pill "En camino" → `truck`); el color de los íconos en pills era gris (heredado del texto), no accent-cool.
+- **Síntoma:** inconsistencia visual entre filter pills (sin color) y chips de fila (con ícono distinto); el Pill component en src/ siempre colorea el ícono con `var(--accent-cool)` en idle y `var(--accent)` cuando activo, pero el CSS del demo no replicaba esto.
+- **Causa raíz:** no existía un mapping canónico de ícono por estado. El agente eligió íconos caso a caso sin tener en cuenta que debían ser iguales en filters y en chips de visualización.
+- **Solución aplicada:** (1) CSS `.filter-pill svg { color: var(--accent-cool) }` añadido al demo. (2) Mapping establecido y aplicado en todos los anchors S7. (3) Todos los chips de estado en rows y detail screens actualizados.
+- **Regla derivada:** los íconos de estado y pago son **siempre los mismos** en cualquier superficie (filter pill, chip de fila, chip de detalle, mobile card, badge). El ícono en filter pills **siempre** tiene color (`var(--accent-cool)` en idle, `var(--accent)` cuando activo). **Mapping canónico para el módulo Orders:**
+
+  | Estado del pedido      | Ícono Lucide     | Chip color |
+  | ---------------------- | ---------------- | ---------- |
+  | Activas (filtro grupo) | `activity`       | —          |
+  | Abierto                | `clock`          | neutral    |
+  | En camino              | `truck`          | info       |
+  | Parcialmente en camino | `truck`          | info       |
+  | Completo               | `package-check`  | success    |
+  | Cancelado              | `ban`            | neutral    |
+  | Atrasado (N días)      | `alert-triangle` | warning    |
+
+  | Estado de pago  | Ícono Lucide     | Chip color      |
+  | --------------- | ---------------- | --------------- |
+  | Pagado          | `check-circle`   | success         |
+  | Pago parcial    | `circle-dot`     | warning/neutral |
+  | Impago          | `x-circle`       | warning         |
+  | Atrasado (pago) | `alert-triangle` | warning         |
+  | Saldo pendiente | `alert-triangle` | warning         |
+
+- **Dónde vive ahora:** PLAYBOOK §9.13 (a crear en A.3).
+- **Cross-módulo:** sí. Cualquier módulo que tenga estados de entidad debe establecer su propio mapping canónico en el mismo momento que define los estados.
 
 ---
 
