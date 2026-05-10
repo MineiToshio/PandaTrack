@@ -45,7 +45,7 @@ Vive dentro del `AppShell` con `Sidebar` izquierda y `MobileTabBar` inferior en 
 
 **Toolbar:** fila horizontal con cuatro elementos en orden: buscador → `FilterTriggerButton` → `Select` de ordenamiento → CTA `Nuevo pedido`.
 
-- **Buscador** (`Input` tipo search): busca por **código de pedido** (PT-XXXXXX, match exacto o prefijo) **OR** **nombre de producto** (substring sobre `OrderItem.name`). "Tienda" NO está en el scope del buscador — vive únicamente en el FilterDrawer (`tag-autocomplete`). Tener tienda en ambos lugares crearía estado conflictivo y duplicaría el filtrado. Placeholder: `"Código o producto (PT-000123, Evangelion OST…)"`. Ver PLAYBOOK §9.13.
+- **Buscador** (`Input` tipo search): busca por **código de pedido** (PT-XXXXXX, match exacto o prefijo) **OR** **nombre de producto** (substring sobre `OrderItem.name`). "Tienda" NO está en el scope del buscador — vive únicamente en el FilterDrawer (`tag-autocomplete`). Tener tienda en ambos lugares crearía estado conflictivo y duplicaría el filtrado. Placeholder: `"Código o producto (ORD-20260428-01, Evangelion OST…)"`. Ver PLAYBOOK §9.13.
 - **`FilterTriggerButton`** (M05 canónico): badge = cantidad de filtros activos.
 - **`Select` "Ordenar por"** (`src/components/core/Select`): opciones y default definidos en PLAYBOOK §9.13. Default: `Más recientes` (`createdAt DESC`). Otras: `Más antiguas`, `Tienda A–Z`, `% Pago: menor`, `Total: mayor`.
 - **CTA `Nuevo pedido`** (primary + icono `plus`).
@@ -56,9 +56,45 @@ Vive dentro del `AppShell` con `Sidebar` izquierda y `MobileTabBar` inferior en 
 
 **Tabla de pedidos:** 7 columnas en desktop, grid responsivo. Columnas (L060 canónico): Avatar → Pedido/Tienda → Productos → Estado → Total → % Pago → Chevron. Los headers de columna siguen L063: `text-align: center` en todos excepto "Pedido / Tienda" (`text-align: left`). Cada fila es expandible (chevron anclado al top, `position: static` en desktop — L059).
 
-**Filas expandibles:** al pulsar el chevron, la fila muestra los ítems del pedido: icono de tipo de producto (L061 con `getStoreProductTypeIcon`), nombre, subtipo, estado individual del ítem (En camino / Pendiente / Listo en tienda / Entregado), cantidad, precio. CTA "Abrir detalle" al final de los ítems.
+**Filas expandibles:** al pulsar el chevron, la fila muestra los ítems del pedido: icono de tipo de producto (ver §3.1), nombre, subtipo, estado individual del ítem (En camino / Pendiente / Listo en tienda / Entregado), cantidad, precio. CTA "Abrir detalle" al final de los ítems.
 
 **Paginación:** canónico = `#s6-stores-list-default` (L062). Mobile: "Cargar más". Desktop: numérica con flechas + conteo "Mostrando A–B de N pedidos".
+
+### 3.1 Íconos de tipo de producto en filas expandibles
+
+Fuente canónica: `src/lib/catalog/storeProductTypeIcons.ts` — `getStoreProductTypeIcon(key)`.
+
+Cada ítem muestra a la izquierda el ícono Lucide correspondiente a su `productTypeKey`. Si el ítem no tiene tipo asignado (`productTypeKey === null`), se usa el ícono por defecto `Tag` (`data-lucide="tag"`).
+
+Al hacer hover sobre el ícono, aparece un tooltip nativo (`title`) con el label en español del tipo. La implementación debe pasar `title={t('productTypes.' + productTypeKey)}` (o el equivalente i18n) al contenedor del ícono. Para ítems sin tipo: `title={t('productTypes.none')}`.
+
+**Mapping completo** (key → ícono Lucide → `data-lucide`):
+
+| `productTypeKey`    | Ícono Lucide        | `data-lucide`        | Label ES            |
+| ------------------- | ------------------- | -------------------- | ------------------- |
+| `albums`            | `Music`             | `music`              | Álbumes / Vinilo    |
+| `art_books`         | `Palette`           | `palette`            | Arte y libretas     |
+| `books`             | `BookOpenText`      | `book-open-text`     | Libros              |
+| `book_accessories`  | `BookMarked`        | `book-marked`        | Accesorios de libro |
+| `comics`            | `BookImage`         | `book-image`         | Cómics              |
+| `figures`           | `Shapes`            | `shapes`             | Figuras             |
+| `funkos`            | `Package`           | `package`            | Funkos              |
+| `funko_accessories` | `Tag`               | `tag`                | Accesorios Funko    |
+| `home_video`        | `Film`              | `film`               | Vídeo doméstico     |
+| `light_novels`      | `ScrollText`        | `scroll-text`        | Light Novels        |
+| `manga`             | `BookOpen`          | `book-open`          | Manga               |
+| `merchandise`       | `ShoppingBag`       | `shopping-bag`       | Merchandising       |
+| `music`             | `Disc`              | `disc`               | Música              |
+| `signatures`        | `Signature`         | `signature`          | Firmas              |
+| `trading_cards`     | `GalleryThumbnails` | `gallery-thumbnails` | Trading Cards       |
+| `video_games`       | `Gamepad2`          | `gamepad-2`          | Videojuegos         |
+| _(sin tipo)_        | `Box`               | `box`                | Producto (sin tipo) |
+
+El ícono por defecto para ítems sin `productTypeKey` es `Box` (`data-lucide="box"`), no el `Tag` que usa `getStoreProductTypeIcon` internamente — `Tag` está reservado para `funko_accessories`. En la implementación, renderizar `<Box />` cuando `productTypeKey === null` y `<Icon />` (resultado de `getStoreProductTypeIcon`) cuando está definido.
+
+**Anti-patrón:** usar `disc-3` (vinilo detallado no existe en el map), `sparkles` u otros íconos no definidos en `STORE_PRODUCT_TYPE_ICON_MAP`. Siempre derivar el ícono de `getStoreProductTypeIcon(item.productTypeKey)` y mostrar `Box` cuando el tipo es `null`.
+
+El mismo contrato aplica en la sección Productos del detalle de pedido — ver `order-detail.md` §3.1 (pendiente bootstrap).
 
 <!-- PENDING A.3: completar con detalles de columnas, grid CSS, progressive disclosure, link de item a detalle -->
 

@@ -17,15 +17,18 @@ Este playbook destila aprendizajes operativos del subproyecto de rediseño. Cada
 
 Variants disponibles + cuándo usar:
 
-| Variant             | Cuándo                                                                                                                                                      |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `primary`           | CTA principal de una pantalla / sección. Una sola variant primary por viewport. Background `--accent`.                                                      |
-| `secondary`         | CTA secundaria con peso visual. Background `--surface-elevated` + border-strong.                                                                            |
-| `ghost`             | CTA tertiary, "Limpiar", "Atrás" en wizards, links como botón. **Tiene border visible** (`--border-strong`) — es el patrón Atelier, no la convención común. |
-| `destructive`       | Acción destructiva irreversible (Eliminar, Cancelar pedido). Background `--destructive`.                                                                    |
-| `destructive-ghost` | Acción destructiva sutil (Reportar, Eliminar de listado). Border destructive sin fill.                                                                      |
-| `outline`           | **Legacy.** No usar para nuevo código — usar `secondary` o `ghost` según el caso.                                                                           |
-| `link`              | **Legacy.** Para inline hyperlinks usar `<a>` directo con `text-accent underline-offset-4 hover:underline`.                                                 |
+| Variant             | Cuándo                                                                                                                                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `primary`           | CTA principal de una pantalla / sección. Una sola variant primary por viewport. Background `--accent`.                                                                                           |
+| `tonal`             | CTA secundaria aditiva con energía de acento: "Añadir producto", "Usar este total", "Hoy" (FX fetch), "Anotar pago". Background `--accent` al 12% + texto `--accent`. Demo equiv: `.btn.accent`. |
+| `secondary`         | CTA secundaria neutral con peso visual. Background `--surface-elevated` + border-strong. Para acciones que no deben competir con el color del acento.                                            |
+| `ghost`             | CTA terciaria: "Limpiar", "Atrás" en wizards, links como botón. **Tiene border visible** (`--border-strong`) — es el patrón Atelier, no la convención común.                                     |
+| `destructive`       | Acción destructiva irreversible (Eliminar, Cancelar pedido). Background `--destructive`.                                                                                                         |
+| `destructive-ghost` | Acción destructiva sutil (Reportar, Eliminar de listado). Border destructive sin fill.                                                                                                           |
+| `outline`           | **Legacy.** No usar para nuevo código — usar `secondary` o `ghost` según el caso.                                                                                                                |
+| `link`              | **Legacy.** Para inline hyperlinks usar `<a>` directo con `text-accent underline-offset-4 hover:underline`.                                                                                      |
+
+**Jerarquía de 3 niveles en formularios / wizards:** `primary` (CTA final) → `tonal` (acciones aditivas en-sección) → `ghost` (navegación atrás, limpiar). Anti-patrón frecuente: usar `ghost` para botones aditivos como "Añadir fila", "Calcular total" o "Cargar tipo de cambio" — esos deben ser `tonal` porque llevan energía de acento sin competir con el CTA primario.
 
 Sizes: `sm | md | lg`. Default `md`. Tap target ≥44×44 mobile en `md` y `lg`.
 
@@ -252,6 +255,7 @@ Reglas accionables descubiertas implementando Stores. Aplican a todos los módul
 
 ### 9.1 Componentes core — patrones nuevos
 
+- **Wizard step cards: background siempre `--surface-elevated`** (L066). `WizardStep` usa `[background:var(--surface-elevated)]` porque la card se sienta directamente sobre el canvas (`--background`). Anti-patrón: usar `--surface` en wizard steps — resulta en cards visualmente planas que no se diferencian del canvas en dark mode. Esto NO contradice L014 (que aplica a cards de contenido que contienen inputs y cuyo contenedor es `--surface`); son jerarquías distintas.
 - **Wizard layouts: `mode: "wizard" | "all-open"`** (L020). Crear usa progressive disclosure; editar usa all-open (todos los paneles visibles, header estático sin chevron, sin botones step-level, stepper top oculto). Exponer la prop desde el inicio del WizardAccordion.
 - **Wizard orchestrator acepta lista explícita de steps** (L017). Nunca asumir `totalSteps = Children.count`. Pasar `steps?: StepperStep[]` permite conditional rendering (ej. BUSINESS=5 vs PERSON=4 steps) sin desincronizar.
 - **Wizard con form único: `keepBodyMounted=true`** (L018). Default true. Si los steps tienen inputs uncontrolled, deben quedar en el DOM (con `hidden` + `aria-hidden`) para que `new FormData(form)` capture sus valores en el submit.
@@ -272,6 +276,7 @@ Reglas accionables descubiertas implementando Stores. Aplican a todos los módul
 
 - **Separadores entre filas: `border-top + first-of-type:border-top:0`** (L025). NO `border-bottom + last-child` porque se rompe en cuanto hay un elemento posterior heterogéneo (ej. CTA al final).
 - **Alturas iguales entre controles: `min-h + items-center + line-height`** (L026). NUNCA `py` vertical. Si un control mide más que sus pares con mismo `size`, sospechar `py` redundante. Aplica a toolbars con Button + Select + Input mixtos.
+- **Input + botón inline en fila: `align-items: stretch`** (L067). Cuando un `<input>` y un `<button>` conviven en la misma fila flex (ej. campo FX + botón "Hoy"), usar `align-items: stretch` en el contenedor y NO dar `sm` al botón si el input no es `sm`. Con `stretch` el botón adopta exactamente la altura del input sin necesidad de hardcodear alturas.
 - **Grid con columna condicional + extremo derecho: usar `flex justify-between`** (L027). CSS Grid no "reserva" slots para hijos condicionales. Patrón seguro: flex con dos grupos hijos (izquierda + `shrink-0` derecha) con `justify-between`.
 - **Flex con label + text node + ancho limitado: usar bloque** (L030). `flex;gap:N` con `<span>` + text node bajo ancho insuficiente comprime y desaparece texto sin overflow visible. Usar bloque o `flex-wrap:wrap` con `min-width:0`.
 - **Cards en listing grid: SIEMPRE `flex-wrap` para meta inline** (L028). Chips que pueden crecer overflowean cards estrechas. Wrappear en fila propia o usar `flex-wrap`.
@@ -388,7 +393,7 @@ Descubierto en S7-A.2 (L065). El ícono de estado es **siempre el mismo** en cua
 
 Anti-patrón: ❌ no usar `package` para "En camino" ni `check-circle` para "Completo" — confunden la semántica de "paquete físico" con "estado de orden", y "pagado" con "entregado".
 
-**Criterio de búsqueda en toolbar de lista:** campo de texto busca por `código de pedido` (PT-XXXXXX, match exacto o prefijo) **OR** `nombre de producto` (substring sobre `OrderItem.name`). **"Tienda" no va en el buscador** — vive exclusivamente en el FilterDrawer como `tag-autocomplete`. Tener tienda en ambos lugares crea estado conflictivo y duplica el filtrado. Placeholder: `"Código o producto (PT-000123, Evangelion OST…)"`.
+**Criterio de búsqueda en toolbar de lista:** campo de texto busca por `código de pedido` (PT-XXXXXX, match exacto o prefijo) **OR** `nombre de producto` (substring sobre `OrderItem.name`). **"Tienda" no va en el buscador** — vive exclusivamente en el FilterDrawer como `tag-autocomplete`. Tener tienda en ambos lugares crea estado conflictivo y duplica el filtrado. Placeholder: `"Código o producto (ORD-20260428-01, Evangelion OST…)"`.
 
 **Opciones de ordenamiento de lista (módulo Orders):**
 

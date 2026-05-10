@@ -7,7 +7,6 @@ import posthog from "posthog-js";
 import { useCallback, useMemo, useState } from "react";
 import Button from "@/components/core/Button/Button";
 import FilterTriggerButton from "@/components/core/FilterTriggerButton/FilterTriggerButton";
-import Eyebrow from "@/components/core/Eyebrow";
 import SearchInput from "@/components/core/SearchInput";
 import Select from "@/components/core/Select";
 import FilterDrawer, { type FilterDrawerValues, type FilterSection } from "@/components/modules/FilterDrawer";
@@ -387,16 +386,10 @@ export default function StoreListingFilters({
 
   return (
     <section className="space-y-4">
-      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <Eyebrow as="p">{tListing("s6.hero.eyebrow")}</Eyebrow>
-          <h1 className="mt-1 [font-size:var(--text-display)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
-            {tListing("s6.hero.title")}
-          </h1>
-          <p className="mt-1 [font-size:var(--text-body)] [color:var(--text-secondary)]">
-            {tListing("s6.hero.subtitle")}
-          </p>
-        </div>
+      <div className="flex items-baseline gap-2.5">
+        <h1 className="[font-size:var(--text-display)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+          {tListing("s6.hero.title")}
+        </h1>
         <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
           {tListing("s6.count", { count: totalStores })}
         </span>

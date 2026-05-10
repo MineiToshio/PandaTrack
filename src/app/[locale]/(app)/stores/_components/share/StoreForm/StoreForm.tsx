@@ -1376,22 +1376,34 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
                 label={tCreateRedesign("aside.typeLabel")}
                 value={storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
               />
-              <AsideSummaryRow label={tCreateRedesign("aside.nameLabel")} value={nameValue || "—"} muted={!nameValue} />
+              <AsideSummaryRow
+                label={tCreateRedesign("aside.nameLabel")}
+                value={nameValue || "—"}
+                muted={!nameValue}
+                changed={isEditMode && nameValue !== initialName}
+              />
               <AsideSummaryRow
                 label={tCreateRedesign("aside.countryLabel")}
                 value={countryCode || "—"}
                 muted={!countryCode}
+                changed={isEditMode && countryCode !== initialCountryCode}
               />
               <AsideSummaryRow
                 label={tCreateRedesign("aside.categoriesLabel")}
                 value={selectedProductTypeKeys.length > 0 ? `${selectedProductTypeKeys.length}` : "—"}
                 muted={selectedProductTypeKeys.length === 0}
+                changed={
+                  isEditMode &&
+                  (selectedProductTypeKeys.length !== initialProductTypeKeys.length ||
+                    selectedProductTypeKeys.some((k) => !initialProductTypeKeys.includes(k)))
+                }
               />
               {storeType === "BUSINESS" && (
                 <AsideSummaryRow
                   label={tCreateRedesign("aside.channelsLabel")}
                   value={`${contactChannelEntries.length}`}
                   muted={contactChannelEntries.length === 0}
+                  changed={isEditMode && contactChannelEntries.length !== initialContactChannelEntries.length}
                 />
               )}
               {storeType === "BUSINESS" && (
@@ -1399,6 +1411,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
                   label={tCreateRedesign("aside.addressesLabel")}
                   value={`${addressData.length}`}
                   muted={addressData.length === 0}
+                  changed={isEditMode && addressData.length !== initialAddressEntries.length}
                 />
               )}
               {storeType === "PERSON" && isPrivate && (
@@ -1444,14 +1457,24 @@ function ReviewSeparator() {
   return <div aria-hidden="true" className="[grid-column:1/-1] my-1 h-px [background:var(--border)]" />;
 }
 
-function AsideSummaryRow({ label, value, muted }: { label: string; value: string; muted?: boolean }) {
+function AsideSummaryRow({
+  label,
+  value,
+  muted,
+  changed,
+}: {
+  label: string;
+  value: string;
+  muted?: boolean;
+  changed?: boolean;
+}) {
   return (
     <div className="flex items-center justify-between gap-3 py-2 [border-top:1px_solid_var(--border)] first:[border-top:0]">
       <dt className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">{label}</dt>
       <dd
         className={cn(
           "text-right [font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)]",
-          muted ? "[color:var(--text-muted)]" : "[color:var(--text-primary)]",
+          changed ? "[color:var(--warning)]" : muted ? "[color:var(--text-muted)]" : "[color:var(--text-primary)]",
         )}
       >
         {value}
