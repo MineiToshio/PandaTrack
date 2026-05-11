@@ -2488,6 +2488,14 @@
     /* S7 FX reconciliation banner */
     .s7-fx-banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: color-mix(in oklch, var(--info) 10%, var(--surface)); border: 1px solid color-mix(in oklch, var(--info) 35%, transparent); border-radius: 10px; font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
     .s7-fx-banner svg { width: 16px; height: 16px; color: var(--info); flex: 0 0 16px; }
+    .s7-fx-banner.is-accent svg { color: var(--accent); }
+    /* S7 FX reconciliation modal — currency-pair groups */
+    .s7-fx-group { padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .s7-fx-group:last-child { border-bottom: none; padding-bottom: 2px; }
+    .s7-fx-group-label { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+    .s7-fx-rate-row { display: flex; align-items: center; gap: 8px; }
+    .s7-fx-unit { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+    .s7-fx-rate-input { width: 110px; text-align: right; font-variant-numeric: tabular-nums; flex: 0 0 110px; }
     /* S7 items in detail left column */
     .s7-item-detail-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
     .s7-item-detail-row:last-child { border-bottom: none; }
@@ -2823,6 +2831,7 @@
       <div class="demo-nav-dropdown" id="demo-dropdown-s7" role="menu">
         <span class="demo-nav-label">── Lista ──</span>
         <a href="#s7-orders-list-default" data-screen="s7-orders-list-default">Lista · Default</a>
+        <a href="#s7-orders-list-fx-banner" data-screen="s7-orders-list-fx-banner">Lista · Banner FX (WO-07)</a>
         <a href="#s7-orders-list-filters-open" data-screen="s7-orders-list-filters-open">Lista · Filtros abiertos</a>
         <a href="#s7-orders-list-empty-initial" data-screen="s7-orders-list-empty-initial">Lista · Vacía inicial</a>
         <a href="#s7-orders-list-empty-filtered" data-screen="s7-orders-list-empty-filtered">Lista · Vacía filtrada</a>
@@ -2845,6 +2854,9 @@
         <div class="demo-nav-sep"></div>
         <span class="demo-nav-label">── Componentes ──</span>
         <a href="#s7-date-range-picker" data-screen="s7-date-range-picker">Componente · DateRangePicker</a>
+        <div class="demo-nav-sep"></div>
+        <span class="demo-nav-label">── WO-07 Reconciliación FX ──</span>
+        <a href="#s7-fx-reconciliation-modal" data-screen="s7-fx-reconciliation-modal">WO-07 · Modal FxReconciliación</a>
       </div>
     </div>
     <span class="demo-nav-current" id="demo-nav-current" aria-live="polite"></span>
@@ -11516,6 +11528,247 @@
           </ul>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S7-B: LISTA — BANNER FX WO-07 (copy completo) ────────── -->
+<section id="s7-orders-list-fx-banner" class="screen" aria-labelledby="s7-orders-list-fx-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link is-active"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
+          <span class="avatar">S</span>
+          <span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span>
+          <span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+        </button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar / expandir sidebar">
+          <i data-lucide="panel-left-close"></i><span class="label">Colapsar</span>
+        </button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title" id="s7-orders-list-fx-title">Pedidos</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+
+      <div class="page-heading">
+        <div class="page-heading-title">
+          <h1>Pedidos</h1>
+          <span class="page-heading-meta">5 activos · 1 cerrado</span>
+        </div>
+      </div>
+
+      <div class="orders-toolbar">
+        <div class="orders-search">
+          <i data-lucide="search"></i>
+          <input class="input" type="search" placeholder="Código o producto (ORD-20260428-01, Evangelion OST…)" aria-label="Buscar pedidos" />
+        </div>
+        <button class="btn ghost"><i data-lucide="sliders-horizontal"></i> Filtrar</button>
+        <select class="input" style="min-width:148px;width:auto;" aria-label="Ordenar por">
+          <option selected>Más recientes</option>
+          <option>Más antiguas</option>
+          <option>Tienda A–Z</option>
+          <option>% Pago: menor</option>
+          <option>Total: mayor</option>
+        </select>
+        <a href="#s7-order-create-step-1" class="btn primary" data-screen-link="s7-order-create-step-1"><i data-lucide="plus"></i> Nuevo pedido</a>
+      </div>
+
+      <!-- FX banner — WO-07 full copy + CTA -->
+      <div class="s7-fx-banner is-accent" role="status" aria-live="polite">
+        <i data-lucide="refresh-cw" style="flex-shrink:0;margin-top:1px;"></i>
+        <div style="flex:1;min-width:0;display:flex;align-items:center;flex-wrap:wrap;gap:10px;">
+          <span style="flex:1;min-width:200px;line-height:1.5;">
+            Tienes <strong>3 pedidos</strong> con el tipo de cambio desactualizado.
+            Actualízalos para que tus reportes reflejen tu moneda base actual.
+          </span>
+          <a href="#s7-fx-reconciliation-modal" class="btn accent sm" data-screen-link="s7-fx-reconciliation-modal" style="white-space:nowrap;flex-shrink:0;">
+            <i data-lucide="refresh-cw"></i> Actualizar tipos de cambio
+          </a>
+        </div>
+      </div>
+
+      <!-- Orders table -->
+      <div class="card" style="padding: 4px;">
+        <div class="orders-table-head" role="row">
+          <div></div>
+          <div>Pedido / Tienda</div>
+          <div>Productos</div>
+          <div>Estado</div>
+          <div>Total</div>
+          <div>% Pago</div>
+          <div></div>
+        </div>
+
+        <!-- Row 1 — Activo, no necesita FX -->
+        <div class="order-row" style="view-transition-name:order-pt-000123;">
+          <div class="store-avatar s32">S</div>
+          <div class="col-store"><strong>Solaris Books &amp; Records</strong><small>ORD-20260428-01 · 28 abr 26</small></div>
+          <div class="col-product"><span class="count num">7</span> productos</div>
+          <div class="col-status"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span></div>
+          <div class="col-total num">$1.240,00 USD</div>
+          <div class="col-progress"><div class="progress-mini" style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:60%;background:var(--accent);"></span></div><small class="num">60%</small></div>
+          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span><span class="text-muted" style="font-size:12px;">7 productos · $1.240,00 · 60%</span></div></div>
+          <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
+        </div>
+
+        <!-- Row 2 — Entregado JPY, FX desactualizado -->
+        <div class="order-row" style="view-transition-name:order-pt-000118;">
+          <div class="store-avatar s32">A</div>
+          <div class="col-store"><strong>Akiba Records</strong><small>ORD-20260312-01 · 12 mar 26</small></div>
+          <div class="col-product"><span class="count num">3</span> productos</div>
+          <div class="col-status"><span class="chip success"><i data-lucide="package-check"></i> Entregado</span></div>
+          <div class="col-total num">¥28.000</div>
+          <div class="col-progress"><div class="progress-mini" style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:100%;background:var(--success);"></span></div><small class="num">100%</small></div>
+          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip success"><i data-lucide="package-check"></i> Entregado</span><span class="text-muted" style="font-size:12px;">3 productos · ¥28.000 · 100%</span></div></div>
+          <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
+        </div>
+
+        <!-- Row 3 — Entregado JPY, FX desactualizado -->
+        <div class="order-row" style="view-transition-name:order-pt-000114;">
+          <div class="store-avatar s32">M</div>
+          <div class="col-store"><strong>Mandarake Akihabara</strong><small>ORD-20260218-01 · 18 feb 26</small></div>
+          <div class="col-product"><span class="count num">5</span> productos</div>
+          <div class="col-status"><span class="chip success"><i data-lucide="package-check"></i> Entregado</span></div>
+          <div class="col-total num">¥45.500</div>
+          <div class="col-progress"><div class="progress-mini" style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:100%;background:var(--success);"></span></div><small class="num">100%</small></div>
+          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip success"><i data-lucide="package-check"></i> Entregado</span><span class="text-muted" style="font-size:12px;">5 productos · ¥45.500 · 100%</span></div></div>
+          <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
+        </div>
+
+        <!-- Row 4 — Entregado USD, FX desactualizado -->
+        <div class="order-row" style="view-transition-name:order-pt-000109;">
+          <div class="store-avatar s32">A</div>
+          <div class="col-store"><strong>Anime Corner US</strong><small>ORD-20260118-01 · 18 ene 26</small></div>
+          <div class="col-product"><span class="count num">2</span> productos</div>
+          <div class="col-status"><span class="chip success"><i data-lucide="package-check"></i> Entregado</span></div>
+          <div class="col-total num">$185,00 USD</div>
+          <div class="col-progress"><div class="progress-mini" style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:100%;background:var(--success);"></span></div><small class="num">100%</small></div>
+          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip success"><i data-lucide="package-check"></i> Entregado</span><span class="text-muted" style="font-size:12px;">2 productos · $185,00 · 100%</span></div></div>
+          <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <nav class="demo-pagination" aria-label="Paginación">
+        <button class="demo-page-btn" disabled aria-label="Página anterior"><i data-lucide="chevron-left"></i></button>
+        <button class="demo-page-btn is-active" aria-current="page">1</button>
+        <button class="demo-page-btn">2</button>
+        <button class="demo-page-btn" aria-label="Página siguiente"><i data-lucide="chevron-right"></i></button>
+      </nav>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── S7-FX: MODAL RECONCILIACIÓN DE TIPOS DE CAMBIO (WO-07) ── -->
+<section id="s7-fx-reconciliation-modal" class="screen" aria-labelledby="s7-fx-modal-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link is-active"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer"><button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button></div>
+    </aside>
+    <div class="app-content" style="pointer-events:none;user-select:none;opacity:0.28;">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title">Pedidos</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span></div>
+      </div>
+      <div class="page-heading"><div class="page-heading-title"><h1>Pedidos</h1><span class="page-heading-meta">5 activos · 1 cerrado</span></div></div>
+      <div class="s7-fx-banner" aria-hidden="true" style="margin-bottom:16px;">
+        <i data-lucide="refresh-cw"></i>
+        <span>Tienes <strong>3 pedidos</strong> con el tipo de cambio desactualizado. Actualízalos para que tus reportes reflejen tu moneda base actual.</span>
+      </div>
+      <div class="card" style="padding:4px;height:140px;"></div>
+    </div>
+  </div>
+
+  <!-- FxReconciliationModal — m01b Semantic Depth, tone-info -->
+  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s7-fx-modal-title">
+    <div class="m01-modal-base m01b-modal" style="max-width:500px;">
+
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-info" aria-hidden="true"><i data-lucide="refresh-cw"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s7-fx-modal-title">Actualizar tipos de cambio</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">3 pedidos con tipo de cambio desactualizado</p>
+        </div>
+      </div>
+
+      <div class="m01b-body">
+        <p style="font-size:13px;line-height:1.65;color:var(--text-secondary);margin-bottom:4px;">
+          Ingresa el tipo de cambio actual para cada par de monedas.
+          El valor se aplicará a todos los pedidos de ese par.
+        </p>
+
+        <!-- Group 1: JPY → ARS · 2 pedidos -->
+        <div class="s7-fx-group">
+          <div class="s7-fx-group-label">
+            JPY → ARS
+            <span style="font-weight:400;color:var(--text-muted);font-size:12px;"> · 2 pedidos</span>
+          </div>
+          <div class="s7-fx-rate-row">
+            <span class="s7-fx-unit">1 JPY =</span>
+            <input
+              type="number"
+              class="input s7-fx-rate-input"
+              placeholder="0.00"
+              step="0.01"
+              min="0.01"
+              max="99999.99"
+              aria-label="Tipo de cambio: 1 JPY en ARS"
+            />
+            <span class="s7-fx-unit">ARS</span>
+          </div>
+        </div>
+
+        <!-- Group 2: USD → ARS · 1 pedido -->
+        <div class="s7-fx-group">
+          <div class="s7-fx-group-label">
+            USD → ARS
+            <span style="font-weight:400;color:var(--text-muted);font-size:12px;"> · 1 pedido</span>
+          </div>
+          <div class="s7-fx-rate-row">
+            <span class="s7-fx-unit">1 USD =</span>
+            <input
+              type="number"
+              class="input s7-fx-rate-input"
+              placeholder="0.00"
+              step="0.01"
+              min="0.01"
+              max="99999.99"
+              aria-label="Tipo de cambio: 1 USD en ARS"
+            />
+            <span class="s7-fx-unit">ARS</span>
+          </div>
+        </div>
+
+        <p style="font-size:12px;color:var(--text-muted);margin-top:14px;line-height:1.5;display:flex;align-items:flex-start;gap:5px;">
+          <i data-lucide="info" style="width:13px;height:13px;flex-shrink:0;margin-top:1px;"></i>
+          <span>Deja un campo vacío para omitir ese par y actualizarlo más tarde.</span>
+        </p>
+      </div>
+
+      <div class="m01b-footer">
+        <a href="#s7-orders-list-fx-banner" class="btn ghost" data-screen-link="s7-orders-list-fx-banner">Cancelar</a>
+        <button class="btn primary"><i data-lucide="check"></i> Aplicar</button>
+      </div>
+
     </div>
   </div>
 </section>
