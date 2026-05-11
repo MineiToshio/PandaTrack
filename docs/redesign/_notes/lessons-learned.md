@@ -674,6 +674,72 @@ Cada entrada:
 
 ---
 
+## L066 — Mobile viewport simulation: override de grid/flex heredado del desktop
+
+- **Origen:** S7-A.2 — primer intento de mobile screens del demo HTML, todas las pantallas se vieron rotas con cajas púrpura gigantes ocupando media pantalla.
+- **Síntoma:** las `<section>` mobile con `<div class="app-shell">` constreñidas a 390px renderizaban su contenido en columnas de ~100px de ancho (text wrapping a 1 char por línea) y los botones del action bar aparecían como cajas verticales de 280×1400 px cubriendo media pantalla.
+- **Causa raíz:** `.app-shell` tiene `display: grid; grid-template-columns: 240px 1fr` desde la media query `@media (min-width: 1024px)`. El **viewport real del browser es desktop (1280+)** aunque el contenedor mobile esté constreñido a 390px via CSS. Las media queries evalúan el **viewport del browser**, no el ancho del elemento. Resultado: la grid `240px 1fr` aplicaba dentro del contenedor de 390px → `app-content` y `s7-mob-actionbar` se volvían **columnas hermanas del grid** en lugar de stack vertical.
+- **Solución aplicada:** override `display: flex; flex-direction: column` con `grid-template-columns: none !important` para `section[id$="-mobile"].is-active > .app-shell`. Mismo override aplicado a `.form-grid` (1fr 320px desktop → 1fr mobile), `.form-sidebar` (position:sticky → static), `.mobile-tabbar` (display:none en ≥1024px → display:flex !important), `.detail-grid` similar.
+- **Regla derivada:** cuando se simula un viewport mobile dentro de un viewport desktop real, **TODOS los selectores con media queries `>=768px` o `>=1024px` aplican erróneamente al contenedor simulado**. Hay que overridearlos uno por uno con `section[id$="-mobile"].is-active <selector>` y `!important`.
+- **Dónde vive ahora:** `_notes/demo-screens.html` (bloque CSS "Mobile viewport simulation"); aplicable a cualquier futura sesión que agregue mobile anchors al demo. PLAYBOOK §9.16 referencia esta lección.
+- **Verificable por:** abrir un mobile anchor en browser desktop. Si los botones se ven verticales/superpuestos o el contenido se squeeza, es esta clase de bug.
+
+## L067 — Cascada `min-width: 0` para flex/grid containers con tablas internas
+
+- **Origen:** S7-A.2 — Edit mobile con tabla de productos `overflow-x: auto` desbordaba el contenedor de 390px (texto cortado a la derecha, helpers ilegibles).
+- **Síntoma:** el `.section-card` interior tenía 466px de ancho cuando el `.form-grid` padre era 388px. La cascada de tamaños mostraba que cada container heredaba `min-content` del child más grande (la tabla con `min-width: 440px`).
+- **Causa raíz:** los flex/grid items tienen `min-width: auto` por default, que significa "shrink hasta min-content del contenido". Si un descendiente lejano tiene `min-width: 440px` (caso: tabla con scroll horizontal), todos los containers entre él y el viewport heredan ese mínimo y se desbordan del padre.
+- **Solución aplicada:** cascada de `min-width: 0` en todos los flex/grid ancestors (`.section-cards`, `.section-card`, `.section-card-body`, `.section-card-inner`, `.field`).
+- **Regla derivada:** cualquier vez que dentro de un contenedor constreñido (modal, sheet, mobile viewport simulado) haya un descendiente con `overflow-x: auto` + `min-width` explícito (tabla, código preformateado, imagen sin `max-width`), agregá `min-width: 0` a todos los flex/grid ancestors hasta el contenedor.
+- **Dónde vive ahora:** `_notes/demo-screens.html` (bloque CSS "min-width:0 cascade"); regla aplicable a Fase B cuando construya forms con tablas internas o cuando implemente `<ModalSheet>` (variante mobile del Modal) con contenido scrollable.
+- **Verificable por:** inspeccionar el `boundingBox.width` de cada ancestor — todos deben ser ≤ al ancho del contenedor padre.
+
+## L068 — Lucide `<i data-lucide>` → `<svg>` rompe selectores CSS directos
+
+- **Origen:** S7-A.2 — banner overdue mobile mostraba el ícono clock en blanco/neutro en lugar de orange (warning); banner impago igualmente sin destructive color.
+- **Síntoma:** CSS `.s7-mob-alert.is-warning > i { color: var(--warning); }` no aplicaba color al ícono renderizado.
+- **Causa raíz:** la librería [Lucide Icons](https://lucide.dev/) reemplaza en runtime los placeholders `<i data-lucide="name">` por elementos `<svg>` reales (vía `lucide.createIcons()`). El selector `> i` deja de matchear porque ya no existe el `<i>` — ahora es `<svg>`. Los selectores hermano/descendiente (` ` y `>`) matchean al svg, pero los que apuntan al tag específico `i` no.
+- **Solución aplicada:** selectores duales para cubrir antes y después de la conversión: `.s7-mob-alert > i, .s7-mob-alert > svg { ... }`.
+- **Regla derivada:** cualquier CSS que apunte al tag `i` específicamente cuando ese `i` lleve `data-lucide` debe duplicarse para `svg` también. Alternativa: usar inline `style="color:var(--xxx)"` en el `<i>` (Lucide preserva atributos al convertir), o envolver el ícono en un `<span class="icon-wrap">` y stylear el wrap. **En React/Next.js (Fase B) esto NO es problema** porque `lucide-react` renderiza `<svg>` directamente.
+- **Dónde vive ahora:** CSS del demo HTML — todos los nuevos selectores siguen este patrón.
+- **Verificable por:** abrir DevTools → Elements → buscar el icon en cuestión. Si es `<svg>` (post-runtime) en lugar de `<i>` (pre-runtime), el selector `> i` no aplica.
+
+## L069 — Action bar/sticky footer en contenedor constreñido: flex column + `flex:1` content
+
+- **Origen:** S7-A.2 — primer intento del sticky action bar en `#s7-order-detail-mobile` con `position: fixed; bottom: 0;` lo posicionaba relativo al viewport del browser (en el bottom de la pantalla, NO en el bottom del phone container).
+- **Síntoma:** la action bar aparecía abajo en la ventana del browser, fuera del phone container simulado.
+- **Causa raíz:** `position: fixed` se posiciona relativo al "containing block", que típicamente es el viewport. PERO si un ancestor tiene `transform`, `filter`, `will-change` o `perspective`, ese ancestor pasa a ser el containing block.
+- **Solución aplicada:** combinación de (1) `transform: translateZ(0)` en `.app-shell` simulado mobile → crea containing block; (2) reestructurar el HTML para que la action bar sea **flex item hermano** de `.app-content` dentro de `.app-shell`, con `.app-shell` en `display: flex; flex-direction: column`; (3) usar `position: static` para la action bar — el flex layout la pone naturalmente al bottom; (4) `.app-content` con `flex: 1; overflow-y: auto` scrollea internamente sin afectar la action bar.
+- **Regla derivada:** para action bars/footers sticky en contenedores constreñidos (no full-viewport, ej. dentro de modals, sheets, mobile simulators):
+  - **NO usar** `position: fixed` directamente.
+  - **Preferir** flex column layout: action bar/footer como hermano de content, content con `flex: 1; overflow-y: auto`.
+  - **Alternativa válida:** `position: sticky; bottom: 0` cuando hay un scrolling parent claro.
+  - Si necesitás `position: fixed` por alguna razón, asegurate que el ancestor tenga `transform: translateZ(0)` u otro property que cree containing block.
+- **Dónde vive ahora:** `_notes/demo-screens.html` CSS "Action bar & tabbar inside mobile"; aplicable directamente a Fase B implementation de `<ModalSheet>` (variante mobile = bottom sheet con sticky footer interno).
+- **Verificable por:** la action bar debe permanecer al pie del contenedor móvil aún cuando se hace scroll dentro del contenido.
+
+## L070 — Anchor mobile naming: SIEMPRE terminar en `-mobile` para que los selectores apliquen
+
+- **Origen:** S7-A.2 — anchor `s7-order-create-mobile-add-product` (mobile en el medio del ID) no recibió el CSS de mobile viewport simulation. Se renderizó full-width sin phone frame.
+- **Síntoma:** el screen se veía normal (desktop layout) en lugar de constreñido a 390px con phone frame.
+- **Causa raíz:** el selector canónico de mobile viewport simulation es `section[id$="-mobile"]` (CSS attribute selector "ends with"). El ID `s7-order-create-mobile-add-product` termina en `-add-product`, no en `-mobile`.
+- **Solución aplicada:** rename del anchor a `s7-order-create-add-product-mobile`.
+- **Regla derivada:** todos los anchors de mobile en el demo HTML deben **terminar** en `-mobile` (no contenerlo en el medio). Convención de naming: `s7-<screen-name>-<variant>-mobile`. Ej: `s7-order-detail-overdue-mobile`, `s7-order-detail-actions-mobile`.
+- **Dónde vive ahora:** convención del demo HTML; aplicar al crear nuevos mobile anchors.
+- **Verificable por:** después de crear un anchor mobile, navegar a él en el browser y confirmar que se ve con phone frame de 390px centrado. Si se ve full-width, el selector no matcheó.
+
+## L071 — Adaptive Modal pattern: bottom sheet en mobile + centered dialog en desktop
+
+- **Origen:** S7-A.2 — durante el rediseño mobile se aplicó intuitivamente el bottom sheet pattern para confirmaciones, forms y pickers. Pregunta humana 2026-05-11: ¿es esto canónico?
+- **Síntoma:** los modales centrados desktop quedaban mal en mobile (mal posicionamiento, tap targets fuera del thumb zone, sentirse "dated").
+- **Causa raíz:** los modales centrados son un patrón desktop-first. En mobile <768px, el patrón consolidado 2024-2026 (Apple HIG, Material 3, NN/g, industria entera) es el bottom sheet con drag handle + sticky CTA.
+- **Solución aplicada:** ADR 0008 extendido con sección "Extensión 2026-05-11 — Adaptive Modal Pattern". El componente Modal canónico pasa a ser **adaptive** vía arquitectura de 3 componentes: `Modal.tsx` (smart wrapper público) + `ModalDialog.tsx` (desktop, hand-rolled como hasta ahora) + `ModalSheet.tsx` (mobile, usa Vaul para drag-to-dismiss). `ModalContent.tsx` shared para Header + Footer. ADR 0010 establece política de libs UI: `vaul` aprobado como única lib top-level; Radix Dialog viene transitivo (no se importa directo).
+- **Regla derivada:** **Prohibido implementar modales centrados en mobile.** Todos los modales del módulo (eliminar, cancelar, discrepancia, anotar pago, añadir producto, ⋯ acciones, picker) usan el wrapper adaptive. Excepción full-screen sheet cuando contenido es muy largo (caso FX Reconciliación).
+- **Dónde vive ahora:** ADR 0008 (Extensión 2026-05-11); PLAYBOOK §1 Modal + Sheet; `modules/orders.md` §Handoff "Pre-requisito"; `_notes/cross-cutting-changes.md` S7-A.2.
+- **Verificable por:** abrir cualquier modal en mobile viewport (<768px) — debe ser bottom sheet con drag handle. En desktop (≥768px) — centered dialog Semantic Depth.
+
+---
+
 ## Cómo agregar una lección nueva
 
 1. Numerar `L0XX` siguiendo el orden cronológico.

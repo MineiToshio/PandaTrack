@@ -258,6 +258,24 @@ Componentes específicos del módulo Orders. Fase B los crea en `src/app/[locale
 
 ## Handoff a Fase B
 
+### ⛔ STOP — Pre-requisito obligatorio antes de cualquier implementación
+
+**Antes de tocar listado / detalle / crear / editar, construí la arquitectura adaptive de `<Modal>` (Modal + ModalDialog + ModalSheet + ModalContent).**
+
+Razón: los 8 modales/sheets del módulo Orders (Eliminar, Cancelar, Discrepancia, Anotar pago, Añadir producto, ⋯ Más acciones, Picker tipo, FX Reconciliación) requieren la variante **adaptive** (centered desktop + bottom sheet mobile). Si se implementan con el Modal canónico actual y se difiere el wrapper, hay que reescribir todos los callsites en una sesión posterior.
+
+Spec completa: ADR 0008 Extensión 2026-05-11. Detalle de implementación: ver sección **"⚠️ Pre-requisito Fase B: Adaptive Modal Pattern"** más abajo.
+
+**Orden de ejecución Fase B (5 conversaciones secuenciales):**
+
+| #   | Conversación                                                                                                                                | Pre-requisito                        | Estado       |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ------------ |
+| 0   | **Modal adaptive architecture (CRITICAL)** — Modal + ModalDialog + ModalSheet + ModalContent + useIsMobile + Vaul + migrar 7 ad-hoc dialogs | ADR 0008 Extensión + ADR 0010 leídos | 🟡 pendiente |
+| 1   | Listado de órdenes                                                                                                                          | Step 0 completo                      | bloqueado    |
+| 2   | Crear orden (wizard 3 pasos)                                                                                                                | Step 0 completo                      | bloqueado    |
+| 3   | Detalle de orden (multi-state)                                                                                                              | Step 0 completo                      | bloqueado    |
+| 4   | Editar orden (L020 all-open)                                                                                                                | Step 0 completo                      | bloqueado    |
+
 ### Rutas y páginas (App Router) — ya existentes
 
 ```
@@ -278,6 +296,66 @@ src/app/[locale]/(app)/orders/
     share/                   ← Componentes compartidos entre list/detail/create/edit
 ```
 
+### ⚠️ Pre-requisito Fase B: Adaptive Modal Pattern
+
+**Antes de implementar cualquier modal/sheet de Orders**, Fase B debe construir la arquitectura adaptive del Modal canónico (ADR 0008 Extensión 2026-05-11). Todos los modales del módulo se renderizan diferente según viewport:
+
+- **Desktop ≥768px** → centered dialog (Semantic Depth, Version B de ADR 0008).
+- **Mobile <768px** → bottom sheet con drag handle + sticky CTA + `safe-area-inset-bottom`.
+
+**Arquitectura aprobada (decisión humana 2026-05-11, 14 fuentes externas citadas en ADR 0008 Extensión):**
+
+1. **El Modal actual hand-rolled NO se reemplaza** — se renombra a `ModalDialog.tsx` (sigue siendo desktop centered, sin deps externas, con su focus trap + Portal + ARIA propios).
+2. **NEW `ModalSheet.tsx`** — mobile bottom sheet usando [Vaul](https://vaul.emilkowal.ski/) (drag-to-dismiss, snap points, safe-area).
+3. **NEW `Modal.tsx` smart wrapper** — usa `useIsMobile()` y renderiza ModalDialog o ModalSheet. Es lo único que importan los callsites.
+4. **NEW `ModalContent.tsx` shared** — Header (icon-circle + title + close) + Footer (actions). Reusado por Dialog y Sheet (DRY).
+5. **NEW `useIsMobile()` hook** — `window.matchMedia('(max-width: 767px)')` SSR-safe.
+
+**Deps** (ver ADR 0010 — UI Primitive Libraries Approval Policy):
+
+- **Agregar**: `vaul` única lib top-level. Radix Dialog viene transitivo dentro de Vaul.
+- **NO agregar**: `@radix-ui/*` como dep directa en `package.json`.
+
+**Costo estimado** (único upfront cost antes de Fase B Parte 1):
+
+| Tarea                                                                  | Tiempo      |
+| ---------------------------------------------------------------------- | ----------- |
+| `useIsMobile()` hook                                                   | 15 min      |
+| Renombrar Modal.tsx → ModalDialog.tsx + cleanup imports                | 30 min      |
+| Extraer ModalContent.tsx con Header/Footer compartidos                 | 2-3 horas   |
+| Instalar Vaul + crear ModalSheet.tsx                                   | 3-4 horas   |
+| Crear Modal.tsx smart wrapper (~30 líneas)                             | 30 min      |
+| Migrar 7 ad-hoc dialogs identificados en audit → `<Modal>` canónico    | 1-1.5 días  |
+| E2E + visual regression en mobile + desktop                            | 0.5 día     |
+| Audit `package.json`: `vaul` presente, `@radix-ui/*` ausente top-level | 5 min       |
+| **Total**                                                              | **~3 días** |
+
+**Hacerlo ANTES** de implementar listas/detalles/forms del módulo. Si se difiere, todos los modales de Orders se implementarán con patrón obsoleto y habrá reescritura posterior.
+
+#### Mapping concreto Orders (referencia para Fase B)
+
+| Caso del módulo           | Mobile                            | Desktop            | ARIA role       | Icon-circle tone | Demo anchor mobile                    |
+| ------------------------- | --------------------------------- | ------------------ | --------------- | ---------------- | ------------------------------------- |
+| Eliminar pedido           | Bottom sheet                      | Centered dialog    | `alertdialog`   | `destructive`    | `#s7-order-detail-delete-mobile`      |
+| Cancelar pedido           | Bottom sheet                      | Centered dialog    | `alertdialog`   | `warning`        | `#s7-order-detail-cancel-mobile`      |
+| Discrepancia de total     | Bottom sheet                      | Centered dialog    | `alertdialog`   | `warning`        | `#s7-order-create-discrepancy-mobile` |
+| Anotar pago               | Bottom sheet                      | Centered dialog    | `dialog`        | sin icon         | `#s7-order-detail-pay-mobile`         |
+| Añadir producto (paso 2)  | Bottom sheet                      | Centered dialog    | `dialog`        | sin icon         | `#s7-order-create-add-product-mobile` |
+| ⋯ Más acciones del pedido | Bottom sheet (action variant)     | Popover (no modal) | `dialog`/`menu` | sin icon         | `#s7-order-detail-actions-mobile`     |
+| Picker tipo de producto   | Bottom sheet (picker variant)     | Popover/dropdown   | `dialog`        | sin icon         | `#s7-product-type-picker-mobile`      |
+| FX Reconciliación masiva  | **Full-screen sheet** (excepción) | Centered dialog L  | `dialog`        | sin icon         | `#s7-fx-reconciliation-mobile`        |
+
+> **Excepción full-screen**: cuando el contenido excede ~4 secciones o requiere scroll significativo (caso FX Reconciliación con N grupos de monedas), el bottom sheet se reemplaza por full-screen sheet que cubre 100% del viewport del contenedor. Documentado en ADR 0008 Extensión.
+
+#### Convenciones de implementación
+
+- Drag handle 36×4 px en `--border-strong`, top corners radius `--radius-2xl` (20px).
+- Sticky footer con `padding-bottom: calc(N + env(safe-area-inset-bottom))`.
+- Animación entrada: `transform: translateY(100% → 0) + opacity`, duración 280ms.
+- Focus trap idéntico al Modal desktop (Radix Dialog lo maneja automáticamente).
+- Cierre via X / Esc / tap backdrop (excepto `alertdialog` que solo cierra con X o botón explícito).
+- Tap target ≥44 px (Apple HIG).
+
 ### Archivos a modificar
 
 | Archivo                                  | Cambio                                                                                                                                                                                                                                                                                                                   |
@@ -291,20 +369,27 @@ src/app/[locale]/(app)/orders/
 
 ### Archivos a crear (nuevos)
 
-| Archivo                                        | Descripción                                                                                                   |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `src/components/modules/StepperBar.tsx`        | Indicador de pasos wizard (reutilizable)                                                                      |
-| Componente `DateRangePicker`                   | Trigger + calendar popup para rango de fechas; evaluar si en `src/components/modules/` o `_components/share/` |
-| `orders/[id]/_components/DetailHero.tsx`       | Hero card del detalle                                                                                         |
-| `orders/[id]/_components/OrderItemsCard.tsx`   | Sección ítems del detalle                                                                                     |
-| `orders/[id]/_components/PaymentsCard.tsx`     | Pagos card con inline expand                                                                                  |
-| `orders/[id]/_components/ActionsCard.tsx`      | Aside acciones sticky                                                                                         |
-| `orders/[id]/_components/PrivateNoteCard.tsx`  | Textarea nota con autosave                                                                                    |
-| `orders/[id]/_components/CancelOrderModal.tsx` | Modal cancelar con motivo                                                                                     |
-| `orders/[id]/_components/DeleteOrderModal.tsx` | Modal eliminar                                                                                                |
-| `orders/_components/FxBanner.tsx`              | Banner FX inline en lista (copy WO-07, botón `tonal`, ícono `--accent`). Demo: `#s7-orders-list-fx-banner`    |
-| `orders/_components/FxReconciliationModal.tsx` | Modal masivo FX: grupos por par de monedas + inputs + defer por vacío. Demo: `#s7-fx-reconciliation-modal`    |
-| `src/lib/fx/frankfurter.ts`                    | Wrapper cliente para Frankfurter API (FX "Hoy")                                                               |
+| Archivo                                                   | Descripción                                                                                                                                                                                                      |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`src/components/modules/Modal/Modal.tsx`** (refactor)   | **⛔ PRE-REQ FASE B PARTE 0.** Smart wrapper público (~30 líneas). Usa `useIsMobile()` y delega a ModalDialog o ModalSheet. Reemplaza al Modal monolítico actual sin cambiar el API público. ADR 0008 Extensión. |
+| **`src/components/modules/Modal/ModalDialog.tsx`** (NEW)  | Desktop centered (Semantic Depth Version B). El código actual de Modal.tsx renombrado + cleanup. Sin deps externas. Internal — no se exporta.                                                                    |
+| **`src/components/modules/Modal/ModalSheet.tsx`** (NEW)   | Mobile bottom sheet usando Vaul (drag handle 36×4px, top corners `--radius-2xl`, sticky footer con `safe-area-inset-bottom`). Internal — no se exporta. ADR 0008 Extensión §"Spec del bottom sheet".             |
+| **`src/components/modules/Modal/ModalContent.tsx`** (NEW) | Header (icon-circle tonal + title + description + close) + Footer (primary/secondary/tertiary actions). Compartido entre Dialog y Sheet (DRY). Internal — no se exporta.                                         |
+| **`src/components/modules/Modal/Modal.types.ts`** (NEW)   | Props y types compartidos entre los componentes del folder Modal. Internal.                                                                                                                                      |
+| **`src/hooks/useIsMobile.ts`** (NEW)                      | Hook que retorna true cuando viewport `<768px`. Implementar con `window.matchMedia('(max-width: 767px)')` + listener + SSR-safe initial state (false en SSR).                                                    |
+| **`package.json`** (modify)                               | Agregar `vaul` como dep top-level. NO agregar `@radix-ui/*` directamente (queda transitivo de Vaul). Ver ADR 0010 — UI Primitive Libraries Approval Policy.                                                      |
+| `src/components/modules/StepperBar.tsx`                   | Indicador de pasos wizard (reutilizable)                                                                                                                                                                         |
+| Componente `DateRangePicker`                              | Trigger + calendar popup para rango de fechas; evaluar si en `src/components/modules/` o `_components/share/`                                                                                                    |
+| `orders/[id]/_components/DetailHero.tsx`                  | Hero card del detalle                                                                                                                                                                                            |
+| `orders/[id]/_components/OrderItemsCard.tsx`              | Sección ítems del detalle                                                                                                                                                                                        |
+| `orders/[id]/_components/PaymentsCard.tsx`                | Pagos card con inline expand                                                                                                                                                                                     |
+| `orders/[id]/_components/ActionsCard.tsx`                 | Aside acciones sticky                                                                                                                                                                                            |
+| `orders/[id]/_components/PrivateNoteCard.tsx`             | Textarea nota con autosave                                                                                                                                                                                       |
+| `orders/[id]/_components/CancelOrderModal.tsx`            | Modal cancelar con motivo                                                                                                                                                                                        |
+| `orders/[id]/_components/DeleteOrderModal.tsx`            | Modal eliminar                                                                                                                                                                                                   |
+| `orders/_components/FxBanner.tsx`                         | Banner FX inline en lista (copy WO-07, botón `tonal`, ícono `--accent`). Demo: `#s7-orders-list-fx-banner`                                                                                                       |
+| `orders/_components/FxReconciliationModal.tsx`            | Modal masivo FX: grupos por par de monedas + inputs + defer por vacío. Demo: `#s7-fx-reconciliation-modal`                                                                                                       |
+| `src/lib/fx/frankfurter.ts`                               | Wrapper cliente para Frankfurter API (FX "Hoy")                                                                                                                                                                  |
 
 ### i18n keys a revisar
 

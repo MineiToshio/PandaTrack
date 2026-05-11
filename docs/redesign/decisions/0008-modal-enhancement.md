@@ -1,12 +1,14 @@
 ---
-title: ADR 0008 — Modal Enhancement · Semantic Depth (M01)
+title: ADR 0008 — Modal Enhancement · Semantic Depth (M01) + Adaptive (S7-A.2)
 date: 2026-05-03
+last_extended: 2026-05-11
 status: accepted
-session: M01-modal-enhancement (mini-sesión correctiva)
+session: M01-modal-enhancement + S7-A.2-adaptive-modal
 owner: Sergio Minei
-updates: components/Modal.md
+updates: components/Modal.md, components/Sheet.md
 sources:
   - _notes/demo-screens.html (18 secciones M01 — versiones A, B, C × 6 casos de uso)
+  - _notes/demo-screens.html (S7 mobile sections — bottom sheets aplicados)
   - _notes/cross-cutting-changes.md (entrada M01)
 ---
 
@@ -177,3 +179,173 @@ Nota: el 14% de mezcla en los icon-circle backgrounds produce un tinte suave; el
 1. `components/Modal.md` actualizado ✅ (en este cierre).
 2. En S12 (implementación): replicar Version B en React usando los tokens y recetas de este ADR.
 3. Confirmar `--radius-2xl: 20px` en `tokens.md` al inicio de S12.
+
+---
+
+## Extensión 2026-05-11 — Adaptive Modal Pattern (mobile bottom sheet)
+
+> Esta extensión NO modifica la decisión original. Formaliza la variante responsive: en mobile el mismo componente lógico se renderiza como **bottom sheet**, en desktop como **centered dialog**. Versión B (Semantic Depth) sigue vigente como contrato visual desktop.
+
+### Contexto
+
+Durante S7 Fase A.2 (rediseño mobile del módulo Orders, 2026-05-11), se aplicó intuitivamente el patrón **bottom sheet** en mobile para confirmaciones destructivas (eliminar/cancelar pedido), forms cortos (anotar pago, añadir producto), pickers (tipo de producto) y action menus (⋯ Más acciones). La pregunta humana fue: ¿es esto el patrón canónico mobile, y por lo tanto modificamos ADR 0008?
+
+Investigación externa (agente con 14 fuentes citadas, 2026-05-11) concluyó:
+
+- **Apple HIG (iOS 15+)** estandarizó `Sheet` como default para tareas scoped, con detents nativos. Action sheets son patrón distinto para listas de acciones.
+- **Material Design 3** posiciona modal bottom sheet como alternativa canónica a inline menus y dialogs simples en mobile.
+- **NN/g**: bottom sheets son menos intrusivos que dialogs centrados y aprovechan 3 de los 4 bordes del viewport.
+- **Thumb zone reach (Hoober, Smashing)**: ~75% de interacciones son con el pulgar; bottom 25–40% del viewport es la "natural zone".
+- **Fintech engagement data**: 25–30% más engagement con bottom sheets vs modales centrados (Doha Bank, Niyo).
+- **Industry usage 2024–2026**: Stripe Checkout, Apple Pay, Apple Maps, Linear mobile, Notion mobile, banking apps modernas.
+- **Stack web canónico**: Radix Dialog (base accesible) + Vaul / shadcn Drawer (mobile drawer con snap points) + adaptive wrapper estilo Credenza (`useIsMobile()` ≤768px → Drawer, else → Dialog).
+
+### Decisión
+
+**Adoptar el patrón "adaptive modal"** como contrato canónico en `src/`:
+
+- **Desktop (≥768px)**: el `<Modal>` mantiene la spec de Version B (centered, Semantic Depth, icon-circle tonal, etc.) tal cual está documentada arriba.
+- **Mobile (<768px)**: el mismo componente lógico renderiza como **bottom sheet**, con la siguiente spec.
+
+### Spec del bottom sheet (mobile)
+
+| Propiedad         | Valor                                                                                               |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| `position`        | `fixed; bottom: 0; left: 0; right: 0; z-index: var(--z-modal)`                                      |
+| `background`      | `var(--surface-elevated)`                                                                           |
+| `border-top`      | `1px solid var(--border-strong)`                                                                    |
+| `border-radius`   | `20px 20px 0 0` (`--radius-2xl` solo en top corners)                                                |
+| `max-height`      | `78%` del viewport (o `90%` para detent `large`)                                                    |
+| `box-shadow`      | `0 -8px 32px color-mix(in oklch, var(--text-primary) 22%, transparent)` (sombra hacia arriba)       |
+| `padding-bottom`  | `calc(N + env(safe-area-inset-bottom))` — respeta home indicator de iOS                             |
+| Backdrop          | mismo `backdrop-filter: blur(8px)` + tint oklch calibrado de la Version B                           |
+| Drag handle       | 36×4 px, `border-radius: 999px`, `background: var(--border-strong)`, margin 8px auto 4px            |
+| Animación entrada | `transform: translateY(100%) → 0` + opacity, duración 280ms, easing `linear(0, 0.5, 0.85, 0.97, 1)` |
+
+### Header del bottom sheet
+
+Mantiene el icon-circle tonal de Version B (48px, mismas reglas por tone) cuando el caso lo justifica (confirm destructive, alert). Para action menus y pickers, se usa header simplificado: solo título + close button (X) sin icon-circle.
+
+### Footer del bottom sheet
+
+Sticky `position: sticky; bottom: 0;` con `border-top: 1px solid var(--border)`, `background: var(--surface-elevated)`, padding-bottom respetando `env(safe-area-inset-bottom)`. Botones full-height `min-height: 44px` (HIG tap target).
+
+### Mapping de casos del módulo Orders
+
+| Caso                    | Mobile                            | Desktop            | ARIA role       | Icon-circle tone        |
+| ----------------------- | --------------------------------- | ------------------ | --------------- | ----------------------- |
+| Eliminar pedido         | Bottom sheet                      | Centered dialog    | `alertdialog`   | `destructive`           |
+| Cancelar pedido         | Bottom sheet                      | Centered dialog    | `alertdialog`   | `warning`               |
+| Discrepancia de total   | Bottom sheet                      | Centered dialog    | `alertdialog`   | `warning`               |
+| Anotar pago             | Bottom sheet                      | Centered dialog    | `dialog`        | `default` o sin icon    |
+| Añadir producto         | Bottom sheet                      | Centered dialog    | `dialog`        | sin icon                |
+| ⋯ Más acciones          | Bottom sheet                      | Popover (no modal) | `dialog`/`menu` | sin icon (action sheet) |
+| Picker tipo de producto | Bottom sheet                      | Popover/dropdown   | `dialog`        | sin icon (picker)       |
+| FX Reconciliación       | **Full-screen sheet** (excepción) | Centered dialog L  | `dialog`        | sin icon                |
+
+> **Excepción full-screen**: cuando el contenido es demasiado largo o complejo (>4 secciones / scroll significativo), el bottom sheet se reemplaza por full-screen sheet (cubre 100% del viewport del contenedor). Caso actual: FX Reconciliación.
+
+### Stack técnico a implementar (Fase B)
+
+**Decisión 2026-05-11**: NO usar Radix Dialog como dep top-level. El Modal canónico actual (`src/components/modules/Modal/Modal.tsx`, 383 líneas hand-rolled) ya implementa focus trap, Portal, ARIA, Esc, scroll lock — no necesita reemplazo. Solo se extiende con una variante mobile.
+
+**Arquitectura de 3 componentes + 1 shared**:
+
+```
+src/components/modules/Modal/
+├── Modal.tsx           ← Público. Smart wrapper. Usa useIsMobile, delega.
+├── ModalDialog.tsx     ← Internal. Desktop centered (el actual Modal renombrado).
+├── ModalSheet.tsx      ← Internal. Mobile bottom sheet (NEW, usa Vaul).
+├── ModalContent.tsx    ← Internal. Header (icon-circle + title + close) + Footer (actions). Shared.
+├── Modal.types.ts      ← Props compartidas entre Dialog y Sheet.
+├── index.ts            ← Solo exporta <Modal>. ModalDialog/Sheet/Content NO se exportan.
+└── _tests/
+```
+
+**Componentes**:
+
+1. **`<Modal>`** (público, ~30 líneas): smart wrapper. Usa `useIsMobile()`. Si mobile → renderiza `<ModalSheet>`. Si desktop → renderiza `<ModalDialog>`. Es lo único que importan los 15 callsites del módulo Orders y los 7 de Settings/Stores. **El API público no cambia** — cero migración de callsites.
+
+2. **`<ModalDialog>`** (internal, ~350 líneas): el código actual de Modal.tsx renombrado. Sin cambios funcionales. Sigue siendo hand-rolled (focus trap propio, Portal propio, ARIA, Esc, scroll lock). Sin deps externas.
+
+3. **`<ModalSheet>`** (internal, ~150 líneas, NEW): mobile bottom sheet. Usa [Vaul](https://vaul.emilkowal.ski/) para drag-to-dismiss + snap points + safe-area. Renderiza `<ModalContent>` adentro del Drawer.Content.
+
+4. **`<ModalContent>`** (internal shared, ~150 líneas): subcomponentes compartidos. Header (icon-circle tonal + title + description + close), Body, Footer (primary/secondary/tertiary actions). Reusado por Dialog y Sheet — DRY garantizado.
+
+5. **`useIsMobile()`** hook (~15 líneas, NEW): `window.matchMedia('(max-width: 767px)')` con listener + SSR-safe initial state.
+
+**Dependencias**:
+
+- **NUEVA**: `vaul` (única dep nueva). Radix Dialog viene como **transitive** dentro de Vaul — NO se importa directamente, NO aparece en `package.json` top-level. Bundle: ~15KB gzipped.
+- **NO se agrega**: `@radix-ui/*` (banned como top-level dep per ADR 0010 — UI Primitive Libraries Approval Policy).
+- **Existing**: `lucide-react` (ya en el proyecto).
+
+**Estilos**: Tailwind v4 + tokens semánticos del rediseño. Cero estilos hardcoded.
+
+**Governance**: ver ADR 0010 — `vaul` es la única lib UI aprobada como dep top-level. Cualquier futura adición requiere ADR explícito.
+
+### Costo estimado (actualizado 2026-05-11)
+
+Con la arquitectura final (Modal smart wrapper + ModalDialog + ModalSheet + ModalContent shared + Vaul):
+
+| Tarea                                                                                                     | Tiempo      |
+| --------------------------------------------------------------------------------------------------------- | ----------- |
+| `useIsMobile()` hook                                                                                      | 15 min      |
+| Renombrar Modal.tsx → ModalDialog.tsx + cleanup imports                                                   | 30 min      |
+| Extraer ModalContent.tsx con Header/Body/Footer compartidos                                               | 2-3 horas   |
+| Instalar Vaul + crear ModalSheet.tsx usando Drawer + ModalContent                                         | 3-4 horas   |
+| Crear Modal.tsx wrapper (smart, ~30 líneas)                                                               | 30 min      |
+| Migrar 7 ad-hoc dialogs identificados en audit (AvatarField, Settings, Stores, etc.) → `<Modal>` canónico | 1-1.5 días  |
+| E2E + visual regression en mobile + desktop (matching ADR 0008 Version B + bottom sheet spec)             | 0.5 día     |
+| Audit `package.json`: confirmar `vaul` presente, `@radix-ui/*` ausente como top-level                     | 5 min       |
+| **Total**                                                                                                 | **~3 días** |
+
+**Cero migración de los 15 callsites canónicos** del Modal actual — siguen importando `<Modal>` que ahora es smart-adaptive. Solo cambian los 7 ad-hoc que se migran al canónico.
+
+**Hacerlo ANTES de Fase B de Orders Parte 1 (listado).** Si se difiere, los modales nuevos de Orders se implementan con patrón obsoleto y hay reescritura posterior.
+
+### Cuándo el centered modal SIGUE siendo correcto en mobile (excepciones)
+
+- Photo viewers / media lightbox → full-screen, no sheet.
+- Wizards multistep muy largos → full-screen page (no sheet con scroll infinito).
+- Alertas no-destructivas muy cortas tipo "Sesión expirada" → centered pequeño.
+
+**Ninguno de los modales actuales de Orders cae en estos casos.**
+
+### Justificación de la extensión
+
+1. **Industry standard 2024–2026** consolidado: Apple HIG + Material 3 + NN/g + adopción universal (Stripe, Linear, Notion, banking).
+2. **Thumb zone reach** con datos duros (Hoober): mejora medible 25–30% engagement.
+3. **Compatible con ADR 0008 original**: el bottom sheet hereda Semantic Depth (mismo icon-circle, mismos tones, mismo backdrop blur). Solo cambia el posicionamiento del contenedor.
+4. **Stack canónico React/Next.js**: Radix + Vaul es el estándar 2026 con accessibility resuelta. Cero deuda técnica.
+5. **Costo bajo, riesgo bajo**: 2.5–4 días totales, único upfront cost antes de Fase B.
+
+### Implicancias adicionales (de esta extensión)
+
+1. `components/Modal.md` debe agregarse una sección "Variante responsive (mobile bottom sheet)" referenciando esta extensión.
+2. `components/Sheet.md` debe absorber esta spec como su contrato visual canónico (ya estaba alineado parcialmente per nota en Version B).
+3. `PLAYBOOK.md` §1 (Modal) + §3 (patrones canónicos) deben referenciar la arquitectura: callsites usan `<Modal>` (smart wrapper); ModalDialog/ModalSheet son internos.
+4. En Fase B de cualquier módulo: usar `<Modal>` desde día 1 — automáticamente es adaptive (renderiza ModalDialog en desktop, ModalSheet en mobile). Prohibido implementar modales centrados manualmente en mobile.
+5. **Governance de libs UI**: ver ADR 0010 — `vaul` es la única lib UI aprobada como dep top-level. Radix Dialog NO se importa directamente (queda transitivo dentro de Vaul).
+5. Mantener cursor rule `modal-canonical-pattern.mdc` vigente. Extender para mencionar que bottom sheet mobile NO es excepción al canónico — es el mismo componente en variante responsive.
+
+### Fuentes externas (citadas en investigación)
+
+- [NN/g — Bottom Sheets: Definition and UX Guidelines](https://www.nngroup.com/articles/bottom-sheet/)
+- [Material Design 3 — Bottom sheets guidelines](https://m3.material.io/components/bottom-sheets/guidelines)
+- [Apple HIG — Sheets](https://developer.apple.com/design/human-interface-guidelines/sheets)
+- [Apple HIG — Modality](https://developer.apple.com/design/human-interface-guidelines/modality)
+- [Apple HIG — Action sheets](https://developer.apple.com/design/human-interface-guidelines/action-sheets)
+- [Smashing — The Thumb Zone](https://www.smashingmagazine.com/2016/09/the-thumb-zone-designing-for-mobile-users/)
+- [Radix UI — Dialog primitive](https://www.radix-ui.com/primitives/docs/components/dialog)
+- [shadcn/ui — Drawer (Vaul)](https://ui.shadcn.com/docs/components/radix/drawer)
+- [Credenza — Auto-Adaptive Dialog + Drawer](https://github.com/redpangilinan/credenza)
+- [MDN — ARIA dialog role](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/dialog_role)
+- [MDN — ARIA alertdialog role](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Roles/alertdialog_role)
+- [W3C APG — Dialog (Modal) Pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/)
+- [LogRocket — Sheets vs dialogs vs snackbars](https://blog.logrocket.com/ux-design/sheets-dialogs-snackbars/)
+- [Mobbin — Bottom Sheet UI Design glossary](https://mobbin.com/glossary/bottom-sheet)
+
+### Confianza
+
+**Alta.** Validación cruzada con guidelines oficiales (Apple HIG, Material 3, NN/g, W3C APG) + adopción industrial unánime + datos cuantitativos de engagement. Decisión humana explícita 2026-05-11 tras revisar el informe del agente.

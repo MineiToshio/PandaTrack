@@ -70,17 +70,52 @@ API: `leadingIcon`, `trailingIcon`, `prefix`, `suffix`, `loading`, `error` (bool
 - Categorías de producto siempre con ícono Lucide en `--accent-cool` (teal). Mapping client-side en cada módulo (no DB).
 - Status enum chips: respetar mapping del ADR 0002.
 
-### Modal (`src/components/modules/Modal/Modal.tsx`) — CANÓNICO ÚNICO
+### Modal (`src/components/modules/Modal/Modal.tsx`) — CANÓNICO ÚNICO + ADAPTIVE
 
 **Regla absoluta:** hay UN solo componente modal en la app. **Prohibido** crear dialog/overlay con `<Portal>` + `<div>` ad-hoc. **Prohibido** copiar el patrón visual de modals viejos del demo HTML.
 
-API obligatoria: `tone` (`default | destructive | warning | info`), `size` (`md | lg`), `primaryAction`, `secondaryAction`, opcional `tertiaryAction`, `icon` (Lucide en icon-circle tonal de 48px).
+**Adaptive Modal Pattern** (ADR 0008 Extensión 2026-05-11): el componente Modal se renderiza diferente según viewport:
+
+- **Desktop ≥768px** → centered dialog con Semantic Depth (Version B de ADR 0008).
+- **Mobile <768px** → **bottom sheet** con drag handle, sticky CTA footer, `safe-area-inset-bottom`, mismo Semantic Depth (icon-circle tonal heredado).
+
+**Arquitectura interna (4 archivos en `src/components/modules/Modal/`):**
+
+1. `Modal.tsx` — **público, smart wrapper** (~30 líneas). Usa `useIsMobile()` y delega. Es lo único que importan los callsites.
+2. `ModalDialog.tsx` — **internal, desktop centered** (~350 líneas). El Modal hand-rolled actual renombrado, sin cambios funcionales. Sin deps externas.
+3. `ModalSheet.tsx` — **internal, mobile bottom sheet** (~150 líneas). Usa [Vaul](https://vaul.emilkowal.ski/) para drag-to-dismiss + snap points + safe-area.
+4. `ModalContent.tsx` — **internal shared** (~150 líneas). Header (icon-circle + title + close) + Footer (actions). Reusado por Dialog y Sheet — DRY garantizado.
+
+**Dependencias** (ver ADR 0010 — UI Primitive Libraries Approval Policy):
+
+- **`vaul`** única lib UI top-level aprobada. Radix Dialog viene como **transitive** dentro de Vaul — NO se importa directamente.
+- **NO** `@radix-ui/*` como dep directa en `package.json`.
+- `lucide-react` (ya existente).
+
+**Excepción full-screen sheet**: cuando contenido es muy largo (>4 secciones / scroll significativo) → full-screen sheet (ver `_notes/demo-screens.html` anchor `#s7-fx-reconciliation-mobile`).
+
+API obligatoria de `<Modal>`: `tone` (`default | destructive | warning | info`), `size` (`md | lg`), `primaryAction`, `secondaryAction`, opcional `tertiaryAction`, `icon` (Lucide en icon-circle tonal de 48px). Para mobile: `ModalSheet` inyecta drag handle + sticky footer automáticamente.
+
+ARIA: usar `role="alertdialog"` para destructivas (Eliminar, Cancelar pedido), `role="dialog"` para forms/pickers.
 
 Reforzado por cursor rule `.cursor/rules/modal-canonical-pattern.mdc`. Detalle en `docs/redesign/components/Modal.md` y ADR 0008.
 
-### Sheet (`src/components/modules/Sheet`)
+### Sheet / Drawer (`src/components/modules/Sheet`) — variante mobile del Modal
 
-Counterpart mobile del Modal. Mismo Semantic Depth language. Para bottom-sheets en mobile.
+Counterpart mobile del Modal — implementado como `ModalSheet.tsx` interno (NO se exporta). Mismo Semantic Depth language heredado de ModalContent. Es **invocado automáticamente** por `<Modal>` cuando `useIsMobile()` retorna true — **nunca se usa directamente** en callsites.
+
+Spec visual del bottom sheet (resumen):
+
+- `position: fixed; bottom: 0;` con `border-radius: 20px 20px 0 0` (solo top corners).
+- Drag handle 36×4 px en `--border-strong`, margin `8px auto 4px`.
+- Header igual al Modal (icon-circle tonal 48px cuando aplica) o simplificado para action menus/pickers.
+- Body `padding: 16px 18px 10px; overflow-y: auto`.
+- Sticky footer con `safe-area-inset-bottom`, `border-top: 1px solid var(--border)`, `min-height: 44px` por botón (HIG tap target).
+- Animación entrada: `transform: translateY(100% → 0) + opacity`, 280ms, easing spring.
+
+**Action sheet variant** (mobile-only para "⋯ Más acciones"): header con título corto + close X, body con lista `.s7-mob-action-list` de filas (icon + label), filas destructivas en `--destructive`. Ver demo anchor `#s7-order-detail-actions-mobile`.
+
+**Picker variant** (Tipo de producto, Tienda, Moneda): header con título + search input opcional, body con lista `.s7-mob-picker-list` (icon + label + check selectivo). Ver demo anchor `#s7-product-type-picker-mobile`.
 
 ### FilterDrawer (`src/components/modules/FilterDrawer/FilterDrawer.tsx`)
 
@@ -432,6 +467,36 @@ Descubiertos en S7-A.3. Aplican a cualquier módulo con pantalla de detalle de e
 - **Undo-toast 5s para deletes optimistas reversibles** (L073). Para operaciones de eliminación que no tienen consecuencias permanentes inmediatas (ej. eliminar un pago de un pedido), usar el patrón undo-toast: (1) aplicar el delete optimistamente en UI de inmediato (el ítem desaparece), (2) mostrar un toast neutro con cuenta regresiva ("Pago eliminado — Deshacer Z · 5s"), (3) si el usuario activa "Deshacer" (clic o tecla `Z`), restaurar el ítem en UI y cancelar el server action, (4) si el toast expira sin acción, ejecutar el server action. Diferencia con el patrón standard de `optimistic-client-updates.mdc`: en ese patrón el server action se dispara inmediatamente junto con el update; en undo-toast el server action se **difiere** hasta que el toast expira. Usar undo-toast cuando el costo del error es bajo (el usuario puede reconstruir el registro) y el valor del "deshacer" es alto (operaciones frecuentes o accidentales). NO usar para deletes destructivos permanentes (pedido, entrega, tienda) — esos requieren modal de confirmación ADR 0008 B.
 
 - **Convención de view-transition names en navegación list → detail** (L074). Al animar la transición entre una fila de lista y la pantalla de detalle con la View Transitions API, la convención de naming es `view-transition-name: {entity}-{dbId}` usando el **DB id** de la entidad (no el humanReadableId ni el slug). El elemento origen (fila en la lista, ej. `order-row`) y el elemento destino (hero card en el detalle, ej. `detail-hero`) deben declarar el mismo `view-transition-name` para activar la animación de elemento compartido. Usar el DB id (no humanReadableId como `ORD-20260428-01`) porque: (a) el DB id nunca tiene caracteres especiales que conflictúen con CSS, (b) es único garantizado, (c) está disponible en ambas superficies sin lógica adicional. En producción, fallos de la View Transitions API (navegadores sin soporte, contextos de `prefers-reduced-motion`) deben ser silenciosos — nunca bloquear la navegación ni mostrar error. Anti-patrón: ❌ no usar el humanReadableId como view-transition-name — los guiones en `ORD-20260428-01` son válidos en CSS pero la longitud variable puede causar bugs sutiles de matching.
+
+### 9.15 Adaptive Modal Pattern: bottom sheet en mobile + centered dialog en desktop (S7-A.2)
+
+Descubierto en S7-A.2 (rediseño mobile de Orders). Aplica a TODOS los modales/sheets del rediseño desde ahora.
+
+- **Adaptive Modal canónico** (L071, ADR 0008 Extensión 2026-05-11). El componente `<Modal>` se renderiza diferente según viewport: en desktop ≥768px = centered dialog Semantic Depth (ADR 0008 Version B); en mobile <768px = bottom sheet con drag handle 36×4px en top corners (`--radius-2xl`), sticky CTA footer con `safe-area-inset-bottom`, animación `translateY(100% → 0)` 280ms. **Arquitectura**: `Modal.tsx` (smart wrapper público) + `ModalDialog.tsx` (desktop hand-rolled) + `ModalSheet.tsx` (mobile, usa [Vaul](https://vaul.emilkowal.ski/)) + `ModalContent.tsx` (shared subcomponents). Callsites importan SOLO `<Modal>` — los demás son internos al folder. **Deps** (ver ADR 0010): `vaul` única lib UI top-level aprobada; Radix Dialog viene transitivo dentro de Vaul (NO se importa directo). ARIA: `role="alertdialog"` para destructivas (Eliminar, Cancelar), `role="dialog"` para forms/pickers. **Prohibido implementar modales centrados en mobile.** Excepción full-screen sheet cuando contenido excede ~4 secciones (caso FX Reconciliación). Demos visuales: anchors `*-mobile` del demo HTML (`s7-order-detail-delete-mobile`, `s7-order-detail-pay-mobile`, `s7-order-detail-actions-mobile`, etc.).
+
+- **Bottom sheet variants** (L071). Tres patrones distintos según contenido:
+  - **Dialog/alertdialog sheet** (confirm, alert, form corto): icon-circle tonal heredado de Semantic Depth, header con título + close, body con descripción/form, sticky footer con 2 botones (Cancelar + Acción).
+  - **Action sheet** (mobile-only para "⋯ Más acciones"): sin icon-circle, lista `.s7-mob-action-list` de filas con icono + label, filas destructivas en `--destructive`. No tiene footer — cada fila ES la acción.
+  - **Picker sheet** (selector de opciones tipo "tipo de producto"): search input opcional arriba + lista `.s7-mob-picker-list` (icon + label + check selectivo). Tap en opción = seleccionar y cerrar (no footer).
+
+### 9.16 Mobile viewport simulation en demo HTML (S7-A.2)
+
+Reglas para agregar nuevas pantallas mobile al demo HTML (`_notes/demo-screens.html`). Aplica solo al demo — Fase B implementa con responsive real (no simulation).
+
+- **Naming convention: anchors mobile deben terminar en `-mobile`** (L070). El selector canónico de mobile viewport simulation es `section[id$="-mobile"]`. IDs como `s7-X-mobile-Y` NO matchean. Convención: `s7-<screen-name>-<variant>-mobile`.
+
+- **Override de selectores con media queries desktop** (L066). Las media queries (`@media (min-width: 768px)`, `>=1024px`) evalúan el viewport del browser, no el ancho del contenedor simulado. Dentro del phone container de 390px, TODOS los selectores responsive desktop aplican erróneamente. Hay que overridearlos uno por uno:
+  - `.app-shell` (grid desktop) → `display: flex; flex-direction: column; grid-template-columns: none !important`
+  - `.form-grid` (1fr 320px) → `1fr !important`
+  - `.form-sidebar` (sticky desktop) → `position: static !important`
+  - `.mobile-tabbar` (`display: none` en ≥1024px) → `display: flex !important`
+  - `.detail-grid` similar
+
+- **Cascada `min-width: 0`** (L067). Si un descendiente tiene `min-width` explícito (tabla con scroll horizontal, código preformateado, imagen sin `max-width`), todos los flex/grid ancestors heredan ese mínimo y desbordan el padre. Agregar `min-width: 0` a `.section-cards`, `.section-card`, `.section-card-body`, `.section-card-inner`, `.field` (o equivalentes) dentro del mobile container.
+
+- **Action bar dentro del phone container: NO usar `position: fixed`** (L069). En contenedores constreñidos, `position: fixed` se escapa al viewport. Preferir flex column layout: action bar como hermano de `app-content` dentro de `app-shell` con `flex-direction: column`; `app-content` con `flex: 1; overflow-y: auto`; action bar con `position: static` o `position: sticky; bottom: 0`. Si `position: fixed` es absolutamente necesario, agregar `transform: translateZ(0)` al ancestor (`app-shell`) para crear containing block.
+
+- **Lucide selectores duales `> i, > svg`** (L068). El runtime `lucide.createIcons()` reemplaza `<i data-lucide="X">` con `<svg>`. Los selectores CSS `> i` dejan de matchear post-runtime. Usar selectores duales: `.alert > i, .alert > svg { color: ...; }`. En Fase B (React/Next con `lucide-react`) NO es problema — renderiza `<svg>` directamente.
 
 ## Referencias
 
