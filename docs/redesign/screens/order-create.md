@@ -10,6 +10,7 @@ demo_anchors:
   - s7-order-create-step-3
   - s7-order-create-empty-stores
   - s7-order-create-discrepancy-modal
+  - s7-order-create-mobile
 supersedes: order-create.md (session 02 — old 5-step wireframe)
 ---
 

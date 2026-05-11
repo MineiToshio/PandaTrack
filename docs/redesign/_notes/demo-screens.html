@@ -376,6 +376,9 @@
       top: calc(100% + 6px);
       left: 0;
       min-width: 210px;
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
       background: var(--surface-elevated);
       border: 1px solid var(--border-strong);
       border-radius: 10px;
@@ -1766,8 +1769,8 @@
     .product-row .name { font-size: 14px; }
     .product-row .qty { color: var(--text-muted); font-size: 12px; font-family: 'JetBrains Mono', ui-monospace, monospace; }
 
-    .form-sidebar { display: none; flex-direction: column; gap: 14px; position: sticky; top: 80px; height: fit-content; }
-    @media (min-width: 1024px) { .form-sidebar { display: flex; } }
+    .form-sidebar { display: flex; flex-direction: column; gap: 14px; height: fit-content; }
+    @media (min-width: 1024px) { .form-sidebar { position: sticky; top: 80px; } }
     .summary-list .row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; }
     .summary-list .row + .row { border-top: 1px solid var(--border); }
     .summary-list .row .label { color: var(--text-secondary); }
@@ -2398,7 +2401,7 @@
     .s7-meta-dot { color: color-mix(in oklch, var(--text-muted) 50%, transparent); }
     .s7-card-delivery { font-size: 12px; margin-top: 4px; }
     .s7-progress { height: 5px; background: color-mix(in oklch, var(--text-primary) 8%, transparent); border-radius: 999px; overflow: hidden; margin-top: 10px; }
-    .s7-progress-fill { height: 100%; background: var(--success); border-radius: 999px; }
+    .s7-progress-fill { height: 100%; background: var(--accent); border-radius: 999px; }
     .s7-expand-zone { display: flex; justify-content: flex-end; margin-top: 8px; }
     .s7-expand-btn { font-size: 12px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; border: none; background: none; cursor: pointer; }
     .s7-expand-btn:hover { background: color-mix(in oklch, var(--text-primary) 6%, transparent); }
@@ -2734,6 +2737,184 @@
     .idx-status.descartado  { background: color-mix(in oklch, var(--text-muted) 10%, transparent); color: var(--text-muted); }
     .idx-status.aprobado    { background: color-mix(in oklch, var(--success)  12%, transparent); color: var(--success); }
     .idx-status.nuevo       { background: color-mix(in oklch, var(--accent)   12%, transparent); color: var(--accent); }
+
+    /* ─── S7 mobile helpers (s7-mob-* namespace) ────────────────────── */
+    .s7-mob-search-wrap {
+      position: sticky; top: 48px; z-index: 15;
+      padding: 0 16px 10px;
+      background: color-mix(in oklch, var(--surface) 92%, transparent);
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    }
+    .s7-mob-chips { padding: 0 16px; margin-bottom: 12px; }
+    .s7-mob-chip-close {
+      display: inline-grid; place-items: center;
+      width: 16px; height: 16px;
+      border: 0; background: transparent; color: currentColor;
+      cursor: pointer; padding: 0; border-radius: 999px;
+    }
+    .s7-mob-chip-close:hover { background: color-mix(in oklch, var(--accent) 16%, transparent); }
+    .s7-mob-chip-close svg { width: 12px; height: 12px; }
+
+    .s7-mob-fx { margin: 0 16px 14px; align-items: flex-start; padding: 12px 14px; }
+    .s7-mob-fx-body { display: flex; flex-direction: column; gap: 8px; min-width: 0; flex: 1; }
+    .s7-mob-fx-copy { margin: 0; font-size: 13px; line-height: 1.4; color: var(--text-secondary); }
+    .s7-mob-fx-copy strong { color: var(--text-primary); font-weight: 600; }
+    .s7-mob-fx .btn.accent.sm { align-self: flex-start; }
+
+    .s7-mob-cards { display: flex; flex-direction: column; gap: 10px; padding: 0 16px; }
+    .s7-mob-card { display: block; text-decoration: none; color: inherit; }
+    .s7-mob-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .s7-mob-card-title-wrap { min-width: 0; flex: 1; }
+    .s7-mob-card-meta { justify-content: flex-start; }
+    .s7-mob-card-total {
+      margin-left: auto; font-weight: 600;
+      color: var(--text-primary); font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .s7-mob-pagination {
+      padding: 18px 16px 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .s7-mob-pagination-count { margin: 0; font-size: 12px; color: var(--text-muted); text-align: center; }
+
+    /* FilterTriggerButton M05 — icon-only + badge en topbar mobile */
+    .s7-mob-filter-trigger { position: relative; }
+    .s7-mob-filter-trigger.is-active {
+      background: color-mix(in oklch, var(--accent) 10%, transparent);
+      color: var(--accent);
+      border-color: color-mix(in oklch, var(--accent) 28%, transparent);
+    }
+    .s7-mob-filter-badge {
+      position: absolute; top: -4px; right: -4px;
+      min-width: 16px; height: 16px; padding: 0 4px;
+      background: var(--accent); color: var(--text-on-accent);
+      font-size: 10px; font-weight: 700; line-height: 16px;
+      border-radius: 999px; display: inline-block; text-align: center;
+    }
+
+    /* Wizard stepper compacto mobile (Paso X de Y + barra de progreso 3 segmentos) */
+    .s7-mob-stepper { padding: 14px 16px 18px; }
+    .s7-mob-stepper-row {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .s7-mob-stepper-eyebrow {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-muted);
+    }
+    .s7-mob-stepper-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .s7-mob-stepper-bar { display: flex; gap: 4px; }
+    .s7-mob-stepper-bar > span { flex: 1; height: 4px; border-radius: 999px; background: var(--border); }
+    .s7-mob-stepper-bar > span.is-done { background: var(--accent); }
+
+    /* Sticky action bar (Detalle/Edit/Crear) — scoped al .app-shell via translateZ(0) */
+    .s7-mob-actionbar {
+      position: sticky; bottom: 0; left: 0; right: 0; z-index: 30;
+      background: color-mix(in oklch, var(--surface-elevated) 96%, transparent);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+      padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+      display: flex; gap: 8px;
+    }
+    .s7-mob-actionbar .btn { min-height: 44px; }
+
+    /* Safe-area refinement for tabbar */
+    .mobile-tabbar { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+
+    /* ─── Mobile viewport simulation ─────────────────────────────────────
+       Screens with id ending in -mobile render as a centered 390px phone
+       container. transform:translateZ(0) keeps position:fixed children
+       (sticky action bars) scoped to the container instead of the viewport. */
+    section[id$="-mobile"].is-active {
+      display: flex !important;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 24px 16px 48px;
+      background: color-mix(in oklch, var(--text-primary) 4%, var(--background));
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    section[id$="-mobile"].is-active > .app-shell {
+      width: 390px;
+      max-width: 100%;
+      min-height: 844px;
+      height: 844px;
+      border: 1px solid var(--border-strong);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -2px color-mix(in oklch, var(--text-primary) 8%, transparent),
+                  0 20px 48px -8px color-mix(in oklch, var(--text-primary) 18%, transparent);
+      flex-shrink: 0;
+      transform: translateZ(0);
+      /* Override base grid layout (240px sidebar + 1fr) — mobile is a single column flex */
+      display: flex !important;
+      flex-direction: column;
+      grid-template-columns: none !important;
+      grid-template-rows: none !important;
+    }
+    /* App-content inside mobile container scrolls internally; action bar/tabbar
+       sit below it as flex siblings at the bottom of the phone frame. */
+    section[id$="-mobile"].is-active .app-content {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    section[id$="-mobile"].is-active .app-content > .app-topbar {
+      /* topbar should not scroll out — pin it inside the scrolling app-content */
+      position: sticky; top: 0; z-index: 20;
+      background: var(--surface);
+    }
+    /* Action bar & tabbar inside mobile: static flex children at the bottom */
+    section[id$="-mobile"].is-active > .app-shell > .s7-mob-actionbar,
+    section[id$="-mobile"].is-active > .app-shell > .mobile-tabbar {
+      position: static;
+      flex-shrink: 0;
+    }
+    /* Force mobile-tabbar visible inside mobile simulation (desktop media query hides it) */
+    section[id$="-mobile"].is-active .mobile-tabbar:not([style*="display:none"]) {
+      display: flex !important;
+    }
+    /* Responsive grids that target the desktop viewport (>=1024px) break
+       inside the 390px phone — force single column regardless of viewport. */
+    section[id$="-mobile"].is-active .form-grid {
+      grid-template-columns: 1fr !important;
+      gap: 14px !important;
+    }
+    section[id$="-mobile"].is-active .form-sidebar {
+      position: static !important;
+      top: auto !important;
+    }
+    section[id$="-mobile"].is-active .detail-grid {
+      grid-template-columns: 1fr !important;
+      gap: 12px !important;
+    }
+    /* min-width:0 cascade: prevents intrinsic min-content (eg table min-width:440px)
+       from pushing flex/grid ancestors wider than the phone container. */
+    section[id$="-mobile"].is-active .section-cards,
+    section[id$="-mobile"].is-active .section-card,
+    section[id$="-mobile"].is-active .section-card-body,
+    section[id$="-mobile"].is-active .section-card-inner,
+    section[id$="-mobile"].is-active .field {
+      min-width: 0;
+    }
+    /* Topbar inside mobile: ensure proper sizing & no overflow */
+    section[id$="-mobile"].is-active .app-topbar {
+      flex-shrink: 0;
+      min-height: 48px;
+      gap: 8px;
+    }
+    section[id$="-mobile"].is-active .app-topbar-left {
+      min-width: 0;
+      flex: 1;
+    }
+    section[id$="-mobile"].is-active .app-topbar-title {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -2851,6 +3032,12 @@
         <a href="#s7-order-create-empty-stores" data-screen="s7-order-create-empty-stores">Crear · Sin tiendas</a>
         <a href="#s7-order-create-discrepancy-modal" data-screen="s7-order-create-discrepancy-modal">Crear · Modal discrepancia</a>
         <a href="#s7-order-edit" data-screen="s7-order-edit">Editar pedido</a>
+        <div class="demo-nav-sep"></div>
+        <span class="demo-nav-label">── Móvil ──</span>
+        <a href="#s7-orders-list-mobile" data-screen="s7-orders-list-mobile">Lista</a>
+        <a href="#s7-order-detail-mobile" data-screen="s7-order-detail-mobile">Detalle</a>
+        <a href="#s7-order-create-mobile" data-screen="s7-order-create-mobile">Crear</a>
+        <a href="#s7-order-edit-mobile" data-screen="s7-order-edit-mobile">Editar</a>
         <div class="demo-nav-sep"></div>
         <span class="demo-nav-label">── Componentes ──</span>
         <a href="#s7-date-range-picker" data-screen="s7-date-range-picker">Componente · DateRangePicker</a>
@@ -3019,6 +3206,8 @@
         <tr><td class="idx-session">S7</td><td>Crear · Paso 1 desde tienda (ADR 0001 D2)</td><td><a class="idx-anchor" href="#s7-order-create-step-1-from-store" data-screen-link="s7-order-create-step-1-from-store">#s7-order-create-step-1-from-store</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Lista · Móvil</td>                           <td><a class="idx-anchor" href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile">#s7-orders-list-mobile</a></td>                           <td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Detalle · Móvil (sticky actions)</td>        <td><a class="idx-anchor" href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile">#s7-order-detail-mobile</a></td>                         <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S7</td><td>Crear · Móvil (wizard paso 1, sin page-heading)</td><td><a class="idx-anchor" href="#s7-order-create-mobile" data-screen-link="s7-order-create-mobile">#s7-order-create-mobile</a></td>               <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S7</td><td>Editar · Móvil (L020 all-open, back-link bajo topbar)</td><td><a class="idx-anchor" href="#s7-order-edit-mobile" data-screen-link="s7-order-edit-mobile">#s7-order-edit-mobile</a></td>           <td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Componente · DateRangePickerInput (open)</td> <td><a class="idx-anchor" href="#s7-date-range-picker" data-screen-link="s7-date-range-picker">#s7-date-range-picker</a></td>                             <td><span class="idx-status nuevo">nuevo</span></td></tr>
       </tbody>
     </table>
@@ -8821,7 +9010,7 @@
       <!-- FX banner — WO-07 -->
       <div class="s7-fx-banner" role="status" aria-live="polite">
         <i data-lucide="refresh-cw"></i>
-        <span>2 pedidos con tipo de cambio desactualizado. <a href="#" style="color:var(--info);font-weight:600;">Actualizar ahora</a></span>
+        <span>2 pedidos con tipo de cambio desactualizado. <a href="#" style="color:var(--accent);font-weight:600;">Actualizar ahora</a></span>
       </div>
 
       <!-- Table-format list (S2 pattern) -->
@@ -11217,107 +11406,157 @@
 <!-- ─── S7-W: LISTA — MÓVIL ───────────────────────────────────── -->
 <section id="s7-orders-list-mobile" class="screen" aria-labelledby="s7-orders-list-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
-    <!-- Sin sidebar en móvil — tabbar inferior -->
-    <div class="app-content" style="padding-bottom:64px;">
-      <div class="app-topbar" style="padding:0 16px;">
-        <div class="app-topbar-left"><p class="app-topbar-title" id="s7-orders-list-mobile-title">Pedidos</p></div>
-        <div class="app-topbar-right"><button class="topbar-iconbtn" aria-label="Filtros"><i data-lucide="sliders-horizontal"></i></button><a href="#s7-order-create-step-1" class="btn primary sm" data-screen-link="s7-order-create-step-1"><i data-lucide="plus"></i> Nuevo</a></div>
+    <div class="app-content" style="padding:0 0 calc(64px + env(safe-area-inset-bottom));">
+
+      <!-- Topbar 48px: título + filter trigger M05 + Nuevo -->
+      <div class="app-topbar" style="padding:0 16px;position:sticky;top:0;z-index:20;">
+        <div class="app-topbar-left">
+          <p class="app-topbar-title" id="s7-orders-list-mobile-title">Pedidos</p>
+        </div>
+        <div class="app-topbar-right">
+          <button class="topbar-iconbtn s7-mob-filter-trigger is-active" type="button" aria-label="Filtros (1 activo)" aria-haspopup="dialog" aria-expanded="false">
+            <i data-lucide="sliders-horizontal"></i>
+            <span class="s7-mob-filter-badge" aria-hidden="true">1</span>
+          </button>
+          <a href="#s7-order-create-mobile" data-screen-link="s7-order-create-mobile" class="btn primary sm" aria-label="Nuevo pedido">
+            <i data-lucide="plus"></i><span>Nuevo</span>
+          </a>
+        </div>
       </div>
 
-      <!-- Search compacto -->
-      <div style="padding:0 16px 12px;">
-        <div class="orders-search"><i data-lucide="search"></i><input class="input" type="search" placeholder="Buscar…" /></div>
+      <!-- Search sticky bajo topbar -->
+      <div class="s7-mob-search-wrap">
+        <label class="orders-search" style="display:block;width:100%;">
+          <i data-lucide="search" aria-hidden="true"></i>
+          <input class="input" type="search" placeholder="Código o producto (ORD-20260428-01, OST…)" aria-label="Buscar pedidos" />
+        </label>
       </div>
 
-      <!-- FX banner compacto -->
-      <div class="s7-fx-banner" style="margin:0 16px 12px;font-size:12px;" role="status">
-        <i data-lucide="refresh-cw"></i>
-        <span>2 pedidos con cambio pendiente. <a href="#" style="color:var(--info);font-weight:600;">Actualizar</a></span>
+      <!-- Filter chips dismissibles -->
+      <div class="orders-filter-chips s7-mob-chips" aria-label="Filtros activos">
+        <span class="filter-chip">
+          Solo activas
+          <button type="button" class="s7-mob-chip-close" aria-label="Quitar filtro Solo activas">
+            <i data-lucide="x" aria-hidden="true"></i>
+          </button>
+        </span>
       </div>
 
-      <!-- Cards verticales (móvil — sin columnas) -->
-      <div style="display:flex;flex-direction:column;gap:10px;padding:0 16px;">
-        <div class="s7-order-card" style="view-transition-name:order-pt-000123;">
+      <!-- FX banner compacto tonal CTA -->
+      <div class="s7-fx-banner is-accent s7-mob-fx" role="status" aria-live="polite">
+        <i data-lucide="refresh-cw" aria-hidden="true"></i>
+        <div class="s7-mob-fx-body">
+          <p class="s7-mob-fx-copy">Tienes <strong>2 pedidos</strong> con el tipo de cambio desactualizado.</p>
+          <button class="btn accent sm" type="button">
+            <i data-lucide="refresh-cw" aria-hidden="true"></i>
+            Actualizar tipos de cambio
+          </button>
+        </div>
+      </div>
+
+      <!-- Cards verticales (4 estados: parcial pagado, atrasado/impago, parcial pagado, pagado 100%) -->
+      <div class="s7-mob-cards" role="list" aria-label="Pedidos">
+
+        <a class="s7-order-card s7-mob-card" role="listitem" href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" style="view-transition-name:order-c1m9q1k7a0001;" aria-label="Pedido ORD-20260428-01 de Solaris Books and Records, 1240 USD, 60% pagado, parcialmente en camino">
           <div class="s7-card-head">
-            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-              <div class="store-avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;">S</div>
-              <div style="min-width:0;">
-                <div class="s7-card-title">Solaris Books &amp; Records</div>
-                <div class="s7-card-date">ORD-20260428-01 · 28 abr 2026</div>
-              </div>
+            <div class="store-avatar s40" aria-hidden="true">S</div>
+            <div class="s7-mob-card-title-wrap">
+              <div class="s7-card-title">Solaris Books &amp; Records</div>
+              <div class="s7-card-date">ORD-20260428-01 · 28 abr 2026</div>
             </div>
-            <span class="num" style="font-size:14px;font-weight:700;flex-shrink:0;">$1.240</span>
           </div>
           <div class="s7-card-chips">
-            <span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span>
+            <span class="chip info"><i data-lucide="truck" aria-hidden="true"></i> Parcialmente en camino</span>
           </div>
           <div class="s7-progress" aria-label="60% pagado"><div class="s7-progress-fill" style="width:60%;"></div></div>
-          <div class="s7-card-meta"><span>4 productos</span><span class="s7-meta-dot">·</span><span>60% pagado</span></div>
-        </div>
+          <div class="s7-card-meta s7-mob-card-meta">
+            <span>7 productos</span>
+            <span class="s7-meta-dot" aria-hidden="true">·</span>
+            <span>60% pagado</span>
+            <span class="s7-mob-card-total num">$1.240,00 USD</span>
+          </div>
+        </a>
 
-        <div class="s7-order-card" style="view-transition-name:order-pt-000118;">
+        <a class="s7-order-card s7-mob-card" role="listitem" href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" style="view-transition-name:order-c1m9q1k7a0002;" aria-label="Pedido ORD-20260312-01 de Anime Corner Europe, 320 EUR, impago, atrasado 8 días">
           <div class="s7-card-head">
-            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-              <div class="store-avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;">A</div>
-              <div style="min-width:0;">
-                <div class="s7-card-title">Anime Corner Europe</div>
-                <div class="s7-card-date">ORD-20260312-01 · 12 mar 2026</div>
-              </div>
+            <div class="store-avatar s40" aria-hidden="true">A</div>
+            <div class="s7-mob-card-title-wrap">
+              <div class="s7-card-title">Anime Corner Europe</div>
+              <div class="s7-card-date">ORD-20260312-01 · 12 mar 2026</div>
             </div>
-            <span class="num" style="font-size:14px;font-weight:700;flex-shrink:0;">€320</span>
           </div>
           <div class="s7-card-chips">
-            <span class="chip warning"><i data-lucide="alert-triangle"></i> Atrasado 12d</span>
+            <span class="chip warning"><i data-lucide="alert-triangle" aria-hidden="true"></i> Atrasado 8d</span>
+            <span class="s7-impago-pill"><i data-lucide="x-circle" aria-hidden="true"></i> Impago</span>
           </div>
-          <div class="s7-card-meta"><span>2 productos</span><span class="s7-meta-dot">·</span><span style="color:var(--warning);">Impago</span></div>
-        </div>
+          <div class="s7-progress" aria-label="0% pagado"><div class="s7-progress-fill" style="width:0%;background:var(--warning);"></div></div>
+          <div class="s7-card-meta s7-mob-card-meta">
+            <span>2 productos</span>
+            <span class="s7-meta-dot" aria-hidden="true">·</span>
+            <span style="color:var(--warning);">0% pagado</span>
+            <span class="s7-mob-card-total num">€320,00</span>
+          </div>
+        </a>
 
-        <div class="s7-order-card" style="view-transition-name:order-pt-000115;">
+        <a class="s7-order-card s7-mob-card" role="listitem" href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" style="view-transition-name:order-c1m9q1k7a0003;" aria-label="Pedido ORD-20260205-01 de HMV Japan, 24500 JPY, 33% pagado">
           <div class="s7-card-head">
-            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-              <div class="store-avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;">H</div>
-              <div style="min-width:0;">
-                <div class="s7-card-title">HMV Japan</div>
-                <div class="s7-card-date">ORD-20260205-01 · 5 feb 2026</div>
-              </div>
+            <div class="store-avatar s40" aria-hidden="true">H</div>
+            <div class="s7-mob-card-title-wrap">
+              <div class="s7-card-title">HMV Japan</div>
+              <div class="s7-card-date">ORD-20260205-01 · 5 feb 2026</div>
             </div>
-            <span class="num" style="font-size:14px;font-weight:700;flex-shrink:0;">¥24.500</span>
           </div>
           <div class="s7-card-chips">
-            <span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span>
-            <span class="s7-impago-pill"><i data-lucide="circle-dot"></i> Pago parcial</span>
+            <span class="chip info"><i data-lucide="truck" aria-hidden="true"></i> Parcialmente en camino</span>
           </div>
           <div class="s7-progress" aria-label="33% pagado"><div class="s7-progress-fill" style="width:33%;background:var(--warning);"></div></div>
-          <div class="s7-card-meta"><span>6 productos</span><span class="s7-meta-dot">·</span><span>33% pagado</span></div>
-        </div>
+          <div class="s7-card-meta s7-mob-card-meta">
+            <span>6 productos</span>
+            <span class="s7-meta-dot" aria-hidden="true">·</span>
+            <span>33% pagado</span>
+            <span class="s7-mob-card-total num">¥24.500</span>
+          </div>
+        </a>
 
-        <div class="s7-order-card" style="view-transition-name:order-pt-000109;">
+        <a class="s7-order-card s7-mob-card" role="listitem" href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" style="view-transition-name:order-c1m9q1k7a0004;" aria-label="Pedido ORD-20260118-01 de Tower Records Shibuya, 540 USD, pagado 100%">
           <div class="s7-card-head">
-            <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-              <div class="store-avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;">T</div>
-              <div style="min-width:0;">
-                <div class="s7-card-title">Tower Records Shibuya</div>
-                <div class="s7-card-date">ORD-20260118-01 · 18 ene 2026</div>
-              </div>
+            <div class="store-avatar s40" aria-hidden="true">T</div>
+            <div class="s7-mob-card-title-wrap">
+              <div class="s7-card-title">Tower Records Shibuya</div>
+              <div class="s7-card-date">ORD-20260118-01 · 18 ene 2026</div>
             </div>
-            <span class="num" style="font-size:14px;font-weight:700;flex-shrink:0;">$540</span>
           </div>
           <div class="s7-card-chips">
-            <span class="chip success"><i data-lucide="check-circle"></i> Pagado</span>
+            <span class="chip success"><i data-lucide="check-circle" aria-hidden="true"></i> Pagado</span>
           </div>
-          <div class="s7-progress" aria-label="100% pagado"><div class="s7-progress-fill" style="width:100%;"></div></div>
-          <div class="s7-card-meta"><span>3 productos</span><span class="s7-meta-dot">·</span><span>100% pagado</span></div>
-        </div>
+          <div class="s7-progress" aria-label="100% pagado"><div class="s7-progress-fill" style="width:100%;background:var(--success);"></div></div>
+          <div class="s7-card-meta s7-mob-card-meta">
+            <span>3 productos</span>
+            <span class="s7-meta-dot" aria-hidden="true">·</span>
+            <span>100% pagado</span>
+            <span class="s7-mob-card-total num">$540,00 USD</span>
+          </div>
+        </a>
+
       </div>
+
+      <!-- Paginación: conteo + Cargar más -->
+      <div class="s7-mob-pagination">
+        <p class="s7-mob-pagination-count">Mostrando 1–4 de 6 pedidos</p>
+        <button class="btn ghost" type="button" aria-label="Cargar más pedidos">
+          <i data-lucide="chevron-down" aria-hidden="true"></i> Cargar más
+        </button>
+      </div>
+
     </div>
 
-    <!-- Tabbar móvil -->
+    <!-- Mobile tabbar (con safe-area-inset-bottom vía CSS .mobile-tabbar) -->
     <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders" class="is-active"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
+      <a href="#dashboard"><i data-lucide="layout-dashboard" aria-hidden="true"></i>Hoy</a>
+      <a href="#s7-orders-list-mobile" class="is-active" aria-current="page"><i data-lucide="package" aria-hidden="true"></i>Pedidos</a>
+      <a href="#deliveries"><i data-lucide="truck" aria-hidden="true"></i>Entregas</a>
+      <a href="#stores"><i data-lucide="store" aria-hidden="true"></i>Tiendas</a>
+      <a href="#settings"><i data-lucide="settings" aria-hidden="true"></i>Ajustes</a>
     </nav>
   </div>
 </section>
@@ -11325,89 +11564,504 @@
 <!-- ─── S7-X: DETALLE — MÓVIL ─────────────────────────────────── -->
 <section id="s7-order-detail-mobile" class="screen" aria-labelledby="s7-order-detail-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
-    <div class="app-content" style="padding-bottom:80px;">
-      <div class="app-topbar" style="padding:0 16px;">
-        <div class="app-topbar-left"><nav class="app-breadcrumb"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link">Pedidos</a></nav><i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i><p class="app-topbar-title" id="s7-order-detail-mobile-title">ORD-20260428-01</p></div>
-        <div class="app-topbar-right"><button class="topbar-iconbtn" aria-label="Más acciones"><i data-lucide="ellipsis"></i></button></div>
+    <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
+
+      <!-- Topbar: back-link icon + breadcrumb + ORD code title + ⋯ overflow -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;position:sticky;top:0;z-index:20;">
+        <div class="app-topbar-left" style="min-width:0;gap:4px;">
+          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Volver a Pedidos" style="width:36px;height:36px;flex-shrink:0;">
+            <i data-lucide="arrow-left"></i>
+          </a>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;">
+            <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:12px;color:var(--text-muted);">Pedidos</a>
+          </nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;"></i>
+          <p class="app-topbar-title" id="s7-order-detail-mobile-title" style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',ui-monospace,monospace;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">ORD-20260428-01</p>
+        </div>
+        <div class="app-topbar-right" style="flex-shrink:0;">
+          <button class="topbar-iconbtn" type="button" aria-label="Más acciones del pedido" aria-haspopup="menu" style="width:40px;height:40px;">
+            <i data-lucide="ellipsis"></i>
+          </button>
+        </div>
       </div>
 
-      <!-- Hero compacto (single column en móvil) -->
-      <div style="padding:0 16px;">
-        <div class="detail-hero">
-          <div class="detail-hero-head">
-            <div class="store-avatar s56">S</div>
-            <div>
-              <div class="name">Solaris Books &amp; Records</div>
-              <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap;">
-                <span class="id">ORD-20260428-01</span>
-                <span class="chip info"><i data-lucide="truck"></i> En camino</span>
-              </div>
+      <!-- Hero compacto con "Saldo pendiente" como label primario -->
+      <div style="padding:12px 16px 0;">
+        <div class="detail-hero" style="padding:18px;border-radius:16px;view-transition-name:order-c1m9q1k7a0001;">
+          <div class="detail-hero-head" style="margin-bottom:14px;gap:11px;">
+            <div class="store-avatar s56" style="width:48px;height:48px;font-size:18px;flex-shrink:0;">S</div>
+            <div style="min-width:0;flex:1;">
+              <div class="name" style="font-size:16px;line-height:1.25;">Solaris Books &amp; Records</div>
+              <button type="button" aria-label="Copiar código de pedido" style="background:none;border:none;padding:2px 0;margin-top:2px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+                <span class="id" style="font-size:11.5px;">ORD-20260428-01</span>
+                <i data-lucide="copy" style="width:11px;height:11px;color:var(--text-muted);" aria-hidden="true"></i>
+              </button>
             </div>
           </div>
-          <span class="eyebrow" style="margin-top:12px;display:block;">Tu pedido · USD</span>
-          <div style="margin-top:8px;">
-            <div class="text-secondary" style="font-size:13px;">Total</div>
-            <div class="detail-hero-amount num">$1.240,00</div>
-            <div class="detail-hero-amount-sub">60% pagado · <span class="num">$744,00</span> USD</div>
-            <div class="progress" aria-label="60% pagado"><span style="width:60%;background:var(--accent);"></span></div>
+
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+            <span class="chip info"><i data-lucide="truck" aria-hidden="true"></i> Parcialmente en camino</span>
+          </div>
+
+          <span class="eyebrow" style="display:block;">Tu pedido · USD</span>
+          <div style="margin-top:6px;">
+            <div class="text-secondary" style="font-size:12.5px;">Saldo pendiente</div>
+            <div class="detail-hero-amount num" style="font-size:34px;margin-top:2px;">$496,00</div>
+            <div class="detail-hero-amount-sub" style="margin-bottom:12px;">de <span class="num">$1.240,00</span> USD</div>
+            <div class="progress" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" aria-label="60% pagado"><span style="width:60%"></span></div>
+            <div class="text-muted" style="font-size:12px;margin-top:6px;line-height:1.4;">60% pagado · entrega estimada <strong style="color:var(--text-secondary);font-weight:500;">15 may 2026</strong></div>
           </div>
         </div>
 
-        <!-- Subcards verticales (single column) -->
+        <!-- Subcards verticales: Productos open, Pagos collapsed con saldo visible, Nota collapsed -->
         <div style="margin-top:14px;">
+
           <div class="subcard is-open" data-collapsible>
-            <button class="subcard-toggle"><span class="eyebrow">Productos</span><span class="text-muted" style="font-size:12px;">7</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
-            <div class="subcard-body">
+            <button class="subcard-toggle" aria-expanded="true" aria-controls="md-prod-body">
+              <span class="eyebrow">Productos</span>
+              <span class="text-muted" style="font-size:12px;">7</span>
+              <span class="chev"><i data-lucide="chevron-down"></i></span>
+            </button>
+            <div class="subcard-body" id="md-prod-body">
               <div class="subcard-body-inner">
                 <div class="item-row"><div class="item-icon" title="Álbumes / Vinilo"><i data-lucide="disc"></i></div><div class="item-name">NGE OST Vol. 2<small><span class="s7-istate transit"><i data-lucide="truck"></i> En camino</span></small></div><span class="item-qty">×1</span><span class="item-price num">$280</span></div>
                 <div class="item-row"><div class="item-icon" title="Manga"><i data-lucide="book-open"></i></div><div class="item-name">Berserk Vol. 41<small><span class="s7-istate none"><i data-lucide="clock"></i> Pendiente</span></small></div><span class="item-qty">×1</span><span class="item-price num">$18</span></div>
-                <div class="item-row"><div class="item-icon" title="Figuras"><i data-lucide="shapes"></i></div><div class="item-name">Nendoroid Asuka Langley<small><span class="s7-istate arrived"><i data-lucide="store"></i> Listo en tienda</span></small></div><span class="item-qty">×1</span><span class="item-price num">$89</span></div>
-                <div class="item-row" style="color:var(--text-muted);font-size:12px;"><div style="width:32px;flex:0 0 32px;"></div><div>+ 4 más…</div></div>
+                <div class="item-row"><div class="item-icon" title="Figuras"><i data-lucide="shapes"></i></div><div class="item-name">Nendoroid Asuka<small><span class="s7-istate arrived"><i data-lucide="store"></i> Listo en tienda</span></small></div><span class="item-qty">×1</span><span class="item-price num">$89</span></div>
+                <div class="item-row"><div class="item-icon" title="Funkos"><i data-lucide="package"></i></div><div class="item-name">Funko Pop Rei<small><span class="s7-istate delivered"><i data-lucide="package-check"></i> Entregado</span></small></div><span class="item-qty">×1</span><span class="item-price num">$14</span></div>
+                <div class="item-row"><div class="item-icon" title="Arte y libretas"><i data-lucide="palette"></i></div><div class="item-name">Evangelion Art Book<small><span class="s7-istate none"><i data-lucide="clock"></i> Pendiente</span></small></div><span class="item-qty">×1</span><span class="item-price num">$65</span></div>
+                <div class="item-row"><div class="item-icon" title="Trading Cards"><i data-lucide="gallery-thumbnails"></i></div><div class="item-name">Eva TCG Booster<small><span class="s7-istate none"><i data-lucide="clock"></i> Pendiente</span></small></div><span class="item-qty">×3</span><span class="item-price num">$24</span></div>
+                <div class="item-row"><div class="item-icon" title="Producto"><i data-lucide="box"></i></div><div class="item-name">Producto extra<small><span class="s7-istate none"><i data-lucide="clock"></i> Pendiente</span></small></div><span class="item-qty">×1</span><span class="item-price num">$12</span></div>
+                <div style="margin-top:12px;">
+                  <button class="btn ghost sm" type="button" style="width:100%;justify-content:center;"><i data-lucide="truck"></i> Crear entrega con estos productos</button>
+                </div>
               </div>
             </div>
           </div>
 
           <div class="subcard" data-collapsible>
-            <button class="subcard-toggle"><span class="eyebrow">Pagos</span><span class="text-muted" style="font-size:12px;">1 · $744</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
-            <div class="subcard-body">
+            <button class="subcard-toggle" aria-expanded="false" aria-controls="md-pay-body">
+              <span class="eyebrow">Pagos</span>
+              <span class="text-muted" style="font-size:12px;">1 pago · <span class="num" style="color:var(--warning);font-weight:600;">$496 restante</span></span>
+              <span class="chev"><i data-lucide="chevron-down"></i></span>
+            </button>
+            <div class="subcard-body" id="md-pay-body">
               <div class="subcard-body-inner">
-                <div class="pay-row"><span class="pay-date">2 may 2026</span><span class="pay-amount num">$744,00</span><button class="pay-delete" aria-label="Eliminar pago"><i data-lucide="x"></i></button></div>
-                <div style="border-top:1px solid var(--border);padding-top:8px;padding-right:40px;display:flex;flex-direction:column;gap:4px;margin-bottom:12px;">
+                <div class="pay-row">
+                  <span class="pay-date">2 may 2026</span>
+                  <span class="pay-amount num">$744,00</span>
+                  <button class="pay-delete" aria-label="Eliminar pago de $744 del 2 may 2026"><i data-lucide="x"></i></button>
+                </div>
+                <div style="border-top:1px solid var(--border);padding-top:10px;padding-right:36px;display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">
                   <div style="display:flex;justify-content:space-between;align-items:baseline;">
                     <span class="text-muted" style="font-size:12px;">Total pagado</span>
                     <span class="num" style="font-size:13px;font-weight:600;">$744,00</span>
                   </div>
                   <div style="display:flex;justify-content:space-between;align-items:baseline;">
                     <span class="text-secondary" style="font-size:13px;">Saldo pendiente</span>
-                    <strong class="num" style="color:var(--warning);font-size:15px;">$496,00</strong>
+                    <strong class="num" style="color:var(--warning);font-size:16px;">$496,00</strong>
                   </div>
                 </div>
-                <button class="btn accent full"><i data-lucide="circle-dollar-sign"></i> Anotar pago</button>
+                <button class="btn accent" type="button" style="width:100%;justify-content:center;">
+                  <i data-lucide="circle-dollar-sign"></i> Anotar pago
+                </button>
               </div>
             </div>
           </div>
 
           <div class="subcard" data-collapsible>
-            <button class="subcard-toggle"><span class="eyebrow">Nota privada</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
-            <div class="subcard-body">
+            <button class="subcard-toggle" aria-expanded="false" aria-controls="md-note-body">
+              <span class="eyebrow">Tu nota privada</span>
+              <span class="text-muted" style="font-size:12px;"><i data-lucide="check" style="width:11px;height:11px;color:var(--success);vertical-align:-1px;"></i> Guardada</span>
+              <span class="chev"><i data-lucide="chevron-down"></i></span>
+            </button>
+            <div class="subcard-body" id="md-note-body">
               <div class="subcard-body-inner">
-                <textarea class="input" rows="3" style="resize:none;width:100%;font-size:13px;">Confirmar tracking con la tienda antes del 10 de mayo.</textarea>
-                <div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;color:var(--text-muted);"><i data-lucide="check-circle" style="width:13px;height:13px;color:var(--success);"></i> Guardada</div>
+                <p class="text-muted" style="font-size:12px;margin:0 0 8px;">Acuerdos con la tienda, fechas importantes o recordatorios.</p>
+                <textarea class="input" rows="3" maxlength="2000" aria-label="Tu nota privada" placeholder="Escribe una nota o recordatorio para este pedido…" style="resize:none;width:100%;font-size:13px;">Confirmar tracking antes del 10 de mayo.</textarea>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:12px;color:var(--text-muted);" aria-live="polite">
+                  <span><i data-lucide="check-circle" style="width:13px;height:13px;color:var(--success);vertical-align:-2px;"></i> Guardada hace 4s</span>
+                  <span class="num">42/2000</span>
+                </div>
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </div>
 
-    <!-- Barra de acciones sticky inferior (móvil) -->
-    <div style="position:fixed;bottom:0;left:0;right:0;z-index:30;background:var(--surface-elevated);border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;" role="toolbar" aria-label="Acciones del pedido">
-      <button class="btn primary" style="flex:1;"><i data-lucide="circle-dollar-sign"></i> Pago</button>
-      <button class="btn primary" style="flex:1;"><i data-lucide="truck"></i> Entrega</button>
-      <a href="#s7-order-edit" data-screen-link="s7-order-edit" class="btn ghost"><i data-lucide="pencil"></i></a>
+    <!-- Sticky action bar (Pago + Entrega + ✎ Editar) -->
+    <div class="s7-mob-actionbar" role="toolbar" aria-label="Acciones del pedido">
+      <button class="btn primary" type="button" style="flex:1;font-size:13px;" aria-keyshortcuts="P">
+        <i data-lucide="circle-dollar-sign"></i> Pago
+      </button>
+      <button class="btn primary" type="button" style="flex:1;font-size:13px;">
+        <i data-lucide="truck"></i> Entrega
+      </button>
+      <a href="#s7-order-edit-mobile" data-screen-link="s7-order-edit-mobile" class="btn ghost" aria-label="Editar pedido" aria-keyshortcuts="E" style="min-width:44px;padding:0 12px;display:inline-grid;place-items:center;">
+        <i data-lucide="pencil"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S7-N: CREAR — MÓVIL ─────────────────────────────────── -->
+<section id="s7-order-create-mobile" class="screen" aria-labelledby="s7-order-create-mobile-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
+
+      <!-- Topbar: breadcrumb + título + X cancelar -->
+      <div class="app-topbar" style="padding:0 16px;position:sticky;top:0;z-index:20;">
+        <div class="app-topbar-left">
+          <nav class="app-breadcrumb" aria-label="Navegación">
+            <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link">Pedidos</a>
+          </nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
+          <p class="app-topbar-title" id="s7-order-create-mobile-title">Nuevo pedido</p>
+        </div>
+        <div class="app-topbar-right">
+          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Cancelar y volver a Pedidos">
+            <i data-lucide="x"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Stepper compacto "Paso X de Y" + barra de progreso 3 segmentos -->
+      <div class="s7-mob-stepper" role="group" aria-label="Progreso del wizard">
+        <div class="s7-mob-stepper-row">
+          <span class="s7-mob-stepper-eyebrow">Paso 1 de 3</span>
+          <span class="s7-mob-stepper-title">Datos</span>
+        </div>
+        <div class="s7-mob-stepper-bar" aria-hidden="true">
+          <span class="is-done"></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+
+      <!-- form-grid: 1fr en móvil; sin Resumen sidebar en paso 1 (5 filas vacías = ruido) -->
+      <div class="form-grid" style="padding:0 16px;">
+        <div class="section-cards" data-wizard data-wizard-start="1">
+
+          <!-- Paso 1 ACTIVO -->
+          <div class="section-card section-card-wizard is-active" data-step="1">
+            <button class="section-card-head" type="button" data-wizard-step="1" style="padding:16px 18px;" aria-expanded="true" aria-controls="s7-mobile-step-1-body">
+              <span class="step-num"><span class="num">1</span></span>
+              <div class="step-titles">
+                <span class="eyebrow">Paso 1 · Datos</span>
+                <h3 class="card-title" style="font-size:15px;">Tienda, moneda y fechas</h3>
+              </div>
+            </button>
+            <div class="section-card-body" id="s7-mobile-step-1-body">
+              <div class="section-card-inner" style="padding:4px 18px 22px;">
+
+                <div class="field">
+                  <label class="field-label" for="s7m-store">Tienda <span style="color:var(--destructive);">*</span></label>
+                  <button id="s7m-store" type="button" class="input" style="display:flex;align-items:center;justify-content:space-between;text-align:left;cursor:pointer;height:44px;width:100%;" aria-haspopup="listbox" aria-expanded="false">
+                    <span style="color:var(--text-muted);font-size:14px;">Elegir tienda…</span>
+                    <i data-lucide="chevrons-up-down" style="width:16px;height:16px;color:var(--text-muted);flex-shrink:0;"></i>
+                  </button>
+                </div>
+
+                <div class="field">
+                  <label class="field-label" for="s7m-currency">Moneda <span style="color:var(--destructive);">*</span></label>
+                  <button id="s7m-currency" type="button" class="input" style="display:flex;align-items:center;justify-content:space-between;text-align:left;cursor:pointer;height:44px;width:100%;" aria-haspopup="listbox" aria-expanded="false">
+                    <span style="color:var(--text-muted);font-size:14px;">Elegir moneda…</span>
+                    <i data-lucide="chevrons-up-down" style="width:16px;height:16px;color:var(--text-muted);flex-shrink:0;"></i>
+                  </button>
+                  <p class="card-helper" style="margin-top:6px;">No se puede cambiar una vez creado el pedido.</p>
+                </div>
+
+                <div class="field">
+                  <label class="field-label" for="s7m-order-date">Fecha del pedido <span style="color:var(--destructive);">*</span></label>
+                  <input id="s7m-order-date" class="input" type="date" value="2026-05-03" style="height:44px;width:100%;" aria-label="Fecha del pedido" />
+                </div>
+
+                <div class="field" style="margin-bottom:0;">
+                  <label class="field-label" for="s7m-delivery-range">Fecha aprox. de entrega <span class="text-muted" style="font-size:11px;font-weight:400;">(opcional)</span></label>
+                  <button id="s7m-delivery-range" type="button" class="input" style="display:flex;align-items:center;justify-content:space-between;text-align:left;cursor:pointer;height:44px;width:100%;" aria-haspopup="dialog" aria-expanded="false">
+                    <span style="font-size:14px;color:var(--text-muted);">Ej: 20 jun – 15 jul 2026</span>
+                    <i data-lucide="calendar-days" style="width:16px;height:16px;color:var(--text-muted);flex-shrink:0;"></i>
+                  </button>
+                  <p class="card-helper" style="margin-top:6px;">Se usará para calcular si el pedido está atrasado.</p>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Paso 2 LOCKED/gated (sin opacity) -->
+          <div class="section-card section-card-wizard" data-step="2" aria-disabled="true">
+            <div class="section-card-head" style="padding:14px 18px;cursor:not-allowed;">
+              <span class="step-num" style="background:color-mix(in oklch,var(--text-primary) 4%,transparent);border-color:var(--border);"><span class="num" style="color:var(--text-muted);">2</span></span>
+              <div class="step-titles">
+                <span class="eyebrow">Paso 2 · Productos y costos</span>
+                <h3 class="card-title" style="font-size:14px;color:var(--text-muted);font-weight:500;">Disponible al continuar</h3>
+              </div>
+              <i data-lucide="lock" style="width:14px;height:14px;color:var(--text-muted);flex-shrink:0;" aria-hidden="true"></i>
+            </div>
+          </div>
+
+          <!-- Paso 3 LOCKED/gated -->
+          <div class="section-card section-card-wizard" data-step="3" aria-disabled="true">
+            <div class="section-card-head" style="padding:14px 18px;cursor:not-allowed;">
+              <span class="step-num" style="background:color-mix(in oklch,var(--text-primary) 4%,transparent);border-color:var(--border);"><span class="num" style="color:var(--text-muted);">3</span></span>
+              <div class="step-titles">
+                <span class="eyebrow">Paso 3 · Confirmar</span>
+                <h3 class="card-title" style="font-size:14px;color:var(--text-muted);font-weight:500;">Disponible al continuar</h3>
+              </div>
+              <i data-lucide="lock" style="width:14px;height:14px;color:var(--text-muted);flex-shrink:0;" aria-hidden="true"></i>
+            </div>
+          </div>
+
+        </div>
+      </div>
     </div>
 
-    <nav class="mobile-tabbar" aria-label="Navegación móvil" style="display:none;"></nav>
+    <!-- Sticky footer: CTA Continuar 100% width + safe-area -->
+    <div class="s7-mob-actionbar" role="group" aria-label="Acciones del paso">
+      <a href="#s7-order-create-step-2" data-screen-link="s7-order-create-step-2" class="btn primary" style="width:100%;justify-content:center;">
+        Continuar <i data-lucide="arrow-right"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S7-O: EDITAR — MÓVIL ─────────────────────────────────── -->
+<section id="s7-order-edit-mobile" class="screen" aria-labelledby="s7-order-edit-mobile-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
+
+      <!-- Topbar: breadcrumb + título + theme toggle -->
+      <div class="app-topbar" style="padding:0 16px;position:sticky;top:0;z-index:20;">
+        <div class="app-topbar-left">
+          <nav class="app-breadcrumb" aria-label="Navegación">
+            <a href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" class="app-breadcrumb-link">Pedidos</a>
+          </nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
+          <p class="app-topbar-title" id="s7-order-edit-mobile-title">Editar pedido</p>
+        </div>
+        <div class="app-topbar-right">
+          <button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button>
+        </div>
+      </div>
+
+      <!-- back-link bajo topbar (spec §1 mobile) -->
+      <a href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" class="back-link" style="margin:4px 16px 12px;display:inline-flex;">
+        <i data-lucide="arrow-left"></i> ORD-20260428-01
+      </a>
+
+      <!-- form-grid: 1fr en móvil; L020 all-open SIN stepper -->
+      <div class="form-grid" style="padding:0 16px;">
+        <div class="section-cards" data-wizard data-all-open>
+
+          <!-- Sección 1 · Datos del pedido (Tienda + Moneda lockeados) -->
+          <div class="section-card section-card-wizard" data-step="1">
+            <div class="section-card-head" style="padding:16px 18px;">
+              <span class="step-num" style="background:color-mix(in oklch,var(--text-primary) 6%,transparent);border-color:var(--border-strong);flex-shrink:0;">
+                <i data-lucide="info" style="width:13px;height:13px;color:var(--text-muted);"></i>
+              </span>
+              <div class="step-titles">
+                <span class="eyebrow">Datos del pedido</span>
+                <h3 class="card-title">Solaris Books &amp; Records · JPY</h3>
+              </div>
+            </div>
+            <div class="section-card-body" style="display:block;max-height:none;">
+              <div class="section-card-inner" style="padding:4px 18px 20px 18px;">
+
+                <div class="field">
+                  <label class="field-label">Tienda</label>
+                  <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:color-mix(in oklch,var(--text-primary) 4%,transparent);border:1px solid var(--border);border-radius:10px;opacity:0.75;" aria-disabled="true">
+                    <div class="store-avatar" style="width:28px;height:28px;font-size:11px;flex-shrink:0;">S</div>
+                    <span style="flex:1;min-width:0;font-size:13px;font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Solaris Books &amp; Records</span>
+                    <i data-lucide="lock" style="width:13px;height:13px;color:var(--text-muted);flex-shrink:0;"></i>
+                  </div>
+                  <p class="card-helper" style="margin-top:5px;">La tienda no se puede cambiar una vez creado el pedido.</p>
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Moneda</label>
+                  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:color-mix(in oklch,var(--text-primary) 4%,transparent);border:1px solid var(--border);border-radius:8px;font-size:14px;opacity:0.75;" aria-disabled="true">
+                    <span style="color:var(--text-primary);">JPY — Yen japonés</span>
+                    <i data-lucide="lock" style="width:13px;height:13px;color:var(--text-muted);flex-shrink:0;"></i>
+                  </div>
+                  <p class="card-helper" style="margin-top:5px;">La moneda no se puede cambiar una vez creado el pedido.</p>
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Fecha de orden <span style="color:var(--destructive);">*</span></label>
+                  <input class="input" type="date" value="2026-05-03" aria-label="Fecha de orden" />
+                </div>
+
+                <div class="field" style="margin-bottom:0;">
+                  <label class="field-label">Fecha aprox. de entrega <span class="text-muted" style="font-size:11px;font-weight:400;">(opcional)</span></label>
+                  <button type="button" class="input" style="display:flex;align-items:center;justify-content:space-between;text-align:left;cursor:pointer;width:100%;" aria-haspopup="dialog" aria-expanded="false">
+                    <span style="font-size:13px;color:var(--text-muted);">Ej: 20 jun – 15 jul 2026</span>
+                    <i data-lucide="calendar-days" style="width:15px;height:15px;color:var(--text-muted);flex-shrink:0;"></i>
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Sección 2 · Productos y costos (tabla scroll horizontal) -->
+          <div class="section-card section-card-wizard" data-step="2">
+            <div class="section-card-head" style="padding:16px 18px;">
+              <span class="step-num" style="background:color-mix(in oklch,var(--text-primary) 6%,transparent);border-color:var(--border-strong);flex-shrink:0;">
+                <i data-lucide="shopping-cart" style="width:13px;height:13px;color:var(--text-muted);"></i>
+              </span>
+              <div class="step-titles">
+                <span class="eyebrow">Productos y costos</span>
+                <h3 class="card-title">5 ítems · ¥29.300</h3>
+              </div>
+            </div>
+            <div class="section-card-body" style="display:block;max-height:none;">
+              <div class="section-card-inner" style="padding:4px 18px 20px 18px;">
+
+                <!-- Tabla con scroll horizontal -->
+                <div style="overflow-x:auto;margin:0 -6px 10px;-webkit-overflow-scrolling:touch;">
+                  <table style="width:100%;min-width:440px;border-collapse:separate;border-spacing:0;" role="grid" aria-label="Productos del pedido">
+                    <thead>
+                      <tr>
+                        <th scope="col" style="border-bottom:1px solid var(--border);width:20px;"></th>
+                        <th scope="col" style="text-align:left;font-size:11px;font-weight:600;color:var(--text-muted);padding:3px 6px 7px;border-bottom:1px solid var(--border);">Nombre</th>
+                        <th scope="col" style="text-align:right;font-size:11px;font-weight:600;color:var(--text-muted);padding:3px 6px 7px;border-bottom:1px solid var(--border);width:50px;">Cant.</th>
+                        <th scope="col" style="text-align:right;font-size:11px;font-weight:600;color:var(--text-muted);padding:3px 6px 7px;border-bottom:1px solid var(--border);width:90px;">Precio (¥)</th>
+                        <th scope="col" style="border-bottom:1px solid var(--border);width:24px;"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style="padding:4px 2px;text-align:center;vertical-align:middle;"><span class="item-handle" style="opacity:0.35;display:inline-flex;"><i data-lucide="grip-vertical"></i></span></td>
+                        <td style="padding:4px;">
+                          <input type="text" style="width:100%;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px 2px;border-radius:5px;" value="NGE OST Vol. 2" aria-label="Nombre del producto" />
+                          <button type="button" style="display:inline-flex;align-items:center;gap:3px;border:none;background:none;font-size:11px;color:var(--text-muted);cursor:pointer;padding:2px 4px 4px;border-radius:5px;" aria-label="Tipo: Música">
+                            <i data-lucide="disc" style="width:11px;height:11px;"></i> Música <i data-lucide="chevron-down" style="width:10px;height:10px;opacity:0.5;"></i>
+                          </button>
+                        </td>
+                        <td style="padding:4px 2px;text-align:right;vertical-align:top;"><input type="number" style="width:44px;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px;border-radius:5px;text-align:right;" value="1" min="1" aria-label="Cantidad" /></td>
+                        <td style="padding:4px 2px;text-align:right;vertical-align:top;"><input type="number" style="width:80px;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px;border-radius:5px;text-align:right;" value="4500" aria-label="Precio unitario" /></td>
+                        <td style="padding:4px 2px;text-align:center;vertical-align:top;"><button type="button" style="border:none;background:none;cursor:pointer;color:var(--text-muted);display:inline-flex;align-items:center;padding:8px 4px;border-radius:4px;" aria-label="Eliminar fila 1"><i data-lucide="x" style="width:13px;height:13px;"></i></button></td>
+                      </tr>
+                      <tr>
+                        <td style="padding:4px 2px;text-align:center;vertical-align:middle;"><span class="item-handle" style="opacity:0.35;display:inline-flex;"><i data-lucide="grip-vertical"></i></span></td>
+                        <td style="padding:4px;">
+                          <input type="text" style="width:100%;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px 2px;border-radius:5px;" value="Berserk Vol. 41" aria-label="Nombre del producto" />
+                          <button type="button" style="display:inline-flex;align-items:center;gap:3px;border:none;background:none;font-size:11px;color:var(--text-muted);cursor:pointer;padding:2px 4px 4px;border-radius:5px;" aria-label="Tipo: Manga">
+                            <i data-lucide="book-open" style="width:11px;height:11px;"></i> Manga <i data-lucide="chevron-down" style="width:10px;height:10px;opacity:0.5;"></i>
+                          </button>
+                        </td>
+                        <td style="padding:4px 2px;text-align:right;vertical-align:top;"><input type="number" style="width:44px;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px;border-radius:5px;text-align:right;" value="2" min="1" aria-label="Cantidad" /></td>
+                        <td style="padding:4px 2px;text-align:right;vertical-align:top;"><input type="number" style="width:80px;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px;border-radius:5px;text-align:right;" value="1800" aria-label="Precio unitario" /></td>
+                        <td style="padding:4px 2px;text-align:center;vertical-align:top;"><button type="button" style="border:none;background:none;cursor:pointer;color:var(--text-muted);display:inline-flex;align-items:center;padding:8px 4px;border-radius:4px;" aria-label="Eliminar fila 2"><i data-lucide="x" style="width:13px;height:13px;"></i></button></td>
+                      </tr>
+                      <tr>
+                        <td style="padding:4px 2px;text-align:center;vertical-align:middle;"><span class="item-handle" style="opacity:0.35;display:inline-flex;"><i data-lucide="grip-vertical"></i></span></td>
+                        <td style="padding:4px;">
+                          <input type="text" style="width:100%;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px 2px;border-radius:5px;" value="NGE Rebuild Box BD" aria-label="Nombre del producto" />
+                          <button type="button" style="display:inline-flex;align-items:center;gap:3px;border:none;background:none;font-size:11px;color:var(--text-muted);cursor:pointer;padding:2px 4px 4px;border-radius:5px;" aria-label="Tipo: Vídeo doméstico">
+                            <i data-lucide="film" style="width:11px;height:11px;"></i> Vídeo <i data-lucide="chevron-down" style="width:10px;height:10px;opacity:0.5;"></i>
+                          </button>
+                        </td>
+                        <td style="padding:4px 2px;text-align:right;vertical-align:top;"><input type="number" style="width:44px;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px;border-radius:5px;text-align:right;" value="1" min="1" aria-label="Cantidad" /></td>
+                        <td style="padding:4px 2px;text-align:right;vertical-align:top;"><input type="number" style="width:80px;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px;border-radius:5px;text-align:right;" value="8200" aria-label="Precio unitario" /></td>
+                        <td style="padding:4px 2px;text-align:center;vertical-align:top;"><button type="button" style="border:none;background:none;cursor:pointer;color:var(--text-muted);display:inline-flex;align-items:center;padding:8px 4px;border-radius:4px;" aria-label="Eliminar fila 3"><i data-lucide="x" style="width:13px;height:13px;"></i></button></td>
+                      </tr>
+                      <tr>
+                        <td style="padding:4px 2px;text-align:center;vertical-align:middle;"><span class="item-handle" style="opacity:0.35;display:inline-flex;"><i data-lucide="grip-vertical"></i></span></td>
+                        <td style="padding:4px;">
+                          <input type="text" style="width:100%;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px 2px;border-radius:5px;" value="Eva Unit-01 figma" aria-label="Nombre del producto" />
+                          <button type="button" style="display:inline-flex;align-items:center;gap:3px;border:none;background:none;font-size:11px;color:var(--text-muted);cursor:pointer;padding:2px 4px 4px;border-radius:5px;" aria-label="Tipo: Figuras">
+                            <i data-lucide="shapes" style="width:11px;height:11px;"></i> Figuras <i data-lucide="chevron-down" style="width:10px;height:10px;opacity:0.5;"></i>
+                          </button>
+                        </td>
+                        <td style="padding:4px 2px;text-align:right;vertical-align:top;"><input type="number" style="width:44px;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px;border-radius:5px;text-align:right;" value="1" min="1" aria-label="Cantidad" /></td>
+                        <td style="padding:4px 2px;text-align:right;vertical-align:top;"><input type="number" style="width:80px;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px;border-radius:5px;text-align:right;" value="12000" aria-label="Precio unitario" /></td>
+                        <td style="padding:4px 2px;text-align:center;vertical-align:top;"><button type="button" style="border:none;background:none;cursor:pointer;color:var(--text-muted);display:inline-flex;align-items:center;padding:8px 4px;border-radius:4px;" aria-label="Eliminar fila 4"><i data-lucide="x" style="width:13px;height:13px;"></i></button></td>
+                      </tr>
+                      <tr>
+                        <td style="padding:4px 2px;text-align:center;vertical-align:middle;"><span class="item-handle" style="opacity:0.35;display:inline-flex;"><i data-lucide="grip-vertical"></i></span></td>
+                        <td style="padding:4px;">
+                          <input type="text" style="width:100%;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px 2px;border-radius:5px;" value="JJK TCG Series 5" aria-label="Nombre del producto" />
+                          <button type="button" style="display:inline-flex;align-items:center;gap:3px;border:none;background:none;font-size:11px;color:var(--text-muted);cursor:pointer;padding:2px 4px 4px;border-radius:5px;" aria-label="Tipo: Trading Cards">
+                            <i data-lucide="gallery-thumbnails" style="width:11px;height:11px;"></i> T. Cards <i data-lucide="chevron-down" style="width:10px;height:10px;opacity:0.5;"></i>
+                          </button>
+                        </td>
+                        <td style="padding:4px 2px;text-align:right;vertical-align:top;"><input type="number" style="width:44px;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px;border-radius:5px;text-align:right;" value="1" min="1" aria-label="Cantidad" /></td>
+                        <td style="padding:4px 2px;text-align:right;vertical-align:top;"><input type="number" style="width:80px;border:none;background:none;font-size:13px;color:var(--text-primary);padding:6px 4px;border-radius:5px;text-align:right;" value="2800" aria-label="Precio unitario" /></td>
+                        <td style="padding:4px 2px;text-align:center;vertical-align:top;"><button type="button" style="border:none;background:none;cursor:pointer;color:var(--text-muted);display:inline-flex;align-items:center;padding:8px 4px;border-radius:4px;" aria-label="Eliminar fila 5"><i data-lucide="x" style="width:13px;height:13px;"></i></button></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <button type="button" class="btn accent sm" style="width:100%;justify-content:center;margin-bottom:14px;">
+                  <i data-lucide="plus"></i> Añadir producto
+                </button>
+
+                <div style="border-top:1px solid var(--border);padding-top:14px;margin-bottom:14px;display:flex;flex-direction:column;gap:10px;">
+                  <span style="font-size:12px;color:var(--text-muted);">
+                    Total calculado desde ítems: <strong style="color:var(--text-primary);font-variant-numeric:tabular-nums;">¥29.300</strong>
+                  </span>
+                  <button type="button" class="btn accent sm" style="width:100%;justify-content:center;" title="Suma qty×precio y rellena el campo Costo total">
+                    <i data-lucide="calculator"></i> Usar este total
+                  </button>
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Costo total (JPY) <span style="color:var(--destructive);">*</span></label>
+                  <input class="input" type="number" value="29300" aria-label="Costo total" />
+                  <p class="card-helper" style="margin-top:6px;">Incluye productos, envío e impuestos.</p>
+                </div>
+
+                <div class="field" style="margin-bottom:0;">
+                  <label class="field-label">Tipo de cambio JPY→ARS <span class="text-muted" style="font-size:11px;font-weight:400;">(opcional)</span></label>
+                  <div style="display:flex;align-items:stretch;gap:8px;">
+                    <input class="input" type="number" placeholder="0.0065" style="flex:1;min-width:0;" aria-label="Tipo de cambio" />
+                    <button class="btn accent" style="white-space:nowrap;flex-shrink:0;" type="button" title="Consulta Frankfurter API">
+                      <i data-lucide="refresh-cw"></i> Hoy
+                    </button>
+                  </div>
+                  <p class="card-helper" style="margin-top:6px;">"Hoy" consulta Frankfurter (gratis, sin key) y rellena automáticamente.</p>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Resumen colapsable (subcard toggle) -->
+        <aside class="form-sidebar">
+          <div class="subcard" data-collapsible>
+            <button class="subcard-toggle" type="button" aria-expanded="false">
+              <span class="eyebrow">Resumen del pedido</span>
+              <span class="text-muted" style="font-size:12px;">5 ítems · <span class="num" style="color:var(--warning);font-weight:600;">¥29.300</span></span>
+              <span class="chev"><i data-lucide="chevron-down"></i></span>
+            </button>
+            <div class="subcard-body">
+              <div class="subcard-body-inner">
+                <div class="summary-list">
+                  <div class="row"><span class="label">Tienda</span><span class="value">Solaris Books</span></div>
+                  <div class="row"><span class="label">Moneda</span><span class="value">JPY</span></div>
+                  <div class="row"><span class="label">Fecha</span><span class="value" style="color:var(--warning);">3 may 2026</span></div>
+                  <div class="row"><span class="label">Productos</span><span class="value" style="color:var(--warning);">5 ítems</span></div>
+                  <div class="row"><span class="label">Total</span><span class="value num" style="color:var(--warning);font-weight:600;">¥29.300</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+      </div>
+    </div>
+
+    <!-- Sticky action bar: Cancelar + Guardar -->
+    <div class="s7-mob-actionbar" role="toolbar" aria-label="Acciones de edición">
+      <a href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" class="btn ghost" style="flex-shrink:0;min-width:96px;justify-content:center;">Cancelar</a>
+      <button class="btn primary" type="button" style="flex:1;justify-content:center;"><i data-lucide="check"></i> Guardar cambios</button>
+    </div>
   </div>
 </section>
 

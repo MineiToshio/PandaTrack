@@ -6,6 +6,7 @@ methodology: §6.quinquies
 last_updated: 2026-05-10
 demo_anchors:
   - s7-order-edit
+  - s7-order-edit-mobile
 ---
 
 # Pantalla: Editar pedido (`/orders/[id]/edit`)
