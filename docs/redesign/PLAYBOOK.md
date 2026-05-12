@@ -143,6 +143,46 @@ Mismo backdrop blur 8px + tint oklch en ambos breakpoints (heredado del lenguaje
 - Desktop: `#s6-stores-list-filters-open`, `#s7-orders-list-filters-open`.
 - Mobile: `#s7-orders-list-filters-mobile` (Stores mobile reusa el mismo componente — la apariencia mobile no tiene un anchor dedicado en stores).
 
+### BackNavLink (`src/components/core/BackNavLink.tsx`)
+
+Componente canónico cross-app para navegación "Volver" / "Atrás". Vive típicamente arriba del `page-heading` del contenido principal, antes del título de la pantalla.
+
+**Tres `appearance` con uso explícito (un solo callsite, un solo patrón):**
+
+| Appearance | Cuándo usar                                                                                                                                                                           | Visual                                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `text`     | **Default canónico.** Back-link sobre el page-heading en pantallas de detalle, edit, create de un módulo.                                                                             | Text link sutil: `--text-muted`, font-size 13px, `arrow-left` 12px, sin background/border/shadow, hover → `--foreground`. |
+| `pill`     | **Legacy opt-in.** Solo donde el back-link tiene que flotar sobre contenido visualmente denso (hero, hero image, sticky header con overlay). Hoy únicamente `OrderSummaryHeader.tsx`. | Pill flotante `rounded-full` con `bg-background/70 backdrop-blur-sm shadow-sm`. NO usar para back-link estándar.          |
+| `button`   | Footer de wizard junto al submit primario, cuando la geometría debe igualar al CTA hermano (`Button outline md`). Hoy `DeliveryCreateForm` footer.                                    | Outline button md, mismas geometría/tokens que `<Button variant="outline" size="md">`.                                    |
+
+**Receta del default `text` (canónica — copia del demo Orders `.back-link`):**
+
+```tsx
+<BackNavLink href={backHref}>{backLabel}</BackNavLink>
+// renderiza:
+// className="text-text-muted hover:text-foreground inline-flex items-center
+//            gap-1.5 px-0 py-0.5 text-[13px] no-underline transition-colors"
+// + <ArrowLeft className="size-3 shrink-0" />
+```
+
+**Reglas vinculantes:**
+
+- **El default es `text`.** No pasar `appearance="pill"` por costumbre — pasarlo solo cuando el back-link tiene que flotar sobre un hero o contenido denso.
+- **Prohibido** envolver el componente con `Button`, `IconButton`, o crear back-links ad-hoc con `<a>` + clases. Usar `<BackNavLink>`.
+- **Icono fijo:** `ArrowLeft` de Lucide, tamaño 12px (`size-3`) en variant `text`. Variant `pill`/`button` usan 16px (`size-4`) por geometría del botón.
+- **Copy:** label corto que indica el destino, no la acción. ✅ "Pedidos", "Volver a Solaris Books", "Tiendas". ❌ "Volver atrás", "Cancelar".
+- **A11y:** `<Link>` semántico de Next; sin `aria-label` extra (el texto del label es el accessible name).
+- **Posición canónica:** primer elemento dentro de `<main>`, antes del `page-heading`. `margin-bottom: 8px` (`mb-2` aproximado) implícito por el spacing del page-heading. No anidar dentro de `app-topbar` (eso es scope del breadcrumb del shell, no del back-link).
+
+**Anti-patrones:**
+
+- ❌ `<BackNavLink appearance="pill">` cuando no hay hero/overlay — usar `text`.
+- ❌ Back-link como botón con `<Button>` o `<IconButton>` — usar `<BackNavLink>`.
+- ❌ Duplicar el breadcrumb del shell con un back-link redundante (los dos siempre existen — el breadcrumb es navegación, el back-link es atajo a la pantalla padre).
+- ❌ Variants nuevas del componente sin abrir mini-sesión / ADR. Si necesitás un patrón nuevo, extendé en lugar de forkear.
+
+**Demo de referencia:** `.back-link` CSS en `_notes/demo-screens.html` líneas 757-763. Anchors visibles: `#s7-order-detail-active`, `#s7-order-create-step-1`, `#s7-order-edit`, `#s7-order-detail-mobile`.
+
 ## 2. Tokens — convenciones cross-app
 
 ### Colores
