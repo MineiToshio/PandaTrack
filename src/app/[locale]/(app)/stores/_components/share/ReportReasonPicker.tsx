@@ -49,9 +49,14 @@ export default function ReportReasonPicker({
             key={option.value}
             className={cn(
               "flex min-h-11 cursor-pointer items-center gap-3 rounded-[var(--radius-md)] px-3 py-2 transition-colors",
-              "[border:1px_solid]",
+              // Use longhands instead of the `border` shorthand: Tailwind v4
+              // can emit shorthand rules AFTER longhand rules, which silently
+              // resets border-color to currentColor (= text color). Splitting
+              // into width + style keeps border-color owned by our conditional
+              // utility below.
+              "[border-width:1px] [border-style:solid]",
               isSelected
-                ? "[border-color:color-mix(in_oklch,var(--accent)_22%,transparent)] [color:var(--text-primary)] [background:color-mix(in_oklch,var(--accent)_8%,transparent)]"
+                ? "[border-color:var(--accent)] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_8%,transparent)]"
                 : "[border-color:var(--border)] [color:var(--text-secondary)] [background:var(--surface)] hover:[border-color:var(--border-strong)]",
             )}
           >

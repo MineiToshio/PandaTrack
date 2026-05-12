@@ -36,7 +36,7 @@ Este documento es el doc maestro de la Fase A del módulo Orders (S7). Los scree
 
 | Screen spec               | Anchors canónicos del demo                                                                                                                                                                                                                          | Descripción                                                                                                                                             |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `screens/order-list.md`   | `#s7-orders-list-loading`, `#s7-orders-list-default`, `#s7-orders-list-empty-initial`, `#s7-orders-list-empty-filtered`, `#s7-orders-list-mobile`                                                                                                   | Lista privada de pedidos con toolbar, filtros, FX banner, expand de ítems, paginación                                                                   |
+| `screens/order-list.md`   | `#s7-orders-list-loading`, `#s7-orders-list-default`, `#s7-orders-list-empty-initial`, `#s7-orders-list-empty-filtered`, `#s7-orders-list-filters-open`, `#s7-orders-list-mobile`, `#s7-orders-list-filters-mobile`                                 | Lista privada de pedidos con toolbar, filtros, FX banner, expand de ítems, paginación                                                                   |
 | `screens/order-detail.md` | `#s7-order-detail-active`, `#s7-order-detail-cancelled`, `#s7-order-detail-completed-unpaid`, `#s7-order-detail-overdue`, `#s7-order-detail-delete-modal`, `#s7-order-detail-cancel-modal`, `#s7-order-detail-pay-modal`, `#s7-order-detail-mobile` | Detalle de pedido multi-estado: 2 columnas desktop (main + aside sticky)                                                                                |
 | `screens/order-create.md` | `#s7-order-create-step-1`, `#s7-order-create-step-2`, `#s7-order-create-step-3`, `#s7-order-create-empty-stores`, `#s7-order-create-discrepancy-modal`, `#s7-order-create-mobile`                                                                   | Wizard de creación — 3 pasos canónicos; `#s7-order-create-mobile` muestra paso 1 en single-column móvil sin `page-heading`                              |
 | `screens/order-edit.md`   | `#s7-order-edit`, `#s7-order-edit-mobile`                                                                                                                                                                                                           | Edición all-open (L020): sin stepper, todas las secciones siempre expandidas; `#s7-order-edit-mobile` muestra single-column con `back-link` bajo topbar |
@@ -230,29 +230,29 @@ Componentes específicos del módulo Orders. Fase B los crea en `src/app/[locale
 
 ## Inventario de componentes core consumidos
 
-| Componente                  | Propósito en el módulo                                       | Pantallas                                    |
-| --------------------------- | ------------------------------------------------------------ | -------------------------------------------- |
-| `AppShell`                  | Contenedor base: sidebar + content                           | todos                                        |
-| `Header` (topbar)           | Topbar sticky 48px con breadcrumb + título                   | todos                                        |
-| `Sidebar`                   | Navegación lateral izquierda                                 | todos                                        |
-| `MobileTabBar`              | Navegación inferior mobile                                   | todos                                        |
-| `FilterTriggerButton` (M05) | Botón "Filtrar" con badge de filtros activos, estado tintado | `order-list`                                 |
-| `FilterDrawer`              | Panel de filtros derecho / Sheet en mobile                   | `order-list`                                 |
-| `Switch`                    | Toggle booleano (filtro FX en FilterDrawer)                  | `order-list`                                 |
-| `Pagination`                | Numérica desktop + "Cargar más" mobile                       | `order-list`                                 |
-| `EmptyState`                | Estado vacío con mascota (lista sin pedidos)                 | `order-list`                                 |
-| `MascotBubble`              | Mascota en estados vacíos                                    | `order-list`                                 |
-| `Modal` (ADR 0008 B)        | Confirm dialogs destructive y warning                        | `order-detail`, `order-create`               |
-| `Toast`                     | Feedback post-acciones (crear, editar, errores)              | `order-create`, `order-edit`, `order-detail` |
-| `ProgressBar`               | Barra de progreso de pago (% pagado)                         | `order-list`, `order-detail`                 |
-| `Button`                    | CTAs primarios, secundarios, ghost                           | todos                                        |
-| `Input`                     | Search toolbar, inputs en forms y FilterDrawer               | todos                                        |
-| `FAB`                       | Botón flotante "+" en mobile (lista)                         | `order-list` mobile                          |
-| `back-link` (patrón CSS)    | Link `← Texto` minimalista con arrow-left 12px               | `order-create`, `order-edit`, `order-detail` |
-| `page-heading` (patrón CSS) | `h1` + meta text bajo el topbar                              | `order-list`, `order-create`, `order-edit`   |
-| `detail-hero` (patrón CSS)  | Card hero del detalle (reemplaza page-heading en detalle)    | `order-detail`                               |
-| `detail-grid` (patrón CSS)  | Layout 2 columnas desktop (main + aside sticky)              | `order-detail`                               |
-| `form-grid` (patrón CSS)    | Layout 2 columnas form (section-cards + sidebar resumen)     | `order-create`, `order-edit`                 |
+| Componente                  | Propósito en el módulo                                                                               | Pantallas                                    |
+| --------------------------- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `AppShell`                  | Contenedor base: sidebar + content                                                                   | todos                                        |
+| `Header` (topbar)           | Topbar sticky 48px con breadcrumb + título                                                           | todos                                        |
+| `Sidebar`                   | Navegación lateral izquierda                                                                         | todos                                        |
+| `MobileTabBar`              | Navegación inferior mobile                                                                           | todos                                        |
+| `FilterTriggerButton` (M05) | Botón "Filtrar" con badge de filtros activos, estado tintado                                         | `order-list`                                 |
+| `FilterDrawer`              | Panel de filtros: side drawer derecho (desktop) / bottom-sheet con drag handle (mobile, ADR 0003 D8) | `order-list`                                 |
+| `Switch`                    | Toggle booleano (filtro FX en FilterDrawer)                                                          | `order-list`                                 |
+| `Pagination`                | Numérica desktop + "Cargar más" mobile                                                               | `order-list`                                 |
+| `EmptyState`                | Estado vacío con mascota (lista sin pedidos)                                                         | `order-list`                                 |
+| `MascotBubble`              | Mascota en estados vacíos                                                                            | `order-list`                                 |
+| `Modal` (ADR 0008 B)        | Confirm dialogs destructive y warning                                                                | `order-detail`, `order-create`               |
+| `Toast`                     | Feedback post-acciones (crear, editar, errores)                                                      | `order-create`, `order-edit`, `order-detail` |
+| `ProgressBar`               | Barra de progreso de pago (% pagado)                                                                 | `order-list`, `order-detail`                 |
+| `Button`                    | CTAs primarios, secundarios, ghost                                                                   | todos                                        |
+| `Input`                     | Search toolbar, inputs en forms y FilterDrawer                                                       | todos                                        |
+| `FAB`                       | Botón flotante "+" en mobile (lista)                                                                 | `order-list` mobile                          |
+| `back-link` (patrón CSS)    | Link `← Texto` minimalista con arrow-left 12px                                                       | `order-create`, `order-edit`, `order-detail` |
+| `page-heading` (patrón CSS) | `h1` + meta text bajo el topbar                                                                      | `order-list`, `order-create`, `order-edit`   |
+| `detail-hero` (patrón CSS)  | Card hero del detalle (reemplaza page-heading en detalle)                                            | `order-detail`                               |
+| `detail-grid` (patrón CSS)  | Layout 2 columnas desktop (main + aside sticky)                                                      | `order-detail`                               |
+| `form-grid` (patrón CSS)    | Layout 2 columnas form (section-cards + sidebar resumen)                                             | `order-create`, `order-edit`                 |
 
 ---
 
@@ -431,6 +431,6 @@ El agente de Fase B lee el spec vigente de cada componente core **al momento de 
 | ID   | Componente afectado         | Descripción                                                    | Estado     | Impacto en Fase B                                                                 |
 | ---- | --------------------------- | -------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------- |
 | M01  | `Modal`                     | Enhancement visual: depth, motion, layered design              | 🟡 abierto | Esperar M01 si aún no cerró antes de implementar los modales del módulo           |
-| S6.1 | `FilterDrawer`              | Patrón canónico (secciones, footer, Sheet en mobile)           | 🟡 abierto | Usar spec actualizado de FilterDrawer al iniciar Fase B                           |
+| S6.1 | `FilterDrawer`              | Patrón canónico (secciones, footer, bottom-sheet en mobile)    | 🟡 abierto | Usar spec actualizado de FilterDrawer al iniciar Fase B                           |
 | S6.2 | `FilterTriggerButton` (M05) | Componente M05 con active state + badge; ya cerrado            | ✅ cerrado | Usar `FilterTriggerButton` desde `src/components/modules/FilterTriggerButton.tsx` |
 | S6.3 | `Pagination`                | Patrón canónico (L062): desktop numérica + mobile "Cargar más" | 🟡 abierto | Leer spec actualizado de Pagination al iniciar Fase B                             |

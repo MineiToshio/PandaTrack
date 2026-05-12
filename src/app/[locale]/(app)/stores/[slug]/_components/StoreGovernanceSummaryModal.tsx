@@ -18,6 +18,7 @@ import StoreReportModal from "./StoreReportModal";
 type StoreGovernanceSummaryModalProps = {
   locale: string;
   storeSlug: string;
+  storeName: string;
   summary: StoreGovernanceSummary;
   /**
    * Trigger surface variant.
@@ -34,6 +35,7 @@ type StoreGovernanceSummaryModalProps = {
 export default function StoreGovernanceSummaryModal({
   locale,
   storeSlug,
+  storeName,
   summary,
   triggerVariant = "banner",
   showTopSeparator = false,
@@ -174,7 +176,6 @@ export default function StoreGovernanceSummaryModal({
         description={t("governance.summary.description")}
         icon={<MessageSquareWarning size={20} aria-hidden="true" />}
         tone="info"
-        size="lg"
         closeButtonLabel={t("governance.report.cancelCta")}
         // The Modal's default `pb-1` body assumes a footer below; this modal has no
         // primary/secondary actions, so we restore proper bottom breathing room.
@@ -339,6 +340,7 @@ export default function StoreGovernanceSummaryModal({
         <StoreReportModal
           locale={locale}
           storeSlug={storeSlug}
+          storeName={storeName}
           existingReport={viewerOpenReport}
           hideTrigger
           openRequestNonce={reportModalOpenRequest}

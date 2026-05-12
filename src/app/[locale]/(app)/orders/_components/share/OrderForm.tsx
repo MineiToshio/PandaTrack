@@ -11,7 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Calculator, ClipboardList, Info, ShoppingBag } from "lucide-react";
+import { AlertTriangle, Calculator, ClipboardList, Info, ShoppingBag } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -38,6 +38,7 @@ import { formatAmount } from "@/lib/currency";
 import type { OrderActionResult } from "../../_actions/orderActions";
 import DatePickerInput from "@/components/core/DatePickerInput";
 import DateRangePickerInput from "@/components/core/DateRangePickerInput";
+import { Modal } from "@/components/modules/Modal";
 import DiscrepancyModal from "./DiscrepancyModal";
 import OrderItemsGrid, { createEmptyRow, type ItemRow } from "./OrderItemsGrid";
 import OrderItemsShortcutsHelp from "./OrderItemsShortcutsHelp";
@@ -693,44 +694,27 @@ export default function OrderForm({
         />
       )}
 
-      {discardState.show && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="discard-dialog-title"
-          aria-describedby="discard-dialog-desc"
-        >
-          <div className="bg-background/70 absolute inset-0 backdrop-blur-sm" />
-          <div className="border-border bg-background relative z-10 w-full max-w-sm rounded-xl border p-6 shadow-xl">
-            <h2 id="discard-dialog-title" className="text-text-title mb-2 text-base font-semibold">
-              {tEdit("discardTitle")}
-            </h2>
-            <Typography id="discard-dialog-desc" size="sm" className="text-text-body mb-6">
-              {tEdit("discardMessage")}
-            </Typography>
-            <div className="flex gap-3">
-              <Button
-                variant="primary"
-                type="button"
-                onClick={() => {
-                  posthog.capture(POSTHOG_EVENTS.ORDER.CREATE_DISCARDED);
-                  router.push(discardState.pendingHref!);
-                }}
-              >
-                {tEdit("discardConfirm")}
-              </Button>
-              <Button
-                variant="secondary"
-                type="button"
-                onClick={() => setDiscardState({ show: false, pendingHref: null })}
-              >
-                {tEdit("discardCancel")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal
+        isOpen={discardState.show}
+        onClose={() => setDiscardState({ show: false, pendingHref: null })}
+        title={tEdit("discardTitle")}
+        subtitle={tEdit("discardMessage")}
+        icon={<AlertTriangle size={20} aria-hidden="true" />}
+        tone="warning"
+        role="alertdialog"
+        primaryAction={{
+          label: tEdit("discardConfirm"),
+          variant: "destructive",
+          onClick: () => {
+            posthog.capture(POSTHOG_EVENTS.ORDER.CREATE_DISCARDED);
+            if (discardState.pendingHref) router.push(discardState.pendingHref);
+          },
+        }}
+        secondaryAction={{
+          label: tEdit("discardCancel"),
+          onClick: () => setDiscardState({ show: false, pendingHref: null }),
+        }}
+      />
     </div>
   );
 }

@@ -163,6 +163,7 @@ export default function StoreDetailContent({
           <StoreGovernanceSummaryModal
             locale={locale}
             storeSlug={store.slug}
+            storeName={store.name}
             summary={governanceSummary}
             triggerVariant="banner"
             viewerOpenReport={governanceViewerContext.openReport}
@@ -387,6 +388,7 @@ export default function StoreDetailContent({
                 <StoreReportModal
                   locale={locale}
                   storeSlug={store.slug}
+                  storeName={store.name}
                   existingReport={governanceViewerContext.openReport}
                   triggerClassName="w-full justify-start"
                   triggerVariant="destructive-ghost"

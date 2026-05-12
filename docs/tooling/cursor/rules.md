@@ -37,6 +37,7 @@ Read these on every implementation because they define project-wide defaults:
 - `optimistic-client-updates.mdc`: Read whenever a Client Component dispatches a mutation that affects state the user is observing. It requires applying the change locally in parallel with the Server Action and reverting on failure, so the user gets immediate feedback without a second server fetch.
 - `testing-strategy.mdc`: Read for every change to decide required unit, integration, and E2E coverage.
 - `theme-light-dark.mdc`: Read whenever UI, styling, or visual assets are changed so both themes are handled.
+- `ui-libs-policy.mdc`: Read before adding ANY new UI primitive / design-system dependency. Implements ADR 0010: hand-roll by default; only Vaul is approved (used transitively by `<ModalSheet>`); `@radix-ui/*` and other UI primitive libs are banned as top-level deps.
 - `validation-checklist.mdc`: Read before finalizing any implementation to choose the correct validation scope and run the required checks in the correct order.
 
 ## Scenario-based rules
@@ -133,6 +134,7 @@ Read these on every implementation because they define project-wide defaults:
 | `testing-strategy.mdc`                 | Risk-based test decisions                                            | Any behavior changes                                                                                                                                                                     |
 | `theme-light-dark.mdc`                 | Light/dark theme support                                             | Visual or styling changes                                                                                                                                                                |
 | `typescript-practices.mdc`             | TypeScript typing conventions                                        | TypeScript code or shared types change                                                                                                                                                   |
+| `ui-libs-policy.mdc`                   | UI primitive libs policy (ADR 0010)                                  | Adding/replacing any UI primitive dependency or considering a design-system lib                                                                                                          |
 | `validation-checklist.mdc`             | Final validation commands                                            | Final verification before completion                                                                                                                                                     |
 
 ## Tooling references

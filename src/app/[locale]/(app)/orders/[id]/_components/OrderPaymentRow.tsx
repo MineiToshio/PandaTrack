@@ -4,8 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Trash2 } from "lucide-react";
 import Typography from "@/components/core/Typography";
-import Modal from "@/components/modules/Modal/Modal";
-import Button from "@/components/core/Button/Button";
+import { Modal } from "@/components/modules/Modal";
 import { formatAmount } from "@/lib/currency";
 
 type PaymentRecord = { id: string; amount: number; paymentDate: Date };
@@ -70,29 +69,29 @@ export default function OrderPaymentRow({
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         title={t("detail.payments.deleteModalTitle")}
-        description={t("detail.payments.deleteModalDescription")}
+        subtitle={t("detail.payments.deleteModalDescription")}
+        icon={<Trash2 size={20} aria-hidden="true" />}
+        tone="destructive"
         role="alertdialog"
-        closeOnBackdropClick={false}
+        dismissible={false}
+        primaryAction={{
+          label: isPending ? "…" : t("detail.payments.deleteConfirm"),
+          onClick: handleConfirm,
+          variant: "destructive",
+          loading: isPending,
+          disabled: isPending,
+        }}
+        secondaryAction={{
+          label: t("detail.payments.deleteCancel"),
+          onClick: () => setModalOpen(false),
+          disabled: isPending,
+        }}
       >
         {error && (
-          <Typography size="sm" className="text-destructive mb-4" role="alert">
+          <Typography size="sm" className="text-destructive" role="alert">
             {error}
           </Typography>
         )}
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" size="md" onClick={() => setModalOpen(false)} disabled={isPending}>
-            {t("detail.payments.deleteCancel")}
-          </Button>
-          <Button
-            variant="outline"
-            size="md"
-            onClick={handleConfirm}
-            disabled={isPending}
-            className="border-destructive text-destructive hover:bg-destructive/10"
-          >
-            {isPending ? "…" : t("detail.payments.deleteConfirm")}
-          </Button>
-        </div>
       </Modal>
     </>
   );

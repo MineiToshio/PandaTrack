@@ -8,7 +8,6 @@ import posthog from "posthog-js";
 import { type VariantProps } from "class-variance-authority";
 import Button from "@/components/core/Button/Button";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
-import FieldCharacterCount from "@/components/core/FieldCharacterCount";
 import Label from "@/components/core/Label";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
@@ -22,6 +21,8 @@ import { saveStoreReport, type SaveStoreReportResult } from "../_actions/saveSto
 type StoreReportModalProps = {
   locale: string;
   storeSlug: string;
+  /** Rendered as the modal subtitle so the user sees which store they are reporting. */
+  storeName: string;
   existingReport: StoreGovernanceViewerContext["openReport"];
   hideTrigger?: boolean;
   openRequestNonce?: number;
@@ -47,6 +48,7 @@ function translateError(t: ReturnType<typeof useTranslations>, errorKey: string)
 export default function StoreReportModal({
   locale,
   storeSlug,
+  storeName,
   existingReport,
   hideTrigger = false,
   openRequestNonce = 0,
@@ -159,10 +161,11 @@ export default function StoreReportModal({
         isOpen={isOpen}
         onClose={closeModal}
         title={t("governance.report.title")}
-        description={t("governance.report.description")}
+        subtitle={storeName}
         icon={<Flag size={20} aria-hidden="true" />}
         tone="warning"
         closeButtonLabel={t("governance.report.cancelCta")}
+        bodyClassName="pb-4"
         primaryAction={{
           label: t("governance.report.submitCta"),
           onClick: () => formRef.current?.requestSubmit(),
@@ -178,6 +181,10 @@ export default function StoreReportModal({
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
           <input type="hidden" name="slug" value={storeSlug} />
           <input type="hidden" name="locale" value={locale} />
+
+          <Typography size="xs" className="text-text-secondary">
+            {t("governance.report.description")}
+          </Typography>
 
           <div className="space-y-2">
             <Label className="text-text-title">{t("governance.report.reasonLabel")}</Label>
@@ -204,6 +211,9 @@ export default function StoreReportModal({
             <Label htmlFor="store-report-details" className="text-text-title">
               {t("governance.report.detailsLabel")}
             </Label>
+            <Typography size="xs" className="text-text-muted">
+              {t("governance.report.detailsHelper")}
+            </Typography>
             <Textarea
               id="store-report-details"
               name="details"
@@ -213,16 +223,7 @@ export default function StoreReportModal({
               maxLength={500}
               error={Boolean(fieldErrors?.details?.[0])}
               aria-invalid={Boolean(fieldErrors?.details?.[0])}
-              className="bg-background/90 min-h-36 resize-y rounded-xl px-4 py-3"
             />
-            <div className="flex items-center justify-between gap-3">
-              <Typography size="xs" className="text-text-muted">
-                {t("governance.report.detailsHelper")}
-              </Typography>
-              <Typography size="xs" className="text-text-muted">
-                <FieldCharacterCount currentLength={details.length} maxLength={500} />
-              </Typography>
-            </div>
             {fieldErrors?.details?.[0] && (
               <Typography size="xs" className="text-destructive" role="alert">
                 {translateError(t, fieldErrors.details[0])}

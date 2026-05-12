@@ -125,9 +125,23 @@ Section types soportados: `pills | pills-search | icon-pills | autocomplete | ta
 - `pills` para listas cortas tipo presencia (chip-buttons con íconos).
 - `switches` para toggles boolean simples.
 
+**Responsive canónico (ADR 0003 D8):**
+
+- **Desktop (≥768px)**: side drawer derecho 440px, anclado al borde derecho, `border-left: 1px solid var(--border-strong)`, top-corners rectos, animación `drawer-slide-right` 280ms (`translateX(100%) → 0`).
+- **Mobile (<768px)**: bottom-sheet, anclado al borde inferior, `border-top: 1px solid var(--border-strong)`, top-corners `--radius-2xl` (20px), drag handle 4×36px en `var(--border-strong)`, `max-height: 92svh`, `box-shadow` hacia arriba `0 -8px 32px ...`, `padding-bottom: env(safe-area-inset-bottom)`, animación `drawer-rise` 280ms (`translateY(100%) → 0`).
+
+Mismo backdrop blur 8px + tint oklch en ambos breakpoints (heredado del lenguaje Semantic Depth de ADR 0008, pero hand-rolled independiente, sin Vaul y sin compartir código con `<Modal>`).
+
+**NO es un `<Modal>`.** Aunque visualmente comparte algunos elementos con el `<Modal>` canónico (backdrop blur, top-corners en mobile, drag handle en mobile), **arquitectónicamente son patrones distintos**: el `<Modal>` canónico es para decisiones discretas (confirm, alert, form corto, decision overlay) y usa Vaul en mobile; el `<FilterDrawer>` es para refinement de lista y es hand-rolled responsive. Coherencia visual viene del design system, no del componente. No mezclar el código de un patrón con el otro y no usar `<Modal>` como contenedor de filtros.
+
 **Comportamiento:** NO cierra on click outside. Solo X y Esc.
 
 **Visual del header:** ícono Lucide en `--accent` (no `--accent-cool`). Border-radius 0 desktop / top corners mobile. Border `--border-strong` panel side / `--border` header+footer.
+
+**Demo anchors de referencia:**
+
+- Desktop: `#s6-stores-list-filters-open`, `#s7-orders-list-filters-open`.
+- Mobile: `#s7-orders-list-filters-mobile` (Stores mobile reusa el mismo componente — la apariencia mobile no tiene un anchor dedicado en stores).
 
 ## 2. Tokens — convenciones cross-app
 
@@ -249,6 +263,7 @@ Spec completo: `docs/redesign/components/FilterTriggerButton.md`. Demo visual: `
 - ❌ Mezclar visualmente paletas (Velvet en `src/` solamente; las alternativas viven solo en demo y docs).
 - ❌ Usar `<select>` nativo aunque sea para 3 opciones — usar Select con buscador integrado.
 - ❌ Cerrar drawer/modal al hacer click outside cuando ocupa una superficie grande (FilterDrawer no cierra outside). Solo X y Esc.
+- ❌ Confundir `<FilterDrawer>` con `<Modal>` y usar uno donde corresponde el otro. Son patrones distintos con código independiente. Filtros de listado → `<FilterDrawer>` (side drawer desktop / bottom-sheet mobile, hand-rolled, sin Vaul). Decisiones discretas (confirm, alert, form corto) → `<Modal>` (centered desktop / bottom-sheet mobile via Vaul). El parecido visual del mobile bottom-sheet es coherencia del design system, no acoplamiento arquitectónico.
 - ❌ `<input type="checkbox">` para opciones boolean en UI. **Por defecto usar `<Switch>`** (`src/components/core/Switch.tsx`). El Checkbox se reserva para: selección múltiple de ítems con estado indeterminate, aceptación de términos/condiciones, bulk-select en tablas. Si dudás, elegí toggle.
 
 ## 5. Workflow obligatorio antes de implementar UI

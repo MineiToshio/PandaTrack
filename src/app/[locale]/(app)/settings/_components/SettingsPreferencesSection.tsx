@@ -10,7 +10,8 @@ import Label from "@/components/core/Label";
 import SearchSelect from "@/components/core/SearchSelect";
 import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
 import Typography from "@/components/core/Typography";
-import Modal from "@/components/modules/Modal/Modal";
+import { Modal } from "@/components/modules/Modal";
+import { AlertTriangle } from "lucide-react";
 import { useToast } from "@/contexts/ToastContext";
 import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
@@ -557,23 +558,29 @@ export default function SettingsPreferencesSection({
         isOpen={isCurrencyModalOpen}
         onClose={handleCurrencyModalCancel}
         title={t("currencyChangeModal.title")}
-        description={t("currencyChangeModal.description")}
+        subtitle={t("currencyChangeModal.description")}
+        icon={<AlertTriangle size={20} aria-hidden="true" />}
+        tone="warning"
         role="alertdialog"
-        closeOnBackdropClick={false}
+        dismissible={false}
         closeButtonLabel={t("currencyChangeModal.cancel")}
-      >
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
-          <Button type="button" variant="ghost" onClick={handleCurrencyModalCancel} disabled={isSubmitting}>
-            {t("currencyChangeModal.cancel")}
-          </Button>
-          <Button type="button" variant="secondary" onClick={handleCurrencyModalConfirmSkip} disabled={isSubmitting}>
-            {isSubmitting ? t("pending") : t("currencyChangeModal.saveSkip")}
-          </Button>
-          <Button type="button" variant="primary" onClick={handleCurrencyModalConfirmReconcile} disabled={isSubmitting}>
-            {isSubmitting ? t("pending") : t("currencyChangeModal.saveAndReconcile")}
-          </Button>
-        </div>
-      </Modal>
+        primaryAction={{
+          label: isSubmitting ? t("pending") : t("currencyChangeModal.saveAndReconcile"),
+          onClick: handleCurrencyModalConfirmReconcile,
+          loading: isSubmitting,
+          disabled: isSubmitting,
+        }}
+        secondaryAction={{
+          label: isSubmitting ? t("pending") : t("currencyChangeModal.saveSkip"),
+          onClick: handleCurrencyModalConfirmSkip,
+          disabled: isSubmitting,
+        }}
+        tertiaryAction={{
+          label: t("currencyChangeModal.cancel"),
+          onClick: handleCurrencyModalCancel,
+          disabled: isSubmitting,
+        }}
+      />
     </section>
   );
 }

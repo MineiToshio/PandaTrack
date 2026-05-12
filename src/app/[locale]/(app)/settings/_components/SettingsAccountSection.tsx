@@ -11,7 +11,8 @@ import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
 import PasswordInput from "@/components/core/PasswordInput";
 import Typography from "@/components/core/Typography";
-import Modal from "@/components/modules/Modal/Modal";
+import { Modal } from "@/components/modules/Modal";
+import { Mail } from "lucide-react";
 import {
   submitChangePasswordAction,
   submitEmailChangeAction,
@@ -399,17 +400,32 @@ export default function SettingsAccountSection({
         isOpen={isEmailModalOpen}
         onClose={handleCloseEmailModal}
         title={t("emailModal.title")}
-        description={
-          <div className="flex flex-col gap-2">
-            <p className="m-0">{t("emailModal.descriptionIntro")}</p>
-            <p className="m-0">{t.rich("emailModal.descriptionIrreversible", { b: renderEmailModalEmphasis })}</p>
-            <p className="m-0">{t.rich("emailModal.descriptionCooldown", { b: renderEmailModalEmphasis })}</p>
-          </div>
+        subtitle={
+          <span className="flex flex-col gap-2">
+            <span className="block">{t("emailModal.descriptionIntro")}</span>
+            <span className="block">
+              {t.rich("emailModal.descriptionIrreversible", { b: renderEmailModalEmphasis })}
+            </span>
+            <span className="block">{t.rich("emailModal.descriptionCooldown", { b: renderEmailModalEmphasis })}</span>
+          </span>
         }
+        icon={<Mail size={20} aria-hidden="true" />}
+        tone="warning"
         initialFocusRef={modalNewEmailInputRef}
         returnFocusRef={changeEmailTriggerRef}
         role="alertdialog"
-        closeOnBackdropClick={!isEmailSubmitting}
+        dismissible={!isEmailSubmitting}
+        primaryAction={{
+          label: isEmailSubmitting ? t("emailModal.pending") : t("emailModal.confirm"),
+          onClick: handleSubmitEmailChange,
+          loading: isEmailSubmitting,
+          disabled: isEmailSubmitting,
+        }}
+        secondaryAction={{
+          label: t("emailModal.cancel"),
+          onClick: handleCloseEmailModal,
+          disabled: isEmailSubmitting,
+        }}
       >
         <div className="space-y-4">
           {emailModalError ? (
@@ -446,14 +462,6 @@ export default function SettingsAccountSection({
               disabled={isEmailSubmitting}
               error={emailModalFieldErrors.currentPassword === true}
             />
-          </div>
-          <div className={cn("flex flex-col-reverse gap-2 sm:flex-row sm:justify-end")}>
-            <Button type="button" variant="secondary" onClick={handleCloseEmailModal} disabled={isEmailSubmitting}>
-              {t("emailModal.cancel")}
-            </Button>
-            <Button type="button" variant="primary" disabled={isEmailSubmitting} onClick={handleSubmitEmailChange}>
-              {isEmailSubmitting ? t("emailModal.pending") : t("emailModal.confirm")}
-            </Button>
           </div>
         </div>
       </Modal>

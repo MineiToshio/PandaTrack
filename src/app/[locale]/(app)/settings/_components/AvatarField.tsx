@@ -2,15 +2,14 @@
 
 import "react-easy-crop/react-easy-crop.css";
 
-import { ImagePlus, Upload, UserRound, X } from "lucide-react";
+import { ImagePlus, Trash2, Upload, UserRound, X } from "lucide-react";
 import Image from "next/image";
-import { type ChangeEvent, type DragEvent, useEffect, useId, useRef, useState } from "react";
+import { type ChangeEvent, type DragEvent, useEffect, useRef, useState } from "react";
 import Cropper, { type Area, type Point } from "react-easy-crop";
 import Button from "@/components/core/Button/Button";
 import Label from "@/components/core/Label";
 import Typography from "@/components/core/Typography";
 import { Modal } from "@/components/modules/Modal";
-import { useFocusScope } from "@/lib/a11y/useFocusScope";
 import {
   AVATAR_ACCEPTED_MIME_TYPES,
   AVATAR_MAX_SOURCE_SIZE_BYTES,
@@ -78,8 +77,6 @@ export default function AvatarField({
   onConfirmRemoveAvatar,
 }: AvatarFieldProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const editorPanelRef = useRef<HTMLDivElement>(null);
-  const editorDescriptionId = useId();
 
   const [previewUrl, setPreviewUrl] = useState<string | null>(() => normalizeProfileImageUrl(initialImageUrl));
   const [editorImageUrl, setEditorImageUrl] = useState<string | null>(null);
@@ -223,13 +220,6 @@ export default function AvatarField({
     setCroppedAreaPixels(nextCroppedAreaPixels);
   };
 
-  const handleEditorEscapeClose = () => {
-    if (isCommittingCrop) return;
-    handleEditorCancel();
-  };
-
-  useFocusScope({ active: Boolean(editorImageUrl), rootRef: editorPanelRef, onClose: handleEditorEscapeClose });
-
   const activeError = error ?? editorError;
 
   return (
@@ -331,28 +321,27 @@ export default function AvatarField({
         </Typography>
       ) : null}
 
-      {editorImageUrl ? (
-        <div
-          className="bg-background/80 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby={`${id}-editor-title`}
-          aria-describedby={editorDescriptionId}
-        >
-          <div
-            ref={editorPanelRef}
-            tabIndex={-1}
-            className="border-border bg-surface w-full max-w-2xl space-y-5 rounded-2xl border p-5 shadow-2xl"
-          >
-            <div className="space-y-2">
-              <Typography id={`${id}-editor-title`} size="sm" className="text-text-title font-semibold">
-                {copy.editorTitle}
-              </Typography>
-              <Typography id={editorDescriptionId} size="xs" className="text-text-muted">
-                {copy.editorDescription}
-              </Typography>
-            </div>
-
+      <Modal
+        isOpen={editorImageUrl != null}
+        onClose={handleEditorCancel}
+        title={copy.editorTitle}
+        subtitle={copy.editorDescription}
+        size="lg"
+        dismissible={!isCommittingCrop}
+        primaryAction={{
+          label: isCommittingCrop ? copy.editorPending : copy.editorConfirm,
+          onClick: handleEditorConfirm,
+          loading: isCommittingCrop,
+          disabled: isCommittingCrop,
+        }}
+        secondaryAction={{
+          label: copy.editorCancel,
+          onClick: handleEditorCancel,
+          disabled: isCommittingCrop,
+        }}
+      >
+        {editorImageUrl ? (
+          <div className="space-y-5">
             <div
               className={cn(
                 "bg-background relative h-80 overflow-hidden rounded-2xl",
@@ -393,62 +382,41 @@ export default function AvatarField({
                 {commitError}
               </Typography>
             ) : null}
-
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={handleEditorCancel} disabled={isCommittingCrop}>
-                {copy.editorCancel}
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                onClick={handleEditorConfirm}
-                disabled={isCommittingCrop}
-                aria-busy={isCommittingCrop}
-              >
-                {isCommittingCrop ? copy.editorPending : copy.editorConfirm}
-              </Button>
-            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </Modal>
 
       <Modal
         isOpen={removeDialogOpen}
         onClose={handleDismissRemoveDialog}
         title={copy.removeDialogTitle}
-        description={
-          <div className="space-y-3">
-            <Typography size="xs" className="text-text-body leading-6">
-              {copy.removeDialogLead}
-            </Typography>
-            <Typography size="xs" className="text-text-muted leading-6">
-              {copy.removeDialogIrreversible}
-            </Typography>
-          </div>
-        }
+        subtitle={copy.removeDialogLead}
+        icon={<Trash2 size={20} aria-hidden="true" />}
+        tone="destructive"
         role="alertdialog"
-        closeOnBackdropClick={false}
-        className="max-w-md"
+        dismissible={false}
+        primaryAction={{
+          label: disabled ? copy.removeDialogPending : copy.removeDialogConfirm,
+          onClick: handleConfirmRemovePhoto,
+          variant: "destructive",
+          loading: disabled,
+          disabled,
+        }}
+        secondaryAction={{
+          label: copy.removeDialogCancel,
+          onClick: handleDismissRemoveDialog,
+          disabled,
+        }}
       >
-        {removeError ? (
-          <Typography size="xs" className="text-destructive mb-4" role="alert">
-            {removeError}
+        <div className="space-y-3">
+          <Typography size="xs" className="text-text-muted leading-6">
+            {copy.removeDialogIrreversible}
           </Typography>
-        ) : null}
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button type="button" variant="secondary" onClick={handleDismissRemoveDialog} disabled={disabled}>
-            {copy.removeDialogCancel}
-          </Button>
-          <Button
-            type="button"
-            variant="primary"
-            onClick={handleConfirmRemovePhoto}
-            disabled={disabled}
-            aria-busy={disabled}
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-          >
-            {disabled ? copy.removeDialogPending : copy.removeDialogConfirm}
-          </Button>
+          {removeError ? (
+            <Typography size="xs" className="text-destructive" role="alert">
+              {removeError}
+            </Typography>
+          ) : null}
         </div>
       </Modal>
     </div>
