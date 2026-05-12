@@ -6,7 +6,6 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import posthog from "posthog-js";
 import { useTheme } from "@/contexts/ThemeContext";
-import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 
 export const MASCOT_VISIBLE_KEY = "pandatrack-mascot-visible";
@@ -100,7 +99,7 @@ export default function MascotBubble({ locale, visible = true, onHide }: MascotB
   };
 
   return (
-    <div className={cn("fixed right-6 z-[35]", "bottom-6", "max-lg:bottom-[calc(var(--mobile-tab-bar-h)+1.5rem)]")}>
+    <div className="fixed right-6 bottom-6 z-[35]">
       <button
         ref={bubbleRef}
         type="button"

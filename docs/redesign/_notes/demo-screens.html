@@ -781,29 +781,6 @@
       font-size: 13px;
     }
 
-    /* Mobile tab bar */
-    .mobile-tabbar {
-      display: flex;
-      justify-content: space-around;
-      padding: 6px 8px 10px;
-      border-top: 1px solid var(--border);
-      background: var(--surface);
-      position: sticky;
-      bottom: 0;
-    }
-    @media (min-width: 1024px) { .mobile-tabbar { display: none; } }
-    .mobile-tabbar a {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-      padding: 6px 8px;
-      font-size: 10px;
-      color: var(--text-muted);
-      min-width: 56px;
-    }
-    .mobile-tabbar a svg { width: 20px; height: 20px; }
-    .mobile-tabbar a.is-active { color: var(--accent); }
 
     /* ─────────────────────────────────────────────────────────────
        Componentes core
@@ -2828,7 +2805,8 @@
       color: var(--text-secondary);
     }
     .s7-mob-card-expand-row i { width: 14px; height: 14px; transition: transform 200ms ease; }
-    .s7-order-card.is-expanded .s7-mob-card-expand-row i { transform: rotate(180deg); }
+    .s7-order-card.is-expanded .s7-mob-card-expand-row i,
+    .s7-order-card.is-expanded .s7-mob-card-expand-row svg { transform: rotate(180deg); }
     /* Expanded items area (slides down from the card) */
     .s7-mob-card-items {
       margin: 12px -16px 0;
@@ -2875,11 +2853,11 @@
     }
     .s7-mob-sheet-head {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 16px 14px;
+      padding: 8px 14px 12px;
       border-bottom: 1px solid var(--border);
     }
-    .s7-mob-sheet-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
-    .s7-mob-sheet-body { padding: 16px 18px 10px; overflow-y: auto; flex: 1; }
+    .s7-mob-sheet-title { font-size: 15px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
+    .s7-mob-sheet-body { padding: 14px 16px 8px; overflow-y: auto; flex: 1; font-size: 14px; }
     .s7-mob-sheet-footer {
       padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
       display: flex; gap: 8px;
@@ -3018,10 +2996,11 @@
     .s7-mob-picker-list { display: flex; flex-direction: column; gap: 2px; }
     .s7-mob-picker-row {
       display: flex; align-items: center; gap: 12px;
-      padding: 12px 14px; border-radius: 10px;
+      padding: 10px 12px; border-radius: 8px;
       cursor: pointer; border: 1px solid transparent;
       background: transparent; width: 100%; text-align: left;
       transition: background 120ms ease, border-color 120ms ease;
+      min-height: 48px;
     }
     .s7-mob-picker-row:hover { background: color-mix(in oklch, var(--text-primary) 4%, transparent); }
     .s7-mob-picker-row.is-selected {
@@ -3029,7 +3008,7 @@
       border-color: color-mix(in oklch, var(--accent) 30%, transparent);
     }
     .s7-mob-picker-row .s7-mob-picker-icon {
-      width: 32px; height: 32px; border-radius: 8px;
+      width: 28px; height: 28px; border-radius: 7px;
       background: color-mix(in oklch, var(--text-primary) 5%, transparent);
       display: grid; place-items: center; flex-shrink: 0; color: var(--text-muted);
     }
@@ -3037,7 +3016,7 @@
       background: color-mix(in oklch, var(--accent) 14%, transparent); color: var(--accent);
     }
     .s7-mob-picker-row .s7-mob-picker-label {
-      flex: 1; min-width: 0; font-size: 14px; color: var(--text-primary);
+      flex: 1; min-width: 0; font-size: 13.5px; color: var(--text-primary);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .s7-mob-picker-row .s7-mob-picker-check { color: var(--accent); width: 16px; height: 16px; flex-shrink: 0; }
@@ -3046,12 +3025,13 @@
     .s7-mob-action-list { display: flex; flex-direction: column; gap: 2px; }
     .s7-mob-action-row {
       display: flex; align-items: center; gap: 12px;
-      padding: 14px 16px; border-radius: 10px;
+      padding: 11px 12px; border-radius: 8px;
       cursor: pointer; border: none; background: transparent; width: 100%;
       text-align: left; font-size: 14px; color: var(--text-primary);
+      min-height: 44px;
     }
     .s7-mob-action-row:hover { background: color-mix(in oklch, var(--text-primary) 4%, transparent); }
-    .s7-mob-action-row > i { width: 18px; height: 18px; color: var(--text-secondary); flex-shrink: 0; }
+    .s7-mob-action-row > i, .s7-mob-action-row > svg { width: 18px; height: 18px; color: var(--text-secondary); flex-shrink: 0; }
     .s7-mob-action-row.is-destructive { color: var(--destructive); }
     .s7-mob-action-row.is-destructive > i { color: var(--destructive); }
 
@@ -3085,8 +3065,6 @@
     }
     .s7-mob-actionbar .btn { min-height: 44px; }
 
-    /* Safe-area refinement for tabbar */
-    .mobile-tabbar { padding-bottom: max(8px, env(safe-area-inset-bottom)); }
 
     /* ─── Mobile viewport simulation ─────────────────────────────────────
        Screens with id ending in -mobile render as a centered 390px phone
@@ -3132,15 +3110,10 @@
       position: sticky; top: 0; z-index: 20;
       background: var(--surface);
     }
-    /* Action bar & tabbar inside mobile: static flex children at the bottom */
-    section[id$="-mobile"].is-active > .app-shell > .s7-mob-actionbar,
-    section[id$="-mobile"].is-active > .app-shell > .mobile-tabbar {
+    /* Action bar inside mobile: static flex child at the bottom */
+    section[id$="-mobile"].is-active > .app-shell > .s7-mob-actionbar {
       position: static;
       flex-shrink: 0;
-    }
-    /* Force mobile-tabbar visible inside mobile simulation (desktop media query hides it) */
-    section[id$="-mobile"].is-active .mobile-tabbar:not([style*="display:none"]) {
-      display: flex !important;
     }
     /* Responsive grids that target the desktop viewport (>=1024px) break
        inside the 390px phone — force single column regardless of viewport. */
@@ -3765,13 +3738,6 @@
       </div>
     </div>
 
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard" class="is-active"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -3950,13 +3916,6 @@
       </div>
     </div>
 
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders" class="is-active"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -4164,13 +4123,6 @@
       </div>
     </div>
 
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders" class="is-active"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -4426,13 +4378,6 @@
       </div>
     </div>
 
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders" class="is-active"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -4683,13 +4628,6 @@
       </div>
     </div>
 
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries" class="is-active"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -4879,13 +4817,6 @@
       </div>
     </div>
 
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings" class="is-active"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -5065,13 +4996,6 @@
       </div>
     </div>
 
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries" class="is-active"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -5415,13 +5339,6 @@
       </div>
     </div>
 
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -5616,13 +5533,6 @@
       </div>
     </div>
 
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -5903,13 +5813,6 @@
       </div>
     </div>
 
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -6013,13 +5916,6 @@
         </div>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -6084,13 +5980,6 @@
         </div>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -6234,13 +6123,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -6382,13 +6264,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -6468,13 +6343,6 @@
         </div>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -6649,13 +6517,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -6837,13 +6698,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -6988,13 +6842,6 @@
         <span style="font-size:12px;color:var(--text-muted);margin-left:8px;">47 tiendas · 12 por página</span>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -7112,13 +6959,6 @@
         </div>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -7261,13 +7101,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -7353,13 +7186,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -7460,13 +7286,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -7569,13 +7388,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -7703,13 +7515,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -7779,13 +7584,6 @@
         </div>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -7885,13 +7683,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -7981,13 +7772,6 @@
         </div>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -8100,13 +7884,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -8235,13 +8012,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -8307,13 +8077,6 @@
         </div>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -8367,13 +8130,6 @@
         </div>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -8494,13 +8250,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard"></i>Hoy</a>
-      <a href="#orders"><i data-lucide="package"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck"></i>Entregas</a>
-      <a href="#stores" class="is-active"><i data-lucide="store"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -9696,7 +9445,10 @@
               <div>
                 <div class="name">Solaris Books &amp; Records</div>
                 <div style="display:flex;gap:10px;align-items:center;margin-top:4px;flex-wrap:wrap;">
-                  <span class="id">ORD-20260428-01</span>
+                  <button type="button" aria-label="Copiar código de pedido" style="background:none;border:none;padding:2px 0;cursor:pointer;display:inline-flex;align-items:center;gap:5px;color:inherit;">
+                    <span class="id">ORD-20260428-01</span>
+                    <i data-lucide="copy" style="width:11px;height:11px;color:var(--text-muted);" aria-hidden="true"></i>
+                  </button>
                   <span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span>
                 </div>
               </div>
@@ -10083,11 +9835,15 @@
         </div>
       </div>
       <div class="m01b-body">
-        <p style="font-size:13px;color:var(--text-secondary);margin:0;">¿Seguro que quieres eliminar el pedido <strong>ORD-20260428-01 · Solaris Books &amp; Records</strong>? Se eliminarán también los pagos y el historial asociados. Las entregas vinculadas no se verán afectadas.</p>
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 14px;">¿Seguro que quieres eliminar el pedido <strong>ORD-20260428-01 · Solaris Books &amp; Records</strong>? Se eliminarán también los pagos y el historial asociados. Las entregas vinculadas no se verán afectadas.</p>
+        <div class="field" style="margin-bottom:0;">
+          <label class="field-label" for="s7-del-confirm-desktop">Escribí <strong style="color:var(--text-primary);font-weight:600;">eliminar</strong> para confirmar</label>
+          <input id="s7-del-confirm-desktop" class="input" type="text" placeholder="eliminar" autocomplete="off" autocapitalize="off" />
+        </div>
       </div>
       <div class="m01b-footer">
         <button class="btn ghost">Cancelar</button>
-        <button class="btn destructive"><i data-lucide="trash-2"></i> Eliminar pedido</button>
+        <button class="btn destructive" disabled style="opacity:0.55;cursor:not-allowed;"><i data-lucide="trash-2"></i> Eliminar pedido</button>
       </div>
     </div>
   </div>
@@ -10923,7 +10679,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil"></nav>
   </div>
 </section>
 
@@ -11185,7 +10940,6 @@
         </aside>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil"></nav>
   </div>
 </section>
 
@@ -11806,14 +11560,6 @@
 
     </div>
 
-    <!-- Mobile tabbar (con safe-area-inset-bottom vía CSS .mobile-tabbar) -->
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard" aria-hidden="true"></i>Hoy</a>
-      <a href="#s7-orders-list-mobile" class="is-active" aria-current="page"><i data-lucide="package" aria-hidden="true"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck" aria-hidden="true"></i>Entregas</a>
-      <a href="#stores"><i data-lucide="store" aria-hidden="true"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings" aria-hidden="true"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -11954,8 +11700,8 @@
       <button class="btn primary" type="button" style="flex:1;font-size:13px;justify-content:center;">
         <i data-lucide="truck"></i> Entrega
       </button>
-      <a href="#s7-order-detail-actions-mobile" data-screen-link="s7-order-detail-actions-mobile" class="btn ghost" aria-label="Más acciones (editar, copiar, cancelar, eliminar)" style="min-width:44px;padding:0 12px;display:inline-grid;place-items:center;">
-        <i data-lucide="ellipsis"></i>
+      <a href="#s7-order-detail-actions-mobile" data-screen-link="s7-order-detail-actions-mobile" class="btn" aria-label="Más acciones (editar, cancelar, eliminar)" style="flex-shrink:0;background:transparent;border:1px solid var(--border-strong);color:var(--text-primary);padding:0 12px;min-height:44px;gap:4px;font-size:12px;">
+        <i data-lucide="ellipsis" style="width:18px;height:18px;"></i>Más
       </a>
     </div>
   </div>
@@ -12631,13 +12377,6 @@
         </div>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard" aria-hidden="true"></i>Hoy</a>
-      <a href="#s7-orders-list-mobile" class="is-active" aria-current="page"><i data-lucide="package" aria-hidden="true"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck" aria-hidden="true"></i>Entregas</a>
-      <a href="#stores"><i data-lucide="store" aria-hidden="true"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings" aria-hidden="true"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -12651,22 +12390,14 @@
       <div class="s7-mob-empty">
         <div class="s7-mob-empty-icon"><i data-lucide="package-open"></i></div>
         <div>
-          <h3>Aún no tenés pedidos</h3>
-          <p>Cuando hagas tu primer pedido a una tienda, vas a verlo acá con su estado, pagos y entregas.</p>
+          <h3>Aún no hay pedidos</h3>
+          <p>Anota tu primer pedido y empieza a seguir tus compras desde aquí.</p>
         </div>
         <div class="s7-mob-empty-actions">
-          <a href="#s7-order-create-mobile" data-screen-link="s7-order-create-mobile" class="btn primary" style="width:100%;justify-content:center;"><i data-lucide="plus"></i> Crear primer pedido</a>
-          <a href="#stores" class="btn ghost" style="width:100%;justify-content:center;font-size:12px;">Ver tiendas</a>
+          <a href="#s7-order-create-mobile" data-screen-link="s7-order-create-mobile" class="btn primary" style="width:100%;justify-content:center;"><i data-lucide="plus"></i> Anotar primer pedido</a>
         </div>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard" aria-hidden="true"></i>Hoy</a>
-      <a href="#s7-orders-list-mobile" class="is-active" aria-current="page"><i data-lucide="package" aria-hidden="true"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck" aria-hidden="true"></i>Entregas</a>
-      <a href="#stores"><i data-lucide="store" aria-hidden="true"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings" aria-hidden="true"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -12689,21 +12420,13 @@
         <div class="s7-mob-empty-icon"><i data-lucide="search-x"></i></div>
         <div>
           <h3>Sin resultados</h3>
-          <p>No hay pedidos que coincidan con los filtros activos. Probá quitar alguno o cambiar el rango.</p>
+          <p>Ningún pedido coincide con los filtros actuales. Prueba ajustando o limpiando los filtros.</p>
         </div>
         <div class="s7-mob-empty-actions">
-          <button type="button" class="btn primary" style="width:100%;justify-content:center;">Limpiar todos los filtros</button>
-          <button type="button" class="btn ghost" style="width:100%;justify-content:center;font-size:12px;">Ajustar filtros</button>
+          <button type="button" class="btn ghost" style="width:100%;justify-content:center;"><i data-lucide="x"></i> Limpiar filtros</button>
         </div>
       </div>
     </div>
-    <nav class="mobile-tabbar" aria-label="Navegación móvil">
-      <a href="#dashboard"><i data-lucide="layout-dashboard" aria-hidden="true"></i>Hoy</a>
-      <a href="#s7-orders-list-mobile" class="is-active" aria-current="page"><i data-lucide="package" aria-hidden="true"></i>Pedidos</a>
-      <a href="#deliveries"><i data-lucide="truck" aria-hidden="true"></i>Entregas</a>
-      <a href="#stores"><i data-lucide="store" aria-hidden="true"></i>Tiendas</a>
-      <a href="#settings"><i data-lucide="settings" aria-hidden="true"></i>Ajustes</a>
-    </nav>
   </div>
 </section>
 
@@ -12746,18 +12469,33 @@
               <input type="text" placeholder="Buscar tiendas…" style="flex:1;min-width:80px;border:0;background:transparent;color:var(--text-primary);outline:none;font-size:13px;" />
             </div>
           </div>
-          <!-- Fecha -->
+          <!-- Fecha — par Desde/Hasta canónico (parity con desktop) -->
           <div style="margin-bottom:20px;">
             <span class="eyebrow" style="display:block;margin-bottom:8px;">Fecha del pedido</span>
-            <button type="button" class="input" style="display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;">
-              <span style="color:var(--text-muted);">Cualquier fecha</span>
-              <i data-lucide="calendar-days" style="width:14px;height:14px;color:var(--text-muted);"></i>
+            <div style="display:flex;gap:8px;">
+              <div style="flex:1;">
+                <label style="font-size:11px;color:var(--text-muted);margin-bottom:4px;display:block;">Desde</label>
+                <input type="date" class="input" style="width:100%;" />
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:11px;color:var(--text-muted);margin-bottom:4px;display:block;">Hasta</label>
+                <input type="date" class="input" style="width:100%;" />
+              </div>
+            </div>
+          </div>
+          <!-- Sort — agregado en mobile (parity con desktop, faltaba completamente) -->
+          <div style="margin-bottom:20px;">
+            <span class="eyebrow" style="display:block;margin-bottom:8px;">Ordenar por</span>
+            <button type="button" class="input" style="display:flex;align-items:center;justify-content:space-between;width:100%;cursor:pointer;text-align:left;">
+              <span style="font-size:13px;color:var(--text-primary);">Más recientes</span>
+              <i data-lucide="chevrons-up-down" style="width:14px;height:14px;color:var(--text-muted);"></i>
             </button>
+            <p class="card-helper" style="margin-top:6px;">5 opciones: Más recientes · Más antiguas · Tienda A–Z · % Pago: menor · Total: mayor</p>
           </div>
           <!-- FX switch -->
           <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--surface-elevated);">
             <div style="min-width:0;">
-              <div style="font-size:13px;font-weight:500;color:var(--text-primary);">Solo con FX desactualizado</div>
+              <div style="font-size:13px;font-weight:500;color:var(--text-primary);">Solo con actualización pendiente</div>
               <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">Pedidos que necesitan refrescar el tipo de cambio</div>
             </div>
             <button type="button" class="switch is-on" role="switch" aria-checked="true" style="flex-shrink:0;"><span class="switch-knob"></span></button>
@@ -12837,7 +12575,7 @@
     <div class="s7-mob-actionbar" role="toolbar" aria-label="Acciones del pedido">
       <a href="#s7-order-detail-pay-mobile" data-screen-link="s7-order-detail-pay-mobile" class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="circle-dollar-sign"></i> Pagar saldo</a>
       <button class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="truck"></i> Entrega</button>
-      <a href="#s7-order-detail-actions-mobile" data-screen-link="s7-order-detail-actions-mobile" class="btn ghost" aria-label="Más acciones" style="min-width:44px;padding:0 12px;display:inline-grid;place-items:center;"><i data-lucide="ellipsis"></i></a>
+      <a href="#s7-order-detail-actions-mobile" data-screen-link="s7-order-detail-actions-mobile" class="btn" aria-label="Más acciones" style="flex-shrink:0;background:transparent;border:1px solid var(--border-strong);color:var(--text-primary);padding:0 12px;min-height:44px;gap:4px;font-size:12px;"><i data-lucide="ellipsis" style="width:18px;height:18px;"></i>Más</a>
     </div>
   </div>
 </section>
@@ -12867,13 +12605,13 @@
             </div>
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
-            <span class="chip neutral"><i data-lucide="x-circle"></i> Cancelado</span>
+            <span class="chip neutral"><i data-lucide="ban"></i> Cancelado</span>
           </div>
           <span class="eyebrow" style="display:block;">Tu pedido · JPY · Cancelado el 4 ene 2026</span>
           <div style="margin-top:6px;">
             <div class="text-secondary" style="font-size:12.5px;">Total del pedido</div>
             <div class="detail-hero-amount num" style="font-size:30px;margin-top:2px;color:var(--text-secondary);">¥18.400</div>
-            <div class="detail-hero-amount-sub" style="margin-bottom:8px;">Pagos eliminados al cancelar (BR-05-15)</div>
+            <div class="detail-hero-amount-sub" style="margin-bottom:8px;">Sin pagos registrados</div>
           </div>
           <p class="text-muted" style="font-size:12px;margin:8px 0 0;border-top:1px solid var(--border);padding-top:10px;"><strong style="color:var(--text-secondary);">Motivo:</strong> El vendedor reportó que el producto no llegará por discontinuación.</p>
         </div>
@@ -12889,7 +12627,7 @@
     </div>
     <div class="s7-mob-actionbar" role="toolbar" aria-label="Acciones del pedido">
       <button class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="rotate-ccw"></i> Reactivar pedido</button>
-      <a href="#s7-order-detail-actions-mobile" data-screen-link="s7-order-detail-actions-mobile" class="btn ghost" aria-label="Más acciones (incluye eliminar)" style="min-width:44px;padding:0 12px;display:inline-grid;place-items:center;"><i data-lucide="ellipsis"></i></a>
+      <a href="#s7-order-detail-actions-mobile" data-screen-link="s7-order-detail-actions-mobile" class="btn" aria-label="Más acciones (incluye eliminar)" style="flex-shrink:0;background:transparent;border:1px solid var(--border-strong);color:var(--text-primary);padding:0 12px;min-height:44px;gap:4px;font-size:12px;"><i data-lucide="ellipsis" style="width:18px;height:18px;"></i>Más</a>
     </div>
   </div>
 </section>
@@ -12943,14 +12681,14 @@
             <button class="subcard-toggle" aria-expanded="false"><span class="eyebrow">Pagos</span><span class="text-muted" style="font-size:12px;">2 pagos · <span class="num" style="color:var(--destructive);font-weight:600;">¥4.200 restante</span></span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
           </div>
           <div class="subcard" data-collapsible>
-            <button class="subcard-toggle" aria-expanded="false"><span class="eyebrow">Productos entregados</span><span class="text-muted" style="font-size:12px;">3 · Todos</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <button class="subcard-toggle" aria-expanded="false"><span class="eyebrow">Productos</span><span class="text-muted" style="font-size:12px;">3</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
           </div>
         </div>
       </div>
     </div>
     <div class="s7-mob-actionbar" role="toolbar" aria-label="Acciones del pedido">
       <a href="#s7-order-detail-pay-mobile" data-screen-link="s7-order-detail-pay-mobile" class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="circle-dollar-sign"></i> Saldar ¥4.200</a>
-      <a href="#s7-order-detail-actions-mobile" data-screen-link="s7-order-detail-actions-mobile" class="btn ghost" aria-label="Más acciones" style="min-width:44px;padding:0 12px;display:inline-grid;place-items:center;"><i data-lucide="ellipsis"></i></a>
+      <a href="#s7-order-detail-actions-mobile" data-screen-link="s7-order-detail-actions-mobile" class="btn" aria-label="Más acciones" style="flex-shrink:0;background:transparent;border:1px solid var(--border-strong);color:var(--text-primary);padding:0 12px;min-height:44px;gap:4px;font-size:12px;"><i data-lucide="ellipsis" style="width:18px;height:18px;"></i>Más</a>
     </div>
   </div>
 </section>
@@ -12983,12 +12721,10 @@
       </div>
       <div class="s7-mob-sheet-body" style="padding:8px;">
         <div class="s7-mob-action-list">
+          <button type="button" class="s7-mob-action-row" role="menuitem"><i data-lucide="truck"></i> Crear entrega</button>
           <a href="#s7-order-edit-mobile" data-screen-link="s7-order-edit-mobile" class="s7-mob-action-row" role="menuitem"><i data-lucide="pencil"></i> Editar pedido</a>
-          <button type="button" class="s7-mob-action-row" role="menuitem"><i data-lucide="copy"></i> Copiar código (ORD-20260428-01)</button>
-          <button type="button" class="s7-mob-action-row" role="menuitem"><i data-lucide="share-2"></i> Compartir pedido</button>
-          <button type="button" class="s7-mob-action-row" role="menuitem"><i data-lucide="link-2"></i> Crear entrega</button>
           <div style="height:1px;background:var(--border);margin:6px 8px;"></div>
-          <a href="#s7-order-detail-cancel-mobile" data-screen-link="s7-order-detail-cancel-mobile" class="s7-mob-action-row" role="menuitem" style="color:var(--warning);"><i data-lucide="x-circle" style="color:var(--warning);"></i> Cancelar pedido</a>
+          <a href="#s7-order-detail-cancel-mobile" data-screen-link="s7-order-detail-cancel-mobile" class="s7-mob-action-row" role="menuitem" style="color:var(--warning);"><i data-lucide="ban" style="color:var(--warning);"></i> Cancelar pedido</a>
           <a href="#s7-order-detail-delete-mobile" data-screen-link="s7-order-detail-delete-mobile" class="s7-mob-action-row is-destructive" role="menuitem"><i data-lucide="trash-2"></i> Eliminar pedido</a>
         </div>
       </div>
@@ -13081,8 +12817,8 @@
           </div>
         </div>
         <div class="field" style="margin-bottom:0;">
-          <label class="field-label" for="s7m-del-confirm">Escribí <span class="num" style="color:var(--text-primary);">ORD-20260428-01</span> para confirmar</label>
-          <input id="s7m-del-confirm" class="input" type="text" placeholder="ORD-…" autocomplete="off" autocapitalize="off" style="font-family:'JetBrains Mono',ui-monospace,monospace;" />
+          <label class="field-label" for="s7m-del-confirm">Escribí <strong style="color:var(--text-primary);font-weight:600;">eliminar</strong> para confirmar</label>
+          <input id="s7m-del-confirm" class="input" type="text" placeholder="eliminar" autocomplete="off" autocapitalize="off" />
         </div>
       </div>
       <div class="s7-mob-sheet-footer">
@@ -13112,10 +12848,10 @@
       <div class="s7-mob-sheet-handle" aria-hidden="true"></div>
       <div class="s7-mob-sheet-body" style="padding-top:14px;">
         <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
-          <div style="width:40px;height:40px;border-radius:12px;background:color-mix(in oklch,var(--warning) 12%,transparent);display:grid;place-items:center;color:var(--warning);flex-shrink:0;"><i data-lucide="x-circle"></i></div>
+          <div style="width:40px;height:40px;border-radius:12px;background:color-mix(in oklch,var(--warning) 12%,transparent);display:grid;place-items:center;color:var(--warning);flex-shrink:0;"><i data-lucide="ban"></i></div>
           <div style="min-width:0;flex:1;">
             <h3 class="s7-mob-sheet-title" id="s7-mob-cancel-title" style="margin:0 0 4px;">¿Cancelar pedido?</h3>
-            <p style="margin:0;font-size:13px;color:var(--text-secondary);line-height:1.5;">El pedido pasará a estado <strong style="color:var(--text-primary);">Cancelado</strong>. Sus <strong style="color:var(--text-primary);">1 pago por $744,00</strong> se eliminará del balance (BR-05-15). Podés reactivarlo después si querés.</p>
+            <p style="margin:0;font-size:13px;color:var(--text-secondary);line-height:1.5;">El pedido pasará a estado <strong style="color:var(--text-primary);">Cancelado</strong>. Los pagos registrados y el historial se conservan. Podrás reactivarlo más adelante desde el detalle del pedido.</p>
           </div>
         </div>
         <div class="field" style="margin-bottom:0;">
@@ -13125,7 +12861,7 @@
       </div>
       <div class="s7-mob-sheet-footer">
         <button type="button" class="btn ghost" style="flex:1;justify-content:center;">Volver</button>
-        <button type="button" class="btn" style="flex:1;justify-content:center;background:var(--warning);color:var(--text-on-accent);"><i data-lucide="x-circle"></i> Cancelar pedido</button>
+        <button type="button" class="btn" style="flex:1;justify-content:center;background:var(--warning);color:var(--text-on-accent);"><i data-lucide="ban"></i> Cancelar pedido</button>
       </div>
     </div>
   </div>
@@ -13181,10 +12917,22 @@
                   <span style="font-size:12px;color:var(--text-muted);">Total calculado: <strong style="color:var(--text-primary);font-variant-numeric:tabular-nums;">¥15.800</strong></span>
                   <button type="button" class="btn accent sm" style="width:100%;justify-content:center;"><i data-lucide="calculator"></i> Usar este total</button>
                 </div>
-                <div class="field" style="margin-bottom:0;">
+                <div class="field">
                   <label class="field-label">Costo total (JPY) <span style="color:var(--destructive);">*</span></label>
                   <input class="input" type="number" value="15800" />
                   <p class="card-helper" style="margin-top:6px;">Incluye productos, envío e impuestos.</p>
+                </div>
+
+                <!-- FX field + botón Hoy (parity con desktop step-2, faltaba en mobile create) -->
+                <div class="field" style="margin-bottom:0;">
+                  <label class="field-label">Tipo de cambio JPY→USD <span class="text-muted" style="font-size:11px;font-weight:400;">(opcional)</span></label>
+                  <div style="display:flex;align-items:stretch;gap:8px;">
+                    <input class="input" type="number" placeholder="0.0067" style="flex:1;min-width:0;" />
+                    <button class="btn accent" style="white-space:nowrap;flex-shrink:0;" type="button" title="Consulta Frankfurter API">
+                      <i data-lucide="refresh-cw"></i> Hoy
+                    </button>
+                  </div>
+                  <p class="card-helper" style="margin-top:6px;">"Hoy" consulta Frankfurter (gratis, sin key) y rellena automáticamente.</p>
                 </div>
               </div>
             </div>
@@ -13277,15 +13025,33 @@
     <div class="s7-mob-backdrop" aria-hidden="true"></div>
     <div class="s7-mob-sheet" role="alertdialog" aria-modal="true" aria-labelledby="s7-mob-disc-title">
       <div class="s7-mob-sheet-handle" aria-hidden="true"></div>
+      <div class="s7-mob-sheet-head">
+        <h3 class="s7-mob-sheet-title" id="s7-mob-disc-title">Total no coincide</h3>
+        <button class="topbar-iconbtn" type="button" aria-label="Cerrar"><i data-lucide="x"></i></button>
+      </div>
       <div class="s7-mob-sheet-body" style="padding-top:14px;">
         <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
           <div style="width:40px;height:40px;border-radius:12px;background:color-mix(in oklch,var(--warning) 12%,transparent);display:grid;place-items:center;color:var(--warning);flex-shrink:0;"><i data-lucide="alert-triangle"></i></div>
           <div style="min-width:0;flex:1;">
-            <h3 class="s7-mob-sheet-title" id="s7-mob-disc-title" style="margin:0 0 4px;">Total no coincide</h3>
-            <p style="margin:0;font-size:13px;color:var(--text-secondary);line-height:1.5;">El costo total que ingresaste (<strong class="num" style="color:var(--text-primary);">¥30.000</strong>) es diferente al total calculado desde los ítems (<strong class="num" style="color:var(--text-primary);">¥15.800</strong>).</p>
+            <p style="margin:0;font-size:13px;color:var(--text-secondary);line-height:1.5;">El costo total que ingresaste no coincide con la suma de los ítems.</p>
           </div>
         </div>
-        <div style="background:color-mix(in oklch,var(--text-primary) 4%,transparent);border-radius:10px;padding:12px;font-size:12px;color:var(--text-secondary);line-height:1.5;">
+        <!-- Tabla comparativa (parity con desktop discrepancy modal) -->
+        <div style="background:color-mix(in oklch,var(--text-primary) 4%,transparent);border-radius:10px;padding:12px 14px;margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;">
+            <span style="font-size:12px;color:var(--text-muted);">Suma de productos</span>
+            <span class="num" style="font-size:14px;font-weight:500;color:var(--text-primary);">¥15.800</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-top:1px solid var(--border);">
+            <span style="font-size:12px;color:var(--text-muted);">Total ingresado</span>
+            <span class="num" style="font-size:14px;font-weight:500;color:var(--text-primary);">¥30.000</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-top:1px solid var(--border-strong);">
+            <span style="font-size:12px;font-weight:600;color:var(--warning);">Diferencia</span>
+            <span class="num" style="font-size:14px;font-weight:700;color:var(--warning);">¥14.200</span>
+          </div>
+        </div>
+        <div style="background:color-mix(in oklch,var(--info) 6%,transparent);border:1px solid color-mix(in oklch,var(--info) 22%,transparent);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--text-secondary);line-height:1.5;">
           <strong style="display:block;color:var(--text-primary);margin-bottom:4px;">¿Por qué puede pasar?</strong>
           Envío, impuestos o promociones aplicados sobre el subtotal. El costo total siempre prevalece sobre la suma de ítems.
         </div>
@@ -14355,7 +14121,7 @@
       e.preventDefault();
       e.stopPropagation();
       // si la row mock no tiene texto significativo (ej. row de tabla), no toast
-      const isNav = el.classList.contains('app-nav-link') || el.closest('.mobile-tabbar');
+      const isNav = el.classList.contains('app-nav-link');
       if (isNav) showStubToast(el.textContent.trim());
     });
   });

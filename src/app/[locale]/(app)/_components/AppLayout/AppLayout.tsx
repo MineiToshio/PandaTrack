@@ -6,11 +6,10 @@ import { ShellIdentityContext } from "@/contexts/ShellIdentityContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import Sidebar from "@/components/modules/Sidebar";
 import Header from "@/components/modules/Header";
-import MobileTabBar from "@/components/modules/MobileTabBar";
+import FAB from "@/components/core/FAB";
 import MascotBubble, { MASCOT_HIDDEN_VALUE, MASCOT_VISIBLE_KEY } from "@/components/modules/MascotBubble";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { APP_SHELL_MAIN_CLASSNAME } from "@/lib/constants";
-import { cn } from "@/lib/styles";
 import { getFabAction } from "../../_utils/fabAction";
 import AppNavDrawer from "./AppNavDrawer";
 import { HeaderTitleProvider } from "./HeaderTitleContext";
@@ -111,14 +110,14 @@ export default function AppLayout({
                 onOpenDrawer={handleOpenDrawer}
                 burgerButtonRef={burgerButtonRef}
               />
-              <main id="main-content" className={cn(APP_SHELL_MAIN_CLASSNAME, "max-lg:pb-[var(--mobile-tab-bar-h)]")}>
+              <main id="main-content" className={APP_SHELL_MAIN_CLASSNAME}>
                 {children}
               </main>
             </HeaderTitleProvider>
           </div>
 
-          {/* Mobile bottom tab bar */}
-          <MobileTabBar locale={locale} pathname={pathname ?? ""} fabAction={fabAction} storesHref={storesHref} />
+          {/* Mobile FAB — floating bottom-right, hidden on desktop */}
+          <FAB action={fabAction} />
 
           {/* Mascot bubble — idle variant, bottom-right corner */}
           <MascotBubble locale={locale} visible={mascotVisible} onHide={() => setMascotVisible(false)} />

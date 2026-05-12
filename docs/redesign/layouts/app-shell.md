@@ -30,18 +30,17 @@ Los organismos individuales tienen su propia spec en `docs/redesign/components/`
 ║  │ user widget     │  ║                                              ║
 ║  └─────────────────┘  ║                                              ║
 ╚══════════════════════════════════════════════════════════════════════╝
-   [MobileTabBar]  fixed bottom  (solo mobile < lg)
+   [FAB]           fixed bottom-right  (solo mobile < lg)
    [MascotBubble]  fixed bottom-right  (todas las pantallas)
-   [FAB]           fixed, dentro del MobileTabBar (solo mobile)
 ```
 
 ## 2. Comportamiento por breakpoint
 
-| Breakpoint           | Sidebar | Header                         | MobileTabBar | FAB       | MascotBubble |
-| -------------------- | ------- | ------------------------------ | ------------ | --------- | ------------ |
-| `< --breakpoint-md`  | Oculto  | Burger + breadcrumbs truncados | Visible      | Elevado   | Bubble fixed |
-| `--breakpoint-md–lg` | Oculto  | Burger + breadcrumbs           | Visible      | Elevado   | Bubble fixed |
-| `≥ --breakpoint-lg`  | Visible | Breadcrumbs + lang + theme     | Oculto       | No render | Bubble fixed |
+| Breakpoint           | Sidebar | Header                         | FAB             | MascotBubble |
+| -------------------- | ------- | ------------------------------ | --------------- | ------------ |
+| `< --breakpoint-md`  | Oculto  | Burger + breadcrumbs truncados | Fixed btm-right | Bubble fixed |
+| `--breakpoint-md–lg` | Oculto  | Burger + breadcrumbs           | Fixed btm-right | Bubble fixed |
+| `≥ --breakpoint-lg`  | Visible | Breadcrumbs + lang + theme     | No render       | Bubble fixed |
 
 El sidebar solo aparece en `≥ --breakpoint-lg`. Los tokens de breakpoint:
 
@@ -61,7 +60,6 @@ El sidebar solo aparece en `≥ --breakpoint-lg`. Los tokens de breakpoint:
 | `--sidebar-w-collapsed` | `4rem`   | Sidebar collapsed (64px)                             |
 | `--header-h`            | `3.5rem` | Altura del header mobile (56px)                      |
 | `--header-h-desktop`    | `4rem`   | Altura del header desktop (64px) + logo zone sidebar |
-| `--mobile-tab-bar-h`    | `4rem`   | Altura del MobileTabBar (64px) **— nuevo token S5**  |
 | `--verify-banner-h`     | `3rem`   | Altura del VerifyEmailBanner (48px)                  |
 | `--fab-size`            | `3.5rem` | Diámetro del FAB (56px)                              |
 
@@ -141,22 +139,21 @@ Cuando el usuario cierra el banner (`sessionStorage` dismiss), el componente se 
 
 Todos los valores en `globals.css` bajo la sección `/* z-index scale */`:
 
-| Token         | Valor | Elemento                                              |
-| ------------- | ----- | ----------------------------------------------------- |
-| `--z-sticky`  | 10    | Encabezados sticky de tablas/listas                   |
-| `--z-sidebar` | 20    | `<Sidebar>` (fixed desktop)                           |
-| `--z-header`  | 30    | `<Header>` sticky + `<MobileTabBar>` fixed            |
-| `--z-mascot`  | 35    | `<MascotBubble>` bubble fixed                         |
-| `--z-fab`     | 38    | `<FAB>` — **nuevo token S5** (entre mascot y popover) |
-| `--z-popover` | 40    | `<DropdownMenu>`, `<Tooltip>`, `<Popover>`            |
-| `--z-sheet`   | 50    | `<Sheet>` (bottom sheet)                              |
-| `--z-drawer`  | 50    | `<AppNavDrawer>` (mobile drawer)                      |
-| `--z-modal`   | 60    | `<Modal>` (dialog)                                    |
-| `--z-toast`   | 70    | `<Toast>` (notifications)                             |
+| Token         | Valor | Elemento                                   |
+| ------------- | ----- | ------------------------------------------ |
+| `--z-sticky`  | 10    | Encabezados sticky de tablas/listas        |
+| `--z-sidebar` | 20    | `<Sidebar>` (fixed desktop)                |
+| `--z-header`  | 30    | `<Header>` sticky                          |
+| `--z-mascot`  | 35    | `<MascotBubble>` bubble fixed              |
+| `--z-fab`     | 38    | `<FAB>` (entre mascot y popover)           |
+| `--z-popover` | 40    | `<DropdownMenu>`, `<Tooltip>`, `<Popover>` |
+| `--z-sheet`   | 50    | `<Sheet>` (bottom sheet)                   |
+| `--z-drawer`  | 50    | `<AppNavDrawer>` (mobile drawer)           |
+| `--z-modal`   | 60    | `<Modal>` (dialog)                         |
+| `--z-toast`   | 70    | `<Toast>` (notifications)                  |
 
 Notas:
 
-- `--z-header` = `--z-mobile-tab-bar` (ambos son navegación primaria con igual importancia).
 - `--z-fab` = 38 garantiza que el FAB quede encima del MascotBubble pero debajo de cualquier popover.
 - Los overlays del sidebar hover-expand usan `--z-sidebar` (20) — nunca superan el header.
 
@@ -200,11 +197,10 @@ Visible solo al foco teclado. Se posiciona absolutamente fuera de la pantalla ha
 
 ## 8. Mobile padding-bottom
 
-En mobile, el contenido principal tiene `padding-bottom` para que el último elemento no quede detrás del MobileTabBar y del safe area de iOS:
+En mobile, el contenido principal tiene `padding-bottom` para el safe area de iOS:
 
 ```
-padding-bottom = --mobile-tab-bar-h + env(safe-area-inset-bottom, 0px)
-               = 4rem + safe-area
+padding-bottom = env(safe-area-inset-bottom, 0px)
 ```
 
 En desktop (`≥ lg`) este padding es 0.
@@ -220,7 +216,7 @@ En desktop (`≥ lg`) este padding es 0.
 | Breadcrumbs             | `Breadcrumbs`       | `src/components/core/Breadcrumbs.tsx`                  |
 | Lang toggle             | `LangToggle`        | `src/components/core/LangToggle.tsx`                   |
 | Theme toggle            | `ThemeToggle`       | `src/components/core/ThemeToggle.tsx`                  |
-| Navegación mobile       | `MobileTabBar`      | `src/components/modules/MobileTabBar/MobileTabBar.tsx` |
+| Navegación mobile       | `AppNavDrawer`      | `src/components/modules/AppNavDrawer/AppNavDrawer.tsx` |
 | Acción principal mobile | `FAB`               | `src/components/core/FAB.tsx`                          |
 | Mascota idle            | `MascotBubble`      | `src/components/modules/MascotBubble/MascotBubble.tsx` |
 | Progress indicador      | `ProgressBar`       | `src/components/core/ProgressBar.tsx`                  |
@@ -246,9 +242,6 @@ Utils del shell:
 Los siguientes tokens **no existen aún** y deben agregarse en la sesión S5:
 
 ```css
-/* Layout — Shell (agregar en la sección de layout magic numbers) */
---mobile-tab-bar-h: 4rem; /* 64px — altura del MobileTabBar */
-
 /* Z-index scale (agregar entre --z-mascot y --z-popover) */
 --z-fab: 38; /* FAB — entre mascot (35) y popover (40) */
 ```
@@ -269,8 +262,8 @@ AppShell
 │   ├── LangToggle        (nuevo — extraído de landing)
 │   ├── ThemeToggle       (nuevo — extraído de landing)
 │   └── IconButton        (ya existe)
-├── MobileTabBar
-│   └── FAB               (nuevo)
+├── AppNavDrawer          (mobile nav — burger drawer)
+├── FAB                   (nuevo — fixed bottom-right mobile)
 └── MascotBubble          (nuevo — idle variant solo S5)
 ```
 
@@ -286,7 +279,7 @@ Todos los eventos de shell van bajo `POSTHOG_EVENTS.APP_SHELL` en `src/lib/const
 | Evento            | Cuándo                                       | Props                                         |
 | ----------------- | -------------------------------------------- | --------------------------------------------- | -------------- |
 | `SIDEBAR_TOGGLED` | Usuario clickea colapsar/expandir            | `{ state: "expanded"                          | "collapsed" }` |
-| `NAV_CLICKED`     | Click en nav link del sidebar o MobileTabBar | `{ destination, navigation_level, viewport }` |
+| `NAV_CLICKED`     | Click en nav link del sidebar o AppNavDrawer | `{ destination, navigation_level, viewport }` |
 | `THEME_CHANGED`   | Usuario cambia tema                          | `{ from, to, source }`                        |
 | `LOCALE_CHANGED`  | Usuario cambia idioma                        | `{ from, to }`                                |
 | `MASCOT_HIDDEN`   | Usuario oculta mascota desde menú contextual | (sin props extra)                             |
@@ -296,7 +289,7 @@ Todos los eventos de shell van bajo `POSTHOG_EVENTS.APP_SHELL` en `src/lib/const
 
 - [ADR 0003 — Demo decisions](../decisions/0003-demo-decisions.md): D3 (sidebar PUSH), D4 (header breadcrumbs+lang+theme).
 - [ADR 0001 — S2 closure decisions](../decisions/0001-s2-closure-decisions.md): D5 (view-transition-name), D9 (pagination desktop classic / mobile load-more).
-- [ADR 0006 — Color blindness icon-label contract](../decisions/0006-color-blindness-icon-label-contract.md): los nav links del sidebar y el MobileTabBar siempre muestran ícono + label visible.
+- [ADR 0006 — Color blindness icon-label contract](../decisions/0006-color-blindness-icon-label-contract.md): los nav links del sidebar y el AppNavDrawer siempre muestran ícono + label visible.
 
 ## Specs de componentes del shell
 
@@ -308,7 +301,7 @@ Todos los eventos de shell van bajo `POSTHOG_EVENTS.APP_SHELL` en `src/lib/const
 | Breadcrumbs       | [`../components/Breadcrumbs.md`](../components/Breadcrumbs.md)             |
 | ThemeToggle       | [`../components/ThemeToggle.md`](../components/ThemeToggle.md)             |
 | LangToggle        | [`../components/LangToggle.md`](../components/LangToggle.md)               |
-| MobileTabBar      | [`../components/MobileTabBar.md`](../components/MobileTabBar.md)           |
+| AppNavDrawer      | [`../components/AppNavDrawer.md`](../components/AppNavDrawer.md)           |
 | FAB               | [`../components/FAB.md`](../components/FAB.md)                             |
 | VerifyEmailBanner | [`../components/VerifyEmailBanner.md`](../components/VerifyEmailBanner.md) |
 | MascotBubble      | [`../components/MascotBubble.md`](../components/MascotBubble.md)           |

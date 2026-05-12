@@ -36,12 +36,6 @@
     "languageNavigation": "Selector de idioma",
     "primarySidebar": "Barra lateral principal"
   },
-  "mobileTabBar": {
-    "today": "Hoy",
-    "orders": "Pedidos",
-    "stores": "Tiendas",
-    "settings": "Ajustes"
-  },
   "error": {
     "title": "Algo salió mal",
     "description": "No pudimos cargar esta sección de la app. Inténtalo de nuevo.",

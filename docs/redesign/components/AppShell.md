@@ -14,7 +14,7 @@ adrs:
 
 ## Propósito
 
-Orquestador del layout privado `(app)`. Combina todos los organismos del shell en una estructura coherente: `<VerifyEmailBanner>` (condicional) → `<Sidebar>` (fixed desktop) → `<Header>` (sticky) → `<main>` → `<MobileTabBar>` (fixed mobile) → `<MascotBubble>` (fixed global).
+Orquestador del layout privado `(app)`. Combina todos los organismos del shell en una estructura coherente: `<VerifyEmailBanner>` (condicional) → `<Sidebar>` (fixed desktop) → `<Header>` (sticky) → `<main>` → `<MascotBubble>` (fixed global).
 
 Define dos modos de expansión del sidebar:
 
@@ -83,7 +83,7 @@ type VerifyBannerPassedProps = {
 │  │  user widget                 │                                  │   │
 │  └──────────────────────────────┘──────────────────────────────────┘   │
 │                                                                         │
-│  [MobileTabBar fixed bottom — solo mobile]                              │
+│  [FAB fixed bottom-right — solo mobile]                                 │
 │  [MascotBubble fixed bottom-right — todas las pantallas]                │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -188,16 +188,14 @@ Landmarks ARIA del shell:
 | `<header>`                 | `banner`        | (landmark nativo)                         |
 | `<nav>` (Breadcrumbs)      | `navigation`    | `aria-label={t("breadcrumbs.ariaLabel")}` |
 | `<main id="main-content">` | `main`          | (landmark nativo)                         |
-| `<nav>` (MobileTabBar)     | `navigation`    | `aria-label={t("nav.ariaLabel")}`         |
 
 ## CSS variables requeridas en globals.css
 
 Las siguientes CSS vars son **nuevas** (aún no en globals.css) y deben agregarse en S5:
 
-| Token                | Valor  | Descripción                                    |
-| -------------------- | ------ | ---------------------------------------------- |
-| `--mobile-tab-bar-h` | `4rem` | Altura del MobileTabBar (64px)                 |
-| `--z-fab`            | `38`   | Z-index del FAB (entre mascot=35 y popover=40) |
+| Token     | Valor | Descripción                                    |
+| --------- | ----- | ---------------------------------------------- |
+| `--z-fab` | `38`  | Z-index del FAB (entre mascot=35 y popover=40) |
 
 Las siguientes ya existen y se reutilizan:
 
@@ -230,16 +228,16 @@ Cuando el `<VerifyEmailBanner>` está activo, el layout inyecta `--app-banner-of
 </div>
 ```
 
-## MobileTabBar padding-bottom
+## Safe-area padding-bottom
 
-En mobile, el contenido principal necesita `padding-bottom` para que el último elemento no quede detrás del MobileTabBar:
+En mobile, el contenido principal necesita `padding-bottom` para el safe area de iOS:
 
 ```tsx
 <main
   id="main-content"
   className="lg:pb-0"
   style={{
-    paddingBottom: "calc(var(--mobile-tab-bar-h) + env(safe-area-inset-bottom, 0px))",
+    paddingBottom: "env(safe-area-inset-bottom, 0px)",
   }}
 >
   {children}
@@ -256,14 +254,13 @@ El AppShell solo garantiza que el DOM container del shell no interfiera con las 
 
 ## Mobile vs desktop
 
-| Aspecto                | Mobile (`< --breakpoint-lg`)              | Desktop (`≥ --breakpoint-lg`)              |
-| ---------------------- | ----------------------------------------- | ------------------------------------------ |
-| Sidebar                | No montado (`lg:hidden`)                  | Montado, expanded/collapsed/hover-expanded |
-| Header                 | Visible, muestra burger button            | Visible, muestra breadcrumbs + lang/theme  |
-| MobileTabBar           | Visible (fixed bottom)                    | No montado (`lg:hidden`)                   |
-| content `padding-left` | 0                                         | `var(--sidebar-current-w)` con transición  |
-| FAB                    | Visible dentro del MobileTabBar           | No renderizado                             |
-| MascotBubble           | Visible (bubble, encima del MobileTabBar) | Visible (bubble, esquina inferior derecha) |
+| Aspecto                | Mobile (`< --breakpoint-lg`)               | Desktop (`≥ --breakpoint-lg`)              |
+| ---------------------- | ------------------------------------------ | ------------------------------------------ |
+| Sidebar                | No montado (`lg:hidden`)                   | Montado, expanded/collapsed/hover-expanded |
+| Header                 | Visible, muestra burger button             | Visible, muestra breadcrumbs + lang/theme  |
+| content `padding-left` | 0                                          | `var(--sidebar-current-w)` con transición  |
+| FAB                    | Visible (fixed bottom-right)               | No renderizado                             |
+| MascotBubble           | Visible (bubble, esquina inferior derecha) | Visible (bubble, esquina inferior derecha) |
 
 ## Accesibilidad
 
@@ -345,8 +342,7 @@ export default async function AppLayout({ children, params }) {
 
 - `--sidebar-w-expanded` (15rem), `--sidebar-w-collapsed` (4rem)
 - `--header-h` (3.5rem), `--header-h-desktop` (4rem)
-- `--mobile-tab-bar-h` (4rem) — **nuevo token S5**
-- `--z-sidebar` (20), `--z-header` (30), `--z-mascot` (35), `--z-fab` (38) — **nuevo token S5**
+- `--z-sidebar` (20), `--z-header` (30), `--z-mascot` (35), `--z-fab` (38)
 - `--motion-base`, `--ease-out-expressive` (PUSH transition)
 - `--motion-fast`, `--ease-emphasis` (skip link)
 - `--accent`, `--text-on-accent` (skip link)
@@ -362,7 +358,8 @@ export default async function AppLayout({ children, params }) {
 - `<VerifyEmailBanner>` — condicional sobre children
 - `<Sidebar>` — desktop nav
 - `<Header>` — sticky header
-- `<MobileTabBar>` — mobile nav
+- `<AppNavDrawer>` — mobile nav (burger drawer)
+- `<FAB>` — acción principal mobile (fixed bottom-right)
 - `<MascotBubble variant="idle">` — bubble global
 - `useSidebarState` hook (`src/hooks/useSidebarState.ts`)
 - `POSTHOG_EVENTS.APP_SHELL` — eventos del shell
@@ -374,5 +371,5 @@ export default async function AppLayout({ children, params }) {
 3. `useSidebarState` hook: mover a `src/hooks/useSidebarState.ts`. Debe exponer `{ expanded, toggle, floatingOpen, setFloatingOpen }`.
 4. La lógica de hover-expand actual en `AppSidebar.tsx` (`floatingOpen` state) se preserva y refina: el `floatingOpen` debe disparar el cambio de `--sidebar-current-w` a `expanded`, creando el PUSH real en lugar del overlay flotante actual.
 5. `ShellIdentityContext` y `ToastProvider` existentes se preservan y se componen dentro de `AppShellLayout`.
-6. Agregar `--mobile-tab-bar-h: 4rem` y `--z-fab: 38` a `src/app/globals.css`.
+6. Agregar `--z-fab: 38` a `src/app/globals.css`.
 7. Tests: PUSH transition cuando sidebar colapsa/expande; `--app-banner-offset` correcto cuando banner activo/inactivo; skip link visible al foco.

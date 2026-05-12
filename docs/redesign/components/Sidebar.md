@@ -16,7 +16,7 @@ Navegación principal del shell `(app)` en desktop (`≥ --breakpoint-lg`). Estr
 
 La persistencia del estado collapsed/expanded usa `localStorage["pandatrack-sidebar"]`. Default `"expanded"`.
 
-En mobile (`< --breakpoint-lg`) el Sidebar no se monta — la navegación la provee el `<MobileTabBar>` y el `<AppNavDrawer>` (drawer lateral que se abre con el burger).
+En mobile (`< --breakpoint-lg`) el Sidebar no se monta — la navegación la provee el `<AppNavDrawer>` (drawer lateral abierto con el burger del topbar).
 
 ## API TypeScript
 
@@ -71,7 +71,7 @@ El sidebar tiene 3 estados operativos:
 └──────────────────────┘
 ```
 
-5 destinos de nav (los 4 primarios + Settings). Settings aparece en el nav del sidebar aunque no esté en el `<MobileTabBar>`.
+5 destinos de nav (los 4 primarios + Settings). Settings aparece en el nav del sidebar.
 
 ## Estados visuales
 

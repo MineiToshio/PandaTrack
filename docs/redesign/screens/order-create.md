@@ -63,7 +63,7 @@ supersedes: order-create.md (session 02 — old 5-step wireframe)
 
 ### Mobile (< 768px)
 
-Single column. Topbar mobile con breadcrumb `Pedidos > Nuevo pedido` + icon-button `X` cancelar. **Sin `page-heading`** (el topbar ya muestra el título). **Sin `MobileTabBar`** (wizard es flujo modal-equivalente — la tabbar interferiría con el sticky footer del CTA).
+Single column. Topbar mobile con breadcrumb `Pedidos > Nuevo pedido` + icon-button `X` cancelar. **Sin `page-heading`** (el topbar ya muestra el título). El wizard ocupa el viewport completo sin nav bar inferior — el sticky footer del CTA no tiene interferencia.
 
 **Stepper compacto en mobile** (no 3-pill stepper): texto "Paso X de 3 · {nombre paso}" + barra de progreso horizontal de 3 segmentos (segmento active en `var(--accent)`, próximos en `var(--border)`). Ahorra ~40px verticales vs el stepper de pills.
 
@@ -81,23 +81,23 @@ Single column. Topbar mobile con breadcrumb `Pedidos > Nuevo pedido` + icon-butt
 
 ### Anchors estructurales del demo
 
-| Sección                     | Demo ID                                | Descripción                                   |
-| --------------------------- | -------------------------------------- | --------------------------------------------- |
-| Paso 1 — Datos              | `#s7-order-create-step-1`              | Tienda + Moneda + Fechas                      |
-| Paso 2 — Productos y costos | `#s7-order-create-step-2`              | Spreadsheet + total + FX                      |
-| Paso 3 — Confirmar          | `#s7-order-create-step-3`              | Resumen + CTA crear                           |
-| Empty stores gate           | `#s7-order-create-empty-stores`        | Sin tiendas: empty state en step-1            |
-| Modal discrepancia          | `#s7-order-create-discrepancy-modal`   | Warning modal 2 botones                       |
-| **Mobile Paso 1**           | `#s7-order-create-mobile`              | Wizard mobile en paso 1 (form completo)       |
-| **Mobile Paso 2**           | `#s7-order-create-step-2-mobile`       | Wizard mobile paso 2 (productos list + add)   |
-| **Mobile Paso 3**           | `#s7-order-create-step-3-mobile`       | Wizard mobile paso 3 (confirm review)         |
-| **Mobile Añadir producto**  | `#s7-order-create-add-product-mobile`  | Bottom sheet de form de producto sobre paso 2 |
-| **Mobile Discrepancia**     | `#s7-order-create-discrepancy-mobile`  | Bottom sheet alertdialog 2 opciones           |
-| **Mobile Sin tiendas**      | `#s7-order-create-empty-stores-mobile` | Empty state mobile con CTA "Crear tienda"     |
-| **Mobile Picker Tienda**    | `#s7-store-picker-mobile`              | Bottom sheet con search + lista de tiendas    |
-| **Mobile Picker Moneda**    | `#s7-currency-picker-mobile`           | Bottom sheet con search + lista de monedas    |
-| **Mobile Picker Tipo**      | `#s7-product-type-picker-mobile`       | Bottom sheet con search + lista de tipos      |
-| **Mobile Picker Fecha**     | `#s7-date-range-picker-mobile`         | Full-screen sheet con calendario + presets    |
+| Sección                     | Demo ID                                | Descripción                                                                                             |
+| --------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Paso 1 — Datos              | `#s7-order-create-step-1`              | Tienda + Moneda + Fechas                                                                                |
+| Paso 2 — Productos y costos | `#s7-order-create-step-2`              | Spreadsheet + total + FX                                                                                |
+| Paso 3 — Confirmar          | `#s7-order-create-step-3`              | Resumen + CTA crear                                                                                     |
+| Empty stores gate           | `#s7-order-create-empty-stores`        | Sin tiendas: empty state en step-1                                                                      |
+| Modal discrepancia          | `#s7-order-create-discrepancy-modal`   | Warning modal 2 botones                                                                                 |
+| **Mobile Paso 1**           | `#s7-order-create-mobile`              | Wizard mobile en paso 1 (form completo)                                                                 |
+| **Mobile Paso 2**           | `#s7-order-create-step-2-mobile`       | Wizard mobile paso 2 (productos list + add + **FX field + Hoy button**, parity con desktop tras S7-A.5) |
+| **Mobile Paso 3**           | `#s7-order-create-step-3-mobile`       | Wizard mobile paso 3 (confirm review)                                                                   |
+| **Mobile Añadir producto**  | `#s7-order-create-add-product-mobile`  | Bottom sheet de form de producto sobre paso 2                                                           |
+| **Mobile Discrepancia**     | `#s7-order-create-discrepancy-mobile`  | Bottom sheet alertdialog 2 opciones                                                                     |
+| **Mobile Sin tiendas**      | `#s7-order-create-empty-stores-mobile` | Empty state mobile con CTA "Crear tienda"                                                               |
+| **Mobile Picker Tienda**    | `#s7-store-picker-mobile`              | Bottom sheet con search + lista de tiendas                                                              |
+| **Mobile Picker Moneda**    | `#s7-currency-picker-mobile`           | Bottom sheet con search + lista de monedas                                                              |
+| **Mobile Picker Tipo**      | `#s7-product-type-picker-mobile`       | Bottom sheet con search + lista de tipos                                                                |
+| **Mobile Picker Fecha**     | `#s7-date-range-picker-mobile`         | Full-screen sheet con calendario + presets                                                              |
 
 > **NOTA metodológica:** El demo también contiene secciones `#s7-order-create-step-3-validation` y `#s7-order-create-step-1-from-store`. Estas secciones son **OLD — supersedidas** (pertenecen al wizard de 5 pasos de una iteración anterior). El wizard canónico es **3 pasos** (Datos → Productos y costos → Confirmar). Las secciones step-4 y step-5 del demo también pertenecen a la iteración obsoleta.
 
@@ -233,6 +233,8 @@ export async function createOrderAction(
 
 - Pasos 1 y 2 colapsados con `is-done`
 - Card `surface-elevated` con grid de resumen: Tienda / Moneda / Fecha / Entrega aprox. (si existe) + divider + "Ítems: N" + divider + "Total del pedido: ¥X.XXX" (font-size 17px, font-weight bold)
+- **Card-helper**: "Una vez creado, no podrás cambiar la tienda ni la moneda." (alineado con mobile en S7-A.5; antes desktop decía "Revisa el resumen antes de crear el pedido.").
+- **Info banner** (`--info` tint, icon `info`): "El pedido se creará en estado **Abierto**. Podrás registrar pagos y entregas desde el detalle." Portado desde mobile en S7-A.5 para parity.
 - Sidebar Resumen: todos los campos rellenados
 - CTAs: "← Atrás" (ghost) + "Crear pedido" (primary, icono `check`)
 

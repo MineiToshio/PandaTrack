@@ -235,7 +235,6 @@ Componentes específicos del módulo Orders. Fase B los crea en `src/app/[locale
 | `AppShell`                  | Contenedor base: sidebar + content                                                                   | todos                                        |
 | `Header` (topbar)           | Topbar sticky 48px con breadcrumb + título                                                           | todos                                        |
 | `Sidebar`                   | Navegación lateral izquierda                                                                         | todos                                        |
-| `MobileTabBar`              | Navegación inferior mobile                                                                           | todos                                        |
 | `FilterTriggerButton` (M05) | Botón "Filtrar" con badge de filtros activos, estado tintado                                         | `order-list`                                 |
 | `FilterDrawer`              | Panel de filtros: side drawer derecho (desktop) / bottom-sheet con drag handle (mobile, ADR 0003 D8) | `order-list`                                 |
 | `Switch`                    | Toggle booleano (filtro FX en FilterDrawer)                                                          | `order-list`                                 |

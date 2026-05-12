@@ -36,12 +36,6 @@
     "languageNavigation": "Language",
     "primarySidebar": "Primary sidebar"
   },
-  "mobileTabBar": {
-    "today": "Today",
-    "orders": "Orders",
-    "stores": "Stores",
-    "settings": "Settings"
-  },
   "error": {
     "title": "Something went wrong",
     "description": "We could not load this app area. Please try again.",

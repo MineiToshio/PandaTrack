@@ -32,7 +32,7 @@ Datos clave: lista paginada de `Store` (nombre, slug, tipo BUSINESS/PERSON, paí
 
 ## 3. Layout y estructura
 
-Vive dentro del `AppShell` ([spec](../components/AppShell.md)) con `Sidebar` izquierda ([spec](../components/Sidebar.md)) y `MobileTabBar` inferior en mobile ([spec](../components/MobileTabBar.md)).
+Vive dentro del `AppShell` ([spec](../components/AppShell.md)) con `Sidebar` izquierda ([spec](../components/Sidebar.md)). En mobile la navegación primaria está en el drawer del topbar (burger button).
 
 **Topbar:** título "Tiendas" + contador de resultados (`47 tiendas`) justificado a la derecha. Usa `Header` ([spec](../components/Header.md)) como contenedor.
 

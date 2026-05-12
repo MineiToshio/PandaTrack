@@ -349,7 +349,6 @@ Cada ADR aceptado debe estar implementado por al menos un componente o diferido 
 | -------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------- |
 | **Sidebar** (logo / nav / user)                    | S5             | App shell; ADR 0003 D3 con collapse + push.                                                       |
 | **Header** (sticky con breadcrumbs)                | S5             | Composición de `<Breadcrumbs>` + `<LangToggle>` + `<ThemeToggle>` (componentes ya specceados).    |
-| **Tab bar inferior mobile**                        | S5             | Parte del shell; 4 destinos + FAB elevado.                                                        |
 | **FAB primario**                                   | S5             | Parte del shell; es Button variant `primary` con tamaño `--fab-size` (token ya existe).           |
 | **VerifyEmailBanner**                              | S5             | Sticky banner del shell para email no verificado.                                                 |
 | **ProgressBar (% pagado)**                         | S5             | Aparece en dashboard hero, orders rows, order detail. Componente independiente — anotado en gaps. |

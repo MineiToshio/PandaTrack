@@ -33,7 +33,7 @@ Ruta edit (APPROVED, no-owner): genera `StoreChangeRequest`.
 
 ## 2. Layout base del wizard
 
-`AppShell` ([spec](../components/AppShell.md)) con `Sidebar` ([spec](../components/Sidebar.md)) y `MobileTabBar` ([spec](../components/MobileTabBar.md)).
+`AppShell` ([spec](../components/AppShell.md)) con `Sidebar` ([spec](../components/Sidebar.md)). En mobile la navegación es el drawer del topbar; el wizard ocupa el viewport completo sin tab bar.
 
 **Topbar:** botón ghost sm `← Tiendas` + título `h2` ("Nueva tienda" / "Editar tienda"). Usa `Breadcrumbs` ([spec](../components/Breadcrumbs.md)).
 

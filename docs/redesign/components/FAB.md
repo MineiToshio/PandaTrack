@@ -26,7 +26,7 @@ Acciones canónicas por ruta:
 | `/settings`                    | No FAB        | —              | —               |
 | Fallback (cualquier otra ruta) | Nuevo pedido  | `shopping-bag` | "Nuevo pedido"  |
 
-En el `<MobileTabBar>` el FAB ocupa la posición central elevada (sobre el tab bar).
+El FAB flota bottom-right con `position="fixed"` y es montado directamente desde el `AppShellLayout`.
 
 ## API TypeScript
 
@@ -45,8 +45,8 @@ type FabAction = {
 type FABProps = {
   /** Acción a disparar. Si `null`, el FAB no renderiza. */
   action: FabAction | null;
-  /** Posición de montaje. `fixed` = floating bottom-right. `elevated` = dentro del MobileTabBar (elevado). */
-  position?: "fixed" | "elevated";
+  /** Posición de montaje. `fixed` = floating bottom-right. */
+  position?: "fixed";
   /** Override del className. */
   className?: string;
 };
@@ -94,13 +94,11 @@ Receta visual:
 
 ## Mobile vs desktop
 
-| Aspecto           | Mobile (`< --breakpoint-md`)                                                               | Desktop (`≥ --breakpoint-md`) |
-| ----------------- | ------------------------------------------------------------------------------------------ | ----------------------------- |
-| Visibilidad       | Visible (`position="fixed"` o `"elevated"`)                                                | **No renderizar** (null)      |
-| Posición          | `fixed` → `bottom: calc(var(--mobile-tab-bar-h) + var(--fab-offset))` desde borde inferior | N/A                           |
-| Sin label visible | Solo ícono (tap target 56×56 ≥ 44px ✅)                                                    | N/A                           |
-
-Cuando se usa dentro de `<MobileTabBar>` con `position="elevated"`: el FAB se eleva 8px sobre el tab bar (transform translate-y o margin negativo). El `<MobileTabBar>` orquesta el centrado.
+| Aspecto           | Mobile (`< --breakpoint-md`)                                      | Desktop (`≥ --breakpoint-md`) |
+| ----------------- | ----------------------------------------------------------------- | ----------------------------- |
+| Visibilidad       | Visible (`position="fixed"`)                                      | **No renderizar** (null)      |
+| Posición          | `bottom: var(--fab-offset); right: var(--fab-offset)` desde borde | N/A                           |
+| Sin label visible | Solo ícono (tap target 56×56 ≥ 44px ✅)                           | N/A                           |
 
 ## Accesibilidad
 
@@ -108,7 +106,6 @@ Cuando se usa dentro de `<MobileTabBar>` con `position="elevated"`: el FAB se el
 - `aria-label={action.label}` — el label es el único texto accesible del botón.
 - Foco visible: `outline` sobre el radius-pill.
 - No trampa de foco — el FAB es un link de navegación estándar.
-- En mobile, el tab bar + FAB no bloquean contenido scrollable importante — el contenido tiene `padding-bottom` equivalente a `--mobile-tab-bar-h + --fab-offset + --fab-size / 2` para que el último item sea visible.
 
 ## Motion
 
@@ -139,18 +136,18 @@ EN se completa en S12.
 ## Anti-patrones
 
 1. **FAB en desktop**: viola el patrón. Desktop usa botones en el header de la lista.
-2. **Multiple FABs en la misma pantalla**: uno solo. Si hay múltiples acciones, usar el OverflowMenu o el MobileTabBar con Sheet.
+2. **Multiple FABs en la misma pantalla**: uno solo. Si hay múltiples acciones, usar el OverflowMenu o un Sheet.
 3. **Label visible en mobile**: el FAB es icon-only en mobile. El label es sr-only.
 4. **`background: var(--accent-warm)` o cualquier color que no sea `--accent`**: el FAB es la acción primaria de marca. Solo `--accent`.
 5. **`color: white` hardcodeado**: usar `var(--text-on-accent)` que en dark es oscuro.
-6. **`z-index` arbitrario**: usar `--z-fab` (token no definido aún — definir como valor entre `--z-mascot` y `--z-popover`, aprox 38).
+6. **`z-index` arbitrario**: usar `--z-fab` (38 — entre `--z-mascot` y `--z-popover`).
 
 ## Ejemplos de uso
 
 ```tsx
-// En MobileTabBar, pasando la acción determinada por la ruta
+// En AppShellLayout, pasando la acción determinada por la ruta
 const fabAction = getFabAction(pathname, locale);
-<FAB action={fabAction} position="elevated" />;
+<FAB action={fabAction} position="fixed" />;
 
 // Helper puro para determinar la acción por ruta
 function getFabAction(pathname: string, locale: string): FabAction | null {
@@ -176,7 +173,6 @@ function getFabAction(pathname: string, locale: string): FabAction | null {
 - `--radius-pill`
 - `--fab-size` (3.5rem = 56px)
 - `--fab-offset` (1rem = 16px)
-- `--mobile-tab-bar-h` (para posición fixed)
 - `--focus-ring`
 - `--motion-fast`, `--ease-emphasis`
 - `--state-hover-mix`, `--state-pressed-mix`

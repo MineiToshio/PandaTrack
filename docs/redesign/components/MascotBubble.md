@@ -291,7 +291,7 @@ EN se deja para S12. "Felix" es working name placeholder — la decisión final 
 
 1. Implementar como `src/components/modules/MascotBubble/MascotBubble.tsx` — **solo `variant="idle"`** en S5. Los variants `walking`, `celebrating`, y `sleeping` se difieren a S12.
 2. Usar sprite placeholder (PNG neutro 56×56 @1x, @2x, @3x) hasta que el asset final llegue en S6. El import del sprite debe ser indirecto (`spriteSet` prop o import condicional) para que el swap en S6 no requiera cambios de API.
-3. `position="bubble"`: `position: fixed; bottom: calc(var(--space-6) + var(--mobile-tab-bar-h)); right: var(--space-6);` en mobile, `bottom: var(--space-6); right: var(--space-6);` en desktop. `z-index: var(--z-mascot)` = 35.
+3. `position="bubble"`: `position: fixed; bottom: var(--space-6); right: var(--space-6);` en mobile y desktop. `z-index: var(--z-mascot)` = 35.
 4. Menú contextual básico (right-click desktop / long-press mobile): implementar en S5 con las dos opciones mínimas: "Ocultar mascota" (escribe `localStorage["pandatrack-mascot-visible"]` = `"hidden"`) y "Cambiar tema" (llama a `setTheme()` de `src/lib/theme.ts`). Usar `<DropdownMenu>` existente.
 5. El `AppShell` lee `localStorage["pandatrack-mascot-visible"]` en mount y no renderiza `<MascotBubble>` si está `"hidden"`. El setting toggle en preferences restaura la visibilidad.
 6. PostHog: `POSTHOG_EVENTS.APP_SHELL.MASCOT_HIDDEN` / `MASCOT_SHOWN` cuando el usuario oculta/muestra desde el menú contextual.

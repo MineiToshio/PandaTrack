@@ -27,7 +27,7 @@ blueprint: docs/product/prd-01-collector-mvp/frd-05-order-payment-shipment/bp-02
 
 ## 1. Layout
 
-Vive dentro del `AppShell` (`src/components/modules/AppShell.tsx`). En desktop el `Sidebar` PUSH ocupa la izquierda; en mobile desaparece y `MobileTabBar` aparece en la parte inferior.
+Vive dentro del `AppShell` (`src/components/modules/AppShell.tsx`). En desktop el `Sidebar` PUSH ocupa la izquierda; en mobile la navegación primaria es el drawer del topbar (burger button).
 
 **Estructura vertical (desktop y mobile):**
 
@@ -64,7 +64,7 @@ Vive dentro del `AppShell` (`src/components/modules/AppShell.tsx`). En desktop e
 | `#s7-orders-list-empty-initial`  | Sin ningún pedido creado                            | `totalCount === 0`, sin filtros   |
 | `#s7-orders-list-empty-filtered` | Sin resultados con filtros activos                  | `totalCount === 0` con filtros    |
 | `#s7-orders-list-filters-open`   | FilterDrawer superpuesto (right panel)              | Usuario pulsó "Filtrar" (desktop) |
-| `#s7-orders-list-mobile`         | Cards verticales, MobileTabBar inferior             | `< 1024px`                        |
+| `#s7-orders-list-mobile`         | Cards verticales, topbar burger-drawer nav          | `< 1024px`                        |
 | `#s7-orders-list-filters-mobile` | FilterDrawer en bottom-sheet (drag handle + sticky) | Usuario pulsó "Filtrar" (mobile)  |
 
 **page-heading:** Aparece entre `app-topbar` y el toolbar. En loading: el meta-span es un skeleton. En empty-initial: solo el `<h1>` sin span meta. En empty-filtered: "0 resultados". **No aparece en mobile** — en mobile el `app-topbar` ya provee el título de la página.
@@ -232,11 +232,11 @@ Footer: botón ghost "Limpiar" + botón primary `flex:1` "Aplicar filtros" (íco
 
 ### 5.7 Mobile (`#s7-orders-list-mobile`)
 
-`--sidebar-width:0px`. Sin sidebar, con `MobileTabBar` inferior (sticky bottom con `safe-area-inset-bottom`). `app-topbar` (sticky top, 48px) lleva título "Pedidos" a la izquierda + `[FilterTriggerButton M05 icon-only con badge] [Nuevo sm primary]` a la derecha. **Sin `page-heading`** — el topbar ya funciona como título. Búsqueda sticky debajo del topbar (full width, placeholder "Código o producto (ORD-…, OST…)"). Filter chips dismissibles debajo de la búsqueda (mismo patrón que desktop). FX banner compacto con CTA tonal "Actualizar tipos de cambio" stacked (no inline). Cards verticales `.s7-order-card` con: store-avatar + nombre + código-fecha + chip estado + barra progreso (`--accent-cool` para items expandidos) + meta "N productos · X% pagado · $total". **Tap en card → navega al detalle**. Al pie de cada card, **expand-chevron row** (`.s7-mob-card-expand-row`): barrita centrada con chevron-down + texto "Ver productos" — tap en chevron → expande inline mostrando los N items (sin truncar) con icon (`--accent-cool`) + name + qty + price. Una segunda tap en chevron (rotado 180° + texto "Ocultar productos") → colapsa. Paginación "Cargar más" canónica al pie (L062), con conteo "Mostrando A–B de N" encima del botón.
+`--sidebar-width:0px`. Sin sidebar. `app-topbar` (sticky top, 48px) lleva título "Pedidos" a la izquierda + `[FilterTriggerButton M05 icon-only con badge] [Nuevo sm primary]` a la derecha. **Sin `page-heading`** — el topbar ya funciona como título. Búsqueda sticky debajo del topbar (full width, placeholder "Código o producto (ORD-…, OST…)"). Filter chips dismissibles debajo de la búsqueda (mismo patrón que desktop). FX banner compacto con CTA tonal "Actualizar tipos de cambio" stacked (no inline). Cards verticales `.s7-order-card` con: store-avatar + nombre + código-fecha + chip estado + barra progreso (`--accent-cool` para items expandidos) + meta "N productos · X% pagado · $total". **Tap en card → navega al detalle**. Al pie de cada card, **expand-chevron row** (`.s7-mob-card-expand-row`): barrita centrada con chevron-down + texto "Ver productos" — tap en chevron → expande inline mostrando los N items (sin truncar) con icon (`--accent-cool`) + name + qty + price. Una segunda tap en chevron (rotado 180° + texto "Ocultar productos") → colapsa. Paginación "Cargar más" canónica al pie (L062), con conteo "Mostrando A–B de N" encima del botón.
 
 ### 5.7.bis Loading mobile (`#s7-orders-list-loading-mobile`)
 
-Skeleton card-style en mobile (no table-format como desktop). Mismo topbar y MobileTabBar pero con placeholders shimmer:
+Skeleton card-style en mobile (no table-format como desktop). Mismo topbar pero con placeholders shimmer:
 
 - Topbar: 2 placeholders (filter button + Nuevo button) con shimmer.
 - Search bar: skeleton input full-width.
@@ -251,8 +251,7 @@ Estado vacío sin filtros (user no tiene pedidos creados). Container `.s7-mob-em
 - Center: icon `package-open` 28px en círculo 64×64 con `--text-primary` 5% bg.
 - Title 16px/600 "Aún no tenés pedidos".
 - Body 13px/secondary "Cuando hagas tu primer pedido a una tienda, vas a verlo acá con su estado, pagos y entregas." (max-width 280px).
-- CTAs apilados verticales (no side-by-side per L075): "Crear primer pedido" primary full-width + "Ver tiendas" ghost full-width.
-- MobileTabBar al pie.
+- CTA único: "Anotar primer pedido" primary full-width (canónico desktop, copy alineado). Title "Aún no hay pedidos" + body "Anota tu primer pedido y empieza a seguir tus compras desde aquí." (sin voseo argentino).
 
 ### 5.7.quater Empty filtered mobile (`#s7-orders-list-empty-filtered-mobile`)
 
@@ -261,24 +260,7 @@ Estado vacío con filtros activos (no hay match). Topbar con FilterTriggerButton
 - Icon `search-x` 28px.
 - Title "Sin resultados".
 - Body "No hay pedidos que coincidan con los filtros activos. Probá quitar alguno o cambiar el rango."
-- CTAs apilados: "Limpiar todos los filtros" primary + "Ajustar filtros" ghost (re-abre el FilterDrawer).
-
-### 5.8 FilterDrawer abierto en mobile (`#s7-orders-list-filters-mobile`)
-
-`<FilterDrawer>` renderizado como **bottom-sheet canónico** (ADR 0003 D8). Anclado al borde inferior del viewport, animación slide-up 280ms, backdrop blur 8px + tint oklch calibrado para light/dark.
-
-Estructura vertical de arriba hacia abajo:
-
-1. **Drag handle** — 4×36px pill, `border-radius:999px`, `background:var(--border-strong)`, `margin: 8px auto 4px`. Solo se muestra en mobile (oculto con `md:hidden`).
-2. **Header** — `padding: 12px 22px 14px`, `border-bottom: 1px solid var(--border)`. Icono `sliders-horizontal` 18px en `var(--accent)` + título "Filtrar pedidos" 15px/600 + `IconButton ghost` X a la derecha.
-3. **Body scrollable** — `padding: 18px 22px`, `overflow-y:auto`, `flex:1`. Contiene las 5 secciones de filtro (mismas que desktop §5.6): Estado del pedido, Estado de pago, Tienda, Fecha del pedido, FX desactualizado.
-4. **Footer sticky** — `padding: 14px 22px`, `border-top: 1px solid var(--border)`, `background: var(--surface-elevated)`, `padding-bottom: env(safe-area-inset-bottom)`. Botón ghost "Limpiar" (flex 0) + botón primary `flex:1` "Aplicar (N)" con icono `check`.
-
-Contenedor: `max-height: 92svh`, `border-top: 1px solid var(--border-strong)`, `border-top-left-radius / border-top-right-radius: 20px` (`--radius-2xl`), `box-shadow: 0 -8px 32px color-mix(...var(--text-primary) 22%...)` (shadow hacia arriba).
-
-**No es un `<Modal>`.** Aunque visualmente comparte algunos elementos (backdrop blur, top-corners, drag handle), arquitectónicamente es un `<FilterDrawer>` hand-rolled con su propio comportamiento responsive (sin Vaul, sin compartir código con el `<Modal>` canónico). El `<Modal>` canónico es para decisiones discretas (confirm, alert, form corto); el `<FilterDrawer>` es para refinement de lista. Coherencia visual sin acoplamiento arquitectónico.
-
-Referencia visual: demo HTML anchor `#s7-orders-list-filters-mobile`. Implementación en `src/components/modules/FilterDrawer/FilterDrawer.tsx` (líneas 360-395).
+- CTA único "Limpiar filtros" (ghost + icon `x`) — alineado con desktop. Title "Sin resultados" + body "Ningún pedido coincide con los filtros actuales. Prueba ajustando o limpiando los filtros." Re-abrir el FilterDrawer es alternativa via tap en chip del header — no se necesita CTA secundaria inventada.
 
 ### 5.9 FX Reconciliación mobile (`#s7-fx-reconciliation-mobile`)
 
@@ -298,7 +280,13 @@ Estructura vertical de arriba hacia abajo:
 
 1. **Drag handle** — 4×36px pill, `border-radius:999px`, `background:var(--border-strong)`, `margin: 8px auto 4px`. Solo se muestra en mobile (oculto con `md:hidden`).
 2. **Header** — `padding: 12px 22px 14px`, `border-bottom: 1px solid var(--border)`. Icono `sliders-horizontal` 18px en `var(--accent)` + título "Filtrar pedidos" 15px/600 + `IconButton ghost` X a la derecha.
-3. **Body scrollable** — `padding: 18px 22px`, `overflow-y:auto`, `flex:1`. Contiene las 5 secciones de filtro (mismas que desktop §5.6): Estado del pedido, Estado de pago, Tienda, Fecha del pedido, FX desactualizado.
+3. **Body scrollable** — `padding: 18px 22px`, `overflow-y:auto`, `flex:1`. Contiene **6 secciones de filtro** (parity total con desktop tras S7-A.5):
+   - **Estado del pedido** (5 pills + iconos): Activas (`activity`) · Abierto (`clock`) · En camino (`truck`) · Completo (`package-check`) · Cancelado (`ban`). Singular, mismos pills que desktop.
+   - **Estado de pago** (4 pills + iconos): Pagado (`check-circle`) · Pago parcial (`circle-dot`) · Impago (`x-circle`) · Atrasado (`alert-triangle`).
+   - **Tienda** (tag-autocomplete con search + chips dismissibles inline).
+   - **Fecha del pedido** (par de inputs `Desde` + `Hasta` con `type="date"` nativo — parity con desktop; reemplaza al trigger único "Cualquier fecha" anterior).
+   - **Ordenar por** (selector con 5 opciones canónicas — agregado en S7-A.5, antes faltaba en mobile): Más recientes · Más antiguas · Tienda A–Z · % Pago: menor · Total: mayor.
+   - **FX desactualizado** (switch + label "Solo con actualización pendiente" + subtitle "Pedidos que necesitan refrescar el tipo de cambio").
 4. **Footer sticky** — `padding: 14px 22px`, `border-top: 1px solid var(--border)`, `background: var(--surface-elevated)`, `padding-bottom: env(safe-area-inset-bottom)`. Botón ghost "Limpiar" (flex 0) + botón primary `flex:1` "Aplicar (N)" con icono `check`.
 
 Contenedor: `max-height: 92svh`, `border-top: 1px solid var(--border-strong)`, `border-top-left-radius / border-top-right-radius: 20px` (`--radius-2xl`), `box-shadow: 0 -8px 32px color-mix(...var(--text-primary) 22%...)` (shadow hacia arriba).

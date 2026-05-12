@@ -224,10 +224,13 @@ El `editOrderAction` recibe `items[]` con el campo `id` opcional:
 
 ### 5.5 Modal discard (cancelar con cambios pendientes)
 
-- Variante **warning** del modal ADR 0008 B
+- Variante **warning** del `<Modal>` canónico — adaptive desde S7-B Parte 0 (ADR 0008 Extensión 2026-05-11): desktop renderiza como centered dialog, mobile como `ModalSheet` (bottom sheet). Mismo API, mismo Semantic Depth.
 - Título: `orders.edit.discardTitle` ("¿Salir sin guardar?")
 - Mensaje: `orders.edit.discardMessage` ("Los cambios que hiciste no se guardarán.")
-- Botones: `orders.edit.discardCancel` "Quedarse" (ghost, cierra modal) + `orders.edit.discardConfirm` "Salir" (primary, navega al detalle)
+- Botones: `orders.edit.discardCancel` "Quedarse" (ghost neutral, cierra modal) + `orders.edit.discardConfirm` "Salir" (warning, navega al detalle).
+- ARIA: `role="alertdialog"` (bloquea drag-dismiss accidental en mobile).
+
+> **Nota S7-A.5**: el demo HTML actualmente no tiene anchor dedicado para el discard mobile sheet — la implementación usa el mismo `<Modal>` adaptive que el delete/cancel sheets. Si se necesita demo visual, agregar anchor `#s7-order-edit-discard-mobile` en sesión futura.
 
 ### 5.6 Submitting
 
