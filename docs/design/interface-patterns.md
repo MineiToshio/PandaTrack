@@ -463,6 +463,49 @@ Rules:
 - keep **focus-visible** treatment from the shared button styles; do not rely on hover alone
 - respect **`prefers-reduced-motion`** for any decorative motion on the same panel
 
+### Pattern: Detail-page secondary actions card
+
+For **detail screens of a single entity** (Order detail, Store detail, Delivery detail, etc.) where the page needs to expose:
+
+- 1 or 2 **primary CTAs** that depend on the entity's current state (e.g., "Anotar pago", "Pagar saldo", "Reactivar pedido")
+- 2–4 **secondary actions** of the form: edit, cancel/archive (reversible), delete (irreversible)
+
+Use **inline "Acciones" card at the foot of the page content**, not a kebab-triggered bottom sheet, not a separate "Danger Zone" card, not contextual actions in the static header.
+
+#### Structure
+
+```text
+┌─ ACCIONES ─────────────────┐
+│ ✏  Editar X            ›   │  ← frequent, non-destructive
+│ ⊘  Cancelar X          ›   │  ← reversible, mid-priority
+│ ──────── (subtle divider)   │
+│ 🗑  Eliminar X          ›   │  ← destructive, irreversible, red
+└─────────────────────────────┘
+```
+
+#### Rules
+
+1. **One card titled "Acciones"** (uppercase eyebrow 11px/600, letter-spacing 0.06em, color `--text-muted`).
+2. **Destructive row always last**, with `color: var(--destructive)` on label and icon. CSS divider above via `::before` only when the destructive row is `:not(:first-child)` — keeps single-row cancelled states clean.
+3. **Reversible actions** (cancel, archive) live as **neutral rows**, not destructive. Pattern Linear-style (Archive vs Delete).
+4. **No separate "Danger Zone" card** for single-entity detail screens. Danger Zone is a settings-screen pattern (GitHub Settings, Vercel, AWS) reserved for **multiple** destructive actions clustered together. For a single irreversible action on a detail page, a red row at the end of the same group is canonical (Apple Calendar event edit, Reminders, Contacts).
+5. **Sticky bottom action bar stays single-purpose** in mobile: it contains only the primary CTA(s) for the current state — never a `[Más]` button or `⋯` icon that opens the secondary actions.
+6. **Confirm dialog is mandatory** for irreversible destructive actions (type-to-confirm with the word "eliminar" — pattern Stripe/GitHub adapted). The visual red color + position is not a replacement for the confirmation — it complements it.
+7. **State-aware visibility**: hide rows that don't apply to the current state instead of rendering them disabled. If after filtering only the destructive row remains, the card still renders (with that single row, no divider).
+8. **Same pattern cross-viewport**. On desktop, the card lives in the right rail or at the end of the detail section. Do not migrate to header buttons in desktop — keep a single pattern to reduce divergence.
+
+#### Why not a kebab + bottom sheet
+
+- **NN/g**: hiding ≤3 actions behind a kebab "saves no space, increases effort, and reduces discoverability". Bottom sheets "aren't suited for displaying always-needed tools".
+- **Material 3 Expressive (2025)**: deprecated speed-dial / FAB-stack in favor of labelled menus.
+- **Apple HIG**: secondary actions belong in the bottom toolbar or inline in the scrollable content; destructive single-actions are red buttons at the bottom of the form.
+- **Discoverability research (NN/g 2024)**: combo icon + label beats icon-only 1.5× on mobile.
+
+#### Reference
+
+- ADR 0011 — Mobile detail-page secondary actions: inline card over bottom sheet (`docs/redesign/decisions/0011-mobile-detail-secondary-actions.md`)
+- First applied in S7 Order detail (mobile + desktop). Demo anchors: `#s7-order-detail-mobile`, `#s7-order-detail-overdue-mobile`, `#s7-order-detail-cancelled-mobile`, `#s7-order-detail-completed-unpaid-mobile`.
+
 ### Pattern: Multi-line structured location block
 
 For **addresses, venues, or pick-up points** in lists or cards:

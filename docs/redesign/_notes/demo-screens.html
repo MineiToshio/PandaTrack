@@ -2718,10 +2718,12 @@
     /* ─── S7 mobile helpers (s7-mob-* namespace) ────────────────────── */
     .s7-mob-search-wrap {
       position: sticky; top: 48px; z-index: 15;
-      padding: 0 16px 10px;
+      padding: 10px 12px;
       background: color-mix(in oklch, var(--surface) 92%, transparent);
       backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      display: flex; align-items: center; gap: 8px;
     }
+    .s7-mob-search-wrap .orders-search { flex: 1; min-width: 0; }
     .s7-mob-chips { padding: 0 16px; margin-bottom: 12px; }
     .s7-mob-chip-close {
       display: inline-grid; place-items: center;
@@ -3033,7 +3035,48 @@
     .s7-mob-action-row:hover { background: color-mix(in oklch, var(--text-primary) 4%, transparent); }
     .s7-mob-action-row > i, .s7-mob-action-row > svg { width: 18px; height: 18px; color: var(--text-secondary); flex-shrink: 0; }
     .s7-mob-action-row.is-destructive { color: var(--destructive); }
-    .s7-mob-action-row.is-destructive > i { color: var(--destructive); }
+    .s7-mob-action-row.is-destructive > i, .s7-mob-action-row.is-destructive > svg { color: var(--destructive); }
+    .s7-mob-action-row .s7-mob-action-chev {
+      margin-left: auto; width: 16px; height: 16px; color: var(--text-muted); flex-shrink: 0;
+    }
+
+    /* Inline secondary-actions card (replaces ⋯ bottom sheet pattern).
+       Pattern: single "Acciones" card with the destructive row last, in red, with a
+       subtle divider above it. Matches Apple HIG (Calendar event edit, Reminders, Contacts).
+       See ADR 0011. */
+    .s7-mob-actions-card {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .s7-mob-actions-card-title {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-muted); padding: 12px 14px 6px;
+    }
+    .s7-mob-actions-card .s7-mob-action-list { padding: 4px 6px 6px; }
+    .s7-mob-actions-card .s7-mob-action-row { border-radius: 10px; }
+    /* Subtle divider above the destructive row when it's not the only action.
+       Mirrors Apple HIG pattern: same group, last position, red, divider above. */
+    .s7-mob-actions-card .s7-mob-action-row.is-destructive:not(:first-child) {
+      margin-top: 4px;
+      position: relative;
+    }
+    .s7-mob-actions-card .s7-mob-action-row.is-destructive:not(:first-child)::before {
+      content: ""; position: absolute; left: 12px; right: 12px; top: -3px;
+      height: 1px; background: var(--border);
+    }
+
+    /* Back link in page content (since topbar is static: hamburger + breadcrumb). */
+    .s7-mob-back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--text-secondary); font-size: 13px;
+      padding: 6px 8px; margin-left: -8px;
+      border-radius: 8px; text-decoration: none;
+      min-height: 36px;
+    }
+    .s7-mob-back-link:hover { background: color-mix(in oklch, var(--text-primary) 4%, transparent); }
+    .s7-mob-back-link > i, .s7-mob-back-link > svg { width: 16px; height: 16px; }
 
     /* Type chip in edit-mobile: visibly a tag picker (border + chevron) */
     .s7-mob-type-pill {
@@ -3285,7 +3328,6 @@
         <a href="#s7-order-detail-overdue-mobile" data-screen="s7-order-detail-overdue-mobile">Detalle · Atrasado</a>
         <a href="#s7-order-detail-cancelled-mobile" data-screen="s7-order-detail-cancelled-mobile">Detalle · Cancelado</a>
         <a href="#s7-order-detail-completed-unpaid-mobile" data-screen="s7-order-detail-completed-unpaid-mobile">Detalle · Completado + Impago</a>
-        <a href="#s7-order-detail-actions-mobile" data-screen="s7-order-detail-actions-mobile">Detalle · Más acciones (sheet)</a>
         <a href="#s7-order-detail-pay-mobile" data-screen="s7-order-detail-pay-mobile">Detalle · Anotar pago (sheet)</a>
         <a href="#s7-order-detail-cancel-mobile" data-screen="s7-order-detail-cancel-mobile">Detalle · Cancelar (sheet)</a>
         <a href="#s7-order-detail-delete-mobile" data-screen="s7-order-detail-delete-mobile">Detalle · Eliminar (sheet)</a>
@@ -3485,7 +3527,6 @@
         <tr><td class="idx-session">S7</td><td>Detalle · Móvil · Atrasado</td><td><a class="idx-anchor" href="#s7-order-detail-overdue-mobile" data-screen-link="s7-order-detail-overdue-mobile">#s7-order-detail-overdue-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Detalle · Móvil · Cancelado</td><td><a class="idx-anchor" href="#s7-order-detail-cancelled-mobile" data-screen-link="s7-order-detail-cancelled-mobile">#s7-order-detail-cancelled-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Detalle · Móvil · Completado + Impago</td><td><a class="idx-anchor" href="#s7-order-detail-completed-unpaid-mobile" data-screen-link="s7-order-detail-completed-unpaid-mobile">#s7-order-detail-completed-unpaid-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
-        <tr><td class="idx-session">S7</td><td>Detalle · Móvil · Más acciones (sheet)</td><td><a class="idx-anchor" href="#s7-order-detail-actions-mobile" data-screen-link="s7-order-detail-actions-mobile">#s7-order-detail-actions-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Detalle · Móvil · Anotar pago (sheet)</td><td><a class="idx-anchor" href="#s7-order-detail-pay-mobile" data-screen-link="s7-order-detail-pay-mobile">#s7-order-detail-pay-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Detalle · Móvil · Cancelar pedido (sheet)</td><td><a class="idx-anchor" href="#s7-order-detail-cancel-mobile" data-screen-link="s7-order-detail-cancel-mobile">#s7-order-detail-cancel-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Detalle · Móvil · Eliminar pedido (sheet)</td><td><a class="idx-anchor" href="#s7-order-detail-delete-mobile" data-screen-link="s7-order-detail-delete-mobile">#s7-order-detail-delete-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
@@ -11397,28 +11438,28 @@
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(64px + env(safe-area-inset-bottom));">
 
-      <!-- Topbar 48px: título + filter trigger M05 + Nuevo -->
-      <div class="app-topbar" style="padding:0 16px;position:sticky;top:0;z-index:20;">
-        <div class="app-topbar-left">
-          <p class="app-topbar-title" id="s7-orders-list-mobile-title">Pedidos</p>
-        </div>
-        <div class="app-topbar-right">
-          <button class="topbar-iconbtn s7-mob-filter-trigger is-active" type="button" aria-label="Filtros (1 activo)" aria-haspopup="dialog" aria-expanded="false">
-            <i data-lucide="sliders-horizontal"></i>
-            <span class="s7-mob-filter-badge" aria-hidden="true">1</span>
-          </button>
-          <a href="#s7-order-create-mobile" data-screen-link="s7-order-create-mobile" class="btn primary sm" aria-label="Nuevo pedido">
-            <i data-lucide="plus"></i><span>Nuevo</span>
-          </a>
+      <!-- Topbar (static shell): hamburger + título — matches ContentHeader.tsx.
+           Page actions (filter trigger, Nuevo) viven en page content, NO en el header. -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;position:sticky;top:0;z-index:20;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" id="s7-orders-list-mobile-title" style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Pedidos</p>
         </div>
       </div>
 
-      <!-- Search sticky bajo topbar -->
+      <!-- Page action row: search + filter trigger + Nuevo (estaban en topbar; ahora en page content) -->
       <div class="s7-mob-search-wrap">
-        <label class="orders-search" style="display:block;width:100%;">
+        <label class="orders-search" style="display:flex;align-items:center;flex:1;min-width:0;">
           <i data-lucide="search" aria-hidden="true"></i>
           <input class="input" type="search" placeholder="Código o producto (ORD-20260428-01, OST…)" aria-label="Buscar pedidos" />
         </label>
+        <button class="topbar-iconbtn s7-mob-filter-trigger is-active" type="button" aria-label="Filtros (1 activo)" aria-haspopup="dialog" aria-expanded="false" style="flex-shrink:0;">
+          <i data-lucide="sliders-horizontal"></i>
+          <span class="s7-mob-filter-badge" aria-hidden="true">1</span>
+        </button>
+        <a href="#s7-order-create-mobile" data-screen-link="s7-order-create-mobile" class="btn primary sm" aria-label="Nuevo pedido" style="flex-shrink:0;">
+          <i data-lucide="plus"></i><span>Nuevo</span>
+        </a>
       </div>
 
       <!-- Filter chips dismissibles -->
@@ -11568,23 +11609,26 @@
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
 
-      <!-- Topbar: back-link icon + breadcrumb + ORD code title + ⋯ overflow -->
+      <!-- Topbar (static shell): hamburger + breadcrumb + ORD code — matches ContentHeader.tsx.
+           No back-arrow (back-link lives in page content). No ⋯ (secondary actions live in inline cards). -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;position:sticky;top:0;z-index:20;">
-        <div class="app-topbar-left" style="min-width:0;gap:4px;">
-          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Volver a Pedidos" style="width:36px;height:36px;flex-shrink:0;">
-            <i data-lucide="arrow-left"></i>
-          </a>
-          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;">
-            <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:12px;color:var(--text-muted);">Pedidos</a>
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;">
+            <i data-lucide="menu"></i>
+          </button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;">
+            <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a>
           </nav>
-          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;"></i>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
           <p class="app-topbar-title" id="s7-order-detail-mobile-title" style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',ui-monospace,monospace;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">ORD-20260428-01</p>
         </div>
-        <div class="app-topbar-right" style="flex-shrink:0;">
-          <button class="topbar-iconbtn" type="button" aria-label="Más acciones del pedido" aria-haspopup="menu" style="width:40px;height:40px;">
-            <i data-lucide="ellipsis"></i>
-          </button>
-        </div>
+      </div>
+
+      <!-- Back-link en page content (paridad de discoverabilidad: thumb-zone vs breadcrumb top) -->
+      <div style="padding:8px 16px 0;">
+        <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="s7-mob-back-link">
+          <i data-lucide="arrow-left"></i> Pedidos
+        </a>
       </div>
 
       <!-- Hero compacto con "Saldo pendiente" como label primario -->
@@ -11689,20 +11733,39 @@
           </div>
 
         </div>
+
+        <!-- Acciones secundarias inline (ADR 0011 — pattern Apple HIG: una sola card,
+             destructiva al final en rojo con divider arriba). -->
+        <div style="margin-top:18px;">
+          <div class="s7-mob-actions-card">
+            <div class="s7-mob-actions-card-title">Acciones</div>
+            <div class="s7-mob-action-list">
+              <a href="#s7-order-edit-mobile" data-screen-link="s7-order-edit-mobile" class="s7-mob-action-row">
+                <i data-lucide="pencil"></i> Editar pedido
+                <i data-lucide="chevron-right" class="s7-mob-action-chev"></i>
+              </a>
+              <a href="#s7-order-detail-cancel-mobile" data-screen-link="s7-order-detail-cancel-mobile" class="s7-mob-action-row">
+                <i data-lucide="ban"></i> Cancelar pedido
+                <i data-lucide="chevron-right" class="s7-mob-action-chev"></i>
+              </a>
+              <a href="#s7-order-detail-delete-mobile" data-screen-link="s7-order-detail-delete-mobile" class="s7-mob-action-row is-destructive">
+                <i data-lucide="trash-2"></i> Eliminar pedido
+                <i data-lucide="chevron-right" class="s7-mob-action-chev"></i>
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Sticky action bar (Pago + Entrega + ⋯ Más acciones) -->
+    <!-- Sticky action bar (single-purpose: solo CTAs primarios del estado) -->
     <div class="s7-mob-actionbar" role="toolbar" aria-label="Acciones del pedido">
       <a href="#s7-order-detail-pay-mobile" data-screen-link="s7-order-detail-pay-mobile" class="btn primary" style="flex:1;font-size:13px;justify-content:center;" aria-keyshortcuts="P">
-        <i data-lucide="circle-dollar-sign"></i> Pago
+        <i data-lucide="circle-dollar-sign"></i> Anotar pago
       </a>
       <button class="btn primary" type="button" style="flex:1;font-size:13px;justify-content:center;">
-        <i data-lucide="truck"></i> Entrega
+        <i data-lucide="truck"></i> Crear entrega
       </button>
-      <a href="#s7-order-detail-actions-mobile" data-screen-link="s7-order-detail-actions-mobile" class="btn" aria-label="Más acciones (editar, cancelar, eliminar)" style="flex-shrink:0;background:transparent;border:1px solid var(--border-strong);color:var(--text-primary);padding:0 12px;min-height:44px;gap:4px;font-size:12px;">
-        <i data-lucide="ellipsis" style="width:18px;height:18px;"></i>Más
-      </a>
     </div>
   </div>
 </section>
@@ -11712,20 +11775,22 @@
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
 
-      <!-- Topbar: breadcrumb + título + X cancelar -->
-      <div class="app-topbar" style="padding:0 16px;position:sticky;top:0;z-index:20;">
-        <div class="app-topbar-left">
-          <nav class="app-breadcrumb" aria-label="Navegación">
-            <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link">Pedidos</a>
-          </nav>
-          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
-          <p class="app-topbar-title" id="s7-order-create-mobile-title">Nuevo pedido</p>
+      <!-- Topbar (static shell): hamburger + breadcrumb — matches ContentHeader.tsx.
+           No X cancelar (cancel/back lives as back-link in page content). -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;position:sticky;top:0;z-index:20;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" id="s7-order-create-mobile-title" style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Nuevo pedido</p>
         </div>
-        <div class="app-topbar-right">
-          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Cancelar y volver a Pedidos">
-            <i data-lucide="x"></i>
-          </a>
-        </div>
+      </div>
+
+      <!-- Back-link en page content (reemplaza X cancelar del topbar) -->
+      <div style="padding:8px 16px 0;">
+        <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="s7-mob-back-link">
+          <i data-lucide="arrow-left"></i> Pedidos
+        </a>
       </div>
 
       <!-- Stepper compacto "Paso X de Y" + barra de progreso 3 segmentos -->
@@ -11834,24 +11899,27 @@
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
 
-      <!-- Topbar: breadcrumb + título + theme toggle -->
-      <div class="app-topbar" style="padding:0 16px;position:sticky;top:0;z-index:20;">
-        <div class="app-topbar-left">
-          <nav class="app-breadcrumb" aria-label="Navegación">
-            <a href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" class="app-breadcrumb-link">Pedidos</a>
+      <!-- Topbar (static shell): hamburger + breadcrumb chain — matches ContentHeader.tsx.
+           Breadcrumb shows parent context (Pedidos > ORD-XXX). Title shows current page. -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;position:sticky;top:0;z-index:20;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;">
+            <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a>
+            <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+            <a href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);font-family:'JetBrains Mono',ui-monospace,monospace;">ORD-20260428-01</a>
           </nav>
-          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
-          <p class="app-topbar-title" id="s7-order-edit-mobile-title">Editar pedido</p>
-        </div>
-        <div class="app-topbar-right">
-          <button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" id="s7-order-edit-mobile-title" style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Editar pedido</p>
         </div>
       </div>
 
-      <!-- back-link bajo topbar (spec §1 mobile) -->
-      <a href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" class="back-link" style="margin:4px 16px 12px;display:inline-flex;">
-        <i data-lucide="arrow-left"></i> ORD-20260428-01
-      </a>
+      <!-- Back-link en page content (paridad con detail mobile pattern) -->
+      <div style="padding:8px 16px 0;">
+        <a href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" class="s7-mob-back-link">
+          <i data-lucide="arrow-left"></i> Volver a ORD-20260428-01
+        </a>
+      </div>
 
       <!-- form-grid: 1fr en móvil; L020 all-open SIN stepper -->
       <div class="form-grid" style="padding:0 16px;">
@@ -12063,18 +12131,13 @@
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0;">
 
-      <div class="app-topbar" style="padding:0 16px;">
-        <div class="app-topbar-left">
-          <nav class="app-breadcrumb" aria-label="Navegación">
-            <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link">Pedidos</a>
-          </nav>
-          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
-          <p class="app-topbar-title" id="s7-order-create-add-product-mobile-title">Nuevo pedido</p>
-        </div>
-        <div class="app-topbar-right">
-          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Cancelar y volver a Pedidos">
-            <i data-lucide="x"></i>
-          </a>
+      <!-- Topbar (static shell, dim parent): canonical hamburger + breadcrumb -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" id="s7-order-create-add-product-mobile-title" style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Nuevo pedido</p>
         </div>
       </div>
 
@@ -12330,14 +12393,18 @@
 <section id="s7-orders-list-loading-mobile" class="screen" aria-labelledby="s7-orders-list-loading-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(64px + env(safe-area-inset-bottom));">
-      <div class="app-topbar" style="padding:0 16px;">
-        <div class="app-topbar-left"><p class="app-topbar-title" id="s7-orders-list-loading-mobile-title">Pedidos</p></div>
-        <div class="app-topbar-right">
-          <div class="s7-mob-skel" style="width:32px;height:32px;border-radius:8px;"></div>
-          <div class="s7-mob-skel" style="width:80px;height:32px;border-radius:8px;"></div>
+      <!-- Topbar (static shell): hamburger + título — matches ContentHeader.tsx -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" id="s7-orders-list-loading-mobile-title" style="font-size:14px;font-weight:600;">Pedidos</p>
         </div>
       </div>
-      <div style="padding:14px 16px 12px;"><div class="s7-mob-skel" style="height:36px;width:100%;border-radius:8px;"></div></div>
+      <div class="s7-mob-search-wrap">
+        <div class="s7-mob-skel" style="height:36px;flex:1;border-radius:8px;"></div>
+        <div class="s7-mob-skel" style="width:32px;height:32px;border-radius:8px;flex-shrink:0;"></div>
+        <div class="s7-mob-skel" style="width:80px;height:32px;border-radius:8px;flex-shrink:0;"></div>
+      </div>
       <div class="s7-mob-cards" aria-busy="true" aria-label="Cargando pedidos">
         <div class="s7-mob-skel-card">
           <div style="display:flex;align-items:center;gap:10px;">
@@ -12384,8 +12451,12 @@
 <section id="s7-orders-list-empty-initial-mobile" class="screen" aria-labelledby="s7-orders-list-empty-initial-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(64px + env(safe-area-inset-bottom));display:flex;flex-direction:column;">
-      <div class="app-topbar" style="padding:0 16px;">
-        <div class="app-topbar-left"><p class="app-topbar-title" id="s7-orders-list-empty-initial-mobile-title">Pedidos</p></div>
+      <!-- Topbar (static shell): hamburger + título — matches ContentHeader.tsx -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" id="s7-orders-list-empty-initial-mobile-title" style="font-size:14px;font-weight:600;">Pedidos</p>
+        </div>
       </div>
       <div class="s7-mob-empty">
         <div class="s7-mob-empty-icon"><i data-lucide="package-open"></i></div>
@@ -12405,11 +12476,16 @@
 <section id="s7-orders-list-empty-filtered-mobile" class="screen" aria-labelledby="s7-orders-list-empty-filtered-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(64px + env(safe-area-inset-bottom));display:flex;flex-direction:column;">
-      <div class="app-topbar" style="padding:0 16px;">
-        <div class="app-topbar-left"><p class="app-topbar-title" id="s7-orders-list-empty-filtered-mobile-title">Pedidos</p></div>
-        <div class="app-topbar-right">
-          <button class="topbar-iconbtn s7-mob-filter-trigger is-active" type="button" aria-label="Filtros (3 activos)"><i data-lucide="sliders-horizontal"></i><span class="s7-mob-filter-badge">3</span></button>
+      <!-- Topbar (static shell): hamburger + título — matches ContentHeader.tsx -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" id="s7-orders-list-empty-filtered-mobile-title" style="font-size:14px;font-weight:600;">Pedidos</p>
         </div>
+      </div>
+      <!-- Page action row: filter trigger (Nuevo se oculta cuando no hay resultados) -->
+      <div style="display:flex;justify-content:flex-end;padding:10px 12px 0;">
+        <button class="topbar-iconbtn s7-mob-filter-trigger is-active" type="button" aria-label="Filtros (3 activos)" style="position:relative;"><i data-lucide="sliders-horizontal"></i><span class="s7-mob-filter-badge">3</span></button>
       </div>
       <div class="orders-filter-chips s7-mob-chips" aria-label="Filtros activos" style="gap:6px;flex-wrap:wrap;">
         <span class="filter-chip">Cancelados <button type="button" class="s7-mob-chip-close" aria-label="Quitar"><i data-lucide="x"></i></button></span>
@@ -12514,17 +12590,23 @@
 <section id="s7-order-detail-overdue-mobile" class="screen" aria-labelledby="s7-order-detail-overdue-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
+      <!-- Topbar (static shell): hamburger + breadcrumb + ORD code — matches ContentHeader.tsx -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
-        <div class="app-topbar-left" style="min-width:0;gap:4px;">
-          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Volver" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="arrow-left"></i></a>
-          <nav class="app-breadcrumb" style="min-width:0;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:12px;color:var(--text-muted);">Pedidos</a></nav>
-          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;"></i>
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
           <p class="app-topbar-title" id="s7-order-detail-overdue-mobile-title" style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',ui-monospace,monospace;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">ORD-20260312-01</p>
         </div>
-        <div class="app-topbar-right" style="flex-shrink:0;">
-          <button class="topbar-iconbtn" aria-label="Más acciones"><i data-lucide="ellipsis"></i></button>
-        </div>
       </div>
+
+      <!-- Back-link en page content -->
+      <div style="padding:8px 16px 0;">
+        <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="s7-mob-back-link">
+          <i data-lucide="arrow-left"></i> Pedidos
+        </a>
+      </div>
+
       <!-- OVERDUE alert -->
       <div class="s7-mob-alert is-warning" role="alert">
         <i data-lucide="clock"></i>
@@ -12570,12 +12652,33 @@
             <button class="subcard-toggle" aria-expanded="false"><span class="eyebrow">Tu nota privada</span><span class="text-muted" style="font-size:12px;">Vacía</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
           </div>
         </div>
+
+        <!-- Acciones secundarias inline (ADR 0011 — pattern Apple HIG) -->
+        <div style="margin-top:18px;">
+          <div class="s7-mob-actions-card">
+            <div class="s7-mob-actions-card-title">Acciones</div>
+            <div class="s7-mob-action-list">
+              <a href="#s7-order-edit-mobile" data-screen-link="s7-order-edit-mobile" class="s7-mob-action-row">
+                <i data-lucide="pencil"></i> Editar pedido
+                <i data-lucide="chevron-right" class="s7-mob-action-chev"></i>
+              </a>
+              <a href="#s7-order-detail-cancel-mobile" data-screen-link="s7-order-detail-cancel-mobile" class="s7-mob-action-row">
+                <i data-lucide="ban"></i> Cancelar pedido
+                <i data-lucide="chevron-right" class="s7-mob-action-chev"></i>
+              </a>
+              <a href="#s7-order-detail-delete-mobile" data-screen-link="s7-order-detail-delete-mobile" class="s7-mob-action-row is-destructive">
+                <i data-lucide="trash-2"></i> Eliminar pedido
+                <i data-lucide="chevron-right" class="s7-mob-action-chev"></i>
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+    <!-- Sticky action bar (single-purpose: solo CTAs primarios del estado overdue) -->
     <div class="s7-mob-actionbar" role="toolbar" aria-label="Acciones del pedido">
       <a href="#s7-order-detail-pay-mobile" data-screen-link="s7-order-detail-pay-mobile" class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="circle-dollar-sign"></i> Pagar saldo</a>
       <button class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="truck"></i> Entrega</button>
-      <a href="#s7-order-detail-actions-mobile" data-screen-link="s7-order-detail-actions-mobile" class="btn" aria-label="Más acciones" style="flex-shrink:0;background:transparent;border:1px solid var(--border-strong);color:var(--text-primary);padding:0 12px;min-height:44px;gap:4px;font-size:12px;"><i data-lucide="ellipsis" style="width:18px;height:18px;"></i>Más</a>
     </div>
   </div>
 </section>
@@ -12584,16 +12687,21 @@
 <section id="s7-order-detail-cancelled-mobile" class="screen" aria-labelledby="s7-order-detail-cancelled-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
+      <!-- Topbar (static shell): hamburger + breadcrumb + ORD code — matches ContentHeader.tsx -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
-        <div class="app-topbar-left" style="min-width:0;gap:4px;">
-          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Volver" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="arrow-left"></i></a>
-          <nav class="app-breadcrumb" style="min-width:0;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:12px;color:var(--text-muted);">Pedidos</a></nav>
-          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;"></i>
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
           <p class="app-topbar-title" id="s7-order-detail-cancelled-mobile-title" style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',ui-monospace,monospace;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">ORD-20260101-03</p>
         </div>
-        <div class="app-topbar-right" style="flex-shrink:0;">
-          <button class="topbar-iconbtn" aria-label="Más acciones"><i data-lucide="ellipsis"></i></button>
-        </div>
+      </div>
+
+      <!-- Back-link en page content -->
+      <div style="padding:8px 16px 0;">
+        <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="s7-mob-back-link">
+          <i data-lucide="arrow-left"></i> Pedidos
+        </a>
       </div>
       <div style="padding:12px 16px 0;">
         <div class="detail-hero" style="padding:18px;border-radius:16px;opacity:0.78;">
@@ -12623,11 +12731,26 @@
             <button class="subcard-toggle" aria-expanded="false"><span class="eyebrow">Historial</span><span class="text-muted" style="font-size:12px;">5 eventos</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
           </div>
         </div>
+
+        <!-- Estado cancelado: solo Eliminar (Editar requiere reactivar primero;
+             Cancelar no aplica porque ya está cancelado). Misma card "Acciones"
+             con única fila destructiva — sin divider (es first-child). -->
+        <div style="margin-top:18px;">
+          <div class="s7-mob-actions-card">
+            <div class="s7-mob-actions-card-title">Acciones</div>
+            <div class="s7-mob-action-list">
+              <a href="#s7-order-detail-delete-mobile" data-screen-link="s7-order-detail-delete-mobile" class="s7-mob-action-row is-destructive">
+                <i data-lucide="trash-2"></i> Eliminar pedido
+                <i data-lucide="chevron-right" class="s7-mob-action-chev"></i>
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+    <!-- Sticky action bar (single-purpose: solo CTA primario del estado cancelado) -->
     <div class="s7-mob-actionbar" role="toolbar" aria-label="Acciones del pedido">
       <button class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="rotate-ccw"></i> Reactivar pedido</button>
-      <a href="#s7-order-detail-actions-mobile" data-screen-link="s7-order-detail-actions-mobile" class="btn" aria-label="Más acciones (incluye eliminar)" style="flex-shrink:0;background:transparent;border:1px solid var(--border-strong);color:var(--text-primary);padding:0 12px;min-height:44px;gap:4px;font-size:12px;"><i data-lucide="ellipsis" style="width:18px;height:18px;"></i>Más</a>
     </div>
   </div>
 </section>
@@ -12636,16 +12759,21 @@
 <section id="s7-order-detail-completed-unpaid-mobile" class="screen" aria-labelledby="s7-order-detail-completed-unpaid-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
+      <!-- Topbar (static shell): hamburger + breadcrumb + ORD code — matches ContentHeader.tsx -->
       <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
-        <div class="app-topbar-left" style="min-width:0;gap:4px;">
-          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Volver" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="arrow-left"></i></a>
-          <nav class="app-breadcrumb" style="min-width:0;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:12px;color:var(--text-muted);">Pedidos</a></nav>
-          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;"></i>
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
           <p class="app-topbar-title" id="s7-order-detail-completed-unpaid-mobile-title" style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',ui-monospace,monospace;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">ORD-20260215-02</p>
         </div>
-        <div class="app-topbar-right" style="flex-shrink:0;">
-          <button class="topbar-iconbtn" aria-label="Más acciones"><i data-lucide="ellipsis"></i></button>
-        </div>
+      </div>
+
+      <!-- Back-link en page content -->
+      <div style="padding:8px 16px 0;">
+        <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="s7-mob-back-link">
+          <i data-lucide="arrow-left"></i> Pedidos
+        </a>
       </div>
       <div class="s7-mob-alert is-destructive" role="alert">
         <i data-lucide="x-circle"></i>
@@ -12684,50 +12812,32 @@
             <button class="subcard-toggle" aria-expanded="false"><span class="eyebrow">Productos</span><span class="text-muted" style="font-size:12px;">3</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
           </div>
         </div>
+
+        <!-- Acciones secundarias inline (ADR 0011 — pattern Apple HIG) -->
+        <div style="margin-top:18px;">
+          <div class="s7-mob-actions-card">
+            <div class="s7-mob-actions-card-title">Acciones</div>
+            <div class="s7-mob-action-list">
+              <a href="#s7-order-edit-mobile" data-screen-link="s7-order-edit-mobile" class="s7-mob-action-row">
+                <i data-lucide="pencil"></i> Editar pedido
+                <i data-lucide="chevron-right" class="s7-mob-action-chev"></i>
+              </a>
+              <a href="#s7-order-detail-cancel-mobile" data-screen-link="s7-order-detail-cancel-mobile" class="s7-mob-action-row">
+                <i data-lucide="ban"></i> Cancelar pedido
+                <i data-lucide="chevron-right" class="s7-mob-action-chev"></i>
+              </a>
+              <a href="#s7-order-detail-delete-mobile" data-screen-link="s7-order-detail-delete-mobile" class="s7-mob-action-row is-destructive">
+                <i data-lucide="trash-2"></i> Eliminar pedido
+                <i data-lucide="chevron-right" class="s7-mob-action-chev"></i>
+              </a>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+    <!-- Sticky action bar (single-purpose: solo CTA primario del estado impago) -->
     <div class="s7-mob-actionbar" role="toolbar" aria-label="Acciones del pedido">
       <a href="#s7-order-detail-pay-mobile" data-screen-link="s7-order-detail-pay-mobile" class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="circle-dollar-sign"></i> Saldar ¥4.200</a>
-      <a href="#s7-order-detail-actions-mobile" data-screen-link="s7-order-detail-actions-mobile" class="btn" aria-label="Más acciones" style="flex-shrink:0;background:transparent;border:1px solid var(--border-strong);color:var(--text-primary);padding:0 12px;min-height:44px;gap:4px;font-size:12px;"><i data-lucide="ellipsis" style="width:18px;height:18px;"></i>Más</a>
-    </div>
-  </div>
-</section>
-
-<!-- ─── MOBILE: s7-order-detail-actions-mobile ─────────────────────────────── -->
-<section id="s7-order-detail-actions-mobile" class="screen" aria-labelledby="s7-order-detail-actions-mobile-title">
-  <div class="app-shell" style="--sidebar-width:0px;">
-    <div class="app-content" style="padding:0;">
-      <div class="app-topbar" style="padding:0 12px 0 8px;">
-        <div class="app-topbar-left" style="min-width:0;gap:4px;">
-          <a href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" class="topbar-iconbtn" aria-label="Volver" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="arrow-left"></i></a>
-          <nav class="app-breadcrumb" style="min-width:0;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:12px;color:var(--text-muted);">Pedidos</a></nav>
-          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;"></i>
-          <p class="app-topbar-title" id="s7-order-detail-actions-mobile-title" style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',ui-monospace,monospace;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">ORD-20260428-01</p>
-        </div>
-        <div class="app-topbar-right" style="flex-shrink:0;">
-          <button class="topbar-iconbtn is-active" aria-label="Más acciones" aria-expanded="true" style="background:color-mix(in oklch,var(--accent) 10%,transparent);color:var(--accent);"><i data-lucide="ellipsis"></i></button>
-        </div>
-      </div>
-      <div style="padding:14px 16px;opacity:0.5;">
-        <div style="height:200px;background:var(--surface-elevated);border-radius:16px;"></div>
-      </div>
-    </div>
-    <div class="s7-mob-backdrop" aria-hidden="true"></div>
-    <div class="s7-mob-sheet" role="menu" aria-labelledby="s7-order-detail-actions-mobile-title">
-      <div class="s7-mob-sheet-handle" aria-hidden="true"></div>
-      <div class="s7-mob-sheet-head">
-        <h3 class="s7-mob-sheet-title">Acciones del pedido</h3>
-        <button class="topbar-iconbtn" type="button" aria-label="Cerrar"><i data-lucide="x"></i></button>
-      </div>
-      <div class="s7-mob-sheet-body" style="padding:8px;">
-        <div class="s7-mob-action-list">
-          <button type="button" class="s7-mob-action-row" role="menuitem"><i data-lucide="truck"></i> Crear entrega</button>
-          <a href="#s7-order-edit-mobile" data-screen-link="s7-order-edit-mobile" class="s7-mob-action-row" role="menuitem"><i data-lucide="pencil"></i> Editar pedido</a>
-          <div style="height:1px;background:var(--border);margin:6px 8px;"></div>
-          <a href="#s7-order-detail-cancel-mobile" data-screen-link="s7-order-detail-cancel-mobile" class="s7-mob-action-row" role="menuitem" style="color:var(--warning);"><i data-lucide="ban" style="color:var(--warning);"></i> Cancelar pedido</a>
-          <a href="#s7-order-detail-delete-mobile" data-screen-link="s7-order-detail-delete-mobile" class="s7-mob-action-row is-destructive" role="menuitem"><i data-lucide="trash-2"></i> Eliminar pedido</a>
-        </div>
-      </div>
     </div>
   </div>
 </section>
@@ -12736,15 +12846,13 @@
 <section id="s7-order-detail-pay-mobile" class="screen" aria-labelledby="s7-order-detail-pay-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0;">
-      <div class="app-topbar" style="padding:0 12px 0 8px;">
-        <div class="app-topbar-left" style="min-width:0;gap:4px;">
-          <a href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" class="topbar-iconbtn" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="arrow-left"></i></a>
-          <nav class="app-breadcrumb" style="min-width:0;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:12px;color:var(--text-muted);">Pedidos</a></nav>
-          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;"></i>
+      <!-- Parent topbar (dim) — canonical static-shell pattern -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
           <p class="app-topbar-title" id="s7-order-detail-pay-mobile-title" style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',ui-monospace,monospace;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">ORD-20260428-01</p>
-        </div>
-        <div class="app-topbar-right" style="flex-shrink:0;">
-          <button class="topbar-iconbtn" aria-label="Más acciones"><i data-lucide="ellipsis"></i></button>
         </div>
       </div>
       <div style="padding:14px 16px;opacity:0.5;">
@@ -12795,9 +12903,12 @@
 <section id="s7-order-detail-delete-mobile" class="screen" aria-labelledby="s7-order-detail-delete-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0;">
-      <div class="app-topbar" style="padding:0 12px 0 8px;">
-        <div class="app-topbar-left" style="min-width:0;gap:4px;">
-          <a href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" class="topbar-iconbtn" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="arrow-left"></i></a>
+      <!-- Parent topbar (dim) — canonical static-shell pattern -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
           <p class="app-topbar-title" id="s7-order-detail-delete-mobile-title" style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',ui-monospace,monospace;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">ORD-20260428-01</p>
         </div>
       </div>
@@ -12833,10 +12944,13 @@
 <section id="s7-order-detail-cancel-mobile" class="screen" aria-labelledby="s7-order-detail-cancel-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0;">
-      <div class="app-topbar" style="padding:0 12px 0 8px;">
-        <div class="app-topbar-left" style="min-width:0;gap:4px;">
-          <a href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" class="topbar-iconbtn" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="arrow-left"></i></a>
-          <p class="app-topbar-title" id="s7-order-detail-cancel-mobile-title" style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',ui-monospace,monospace;">ORD-20260428-01</p>
+      <!-- Parent topbar (dim) — canonical static-shell pattern -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" id="s7-order-detail-cancel-mobile-title" style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',ui-monospace,monospace;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">ORD-20260428-01</p>
         </div>
       </div>
       <div style="padding:14px 16px;opacity:0.5;">
@@ -12871,14 +12985,13 @@
 <section id="s7-order-create-step-2-mobile" class="screen" aria-labelledby="s7-order-create-step-2-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
-      <div class="app-topbar" style="padding:0 16px;">
-        <div class="app-topbar-left">
-          <nav class="app-breadcrumb"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link">Pedidos</a></nav>
-          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
-          <p class="app-topbar-title" id="s7-order-create-step-2-mobile-title">Nuevo pedido</p>
-        </div>
-        <div class="app-topbar-right">
-          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Cancelar"><i data-lucide="x"></i></a>
+      <!-- Topbar (static shell): canonical hamburger + breadcrumb — matches ContentHeader.tsx -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" id="s7-order-create-step-2-mobile-title" style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Nuevo pedido</p>
         </div>
       </div>
       <div class="s7-mob-stepper">
@@ -12958,14 +13071,13 @@
 <section id="s7-order-create-step-3-mobile" class="screen" aria-labelledby="s7-order-create-step-3-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0 0 calc(76px + env(safe-area-inset-bottom));">
-      <div class="app-topbar" style="padding:0 16px;">
-        <div class="app-topbar-left">
-          <nav class="app-breadcrumb"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link">Pedidos</a></nav>
-          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
-          <p class="app-topbar-title" id="s7-order-create-step-3-mobile-title">Nuevo pedido</p>
-        </div>
-        <div class="app-topbar-right">
-          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Cancelar"><i data-lucide="x"></i></a>
+      <!-- Topbar (static shell): canonical hamburger + breadcrumb — matches ContentHeader.tsx -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" id="s7-order-create-step-3-mobile-title" style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Nuevo pedido</p>
         </div>
       </div>
       <div class="s7-mob-stepper">
@@ -13010,12 +13122,13 @@
 <section id="s7-order-create-discrepancy-mobile" class="screen" aria-labelledby="s7-order-create-discrepancy-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0;">
-      <div class="app-topbar" style="padding:0 16px;">
-        <div class="app-topbar-left">
-          <p class="app-topbar-title" id="s7-order-create-discrepancy-mobile-title">Nuevo pedido</p>
-        </div>
-        <div class="app-topbar-right">
-          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Cancelar"><i data-lucide="x"></i></a>
+      <!-- Topbar (static shell, dim parent): canonical hamburger + breadcrumb -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" id="s7-order-create-discrepancy-mobile-title" style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Nuevo pedido</p>
         </div>
       </div>
       <div style="padding:14px 16px;opacity:0.5;">
@@ -13068,14 +13181,13 @@
 <section id="s7-order-create-empty-stores-mobile" class="screen" aria-labelledby="s7-order-create-empty-stores-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0;display:flex;flex-direction:column;">
-      <div class="app-topbar" style="padding:0 16px;">
-        <div class="app-topbar-left">
-          <nav class="app-breadcrumb"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link">Pedidos</a></nav>
-          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
-          <p class="app-topbar-title" id="s7-order-create-empty-stores-mobile-title">Nuevo pedido</p>
-        </div>
-        <div class="app-topbar-right">
-          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Cancelar"><i data-lucide="x"></i></a>
+      <!-- Topbar (static shell): canonical hamburger + breadcrumb -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" id="s7-order-create-empty-stores-mobile-title" style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Nuevo pedido</p>
         </div>
       </div>
       <div class="s7-mob-empty">
@@ -13153,12 +13265,13 @@
 <section id="s7-product-type-picker-mobile" class="screen" aria-labelledby="s7-product-type-picker-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0;">
-      <div class="app-topbar" style="padding:0 16px;">
-        <div class="app-topbar-left">
-          <p class="app-topbar-title" id="s7-product-type-picker-mobile-title">Editar pedido</p>
-        </div>
-        <div class="app-topbar-right">
-          <button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button>
+      <!-- Parent topbar (dim) — canonical static-shell pattern -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" id="s7-product-type-picker-mobile-title" style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Editar pedido</p>
         </div>
       </div>
       <div style="padding:14px 16px;opacity:0.5;">
@@ -13201,14 +13314,13 @@
 <section id="s7-store-picker-mobile" class="screen" aria-labelledby="s7-store-picker-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0;">
-      <div class="app-topbar" style="padding:0 16px;">
-        <div class="app-topbar-left">
-          <nav class="app-breadcrumb"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link">Pedidos</a></nav>
-          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
-          <p class="app-topbar-title" id="s7-store-picker-mobile-title">Nuevo pedido</p>
-        </div>
-        <div class="app-topbar-right">
-          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Cancelar"><i data-lucide="x"></i></a>
+      <!-- Parent topbar (dim) — canonical static-shell pattern -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" id="s7-store-picker-mobile-title" style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Nuevo pedido</p>
         </div>
       </div>
       <div style="padding:14px 16px;opacity:0.5;">
@@ -13284,14 +13396,13 @@
 <section id="s7-currency-picker-mobile" class="screen" aria-labelledby="s7-currency-picker-mobile-title">
   <div class="app-shell" style="--sidebar-width:0px;">
     <div class="app-content" style="padding:0;">
-      <div class="app-topbar" style="padding:0 16px;">
-        <div class="app-topbar-left">
-          <nav class="app-breadcrumb"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link">Pedidos</a></nav>
-          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
-          <p class="app-topbar-title" id="s7-currency-picker-mobile-title">Nuevo pedido</p>
-        </div>
-        <div class="app-topbar-right">
-          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Cancelar"><i data-lucide="x"></i></a>
+      <!-- Parent topbar (dim) — canonical static-shell pattern -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" id="s7-currency-picker-mobile-title" style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Nuevo pedido</p>
         </div>
       </div>
       <div style="padding:14px 16px;opacity:0.5;">

@@ -3,7 +3,7 @@ title: Order edit
 session: 07
 status: spec-complete
 methodology: §6.quinquies
-last_updated: 2026-05-10
+last_updated: 2026-05-12
 demo_anchors:
   - s7-order-edit
   - s7-order-edit-mobile
@@ -60,7 +60,13 @@ demo_anchors:
 
 ### Mobile (< 768px)
 
-Single column. `form-sidebar` colapsa debajo de las `section-cards`. Ambas secciones permanecen expandidas (sin colapsar). El `back-link` aparece bajo el topbar.
+Single column.
+
+**Topbar (static shell, ContentHeader.tsx).** Patrón canónico S7-A.6 con breadcrumb chain de 3 niveles: `[☰ hamburger]` + `Pedidos` (link a la lista) + chevron-sep + `ORD-XXXXX` (link al detalle, font mono) + chevron-sep + título "Editar pedido" (14px/600, truncate). Sin `X cancelar` en topbar — la salida vive en el back-link del page content y en el botón "Cancelar" del sticky footer.
+
+**Back-link en page content.** `<a class="s7-mob-back-link" href="/pedidos/[id]"><i lucide="arrow-left"/> Volver a ORD-XXXXX</a>`. Apunta al **detalle** (no a la lista), porque ese es el origen natural del flujo de edición. Diferencia con create-mobile (que va a la lista).
+
+`form-sidebar` colapsa debajo de las `section-cards`. Ambas secciones permanecen expandidas (sin colapsar, patrón L020 all-open).
 
 ### Anchors estructurales del demo
 

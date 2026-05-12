@@ -2,7 +2,7 @@
 title: Order detail
 session: 07
 status: spec-complete
-last_updated: 2026-05-10
+last_updated: 2026-05-12
 demo_anchors:
   - "#s7-order-detail-active"
   - "#s7-order-detail-cancelled"
@@ -16,7 +16,6 @@ demo_anchors:
   - "#s7-order-detail-overdue-mobile"
   - "#s7-order-detail-cancelled-mobile"
   - "#s7-order-detail-completed-unpaid-mobile"
-  - "#s7-order-detail-actions-mobile"
   - "#s7-order-detail-pay-mobile"
   - "#s7-order-detail-delete-mobile"
   - "#s7-order-detail-cancel-mobile"
@@ -260,17 +259,34 @@ El motivo se guarda como `cancellationReason` en el pedido y aparece en el callo
 
 ### 5.8 Mobile (`#s7-order-detail-mobile`)
 
-`--sidebar-width:0px`. Sin sidebar. Topbar lleva `[← back-arrow icon-button]` + breadcrumb compacto "Pedidos" + chevron-sep + título `ORD-…` (font mono) + `[⋯ overflow icon-button]` a la derecha.
+`--sidebar-width:0px`. Sin sidebar.
 
-**Sticky action bar** (fija al fondo via flex-column del `.app-shell`, `border-top`, `var(--surface-elevated)`, `backdrop-filter: blur(10px)`, `padding-bottom: calc(N + env(safe-area-inset-bottom))`):
+**Topbar (static shell, ContentHeader.tsx).** Patrón canónico aplicado en S7-A.6 (ADR 0011): `[☰ hamburger icon-button]` + breadcrumb `Pedidos` (link) + chevron-sep + título `ORD-…` (font mono, 14px/600, truncate). Sin back-arrow, sin `⋯`, sin acciones contextuales del lado derecho. El header es estático cross-route — las acciones de página viven en el page content. Esto refleja la implementación real de `src/app/[locale]/(app)/_components/AppLayout/ContentHeader.tsx`.
 
-- `[Pago (primary flex:1)]` `[Entrega (primary flex:1)]` `[Más outline + label + icon ellipsis]`
-
-El botón "Más" (outline button con label visible + icon `ellipsis` 18px, NO icon-only `⋯`) abre el bottom sheet `#s7-order-detail-actions-mobile` (ver §5.12) que contiene Editar, Crear entrega, Cancelar, Eliminar. La decisión de usar outline+label vs icon-only viene del research NN/g 2024: combo icon+label gana 1.5× sobre icon-only para discoverability mobile. El botón "Pago" abre el bottom sheet `#s7-order-detail-pay-mobile` (Anotar pago — NO inline expand como desktop, ver §5.13).
+**Back-link en page content.** Inmediatamente debajo del topbar, padding 8px 16px 0: `<a class="s7-mob-back-link"><i lucide="arrow-left"/> Pedidos</a>`. Da una acción "volver" en zona thumb-reachable (el breadcrumb del header está en zona difícil). Estándar mobile detail-screen post-iOS HIG.
 
 **Hero:** full width, padding 16px. Mismo contenido que desktop pero compacto. Jerarquía invertida vs desktop: "**Saldo pendiente**" como label primario (no "Total") con cifra grande en `--warning` cuando hay saldo, `--destructive` cuando impago. Tap-to-copy en el código `ORD-…` (botón inline con icono `copy` 11px).
 
 **Subcards:** Productos (open, todos los N items visibles — sin truncar con "+ N más"), Pagos (collapsed — header expone "$X restante" en `--warning` para que el saldo sea visible aun sin expandir), Nota privada (collapsed con indicador "✓ Guardada"). Historial **no se muestra en mobile** (información de baja prioridad, accesible vía desktop).
+
+**Card "Acciones" inline (ADR 0011).** Al final del scroll del page content, antes de la sticky action bar: card `.s7-mob-actions-card` con título eyebrow "Acciones" y lista de filas tap-able. Patrón Apple HIG (Calendar event edit, Reminders, Contacts): un solo grupo, fila destructiva al final en rojo, con divider sutil arriba.
+
+Filas para estado activo (y atrasado/impago, mismo subset):
+
+1. `pencil` Editar pedido → navega a `/pedidos/[id]/editar`
+2. `ban` Cancelar pedido → abre bottom sheet `#s7-order-detail-cancel-mobile`
+3. (divider sutil — CSS via `::before`)
+4. `trash-2` (destructive, rojo) Eliminar pedido → abre `#s7-order-detail-delete-mobile`
+
+> **Cancelar es semi-destructivo pero reversible** (el pedido pasa a estado `cancelled`, se puede reactivar). Por eso vive como fila neutra del menú, no en zona destructiva. Solo Eliminar (irreversible) lleva el color rojo + divider. Patrón Linear-style (Archive vs Delete).
+
+**Sticky action bar single-purpose** (fija al fondo via flex-column del `.app-shell`, `border-top`, `var(--surface-elevated)`, `backdrop-filter: blur(10px)`, `padding-bottom: calc(N + env(safe-area-inset-bottom))`). Contiene **solo los CTAs primarios del estado**, sin `[Más]`:
+
+- Activo: `[Anotar pago (primary flex:1)]` `[Crear entrega (primary flex:1)]`
+- "Anotar pago" abre el bottom sheet `#s7-order-detail-pay-mobile` (ver §5.13 — NO inline expand como desktop).
+- "Crear entrega" navega a `/deliveries/new?sourceOrderId=`.
+
+Anti-patrón cerrado (S7-A.6): la action bar **no contiene** botón `[Más]` ni icono `⋯`. Las acciones secundarias (Editar, Cancelar, Eliminar) viven en la card inline al pie del scroll. Esto cumple dos constraints: (1) la sticky bar queda single-purpose, sin conflicto entre primary CTA y disclosure; (2) las secundarias son visibles labelled (no escondidas detrás de `⋯`).
 
 ### 5.9 Atrasado mobile (`#s7-order-detail-overdue-mobile`)
 
@@ -279,7 +295,8 @@ Mismo layout que §5.8 más:
 - **Alert banner** entre topbar y hero: `.s7-mob-alert.is-warning`, icono `clock` en `--warning` 18px, strong "Atrasado N días" + body "Estimado el X · aún sin entrega confirmada. Considerá contactar a la tienda."
 - Hero con dual chip (`info` "Pendiente" + `warning` "Atrasado Nd" + `s7-impago-pill` si impago).
 - Saldo en `--warning`.
-- Action bar: `[Pagar saldo primary]` `[Entrega primary]` `[Más outline + label]`.
+- Card "Acciones" inline al pie del scroll, mismas filas que §5.8: Editar · Cancelar · ─ · Eliminar.
+- Sticky action bar single-purpose: `[Pagar saldo (primary flex:1)]` `[Entrega (primary flex:1)]`. Sin `[Más]`.
 
 ### 5.10 Cancelado mobile (`#s7-order-detail-cancelled-mobile`)
 
@@ -289,8 +306,9 @@ Mismo layout que §5.8 más:
 - "Total del pedido" muteado (`--text-secondary`, **SIN strikethrough** — estandarizado con desktop, ver L075).
 - Subtitle "Cancelado el X · Sin pagos registrados" (NO referenciar códigos internos del FRD como BR-05-15 en copy visible).
 - Sección "Motivo:" con el `cancellationReason` si existe.
-- Subcards: Productos (collapsed, info histórica) + Historial (collapsed, 5 eventos). NO action bar de Pago/Entrega.
-- Action bar: `[Reactivar pedido primary]` `[Más outline + label (incluye Eliminar)]`. Reactivar sin modal por ser acción reversible.
+- Subcards: Productos (collapsed, info histórica) + Historial (collapsed, 5 eventos).
+- **Card "Acciones" reducida (S7-A.6 + ADR 0011)**: solo `trash-2` (destructive, rojo) Eliminar pedido. NO Editar (un pedido cancelado no se edita — el flujo es reactivar primero); NO Cancelar (ya está cancelado). Como Eliminar es la única fila, no lleva divider arriba (es first-child de la card).
+- Sticky action bar single-purpose: `[Reactivar pedido (primary flex:1)]`. Reactivar sin modal por ser acción reversible. Sin `[Más]`.
 
 ### 5.11 Completado + Impago mobile (`#s7-order-detail-completed-unpaid-mobile`)
 
@@ -300,23 +318,12 @@ Mismo layout que §5.8 más:
 - Hero con dual chip (`success` "Completado" + `s7-impago-pill` "Impago"). Saldo en `--destructive` con cifra grande.
 - Progress bar al X% con `background: var(--destructive)`.
 - Subtitle "Entregado completo el X".
-- Action bar: `[Saldar $X primary]` `[Más outline + label]`.
+- Card "Acciones" inline al pie del scroll, mismas filas que §5.8: Editar · Cancelar · ─ · Eliminar.
+- Sticky action bar single-purpose: `[Saldar $X (primary flex:1)]`. Sin `[Más]`.
 
-### 5.12 Más acciones bottom sheet (`#s7-order-detail-actions-mobile`)
+### 5.12 (eliminada en S7-A.6) — Bottom sheet "Más acciones"
 
-Mobile-only — desktop no tiene este sheet porque el aside ya muestra todas las acciones inline. Bottom sheet (`<Modal>` adaptive renderizado como `ModalSheet`):
-
-- Header sin icon-circle (action sheet variant): título "Acciones del pedido" + X close.
-- Body: `.s7-mob-action-list` con filas tap-able — **mismas 4 acciones que el aside desktop, en el mismo orden**:
-  1. `truck` Crear entrega → navega a `/deliveries/new?sourceOrderId=`
-  2. `pencil` Editar pedido → navega a edit
-  3. Divider
-  4. `ban` (warning) Cancelar pedido → abre `#s7-order-detail-cancel-mobile`
-  5. `trash-2` (destructive) Eliminar pedido → abre `#s7-order-detail-delete-mobile`
-
-> **Trigger del sheet**: botón "Más" en el sticky action bar (outline + label visible, NO `⋯` icon-only). NN/g 2024: combo icon+label gana 1.5× sobre icon-only para discoverability mobile. Implementado en S7-A.5.
-
-> **Anti-patrón cerrado (S7-A.5)**: el sheet NO incluye "Compartir pedido" ni "Copiar código (ORD-…)" — ambas eran inventadas mobile-only sin equivalente desktop ni mención en FRD. Si en el futuro se decide agregarlas, abrir cross-cutting change para portar el feature también a desktop.
+> **Anchor eliminado (`#s7-order-detail-actions-mobile`).** El bottom sheet de "Más acciones" gatillado por `⋯` o por outline `[Más]` fue retirado. Las acciones secundarias (Editar, Cancelar, Eliminar) ahora viven inline en la card "Acciones" al pie del scroll del detalle (ver §5.8). Decisión y evidencia en ADR 0011. Numeración conservada para que las referencias §5.13+ no se rompan.
 
 ### 5.13 Anotar pago bottom sheet (`#s7-order-detail-pay-mobile`)
 
@@ -415,9 +422,12 @@ Tap en el span `.id` (el código ORD-YYYYMMDD-NN) → `navigator.clipboard.write
 
 ### 6.9 Gestos mobile
 
-- **Tap en `[Más]` del action bar** → abre `#s7-order-detail-actions-mobile` (bottom sheet con Crear entrega / Editar / Cancelar / Eliminar — las 4 acciones canónicas del aside desktop, en mismo orden). Patrón canónico mobile-only. El botón "Más" usa outline + label visible (NO icon-only `⋯`) para discoverability — research NN/g 2024.
-- **Tap en `[Pago]` del action bar** → abre `#s7-order-detail-pay-mobile` (bottom sheet con form). NO inline expand como desktop (ver §5.13 para la razón).
-- **Tap en `[⋯]` del topbar** → mismo destino que el botón Más del action bar (redundancia intencional para usuarios que están en el top de la pantalla y no quieren scrollear).
+- **Tap en fila de la card "Acciones"** → navega o abre sheet según corresponda: Editar pedido → `/pedidos/[id]/editar`; Cancelar pedido → bottom sheet `#s7-order-detail-cancel-mobile`; Eliminar pedido → bottom sheet `#s7-order-detail-delete-mobile`. La card vive inline al pie del scroll del detalle (ADR 0011) — no detrás de `⋯`, no detrás de bottom sheet de "Más acciones".
+- **Tap en `[Anotar pago]` del action bar** → abre `#s7-order-detail-pay-mobile` (bottom sheet con form). NO inline expand como desktop (ver §5.13 para la razón).
+- **Tap en `[Crear entrega]` del action bar** → navega a `/deliveries/new?sourceOrderId=`.
+- **Tap en `[Reactivar pedido]` (cancelled)** → ejecuta la acción directamente sin modal (reversible).
+- **Tap en `← Pedidos` (back-link en page content)** → navega a `/pedidos`. Está justo debajo del topbar para que el back sea thumb-reachable (el `Pedidos` del breadcrumb del header también funciona pero está en la zona dura).
+- **Tap en `☰` (hamburger topbar)** → abre el drawer de navegación principal de la app (responsabilidad del AppShell, no de esta pantalla).
 - **Tap en código `ORD-…`** en el hero (botón inline con icono `copy`): copia al clipboard. Feedback: toast 2s "Código copiado" en top de la pantalla mobile.
 - **Pull-to-refresh:** recarga el detalle completo. Comportamiento del browser nativo (no custom).
 - **Swipe izquierda en pay-row (Pagos subcard expandido):** revela botón `X` delete en el extremo derecho del row. Confirmación: undo-toast 5s (L073) — el delete es optimista, se puede deshacer con tap en "Deshacer" o tecla `Z`.

@@ -3,7 +3,7 @@ title: Order create
 session: 07
 status: spec-complete
 methodology: §6.quinquies
-last_updated: 2026-05-10
+last_updated: 2026-05-12
 demo_anchors:
   - s7-order-create-step-1
   - s7-order-create-step-2
@@ -63,7 +63,13 @@ supersedes: order-create.md (session 02 — old 5-step wireframe)
 
 ### Mobile (< 768px)
 
-Single column. Topbar mobile con breadcrumb `Pedidos > Nuevo pedido` + icon-button `X` cancelar. **Sin `page-heading`** (el topbar ya muestra el título). El wizard ocupa el viewport completo sin nav bar inferior — el sticky footer del CTA no tiene interferencia.
+Single column.
+
+**Topbar (static shell, ContentHeader.tsx).** Patrón canónico S7-A.6: `[☰ hamburger]` + breadcrumb `Pedidos` (link) + chevron-sep + título "Nuevo pedido". Sin `X cancelar` en el topbar — esa acción se reubicó como back-link en page content. **Sin `page-heading`** (el topbar ya muestra el título).
+
+**Back-link en page content.** Inmediatamente debajo del topbar: `<a class="s7-mob-back-link"><i lucide="arrow-left"/> Pedidos</a>`. Reemplaza la `X` que vivía en topbar-right. Da una salida del wizard explícita y thumb-reachable. El stepper compacto va debajo.
+
+El wizard ocupa el viewport completo sin nav bar inferior — el sticky footer del CTA no tiene interferencia.
 
 **Stepper compacto en mobile** (no 3-pill stepper): texto "Paso X de 3 · {nombre paso}" + barra de progreso horizontal de 3 segmentos (segmento active en `var(--accent)`, próximos en `var(--border)`). Ahorra ~40px verticales vs el stepper de pills.
 

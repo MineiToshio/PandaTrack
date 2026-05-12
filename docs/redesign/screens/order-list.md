@@ -2,7 +2,7 @@
 title: Order list
 session: 07
 status: spec-complete
-last_updated: 2026-05-10
+last_updated: 2026-05-12
 demo_anchors:
   - "#s7-orders-list-loading"
   - "#s7-orders-list-default"
@@ -232,14 +232,25 @@ Footer: botón ghost "Limpiar" + botón primary `flex:1` "Aplicar filtros" (íco
 
 ### 5.7 Mobile (`#s7-orders-list-mobile`)
 
-`--sidebar-width:0px`. Sin sidebar. `app-topbar` (sticky top, 48px) lleva título "Pedidos" a la izquierda + `[FilterTriggerButton M05 icon-only con badge] [Nuevo sm primary]` a la derecha. **Sin `page-heading`** — el topbar ya funciona como título. Búsqueda sticky debajo del topbar (full width, placeholder "Código o producto (ORD-…, OST…)"). Filter chips dismissibles debajo de la búsqueda (mismo patrón que desktop). FX banner compacto con CTA tonal "Actualizar tipos de cambio" stacked (no inline). Cards verticales `.s7-order-card` con: store-avatar + nombre + código-fecha + chip estado + barra progreso (`--accent-cool` para items expandidos) + meta "N productos · X% pagado · $total". **Tap en card → navega al detalle**. Al pie de cada card, **expand-chevron row** (`.s7-mob-card-expand-row`): barrita centrada con chevron-down + texto "Ver productos" — tap en chevron → expande inline mostrando los N items (sin truncar) con icon (`--accent-cool`) + name + qty + price. Una segunda tap en chevron (rotado 180° + texto "Ocultar productos") → colapsa. Paginación "Cargar más" canónica al pie (L062), con conteo "Mostrando A–B de N" encima del botón.
+`--sidebar-width:0px`. Sin sidebar.
+
+**Topbar (static shell, ContentHeader.tsx).** Patrón canónico S7-A.6: `[☰ hamburger]` + título "Pedidos" (14px/600). Sin filter trigger, sin "Nuevo" en el header — esas acciones contextuales viven en el page content (search action row, abajo).
+
+**Page action row sticky bajo el topbar** (`.s7-mob-search-wrap`, `position: sticky; top: 48px`, `display: flex; gap: 8px; padding: 10px 12px`, backdrop blur). Una sola fila horizontal con:
+
+- `<SearchInput>` (`flex:1`, placeholder "Código o producto (ORD-20260428-01, OST…)"),
+- `[FilterTriggerButton M05 icon-only con badge]` (`flex-shrink:0`),
+- `[+ Nuevo (primary sm)]` (`flex-shrink:0`).
+
+Las 3 acciones contextuales del listado quedan en la zona de page chrome, no en el shell. Mantiene paridad con `ContentHeader.tsx` (header inmutable cross-route) y resuelve discoverability de filter + Nuevo en thumb zone.
+
+Filter chips dismissibles debajo del action row (mismo patrón que desktop). FX banner compacto con CTA tonal "Actualizar tipos de cambio" stacked (no inline). Cards verticales `.s7-order-card` con: store-avatar + nombre + código-fecha + chip estado + barra progreso (`--accent-cool` para items expandidos) + meta "N productos · X% pagado · $total". **Tap en card → navega al detalle**. Al pie de cada card, **expand-chevron row** (`.s7-mob-card-expand-row`): barrita centrada con chevron-down + texto "Ver productos" — tap en chevron → expande inline mostrando los N items (sin truncar) con icon (`--accent-cool`) + name + qty + price. Una segunda tap en chevron (rotado 180° + texto "Ocultar productos") → colapsa. Paginación "Cargar más" canónica al pie (L062), con conteo "Mostrando A–B de N" encima del botón.
 
 ### 5.7.bis Loading mobile (`#s7-orders-list-loading-mobile`)
 
-Skeleton card-style en mobile (no table-format como desktop). Mismo topbar pero con placeholders shimmer:
+Skeleton card-style en mobile (no table-format como desktop). Mismo topbar (☰ + "Pedidos") + search action row con placeholders shimmer:
 
-- Topbar: 2 placeholders (filter button + Nuevo button) con shimmer.
-- Search bar: skeleton input full-width.
+- Search action row: 3 skeletons en línea (input full-flex + filter button + Nuevo button), todos con shimmer.
 - 4 skeleton cards: cada una con avatar circular (40×40) + 2 líneas de texto (name + meta) + 1 placeholder de chip + barra de progreso + placeholder de total.
 - Animación `s7-skel-shimmer` 1.4s linear infinite.
 
@@ -247,7 +258,7 @@ Skeleton card-style en mobile (no table-format como desktop). Mismo topbar pero 
 
 Estado vacío sin filtros (user no tiene pedidos creados). Container `.s7-mob-empty`:
 
-- Topbar simplificado (solo "Pedidos", sin filter button, sin Nuevo).
+- Topbar canónico (☰ + "Pedidos"). Search action row oculto (no hay nada que buscar/filtrar; el CTA primary del empty cubre la acción "Anotar primer pedido").
 - Center: icon `package-open` 28px en círculo 64×64 con `--text-primary` 5% bg.
 - Title 16px/600 "Aún no tenés pedidos".
 - Body 13px/secondary "Cuando hagas tu primer pedido a una tienda, vas a verlo acá con su estado, pagos y entregas." (max-width 280px).
@@ -255,7 +266,7 @@ Estado vacío sin filtros (user no tiene pedidos creados). Container `.s7-mob-em
 
 ### 5.7.quater Empty filtered mobile (`#s7-orders-list-empty-filtered-mobile`)
 
-Estado vacío con filtros activos (no hay match). Topbar con FilterTriggerButton en estado active (badge "3") + chips dismissibles (3 ejemplos: "Cancelados", "Solaris Books", "Marzo 2026"). Body usa `.s7-mob-empty`:
+Estado vacío con filtros activos (no hay match). Topbar canónico (☰ + "Pedidos"). En lugar del search action row habitual, se renderiza solo el FilterTriggerButton en estado active (badge "3") alineado a la derecha (sin search input ni Nuevo CTA — el primer paso esperado del usuario es ajustar filtros). Chips dismissibles debajo (3 ejemplos: "Cancelados", "Solaris Books", "Marzo 2026"). Body usa `.s7-mob-empty`:
 
 - Icon `search-x` 28px.
 - Title "Sin resultados".
@@ -375,6 +386,7 @@ Demo: `#s7-orders-list-fx-banner` (banner) · `#s7-fx-reconciliation-modal` (mod
 
 ### 6.11 Gestos mobile
 
+- **Tap en `☰` (hamburger del topbar)** → abre el drawer de navegación principal de la app (responsabilidad del AppShell, no de esta pantalla). El topbar es estático cross-route (`ContentHeader.tsx`); las acciones contextuales del listado (filter, Nuevo) viven en el search action row del page content (§5.7).
 - **Tap en `.s7-order-card`** → navega al detalle (`/orders/[id]`). View transition con `view-transition-name: order-{dbId}` (L074).
 - **Tap en `.s7-mob-card-expand-row`** (chevron al pie de cada card) → expande inline mostrando los N items del pedido. Segunda tap → colapsa. NO interrumpe la navegación del card — el chevron tiene su propio tap area con `stopPropagation`. Anim: max-height transition 200ms.
 - **Pull-to-refresh** → comportamiento del browser nativo (no custom). Si se quiere implementar custom (PWA con `display:standalone`), usar [react-pull-to-refresh](https://www.npmjs.com/package/react-pull-to-refresh) o similar — fuera de scope de Fase B Parte 1.
