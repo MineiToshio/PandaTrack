@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronUp, LogOut, Settings } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import posthog from "posthog-js";
-import SignOutButton from "@/components/modules/auth/SignOutButton";
+import { authClient } from "@/lib/auth/auth-client";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { cn, TINTED_SURFACE_GRADIENT_STOPS } from "@/lib/styles";
 import type { AppShellUserIdentity } from "./types";
@@ -96,6 +96,7 @@ export default function ShellAccountMenu({
   onItemSelect,
 }: ShellAccountMenuProps) {
   const pathname = usePathname() ?? "";
+  const router = useRouter();
   const t = useTranslations("appLayout");
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -139,6 +140,19 @@ export default function ShellAccountMenu({
   const handleItemSelect = () => {
     setOpen(false);
     onItemSelect?.();
+  };
+
+  const handleSignOut = () => {
+    handleItemSelect();
+    posthog.capture(POSTHOG_EVENTS.AUTH.SIGNOUT, { locale });
+    authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push(`/${locale}${ROUTES.signIn}`);
+        },
+      },
+    });
+    router.refresh();
   };
 
   return (
@@ -194,7 +208,7 @@ export default function ShellAccountMenu({
           <div className="flex flex-col gap-1 p-2">
             <Link
               href={`/${locale}${ROUTES.settings}`}
-              className="focus-visible:ring-ring focus-visible:ring-offset-background text-text-body hover:bg-muted hover:text-foreground inline-flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              className="focus-visible:ring-ring focus-visible:ring-offset-background text-text-body hover:bg-foreground/[0.06] hover:text-foreground inline-flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
               onClick={handleItemSelect}
               data-ph-event={POSTHOG_EVENTS.APP_SHELL.ACCOUNT_MENU_ITEM_CLICKED}
               data-ph-props={JSON.stringify({ destination: "settings", surface })}
@@ -203,15 +217,16 @@ export default function ShellAccountMenu({
               <span>{t("account.settings")}</span>
             </Link>
 
-            <SignOutButton
-              locale={locale}
-              label={signOutLabel}
-              variant="ghost"
-              size="md"
-              className="text-text-body hover:bg-muted hover:text-foreground h-auto min-h-11 w-full justify-start gap-3 rounded-xl px-3 py-2"
-              onSignOut={handleItemSelect}
-              icon={<LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />}
-            />
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="focus-visible:ring-ring focus-visible:ring-offset-background text-destructive hover:bg-destructive/10 hover:text-destructive inline-flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              data-ph-event={POSTHOG_EVENTS.APP_SHELL.ACCOUNT_MENU_ITEM_CLICKED}
+              data-ph-props={JSON.stringify({ destination: "sign-out", surface })}
+            >
+              <LogOut className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>{signOutLabel}</span>
+            </button>
           </div>
 
           <div className="border-border flex flex-nowrap items-center justify-center gap-2 border-t px-4 py-3">
