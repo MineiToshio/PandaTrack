@@ -7,6 +7,8 @@ last_updated: 2026-05-10
 demo_anchors:
   - s7-order-edit
   - s7-order-edit-mobile
+  - s7-product-type-picker-mobile
+  - s7-date-range-picker-mobile
 ---
 
 # Pantalla: Editar pedido (`/orders/[id]/edit`)

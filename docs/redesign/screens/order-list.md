@@ -12,7 +12,11 @@ demo_anchors:
   - "#s7-orders-list-empty-filtered"
   - "#s7-orders-list-filters-open"
   - "#s7-orders-list-mobile"
+  - "#s7-orders-list-loading-mobile"
+  - "#s7-orders-list-empty-initial-mobile"
+  - "#s7-orders-list-empty-filtered-mobile"
   - "#s7-orders-list-filters-mobile"
+  - "#s7-fx-reconciliation-mobile"
 frd: docs/product/prd-01-collector-mvp/frd-05-order-payment-shipment/frd-05-order-payment-shipment.md
 blueprint: docs/product/prd-01-collector-mvp/frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/bp-02-order-workspace-and-list-experience.md
 ---
@@ -228,7 +232,63 @@ Footer: botón ghost "Limpiar" + botón primary `flex:1` "Aplicar filtros" (íco
 
 ### 5.7 Mobile (`#s7-orders-list-mobile`)
 
-`--sidebar-width:0px`. Sin sidebar, con `MobileTabBar` inferior. `app-topbar` lleva solo título "Pedidos" a la izquierda + `[filtros-icon] [Nuevo sm]` a la derecha. **Sin `page-heading`** — el topbar ya funciona como título. Búsqueda en bloque separado debajo del topbar (full width, placeholder "Buscar…"). FX banner compacto (12px). Cards verticales `s7-order-card` con: store-avatar + nombre + código-fecha + total + chip estado + barra progreso + meta "N productos · X% pagado". Tap en card → navega al detalle (sin expand de ítems en mobile).
+`--sidebar-width:0px`. Sin sidebar, con `MobileTabBar` inferior (sticky bottom con `safe-area-inset-bottom`). `app-topbar` (sticky top, 48px) lleva título "Pedidos" a la izquierda + `[FilterTriggerButton M05 icon-only con badge] [Nuevo sm primary]` a la derecha. **Sin `page-heading`** — el topbar ya funciona como título. Búsqueda sticky debajo del topbar (full width, placeholder "Código o producto (ORD-…, OST…)"). Filter chips dismissibles debajo de la búsqueda (mismo patrón que desktop). FX banner compacto con CTA tonal "Actualizar tipos de cambio" stacked (no inline). Cards verticales `.s7-order-card` con: store-avatar + nombre + código-fecha + chip estado + barra progreso (`--accent-cool` para items expandidos) + meta "N productos · X% pagado · $total". **Tap en card → navega al detalle**. Al pie de cada card, **expand-chevron row** (`.s7-mob-card-expand-row`): barrita centrada con chevron-down + texto "Ver productos" — tap en chevron → expande inline mostrando los N items (sin truncar) con icon (`--accent-cool`) + name + qty + price. Una segunda tap en chevron (rotado 180° + texto "Ocultar productos") → colapsa. Paginación "Cargar más" canónica al pie (L062), con conteo "Mostrando A–B de N" encima del botón.
+
+### 5.7.bis Loading mobile (`#s7-orders-list-loading-mobile`)
+
+Skeleton card-style en mobile (no table-format como desktop). Mismo topbar y MobileTabBar pero con placeholders shimmer:
+
+- Topbar: 2 placeholders (filter button + Nuevo button) con shimmer.
+- Search bar: skeleton input full-width.
+- 4 skeleton cards: cada una con avatar circular (40×40) + 2 líneas de texto (name + meta) + 1 placeholder de chip + barra de progreso + placeholder de total.
+- Animación `s7-skel-shimmer` 1.4s linear infinite.
+
+### 5.7.ter Empty initial mobile (`#s7-orders-list-empty-initial-mobile`)
+
+Estado vacío sin filtros (user no tiene pedidos creados). Container `.s7-mob-empty`:
+
+- Topbar simplificado (solo "Pedidos", sin filter button, sin Nuevo).
+- Center: icon `package-open` 28px en círculo 64×64 con `--text-primary` 5% bg.
+- Title 16px/600 "Aún no tenés pedidos".
+- Body 13px/secondary "Cuando hagas tu primer pedido a una tienda, vas a verlo acá con su estado, pagos y entregas." (max-width 280px).
+- CTAs apilados verticales (no side-by-side per L075): "Crear primer pedido" primary full-width + "Ver tiendas" ghost full-width.
+- MobileTabBar al pie.
+
+### 5.7.quater Empty filtered mobile (`#s7-orders-list-empty-filtered-mobile`)
+
+Estado vacío con filtros activos (no hay match). Topbar con FilterTriggerButton en estado active (badge "3") + chips dismissibles (3 ejemplos: "Cancelados", "Solaris Books", "Marzo 2026"). Body usa `.s7-mob-empty`:
+
+- Icon `search-x` 28px.
+- Title "Sin resultados".
+- Body "No hay pedidos que coincidan con los filtros activos. Probá quitar alguno o cambiar el rango."
+- CTAs apilados: "Limpiar todos los filtros" primary + "Ajustar filtros" ghost (re-abre el FilterDrawer).
+
+### 5.8 FilterDrawer abierto en mobile (`#s7-orders-list-filters-mobile`)
+
+`<FilterDrawer>` renderizado como **bottom-sheet canónico** (ADR 0003 D8). Anclado al borde inferior del viewport, animación slide-up 280ms, backdrop blur 8px + tint oklch calibrado para light/dark.
+
+Estructura vertical de arriba hacia abajo:
+
+1. **Drag handle** — 4×36px pill, `border-radius:999px`, `background:var(--border-strong)`, `margin: 8px auto 4px`. Solo se muestra en mobile (oculto con `md:hidden`).
+2. **Header** — `padding: 12px 22px 14px`, `border-bottom: 1px solid var(--border)`. Icono `sliders-horizontal` 18px en `var(--accent)` + título "Filtrar pedidos" 15px/600 + `IconButton ghost` X a la derecha.
+3. **Body scrollable** — `padding: 18px 22px`, `overflow-y:auto`, `flex:1`. Contiene las 5 secciones de filtro (mismas que desktop §5.6): Estado del pedido, Estado de pago, Tienda, Fecha del pedido, FX desactualizado.
+4. **Footer sticky** — `padding: 14px 22px`, `border-top: 1px solid var(--border)`, `background: var(--surface-elevated)`, `padding-bottom: env(safe-area-inset-bottom)`. Botón ghost "Limpiar" (flex 0) + botón primary `flex:1` "Aplicar (N)" con icono `check`.
+
+Contenedor: `max-height: 92svh`, `border-top: 1px solid var(--border-strong)`, `border-top-left-radius / border-top-right-radius: 20px` (`--radius-2xl`), `box-shadow: 0 -8px 32px color-mix(...var(--text-primary) 22%...)` (shadow hacia arriba).
+
+**No es un `<Modal>`.** Aunque visualmente comparte algunos elementos (backdrop blur, top-corners, drag handle), arquitectónicamente es un `<FilterDrawer>` hand-rolled con su propio comportamiento responsive (sin Vaul, sin compartir código con el `<Modal>` canónico). El `<Modal>` canónico es para decisiones discretas (confirm, alert, form corto); el `<FilterDrawer>` es para refinement de lista. Coherencia visual sin acoplamiento arquitectónico.
+
+Referencia visual: demo HTML anchor `#s7-orders-list-filters-mobile`. Implementación en `src/components/modules/FilterDrawer/FilterDrawer.tsx` (líneas 360-395).
+
+### 5.9 FX Reconciliación mobile (`#s7-fx-reconciliation-mobile`)
+
+Cuando el user toca el CTA "Actualizar tipos de cambio" del FX banner, abre un **full-screen sheet** (no bottom sheet — el contenido es demasiado complejo para 50% del viewport). Implementado con `<Modal>` canónico (ADR 0008 Extensión 2026-05-11 — caso de excepción full-screen).
+
+Estructura:
+
+- Header `.s7-mob-fullsheet-head`: `← back-arrow` + título "Actualizar FX" + counter "N pedidos".
+- Body `.s7-mob-fullsheet-body`: 1 párrafo de instrucción + grupos por par de monedas (cards con border 1px). Cada grupo: header con eyebrow (par de monedas, ej "JPY → ARS") + count "X pedidos" + chip de status (`warning` si "Sin actualizar", `success` si "Listo"). Body del grupo: input numérico + botón "Hoy" tonal (Frankfurter API). Collapsible "Ver pedidos afectados (N)" con lista de ORD codes y montos.
+- Footer sticky: Cancelar + Aplicar a N pedidos primary full-width.
 
 ### 5.8 FilterDrawer abierto en mobile (`#s7-orders-list-filters-mobile`)
 
@@ -327,8 +387,11 @@ Demo: `#s7-orders-list-fx-banner` (banner) · `#s7-fx-reconciliation-modal` (mod
 
 ### 6.11 Gestos mobile
 
-- Tap en `s7-order-card` → navega al detalle.
-- Pull-to-refresh → recarga la página completa (comportamiento nativo del browser, no implementado custom).
+- **Tap en `.s7-order-card`** → navega al detalle (`/orders/[id]`). View transition con `view-transition-name: order-{dbId}` (L074).
+- **Tap en `.s7-mob-card-expand-row`** (chevron al pie de cada card) → expande inline mostrando los N items del pedido. Segunda tap → colapsa. NO interrumpe la navegación del card — el chevron tiene su propio tap area con `stopPropagation`. Anim: max-height transition 200ms.
+- **Pull-to-refresh** → comportamiento del browser nativo (no custom). Si se quiere implementar custom (PWA con `display:standalone`), usar [react-pull-to-refresh](https://www.npmjs.com/package/react-pull-to-refresh) o similar — fuera de scope de Fase B Parte 1.
+- **Swipe horizontal en `.s7-order-card`** → no implementado en Fase B (potencial Fase 2: swipe-right = "Anotar pago", swipe-left = "Cancelar"). Si en el futuro se implementa, usar el patrón canónico de iOS Mail / Gmail.
+- **Long-press en `.s7-order-card`** → no implementado en Fase B (potencial alternativa al chevron expand para usuarios power).
 
 ## 7. Validaciones
 

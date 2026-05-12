@@ -3331,6 +3331,9 @@
         <span class="demo-nav-label">── Móvil · Otros ──</span>
         <a href="#s7-fx-reconciliation-mobile" data-screen="s7-fx-reconciliation-mobile">FX Reconciliación (full-sheet)</a>
         <a href="#s7-product-type-picker-mobile" data-screen="s7-product-type-picker-mobile">Picker · Tipo de producto (sheet)</a>
+        <a href="#s7-store-picker-mobile" data-screen="s7-store-picker-mobile">Picker · Tienda (sheet)</a>
+        <a href="#s7-currency-picker-mobile" data-screen="s7-currency-picker-mobile">Picker · Moneda (sheet)</a>
+        <a href="#s7-date-range-picker-mobile" data-screen="s7-date-range-picker-mobile">Picker · Rango de fechas (full-sheet)</a>
         <div class="demo-nav-sep"></div>
         <span class="demo-nav-label">── Componentes ──</span>
         <a href="#s7-date-range-picker" data-screen="s7-date-range-picker">Componente · DateRangePicker</a>
@@ -3519,6 +3522,9 @@
         <tr><td class="idx-session">S7</td><td>Crear · Móvil · Sin tiendas</td><td><a class="idx-anchor" href="#s7-order-create-empty-stores-mobile" data-screen-link="s7-order-create-empty-stores-mobile">#s7-order-create-empty-stores-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>FX Reconciliación · Móvil (full-sheet)</td><td><a class="idx-anchor" href="#s7-fx-reconciliation-mobile" data-screen-link="s7-fx-reconciliation-mobile">#s7-fx-reconciliation-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Picker · Móvil · Tipo de producto (sheet)</td><td><a class="idx-anchor" href="#s7-product-type-picker-mobile" data-screen-link="s7-product-type-picker-mobile">#s7-product-type-picker-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S7</td><td>Picker · Móvil · Tienda (sheet)</td><td><a class="idx-anchor" href="#s7-store-picker-mobile" data-screen-link="s7-store-picker-mobile">#s7-store-picker-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S7</td><td>Picker · Móvil · Moneda (sheet)</td><td><a class="idx-anchor" href="#s7-currency-picker-mobile" data-screen-link="s7-currency-picker-mobile">#s7-currency-picker-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S7</td><td>Picker · Móvil · Rango de fechas (full-sheet)</td><td><a class="idx-anchor" href="#s7-date-range-picker-mobile" data-screen-link="s7-date-range-picker-mobile">#s7-date-range-picker-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Componente · DateRangePickerInput (open)</td> <td><a class="idx-anchor" href="#s7-date-range-picker" data-screen-link="s7-date-range-picker">#s7-date-range-picker</a></td>                             <td><span class="idx-status nuevo">nuevo</span></td></tr>
       </tbody>
     </table>
@@ -13424,6 +13430,268 @@
     </div>
   </div>
 </section>
+
+<!-- ─── MOBILE: s7-store-picker-mobile ────────────────────────── -->
+<section id="s7-store-picker-mobile" class="screen" aria-labelledby="s7-store-picker-mobile-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0;">
+      <div class="app-topbar" style="padding:0 16px;">
+        <div class="app-topbar-left">
+          <nav class="app-breadcrumb"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
+          <p class="app-topbar-title" id="s7-store-picker-mobile-title">Nuevo pedido</p>
+        </div>
+        <div class="app-topbar-right">
+          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Cancelar"><i data-lucide="x"></i></a>
+        </div>
+      </div>
+      <div style="padding:14px 16px;opacity:0.5;">
+        <div style="height:280px;background:var(--surface-elevated);border-radius:16px;"></div>
+      </div>
+    </div>
+    <div class="s7-mob-backdrop" aria-hidden="true"></div>
+    <div class="s7-mob-sheet" role="dialog" aria-modal="true" aria-labelledby="s7-mob-store-picker-title" style="max-height:85%;">
+      <div class="s7-mob-sheet-handle" aria-hidden="true"></div>
+      <div class="s7-mob-sheet-head">
+        <h3 class="s7-mob-sheet-title" id="s7-mob-store-picker-title">Elegir tienda</h3>
+        <button class="topbar-iconbtn" type="button" aria-label="Cerrar"><i data-lucide="x"></i></button>
+      </div>
+      <div style="padding:10px 14px 0;">
+        <div class="orders-search" style="width:100%;"><i data-lucide="search"></i><input class="input" type="search" placeholder="Buscar tienda…" /></div>
+      </div>
+      <div class="s7-mob-sheet-body" style="padding-top:10px;">
+        <div class="s7-mob-picker-list">
+          <button type="button" class="s7-mob-picker-row is-selected" role="option" aria-selected="true">
+            <div class="store-avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;">S</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:500;color:var(--text-primary);">Solaris Books &amp; Records</div>
+              <div style="font-size:11px;color:var(--text-muted);">7 pedidos · USD · Última: 28 abr 2026</div>
+            </div>
+            <i data-lucide="check" class="s7-mob-picker-check"></i>
+          </button>
+          <button type="button" class="s7-mob-picker-row">
+            <div class="store-avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;">A</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:500;color:var(--text-primary);">Anime Corner Europe</div>
+              <div style="font-size:11px;color:var(--text-muted);">3 pedidos · EUR</div>
+            </div>
+          </button>
+          <button type="button" class="s7-mob-picker-row">
+            <div class="store-avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;">H</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:500;color:var(--text-primary);">HMV Japan</div>
+              <div style="font-size:11px;color:var(--text-muted);">5 pedidos · JPY</div>
+            </div>
+          </button>
+          <button type="button" class="s7-mob-picker-row">
+            <div class="store-avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;">T</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:500;color:var(--text-primary);">Tower Records Shibuya</div>
+              <div style="font-size:11px;color:var(--text-muted);">2 pedidos · JPY</div>
+            </div>
+          </button>
+          <button type="button" class="s7-mob-picker-row">
+            <div class="store-avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;">M</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:500;color:var(--text-primary);">Mandarake Online</div>
+              <div style="font-size:11px;color:var(--text-muted);">1 pedido · JPY</div>
+            </div>
+          </button>
+          <button type="button" class="s7-mob-picker-row">
+            <div class="store-avatar" style="width:36px;height:36px;font-size:13px;flex-shrink:0;">D</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:500;color:var(--text-primary);">Disk Union Shinjuku</div>
+              <div style="font-size:11px;color:var(--text-muted);">4 pedidos · JPY</div>
+            </div>
+          </button>
+        </div>
+        <div style="border-top:1px solid var(--border);margin-top:12px;padding:12px 4px 0;">
+          <a href="#stores" class="btn ghost sm" style="width:100%;justify-content:center;"><i data-lucide="plus"></i> Crear nueva tienda</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── MOBILE: s7-currency-picker-mobile ─────────────────────── -->
+<section id="s7-currency-picker-mobile" class="screen" aria-labelledby="s7-currency-picker-mobile-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0;">
+      <div class="app-topbar" style="padding:0 16px;">
+        <div class="app-topbar-left">
+          <nav class="app-breadcrumb"><a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link">Pedidos</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
+          <p class="app-topbar-title" id="s7-currency-picker-mobile-title">Nuevo pedido</p>
+        </div>
+        <div class="app-topbar-right">
+          <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="topbar-iconbtn" aria-label="Cancelar"><i data-lucide="x"></i></a>
+        </div>
+      </div>
+      <div style="padding:14px 16px;opacity:0.5;">
+        <div style="height:280px;background:var(--surface-elevated);border-radius:16px;"></div>
+      </div>
+    </div>
+    <div class="s7-mob-backdrop" aria-hidden="true"></div>
+    <div class="s7-mob-sheet" role="dialog" aria-modal="true" aria-labelledby="s7-mob-curr-picker-title" style="max-height:85%;">
+      <div class="s7-mob-sheet-handle" aria-hidden="true"></div>
+      <div class="s7-mob-sheet-head">
+        <h3 class="s7-mob-sheet-title" id="s7-mob-curr-picker-title">Elegir moneda</h3>
+        <button class="topbar-iconbtn" type="button" aria-label="Cerrar"><i data-lucide="x"></i></button>
+      </div>
+      <div style="padding:10px 14px 0;">
+        <div class="orders-search" style="width:100%;"><i data-lucide="search"></i><input class="input" type="search" placeholder="Buscar moneda…" /></div>
+      </div>
+      <div class="s7-mob-sheet-body" style="padding-top:10px;">
+        <p class="text-muted" style="font-size:11px;margin:0 0 10px 14px;">La moneda base de tu cuenta es <strong style="color:var(--text-primary);">USD</strong>.</p>
+        <div class="s7-mob-picker-list">
+          <button type="button" class="s7-mob-picker-row is-selected" role="option" aria-selected="true">
+            <div class="s7-mob-picker-icon" style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;font-weight:600;">$</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:14px;font-weight:500;color:var(--text-primary);">USD — Dólar americano</div>
+              <div style="font-size:11px;color:var(--text-muted);">Moneda base · Sin tipo de cambio</div>
+            </div>
+            <i data-lucide="check" class="s7-mob-picker-check"></i>
+          </button>
+          <button type="button" class="s7-mob-picker-row">
+            <div class="s7-mob-picker-icon" style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;font-weight:600;">€</div>
+            <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:500;color:var(--text-primary);">EUR — Euro</div><div style="font-size:11px;color:var(--text-muted);">Requiere tipo de cambio EUR→USD</div></div>
+          </button>
+          <button type="button" class="s7-mob-picker-row">
+            <div class="s7-mob-picker-icon" style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;font-weight:600;">¥</div>
+            <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:500;color:var(--text-primary);">JPY — Yen japonés</div><div style="font-size:11px;color:var(--text-muted);">Requiere tipo de cambio JPY→USD</div></div>
+          </button>
+          <button type="button" class="s7-mob-picker-row">
+            <div class="s7-mob-picker-icon" style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;font-weight:600;">£</div>
+            <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:500;color:var(--text-primary);">GBP — Libra esterlina</div><div style="font-size:11px;color:var(--text-muted);">Requiere tipo de cambio GBP→USD</div></div>
+          </button>
+          <button type="button" class="s7-mob-picker-row">
+            <div class="s7-mob-picker-icon" style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;font-weight:600;">A$</div>
+            <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:500;color:var(--text-primary);">ARS — Peso argentino</div><div style="font-size:11px;color:var(--text-muted);">Requiere tipo de cambio ARS→USD</div></div>
+          </button>
+          <button type="button" class="s7-mob-picker-row">
+            <div class="s7-mob-picker-icon" style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;font-weight:600;">C$</div>
+            <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:500;color:var(--text-primary);">CAD — Dólar canadiense</div><div style="font-size:11px;color:var(--text-muted);">Requiere tipo de cambio CAD→USD</div></div>
+          </button>
+          <button type="button" class="s7-mob-picker-row">
+            <div class="s7-mob-picker-icon" style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;font-weight:600;">CHF</div>
+            <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:500;color:var(--text-primary);">CHF — Franco suizo</div><div style="font-size:11px;color:var(--text-muted);">Requiere tipo de cambio CHF→USD</div></div>
+          </button>
+          <button type="button" class="s7-mob-picker-row">
+            <div class="s7-mob-picker-icon" style="font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px;font-weight:600;">MX$</div>
+            <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:500;color:var(--text-primary);">MXN — Peso mexicano</div><div style="font-size:11px;color:var(--text-muted);">Requiere tipo de cambio MXN→USD</div></div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── MOBILE: s7-date-range-picker-mobile ───────────────────── -->
+<section id="s7-date-range-picker-mobile" class="screen" aria-labelledby="s7-date-range-picker-mobile-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="s7-mob-fullsheet" role="dialog" aria-modal="true" aria-labelledby="s7-date-range-picker-mobile-title">
+      <div class="s7-mob-fullsheet-head">
+        <button class="topbar-iconbtn" type="button" aria-label="Cerrar sin guardar"><i data-lucide="arrow-left"></i></button>
+        <h2 class="s7-mob-fullsheet-title" id="s7-date-range-picker-mobile-title">Fecha aprox. de entrega</h2>
+        <button type="button" class="btn ghost sm" style="color:var(--text-secondary);">Limpiar</button>
+      </div>
+      <div class="s7-mob-fullsheet-body">
+        <!-- Quick range presets -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
+          <button class="filter-pill" type="button">Próximos 7 días</button>
+          <button class="filter-pill is-active" type="button">Próximos 30 días</button>
+          <button class="filter-pill" type="button">Próximos 60 días</button>
+          <button class="filter-pill" type="button">Este mes</button>
+          <button class="filter-pill" type="button">Próximo mes</button>
+        </div>
+
+        <!-- Selected range display -->
+        <div style="background:color-mix(in oklch,var(--accent) 8%,var(--surface));border:1px solid color-mix(in oklch,var(--accent) 28%,transparent);border-radius:10px;padding:10px 12px;margin-bottom:18px;display:flex;align-items:center;gap:10px;">
+          <i data-lucide="calendar-range" style="width:16px;height:16px;color:var(--accent);"></i>
+          <div style="flex:1;font-size:13px;">
+            <strong style="color:var(--text-primary);">11 may</strong> <span style="color:var(--text-muted);">→</span> <strong style="color:var(--text-primary);">10 jun 2026</strong>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">30 días seleccionados</div>
+          </div>
+        </div>
+
+        <!-- Calendar grid: May 2026 -->
+        <div style="margin-bottom:18px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <button type="button" class="topbar-iconbtn" aria-label="Mes anterior"><i data-lucide="chevron-left"></i></button>
+            <span style="font-size:14px;font-weight:600;color:var(--text-primary);">Mayo 2026</span>
+            <button type="button" class="topbar-iconbtn" aria-label="Mes siguiente"><i data-lucide="chevron-right"></i></button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:11px;color:var(--text-muted);margin-bottom:6px;">
+            <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:13px;">
+            <span style="padding:8px 0;color:var(--text-muted);opacity:0.4;">28</span>
+            <span style="padding:8px 0;color:var(--text-muted);opacity:0.4;">29</span>
+            <span style="padding:8px 0;color:var(--text-muted);opacity:0.4;">30</span>
+            <span style="padding:8px 0;">1</span><span style="padding:8px 0;">2</span><span style="padding:8px 0;">3</span><span style="padding:8px 0;">4</span>
+            <span style="padding:8px 0;">5</span><span style="padding:8px 0;">6</span><span style="padding:8px 0;">7</span><span style="padding:8px 0;">8</span><span style="padding:8px 0;">9</span><span style="padding:8px 0;">10</span>
+            <button type="button" style="padding:8px 0;border-radius:999px 0 0 999px;background:var(--accent);color:var(--text-on-accent);font-weight:600;border:0;cursor:pointer;">11</button>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">12</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">13</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">14</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">15</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">16</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">17</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">18</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">19</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">20</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">21</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">22</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">23</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">24</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">25</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">26</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">27</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">28</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">29</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">30</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">31</span>
+          </div>
+        </div>
+
+        <!-- Calendar grid: June 2026 -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <span style="font-size:14px;font-weight:600;color:var(--text-primary);">Junio 2026</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:11px;color:var(--text-muted);margin-bottom:6px;">
+            <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:13px;">
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">1</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">2</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">3</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">4</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">5</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">6</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">7</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">8</span>
+            <span style="padding:8px 0;background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);">9</span>
+            <button type="button" style="padding:8px 0;border-radius:0 999px 999px 0;background:var(--accent);color:var(--text-on-accent);font-weight:600;border:0;cursor:pointer;">10</button>
+            <span style="padding:8px 0;">11</span><span style="padding:8px 0;">12</span><span style="padding:8px 0;">13</span><span style="padding:8px 0;">14</span>
+            <span style="padding:8px 0;">15</span><span style="padding:8px 0;">16</span><span style="padding:8px 0;">17</span><span style="padding:8px 0;">18</span><span style="padding:8px 0;">19</span><span style="padding:8px 0;">20</span><span style="padding:8px 0;">21</span>
+            <span style="padding:8px 0;">22</span><span style="padding:8px 0;">23</span><span style="padding:8px 0;">24</span><span style="padding:8px 0;">25</span><span style="padding:8px 0;">26</span><span style="padding:8px 0;">27</span><span style="padding:8px 0;">28</span>
+            <span style="padding:8px 0;">29</span><span style="padding:8px 0;">30</span>
+          </div>
+        </div>
+      </div>
+      <div class="s7-mob-fullsheet-footer">
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="btn ghost" style="flex:0 0 96px;justify-content:center;">Cancelar</button>
+          <button type="button" class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="check"></i> Aplicar rango</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ─── S7-Y: COMPONENTE — DateRangePickerInput (abierto) ────── -->
 <section id="s7-date-range-picker" class="screen" aria-labelledby="s7-drp-title">
   <div class="app-shell">

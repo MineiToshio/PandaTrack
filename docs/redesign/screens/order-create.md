@@ -11,6 +11,15 @@ demo_anchors:
   - s7-order-create-empty-stores
   - s7-order-create-discrepancy-modal
   - s7-order-create-mobile
+  - s7-order-create-step-2-mobile
+  - s7-order-create-step-3-mobile
+  - s7-order-create-add-product-mobile
+  - s7-order-create-discrepancy-mobile
+  - s7-order-create-empty-stores-mobile
+  - s7-store-picker-mobile
+  - s7-currency-picker-mobile
+  - s7-product-type-picker-mobile
+  - s7-date-range-picker-mobile
 supersedes: order-create.md (session 02 — old 5-step wireframe)
 ---
 
@@ -54,17 +63,41 @@ supersedes: order-create.md (session 02 — old 5-step wireframe)
 
 ### Mobile (< 768px)
 
-Single column. `form-sidebar` colapsa debajo de `section-cards`. El `stepper` se muestra full-width en la parte superior del content. No hay `page-heading` en mobile (el `app-topbar` ya muestra el título).
+Single column. Topbar mobile con breadcrumb `Pedidos > Nuevo pedido` + icon-button `X` cancelar. **Sin `page-heading`** (el topbar ya muestra el título). **Sin `MobileTabBar`** (wizard es flujo modal-equivalente — la tabbar interferiría con el sticky footer del CTA).
+
+**Stepper compacto en mobile** (no 3-pill stepper): texto "Paso X de 3 · {nombre paso}" + barra de progreso horizontal de 3 segmentos (segmento active en `var(--accent)`, próximos en `var(--border)`). Ahorra ~40px verticales vs el stepper de pills.
+
+**Pasos no activos** (cuando el user está en paso 1, los pasos 2 y 3 aparecen colapsados pero **NO en `opacity:0.5`** — usar patrón `locked/gated` con icono `lock` 14px a la derecha + `aria-disabled="true"`, sin opacity, color muted en numeral y title "Disponible al continuar"). El patrón comunica "estos pasos existen pero aún no son accesibles" sin romper contraste AA.
+
+**Sticky footer CTA** (`safe-area-inset-bottom` respetado, `min-height: 44px` per HIG):
+
+- Paso 1: solo `[Continuar →]` primary full-width.
+- Paso 2: `[← Atrás (ghost flex 0)]` + `[Continuar → (primary flex:1)]`.
+- Paso 3: `[← Atrás (ghost flex 0)]` + `[Crear pedido ✓ (primary flex:1)]`.
+
+**Sidebar Resumen** omitido en paso 1 (las 5 filas vacías "—" son ruido sin valor). Aparece **solo en paso 3** como parte del resumen del summary-list (no como aside aparte). En paso 2, el subtotal calculado se muestra inline arriba del campo Costo total ("Total calculado: $X" + botón "Usar este total").
+
+**Pickers mobile** (Tienda, Moneda, Tipo de producto, Fecha aprox. de entrega): NO son popovers como desktop. Cada uno abre un **bottom sheet** (o full-screen sheet para calendarios) dedicado — ver §5.X y §6.X correspondientes.
 
 ### Anchors estructurales del demo
 
-| Sección                     | Demo ID                              | Descripción                        |
-| --------------------------- | ------------------------------------ | ---------------------------------- |
-| Paso 1 — Datos              | `#s7-order-create-step-1`            | Tienda + Moneda + Fechas           |
-| Paso 2 — Productos y costos | `#s7-order-create-step-2`            | Spreadsheet + total + FX           |
-| Paso 3 — Confirmar          | `#s7-order-create-step-3`            | Resumen + CTA crear                |
-| Empty stores gate           | `#s7-order-create-empty-stores`      | Sin tiendas: empty state en step-1 |
-| Modal discrepancia          | `#s7-order-create-discrepancy-modal` | Warning modal 2 botones            |
+| Sección                     | Demo ID                                | Descripción                                   |
+| --------------------------- | -------------------------------------- | --------------------------------------------- |
+| Paso 1 — Datos              | `#s7-order-create-step-1`              | Tienda + Moneda + Fechas                      |
+| Paso 2 — Productos y costos | `#s7-order-create-step-2`              | Spreadsheet + total + FX                      |
+| Paso 3 — Confirmar          | `#s7-order-create-step-3`              | Resumen + CTA crear                           |
+| Empty stores gate           | `#s7-order-create-empty-stores`        | Sin tiendas: empty state en step-1            |
+| Modal discrepancia          | `#s7-order-create-discrepancy-modal`   | Warning modal 2 botones                       |
+| **Mobile Paso 1**           | `#s7-order-create-mobile`              | Wizard mobile en paso 1 (form completo)       |
+| **Mobile Paso 2**           | `#s7-order-create-step-2-mobile`       | Wizard mobile paso 2 (productos list + add)   |
+| **Mobile Paso 3**           | `#s7-order-create-step-3-mobile`       | Wizard mobile paso 3 (confirm review)         |
+| **Mobile Añadir producto**  | `#s7-order-create-add-product-mobile`  | Bottom sheet de form de producto sobre paso 2 |
+| **Mobile Discrepancia**     | `#s7-order-create-discrepancy-mobile`  | Bottom sheet alertdialog 2 opciones           |
+| **Mobile Sin tiendas**      | `#s7-order-create-empty-stores-mobile` | Empty state mobile con CTA "Crear tienda"     |
+| **Mobile Picker Tienda**    | `#s7-store-picker-mobile`              | Bottom sheet con search + lista de tiendas    |
+| **Mobile Picker Moneda**    | `#s7-currency-picker-mobile`           | Bottom sheet con search + lista de monedas    |
+| **Mobile Picker Tipo**      | `#s7-product-type-picker-mobile`       | Bottom sheet con search + lista de tipos      |
+| **Mobile Picker Fecha**     | `#s7-date-range-picker-mobile`         | Full-screen sheet con calendario + presets    |
 
 > **NOTA metodológica:** El demo también contiene secciones `#s7-order-create-step-3-validation` y `#s7-order-create-step-1-from-store`. Estas secciones son **OLD — supersedidas** (pertenecen al wizard de 5 pasos de una iteración anterior). El wizard canónico es **3 pasos** (Datos → Productos y costos → Confirmar). Las secciones step-4 y step-5 del demo también pertenecen a la iteración obsoleta.
 
@@ -359,6 +392,21 @@ createOrderAction → { success: true, orderId } → router.push(`/orders/${orde
 
 - View transition: `view-transition-name: order-create-confirm` en la card de confirmación del paso 3; `view-transition-name: order-{id}` en la `.detail-hero` del destino
 - Si la navegación falla: toast de error, form permanece interactivo
+
+### 6.13 Gestos mobile
+
+- **Tap en field Tienda** (paso 1) → abre `#s7-store-picker-mobile` (bottom sheet con search + lista de tiendas con avatar + meta). Selección cierra el sheet y rellena el field.
+- **Tap en field Moneda** (paso 1) → abre `#s7-currency-picker-mobile` (bottom sheet con search + lista de monedas). La moneda base del user aparece marcada con check + label "Moneda base · Sin tipo de cambio". Resto requieren FX.
+- **Tap en field Fecha del pedido** (paso 1) → invoca `<input type="date">` nativo del SO (iOS date wheel / Android calendar picker). NO custom sheet — el picker nativo es más rápido y familiar.
+- **Tap en field Fecha aprox. de entrega** (paso 1) → abre `#s7-date-range-picker-mobile` (full-screen sheet con calendar 2 meses + quick presets "Próximos 7/30/60 días, Este/Próximo mes" + range visualization en banner highlighted).
+- **Tap en pill de Tipo de producto** (paso 2 — fila de productos): abre `#s7-product-type-picker-mobile` (bottom sheet con search + lista de tipos con icon Lucide + label).
+- **Tap en `+ Añadir producto`** (paso 2): abre `#s7-order-create-add-product-mobile` (bottom sheet con form: Nombre, Tipo de producto, Cantidad, Precio unitario opcional + helper "Si dejás el precio vacío, podés agregarlo más tarde").
+- **Tap en `pencil` edit de un producto existente** (paso 2): abre el mismo bottom sheet de Añadir producto pero con campos prefilled — modo edición.
+- **Discrepancia detectada al "Continuar"** desde paso 2: abre `#s7-order-create-discrepancy-mobile` (bottom sheet alertdialog con icon `alert-triangle` warning + comparación ¥30.000 ingresado vs ¥15.800 calculado + panel "¿Por qué puede pasar?" + 2 botones "Volver y corregir" / "Guardar de todos modos"). 2 opciones, NO 3 (CB-02).
+- **Tap en `X` del topbar mobile** → confirma con browser dialog nativo si hay cambios sin guardar; si confirma, navega a `/orders` (lista).
+- **Drag-to-dismiss en bottom sheets**: pickers (Tienda/Moneda/Tipo) y Add product permiten drag down para cerrar. Discrepancy alertdialog NO permite drag-dismiss accidental.
+- **Pull-to-refresh** en cualquier paso: comportamiento nativo del browser. NO recomendado durante el flujo de creación (perdés state del form).
+- **Tap en step locked** (paso 2 o 3 estando en paso 1) → toast informativo "Completá el paso anterior para continuar". NO navega.
 
 ---
 
