@@ -22,6 +22,9 @@ type DateRangeValue = {
   to: string | null;
 };
 
+/** Set canónico de quick-range presets (S7-A.9). Renderizados como `.filter-pill` arriba del calendar. */
+type DateRangePresetKey = "next7Days" | "next30Days" | "next60Days" | "thisMonth" | "nextMonth";
+
 type DateRangeInputProps = {
   /** Identificador base — se usa como prefijo para `from`/`to` (ej. `expected-delivery-from`). */
   id: string;
@@ -53,6 +56,16 @@ type DateRangeInputProps = {
   max?: string;
   /** Locale. Default `es-AR`. */
   locale?: "es-AR" | "en-US";
+  /**
+   * Quick-range presets renderizados arriba del calendar grid como `.filter-pill` chips.
+   * Cada preset, al tap, prellena el rango (`from = today` y `to = today + N días`, o boundaries
+   * del mes para `thisMonth` / `nextMonth`). El preset cuyo rango coincida con la selección actual
+   * lleva `.is-active`. Default canónico (S7-A.9): los 5 keys en orden.
+   * Pasar `[]` para ocultar la fila de presets. Labels resueltos vía i18n
+   * (`orders.create.dateRange.preset.*`) con versión corta (desktop popup 262px) vs larga
+   * con prefijo "Próximos" (mobile full-sheet).
+   */
+  presets?: DateRangePresetKey[];
 };
 ```
 
@@ -60,23 +73,23 @@ type DateRangeInputProps = {
 
 Igual que `<DateInput>`. El size se propaga a ambos sub-inputs.
 
-| Variant (`size`) | Uso                                                       | Tokens consumidos                                                |
-| ---------------- | --------------------------------------------------------- | ---------------------------------------------------------------- |
-| `sm`             | Filtros densos en filter drawer                           | `--space-2 --space-3` padding, `--text-caption`                  |
-| `md` (default)   | Form fields estándar                                      | `--space-3 --space-4` padding, `--text-body`                     |
-| `lg`             | Wizard expectedDelivery                                   | `--space-3 --space-4` padding, `--text-body-lg`                  |
+| Variant (`size`) | Uso                             | Tokens consumidos                               |
+| ---------------- | ------------------------------- | ----------------------------------------------- |
+| `sm`             | Filtros densos en filter drawer | `--space-2 --space-3` padding, `--text-caption` |
+| `md` (default)   | Form fields estándar            | `--space-3 --space-4` padding, `--text-body`    |
+| `lg`             | Wizard expectedDelivery         | `--space-3 --space-4` padding, `--text-body-lg` |
 
 ## Estados visuales
 
 El rango compone dos `<DateInput>` y suma estos estados de coordinación:
 
-| Estado                | Receta CSS (light)                                                                                                                                | Receta CSS (dark) | Notas                                                                                                                                                    |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `default`             | dos `<DateInput>` lado a lado en `display: flex; gap: var(--space-3); align-items: center;` con divider entre ambos                                | mismo             | Divider: `1px` height `1.5rem` `background: var(--border);` o un guión "→" en `--text-muted` `--text-caption`.                                            |
-| `from selected only`  | `from` filled, `to` placeholder. Cuando el usuario abre `to`, su popover ya parte en el mes de `from`.                                              | mismo             | El `to` aplica `min` dinámico igual a `from + 1 día` para evitar rango inválido.                                                                          |
-| `from > to inválido`  | Ambos inputs `error` borde `color-mix(in oklch, var(--destructive) 60%, var(--border-strong))`                                                     | mismo             | El `<ErrorMessage>` debajo dice "Hasta tiene que venir después de desde."                                                                                 |
-| `disabled`            | Los dos sub-inputs heredan `disabled`                                                                                                              | mismo             | Sin `opacity` (ADR 0001 D3).                                                                                                                              |
-| `error`               | Los dos sub-inputs heredan `error` border                                                                                                          | mismo             | El error es del rango, no de cada input por separado.                                                                                                    |
+| Estado               | Receta CSS (light)                                                                                                  | Receta CSS (dark) | Notas                                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------- |
+| `default`            | dos `<DateInput>` lado a lado en `display: flex; gap: var(--space-3); align-items: center;` con divider entre ambos | mismo             | Divider: `1px` height `1.5rem` `background: var(--border);` o un guión "→" en `--text-muted` `--text-caption`. |
+| `from selected only` | `from` filled, `to` placeholder. Cuando el usuario abre `to`, su popover ya parte en el mes de `from`.              | mismo             | El `to` aplica `min` dinámico igual a `from + 1 día` para evitar rango inválido.                               |
+| `from > to inválido` | Ambos inputs `error` borde `color-mix(in oklch, var(--destructive) 60%, var(--border-strong))`                      | mismo             | El `<ErrorMessage>` debajo dice "Hasta tiene que venir después de desde."                                      |
+| `disabled`           | Los dos sub-inputs heredan `disabled`                                                                               | mismo             | Sin `opacity` (ADR 0001 D3).                                                                                   |
+| `error`              | Los dos sub-inputs heredan `error` border                                                                           | mismo             | El error es del rango, no de cada input por separado.                                                          |
 
 Receta del wrapper (CSS):
 
@@ -136,14 +149,14 @@ Receta del wrapper (CSS):
 
 ## Copy default + i18n
 
-| Clave i18n sugerida                          | Valor ES                                              |
-| -------------------------------------------- | ----------------------------------------------------- |
-| `components.dateRangeInput.from.placeholder` | "desde"                                               |
-| `components.dateRangeInput.to.placeholder`   | "hasta"                                               |
-| `components.dateRangeInput.divider.aria`     | "hasta"                                               |
-| `components.dateRangeInput.group.aria`       | "Rango de fechas"                                     |
-| `components.dateRangeInput.error.invalid`    | "Hasta tiene que venir después de desde."             |
-| `components.dateRangeInput.error.outOfBounds`| "Fuera del rango permitido."                          |
+| Clave i18n sugerida                           | Valor ES                                  |
+| --------------------------------------------- | ----------------------------------------- |
+| `components.dateRangeInput.from.placeholder`  | "desde"                                   |
+| `components.dateRangeInput.to.placeholder`    | "hasta"                                   |
+| `components.dateRangeInput.divider.aria`      | "hasta"                                   |
+| `components.dateRangeInput.group.aria`        | "Rango de fechas"                         |
+| `components.dateRangeInput.error.invalid`     | "Hasta tiene que venir después de desde." |
+| `components.dateRangeInput.error.outOfBounds` | "Fuera del rango permitido."              |
 
 ## Edge cases
 
@@ -218,6 +231,6 @@ Receta del wrapper (CSS):
 
 1. El reorder automático cuando `from > to` puede emitirse como warning en consola en dev; en prod el componente arregla silenciosamente.
 2. El `<Label>` del grupo usa `<fieldset>` + `<legend>` opcional para mejor screen reader. MVP: `<div role="group" aria-labelledby>`.
-3. Pendiente decidir si el componente soporta `presets` ("Esta semana", "Próximos 30 días") en el popover. MVP: no; agregable en filter drawer custom.
+3. ~~Pendiente decidir si el componente soporta `presets`~~ **Resuelto S7-A.9 (2026-05-12):** quick-range presets son canónicos en `DateRangePicker` para ambos viewports. Set canónico: `7 días · 30 días · 60 días · Este mes · Próximo mes`. Labels cortos en desktop (popup 262px, font-size 11px, gap 4px, separados del calendar por `border-bottom`); labels largos con prefijo "Próximos" en mobile (full-sheet con espacio disponible). El preset cuyo rango coincida con la selección actual lleva `.is-active`. Demo anchors: `#s7-date-range-picker` (desktop) y `#s7-date-range-picker-mobile` (mobile). Spec funcional: `screens/order-create.md` §6.4.
 4. El form padre recibe `expectedDeliveryFrom` y `expectedDeliveryTo` (sufijos `From`/`To` del nombre base). Documentar la convención en el `<Form>` spec (Tier 2).
 5. Validar con tester real que el flujo de stack mobile no confunde — probar la primera vez en S6.

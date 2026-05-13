@@ -230,12 +230,20 @@ type OrderItemWithDeliveryState = {
 
 ### 5.5 Formulario inline "Anotar pago" (`#s7-order-detail-pay-modal`)
 
-El formulario se expande **dentro del card Pagos** al pulsar "Anotar pago" — el resto de la página permanece visible (el usuario puede ver el saldo pendiente mientras llena el monto). Dos campos en columna (mobile) o fila (desktop):
+El formulario se expande **dentro del card Pagos** al pulsar "Anotar pago" — el resto de la página permanece visible (el usuario puede ver el saldo pendiente mientras llena el monto). Campos:
 
 - `amount` — `<Input type="number">` con símbolo de currency prefijo. `min=0.01`. Validación: amount > 0 y amount ≤ `remainingAmount`.
+- `currency` — `<Select>` (default: currency del pedido, no editable en este flujo simple).
+- **Quick-picks debajo del input de monto (S7-A.7, paridad desktop+mobile):** dos chips `.filter-pill` que prellenan el monto:
+  - **"Saldo pendiente ($X)"** → setea el monto a `order.remainingAmount`.
+  - **"Mitad ($X/2)"** → setea el monto a `order.remainingAmount / 2`.
+  - Ambos cálculos sobre **saldo pendiente**, NO sobre monto total del pedido. Esto evita que "Mitad" sugiera valores mayores al saldo actual cuando ya hay pagos previos.
 - `paymentDate` — `<Input type="date">` con `max={today}`. Default: hoy.
+- `note` — `<textarea>` opcional, 2 rows, placeholder "Ej.: Pago final, transferencia SEPA…".
 
 CTA: "Guardar pago" (primary) + "Cancelar" (ghost). El formulario se cierra al confirmar o cancelar. Optimistic: la row aparece inmediatamente con motion slide-from-top. Si server falla: slide-out con tinte `var(--destructive) 14%` + toast revert.
+
+> **Decisión de quick-picks (S7-A.7):** 2 chips fijos (no 3). Investigación de patrones de quick-picks en apps de pago (Venmo, Splitwise, Klarna, Apple Pay, Stripe Checkout, PayPal Pay Later) + NN/g choice-paralysis convergen en "2–3 chips máximo". Tres chips (10%, 25%, "Seña") fueron evaluados y descartados: 10%/25% del saldo son valores poco accionables; "Seña" (30–50% del total) solo aplica al primer pago y confunde en pagos subsiguientes. Si en el futuro se quiere preset "Seña" condicional (solo `paymentsCount === 0`), abrir cross-cutting change separado.
 
 ### 5.6 Modal "Eliminar pedido" (`#s7-order-detail-delete-modal`)
 
@@ -267,7 +275,12 @@ El motivo se guarda como `cancellationReason` en el pedido y aparece en el callo
 
 **Hero:** full width, padding 16px. Mismo contenido que desktop pero compacto. Jerarquía invertida vs desktop: "**Saldo pendiente**" como label primario (no "Total") con cifra grande en `--warning` cuando hay saldo, `--destructive` cuando impago. Tap-to-copy en el código `ORD-…` (botón inline con icono `copy` 11px).
 
-**Subcards:** Productos (open, todos los N items visibles — sin truncar con "+ N más"), Pagos (collapsed — header expone "$X restante" en `--warning` para que el saldo sea visible aun sin expandir), Nota privada (collapsed con indicador "✓ Guardada"). Historial **no se muestra en mobile** (información de baja prioridad, accesible vía desktop).
+**Subcards (defaults state-aware, S7-A.7):**
+
+- **Productos** — `is-open` siempre. Lista todos los N items sin truncar con "+ N más".
+- **Pagos** — `is-open` por default cuando `saldo > 0` (activo/atrasado/impago). Surfacea el historial + total pagado + saldo pendiente sin que el usuario tenga que expandir manualmente. Cuando `saldo = 0` (cancelado o pagado completo, casos sin acción esperada), pasa a `collapsed` mostrando solo el resumen en el header. Internamente la card **NO contiene botón "Anotar pago"** — la acción canónica vive en la sticky bar al pie del scroll (Option Z: single source of truth). Si no hay pagos registrados, el body de la card muestra un mensaje guía: _"Sin pagos registrados aún. Usá [Pagar saldo / Anotar pago] abajo para anotar el primero."_ — el bold corresponde al label del primary CTA del estado.
+- **Nota privada** — `collapsed` siempre. La textarea expandida es voluminosa y la interacción es de baja frecuencia. El indicador "✓ Guardada" en el header cubre la necesidad informativa ("no perdí mi nota") sin requerir expand. Patrón Apple HIG: contenido "sometimes relevant" detrás de accordion.
+- **Historial** — **no se muestra en mobile en ningún estado** (decisión S7-A.8, información de baja prioridad accesible vía desktop). Incluye cancelled: el subtitle + campo "Motivo" cubren el contexto necesario en mobile.
 
 **Card "Acciones" inline (ADR 0011).** Al final del scroll del page content, antes de la sticky action bar: card `.s7-mob-actions-card` con título eyebrow "Acciones" y lista de filas tap-able. Patrón Apple HIG (Calendar event edit, Reminders, Contacts): un solo grupo, fila destructiva al final en rojo, con divider sutil arriba.
 
@@ -280,13 +293,27 @@ Filas para estado activo (y atrasado/impago, mismo subset):
 
 > **Cancelar es semi-destructivo pero reversible** (el pedido pasa a estado `cancelled`, se puede reactivar). Por eso vive como fila neutra del menú, no en zona destructiva. Solo Eliminar (irreversible) lleva el color rojo + divider. Patrón Linear-style (Archive vs Delete).
 
-**Sticky action bar single-purpose** (fija al fondo via flex-column del `.app-shell`, `border-top`, `var(--surface-elevated)`, `backdrop-filter: blur(10px)`, `padding-bottom: calc(N + env(safe-area-inset-bottom))`). Contiene **solo los CTAs primarios del estado**, sin `[Más]`:
+**Sticky action bar single-purpose con jerarquía single-primary (S7-A.7)** (fija al fondo via flex-column del `.app-shell`, `border-top`, `var(--surface-elevated)`, `backdrop-filter: blur(10px)`, `padding-bottom: calc(N + env(safe-area-inset-bottom))`). Contiene **solo los CTAs primarios del estado**, sin `[Más]`.
 
-- Activo: `[Anotar pago (primary flex:1)]` `[Crear entrega (primary flex:1)]`
-- "Anotar pago" abre el bottom sheet `#s7-order-detail-pay-mobile` (ver §5.13 — NO inline expand como desktop).
-- "Crear entrega" navega a `/deliveries/new?sourceOrderId=`.
+**Reglas de jerarquía visual:**
 
-Anti-patrón cerrado (S7-A.6): la action bar **no contiene** botón `[Más]` ni icono `⋯`. Las acciones secundarias (Editar, Cancelar, Eliminar) viven en la card inline al pie del scroll. Esto cumple dos constraints: (1) la sticky bar queda single-purpose, sin conflicto entre primary CTA y disclosure; (2) las secundarias son visibles labelled (no escondidas detrás de `⋯`).
+- **Un solo botón primary por sticky bar** (`.btn.primary` — solid `var(--accent)` + `oklch(99% 0 0)` text). El secundario usa el variant tonal (`.btn.accent` — `color-mix(in oklch, var(--accent) 10%, transparent)` bg + `var(--accent)` text/border 28%). Mismo color hue, distintas weights — coexisten sin competir.
+- **Primary a la DERECHA**, secundario a la izquierda (Apple HIG Toolbars + Material 3 Dialogs + Gutenberg reading-gravity end + thumb zone right-handed users — research S7-A.7).
+- **Primary = la acción de mayor frecuencia esperada** según FRD priorities + lifecycle del pedido. Pago > Entrega en este producto (FRD prioridad 3 vs 4; típicamente 2–3 pagos vs 1–2 entregas por pedido).
+
+**Mapping por estado:**
+
+| Estado    | Secundario (izquierda, tonal `.btn.accent`) | Primary (derecha, `.btn.primary`)                       |
+| --------- | ------------------------------------------- | ------------------------------------------------------- |
+| Activo    | `[Crear entrega]` (icon `truck`)            | `[Anotar pago]` (icon `circle-dollar-sign`)             |
+| Atrasado  | `[Entrega]` (icon `truck`)                  | `[Pagar saldo]` (icon `circle-dollar-sign`)             |
+| Impago    | —                                           | `[Saldar $X]` (single button, no secundario)            |
+| Cancelado | —                                           | `[Reactivar pedido]` (single button, icon `rotate-ccw`) |
+
+- "Anotar pago" / "Pagar saldo" / "Saldar $X" abren el bottom sheet `#s7-order-detail-pay-mobile` (ver §5.13 — NO inline expand como desktop).
+- "Crear entrega" / "Entrega" navega a `/deliveries/new?sourceOrderId=`.
+
+Anti-patrón cerrado (S7-A.6): la action bar **no contiene** botón `[Más]` ni icono `⋯`. Las acciones secundarias (Editar, Cancelar, Eliminar) viven en la card inline al pie del scroll. Esto cumple tres constraints: (1) la sticky bar queda single-purpose; (2) la jerarquía visual entre primary y secundario no compite; (3) las secundarias son visibles labelled (no escondidas detrás de `⋯`).
 
 ### 5.9 Atrasado mobile (`#s7-order-detail-overdue-mobile`)
 
@@ -296,7 +323,7 @@ Mismo layout que §5.8 más:
 - Hero con dual chip (`info` "Pendiente" + `warning` "Atrasado Nd" + `s7-impago-pill` si impago).
 - Saldo en `--warning`.
 - Card "Acciones" inline al pie del scroll, mismas filas que §5.8: Editar · Cancelar · ─ · Eliminar.
-- Sticky action bar single-purpose: `[Pagar saldo (primary flex:1)]` `[Entrega (primary flex:1)]`. Sin `[Más]`.
+- Sticky action bar single-primary: `[Entrega (tonal `.btn.accent`)]` (izquierda) + `[Pagar saldo (`.btn.primary`)]` (derecha). Misma regla de jerarquía que §5.8.
 
 ### 5.10 Cancelado mobile (`#s7-order-detail-cancelled-mobile`)
 
@@ -306,9 +333,9 @@ Mismo layout que §5.8 más:
 - "Total del pedido" muteado (`--text-secondary`, **SIN strikethrough** — estandarizado con desktop, ver L075).
 - Subtitle "Cancelado el X · Sin pagos registrados" (NO referenciar códigos internos del FRD como BR-05-15 en copy visible).
 - Sección "Motivo:" con el `cancellationReason` si existe.
-- Subcards: Productos (collapsed, info histórica) + Historial (collapsed, 5 eventos).
+- Subcards: Productos (collapsed, info histórica). **Historial NO se muestra en mobile cancelled** (decisión S7-A.8): el subtitle del hero "Cancelado el X · Sin pagos registrados" + el campo "Motivo" cubren el contexto auditable necesario en mobile; el historial completo de eventos sigue accesible vía desktop. Mantiene la regla general "Historial NO en mobile" (§5.8) sin excepción.
 - **Card "Acciones" reducida (S7-A.6 + ADR 0011)**: solo `trash-2` (destructive, rojo) Eliminar pedido. NO Editar (un pedido cancelado no se edita — el flujo es reactivar primero); NO Cancelar (ya está cancelado). Como Eliminar es la única fila, no lleva divider arriba (es first-child de la card).
-- Sticky action bar single-purpose: `[Reactivar pedido (primary flex:1)]`. Reactivar sin modal por ser acción reversible. Sin `[Más]`.
+- Sticky action bar single-primary: `[Reactivar pedido (`.btn.primary`)]` (botón único). Reactivar sin modal por ser acción reversible. Sin `[Más]`.
 
 ### 5.11 Completado + Impago mobile (`#s7-order-detail-completed-unpaid-mobile`)
 
@@ -319,7 +346,7 @@ Mismo layout que §5.8 más:
 - Progress bar al X% con `background: var(--destructive)`.
 - Subtitle "Entregado completo el X".
 - Card "Acciones" inline al pie del scroll, mismas filas que §5.8: Editar · Cancelar · ─ · Eliminar.
-- Sticky action bar single-purpose: `[Saldar $X (primary flex:1)]`. Sin `[Más]`.
+- Sticky action bar single-primary: `[Saldar $X (`.btn.primary`)]` (botón único, ocupa todo el ancho — no hay secundario porque no hay items pendientes de entrega en este estado). Sin `[Más]`.
 
 ### 5.12 (eliminada en S7-A.6) — Bottom sheet "Más acciones"
 
@@ -330,7 +357,12 @@ Mismo layout que §5.8 más:
 **NO es inline expand como desktop §5.5.** En mobile, "Anotar pago" abre un bottom sheet dedicado (`<Modal>` adaptive como `ModalSheet`, ARIA `role="dialog"`):
 
 - Header: título "Anotar pago" + X close.
-- Body: panel destacado "Saldo pendiente: $X USD" con border y bg `--warning` al 8% + form fields (monto * con quick chips "Saldo completo" / "Mitad ($X/2)" debajo, fecha del pago \* input `type="date"` con default hoy, nota opcional).
+- Body: panel destacado "Saldo pendiente: $X USD" con border y bg `--warning` al 8% + form fields. Estructura del field `monto *`:
+  - `<Input type="number">` con prefijo de currency.
+  - **Quick-picks debajo del input (S7-A.7, alineados con desktop §5.5):** dos chips `.filter-pill` — **"Saldo pendiente ($X)"** (prellena `remainingAmount`) y **"Mitad ($X/2)"** (prellena `remainingAmount / 2`). Cálculo siempre sobre saldo pendiente, no sobre total del pedido.
+
+  Seguido por `fecha del pago *` (input `type="date"` con default hoy) y `nota` (opcional).
+
 - Footer: Cancelar (ghost) + Guardar pago (primary).
 
 **Razón del cambio vs inline expand**: en mobile el detalle subcards son collapsed por default, abrir inline-expand dentro de un subcard collapsed es awkward. Mejor un sheet dedicado que mantiene el contexto del pedido (backdrop muestra hero detrás).
@@ -362,7 +394,8 @@ Mismo layout que §5.8 más:
 - Click en el botón `subcard-toggle` (header completo, incluyendo eyebrow + count + chevron) → toggle.
 - `aria-expanded` en el botón alterna. Altura de `.subcard-body` se anima con `max-height` + `overflow:hidden` (280ms).
 - Chevron rota 180° al abrir (150ms).
-- Estado inicial: Productos = **open**, Historial = **closed**. En mobile: Pagos = **closed**, Nota privada = **closed**.
+- **Estado inicial desktop:** Productos = **open**, Historial = **closed**.
+- **Estado inicial mobile (state-aware, S7-A.7):** Productos = **open** siempre; **Pagos = open cuando `saldo > 0`** (activo/atrasado/impago), **closed cuando `saldo = 0`** (cancelado, o pagado completo); Nota privada = **closed** siempre. Decisión basada en research NN/g (acordeones esconden discoverability — usar solo para contenido "sometimes relevant"); Pagos es "always relevant" cuando hay acción pendiente. Detalle en §5.8 — Subcards.
 
 ### 6.2 "Anotar pago" — formulario inline
 

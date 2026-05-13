@@ -494,6 +494,16 @@ Use **inline "Acciones" card at the foot of the page content**, not a kebab-trig
 7. **State-aware visibility**: hide rows that don't apply to the current state instead of rendering them disabled. If after filtering only the destructive row remains, the card still renders (with that single row, no divider).
 8. **Same pattern cross-viewport**. On desktop, the card lives in the right rail or at the end of the detail section. Do not migrate to header buttons in desktop — keep a single pattern to reduce divergence.
 
+#### Companion rule: sticky action bar (mobile) — single-primary hierarchy
+
+When a detail screen has a **sticky bottom action bar** for the primary CTA(s) of the current state, follow these rules (ADR 0011 Extension 2026-05-12):
+
+1. **One `.btn.primary` per bar.** If there are two competing actions, the lower-priority one uses the tonal variant (`.btn.accent` — color-mix 10% bg + accent text + accent border 28%). Two solid-purple primaries side-by-side compete and degrade hierarchy (Material 3, UX Planet).
+2. **Primary on the RIGHT, secondary on the left.** Apple HIG Toolbars ("trailing edge"), Material 3 Dialogs ("affirmative right"), Gutenberg reading-gravity (task completes faster), NN/g + Smashing thumb zone (bottom-right easy zone for right-handed users, 75% of population).
+3. **Pick primary by frequency × FRD priority.** The most-used action over the lifecycle of the entity gets the primary slot. If FRD declares priorities, follow them. In PandaTrack: payment > shipment (FRD #3 vs #4).
+4. **Single CTA OK.** When only one primary action applies to the current state (e.g., "Reactivar pedido" for cancelled, "Saldar $X" for impago), the sticky bar holds one button, full-width.
+5. **Never put `[Más]` or `⋯` in the sticky bar.** Secondary actions live in the inline "Acciones" card at the foot of the scroll (this section above). The sticky bar stays single-purpose.
+
 #### Why not a kebab + bottom sheet
 
 - **NN/g**: hiding ≤3 actions behind a kebab "saves no space, increases effort, and reduces discoverability". Bottom sheets "aren't suited for displaying always-needed tools".

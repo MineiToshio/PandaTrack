@@ -2944,7 +2944,7 @@
       padding: 0 12px 0 8px; min-height: 48px;
       border-bottom: 1px solid var(--border); gap: 8px;
     }
-    .s7-mob-fullsheet-title { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+    .s7-mob-fullsheet-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
     .s7-mob-fullsheet-body { flex: 1; overflow-y: auto; padding: 16px; }
     .s7-mob-fullsheet-footer {
       padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
@@ -2995,14 +2995,14 @@
     }
 
     /* Picker list rows */
-    .s7-mob-picker-list { display: flex; flex-direction: column; gap: 2px; }
+    .s7-mob-picker-list { display: flex; flex-direction: column; gap: 1px; }
     .s7-mob-picker-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 12px; border-radius: 8px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 8px;
       cursor: pointer; border: 1px solid transparent;
       background: transparent; width: 100%; text-align: left;
       transition: background 120ms ease, border-color 120ms ease;
-      min-height: 48px;
+      min-height: 44px;
     }
     .s7-mob-picker-row:hover { background: color-mix(in oklch, var(--text-primary) 4%, transparent); }
     .s7-mob-picker-row.is-selected {
@@ -3010,18 +3010,21 @@
       border-color: color-mix(in oklch, var(--accent) 30%, transparent);
     }
     .s7-mob-picker-row .s7-mob-picker-icon {
-      width: 28px; height: 28px; border-radius: 7px;
-      background: color-mix(in oklch, var(--text-primary) 5%, transparent);
-      display: grid; place-items: center; flex-shrink: 0; color: var(--text-muted);
+      width: 24px; height: 24px; border-radius: 6px;
+      background: color-mix(in oklch, var(--accent-cool) 8%, transparent);
+      display: grid; place-items: center; flex-shrink: 0;
+      color: var(--accent-cool);
     }
+    .s7-mob-picker-row .s7-mob-picker-icon > svg,
+    .s7-mob-picker-row .s7-mob-picker-icon > i { width: 13px; height: 13px; }
     .s7-mob-picker-row.is-selected .s7-mob-picker-icon {
       background: color-mix(in oklch, var(--accent) 14%, transparent); color: var(--accent);
     }
     .s7-mob-picker-row .s7-mob-picker-label {
-      flex: 1; min-width: 0; font-size: 13.5px; color: var(--text-primary);
+      flex: 1; min-width: 0; font-size: 13px; color: var(--text-primary);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
-    .s7-mob-picker-row .s7-mob-picker-check { color: var(--accent); width: 16px; height: 16px; flex-shrink: 0; }
+    .s7-mob-picker-row .s7-mob-picker-check { color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
 
     /* Action menu (más acciones bottom sheet) */
     .s7-mob-action-list { display: flex; flex-direction: column; gap: 2px; }
@@ -3315,6 +3318,7 @@
         <a href="#s7-order-create-empty-stores" data-screen="s7-order-create-empty-stores">Crear · Sin tiendas</a>
         <a href="#s7-order-create-discrepancy-modal" data-screen="s7-order-create-discrepancy-modal">Crear · Modal discrepancia</a>
         <a href="#s7-order-edit" data-screen="s7-order-edit">Editar pedido</a>
+        <a href="#s7-order-edit-discard-modal" data-screen="s7-order-edit-discard-modal">Editar · Modal discard</a>
         <div class="demo-nav-sep"></div>
         <span class="demo-nav-label">── Móvil · Lista ──</span>
         <a href="#s7-orders-list-mobile" data-screen="s7-orders-list-mobile">Lista · Default</a>
@@ -3342,6 +3346,7 @@
         <div class="demo-nav-sep"></div>
         <span class="demo-nav-label">── Móvil · Editar ──</span>
         <a href="#s7-order-edit-mobile" data-screen="s7-order-edit-mobile">Editar</a>
+        <a href="#s7-order-edit-discard-mobile" data-screen="s7-order-edit-discard-mobile">Editar · Discard (sheet)</a>
         <div class="demo-nav-sep"></div>
         <span class="demo-nav-label">── Móvil · Otros ──</span>
         <a href="#s7-fx-reconciliation-mobile" data-screen="s7-fx-reconciliation-mobile">FX Reconciliación (full-sheet)</a>
@@ -3510,6 +3515,7 @@
         <tr><td class="idx-session">S7</td><td>Crear · Sin tiendas (empty)</td>             <td><a class="idx-anchor" href="#s7-order-create-empty-stores" data-screen-link="s7-order-create-empty-stores">#s7-order-create-empty-stores</a></td>           <td><span class="idx-status iterando">iterando</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Crear · Modal discrepancia 3-way</td>        <td><a class="idx-anchor" href="#s7-order-create-discrepancy-modal" data-screen-link="s7-order-create-discrepancy-modal">#s7-order-create-discrepancy-modal</a></td><td><span class="idx-status iterando">iterando</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Editar pedido (L020 all-open)</td>          <td><a class="idx-anchor" href="#s7-order-edit" data-screen-link="s7-order-edit">#s7-order-edit</a></td>                                                 <td><span class="idx-status iterando">iterando</span></td></tr>
+        <tr><td class="idx-session">S7</td><td>Editar · Modal discard (cancelar con cambios pendientes)</td><td><a class="idx-anchor" href="#s7-order-edit-discard-modal" data-screen-link="s7-order-edit-discard-modal">#s7-order-edit-discard-modal</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Lista · Skeleton loading</td>                <td><a class="idx-anchor" href="#s7-orders-list-loading" data-screen-link="s7-orders-list-loading">#s7-orders-list-loading</a></td>                         <td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Detalle · Atrasado (overdue)</td>            <td><a class="idx-anchor" href="#s7-order-detail-overdue" data-screen-link="s7-order-detail-overdue">#s7-order-detail-overdue</a></td>                       <td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Detalle · Pago parcial</td>                  <td><a class="idx-anchor" href="#s7-order-detail-partially-paid" data-screen-link="s7-order-detail-partially-paid">#s7-order-detail-partially-paid</a></td>   <td><span class="idx-status nuevo">nuevo</span></td></tr>
@@ -3519,6 +3525,7 @@
         <tr><td class="idx-session">S7</td><td>Detalle · Móvil (sticky actions)</td>        <td><a class="idx-anchor" href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile">#s7-order-detail-mobile</a></td>                         <td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Crear · Móvil (wizard paso 1, sin page-heading)</td><td><a class="idx-anchor" href="#s7-order-create-mobile" data-screen-link="s7-order-create-mobile">#s7-order-create-mobile</a></td>               <td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Editar · Móvil (L020 all-open, back-link bajo topbar)</td><td><a class="idx-anchor" href="#s7-order-edit-mobile" data-screen-link="s7-order-edit-mobile">#s7-order-edit-mobile</a></td>           <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S7</td><td>Editar · Móvil · Discard (sheet)</td><td><a class="idx-anchor" href="#s7-order-edit-discard-mobile" data-screen-link="s7-order-edit-discard-mobile">#s7-order-edit-discard-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Crear · Móvil · Añadir producto (bottom sheet)</td><td><a class="idx-anchor" href="#s7-order-create-add-product-mobile" data-screen-link="s7-order-create-add-product-mobile">#s7-order-create-add-product-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Lista · Móvil · Cargando (skeleton)</td><td><a class="idx-anchor" href="#s7-orders-list-loading-mobile" data-screen-link="s7-orders-list-loading-mobile">#s7-orders-list-loading-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Lista · Móvil · Vacía inicial</td><td><a class="idx-anchor" href="#s7-orders-list-empty-initial-mobile" data-screen-link="s7-orders-list-empty-initial-mobile">#s7-orders-list-empty-initial-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
@@ -10065,7 +10072,7 @@
                 <button class="pay-panel-close" aria-label="Cerrar formulario"><i data-lucide="x"></i></button>
               </div>
 
-              <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:10px;">
+              <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:6px;">
                 <div>
                   <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;" for="pif-amount">Monto</label>
                   <input id="pif-amount" class="input num" type="number" value="496.00" style="font-size:15px;font-weight:600;" aria-label="Monto del pago" />
@@ -10074,6 +10081,11 @@
                   <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;" for="pif-currency">Moneda</label>
                   <select id="pif-currency" class="input" aria-label="Moneda"><option selected>USD</option><option>EUR</option><option>JPY</option></select>
                 </div>
+              </div>
+              <!-- Quick-picks alineados con mobile (S7-A.7): cálculo sobre saldo pendiente. -->
+              <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;">
+                <button type="button" class="filter-pill" style="font-size:11px;padding:3px 9px;min-height:0;">Saldo pendiente ($496)</button>
+                <button type="button" class="filter-pill" style="font-size:11px;padding:3px 9px;min-height:0;">Mitad ($248)</button>
               </div>
 
               <div style="margin-bottom:10px;">
@@ -10165,6 +10177,15 @@
                     <span style="flex:1;font-size:13px;font-weight:500;color:var(--text-primary);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Solaris Books &amp; Records</span>
                     <button type="button" aria-label="Limpiar selección" style="background:none;border:none;padding:2px;color:var(--text-muted);cursor:pointer;flex-shrink:0;display:flex;"><i data-lucide="x" style="width:13px;height:13px;"></i></button>
                   </div>
+                  <!-- CTA inline "Crear nueva tienda" — paridad con mobile picker + implementación
+                       real OrderStoreSelect.tsx que lo expone al pie del dropdown abierto.
+                       Real route: /{locale}/stores/new?returnTo=order-create.
+                       Al success el CreateStoreForm redirige a /{locale}/pedidos/nuevo?store={id}
+                       con autoselect. Ver FRD-05 WO-04 + order-create.md §6.2. -->
+                  <p class="card-helper" style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+                    <span>¿No encontrás tu tienda?</span>
+                    <a href="#stores" data-return-to="order-create" class="btn link sm" style="padding:0;font-size:12px;"><i data-lucide="plus-circle" style="width:12px;height:12px;"></i> Crear nueva tienda</a>
+                  </p>
                 </div>
                 <div class="field">
                   <label class="field-label">Moneda <span style="color:var(--destructive);">*</span></label>
@@ -10984,6 +11005,63 @@
   </div>
 </section>
 
+<!-- ─── S7-Q: EDITAR — Modal discard (cancelar con cambios pendientes) ──── -->
+<!-- Modal canónico ADR 0008 Version B, variante warning. Aparece al pulsar "Cancelar"
+     (o al navegar) cuando formState.isDirty === true. Foco inicial en "Quedarse"
+     (acción menos destructiva, ADR 0008). Esc ejecuta "Quedarse". -->
+<section id="s7-order-edit-discard-modal" class="screen" aria-labelledby="s7-edit-discard-title">
+  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.35;">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link is-active"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left">
+          <nav class="app-breadcrumb" aria-label="Navegación">
+            <a href="#s7-orders-list-default" data-screen-link="s7-orders-list-default" class="app-breadcrumb-link">Pedidos</a>
+            <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
+            <a href="#s7-order-detail-active" data-screen-link="s7-order-detail-active" class="app-breadcrumb-link" style="font-family:'JetBrains Mono',ui-monospace,monospace;">ORD-20260428-01</a>
+          </nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
+          <p class="app-topbar-title">Editar pedido</p>
+        </div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <div style="padding:20px;opacity:0.5;">
+        <div style="height:160px;background:var(--surface-elevated);border-radius:16px;"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Modal ADR 0008 Version B — Warning variant -->
+  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s7-edit-discard-title" aria-describedby="s7-edit-discard-body">
+    <div class="m01-modal-base m01b-modal">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-warning" aria-hidden="true"><i data-lucide="triangle-alert"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s7-edit-discard-title">¿Salir sin guardar?</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">Los cambios que hiciste no se guardarán.</p>
+        </div>
+      </div>
+      <div class="m01b-body">
+        <p id="s7-edit-discard-body" style="font-size:13px;color:var(--text-secondary);margin:0;">Tenés cambios pendientes en este pedido. Si salís ahora, se perderán. Podés <strong style="color:var(--text-primary);">quedarte</strong> para guardar antes, o <strong style="color:var(--text-primary);">salir</strong> y descartar los cambios.</p>
+      </div>
+      <div class="m01b-footer">
+        <!-- Foco inicial = "Quedarse" (acción menos destructiva, ADR 0008). -->
+        <button class="btn warning" type="button" style="order:2;"><i data-lucide="log-out"></i> Salir</button>
+        <button class="btn ghost" type="button" autofocus style="order:1;">Quedarse</button>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ─── S7-S: DETALLE — ATRASADO ──────────────────────────────── -->
 <section id="s7-order-detail-overdue" class="screen" aria-labelledby="s7-order-detail-overdue-title">
   <div class="app-shell">
@@ -11684,8 +11762,10 @@
             </div>
           </div>
 
-          <div class="subcard" data-collapsible>
-            <button class="subcard-toggle" aria-expanded="false" aria-controls="md-pay-body">
+          <!-- Pagos card: expandida por default cuando saldo > 0 (state-aware).
+               Sin botón "Anotar pago" interno — single source of truth = sticky bar (Option Z). -->
+          <div class="subcard is-open" data-collapsible>
+            <button class="subcard-toggle" aria-expanded="true" aria-controls="md-pay-body">
               <span class="eyebrow">Pagos</span>
               <span class="text-muted" style="font-size:12px;">1 pago · <span class="num" style="color:var(--warning);font-weight:600;">$496 restante</span></span>
               <span class="chev"><i data-lucide="chevron-down"></i></span>
@@ -11697,7 +11777,7 @@
                   <span class="pay-amount num">$744,00</span>
                   <button class="pay-delete" aria-label="Eliminar pago de $744 del 2 may 2026"><i data-lucide="x"></i></button>
                 </div>
-                <div style="border-top:1px solid var(--border);padding-top:10px;padding-right:36px;display:flex;flex-direction:column;gap:5px;margin-bottom:12px;">
+                <div style="border-top:1px solid var(--border);padding-top:10px;padding-right:36px;display:flex;flex-direction:column;gap:5px;">
                   <div style="display:flex;justify-content:space-between;align-items:baseline;">
                     <span class="text-muted" style="font-size:12px;">Total pagado</span>
                     <span class="num" style="font-size:13px;font-weight:600;">$744,00</span>
@@ -11707,9 +11787,6 @@
                     <strong class="num" style="color:var(--warning);font-size:16px;">$496,00</strong>
                   </div>
                 </div>
-                <button class="btn accent" type="button" style="width:100%;justify-content:center;">
-                  <i data-lucide="circle-dollar-sign"></i> Anotar pago
-                </button>
               </div>
             </div>
           </div>
@@ -11758,14 +11835,16 @@
       </div>
     </div>
 
-    <!-- Sticky action bar (single-purpose: solo CTAs primarios del estado) -->
+    <!-- Sticky action bar (single-purpose, jerarquía single-primary):
+         secundario izquierda (Crear entrega tonal) + primary derecha (Anotar pago) —
+         Apple HIG + M3 + Gutenberg + thumb zone right-handed; primary = pago por FRD priority + frecuencia. -->
     <div class="s7-mob-actionbar" role="toolbar" aria-label="Acciones del pedido">
+      <button class="btn accent" type="button" style="flex:1;font-size:13px;justify-content:center;">
+        <i data-lucide="truck"></i> Crear entrega
+      </button>
       <a href="#s7-order-detail-pay-mobile" data-screen-link="s7-order-detail-pay-mobile" class="btn primary" style="flex:1;font-size:13px;justify-content:center;" aria-keyshortcuts="P">
         <i data-lucide="circle-dollar-sign"></i> Anotar pago
       </a>
-      <button class="btn primary" type="button" style="flex:1;font-size:13px;justify-content:center;">
-        <i data-lucide="truck"></i> Crear entrega
-      </button>
     </div>
   </div>
 </section>
@@ -12121,6 +12200,50 @@
     <div class="s7-mob-actionbar" role="toolbar" aria-label="Acciones de edición">
       <a href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" class="btn ghost" style="flex-shrink:0;min-width:96px;justify-content:center;">Cancelar</a>
       <button class="btn primary" type="button" style="flex:1;justify-content:center;"><i data-lucide="check"></i> Guardar cambios</button>
+    </div>
+  </div>
+</section>
+
+<!-- ─── MOBILE: s7-order-edit-discard-mobile ────────────────────────────── -->
+<!-- Bottom sheet equivalente al modal warning desktop (ADR 0008 Extensión: Modal adaptive
+     renderiza ModalSheet en mobile). Mismo contenido, mismo foco initial (Quedarse). -->
+<section id="s7-order-edit-discard-mobile" class="screen" aria-labelledby="s7-mob-edit-discard-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0;">
+      <!-- Parent topbar dim — canonical static-shell pattern -->
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;">
+            <a href="#s7-orders-list-mobile" data-screen-link="s7-orders-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Pedidos</a>
+            <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+            <a href="#s7-order-detail-mobile" data-screen-link="s7-order-detail-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);font-family:'JetBrains Mono',ui-monospace,monospace;">ORD-20260428-01</a>
+          </nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Editar pedido</p>
+        </div>
+      </div>
+      <div style="padding:14px 16px;opacity:0.5;">
+        <div style="height:200px;background:var(--surface-elevated);border-radius:16px;"></div>
+      </div>
+    </div>
+    <div class="s7-mob-backdrop" aria-hidden="true"></div>
+    <div class="s7-mob-sheet" role="dialog" aria-modal="true" aria-labelledby="s7-mob-edit-discard-title" aria-describedby="s7-mob-edit-discard-body">
+      <div class="s7-mob-sheet-handle" aria-hidden="true"></div>
+      <div class="s7-mob-sheet-body" style="padding-top:14px;">
+        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+          <div style="width:40px;height:40px;border-radius:12px;background:color-mix(in oklch,var(--warning) 12%,transparent);display:grid;place-items:center;color:var(--warning);flex-shrink:0;"><i data-lucide="triangle-alert"></i></div>
+          <div style="min-width:0;flex:1;">
+            <h3 class="s7-mob-sheet-title" id="s7-mob-edit-discard-title" style="margin:0 0 4px;">¿Salir sin guardar?</h3>
+            <p id="s7-mob-edit-discard-body" style="margin:0;font-size:13px;color:var(--text-secondary);line-height:1.5;">Tenés cambios pendientes en este pedido. Si salís ahora, se perderán. Podés <strong style="color:var(--text-primary);">quedarte</strong> para guardar antes, o <strong style="color:var(--text-primary);">salir</strong> y descartar los cambios.</p>
+          </div>
+        </div>
+      </div>
+      <div class="s7-mob-sheet-footer">
+        <!-- Foco inicial = "Quedarse" (acción menos destructiva). Esc ejecuta Quedarse. -->
+        <button type="button" class="btn ghost" autofocus style="flex:0 0 110px;justify-content:center;">Quedarse</button>
+        <button type="button" class="btn warning" style="flex:1;justify-content:center;"><i data-lucide="log-out"></i> Salir</button>
+      </div>
     </div>
   </div>
 </section>
@@ -12645,8 +12768,12 @@
               <div class="item-row"><div class="item-icon"><i data-lucide="shapes"></i></div><div class="item-name">Eva Funko Rei v2<small><span class="s7-istate none"><i data-lucide="clock"></i> Pendiente</span></small></div><span class="item-qty">×1</span><span class="item-price num">€100</span></div>
             </div></div>
           </div>
-          <div class="subcard" data-collapsible>
-            <button class="subcard-toggle" aria-expanded="false"><span class="eyebrow">Pagos</span><span class="text-muted" style="font-size:12px;">0 pagos · <span class="num" style="color:var(--warning);font-weight:600;">€320 restante</span></span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+          <!-- Pagos card: expandida por default cuando saldo > 0; sin botón interno (Option Z). -->
+          <div class="subcard is-open" data-collapsible>
+            <button class="subcard-toggle" aria-expanded="true"><span class="eyebrow">Pagos</span><span class="text-muted" style="font-size:12px;">0 pagos · <span class="num" style="color:var(--warning);font-weight:600;">€320 restante</span></span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="subcard-body"><div class="subcard-body-inner">
+              <p class="text-muted" style="font-size:12px;margin:0;">Sin pagos registrados aún. Usá <strong style="color:var(--text-secondary);">Pagar saldo</strong> abajo para anotar el primero.</p>
+            </div></div>
           </div>
           <div class="subcard" data-collapsible>
             <button class="subcard-toggle" aria-expanded="false"><span class="eyebrow">Tu nota privada</span><span class="text-muted" style="font-size:12px;">Vacía</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
@@ -12675,10 +12802,11 @@
         </div>
       </div>
     </div>
-    <!-- Sticky action bar (single-purpose: solo CTAs primarios del estado overdue) -->
+    <!-- Sticky action bar (single-purpose, jerarquía single-primary):
+         secundario izquierda (Entrega tonal) + primary derecha (Pagar saldo). -->
     <div class="s7-mob-actionbar" role="toolbar" aria-label="Acciones del pedido">
+      <button class="btn accent" style="flex:1;justify-content:center;"><i data-lucide="truck"></i> Entrega</button>
       <a href="#s7-order-detail-pay-mobile" data-screen-link="s7-order-detail-pay-mobile" class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="circle-dollar-sign"></i> Pagar saldo</a>
-      <button class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="truck"></i> Entrega</button>
     </div>
   </div>
 </section>
@@ -12727,9 +12855,7 @@
           <div class="subcard" data-collapsible>
             <button class="subcard-toggle" aria-expanded="false"><span class="eyebrow">Productos</span><span class="text-muted" style="font-size:12px;">3</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
           </div>
-          <div class="subcard" data-collapsible>
-            <button class="subcard-toggle" aria-expanded="false"><span class="eyebrow">Historial</span><span class="text-muted" style="font-size:12px;">5 eventos</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
-          </div>
+          <!-- Historial NO se muestra en mobile cancelled (S7-A.8): subtitle hero + Motivo cubren contexto. -->
         </div>
 
         <!-- Estado cancelado: solo Eliminar (Editar requiere reactivar primero;
@@ -12805,8 +12931,31 @@
           </div>
         </div>
         <div style="margin-top:14px;">
-          <div class="subcard" data-collapsible>
-            <button class="subcard-toggle" aria-expanded="false"><span class="eyebrow">Pagos</span><span class="text-muted" style="font-size:12px;">2 pagos · <span class="num" style="color:var(--destructive);font-weight:600;">¥4.200 restante</span></span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+          <!-- Pagos card: expandida por default (saldo > 0 — impago). Sin botón interno (Option Z). -->
+          <div class="subcard is-open" data-collapsible>
+            <button class="subcard-toggle" aria-expanded="true"><span class="eyebrow">Pagos</span><span class="text-muted" style="font-size:12px;">2 pagos · <span class="num" style="color:var(--destructive);font-weight:600;">¥4.200 restante</span></span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="subcard-body"><div class="subcard-body-inner">
+              <div class="pay-row">
+                <span class="pay-date">20 feb 2026</span>
+                <span class="pay-amount num">¥4.200</span>
+                <button class="pay-delete" aria-label="Eliminar pago"><i data-lucide="x"></i></button>
+              </div>
+              <div class="pay-row">
+                <span class="pay-date">10 mar 2026</span>
+                <span class="pay-amount num">¥4.000</span>
+                <button class="pay-delete" aria-label="Eliminar pago"><i data-lucide="x"></i></button>
+              </div>
+              <div style="border-top:1px solid var(--border);padding-top:10px;padding-right:36px;display:flex;flex-direction:column;gap:5px;">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                  <span class="text-muted" style="font-size:12px;">Total pagado</span>
+                  <span class="num" style="font-size:13px;font-weight:600;">¥8.200</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                  <span class="text-secondary" style="font-size:13px;">Saldo pendiente</span>
+                  <strong class="num" style="color:var(--destructive);font-size:16px;">¥4.200</strong>
+                </div>
+              </div>
+            </div></div>
           </div>
           <div class="subcard" data-collapsible>
             <button class="subcard-toggle" aria-expanded="false"><span class="eyebrow">Productos</span><span class="text-muted" style="font-size:12px;">3</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
@@ -12877,8 +13026,9 @@
             <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;">$</span>
             <input id="s7m-pay-amount" class="input" type="number" value="496.00" style="padding-left:24px;font-variant-numeric:tabular-nums;font-size:15px;font-weight:500;" aria-label="Monto del pago" />
           </div>
+          <!-- Quick-picks: 2 chips canónicos (S7-A.7 alineado desktop+mobile). Cálculo sobre saldo pendiente. -->
           <p class="card-helper" style="margin-top:6px;display:flex;gap:6px;align-items:center;">
-            <button type="button" class="filter-pill" style="font-size:10px;padding:2px 8px;min-height:0;">Saldo completo</button>
+            <button type="button" class="filter-pill" style="font-size:10px;padding:2px 8px;min-height:0;">Saldo pendiente ($496)</button>
             <button type="button" class="filter-pill" style="font-size:10px;padding:2px 8px;min-height:0;">Mitad ($248)</button>
           </p>
         </div>
@@ -13384,7 +13534,12 @@
           </button>
         </div>
         <div style="border-top:1px solid var(--border);margin-top:12px;padding:12px 4px 0;">
-          <a href="#stores" class="btn ghost sm" style="width:100%;justify-content:center;"><i data-lucide="plus"></i> Crear nueva tienda</a>
+          <!-- Crear nueva tienda con preservación de contexto.
+               Implementación real (S7-A.8 / FRD-05 WO-04): href="/{locale}/stores/new?returnTo=order-create".
+               El back-link y el success redirect del CreateStoreForm respetan ese param y vuelven a
+               /pedidos/nuevo?store={createdStoreId} con la tienda preseleccionada. Acá usamos #stores
+               solo porque es demo HTML con anchors. -->
+          <a href="#stores" data-return-to="order-create" class="btn ghost sm" style="width:100%;justify-content:center;"><i data-lucide="plus"></i> Crear nueva tienda</a>
         </div>
       </div>
     </div>
@@ -13602,6 +13757,15 @@
 
         <!-- Calendar popup — estático para previsualización -->
         <div style="background:var(--surface-page);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 32px color-mix(in oklch,var(--text-primary) 12%,transparent);padding:16px;width:262px;" role="dialog" aria-label="Seleccionar rango de fechas">
+
+              <!-- Quick range presets (S7-A.9, paridad con mobile #s7-date-range-picker-mobile) -->
+              <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);">
+                <button class="filter-pill" type="button" style="font-size:11px;padding:3px 8px;min-height:0;">7 días</button>
+                <button class="filter-pill" type="button" style="font-size:11px;padding:3px 8px;min-height:0;">30 días</button>
+                <button class="filter-pill" type="button" style="font-size:11px;padding:3px 8px;min-height:0;">60 días</button>
+                <button class="filter-pill" type="button" style="font-size:11px;padding:3px 8px;min-height:0;">Este mes</button>
+                <button class="filter-pill" type="button" style="font-size:11px;padding:3px 8px;min-height:0;">Próximo mes</button>
+              </div>
 
               <!-- Month nav -->
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -14313,6 +14477,8 @@
     's7-order-create-empty-stores':      'S7 · Crear · Sin tiendas',
     's7-order-create-discrepancy-modal': 'S7 · Crear · Modal discrepancia',
     's7-order-edit':                     'S7 · Editar pedido',
+    's7-order-edit-discard-modal':       'S7 · Editar · Modal discard',
+    's7-order-edit-discard-mobile':      'S7 · Editar · Discard (sheet)',
   };
 
   function showScreen(id) {

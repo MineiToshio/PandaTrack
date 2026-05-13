@@ -7,6 +7,8 @@ last_updated: 2026-05-12
 demo_anchors:
   - s7-order-edit
   - s7-order-edit-mobile
+  - s7-order-edit-discard-modal
+  - s7-order-edit-discard-mobile
   - s7-product-type-picker-mobile
   - s7-date-range-picker-mobile
 ---
@@ -236,7 +238,17 @@ El `editOrderAction` recibe `items[]` con el campo `id` opcional:
 - Botones: `orders.edit.discardCancel` "Quedarse" (ghost neutral, cierra modal) + `orders.edit.discardConfirm` "Salir" (warning, navega al detalle).
 - ARIA: `role="alertdialog"` (bloquea drag-dismiss accidental en mobile).
 
-> **Nota S7-A.5**: el demo HTML actualmente no tiene anchor dedicado para el discard mobile sheet — la implementación usa el mismo `<Modal>` adaptive que el delete/cancel sheets. Si se necesita demo visual, agregar anchor `#s7-order-edit-discard-mobile` en sesión futura.
+**Demo anchors (S7-A.8):**
+
+- Desktop: `#s7-order-edit-discard-modal` — dim parent + centered dialog `m01b-modal` tone-warning con icon-circle `triangle-alert`.
+- Mobile: `#s7-order-edit-discard-mobile` — dim parent + bottom sheet con drag handle + mismo icon-circle warning + mismo copy.
+
+Ambos consumen el mismo `<Modal>` adaptive canónico (ADR 0008 Extensión 2026-05-11) — desktop renderiza `ModalDialog`, mobile renderiza `ModalSheet` via Vaul. El demo HTML es solo referencia visual; el componente real ya existe en `src/components/modules/Modal/`.
+
+**Foco inicial y orden de botones** (ADR 0008 + WAI-ARIA): foco en "Quedarse" (acción menos destructiva); `Escape` ejecuta "Quedarse". En el footer:
+
+- Desktop: "Quedarse" izquierda (ghost) + "Salir" derecha (warning). Patrón M3 Dialogs / Apple HIG: affirmative-right convention; aquí "Quedarse" es el affirmative (mantener trabajo).
+- Mobile sheet: igual orden — "Quedarse" izquierda con `flex: 0 0 110px`, "Salir" derecha con `flex: 1`.
 
 ### 5.6 Submitting
 

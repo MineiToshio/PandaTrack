@@ -2,7 +2,7 @@
 title: ADR 0011 — Mobile detail-page secondary actions: inline card over bottom sheet
 date: 2026-05-12
 status: accepted
-session: S7-A.6 — mobile topbar realignment + secondary actions pattern
+session: S7-A.6 — mobile topbar realignment + secondary actions pattern; extended 2026-05-12 in S7-A.7 (sticky bar single-primary + Pagos card state-aware default)
 owner: Sergio Minei
 trigger: S7-A.5 documented "Topbar mobile alignment a patrón implementación" as pending; user surfaced that the `⋯`/[Más] bottom sheet pattern for secondary actions on order detail is not intuitive and conflicts with the static `ContentHeader.tsx` shell
 updates: screens/order-list.md, screens/order-detail.md, screens/order-create.md, screens/order-edit.md, design/interface-patterns.md, _notes/cross-cutting-changes.md, _notes/demo-screens.html
@@ -176,6 +176,73 @@ Las filas de la card "Acciones" abren estos modals; no se ejecuta nada destructi
 - ✅ Specs de los 4 order screens: actualizadas en S7-A.6.
 - ⬜ Implementación en `src/`: pendiente de Fase B Parte 2. Sin breaking change en `src/` porque la pantalla no está implementada todavía.
 
+## Extensión 2026-05-12 — Jerarquía single-primary en sticky bar + Pagos card state-aware
+
+Post-implementación de S7-A.6 (2026-05-12 mismo día) el usuario surfaced dos refinements que afectan al patrón canónico de detail-screen mobile:
+
+### 1. Anti-duplication: una sola entrada para "Anotar pago"
+
+S7-A.6 dejó **dos entradas** para "Anotar pago" en el detalle mobile activo:
+
+- Botón primary en la sticky bar (canónico de §5.8)
+- Botón primary inline dentro de la subcard "Pagos" expandida
+
+Esto es duplicación pura (misma acción, mismo target, sin diferenciación semántica). En contraste, "Crear entrega" tiene dos entradas legítimamente distintas:
+
+- Botón en sticky bar → abre form vacío
+- Ghost button "Crear entrega con estos productos" dentro de la subcard "Productos" → pre-selecciona los items pendientes (atajo contextual)
+
+**Decisión adoptada (Option Z):** el sticky bar es la **single source of truth** para los CTAs primary del estado. Se eliminan las entradas duplicadas de la card "Pagos" interna. Los atajos contextuales (como "Crear entrega con estos productos") sobreviven solo cuando aportan semántica distinta del CTA del sticky bar.
+
+### 2. Jerarquía single-primary en sticky bar con 2 botones
+
+S7-A.6 implementó sticky bars con dos botones `.btn.primary` (purple bg + white text) compitiendo entre sí. Material 3 + UX Planet son explícitos: **"one high-emphasis button per context"**. Dos buttons primary degradan la jerarquía y obligan al usuario a decidir.
+
+Research (2026-05-12, 10+ fuentes citadas):
+
+- **Apple HIG (Toolbars)**: "Primary actions on the trailing edge" → primary a la derecha.
+- **Material 3 (Dialogs)**: "Affirmative actions are placed on the right side."
+- **Gutenberg reading-gravity**: el peso visual del flujo de lectura termina en la esquina inferior-derecha — primary derecha completa más rápido la tarea.
+- **NN/g + Smashing thumb zone**: bottom-right es la "easy zone" para usuarios diestros (75% de la población).
+- **SubUX / UX Planet**: button hierarchy = primary por frecuencia analítica + tonal/outline para alternos coexistentes.
+
+**Decisión adoptada:**
+
+| Aspecto                      | Regla                                                                                                                             |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Cantidad de primary          | **Un solo `.btn.primary`** por sticky bar                                                                                         |
+| Variant del secundario       | **`.btn.accent`** (tonal — purple light bg + purple text + purple border 28%). Misma familia de color que el primary; no compite  |
+| Posición del primary         | **Derecha** (Apple HIG + M3 + Gutenberg + thumb zone)                                                                             |
+| Criterio para elegir primary | **Frecuencia de uso esperada + FRD priority.** En PandaTrack: pago > entrega (FRD #3 vs #4; 2–3 pagos vs 1–2 entregas por pedido) |
+
+Aplicabilidad cross-module:
+
+- Order detail (S7) — aplicado: pago = primary, entrega = secundario.
+- Store detail (S6) — pendiente migrar: si llega a tener 2 acciones en sticky bar, evaluar primary por FRD priority + frecuencia.
+- Delivery detail (S8) — usar el pattern desde día 1: si hay 2 acciones, primary = la más frecuente; secundario = `.btn.accent` izquierda.
+- Item detail si aparece — mismo pattern.
+
+### 3. Defaults state-aware de subcards (Pagos)
+
+S7-A.6 mantuvo Pagos collapsed por default. Re-evaluación con research (NN/g sobre acordeones, real apps como Mercado Libre / Shopify / Stripe / banking apps):
+
+- Acordeones esconden discoverability — usarlos solo para contenido "sometimes relevant"
+- Pagos es **siempre relevante** cuando hay saldo pendiente (es la acción esperada)
+- Pagos es **histórico** cuando saldo = 0 (puede ir collapsed)
+
+**Decisión adoptada:**
+
+- Productos: **always open**.
+- **Pagos: open cuando `saldo > 0` (activo/atrasado/impago); collapsed cuando `saldo = 0`** (cancelado, pagado completo).
+- Nota privada: **always collapsed** (textarea voluminosa, baja frecuencia; el header con "✓ Guardada" cubre el caso informativo).
+- Historial (cuando aplica): collapsed.
+
+### Implicaciones de implementación
+
+- `<DetailActionCard>` (futuro componente `src/components/modules/DetailActionCard/`) **no cambia** — sigue el patrón de la sección "Implementación" arriba.
+- Nuevo componente potencial `<DetailStickyActionBar>` (`src/components/modules/DetailStickyActionBar/`) que acepta `primaryAction` + `secondaryAction?` con validación: máximo 1 primary, secundario forzado a `.btn.accent` con posición izquierda, primary forzado a posición derecha. Implementar cuando se aborde Fase B Parte 2.
+- Subcards con estado inicial: si el componente `<Subcard>` ya existe en `src/`, agregar prop `initiallyOpen?: boolean` para permitir defaults state-aware desde el componente padre. Si no existe, implementarlo en Fase B Parte 2.
+
 ## Notas
 
 - ADR 0011 NO modifica ADR 0008 (Modal canonical) ni ADR 0008 Extensión (Modal adaptive). Los confirm dialogs siguen usando `<Modal>` adaptive sin cambios.
@@ -193,6 +260,12 @@ Las filas de la card "Acciones" abren estos modals; no se ejecuta nada destructi
 - Smashing — Manage Dangerous Actions: <https://www.smashingmagazine.com/2024/09/how-manage-dangerous-actions-user-interfaces/>
 - Stripe Dashboard mobile: <https://docs.stripe.com/dashboard/mobile>
 - Linear — Delete and archive issues: <https://linear.app/docs/delete-archive-issues>
+- Material 3 — Dialogs Guidelines (affirmative right rule): <https://m3.material.io/components/dialogs/guidelines>
+- Material 3 — Bottom App Bar Guidelines: <https://m3.material.io/components/bottom-app-bar/guidelines>
+- UX Movement — Optimal Placement for Mobile CTAs: <https://uxmovement.com/mobile/optimal-placement-for-mobile-call-to-action-buttons/>
+- UX Planet — Primary & Secondary Action Buttons (Nick Babich): <https://uxplanet.org/primary-secondary-action-buttons-c16df9b36150>
+- SubUX — Button hierarchy (primary, secondary, tertiary): <https://subux.pro/guides/article/button-hierarchy-primary-secondary-tertiary>
+- Brainstorm Ergonomics — Dialog Button Order: <https://www.brainstormergonomics.com/blog/dialog-button-order-design/>
 - ADR 0008 — Modal enhancement (canonical pattern): `../decisions/0008-modal-enhancement.md`
 - ADR 0010 — UI primitive libraries policy: `../decisions/0010-ui-primitive-libraries-policy.md`
 - `ContentHeader.tsx` (shell real): `src/app/[locale]/(app)/_components/AppLayout/ContentHeader.tsx`

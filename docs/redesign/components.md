@@ -1,6 +1,6 @@
 ---
 title: Catálogo de componentes core
-last_updated: 2026-05-02
+last_updated: 2026-05-12
 status: final S4
 session: 04-components
 owner: Sergio Minei
@@ -74,6 +74,7 @@ owner: Sergio Minei
 
 - [`components/Toast.md`](./components/Toast.md) — variants `success | warning | error | info | achievement | neutral-undo`. Variant `neutral-undo` con CTA Deshacer + atajo `Z` + countdown 5s/8s (ADR 0001 D4).
 - [`components/Sheet.md`](./components/Sheet.md) — bottom sheet mobile primitiva. Drag handle. `--sheet-max-h` (92svh).
+- [`components/MobilePicker.md`](./components/MobilePicker.md) — versión mobile-only de `<Combobox>` searchable. Renderiza lista de opciones (con icono `--accent-cool` idle, `--accent` selected) dentro de un `<Sheet>`. Soporta `searchable`, `inlineAction` (ADR 0001 D12), `hint`. Tokens visuales canonizados S7-A.9. Caso canónico: pickers de Tienda/Moneda/Tipo de producto del wizard `order-create`.
 - [`components/Modal.md`](./components/Modal.md) — center modal desktop, degrada a Sheet mobile. Caso modal de discrepancia 12.a (3 CTAs sin destructive).
 - [`components/Drawer.md`](./components/Drawer.md) — primitiva panel lateral. Widths narrow/default/wide. Mobile fallback es responsabilidad del consumer.
 - [`components/Popover.md`](./components/Popover.md) — base de DateInput, autocomplete results, Tooltip (composible).
@@ -185,6 +186,7 @@ Cada componente invocado en `screens/*.md` debe existir en este catálogo o esta
 | StoreAvatar          | ✅ specced |
 | Modal (discrepancia) | ✅ specced |
 | Sheet (mobile)       | ✅ specced |
+| MobilePicker         | ✅ specced |
 | Toast                | ✅ specced |
 | ErrorMessage         | ✅ specced |
 | HelperText           | ✅ specced |

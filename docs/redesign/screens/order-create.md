@@ -282,6 +282,13 @@ La navegación **hacia atrás** (clic en paso completado o botón "← Atrás") 
 - Botón clear "×" visible cuando hay selección
 - Al seleccionar una tienda: si la tienda tiene `defaultCurrencyCode`, auto-rellena el campo Moneda **solo si está vacío** — no sobreescribe elección del usuario
 - Si no hay tiendas disponibles → gate §5.3
+- **CTA "Crear nueva tienda" inline con preservación de contexto (FRD-05 WO-04; alineado en S7-A.8):**
+  - **Ubicación:** desktop combobox lo expone al pie de la lista del dropdown abierto (impl: `OrderStoreSelect.tsx` ~líneas 254-270). Mobile picker `#s7-store-picker-mobile` lo expone al pie del sheet por encima del safe-area-inset (impl ya alineada).
+  - **Navegación:** `href="/{locale}/stores/new?returnTo=order-create"` — el `returnTo` es la constante canónica del codebase (`RETURN_TO_ORDER_CREATE = "order-create"`, ver `AUTH_RETURN_TO_PARAM`).
+  - **Back-link del CreateStoreForm:** debe detectar `returnTo=order-create` y volver a `/{locale}/pedidos/nuevo` (NO a `/{locale}/tiendas`).
+  - **Success redirect del CreateStoreForm:** al crear la tienda con éxito, redirige a `/{locale}/pedidos/nuevo?store={createdStoreId}` (impl: `StoreForm.tsx` líneas 515-521). El `?store` es el query param canónico de preselect en este wizard.
+  - **Lectura del param de preselect:** el wizard de pedido reanuda y `OrderForm.tsx` (~línea 128) lee `useSearchParams().get("store")` y autoselecciona esa tienda en el combobox. La moneda default se infiere del `defaultCurrencyCode` de la tienda como en el flujo normal.
+  - **Por qué importa:** evita que el usuario pierda el progreso del wizard si se da cuenta a mitad del Paso 1 que su tienda no está en el listado. Patrón canónico del FRD; ya existe en implementación.
 
 ### 6.3 Moneda — select
 
@@ -298,6 +305,11 @@ La navegación **hacia atrás** (clic en paso completado o botón "← Atrás") 
 - Si solo se selecciona fecha inicial, se guarda `expectedDeliveryFrom` con `expectedDeliveryTo = null`
 - Botón para limpiar el rango (elimina ambas fechas)
 - Validación: `to` no puede ser anterior a `from`; error inline `orders.validation.deliveryToBeforeFrom`
+- **Quick-range presets (S7-A.9, paridad desktop+mobile)**: arriba del calendar grid se muestra una fila de chips `.filter-pill` con presets canónicos:
+  - **Desktop popup** (`#s7-date-range-picker`): `7 días · 30 días · 60 días · Este mes · Próximo mes` (labels cortos, font-size 11px, separados del calendar por `border-bottom` 1px).
+  - **Mobile full-sheet** (`#s7-date-range-picker-mobile`): mismos 5 presets con labels completos `Próximos 7 días · Próximos 30 días · Próximos 60 días · Este mes · Próximo mes` (más espacio disponible).
+  - Cada preset, al tap, prellena el rango `from = today` y `to = today + N días` (o `start/end of month` para "Este mes" / "Próximo mes"). El estado `.is-active` se aplica al preset cuyo rango coincida exactamente con la selección actual del usuario.
+  - Las claves i18n correspondientes: `orders.create.dateRange.preset.next7Days`, `preset.next30Days`, `preset.next60Days`, `preset.thisMonth`, `preset.nextMonth`. Versión corta (desktop) vs larga (mobile) se resuelve en el componente.
 
 ### 6.5 Tabla de productos (spreadsheet)
 
