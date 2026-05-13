@@ -1,4 +1,5 @@
 import type { OrderStatus } from "../../../../../../generated/prisma/client";
+import { ORDER_LIST_SORT_VALUES, type OrderListPaymentState, type OrderListSort } from "@/lib/orders/orderListSort";
 
 const ALL_ORDER_STATUSES: OrderStatus[] = [
   "OPEN",
@@ -16,17 +17,27 @@ export const DEFAULT_ACTIVE_STATUSES: OrderStatus[] = [
   "PARTIALLY_DELIVERED",
 ];
 
-export const ORDER_LIST_PAGE_SIZE = 20;
+export const ORDER_LIST_PAGE_SIZE = 30;
+
+export const DEFAULT_ORDER_LIST_SORT: OrderListSort = "recent";
+
+const ALL_PAYMENT_STATES: OrderListPaymentState[] = ["paid", "partial", "unpaid", "overdue"];
 
 export type ParsedOrderListingParams = {
   nameQuery: string | undefined;
   productTypeKeys: string[];
   storeId: string | undefined;
   statuses: OrderStatus[];
+  paymentStates: OrderListPaymentState[];
+  fxPendingOnly: boolean;
+  sort: OrderListSort;
   /** True when no `?status=` param is present and the default active set was applied. */
   appliedDefaultStatuses: boolean;
   dateFrom: Date | undefined;
   dateTo: Date | undefined;
+  deliveryFrom: Date | undefined;
+  deliveryTo: Date | undefined;
+  deliveryOverdueOnly: boolean;
   page: number;
 };
 
@@ -35,9 +46,15 @@ export type OrderListActiveFilters = {
   productTypeKeys: string[];
   storeId: string | undefined;
   statuses: OrderStatus[];
+  paymentStates: OrderListPaymentState[];
+  fxPendingOnly: boolean;
+  sort: OrderListSort;
   appliedDefaultStatuses: boolean;
   dateFromIso: string | undefined;
   dateToIso: string | undefined;
+  deliveryFromIso: string | undefined;
+  deliveryToIso: string | undefined;
+  deliveryOverdueOnly: boolean;
 };
 
 export function parseOrderListingParams(raw: Record<string, string | string[] | undefined>): ParsedOrderListingParams {
@@ -45,14 +62,29 @@ export function parseOrderListingParams(raw: Record<string, string | string[] | 
   const productTypeKeys = arrayFromParam(raw.productType).filter(Boolean);
   const storeId = typeof raw.store === "string" && raw.store.trim() ? raw.store.trim() : undefined;
 
-  const hasStatusParam = raw.status !== undefined;
-  const parsedStatuses = arrayFromParam(raw.status).filter((value): value is OrderStatus =>
+  // Status is never auto-applied. The sidebar / burger entry-point hard-codes the four
+  // default-active statuses in its href so clicking it shows "Solo activas". Any other
+  // entry (typed URL, chip clear, back-nav) leaves the filter empty.
+  const statuses = arrayFromParam(raw.status).filter((value): value is OrderStatus =>
     (ALL_ORDER_STATUSES as string[]).includes(value),
   );
-  const statuses = hasStatusParam ? parsedStatuses : DEFAULT_ACTIVE_STATUSES;
+
+  const paymentStates = arrayFromParam(raw.payment).filter((value): value is OrderListPaymentState =>
+    (ALL_PAYMENT_STATES as string[]).includes(value),
+  );
+
+  const fxPendingOnly = parseBoolean(raw.fxPending);
+
+  const sortParam = typeof raw.sort === "string" ? raw.sort : undefined;
+  const sort: OrderListSort = (ORDER_LIST_SORT_VALUES as readonly string[]).includes(sortParam ?? "")
+    ? (sortParam as OrderListSort)
+    : DEFAULT_ORDER_LIST_SORT;
 
   const dateFrom = parseDateParam(raw.dateFrom);
   const dateTo = parseDateParam(raw.dateTo);
+  const deliveryFrom = parseDateParam(raw.deliveryFrom);
+  const deliveryTo = parseDateParam(raw.deliveryTo);
+  const deliveryOverdueOnly = parseBoolean(raw.delOverdue);
 
   const page = parsePositiveInteger(raw.page);
 
@@ -61,9 +93,17 @@ export function parseOrderListingParams(raw: Record<string, string | string[] | 
     productTypeKeys,
     storeId,
     statuses,
-    appliedDefaultStatuses: !hasStatusParam,
+    paymentStates,
+    fxPendingOnly,
+    sort,
+    // No longer represents an auto-default — kept on the shape only because callers still
+    // pass it through `buildOrderListFilterUrl`. Future cleanup can drop the flag entirely.
+    appliedDefaultStatuses: false,
     dateFrom,
     dateTo,
+    deliveryFrom,
+    deliveryTo,
+    deliveryOverdueOnly,
     page,
   };
 }
@@ -80,17 +120,24 @@ export function buildOrderListFilterUrl(
   filters: OrderListActiveFilters,
   overrides: Partial<OrderListActiveFilters & { page: number }> = {},
 ): string {
+  // Use `in` checks so callers can pass an explicit `undefined`/`false` to clear a filter
+  // (e.g. removing the search chip needs `nameQuery: undefined` to win over `filters.nameQuery`).
   const next = {
-    nameQuery: overrides.nameQuery !== undefined ? overrides.nameQuery : filters.nameQuery,
-    productTypeKeys: overrides.productTypeKeys ?? filters.productTypeKeys,
-    storeId: overrides.storeId !== undefined ? overrides.storeId : filters.storeId,
-    statuses: overrides.statuses ?? filters.statuses,
+    nameQuery: "nameQuery" in overrides ? overrides.nameQuery : filters.nameQuery,
+    productTypeKeys: "productTypeKeys" in overrides ? overrides.productTypeKeys! : filters.productTypeKeys,
+    storeId: "storeId" in overrides ? overrides.storeId : filters.storeId,
+    statuses: "statuses" in overrides ? overrides.statuses! : filters.statuses,
+    paymentStates: "paymentStates" in overrides ? overrides.paymentStates! : filters.paymentStates,
+    fxPendingOnly: "fxPendingOnly" in overrides ? Boolean(overrides.fxPendingOnly) : filters.fxPendingOnly,
+    sort: "sort" in overrides ? overrides.sort! : filters.sort,
     appliedDefaultStatuses:
-      overrides.appliedDefaultStatuses !== undefined
-        ? overrides.appliedDefaultStatuses
-        : filters.appliedDefaultStatuses,
-    dateFromIso: overrides.dateFromIso !== undefined ? overrides.dateFromIso : filters.dateFromIso,
-    dateToIso: overrides.dateToIso !== undefined ? overrides.dateToIso : filters.dateToIso,
+      "appliedDefaultStatuses" in overrides ? overrides.appliedDefaultStatuses! : filters.appliedDefaultStatuses,
+    dateFromIso: "dateFromIso" in overrides ? overrides.dateFromIso : filters.dateFromIso,
+    dateToIso: "dateToIso" in overrides ? overrides.dateToIso : filters.dateToIso,
+    deliveryFromIso: "deliveryFromIso" in overrides ? overrides.deliveryFromIso : filters.deliveryFromIso,
+    deliveryToIso: "deliveryToIso" in overrides ? overrides.deliveryToIso : filters.deliveryToIso,
+    deliveryOverdueOnly:
+      "deliveryOverdueOnly" in overrides ? Boolean(overrides.deliveryOverdueOnly) : filters.deliveryOverdueOnly,
   };
 
   const params = new URLSearchParams();
@@ -101,8 +148,14 @@ export function buildOrderListFilterUrl(
   if (next.statuses.length === 0 && overrides.statuses !== undefined) {
     params.set("status", "");
   }
+  next.paymentStates.forEach((value) => params.append("payment", value));
+  if (next.fxPendingOnly) params.set("fxPending", "true");
+  if (next.sort !== DEFAULT_ORDER_LIST_SORT) params.set("sort", next.sort);
   if (next.dateFromIso) params.set("dateFrom", next.dateFromIso);
   if (next.dateToIso) params.set("dateTo", next.dateToIso);
+  if (next.deliveryFromIso) params.set("deliveryFrom", next.deliveryFromIso);
+  if (next.deliveryToIso) params.set("deliveryTo", next.deliveryToIso);
+  if (next.deliveryOverdueOnly) params.set("delOverdue", "true");
 
   const targetPage = overrides.page ?? 1;
   if (targetPage > 1) params.set("page", String(targetPage));
@@ -118,6 +171,12 @@ export function hasOnlyDefaultActiveFilters(filters: OrderListActiveFilters): bo
     !filters.storeId &&
     !filters.dateFromIso &&
     !filters.dateToIso &&
+    !filters.deliveryFromIso &&
+    !filters.deliveryToIso &&
+    !filters.deliveryOverdueOnly &&
+    filters.paymentStates.length === 0 &&
+    !filters.fxPendingOnly &&
+    filters.sort === DEFAULT_ORDER_LIST_SORT &&
     isDefaultActiveStatusSet(filters.statuses)
   );
 }
@@ -143,4 +202,9 @@ function parseDateParam(value: string | string[] | undefined): Date | undefined 
   const parsed = new Date(trimmed);
   if (Number.isNaN(parsed.getTime())) return undefined;
   return parsed;
+}
+
+function parseBoolean(value: string | string[] | undefined): boolean {
+  const first = Array.isArray(value) ? value[0] : value;
+  return first === "true" || first === "1";
 }

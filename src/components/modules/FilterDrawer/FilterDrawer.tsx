@@ -4,6 +4,8 @@ import { Check, Search, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import Button from "@/components/core/Button/Button";
 import Chip from "@/components/core/Chip";
+import DatePickerInput from "@/components/core/DatePickerInput";
+import DateRangePickerInput from "@/components/core/DateRangePickerInput";
 import Eyebrow from "@/components/core/Eyebrow";
 import IconButton from "@/components/core/IconButton";
 import Input from "@/components/core/Input";
@@ -58,12 +60,54 @@ export type FilterTagAutocompleteSection = {
   placeholder?: string;
 };
 
+/**
+ * Date range with two custom DatePickerInput fields. Value shape:
+ *   `{ from?: string; to?: string; flag?: boolean }`
+ * The optional `flag` boolean backs the `trailingSwitch` (e.g. "Por recibir"); the consumer
+ * is responsible for honoring it (typically by clearing `from`/`to` when the flag is on).
+ */
+export type FilterDateRangeSection = {
+  id: string;
+  label: string;
+  type: "date-range";
+  fromLabel: string;
+  toLabel: string;
+  /** Quick-select pills rendered INSIDE the calendar popup. */
+  presets?: Array<{ value: string; label: string }>;
+  /**
+   * Resolves a preset value into a concrete `{ from, to }` ISO range. The drawer applies
+   * the resolved range to the section's value when the user clicks a preset pill.
+   */
+  resolvePreset?: (value: string) => { from?: string; to?: string };
+  /**
+   * Optional trailing switch rendered inside the same fieldset (below the inputs).
+   * When ON, the date-range fields auto-disable visually and the consumer should clear them.
+   */
+  trailingSwitch?: { label: string; helper?: string };
+  /** Helper text rendered under the legend, typically explaining the disabled state. */
+  helperText?: string;
+  /** Disables the date inputs (the trailing switch stays interactive). */
+  disabled?: boolean;
+  /**
+   * `"split"` (default) → two stacked single-date pickers (Desde + Hasta).
+   * `"single"` → one combined `<DateRangePickerInput>` with side-by-side calendars.
+   * Use `"single"` for forward-looking filters where range selection is the dominant pattern
+   * (e.g. expected delivery window); `"split"` for backward-looking filters where each
+   * endpoint is often filled independently (e.g. order date).
+   */
+  mode?: "split" | "single";
+  /** Used as the placeholder + clear aria-label of the single-range trigger. */
+  singleRangePlaceholder?: string;
+  singleRangeClearLabel?: string;
+};
+
 export type FilterSection =
   | FilterPillsSection
   | FilterPillsSearchSection
   | FilterAutocompleteSection
   | FilterSwitchesSection
-  | FilterTagAutocompleteSection;
+  | FilterTagAutocompleteSection
+  | FilterDateRangeSection;
 
 export type FilterDrawerValues = Record<string, unknown>;
 
@@ -347,10 +391,130 @@ export default function FilterDrawer({
     );
   };
 
+  const renderDateRangeSection = (section: FilterDateRangeSection) => {
+    const current = (values[section.id] ?? {}) as { from?: string; to?: string; flag?: boolean };
+    const handleChange = (key: "from" | "to", value: string | undefined) => {
+      const next = { ...current, [key]: value || undefined };
+      onChange({ ...values, [section.id]: next });
+    };
+    const handlePreset = (presetValue: string) => {
+      if (!section.resolvePreset) return;
+      const resolved = section.resolvePreset(presetValue);
+      // Preserve the trailing switch flag while replacing the range from the preset.
+      onChange({ ...values, [section.id]: { ...resolved, flag: current.flag } });
+    };
+    const handleSwitchToggle = (on: boolean) => {
+      // When toggle is ON, blank the range so the consumer doesn't need to defensively clear.
+      onChange({ ...values, [section.id]: on ? { flag: true } : { ...current, flag: false } });
+    };
+    const parseISO = (iso: string | undefined): Date | null => {
+      if (!iso) return null;
+      const [y, m, d] = iso.split("-").map(Number);
+      if (!y || !m || !d) return null;
+      return new Date(y, m - 1, d);
+    };
+    const toISO = (date: Date | null): string | undefined => {
+      if (!date) return undefined;
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    };
+    const inputsDisabled = section.disabled || current.flag === true;
+    const mode = section.mode ?? "split";
+    const handleRangeChange = (nextFrom: Date | null, nextTo: Date | null) => {
+      onChange({
+        ...values,
+        [section.id]: { ...current, from: toISO(nextFrom), to: toISO(nextTo) },
+      });
+    };
+    return (
+      <fieldset
+        key={section.id}
+        className="[margin:0] flex flex-col [padding:0] [border:none]"
+        aria-disabled={section.disabled || undefined}
+      >
+        <Eyebrow as="legend" className="mb-2">
+          {section.label}
+        </Eyebrow>
+        {section.helperText && (
+          <p className="mb-2 [font-size:var(--text-caption)] [color:var(--text-muted)]">{section.helperText}</p>
+        )}
+        <div
+          className={cn(
+            mode === "split" ? "grid grid-cols-2 gap-2" : "block",
+            inputsDisabled && "pointer-events-none opacity-50",
+          )}
+          aria-disabled={inputsDisabled || undefined}
+        >
+          {mode === "single" ? (
+            <DateRangePickerInput
+              id={`${generatedId}-daterange-${section.id}`}
+              from={parseISO(current.from)}
+              to={parseISO(current.to)}
+              onChange={handleRangeChange}
+              placeholder={section.singleRangePlaceholder ?? `${section.fromLabel} – ${section.toLabel}`}
+              clearLabel={section.singleRangeClearLabel ?? "Clear"}
+              disabled={inputsDisabled}
+              presets={section.presets}
+              onPresetSelect={handlePreset}
+              size="sm"
+            />
+          ) : (
+            <>
+              <label className="flex flex-col gap-1">
+                <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{section.fromLabel}</span>
+                <DatePickerInput
+                  id={`${generatedId}-date-${section.id}-from`}
+                  value={parseISO(current.from)}
+                  onChange={(date) => handleChange("from", toISO(date))}
+                  placeholder={section.fromLabel}
+                  disabled={inputsDisabled}
+                  presets={section.presets}
+                  onPresetSelect={handlePreset}
+                  popupAlign="start"
+                  size="sm"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{section.toLabel}</span>
+                <DatePickerInput
+                  id={`${generatedId}-date-${section.id}-to`}
+                  value={parseISO(current.to)}
+                  onChange={(date) => handleChange("to", toISO(date))}
+                  placeholder={section.toLabel}
+                  disabled={inputsDisabled}
+                  presets={section.presets}
+                  onPresetSelect={handlePreset}
+                  popupAlign="end"
+                  size="sm"
+                />
+              </label>
+            </>
+          )}
+        </div>
+        {section.trailingSwitch && (
+          <label className="mt-3 flex items-start justify-between gap-3 py-1 [color:var(--text-primary)]">
+            <span className="flex flex-col">
+              <span className="[font-size:var(--text-body)]">{section.trailingSwitch.label}</span>
+              {section.trailingSwitch.helper && (
+                <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
+                  {section.trailingSwitch.helper}
+                </span>
+              )}
+            </span>
+            <Switch checked={current.flag === true} onChange={handleSwitchToggle} />
+          </label>
+        )}
+      </fieldset>
+    );
+  };
+
   const renderSection = (section: FilterSection) => {
     if (section.type === "autocomplete") return renderAutocompleteSection(section);
     if (section.type === "switches") return renderSwitchesSection(section);
     if (section.type === "tag-autocomplete") return renderTagAutocompleteSection(section);
+    if (section.type === "date-range") return renderDateRangeSection(section);
     return renderPillsSection(section);
   };
 

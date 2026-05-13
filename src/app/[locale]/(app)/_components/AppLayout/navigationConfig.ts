@@ -20,7 +20,11 @@ const NAV_ROUTE_ITEMS: NavItem[] = [
   {
     id: "orders",
     pathSegment: "orders",
-    href: (locale) => `/${locale}${ROUTES.orders}`,
+    // Sidebar / burger menu entry-point preselects the "Solo activas" filter (FRD BP-02).
+    // Other entry-points (chip clears, browser address, back-nav) land on a bare URL and
+    // do NOT auto-apply the default — see `parseOrderListingParams`.
+    href: (locale) =>
+      `/${locale}${ROUTES.orders}?status=OPEN&status=PARTIALLY_IN_TRANSIT&status=IN_TRANSIT&status=PARTIALLY_DELIVERED`,
     labelKey: "nav.purchases",
   },
   {

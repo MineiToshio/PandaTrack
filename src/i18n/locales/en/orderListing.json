@@ -7,39 +7,103 @@
     "eyebrow": "Collector workspace",
     "title": "Orders",
     "description": "Review your orders, track payments, and follow deliveries from a single place.",
-    "newOrder": "New order"
+    "newOrder": "New order",
+    "newOrderShort": "New"
+  },
+  "heading": {
+    "meta": "{active} {active, plural, one {active} other {active}} · {closed} {closed, plural, one {closed} other {closed}}",
+    "zeroResults": "0 results"
   },
   "summary": {
     "showing": "{total, plural, one {# order} other {# orders}} total · showing {start}-{end}",
     "summaryEmpty": "0 orders"
   },
+  "search": {
+    "label": "Search orders",
+    "placeholder": "Code or product (ORD-20260428-01, Evangelion OST…)"
+  },
   "filters": {
-    "openButton": "Filters",
+    "openButton": "Filter",
+    "openButtonShort": "Filters",
+    "iconLabel": "Open filters",
     "dialogTitle": "Filter orders",
     "closeDialog": "Close filters",
     "apply": "Apply filters",
-    "reset": "Reset",
+    "applyWithCount": "Apply ({count})",
+    "reset": "Clear",
+    "clearAll": "Clear filters",
     "nameLabel": "Search by product",
     "namePlaceholder": "Product name",
     "storeLabel": "Store",
+    "storeSearchPlaceholder": "Search store…",
     "storePlaceholder": "All stores",
     "productTypeLabel": "Product type",
-    "statusLabel": "Status",
+    "statusLabel": "Order status",
+    "paymentLabel": "Payment status",
+    "dateLabel": "Order date",
     "dateFromLabel": "From",
-    "dateToLabel": "To"
+    "dateToLabel": "To",
+    "deliveryDateLabel": "Expected delivery",
+    "deliveryRangePlaceholder": "Pick a date range",
+    "deliveryRangeClearLabel": "Clear delivery range",
+    "deliveryOverdueLabel": "Due to arrive",
+    "deliveryOverdueHelper": "Orders inside or past their expected delivery window.",
+    "deliveryRangeDisabledHelper": "Disabled while the \"Due to arrive\" filter is active.",
+    "fxLabel": "Exchange rate",
+    "fxPendingLabel": "Only with pending update",
+    "fxPendingHelper": "Orders that need their exchange rate refreshed.",
+    "sortSectionLabel": "Sort by"
+  },
+  "datePresets": {
+    "ordersLast7": "Last 7 days",
+    "ordersLast30": "Last 30 days",
+    "ordersLast90": "Last 90 days",
+    "ordersThisYear": "This year",
+    "deliveryNext7": "Next 7 days",
+    "deliveryNext14": "Next 14 days",
+    "deliveryNext30": "Next 30 days",
+    "deliveryThisMonth": "This month",
+    "deliveryNextMonth": "Next month",
+    "deliveryOverdue": "Overdue"
+  },
+  "sort": {
+    "label": "Sort by",
+    "newest": "Newest",
+    "oldest": "Oldest",
+    "storeAZ": "Store A–Z",
+    "paymentAsc": "% Paid: lowest",
+    "totalDesc": "Total: highest"
+  },
+  "payment": {
+    "paid": "Paid",
+    "partial": "Partial",
+    "unpaid": "Unpaid",
+    "overdue": "Overdue"
+  },
+  "statusFilter": {
+    "active": "Active",
+    "open": "Open",
+    "inTransit": "In transit",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
   },
   "chips": {
     "soloActivas": "Active only",
     "from": "From {date}",
     "to": "To {date}",
     "store": "Store: {name}",
+    "fxPending": "FX update pending",
+    "deliveryFrom": "Delivery from {date}",
+    "deliveryTo": "Delivery to {date}",
+    "deliveryRange": "Delivery: {from} – {to}",
+    "deliveryOverdue": "Due to arrive",
     "remove": "Remove filter {label}"
   },
   "status": {
     "OPEN": "Open",
     "IN_TRANSIT": "In transit",
-    "PARTIALLY_IN_TRANSIT": "Partially in transit",
-    "PARTIALLY_DELIVERED": "Partially delivered",
+    "PARTIALLY_IN_TRANSIT": "Partial in transit",
+    "PARTIALLY_DELIVERED": "Partial delivery",
     "COMPLETED": "Completed",
     "CANCELLED": "Cancelled"
   },
@@ -47,37 +111,74 @@
     "expand": "Show items",
     "collapse": "Hide items",
     "items": "{count, plural, one {# item} other {# items}}",
+    "itemsSuffix": "{count, plural, one {item} other {items}}",
+    "moreItems": "+ {count} more…",
+    "openDetail": "Open detail",
     "paymentPercentage": "{pct}% paid",
     "paymentBarLabel": "Payment progress",
     "delivery": "{from} – {to}",
     "deliveryFrom": "From {from}",
     "deliveryTo": "Until {to}",
     "overdue": "Overdue",
+    "overdueDays": "Overdue {days}d",
     "unpaid": "Unpaid",
     "itemsSectionTitle": "Order items",
     "itemQuantity": "× {quantity}",
     "itemDelivery": {
-      "open": "Pending",
+      "open": "Pending at store",
+      "arrived_at_store": "Ready at store",
       "in_transit": "In transit",
       "delivered": "Delivered"
     }
   },
+  "table": {
+    "headerOrder": "Order / Store",
+    "headerProducts": "Products",
+    "headerStatus": "Status",
+    "headerTotal": "Total",
+    "headerProgress": "% Paid"
+  },
   "empty": {
     "noOrders": {
-      "title": "You have no orders yet",
-      "description": "Record your first order and keep track of your payments and deliveries in one place.",
-      "cta": "New order"
+      "title": "No orders yet",
+      "description": "Log your first order and start tracking your purchases from here.",
+      "cta": "Log first order"
     },
     "noResults": {
-      "title": "No orders match those filters",
-      "description": "Try removing a filter or resetting back to the active view.",
-      "cta": "Reset"
+      "title": "No results",
+      "description": "No orders match the current filters. Try adjusting or clearing them.",
+      "cta": "Clear filters"
+    }
+  },
+  "fx": {
+    "banner": "You have {count, plural, one {# order} other {# orders}} with an outdated exchange rate. Update them so your reports reflect your current base currency.",
+    "cta": "Update exchange rates",
+    "ctaShort": "Update",
+    "modal": {
+      "title": "Update exchange rates",
+      "subtitle": "{count, plural, one {# order} other {# orders}} with pending FX",
+      "instruction": "Enter the current exchange rate for each currency pair. Empty fields are left for later.",
+      "groupCount": "{count, plural, one {# order} other {# orders}}",
+      "statusPending": "Pending",
+      "statusReady": "Ready",
+      "todayButton": "Today",
+      "todayLoading": "Fetching…",
+      "todayError": "Couldn't fetch the rate.",
+      "rateLabel": "1 {from} = ? {to}",
+      "ratePlaceholder": "0.00",
+      "affectedToggle": "View affected orders ({count})",
+      "applyCta": "Apply to {count, plural, one {# order} other {# orders}}",
+      "cancel": "Cancel",
+      "successToast": "Exchange rates updated",
+      "errorToast": "Couldn't update exchange rates. Try again."
     }
   },
   "pagination": {
     "navigationAriaLabel": "Orders pagination",
     "goToPageAriaLabel": "Go to page {page}",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "loadMore": "Load more",
+    "showing": "Showing {start}–{end} of {total} {total, plural, one {order} other {orders}}"
   }
 }

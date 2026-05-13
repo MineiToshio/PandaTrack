@@ -89,9 +89,15 @@ describe("hasOnlyDefaultActiveFilters", () => {
         productTypeKeys: [],
         storeId: undefined,
         statuses: DEFAULT_ACTIVE_STATUSES,
+        paymentStates: [],
+        fxPendingOnly: false,
+        sort: "recent",
         appliedDefaultStatuses: false,
         dateFromIso: undefined,
         dateToIso: undefined,
+        deliveryFromIso: undefined,
+        deliveryToIso: undefined,
+        deliveryOverdueOnly: false,
       }),
     ).toBe(true);
   });
@@ -103,9 +109,15 @@ describe("hasOnlyDefaultActiveFilters", () => {
         productTypeKeys: [],
         storeId: undefined,
         statuses: DEFAULT_ACTIVE_STATUSES,
+        paymentStates: [],
+        fxPendingOnly: false,
+        sort: "recent",
         appliedDefaultStatuses: false,
         dateFromIso: undefined,
         dateToIso: undefined,
+        deliveryFromIso: undefined,
+        deliveryToIso: undefined,
+        deliveryOverdueOnly: false,
       }),
     ).toBe(false);
   });

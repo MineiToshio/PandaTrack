@@ -1,5 +1,6 @@
 export { default } from "./FilterDrawer";
 export type {
+  FilterDateRangeSection,
   FilterDrawerProps,
   FilterDrawerValues,
   FilterPillsSection,

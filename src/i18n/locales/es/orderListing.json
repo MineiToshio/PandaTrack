@@ -7,77 +7,178 @@
     "eyebrow": "Tu espacio de trabajo",
     "title": "Pedidos",
     "description": "Revisa tus pedidos, controla los pagos y haz seguimiento de las entregas en un solo lugar.",
-    "newOrder": "Nuevo pedido"
+    "newOrder": "Nuevo pedido",
+    "newOrderShort": "Nuevo"
+  },
+  "heading": {
+    "meta": "{active} {active, plural, one {activo} other {activos}} · {closed} {closed, plural, one {cerrado} other {cerrados}}",
+    "zeroResults": "0 resultados"
   },
   "summary": {
     "showing": "{total, plural, one {# pedido} other {# pedidos}} en total · mostrando {start}-{end}",
     "summaryEmpty": "0 pedidos"
   },
+  "search": {
+    "label": "Buscar pedidos",
+    "placeholder": "Código o producto (ORD-20260428-01, Evangelion OST…)"
+  },
   "filters": {
-    "openButton": "Filtros",
+    "openButton": "Filtrar",
+    "openButtonShort": "Filtros",
+    "iconLabel": "Abrir filtros",
     "dialogTitle": "Filtrar pedidos",
     "closeDialog": "Cerrar filtros",
     "apply": "Aplicar filtros",
-    "reset": "Restablecer",
+    "applyWithCount": "Aplicar ({count})",
+    "reset": "Limpiar",
+    "clearAll": "Limpiar filtros",
     "nameLabel": "Buscar por producto",
     "namePlaceholder": "Nombre del producto",
     "storeLabel": "Tienda",
+    "storeSearchPlaceholder": "Buscar tienda…",
     "storePlaceholder": "Todas las tiendas",
     "productTypeLabel": "Tipo de producto",
-    "statusLabel": "Estado",
+    "statusLabel": "Estado del pedido",
+    "paymentLabel": "Estado de pago",
+    "dateLabel": "Fecha del pedido",
     "dateFromLabel": "Desde",
-    "dateToLabel": "Hasta"
+    "dateToLabel": "Hasta",
+    "deliveryDateLabel": "Fecha de entrega estimada",
+    "deliveryRangePlaceholder": "Elegir rango de fechas",
+    "deliveryRangeClearLabel": "Limpiar rango de entrega",
+    "deliveryOverdueLabel": "Por recibir",
+    "deliveryOverdueHelper": "Pedidos que ya están dentro del rango de entrega o que deberían haber llegado.",
+    "deliveryRangeDisabledHelper": "Desactivado mientras el filtro \"Por recibir\" esté activo.",
+    "fxLabel": "Tipo de cambio",
+    "fxPendingLabel": "Solo con actualización pendiente",
+    "fxPendingHelper": "Pedidos que necesitan refrescar el tipo de cambio.",
+    "sortSectionLabel": "Ordenar por"
+  },
+  "datePresets": {
+    "ordersLast7": "Últimos 7 días",
+    "ordersLast30": "Últimos 30 días",
+    "ordersLast90": "Últimos 90 días",
+    "ordersThisYear": "Este año",
+    "deliveryNext7": "Próximos 7 días",
+    "deliveryNext14": "Próximos 14 días",
+    "deliveryNext30": "Próximos 30 días",
+    "deliveryThisMonth": "Este mes",
+    "deliveryNextMonth": "Próximo mes",
+    "deliveryOverdue": "Atrasados"
+  },
+  "sort": {
+    "label": "Ordenar por",
+    "newest": "Más recientes",
+    "oldest": "Más antiguas",
+    "storeAZ": "Tienda A–Z",
+    "paymentAsc": "% Pago: menor",
+    "totalDesc": "Total: mayor"
+  },
+  "payment": {
+    "paid": "Pagado",
+    "partial": "Pago parcial",
+    "unpaid": "Impago",
+    "overdue": "Atrasado"
+  },
+  "statusFilter": {
+    "active": "Activas",
+    "open": "Abierto",
+    "inTransit": "En camino",
+    "completed": "Completo",
+    "cancelled": "Cancelado"
   },
   "chips": {
     "soloActivas": "Solo activas",
     "from": "Desde {date}",
     "to": "Hasta {date}",
     "store": "Tienda: {name}",
+    "fxPending": "Tipo de cambio pendiente",
+    "deliveryFrom": "Entrega desde {date}",
+    "deliveryTo": "Entrega hasta {date}",
+    "deliveryRange": "Entrega: {from} – {to}",
+    "deliveryOverdue": "Por recibir",
     "remove": "Quitar filtro {label}"
   },
   "status": {
-    "OPEN": "Abierta",
-    "IN_TRANSIT": "En tránsito",
-    "PARTIALLY_IN_TRANSIT": "Parcialmente en tránsito",
-    "PARTIALLY_DELIVERED": "Parcialmente entregada",
-    "COMPLETED": "Completada",
-    "CANCELLED": "Cancelada"
+    "OPEN": "Abierto",
+    "IN_TRANSIT": "En camino",
+    "PARTIALLY_IN_TRANSIT": "En camino parcial",
+    "PARTIALLY_DELIVERED": "Entrega parcial",
+    "COMPLETED": "Completo",
+    "CANCELLED": "Cancelado"
   },
   "card": {
-    "expand": "Mostrar artículos",
-    "collapse": "Ocultar artículos",
-    "items": "{count, plural, one {# artículo} other {# artículos}}",
+    "expand": "Ver productos",
+    "collapse": "Ocultar productos",
+    "items": "{count, plural, one {# producto} other {# productos}}",
+    "itemsSuffix": "{count, plural, one {producto} other {productos}}",
+    "moreItems": "+ {count} más…",
+    "openDetail": "Abrir detalle",
     "paymentPercentage": "{pct}% pagado",
     "paymentBarLabel": "Progreso de pago",
     "delivery": "{from} – {to}",
     "deliveryFrom": "Desde {from}",
     "deliveryTo": "Hasta {to}",
-    "overdue": "Atrasada",
+    "overdue": "Atrasado",
+    "overdueDays": "Atrasado {days}d",
     "unpaid": "Impago",
-    "itemsSectionTitle": "Artículos del pedido",
+    "itemsSectionTitle": "Productos del pedido",
     "itemQuantity": "× {quantity}",
     "itemDelivery": {
-      "open": "Pendiente",
-      "in_transit": "En tránsito",
+      "open": "Pendiente en tienda",
+      "arrived_at_store": "Listo en tienda",
+      "in_transit": "En camino",
       "delivered": "Entregado"
     }
   },
+  "table": {
+    "headerOrder": "Pedido / Tienda",
+    "headerProducts": "Productos",
+    "headerStatus": "Estado",
+    "headerTotal": "Total",
+    "headerProgress": "% Pago"
+  },
   "empty": {
     "noOrders": {
-      "title": "Todavía no tienes pedidos",
-      "description": "Registra tu primer pedido y lleva el control de tus pagos y entregas desde un solo lugar.",
-      "cta": "Nuevo pedido"
+      "title": "Aún no hay pedidos",
+      "description": "Anota tu primer pedido y empieza a seguir tus compras desde aquí.",
+      "cta": "Anotar primer pedido"
     },
     "noResults": {
-      "title": "No encontramos pedidos con esos filtros",
-      "description": "Prueba quitar algún filtro o restablecer la vista activa.",
-      "cta": "Restablecer"
+      "title": "Sin resultados",
+      "description": "Ningún pedido coincide con los filtros actuales. Prueba ajustando o limpiando los filtros.",
+      "cta": "Limpiar filtros"
+    }
+  },
+  "fx": {
+    "banner": "Tienes {count, plural, one {# pedido} other {# pedidos}} con el tipo de cambio desactualizado. Actualízalos para que tus reportes reflejen tu moneda base actual.",
+    "cta": "Actualizar tipos de cambio",
+    "ctaShort": "Actualizar",
+    "modal": {
+      "title": "Actualizar tipos de cambio",
+      "subtitle": "{count, plural, one {# pedido} other {# pedidos}} con cambio pendiente",
+      "instruction": "Ingresa el tipo de cambio actual por cada par de monedas. Los que dejes vacíos quedarán para más tarde.",
+      "groupCount": "{count, plural, one {# pedido} other {# pedidos}}",
+      "statusPending": "Sin actualizar",
+      "statusReady": "Listo",
+      "todayButton": "Hoy",
+      "todayLoading": "Buscando…",
+      "todayError": "No se pudo obtener el cambio.",
+      "rateLabel": "1 {from} = ? {to}",
+      "ratePlaceholder": "0.00",
+      "affectedToggle": "Ver pedidos afectados ({count})",
+      "applyCta": "Aplicar a {count, plural, one {# pedido} other {# pedidos}}",
+      "cancel": "Cancelar",
+      "successToast": "Tipos de cambio actualizados",
+      "errorToast": "No se pudieron actualizar los tipos de cambio. Intenta de nuevo."
     }
   },
   "pagination": {
     "navigationAriaLabel": "Paginación de pedidos",
     "goToPageAriaLabel": "Ir a la página {page}",
     "previous": "Anterior",
-    "next": "Siguiente"
+    "next": "Siguiente",
+    "loadMore": "Cargar más",
+    "showing": "Mostrando {start}–{end} de {total} {total, plural, one {pedido} other {pedidos}}"
   }
 }

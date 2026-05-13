@@ -1,43 +1,38 @@
-import Link from "next/link";
-import { ShoppingBag, SearchX } from "lucide-react";
+import { PackageOpen, SearchX } from "lucide-react";
 import { getTranslations } from "next-intl/server";
-import { buttonVariants } from "@/components/core/Button/buttonVariants";
-import Heading from "@/components/core/Heading";
-import Typography from "@/components/core/Typography";
+import Button from "@/components/core/Button/Button";
 import { ROUTES } from "@/lib/constants";
-import { cn } from "@/lib/styles";
 
 type OrderListEmptyStateProps = {
   locale: string;
   variant: "noOrders" | "noResults";
+  resetHref?: string;
 };
 
-export default async function OrderListEmptyState({ locale, variant }: OrderListEmptyStateProps) {
+export default async function OrderListEmptyState({ locale, variant, resetHref }: OrderListEmptyStateProps) {
   const t = await getTranslations({ locale, namespace: "orderListing" });
   const isNoOrders = variant === "noOrders";
-  const Icon = isNoOrders ? ShoppingBag : SearchX;
+  const Icon = isNoOrders ? PackageOpen : SearchX;
   const titleKey = isNoOrders ? "empty.noOrders.title" : "empty.noResults.title";
   const descKey = isNoOrders ? "empty.noOrders.description" : "empty.noResults.description";
   const ctaKey = isNoOrders ? "empty.noOrders.cta" : "empty.noResults.cta";
-  const href = isNoOrders ? `/${locale}${ROUTES.ordersNew}` : `/${locale}${ROUTES.orders}`;
-  const ctaVariant = isNoOrders ? "primary" : "secondary";
+  const ctaHref = isNoOrders ? `/${locale}${ROUTES.ordersNew}` : (resetHref ?? `/${locale}${ROUTES.orders}`);
 
   return (
-    <div className="border-border/70 bg-background/70 rounded-2xl border border-dashed p-8 text-center">
-      <div className="bg-primary/10 text-primary mx-auto mb-4 inline-flex size-12 items-center justify-center rounded-full">
-        <Icon className="size-6" aria-hidden />
-      </div>
-      <Heading as="h2" size="xs" className="text-text-title">
+    <div className="flex flex-col items-center gap-4 rounded-[var(--radius-2xl)] px-6 py-10 text-center [background:var(--surface-elevated)] [border:1px_dashed_var(--border)]">
+      <span
+        aria-hidden
+        className="inline-flex h-16 w-16 items-center justify-center rounded-full [color:var(--text-secondary)] [background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]"
+      >
+        <Icon width={28} height={28} />
+      </span>
+      <h2 className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
         {t(titleKey)}
-      </Heading>
-      <Typography size="sm" className="text-text-muted mx-auto mt-2 max-w-md">
-        {t(descKey)}
-      </Typography>
-      <div className="mt-5">
-        <Link href={href} className={cn(buttonVariants({ variant: ctaVariant }), "min-h-11 rounded-xl px-5")}>
-          {t(ctaKey)}
-        </Link>
-      </div>
+      </h2>
+      <p className="max-w-[40ch] [font-size:var(--text-body)] [color:var(--text-secondary)]">{t(descKey)}</p>
+      <Button as="a" href={ctaHref} variant={isNoOrders ? "primary" : "ghost"} size="md">
+        {t(ctaKey)}
+      </Button>
     </div>
   );
 }
