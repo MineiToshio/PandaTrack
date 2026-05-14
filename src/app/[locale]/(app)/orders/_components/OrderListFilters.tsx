@@ -430,8 +430,11 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
           onClick={() => setDrawerOpen(true)}
           variant="icon-only"
           aria-label={t("filters.iconLabel")}
+          // Match the bordered look of the Search input + Nuevo button so all three controls
+          // share the same visual height + container affordance in the mobile action row.
+          className="[background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklch,var(--text-primary)_4%,var(--surface-elevated))]"
         />
-        <Button as="a" href={newOrderHref} variant="primary" size="sm" leadingIcon={<Plus size={14} aria-hidden />}>
+        <Button as="a" href={newOrderHref} variant="primary" size="md" leadingIcon={<Plus size={16} aria-hidden />}>
           {t("hero.newOrderShort")}
         </Button>
       </div>
