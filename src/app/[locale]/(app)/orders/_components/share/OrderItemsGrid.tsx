@@ -11,15 +11,15 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
-import { useCallback, useRef } from "react";
+import { ChevronDown, GripVertical, Search, X } from "lucide-react";
+import { createElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import Input from "@/components/core/Input";
-import Select from "@/components/core/Select";
-import Button from "@/components/core/Button/Button";
+import Portal from "@/components/core/Portal";
 import { cn } from "@/lib/styles";
 import { sanitizeDecimalInput } from "@/lib/decimalInput";
+import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { inheritProductTypeFromPrevious } from "@/lib/orders/orderItemUtils";
+import { foldSearchText } from "@/lib/strings/foldSearchText";
 
 export type ItemRow = {
   rowId: string;
@@ -59,6 +59,221 @@ type CellKeyDownContext = {
   rowId: string;
 };
 
+// Borderless transparent cell input — matches the demo spreadsheet styling
+// (font-size 13px, no border, subtle focus tint, radius 5px).
+const CELL_INPUT_BASE =
+  "w-full border-0 bg-transparent text-[13px] [color:var(--text-primary)] rounded-[5px] " +
+  "placeholder:[color:var(--text-muted)] focus:outline-none " +
+  "focus:[background:color-mix(in_oklch,var(--accent)_8%,transparent)]";
+
+type ItemTypePickerProps = {
+  rowId: string;
+  value: string;
+  productTypeKeys: string[];
+  tProductTypes: (key: string) => string;
+  placeholder: string;
+  ariaLabelFor: (label: string) => string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onChange: (value: string) => void;
+  onKeyDown: (e: React.KeyboardEvent) => void;
+};
+
+/**
+ * Compact, filterable single-select for the spreadsheet's "Tipo" column.
+ *
+ * Why not `<SearchSelect>`: that primitive renders a 46px input trigger which
+ * is too tall for an inline table cell (the demo HTML uses a 12px font, ~26px
+ * tall button — borderless). The dropdown CONTENT here follows the
+ * `<SearchSelect>` mental model (search input + filtered listbox + keyboard
+ * nav), so the user experience is consistent with the canonical picker even
+ * though the trigger is compact.
+ *
+ * Portal + fixed positioning so the listbox escapes the table's `overflow-x`.
+ * Outer-document scroll repositions; inner listbox scroll is preserved.
+ */
+function ItemTypePicker({
+  rowId,
+  value,
+  productTypeKeys,
+  tProductTypes,
+  placeholder,
+  ariaLabelFor,
+  open,
+  onOpenChange,
+  onChange,
+  onKeyDown,
+}: ItemTypePickerProps) {
+  const tPicker = useTranslations("orders.picker");
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [coords, setCoords] = useState<{ top: number; left: number; minWidth: number } | null>(null);
+  const [query, setQuery] = useState("");
+
+  // Reset query each time the picker opens; focus the search input.
+  useEffect(() => {
+    if (!open) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setQuery("");
+    requestAnimationFrame(() => searchRef.current?.focus());
+  }, [open]);
+
+  // Position via Portal + fixed coords. Recompute on outer-document scroll
+  // (so the popover follows the trigger when the page scrolls) but ignore
+  // scroll events originating inside the listbox itself (so the user can
+  // wheel-scroll or grab the scrollbar to navigate long option lists).
+  useLayoutEffect(() => {
+    if (!open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCoords(null);
+      return;
+    }
+    const compute = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCoords({ top: rect.bottom + 4, left: rect.left, minWidth: rect.width });
+    };
+    compute();
+    const onScroll = (e: Event) => {
+      // Ignore scroll inside our own popover — the user is navigating options.
+      if (popoverRef.current?.contains(e.target as Node)) return;
+      // Outer-document scroll: keep the popover anchored to the trigger.
+      compute();
+    };
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", compute);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", compute);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (triggerRef.current?.contains(t)) return;
+      if (popoverRef.current?.contains(t)) return;
+      onOpenChange(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open, onOpenChange]);
+
+  const filteredKeys = useMemo(() => {
+    const folded = foldSearchText(query);
+    if (!folded) return productTypeKeys;
+    return productTypeKeys.filter((k) => foldSearchText(tProductTypes(k)).includes(folded));
+  }, [productTypeKeys, query, tProductTypes]);
+
+  const selectedLabel = value ? tProductTypes(value) : null;
+  const iconNode = value
+    ? createElement(getStoreProductTypeIcon(value), { size: 12, "aria-hidden": true, className: "shrink-0" })
+    : null;
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        id={cellInputId("type", rowId)}
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={ariaLabelFor(selectedLabel ?? placeholder)}
+        onClick={() => onOpenChange(!open)}
+        onKeyDown={onKeyDown}
+        className={cn(
+          "flex w-full items-center gap-1 rounded-[5px] px-1 py-1.5 text-left text-[12px] whitespace-nowrap",
+          "focus:outline-none focus:[background:color-mix(in_oklch,var(--accent)_8%,transparent)]",
+          selectedLabel ? "[color:var(--text-secondary)]" : "[color:var(--text-muted)]",
+        )}
+      >
+        {iconNode}
+        <span className="min-w-0 flex-1 truncate">{selectedLabel ?? placeholder}</span>
+        <ChevronDown size={10} className="shrink-0 opacity-50" aria-hidden />
+      </button>
+      {open && coords && (
+        <Portal>
+          <div
+            ref={popoverRef}
+            role="dialog"
+            aria-label={tPicker("productTypeTitle")}
+            style={{
+              position: "fixed",
+              top: coords.top,
+              left: coords.left,
+              minWidth: Math.max(coords.minWidth, 220),
+            }}
+            className={cn(
+              "z-50 flex max-h-80 flex-col overflow-hidden rounded-[10px]",
+              "[background:var(--background)] [border:1px_solid_var(--border-strong)]",
+              "[box-shadow:var(--shadow-3,0_18px_48px_-12px_rgba(0,0,0,0.35))]",
+            )}
+          >
+            <div className="relative flex items-center px-2 py-2 [border-bottom:1px_solid_var(--border)]">
+              <Search size={13} aria-hidden className="pointer-events-none absolute left-4 [color:var(--text-muted)]" />
+              <input
+                ref={searchRef}
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    e.stopPropagation();
+                    onOpenChange(false);
+                  }
+                }}
+                placeholder={tPicker("productTypeSearch")}
+                aria-label={tPicker("productTypeSearch")}
+                className={cn(
+                  "w-full rounded-[6px] py-1.5 pr-2 pl-7 text-[13px]",
+                  "[color:var(--text-primary)] [background:var(--surface)] [border:1px_solid_var(--border)]",
+                  "placeholder:[color:var(--text-muted)]",
+                  "focus:[border-color:color-mix(in_oklch,var(--accent)_45%,var(--border))] focus:outline-none",
+                  "focus:[box-shadow:0_0_0_3px_color-mix(in_oklch,var(--accent)_15%,transparent)]",
+                )}
+              />
+            </div>
+            <ul role="listbox" aria-label={tPicker("productTypeTitle")} className="flex-1 overflow-y-auto p-1">
+              {filteredKeys.length === 0 ? (
+                <li className="px-2 py-2 text-[12px] [color:var(--text-muted)]">{tPicker("productTypeEmpty")}</li>
+              ) : (
+                filteredKeys.map((key) => {
+                  const Icon = getStoreProductTypeIcon(key);
+                  return (
+                    <li key={key}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={value === key}
+                        onClick={() => {
+                          onChange(key);
+                          onOpenChange(false);
+                        }}
+                        className={cn(
+                          "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12px] [color:var(--text-primary)]",
+                          value === key
+                            ? "[background:color-mix(in_oklch,var(--accent)_10%,transparent)]"
+                            : "hover:[background:color-mix(in_oklch,var(--text-primary)_4%,transparent)]",
+                        )}
+                      >
+                        <Icon size={13} aria-hidden className="shrink-0 [color:var(--accent-cool)]" />
+                        <span className="min-w-0 flex-1 truncate">{tProductTypes(key)}</span>
+                      </button>
+                    </li>
+                  );
+                })
+              )}
+            </ul>
+          </div>
+        </Portal>
+      )}
+    </>
+  );
+}
+
 type OrderItemRowProps = {
   row: ItemRow;
   index: number;
@@ -67,6 +282,8 @@ type OrderItemRowProps = {
   nameError?: string;
   quantityError?: string;
   unitPriceError?: string;
+  typePickerOpen: boolean;
+  onTypePickerOpenChange: (open: boolean) => void;
   onNameChange: (rowId: string, value: string) => void;
   onQuantityChange: (rowId: string, value: string) => void;
   onUnitPriceChange: (rowId: string, value: string) => void;
@@ -83,6 +300,8 @@ function OrderItemRow({
   nameError,
   quantityError,
   unitPriceError,
+  typePickerOpen,
+  onTypePickerOpenChange,
   onNameChange,
   onQuantityChange,
   onUnitPriceChange,
@@ -102,142 +321,131 @@ function OrderItemRow({
   };
 
   return (
-    <div
+    <tr
       ref={setNodeRef}
       style={style}
-      className={cn(
-        "group border-border bg-background rounded-lg border",
-        "md:flex md:items-center md:gap-2 md:rounded-none md:border-0 md:border-b md:px-2 md:py-1.5",
-        isDragging && "shadow-lg",
-      )}
+      className={cn(isDragging && "[box-shadow:0_6px_20px_color-mix(in_oklch,black_22%,transparent)]")}
     >
-      <div className="hidden items-center md:flex">
+      {/* Drag handle */}
+      <td className="px-[3px] py-[2px] text-center align-middle">
         <button
           type="button"
           aria-label={t("itemDragLabel")}
-          className="text-text-muted cursor-grab opacity-0 transition-opacity group-hover:opacity-100 active:cursor-grabbing"
+          className="inline-flex cursor-grab [color:var(--text-muted)] opacity-35 transition-opacity hover:opacity-70 active:cursor-grabbing"
           {...attributes}
           {...listeners}
         >
-          <GripVertical size={16} aria-hidden />
+          <GripVertical size={14} aria-hidden />
         </button>
-      </div>
+      </td>
 
-      <div className="md:hidden">
-        <button
-          type="button"
-          aria-label={t("itemDragLabel")}
+      {/* Name */}
+      <td className="px-[3px] py-[2px]">
+        <input
+          id={cellInputId("name", row.rowId)}
+          type="text"
+          value={row.name}
+          placeholder={t("itemNamePlaceholder")}
+          aria-label={t("itemNameLabel")}
+          aria-invalid={!!nameError}
+          aria-describedby={nameError ? `item-name-error-${row.rowId}` : undefined}
+          onChange={(e) => onNameChange(row.rowId, e.target.value)}
+          onKeyDown={(e) => onCellKeyDown(e, { column: "name", rowId: row.rowId })}
           className={cn(
-            "text-text-muted float-right m-2 cursor-grab opacity-30 active:cursor-grabbing",
-            isDragging && "opacity-100",
+            CELL_INPUT_BASE,
+            "min-w-[160px] px-1.5 py-1.5",
+            nameError && "[box-shadow:inset_0_0_0_1px_var(--destructive)]",
           )}
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical size={16} aria-hidden />
-        </button>
-      </div>
+        />
+        {nameError && (
+          <p
+            id={`item-name-error-${row.rowId}`}
+            className="mt-0.5 px-1.5 text-[11px] [color:var(--destructive)]"
+            role="alert"
+          >
+            {nameError}
+          </p>
+        )}
+      </td>
 
-      <div className="flex flex-col gap-2 p-3 md:contents">
-        <div className="md:min-w-0 md:flex-1">
-          <label className="text-text-muted mb-0.5 block text-xs md:sr-only" htmlFor={cellInputId("name", row.rowId)}>
-            {t("itemNameLabel")}
-          </label>
-          <Input
-            id={cellInputId("name", row.rowId)}
-            type="text"
-            value={row.name}
-            placeholder={t("itemNamePlaceholder")}
-            error={!!nameError}
-            aria-invalid={!!nameError}
-            aria-describedby={nameError ? `item-name-error-${row.rowId}` : undefined}
-            onChange={(e) => onNameChange(row.rowId, e.target.value)}
-            onKeyDown={(e) => onCellKeyDown(e, { column: "name", rowId: row.rowId })}
-            onBlur={() => {}}
-          />
-          {nameError && (
-            <p id={`item-name-error-${row.rowId}`} className="text-destructive mt-0.5 text-xs" role="alert">
-              {nameError}
-            </p>
+      {/* Quantity */}
+      <td className="px-[3px] py-[2px] text-right align-top">
+        <input
+          id={cellInputId("qty", row.rowId)}
+          type="number"
+          min="1"
+          step="1"
+          value={row.quantity}
+          aria-label={t("itemQuantityLabel")}
+          aria-invalid={!!quantityError}
+          onChange={(e) => onQuantityChange(row.rowId, e.target.value)}
+          onKeyDown={(e) => onCellKeyDown(e, { column: "qty", rowId: row.rowId })}
+          className={cn(
+            CELL_INPUT_BASE,
+            "w-[52px] px-1 py-1.5 text-right",
+            quantityError && "[box-shadow:inset_0_0_0_1px_var(--destructive)]",
           )}
-        </div>
+        />
+      </td>
 
-        <div className="flex gap-2 md:contents">
-          <div className="md:w-20">
-            <label className="text-text-muted mb-0.5 block text-xs md:sr-only" htmlFor={cellInputId("qty", row.rowId)}>
-              {t("itemQuantityLabel")}
-            </label>
-            <Input
-              id={cellInputId("qty", row.rowId)}
-              type="number"
-              min="1"
-              step="1"
-              value={row.quantity}
-              error={!!quantityError}
-              aria-invalid={!!quantityError}
-              onChange={(e) => onQuantityChange(row.rowId, e.target.value)}
-              onKeyDown={(e) => onCellKeyDown(e, { column: "qty", rowId: row.rowId })}
-            />
-          </div>
+      {/* Unit price */}
+      <td className="px-[3px] py-[2px] text-right align-top">
+        <input
+          id={cellInputId("price", row.rowId)}
+          type="text"
+          inputMode="decimal"
+          value={row.unitPrice}
+          placeholder="—"
+          aria-label={t("itemUnitPriceLabel")}
+          aria-invalid={!!unitPriceError}
+          aria-describedby={unitPriceError ? `item-price-error-${row.rowId}` : undefined}
+          onChange={(e) => onUnitPriceChange(row.rowId, sanitizeDecimalInput(e.target.value))}
+          onKeyDown={(e) => onCellKeyDown(e, { column: "price", rowId: row.rowId })}
+          className={cn(
+            CELL_INPUT_BASE,
+            "w-[110px] px-1 py-1.5 text-right",
+            unitPriceError && "[box-shadow:inset_0_0_0_1px_var(--destructive)]",
+          )}
+        />
+        {unitPriceError && (
+          <p
+            id={`item-price-error-${row.rowId}`}
+            className="mt-0.5 text-[11px] [color:var(--destructive)]"
+            role="alert"
+          >
+            {unitPriceError}
+          </p>
+        )}
+      </td>
 
-          <div className="md:w-28">
-            <label
-              className="text-text-muted mb-0.5 block text-xs md:sr-only"
-              htmlFor={cellInputId("price", row.rowId)}
-            >
-              {t("itemUnitPriceLabel")}
-            </label>
-            <Input
-              id={cellInputId("price", row.rowId)}
-              type="text"
-              inputMode="decimal"
-              value={row.unitPrice}
-              placeholder={t("itemUnitPricePlaceholder")}
-              error={!!unitPriceError}
-              aria-invalid={!!unitPriceError}
-              aria-describedby={unitPriceError ? `item-price-error-${row.rowId}` : undefined}
-              onChange={(e) => onUnitPriceChange(row.rowId, sanitizeDecimalInput(e.target.value))}
-              onKeyDown={(e) => onCellKeyDown(e, { column: "price", rowId: row.rowId })}
-            />
-            {unitPriceError && (
-              <p id={`item-price-error-${row.rowId}`} className="text-destructive mt-0.5 text-xs" role="alert">
-                {unitPriceError}
-              </p>
-            )}
-          </div>
+      {/* Type */}
+      <td className="px-[3px] py-[2px] align-top">
+        <ItemTypePicker
+          rowId={row.rowId}
+          value={row.productTypeKey}
+          productTypeKeys={productTypeKeys}
+          tProductTypes={tProductTypes}
+          placeholder={t("itemProductTypePlaceholder")}
+          ariaLabelFor={(label) => `${t("itemProductTypeLabel")}: ${label}`}
+          open={typePickerOpen}
+          onOpenChange={onTypePickerOpenChange}
+          onChange={(value) => onProductTypeChange(row.rowId, value)}
+          onKeyDown={(e) => onCellKeyDown(e, { column: "type", rowId: row.rowId })}
+        />
+      </td>
 
-          <div className="min-w-0 flex-1 md:w-36 md:flex-none">
-            <label className="text-text-muted mb-0.5 block text-xs md:sr-only" htmlFor={cellInputId("type", row.rowId)}>
-              {t("itemProductTypeLabel")}
-            </label>
-            <Select
-              id={cellInputId("type", row.rowId)}
-              value={row.productTypeKey}
-              onChange={(e) => onProductTypeChange(row.rowId, e.target.value)}
-              onKeyDown={(e) => onCellKeyDown(e, { column: "type", rowId: row.rowId })}
-            >
-              <option value="">{t("itemProductTypePlaceholder")}</option>
-              {productTypeKeys.map((key) => (
-                <option key={key} value={key}>
-                  {tProductTypes(key)}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-end p-2 md:p-0">
+      {/* Delete */}
+      <td className="px-[3px] py-[2px] text-center align-top">
         <button
           type="button"
           aria-label={`${t("itemDeleteLabel")} ${index + 1}`}
           onClick={() => onDelete(row.rowId)}
-          className="text-text-muted hover:text-destructive focus-visible:ring-ring rounded p-1 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          className="inline-flex items-center rounded p-1 [color:var(--text-muted)] transition-colors hover:[color:var(--destructive)] focus-visible:[box-shadow:0_0_0_2px_var(--focus-ring)] focus-visible:outline-none"
         >
-          <Trash2 size={16} aria-hidden />
+          <X size={13} aria-hidden />
         </button>
-      </div>
-    </div>
+      </td>
+    </tr>
   );
 }
 
@@ -248,6 +456,8 @@ type OrderItemsGridProps = {
   tProductTypes: (key: string) => string;
   itemErrors?: Record<string, { name?: string; quantity?: string; unitPrice?: string }>;
   createNewRow: () => ItemRow;
+  /** Currency code shown in the "Precio unit. ({currency})" header. */
+  currencyCode?: string;
 };
 
 export function createEmptyRow(rowId: string): ItemRow {
@@ -260,45 +470,6 @@ export function createEmptyRow(rowId: string): ItemRow {
   };
 }
 
-type RowInserterProps = {
-  onInsert: () => void;
-  label: string;
-};
-
-function RowInserter({ onInsert, label }: RowInserterProps) {
-  return (
-    <div className="relative hidden h-0 md:block">
-      <button
-        type="button"
-        aria-label={label}
-        onClick={onInsert}
-        className={cn(
-          "group/inserter absolute inset-x-0 top-0 z-10 flex h-3 -translate-y-1/2 items-center",
-          "focus-visible:outline-none",
-        )}
-      >
-        <span
-          aria-hidden
-          className={cn(
-            "bg-primary text-primary-foreground absolute top-1/2 left-2 flex size-4 -translate-y-1/2 items-center justify-center rounded-full shadow-sm",
-            "opacity-0 transition-opacity",
-            "group-hover/inserter:opacity-100 group-focus-visible/inserter:opacity-100",
-          )}
-        >
-          <Plus size={10} aria-hidden />
-        </span>
-        <span
-          aria-hidden
-          className={cn(
-            "bg-primary absolute top-1/2 right-0 left-6 block h-px -translate-y-1/2 opacity-0 transition-opacity",
-            "group-hover/inserter:opacity-100 group-focus-visible/inserter:opacity-100",
-          )}
-        />
-      </button>
-    </div>
-  );
-}
-
 export default function OrderItemsGrid({
   rows,
   onChange,
@@ -306,9 +477,10 @@ export default function OrderItemsGrid({
   tProductTypes,
   itemErrors = {},
   createNewRow,
+  currencyCode,
 }: OrderItemsGridProps) {
   const t = useTranslations("orders.form");
-  const addButtonRef = useRef<HTMLButtonElement>(null);
+  const [openTypePickerRowId, setOpenTypePickerRowId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor),
@@ -348,22 +520,6 @@ export default function OrderItemsGrid({
     [rows, createNewRow],
   );
 
-  const handleAddRow = useCallback(() => {
-    const newRow = buildInheritedRow(rows.length);
-    onChange([...rows, newRow]);
-    focusCell("name", newRow.rowId, false);
-  }, [rows, onChange, buildInheritedRow]);
-
-  const handleInsertRowAt = useCallback(
-    (index: number) => {
-      const newRow = buildInheritedRow(index);
-      const next = [...rows.slice(0, index), newRow, ...rows.slice(index)];
-      onChange(next);
-      focusCell("name", newRow.rowId, false);
-    },
-    [rows, onChange, buildInheritedRow],
-  );
-
   const handleDelete = useCallback(
     (rowId: string) => {
       const next = rows.filter((r) => r.rowId !== rowId);
@@ -378,34 +534,22 @@ export default function OrderItemsGrid({
   // base combo — literal Ctrl on both Mac and Windows (`event.ctrlKey`, NOT
   // metaKey). Reason: this is the only combo that is free of OS-level bindings on
   // macOS (Ctrl alone is taken by Mission Control / Spaces) and free of browser
-  // history conflicts on every major browser. `Alt` alone / Option alone triggered
-  // Firefox history back/forward on Mac and Mission Control scroll. `Cmd/Ctrl`
-  // alone conflicts with browser history nav. `Ctrl + Shift` is the safe harbor.
+  // history conflicts on every major browser. `Ctrl + Shift` is the safe harbor.
   //
-  // Reordering uses `Alt + Shift + ↑/↓` (VSCode "move line" convention) as a
-  // deliberately distinct combo — this is an advanced, rarely used action so it
-  // earns its own key pattern rather than stacking a third modifier on top.
+  // Reordering uses `Alt + Shift + ↑/↓` (VSCode "move line" convention).
   //
   // Shortcut map (keep in sync with WO-04 "Item spreadsheet — keyboard"):
-  //   Tab                               last cell (type) of last row → append new row (legacy, no modifier)
-  //   Ctrl + Shift + ↑/↓                move focus to same column of previous / next row (hard stop at edges)
+  //   Tab                               last cell (type) of last row → append new row
+  //   Ctrl + Shift + ↑/↓                move focus to same column of previous / next row
   //   Ctrl + Shift + ←/→                move focus to the previous / next column in the current row
   //   Ctrl + Shift + Enter              insert new row below the current row, focus its name cell
-  //   Ctrl + Shift + Backspace | Delete delete current row, move focus to same column of previous (or next if first)
-  //   Alt + Shift + ↑/↓                 reorder current row up / down one position, preserve focused cell
-  //
-  // Conflict trade-offs accepted:
-  //   - Ctrl + Shift + ←/→ overrides the native "extend word selection" text-editing shortcut.
-  //   - Ctrl + Shift + Backspace overrides "delete previous word" on some platforms.
-  //   - Alt + Shift + ↑/↓ overrides "extend selection by paragraph" on some browsers.
+  //   Ctrl + Shift + Backspace | Delete delete current row, move focus to same column of previous
+  //   Alt + Shift + ↑/↓                 reorder current row up / down one position
   const handleCellKeyDown = useCallback(
     (event: React.KeyboardEvent, ctx: CellKeyDownContext) => {
       const key = event.key;
       const shift = event.shiftKey;
-      // Literal Ctrl, NOT Cmd (metaKey). Ignore if Meta or Alt also pressed so we
-      // don't steal unrelated chords.
       const ctrlShift = event.ctrlKey && shift && !event.metaKey && !event.altKey;
-      // Alt + Shift only, no Ctrl / no Meta.
       const altShift = event.altKey && shift && !event.metaKey && !event.ctrlKey;
 
       const index = rows.findIndex((r) => r.rowId === ctx.rowId);
@@ -487,26 +631,38 @@ export default function OrderItemsGrid({
     [rows, onChange, buildInheritedRow],
   );
 
-  return (
-    <div className="space-y-2">
-      <div className="hidden grid-cols-[24px_1fr_80px_112px_144px_32px] items-center gap-2 px-2 md:grid">
-        <span />
-        <span className="text-text-muted text-xs font-medium">{t("itemNameLabel")}</span>
-        <span className="text-text-muted text-xs font-medium">{t("itemQuantityLabel")}</span>
-        <span className="text-text-muted text-xs font-medium">{t("itemUnitPriceLabel")}</span>
-        <span className="text-text-muted text-xs font-medium">{t("itemProductTypeLabel")}</span>
-        <span />
-      </div>
+  const headerCellClass =
+    "[border-bottom:1px_solid_var(--border)] px-1.5 pt-[3px] pb-[7px] text-[11px] font-semibold [color:var(--text-muted)] whitespace-nowrap";
 
+  const priceHeader = currencyCode ? `${t("itemUnitPriceLabel")} (${currencyCode})` : t("itemUnitPriceLabel");
+
+  return (
+    <div className="-mx-1 overflow-x-auto">
       <DndContext id="order-items-dnd" sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={rows.map((r) => r.rowId)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-2 md:space-y-0">
-            {rows.map((row, index) => (
-              <div key={row.rowId}>
-                {index > 0 && (
-                  <RowInserter onInsert={() => handleInsertRowAt(index)} label={t("itemInsertBetweenLabel")} />
-                )}
+        <table role="grid" aria-label={t("itemsSectionTitle")} className="w-full border-separate border-spacing-0">
+          <thead>
+            <tr>
+              <th scope="col" className="w-6 [border-bottom:1px_solid_var(--border)]" />
+              <th scope="col" className={cn(headerCellClass, "text-left")}>
+                {t("itemNameLabel")}
+              </th>
+              <th scope="col" className={cn(headerCellClass, "w-16 text-right")}>
+                {t("itemQuantityLabel")}
+              </th>
+              <th scope="col" className={cn(headerCellClass, "w-[130px] text-right")}>
+                {priceHeader}
+              </th>
+              <th scope="col" className={cn(headerCellClass, "w-[110px] text-left")}>
+                {t("itemProductTypeLabel")}
+              </th>
+              <th scope="col" className="w-7 [border-bottom:1px_solid_var(--border)]" />
+            </tr>
+          </thead>
+          <tbody>
+            <SortableContext items={rows.map((r) => r.rowId)} strategy={verticalListSortingStrategy}>
+              {rows.map((row, index) => (
                 <OrderItemRow
+                  key={row.rowId}
                   row={row}
                   index={index}
                   productTypeKeys={productTypeKeys}
@@ -514,6 +670,8 @@ export default function OrderItemsGrid({
                   nameError={itemErrors[row.rowId]?.name}
                   quantityError={itemErrors[row.rowId]?.quantity}
                   unitPriceError={itemErrors[row.rowId]?.unitPrice}
+                  typePickerOpen={openTypePickerRowId === row.rowId}
+                  onTypePickerOpenChange={(open) => setOpenTypePickerRowId(open ? row.rowId : null)}
                   onNameChange={(rowId, value) => updateRow(rowId, { name: value })}
                   onQuantityChange={(rowId, value) => updateRow(rowId, { quantity: value })}
                   onUnitPriceChange={(rowId, value) => updateRow(rowId, { unitPrice: value })}
@@ -521,18 +679,11 @@ export default function OrderItemsGrid({
                   onDelete={handleDelete}
                   onCellKeyDown={handleCellKeyDown}
                 />
-              </div>
-            ))}
-          </div>
-        </SortableContext>
+              ))}
+            </SortableContext>
+          </tbody>
+        </table>
       </DndContext>
-
-      <div className="pt-1">
-        <Button ref={addButtonRef} type="button" variant="secondary" size="sm" onClick={handleAddRow}>
-          <Plus size={14} className="mr-1" aria-hidden />
-          {t("addItemButton")}
-        </Button>
-      </div>
     </div>
   );
 }

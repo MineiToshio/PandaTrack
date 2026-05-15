@@ -11,7 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { AlertTriangle, Calculator, ClipboardList, Info, ShoppingBag } from "lucide-react";
+import { AlertTriangle, Calculator, ClipboardList, Info, Plus, ShoppingBag } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -40,6 +40,7 @@ import DatePickerInput from "@/components/core/DatePickerInput";
 import DateRangePickerInput from "@/components/core/DateRangePickerInput";
 import { Modal } from "@/components/modules/Modal";
 import DiscrepancyModal from "./DiscrepancyModal";
+import OrderCreateForm from "./OrderCreateForm";
 import OrderItemsGrid, { createEmptyRow, type ItemRow } from "./OrderItemsGrid";
 import OrderItemsShortcutsHelp from "./OrderItemsShortcutsHelp";
 import OrderCurrencySelect from "./OrderCurrencySelect";
@@ -97,14 +98,23 @@ function getStoreDefaultCurrencyCode(store: StoreOption | null | undefined): str
   return PRIMARY_CURRENCY_BY_COUNTRY[upper] ?? null;
 }
 
-export default function OrderForm({
-  mode,
-  stores,
-  productTypeKeys,
-  baseCurrencyCode,
-  action,
-  initialOrder,
-}: OrderFormProps) {
+export default function OrderForm(props: OrderFormProps) {
+  // S7-B Parte 2: create mode now uses the new 3-step wizard (OrderCreateForm).
+  // Edit mode keeps the legacy flat layout until S7-B Parte 4 (L020 all-open).
+  if (props.mode === "create") {
+    return (
+      <OrderCreateForm
+        stores={props.stores}
+        productTypeKeys={props.productTypeKeys}
+        baseCurrencyCode={props.baseCurrencyCode}
+        action={props.action}
+      />
+    );
+  }
+  return <OrderFormLegacy {...props} />;
+}
+
+function OrderFormLegacy({ mode, stores, productTypeKeys, baseCurrencyCode, action, initialOrder }: OrderFormProps) {
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -352,18 +362,6 @@ export default function OrderForm({
     setDiscrepancyState({ show: false, enteredCents: 0, calculatedCents: 0, pendingFormData: null });
     if (fd) startTransition(() => formAction(fd));
   }, [discrepancyState.pendingFormData, formAction]);
-
-  const handleDiscrepancyUseCalculated = useCallback(() => {
-    posthog.capture(POSTHOG_EVENTS.ORDER.DISCREPANCY_RESOLVED, { resolution: "used_calculated" });
-    const fd = discrepancyState.pendingFormData;
-    const calculatedDecimal = formatCents(discrepancyState.calculatedCents);
-    setTotalCost(calculatedDecimal);
-    setDiscrepancyState({ show: false, enteredCents: 0, calculatedCents: 0, pendingFormData: null });
-    if (fd) {
-      fd.set("totalCost", calculatedDecimal);
-      startTransition(() => formAction(fd));
-    }
-  }, [discrepancyState, formAction]);
 
   const handleDiscrepancyGoBack = useCallback(() => {
     posthog.capture(POSTHOG_EVENTS.ORDER.DISCREPANCY_RESOLVED, { resolution: "cancelled" });
@@ -622,7 +620,22 @@ export default function OrderForm({
               tProductTypes={(key) => tProductTypes(key as never)}
               itemErrors={itemErrors}
               createNewRow={() => createEmptyRow(nextRowId())}
+              currencyCode={currencyCode || undefined}
             />
+            <div className="pt-1">
+              <Button
+                type="button"
+                variant="tonal"
+                size="sm"
+                onClick={() => {
+                  setItems((prev) => [...prev, createEmptyRow(nextRowId())]);
+                  markDirty();
+                }}
+                leadingIcon={<Plus size={14} aria-hidden />}
+              >
+                {tForm("addItemButton")}
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -683,16 +696,14 @@ export default function OrderForm({
         </div>
       </form>
 
-      {discrepancyState.show && (
-        <DiscrepancyModal
-          enteredTotal={discrepancyState.enteredCents}
-          calculatedTotal={discrepancyState.calculatedCents}
-          formatAmount={(cents) => formatAmountDisplay(cents, currencyCode)}
-          onKeepEntered={handleDiscrepancyKeepEntered}
-          onUseCalculated={handleDiscrepancyUseCalculated}
-          onGoBack={handleDiscrepancyGoBack}
-        />
-      )}
+      <DiscrepancyModal
+        isOpen={discrepancyState.show}
+        enteredTotal={discrepancyState.enteredCents}
+        calculatedTotal={discrepancyState.calculatedCents}
+        formatAmount={(cents) => formatAmountDisplay(cents, currencyCode)}
+        onGoBack={handleDiscrepancyGoBack}
+        onSaveAnyway={handleDiscrepancyKeepEntered}
+      />
 
       <Modal
         isOpen={discardState.show}
