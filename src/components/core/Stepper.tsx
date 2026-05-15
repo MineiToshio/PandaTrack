@@ -26,6 +26,20 @@ export type StepperProps = {
   onStepClick?: (n: number) => void;
   /** Localized name for the navigation landmark. */
   ariaLabel?: string;
+  /**
+   * Visual variant.
+   * - `"default"` (full bullets + labels per step) — canónico desktop wizard top bar.
+   * - `"compact"` (mobile S7-A.2): row eyebrow "Paso X de N · {title}" + a 3-segment
+   *   progress bar below. Used in mobile wizard headers where vertical space is scarce.
+   *   Requires `compactStepLabel` and `compactStepEyebrow` strings supplied by the consumer.
+   */
+  variant?: "default" | "compact";
+  /**
+   * Localized "Paso {current} de {total}" pre-formatted string for `variant="compact"`.
+   * Example: `t("compactEyebrow", { current: activeStep, total: steps.length })`.
+   * Required when `variant === "compact"`.
+   */
+  compactEyebrow?: string;
   className?: string;
 };
 
@@ -48,10 +62,44 @@ export default function Stepper({
   erroredSteps = [],
   onStepClick,
   ariaLabel,
+  variant = "default",
+  compactEyebrow,
   className,
 }: StepperProps) {
   const doneSet = new Set(doneSteps);
   const errorSet = new Set(erroredSteps);
+
+  if (variant === "compact") {
+    const activeLabel = steps.find((s) => s.n === activeStep)?.label ?? "";
+    return (
+      <nav aria-label={ariaLabel ?? "Steps"} className={cn("w-full", className)}>
+        <div className="flex items-baseline justify-between gap-2 pb-2">
+          <span className="[font-family:var(--font-mono)] [font-size:var(--text-eyebrow)] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
+            {compactEyebrow ?? `${activeStep} / ${steps.length}`}
+          </span>
+          <span className="truncate text-[14px] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+            {activeLabel}
+          </span>
+        </div>
+        <div className="flex gap-1" role="list" aria-hidden="true">
+          {steps.map((step) => {
+            const state = getStepState(step.n, activeStep, doneSet, errorSet);
+            const isFilled = state === "active" || state === "done" || state === "errored";
+            return (
+              <span
+                key={step.n}
+                className={cn(
+                  "h-1 flex-1 rounded-full transition-colors",
+                  isFilled ? "[background:var(--accent)]" : "[background:var(--border-strong)]",
+                  state === "errored" && "[background:var(--destructive)]",
+                )}
+              />
+            );
+          })}
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav aria-label={ariaLabel ?? "Steps"} className={cn("w-full", className)}>

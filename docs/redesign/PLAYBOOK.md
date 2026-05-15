@@ -257,6 +257,26 @@ Card visible al 100% (eyebrow + title intactos), contenido reemplazado por icon 
 
 Wrapper `surface-elevated` + badge mono `↳ DESDE PT-XXXXXX` + valor + link ghost "Cambiar". ADR 0001 D2.
 
+### Wizard step CTA — "Continuar" SIEMPRE habilitado + validación inline al click
+
+> **Regla vinculante cross-app.** En todo wizard de creación (`WizardAccordion mode="wizard"`), el botón "Continuar" / "Crear" de cada paso **nunca se renderiza `disabled`**. Está siempre clickeable.
+
+**Por qué:** un botón deshabilitado deja al usuario sin feedback — "¿por qué no puedo continuar? ¿qué me falta?". Un botón habilitado + validación inline al click le dice exactamente qué corregir.
+
+**Mecánica (ya soportada por `<WizardStep>`):**
+
+1. `primaryAction={{ label }}` — **sin `disabled`**. (`disabled` se reserva solo para el estado `loading` del submit final del último paso.)
+2. `validate={validateStepN}` — el validador corre en el click del primary. Debe:
+   - **Setear estado de error a nivel campo** (un `useState` por campo: `storeError`, `currencyError`, etc.).
+   - **Retornar el booleano** de validez.
+3. `<WizardStep>` llama `ctx.reportValidation(n, isValid)`: si `false`, el paso pasa a estado `errored` → bullet del numeral se tiñe `--destructive`, borde de la card `--destructive`, el `<Stepper>` superior marca ese paso en rojo.
+4. Cada campo recibe `error={Boolean(fieldError)}` (se pinta rojo) y renderiza debajo un mensaje inline: `<p class="flex items-center gap-1.5 text-[12px] [color:var(--destructive)]"><AlertCircle size={13}/> {fieldError}</p>`.
+5. Los errores se **limpian on-change** de su campo (`onChange` → `setFieldError(null)`).
+
+**Patrón de error idéntico al de `StoreForm`** (módulo Stores S6): mismo `<AlertCircle size={13}>` + texto 12px `--destructive`, mismo viraje de bullet/card/stepper. No inventar un patrón de error nuevo por módulo — copiar este.
+
+Referencia de implementación: `OrderCreateForm.tsx` (`validateStep1` setea `storeError`/`currencyError`/`orderDateError`), `WizardStep.tsx` (`handlePrimary` → `reportValidation`).
+
 ### Filter chips display (después de aplicar filtros)
 
 Row de chips con `<X>` para remover individual. Visible arriba del listado. Patrón cross-módulo.
@@ -309,13 +329,64 @@ Spec completo: `docs/redesign/components/FilterTriggerButton.md`. Demo visual: `
 ## 5. Workflow obligatorio antes de implementar UI
 
 1. **Leer este playbook completo** (sí, todo).
-2. **Leer el HTML demo** del componente/pantalla afectada en `docs/redesign/_notes/demo-screens.html`. Los anchors están agrupados en la nav lateral del demo por sesión (`#s6-`, `#s7-`, `#m01-`).
-3. **Leer la spec del componente** en `docs/redesign/components/<Name>.md`.
-4. **Leer ADRs aplicables** en `docs/redesign/decisions/`.
-5. **Verificar tokens correctos** consultando `docs/redesign/tokens.md`.
-6. Solo entonces implementar.
+2. **`ls src/components/core/` y `src/components/modules/`** — **inventario obligatorio antes de crear nada**. Cualquier patrón visual replicado en el módulo nuevo casi seguro existe ya en el módulo cerrado anterior (Stores → Orders → Deliveries). **Ver §5.1 — Regla de reuse obligatorio.**
+3. **Leer el HTML demo** del componente/pantalla afectada en `docs/redesign/_notes/demo-screens.html`. Los anchors están agrupados en la nav lateral del demo por sesión (`#s6-`, `#s7-`, `#m01-`).
+4. **Leer la spec del componente** en `docs/redesign/components/<Name>.md`.
+5. **Leer ADRs aplicables** en `docs/redesign/decisions/`.
+6. **Verificar tokens correctos** consultando `docs/redesign/tokens.md`.
+7. Solo entonces implementar.
 
-Si saltás cualquiera de estos pasos, vas a generar trabajo que después hay que rehacer. **Empíricamente verificado durante S6** (módulo Stores requirió 4-5 rounds de fixes por saltarse pasos).
+Si saltás cualquiera de estos pasos, vas a generar trabajo que después hay que rehacer. **Empíricamente verificado durante S6** (módulo Stores requirió 4-5 rounds de fixes por saltarse pasos) y **S7-B Parte 2** (panel Resumen, CTAs Continuar/Atrás, contenedores collapsibles de wizard se recrearon desde cero teniendo el patrón canónico ya implementado en `StoreForm` — Sergio rebote ~6 fixes en 2 turnos por esa omisión).
+
+### 5.1 Regla de reuse obligatorio (cross-module)
+
+> **Antes de crear cualquier componente o pattern para un módulo nuevo, asumí que ya existe en el módulo anterior y buscalo.** Si replicaste algo en lugar de reusar y se ve "casi igual pero no": estás generando deuda. Movelo a un componente compartido.
+
+**Lista vinculante de patrones cross-module reutilizables** (origen: Stores S6, consumidores: Orders S7, Deliveries S8…):
+
+| Patrón                             | Componente canónico                                                            | Ubicación                                                       |
+| ---------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| Aside Resumen del form-grid        | `<AsideSummary>` + `<AsideSummaryRow>`                                         | `src/components/modules/AsideSummary/`                          |
+| Wizard con stepper + cards         | `<WizardAccordion>` + `<WizardStep>` + `<Stepper>`                             | `src/components/modules/WizardAccordion/`, `core/Stepper.tsx`   |
+| Stepper full-width arriba del grid | `<Stepper>` montado fuera de `<WizardAccordion showStepper={false}>`           | `core/Stepper.tsx` — patrón documentado en S7-B Parte 2         |
+| CTAs Continuar / Atrás de wizard   | `primaryAction={{ label }}` + `secondaryAction={{ label }}` (sin icons manual) | `<WizardStep>` API — los iconos default (ArrowRight) los agrega |
+| Back-link sobre page-heading       | `<BackNavLink>`                                                                | `core/BackNavLink.tsx`                                          |
+| Modal adaptive (centered + sheet)  | `<Modal>`                                                                      | `modules/Modal/`                                                |
+| Filter drawer (lista módulo)       | `<FilterDrawer>`                                                               | `modules/FilterDrawer/`                                         |
+| Picker mobile (lista + search)     | `<MobilePicker>`                                                               | `modules/MobilePicker/`                                         |
+| Input + helper text + error inline | `<Input>` con `error` + `helperText` props                                     | `core/Input.tsx`                                                |
+| Eyebrow mono uppercase             | `<Eyebrow>`                                                                    | `core/Eyebrow.tsx`                                              |
+| StoreAvatar inicial + bg           | `<StoreAvatar>`                                                                | `core/StoreAvatar.tsx`                                          |
+| Chip de estado por enum            | `<StatusChip>` (discriminated union)                                           | `core/StatusChip.tsx`                                           |
+| Combobox desktop con search        | `<Combobox>` / `<SearchableSelect>`                                            | `core/`                                                         |
+| Toast neutral con undo             | `<Toast variant="neutral-undo">`                                               | `core/Toast`                                                    |
+| Switch / Checkbox / Radio          | `<Switch>` / `<Checkbox>` / `<Radio>`                                          | `core/`                                                         |
+| Sidebar de detalle sticky          | `<DetailSidebar>` (cuando aplique)                                             | `modules/DetailSidebar/`                                        |
+
+**Decisión:**
+
+1. Antes de escribir cualquier `<div className="rounded-... bg-...">` que se parezca a algo del módulo anterior, **buscar en la tabla de arriba**. Si está, **reusalo**.
+2. Si encontrás un patrón nuevo replicado en 2+ lugares (typically Stores + Orders) y no está en `core/` o `modules/`: **promovelo a un módulo compartido en la misma sesión que lo detectás**. No esperés a "después". Movelo, migrá los consumidores, mantené la tabla de arriba actualizada.
+3. Si tu PR introduce un componente cuyo nombre se parece a uno existente (`OrderCreateSummarySidebar` vs `AsideSummary`): **fail review**. Renombrá tu wrapper o eliminalo y consumí el shared directo.
+4. **Heights, tokens, paddings**: respetar exactamente los del componente canónico. No tunear (`h-10` vs `h-[2.875rem]`). Si necesitás un tamaño nuevo, abrí una variant en el componente canónico, no inventes uno paralelo.
+5. **Naming**: cuando promovés un patrón, nombre genérico que funcione para N módulos (`AsideSummary` ✓, `OrderCreateSummarySidebar` ✗).
+
+**Lessons-learned related**: L038 (audit antes de crear), L042 (componentes core S4/S5 audit visual cada Fase B), L043 (inventario = USO del módulo, no replicar spec).
+
+### 5.2 Copy / i18n — español neutro obligatorio
+
+Todo el copy en español **usa español neutro internacional**. Sin modismos regionales:
+
+- ❌ Argentinismos: "dejás", "podés", "anotá", "tenés", "querés", "necesitás", "armá"
+- ❌ Mexicanismos: "platícame", "ahorita", "padre" (en sentido "cool")
+- ❌ Voseo en imperativos: "agregá", "elegí", "guardá"
+- ✅ Forma neutra: "deja", "puedes", "registra", "tienes", "quieres", "necesitas", "arma"
+- ✅ Imperativos tuteo: "agrega", "elige", "guarda"
+- ✅ Aceptable: "Tú" o tercera persona impersonal según el caso. Mantener consistencia dentro del namespace.
+
+Se aplica a TODO `src/i18n/locales/es/*.json` y todo lo que escriba un agente para usuarios hispanohablantes. Cualquier PR que introduzca voseo/modismos será rebotado.
+
+**Si encontrás argentinismos heredados** en docs (specs, lessons, demo-screens.html) o en código durante una sesión, **flageá pero no fixees silenciosamente** — abrí un cross-cutting para limpiar el copy en un pase dedicado. Lo que sí podés y debés hacer: en el copy nuevo que vas a escribir en tu sesión, usar siempre neutro desde el primer minuto.
 
 ## 6. Cómo verificar tu propio output (auto-audit antes de cerrar)
 

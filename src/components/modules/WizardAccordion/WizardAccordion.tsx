@@ -157,6 +157,25 @@ const WizardAccordion = forwardRef<WizardAccordionHandle, WizardAccordionProps>(
     [gated, computeMaxAllowed],
   );
 
+  const canActivate = useCallback(
+    (n: number) => {
+      if (n < 1 || n > totalSteps) return false;
+      if (!gated) return true;
+      return n <= computeMaxAllowed();
+    },
+    [gated, computeMaxAllowed, totalSteps],
+  );
+
+  // Registry for the active step's sticky-mobile pulse function. Used by locked
+  // step header clicks to nudge the user toward the bottom action bar.
+  const stickyPulseRef = useRef<(() => void) | null>(null);
+  const registerStickyPulse = useCallback((fn: (() => void) | null) => {
+    stickyPulseRef.current = fn;
+  }, []);
+  const pulseStickyHint = useCallback(() => {
+    stickyPulseRef.current?.();
+  }, []);
+
   const scrollStepIntoView = useCallback((n: number) => {
     if (typeof window === "undefined") return;
     requestAnimationFrame(() => {
@@ -224,11 +243,27 @@ const WizardAccordion = forwardRef<WizardAccordionHandle, WizardAccordionProps>(
       totalSteps,
       layout,
       activate,
+      canActivate,
       markDoneAndAdvance,
       goBack,
       reportValidation,
+      pulseStickyHint,
+      registerStickyPulse,
     }),
-    [activeStep, doneSteps, erroredSteps, totalSteps, layout, activate, markDoneAndAdvance, goBack, reportValidation],
+    [
+      activeStep,
+      doneSteps,
+      erroredSteps,
+      totalSteps,
+      layout,
+      activate,
+      canActivate,
+      markDoneAndAdvance,
+      goBack,
+      reportValidation,
+      pulseStickyHint,
+      registerStickyPulse,
+    ],
   );
 
   // The stepper is meaningless without a single "active step", so hide it in all-open layout.

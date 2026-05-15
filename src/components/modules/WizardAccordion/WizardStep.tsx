@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowRight, Check, ChevronRight, ChevronUp, X } from "lucide-react";
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { ArrowLeft, ArrowRight, Check, ChevronRight, ChevronUp, X } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import Button from "@/components/core/Button/Button";
 import { cn } from "@/lib/styles";
 import { useWizardAccordion } from "./WizardContext";
@@ -60,6 +60,15 @@ export type WizardStepProps = {
   disabled?: boolean;
   /** When true, the step bullet renders with the destructive palette (active step has errors). */
   hasError?: boolean;
+  /**
+   * Where the per-step action buttons render.
+   * - `"inline"` (default): inside the step body, below the form content, separated by a top border.
+   * - `"sticky-on-mobile"`: inline on `md+` (same as default), but fixed at the bottom of the
+   *   viewport on `<md` with `safe-area-inset-bottom` padding. Used for mobile wizards (S7-A.2
+   *   `s7-mob-actionbar` pattern). The page is responsible for adding bottom padding so the
+   *   content does not sit under the bar (e.g. `pb-[calc(76px+env(safe-area-inset-bottom))] md:pb-0`).
+   */
+  actionsLayout?: "inline" | "sticky-on-mobile";
   className?: string;
 };
 
@@ -77,6 +86,7 @@ export default function WizardStep({
   keepBodyMounted = true,
   disabled = false,
   hasError = false,
+  actionsLayout = "inline",
   className,
 }: WizardStepProps) {
   const ctx = useWizardAccordion();
@@ -84,6 +94,31 @@ export default function WizardStep({
   const headingId = `${generatedId}-title`;
   const bodyId = `${generatedId}-body`;
   const bodyRef = useRef<HTMLDivElement>(null);
+  // Ref to the mobile sticky primary button so we can briefly pulse it when the
+  // user taps inside the step body — surfaces the action bar to first-time users.
+  const stickyPrimaryRef = useRef<HTMLButtonElement>(null);
+  // Throttle so rapid taps don't restart the pulse every frame.
+  const lastPulseRef = useRef(0);
+  const triggerStickyPulse = useCallback(() => {
+    const btn = stickyPrimaryRef.current;
+    if (!btn) return;
+    const now = Date.now();
+    if (now - lastPulseRef.current < 1200) return;
+    lastPulseRef.current = now;
+    btn.classList.remove("animate-wizard-pulse");
+    // Force reflow so the animation restarts (otherwise classList.add is a no-op).
+    void btn.offsetWidth;
+    btn.classList.add("animate-wizard-pulse");
+  }, []);
+  const handleBodyPointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (actionsLayout !== "sticky-on-mobile") return;
+      // Don't pulse if the user tapped the sticky bar itself (avoids feedback loop).
+      if (stickyPrimaryRef.current?.contains(event.target as Node)) return;
+      triggerStickyPulse();
+    },
+    [actionsLayout, triggerStickyPulse],
+  );
 
   const isAllOpen = ctx.layout === "all-open";
   // In all-open layout there is no notion of an active step — every body is visible
@@ -151,8 +186,24 @@ export default function WizardStep({
 
   const handleHeaderClick = () => {
     if (isActive || disabled) return;
+    // If this step is locked by `gated` mode (future step user hasn't earned
+    // yet), nudge them toward the sticky CTA at the bottom of the viewport
+    // instead of doing nothing silently.
+    if (!ctx.canActivate(n)) {
+      ctx.pulseStickyHint();
+      return;
+    }
     ctx.activate(n);
   };
+
+  // The active step in sticky-on-mobile mode owns the visible bottom CTA.
+  // Register `triggerStickyPulse` so that locked-step header clicks (handled
+  // in other WizardStep instances) can pulse this button via context.
+  useEffect(() => {
+    if (!isActive || isAllOpen || actionsLayout !== "sticky-on-mobile") return;
+    ctx.registerStickyPulse(triggerStickyPulse);
+    return () => ctx.registerStickyPulse(null);
+  }, [isActive, isAllOpen, actionsLayout, ctx, triggerStickyPulse]);
 
   const showBody = isAllOpen || isActive || keepBodyMounted;
   const bodyHidden = !isAllOpen && !isActive;
@@ -237,13 +288,24 @@ export default function WizardStep({
             ref={bodyRef}
             hidden={bodyHidden}
             aria-hidden={bodyHidden}
-            className="flex flex-col gap-4 pt-4 pr-4 pb-4 pl-[3.5rem] md:pt-5 md:pr-5 md:pb-5 md:pl-[3.75rem]"
+            onPointerDown={handleBodyPointerDown}
+            // Mobile: body fills the full width (no left-indent under the bullet) —
+            // matches the demo S7 mobile wizard. Desktop: indent so content lines
+            // up with the title to the right of the bullet.
+            className="flex flex-col gap-4 p-4 md:pt-5 md:pr-5 md:pb-5 md:pl-[3.75rem]"
           >
             {children}
             {/* Per-step primary/secondary buttons only render in wizard layout — in
-                all-open the parent owns a single submit footer outside the wizard. */}
+                all-open the parent owns a single submit footer outside the wizard.
+                `actionsLayout="sticky-on-mobile"` hides the inline bar on `<md` and
+                renders a parallel fixed-bottom bar (see below). */}
             {!isAllOpen && (primaryAction || secondaryAction) && (
-              <div className="flex flex-col-reverse gap-2 pt-4 [border-top:1px_solid_var(--border)] md:flex-row md:items-center md:justify-end md:gap-3">
+              <div
+                className={cn(
+                  "flex flex-col-reverse gap-2 pt-4 [border-top:1px_solid_var(--border)] md:flex-row md:items-center md:justify-end md:gap-3",
+                  actionsLayout === "sticky-on-mobile" && "hidden md:flex",
+                )}
+              >
                 {secondaryAction && (
                   <Button
                     variant="ghost"
@@ -251,6 +313,11 @@ export default function WizardStep({
                     type="button"
                     onClick={handleSecondary}
                     disabled={secondaryAction.disabled}
+                    leadingIcon={
+                      secondaryAction.leadingIcon === null
+                        ? undefined
+                        : (secondaryAction.leadingIcon ?? <ArrowLeft size={14} aria-hidden="true" />)
+                    }
                     fullWidth
                     className="md:w-auto"
                   >
@@ -273,6 +340,58 @@ export default function WizardStep({
                     }
                     fullWidth
                     className="md:w-auto"
+                  >
+                    {primaryAction.label}
+                  </Button>
+                )}
+              </div>
+            )}
+            {/* Mobile sticky action bar (only when `actionsLayout="sticky-on-mobile"`).
+                The bar is fixed to the viewport bottom on `<md` and hidden on `md+`. */}
+            {!isAllOpen && actionsLayout === "sticky-on-mobile" && (primaryAction || secondaryAction) && (
+              <div
+                role="group"
+                aria-label="Acciones del paso"
+                className={cn(
+                  "fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 px-4 py-3 md:hidden",
+                  "[background:var(--surface-elevated)] [border-top:1px_solid_var(--border)]",
+                  "[padding-bottom:calc(0.75rem_+_env(safe-area-inset-bottom))]",
+                )}
+              >
+                {secondaryAction && (
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    type="button"
+                    onClick={handleSecondary}
+                    disabled={secondaryAction.disabled}
+                    leadingIcon={
+                      secondaryAction.leadingIcon === null
+                        ? undefined
+                        : (secondaryAction.leadingIcon ?? <ArrowLeft size={14} aria-hidden="true" />)
+                    }
+                    className="shrink-0"
+                    style={{ flex: "0 0 96px" }}
+                  >
+                    {secondaryAction.label}
+                  </Button>
+                )}
+                {primaryAction && (
+                  <Button
+                    ref={stickyPrimaryRef}
+                    variant="primary"
+                    size="md"
+                    type="button"
+                    onClick={handlePrimary}
+                    loading={primaryAction.loading}
+                    disabled={primaryAction.disabled}
+                    leadingIcon={primaryAction.leadingIcon ?? undefined}
+                    trailingIcon={
+                      primaryAction.trailingIcon === null
+                        ? undefined
+                        : (primaryAction.trailingIcon ?? <ArrowRight size={14} aria-hidden="true" />)
+                    }
+                    className="flex-1"
                   >
                     {primaryAction.label}
                   </Button>
