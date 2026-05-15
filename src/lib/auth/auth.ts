@@ -50,7 +50,35 @@ export const auth = betterAuth({
   },
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: getPublicSiteUrl(),
-  trustedOrigins: [...new Set([getAppBaseUrl(), getPublicSiteUrl()])],
+  /**
+   * Origins allowed to talk to Better Auth. The base + public URLs cover production
+   * and the canonical local dev URL. `BETTER_AUTH_EXTRA_ORIGINS` is a dev-only
+   * escape hatch — comma-separated list of additional origins to trust (e.g. when
+   * serving the dev server bound to `0.0.0.0` so a phone on the same LAN can sign
+   * in via `http://192.168.x.x:3001`). Empty / unset in production.
+   */
+  trustedOrigins: [
+    ...new Set([
+      getAppBaseUrl(),
+      getPublicSiteUrl(),
+      ...(process.env.BETTER_AUTH_EXTRA_ORIGINS ?? "")
+        .split(",")
+        .map((origin) => origin.trim().replace(/\/$/, ""))
+        .filter(Boolean),
+    ]),
+  ],
+  advanced: {
+    /**
+     * Force non-secure cookies in dev so the session works over plain HTTP
+     * (localhost + LAN IP like `192.168.x.x:3001`). Better Auth's auto-detect
+     * adds `Secure` + the `__Secure-` prefix even when baseURL is HTTP, which
+     * silently breaks sign-in on a LAN IP because browsers only allow Secure
+     * cookies on `localhost` HTTP (never on a non-loopback host). In production
+     * (Vercel / any HTTPS deploy) NODE_ENV is `production` → secure cookies
+     * stay enabled.
+     */
+    useSecureCookies: process.env.NODE_ENV === "production",
+  },
   /**
    * Load session user from the database on each request so server actions that update `user.email`
    * (immediate email change) are visible to the next Better Auth call in the same flow without stale
