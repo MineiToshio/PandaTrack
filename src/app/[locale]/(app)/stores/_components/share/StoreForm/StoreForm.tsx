@@ -29,6 +29,7 @@ import Modal from "@/components/modules/Modal/Modal";
 import { WizardAccordion, WizardStep, type WizardAccordionHandle } from "@/components/modules/WizardAccordion";
 import Stepper, { type StepperStep } from "@/components/core/Stepper";
 import BackNavLink from "@/components/core/BackNavLink";
+import { AsideSummary, AsideSummaryRow } from "@/components/modules/AsideSummary";
 import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS, RETURN_TO_ORDER_CREATE, ROUTES } from "@/lib/constants";
 import posthog from "posthog-js";
@@ -1367,69 +1368,63 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
           )}
         </div>
 
-        {/* ── Aside Resumen sticky ── */}
-        <aside className="lg:[position:sticky] lg:[top:calc(var(--app-banner-offset,0px)_+_var(--header-h-desktop,4rem)_+_var(--space-4,1rem))] lg:self-start">
-          <div className="rounded-[var(--radius-xl)] p-4 [box-shadow:var(--shadow-2)] [background:var(--surface-elevated)] [border:1px_solid_var(--border)] md:p-5">
-            <Eyebrow as="p">{tCreateRedesign("summaryEyebrow")}</Eyebrow>
-            <dl className="mt-3 flex flex-col">
-              <AsideSummaryRow
-                label={tCreateRedesign("aside.typeLabel")}
-                value={storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
-              />
-              <AsideSummaryRow
-                label={tCreateRedesign("aside.nameLabel")}
-                value={nameValue || "—"}
-                muted={!nameValue}
-                changed={isEditMode && nameValue !== initialName}
-              />
-              <AsideSummaryRow
-                label={tCreateRedesign("aside.countryLabel")}
-                value={countryCode || "—"}
-                muted={!countryCode}
-                changed={isEditMode && countryCode !== initialCountryCode}
-              />
-              <AsideSummaryRow
-                label={tCreateRedesign("aside.categoriesLabel")}
-                value={selectedProductTypeKeys.length > 0 ? `${selectedProductTypeKeys.length}` : "—"}
-                muted={selectedProductTypeKeys.length === 0}
-                changed={
-                  isEditMode &&
-                  (selectedProductTypeKeys.length !== initialProductTypeKeys.length ||
-                    selectedProductTypeKeys.some((k) => !initialProductTypeKeys.includes(k)))
-                }
-              />
-              {storeType === "BUSINESS" && (
-                <AsideSummaryRow
-                  label={tCreateRedesign("aside.channelsLabel")}
-                  value={`${contactChannelEntries.length}`}
-                  muted={contactChannelEntries.length === 0}
-                  changed={isEditMode && contactChannelEntries.length !== initialContactChannelEntries.length}
-                />
-              )}
-              {storeType === "BUSINESS" && (
-                <AsideSummaryRow
-                  label={tCreateRedesign("aside.addressesLabel")}
-                  value={`${addressData.length}`}
-                  muted={addressData.length === 0}
-                  changed={isEditMode && addressData.length !== initialAddressEntries.length}
-                />
-              )}
-              {storeType === "PERSON" && isPrivate && (
-                <AsideSummaryRow label={tCreateRedesign("step1.privateLabel")} value="✓" />
-              )}
-              <div className="flex items-center justify-between gap-3 py-2 [border-top:1px_solid_var(--border)]">
-                <dt className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">
-                  {tCreateRedesign("aside.statusLabel")}
-                </dt>
-                <dd>
-                  <Chip variant="info" icon={<Clock size={11} aria-hidden="true" />} size="sm">
-                    {tCreateRedesign("aside.statusPending")}
-                  </Chip>
-                </dd>
-              </div>
-            </dl>
+        <AsideSummary eyebrow={tCreateRedesign("summaryEyebrow")}>
+          <AsideSummaryRow
+            label={tCreateRedesign("aside.typeLabel")}
+            value={storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
+          />
+          <AsideSummaryRow
+            label={tCreateRedesign("aside.nameLabel")}
+            value={nameValue || "—"}
+            muted={!nameValue}
+            changed={isEditMode && nameValue !== initialName}
+          />
+          <AsideSummaryRow
+            label={tCreateRedesign("aside.countryLabel")}
+            value={countryCode || "—"}
+            muted={!countryCode}
+            changed={isEditMode && countryCode !== initialCountryCode}
+          />
+          <AsideSummaryRow
+            label={tCreateRedesign("aside.categoriesLabel")}
+            value={selectedProductTypeKeys.length > 0 ? `${selectedProductTypeKeys.length}` : "—"}
+            muted={selectedProductTypeKeys.length === 0}
+            changed={
+              isEditMode &&
+              (selectedProductTypeKeys.length !== initialProductTypeKeys.length ||
+                selectedProductTypeKeys.some((k) => !initialProductTypeKeys.includes(k)))
+            }
+          />
+          {storeType === "BUSINESS" && (
+            <AsideSummaryRow
+              label={tCreateRedesign("aside.channelsLabel")}
+              value={`${contactChannelEntries.length}`}
+              muted={contactChannelEntries.length === 0}
+              changed={isEditMode && contactChannelEntries.length !== initialContactChannelEntries.length}
+            />
+          )}
+          {storeType === "BUSINESS" && (
+            <AsideSummaryRow
+              label={tCreateRedesign("aside.addressesLabel")}
+              value={`${addressData.length}`}
+              muted={addressData.length === 0}
+              changed={isEditMode && addressData.length !== initialAddressEntries.length}
+            />
+          )}
+          {storeType === "PERSON" && isPrivate && (
+            <AsideSummaryRow label={tCreateRedesign("step1.privateLabel")} value="✓" />
+          )}
+          <div className="flex items-center justify-between gap-3 py-2 [border-top:1px_solid_var(--border)]">
+            <dt className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">
+              {tCreateRedesign("aside.statusLabel")}
+            </dt>
+            <dd>
+              <Chip variant="info" icon={<Clock size={11} aria-hidden="true" />} size="sm">
+                {tCreateRedesign("aside.statusPending")}
+              </Chip>
+            </dd>
           </div>
-        </aside>
+        </AsideSummary>
       </form>
     </div>
   );
@@ -1455,30 +1450,4 @@ function FieldErrorMsg({ children }: { children: React.ReactNode }) {
 
 function ReviewSeparator() {
   return <div aria-hidden="true" className="[grid-column:1/-1] my-1 h-px [background:var(--border)]" />;
-}
-
-function AsideSummaryRow({
-  label,
-  value,
-  muted,
-  changed,
-}: {
-  label: string;
-  value: string;
-  muted?: boolean;
-  changed?: boolean;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 py-2 [border-top:1px_solid_var(--border)] first:[border-top:0]">
-      <dt className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">{label}</dt>
-      <dd
-        className={cn(
-          "text-right [font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)]",
-          changed ? "[color:var(--warning)]" : muted ? "[color:var(--text-muted)]" : "[color:var(--text-primary)]",
-        )}
-      >
-        {value}
-      </dd>
-    </div>
-  );
 }
