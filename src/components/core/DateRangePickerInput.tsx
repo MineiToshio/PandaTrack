@@ -61,7 +61,22 @@ function formatRange(from: Date | null, to: Date | null, locale: string): string
   return `${formatDate(anchor, locale, true)} – …`;
 }
 
-const POPUP_WIDTH_PX = 660;
+/**
+ * Desktop popup width = preset rail (150) + border (1) + calendar wrapper padding
+ * (24) + two month columns (252 each via `w-9 × 7 = 36 × 7`) + months gap (24)
+ * + horizontal slack so the navigation chevrons (`absolute inset-x-0`) and the
+ * Saturday column don't clip on the right edge.
+ *
+ * 150 + 1 + 24 + 252 + 24 + 252 + 17 (slack) = 720.
+ */
+const POPUP_WIDTH_PX = 720;
+/**
+ * Mobile popup width = calendar wrapper padding (24) + single month (252) + ~20
+ * slack for the floating prev/next chevrons that sit outside the month-caption
+ * box. Tightened from 320 → 296 so the calendar hugs the popup with no visible
+ * right-side gutter.
+ */
+const POPUP_WIDTH_MOBILE_PX = 296;
 const POPUP_OFFSET_PX = 6;
 const VIEWPORT_PADDING_PX = 12;
 const MOBILE_BREAKPOINT_PX = 768;
@@ -99,8 +114,8 @@ export default function DateRangePickerInput({
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
     const isMobile = viewportWidth < MOBILE_BREAKPOINT_PX;
-    // Mobile: shrink popup to fit viewport (single-month layout). Desktop: full 660px.
-    const width = isMobile ? Math.min(viewportWidth - VIEWPORT_PADDING_PX * 2, POPUP_WIDTH_PX) : POPUP_WIDTH_PX;
+    // Mobile: hug the single-month width (no empty gutters). Desktop: full 660px (two months side-by-side).
+    const width = isMobile ? Math.min(viewportWidth - VIEWPORT_PADDING_PX * 2, POPUP_WIDTH_MOBILE_PX) : POPUP_WIDTH_PX;
     const popupHeight = popupRef.current?.getBoundingClientRect().height ?? 420;
     // Prefer right edge of trigger as anchor → popup hangs to the left.
     let left = rect.right - width;
@@ -296,7 +311,7 @@ export default function DateRangePickerInput({
                 ))}
               </div>
             )}
-            <div className="flex-1 p-3">
+            <div className="flex flex-1 justify-center p-3">
               <DayPicker
                 mode="range"
                 numberOfMonths={popupPos?.isMobile ? 1 : numberOfMonths}

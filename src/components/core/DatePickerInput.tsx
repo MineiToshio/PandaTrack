@@ -161,8 +161,11 @@ export default function DatePickerInput({
           role="dialog"
           aria-label={placeholder}
           className={cn(
-            "absolute top-full left-0 z-20 mt-1 flex flex-col gap-2 rounded-[var(--radius-lg)] p-3 shadow-lg",
-            "[background:var(--surface-elevated)] [border:1px_solid_var(--border)]",
+            "absolute top-full left-0 z-20 mt-1 flex flex-col gap-2 rounded-[var(--radius-lg)] p-3",
+            // Match DateRangePickerInput popup chrome — surface tier + border-strong + elevated
+            // shadow so single-date and range-date popovers feel like the same component family.
+            "[background:var(--background)] [border:1px_solid_var(--border-strong)]",
+            "[box-shadow:var(--shadow-3,0_18px_48px_-12px_rgba(0,0,0,0.35))]",
           )}
         >
           {presets && presets.length > 0 && (
