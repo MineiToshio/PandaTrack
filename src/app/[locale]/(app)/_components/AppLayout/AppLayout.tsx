@@ -1,16 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { ShellIdentityContext } from "@/contexts/ShellIdentityContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import Sidebar from "@/components/modules/Sidebar";
 import Header from "@/components/modules/Header";
-import FAB from "@/components/core/FAB";
-import MascotBubble, { MASCOT_HIDDEN_VALUE, MASCOT_VISIBLE_KEY } from "@/components/modules/MascotBubble";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { APP_SHELL_MAIN_CLASSNAME } from "@/lib/constants";
-import { getFabAction } from "../../_utils/fabAction";
 import AppNavDrawer from "./AppNavDrawer";
 import { HeaderTitleProvider } from "./HeaderTitleContext";
 import type { AppShellUserIdentity } from "./types";
@@ -35,18 +32,6 @@ export default function AppLayout({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const burgerButtonRef = useRef<HTMLButtonElement>(null);
   const [currentUser, setCurrentUser] = useState<AppShellUserIdentity>(initialUser);
-  const [mascotVisible, setMascotVisible] = useState(true);
-
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(MASCOT_VISIBLE_KEY) === MASCOT_HIDDEN_VALUE) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional client-only hydration from localStorage
-        setMascotVisible(false);
-      }
-    } catch {
-      // Ignore storage errors
-    }
-  }, []);
 
   const updateUser = useCallback((patch: Partial<AppShellUserIdentity>) => {
     setCurrentUser((prev) => ({ ...prev, ...patch }));
@@ -55,8 +40,6 @@ export default function AppLayout({
   // Content offset follows ONLY the pinned `expanded` state — hover-expand floats over content
   // (does not push). PUSH is reserved for the manual collapse/expand toggle.
   const sidebarCurrentW = expanded ? "var(--sidebar-w-expanded)" : "var(--sidebar-w-collapsed)";
-
-  const fabAction = getFabAction(pathname ?? "", locale);
 
   const handleOpenDrawer = () => setDrawerOpen(true);
   const handleCloseDrawer = () => setDrawerOpen(false);
@@ -115,12 +98,6 @@ export default function AppLayout({
               </main>
             </HeaderTitleProvider>
           </div>
-
-          {/* Mobile FAB — floating bottom-right, hidden on desktop */}
-          <FAB action={fabAction} />
-
-          {/* Mascot bubble — idle variant, bottom-right corner */}
-          <MascotBubble locale={locale} visible={mascotVisible} onHide={() => setMascotVisible(false)} />
         </div>
       </ToastProvider>
     </ShellIdentityContext.Provider>

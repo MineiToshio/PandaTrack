@@ -1,12 +1,14 @@
 ---
 title: FAB
 tier: 2
-status: spec — S5 (ready for implementation)
-last_updated: 2026-05-02
-session: 05-app-shell
+status: REMOVED from app shell (2026-05-15) — file kept in src for potential future reuse, not mounted anywhere
+last_updated: 2026-05-15
+session: 05-app-shell · removed in S5.3 cross-cutting
 adrs:
   - ADR 0001 D6 (acciones destructivas en overflow — el FAB es solo para acción primaria)
 ---
+
+> ⛔ **REMOVED from app shell on 2026-05-15** (cross-cutting entry **S5.3**). The component does not mount in `AppLayout` anymore. The file `src/components/core/FAB.tsx` still exists but is unused. Do NOT add it back to the shell without a fresh decision — Sergio explicitly removed it. If you need a primary mobile CTA, use a sticky bottom action bar inside the page (see `<WizardStep actionsLayout="sticky-on-mobile">`).
 
 # FAB
 

@@ -1,13 +1,15 @@
 ---
 title: MascotBubble
 tier: 3
-status: spec — S5 (ready for implementation)
-last_updated: 2026-05-02
-session: 04-components
+status: REMOVED from app shell (2026-05-15) — file kept in src for potential future reuse, not mounted anywhere
+last_updated: 2026-05-15
+session: 04-components · removed in S5.3 cross-cutting
 adrs:
   - ADR 0001 D17 (mascota toggle + menú contextual right-click / long-press)
   - ADR 0003 D2 (theme toggle solo light/dark — relevante para opción "Cambiar tema" del menú contextual)
 ---
+
+> ⛔ **REMOVED from app shell on 2026-05-15** (cross-cutting entry **S5.3**). The component does not mount in `AppLayout` anymore. The file `src/components/modules/MascotBubble.tsx` still exists but is unused. Do NOT add it back to the shell without a fresh decision — Sergio explicitly removed it (visual noise, competed with sticky action bars + content focus). EmptyState `visual` slot can still use a small mascot illustration where relevant, but the floating bottom-right bubble is gone.
 
 # MascotBubble
 
