@@ -18,6 +18,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import Typography from "@/components/core/Typography";
 import Eyebrow from "@/components/core/Eyebrow";
 import Label from "@/components/core/Label";
@@ -198,6 +199,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
   const tValidation = useTranslations("stores.validation");
   const tEdit = useTranslations("stores.edit");
   const tCountries = useTranslations("countries");
+  const isMobile = useIsMobile();
   const tProductTypes = useTranslations("storeProductTypes");
   const tChannelTypes = useTranslations("stores.contactChannelTypes");
 
@@ -254,7 +256,6 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
   const [logoSubmission, setLogoSubmission] = useState<StoreLogoSubmission>({
     action: "keep",
     file: null,
-    cropArea: null,
   });
   const [comment, setComment] = useState<string>(existingChangeRequest?.comment ?? "");
 
@@ -452,12 +453,8 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
 
     if (storeType === "BUSINESS") {
       nextFormData.set("logoAction", logoSubmission.action);
-      if (logoSubmission.action === "set" && logoSubmission.file && logoSubmission.cropArea) {
+      if (logoSubmission.action === "set" && logoSubmission.file) {
         nextFormData.set("logoFile", logoSubmission.file, logoSubmission.file.name);
-        nextFormData.set("logoCropX", String(logoSubmission.cropArea.x));
-        nextFormData.set("logoCropY", String(logoSubmission.cropArea.y));
-        nextFormData.set("logoCropWidth", String(logoSubmission.cropArea.width));
-        nextFormData.set("logoCropHeight", String(logoSubmission.cropArea.height));
       }
     } else {
       nextFormData.set("logoAction", "keep");
@@ -692,7 +689,14 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
   );
 
   return (
-    <div className="space-y-4">
+    <div
+      className={cn(
+        "space-y-4",
+        // Reserve space for the mobile sticky action bar so content doesn't sit
+        // behind it. Desktop has no sticky bar → no extra padding needed.
+        !isEditMode && "pb-[calc(76px+env(safe-area-inset-bottom))] md:pb-0",
+      )}
+    >
       <BackNavLink href={backHref}>{backLabel}</BackNavLink>
 
       <Modal
@@ -746,6 +750,11 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
               erroredSteps={erroredStepsArr}
               onStepClick={handleStepperClick}
               ariaLabel={tCreateRedesign("stepperLabel")}
+              variant={isMobile ? "compact" : "default"}
+              compactEyebrow={tCreateRedesign("stepperCompactEyebrow", {
+                current: activeStep,
+                total: stepperSteps.length,
+              })}
             />
           </div>
         )}
@@ -771,7 +780,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
               title={tCreateRedesign("step1.title")}
               primaryAction={{ label: tCreateRedesign("continue") }}
               summary={storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
-              disabled={1 > maxAllowedStep}
+              actionsLayout={isEditMode ? "inline" : "sticky-on-mobile"}
             >
               <div className="space-y-4">
                 <Typography size="xs" className="text-text-muted">
@@ -790,7 +799,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
                       const nextStoreType = value as StoreTypeValue;
                       setStoreType(nextStoreType);
                       if (nextStoreType === "PERSON") {
-                        setLogoSubmission({ action: "keep", file: null, cropArea: null });
+                        setLogoSubmission({ action: "keep", file: null });
                       } else {
                         setIsPrivate(false);
                       }
@@ -855,7 +864,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
               primaryAction={{ label: tCreateRedesign("continue") }}
               secondaryAction={{ label: tCreateRedesign("back") }}
               summary={nameValue && countryCode ? `${nameValue} · ${tCountries(countryCode)}` : undefined}
-              disabled={2 > maxAllowedStep}
+              actionsLayout={isEditMode ? "inline" : "sticky-on-mobile"}
               hasError={Boolean(clientErrors.name || clientErrors.countryCode)}
               validate={() => {
                 const next: Record<string, string> = {};
@@ -1025,7 +1034,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
                     : `${selectedProductTypeKeys.length}`
                   : undefined
               }
-              disabled={3 > maxAllowedStep}
+              actionsLayout={isEditMode ? "inline" : "sticky-on-mobile"}
               hasError={Boolean(clientErrors.productTypeKeys || clientErrors.presenceTypes)}
               validate={() => {
                 const next: Record<string, string> = {};
@@ -1169,7 +1178,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
                     ? `${contactChannelEntries.length + addressData.length}`
                     : undefined
                 }
-                disabled={4 > maxAllowedStep}
+                actionsLayout={isEditMode ? "inline" : "sticky-on-mobile"}
                 validate={() => {
                   const next: Record<string, string> = {};
                   if (isChannelFormOpen) next.channelFormOpen = "channelFormOpen";
@@ -1308,7 +1317,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
               }}
               secondaryAction={{ label: tCreateRedesign("back") }}
               autoAdvance={false}
-              disabled={reviewStepN > maxAllowedStep}
+              actionsLayout={isEditMode ? "inline" : "sticky-on-mobile"}
             >
               <Typography size="xs" className="text-text-muted">
                 {tCreateRedesign("step5.helper")}
@@ -1368,7 +1377,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
           )}
         </div>
 
-        <AsideSummary eyebrow={tCreateRedesign("summaryEyebrow")}>
+        <AsideSummary eyebrow={tCreateRedesign("summaryEyebrow")} className="hidden lg:block">
           <AsideSummaryRow
             label={tCreateRedesign("aside.typeLabel")}
             value={storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}

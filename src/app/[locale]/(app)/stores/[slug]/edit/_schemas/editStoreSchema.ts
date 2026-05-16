@@ -17,7 +17,6 @@ const editStoreBaseSchema = z.object({
   addresses: createStoreShape.addresses,
   importCountries: createStoreShape.importCountries,
   logoAction: createStoreShape.logoAction,
-  logoCropArea: createStoreShape.logoCropArea,
   comment: z.string().max(500, "commentTooLong").trim().optional().nullable(),
 });
 

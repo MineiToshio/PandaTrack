@@ -10,7 +10,6 @@ import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import {
   getPendingStoreLogoObjectKey,
   getStoreLogoObjectKey,
-  parseStoreLogoCropArea,
   processStoreLogoFile,
   StoreLogoError,
 } from "@/lib/store/logo";
@@ -79,12 +78,6 @@ export async function saveStoreEdit(
     .filter((address) => address.addressLine.trim().length > 0);
   const logoFileValue = formData.get("logoFile");
   const logoFile = logoFileValue instanceof File && logoFileValue.size > 0 ? logoFileValue : null;
-  const logoCropArea = parseStoreLogoCropArea({
-    x: formData.get("logoCropX"),
-    y: formData.get("logoCropY"),
-    width: formData.get("logoCropWidth"),
-    height: formData.get("logoCropHeight"),
-  });
 
   const parsed = editStoreSchema.safeParse({
     slug: formData.get("slug"),
@@ -104,7 +97,6 @@ export async function saveStoreEdit(
       .getAll("importCountries")
       .filter((value): value is string => typeof value === "string" && value.length === 2),
     logoAction: formData.get("logoAction") ?? "keep",
-    logoCropArea,
     comment: formData.get("comment") ?? undefined,
   });
 
@@ -131,13 +123,11 @@ export async function saveStoreEdit(
   const currentLogoUrl = viewerContext.openChangeRequest?.changes.logoUrl ?? store.logoUrl;
   const isBusinessLogoSet = store.storeType === "BUSINESS" && parsed.data.logoAction === "set";
 
-  if (isBusinessLogoSet && (!logoFile || !parsed.data.logoCropArea)) {
+  if (isBusinessLogoSet && !logoFile) {
     return {
       success: false,
       error: "validation_failed",
-      fieldErrors: {
-        logo: ["logoRequired"],
-      },
+      fieldErrors: { logo: ["logoRequired"] },
     };
   }
 
@@ -149,7 +139,7 @@ export async function saveStoreEdit(
       nextLogoUrl = null;
     }
 
-    if (isBusinessLogoSet && logoFile && parsed.data.logoCropArea) {
+    if (isBusinessLogoSet && logoFile) {
       try {
         posthogClient.capture({
           distinctId: session.user.id,
@@ -161,7 +151,7 @@ export async function saveStoreEdit(
           },
         });
 
-        const processedLogoBuffer = await processStoreLogoFile(logoFile, parsed.data.logoCropArea);
+        const processedLogoBuffer = await processStoreLogoFile(logoFile);
         const objectKey = canDirectEdit
           ? getStoreLogoObjectKey(store.id)
           : getPendingStoreLogoObjectKey(store.id, session.user.id);

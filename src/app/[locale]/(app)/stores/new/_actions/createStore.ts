@@ -8,7 +8,7 @@ import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { createStore as createStoreQuery, deleteStoreById, updateStoreLogoUrl } from "@/queries/store";
 import { listExistingCountryCodes } from "@/queries/country";
 import { listExistingStoreProductTypeKeys } from "@/queries/storeProductType";
-import { getStoreLogoObjectKey, parseStoreLogoCropArea, processStoreLogoFile, StoreLogoError } from "@/lib/store/logo";
+import { getStoreLogoObjectKey, processStoreLogoFile, StoreLogoError } from "@/lib/store/logo";
 import { uploadStoreLogoBuffer } from "@/lib/store/logoStorage";
 import { createStoreSchema, type CreateStoreInput } from "../_schemas/createStoreSchema";
 import type { StoreStatus } from "../../../../../../../generated/prisma/client";
@@ -65,12 +65,6 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
       .getAll("importCountries")
       .filter((v): v is string => typeof v === "string" && v.length === 2),
     logoAction: formData.get("logoAction") ?? "keep",
-    logoCropArea: parseStoreLogoCropArea({
-      x: formData.get("logoCropX"),
-      y: formData.get("logoCropY"),
-      width: formData.get("logoCropWidth"),
-      height: formData.get("logoCropHeight"),
-    }),
   };
   const logoFileValue = formData.get("logoFile");
   const logoFile = logoFileValue instanceof File && logoFileValue.size > 0 ? logoFileValue : null;
@@ -89,7 +83,6 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
     addresses: raw.addresses,
     importCountries: raw.importCountries,
     logoAction: raw.logoAction,
-    logoCropArea: raw.logoCropArea,
   });
 
   if (!parsed.success) {
@@ -104,13 +97,11 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
 
   const input = parsed.data as CreateStoreInput;
   const isBusinessLogoSet = input.storeType === "BUSINESS" && input.logoAction === "set";
-  if (isBusinessLogoSet && (!logoFile || !input.logoCropArea)) {
+  if (isBusinessLogoSet && !logoFile) {
     return {
       success: false,
       error: "validation_failed",
-      fieldErrors: {
-        logo: ["logoRequired"],
-      },
+      fieldErrors: { logo: ["logoRequired"] },
     };
   }
 
@@ -143,9 +134,9 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
   const posthogClient = getPostHogClient();
 
   let processedLogoBuffer: Buffer | null = null;
-  if (isBusinessLogoSet && logoFile && input.logoCropArea) {
+  if (isBusinessLogoSet && logoFile) {
     try {
-      processedLogoBuffer = await processStoreLogoFile(logoFile, input.logoCropArea);
+      processedLogoBuffer = await processStoreLogoFile(logoFile);
     } catch (error) {
       const errorCode = error instanceof StoreLogoError ? error.code : "logoProcessingFailed";
 

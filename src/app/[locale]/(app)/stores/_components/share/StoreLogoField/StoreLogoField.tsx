@@ -14,15 +14,15 @@ import { cn } from "@/lib/styles";
 import {
   STORE_LOGO_ACCEPTED_MIME_TYPES,
   STORE_LOGO_MAX_SOURCE_SIZE_BYTES,
+  STORE_LOGO_OUTPUT_SIZE_PX,
   type StoreLogoAction,
-  type StoreLogoCropArea,
 } from "@/lib/store/logoShared";
 import { getCroppedImageDataUrl } from "./getCroppedImageDataUrl";
+import { getProcessedImageBlob } from "@/lib/images/getProcessedImageBlob";
 
 export type StoreLogoSubmission = {
   action: StoreLogoAction;
   file: File | null;
-  cropArea: StoreLogoCropArea | null;
 };
 
 type StoreLogoFieldCopy = {
@@ -64,7 +64,6 @@ const DEFAULT_ZOOM = 1;
 const DEFAULT_SUBMISSION: StoreLogoSubmission = {
   action: "keep",
   file: null,
-  cropArea: null,
 };
 
 export default function StoreLogoField({
@@ -174,11 +173,7 @@ export default function StoreLogoField({
     }
 
     setPreviewUrl(null);
-    setSubmission({
-      action: "remove",
-      file: null,
-      cropArea: null,
-    });
+    setSubmission({ action: "remove", file: null });
     setConfirmedCrop(DEFAULT_CROP);
     setConfirmedZoom(DEFAULT_ZOOM);
     setEditorError(null);
@@ -213,7 +208,7 @@ export default function StoreLogoField({
       return;
     }
 
-    const cropArea: StoreLogoCropArea = {
+    const cropArea = {
       x: Math.round(croppedAreaPixels.x),
       y: Math.round(croppedAreaPixels.y),
       width: Math.round(croppedAreaPixels.width),
@@ -221,15 +216,15 @@ export default function StoreLogoField({
     };
 
     try {
-      const nextPreviewUrl = await getCroppedImageDataUrl(editorImageUrl, cropArea);
+      const [nextPreviewUrl, processedBlob] = await Promise.all([
+        getCroppedImageDataUrl(editorImageUrl, cropArea),
+        getProcessedImageBlob(editorImageUrl, cropArea, STORE_LOGO_OUTPUT_SIZE_PX),
+      ]);
+      const processedFile = new File([processedBlob], "logo.webp", { type: "image/webp" });
       setPreviewUrl(nextPreviewUrl);
       setConfirmedCrop(crop);
       setConfirmedZoom(zoom);
-      setSubmission({
-        action: "set",
-        file: editorFile,
-        cropArea,
-      });
+      setSubmission({ action: "set", file: processedFile });
       resetEditorState();
     } catch {
       setEditorError("logoProcessingFailed");
