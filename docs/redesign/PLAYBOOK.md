@@ -277,6 +277,42 @@ Wrapper `surface-elevated` + badge mono `↳ DESDE PT-XXXXXX` + valor + link gho
 
 Referencia de implementación: `OrderCreateForm.tsx` (`validateStep1` setea `storeError`/`currencyError`/`orderDateError`), `WizardStep.tsx` (`handlePrimary` → `reportValidation`).
 
+### Wizard mobile — checklist canónico cross-app
+
+> **Regla vinculante.** Cualquier wizard de creación (`<WizardAccordion mode="wizard">`) en mobile (`<md`) DEBE seguir este checklist completo. No aplica a `mode="all-open"` (edición) que mantiene el layout desktop.
+
+Referencias de implementación: `OrderCreateForm.tsx` (S7-B Parte 2) y `StoreForm.tsx` (S6 + alineación 2026-05-16). Si vas a crear un wizard nuevo, copialos exacto.
+
+1. **`useIsMobile()`** al root del componente para bifurcar los renders mobile vs desktop. SSR-safe (inicia false, hidrata post-mount).
+2. **Stepper compact en mobile**: `<Stepper variant={isMobile ? "compact" : "default"} compactEyebrow={t("stepperCompactEyebrow", { current, total })} />`. La key i18n debe existir en el namespace del módulo (ej. `orders.create.stepperCompactEyebrow`, `stores.redesign.create.stepperCompactEyebrow`).
+3. **`actionsLayout="sticky-on-mobile"` en cada `<WizardStep>`**. Render condicional: si tu wizard tiene un branch `edit` con `mode="all-open"`, pasale `actionsLayout="inline"` en ese branch (el sticky bar no aplica al all-open layout). Patrón:
+   ```tsx
+   actionsLayout={isEditMode ? "inline" : "sticky-on-mobile"}
+   ```
+4. **Continuar SIEMPRE habilitado** (ver §3 "Wizard step CTA"). NO usar `disabled={N > maxAllowedStep}` ni similares en los `primaryAction` — eso bloquea el `WizardContext.canActivate(n)` que dispara el pulse hint cuando el usuario tapea un paso futuro. El `<WizardStep>` ya maneja: si el header del paso N es clickado y `!ctx.canActivate(n)`, llama `ctx.pulseStickyHint()` automáticamente.
+5. **AsideSummary oculto en mobile**: `<AsideSummary className="hidden lg:block">` o conditional `!isMobile && <AsideSummary>`. El resumen vive solo en desktop; en mobile el sticky bar + summary del paso 3 cumplen la misma función.
+6. **Bottom padding para evitar overlap con el sticky bar**: el contenedor raíz del wizard debe reservar espacio en mobile:
+   ```tsx
+   className = "pb-[calc(76px+env(safe-area-inset-bottom))] md:pb-0";
+   ```
+   `76px` ≈ altura del sticky bar (`py-3` + Button `md` height) + safe-area inset.
+7. **h1 oculto en mobile** (opcional pero recomendado): el topbar canónico ya muestra el título de la pantalla. Usar `<h1 className="hidden md:block ...">` para evitar duplicación visual cross-viewport.
+8. **Ancho asimétrico de los CTAs del sticky bar** (heredado automáticamente del `<WizardStep>`): `Atrás` tiene `flex: 0 0 96px` (chico, ancho fijo), `Continuar` tiene `flex: 1` (crece). Match del demo S7-A.6. NO sobreescribir.
+
+**Cómo verificar** (preview tools):
+
+- Cargar la URL del wizard en mobile (375×812).
+- Confirmar: stepper compact arriba (PASO X DE N + barra), wizard cards sin indent izquierdo, sticky bar abajo con `Atrás 96px / Continuar flex-1`, NO AsideSummary visible, h1 desktop oculto.
+- Tap en un paso futuro colapsado (locked) → el Continuar abajo debe hacer pulse.
+- Tap en cualquier input/fila dentro del step body → mismo pulse (UX hint para descubrir el sticky bar).
+
+**Anti-patrones**:
+
+- ❌ Pasar `actionsLayout="sticky-on-mobile"` al wizard de **edit** (`mode="all-open"`). El all-open no renderiza CTAs per-step — el sticky bar no tiene de dónde tomar handlers.
+- ❌ Mantener `disabled={N > maxAllowedStep}` en `primaryAction` "para que el botón se vea desactivado en pasos locked". Eso NO es lo que el usuario ve: el botón del header del paso locked no es el primaryAction del propio step, es el header click; bloquear `primaryAction.disabled` solo desactiva el botón visible del paso ACTIVO (no del locked) y rompe el patrón canónico de "Continuar siempre habilitado".
+- ❌ Renderizar `<AsideSummary>` en mobile sin `hidden lg:block`. Genera scroll vertical extra sin valor.
+- ❌ Olvidar el `pb-[calc(76px+...)]` del container → el sticky bar tapa el último input del último paso.
+
 ### Filter chips display (después de aplicar filtros)
 
 Row de chips con `<X>` para remover individual. Visible arriba del listado. Patrón cross-módulo.

@@ -531,6 +531,7 @@
         "statusPending": "Pending"
       },
       "stepperLabel": "Form steps",
+      "stepperCompactEyebrow": "Step {current} of {total}",
       "countryNoResults": "No country matches.",
       "continue": "Continue",
       "back": "Back",

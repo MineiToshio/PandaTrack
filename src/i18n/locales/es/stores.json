@@ -531,6 +531,7 @@
         "statusPending": "Pendiente"
       },
       "stepperLabel": "Pasos del formulario",
+      "stepperCompactEyebrow": "Paso {current} de {total}",
       "countryNoResults": "Ningún país coincide.",
       "continue": "Continuar",
       "back": "Atrás",
