@@ -5,13 +5,16 @@ This document defines PandaTrack's visual language: semantic design variables, t
 ## Number and currency formatting
 
 **Always use a period (`.`) as the decimal separator.** Never use a comma.
+**Never use a thousand separator.** Display amounts as a single continuous number — `1240.00`, not `1,240.00` and not `1.240,00`.
 
 ### Monetary amounts
 
-- All monetary display goes through `formatAmount(minorUnits, currencyCode)` in `src/lib/currency.ts`.
-- That function forces `"en"` locale in `Intl.NumberFormat` so the decimal separator is always a period, regardless of the user's UI language.
-- Format pattern: `{amount} {code}` — value first, ISO code after (e.g. `888.50 USD`, `43,000 CLP`).
-- Pass the `locale` argument only for backward compatibility; it is intentionally ignored inside the function.
+- All monetary display goes through the helpers in `src/lib/currency.ts`:
+  - `formatAmount(minorUnits, currencyCode)` → `{value} {code}` (e.g. `888.50 USD`, `43000 CLP`)
+  - `formatAmountSymbolOnly(minorUnits, currencyCode, locale, { alwaysShowDecimals })` → `{symbol}{value}` (e.g. `$496.00`, `S/ 6765.00`)
+  - `formatAmountWithSymbol(...)` → `{symbol}{value} {code}` when the symbol is ambiguous (e.g. `$496.00 USD`)
+- All three helpers force `"en"` locale + `useGrouping: false` in `Intl.NumberFormat` so the decimal separator is always a period and there is never a thousand separator, regardless of the user's UI language.
+- The `locale` argument to the symbol variants is used only to resolve the currency's narrow symbol (e.g. `S/` for PEN in `es`); it does **not** affect the number layout.
 
 ### Decimal inputs (prices, payment amounts)
 

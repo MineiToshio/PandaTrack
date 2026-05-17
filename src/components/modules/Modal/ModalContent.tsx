@@ -52,17 +52,18 @@ export function ModalHeader({
         </span>
       )}
       <div className="min-w-0 flex-1">
+        {/* Demo `.m01b-title` (CSS line 2578): 17px / 700 / line-height 1.3 / text-primary.
+            Previous values (1.125rem / semibold) drifted from spec — bringing back to demo. */}
         <h2
           id={titleId}
-          className="[font-size:1.125rem] [line-height:1.3] [font-weight:var(--font-weight-semibold)] [letter-spacing:-0.01em] [color:var(--text-primary)]"
+          className="[font-size:1.0625rem] [line-height:1.3] [font-weight:var(--font-weight-display)] [color:var(--text-primary)]"
         >
           {title}
         </h2>
         {hasSubtitle && (
-          <p
-            id={descriptionId}
-            className="mt-1 [font-size:var(--text-body)] [line-height:1.5] [color:var(--text-secondary)]"
-          >
+          // Demo `.m01b-subtitle` (CSS line 2579): 13px / text-secondary / line-height 1.4 /
+          // margin-top 3px.
+          <p id={descriptionId} className="mt-[3px] [font-size:13px] [line-height:1.4] [color:var(--text-secondary)]">
             {subtitle}
           </p>
         )}

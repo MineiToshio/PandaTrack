@@ -3,7 +3,11 @@ import { deriveHasUnpaidBalance } from "@/lib/orders/orderState";
 import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
 import type { ItemDeliveryState } from "@/lib/orders/orderState";
 import type { OrderListPaymentState, OrderListSort } from "@/lib/orders/orderListSort";
-import { DeliveryStatus, type OrderStatus } from "../../../../generated/prisma/client";
+import {
+  DeliveryStatus,
+  type OrderItemDeliveryState as OrderItemDeliveryStatePrisma,
+  type OrderStatus,
+} from "../../../../generated/prisma/client";
 
 export type OrderItem = {
   id: string;
@@ -37,6 +41,7 @@ export type OrderPayment = {
 
 export type OrderDetail = OrderListItem & {
   note: string | null;
+  cancellationReason: string | null;
   updatedAt: Date;
   hasUnpaidBalance: boolean;
   paidAmount: number;
@@ -95,6 +100,7 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
       totalCost: true,
       note: true,
       status: true,
+      cancellationReason: true,
       createdAt: true,
       updatedAt: true,
       items: {
@@ -135,6 +141,7 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
     exchangeRate: row.exchangeRate ? Number(row.exchangeRate) : null,
     totalCost: row.totalCost,
     note: row.note,
+    cancellationReason: row.cancellationReason,
     status: row.status,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -148,11 +155,17 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
   };
 }
 
-function deriveItemDeliveryState(deliveryItems: Array<{ delivery: { status: DeliveryStatus } }>): ItemDeliveryState {
-  if (deliveryItems.length === 0) return "open";
-  const hasDelivered = deliveryItems.some((d) => d.delivery.status === DeliveryStatus.DELIVERED);
-  if (hasDelivered) return "delivered";
-  return "in_transit";
+function deriveItemDeliveryState(
+  deliveryItems: Array<{ delivery: { status: DeliveryStatus } }>,
+  ownDeliveryState: OrderItemDeliveryStatePrisma,
+): ItemDeliveryState {
+  if (deliveryItems.length > 0) {
+    const hasDelivered = deliveryItems.some((d) => d.delivery.status === DeliveryStatus.DELIVERED);
+    if (hasDelivered) return "delivered";
+    return "in_transit";
+  }
+  if (ownDeliveryState === "ARRIVED_AT_STORE") return "arrived_at_store";
+  return "open";
 }
 
 export async function getOrderDetail(orderId: string, userId: string): Promise<OrderDetailFull | null> {
@@ -171,6 +184,7 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
       totalCost: true,
       note: true,
       status: true,
+      cancellationReason: true,
       createdAt: true,
       updatedAt: true,
       items: {
@@ -181,6 +195,7 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
           unitPrice: true,
           productTypeKey: true,
           position: true,
+          deliveryState: true,
           deliveryItems: {
             select: { delivery: { select: { status: true } } },
             where: { delivery: { status: { not: DeliveryStatus.CANCELLED } } },
@@ -210,7 +225,7 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
     unitPrice: item.unitPrice,
     productTypeKey: item.productTypeKey,
     position: item.position,
-    deliveryState: deriveItemDeliveryState(item.deliveryItems),
+    deliveryState: deriveItemDeliveryState(item.deliveryItems, item.deliveryState),
   }));
 
   const hasNonCancelledDeliveryLinks = itemsWithState.some(
@@ -241,6 +256,7 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
     exchangeRate: row.exchangeRate ? Number(row.exchangeRate) : null,
     totalCost: row.totalCost,
     note: row.note,
+    cancellationReason: row.cancellationReason,
     status: row.status,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -442,6 +458,7 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
         productTypeKey: true,
         unitPrice: true,
         position: true,
+        deliveryState: true,
         deliveryItems: {
           select: { delivery: { select: { status: true } } },
           where: { delivery: { status: { not: DeliveryStatus.CANCELLED } } },
@@ -491,7 +508,7 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
         quantity: item.quantity,
         productTypeKey: item.productTypeKey,
         unitPrice: item.unitPrice,
-        deliveryState: deriveItemDeliveryState(item.deliveryItems),
+        deliveryState: deriveItemDeliveryState(item.deliveryItems, item.deliveryState),
       })),
       paidAmount,
       paymentPercentage,

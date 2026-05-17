@@ -5,7 +5,7 @@
       "name": "Next.js dev server",
       "runtimeExecutable": ".claude/dev-server.sh",
       "runtimeArgs": [],
-      "port": 7000,
+      "port": 7100,
       "autoPort": false
     },
     {

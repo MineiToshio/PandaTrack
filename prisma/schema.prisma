@@ -437,6 +437,7 @@ model Order {
   totalCost            Int
   note                 String?
   status               OrderStatus           @default(OPEN)
+  cancellationReason   String?
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   store                Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)

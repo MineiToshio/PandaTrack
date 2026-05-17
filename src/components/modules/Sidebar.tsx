@@ -134,7 +134,7 @@ export default function Sidebar({
                 isExpanded ? "px-3" : "w-full justify-center",
                 isActive
                   ? "bg-accent/14 text-accent font-medium"
-                  : "text-text-body hover:bg-muted hover:text-foreground",
+                  : "text-text-body hover:bg-foreground/15 hover:text-foreground",
               )}
               data-ph-event={POSTHOG_EVENTS.APP_SHELL.NAV_CLICKED}
               data-ph-props={JSON.stringify({

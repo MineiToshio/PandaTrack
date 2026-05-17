@@ -156,6 +156,9 @@ export const POSTHOG_EVENTS = {
     LIST_CARD_EXPANDED: "orders_list_card_expanded",
     LIST_CARD_COLLAPSED: "orders_list_card_collapsed",
     LIST_PAGE_CHANGED: "orders_list_page_changed",
+    ITEM_MARKED_ARRIVED: "order_item_marked_arrived",
+    ITEM_REVERTED_PENDING: "order_item_reverted_pending",
+    STICKY_BAR_PRIMARY_CLICKED: "order_detail_sticky_primary_clicked",
   },
   DELIVERY: {
     CREATE_FLOW_OPENED: "delivery_create_flow_opened",

@@ -132,7 +132,9 @@ export default function AppNavDrawer({
                 onClick={onClose}
                 className={cn(
                   "focus-visible:ring-ring focus-visible:ring-offset-background flex h-11 min-h-11 items-center gap-3 rounded-lg px-2.5 pr-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-                  isActive ? "bg-primary/20 text-primary" : "text-text-body hover:bg-muted hover:text-foreground",
+                  isActive
+                    ? "bg-primary/20 text-primary"
+                    : "text-text-body hover:bg-foreground/15 hover:text-foreground",
                 )}
                 aria-current={isActive ? "page" : undefined}
                 data-ph-event={POSTHOG_EVENTS.APP_SHELL.NAV_CLICKED}

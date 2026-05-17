@@ -9,17 +9,26 @@ import { cancelOrder, deleteOrder, reactivateOrder } from "@/lib/data/orders/ord
 
 export type OrderLifecycleResult = { ok: true } | { ok: false; error: string };
 
-export async function cancelOrderAction(orderId: string): Promise<OrderLifecycleResult> {
+export async function cancelOrderAction(
+  orderId: string,
+  cancellationReason: string | null = null,
+): Promise<OrderLifecycleResult> {
   const session = await getSession();
   if (!session?.user?.id) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
 
+  const reason = cancellationReason?.trim() ? cancellationReason.trim().slice(0, 500) : null;
+
   try {
-    const result = await cancelOrder(orderId, userId);
+    const result = await cancelOrder(orderId, userId, reason);
     if (!result.ok) return { ok: false, error: result.error };
 
     const posthog = getPostHogClient();
-    posthog.capture({ distinctId: userId, event: POSTHOG_EVENTS.ORDER.CANCELLED, properties: { orderId } });
+    posthog.capture({
+      distinctId: userId,
+      event: POSTHOG_EVENTS.ORDER.CANCELLED,
+      properties: { orderId, hasReason: reason !== null },
+    });
     await posthog.shutdown();
 
     return { ok: true };

@@ -167,10 +167,10 @@ export default function ShellAccountMenu({
           surface === "desktop"
             ? open
               ? "bg-muted/95 rounded-xl px-2 py-2 shadow-[inset_0_0_0_1px_var(--color-border)]"
-              : "hover:bg-muted/85 active:bg-muted/95 rounded-xl px-2 py-2"
+              : "hover:bg-foreground/15 active:bg-foreground/20 rounded-xl px-2 py-2"
             : open
               ? "border-border bg-muted/80 rounded-2xl border px-3 py-3 shadow-[inset_0_0_0_1px_var(--color-border)]"
-              : "border-border bg-card hover:bg-muted/60 active:bg-muted/80 rounded-2xl border px-3 py-3",
+              : "border-border bg-card hover:bg-foreground/15 active:bg-foreground/20 rounded-2xl border px-3 py-3",
         )}
         onClick={handleToggle}
       >

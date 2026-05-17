@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { DeliveryStatus, OrderStatus } from "../../../../generated/prisma/client";
+import { DeliveryStatus, OrderItemDeliveryState, OrderStatus } from "../../../../generated/prisma/client";
 import { generateOrderHumanReadableId } from "@/lib/orders/orderIdentifier";
 import { appendOrderHistoryEntry, OrderHistoryEventType } from "./orderHistoryMutations";
 import { createOrderItems, replaceOrderItems } from "./orderItemMutations";
@@ -145,7 +145,11 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
   });
 }
 
-export async function cancelOrder(orderId: string, userId: string): Promise<CancelOrderResult> {
+export async function cancelOrder(
+  orderId: string,
+  userId: string,
+  cancellationReason: string | null = null,
+): Promise<CancelOrderResult> {
   return prisma.$transaction(async (tx) => {
     const order = await tx.order.findFirst({
       where: { id: orderId, userId },
@@ -168,11 +172,14 @@ export async function cancelOrder(orderId: string, userId: string): Promise<Canc
       return { ok: false, error: "HAS_LIVE_DELIVERY_LINKS" };
     }
 
-    await tx.orderPayment.deleteMany({ where: { orderId } });
-
+    // Cancellation preserves payments and history per spec — the order is archived,
+    // not destroyed. The reactivate flow relies on the payment trail still being
+    // available so the collector can see what they paid before they paused the order.
+    // (Previously this called `tx.orderPayment.deleteMany(...)` which contradicted the
+    // cancel modal copy and broke `Reactivar pedido`.)
     await tx.order.update({
       where: { id: orderId },
-      data: { status: OrderStatus.CANCELLED },
+      data: { status: OrderStatus.CANCELLED, cancellationReason },
     });
 
     await appendOrderHistoryEntry({
@@ -203,7 +210,7 @@ export async function reactivateOrder(orderId: string, userId: string): Promise<
 
     await tx.order.update({
       where: { id: orderId },
-      data: { status: OrderStatus.OPEN },
+      data: { status: OrderStatus.OPEN, cancellationReason: null },
     });
 
     await appendOrderHistoryEntry({
@@ -214,6 +221,44 @@ export async function reactivateOrder(orderId: string, userId: string): Promise<
     });
 
     return { ok: true };
+  });
+}
+
+type SetItemDeliveryStateResult =
+  | { ok: true; deliveryState: OrderItemDeliveryState }
+  | { ok: false; error: "ITEM_NOT_FOUND" | "ITEM_HAS_LIVE_DELIVERY" | "ORDER_CANCELLED" };
+
+/**
+ * Toggles between `NONE` (pending in store) and `ARRIVED_AT_STORE` (ready at store).
+ * Refuses when the item is already linked to a non-cancelled delivery — the delivery owns
+ * `in_transit` / `delivered`, so the user shouldn't be able to flip the read-only state.
+ */
+export async function setOrderItemArrivedAtStore(
+  itemId: string,
+  userId: string,
+  arrived: boolean,
+): Promise<SetItemDeliveryStateResult> {
+  return prisma.$transaction(async (tx) => {
+    const item = await tx.orderItem.findFirst({
+      where: { id: itemId, userId },
+      select: { id: true, orderId: true, deliveryState: true, order: { select: { status: true } } },
+    });
+
+    if (!item) return { ok: false, error: "ITEM_NOT_FOUND" };
+    if (item.order.status === OrderStatus.CANCELLED) return { ok: false, error: "ORDER_CANCELLED" };
+
+    const liveLink = await tx.deliveryOrderItem.findFirst({
+      where: { orderItemId: itemId, delivery: { status: { not: DeliveryStatus.CANCELLED } } },
+      select: { deliveryId: true },
+    });
+    if (liveLink) return { ok: false, error: "ITEM_HAS_LIVE_DELIVERY" };
+
+    const next = arrived ? OrderItemDeliveryState.ARRIVED_AT_STORE : OrderItemDeliveryState.NONE;
+    if (item.deliveryState === next) return { ok: true, deliveryState: next };
+
+    await tx.orderItem.update({ where: { id: itemId }, data: { deliveryState: next } });
+
+    return { ok: true, deliveryState: next };
   });
 }
 

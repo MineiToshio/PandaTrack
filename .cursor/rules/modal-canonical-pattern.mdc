@@ -48,6 +48,21 @@ import { Trash2 } from "lucide-react";
 
 The component covers: `tone` (default/destructive/warning/info), `size` (md/lg), `primaryAction` / `secondaryAction` / `tertiaryAction`, `dismissible`, `role` (`dialog` | `alertdialog`), focus management, keyboard, ARIA, motion, `prefers-reduced-motion` fallback. Read the component JSDoc for the full API.
 
+## Submit dismissal — Optimistic Confirmation
+
+Modals and sheets that wrap a mutation MUST close synchronously on submit, not after awaiting the Server Action. See `optimistic-client-updates.mdc` § "Modal / sheet dismissal — Optimistic Confirmation" for the full pattern. Quick recipe:
+
+```tsx
+// Inside the modal wrapper:
+onSubmit={async (...args) => {
+  void parentOnSubmit(...args); // fire-and-forget — parent owns optimistic patch + rollback + toast
+  onClose();
+  return { ok: true };          // inner form skips spinner + inline error
+}}
+```
+
+Spinners that block the very value the mutation updates (the hero amount behind a payment sheet, the row being deleted behind a confirm) are an anti-pattern in this codebase. The only modal flows that may keep the awaited-then-close behavior are irreversible destructive flows with no undo, server-computed identifiers the UI must display verbatim, or other cases listed under "Permitted exceptions" in `optimistic-client-updates.mdc`.
+
 ## When you find a screen needing a modal
 
 1. Open `src/components/modules/Modal/Modal.tsx` and read the JSDoc + the `ModalProps` type.

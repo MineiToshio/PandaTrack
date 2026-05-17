@@ -162,7 +162,12 @@
   --color-border-strong: var(--border-strong);
 
   /* text-primary, text-secondary, text-muted, text-on-accent are colors —
-     exposed as --color-* so Tailwind utilities work */
+     exposed as --color-* so Tailwind utilities work.
+     The legacy `*-color` suffixed aliases are kept for any consumer that still
+     references them; the canonical names below match Tailwind v4's `text-text-*`
+     utility lookup (`text-text-secondary` → `--color-text-secondary`). */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
   --color-text-primary-color: var(--text-primary);
   --color-text-secondary-color: var(--text-secondary);
   --color-text-on-accent: var(--text-on-accent);
