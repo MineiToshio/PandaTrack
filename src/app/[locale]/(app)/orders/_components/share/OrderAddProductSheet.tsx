@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { createElement, useEffect, useId, useState } from "react";
 import Sheet from "@/components/modules/Sheet/Sheet";
@@ -83,29 +83,45 @@ export default function OrderAddProductSheet({
       size="md"
       bodyClassName="px-5 py-4"
       footer={
-        <div className="flex items-center gap-2">
+        // Layout mirrors the create-order wizard's mobile sticky bar (`OrderEditForm`
+        // sticky toolbar): compact secondary on the left, flex-1 primary on the right
+        // with a leading icon. The user reads the primary as the main affordance
+        // ("Añadir"/"Guardar"), and "Cancelar" stays out of the way as a small ghost.
+        <div className="flex items-stretch gap-2">
           {mode === "edit" && onDelete && (
             <Button
               type="button"
               variant="ghost"
-              size="sm"
+              size="md"
               onClick={() => {
                 onDelete();
                 onOpenChange(false);
               }}
-              className="[color:var(--destructive)]"
+              className="[min-width:96px] flex-shrink-0 [justify-content:center] [color:var(--destructive)]"
             >
               {t("delete")}
             </Button>
           )}
-          <div className="flex flex-1 justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-              {t("cancel")}
-            </Button>
-            <Button type="button" variant="primary" size="sm" onClick={handleSubmit} disabled={nameInvalid}>
-              {mode === "edit" ? t("save") : t("add")}
-            </Button>
-          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="md"
+            onClick={() => onOpenChange(false)}
+            className="[min-width:96px] flex-shrink-0 [justify-content:center]"
+          >
+            {t("cancel")}
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            onClick={handleSubmit}
+            disabled={nameInvalid}
+            leadingIcon={mode === "edit" ? <Check size={14} aria-hidden /> : <Plus size={14} aria-hidden />}
+            className="flex-1 [justify-content:center]"
+          >
+            {mode === "edit" ? t("save") : t("add")}
+          </Button>
         </div>
       }
     >
