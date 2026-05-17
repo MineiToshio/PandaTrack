@@ -192,7 +192,7 @@ export default function OrderDetailHero({
         {showPaidStatus ? (
           <div className="text-success flex items-center gap-2 leading-none">
             <CircleCheck className="size-7 shrink-0" aria-hidden strokeWidth={2.25} />
-            <span className="text-[clamp(22px,3.5vw,28px)] font-bold tracking-[-0.01em]">
+            <span className="text-[clamp(22px,3.5vw,28px)] font-bold tracking-[0.04em] uppercase">
               {t("detail.hero.paidInFull")}
             </span>
           </div>
