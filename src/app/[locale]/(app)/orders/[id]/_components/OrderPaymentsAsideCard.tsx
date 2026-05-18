@@ -127,10 +127,10 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
             <strong
               className={cn(
                 "text-[15px] font-bold tabular-nums",
-                hasUnpaidBalance ? "text-warning" : "text-text-title",
+                hasUnpaidBalance ? "text-warning" : "text-text-muted",
               )}
             >
-              {formatAmountSymbolOnly(summary.remainingAmount, currencyCode, locale)}
+              {hasUnpaidBalance ? formatAmountSymbolOnly(summary.remainingAmount, currencyCode, locale) : "—"}
             </strong>
           </div>
         </div>
