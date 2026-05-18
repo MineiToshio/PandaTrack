@@ -2,8 +2,12 @@
 
 import { createContext, useCallback, useContext, useState } from "react";
 
-/** Optional second breadcrumb after "Stores" on store edit (dynamic store name + link to detail). */
-export type BreadcrumbAfterStores = {
+/**
+ * Optional middle breadcrumb between the primary-area crumb (e.g. "Pedidos", "Tiendas")
+ * and the rest of the trail. Used by edit pages where the segment between the section
+ * and the action is a dynamic entity name/id (store name, order code).
+ */
+export type BreadcrumbMiddle = {
   label: string;
   href: string;
 };
@@ -11,26 +15,26 @@ export type BreadcrumbAfterStores = {
 type HeaderTitleContextValue = {
   title: string | null;
   setTitle: (title: string | null) => void;
-  breadcrumbAfterStores: BreadcrumbAfterStores | null;
-  setBreadcrumbAfterStores: (value: BreadcrumbAfterStores | null) => void;
+  breadcrumbMiddle: BreadcrumbMiddle | null;
+  setBreadcrumbMiddle: (value: BreadcrumbMiddle | null) => void;
 };
 
 const HeaderTitleContext = createContext<HeaderTitleContextValue | null>(null);
 
 export function HeaderTitleProvider({ children }: { children: React.ReactNode }) {
   const [title, setTitle] = useState<string | null>(null);
-  const [breadcrumbAfterStores, setBreadcrumbAfterStoresState] = useState<BreadcrumbAfterStores | null>(null);
+  const [breadcrumbMiddle, setBreadcrumbMiddleState] = useState<BreadcrumbMiddle | null>(null);
   const setTitleStable = useCallback((value: string | null) => setTitle(value), []);
-  const setBreadcrumbAfterStores = useCallback((value: BreadcrumbAfterStores | null) => {
-    setBreadcrumbAfterStoresState(value);
+  const setBreadcrumbMiddle = useCallback((value: BreadcrumbMiddle | null) => {
+    setBreadcrumbMiddleState(value);
   }, []);
   return (
     <HeaderTitleContext.Provider
       value={{
         title,
         setTitle: setTitleStable,
-        breadcrumbAfterStores,
-        setBreadcrumbAfterStores,
+        breadcrumbMiddle,
+        setBreadcrumbMiddle,
       }}
     >
       {children}
@@ -41,7 +45,7 @@ export function HeaderTitleProvider({ children }: { children: React.ReactNode })
 export function useHeaderTitle(): HeaderTitleContextValue {
   const ctx = useContext(HeaderTitleContext);
   if (!ctx) {
-    return { title: null, setTitle: () => {}, breadcrumbAfterStores: null, setBreadcrumbAfterStores: () => {} };
+    return { title: null, setTitle: () => {}, breadcrumbMiddle: null, setBreadcrumbMiddle: () => {} };
   }
   return ctx;
 }

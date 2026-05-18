@@ -41,9 +41,9 @@ function toDisplayBreadcrumbs(
 
 export default function Header({ locale, pathname, drawerOpen, onOpenDrawer, burgerButtonRef }: HeaderProps) {
   const t = useTranslations("appLayout");
-  const { title: titleOverride, breadcrumbAfterStores } = useHeaderTitle();
+  const { title: titleOverride, breadcrumbMiddle } = useHeaderTitle();
   const pageHeader = getPageHeader(pathname, locale);
-  const displayBreadcrumbs = toDisplayBreadcrumbs(pageHeader.breadcrumbs, breadcrumbAfterStores);
+  const displayBreadcrumbs = toDisplayBreadcrumbs(pageHeader.breadcrumbs, breadcrumbMiddle);
   const pageTitle = titleOverride ?? t(pageHeader.titleKey);
 
   return (

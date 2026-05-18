@@ -9,6 +9,7 @@ import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
 import { prisma } from "@/lib/prisma";
 import { editOrderAction } from "../../_actions/orderActions";
 import OrderForm from "../../_components/share/OrderForm";
+import OrderSegmentContentHeader from "../_components/OrderSegmentContentHeader";
 
 type Props = {
   params: Promise<{ locale: string; id: string }>;
@@ -46,27 +47,30 @@ export default async function OrdersEditPage({ params }: Props) {
   const boundEditAction = editOrderAction.bind(null, order.id);
 
   return (
-    <OrderForm
-      mode="edit"
-      stores={stores}
-      productTypeKeys={productTypeKeys}
-      baseCurrencyCode={user?.baseCurrencyCode ?? null}
-      action={boundEditAction}
-      initialOrder={{
-        id: order.id,
-        humanReadableId: order.humanReadableId,
-        storeId: order.storeId,
-        orderDate: order.orderDate,
-        expectedDeliveryFrom: order.expectedDeliveryFrom,
-        expectedDeliveryTo: order.expectedDeliveryTo,
-        currencyCode: order.currencyCode,
-        exchangeRate: order.exchangeRate != null ? Number(order.exchangeRate) : null,
-        totalCost: order.totalCost,
-        // Sum of payments already recorded — the edit form blocks the user from lowering
-        // `totalCost` below this value (server enforces the same gate).
-        paidAmount: order.payments.reduce((sum, p) => sum + p.amount, 0),
-        items: order.items,
-      }}
-    />
+    <>
+      <OrderSegmentContentHeader locale={locale} orderId={order.id} humanReadableId={order.humanReadableId} />
+      <OrderForm
+        mode="edit"
+        stores={stores}
+        productTypeKeys={productTypeKeys}
+        baseCurrencyCode={user?.baseCurrencyCode ?? null}
+        action={boundEditAction}
+        initialOrder={{
+          id: order.id,
+          humanReadableId: order.humanReadableId,
+          storeId: order.storeId,
+          orderDate: order.orderDate,
+          expectedDeliveryFrom: order.expectedDeliveryFrom,
+          expectedDeliveryTo: order.expectedDeliveryTo,
+          currencyCode: order.currencyCode,
+          exchangeRate: order.exchangeRate != null ? Number(order.exchangeRate) : null,
+          totalCost: order.totalCost,
+          // Sum of payments already recorded — the edit form blocks the user from lowering
+          // `totalCost` below this value (server enforces the same gate).
+          paidAmount: order.payments.reduce((sum, p) => sum + p.amount, 0),
+          items: order.items,
+        }}
+      />
+    </>
   );
 }

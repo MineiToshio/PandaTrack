@@ -14,6 +14,10 @@
     "newStore": "New store",
     "editStore": "Edit"
   },
+  "orders": {
+    "newOrder": "New order",
+    "editOrder": "Edit order"
+  },
   "sidebar": {
     "expand": "Expand sidebar",
     "collapse": "Collapse sidebar"

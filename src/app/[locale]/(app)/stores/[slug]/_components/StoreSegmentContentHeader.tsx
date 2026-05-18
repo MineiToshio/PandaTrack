@@ -28,25 +28,25 @@ function isStoreEditPath(pathname: string, locale: string, storeSlug: string): b
  */
 export default function StoreSegmentContentHeader({ locale, storeSlug, storeName }: StoreSegmentContentHeaderProps) {
   const pathname = usePathname() ?? "";
-  const { setTitle, setBreadcrumbAfterStores } = useHeaderTitle();
+  const { setTitle, setBreadcrumbMiddle } = useHeaderTitle();
   const storeDetailHref = `/${locale}${ROUTES.stores}/${storeSlug}`;
 
   useEffect(() => {
     if (isStoreEditPath(pathname, locale, storeSlug)) {
       setTitle(null);
-      setBreadcrumbAfterStores({ label: storeName, href: storeDetailHref });
+      setBreadcrumbMiddle({ label: storeName, href: storeDetailHref });
     } else {
       setTitle(storeName);
-      setBreadcrumbAfterStores(null);
+      setBreadcrumbMiddle(null);
     }
-  }, [pathname, locale, storeSlug, storeName, storeDetailHref, setTitle, setBreadcrumbAfterStores]);
+  }, [pathname, locale, storeSlug, storeName, storeDetailHref, setTitle, setBreadcrumbMiddle]);
 
   useEffect(() => {
     return () => {
       setTitle(null);
-      setBreadcrumbAfterStores(null);
+      setBreadcrumbMiddle(null);
     };
-  }, [setTitle, setBreadcrumbAfterStores]);
+  }, [setTitle, setBreadcrumbMiddle]);
 
   return null;
 }
