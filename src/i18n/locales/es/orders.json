@@ -138,12 +138,17 @@
     "title": "Editar pedido · {humanReadableId}",
     "heroDescription": "Modifica los detalles de este pedido.",
     "submit": "Guardar cambios",
+    "cancel": "Cancelar",
     "submitting": "Guardando...",
     "successToast": "Pedido guardado",
     "discardTitle": "¿Salir sin guardar?",
     "discardMessage": "Los cambios que hiciste no se guardarán.",
     "discardConfirm": "Salir",
-    "discardCancel": "Quedarse"
+    "discardCancel": "Quedarse",
+    "sectionDatosTitle": "Datos del pedido",
+    "sectionDatosSubtitle": "{storeName} · {currencyCode}",
+    "sectionProductosTitle": "Productos y costos",
+    "sectionProductosSubtitle": "Ítems y total del pedido"
   },
   "emptyState": {
     "title": "Primero, agrega una tienda",
@@ -159,6 +164,8 @@
     "storeCreateOption": "+ Crear tienda",
     "storeCreateWithName": "+ Crear \"{name}\"",
     "storeNotFoundQuestion": "¿No encuentras tu tienda?",
+    "storeLockedHelper": "La tienda no se puede cambiar una vez creado el pedido.",
+    "currencyLockedHelper": "La moneda no se puede cambiar una vez creado el pedido.",
     "orderDateLabel": "Fecha del pedido",
     "orderDatePlaceholder": "Seleccionar fecha",
     "deliveryRangeLabel": "Entrega estimada (opcional)",
@@ -230,6 +237,7 @@
     "totalCostInvalid": "Ingresa un monto válido (ej. 25.99)",
     "totalCostTooLow": "El total debe ser mayor a 0",
     "totalCostTooHigh": "El total es demasiado alto",
+    "totalBelowPaid": "El total no puede ser menor que los pagos ya registrados ({paid}). Elimina algún pago o sube el total.",
     "itemsRequired": "Agrega al menos un artículo",
     "itemNameRequired": "El nombre es obligatorio",
     "itemNameTooLong": "El nombre es demasiado largo",
@@ -243,7 +251,8 @@
     "STORE_NOT_FOUND": "La tienda seleccionada no existe.",
     "INVALID_PRODUCT_TYPE": "Uno de los tipos de producto no es válido.",
     "ITEM_HAS_LIVE_DELIVERY": "Un artículo está vinculado a un envío activo y no puede eliminarse.",
-    "STORE_CHANGE_BLOCKED": "Solo puedes cambiar la tienda si el pedido está abierto y sin envíos."
+    "STORE_CHANGE_BLOCKED": "Solo puedes cambiar la tienda si el pedido está abierto y sin envíos.",
+    "TOTAL_BELOW_PAID": "El total no puede ser menor que los pagos ya registrados. Elimina algún pago o sube el total."
   },
   "detail": {
     "backToList": "Pedidos",

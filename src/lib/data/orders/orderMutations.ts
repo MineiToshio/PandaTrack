@@ -19,7 +19,10 @@ type EditOrderResult =
         | "STORE_NOT_FOUND"
         | "STORE_CHANGE_BLOCKED"
         | "INVALID_PRODUCT_TYPE"
-        | "ITEM_HAS_LIVE_DELIVERY";
+        | "ITEM_HAS_LIVE_DELIVERY"
+        // Total can't be lowered below the sum of payments already recorded — collectors
+        // must delete payments first if they want to bring the total down past what's paid.
+        | "TOTAL_BELOW_PAID";
     };
 
 type CancelOrderResult = { ok: true } | { ok: false; error: "ORDER_NOT_FOUND" | "HAS_LIVE_DELIVERY_LINKS" };
@@ -114,6 +117,18 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
       const store = await tx.store.findFirst({ where: { id: input.storeId }, select: { id: true } });
       if (!store) {
         return { ok: false, error: "STORE_NOT_FOUND" };
+      }
+    }
+
+    // Total guard — server-side safety net for the client check in `OrderEditForm`. We
+    // refuse to update the total to a value below the sum of payments already recorded;
+    // doing so would produce a negative `remainingAmount` everywhere downstream (hero,
+    // sticky bar, list cards).
+    if (input.totalCost !== undefined) {
+      const paid = await tx.orderPayment.aggregate({ where: { orderId }, _sum: { amount: true } });
+      const paidAmount = paid._sum.amount ?? 0;
+      if (input.totalCost < paidAmount) {
+        return { ok: false, error: "TOTAL_BELOW_PAID" };
       }
     }
 

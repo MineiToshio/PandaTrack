@@ -62,6 +62,9 @@ export default async function OrdersEditPage({ params }: Props) {
         currencyCode: order.currencyCode,
         exchangeRate: order.exchangeRate != null ? Number(order.exchangeRate) : null,
         totalCost: order.totalCost,
+        // Sum of payments already recorded — the edit form blocks the user from lowering
+        // `totalCost` below this value (server enforces the same gate).
+        paidAmount: order.payments.reduce((sum, p) => sum + p.amount, 0),
         items: order.items,
       }}
     />

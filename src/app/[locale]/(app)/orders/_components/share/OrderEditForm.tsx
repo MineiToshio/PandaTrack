@@ -66,6 +66,8 @@ export type InitialOrderData = {
   currencyCode: string;
   exchangeRate: number | null;
   totalCost: number;
+  /** Sum of payments already recorded — minimum the user can lower `totalCost` to. */
+  paidAmount: number;
   items: InitialOrderItem[];
 };
 
@@ -232,6 +234,14 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
   const hasAnyPricedItem = pricedRows.length > 0;
   const validItemsCount = useMemo(() => items.filter((r) => r.name.trim().length > 0).length, [items]);
 
+  // Total-vs-paid guard — the user can't lower `totalCost` below the sum of payments
+  // already recorded. Server enforces the same gate (`TOTAL_BELOW_PAID`), but we surface
+  // it inline as the user types so they fix it before hitting Save instead of after.
+  const parsedTotalCents = useMemo(() => parseCentsFromDecimal(totalCost), [totalCost]);
+  const totalBelowPaid =
+    parsedTotalCents !== null && initialOrder.paidAmount > 0 && parsedTotalCents < initialOrder.paidAmount;
+  const paidAmountLabel = formatAmount(initialOrder.paidAmount, currencyCode);
+
   const handleAddItemRow = useCallback(() => {
     setItems((prev) => [...prev, createEmptyRow(nextRowId())]);
   }, [nextRowId]);
@@ -298,8 +308,11 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
     } else {
       setClientTotalCostError(null);
     }
+    // `totalBelowPaid` already renders its own inline error reactively while typing;
+    // here we just block submit so neither path slips past the gate.
+    if (totalBelowPaid) valid = false;
     return valid;
-  }, [orderDate, validateItems, totalCost, t]);
+  }, [orderDate, validateItems, totalCost, totalBelowPaid, t]);
 
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -639,7 +652,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
                       inputMode="decimal"
                       value={totalCost}
                       placeholder={tForm("totalCostPlaceholder")}
-                      error={Boolean(clientTotalCostError)}
+                      error={Boolean(clientTotalCostError) || totalBelowPaid}
                       onChange={(e) => {
                         setTotalCost(sanitizeDecimalInput(e.target.value));
                         setClientTotalCostError(null);
@@ -648,6 +661,10 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
                     {clientTotalCostError ? (
                       <p className="text-[12px] [color:var(--destructive)]" role="alert">
                         {clientTotalCostError}
+                      </p>
+                    ) : totalBelowPaid ? (
+                      <p className="text-[12px] [color:var(--destructive)]" role="alert">
+                        {t("validation.totalBelowPaid", { paid: paidAmountLabel })}
                       </p>
                     ) : (
                       <p className="text-[11.5px] [color:var(--text-muted)]">{tCreate("totalCostHelper")}</p>
@@ -713,7 +730,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
               <Button
                 type="submit"
                 variant="primary"
-                disabled={isPending || !isDirty}
+                disabled={isPending || !isDirty || totalBelowPaid}
                 leadingIcon={<Check size={14} aria-hidden />}
               >
                 {isPending ? tEdit("submitting") : tEdit("submit")}
@@ -756,7 +773,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
         <Button
           type="button"
           variant="primary"
-          disabled={isPending || !isDirty}
+          disabled={isPending || !isDirty || totalBelowPaid}
           leadingIcon={<Check size={14} aria-hidden />}
           onClick={() => formRef.current?.requestSubmit()}
           className="flex-1 [justify-content:center]"

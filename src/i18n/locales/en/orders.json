@@ -138,12 +138,17 @@
     "title": "Edit order · {humanReadableId}",
     "heroDescription": "Modify the details of this order.",
     "submit": "Save changes",
+    "cancel": "Cancel",
     "submitting": "Saving...",
     "successToast": "Order saved",
     "discardTitle": "Leave without saving?",
     "discardMessage": "Changes you made will not be saved.",
     "discardConfirm": "Leave",
-    "discardCancel": "Stay"
+    "discardCancel": "Stay",
+    "sectionDatosTitle": "Order details",
+    "sectionDatosSubtitle": "{storeName} · {currencyCode}",
+    "sectionProductosTitle": "Products and costs",
+    "sectionProductosSubtitle": "Items and order total"
   },
   "emptyState": {
     "title": "Start with a store",
@@ -159,6 +164,8 @@
     "storeCreateOption": "+ Create store",
     "storeCreateWithName": "+ Create \"{name}\"",
     "storeNotFoundQuestion": "Can't find your store?",
+    "storeLockedHelper": "The store cannot be changed once the order is created.",
+    "currencyLockedHelper": "The currency cannot be changed once the order is created.",
     "orderDateLabel": "Order date",
     "orderDatePlaceholder": "Select date",
     "deliveryRangeLabel": "Expected delivery (optional)",
@@ -230,6 +237,7 @@
     "totalCostInvalid": "Enter a valid amount (e.g. 25.99)",
     "totalCostTooLow": "Total must be greater than 0",
     "totalCostTooHigh": "Total is too high",
+    "totalBelowPaid": "Total can't be lower than payments already recorded ({paid}). Delete a payment or raise the total.",
     "itemsRequired": "Add at least one item",
     "itemNameRequired": "Name is required",
     "itemNameTooLong": "Name is too long",
@@ -243,7 +251,8 @@
     "STORE_NOT_FOUND": "The selected store does not exist.",
     "INVALID_PRODUCT_TYPE": "One of the product types is invalid.",
     "ITEM_HAS_LIVE_DELIVERY": "An item is linked to an active shipment and cannot be removed.",
-    "STORE_CHANGE_BLOCKED": "You can only change the store while the order is open and has no shipments."
+    "STORE_CHANGE_BLOCKED": "You can only change the store while the order is open and has no shipments.",
+    "TOTAL_BELOW_PAID": "Total can't be lower than payments already recorded. Delete a payment or raise the total."
   },
   "detail": {
     "backToList": "Orders",
