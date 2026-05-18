@@ -1,10 +1,10 @@
 ---
 title: PandaTrack Redesign — Subproyecto
-last_updated: 2026-05-11
+last_updated: 2026-05-17
 owner: Sergio Minei
 ---
 
-> **Estado actual:** S1-S6 ✅ done · M01-M05 ✅ done · S7 Fase A ✅ done. **Plan revisado post-S4** (ver [`methodology.md`](./methodology.md)): cada sesión tiene **Fase A (docs) + Fase B (implementación inmediata)** con gate humano en el medio. Todo va a branch `redesign`. Dashboard fuera de scope. Última sesión (S13) reemplaza `docs/design/` con el sistema final.
+> **Estado actual:** S1-S6 ✅ done · M01-M06 ✅ done · S5.2 + S5.3 ✅ done · S7 Fase A ✅ done · **S7 Fase B (Orders end-to-end) ✅ done**. Próxima: **S8 — Pantalla Ajustes** (insertada en el roadmap por decisión humana 2026-05-17; corre la numeración de Deliveries → S9, Estados → S10, etc.). **Plan revisado post-S4** (ver [`methodology.md`](./methodology.md)): cada sesión tiene **Fase A (docs) + Fase B (implementación inmediata)** con gate humano en el medio. Todo va a branch `redesign`. Dashboard fuera de scope. Última sesión (S14) reemplaza `docs/design/` con el sistema final.
 >
 > **S5 Fase B completada ✅ (2026-05-02).** App shell PUSH sidebar · Header con breadcrumbs + core toggles · MobileTabBar con FAB elevado central · MascotBubble idle · ProgressBar · Pagination · FAB · useSidebarState shared hook · AppLayout refactorizado. i18n completo. 388 tests ✅, build limpio ✅. Ver [`sessions/05-app-shell.md`](./sessions/05-app-shell.md). _(MobileTabBar eliminada en S5.2 — ver abajo.)_
 >
@@ -28,7 +28,9 @@ owner: Sergio Minei
 >
 > **⛔ PRE-REQUISITO OBLIGATORIO antes de S7 Fase B Parte 1: Modal adaptive architecture** (ADR 0008 Extensión 2026-05-11 + ADR 0010). Construir 4 archivos en `src/components/modules/Modal/`: `Modal.tsx` (smart wrapper público) + `ModalDialog.tsx` (desktop, renombrado del actual) + `ModalSheet.tsx` (mobile bottom sheet, usa Vaul) + `ModalContent.tsx` (shared) + `useIsMobile()` hook. Instalar `vaul` (Radix viene transitivo, NO se agrega top-level). Migrar 7 ad-hoc dialogs identificados al canónico `<Modal>`. **Cero migración de los 15 callsites canónicos** — siguen importando `<Modal>` igual que hoy. Costo ~3 días. Esta tarea debe completarse ANTES de implementar listado/detalle/crear/editar de Orders. Razón: los 8 modales del módulo requieren la variante adaptive — si se difiere, reescritura posterior. Detalle completo en `modules/orders.md` §Handoff → "⛔ STOP Pre-requisito Fase B Parte 0".
 >
-> **Próxima sesión: 🟡 S7 Fase B — Módulo Órdenes · Implementación parte 1 (listado)** — Opus 4.7 / Alto, conversación nueva, en Claude Code. La Fase B se ejecuta en 5 conversaciones secuenciales (decisión humana 2026-05-10 + extensión 2026-05-11): **(0) Modal adaptive architecture (Modal + ModalDialog + ModalSheet + ModalContent + useIsMobile + Vaul) + migración de 7 ad-hoc dialogs al canónico — pre-requisito obligatorio**, (1) listado de órdenes, (2) crear orden, (3) detalle de orden, (4) editar orden. Cada conversación lee el handoff brief de `modules/orders.md` + el spec específico de la pantalla. Branch `redesign`. NO commits del agente — Sergio commitea cada parte antes de arrancar la siguiente.
+> **S7 Fase B (Orders end-to-end) completada ✅ (2026-05-17).** 4 partes secuenciales cerradas: Parte 1 listado (commits `62c9e29` + `7643740`), Parte 2 crear (`0ff116e`), Parte 3 detalle (`559ae70` + refinements `6ff148b`/`3b92c77`), Parte 4 editar (`a89eee7` + `25f6089`). Componentes propios: ~25 entre `_components/` del listado, `share/` del wizard y `[id]/_components/` del detalle. Modal adaptive (M06) + MobilePicker + AsideSummary consumidos cross-pantalla. Lifecycle por reversibilidad (ADR 0001 D6), toast neutral-undo (D4), view-transition `order-{id}` (D7), autosave de nota privada con debounce 800ms aplicados. Resto del shell content header con segmented control commiteado en paralelo.
+>
+> **Próxima sesión: 🟡 S8 — Pantalla Ajustes (Fase A con HTML-first iteration)** — Sonnet 4.6 / Alto, conversación nueva. Módulo lite: 1 pantalla con 3 tabs (Profile, Account, Preferences) + modales adaptive (cambiar email, eliminar cuenta, eliminar avatar, currency picker mobile) + decisiones mobile (tabs laterales desktop → patrón mobile a definir). Scope (a): rediseñar lo que existe en `src/app/[locale]/(app)/settings/`; las nuevas funcionalidades del FRD-07 entran como `P-S8-NN` propuestas. Después: Fase B en 1 conversación (sin partes secuenciales — scope acotado).
 >
 > - **6 wireframes lo-fi** en `screens/`.
 > - **8 ADRs cerrados:** [`0001`](./decisions/0001-s2-closure-decisions.md) (19 decisiones de cierre S2), [`0002`](./decisions/0002-status-chip-mapping.md) (mapeo de enums Prisma a chips), [`0003`](./decisions/0003-demo-decisions.md) (8 decisiones del demo: Velvet, theme sin `system`, sidebar push, header con breadcrumbs, wizard accordion, sidebar derecha, filter drawer), [`0004`](./decisions/0004-categorical-palette-removal.md) (paleta categórica eliminada), [`0005`](./decisions/0005-dashboard-microstat-icon-tile.md) (icon-tile + cifra neutra), [`0006`](./decisions/0006-color-blindness-icon-label-contract.md) (contrato ícono+label), [`0007`](./decisions/0007-text-muted-outdoor-code-mono-reassignment.md) (code mono en `--text-secondary`), [`0008`](./decisions/0008-modal-enhancement.md) (Modal Enhancement — Semantic Depth: icon-circle tonal, backdrop blur, spring animation, radius 20px).
@@ -183,25 +185,26 @@ Detalle completo en [`methodology.md`](./methodology.md). Resumen de las reglas 
 
 ## Sesiones (estado renumerado post-S4)
 
-| #   | Nombre                                          | Tipo             | Estado                                                                                      |
-| --- | ----------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------- |
-| 01  | Research + Auditoría + 4 direcciones            | original         | ✅ done                                                                                     |
-| 02  | Wireframes de pantallas críticas                | original         | ✅ done                                                                                     |
-| 03  | Sistema de tokens dual-mode (Fase A)            | foundational     | ✅ done                                                                                     |
-| 03B | Implementación de tokens en `src/` (Fase B)     | B-only           | ✅ done                                                                                     |
-| 04  | Componentes core — specs (Fase A)               | foundational     | ✅ done                                                                                     |
-| 04B | Implementación de atoms (Fase B, primer batch)  | B-only           | ✅ done                                                                                     |
-| 04B | Implementación de atoms (Fase B, segundo batch) | B-only           | ✅ done                                                                                     |
-| 05  | Navegación y layouts (app shell)                | foundational A+B | ✅ done                                                                                     |
-| 06  | Módulo Tiendas (crear / lista / detalle)        | módulo           | ✅ done                                                                                     |
-| M04 | Wizard form polish (create-store)               | correctiva       | ✅ done                                                                                     |
-| 07  | Módulo Órdenes (crear-editar / lista / detalle) | módulo           | Fase A ✅ done · Fase B 🟡 next (4 partes secuenciales: listado → crear → detalle → editar) |
-| 08  | Módulo Entregas (crear / lista / detalle)       | módulo           | ⏳ pending                                                                                  |
-| 09  | Estados transversales (empty / loading / error) | foundational A+B | ⏳ pending                                                                                  |
-| 10  | Onboarding + Landing                            | módulo           | ⏳ pending                                                                                  |
-| 11  | Motion + microinteracciones + voice library     | foundational A+B | ⏳ pending                                                                                  |
-| 12  | Pasada final de auditoría                       | foundational A+B | ⏳ pending                                                                                  |
-| 13  | Reemplazo de `docs/design/` con sistema final   | meta             | ⏳ pending                                                                                  |
+| #   | Nombre                                                                | Tipo                            | Estado                                                                                         |
+| --- | --------------------------------------------------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 01  | Research + Auditoría + 4 direcciones                                  | original                        | ✅ done                                                                                        |
+| 02  | Wireframes de pantallas críticas                                      | original                        | ✅ done                                                                                        |
+| 03  | Sistema de tokens dual-mode (Fase A)                                  | foundational                    | ✅ done                                                                                        |
+| 03B | Implementación de tokens en `src/` (Fase B)                           | B-only                          | ✅ done                                                                                        |
+| 04  | Componentes core — specs (Fase A)                                     | foundational                    | ✅ done                                                                                        |
+| 04B | Implementación de atoms (Fase B, primer batch)                        | B-only                          | ✅ done                                                                                        |
+| 04B | Implementación de atoms (Fase B, segundo batch)                       | B-only                          | ✅ done                                                                                        |
+| 05  | Navegación y layouts (app shell)                                      | foundational A+B                | ✅ done                                                                                        |
+| 06  | Módulo Tiendas (crear / lista / detalle)                              | módulo                          | ✅ done                                                                                        |
+| M04 | Wizard form polish (create-store)                                     | correctiva                      | ✅ done                                                                                        |
+| 07  | Módulo Órdenes (crear-editar / lista / detalle)                       | módulo                          | ✅ done (Fase A + Fase B en 4 partes secuenciales)                                             |
+| 08  | Pantalla Ajustes (Profile / Account / Preferences + modales adaptive) | módulo lite (1 pantalla + tabs) | 🟡 next (Fase A iterativa con HTML-first; insertada en roadmap 2026-05-17 por decisión humana) |
+| 09  | Módulo Entregas (crear / lista / detalle)                             | módulo                          | ⏳ pending (renumerada desde S8)                                                               |
+| 10  | Estados transversales (empty / loading / error)                       | foundational A+B                | ⏳ pending (renumerada desde S9)                                                               |
+| 11  | Onboarding + Landing                                                  | módulo                          | ⏳ pending (renumerada desde S10)                                                              |
+| 12  | Motion + microinteracciones + voice library                           | foundational A+B                | ⏳ pending (renumerada desde S11)                                                              |
+| 13  | Pasada final de auditoría                                             | foundational A+B                | ⏳ pending (renumerada desde S12)                                                              |
+| 14  | Reemplazo de `docs/design/` con sistema final                         | meta                            | ⏳ pending (renumerada desde S13)                                                              |
 
 **Cambios respecto al plan original:**
 
@@ -213,7 +216,7 @@ Detalle completo en [`methodology.md`](./methodology.md). Resumen de las reglas 
 
 ## Estado actual
 
-- Sesión vigente: **S7 Fase B — Módulo Órdenes · Implementación parte 1 (listado)** 🟡 próxima. Las partes 2 (crear), 3 (detalle), 4 (editar) se ejecutan en conversaciones nuevas separadas según se vayan cerrando.
+- Sesión vigente: **S8 — Pantalla Ajustes · Fase A (HTML-first iteration)** 🟡 próxima. Insertada en roadmap 2026-05-17 por decisión humana (antes de S9 Entregas para cerrar el bloque de pantallas administrativas del coleccionista). Fase A iterativa con extensión del demo HTML + bootstrap de specs `screens/settings.md` y `modules/settings.md`. Fase B en 1 conversación posterior (sin partes secuenciales — scope acotado a 1 pantalla con 3 tabs + modales adaptive).
 - S1 (Research + Auditoría + 4 direcciones) cerrada con rev 1 + rev 2.
 - S2 produjo 6 wireframes lo-fi, red team, plan de 5 validaciones humanas, y **ADR 0001** (19 decisiones).
 - S3 produjo `tokens.md` (Velvet default + 4 alternativas), `tokens-css.md` (mapping Tailwind v4), audit de contraste 188/188 AA, red team 15 objeciones / 0 bloqueantes, y **ADR 0004** (eliminación de paleta categórica).
