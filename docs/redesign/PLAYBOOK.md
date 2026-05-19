@@ -660,6 +660,152 @@ Reglas para agregar nuevas pantallas mobile al demo HTML (`_notes/demo-screens.h
 
 - **Lucide selectores duales `> i, > svg`** (L068). El runtime `lucide.createIcons()` reemplaza `<i data-lucide="X">` con `<svg>`. Los selectores CSS `> i` dejan de matchear post-runtime. Usar selectores duales: `.alert > i, .alert > svg { color: ...; }`. En Fase B (React/Next con `lucide-react`) NO es problema — renderiza `<svg>` directamente.
 
+### 9.17 Patrón S8 — Chip Eyebrow + Top-Accent (S8, módulo Ajustes + uplift de detalles)
+
+Descubierto en S8 (Fase A demo) y trasladado a código en S8 Fase B uplift de `order-detail` y `store-detail`. Aplica a cualquier página de detalle con cards heterogéneas que coexisten en un mismo viewport.
+
+**Qué es.** Un par visual coordinado:
+
+- **Chip Eyebrow** — el eyebrow tradicional (mono uppercase) se renderiza como pill tintada con borde + fondo `color-mix(in oklch, var(--token) 9–14%, transparent)` + ícono lucide leading.
+- **Top-accent border** — la card lleva `border-top: 2px solid color-mix(in oklch, var(--token) 55%, transparent)` con el mismo token semántico que el chip.
+
+Los dos elementos siempre se aplican juntos. Un chip sin top-border, o un top-border sin chip, rompe el patrón y se lee como ruido.
+
+**Tonos disponibles** (vocabulario semántico cross-módulo — NO inventar tonos por módulo):
+
+| Tono          | Token           | Comunica                                 | Ejemplos canónicos                             |
+| ------------- | --------------- | ---------------------------------------- | ---------------------------------------------- |
+| `accent`      | `--accent`      | Identidad, contenido principal, acciones | Hero del pedido, Acciones, Tu tienda · Resumen |
+| `cool`        | `--accent-cool` | Sistema, datos, historial, info técnica  | Productos, Historial, Pagos (activo)           |
+| `warm`        | `--accent-warm` | Personal, hobby, social, notas, reseñas  | Tu nota privada, Reseñas                       |
+| `success`     | `--success`     | Estado terminal positivo                 | Pagos cuando 100% pagado                       |
+| `warning`     | `--warning`     | Estado de atención (no error)            | Pagos cuando pedido completo + saldo           |
+| `destructive` | `--destructive` | Estado de error / urgencia               | Pagos cuando pedido overdue                    |
+
+**Vocabulario cross-módulo congelado** — estos labels NO varían su tono+ícono entre pantallas:
+
+| Eyebrow                                     | Tono                      | Ícono lucide |
+| ------------------------------------------- | ------------------------- | ------------ |
+| `Acciones`                                  | `accent`                  | `Zap`        |
+| `Tu nota privada`                           | `warm`                    | `PencilLine` |
+| `Reseñas`                                   | `warm`                    | `Star`       |
+| `Productos`                                 | `cool`                    | `Boxes`      |
+| `Historial`                                 | `cool`                    | `Clock3`     |
+| `Pagos`                                     | (state-aware — ver abajo) | `Wallet`     |
+| `Tu pedido · {curr}`                        | `accent`                  | `Package`    |
+| `Categorías` / `Categorías e importaciones` | `cool`                    | `Tags`       |
+| `Canales de contacto`                       | `cool`                    | `AtSign`     |
+| `Direcciones`                               | `cool`                    | `MapPin`     |
+
+**Pagos — tono derivado del estado del pedido** (`derivePaymentsTone` en `OrderPaymentsAsideCard.tsx`):
+
+```
+isFullyPaid     → success
+isOverdue       → destructive
+isCompleted && hasUnpaidBalance → warning
+otherwise (activo, cancelado) → cool
+```
+
+#### Cuándo usar
+
+✅ Páginas de detalle (`order-detail`, `store-detail`, `delivery-detail` futuro) — cards de tipos **distintos** coexistiendo en el viewport. El usuario necesita escanear y encontrar "dónde está la card de Pagos / Acciones / Nota". Los tonos crean un lenguaje visual reconocible.
+
+✅ Pantalla de Ajustes (S8) — paneles Perfil / Cuenta / Preferencias y sus sub-cards (Apariencia cool, Coleccionista warm).
+
+✅ Cards que comparten viewport y representan **naturalezas semánticas distintas**.
+
+#### Cuándo NO usar
+
+❌ **Wizard step cards** (`section-card-wizard` con `step-num`, en `order-create` / `store-create`). Las cards son homogéneas (cada una es "un paso") y ya tienen el `step-num` como diferenciador primario. Además los estados `is-active` (`--border-strong` + sombra) e `is-done` (success verde) ya usan color tonal en un eje de progresión — un top-border de color pelearía con eso. Razonamiento completo: en wizards el flujo es lineal (no se escanea), las cards contienen inputs (cromo de color se lee como alerta), y dos sistemas tonales superpuestos se anulan.
+
+❌ **List items repetidos** (`order-list`, `store-list`, filas de cualquier listado). Cards homogéneas en serie — agregar top-border de color en cada fila licúa la señal hasta convertirse en decoración.
+
+❌ **Eyebrows dentro de modales o sheets**. Los modales (`m01b` / ADR 0008 Semantic Depth) ya usan `m01b-icon-circle` tonal como diferenciador. Apilar un chip eyebrow encima duplica la señal.
+
+❌ **Filter drawer interno** (`#s6-stores-list-filters-open`, `#s7-orders-list-filters-open`). El drawer mismo es el contexto; secciones internas no necesitan diferenciación tonal.
+
+❌ **Sidebar sticky cards de wizards** (`Resumen` aside, `Atajos`). Son auxiliares secundarios — no merecen jerarquía visual de "tipo principal".
+
+❌ **Eyebrow `Tu pedido · {moneda}` cuando vive dentro del `m01b-header` de un modal** — el modal ya tiene su propio icon-circle.
+
+Regla general: el patrón es un **diferenciador**, y los diferenciadores solo funcionan mientras son escasos. Si lo aplicás en todas las cards de la app, el ojo deja de registrarlo como significativo.
+
+#### Cómo implementar en código (Fase B)
+
+**1. Componentes core** (ya extendidos en S8 Fase B):
+
+- `<Eyebrow variant="chip" tone="..." icon={LucideIcon}>` — renderiza el pill. Tones: `muted | accent | cool | warm | success | warning | destructive`. Acepta `id` para `aria-labelledby`.
+- `<SectionCard topAccent="...">` — top-border 2px independiente del prop `tone` (que sigue siendo borde-izquierdo para warning/destructive states).
+- Wrappers con styling propio (`CollapsibleSection`, `CollapsibleSubcard`, `DetailSidebar`, `PrivateNoteCard`, `OrderPaymentsAsideCard`) reciben prop `topAccent` y aplican el border-top via inline style con `color-mix` sobre el token correspondiente. Patrón:
+
+  ```ts
+  const TOP_ACCENT_VAR: Record<EyebrowTone, string> = {
+    accent: "var(--accent)",
+    cool: "var(--accent-cool)",
+    warm: "var(--accent-warm)",
+    success: "var(--success)",
+    warning: "var(--warning)",
+    destructive: "var(--destructive)",
+    muted: "var(--text-muted)",
+  };
+  style={{ borderTop: `2px solid color-mix(in oklch, ${TOP_ACCENT_VAR[topAccent]} 55%, transparent)` }}
+  ```
+
+**2. El gotcha RSC — íconos cruzando server→client** (descubierto durante S8 Fase B):
+
+Si el card-wrapper es un Client Component (`"use client"` porque tiene `useState` para colapsar/toggle) y el padre es Server Component, **NO se puede pasar el componente del ícono lucide como prop directo** — React intenta serializarlo y crashea con:
+
+> Only plain objects can be passed to Client Components from Server Components. Classes or other objects with methods are not supported.
+
+**Patrón correcto:** la wrapper Client Component recibe el eyebrow ya armado como `ReactNode`, y el padre Server Component arma el JSX (que React server-renderiza antes de cruzar el boundary):
+
+```tsx
+// ❌ MAL — crash en RSC boundary
+<CollapsibleSection
+  eyebrow={tStores("redesign.detail.categoriesTitle")}
+  eyebrowTone="cool"
+  eyebrowIcon={Tags}        // function ref no se serializa
+  topAccent="cool"
+/>
+
+// ✅ BIEN — el Eyebrow se renderiza server-side, el SVG ya plano cruza el boundary
+<CollapsibleSection
+  eyebrow={
+    <Eyebrow variant="chip" tone="cool" icon={Tags}>
+      {tStores("redesign.detail.categoriesTitle")}
+    </Eyebrow>
+  }
+  topAccent="cool"
+/>
+```
+
+Esto funciona porque `Eyebrow` no tiene `"use client"` — es Server Component. React lo renderiza server-side, el ícono se invoca server-side y resulta en SVG markup plano que sí cruza la frontera serializado.
+
+`topAccent` (string enum) se pasa como prop directo sin problema — el problema es exclusivo de function refs (componentes).
+
+**3. Cuándo el componente consumidor es Client** (el card-wrapper completo, no solo el eyebrow):
+
+Si todo el árbol consumidor es client (ej. `OrderDetailHero`, `OrderPaymentsAsideCard`, `OrderActionsCard`, `PrivateNoteCard`), importá los íconos directamente desde `lucide-react` dentro del Client Component y pasalos a `<Eyebrow icon={...}>` sin restricción — todo se ejecuta del lado cliente, no hay boundary que cruzar.
+
+#### Tokens consumidos por el patrón
+
+- Color: `--accent`, `--accent-cool`, `--accent-warm`, `--success`, `--warning`, `--destructive`, `--text-muted`.
+- Chip background: `color-mix(in oklch, var(--token) 9–14%, transparent)`.
+- Chip border: `color-mix(in oklch, var(--token) 18–28%, transparent)`.
+- Card top-border: `2px solid color-mix(in oklch, var(--token) 55%, transparent)`.
+
+Los porcentajes vienen del demo HTML y están calibrados para AA en light/dark. NO ajustar sin actualizar el demo + este playbook.
+
+#### Verificación post-implementación
+
+Para cada card afectada por el patrón:
+
+1. Top border 2px en el color correcto (no 1px ni 3px).
+2. Eyebrow chip con ícono visible y color coordinado con el border (NO un tono que no exista en la tabla cross-módulo).
+3. Sin regresión de layout — la card no crece > 2px en altura.
+4. Light y dark — los `color-mix` con tokens semánticos se adaptan solos. Probar ambos themes.
+5. Labels recurrentes (`Acciones`, `Tu nota privada`, etc.) usan el mismo tono+ícono que en el resto de la app (vocabulario congelado).
+
 ## Referencias
 
 - `docs/redesign/methodology.md` — metodología completa del subproyecto.

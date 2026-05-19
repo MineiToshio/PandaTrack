@@ -1,9 +1,9 @@
 ---
 title: Eyebrow
 tier: 1
-status: spec — no implementado
-last_updated: 2026-05-02
-session: 04-components
+status: implementado · chip variant agregado S8 Fase B
+last_updated: 2026-05-18
+session: 04-components · ampliado en S8
 adrs:
   - ADR 0001 D2 (eyebrow ↳ DESDE PT-XXXXXX en field-as-attribute)
   - ADR 0005 (microstat eyebrow uppercase mono)
@@ -15,41 +15,71 @@ adrs:
 
 Atom de tipografía: render uppercase mono identificando una sección, slot, o categoría. Aparece en cada section card de [`order-create.md`](../screens/order-create.md) ("PASO 1 · TIENDA", "PASO 2 · FECHAS", etc.), en cada section card de [`delivery-create.md`](../screens/delivery-create.md) ("DESDE", "QUÉ LLEGA", "CUÁNDO Y CUÁNTO"), en eyebrows de microstats del dashboard ("PRÓXIMOS 30 DÍAS", "TUS PRE-ÓRDENES" — ADR 0005), y en el patrón field-as-attribute (ADR 0001 D2 — `↳ DESDE PT-002418`). Tokenizado como `--text-eyebrow`.
 
+Desde S8 admite dos variantes: `text` (la original, default) y `chip` (pill tintada con ícono leading, parte del patrón S8 cross-módulo descrito en `PLAYBOOK §9.17`).
+
 ## API TypeScript
 
 ```ts
+type EyebrowVariant = "text" | "chip";
+type EyebrowTone = "muted" | "accent" | "cool" | "warm" | "success" | "warning" | "destructive";
+
 type EyebrowProps = {
   /** Contenido. Se renderiza tal cual; el componente aplica `text-transform: uppercase` por CSS. */
   children: ReactNode;
+  /** Variante visual. `text` = inline mono uppercase (default). `chip` = pill tintada con ícono leading (S8). */
+  variant?: EyebrowVariant;
   /** Tamaño. Default `md`. */
   size?: "sm" | "md";
-  /** Tono. Default `muted`. `accent` se usa solo en moments celebratorios (achievement). */
-  tone?: "muted" | "accent";
+  /**
+   * Tono. Default `muted`.
+   * - `text` variant: `muted` (default) o `accent` (celebratorio).
+   * - `chip` variant: cualquiera del set semántico cross-módulo. Ver PLAYBOOK §9.17.
+   */
+  tone?: EyebrowTone;
+  /** Ícono lucide leading. SOLO se renderiza en `variant="chip"`. */
+  icon?: ComponentType<SVGProps<SVGSVGElement>>;
   /** Etiqueta semántica. Default `span`. Usar `h2`/`h3` cuando el eyebrow es heading semántico de la sección. */
-  as?: "span" | "p" | "h2" | "h3" | "h4";
+  as?: "span" | "p" | "h2" | "h3" | "h4" | "legend";
+  /** `id` estable — usado como target de `aria-labelledby` desde la `<section>` padre. */
+  id?: string;
+  className?: string;
 };
 ```
 
 ## Variants / Sizes
 
-| Variant (`size`) | Uso                                                       | Tokens consumidos                                      |
-| ---------------- | --------------------------------------------------------- | ------------------------------------------------------ |
-| `sm`             | Inline en cuerpo, captions densos                         | `--text-eyebrow` (11px), `--text-muted`                |
-| `md` (default)   | Section cards, microstats, field-as-attribute             | `--text-eyebrow` (11px), `--text-muted`                |
+| Variant (`variant`) | Uso                                                                                                          | Tokens consumidos                                |
+| ------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| `text` (default)    | Section cards de wizards, microstats, attribute prefix, headings de paneles                                  | `--text-eyebrow`, color por tono                 |
+| `chip` (S8)         | Cards de detalle (`order-detail`, `store-detail`, settings panes) — comunicar naturaleza semántica con tinte | `--text-eyebrow` + `color-mix` sobre token tonal |
+
+| Variant (`size`) | Uso                                           | Tokens consumidos                       |
+| ---------------- | --------------------------------------------- | --------------------------------------- |
+| `sm`             | Inline en cuerpo, captions densos             | `--text-eyebrow` (11px), `--text-muted` |
+| `md` (default)   | Section cards, microstats, field-as-attribute | `--text-eyebrow` (11px), `--text-muted` |
 
 (El size del Eyebrow es estable por convención S3 — no escala. Las dos variantes existen para herencia consistente con otros atoms.)
 
-| Tone     | Uso                                                                         | Tokens consumidos                              |
-| -------- | --------------------------------------------------------------------------- | ---------------------------------------------- |
-| `muted`  | Default — section cards, microstat eyebrows, attribute prefix               | `--text-muted`                                 |
-| `accent` | Achievement celebrations, microstat con destaque                            | `--accent`                                     |
+### Tones disponibles
+
+| Tone          | Aplicable en   | Uso                                                                               | Token           |
+| ------------- | -------------- | --------------------------------------------------------------------------------- | --------------- |
+| `muted`       | `text`, `chip` | Default — section cards de wizards, microstat eyebrows, attribute prefix          | `--text-muted`  |
+| `accent`      | `text`, `chip` | Identidad, contenido principal, acciones; achievement celebrations (variant text) | `--accent`      |
+| `cool`        | `chip`         | Sistema, datos, historial, info técnica (Productos, Historial, Categorías…)       | `--accent-cool` |
+| `warm`        | `chip`         | Personal, hobby, social, notas privadas, reseñas                                  | `--accent-warm` |
+| `success`     | `chip`         | Estado terminal positivo (Pagos · 100% pagado)                                    | `--success`     |
+| `warning`     | `chip`         | Estado de atención (Pagos · completed + saldo pendiente)                          | `--warning`     |
+| `destructive` | `chip`         | Estado de error / urgencia (Pagos · overdue)                                      | `--destructive` |
+
+El vocabulario de tonos cross-módulo está congelado en `PLAYBOOK §9.17` — labels como `Acciones`, `Tu nota privada`, `Reseñas`, `Productos`, `Historial` SIEMPRE usan el mismo par tono+ícono entre pantallas.
 
 ## Estados visuales
 
-| Estado    | Receta CSS (light)                                                                                                                                                                                                                                                  | Receta CSS (dark) | Notas                                                                                          |
-| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------- |
-| `muted`   | `font-family: var(--font-mono); font-size: var(--text-eyebrow); line-height: var(--text-eyebrow--line-height); letter-spacing: var(--text-eyebrow--letter-spacing); font-weight: var(--font-weight-mono); text-transform: uppercase; color: var(--text-muted); font-feature-settings: "calt", "ss01";` | mismo             | `letter-spacing: 0.08em` (token).                                                              |
-| `accent`  | mismo + `color: var(--accent)`                                                                                                                                                                                                                                       | mismo             | Solo en momentos celebratorios.                                                                |
+| Estado   | Receta CSS (light)                                                                                                                                                                                                                                                                                     | Receta CSS (dark) | Notas                             |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- | --------------------------------- |
+| `muted`  | `font-family: var(--font-mono); font-size: var(--text-eyebrow); line-height: var(--text-eyebrow--line-height); letter-spacing: var(--text-eyebrow--letter-spacing); font-weight: var(--font-weight-mono); text-transform: uppercase; color: var(--text-muted); font-feature-settings: "calt", "ss01";` | mismo             | `letter-spacing: 0.08em` (token). |
+| `accent` | mismo + `color: var(--accent)`                                                                                                                                                                                                                                                                         | mismo             | Solo en momentos celebratorios.   |
 
 Receta base (CSS):
 
@@ -93,22 +123,22 @@ Bajo `prefers-reduced-motion`: sin cambios.
 
 ## Copy default + i18n
 
-| Clave i18n sugerida                          | Valor ES                                  |
-| -------------------------------------------- | ----------------------------------------- |
-| `components.eyebrow.section.step1`           | "PASO 1 · TIENDA"                         |
-| `components.eyebrow.section.step2`           | "PASO 2 · FECHAS"                         |
-| `components.eyebrow.section.step3`           | "PASO 3 · ITEMS"                          |
-| `components.eyebrow.section.step4`           | "PASO 4 · COSTOS"                         |
-| `components.eyebrow.section.step5`           | "PASO 5 · NOTA"                           |
-| `components.eyebrow.section.from`            | "DESDE"                                   |
-| `components.eyebrow.section.what`            | "QUÉ LLEGA"                               |
-| `components.eyebrow.section.when`            | "CUÁNDO Y CUÁNTO"                         |
-| `components.eyebrow.section.summary`         | "RESUMEN"                                 |
-| `components.eyebrow.dashboard.next30`        | "PRÓXIMOS 30 DÍAS"                        |
-| `components.eyebrow.dashboard.thisMonth`     | "ESTE MES"                                |
-| `components.eyebrow.dashboard.late`          | "ATRASADO"                                |
-| `components.eyebrow.dashboard.thisWeek`      | "LLEGA ESTA SEMANA"                       |
-| `components.eyebrow.attribute.fromOrder`     | "↳ DESDE {humanId}"                       |
+| Clave i18n sugerida                      | Valor ES            |
+| ---------------------------------------- | ------------------- |
+| `components.eyebrow.section.step1`       | "PASO 1 · TIENDA"   |
+| `components.eyebrow.section.step2`       | "PASO 2 · FECHAS"   |
+| `components.eyebrow.section.step3`       | "PASO 3 · ITEMS"    |
+| `components.eyebrow.section.step4`       | "PASO 4 · COSTOS"   |
+| `components.eyebrow.section.step5`       | "PASO 5 · NOTA"     |
+| `components.eyebrow.section.from`        | "DESDE"             |
+| `components.eyebrow.section.what`        | "QUÉ LLEGA"         |
+| `components.eyebrow.section.when`        | "CUÁNDO Y CUÁNTO"   |
+| `components.eyebrow.section.summary`     | "RESUMEN"           |
+| `components.eyebrow.dashboard.next30`    | "PRÓXIMOS 30 DÍAS"  |
+| `components.eyebrow.dashboard.thisMonth` | "ESTE MES"          |
+| `components.eyebrow.dashboard.late`      | "ATRASADO"          |
+| `components.eyebrow.dashboard.thisWeek`  | "LLEGA ESTA SEMANA" |
+| `components.eyebrow.attribute.fromOrder` | "↳ DESDE {humanId}" |
 
 ## Edge cases
 

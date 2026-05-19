@@ -738,6 +738,26 @@ Cada entrada:
 - **Dónde vive ahora:** ADR 0008 (Extensión 2026-05-11); PLAYBOOK §1 Modal + Sheet; `modules/orders.md` §Handoff "Pre-requisito"; `_notes/cross-cutting-changes.md` S7-A.2.
 - **Verificable por:** abrir cualquier modal en mobile viewport (<768px) — debe ser bottom sheet con drag handle. En desktop (≥768px) — centered dialog Semantic Depth.
 
+## L072 — Secciones `.screen` fuera de `<main>` se renderizan al final del documento
+
+- **Origen:** S8-A.2 — el bloque de 17 nuevas secciones S8 se pegó al final del HTML, después de `</main>`, `<aside class="filter-drawer">`, `<button class="panda-bubble">` y `<script>`. Síntoma reportado por humano: "Cuenta no se ve y Preferencias sale pegado hacia abajo".
+- **Síntoma:** al navegar a `#s8-settings-desktop-account` el contenido aparecía mucho más abajo de lo esperado (con un gran espacio en blanco entre el demo-atelier navbar y el inicio del sidebar PandaTrack). Para `#s8-settings-modal-*` la sensación era de "salto extraño" — primero la pantalla parecía vacía y después el contenido se acomodaba.
+- **Causa raíz:** los `<section class="screen">` se posicionan **donde estén en el DOM**. Las pantallas ANTERIORES estaban dentro de `<main>` (con `padding: 32px 32px 160px` y `max-width` constraints), pero las nuevas S8 estaban fuera. Cuando una S8 era `is-active` y todas las demás `display:none`, el documento body contenía: `<header>` (44px) + `<main>` con un solo screen activo (~720px) + filter-drawer (0 layout) + panda-bubble (0 layout) + script + las nuevas screens. Las S8 quedaban después de todo el otro contenido del body. Además los íconos lucide se generaban **después** del script `lucide.createIcons()`, lo que causaba layout shift al activar la pantalla (el famoso "salto").
+- **Solución aplicada:** mover el bloque entero de 17 secciones S8 desde después de `</script>` hasta antes del `</main>` original. Script Python con extracción + reinserción de líneas. `</main>` se conservó en su posición canónica, las secciones S8 quedaron como hermanas de las S6/S7 dentro de main, y `lucide.createIcons()` (al final del `<script>`) las procesa correctamente al cargar.
+- **Regla derivada:** **TODAS las `<section class="screen">` deben vivir dentro de `<main>`**. Verificar inmediatamente después de agregar un bloque de pantallas con `grep -n '</main>' demo-screens.html` y confirmar que la línea es POSTERIOR a todas las secciones nuevas. Al agregar pantallas al demo HTML: agregalas siempre **antes** del `</main>` existente, no al final del body.
+- **Dónde vive ahora:** demo HTML estructura canónica; aplicar al crear cualquier batch nuevo de pantallas.
+- **Verificable por:** `document.querySelector('.screen.is-active')?.parentElement.tagName` debe ser `"MAIN"` (no `"BODY"`).
+
+## L073 — `querySelectorAll` capturado en script-time pierde elementos del DOM posteriores al script
+
+- **Origen:** S8-A.2 — síntoma reportado por humano: "el único HTML que me funciona es el de Perfil (refactor). Los demás salen todo negro".
+- **Síntoma:** al navegar a cualquier anchor S8 nuevo (`#s8-settings-modal-currency`, `#s8-settings-profile-mobile`, etc.) la pantalla quedaba completamente negra. El navbar mostraba la URL correcta pero ningún `.screen` se activaba.
+- **Causa raíz:** el `<script>` del demo (líneas 14252–15155) declaraba `const screens = document.querySelectorAll('.screen')` al inicio. **El HTML se parsea secuencialmente**: cuando el parser llega al `<script>` ejecuta el JS y captura un NodeList **estático** de las `.screen` que ya están en el DOM hasta esa línea. Las secciones S8 (líneas 15187+, después del script) no estaban parseadas todavía → no estaban en la NodeList. Luego `showScreen(id)` hacía `screens.forEach(s => s.classList.toggle('is-active', s.id === id))` — recorría solo las screens viejas, ninguna matcheaba el id S8, y nada se activaba.
+- **Solución aplicada:** reemplazar el uso de `screens` cacheado por `document.querySelectorAll('.screen').forEach(...)` **dentro de `showScreen`**, así la query se evalúa en tiempo de llamada con el DOM completo. La declaración inicial se mantuvo solo para retrocompatibilidad pero no es necesaria.
+- **Regla derivada:** **NO cachear NodeLists de elementos en variables `const` declaradas en `<script>` inline si esos elementos pueden ser agregados al DOM después del script**. Para selectores que deben "ver" todo el documento, usar la query dentro de la función que la consume. Para queries de elementos pre-existentes (botones del demo navbar, etc.) el cacheo está bien.
+- **Dónde vive ahora:** demo HTML JS structure; lección aplicable a cualquier script inline que use `querySelectorAll` y deba alcanzar contenido posterior.
+- **Verificable por:** después de agregar pantallas nuevas al demo, navegá a cada anchor y confirmá que activa. Si una "está negra" → script-time NodeList stale.
+
 ---
 
 ## Cómo agregar una lección nueva

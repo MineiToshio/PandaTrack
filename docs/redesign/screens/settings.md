@@ -1,242 +1,253 @@
 ---
 title: Settings
-session: 02
-status: lo-fi-wireframe + post-closure updates
-last_updated: 2026-05-01
-post_closure_adr: ../decisions/0001-s2-closure-decisions.md
+session: 08
+status: spec-complete
+last_updated: 2026-05-18
+demo_anchors:
+  - "#settings"
+  - "#s8-settings-desktop-account"
+  - "#s8-settings-desktop-preferences"
+  - "#s8-settings-modal-username"
+  - "#s8-settings-modal-displayname"
+  - "#s8-settings-modal-avatar"
+  - "#s8-settings-modal-avatar-remove"
+  - "#s8-settings-modal-email"
+  - "#s8-settings-modal-password"
+  - "#s8-settings-modal-currency"
+  - "#s8-settings-profile-mobile"
+  - "#s8-settings-account-mobile"
+  - "#s8-settings-preferences-mobile"
+  - "#s8-settings-username-sheet-mobile"
+  - "#s8-settings-displayname-sheet-mobile"
+  - "#s8-settings-avatar-sheet-mobile"
+  - "#s8-settings-currency-sheet-mobile"
+frd: docs/product/prd-01-collector-mvp/frd-07-user-account-settings/frd-07-user-account-settings.md
 ---
 
 # Settings
 
-> **Addendum post-S2 (2026-05-01)** — Decisiones aplicadas tras research, ver [`ADR 0001`](../decisions/0001-s2-closure-decisions.md):
+> **Fuente visual de verdad:** `docs/redesign/_notes/demo-screens.html`. Los anchors listados arriba son la referencia canónica. Este spec describe el contrato funcional, tokens, componentes y comportamiento.
 >
-> - Decisión 15: layout desktop confirmado **Opción A** — tabs verticales cols 1-3 + contenido cols 4-12. Default Profile activa.
-> - Decisión 14: theme toggle en `preferences` con 3 opciones `light` / `dark` / `system`, default `system`. Misma fuente de verdad `localStorage["theme"]` que el shell.
-> - Decisión 17: el toggle "Mostrar mascota" vive en `preferences` (current). **Bonus de descubribilidad:** right-click (desktop) / long-press (mobile) en la mascota misma abre menú contextual con: `Ocultar mascota` · `Cambiar tema` · `Configuración`.
-> - Decisión 18: el chip warning con timer del cooldown de username aparece **sólo durante el período activo de cooldown** (post-cambio). Cuando termina, el chip desaparece y el input vuelve a estado normal editable. NO mostrar el chip permanentemente.
-> - Decisión 19: el botón "Cerrar sesión en todos los dispositivos" se muestra siempre que la capability exista en el backend (BetterAuth la soporta), sin condicionar al número de sesiones activas.
-> - Decisión 11: nuevo campo `preferences.preferredDensity` (S3+) refleja el toggle densa/cómoda de la lista de pedidos.
-> - Decisión 16: spec final del componente `<StoreAvatar size={24|32|40|56} />` con UNA sola letra (monograma de marca) — aplica también al avatar del usuario (mismo componente reusado para tienda y para usuario).
+> **Reemplaza:** el spec S2 lo-fi que vivía en este mismo archivo. Las decisiones de ADR 0001 D14–D19 siguen vigentes y están integradas.
+>
+> **Patrón visual:** esta pantalla es el origen del patrón Chip Eyebrow + Top-Accent documentado en `docs/redesign/PLAYBOOK.md §9.17`. Cualquier ajuste a los tonos por card debe sincronizarse con esa sección.
 
-## 1. Propósito y contrato funcional
+## 1. Layout
 
-Pantalla utilitaria donde el usuario edita su identidad, credenciales y preferencias de coleccionista (ver fila #24 + sub-flujos 24.a Profile / 24.b Account / 24.c Preferences en `functional-inventory.md`). Datos clave por sección — **Profile**: `username` (unique, regex, blocked words, cooldown 30d), `displayName` (max 50), `avatar` (upload + crop). **Account**: `email + verified flag`, `password` (`canChange`/`canSet`), `mfa` toggle si hay capability. **Preferences**: `preferredCountryCode`, `baseCurrencyCode` (cambio dispara modal de confirmación), `preferredProductTypeKeys` (multi-select), `budgetAmount` (cents) y `budgetResetDayOfMonth` (1–31). Acciones: editar inline cada campo, validaciones específicas (debounced availability para username, password reglas inline, currency change con modal destructivo), un edit activo a la vez. Permisos: `verified` — gate de la app entera, no se duplica en esta pantalla.
+Vive dentro del `AppShell`. En desktop el sidebar PUSH ocupa la izquierda. La pantalla de Ajustes es una sola ruta (`/settings`) que renderiza 3 secciones via tabs: Perfil / Cuenta / Preferencias.
 
-## 2. Wireframe mobile (360px)
+### Desktop (≥ 1024px)
 
 ```
-┌──────────────────────────────────────────┐
-│ ← Atrás                          [···]   │   56px content header
-├──────────────────────────────────────────┤
-│                                          │
-│  AJUSTES                                 │   eyebrow mono uppercase text-muted
-│  Tu cuenta                               │   Display 32pt tracking -0.03em
-│  Edita tu perfil, acceso y preferencias. │   Body-L text-secondary
-│                                          │
-│  ┌────────────────────────────────────┐  │   ← CARD 1 · Profile (EXPANDED)
-│  │ PERFIL                          ▴  │  │   surface, radius-xl, padding 20px
-│  │ Tu identidad                       │  │   Title 19pt
-│  │ Cómo te ven en la app.             │  │   Body 13 text-secondary
-│  │ ──────────────────────────────────  │  │
-│  │ Usuario                            │  │   label text-secondary 13px
-│  │ @sergio_m            ✎             │  │   value 15px / 500 + pencil
-│  │ ──────────────────────────────────  │  │
-│  │ Nombre visible                     │  │
-│  │ Sergio Minei         ✎             │  │
-│  │ ──────────────────────────────────  │  │
-│  │ Avatar                             │  │
-│  │ ╭──╮                               │  │   56px circular
-│  │ │ S│   [ Cambiar avatar ]          │  │   ghost button + ícono camera
-│  │ ╰──╯   [ Eliminar ]                │  │   destructive ghost (si existe)
-│  └────────────────────────────────────┘  │
-│                                          │
-│  ┌────────────────────────────────────┐  │   ← CARD 2 · Account (COLLAPSED)
-│  │ CUENTA                          ▾  │  │   eyebrow mono
-│  │ Email, contraseña y acceso         │  │   Body 13
-│  └────────────────────────────────────┘  │
-│                                          │
-│  ┌────────────────────────────────────┐  │   ← CARD 3 · Preferences (COLLAPSED)
-│  │ PREFERENCIAS                    ▾  │  │
-│  │ País, moneda, categorías, presupuesto │
-│  └────────────────────────────────────┘  │
-│                                          │
-│  ─────────────────────────────────────   │
-│  [ Cerrar sesión ]                       │   ghost destructive, full-width
-│                                          │
-└──────────────────────────────────────────┘
-
-  Estado editing inline (Username):
-  ┌────────────────────────────────────┐
-  │ Usuario                            │
-  │ ┌────────────────────────────────┐ │   input expandido
-  │ │ @sergio_minei            ✓     │ │   check verde · available
-  │ └────────────────────────────────┘ │
-  │ Disponible.                        │   helper success
-  │ [ Guardar ]   [ Cancelar ]         │   primary indigo + ghost
-  └────────────────────────────────────┘
+AppShell (sidebar 240px PUSH)
+└── app-content
+    ├── app-topbar (48px sticky) — breadcrumb "Inicio / Ajustes" + lang/theme toggles
+    └── page-body (px-6 py-8, max-w-screen-xl)
+        └── settings-layout (grid 12 cols gap-8)
+            ├── settings-nav (cols 1–3, sticky top-[48px])
+            │   └── tabs verticales: Perfil / Cuenta / Preferencias
+            └── settings-pane (cols 4–12) — pane activo
 ```
 
-## 3. Wireframe desktop (≥1024px)
+**ADR 0001 D15** — tabs verticales (220px) elegidos sobre accordion. Override explícito de BR-07-01 que decía "sections not tabs".
 
-**Opción elegida: A — tabs verticales.** Justificación: el patrón de "settings con sidebar de secciones" (Vercel, Linear, Stripe Dashboard) se reconoce inmediatamente, mantiene una sola decisión activa por viewport (§2 principios), y deja respiración al detalle de la sección activa sin obligar al scroll que sí pediría la opción B. El shell `max-w-6xl` con grid 12 cols ya es la convención del resto de pantallas de S2.
+### Mobile (< 1024px)
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ Sidebar 240px │  Content (max-w-6xl, px-8 py-10)                            │
-│   Dashboard   │                                                             │
-│   Pedidos     │   AJUSTES                                                   │
-│   Tiendas     │   Tu cuenta                                                 │
-│   Entregas    │   Edita tu perfil, acceso y preferencias.                   │
-│ ▸ Ajustes     │                                                             │
-│   Salir       │   ┌─────────────────┬────────────────────────────────────┐  │
-│               │   │ cols 1-3        │ cols 4-12                          │  │
-│               │   │ TABS VERTICALES │ SECTION CARD ACTIVA                │  │
-│               │   │                 │ surface, radius-xl, p-7            │  │
-│               │   │ ▸ Perfil        │                                    │  │
-│               │   │   Cuenta        │ PERFIL                             │  │
-│               │   │   Preferencias  │ Tu identidad                       │  │
-│               │   │                 │ Cómo te ven en la app.             │  │
-│               │   │                 │ ──────────────────────────────────  │  │
-│               │   │                 │ Usuario          @sergio_m      ✎ │  │
-│               │   │                 │ cols 1-4         cols 5-10  11-12 │  │
-│               │   │                 │ ──────────────────────────────────  │  │
-│               │   │                 │ Nombre visible   Sergio Minei   ✎ │  │
-│               │   │                 │ ──────────────────────────────────  │  │
-│               │   │                 │ Avatar           ╭──╮              │  │
-│               │   │                 │                  │ S│  [ Cambiar ] │  │
-│               │   │                 │                  ╰──╯  [ Eliminar ]│  │
-│               │   │                 │                                    │  │
-│               │   └─────────────────┴────────────────────────────────────┘  │
-│               │                                                             │
-│               │   Estado editing inline (Usuario):                          │
-│               │   ┌────────────────────────────────────────────────────┐    │
-│               │   │ Usuario                                            │    │
-│               │   │ cols 1-4                                           │    │
-│               │   │ ┌──────────────────────────────────────────┐  ✓   │    │
-│               │   │ │ @sergio_minei                            │      │    │   cols 5-12 input
-│               │   │ └──────────────────────────────────────────┘      │    │
-│               │   │ Disponible.                  helper text-success  │    │
-│               │   │ [ Guardar ]   [ Cancelar ]   primary + ghost      │    │
-│               │   └────────────────────────────────────────────────────┘    │
-│               │                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-  Tabs verticales — receta:
-    Estado normal:  text-secondary, padding y-2 x-3, sin border.
-    Estado active:  background --accent / 10%, color --accent, border-l 2px --accent.
-    Hover:          state layer text-primary / 6%.
-    Foco teclado:   --focus-ring 2px outset.
+AppShell (sidebar-width: 0)
+└── app-content
+    ├── app-topbar (48px sticky) — hamburger + "Ajustes"
+    ├── s8-seg-wrap (sticky top-[48px], hidden ≥ 1024px)
+    │   └── s8-seg-ctrl (segmented control: Perfil · Cuenta · Prefs)
+    └── page-body (px-4 py-4) — pane activo vía is-active
 ```
 
-## 4. Tokens invocados
+Sticky a `top: 48px`, oculto ≥ 1024px via `@media (min-width: 1024px) { .s8-seg-wrap { display: none } }`. El sidebar desktop y el segmented control mobile comparten el mismo handler `[data-settings-tab]` / `[data-settings-pane]`.
 
-- `--background`: lienzo de la pantalla settings.
-- `--surface`: las 3 section cards (Profile · Account · Preferences) en su estado base.
-- `--surface-elevated`: avatar preview circular detrás de la letra fallback, modal de currency change, sheet bottom de avatar upload + crop, sheet bottom de modals en mobile.
-- `--border`: divisores entre filas dentro de cada card, separador entre el header de la pantalla y la primera card.
-- `--border-strong`: borde de inputs, borde del avatar preview, borde de los `<kbd>` de atajos.
-- `--text-primary`: valores activos de cada fila (`@sergio_m`, `Sergio Minei`, email, etc.), title de cada card.
-- `--text-secondary`: labels de fila ("Usuario", "Email", "País"), helper Body 13 debajo del title, helpers neutros de validación.
-- `--text-muted`: eyebrow mono "AJUSTES" y "PERFIL/CUENTA/PREFERENCIAS", counter `current/50` del displayName, timer de cooldown en helper, helper neutro `sameAsCurrent` ("Es el que ya tienes").
-- `--accent` (indigo): CTA primario "Guardar", focus ring de inputs y CTAs, tab activa de la sidebar de tabs verticales (cols 1-3 desktop), check de availability_checking → available, chip activo de `productType` (border `--accent` + tinte 10%), letra fallback del avatar.
-- `--accent-cool` (teal): íconos Lucide de los chips de `productType` en estado normal, ícono `shield` del row MFA, info inline del flujo de cambio de email ("Te enviamos un link…").
-- `--accent-warm` (coral): badge contextual del email "Verificado" si decidimos calidez en confirmación (alternativo: `--success`); halo de mascota celebrating si en futuro se agrega achievement (fuera S2).
-- `--success`: check inline post-save ("Guardado"), badge "Email verificado", helper success del username `available`.
-- `--warning`: badge "Email no verificado", chip cooldown timer activo del username ("Podrás cambiarlo en {days} días").
-- `--destructive`: botón "Eliminar avatar", botón "Cerrar sesión", helper de error del username `taken`, ícono `x-circle` del estado `taken`.
-- `--focus-ring`: cualquier `:focus-visible` de tabs, inputs, CTAs, chips, toggles.
+## 2. Anchors del demo
 
-Si en producción se detecta que necesitamos un token específico para "row hover" o "section divider más sutil que `--border`" se anota en `docs/redesign/_notes/atelier-gaps.md` con el caso concreto. Para este lo-fi no se identificó hueco bloqueante.
+| Anchor                                  | Descripción                                                                         | Viewport      |
+| --------------------------------------- | ----------------------------------------------------------------------------------- | ------------- |
+| `#settings`                             | Perfil tab activa, estado base con `vinyl_hunter`                                   | desktop       |
+| `#s8-settings-desktop-account`          | Cuenta tab activa: email + contraseña                                               | desktop       |
+| `#s8-settings-desktop-preferences`      | Preferencias tab activa: Interfaz + Coleccionista                                   | desktop       |
+| `#s8-settings-modal-username`           | Modal cambiar username (FR-07-33 cooldown chip)                                     | desktop modal |
+| `#s8-settings-modal-displayname`        | Modal cambiar nombre visible (maxlength 50, char counter)                           | desktop modal |
+| `#s8-settings-modal-avatar`             | Modal subir foto (dropzone, botón "Recortar y confirmar" deshabilitado si vacío)    | desktop modal |
+| `#s8-settings-modal-avatar-remove`      | Modal eliminar foto (tone-destructive, "inicial V se usará")                        | desktop modal |
+| `#s8-settings-modal-email`              | Modal cambiar email (email nuevo + password actual, tone-warning)                   | desktop modal |
+| `#s8-settings-modal-password`           | Modal cambiar contraseña (actual + nueva + confirmar)                               | desktop modal |
+| `#s8-settings-modal-currency`           | Modal cambiar moneda base — FR-07-32 two-path footer (tone-warning)                 | desktop modal |
+| `#s8-settings-profile-mobile`           | Phone frame: segmented Perfil active, profile card                                  | mobile        |
+| `#s8-settings-account-mobile`           | Phone frame: segmented Cuenta active, account card                                  | mobile        |
+| `#s8-settings-preferences-mobile`       | Phone frame: segmented Prefs active, Interfaz + Coleccionista cards + cerrar sesión | mobile        |
+| `#s8-settings-username-sheet-mobile`    | Bottom sheet: @ prefix input, cooldown chip                                         | mobile sheet  |
+| `#s8-settings-displayname-sheet-mobile` | Bottom sheet: name input, char counter                                              | mobile sheet  |
+| `#s8-settings-avatar-sheet-mobile`      | Bottom sheet: avatar V preview, picker rows (subir / eliminar)                      | mobile sheet  |
+| `#s8-settings-currency-sheet-mobile`    | Bottom sheet: currency picker + warning + FR-07-32 two-path footer (vertical)       | mobile sheet  |
 
-## 5. Estados
+## 3. Secciones del pane
 
-- **Empty.** No aplica como estado de la pantalla — el usuario siempre tiene cuenta. **Avatar empty** sí: si no hay avatar subido, fallback a la letra inicial sobre tinte indigo 14% con border `--accent` 28% (receta única §4.4 — sin paleta categórica).
-- **Loading.** El layout precarga la identidad del usuario desde el shell, así que el primer paint ya tiene los valores. Loading sólo aparece tras submit: la fila editada muestra spinner sutil dentro del input + CTA "Guardar" deshabilitado con label "Guardando…". Skeletons de fila (label + bar 60% width) sólo si el server tarda >300ms.
-- **Error.** Inline alert dentro de la fila afectada: ícono `alert-circle` `--destructive` + copy del glosario "Algo se rompió de este lado. Dale otra vez." + botón ghost "Reintentar". El input mantiene el valor tipeado (§3 principios — conservar inputs).
-- **Success post-edit.** Feedback inline verde en la misma fila: ícono `check` `--success` + copy "Guardado" + micro-pulso del border de la fila. Persiste 2s y hace fade out 150ms. Para cambios sensibles (cambio de email, cambio de password) además se dispara toast persistente Sonner-style con detalle accionable ("Te enviamos un link a tu nuevo email para confirmar.").
-- **Edit detallado por campo:**
-  - **Profile / username.** Input con debounced availability check (300ms tras última tecla). Sub-estados visuales: `availability_checking` (spinner suave dentro del input, helper neutro "Buscando…"), `available` (check `--success` + helper "Disponible."), `taken` (cross `--destructive` + helper "Ya está en uso. Prueba otro."), `sameAsCurrent` (helper `--text-muted` neutro "Es el que ya tienes."), `cooldown` (input deshabilitado + chip warning con timer "Podrás cambiarlo en {days} días."). CTA "Guardar" sólo habilitado en `available`.
-  - **Profile / displayName.** Input simple max 50 chars con counter en `--text-muted` `current/50`, post-blur validation, sin debounce.
-  - **Profile / avatar.** Zona clickeable + CTA "Cambiar avatar" abre **modal/sheet bottom** con uploader y cropper circular (drag para recortar). Si ya hay avatar, también botón "Eliminar" `--destructive` ghost. Preview circular dentro del modal con `--surface-elevated`.
-  - **Account / email.** Form expandible con `newEmail` + `currentPassword`. Submit dispara verificación: helper info inline `--accent-cool` "Te enviamos un link de verificación a tu nuevo email." + toast persistente. Si el server responde con `cooldown` (`retryAfterIso`), helper warning con timer "Podrás cambiarlo en {time}.".
-  - **Account / password.** Form expandible con `currentPassword` (si `canChange`) o sólo `newPassword` (si `canSet`) + `confirmation`. Reglas de password en helper inline `--text-muted` (longitud, mayúsculas, números). Validación post-blur por campo.
-  - **Account / MFA.** Toggle simple. Al activar, abre flujo de enrolment como sheet/modal aparte (QR, código de verificación) — fuera del wireframe lo-fi de S2.
-  - **Preferences / currency change.** Cambiar `baseCurrencyCode` dispara `currency_change_modal` (sheet bottom en mobile, modal centrado en desktop) con copy del glosario _"Cambiar moneda base no convierte tus datos viejos. ¿Seguir?"_ y CTAs "Confirmar cambio" `--accent` + "Volver" ghost.
-  - **Preferences / productTypes.** Chips multi-select con receta §4.13 (ícono Lucide + label). Estado normal `border-strong` + ícono `--accent-cool`; estado active `--accent` border + tinte 10% + ícono e ícono `--accent`.
-  - **Preferences / budget.** Input monetario con `font-variant-numeric: tabular-nums` + select de `budgetResetDayOfMonth` (1–31) inline a la derecha.
+Cada card consume el patrón Chip Eyebrow + Top-Accent (PLAYBOOK §9.17) con tono dedicado:
 
-## 6. Motion y view transitions
+| Card          | Tono              | Eyebrow chip            | Top border 2px   |
+| ------------- | ----------------- | ----------------------- | ---------------- |
+| Perfil        | `accent` (purple) | `<user>` Perfil         | `s8-card-accent` |
+| Cuenta        | `cool` (teal)     | `<shield>` Cuenta       | `s8-card-cool`   |
+| Interfaz      | `cool` (teal)     | `<monitor>` Interfaz    | `s8-card-cool`   |
+| Coleccionista | `warm` (coral)    | `<heart>` Coleccionista | `s8-card-warm`   |
 
-- **Section card collapse/expand (mobile).** Altura animada con `--motion-base 280ms` y `--ease-emphasis`. Chevron rota 180° en `--motion-fast`. Stagger de 30ms entre filas internas al expandir.
-- **Tab switch (desktop).** Cross-fade del contenido de la sección activa en `--motion-fast` (150ms) sin slide. La línea izquierda `--accent` de la tab activa se desliza con `--motion-fast` `--ease-emphasis`.
-- **Inline edit toggle (viewing → editing).** El control crece/morfa en altura con `--motion-fast`; CTAs "Guardar" + "Cancelar" aparecen con stagger 30ms.
-- **Username availability.** Spinner sutil dentro del input mientras chequea; transición a check (success) o cross (destructive) con fade 150ms `--ease-emphasis`. Sin layout shift.
-- **Currency change modal.** Enter scale `0.96 → 1` + backdrop fade en `--motion-base`. Focus trap dentro del modal. Exit fade `--motion-fast`.
-- **Avatar upload + crop sheet.** Enter con `--ease-out-expressive` desde abajo (sheet bottom). Preview circular se actualiza con cada drag del crop sin re-renders globales.
-- **Save success inline.** Check `--success` aparece con `--motion-fast` y micro-pulso del border de la fila, persiste 2s, fade out 150ms.
-- **Reduced motion.** `prefers-reduced-motion: reduce` → todo se reduce a fade 150ms, sin springs, sin stagger, sin scale.
+### 3.1 Perfil — Tu identidad pública
 
-## 7. Atajos de teclado (desktop) y gestos (mobile)
+| Fila              | Valor demo      | CTA / Flujo                                                        |
+| ----------------- | --------------- | ------------------------------------------------------------------ |
+| Avatar            | Inicial "V"     | "Subir foto" → `modal-avatar` / "Eliminar" → `modal-avatar-remove` |
+| Nombre de usuario | `@vinyl_hunter` | "Cambiar" → `modal-username` (FR-07-33 cooldown visible)           |
+| Nombre visible    | "Vinyl Hunter"  | "Cambiar" → `modal-displayname` (maxlength 50)                     |
 
-**Desktop**
+**Avatar fallback:** clase `s8-avatar-hero` — 56×56 circular con `linear-gradient(135deg, --accent → --accent-warm)` + glow shadow + texto blanco. Aplica también en mobile (Perfil card) y en sheet de avatar (preview).
 
-- `Tab` navega lineal por las filas de la sección activa.
-- `↑` / `↓` navegan entre tabs verticales cuando el foco está en la sidebar de tabs (cols 1-3).
-- `Enter` activa edit en la fila enfocada.
-- `⌘ + Enter` guarda la fila en edit.
-- `Esc` cancela edit (con confirm si el campo está dirty).
-- `⌘ + K` abre command palette (`/dashboard`-level shortcut, no exclusivo de settings).
+**Cooldown note (FR-07-33):** debajo del username el hint se renderiza como `s8-cooldown-chip` — pill con `--warning` tint 12% + ícono `clock-3`. Copy: "Próximo cambio en {days} días." Cuando expira el cooldown el chip desaparece (NO se muestra permanentemente). El modal repite el chip en el cuerpo con la fecha exacta ("Próximo cambio: 22 may 2026").
 
-**Mobile**
+### 3.2 Cuenta — Email, contraseña y acceso
 
-- Tap en cualquier parte de la fila viewing activa el edit.
-- Sheets bottom para los modals de avatar upload + crop y de currency change.
-- Pull-to-refresh recarga el snapshot del usuario (corrige drift si la sesión está vieja).
-- Long-press en una fila viewing muestra acción "Copiar valor" (útil para username público).
+| Fila       | Valor demo                           | CTA / Flujo                                             |
+| ---------- | ------------------------------------ | ------------------------------------------------------- |
+| Email      | `vinyl@pandatrack.dev`               | chip `success` "Verificado" + "Cambiar" → `modal-email` |
+| Contraseña | "Última actualización hace 3 meses." | "Cambiar" → `modal-password`                            |
 
-## 8. Mascota
+**No incluye:**
 
-La mascota **NO aparece** en settings. Es una pantalla utilitaria, no celebratoria — si el usuario está acá está concentrado editando datos sensibles y la presencia de la mascota distraería. La bubble idle del shell sigue presente (regla universal del shell), con la ironía explícita de que el toggle `Mostrar mascota` vive en esta misma pantalla, dentro de Preferences. Un futuro achievement tipo "10 cambios sin errores" queda fuera de scope S2.
+- ❌ Toggle MFA — se pospone a S9+.
+- ❌ Fila "Sesiones activas" — removida del pane en S8 Fase A (decisión usuario, 2026-05-18). La capability sigue disponible en backend; reintroducir cuando exista UX dedicada para gestión multi-dispositivo.
 
-## 9. Voice samples
+### 3.3 Preferencias — Interfaz + Coleccionista
 
-Strings reales en español alineados al glosario §7 de `principles.md`. Claves i18n en `src/i18n/locales/es/settings.json`.
+**Card Interfaz** (tono `cool`, eyebrow `<monitor>` Interfaz):
 
-- `settings.title` → "Tu cuenta"
-- `settings.subtitle` → "Edita tu perfil, acceso y preferencias."
-- `settings.profile.username.helper.available` → "Disponible."
-- `settings.profile.username.helper.taken` → "Ya está en uso. Prueba otro."
-- `settings.profile.username.helper.cooldown` → "Podrás cambiarlo en {days} días."
-- `settings.profile.avatar.cta.change` → "Cambiar avatar"
-- `settings.account.email.verified.badge` → "Verificado"
-- `settings.account.email.afterChange.info` → "Te enviamos un link de verificación a tu nuevo email."
-- `settings.preferences.currency.changeConfirm.title` → "Cambiar moneda base no convierte tus datos viejos. ¿Seguir?"
-- `settings.preferences.currency.changeConfirm.cta` → "Confirmar cambio"
-- `settings.cta.save` → "Guardar"
-- `settings.cta.cancel` → "Cancelar"
-- `settings.feedback.saved` → "Guardado"
-- `settings.error.generic` → "Algo se rompió de este lado. Dale otra vez."
+| Fila   | Valor demo                      | Control                                                     |
+| ------ | ------------------------------- | ----------------------------------------------------------- |
+| Tema   | "Light, dark o el del sistema." | Segmented buttons Light / Dark / Sistema (default: Sistema) |
+| Idioma | "Cómo se muestran los textos."  | Segmented buttons Español / English (default: Español)      |
 
-## 10. Riesgos y supuestos
+**Renames vs S2:**
 
-**Supuestos**
+- ❌ Card "Apariencia" → ✅ "Interfaz" (ícono `monitor`) — el alcance ahora incluye idioma además del tema, "Apariencia" se sentía limitado a estética.
+- ❌ "Tema y densidad" → ✅ "Tema e idioma".
+- ❌ Fila "Densidad de listas" — removida del scope S8 (decisión usuario, 2026-05-18). FR-07-31 queda postergado hasta que se valide la necesidad real con usuarios reales.
 
-- Layout desktop con tabs verticales (Opción A) por consistencia con apps tipo Vercel/Linear/Stripe Dashboard que ya forman el modelo mental del usuario 18–25 acostumbrado a SaaS premium.
-- Cada fila se edita inline (no modal) salvo cambios sensibles que requieren modal por UX explícita: avatar upload requiere modal por el cropper, currency change requiere modal por el copy destructivo.
-- Toggle "Mostrar mascota" vive en Preferences, no en una sección "Apariencia/Tema" separada — recomendación inicial.
-- Theme toggle (light/dark/system) vive en ambos lugares: shell (acceso rápido en cualquier pantalla) y settings (fuente de verdad persistente). Recomendación inicial.
+**Card Coleccionista** (tono `warm`, eyebrow `<heart>` Coleccionista):
 
-**Riesgos**
+| Fila                 | Valor demo                                                         | CTA / Flujo                                      |
+| -------------------- | ------------------------------------------------------------------ | ------------------------------------------------ |
+| País                 | "Argentina · AR"                                                   | "Cambiar" (no modal en este release — inline)    |
+| Moneda base          | "USD · Aplicada a totales y resúmenes."                            | "Cambiar" → `modal-currency` (FR-07-32 two-path) |
+| Categorías favoritas | Chips multi-select Vinyl / Manga / Figuras / Anime / Cards / Plush | Toggle inline (active: tint accent 10%)          |
+| Presupuesto mensual  | `$300,00` + reset día `01`                                         | Inline edit (input numérico + select día 1–31)   |
 
-- **Cooldown 30d del username.** Si no se comunica claramente el usuario va a creer que el botón está roto. La pantalla muestra el contador en chip warning visible siempre — no se esconde detrás de un tooltip.
-- **Currency change destructivo.** No convierte datos viejos. El modal de confirmación es la única protección — debe ser explícito en el copy y no permitir confirm accidental con Enter en focus equivocado.
-- **MFA enrolment.** Es un flujo aparte (QR + código) que no entra en el lo-fi S2 — sólo se documenta el toggle de entrada. Diseñar el flujo completo en S3.
-- **Avatar cropper.** Es la única superficie de settings con upload + manipulación de imagen — riesgo de complejidad si se intenta in-place; por eso vive en modal/sheet aparte.
-- **Patrón de section cards** debe quedar consistente con `order-create` y otras pantallas de S2 que usen el mismo patrón colapsable — si una pantalla decide chevron a la izquierda y otra a la derecha, el sistema se rompe.
+**Mobile extra:** botón "Cerrar sesión" al pie de Preferencias en mobile (ghost destructive, full width). Desktop no lo muestra — la sesión se cierra desde el menú de usuario del sidebar.
 
-**Decisiones para input humano antes de S3**
+## 4. Flujo FR-07-32 — Cambiar moneda base (two-path)
 
-- ¿El toggle "Mostrar mascota" vive en Preferences (recomendación) o en una sección "Apariencia" separada que también incluya el theme toggle?
-- ¿El theme toggle (light/dark/system) vive sólo en settings, sólo en shell, o en ambos (recomendación)?
-- ¿La fila "Cerrar sesión" vive como ghost destructive al pie de la pantalla (mockup actual) o se muda a la sidebar del shell para evitar contaminar la utilidad de settings con una acción de sesión?
-- ¿Mostrar `--accent-warm` en el badge "Verificado" para sumar calidez, o quedarnos con `--success` por consistencia funcional? (recomendación: `--success` — el verificado es status confirmado, no celebración).
+El cambio de moneda base NO convierte datos históricos. El flujo requiere confirmación explícita sobre qué hacer con los tipos de cambio existentes.
+
+### Desktop — Modal centrado (`#s8-settings-modal-currency`, tone-warning)
+
+Footer de 3 botones horizontales:
+
+1. `btn ghost` "Cancelar" — cierra sin cambios.
+2. `btn tonal` "Guardar sin actualizar" — cambia moneda base, preserva FX rates existentes.
+3. `btn primary` "Guardar y actualizar tipos de cambio" — cambia moneda base + re-fetches FX rates para pedidos elegibles del mes actual.
+
+### Mobile — Bottom sheet (`#s8-settings-currency-sheet-mobile`, max-height 88svh)
+
+Footer vertical (mobile UX: acción principal primero, secundaria debajo):
+
+1. `btn primary` full-width "Guardar y actualizar tipos de cambio".
+2. `btn ghost` full-width "Guardar sin actualizar".
+
+Ambas versiones incluyen el warning box: "Cambiar la moneda base **no convierte** tus pedidos anteriores. Los totales históricos seguirán en su moneda original hasta que los actualicés manualmente."
+
+## 5. Modal pattern (desktop) y Sheet pattern (mobile)
+
+**Desktop:** todos los sub-flujos usan el patrón `m01b` (ADR 0008 canónico):
+
+- `m01b-icon-circle` con tone semántico + `m01b-header` + `m01b-body` + `m01b-footer`.
+- Tones: `tone-default` (username, displayname, avatar-upload, password), `tone-warning` (email, currency), `tone-destructive` (avatar-remove).
+- **Uplift S8:** el `icon-circle` lleva además `s8-modal-icon-gradient` (radial gradient `color-mix` del token tonal 10→28%) para reforzar la jerarquía visual.
+- Cierre: botón X + backdrop click + Esc.
+
+**Mobile:** todos los sub-flujos usan `s7-mob-sheet` (bottom sheet canónico de S7):
+
+- `s7-mob-sheet-handle` + título + `s7-mob-sheet-body` (scrollable) + `s7-mob-sheet-footer`.
+- Backdrop `s7-mob-backdrop` semitransparente con blur.
+
+## 6. Tokens invocados
+
+| Token                         | Uso                                                                                                                                       |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `--surface`                   | Page bg, segmented control wrap, section cards base                                                                                       |
+| `--surface-elevated`          | Segmented control pill bg, modales, bottom sheets                                                                                         |
+| `--border`                    | Divisores entre filas, borde de currency rows idle                                                                                        |
+| `--border-strong`             | Borde de inputs, drag handle, segmented control                                                                                           |
+| `--text-primary`              | Valores de cada fila, título de sección                                                                                                   |
+| `--text-secondary`            | Labels de fila, subtítulos                                                                                                                |
+| `--text-muted`                | Char counter, hints neutros                                                                                                               |
+| `--accent`                    | Tab activa (bg 12% + color), segmented btn activo, CTA primario, eyebrow chip default, top-border `s8-card-accent`, avatar gradient start |
+| `--accent-cool`               | Eyebrow chip Cuenta/Interfaz, top-border `s8-card-cool`                                                                                   |
+| `--accent-warm`               | Eyebrow chip Coleccionista, top-border `s8-card-warm`, avatar gradient end                                                                |
+| `--success`                   | Chip "Verificado" del email                                                                                                               |
+| `--warning`                   | `s8-cooldown-chip` (FR-07-33), tone-warning de email/currency modal, warning box bg/border                                                |
+| `--destructive`               | Botón "Eliminar foto", tone-destructive del avatar-remove modal, "Cerrar sesión" mobile                                                   |
+| `color-mix(--accent 8%, ...)` | Currency row seleccionada bg, segmented control btn activo bg                                                                             |
+
+## 7. Interacciones y accesibilidad
+
+- **Tablist:** `role="tablist"` en sidebar nav y segmented control. Buttons `role="tab"` + `aria-selected`. Panes `role="tabpanel"` + `aria-labelledby`. Sync via `[data-settings-tab]` + `[data-settings-pane]`.
+- **Keyboard nav:** flechas arriba/abajo navegan entre tabs del sidebar desktop; flechas izquierda/derecha entre botones del segmented mobile.
+- **Inputs:** labels explícitos `for` / `id`. Input username con prefix "@" usando `input-prefix` span. Char counter conectado via `aria-describedby`.
+- **Modales:** focus trap, cierre con Esc, focus return al CTA que abrió el modal.
+- **Botones "Cambiar":** `aria-label="Cambiar {campo}"` para contexto fuera de label visual.
+- **Cooldown:** cuando el `Guardar` del modal está deshabilitado por cooldown, debe tener `aria-disabled="true"` + tooltip explicativo accesible.
+
+## 8. i18n — voice samples (es)
+
+| Clave                                          | Valor                                                                                                                                                         |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `settings.title`                               | "Ajustes"                                                                                                                                                     |
+| `settings.tabs.profile`                        | "Perfil"                                                                                                                                                      |
+| `settings.tabs.account`                        | "Cuenta"                                                                                                                                                      |
+| `settings.tabs.preferences`                    | "Preferencias"                                                                                                                                                |
+| `settings.profile.title`                       | "Tu identidad pública"                                                                                                                                        |
+| `settings.profile.subtitle`                    | "Así te ven los demás en la app."                                                                                                                             |
+| `settings.profile.username.cooldown.chip`      | "Próximo cambio en {days} días."                                                                                                                              |
+| `settings.profile.username.modal.subtitle`     | "El cambio es posible cada 7 días · quedan {days} días"                                                                                                       |
+| `settings.profile.username.modal.cooldownChip` | "Próximo cambio: {date}"                                                                                                                                      |
+| `settings.account.title`                       | "Email, contraseña y acceso"                                                                                                                                  |
+| `settings.account.subtitle`                    | "Los cambios sensibles requieren tu contraseña actual."                                                                                                       |
+| `settings.account.email.verified`              | "Verificado"                                                                                                                                                  |
+| `settings.preferences.interfaz.title`          | "Tema e idioma"                                                                                                                                               |
+| `settings.preferences.interfaz.subtitle`       | "Los cambios son inmediatos."                                                                                                                                 |
+| `settings.preferences.interfaz.theme.helper`   | "Light, dark o el del sistema."                                                                                                                               |
+| `settings.preferences.interfaz.lang.helper`    | "Cómo se muestran los textos."                                                                                                                                |
+| `settings.preferences.collector.title`         | "País, moneda y categorías"                                                                                                                                   |
+| `settings.preferences.collector.subtitle`      | "Cambiar la moneda base no convierte tus datos anteriores."                                                                                                   |
+| `settings.preferences.currency.warning`        | "Cambiar la moneda base **no convierte** tus pedidos anteriores. Los totales históricos seguirán en su moneda original hasta que los actualicés manualmente." |
+| `settings.preferences.currency.saveAndUpdate`  | "Guardar y actualizar tipos de cambio"                                                                                                                        |
+| `settings.preferences.currency.saveWithout`    | "Guardar sin actualizar"                                                                                                                                      |
+| `settings.preferences.signOut.mobile`          | "Cerrar sesión"                                                                                                                                               |
+
+EN locale: aplicar las mismas claves con copy traducido neutro (no AmE/BrE idiomas, mantener lenguaje claro y conversacional como en `principles.md` §7).
+
+## 9. Pendientes (A.2 → Fase B)
+
+- [ ] Validaciones inline del username (debounced availability) — estados `checking / available / taken / cooldown`. Copy ya definido en FRD-07.
+- [ ] Avatar upload + crop — interacción dentro del modal (dropzone → preview → crop circular → confirm). El demo muestra el dropzone vacío; falta especificar el flujo del cropper.
+- [ ] Email verification flow post-cambio — toast persistente "Te enviamos un link a {newEmail}" + helper info inline.
+- [ ] Password rules inline (longitud / mayúsculas / números) — pendiente confirmar reglas con BetterAuth.
+- [ ] Theme + density toggles — interacción optimista (cambio inmediato en `localStorage`, persist async via Server Action).
+- [ ] Idioma toggle — flow real (next-intl locale switch + redirect a ruta localizada).
+- [ ] Categories multi-select — chip toggle states (idle vs active) + Server Action de update.
+- [ ] Budget field — input monetario con `font-variant-numeric: tabular-nums` + select día 1–31, Server Action.
+- [ ] Mascot toggle — pendiente confirmación de ubicación (ADR 0001 D17 dice Preferencias, falta demo).
+- [ ] Motion: tab-switch cross-fade 150ms, modal enter scale 0.96→1 + backdrop fade, `prefers-reduced-motion` fallback.

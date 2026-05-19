@@ -1793,9 +1793,6 @@
 
     .settings-section { display: none; }
     .settings-section.is-active { display: block; }
-    @media (max-width: 1023px) {
-      .settings-section { display: block; }
-    }
 
     .settings-row {
       display: grid;
@@ -1812,6 +1809,171 @@
     .settings-row .val { font-size: 14.5px; font-weight: 500; }
     .settings-row .val small { display: block; color: var(--text-muted); font-size: 12px; font-weight: 400; margin-top: 2px; }
     .settings-row .actions { display: flex; gap: 8px; }
+
+    /* ─────────────────────────────────────────────────────────────
+       S8 Settings — segmented control (mobile) + scoped CSS
+       ───────────────────────────────────────────────────────────── */
+    .s8-seg-wrap {
+      padding: 10px 16px 8px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 48px; z-index: 5;
+      margin: 0 -16px;
+    }
+    @media (min-width: 768px) { .s8-seg-wrap { margin: 0 -24px; } }
+    @media (min-width: 1024px) { .s8-seg-wrap { display: none; } }
+    .s8-seg-ctrl {
+      display: flex; gap: 3px; padding: 3px;
+      background: var(--surface-elevated); border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    .s8-seg-btn {
+      flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+      padding: 7px 8px; border: 0; background: transparent; border-radius: 7px;
+      color: var(--text-secondary); font-size: 12.5px; font-weight: 500;
+      cursor: pointer; transition: background 120ms ease, color 120ms ease;
+      white-space: nowrap;
+    }
+    .s8-seg-btn svg, .s8-seg-btn i { width: 13px; height: 13px; flex-shrink: 0; }
+    .s8-seg-btn.is-active {
+      background: color-mix(in oklch, var(--accent) 12%, var(--surface));
+      color: var(--accent);
+      box-shadow: 0 1px 3px color-mix(in oklch, var(--text-primary) 10%, transparent);
+    }
+    /* Currency picker list used in the currency modal + mobile sheet */
+    .s8-currency-list { display: flex; flex-direction: column; gap: 2px; margin-top: 14px; }
+    .s8-currency-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--surface);
+      cursor: pointer; transition: border-color 120ms, background 120ms;
+    }
+    .s8-currency-row:hover { border-color: var(--border-strong); background: color-mix(in oklch, var(--text-primary) 4%, transparent); }
+    .s8-currency-row.is-selected {
+      border-color: var(--accent);
+      background: color-mix(in oklch, var(--accent) 8%, transparent);
+    }
+    .s8-currency-row .s8-cur-code { font-size: 14px; font-weight: 600; color: var(--text-primary); min-width: 36px; }
+    .s8-currency-row .s8-cur-name { flex: 1; font-size: 13px; color: var(--text-secondary); }
+    .s8-currency-row .s8-cur-check { color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
+    /* Warning callout used inside modals */
+    .s8-modal-warning {
+      display: flex; gap: 8px; align-items: flex-start;
+      padding: 10px 12px; border-radius: 8px; margin-top: 14px;
+      background: color-mix(in oklch, var(--warning) 10%, var(--surface));
+      border: 1px solid color-mix(in oklch, var(--warning) 35%, transparent);
+      font-size: 12.5px; line-height: 1.5; color: var(--text-secondary);
+    }
+    .s8-modal-warning > i, .s8-modal-warning > svg { width: 14px; height: 14px; color: var(--warning); flex-shrink: 0; margin-top: 1px; }
+    /* Avatar upload drop zone */
+    .s8-avatar-dropzone {
+      border: 2px dashed var(--border-strong); border-radius: 12px;
+      padding: 28px 20px; text-align: center;
+      cursor: pointer; transition: border-color 150ms, background 150ms;
+      background: transparent;
+    }
+    .s8-avatar-dropzone:hover { border-color: var(--accent); background: color-mix(in oklch, var(--accent) 5%, transparent); }
+    .s8-avatar-dropzone-icon { width: 40px; height: 40px; border-radius: 20px; background: color-mix(in oklch, var(--accent) 12%, transparent); display: grid; place-items: center; color: var(--accent); margin: 0 auto 12px; }
+    .s8-avatar-dropzone-icon svg { width: 18px; height: 18px; }
+    .s8-avatar-dropzone p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+    .s8-avatar-dropzone small { font-size: 11px; color: var(--text-muted); margin-top: 4px; display: block; }
+
+    /* S8 color uplift — keep the surface palette but inject hobby warmth.
+       All patterns reuse semantic tokens (--accent / --accent-warm / --accent-cool). */
+
+    /* Eyebrow as soft tinted pill — replaces flat text-muted eyebrows in S8 panes */
+    .s8-eyebrow-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 9px; border-radius: 999px;
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase;
+      background: color-mix(in oklch, var(--accent) 9%, transparent);
+      color: var(--accent);
+      border: 1px solid color-mix(in oklch, var(--accent) 18%, transparent);
+    }
+    .s8-eyebrow-chip svg { width: 11px; height: 11px; }
+    .s8-eyebrow-chip.tone-cool {
+      background: color-mix(in oklch, var(--accent-cool) 10%, transparent);
+      color: var(--accent-cool);
+      border-color: color-mix(in oklch, var(--accent-cool) 22%, transparent);
+    }
+    .s8-eyebrow-chip.tone-warm {
+      background: color-mix(in oklch, var(--accent-warm) 12%, transparent);
+      color: var(--accent-warm);
+      border-color: color-mix(in oklch, var(--accent-warm) 22%, transparent);
+    }
+    .s8-eyebrow-chip.tone-success {
+      background: color-mix(in oklch, var(--success) 12%, transparent);
+      color: var(--success);
+      border-color: color-mix(in oklch, var(--success) 26%, transparent);
+    }
+    .s8-eyebrow-chip.tone-warning {
+      background: color-mix(in oklch, var(--warning) 14%, transparent);
+      color: var(--warning);
+      border-color: color-mix(in oklch, var(--warning) 28%, transparent);
+    }
+    .s8-eyebrow-chip.tone-destructive {
+      background: color-mix(in oklch, var(--destructive) 12%, transparent);
+      color: var(--destructive);
+      border-color: color-mix(in oklch, var(--destructive) 26%, transparent);
+    }
+
+    /* Hero avatar — warm gradient + soft outer glow (used in profile pane + sheets) */
+    .s8-avatar-hero {
+      width: 56px; height: 56px; border-radius: 999px; flex-shrink: 0;
+      display: grid; place-items: center;
+      font-size: 22px; font-weight: 700; letter-spacing: -0.01em;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-warm) 100%);
+      box-shadow:
+        0 0 0 1px color-mix(in oklch, var(--accent) 32%, transparent),
+        0 4px 14px -2px color-mix(in oklch, var(--accent) 26%, transparent),
+        inset 0 1px 0 rgba(255,255,255,0.18);
+    }
+    .s8-avatar-hero.s40 { width: 40px; height: 40px; font-size: 16px; }
+    .s8-avatar-hero.s72 { width: 72px; height: 72px; font-size: 28px; }
+
+    /* Section cards with subtle top accent — differentiates Apariencia (cool) from
+       Coleccionista (warm). 2px solid edge, no shadow stacking. */
+    .s8-card-accent { border-top: 2px solid color-mix(in oklch, var(--accent) 55%, transparent); }
+    .s8-card-cool { border-top: 2px solid color-mix(in oklch, var(--accent-cool) 55%, transparent); }
+    .s8-card-warm { border-top: 2px solid color-mix(in oklch, var(--accent-warm) 55%, transparent); }
+    .s8-card-cool::before, .s8-card-warm::before { content: none; } /* placeholder */
+
+    /* Cooldown chip — soft warning tint with clock, replaces flat helper text */
+    .s8-cooldown-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 9px 3px 7px; border-radius: 999px;
+      font-size: 11.5px; font-weight: 500;
+      background: color-mix(in oklch, var(--warning) 12%, transparent);
+      color: var(--warning);
+      border: 1px solid color-mix(in oklch, var(--warning) 26%, transparent);
+    }
+    .s8-cooldown-chip svg { width: 11px; height: 11px; flex-shrink: 0; }
+    .s8-cooldown-chip strong { color: var(--warning); font-weight: 600; }
+
+    /* Modal icon-circle gradient — replaces flat tinted circle in m01b modals */
+    .s8-modal-icon-gradient {
+      background: radial-gradient(closest-side,
+        color-mix(in oklch, var(--accent) 28%, transparent) 0%,
+        color-mix(in oklch, var(--accent) 10%, transparent) 70%,
+        transparent 100%) !important;
+      border-color: color-mix(in oklch, var(--accent) 30%, transparent) !important;
+    }
+    .s8-modal-icon-gradient.tone-warning {
+      background: radial-gradient(closest-side,
+        color-mix(in oklch, var(--warning) 28%, transparent) 0%,
+        color-mix(in oklch, var(--warning) 10%, transparent) 70%,
+        transparent 100%) !important;
+      border-color: color-mix(in oklch, var(--warning) 30%, transparent) !important;
+    }
+    .s8-modal-icon-gradient.tone-destructive {
+      background: radial-gradient(closest-side,
+        color-mix(in oklch, var(--destructive) 28%, transparent) 0%,
+        color-mix(in oklch, var(--destructive) 10%, transparent) 70%,
+        transparent 100%) !important;
+      border-color: color-mix(in oklch, var(--destructive) 30%, transparent) !important;
+    }
 
     .pref-toggle {
       display: inline-flex;
@@ -3175,6 +3337,15 @@
       grid-template-columns: 1fr !important;
       gap: 12px !important;
     }
+    /* settings-row: desktop uses @media(>=768px) → 180px 1fr auto — override to stack */
+    section[id$="-mobile"].is-active .settings-row {
+      grid-template-columns: 1fr !important;
+      align-items: start !important;
+      gap: 4px !important;
+    }
+    section[id$="-mobile"].is-active .settings-row .actions {
+      margin-top: 4px;
+    }
     /* min-width:0 cascade: prevents intrinsic min-content (eg table min-width:440px)
        from pushing flex/grid ancestors wider than the phone container. */
     section[id$="-mobile"].is-active .section-cards,
@@ -3362,6 +3533,35 @@
         <a href="#s7-fx-reconciliation-modal" data-screen="s7-fx-reconciliation-modal">WO-07 · Modal FxReconciliación</a>
       </div>
     </div>
+    <div class="demo-nav-group" id="demo-nav-group-s8">
+      <button class="demo-nav-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="demo-dropdown-s8">
+        S8 · Ajustes <i data-lucide="chevron-down"></i>
+      </button>
+      <div class="demo-nav-dropdown" id="demo-dropdown-s8" role="menu">
+        <span class="demo-nav-label">── Desktop ──</span>
+        <a href="#settings" data-screen="settings">Perfil (refactor)</a>
+        <a href="#s8-settings-desktop-account" data-screen="s8-settings-desktop-account">Cuenta</a>
+        <a href="#s8-settings-desktop-preferences" data-screen="s8-settings-desktop-preferences">Preferencias</a>
+        <div class="demo-nav-sep"></div>
+        <span class="demo-nav-label">── Desktop · Modales ──</span>
+        <a href="#s8-settings-modal-username" data-screen="s8-settings-modal-username">Modal · Usuario</a>
+        <a href="#s8-settings-modal-displayname" data-screen="s8-settings-modal-displayname">Modal · Nombre visible</a>
+        <a href="#s8-settings-modal-avatar" data-screen="s8-settings-modal-avatar">Modal · Subir foto</a>
+        <a href="#s8-settings-modal-avatar-remove" data-screen="s8-settings-modal-avatar-remove">Modal · Eliminar foto</a>
+        <a href="#s8-settings-modal-email" data-screen="s8-settings-modal-email">Modal · Email</a>
+        <a href="#s8-settings-modal-password" data-screen="s8-settings-modal-password">Modal · Contraseña</a>
+        <a href="#s8-settings-modal-currency" data-screen="s8-settings-modal-currency">Modal · Moneda base (FR-07-32)</a>
+        <div class="demo-nav-sep"></div>
+        <span class="demo-nav-label">── Móvil ──</span>
+        <a href="#s8-settings-profile-mobile" data-screen="s8-settings-profile-mobile">Ajustes · Perfil</a>
+        <a href="#s8-settings-account-mobile" data-screen="s8-settings-account-mobile">Ajustes · Cuenta</a>
+        <a href="#s8-settings-preferences-mobile" data-screen="s8-settings-preferences-mobile">Ajustes · Preferencias</a>
+        <a href="#s8-settings-username-sheet-mobile" data-screen="s8-settings-username-sheet-mobile">Sheet · Usuario</a>
+        <a href="#s8-settings-displayname-sheet-mobile" data-screen="s8-settings-displayname-sheet-mobile">Sheet · Nombre visible</a>
+        <a href="#s8-settings-avatar-sheet-mobile" data-screen="s8-settings-avatar-sheet-mobile">Sheet · Foto de perfil</a>
+        <a href="#s8-settings-currency-sheet-mobile" data-screen="s8-settings-currency-sheet-mobile">Sheet · Moneda base (FR-07-32)</a>
+      </div>
+    </div>
     <span class="demo-nav-current" id="demo-nav-current" aria-live="polite"></span>
   </nav>
   <div class="palette-switch">
@@ -3547,6 +3747,24 @@
         <tr><td class="idx-session">S7</td><td>Picker · Móvil · Moneda (sheet)</td><td><a class="idx-anchor" href="#s7-currency-picker-mobile" data-screen-link="s7-currency-picker-mobile">#s7-currency-picker-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Picker · Móvil · Rango de fechas (full-sheet)</td><td><a class="idx-anchor" href="#s7-date-range-picker-mobile" data-screen-link="s7-date-range-picker-mobile">#s7-date-range-picker-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S7</td><td>Componente · DateRangePickerInput (open)</td> <td><a class="idx-anchor" href="#s7-date-range-picker" data-screen-link="s7-date-range-picker">#s7-date-range-picker</a></td>                             <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <!-- S8 AJUSTES (módulo lite) -->
+        <tr><td class="idx-session">S8</td><td>Ajustes · Perfil (refactor)</td>               <td><a class="idx-anchor" href="#settings" data-screen-link="settings">#settings</a></td>                                                                  <td><span class="idx-status iterando">iterando</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Ajustes · Cuenta</td>                          <td><a class="idx-anchor" href="#s8-settings-desktop-account" data-screen-link="s8-settings-desktop-account">#s8-settings-desktop-account</a></td>           <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Ajustes · Preferencias</td>                    <td><a class="idx-anchor" href="#s8-settings-desktop-preferences" data-screen-link="s8-settings-desktop-preferences">#s8-settings-desktop-preferences</a></td> <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Modal · Cambiar usuario</td>                   <td><a class="idx-anchor" href="#s8-settings-modal-username" data-screen-link="s8-settings-modal-username">#s8-settings-modal-username</a></td>               <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Modal · Cambiar nombre visible</td>            <td><a class="idx-anchor" href="#s8-settings-modal-displayname" data-screen-link="s8-settings-modal-displayname">#s8-settings-modal-displayname</a></td>       <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Modal · Subir foto de perfil</td>              <td><a class="idx-anchor" href="#s8-settings-modal-avatar" data-screen-link="s8-settings-modal-avatar">#s8-settings-modal-avatar</a></td>                     <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Modal · Eliminar foto de perfil</td>           <td><a class="idx-anchor" href="#s8-settings-modal-avatar-remove" data-screen-link="s8-settings-modal-avatar-remove">#s8-settings-modal-avatar-remove</a></td>   <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Modal · Cambiar email</td>                     <td><a class="idx-anchor" href="#s8-settings-modal-email" data-screen-link="s8-settings-modal-email">#s8-settings-modal-email</a></td>                         <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Modal · Cambiar contraseña</td>                <td><a class="idx-anchor" href="#s8-settings-modal-password" data-screen-link="s8-settings-modal-password">#s8-settings-modal-password</a></td>               <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Modal · Cambiar moneda base (FR-07-32)</td>    <td><a class="idx-anchor" href="#s8-settings-modal-currency" data-screen-link="s8-settings-modal-currency">#s8-settings-modal-currency</a></td>               <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Móvil · Ajustes · Perfil</td>                  <td><a class="idx-anchor" href="#s8-settings-profile-mobile" data-screen-link="s8-settings-profile-mobile">#s8-settings-profile-mobile</a></td>               <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Móvil · Ajustes · Cuenta</td>                  <td><a class="idx-anchor" href="#s8-settings-account-mobile" data-screen-link="s8-settings-account-mobile">#s8-settings-account-mobile</a></td>               <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Móvil · Ajustes · Preferencias</td>            <td><a class="idx-anchor" href="#s8-settings-preferences-mobile" data-screen-link="s8-settings-preferences-mobile">#s8-settings-preferences-mobile</a></td>   <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Móvil · Sheet · Cambiar usuario</td>           <td><a class="idx-anchor" href="#s8-settings-username-sheet-mobile" data-screen-link="s8-settings-username-sheet-mobile">#s8-settings-username-sheet-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Móvil · Sheet · Nombre visible</td>            <td><a class="idx-anchor" href="#s8-settings-displayname-sheet-mobile" data-screen-link="s8-settings-displayname-sheet-mobile">#s8-settings-displayname-sheet-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Móvil · Sheet · Foto de perfil</td>            <td><a class="idx-anchor" href="#s8-settings-avatar-sheet-mobile" data-screen-link="s8-settings-avatar-sheet-mobile">#s8-settings-avatar-sheet-mobile</a></td>   <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S8</td><td>Móvil · Sheet · Moneda base (FR-07-32)</td>    <td><a class="idx-anchor" href="#s8-settings-currency-sheet-mobile" data-screen-link="s8-settings-currency-sheet-mobile">#s8-settings-currency-sheet-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
       </tbody>
     </table>
   </div>
@@ -4693,10 +4911,10 @@
       <a href="#settings" class="app-nav-link is-active"><i data-lucide="settings"></i>Ajustes</a>
       <div class="app-sidebar-footer">
         <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
-          <span class="avatar">S</span>
+          <span class="avatar">V</span>
           <span class="info">
-            <strong>Sergio Minei</strong>
-            <small>sergio@pandatrack.dev</small>
+            <strong>Vinyl Hunter</strong>
+            <small>vinyl@pandatrack.dev</small>
           </span>
           <span class="chev"><i data-lucide="chevrons-up-down"></i></span>
         </button>
@@ -4709,13 +4927,23 @@
 
     <div class="app-content">
       <div class="app-topbar">
-        <h2 id="settings-title">Ajustes</h2>
-        <div class="app-topbar-spacer"></div>
+        <div class="app-topbar-left">
+          <p class="app-topbar-title" id="settings-title">Ajustes</p>
+        </div>
+        <div class="app-topbar-right">
+          <span class="app-lang-toggle">ES</span>
+          <button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button>
+        </div>
       </div>
 
-      <span class="eyebrow">Tu cuenta</span>
-      <h3 class="display" style="font-size: 28px; margin: 6px 0 4px;">Edita tu perfil, acceso y preferencias</h3>
-      <p class="text-secondary" style="margin: 0 0 24px;">Cambios sensibles disparan confirmación.</p>
+      <!-- Mobile segmented control — visible only below 1024px, sticky under topbar -->
+      <div class="s8-seg-wrap">
+        <div class="s8-seg-ctrl" role="tablist" aria-label="Secciones de ajustes">
+          <button class="s8-seg-btn is-active" role="tab" data-settings-tab="profile" aria-selected="true"><i data-lucide="user"></i> Perfil</button>
+          <button class="s8-seg-btn" role="tab" data-settings-tab="account" aria-selected="false"><i data-lucide="lock"></i> Cuenta</button>
+          <button class="s8-seg-btn" role="tab" data-settings-tab="preferences" aria-selected="false"><i data-lucide="sliders-horizontal"></i> Prefs</button>
+        </div>
+      </div>
 
       <div class="settings-layout">
         <nav class="settings-tabs" id="settings-nav" aria-label="Secciones de ajustes">
@@ -4726,43 +4954,45 @@
 
         <div>
           <!-- PROFILE -->
-          <section class="settings-section is-active" data-settings-pane="profile">
-            <div class="card">
-              <span class="eyebrow">Perfil</span>
-              <h3 class="card-title" style="margin-top: 4px;">Tu identidad</h3>
-              <p class="card-helper">Cómo te ven en la app.</p>
+          <section class="settings-section is-active" data-settings-pane="profile" role="tabpanel" aria-labelledby="s8-prof-heading">
+            <div class="card s8-card-accent">
+              <span class="s8-eyebrow-chip"><i data-lucide="user"></i>Perfil</span>
+              <h3 class="card-title" id="s8-prof-heading" style="margin-top: 4px;">Tu identidad pública</h3>
+              <p class="card-helper">Así te ven los demás en la app.</p>
 
               <div class="settings-row">
-                <div class="lbl">Usuario</div>
-                <div class="val">@sergio_m<small>Cambios cada 30 días.</small></div>
+                <div class="lbl">Avatar</div>
+                <div class="val" style="display: flex; align-items: center; gap: 12px;">
+                  <div class="s8-avatar-hero">V</div>
+                  <span class="text-muted" style="font-size: 12px;">Letra inicial · sin foto subida</span>
+                </div>
+                <div class="actions">
+                  <button class="btn ghost sm">Subir foto</button>
+                </div>
+              </div>
+              <div class="settings-row">
+                <div class="lbl">Nombre de usuario</div>
+                <div class="val">@vinyl_hunter<small style="margin-top:6px;display:block;"><span class="s8-cooldown-chip"><i data-lucide="clock-3"></i>Próximo cambio en <strong>5 días</strong></span></small></div>
                 <div class="actions"><button class="btn ghost sm"><i data-lucide="pencil"></i> Cambiar</button></div>
               </div>
               <div class="settings-row">
                 <div class="lbl">Nombre visible</div>
-                <div class="val">Sergio Minei</div>
+                <div class="val">Vinyl Hunter</div>
                 <div class="actions"><button class="btn ghost sm"><i data-lucide="pencil"></i> Cambiar</button></div>
-              </div>
-              <div class="settings-row">
-                <div class="lbl">Avatar</div>
-                <div class="val" style="display: flex; align-items: center; gap: 12px;">
-                  <div class="store-avatar s56">S</div>
-                  <span class="text-muted" style="font-size: 12px;">Letra inicial · sin logo subido</span>
-                </div>
-                <div class="actions"><button class="btn ghost sm">Cambiar</button><button class="btn destructive-ghost sm">Eliminar</button></div>
               </div>
             </div>
           </section>
 
           <!-- ACCOUNT -->
-          <section class="settings-section" data-settings-pane="account">
-            <div class="card">
-              <span class="eyebrow">Cuenta</span>
-              <h3 class="card-title" style="margin-top: 4px;">Email, contraseña y acceso</h3>
-              <p class="card-helper">Cambios sensibles requieren tu contraseña actual.</p>
+          <section class="settings-section" data-settings-pane="account" role="tabpanel" aria-labelledby="s8-acc-heading">
+            <div class="card s8-card-cool">
+              <span class="s8-eyebrow-chip tone-cool"><i data-lucide="shield"></i>Cuenta</span>
+              <h3 class="card-title" id="s8-acc-heading" style="margin-top: 4px;">Email, contraseña y acceso</h3>
+              <p class="card-helper">Los cambios sensibles requieren tu contraseña actual.</p>
 
               <div class="settings-row">
                 <div class="lbl">Email</div>
-                <div class="val">sergio@pandatrack.dev<small><span class="chip success" style="margin-top: 4px; padding: 2px 8px; font-size: 11px;"><i data-lucide="check-circle"></i> Verificado</span></small></div>
+                <div class="val">vinyl@pandatrack.dev<small><span class="chip success" style="margin-top: 4px; padding: 2px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px;"><i data-lucide="check-circle" style="width:10px;height:10px;"></i> Verificado</span></small></div>
                 <div class="actions"><button class="btn ghost sm">Cambiar</button></div>
               </div>
               <div class="settings-row">
@@ -4770,25 +5000,15 @@
                 <div class="val">••••••••••<small>Última actualización hace 3 meses.</small></div>
                 <div class="actions"><button class="btn ghost sm">Cambiar</button></div>
               </div>
-              <div class="settings-row">
-                <div class="lbl">Verificación en 2 pasos</div>
-                <div class="val text-secondary">Activa MFA para sumar protección.</div>
-                <div class="actions"><button class="switch" aria-pressed="false" aria-label="Activar MFA"></button></div>
-              </div>
-              <div class="settings-row">
-                <div class="lbl">Sesiones</div>
-                <div class="val">2 dispositivos activos<small>iPhone · MacBook</small></div>
-                <div class="actions"><button class="btn destructive-ghost sm">Cerrar todas</button></div>
-              </div>
             </div>
           </section>
 
           <!-- PREFERENCES -->
-          <section class="settings-section" data-settings-pane="preferences">
-            <div class="card">
-              <span class="eyebrow">Apariencia</span>
-              <h3 class="card-title" style="margin-top: 4px;">Tema y mascota</h3>
-              <p class="card-helper">Cambios inmediatos. Misma fuente de verdad que el toggle de la app.</p>
+          <section class="settings-section" data-settings-pane="preferences" role="tabpanel" aria-labelledby="s8-pref-heading">
+            <div class="card s8-card-cool">
+              <span class="s8-eyebrow-chip tone-cool"><i data-lucide="monitor"></i>Interfaz</span>
+              <h3 class="card-title" id="s8-pref-heading" style="margin-top: 4px;">Tema e idioma</h3>
+              <p class="card-helper">Los cambios son inmediatos.</p>
 
               <div class="settings-row">
                 <div class="lbl">Tema</div>
@@ -4802,30 +5022,25 @@
                 </div>
               </div>
               <div class="settings-row">
-                <div class="lbl">Mostrar mascota</div>
-                <div class="val text-secondary">Pan se queda en la esquina inferior. Click derecho la oculta también.</div>
-                <div class="actions"><button class="switch" aria-pressed="true" aria-label="Mostrar mascota" id="pref-mascot"></button></div>
-              </div>
-              <div class="settings-row">
-                <div class="lbl">Densidad de listas</div>
-                <div class="val text-secondary">Densa cabe más, cómoda respira más.</div>
+                <div class="lbl">Idioma</div>
+                <div class="val text-secondary">Cómo se muestran los textos.</div>
                 <div class="actions">
-                  <div class="pref-toggle">
-                    <button aria-pressed="true">Densa</button>
-                    <button aria-pressed="false">Cómoda</button>
+                  <div class="pref-toggle" id="pref-lang">
+                    <button data-pref-lang="es" aria-pressed="true">Español</button>
+                    <button data-pref-lang="en" aria-pressed="false">English</button>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="card" style="margin-top: 14px;">
-              <span class="eyebrow">Coleccionista</span>
+            <div class="card s8-card-warm" style="margin-top: 14px;">
+              <span class="s8-eyebrow-chip tone-warm"><i data-lucide="heart"></i>Coleccionista</span>
               <h3 class="card-title" style="margin-top: 4px;">País, moneda y categorías</h3>
-              <p class="card-helper">Cambiar moneda base no convierte tus datos viejos.</p>
+              <p class="card-helper">Cambiar la moneda base no convierte tus datos anteriores.</p>
 
               <div class="settings-row">
                 <div class="lbl">País</div>
-                <div class="val">Colombia · CO</div>
+                <div class="val">Argentina · AR</div>
                 <div class="actions"><button class="btn ghost sm">Cambiar</button></div>
               </div>
               <div class="settings-row">
@@ -6087,8 +6302,8 @@
           </div>
 
           <div style="margin-top:16px;">
-            <div class="subcard is-open" data-collapsible>
-              <button class="subcard-toggle"><span class="eyebrow">Categorías e importaciones</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="subcard is-open s8-card-cool" data-collapsible>
+              <button class="subcard-toggle"><span class="s8-eyebrow-chip tone-cool"><i data-lucide="tags"></i>Categorías e importaciones</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
               <div class="subcard-body"><div class="subcard-body-inner">
                 <div style="margin-bottom:10px;"><span class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600;">Categorías</span></div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;"><span class="chip accent"><i data-lucide="disc"></i> Vinyl</span><span class="chip accent"><i data-lucide="sparkles"></i> Anime</span></div>
@@ -6096,22 +6311,22 @@
                 <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:12px;"><span class="chip neutral" style="font-size:12px;">Japón</span><span class="chip neutral" style="font-size:12px;">Corea del Sur</span><span class="chip neutral" style="font-size:12px;">Estados Unidos</span></div>
               </div></div>
             </div>
-            <div class="subcard is-open" data-collapsible>
-              <button class="subcard-toggle"><span class="eyebrow">Canales de contacto</span><span class="text-muted" style="font-size:12px;">3</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="subcard is-open s8-card-cool" data-collapsible>
+              <button class="subcard-toggle"><span class="s8-eyebrow-chip tone-cool"><i data-lucide="at-sign"></i>Canales de contacto</span><span class="text-muted" style="font-size:12px;">3</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
               <div class="subcard-body"><div class="subcard-body-inner">
                 <div class="channel-row"><div class="channel-icon"><i data-lucide="globe"></i></div><div style="flex:1;"><div class="label">Sitio web</div><div class="value">akiba-records.jp</div></div><button class="btn ghost sm"><i data-lucide="external-link"></i></button></div>
                 <div class="channel-row"><div class="channel-icon"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></div><div style="flex:1;"><div class="label">Instagram</div><div class="value">@akiba_records</div></div><button class="btn ghost sm"><i data-lucide="external-link"></i></button></div>
                 <div class="channel-row"><div class="channel-icon"><i data-lucide="mail"></i></div><div style="flex:1;"><div class="label">Email</div><div class="value">hello@akiba-records.jp</div></div><button class="btn ghost sm"><i data-lucide="copy"></i></button></div>
               </div></div>
             </div>
-            <div class="subcard is-open" data-collapsible>
-              <button class="subcard-toggle"><span class="eyebrow">Direcciones</span><span class="text-muted" style="font-size:12px;">1</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="subcard is-open s8-card-cool" data-collapsible>
+              <button class="subcard-toggle"><span class="s8-eyebrow-chip tone-cool"><i data-lucide="map-pin"></i>Direcciones</span><span class="text-muted" style="font-size:12px;">1</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
               <div class="subcard-body"><div class="subcard-body-inner">
                 <div class="channel-row"><div class="channel-icon"><i data-lucide="map-pin"></i></div><div style="flex:1;"><div class="label">Tienda principal</div><div class="value">1-chome Sotokanda, Chiyoda-ku · Tokio, Japón</div></div><button class="btn ghost sm"><i data-lucide="map" style="width:13px;height:13px;"></i></button></div>
               </div></div>
             </div>
-            <div class="subcard is-open" data-collapsible>
-              <button class="subcard-toggle"><span class="eyebrow">Reseñas</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="subcard is-open s8-card-warm" data-collapsible>
+              <button class="subcard-toggle"><span class="s8-eyebrow-chip tone-warm"><i data-lucide="star"></i>Reseñas</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
               <div class="subcard-body"><div class="subcard-body-inner">
                 <div style="display:flex;align-items:center;gap:16px;padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--border);">
                   <span style="font-size:38px;font-weight:700;line-height:1;color:var(--text-primary);">4.7</span>
@@ -6138,8 +6353,8 @@
 
         <aside>
           <!-- Resumen: métricas internas del owner -->
-          <div class="card elevated" style="position: sticky; top: 80px;">
-            <span class="eyebrow">Tu tienda · Resumen</span>
+          <div class="card elevated s8-card-accent" style="position: sticky; top: 80px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="store"></i>Tu tienda · Resumen</span>
             <div style="margin-top: 10px;">
               <div class="summary-row"><span class="label">Pedidos anotados</span><span class="value num">17</span></div>
               <div class="summary-row"><span class="label">Pedidos activos</span><span class="value num">5</span></div>
@@ -6153,8 +6368,8 @@
           </div>
 
           <!-- Acciones: owner -->
-          <div class="card elevated" style="margin-top: 14px;">
-            <span class="eyebrow">Acciones</span>
+          <div class="card elevated s8-card-accent" style="margin-top: 14px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="zap"></i>Acciones</span>
             <div class="actions-list" style="margin-top: 10px;">
               <button class="btn primary"><i data-lucide="pencil"></i> Editar tienda</button>
               <button class="btn ghost"><i data-lucide="flag"></i> Ver reportes pendientes <span class="chip warning" style="padding: 1px 7px; font-size: 11px; margin-left: 4px;">2</span></button>
@@ -6162,8 +6377,8 @@
           </div>
 
           <!-- Nota privada (owner puede tener su propia nota igual) -->
-          <div class="card elevated" style="margin-top: 14px;">
-            <span class="eyebrow">Tu nota privada</span>
+          <div class="card elevated s8-card-warm" style="margin-top: 14px;">
+            <span class="s8-eyebrow-chip tone-warm"><i data-lucide="pencil-line"></i>Tu nota privada</span>
             <p class="text-muted" style="font-size: 12px; margin: 6px 0 10px;">Solo tú la ves.</p>
             <textarea class="input" rows="3" placeholder="Apuntes sobre esta tienda.">Actualizar horario de atención en description.</textarea>
             <div class="text-muted" style="font-size: 12px; margin-top: 6px;"><i data-lucide="check" style="width: 12px; height: 12px; color: var(--success); vertical-align: -1px;"></i> Guardada hace 5m</div>
@@ -6242,9 +6457,9 @@
           </div>
 
           <div style="margin-top: 16px;">
-            <div class="subcard is-open" data-collapsible>
+            <div class="subcard is-open s8-card-cool" data-collapsible>
               <button class="subcard-toggle">
-                <span class="eyebrow">Categorías</span>
+                <span class="s8-eyebrow-chip tone-cool"><i data-lucide="tags"></i>Categorías</span>
                 <span class="text-muted" style="font-size: 12px;">2</span>
                 <span class="chev"><i data-lucide="chevron-down"></i></span>
               </button>
@@ -6257,9 +6472,9 @@
             </div>
 
             <!-- reseñas: habilitadas incluso en pending -->
-            <div class="subcard is-open" data-collapsible>
+            <div class="subcard is-open s8-card-warm" data-collapsible>
               <button class="subcard-toggle">
-                <span class="eyebrow">Reseñas</span>
+                <span class="s8-eyebrow-chip tone-warm"><i data-lucide="star"></i>Reseñas</span>
                 <span class="text-muted" style="font-size: 12px;">—</span>
                 <span class="chev"><i data-lucide="chevron-down"></i></span>
               </button>
@@ -6286,8 +6501,8 @@
         </div>
 
         <aside>
-          <div class="card elevated" style="position: sticky; top: 80px;">
-            <span class="eyebrow">Resumen</span>
+          <div class="card elevated s8-card-accent" style="position: sticky; top: 80px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="store"></i>Resumen</span>
             <div style="margin-top: 10px;">
               <div class="summary-row"><span class="label">Pedidos activos</span><span class="value num">0</span></div>
               <div class="summary-row"><span class="label">Pedidos cerrados</span><span class="value num">0</span></div>
@@ -6295,16 +6510,16 @@
             </div>
           </div>
 
-          <div class="card elevated" style="margin-top: 14px;">
-            <span class="eyebrow">Acciones</span>
+          <div class="card elevated s8-card-accent" style="margin-top: 14px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="zap"></i>Acciones</span>
             <div class="actions-list" style="margin-top: 10px;">
               <a href="#order-create" class="btn primary" data-screen-link="order-create"><i data-lucide="plus-circle"></i> Anotar pedido aquí</a>
               <button class="btn ghost"><i data-lucide="pencil"></i> Editar tienda</button>
             </div>
           </div>
 
-          <div class="card elevated" style="margin-top: 14px;">
-            <span class="eyebrow">Tu nota privada</span>
+          <div class="card elevated s8-card-warm" style="margin-top: 14px;">
+            <span class="s8-eyebrow-chip tone-warm"><i data-lucide="pencil-line"></i>Tu nota privada</span>
             <p class="text-muted" style="font-size: 12px; margin: 6px 0 10px;">Solo tú la ves.</p>
             <textarea class="input" rows="3" placeholder="Apuntes para ti."></textarea>
             <button class="btn ghost sm" style="margin-top: 8px; font-size: 12px;"><i data-lucide="save"></i> Guardar nota</button>
@@ -7071,8 +7286,8 @@
           </div>
           <div>
             <!-- Categorías + Importa de -->
-            <div class="subcard is-open" data-collapsible>
-              <button class="subcard-toggle"><span class="eyebrow">Categorías e importaciones</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="subcard is-open s8-card-cool" data-collapsible>
+              <button class="subcard-toggle"><span class="s8-eyebrow-chip tone-cool"><i data-lucide="tags"></i>Categorías e importaciones</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
               <div class="subcard-body"><div class="subcard-body-inner">
                 <div style="margin-bottom:10px;"><span class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600;">Categorías</span></div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;"><span class="chip accent"><i data-lucide="disc"></i> Vinyl</span><span class="chip accent"><i data-lucide="sparkles"></i> Anime</span></div>
@@ -7080,22 +7295,22 @@
                 <div style="display:flex;gap:6px;flex-wrap:wrap;font-size:12px;"><span class="chip neutral" style="font-size:12px;">Japón</span><span class="chip neutral" style="font-size:12px;">Corea del Sur</span><span class="chip neutral" style="font-size:12px;">Estados Unidos</span></div>
               </div></div>
             </div>
-            <div class="subcard is-open" data-collapsible>
-              <button class="subcard-toggle"><span class="eyebrow">Canales de contacto</span><span class="text-muted" style="font-size:12px;">3</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="subcard is-open s8-card-cool" data-collapsible>
+              <button class="subcard-toggle"><span class="s8-eyebrow-chip tone-cool"><i data-lucide="at-sign"></i>Canales de contacto</span><span class="text-muted" style="font-size:12px;">3</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
               <div class="subcard-body"><div class="subcard-body-inner">
                 <div class="channel-row"><div class="channel-icon"><i data-lucide="globe"></i></div><div style="flex:1;"><div class="label">Sitio web</div><div class="value">akiba-records.jp</div></div><button class="btn ghost sm"><i data-lucide="external-link"></i></button></div>
                 <div class="channel-row"><div class="channel-icon"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg></div><div style="flex:1;"><div class="label">Instagram</div><div class="value">@akiba_records</div></div><button class="btn ghost sm"><i data-lucide="external-link"></i></button></div>
                 <div class="channel-row"><div class="channel-icon"><i data-lucide="mail"></i></div><div style="flex:1;"><div class="label">Email</div><div class="value">hello@akiba-records.jp</div></div><button class="btn ghost sm"><i data-lucide="copy"></i></button></div>
               </div></div>
             </div>
-            <div class="subcard is-open" data-collapsible>
-              <button class="subcard-toggle"><span class="eyebrow">Direcciones</span><span class="text-muted" style="font-size:12px;">1</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="subcard is-open s8-card-cool" data-collapsible>
+              <button class="subcard-toggle"><span class="s8-eyebrow-chip tone-cool"><i data-lucide="map-pin"></i>Direcciones</span><span class="text-muted" style="font-size:12px;">1</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
               <div class="subcard-body"><div class="subcard-body-inner">
                 <div class="channel-row"><div class="channel-icon"><i data-lucide="map-pin"></i></div><div style="flex:1;"><div class="label">Tienda principal</div><div class="value">1-chome Sotokanda, Chiyoda-ku · Tokio, Japón</div></div><button class="btn ghost sm"><i data-lucide="map" style="width:13px;height:13px;"></i></button></div>
               </div></div>
             </div>
-            <div class="subcard is-open" data-collapsible>
-              <button class="subcard-toggle"><span class="eyebrow">Reseñas</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="subcard is-open s8-card-warm" data-collapsible>
+              <button class="subcard-toggle"><span class="s8-eyebrow-chip tone-warm"><i data-lucide="star"></i>Reseñas</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
               <div class="subcard-body"><div class="subcard-body-inner">
                 <div style="display:flex;align-items:center;gap:16px;padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--border);">
                   <span style="font-size:38px;font-weight:700;line-height:1;color:var(--text-primary);">4.7</span>
@@ -7121,8 +7336,8 @@
           </div>
         </div>
         <aside>
-          <div class="card elevated" style="position:sticky;top:80px;">
-            <span class="eyebrow">Tus pedidos aquí</span>
+          <div class="card elevated s8-card-accent" style="position:sticky;top:80px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="package"></i>Tus pedidos aquí</span>
             <div style="margin-top:10px;">
               <div class="summary-row"><span class="label">Pedidos activos</span><span class="value num">3</span></div>
               <div class="summary-row"><span class="label">Pedidos cerrados</span><span class="value num">9</span></div>
@@ -7131,8 +7346,8 @@
             </div>
             <div style="margin-top:14px;"><button class="btn link sm"><i data-lucide="external-link"></i> Ver pedidos</button></div>
           </div>
-          <div class="card elevated" style="margin-top:14px;">
-            <span class="eyebrow">Acciones</span>
+          <div class="card elevated s8-card-accent" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="zap"></i>Acciones</span>
             <div class="actions-list" style="margin-top:10px;">
               <a href="#order-create" class="btn primary" data-screen-link="order-create"><i data-lucide="plus-circle"></i> Anotar pedido aquí</a>
               <button class="btn ghost"><i data-lucide="bookmark"></i> Guardar tienda</button>
@@ -7140,8 +7355,8 @@
               <a href="#s6-store-detail-report-modal" class="btn destructive-ghost" data-screen-link="s6-store-detail-report-modal"><i data-lucide="flag"></i> Reportar tienda</a>
             </div>
           </div>
-          <div class="card elevated" style="margin-top:14px;">
-            <span class="eyebrow">Tu nota privada</span>
+          <div class="card elevated s8-card-warm" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip tone-warm"><i data-lucide="pencil-line"></i>Tu nota privada</span>
             <p class="text-muted" style="font-size:12px;margin:6px 0 10px;">Acuerdos con la tienda, fechas importantes, instrucciones especiales o el contexto para retomarlo después.</p>
             <textarea class="input" rows="4" placeholder="Apuntes para ti.">Compran también vinilos usados — preguntar antes del pedido</textarea>
             <div class="text-muted" style="font-size:12px;margin-top:6px;"><i data-lucide="check" style="width:12px;height:12px;color:var(--success);vertical-align:-1px;"></i> Guardada hace 2 min</div>
@@ -7871,8 +8086,8 @@
             </div>
           </div>
           <div style="margin-top:16px;">
-            <div class="subcard is-open" data-collapsible>
-              <button class="subcard-toggle"><span class="eyebrow">Categorías e importaciones</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="subcard is-open s8-card-cool" data-collapsible>
+              <button class="subcard-toggle"><span class="s8-eyebrow-chip tone-cool"><i data-lucide="tags"></i>Categorías e importaciones</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
               <div class="subcard-body"><div class="subcard-body-inner">
                 <div style="margin-bottom:10px;"><span class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600;">Categorías</span></div>
                 <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;"><span class="chip accent"><i data-lucide="shapes"></i> Figures</span><span class="chip accent"><i data-lucide="gallery-thumbnails"></i> Cards</span></div>
@@ -7880,8 +8095,8 @@
                 <div style="display:flex;gap:6px;flex-wrap:wrap;"><span class="chip neutral" style="font-size:12px;">Estados Unidos</span></div>
               </div></div>
             </div>
-            <div class="subcard is-open" data-collapsible>
-              <button class="subcard-toggle"><span class="eyebrow">Reseñas</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="subcard is-open s8-card-warm" data-collapsible>
+              <button class="subcard-toggle"><span class="s8-eyebrow-chip tone-warm"><i data-lucide="star"></i>Reseñas</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
               <div class="subcard-body"><div class="subcard-body-inner">
                 <div style="display:flex;align-items:center;gap:16px;padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid var(--border);">
                   <span style="font-size:38px;font-weight:700;line-height:1;color:var(--text-primary);">4.1</span>
@@ -7904,8 +8119,8 @@
           </div>
         </div>
         <aside>
-          <div class="card elevated" style="position:sticky;top:80px;">
-            <span class="eyebrow">Tus pedidos aquí</span>
+          <div class="card elevated s8-card-accent" style="position:sticky;top:80px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="package"></i>Tus pedidos aquí</span>
             <div style="margin-top:10px;">
               <div class="summary-row"><span class="label">Pedidos activos</span><span class="value num">1</span></div>
               <div class="summary-row"><span class="label">Pedidos cerrados</span><span class="value num">2</span></div>
@@ -7914,8 +8129,8 @@
             </div>
             <div style="margin-top:14px;"><button class="btn link sm"><i data-lucide="external-link"></i> Ver pedidos</button></div>
           </div>
-          <div class="card elevated" style="margin-top:14px;">
-            <span class="eyebrow">Acciones</span>
+          <div class="card elevated s8-card-accent" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="zap"></i>Acciones</span>
             <div class="actions-list" style="margin-top:10px;">
               <a href="#order-create" class="btn primary" data-screen-link="order-create"><i data-lucide="plus-circle"></i> Anotar pedido aquí</a>
               <button class="btn ghost"><i data-lucide="bookmark"></i> Guardar tienda</button>
@@ -7923,8 +8138,8 @@
               <button class="btn destructive-ghost"><i data-lucide="flag"></i> Reportar tienda</button>
             </div>
           </div>
-          <div class="card elevated" style="margin-top:14px;">
-            <span class="eyebrow">Tu nota privada</span>
+          <div class="card elevated s8-card-warm" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip tone-warm"><i data-lucide="pencil-line"></i>Tu nota privada</span>
             <p class="text-muted" style="font-size:12px;margin:6px 0 10px;">Acuerdos con la tienda, fechas importantes, instrucciones especiales o el contexto para retomarlo después.</p>
             <textarea class="input" rows="3" placeholder="Apuntes para ti."></textarea>
             <div class="text-muted" style="font-size:12px;margin-top:6px;"><i data-lucide="check" style="width:12px;height:12px;color:var(--success);vertical-align:-1px;"></i> Guardada hace 5 min</div>
@@ -9487,7 +9702,7 @@
       <div class="detail-grid">
         <div>
           <!-- Hero del pedido (patrón S2 / S6) -->
-          <div class="detail-hero" style="view-transition-name:order-pt-000123;">
+          <div class="detail-hero s8-card-accent" style="view-transition-name:order-pt-000123;">
             <div class="detail-hero-head">
               <div class="store-avatar s56">S</div>
               <div>
@@ -9501,7 +9716,7 @@
                 </div>
               </div>
             </div>
-            <span class="eyebrow">Tu pedido · USD</span>
+            <span class="s8-eyebrow-chip"><i data-lucide="package"></i>Tu pedido · USD</span>
             <div style="margin-top:12px;">
               <div class="text-secondary" style="font-size:13px;">Saldo pendiente</div>
               <div class="detail-hero-amount num">$496,00</div>
@@ -9513,9 +9728,9 @@
 
           <!-- Productos (subcard expandible) -->
           <div style="margin-top:16px;">
-            <div class="subcard is-open" data-collapsible>
+            <div class="subcard is-open s8-card-cool" data-collapsible>
               <button class="subcard-toggle">
-                <span class="eyebrow">Productos</span>
+                <span class="s8-eyebrow-chip tone-cool"><i data-lucide="boxes"></i>Productos</span>
                 <span class="text-muted" style="font-size:12px;">7</span>
                 <span class="chev"><i data-lucide="chevron-down"></i></span>
               </button>
@@ -9534,9 +9749,9 @@
             </div>
 
             <!-- Historial (subcard) -->
-            <div class="subcard" data-collapsible>
+            <div class="subcard s8-card-cool" data-collapsible>
               <button class="subcard-toggle">
-                <span class="eyebrow">Historial</span>
+                <span class="s8-eyebrow-chip tone-cool"><i data-lucide="clock-3"></i>Historial</span>
                 <span class="text-muted" style="font-size:12px;">3</span>
                 <span class="chev"><i data-lucide="chevron-down"></i></span>
               </button>
@@ -9552,8 +9767,8 @@
         </div>
 
         <aside>
-          <div class="card elevated" style="position:sticky;top:80px;">
-            <span class="eyebrow">Pagos</span>
+          <div class="card elevated s8-card-cool" style="position:sticky;top:80px;">
+            <span class="s8-eyebrow-chip tone-cool"><i data-lucide="wallet"></i>Pagos</span>
             <div style="margin-top:10px;">
               <div class="pay-row"><span class="pay-date">28 abr 2026</span><span class="pay-amount num">$744,00</span><button class="pay-delete" aria-label="Eliminar pago"><i data-lucide="x"></i></button></div>
               <div style="border-top:1px solid var(--border);padding-top:8px;padding-right:40px;display:flex;flex-direction:column;gap:4px;">
@@ -9570,8 +9785,8 @@
             <button class="btn accent full" style="margin-top:12px;"><i data-lucide="circle-dollar-sign"></i> Anotar pago</button>
           </div>
 
-          <div class="card elevated" style="margin-top:14px;">
-            <span class="eyebrow">Acciones</span>
+          <div class="card elevated s8-card-accent" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="zap"></i>Acciones</span>
             <div class="actions-list" style="margin-top:10px;">
               <button class="btn primary"><i data-lucide="truck"></i> Crear entrega</button>
               <a href="#s7-order-edit" data-screen-link="s7-order-edit" class="btn ghost"><i data-lucide="pencil"></i> Editar pedido</a>
@@ -9580,8 +9795,8 @@
             </div>
           </div>
 
-          <div class="card elevated" style="margin-top:14px;">
-            <span class="eyebrow">Tu nota privada</span>
+          <div class="card elevated s8-card-warm" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip tone-warm"><i data-lucide="pencil-line"></i>Tu nota privada</span>
             <p class="text-muted" style="font-size:12px;margin:6px 0 10px;">Acuerdos con la tienda, fechas importantes, instrucciones especiales o el contexto para retomarlo después.</p>
             <textarea class="input" rows="3" placeholder="Escribe una nota o recordatorio para este pedido…">Confirmar tracking antes del 10 de mayo.</textarea>
             <div class="text-muted" style="font-size:12px;margin-top:6px;"><i data-lucide="check" style="width:12px;height:12px;color:var(--success);vertical-align:-1px;"></i> Guardada hace 4s</div>
@@ -9621,7 +9836,7 @@
       <a href="#s7-orders-list-default" class="back-link" data-screen-link="s7-orders-list-default"><i data-lucide="arrow-left"></i> Pedidos</a>
       <div class="detail-grid">
         <div>
-          <div class="detail-hero" style="opacity:0.75;">
+          <div class="detail-hero s8-card-accent" style="opacity:0.75;">
             <div class="detail-hero-head">
               <div class="store-avatar s56">A</div>
               <div>
@@ -9632,7 +9847,7 @@
                 </div>
               </div>
             </div>
-            <span class="eyebrow">Tu pedido · EUR</span>
+            <span class="s8-eyebrow-chip"><i data-lucide="package"></i>Tu pedido · EUR</span>
             <div style="margin-top:12px;">
               <div class="text-secondary" style="font-size:13px;">Total</div>
               <div class="detail-hero-amount num" style="color:var(--text-secondary);">€320,00</div>
@@ -9650,9 +9865,9 @@
           </div>
 
           <div style="margin-top:16px;">
-            <div class="subcard is-open" data-collapsible>
+            <div class="subcard is-open s8-card-cool" data-collapsible>
               <button class="subcard-toggle">
-                <span class="eyebrow">Productos</span>
+                <span class="s8-eyebrow-chip tone-cool"><i data-lucide="boxes"></i>Productos</span>
                 <span class="text-muted" style="font-size:12px;">2</span>
                 <span class="chev"><i data-lucide="chevron-down"></i></span>
               </button>
@@ -9664,9 +9879,9 @@
               </div>
             </div>
 
-            <div class="subcard" data-collapsible>
+            <div class="subcard s8-card-cool" data-collapsible>
               <button class="subcard-toggle">
-                <span class="eyebrow">Historial</span>
+                <span class="s8-eyebrow-chip tone-cool"><i data-lucide="clock-3"></i>Historial</span>
                 <span class="text-muted" style="font-size:12px;">2</span>
                 <span class="chev"><i data-lucide="chevron-down"></i></span>
               </button>
@@ -9681,13 +9896,13 @@
         </div>
 
         <aside>
-          <div class="card elevated" style="position:sticky;top:80px;">
-            <span class="eyebrow">Pagos</span>
+          <div class="card elevated s8-card-cool" style="position:sticky;top:80px;">
+            <span class="s8-eyebrow-chip tone-cool"><i data-lucide="wallet"></i>Pagos</span>
             <p class="text-muted" style="font-size:13px;margin:10px 0 0;">Sin pagos registrados.</p>
           </div>
 
-          <div class="card elevated" style="margin-top:14px;">
-            <span class="eyebrow">Acciones</span>
+          <div class="card elevated s8-card-accent" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="zap"></i>Acciones</span>
             <div class="actions-list" style="margin-top:10px;">
               <button class="btn primary"><i data-lucide="rotate-ccw"></i> Reactivar pedido</button>
               <button class="btn ghost" disabled aria-disabled="true" style="opacity:0.45;cursor:not-allowed;" title="No disponible para pedidos cancelados"><i data-lucide="pencil"></i> Editar pedido</button>
@@ -9696,8 +9911,8 @@
             </div>
           </div>
 
-          <div class="card elevated" style="margin-top:14px;">
-            <span class="eyebrow">Tu nota privada</span>
+          <div class="card elevated s8-card-warm" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip tone-warm"><i data-lucide="pencil-line"></i>Tu nota privada</span>
             <p class="text-muted" style="font-size:12px;margin:6px 0 10px;">Acuerdos con la tienda, fechas importantes, instrucciones especiales o el contexto para retomarlo después.</p>
             <textarea class="input" rows="3" placeholder="Escribe una nota o recordatorio para este pedido…"></textarea>
           </div>
@@ -9746,7 +9961,7 @@
 
       <div class="detail-grid">
         <div>
-          <div class="detail-hero">
+          <div class="detail-hero s8-card-accent">
             <div class="detail-hero-head">
               <div class="store-avatar s56">D</div>
               <div>
@@ -9758,7 +9973,7 @@
                 </div>
               </div>
             </div>
-            <span class="eyebrow">Tu pedido · JPY</span>
+            <span class="s8-eyebrow-chip"><i data-lucide="package"></i>Tu pedido · JPY</span>
             <div style="margin-top:12px;">
               <div class="text-secondary" style="font-size:13px;">Saldo pendiente</div>
               <div class="detail-hero-amount num" style="color:var(--warning);">¥3.680</div>
@@ -9769,9 +9984,9 @@
           </div>
 
           <div style="margin-top:16px;">
-            <div class="subcard is-open" data-collapsible>
+            <div class="subcard is-open s8-card-cool" data-collapsible>
               <button class="subcard-toggle">
-                <span class="eyebrow">Productos</span>
+                <span class="s8-eyebrow-chip tone-cool"><i data-lucide="boxes"></i>Productos</span>
                 <span class="text-muted" style="font-size:12px;">5</span>
                 <span class="chev"><i data-lucide="chevron-down"></i></span>
               </button>
@@ -9785,9 +10000,9 @@
               </div>
             </div>
 
-            <div class="subcard" data-collapsible>
+            <div class="subcard s8-card-cool" data-collapsible>
               <button class="subcard-toggle">
-                <span class="eyebrow">Historial</span>
+                <span class="s8-eyebrow-chip tone-cool"><i data-lucide="clock-3"></i>Historial</span>
                 <span class="text-muted" style="font-size:12px;">2</span>
                 <span class="chev"><i data-lucide="chevron-down"></i></span>
               </button>
@@ -9802,8 +10017,8 @@
         </div>
 
         <aside>
-          <div class="card elevated" style="position:sticky;top:80px;">
-            <span class="eyebrow">Pagos</span>
+          <div class="card elevated s8-card-warning" style="position:sticky;top:80px;">
+            <span class="s8-eyebrow-chip tone-warning"><i data-lucide="wallet"></i>Pagos</span>
             <div style="margin-top:10px;">
               <div class="pay-row"><span class="pay-date">5 nov 2025</span><span class="pay-amount num">¥14.720</span><button class="pay-delete" aria-label="Eliminar pago"><i data-lucide="x"></i></button></div>
               <div style="border-top:1px solid var(--border);padding-top:8px;padding-right:40px;display:flex;flex-direction:column;gap:4px;">
@@ -9820,8 +10035,8 @@
             <button class="btn accent full" style="margin-top:12px;"><i data-lucide="circle-dollar-sign"></i> Anotar pago</button>
           </div>
 
-          <div class="card elevated" style="margin-top:14px;">
-            <span class="eyebrow">Acciones</span>
+          <div class="card elevated s8-card-accent" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="zap"></i>Acciones</span>
             <div class="actions-list" style="margin-top:10px;">
               <button class="btn primary"><i data-lucide="truck"></i> Crear entrega</button>
               <a href="#s7-order-edit" data-screen-link="s7-order-edit" class="btn ghost"><i data-lucide="pencil"></i> Editar pedido</a>
@@ -9829,8 +10044,8 @@
             </div>
           </div>
 
-          <div class="card elevated" style="margin-top:14px;">
-            <span class="eyebrow">Tu nota privada</span>
+          <div class="card elevated s8-card-warm" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip tone-warm"><i data-lucide="pencil-line"></i>Tu nota privada</span>
             <p class="text-muted" style="font-size:12px;margin:6px 0 10px;">Acuerdos con la tienda, fechas importantes, instrucciones especiales o el contexto para retomarlo después.</p>
             <textarea class="input" rows="3" placeholder="Escribe una nota o recordatorio para este pedido…"></textarea>
           </div>
@@ -11101,7 +11316,7 @@
       <a href="#s7-orders-list-default" class="back-link" data-screen-link="s7-orders-list-default"><i data-lucide="arrow-left"></i> Pedidos</a>
       <div class="detail-grid">
         <div>
-          <div class="detail-hero">
+          <div class="detail-hero s8-card-accent">
             <div class="detail-hero-head">
               <div class="store-avatar s56">A</div>
               <div>
@@ -11113,7 +11328,7 @@
                 </div>
               </div>
             </div>
-            <span class="eyebrow">Tu pedido · EUR</span>
+            <span class="s8-eyebrow-chip"><i data-lucide="package"></i>Tu pedido · EUR</span>
             <div style="margin-top:12px;">
               <div class="text-secondary" style="font-size:13px;">Total</div>
               <div class="detail-hero-amount num">€320,00</div>
@@ -11123,9 +11338,9 @@
           </div>
 
           <div style="margin-top:16px;">
-            <div class="subcard is-open" data-collapsible>
+            <div class="subcard is-open s8-card-cool" data-collapsible>
               <button class="subcard-toggle">
-                <span class="eyebrow">Productos</span>
+                <span class="s8-eyebrow-chip tone-cool"><i data-lucide="boxes"></i>Productos</span>
                 <span class="text-muted" style="font-size:12px;">2</span>
                 <span class="chev"><i data-lucide="chevron-down"></i></span>
               </button>
@@ -11137,9 +11352,9 @@
               </div>
             </div>
 
-            <div class="subcard" data-collapsible>
+            <div class="subcard s8-card-cool" data-collapsible>
               <button class="subcard-toggle">
-                <span class="eyebrow">Historial</span>
+                <span class="s8-eyebrow-chip tone-cool"><i data-lucide="clock-3"></i>Historial</span>
                 <span class="text-muted" style="font-size:12px;">2</span>
                 <span class="chev"><i data-lucide="chevron-down"></i></span>
               </button>
@@ -11154,14 +11369,14 @@
         </div>
 
         <aside>
-          <div class="card elevated" style="position:sticky;top:80px;">
-            <span class="eyebrow">Pagos</span>
+          <div class="card elevated s8-card-destructive" style="position:sticky;top:80px;">
+            <span class="s8-eyebrow-chip tone-destructive"><i data-lucide="wallet"></i>Pagos</span>
             <p class="text-muted" style="font-size:13px;margin:10px 0 12px;">Sin pagos registrados.</p>
             <button class="btn accent full"><i data-lucide="circle-dollar-sign"></i> Anotar pago</button>
           </div>
 
-          <div class="card elevated" style="margin-top:14px;">
-            <span class="eyebrow">Acciones</span>
+          <div class="card elevated s8-card-accent" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="zap"></i>Acciones</span>
             <div class="actions-list" style="margin-top:10px;">
               <button class="btn primary"><i data-lucide="truck"></i> Crear entrega</button>
               <a href="#s7-order-edit" data-screen-link="s7-order-edit" class="btn ghost"><i data-lucide="pencil"></i> Editar pedido</a>
@@ -11170,8 +11385,8 @@
             </div>
           </div>
 
-          <div class="card elevated" style="margin-top:14px;">
-            <span class="eyebrow">Tu nota privada</span>
+          <div class="card elevated s8-card-warm" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip tone-warm"><i data-lucide="pencil-line"></i>Tu nota privada</span>
             <p class="text-muted" style="font-size:12px;margin:6px 0 10px;">Acuerdos con la tienda, fechas importantes, instrucciones especiales o el contexto para retomarlo después.</p>
             <textarea class="input" rows="3" placeholder="Escribe una nota o recordatorio para este pedido…"></textarea>
           </div>
@@ -14095,6 +14310,886 @@
   </div>
 </section>
 
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 AJUSTES — DESKTOP · CUENTA (tab activo)
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-desktop-account" class="screen" aria-labelledby="s8-acc-dt-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link is-active"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
+          <span class="avatar">V</span>
+          <span class="info"><strong>Vinyl Hunter</strong><small>vinyl@pandatrack.dev</small></span>
+          <span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+        </button>
+        <button class="app-sidebar-collapse-btn" type="button" aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title" id="s8-acc-dt-title">Ajustes</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <div class="settings-layout">
+        <nav class="settings-tabs" aria-label="Secciones de ajustes">
+          <button class="settings-tab" data-settings-tab="profile"><i data-lucide="user"></i> Perfil</button>
+          <button class="settings-tab is-active" data-settings-tab="account"><i data-lucide="lock"></i> Cuenta</button>
+          <button class="settings-tab" data-settings-tab="preferences"><i data-lucide="sliders-horizontal"></i> Preferencias</button>
+        </nav>
+        <div>
+          <section class="settings-section is-active" data-settings-pane="account" role="tabpanel" aria-labelledby="s8-acc-dt-heading">
+            <div class="card s8-card-cool">
+              <span class="s8-eyebrow-chip tone-cool"><i data-lucide="shield"></i>Cuenta</span>
+              <h3 class="card-title" id="s8-acc-dt-heading" style="margin-top:4px;">Email, contraseña y acceso</h3>
+              <p class="card-helper">Los cambios sensibles requieren tu contraseña actual.</p>
+              <div class="settings-row">
+                <div class="lbl">Email</div>
+                <div class="val">vinyl@pandatrack.dev<small><span class="chip success" style="margin-top:4px;padding:2px 8px;font-size:11px;display:inline-flex;align-items:center;gap:4px;"><i data-lucide="check-circle" style="width:10px;height:10px;"></i> Verificado</span></small></div>
+                <div class="actions"><button class="btn ghost sm">Cambiar</button></div>
+              </div>
+              <div class="settings-row">
+                <div class="lbl">Contraseña</div>
+                <div class="val">••••••••••<small>Última actualización hace 3 meses.</small></div>
+                <div class="actions"><button class="btn ghost sm">Cambiar</button></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 AJUSTES — DESKTOP · PREFERENCIAS (tab activo)
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-desktop-preferences" class="screen" aria-labelledby="s8-pref-dt-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link is-active"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
+          <span class="avatar">V</span>
+          <span class="info"><strong>Vinyl Hunter</strong><small>vinyl@pandatrack.dev</small></span>
+          <span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+        </button>
+        <button class="app-sidebar-collapse-btn" type="button" aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title" id="s8-pref-dt-title">Ajustes</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <div class="settings-layout">
+        <nav class="settings-tabs" aria-label="Secciones de ajustes">
+          <button class="settings-tab" data-settings-tab="profile"><i data-lucide="user"></i> Perfil</button>
+          <button class="settings-tab" data-settings-tab="account"><i data-lucide="lock"></i> Cuenta</button>
+          <button class="settings-tab is-active" data-settings-tab="preferences"><i data-lucide="sliders-horizontal"></i> Preferencias</button>
+        </nav>
+        <div>
+          <section class="settings-section is-active" data-settings-pane="preferences" role="tabpanel" aria-labelledby="s8-pref-dt-heading">
+            <div class="card s8-card-cool">
+              <span class="s8-eyebrow-chip tone-cool"><i data-lucide="monitor"></i>Interfaz</span>
+              <h3 class="card-title" id="s8-pref-dt-heading" style="margin-top:4px;">Tema e idioma</h3>
+              <p class="card-helper">Los cambios son inmediatos.</p>
+              <div class="settings-row">
+                <div class="lbl">Tema</div>
+                <div class="val text-secondary">Light, dark o el del sistema.</div>
+                <div class="actions">
+                  <div class="pref-toggle">
+                    <button aria-pressed="false">Light</button>
+                    <button aria-pressed="false">Dark</button>
+                    <button aria-pressed="true">Sistema</button>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-row">
+                <div class="lbl">Idioma</div>
+                <div class="val text-secondary">Cómo se muestran los textos.</div>
+                <div class="actions">
+                  <div class="pref-toggle">
+                    <button aria-pressed="true">Español</button>
+                    <button aria-pressed="false">English</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card s8-card-warm" style="margin-top:14px;">
+              <span class="s8-eyebrow-chip tone-warm"><i data-lucide="heart"></i>Coleccionista</span>
+              <h3 class="card-title" style="margin-top:4px;">País, moneda y categorías</h3>
+              <p class="card-helper">Cambiar la moneda base no convierte tus datos anteriores.</p>
+              <div class="settings-row">
+                <div class="lbl">País</div>
+                <div class="val">Argentina · AR</div>
+                <div class="actions"><button class="btn ghost sm">Cambiar</button></div>
+              </div>
+              <div class="settings-row">
+                <div class="lbl">Moneda base</div>
+                <div class="val num">USD<small>Aplicada a totales y resúmenes.</small></div>
+                <div class="actions"><button class="btn ghost sm">Cambiar</button></div>
+              </div>
+              <div class="settings-row">
+                <div class="lbl">Categorías favoritas</div>
+                <div class="val" style="grid-column:2/-1;">
+                  <div class="category-chips">
+                    <button class="cat-chip is-active"><i data-lucide="disc"></i> Vinyl</button>
+                    <button class="cat-chip is-active"><i data-lucide="book-open"></i> Manga</button>
+                    <button class="cat-chip"><i data-lucide="shapes"></i> Figuras</button>
+                    <button class="cat-chip is-active"><i data-lucide="sparkles"></i> Anime</button>
+                    <button class="cat-chip"><i data-lucide="gallery-thumbnails"></i> Cards</button>
+                    <button class="cat-chip"><i data-lucide="package"></i> Plush</button>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-row">
+                <div class="lbl">Presupuesto mensual</div>
+                <div class="val" style="display:flex;gap:10px;align-items:center;">
+                  <input class="input num" type="text" value="$300,00" style="max-width:140px;" />
+                  <span class="text-secondary" style="font-size:13px;">reset día</span>
+                  <input class="input num" type="text" value="01" style="max-width:60px;text-align:center;" />
+                </div>
+                <div class="actions"></div>
+              </div>
+            </div>
+            <div style="margin-top:18px;"><button class="btn destructive-ghost"><i data-lucide="log-out"></i> Cerrar sesión</button></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 · MODAL — CAMBIAR NOMBRE DE USUARIO
+     ADR 0008-B · tone-default · FR-07-05/06/08/33
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-modal-username" class="screen" aria-labelledby="s8-modal-username-title">
+  <!-- Background: settings profile (dimmed) -->
+  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.3;">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#settings" class="app-nav-link is-active"><i data-lucide="settings"></i>Ajustes</a>
+    </aside>
+    <div class="app-content"><div class="app-topbar"><p class="app-topbar-title">Ajustes</p></div>
+      <div class="settings-layout">
+        <nav class="settings-tabs"><button class="settings-tab is-active"><i data-lucide="user"></i> Perfil</button><button class="settings-tab"><i data-lucide="lock"></i> Cuenta</button><button class="settings-tab"><i data-lucide="sliders-horizontal"></i> Preferencias</button></nav>
+        <div><div class="card"><span class="s8-eyebrow-chip"><i data-lucide="user"></i>Perfil</span><h3 class="card-title" style="margin-top:4px;">Tu identidad pública</h3></div></div>
+      </div>
+    </div>
+  </div>
+  <!-- Modal ADR 0008-B · tone-default (user icon) -->
+  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s8-modal-username-title">
+    <div class="m01-modal-base m01b-modal">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-default s8-modal-icon-gradient" aria-hidden="true"><i data-lucide="at-sign"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s8-modal-username-title">Cambiar nombre de usuario</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">El cambio es posible cada 7 días · quedan 5 días</p>
+        </div>
+      </div>
+      <div class="m01b-body">
+        <div class="field" style="margin-bottom:14px;">
+          <label class="field-label" for="s8-username-input">Nombre de usuario</label>
+          <div style="position:relative;">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none;">@</span>
+            <input id="s8-username-input" class="input" type="text" value="vinyl_hunter" autocomplete="off" autocapitalize="off" spellcheck="false" style="padding-left:26px;" />
+          </div>
+          <p class="field-hint">3–30 caracteres · letras, números y guiones medios. Sin espacios.</p>
+        </div>
+        <div style="display:flex;justify-content:center;margin:0;">
+          <span class="s8-cooldown-chip"><i data-lucide="clock-3"></i>Próximo cambio: <strong>22 may 2026</strong></span>
+        </div>
+      </div>
+      <div class="m01b-footer">
+        <button class="btn ghost">Cancelar</button>
+        <button class="btn primary"><i data-lucide="check"></i> Guardar</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 · MODAL — CAMBIAR NOMBRE VISIBLE
+     ADR 0008-B · tone-default · FR-07-09
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-modal-displayname" class="screen" aria-labelledby="s8-modal-displayname-title">
+  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.3;">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#settings" class="app-nav-link is-active"><i data-lucide="settings"></i>Ajustes</a>
+    </aside>
+    <div class="app-content"><div class="app-topbar"><p class="app-topbar-title">Ajustes</p></div></div>
+  </div>
+  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s8-modal-displayname-title">
+    <div class="m01-modal-base m01b-modal">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-default s8-modal-icon-gradient" aria-hidden="true"><i data-lucide="user-pen"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s8-modal-displayname-title">Cambiar nombre visible</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">Así te ven los demás · máximo 50 caracteres</p>
+        </div>
+      </div>
+      <div class="m01b-body">
+        <div class="field" style="margin-bottom:4px;">
+          <label class="field-label" for="s8-displayname-input">Nombre visible</label>
+          <input id="s8-displayname-input" class="input" type="text" value="Vinyl Hunter" maxlength="50" autocomplete="name" />
+          <p class="field-hint">12 / 50 caracteres</p>
+        </div>
+      </div>
+      <div class="m01b-footer">
+        <button class="btn ghost">Cancelar</button>
+        <button class="btn primary"><i data-lucide="check"></i> Guardar</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 · MODAL — SUBIR FOTO DE PERFIL (avatar upload + crop)
+     ADR 0008-B · tone-default · FR-07-10
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-modal-avatar" class="screen" aria-labelledby="s8-modal-avatar-title">
+  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.3;">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#settings" class="app-nav-link is-active"><i data-lucide="settings"></i>Ajustes</a>
+    </aside>
+    <div class="app-content"><div class="app-topbar"><p class="app-topbar-title">Ajustes</p></div></div>
+  </div>
+  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s8-modal-avatar-title">
+    <div class="m01-modal-base m01b-modal" style="max-width:440px;">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-default s8-modal-icon-gradient" aria-hidden="true"><i data-lucide="image"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s8-modal-avatar-title">Foto de perfil</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">PNG, JPG o WebP · máximo 5 MB</p>
+        </div>
+      </div>
+      <div class="m01b-body">
+        <!-- Upload drop zone (pre-select state) -->
+        <div class="s8-avatar-dropzone" role="button" tabindex="0" aria-label="Seleccionar imagen de perfil">
+          <div class="s8-avatar-dropzone-icon"><i data-lucide="upload"></i></div>
+          <p>Arrastrá una imagen aquí o <strong style="color:var(--accent);">buscá en tu dispositivo</strong></p>
+          <small>PNG · JPG · WebP · máx 5 MB</small>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);text-align:center;margin:12px 0 0;line-height:1.5;">
+          Al hacer clic en "Recortar y confirmar" aplicás los cambios de inmediato.
+        </p>
+      </div>
+      <div class="m01b-footer">
+        <button class="btn ghost">Cancelar</button>
+        <button class="btn primary" disabled style="opacity:0.45;cursor:not-allowed;"><i data-lucide="crop"></i> Recortar y confirmar</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 · MODAL — ELIMINAR FOTO DE PERFIL
+     ADR 0008-B · tone-destructive · FR-07-10
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-modal-avatar-remove" class="screen" aria-labelledby="s8-modal-avatar-remove-title">
+  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.3;">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#settings" class="app-nav-link is-active"><i data-lucide="settings"></i>Ajustes</a>
+    </aside>
+    <div class="app-content"><div class="app-topbar"><p class="app-topbar-title">Ajustes</p></div></div>
+  </div>
+  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s8-modal-avatar-remove-title">
+    <div class="m01-modal-base m01b-modal">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-destructive s8-modal-icon-gradient tone-destructive" aria-hidden="true"><i data-lucide="image-off"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s8-modal-avatar-remove-title">Eliminar foto de perfil</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">Esta acción no se puede deshacer</p>
+        </div>
+      </div>
+      <div class="m01b-body">
+        <p style="font-size:13px;color:var(--text-secondary);margin:0;line-height:1.65;">
+          Se eliminará tu foto de perfil. Tu inicial <strong style="color:var(--text-primary);">V</strong> se usará como avatar hasta que subas una nueva imagen.
+        </p>
+      </div>
+      <div class="m01b-footer">
+        <button class="btn ghost">Cancelar</button>
+        <button class="btn destructive"><i data-lucide="trash-2"></i> Eliminar foto</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 · MODAL — CAMBIAR EMAIL
+     ADR 0008-B · tone-warning · FR-07-14
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-modal-email" class="screen" aria-labelledby="s8-modal-email-title">
+  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.3;">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#settings" class="app-nav-link is-active"><i data-lucide="settings"></i>Ajustes</a>
+    </aside>
+    <div class="app-content"><div class="app-topbar"><p class="app-topbar-title">Ajustes</p></div></div>
+  </div>
+  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s8-modal-email-title">
+    <div class="m01-modal-base m01b-modal">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-warning s8-modal-icon-gradient tone-warning" aria-hidden="true"><i data-lucide="mail"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s8-modal-email-title">Cambiar email</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">Requiere verificación del nuevo correo</p>
+        </div>
+      </div>
+      <div class="m01b-body">
+        <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:14px;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;">
+          Email actual: <strong style="color:var(--text-primary);">vinyl@pandatrack.dev</strong>
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <label class="field-label" for="s8-email-new">Nuevo email</label>
+          <input id="s8-email-new" class="input" type="email" placeholder="nuevo@correo.com" autocomplete="email" />
+        </div>
+        <div class="field" style="margin-bottom:4px;">
+          <label class="field-label" for="s8-email-password">Contraseña actual</label>
+          <input id="s8-email-password" class="input" type="password" placeholder="••••••••" autocomplete="current-password" />
+          <p class="field-hint">Necesaria para confirmar el cambio.</p>
+        </div>
+      </div>
+      <div class="m01b-footer">
+        <button class="btn ghost">Cancelar</button>
+        <button class="btn primary"><i data-lucide="send"></i> Enviar verificación</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 · MODAL — CAMBIAR CONTRASEÑA
+     ADR 0008-B · tone-default (lock) · FR-07-15
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-modal-password" class="screen" aria-labelledby="s8-modal-password-title">
+  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.3;">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#settings" class="app-nav-link is-active"><i data-lucide="settings"></i>Ajustes</a>
+    </aside>
+    <div class="app-content"><div class="app-topbar"><p class="app-topbar-title">Ajustes</p></div></div>
+  </div>
+  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s8-modal-password-title">
+    <div class="m01-modal-base m01b-modal">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-default s8-modal-icon-gradient" aria-hidden="true"><i data-lucide="lock-keyhole"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s8-modal-password-title">Cambiar contraseña</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">Mínimo 8 caracteres · sin espacios</p>
+        </div>
+      </div>
+      <div class="m01b-body">
+        <div class="field" style="margin-bottom:12px;">
+          <label class="field-label" for="s8-pwd-current">Contraseña actual</label>
+          <input id="s8-pwd-current" class="input" type="password" placeholder="••••••••" autocomplete="current-password" />
+        </div>
+        <div class="field" style="margin-bottom:12px;">
+          <label class="field-label" for="s8-pwd-new">Nueva contraseña</label>
+          <input id="s8-pwd-new" class="input" type="password" placeholder="••••••••" autocomplete="new-password" />
+        </div>
+        <div class="field" style="margin-bottom:4px;">
+          <label class="field-label" for="s8-pwd-confirm">Confirmar nueva contraseña</label>
+          <input id="s8-pwd-confirm" class="input" type="password" placeholder="••••••••" autocomplete="new-password" />
+        </div>
+      </div>
+      <div class="m01b-footer">
+        <button class="btn ghost">Cancelar</button>
+        <button class="btn primary"><i data-lucide="check"></i> Guardar contraseña</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 · MODAL — CAMBIAR MONEDA BASE (FR-07-32 · WO-05)
+     ADR 0008-B · tone-warning · dos rutas explícitas
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-modal-currency" class="screen" aria-labelledby="s8-modal-currency-title">
+  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.3;">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#settings" class="app-nav-link is-active"><i data-lucide="settings"></i>Ajustes</a>
+    </aside>
+    <div class="app-content"><div class="app-topbar"><p class="app-topbar-title">Ajustes</p></div></div>
+  </div>
+  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s8-modal-currency-title">
+    <div class="m01-modal-base m01b-modal" style="max-width:480px;">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-warning s8-modal-icon-gradient tone-warning" aria-hidden="true"><i data-lucide="coins"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s8-modal-currency-title">Cambiar moneda base</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">Este cambio afecta tus reportes y totales</p>
+        </div>
+      </div>
+      <div class="m01b-body">
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 4px;line-height:1.65;">
+          Elegí la moneda en la que querés ver tus totales y resúmenes.
+        </p>
+        <!-- Currency picker -->
+        <div class="s8-currency-list" role="listbox" aria-label="Seleccionar moneda base">
+          <div class="s8-currency-row is-selected" role="option" aria-selected="true" tabindex="0">
+            <span class="s8-cur-code">USD</span>
+            <span class="s8-cur-name">Dólar estadounidense</span>
+            <i data-lucide="check" class="s8-cur-check"></i>
+          </div>
+          <div class="s8-currency-row" role="option" aria-selected="false" tabindex="0">
+            <span class="s8-cur-code">ARS</span>
+            <span class="s8-cur-name">Peso argentino</span>
+          </div>
+          <div class="s8-currency-row" role="option" aria-selected="false" tabindex="0">
+            <span class="s8-cur-code">EUR</span>
+            <span class="s8-cur-name">Euro</span>
+          </div>
+          <div class="s8-currency-row" role="option" aria-selected="false" tabindex="0">
+            <span class="s8-cur-code">JPY</span>
+            <span class="s8-cur-name">Yen japonés</span>
+          </div>
+          <div class="s8-currency-row" role="option" aria-selected="false" tabindex="0">
+            <span class="s8-cur-code">GBP</span>
+            <span class="s8-cur-name">Libra esterlina</span>
+          </div>
+        </div>
+        <!-- FR-07-32 warning -->
+        <div class="s8-modal-warning">
+          <i data-lucide="triangle-alert"></i>
+          <span>Cambiar la moneda base <strong>no convierte</strong> tus pedidos anteriores. Los totales históricos seguirán en su moneda original hasta que los actualicés manualmente.</span>
+        </div>
+      </div>
+      <!-- FR-07-32: dos CTAs explícitos — guardar con o sin actualizar tipos de cambio -->
+      <div class="m01b-footer" style="gap:8px;">
+        <button class="btn ghost" style="flex:0 0 auto;">Cancelar</button>
+        <button class="btn tonal" style="flex:1;justify-content:center;font-size:13px;">Guardar sin actualizar</button>
+        <button class="btn primary" style="flex:1.4;justify-content:center;font-size:13px;"><i data-lucide="refresh-cw"></i> Guardar y actualizar</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 · MÓVIL — AJUSTES · PERFIL (segmented control)
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-profile-mobile" class="screen" aria-labelledby="s8-mob-prof-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0 0 env(safe-area-inset-bottom);">
+      <div class="app-topbar" style="padding:0 12px 0 12px;position:sticky;top:0;z-index:20;background:var(--surface);">
+        <div class="app-topbar-left" style="gap:8px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" id="s8-mob-prof-title" style="font-size:14px;font-weight:600;">Ajustes</p>
+        </div>
+        <div class="app-topbar-right"><span class="app-lang-toggle" style="font-size:11px;">ES</span></div>
+      </div>
+
+      <!-- Segmented control sticky under topbar -->
+      <div style="padding:10px 16px 8px;border-bottom:1px solid var(--border);position:sticky;top:48px;z-index:19;background:var(--surface);">
+        <div class="s8-seg-ctrl" role="tablist" aria-label="Secciones de ajustes">
+          <button class="s8-seg-btn is-active" role="tab" aria-selected="true"><i data-lucide="user"></i> Perfil</button>
+          <button class="s8-seg-btn" role="tab" aria-selected="false"><i data-lucide="lock"></i> Cuenta</button>
+          <button class="s8-seg-btn" role="tab" aria-selected="false"><i data-lucide="sliders-horizontal"></i> Prefs</button>
+        </div>
+      </div>
+
+      <!-- Profile content -->
+      <div style="padding:16px;">
+        <div class="card s8-card-accent">
+          <span class="s8-eyebrow-chip"><i data-lucide="user"></i>Perfil</span>
+          <h3 class="card-title" style="margin-top:4px;">Tu identidad pública</h3>
+          <p class="card-helper">Así te ven los demás en la app.</p>
+
+          <div class="settings-row">
+            <div class="lbl">Avatar</div>
+            <div class="val" style="display:flex;align-items:center;gap:12px;">
+              <div class="s8-avatar-hero">V</div>
+              <span class="text-muted" style="font-size:12px;">Sin foto · letra inicial</span>
+            </div>
+            <div class="actions" style="margin-top:6px;">
+              <button class="btn ghost sm">Subir foto</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="lbl">Nombre de usuario</div>
+            <div class="val">@vinyl_hunter<small style="margin-top:6px;display:block;"><span class="s8-cooldown-chip"><i data-lucide="clock-3"></i>Próximo cambio: <strong>22 may 2026</strong></span></small></div>
+            <div class="actions" style="margin-top:6px;"><button class="btn ghost sm"><i data-lucide="pencil"></i> Cambiar</button></div>
+          </div>
+          <div class="settings-row">
+            <div class="lbl">Nombre visible</div>
+            <div class="val">Vinyl Hunter</div>
+            <div class="actions" style="margin-top:6px;"><button class="btn ghost sm"><i data-lucide="pencil"></i> Cambiar</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 · MÓVIL — AJUSTES · CUENTA
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-account-mobile" class="screen" aria-labelledby="s8-mob-acc-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0 0 env(safe-area-inset-bottom);">
+      <div class="app-topbar" style="padding:0 12px;position:sticky;top:0;z-index:20;background:var(--surface);">
+        <div class="app-topbar-left" style="gap:8px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" id="s8-mob-acc-title" style="font-size:14px;font-weight:600;">Ajustes</p>
+        </div>
+      </div>
+      <div style="padding:10px 16px 8px;border-bottom:1px solid var(--border);position:sticky;top:48px;z-index:19;background:var(--surface);">
+        <div class="s8-seg-ctrl" role="tablist" aria-label="Secciones de ajustes">
+          <button class="s8-seg-btn" role="tab" aria-selected="false"><i data-lucide="user"></i> Perfil</button>
+          <button class="s8-seg-btn is-active" role="tab" aria-selected="true"><i data-lucide="lock"></i> Cuenta</button>
+          <button class="s8-seg-btn" role="tab" aria-selected="false"><i data-lucide="sliders-horizontal"></i> Prefs</button>
+        </div>
+      </div>
+      <div style="padding:16px;">
+        <div class="card s8-card-cool">
+          <span class="s8-eyebrow-chip tone-cool"><i data-lucide="shield"></i>Cuenta</span>
+          <h3 class="card-title" style="margin-top:4px;">Email, contraseña y acceso</h3>
+          <p class="card-helper">Los cambios sensibles requieren tu contraseña actual.</p>
+          <div class="settings-row">
+            <div class="lbl">Email</div>
+            <div class="val">vinyl@pandatrack.dev<small><span class="chip success" style="margin-top:4px;padding:2px 8px;font-size:11px;display:inline-flex;align-items:center;gap:3px;"><i data-lucide="check-circle" style="width:10px;height:10px;"></i> Verificado</span></small></div>
+            <div class="actions" style="margin-top:6px;"><button class="btn ghost sm">Cambiar</button></div>
+          </div>
+          <div class="settings-row">
+            <div class="lbl">Contraseña</div>
+            <div class="val">••••••••••<small>Hace 3 meses.</small></div>
+            <div class="actions" style="margin-top:6px;"><button class="btn ghost sm">Cambiar</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 · MÓVIL — AJUSTES · PREFERENCIAS
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-preferences-mobile" class="screen" aria-labelledby="s8-mob-pref-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0 0 env(safe-area-inset-bottom);">
+      <div class="app-topbar" style="padding:0 12px;position:sticky;top:0;z-index:20;background:var(--surface);">
+        <div class="app-topbar-left" style="gap:8px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" id="s8-mob-pref-title" style="font-size:14px;font-weight:600;">Ajustes</p>
+        </div>
+      </div>
+      <div style="padding:10px 16px 8px;border-bottom:1px solid var(--border);position:sticky;top:48px;z-index:19;background:var(--surface);">
+        <div class="s8-seg-ctrl" role="tablist" aria-label="Secciones de ajustes">
+          <button class="s8-seg-btn" role="tab" aria-selected="false"><i data-lucide="user"></i> Perfil</button>
+          <button class="s8-seg-btn" role="tab" aria-selected="false"><i data-lucide="lock"></i> Cuenta</button>
+          <button class="s8-seg-btn is-active" role="tab" aria-selected="true"><i data-lucide="sliders-horizontal"></i> Prefs</button>
+        </div>
+      </div>
+      <div style="padding:16px;">
+        <div class="card s8-card-cool">
+          <span class="s8-eyebrow-chip tone-cool"><i data-lucide="monitor"></i>Interfaz</span>
+          <h3 class="card-title" style="margin-top:4px;">Tema e idioma</h3>
+          <div class="settings-row">
+            <div class="lbl">Tema</div>
+            <div class="val text-secondary" style="font-size:13px;">Light, dark o el del sistema.</div>
+            <div class="actions" style="margin-top:6px;">
+              <div class="pref-toggle"><button aria-pressed="false">Light</button><button aria-pressed="false">Dark</button><button aria-pressed="true">Sistema</button></div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="lbl">Idioma</div>
+            <div class="val text-secondary" style="font-size:13px;">Cómo se muestran los textos.</div>
+            <div class="actions" style="margin-top:6px;">
+              <div class="pref-toggle"><button aria-pressed="true">Español</button><button aria-pressed="false">English</button></div>
+            </div>
+          </div>
+        </div>
+        <div class="card s8-card-warm" style="margin-top:12px;">
+          <span class="s8-eyebrow-chip tone-warm"><i data-lucide="heart"></i>Coleccionista</span>
+          <h3 class="card-title" style="margin-top:4px;">País, moneda y categorías</h3>
+          <div class="settings-row">
+            <div class="lbl">País</div>
+            <div class="val">Argentina · AR</div>
+            <div class="actions" style="margin-top:6px;"><button class="btn ghost sm">Cambiar</button></div>
+          </div>
+          <div class="settings-row">
+            <div class="lbl">Moneda base</div>
+            <div class="val num">USD<small>Totales y resúmenes.</small></div>
+            <div class="actions" style="margin-top:6px;"><button class="btn ghost sm">Cambiar</button></div>
+          </div>
+          <div class="settings-row">
+            <div class="lbl">Categorías favoritas</div>
+            <div class="val" style="margin-top:4px;">
+              <div class="category-chips" style="flex-wrap:wrap;gap:6px;">
+                <button class="cat-chip is-active"><i data-lucide="disc"></i> Vinyl</button>
+                <button class="cat-chip is-active"><i data-lucide="book-open"></i> Manga</button>
+                <button class="cat-chip is-active"><i data-lucide="sparkles"></i> Anime</button>
+                <button class="cat-chip"><i data-lucide="shapes"></i> Figuras</button>
+              </div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="lbl">Presupuesto</div>
+            <div class="val" style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+              <input class="input num" type="text" value="$300,00" style="max-width:120px;" />
+              <span class="text-secondary" style="font-size:12px;">día</span>
+              <input class="input num" type="text" value="01" style="max-width:52px;text-align:center;" />
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <button class="btn destructive-ghost" style="width:100%;justify-content:center;"><i data-lucide="log-out"></i> Cerrar sesión</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 · MÓVIL — SHEET · CAMBIAR NOMBRE DE USUARIO
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-username-sheet-mobile" class="screen" aria-labelledby="s8-mob-username-sheet-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0;">
+      <div class="app-topbar" style="padding:0 12px;position:sticky;top:0;z-index:20;background:var(--surface);opacity:0.4;pointer-events:none;">
+        <div class="app-topbar-left" style="gap:8px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="pointer-events:none;"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" style="font-size:14px;font-weight:600;">Ajustes</p>
+        </div>
+      </div>
+      <div style="padding:14px 16px;opacity:0.35;">
+        <div style="height:220px;background:var(--surface-elevated);border-radius:16px;"></div>
+      </div>
+    </div>
+    <div class="s7-mob-backdrop" aria-hidden="true"></div>
+    <div class="s7-mob-sheet" role="dialog" aria-modal="true" aria-labelledby="s8-mob-username-sheet-title" style="max-height:80%;">
+      <div class="s7-mob-sheet-handle" aria-hidden="true"></div>
+      <div class="s7-mob-sheet-head">
+        <h3 class="s7-mob-sheet-title" id="s8-mob-username-sheet-title">Cambiar nombre de usuario</h3>
+        <button class="topbar-iconbtn" type="button" aria-label="Cerrar"><i data-lucide="x"></i></button>
+      </div>
+      <div class="s7-mob-sheet-body">
+        <div class="field" style="margin-bottom:14px;">
+          <label class="field-label" for="s8-mob-username-input">Nombre de usuario</label>
+          <div style="position:relative;">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none;">@</span>
+            <input id="s8-mob-username-input" class="input" type="text" value="vinyl_hunter" autocomplete="off" autocapitalize="none" style="padding-left:26px;" />
+          </div>
+          <p class="field-hint">3–30 caracteres · letras, números y guiones medios.</p>
+        </div>
+        <div style="display:flex;justify-content:center;margin:0;"><span class="s8-cooldown-chip"><i data-lucide="clock-3"></i>Próximo cambio: <strong>22 may 2026</strong></span></div>
+      </div>
+      <div class="s7-mob-sheet-footer">
+        <button class="btn ghost" style="flex:0 0 auto;">Cancelar</button>
+        <button class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="check"></i> Guardar</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 · MÓVIL — SHEET · NOMBRE VISIBLE
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-displayname-sheet-mobile" class="screen" aria-labelledby="s8-mob-displayname-sheet-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0;">
+      <div class="app-topbar" style="padding:0 12px;position:sticky;top:0;z-index:20;background:var(--surface);opacity:0.4;pointer-events:none;">
+        <div class="app-topbar-left" style="gap:8px;">
+          <button class="topbar-iconbtn" style="pointer-events:none;"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" style="font-size:14px;font-weight:600;">Ajustes</p>
+        </div>
+      </div>
+      <div style="padding:14px 16px;opacity:0.35;">
+        <div style="height:220px;background:var(--surface-elevated);border-radius:16px;"></div>
+      </div>
+    </div>
+    <div class="s7-mob-backdrop" aria-hidden="true"></div>
+    <div class="s7-mob-sheet" role="dialog" aria-modal="true" aria-labelledby="s8-mob-displayname-sheet-title" style="max-height:70%;">
+      <div class="s7-mob-sheet-handle" aria-hidden="true"></div>
+      <div class="s7-mob-sheet-head">
+        <h3 class="s7-mob-sheet-title" id="s8-mob-displayname-sheet-title">Cambiar nombre visible</h3>
+        <button class="topbar-iconbtn" type="button" aria-label="Cerrar"><i data-lucide="x"></i></button>
+      </div>
+      <div class="s7-mob-sheet-body">
+        <div class="field" style="margin-bottom:4px;">
+          <label class="field-label" for="s8-mob-displayname-input">Nombre visible</label>
+          <input id="s8-mob-displayname-input" class="input" type="text" value="Vinyl Hunter" maxlength="50" autocomplete="name" />
+          <p class="field-hint">12 / 50 caracteres</p>
+        </div>
+      </div>
+      <div class="s7-mob-sheet-footer">
+        <button class="btn ghost" style="flex:0 0 auto;">Cancelar</button>
+        <button class="btn primary" style="flex:1;justify-content:center;"><i data-lucide="check"></i> Guardar</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 · MÓVIL — SHEET · FOTO DE PERFIL
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-avatar-sheet-mobile" class="screen" aria-labelledby="s8-mob-avatar-sheet-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0;">
+      <div class="app-topbar" style="padding:0 12px;position:sticky;top:0;z-index:20;background:var(--surface);opacity:0.4;pointer-events:none;">
+        <div class="app-topbar-left" style="gap:8px;">
+          <button class="topbar-iconbtn" style="pointer-events:none;"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" style="font-size:14px;font-weight:600;">Ajustes</p>
+        </div>
+      </div>
+      <div style="padding:14px 16px;opacity:0.35;">
+        <div style="height:200px;background:var(--surface-elevated);border-radius:16px;"></div>
+      </div>
+    </div>
+    <div class="s7-mob-backdrop" aria-hidden="true"></div>
+    <div class="s7-mob-sheet" role="dialog" aria-modal="true" aria-labelledby="s8-mob-avatar-sheet-title" style="max-height:75%;">
+      <div class="s7-mob-sheet-handle" aria-hidden="true"></div>
+      <div class="s7-mob-sheet-head">
+        <h3 class="s7-mob-sheet-title" id="s8-mob-avatar-sheet-title">Foto de perfil</h3>
+        <button class="topbar-iconbtn" type="button" aria-label="Cerrar"><i data-lucide="x"></i></button>
+      </div>
+      <div class="s7-mob-sheet-body">
+        <!-- Current avatar preview -->
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;padding:12px;background:var(--surface);border-radius:10px;border:1px solid var(--border);">
+          <div class="s8-avatar-hero">V</div>
+          <div>
+            <div style="font-size:13px;font-weight:500;color:var(--text-primary);">Foto actual</div>
+            <div style="font-size:11px;color:var(--text-muted);">Letra inicial · sin foto subida</div>
+          </div>
+        </div>
+        <!-- Action options (picker rows) -->
+        <div class="s7-mob-picker-list">
+          <button type="button" class="s7-mob-picker-row">
+            <div class="s7-mob-picker-icon"><i data-lucide="upload"></i></div>
+            <span class="s7-mob-picker-label">Subir nueva foto</span>
+          </button>
+          <button type="button" class="s7-mob-picker-row" style="opacity:0.4;pointer-events:none;">
+            <div class="s7-mob-picker-icon"><i data-lucide="trash-2"></i></div>
+            <span class="s7-mob-picker-label" style="color:var(--text-muted);">Eliminar foto — sin foto actual</span>
+          </button>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);margin-top:12px;line-height:1.5;">PNG · JPG · WebP · máx 5 MB. Se recorta en círculo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S8 · MÓVIL — SHEET · MONEDA BASE (FR-07-32 · WO-05)
+     Picker de moneda + two-path footer
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s8-settings-currency-sheet-mobile" class="screen" aria-labelledby="s8-mob-currency-sheet-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0;">
+      <div class="app-topbar" style="padding:0 12px;position:sticky;top:0;z-index:20;background:var(--surface);opacity:0.4;pointer-events:none;">
+        <div class="app-topbar-left" style="gap:8px;">
+          <button class="topbar-iconbtn" style="pointer-events:none;"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" style="font-size:14px;font-weight:600;">Ajustes</p>
+        </div>
+      </div>
+      <div style="padding:14px 16px;opacity:0.35;">
+        <div style="height:200px;background:var(--surface-elevated);border-radius:16px;"></div>
+      </div>
+    </div>
+    <div class="s7-mob-backdrop" aria-hidden="true"></div>
+    <div class="s7-mob-sheet" role="dialog" aria-modal="true" aria-labelledby="s8-mob-currency-sheet-title" style="max-height:88%;">
+      <div class="s7-mob-sheet-handle" aria-hidden="true"></div>
+      <div class="s7-mob-sheet-head">
+        <h3 class="s7-mob-sheet-title" id="s8-mob-currency-sheet-title">Cambiar moneda base</h3>
+        <button class="topbar-iconbtn" type="button" aria-label="Cerrar"><i data-lucide="x"></i></button>
+      </div>
+      <div class="s7-mob-sheet-body">
+        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px;line-height:1.5;">
+          Elegí la moneda en la que querés ver tus totales y resúmenes.
+        </p>
+        <!-- Currency picker using s7-mob-picker-row pattern -->
+        <div class="s7-mob-picker-list" role="listbox" aria-label="Seleccionar moneda">
+          <button type="button" class="s7-mob-picker-row is-selected" role="option" aria-selected="true">
+            <div class="s7-mob-picker-icon"><i data-lucide="dollar-sign"></i></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);">USD</div>
+              <div style="font-size:11px;color:var(--text-muted);">Dólar estadounidense</div>
+            </div>
+            <i data-lucide="check" class="s7-mob-picker-check"></i>
+          </button>
+          <button type="button" class="s7-mob-picker-row" role="option" aria-selected="false">
+            <div class="s7-mob-picker-icon"><i data-lucide="banknote"></i></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);">ARS</div>
+              <div style="font-size:11px;color:var(--text-muted);">Peso argentino</div>
+            </div>
+          </button>
+          <button type="button" class="s7-mob-picker-row" role="option" aria-selected="false">
+            <div class="s7-mob-picker-icon"><i data-lucide="euro"></i></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);">EUR</div>
+              <div style="font-size:11px;color:var(--text-muted);">Euro</div>
+            </div>
+          </button>
+          <button type="button" class="s7-mob-picker-row" role="option" aria-selected="false">
+            <div class="s7-mob-picker-icon"><i data-lucide="japanese-yen"></i></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);">JPY</div>
+              <div style="font-size:11px;color:var(--text-muted);">Yen japonés</div>
+            </div>
+          </button>
+          <button type="button" class="s7-mob-picker-row" role="option" aria-selected="false">
+            <div class="s7-mob-picker-icon"><i data-lucide="pound-sterling"></i></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);">GBP</div>
+              <div style="font-size:11px;color:var(--text-muted);">Libra esterlina</div>
+            </div>
+          </button>
+        </div>
+        <!-- FR-07-32 warning -->
+        <div class="s8-modal-warning" style="margin-top:14px;">
+          <i data-lucide="triangle-alert"></i>
+          <span>Cambiar la moneda base <strong>no convierte</strong> los datos anteriores. Los totales históricos quedan en su moneda original.</span>
+        </div>
+      </div>
+      <!-- FR-07-32: two-path footer — explicado en WO-05 -->
+      <div class="s7-mob-sheet-footer" style="flex-direction:column;gap:8px;">
+        <button type="button" class="btn primary" style="width:100%;justify-content:center;min-height:44px;"><i data-lucide="refresh-cw"></i> Guardar y actualizar tipos de cambio</button>
+        <button type="button" class="btn ghost" style="width:100%;justify-content:center;min-height:44px;font-size:13px;">Guardar sin actualizar</button>
+      </div>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <!-- Filter drawer (mobile sheet / desktop drawer derecho) -->
@@ -14479,11 +15574,28 @@
     's7-order-edit':                     'S7 · Editar pedido',
     's7-order-edit-discard-modal':       'S7 · Editar · Modal discard',
     's7-order-edit-discard-mobile':      'S7 · Editar · Discard (sheet)',
+    'settings':                          'S8 · Ajustes · Perfil',
+    's8-settings-desktop-account':       'S8 · Ajustes · Cuenta',
+    's8-settings-desktop-preferences':   'S8 · Ajustes · Preferencias',
+    's8-settings-modal-username':        'S8 · Modal · Cambiar usuario',
+    's8-settings-modal-displayname':     'S8 · Modal · Nombre visible',
+    's8-settings-modal-avatar':          'S8 · Modal · Subir foto',
+    's8-settings-modal-avatar-remove':   'S8 · Modal · Eliminar foto',
+    's8-settings-modal-email':           'S8 · Modal · Cambiar email',
+    's8-settings-modal-password':        'S8 · Modal · Cambiar contraseña',
+    's8-settings-modal-currency':        'S8 · Modal · Moneda base (FR-07-32)',
+    's8-settings-profile-mobile':        'S8 · Móvil · Perfil',
+    's8-settings-account-mobile':        'S8 · Móvil · Cuenta',
+    's8-settings-preferences-mobile':    'S8 · Móvil · Preferencias',
+    's8-settings-username-sheet-mobile': 'S8 · Sheet · Usuario',
+    's8-settings-displayname-sheet-mobile': 'S8 · Sheet · Nombre visible',
+    's8-settings-avatar-sheet-mobile':   'S8 · Sheet · Foto de perfil',
+    's8-settings-currency-sheet-mobile': 'S8 · Sheet · Moneda base (FR-07-32)',
   };
 
   function showScreen(id) {
     if (!document.getElementById(id)) id = 'dashboard';
-    screens.forEach(s => s.classList.toggle('is-active', s.id === id));
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('is-active', s.id === id));
     tabs.forEach(t => t.setAttribute('aria-current', t.dataset.screen === id ? 'true' : 'false'));
     if (navCurrentEl) {
       const label = SCREEN_LABELS[id] || id;
@@ -14869,12 +15981,19 @@
     if (e.key === 'Escape' && filterDrawer.classList.contains('is-open')) closeFilters();
   });
 
-  // ── Settings tabs ───────────────────────────────────────────
-  document.querySelectorAll('[data-settings-tab]').forEach(tab => {
-    tab.addEventListener('click', () => {
-      const target = tab.dataset.settingsTab;
-      document.querySelectorAll('[data-settings-tab]').forEach(t => t.classList.toggle('is-active', t === tab));
-      document.querySelectorAll('[data-settings-pane]').forEach(p => p.classList.toggle('is-active', p.dataset.settingsPane === target));
+  // ── Settings tabs (S8: unified — sidebar tabs + segmented control) ─────────
+  // Syncs is-active on ALL elements sharing the same data-settings-tab value.
+  document.querySelectorAll('[data-settings-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.settingsTab;
+      document.querySelectorAll('[data-settings-tab]').forEach(t => {
+        const active = t.dataset.settingsTab === target;
+        t.classList.toggle('is-active', active);
+        if (t.hasAttribute('aria-selected')) t.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+      document.querySelectorAll('[data-settings-pane]').forEach(p =>
+        p.classList.toggle('is-active', p.dataset.settingsPane === target)
+      );
     });
   });
 
@@ -15030,7 +16149,9 @@
 
   // ── Initial Lucide pass ─────────────────────────────────────
   lucide.createIcons();
+
 </script>
+
 
 
 </body>
