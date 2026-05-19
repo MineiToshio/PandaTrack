@@ -2,18 +2,35 @@
 
 import { ChevronDown } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
-import Eyebrow from "@/components/core/Eyebrow";
+import Eyebrow, { type EyebrowTone } from "@/components/core/Eyebrow";
 import { cn } from "@/lib/styles";
 
+const TOP_ACCENT_VAR: Record<EyebrowTone, string> = {
+  muted: "var(--text-muted)",
+  accent: "var(--accent)",
+  cool: "var(--accent-cool)",
+  warm: "var(--accent-warm)",
+  success: "var(--success)",
+  warning: "var(--warning)",
+  destructive: "var(--destructive)",
+};
+
 export type CollapsibleSectionProps = {
-  /** Eyebrow text (uppercase mono). */
-  eyebrow: string;
+  /**
+   * Eyebrow content. Pass a string to render the default mono uppercase text, or a
+   * pre-rendered `<Eyebrow variant="chip" .../>` element when this Client Component
+   * is used from a Server Component (lucide icons cannot cross the RSC boundary as
+   * bare props — they must be embedded in JSX so React server-renders them first).
+   */
+  eyebrow: ReactNode;
   /** Optional small count shown next to the eyebrow (e.g. "3" channels). */
   count?: number | string;
   children: ReactNode;
   /** Default open state. Default `true`. */
   defaultOpen?: boolean;
   className?: string;
+  /** Top accent border (2px) coordinated with the eyebrow tone. */
+  topAccent?: EyebrowTone;
 };
 
 /**
@@ -30,10 +47,15 @@ export default function CollapsibleSection({
   children,
   defaultOpen = true,
   className,
+  topAccent,
 }: CollapsibleSectionProps) {
   const generatedId = useId();
   const bodyId = `${generatedId}-body`;
   const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  const topAccentStyle = topAccent
+    ? { borderTop: `2px solid color-mix(in oklch, ${TOP_ACCENT_VAR[topAccent]} 55%, transparent)` }
+    : undefined;
 
   return (
     <section
@@ -42,6 +64,7 @@ export default function CollapsibleSection({
         "[background:var(--surface-elevated)] [border:1px_solid_var(--border)]",
         className,
       )}
+      style={topAccentStyle}
     >
       <button
         type="button"
@@ -54,7 +77,11 @@ export default function CollapsibleSection({
           "hover:[background:color-mix(in_oklch,var(--text-primary)_3%,transparent)]",
         )}
       >
-        <Eyebrow className="flex-1">{eyebrow}</Eyebrow>
+        {typeof eyebrow === "string" ? (
+          <Eyebrow className="flex-1">{eyebrow}</Eyebrow>
+        ) : (
+          <span className="flex-1 self-start">{eyebrow}</span>
+        )}
         {count != null && <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{count}</span>}
         <ChevronDown
           size={16}

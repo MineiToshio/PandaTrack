@@ -1,7 +1,8 @@
 "use client";
 
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, PencilLine } from "lucide-react";
 import { useEffect, useRef, useState, useTransition, type ChangeEvent, type ReactNode } from "react";
+import Eyebrow from "@/components/core/Eyebrow";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
@@ -162,15 +163,13 @@ export default function PrivateNoteCard({
       aria-labelledby={`${inputId}-heading`}
       className={cn(
         "bg-surface-elevated border-border rounded-2xl border p-[18px] [box-shadow:var(--elevation-2)] sm:p-[22px]",
+        "[border-top:2px_solid_color-mix(in_oklch,var(--accent-warm)_55%,transparent)]",
         className,
       )}
     >
-      <h2
-        id={`${inputId}-heading`}
-        className="text-text-muted mb-2 font-mono text-[11px] font-medium tracking-[0.08em] uppercase"
-      >
+      <Eyebrow as="h2" variant="chip" tone="warm" icon={PencilLine} id={`${inputId}-heading`} className="mb-2">
         {title}
-      </h2>
+      </Eyebrow>
       {subtitle && (
         <Typography size="xs" className="text-text-muted mb-2">
           {subtitle}

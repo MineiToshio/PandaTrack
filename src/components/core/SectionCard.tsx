@@ -6,6 +6,7 @@ import { cn } from "@/lib/styles";
 
 export type SectionCardState = "default" | "active" | "gated";
 export type SectionCardTone = "default" | "warning" | "destructive";
+export type SectionCardTopAccent = "accent" | "cool" | "warm" | "success" | "warning" | "destructive";
 
 export type SectionCardProps = {
   /** Eyebrow shown above the title (mono uppercase). */
@@ -37,6 +38,11 @@ export type SectionCardProps = {
   state?: SectionCardState;
   /** Tonal accent for left border (warning/destructive states without changing background). */
   tone?: SectionCardTone;
+  /**
+   * Top-border accent (2px) coordinated with a chip Eyebrow. Independent of `tone` so
+   * cards can carry both a left destructive indicator and a top accent if needed.
+   */
+  topAccent?: SectionCardTopAccent;
   /** Heading level for the title. Default `h3`. */
   headingLevel?: "h2" | "h3" | "h4";
   className?: string;
@@ -58,6 +64,15 @@ const TONE_BORDERS: Record<SectionCardTone, string> = {
   destructive: "[border-left:3px_solid_var(--destructive)]",
 };
 
+const TOP_ACCENT_BORDERS: Record<SectionCardTopAccent, string> = {
+  accent: "[border-top:2px_solid_color-mix(in_oklch,var(--accent)_55%,transparent)]",
+  cool: "[border-top:2px_solid_color-mix(in_oklch,var(--accent-cool)_55%,transparent)]",
+  warm: "[border-top:2px_solid_color-mix(in_oklch,var(--accent-warm)_55%,transparent)]",
+  success: "[border-top:2px_solid_color-mix(in_oklch,var(--success)_55%,transparent)]",
+  warning: "[border-top:2px_solid_color-mix(in_oklch,var(--warning)_55%,transparent)]",
+  destructive: "[border-top:2px_solid_color-mix(in_oklch,var(--destructive)_55%,transparent)]",
+};
+
 export default function SectionCard({
   eyebrow,
   title,
@@ -70,6 +85,7 @@ export default function SectionCard({
   onOpenChange,
   state = "default",
   tone = "default",
+  topAccent,
   headingLevel = "h3",
   className,
   bodyClassName,
@@ -138,6 +154,7 @@ export default function SectionCard({
         "overflow-hidden [border-radius:var(--radius-xl)]",
         STATE_CLASSNAMES[state],
         TONE_BORDERS[tone],
+        topAccent && TOP_ACCENT_BORDERS[topAccent],
         className,
       )}
     >

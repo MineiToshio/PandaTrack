@@ -1,7 +1,8 @@
 "use client";
 
-import { AlertTriangle, CircleCheck, PackageCheck, Truck } from "lucide-react";
+import { AlertTriangle, CircleCheck, Package, PackageCheck, Truck } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Eyebrow from "@/components/core/Eyebrow";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { useAnimatedNumber } from "@/hooks/useAnimatedNumber";
 import { cn } from "@/lib/styles";
@@ -135,6 +136,7 @@ export default function OrderDetailHero({
     <div
       className={cn(
         "bg-surface-elevated border-border relative rounded-[18px] border p-[22px]",
+        "[border-top:2px_solid_color-mix(in_oklch,var(--accent)_55%,transparent)]",
         "[box-shadow:var(--elevation-2)]",
         isCancelled && "opacity-75",
       )}
@@ -176,12 +178,12 @@ export default function OrderDetailHero({
         </div>
       </div>
 
-      {/* Eyebrow — demo `.eyebrow`: mono · 500 · 11px · tracking 0.08em · muted.
-          Order date intentionally lives in the meta line below (and in Historial),
-          not as a standalone Calendar row, per demo `s7-order-detail-*`. */}
-      <div className="text-text-muted mt-3 font-mono text-[11px] font-medium tracking-[0.08em] uppercase">
+      {/* S8 chip eyebrow — top accent border + tinted pill identify this card as the
+          order identity / main content. Order date intentionally lives in the meta line
+          below (and in Historial), not as a standalone Calendar row. */}
+      <Eyebrow variant="chip" tone="accent" icon={Package} className="mt-3">
         {t("detail.hero.eyebrow")} · {order.currencyCode}
-      </div>
+      </Eyebrow>
 
       {/* Amount block — matches demo `.detail-hero-amount` + `.detail-hero-amount-sub`.
           Fully-paid swap: when the saldo settles at 0 we replace `Saldo pendiente · $0.00`

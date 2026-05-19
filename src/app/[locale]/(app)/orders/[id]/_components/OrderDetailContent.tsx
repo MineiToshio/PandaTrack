@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Boxes } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import Eyebrow from "@/components/core/Eyebrow";
 import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import type { OrderDetailFull } from "@/lib/data/orders/orderQueries";
@@ -102,7 +103,12 @@ export default async function OrderDetailContent({ order, locale, backHref }: Or
                   When cancelled we dim ONLY the body (not the eyebrow / count / chevron)
                   per demo `s7-order-detail-cancelled` `.subcard-body-inner{opacity:0.6}`. */}
               <CollapsibleSubcard
-                eyebrow={t("detail.items.headerCount", { count: order.items.length })}
+                eyebrow={
+                  <Eyebrow variant="chip" tone="cool" icon={Boxes}>
+                    {t("detail.items.headerCount", { count: order.items.length })}
+                  </Eyebrow>
+                }
+                topAccent="cool"
                 defaultOpen
                 bodyClassName={isCancelled ? "opacity-60" : undefined}
               >

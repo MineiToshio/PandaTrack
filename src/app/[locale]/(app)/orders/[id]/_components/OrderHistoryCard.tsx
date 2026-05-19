@@ -1,6 +1,8 @@
+import { Clock3 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import Eyebrow from "@/components/core/Eyebrow";
 import CollapsibleSubcard from "./CollapsibleSubcard";
 import OrderHistoryRow from "./OrderHistoryRow";
-import { getTranslations } from "next-intl/server";
 
 type HistoryEntry = {
   id: string;
@@ -25,7 +27,12 @@ export default async function OrderHistoryCard({ history, locale, isCancelled = 
 
   return (
     <CollapsibleSubcard
-      eyebrow={t("detail.history.sectionTitle")}
+      eyebrow={
+        <Eyebrow variant="chip" tone="cool" icon={Clock3}>
+          {t("detail.history.sectionTitle")}
+        </Eyebrow>
+      }
+      topAccent="cool"
       meta={String(history.length)}
       defaultOpen={false}
       bodyClassName={isCancelled ? "opacity-60" : undefined}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import {
+  AtSign,
   CircleAlert,
   Clock,
   Copy,
@@ -12,9 +13,13 @@ import {
   Mail,
   Map as MapIcon,
   MapPin,
+  Package,
   Pencil,
   Phone,
   PlusCircle,
+  Star,
+  Tags,
+  Zap,
 } from "lucide-react";
 import { formatAmount } from "@/lib/currency";
 import { siFacebook, siInstagram, siTiktok, siWhatsapp } from "simple-icons";
@@ -191,7 +196,14 @@ export default function StoreDetailContent({
               }}
             />
 
-            <CollapsibleSection eyebrow={tStores("redesign.detail.categoriesTitle")}>
+            <CollapsibleSection
+              eyebrow={
+                <Eyebrow variant="chip" tone="cool" icon={Tags}>
+                  {tStores("redesign.detail.categoriesTitle")}
+                </Eyebrow>
+              }
+              topAccent="cool"
+            >
               <div className="space-y-4">
                 <div>
                   <Eyebrow as="p">{tStores("create.productTypesLabel")}</Eyebrow>
@@ -230,7 +242,15 @@ export default function StoreDetailContent({
             </CollapsibleSection>
 
             {isBusiness && contactChannelsCount > 0 && (
-              <CollapsibleSection eyebrow={tStores("redesign.detail.channelsTitle")} count={contactChannelsCount}>
+              <CollapsibleSection
+                eyebrow={
+                  <Eyebrow variant="chip" tone="cool" icon={AtSign}>
+                    {tStores("redesign.detail.channelsTitle")}
+                  </Eyebrow>
+                }
+                count={contactChannelsCount}
+                topAccent="cool"
+              >
                 <div className="flex flex-col">
                   {store.contactChannels?.map((ch) => {
                     const href = buildContactHref(ch.type, ch.value);
@@ -270,7 +290,15 @@ export default function StoreDetailContent({
             )}
 
             {isBusiness && addressesCount > 0 && (
-              <CollapsibleSection eyebrow={tStores("redesign.detail.addressesTitle")} count={addressesCount}>
+              <CollapsibleSection
+                eyebrow={
+                  <Eyebrow variant="chip" tone="cool" icon={MapPin}>
+                    {tStores("redesign.detail.addressesTitle")}
+                  </Eyebrow>
+                }
+                count={addressesCount}
+                topAccent="cool"
+              >
                 <div className="flex flex-col">
                   {store.addresses?.map((address, index) => {
                     // Postal-style multi-line: street → reference → city, country.
@@ -302,7 +330,14 @@ export default function StoreDetailContent({
               </CollapsibleSection>
             )}
 
-            <CollapsibleSection eyebrow={tStores("redesign.detail.reviewsTitle")}>
+            <CollapsibleSection
+              eyebrow={
+                <Eyebrow variant="chip" tone="warm" icon={Star}>
+                  {tStores("redesign.detail.reviewsTitle")}
+                </Eyebrow>
+              }
+              topAccent="warm"
+            >
               <StorePublicReviewsSection locale={locale} storeSlug={store.slug} />
             </CollapsibleSection>
           </div>
@@ -315,6 +350,10 @@ export default function StoreDetailContent({
               acciones: tStores("redesign.detail.aside.acciones"),
               notaPrivada: tStores("redesign.detail.aside.notaPrivada"),
               notaPrivadaEyebrow: tStores("redesign.detail.aside.notaPrivada"),
+            }}
+            accents={{
+              resumen: { tone: "accent", icon: Package, topAccent: "accent" },
+              acciones: { tone: "accent", icon: Zap, topAccent: "accent" },
             }}
             resumen={
               viewerActivity.ordersTotal > 0 ? (

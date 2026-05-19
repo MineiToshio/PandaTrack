@@ -182,6 +182,7 @@ export default function OrderDetailClient({
           summary={summary}
           hasUnpaidBalance={hasUnpaidBalance}
           status={order.status}
+          isOverdue={isOverdue}
           currencyCode={order.currencyCode}
           orderDate={order.orderDate}
           locale={locale}
@@ -200,6 +201,7 @@ export default function OrderDetailClient({
           summary={summary}
           hasUnpaidBalance={hasUnpaidBalance}
           status={order.status}
+          isOverdue={isOverdue}
           currencyCode={order.currencyCode}
           orderDate={order.orderDate}
           locale={locale}

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Ban, Pencil, RotateCcw, Trash2, Truck } from "lucide-react";
+import { Ban, Pencil, RotateCcw, Trash2, Truck, Zap } from "lucide-react";
 import Button from "@/components/core/Button/Button";
+import Eyebrow from "@/components/core/Eyebrow";
 import Tooltip from "@/components/core/Tooltip";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import type { OrderEligibility } from "@/lib/data/orders/orderQueries";
@@ -57,14 +58,11 @@ export default function OrderActionsCard({
   return (
     <section
       aria-labelledby="order-actions-heading"
-      className="bg-surface-elevated border-border rounded-2xl border p-[18px] [box-shadow:var(--elevation-2)] sm:p-[22px]"
+      className="bg-surface-elevated border-border rounded-2xl border p-[18px] [box-shadow:var(--elevation-2)] [border-top:2px_solid_color-mix(in_oklch,var(--accent)_55%,transparent)] sm:p-[22px]"
     >
-      <h2
-        id="order-actions-heading"
-        className="text-text-muted font-mono text-[11px] font-medium tracking-[0.08em] uppercase"
-      >
+      <Eyebrow as="h2" variant="chip" tone="accent" icon={Zap} id="order-actions-heading">
         {t("detail.mobileActions.sectionTitle")}
-      </h2>
+      </Eyebrow>
 
       <div className="mt-3 flex flex-col gap-2">
         {isCancelled ? (

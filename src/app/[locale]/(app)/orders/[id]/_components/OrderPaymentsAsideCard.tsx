@@ -2,13 +2,48 @@
 
 import { forwardRef, useImperativeHandle, useState } from "react";
 import { useTranslations } from "next-intl";
-import { CircleDollarSign } from "lucide-react";
+import { CircleDollarSign, Wallet } from "lucide-react";
+import Eyebrow, { type EyebrowTone } from "@/components/core/Eyebrow";
 import { cn } from "@/lib/styles";
 import type { PaymentSummary } from "@/lib/orders/paymentSummary";
 import { formatAmountSymbolOnly } from "@/lib/currency";
 import type { OrderStatus } from "../../../../../../../generated/prisma/client";
 import OrderPaymentRow from "./OrderPaymentRow";
 import OrderInlinePaymentForm from "./OrderInlinePaymentForm";
+
+const TOP_ACCENT_VAR: Record<EyebrowTone, string> = {
+  muted: "var(--text-muted)",
+  accent: "var(--accent)",
+  cool: "var(--accent-cool)",
+  warm: "var(--accent-warm)",
+  success: "var(--success)",
+  warning: "var(--warning)",
+  destructive: "var(--destructive)",
+};
+
+/**
+ * State-aware tone for the Pagos card:
+ *  - 100% paid → success
+ *  - overdue (active order past estimated date) → destructive
+ *  - completed with saldo pendiente → warning
+ *  - everything else (active, cancelled) → cool (neutral tracking)
+ */
+function derivePaymentsTone({
+  isFullyPaid,
+  isOverdue,
+  isCompleted,
+  hasUnpaidBalance,
+}: {
+  isFullyPaid: boolean;
+  isOverdue: boolean;
+  isCompleted: boolean;
+  hasUnpaidBalance: boolean;
+}): EyebrowTone {
+  if (isFullyPaid) return "success";
+  if (isOverdue) return "destructive";
+  if (isCompleted && hasUnpaidBalance) return "warning";
+  return "cool";
+}
 
 type PaymentRecord = { id: string; amount: number; paymentDate: Date };
 
@@ -23,6 +58,8 @@ type OrderPaymentsAsideCardProps = {
   summary: PaymentSummary;
   hasUnpaidBalance: boolean;
   status: OrderStatus;
+  /** True when this is an active order past its estimated delivery date. */
+  isOverdue: boolean;
   currencyCode: string;
   orderDate: Date;
   locale: string;
@@ -49,6 +86,7 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
       summary,
       hasUnpaidBalance,
       status,
+      isOverdue,
       currencyCode,
       orderDate,
       locale,
@@ -67,8 +105,10 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
     }));
 
     const isCancelled = status === "CANCELLED";
+    const isCompleted = status === "COMPLETED";
     const isFullyPaid = summary.paymentPercentage >= 100;
     const canAddPayment = !isCancelled && !isFullyPaid;
+    const tone = derivePaymentsTone({ isFullyPaid, isOverdue, isCompleted, hasUnpaidBalance });
 
     async function handleAddPayment(amount: number, paymentDate: Date) {
       const result = await onAddPayment(amount, paymentDate);
@@ -83,14 +123,12 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
           "bg-surface-elevated border-border rounded-2xl border p-[18px] [box-shadow:var(--elevation-2)] sm:p-[22px]",
           className,
         )}
+        style={{ borderTop: `2px solid color-mix(in oklch, ${TOP_ACCENT_VAR[tone]} 55%, transparent)` }}
       >
         <div className="flex items-center justify-between gap-2">
-          <h2
-            id="payments-aside-heading"
-            className="text-text-muted font-mono text-[11px] font-medium tracking-[0.08em] uppercase"
-          >
+          <Eyebrow as="h2" variant="chip" tone={tone} icon={Wallet} id="payments-aside-heading">
             {t("detail.payments.sectionTitle")}
-          </h2>
+          </Eyebrow>
         </div>
 
         {/* Payment rows — only rendered when there are payments. Sergio wants the totals
