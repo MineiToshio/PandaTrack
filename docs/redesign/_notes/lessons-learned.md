@@ -758,6 +758,16 @@ Cada entrada:
 - **Dónde vive ahora:** demo HTML JS structure; lección aplicable a cualquier script inline que use `querySelectorAll` y deba alcanzar contenido posterior.
 - **Verificable por:** después de agregar pantallas nuevas al demo, navegá a cada anchor y confirmá que activa. Si una "está negra" → script-time NodeList stale.
 
+## L074 — `color-mix(in oklch, …, transparent)` sobre tokens casi acromáticos produce tinte rosado
+
+- **Origen:** auditoría UX post-S8 (2026-06-12) — la barra sticky mobile del listado de pedidos (`OrderListFilters` y su skeleton) se veía con una banda salmón en light theme que no existía en el demo.
+- **Síntoma:** un fondo `color-mix(in_oklch,var(--background)_92%,transparent)` renderizaba rosado/durazno en lugar del lavanda del canvas. Solo visible en superficies grandes; imperceptible en chips.
+- **Causa raíz:** `transparent` es `rgba(0,0,0,0)`; al interpolar en **oklch** (espacio cilíndrico) el hue del resultado deriva hacia el hue de `transparent` (0 = rojo) o queda `none` (que el navegador también renderiza como hue 0). Con tokens de **chroma bajo** como `--background` (lavanda casi acromático), ese drift de hue es visible como tinte rosado. Con tokens de chroma alto (accent, success) el drift no se nota porque el 8% de transparent apenas pesa.
+- **Solución aplicada:** cambiar la mezcla a `color-mix(in_oklab, …)` (espacio rectangular, sin canal de hue) en `OrderListFilters.tsx` y `OrderListLoadingSkeleton.tsx`. Visualmente idéntico al canvas, sin drift.
+- **Regla derivada:** **para dar alpha a tokens neutros/casi acromáticos (`--background`, `--surface*`, `--border`, `--text-*`) usar `color-mix(in oklab, …)` o alpha directo; reservar `in oklch` para tintar tokens de acento de chroma alto** (chips, top-accents, donde ya está calibrado).
+- **Dónde vive ahora:** PLAYBOOK §2 Tokens → Colores.
+- **Verificable por:** screenshot en light theme — la barra sticky debe fundirse con el canvas; si se ve una banda rosada/salmón sobre fondo lavanda, hay un `in oklch` mezclando un token neutro con `transparent`.
+
 ---
 
 ## Cómo agregar una lección nueva

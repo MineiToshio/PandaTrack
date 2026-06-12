@@ -109,8 +109,8 @@ The private note field is not part of this form. It is inline-editable from the 
 
 ### Store selector
 
-- Uses the existing `SearchSelect` core component (`src/components/core/SearchSelect.tsx`)
-- All stores are loaded server-side at page render and passed as props; `SearchSelect` filters locally (sufficient for MVP volume)
+- Uses the route-local `OrderStoreSelect` component, which follows the core `SearchableSelect` pattern (`src/components/core/SearchableSelect.tsx`)
+- All stores are loaded server-side at page render and passed as props; the selector filters locally (sufficient for MVP volume)
 - A **"+ Create store"** option always appears at the bottom of the dropdown list
 - When the search input has text and no results match, the option reads **"+ Create [typed name]"**
 - Both options redirect to `/stores/new?returnTo=order-create` (query value is the shared app constant `RETURN_TO_ORDER_CREATE` in `src/lib/constants.ts`, same as the settings banner — param name matches `AUTH_RETURN_TO_PARAM` / `returnTo`); the typed-name variant also appends `&name={value}` to prefill the store name field
@@ -294,7 +294,7 @@ The form body uses `APP_SHELL_FORM_RAIL_CLASSNAME` to keep fields at a comfortab
 - The `returnTo=order-create` query value is centralized as `RETURN_TO_ORDER_CREATE` in `src/lib/constants.ts`. The store-creation flow reads it (via `searchParams` on `/stores/new`) so the client redirect after create goes to `/orders/new?store={id}` instead of the default store detail/list.
 - The order form builds store-create and settings links with the `returnTo` query key from `AUTH_RETURN_TO_PARAM` (`src/lib/auth/authRedirect.ts`) so the param name stays aligned with auth callbacks.
 - The settings page and `SettingsPreferencesSection` read the same `returnTo` value for the back link and post-save redirect to `/orders/new` (see _Settings round-trip_ above).
-- Store list is fetched in the server component and passed as props to the `SearchSelect` client component — no separate API call needed.
+- Store list is fetched in the server component and passed as props to the store selector client component — no separate API call needed.
 - `@dnd-kit/sortable` `position` normalization (consecutive integers from 1) is applied client-side before sending the save payload; raw client position arrays are not trusted server-side.
 - Item add and delete operations during an edit session are pending until the user explicitly saves. Discarding the edit abandons all pending item mutations without applying them.
 - Items blocked from deletion (linked to a non-cancelled delivery) show the block modal defined in WO-02 with a navigable delivery identifier link.

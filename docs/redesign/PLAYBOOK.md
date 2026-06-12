@@ -190,6 +190,7 @@ Componente canónico cross-app para navegación "Volver" / "Atrás". Vive típic
 - **Velvet** es la paleta única en `src/`. Las otras paletas (Lilac, Plum, Lagoon, Forest) viven solo en demo HTML para referencia futura.
 - `--text-on-accent` light = blanco; dark = oscuro. Decisión S3-B para AA. Si te molesta visualmente, no cambies sin abrir un ADR.
 - Status enums usan tokens semánticos: `--success`, `--warning`, `--destructive`, `--info`. Nunca hex literales.
+- **Alpha sobre tokens neutros (`--background`, `--surface*`, `--border`, `--text-*`): usar `color-mix(in oklab, …, transparent)`, NO `in oklch`** — en oklch el hue deriva hacia rojo al mezclar con `transparent` y los tokens de chroma bajo se ven rosados (L074). `in oklch` queda reservado para tintar tokens de acento de chroma alto (chips, top-accents).
 
 ### Borders
 
@@ -472,7 +473,7 @@ Reglas accionables descubiertas implementando Stores. Aplican a todos los módul
 - **`ChannelRow` con `valueLines?: string[]`** (L023) para campos multi-línea (direcciones). URLs/emails siguen con `truncate`; campos cuyo valor pierde sentido si se trunca usan multi-line wrap.
 - **`<StarRating value={number|null} size>` compartido** (L024). Cualquier display de rating numérico se acompaña SIEMPRE de las 5 estrellas visuales. No construir ad-hoc. Cuando aparezca el segundo consumidor cross-módulo, promover a `core/`.
 - **Border consistency entre variants** (L015). Si una variant tiene `border: 1px solid`, todas las que conviven con ella deben tener border (transparente cuando no se ve) para igualar el border-box accounting. Aplica a Button, Chip, IconButton, Badge.
-- **Select vs SearchSelect: criterio de cantidad** (L022). <7 opciones fijas → `<Select>`. Lista larga o dinámica → `<SearchSelect>`. Multi-select con tags inline → `<MultiTagAutocomplete>`. NO agregar búsqueda "por consistencia" si la lista no la justifica.
+- **Select vs SearchableSelect: criterio de cantidad** (L022). <7 opciones fijas → `<Select>`. Lista larga o dinámica → `<SearchableSelect>`. Multi-select con tags inline → `<MultiTagAutocomplete>`. NO agregar búsqueda "por consistencia" si la lista no la justifica.
 
 ### 9.2 Tokens y theming — refuerzos
 
@@ -507,7 +508,7 @@ Reglas accionables descubiertas implementando Stores. Aplican a todos los módul
 
 ### 9.7 Workflow — refuerzos críticos
 
-- **Antes de crear componente UI, `ls src/components/core/` y `modules/`** (L038). En este repo conviven varios componentes con propósitos similares (Select, SearchSelect, Combobox; Modal, Sheet, Drawer). Verificar inventario antes de crear.
+- **Antes de crear componente UI, `ls src/components/core/` y `modules/`** (L038). En este repo conviven varios componentes con propósitos similares (Select, SearchableSelect, Combobox; Modal, Sheet, Drawer). Verificar inventario antes de crear.
 - **N inconsistencias visuales: leer demo + mapear elementos ANTES de tocar** (L039). Cuando humano lista N gaps, primer paso NO es fixar la primera. Es leer todos los anchors relevantes del demo + listar en chat el mapping `elemento del demo → componente del repo + delta`. Recién después editar.
 - **Refactors visuales de pantalla: wholesale del shell, NO parcial** (L040). Reescribir el shell visual completo usando los componentes nuevos del demo. Reusar building-blocks de lógica (forms, modals, queries) pero el chrome SE REESCRIBE. Nunca dejar `SectionSurfaceCard` legacy + componentes nuevos en la misma pantalla.
 - **Demo HTML con mutation JS post-render: leer también los scripts** (L041). El demo aplica `buildTopbar()` y otros transformadores en `<script>` final (~línea 8824). Si los breadcrumbs vienen del shell, no duplicar back link en body de página.
