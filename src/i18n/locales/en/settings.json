@@ -3,61 +3,96 @@
     "title": "Settings",
     "description": "Manage your PandaTrack account and preferences."
   },
-  "hero": {
-    "eyebrow": "Collector settings"
-  },
   "title": "Settings",
-  "intro": "Manage your profile, sign-in details, and preferences in one place.",
   "returnToOrderCreate": "Back to new order form",
+  "topbar": {
+    "menu": "Open menu"
+  },
+  "tabs": {
+    "profile": "Profile",
+    "account": "Account",
+    "preferences": "Preferences",
+    "preferencesShort": "Prefs",
+    "ariaLabel": "Settings sections"
+  },
   "profile": {
-    "title": "Profile",
+    "eyebrow": "Profile",
+    "title": "Your public identity",
+    "subtitle": "How others see you across the app.",
+    "rows": {
+      "avatar": "Avatar",
+      "username": "Username",
+      "displayName": "Display name"
+    },
+    "avatar": {
+      "initialFallback": "Initial letter · no photo uploaded",
+      "changeCta": "Upload photo",
+      "replaceCta": "Replace photo",
+      "removeCta": "Remove photo",
+      "modal": {
+        "title": "Profile photo",
+        "subtitle": "Drag an image here or choose one from your device.",
+        "dropzoneTitle": "Drop your photo here",
+        "dropzoneDescription": "PNG, JPEG, or WebP, up to 10 MB.",
+        "browseCta": "Choose file",
+        "editorDescription": "Drag to reposition and use the slider to zoom.",
+        "zoomLabel": "Zoom",
+        "cancel": "Cancel",
+        "confirm": "Use this photo",
+        "pending": "Saving…",
+        "successUploaded": "Profile photo updated."
+      },
+      "removeModal": {
+        "title": "Remove your profile photo?",
+        "subtitle": "Your account will show your initial again.",
+        "body": "You can upload a new photo anytime.",
+        "cancel": "Cancel",
+        "confirm": "Yes, remove photo",
+        "pending": "Removing…",
+        "success": "Profile photo removed."
+      }
+    },
     "username": {
-      "label": "Username",
-      "helper": "Used in your account identity. 3-30 characters, letters, numbers, and single hyphens only. You can save a new username at most once every 7 days.",
-      "save": "Save username",
-      "pending": "Saving...",
-      "checking": "Checking...",
-      "available": "Username is available.",
-      "taken": "This username is already taken.",
-      "sameAsCurrent": "This is already your username.",
+      "modal": {
+        "title": "Change username",
+        "subtitle": "Letters, numbers, and single hyphens only. Between 3 and 30 characters.",
+        "label": "Username",
+        "hint": "3–30 characters · letters, numbers, and single hyphens. No spaces.",
+        "cancel": "Cancel",
+        "save": "Save",
+        "pending": "Saving…",
+        "checking": "Checking…",
+        "available": "Available.",
+        "taken": "This username is already taken.",
+        "sameAsCurrent": "This is already your username."
+      },
+      "cooldown": {
+        "chipDays": "Next change in {days} days.",
+        "chipDay": "Next change in {days} day.",
+        "modalSubtitle": "You can change it every 7 days · {days} days left",
+        "modalSubtitleSingular": "You can change it every 7 days · {days} day left",
+        "modalChip": "Next change: {date}",
+        "blockedHint": "Available on {date}."
+      },
       "success": "Username updated.",
       "validation": {
-        "format": "Username can only contain letters, numbers, and single hyphens, with no leading or trailing hyphens.",
-        "length": "Username must be between 3 and 30 characters.",
+        "format": "Only letters, numbers, and single hyphens, with no leading or trailing hyphens.",
+        "length": "Must be between 3 and 30 characters.",
         "reserved": "This username is not available.",
         "blocked": "This username contains a term that is not allowed."
       }
     },
     "displayName": {
-      "label": "Display name",
-      "helper": "Shown alongside your username. Up to 50 characters.",
-      "save": "Save name",
-      "pending": "Saving...",
+      "modal": {
+        "title": "Change display name",
+        "subtitle": "Shown alongside your username. Up to 50 characters.",
+        "label": "Display name",
+        "cancel": "Cancel",
+        "save": "Save",
+        "pending": "Saving…",
+        "counter": "{count}/{max}"
+      },
       "success": "Display name updated."
-    },
-    "avatar": {
-      "label": "Profile photo",
-      "helper": "Used as your avatar across the app. PNG, JPEG, or WebP, up to 10 MB.",
-      "emptyTitle": "Upload a profile photo",
-      "emptyDescription": "Drag and drop or click to choose a file.",
-      "uploadCta": "Choose file",
-      "replaceCta": "Replace",
-      "removeCta": "Remove photo",
-      "removeDialogTitle": "Remove your profile photo?",
-      "removeDialogLead": "Your account will show your initial instead of this image everywhere in the app.",
-      "removeDialogIrreversible": "You cannot restore this exact photo after removing it. You can upload a new one anytime.",
-      "removeDialogCancel": "Cancel",
-      "removeDialogConfirm": "Yes, remove photo",
-      "removeDialogPending": "Removing…",
-      "editorTitle": "Crop your photo",
-      "editorDescription": "Drag to reposition and use the slider to zoom.",
-      "zoomLabel": "Zoom",
-      "editorCancel": "Cancel",
-      "editorConfirm": "Use this photo",
-      "acceptedFormats": "PNG, JPEG, WebP",
-      "pending": "Saving...",
-      "successUploaded": "Profile photo updated.",
-      "successRemoved": "Profile photo removed."
     },
     "errors": {
       "validation": "Check the field and try again.",
@@ -71,105 +106,68 @@
       "generic": "Something went wrong. Please try again."
     }
   },
-  "preferences": {
-    "title": "Preferences",
-    "intro": "Set your defaults for country, collecting interests, base currency, and budget. All fields are optional.",
-    "currency": {
-      "label": "Base currency",
-      "helper": "Used for budget tracking and order summaries.",
-      "placeholder": "Search currency…",
-      "clear": "Clear currency",
-      "noResults": "No currency found."
-    },
-    "country": {
-      "label": "Preferred country",
-      "helper": "Used as your default when browsing stores.",
-      "placeholder": "Search country…",
-      "clear": "Clear country preference",
-      "noResults": "No country found."
-    },
-    "productTypes": {
-      "label": "What types of products do you collect?",
-      "helper": "Shown as default filters when browsing stores.",
-      "placeholder": "Add product types…",
-      "removeAriaLabel": "Remove {label}"
-    },
-    "budgetAmount": {
-      "label": "Monthly budget",
-      "helper": "A positive whole number in your base currency. Leave empty for no budget.",
-      "placeholder": "e.g. 200",
-      "currencyRequired": "Set a base currency to enable the budget field."
-    },
-    "budgetResetDay": {
-      "label": "Budget resets on",
-      "helper": "Pick the day of the month when a new budget period starts.",
-      "dayOption": "Day {day} of the month",
-      "dayAriaLabel": "Day {day} of the month",
-      "summaryDay": "Resets on day {day} of every month.",
-      "summaryLastDay": "Resets on the last day of every month (day 31, or the last valid day in shorter months)."
-    },
-    "save": "Save preferences",
-    "pending": "Saving…",
-    "success": "Preferences saved.",
-    "currencyChangeModal": {
-      "title": "Change base currency?",
-      "description": "Changing your base currency affects how budget periods are tracked from this month onward. Orders contributing to current and future budget periods may need their currency rate updated. You can review and update affected orders after saving, or do it manually per order later.",
-      "saveAndReconcile": "Save and reconcile",
-      "saveSkip": "Save without reconciling",
-      "cancel": "Cancel"
-    },
-    "errors": {
-      "unauthorized": "You need to be signed in.",
-      "validation": "Check the fields and try again.",
-      "generic": "Something went wrong. Please try again."
-    },
-    "currencies": {
-      "ARS": "Argentine peso",
-      "BRL": "Brazilian real",
-      "CAD": "Canadian dollar",
-      "CLP": "Chilean peso",
-      "CNY": "Chinese yuan",
-      "COP": "Colombian peso",
-      "EUR": "Euro",
-      "GBP": "British pound",
-      "JPY": "Japanese yen",
-      "KRW": "South Korean won",
-      "MXN": "Mexican peso",
-      "PEN": "Peruvian sol",
-      "USD": "US dollar"
-    }
-  },
   "account": {
-    "title": "Account",
-    "email": {
-      "label": "Email",
-      "helper": "Used to sign in and for important notifications. You can change it here at most once every 7 days.",
-      "changeButton": "Change email",
-      "googleHelper": "Your account uses Google. To change your email, update it directly in your Google account.",
-      "pendingVerification": "We've sent a verification link to {email}. Please verify to complete the change."
+    "eyebrow": "Account",
+    "title": "Email, password, and access",
+    "subtitle": "Sensitive changes require your current password.",
+    "rows": {
+      "email": "Email",
+      "password": "Password"
     },
-    "emailModal": {
-      "title": "Change email",
-      "descriptionIntro": "Enter your new email and current password to confirm.",
-      "descriptionIrreversible": "This change is <b>immediate and irreversible</b>. The <b>new email</b> is what you'll use to <b>sign in</b> from now on.",
-      "descriptionCooldown": "You can only make this change once <b>every 7 days</b>. Double-check the address before you confirm.",
-      "newEmail": "New email",
-      "currentPassword": "Current password",
-      "cancel": "Cancel",
-      "confirm": "Confirm change",
-      "pending": "Saving..."
+    "email": {
+      "verifiedChip": "Verified",
+      "changeButton": "Change",
+      "googleHelper": "Your account uses Google. To change your email, update it in your Google account.",
+      "pendingVerification": "We sent a verification link to {email}. Please verify to complete the change.",
+      "modal": {
+        "title": "Change email",
+        "subtitle": "This change is immediate and irreversible.",
+        "introBlock": "Enter your new email and current password to confirm. The new email is what you will use to sign in.",
+        "cooldownBlock": "You can only make this change once every 7 days. Double-check before confirming.",
+        "newEmailLabel": "New email",
+        "newEmailPlaceholder": "new@email.com",
+        "currentPasswordLabel": "Current password",
+        "cancel": "Cancel",
+        "confirm": "Confirm change",
+        "pending": "Saving…"
+      }
+    },
+    "password": {
+      "summary": "Last updated {months} months ago.",
+      "summaryRecent": "Last updated recently.",
+      "summaryUnknown": "Your password has not been changed yet.",
+      "summaryUnset": "You have not set a password yet.",
+      "changeButton": "Change",
+      "setButton": "Set",
+      "modal": {
+        "changeTitle": "Change password",
+        "setTitle": "Set password",
+        "subtitle": "Minimum 8 characters.",
+        "currentPasswordLabel": "Current password",
+        "newPasswordLabel": "New password",
+        "confirmPasswordLabel": "Confirm new password",
+        "showPassword": "Show password",
+        "hidePassword": "Hide password",
+        "cancel": "Cancel",
+        "save": "Save password",
+        "pending": "Saving…"
+      },
+      "rules": {
+        "minLength": "At least 8 characters"
+      },
+      "strength": {
+        "weak": "Weak",
+        "fair": "Fair",
+        "good": "Good",
+        "excellent": "Excellent",
+        "label": "Strength"
+      },
+      "validation": {
+        "confirmMismatch": "Passwords do not match."
+      }
     },
     "validation": {
       "fillRequiredFields": "Fill in the highlighted fields to continue."
-    },
-    "password": {
-      "helper": "Use a strong password and do not reuse it on other sites.",
-      "changeTitle": "Change password",
-      "setTitle": "Set password",
-      "currentPassword": "Current password",
-      "newPassword": "New password",
-      "save": "Save password",
-      "pending": "Saving..."
     },
     "success": {
       "passwordUpdated": "Your password was updated.",
@@ -186,6 +184,109 @@
       "passwordTooShort": "Password is too short.",
       "passwordTooLong": "Password is too long.",
       "passwordAlreadySet": "A password is already set for this account.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "preferences": {
+    "interfaz": {
+      "eyebrow": "Interface",
+      "title": "Theme and language",
+      "subtitle": "Changes apply instantly.",
+      "themeRow": {
+        "label": "Theme",
+        "helper": "Pick between light and dark.",
+        "options": {
+          "light": "Light",
+          "dark": "Dark"
+        }
+      },
+      "langRow": {
+        "label": "Language",
+        "helper": "How text is displayed.",
+        "options": {
+          "es": "Español",
+          "en": "English"
+        }
+      }
+    },
+    "collector": {
+      "eyebrow": "Collector",
+      "title": "Country, currency, and categories",
+      "subtitle": "Changing the base currency does not convert your past data.",
+      "rows": {
+        "country": "Country",
+        "currency": "Base currency",
+        "categories": "Favorite categories",
+        "budget": "Monthly budget"
+      },
+      "country": {
+        "empty": "No preferred country",
+        "changeButton": "Change",
+        "placeholder": "Search country…",
+        "noResults": "No country found."
+      },
+      "currency": {
+        "empty": "No base currency",
+        "summary": "Applied to totals and summaries.",
+        "changeButton": "Change",
+        "placeholder": "Search currency…",
+        "noResults": "No currency found."
+      },
+      "categories": {
+        "helper": "Used as default filters when browsing stores.",
+        "removeAriaLabel": "Remove {label}"
+      },
+      "budget": {
+        "placeholder": "e.g. 200",
+        "resetLabel": "resets day",
+        "resetSummary": "Resets on day {day} of every month.",
+        "resetSummaryLast": "Resets on the last day of every month.",
+        "currencyRequired": "Set a base currency to enable the budget.",
+        "dayOption": "Day {day}",
+        "dayAriaLabel": "Day {day} of the month"
+      }
+    },
+    "autosave": {
+      "saving": "Saving…",
+      "saved": "Saved",
+      "savedAgo": "Saved {seconds}s ago",
+      "savedRecently": "Saved a moment ago",
+      "error": "Could not save."
+    },
+    "currencyModal": {
+      "title": "Change base currency",
+      "subtitle": "This change affects your reports and totals.",
+      "intro": "Your past orders stay in their original currency. This only changes how your summary is totalled.",
+      "listAriaLabel": "Select base currency",
+      "warning": "Changing the base currency does not convert your past orders. Historical totals remain in their original currency until you update them manually.",
+      "cancel": "Cancel",
+      "saveWithout": "Save without updating",
+      "saveAndUpdate": "Save and update",
+      "pending": "Saving…",
+      "successSaved": "Base currency updated.",
+      "successRedirect": "Base currency updated. Reviewing exchange rates…"
+    },
+    "signOut": {
+      "mobile": "Sign out"
+    },
+    "currencies": {
+      "ARS": "Argentine peso",
+      "BRL": "Brazilian real",
+      "CAD": "Canadian dollar",
+      "CLP": "Chilean peso",
+      "CNY": "Chinese yuan",
+      "COP": "Colombian peso",
+      "EUR": "Euro",
+      "GBP": "British pound",
+      "JPY": "Japanese yen",
+      "KRW": "South Korean won",
+      "MXN": "Mexican peso",
+      "PEN": "Peruvian sol",
+      "USD": "US dollar"
+    },
+    "errors": {
+      "unauthorized": "You need to be signed in.",
+      "validation": "Check the fields and try again.",
       "generic": "Something went wrong. Please try again."
     }
   }

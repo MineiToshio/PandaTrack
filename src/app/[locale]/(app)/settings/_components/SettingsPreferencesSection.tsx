@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/core/Button/Button";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
-import SearchSelect from "@/components/core/SearchSelect";
+import SearchableSelect from "@/components/core/SearchableSelect";
 import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
 import Typography from "@/components/core/Typography";
 import { Modal } from "@/components/modules/Modal";
@@ -255,7 +255,7 @@ export default function SettingsPreferencesSection({
     () =>
       (ALLOWED_COLLECTOR_BASE_CURRENCY_CODES as string[]).map((code) => ({
         value: code,
-        label: t(`currencies.${code}`),
+        label: `${code} - ${t(`currencies.${code}`)}`,
       })),
     [t],
   );
@@ -264,7 +264,7 @@ export default function SettingsPreferencesSection({
     () =>
       (COUNTRY_CODES as readonly string[]).map((code) => ({
         value: code,
-        label: tCountries(code),
+        label: `${code} - ${tCountries(code)}`,
       })),
     [tCountries],
   );
@@ -432,7 +432,7 @@ export default function SettingsPreferencesSection({
                 {t("country.helper")}
               </Typography>
             </div>
-            <SearchSelect
+            <SearchableSelect
               id={countryId}
               options={countryOptions}
               value={countryCode}
@@ -471,7 +471,7 @@ export default function SettingsPreferencesSection({
                 {t("currency.helper")}
               </Typography>
             </div>
-            <SearchSelect
+            <SearchableSelect
               id={currencyId}
               options={currencyOptions}
               value={currencyCode}

@@ -1,17 +1,16 @@
-import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
-import AppPageHero from "@/components/modules/AppPageHero";
-import SettingsAccountSection from "@/app/[locale]/(app)/settings/_components/SettingsAccountSection";
-import SettingsProfileSection from "@/app/[locale]/(app)/settings/_components/SettingsProfileSection";
-import SettingsPreferencesSection from "@/app/[locale]/(app)/settings/_components/SettingsPreferencesSection";
+import BackNavLink from "@/components/core/BackNavLink";
+import SettingsAccountPane from "@/app/[locale]/(app)/settings/_components/SettingsAccountPane";
+import SettingsPrefsPane from "@/app/[locale]/(app)/settings/_components/SettingsPrefsPane";
+import SettingsProfilePane from "@/app/[locale]/(app)/settings/_components/SettingsProfilePane";
+import SettingsShell from "@/app/[locale]/(app)/settings/_components/SettingsShell";
 import { getSession } from "@/lib/auth/auth-server";
 import { getAccountCapabilitiesForUser } from "@/lib/auth/accountCapabilities";
 import { buildPageMetadata } from "@/lib/seo";
 import { getSettingsPageSnapshot } from "@/queries/userSettings";
-import BackNavLink from "@/components/core/BackNavLink";
-import { APP_SHELL_FORM_RAIL_CLASSNAME, RETURN_TO_ORDER_CREATE, ROUTES } from "@/lib/constants";
-import { cn } from "@/lib/styles";
+import { RETURN_TO_ORDER_CREATE, ROUTES } from "@/lib/constants";
 import { isLocale } from "@/types/locale";
 
 type SettingsPageProps = {
@@ -60,37 +59,43 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
 
   return (
     <div className="text-foreground">
-      <div className={cn(APP_SHELL_FORM_RAIL_CLASSNAME, "space-y-6")}>
-        <div className="space-y-3">
-          {returnToOrderCreate ? (
-            <BackNavLink href={`/${locale}${ROUTES.ordersNew}`}>{t("returnToOrderCreate")}</BackNavLink>
-          ) : null}
-          <AppPageHero eyebrow={t("hero.eyebrow")} title={t("title")} description={t("intro")} />
+      {returnToOrderCreate ? (
+        <div className="mb-3">
+          <BackNavLink href={`/${locale}${ROUTES.ordersNew}`}>{t("returnToOrderCreate")}</BackNavLink>
         </div>
+      ) : null}
 
-        <SettingsProfileSection
-          locale={locale}
-          initialUsername={userSnapshot.username}
-          initialDisplayName={userSnapshot.name}
-          initialImageUrl={userSnapshot.image}
-        />
+      <h1 className="sr-only">{t("title")}</h1>
 
-        <SettingsAccountSection
-          locale={locale}
-          initialEmail={userSnapshot.email}
-          emailVerified={userSnapshot.emailVerified}
-          capabilities={capabilities}
-        />
-
-        <SettingsPreferencesSection
-          initialCountryCode={userSnapshot.preferredCountryCode}
-          initialCurrencyCode={userSnapshot.baseCurrencyCode}
-          initialProductTypeKeys={userSnapshot.preferredProductTypeKeys}
-          initialBudgetAmount={userSnapshot.budgetAmount}
-          initialBudgetResetDayOfMonth={userSnapshot.budgetResetDayOfMonth}
-          redirectToOrderCreateAfterSave={returnToOrderCreate}
-        />
-      </div>
+      <SettingsShell
+        profilePane={
+          <SettingsProfilePane
+            initialUsername={userSnapshot.username}
+            initialDisplayName={userSnapshot.name}
+            initialImageUrl={userSnapshot.image}
+            usernameChangedAt={userSnapshot.usernameChangedAt}
+          />
+        }
+        accountPane={
+          <SettingsAccountPane
+            locale={locale}
+            initialEmail={userSnapshot.email}
+            emailVerified={userSnapshot.emailVerified}
+            capabilities={capabilities}
+            passwordChangedAt={userSnapshot.passwordChangedAt}
+          />
+        }
+        preferencesPane={
+          <SettingsPrefsPane
+            locale={locale}
+            initialCountryCode={userSnapshot.preferredCountryCode}
+            initialCurrencyCode={userSnapshot.baseCurrencyCode}
+            initialProductTypeKeys={userSnapshot.preferredProductTypeKeys}
+            initialBudgetAmount={userSnapshot.budgetAmount}
+            initialBudgetResetDayOfMonth={userSnapshot.budgetResetDayOfMonth}
+          />
+        }
+      />
     </div>
   );
 }
