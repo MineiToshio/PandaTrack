@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/nextjs";
+
 export type WaitlistRowPayload = {
   createdAt: string;
   name: string;
@@ -10,7 +12,7 @@ const WEB_APP_URL = process.env.GOOGLE_APPS_SCRIPT_WAITLIST_WEB_APP_URL;
 
 /**
  * Sends the waitlist row to the Google Apps Script web app so it can append it to the sheet.
- * Does not throw; logs errors so the main waitlist flow is not blocked.
+ * Does not throw; failures are reported to Sentry so the main waitlist flow is not blocked.
  */
 export async function appendWaitlistToGoogleSheet(payload: WaitlistRowPayload): Promise<void> {
   if (!WEB_APP_URL || WEB_APP_URL.trim() === "") {
@@ -25,17 +27,25 @@ export async function appendWaitlistToGoogleSheet(payload: WaitlistRowPayload): 
     });
 
     if (!response.ok) {
-      const text = await response.text();
-      console.error("Waitlist Google Sheet append failed:", response.status, text);
+      Sentry.captureMessage("Waitlist Google Sheet append failed", {
+        level: "error",
+        tags: { flow: "waitlist", step: "sheetAppend" },
+        extra: { status: response.status },
+      });
       return;
     }
 
     const data = (await response.json()) as { success?: boolean; error?: string };
     if (data.success !== true) {
-      console.error("Waitlist Google Sheet append error:", data.error ?? "Unknown");
+      Sentry.captureMessage("Waitlist Google Sheet append rejected", {
+        level: "error",
+        tags: { flow: "waitlist", step: "sheetAppend" },
+        extra: { error: data.error ?? "Unknown" },
+      });
     }
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("Waitlist Google Sheet append request failed:", message);
+    Sentry.captureException(err, {
+      tags: { flow: "waitlist", step: "sheetAppend" },
+    });
   }
 }

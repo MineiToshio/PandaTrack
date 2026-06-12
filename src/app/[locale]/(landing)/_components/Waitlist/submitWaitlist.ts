@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { appendWaitlistToGoogleSheet } from "@/lib/integrations/GoogleAppsScript";
 import { createSubscriber, tagSubscriberByLocale, tagWaitlistSubscriber } from "@/lib/integrations/kit";
 import { POSTHOG_EVENTS } from "@/lib/constants";
@@ -51,14 +52,18 @@ export async function submitWaitlist(formData: FormData): Promise<SubmitWaitlist
     try {
       await tagWaitlistSubscriber(email);
     } catch (tagErr) {
-      console.error("Waitlist source tag failed (subscriber was created):", tagErr);
+      Sentry.captureException(tagErr, {
+        tags: { flow: "waitlist", step: "sourceTag" },
+      });
     }
 
     if (locale) {
       try {
         await tagSubscriberByLocale(locale, email);
       } catch (tagErr) {
-        console.error("Waitlist locale tag failed (subscriber was created):", tagErr);
+        Sentry.captureException(tagErr, {
+          tags: { flow: "waitlist", step: "localeTag" },
+        });
       }
     }
 
@@ -96,7 +101,9 @@ export async function submitWaitlist(formData: FormData): Promise<SubmitWaitlist
     return { success: true };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    console.error("Waitlist signup failed:", message);
+    Sentry.captureException(err, {
+      tags: { flow: "waitlist", step: "createSubscriber" },
+    });
 
     // Track failed waitlist signup on server
     posthog.capture({
