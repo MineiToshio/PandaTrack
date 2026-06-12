@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
@@ -65,7 +66,8 @@ export async function saveStoreReport(
     revalidatePath(`/${parsed.data.locale}${ROUTES.stores}/${store.slug}`);
 
     return { success: true };
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error);
     return { success: false, error: "saveReportFailed" };
   }
 }

@@ -392,7 +392,7 @@
       "country": "País de la tienda",
       "importCountry": "Importa desde",
       "other": "Otros",
-      "receivesOrders": "Recibe pre-órdenes",
+      "receivesOrders": "Recibe pre-reservas",
       "hasStock": "Tiene stock",
       "presencePhysical": "Tienda física",
       "presenceOnline": "Tienda online",
@@ -422,7 +422,7 @@
         "online": "Tienda online"
       },
       "hasStock": "Tiene stock",
-      "acceptsPreorders": "Acepta pre-órdenes",
+      "acceptsPreorders": "Acepta pre-reservas",
       "importsFrom": "Importa desde",
       "ratingFallback": "Sin reseñas",
       "personChip": "Persona",
@@ -502,7 +502,7 @@
         "presenceHelper": "Dónde opera la tienda. Los canales de contacto van en el paso siguiente.",
         "importHelper": "¿Desde dónde importa o consigue productos esta tienda? Ayuda a coleccionistas a filtrar por origen.",
         "hasStockLabel": "Tiene stock",
-        "receivesOrdersLabel": "Recibe pre-órdenes",
+        "receivesOrdersLabel": "Recibe pre-reservas",
         "stockSectionLabel": "Comportamiento comercial"
       },
       "step4": {

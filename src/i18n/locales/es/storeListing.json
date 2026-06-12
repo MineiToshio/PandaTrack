@@ -82,8 +82,8 @@
     "receivesOrdersNo": "No acepta pedidos",
     "hasStockYes": "Vende con stock",
     "hasStockNo": "No vende con stock",
-    "receivesOrdersTooltip": "Indica si la tienda acepta pedidos o encargos: puede gestionar el pedido aunque el artículo no esté en inventario fijo.",
-    "hasStockTooltip": "Indica si la tienda vende desde inventario propio: artículos disponibles o rotación habitual, sin depender solo de encargos puntuales.",
+    "receivesOrdersTooltip": "Indica si la tienda acepta pedidos o encargos: puede gestionar el pedido aunque el producto no esté en inventario fijo.",
+    "hasStockTooltip": "Indica si la tienda vende desde inventario propio: productos disponibles o rotación habitual, sin depender solo de encargos puntuales.",
     "storeTypeBusiness": "Negocio",
     "storeTypePerson": "Vendedor"
   }
