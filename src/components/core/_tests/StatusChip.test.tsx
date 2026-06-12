@@ -17,12 +17,12 @@ vi.mock("next-intl", () => ({
 
 describe("StatusChip — orderStatus", () => {
   it.each([
-    ["OPEN", "statusChip.orderStatus.OPEN"],
-    ["PARTIALLY_IN_TRANSIT", "statusChip.orderStatus.PARTIALLY_IN_TRANSIT"],
-    ["IN_TRANSIT", "statusChip.orderStatus.IN_TRANSIT"],
-    ["PARTIALLY_DELIVERED", "statusChip.orderStatus.PARTIALLY_DELIVERED"],
-    ["COMPLETED", "statusChip.orderStatus.COMPLETED"],
-    ["CANCELLED", "statusChip.orderStatus.CANCELLED"],
+    ["OPEN", "components.statusChip.orderStatus.OPEN"],
+    ["PARTIALLY_IN_TRANSIT", "components.statusChip.orderStatus.PARTIALLY_IN_TRANSIT"],
+    ["IN_TRANSIT", "components.statusChip.orderStatus.IN_TRANSIT"],
+    ["PARTIALLY_DELIVERED", "components.statusChip.orderStatus.PARTIALLY_DELIVERED"],
+    ["COMPLETED", "components.statusChip.orderStatus.COMPLETED"],
+    ["CANCELLED", "components.statusChip.orderStatus.CANCELLED"],
   ] as const)("renders label for %s", (value, expected) => {
     render(<StatusChip kind="orderStatus" value={value} />);
     expect(screen.getByText(expected)).toBeTruthy();
@@ -32,36 +32,36 @@ describe("StatusChip — orderStatus", () => {
 describe("StatusChip — deliveryStatus", () => {
   it("renders IN_TRANSIT label when not overdue", () => {
     render(<StatusChip kind="deliveryStatus" value="IN_TRANSIT" />);
-    expect(screen.getByText("statusChip.deliveryStatus.IN_TRANSIT")).toBeTruthy();
+    expect(screen.getByText("components.statusChip.deliveryStatus.IN_TRANSIT")).toBeTruthy();
   });
 
   it("renders overdue label when IN_TRANSIT and overdueDays >= 1", () => {
     render(<StatusChip kind="deliveryStatus" value="IN_TRANSIT" overdueDays={3} />);
-    expect(screen.getByText("statusChip.deliveryStatus.overdue:days=3")).toBeTruthy();
+    expect(screen.getByText("components.statusChip.deliveryStatus.overdue:days=3")).toBeTruthy();
   });
 
   it("does not render overdue label when overdueDays is 0", () => {
     render(<StatusChip kind="deliveryStatus" value="IN_TRANSIT" overdueDays={0} />);
-    expect(screen.getByText("statusChip.deliveryStatus.IN_TRANSIT")).toBeTruthy();
+    expect(screen.getByText("components.statusChip.deliveryStatus.IN_TRANSIT")).toBeTruthy();
   });
 
   it("renders DELIVERED label", () => {
     render(<StatusChip kind="deliveryStatus" value="DELIVERED" />);
-    expect(screen.getByText("statusChip.deliveryStatus.DELIVERED")).toBeTruthy();
+    expect(screen.getByText("components.statusChip.deliveryStatus.DELIVERED")).toBeTruthy();
   });
 
   it("renders CANCELLED label", () => {
     render(<StatusChip kind="deliveryStatus" value="CANCELLED" />);
-    expect(screen.getByText("statusChip.deliveryStatus.CANCELLED")).toBeTruthy();
+    expect(screen.getByText("components.statusChip.deliveryStatus.CANCELLED")).toBeTruthy();
   });
 });
 
 describe("StatusChip — itemDeliveryState", () => {
   it.each([
-    ["NONE", "statusChip.itemDeliveryState.NONE"],
-    ["ARRIVED_AT_STORE", "statusChip.itemDeliveryState.ARRIVED_AT_STORE"],
-    ["IN_TRANSIT", "statusChip.itemDeliveryState.IN_TRANSIT"],
-    ["DELIVERED", "statusChip.itemDeliveryState.DELIVERED"],
+    ["NONE", "components.statusChip.itemDeliveryState.NONE"],
+    ["ARRIVED_AT_STORE", "components.statusChip.itemDeliveryState.ARRIVED_AT_STORE"],
+    ["IN_TRANSIT", "components.statusChip.itemDeliveryState.IN_TRANSIT"],
+    ["DELIVERED", "components.statusChip.itemDeliveryState.DELIVERED"],
   ] as const)("renders label for %s", (value, expected) => {
     render(<StatusChip kind="itemDeliveryState" value={value} />);
     expect(screen.getByText(expected)).toBeTruthy();
@@ -71,33 +71,33 @@ describe("StatusChip — itemDeliveryState", () => {
 describe("StatusChip — derived", () => {
   it("renders paid label", () => {
     render(<StatusChip kind="derived" value="paid" />);
-    expect(screen.getByText("statusChip.derived.paid")).toBeTruthy();
+    expect(screen.getByText("components.statusChip.derived.paid")).toBeTruthy();
   });
 
   it("renders unpaid label", () => {
     render(<StatusChip kind="derived" value="unpaid" />);
-    expect(screen.getByText("statusChip.derived.unpaid")).toBeTruthy();
+    expect(screen.getByText("components.statusChip.derived.unpaid")).toBeTruthy();
   });
 
   it("renders overdue label with days", () => {
     render(<StatusChip kind="derived" value="overdue" days={5} />);
-    expect(screen.getByText("statusChip.derived.overdue:days=5")).toBeTruthy();
+    expect(screen.getByText("components.statusChip.derived.overdue:days=5")).toBeTruthy();
   });
 
   it("renders partial label with pct", () => {
     render(<StatusChip kind="derived" value="partial" pct={60} />);
-    expect(screen.getByText("statusChip.derived.partial:pct=60")).toBeTruthy();
+    expect(screen.getByText("components.statusChip.derived.partial:pct=60")).toBeTruthy();
   });
 
   // Edge cases per spec
   it("partial at pct=0 falls back to unpaid label", () => {
     render(<StatusChip kind="derived" value="partial" pct={0} />);
-    expect(screen.getByText("statusChip.derived.unpaid")).toBeTruthy();
+    expect(screen.getByText("components.statusChip.derived.unpaid")).toBeTruthy();
   });
 
   it("partial at pct=100 falls back to paid label", () => {
     render(<StatusChip kind="derived" value="partial" pct={100} />);
-    expect(screen.getByText("statusChip.derived.paid")).toBeTruthy();
+    expect(screen.getByText("components.statusChip.derived.paid")).toBeTruthy();
   });
 });
 

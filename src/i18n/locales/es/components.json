@@ -88,7 +88,7 @@
       "IN_TRANSIT": "En camino",
       "DELIVERED": "Llegó",
       "CANCELLED": "Cancelada",
-      "overdue": "Atrasada {days, plural, one {# día} other {# días}}"
+      "overdue": "Atrasada {days}d"
     },
     "itemDeliveryState": {
       "NONE": "Pendiente en tienda",

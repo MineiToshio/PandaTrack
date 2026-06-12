@@ -71,13 +71,115 @@
     "deliveryDate": "Shipping date: {date}"
   },
   "list": {
-    "eyebrow": "Collector workspace",
     "title": "Deliveries",
     "description": "Follow every delivery from your orders, even when they arrive in parts.",
-    "placeholder": {
-      "title": "This section is on its way",
-      "description": "Soon you'll see all your deliveries and their status here. For now, you can create deliveries from an order's detail page.",
-      "cta": "View my orders"
+    "newDelivery": "New delivery",
+    "newDeliveryShort": "New",
+    "heading": {
+      "meta": "{inTransit} in transit · {delivered, plural, one {# received} other {# received}}",
+      "zeroResults": "0 results"
+    },
+    "search": {
+      "label": "Search deliveries",
+      "placeholder": "Code or product (DLV-20260508-01, NGE OST…)",
+      "placeholderShort": "Code or product (DLV-20260508-01…)"
+    },
+    "filters": {
+      "openButton": "Filter",
+      "iconLabel": "Open filters",
+      "dialogTitle": "Filter deliveries",
+      "closeDialog": "Close filters",
+      "apply": "Apply filters",
+      "applyWithCount": "Apply ({count})",
+      "reset": "Clear",
+      "clearAll": "Clear filters",
+      "statusLabel": "Delivery status",
+      "arrivalLabel": "Expected arrival",
+      "arrivalRangePlaceholder": "Choose a date range",
+      "arrivalRangeClearLabel": "Clear arrival range",
+      "overdueLabel": "Overdue only",
+      "overdueHelper": "In-transit deliveries whose arrival window already passed.",
+      "storeLabel": "Store",
+      "storeSearchPlaceholder": "Search store…",
+      "productLabel": "Product",
+      "productPlaceholder": "Product name…",
+      "shippedLabel": "Shipping date",
+      "dateFromLabel": "From",
+      "dateToLabel": "To",
+      "sortSectionLabel": "Sort by"
+    },
+    "datePresets": {
+      "dueToday": "Due today",
+      "next7": "Next 7 days",
+      "next14": "Next 14 days",
+      "thisMonth": "This month"
+    },
+    "sort": {
+      "label": "Sort by",
+      "oldest": "Oldest first",
+      "newest": "Newest first",
+      "etaAsc": "Closest ETA",
+      "storeAZ": "Store A–Z"
+    },
+    "status": {
+      "IN_TRANSIT": "In transit",
+      "DELIVERED": "Delivered",
+      "CANCELLED": "Cancelled"
+    },
+    "chips": {
+      "overdueOnly": "Overdue only",
+      "arrivalRange": "Arrival: {from} – {to}",
+      "arrivalFrom": "Arrival from {date}",
+      "arrivalTo": "Arrival until {date}",
+      "store": "Store: {name}",
+      "product": "Product: {name}",
+      "shippedFrom": "Shipped from {date}",
+      "shippedTo": "Shipped until {date}",
+      "remove": "Remove filter {label}"
+    },
+    "table": {
+      "headerDelivery": "Delivery / Store",
+      "headerProducts": "Products",
+      "headerStatus": "Status",
+      "headerCost": "Cost",
+      "headerArrival": "Est. arrival",
+      "shipped": "shipped {date}",
+      "received": "Received {date}",
+      "arrives": "arrives {window}",
+      "expected": "expected {window}"
+    },
+    "card": {
+      "items": "{count, plural, one {# product} other {# products}}",
+      "itemsSuffix": "{count, plural, one {product} other {products}}",
+      "itemQuantity": "×{quantity}",
+      "moreItems": "+ {count} more…",
+      "openDetail": "Open detail",
+      "expand": "View products",
+      "expandCount": "{count, plural, one {View # product} other {View # products}}",
+      "collapse": "Hide products",
+      "overdueAriaLabel": "Overdue {days, plural, one {# day} other {# days}}"
+    },
+    "empty": {
+      "noDeliveries": {
+        "title": "No deliveries yet",
+        "description": "Follow every delivery from your orders, even when they arrive in parts. Create the first one from an order's detail page, or start here.",
+        "cta": "New delivery",
+        "secondaryCta": "View my orders"
+      },
+      "noResults": {
+        "title": "No results with these filters",
+        "description": "No delivery matches the active filters. Try adjusting the search or clearing them.",
+        "descriptionWithTerm": "No delivery matches <strong>\"{term}\"</strong> and the active filters. Try adjusting the search or clearing them.",
+        "cta": "Clear filters"
+      }
+    },
+    "pagination": {
+      "showing": "Showing {start}–{end} of {total, plural, one {# delivery} other {# deliveries}}",
+      "loadMore": "Load more",
+      "navigationAriaLabel": "Deliveries pagination",
+      "previous": "Previous page",
+      "next": "Next page",
+      "goToPageAriaLabel": "Go to page {page}"
     }
   }
 }

@@ -88,7 +88,7 @@
       "IN_TRANSIT": "In transit",
       "DELIVERED": "Delivered",
       "CANCELLED": "Cancelled",
-      "overdue": "{days, plural, one {# day overdue} other {# days overdue}}"
+      "overdue": "Overdue {days}d"
     },
     "itemDeliveryState": {
       "NONE": "Pending at store",

@@ -513,6 +513,7 @@ model Delivery {
   deliveryDate        DateTime
   expectedArrivalFrom DateTime?
   expectedArrivalTo   DateTime?
+  receivedDate        DateTime?
   cost                Int
   currencyCode        String
   exchangeRate        Decimal?

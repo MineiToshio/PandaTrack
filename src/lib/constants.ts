@@ -164,6 +164,11 @@ export const POSTHOG_EVENTS = {
   DELIVERY: {
     CREATE_FLOW_OPENED: "delivery_create_flow_opened",
     CREATED: "delivery_created",
+    LIST_FILTERED: "deliveries_list_filtered",
+    LIST_FILTER_CHIP_REMOVED: "deliveries_list_filter_chip_removed",
+    LIST_FILTERS_RESET: "deliveries_list_filters_reset",
+    LIST_CARD_EXPANDED: "deliveries_list_card_expanded",
+    LIST_CARD_COLLAPSED: "deliveries_list_card_collapsed",
   },
   STORE: {
     CREATED: "store_created",

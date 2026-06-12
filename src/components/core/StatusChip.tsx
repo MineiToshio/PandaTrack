@@ -1,4 +1,5 @@
 import {
+  AlertCircle,
   AlertTriangle,
   Ban,
   CheckCircle,
@@ -127,7 +128,7 @@ function getIconStyle(variant: ChipVariant): CSSProperties | undefined {
  */
 export default function StatusChip(props: StatusChipProps) {
   const { size = "md", ariaLabel } = props;
-  const t = useTranslations("statusChip");
+  const t = useTranslations("components.statusChip");
 
   let resolved: ResolvedChip;
 
@@ -159,9 +160,10 @@ export default function StatusChip(props: StatusChipProps) {
     resolved = statusMap[props.value];
   } else if (props.kind === "deliveryStatus") {
     if (props.value === "IN_TRANSIT" && props.overdueDays != null && props.overdueDays >= 1) {
+      // ADR 0002: delivery overdue chip uses `alert-circle`, not the order-level `alert-triangle`.
       resolved = {
         variant: "warning",
-        icon: <AlertTriangle size={14} aria-hidden="true" />,
+        icon: <AlertCircle size={14} aria-hidden="true" />,
         label: t("deliveryStatus.overdue", { days: props.overdueDays }),
       };
     } else {

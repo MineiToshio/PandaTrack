@@ -1,15 +1,47 @@
+import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
-import { Truck } from "lucide-react";
-import Button from "@/components/core/Button/Button";
-import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { redirect } from "next/navigation";
 import { buildPageMetadata } from "@/lib/seo";
-import AppComingSoonCard from "../_components/AppComingSoonCard";
-import AppPlaceholderPage from "../_components/AppPlaceholderPage";
+import { getSession } from "@/lib/auth/auth-server";
+import { prisma } from "@/lib/prisma";
+import { getDeliveriesList, getDeliveryStoreOptions } from "@/lib/data/deliveries/deliveryQueries";
+import { ROUTES } from "@/lib/constants";
+import {
+  DEFAULT_DELIVERY_STATUS,
+  DELIVERY_LIST_PAGE_SIZE,
+  parseDeliveryListingParams,
+  type DeliveryListActiveFilters,
+} from "./_utils/deliveryListingParams";
+import DeliveryListContent from "./_components/DeliveryListContent";
+import DeliveryListFilters from "./_components/DeliveryListFilters";
+import DeliveryListFilterChips from "./_components/DeliveryListFilterChips";
+import DeliveryListPagination from "./_components/DeliveryListPagination";
+import DeliveryListLoadingSkeleton from "./_components/DeliveryListLoadingSkeleton";
 
 type DeliveriesPageProps = {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
+
+function buildListUrl(
+  basePath: string,
+  rawParams: Record<string, string | string[] | undefined>,
+  page: number,
+): string {
+  const params = new URLSearchParams();
+  Object.entries(rawParams).forEach(([key, value]) => {
+    if (key === "page" || value == null) return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => params.append(key, item));
+      return;
+    }
+    params.set(key, value);
+  });
+  if (page > 1) params.set("page", String(page));
+  const qs = params.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
+}
 
 export async function generateMetadata({ params }: DeliveriesPageProps): Promise<Metadata> {
   const { locale } = await params;
@@ -22,29 +54,171 @@ export async function generateMetadata({ params }: DeliveriesPageProps): Promise
   });
 }
 
-export default async function DeliveriesPage({ params }: DeliveriesPageProps) {
+export default async function DeliveriesPage({ params, searchParams }: DeliveriesPageProps) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "deliveries" });
+  const session = await getSession();
+  if (!session?.user?.id) redirect(`/${locale}/sign-in`);
+  const rawParams = await searchParams;
+  const basePath = `/${locale}${ROUTES.deliveries}`;
+
+  // Canonical default (BP-01): a bare URL (no `status` key at all) redirects to the
+  // "En camino" view so the default is visible and removable as a chip. An explicit
+  // empty `status=` (chip removal / clear) means "all statuses" and is left alone.
+  if (rawParams.status === undefined) {
+    const canonicalParams = new URLSearchParams();
+    Object.entries(rawParams).forEach(([key, value]) => {
+      if (value == null) return;
+      if (Array.isArray(value)) {
+        value.forEach((item) => canonicalParams.append(key, item));
+        return;
+      }
+      canonicalParams.set(key, value);
+    });
+    canonicalParams.set("status", DEFAULT_DELIVERY_STATUS);
+    redirect(`${basePath}?${canonicalParams.toString()}`);
+  }
+
+  // Suspense key forces the async data-fetching subtree to remount on every URL params
+  // change, surfacing the skeleton between navigations.
+  const fingerprint = JSON.stringify(rawParams);
 
   return (
-    <AppPlaceholderPage eyebrow={t("list.eyebrow")} title={t("list.title")} description={t("list.description")}>
-      <AppComingSoonCard
-        icon={Truck}
-        title={t("list.placeholder.title")}
-        description={t("list.placeholder.description")}
-        actions={
-          <Button
-            as="a"
-            href={`/${locale}${ROUTES.orders}`}
-            variant="primary"
-            size="md"
-            data-ph-event={POSTHOG_EVENTS.APP_SHELL.PLACEHOLDER_CTA_CLICKED}
-            data-ph-props={JSON.stringify({ source: "deliveries", target: "orders" })}
-          >
-            {t("list.placeholder.cta")}
-          </Button>
-        }
-      />
-    </AppPlaceholderPage>
+    <Suspense key={fingerprint} fallback={<DeliveriesListFallback locale={locale} />}>
+      <DeliveriesListView locale={locale} userId={session.user.id} rawParams={rawParams} basePath={basePath} />
+    </Suspense>
+  );
+}
+
+async function DeliveriesListFallback({ locale }: { locale: string }) {
+  const t = await getTranslations({ locale, namespace: "deliveries" });
+  return (
+    <DeliveryListLoadingSkeleton
+      title={t("list.title")}
+      headers={{
+        delivery: t("list.table.headerDelivery"),
+        products: t("list.table.headerProducts"),
+        status: t("list.table.headerStatus"),
+        cost: t("list.table.headerCost"),
+        arrival: t("list.table.headerArrival"),
+      }}
+    />
+  );
+}
+
+async function DeliveriesListView({
+  locale,
+  userId,
+  rawParams,
+  basePath,
+}: {
+  locale: string;
+  userId: string;
+  rawParams: Record<string, string | string[] | undefined>;
+  basePath: string;
+}) {
+  const parsed = parseDeliveryListingParams(rawParams);
+  const toIso = (date: Date | undefined) => (date ? date.toISOString().slice(0, 10) : undefined);
+
+  const activeFilters: DeliveryListActiveFilters = {
+    nameQuery: parsed.nameQuery,
+    statuses: parsed.statuses,
+    overdueOnly: parsed.overdueOnly,
+    arrivalFromIso: toIso(parsed.arrivalFrom),
+    arrivalToIso: toIso(parsed.arrivalTo),
+    storeId: parsed.storeId,
+    productQuery: parsed.productQuery,
+    shippedFromIso: toIso(parsed.shippedFrom),
+    shippedToIso: toIso(parsed.shippedTo),
+    sort: parsed.sort,
+  };
+
+  const [listing, storeOptions, t, inTransitCount, deliveredCount] = await Promise.all([
+    getDeliveriesList(userId, {
+      nameQuery: parsed.nameQuery,
+      statuses: parsed.statuses.length > 0 ? parsed.statuses : undefined,
+      storeId: parsed.storeId,
+      productQuery: parsed.productQuery,
+      overdueOnly: parsed.overdueOnly,
+      arrivalFrom: parsed.arrivalFrom,
+      arrivalTo: parsed.arrivalTo,
+      shippedFrom: parsed.shippedFrom,
+      shippedTo: parsed.shippedTo,
+      sort: parsed.sort,
+      page: parsed.page,
+      pageSize: DELIVERY_LIST_PAGE_SIZE,
+    }),
+    getDeliveryStoreOptions(userId),
+    getTranslations({ locale, namespace: "deliveries" }),
+    prisma.delivery.count({ where: { userId, status: "IN_TRANSIT" } }),
+    prisma.delivery.count({ where: { userId, status: "DELIVERED" } }),
+  ]);
+
+  const today = new Date();
+  const currentListUrl = buildListUrl(basePath, rawParams, listing.page);
+  // "Limpiar filtros" lands on `?status=` (all statuses, no filter). The bare URL is
+  // reserved for the canonical redirect above.
+  const resetHref = `${basePath}?status=`;
+
+  const storesById: Record<string, string> = {};
+  storeOptions.forEach((store) => {
+    storesById[store.storeId] = store.storeName;
+  });
+
+  const buildPaginationHref = (targetPage: number) => buildListUrl(basePath, rawParams, targetPage);
+  const hasAnyFilter =
+    Boolean(parsed.nameQuery) ||
+    parsed.statuses.length > 0 ||
+    parsed.overdueOnly ||
+    Boolean(parsed.arrivalFrom) ||
+    Boolean(parsed.arrivalTo) ||
+    Boolean(parsed.storeId) ||
+    Boolean(parsed.productQuery) ||
+    Boolean(parsed.shippedFrom) ||
+    Boolean(parsed.shippedTo);
+
+  return (
+    <div className="text-foreground">
+      <div className="space-y-5">
+        {/* Desktop page-heading; mobile gets title from app-topbar */}
+        <div className="hidden flex-wrap items-baseline gap-2.5 lg:flex">
+          <h1 className="[font-size:var(--text-display)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+            {t("list.title")}
+          </h1>
+          <span className="[font-size:var(--text-caption)] [color:var(--text-muted)] tabular-nums">
+            {listing.totalCount === 0 && hasAnyFilter
+              ? t("list.heading.zeroResults")
+              : t("list.heading.meta", { inTransit: inTransitCount, delivered: deliveredCount })}
+          </span>
+        </div>
+
+        <DeliveryListFilters
+          locale={locale}
+          storeOptions={storeOptions.map((store) => ({ id: store.storeId, name: store.storeName }))}
+          initial={activeFilters}
+        />
+
+        <DeliveryListFilterChips locale={locale} basePath={basePath} filters={activeFilters} storesById={storesById} />
+
+        <DeliveryListContent
+          locale={locale}
+          deliveries={listing.deliveries}
+          totalCount={listing.totalCount}
+          hasAnyFilter={hasAnyFilter}
+          searchTerm={parsed.nameQuery}
+          today={today}
+          returnTo={currentListUrl}
+          resetHref={resetHref}
+        />
+
+        <DeliveryListPagination
+          locale={locale}
+          totalPages={listing.totalPages}
+          currentPage={listing.page}
+          totalCount={listing.totalCount}
+          pageSize={listing.pageSize}
+          createPageHref={buildPaginationHref}
+        />
+      </div>
+    </div>
   );
 }

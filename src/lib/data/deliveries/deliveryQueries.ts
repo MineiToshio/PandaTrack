@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { OrderItemDeliveryState } from "../../../../generated/prisma/client";
+import { OrderItemDeliveryState, type DeliveryStatus } from "../../../../generated/prisma/client";
+import type { DeliveryListSort } from "@/lib/deliveries/deliveryListSort";
 
 export type EligibleStore = {
   storeId: string;
@@ -171,9 +172,207 @@ export async function getEligibleProductsForStore(
 }
 
 // ---------------------------------------------------------------------------
-// Stubs — filled in by WO-03 (detail) and WO-06 (list)
+// List
+// ---------------------------------------------------------------------------
+
+export type DeliveriesListPageItem = {
+  id: string;
+  humanReadableId: string;
+  deliveryDate: Date;
+  expectedArrivalFrom: Date | null;
+  expectedArrivalTo: Date | null;
+  receivedDate: Date | null;
+  status: DeliveryStatus;
+  cost: number;
+  currencyCode: string;
+  store: { id: string; name: string; slug: string };
+  /** Sum of quantities across linked order items ("N productos"). */
+  productCount: number;
+  items: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    productTypeKey: string | null;
+  }>;
+};
+
+export type DeliveriesListPageFilters = {
+  /** Matches `DLV-*` code or product name (case-insensitive contains). */
+  nameQuery?: string;
+  statuses?: DeliveryStatus[];
+  storeId?: string;
+  /** Drawer "Producto" filter — product name only. */
+  productQuery?: string;
+  /** IN_TRANSIT deliveries whose expected arrival window already passed. */
+  overdueOnly?: boolean;
+  /** Expected-arrival range overlap (any part of the window inside the range). */
+  arrivalFrom?: Date;
+  arrivalTo?: Date;
+  /** Shipping date (deliveryDate) range. */
+  shippedFrom?: Date;
+  shippedTo?: Date;
+  sort?: DeliveryListSort;
+  page: number;
+  pageSize: number;
+};
+
+export type DeliveriesListPageResult = {
+  deliveries: DeliveriesListPageItem[];
+  totalCount: number;
+  totalPages: number;
+  page: number;
+  pageSize: number;
+};
+
+function resolveDeliveryOrderBy(sort: DeliveryListSort) {
+  switch (sort) {
+    case "recent":
+      return { deliveryDate: "desc" as const };
+    case "eta-asc":
+      return { expectedArrivalFrom: { sort: "asc" as const, nulls: "last" as const } };
+    case "store-asc":
+      return { store: { name: "asc" as const } };
+    case "oldest":
+    default:
+      return { deliveryDate: "asc" as const };
+  }
+}
+
+export async function getDeliveriesList(
+  userId: string,
+  filters: DeliveriesListPageFilters,
+): Promise<DeliveriesListPageResult> {
+  const {
+    nameQuery,
+    statuses,
+    storeId,
+    productQuery,
+    overdueOnly,
+    arrivalFrom,
+    arrivalTo,
+    shippedFrom,
+    shippedTo,
+    sort = "oldest",
+    page,
+    pageSize,
+  } = filters;
+  const now = new Date();
+
+  const baseWhere: Record<string, unknown> = {
+    userId,
+    ...(storeId ? { storeId } : {}),
+    ...(statuses && statuses.length > 0 ? { status: { in: statuses } } : {}),
+    ...(shippedFrom || shippedTo
+      ? {
+          deliveryDate: {
+            ...(shippedFrom ? { gte: shippedFrom } : {}),
+            ...(shippedTo ? { lte: shippedTo } : {}),
+          },
+        }
+      : {}),
+  };
+
+  if (overdueOnly) {
+    // Overdue is only meaningful for active deliveries; do not override an explicit status filter.
+    baseWhere.expectedArrivalTo = { lt: now };
+    if (!statuses || statuses.length === 0) {
+      baseWhere.status = "IN_TRANSIT" satisfies DeliveryStatus;
+    }
+  } else if (arrivalFrom || arrivalTo) {
+    // Window overlap: delivery window touches [from, to]; null endpoints are open-ended.
+    const conditions: Array<Record<string, unknown>> = [];
+    if (arrivalTo) conditions.push({ expectedArrivalFrom: { lte: arrivalTo } });
+    if (arrivalFrom) conditions.push({ expectedArrivalTo: { gte: arrivalFrom } });
+    if (conditions.length > 0) Object.assign(baseWhere, { AND: conditions });
+  }
+
+  if (productQuery && productQuery.trim()) {
+    baseWhere.orderItems = {
+      some: { orderItem: { name: { contains: productQuery.trim(), mode: "insensitive" } } },
+    };
+  }
+
+  const trimmedQuery = nameQuery?.trim();
+  const where = trimmedQuery
+    ? {
+        ...baseWhere,
+        OR: [
+          { humanReadableId: { contains: trimmedQuery, mode: "insensitive" as const } },
+          { orderItems: { some: { orderItem: { name: { contains: trimmedQuery, mode: "insensitive" as const } } } } },
+        ],
+      }
+    : baseWhere;
+
+  const [rows, totalCount] = await Promise.all([
+    prisma.delivery.findMany({
+      where,
+      select: {
+        id: true,
+        humanReadableId: true,
+        deliveryDate: true,
+        expectedArrivalFrom: true,
+        expectedArrivalTo: true,
+        receivedDate: true,
+        status: true,
+        cost: true,
+        currencyCode: true,
+        store: { select: { id: true, name: true, slug: true } },
+        orderItems: {
+          select: {
+            orderItem: { select: { id: true, name: true, quantity: true, productTypeKey: true } },
+          },
+          orderBy: { createdAt: "asc" },
+        },
+      },
+      orderBy: resolveDeliveryOrderBy(sort),
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.delivery.count({ where }),
+  ]);
+
+  const deliveries: DeliveriesListPageItem[] = rows.map((row) => {
+    const items = row.orderItems.map((link) => ({
+      id: link.orderItem.id,
+      name: link.orderItem.name,
+      quantity: link.orderItem.quantity,
+      productTypeKey: link.orderItem.productTypeKey,
+    }));
+    return {
+      id: row.id,
+      humanReadableId: row.humanReadableId,
+      deliveryDate: row.deliveryDate,
+      expectedArrivalFrom: row.expectedArrivalFrom,
+      expectedArrivalTo: row.expectedArrivalTo,
+      receivedDate: row.receivedDate,
+      status: row.status,
+      cost: row.cost,
+      currencyCode: row.currencyCode,
+      store: row.store,
+      productCount: items.reduce((sum, item) => sum + item.quantity, 0),
+      items,
+    };
+  });
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  return { deliveries, totalCount, totalPages, page, pageSize };
+}
+
+/** Distinct stores the user has deliveries with — feeds the list filter drawer. */
+export async function getDeliveryStoreOptions(userId: string): Promise<EligibleStore[]> {
+  const rows = await prisma.delivery.findMany({
+    where: { userId },
+    select: { store: { select: { id: true, name: true } } },
+    distinct: ["storeId"],
+    orderBy: { store: { name: "asc" } },
+  });
+  return rows.map((row) => ({ storeId: row.store.id, storeName: row.store.name }));
+}
+
+// ---------------------------------------------------------------------------
+// Stubs — filled in by WO-03 (detail)
 // ---------------------------------------------------------------------------
 
 // getDeliveryById — WO-03
 // getDeliveryDetail — WO-03
-// getDeliveriesList — WO-06

@@ -30,7 +30,9 @@ const NAV_ROUTE_ITEMS: NavItem[] = [
   {
     id: "deliveries",
     pathSegment: "deliveries",
-    href: (locale) => `/${locale}${ROUTES.deliveries}`,
+    // Entry-point carries the canonical "En camino" default (BP-01); the page also
+    // canonicalizes bare URLs to this filter. Explicit empty `status=` means "all".
+    href: (locale) => `/${locale}${ROUTES.deliveries}?status=IN_TRANSIT`,
     labelKey: "nav.deliveries",
   },
   {

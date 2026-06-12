@@ -101,13 +101,22 @@ export type FilterDateRangeSection = {
   singleRangeClearLabel?: string;
 };
 
+/** Free-text filter (e.g. product name). Value shape: `string`. */
+export type FilterTextSection = {
+  id: string;
+  label: string;
+  type: "text";
+  placeholder?: string;
+};
+
 export type FilterSection =
   | FilterPillsSection
   | FilterPillsSearchSection
   | FilterAutocompleteSection
   | FilterSwitchesSection
   | FilterTagAutocompleteSection
-  | FilterDateRangeSection;
+  | FilterDateRangeSection
+  | FilterTextSection;
 
 export type FilterDrawerValues = Record<string, unknown>;
 
@@ -510,11 +519,30 @@ export default function FilterDrawer({
     );
   };
 
+  const renderTextSection = (section: FilterTextSection) => {
+    const current = typeof values[section.id] === "string" ? (values[section.id] as string) : "";
+    return (
+      <fieldset key={section.id} className="[margin:0] flex flex-col [padding:0] [border:none]">
+        <Eyebrow as="legend" className="mb-2">
+          {section.label}
+        </Eyebrow>
+        <Input
+          type="text"
+          value={current}
+          onChange={(event) => onChange({ ...values, [section.id]: event.target.value })}
+          placeholder={section.placeholder}
+          aria-label={section.label}
+        />
+      </fieldset>
+    );
+  };
+
   const renderSection = (section: FilterSection) => {
     if (section.type === "autocomplete") return renderAutocompleteSection(section);
     if (section.type === "switches") return renderSwitchesSection(section);
     if (section.type === "tag-autocomplete") return renderTagAutocompleteSection(section);
     if (section.type === "date-range") return renderDateRangeSection(section);
+    if (section.type === "text") return renderTextSection(section);
     return renderPillsSection(section);
   };
 
