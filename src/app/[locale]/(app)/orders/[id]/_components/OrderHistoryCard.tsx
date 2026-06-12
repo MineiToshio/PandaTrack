@@ -1,7 +1,7 @@
 import { Clock3 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import Eyebrow from "@/components/core/Eyebrow";
-import CollapsibleSubcard from "./CollapsibleSubcard";
+import CollapsibleSubcard from "@/components/modules/CollapsibleSubcard";
 import OrderHistoryRow from "./OrderHistoryRow";
 
 type HistoryEntry = {

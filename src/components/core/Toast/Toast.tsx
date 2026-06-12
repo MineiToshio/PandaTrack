@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from "lucide-react";
+import { CheckCircle, AlertCircle, Info, AlertTriangle, RotateCcw, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/styles";
 import type { ToastItem } from "@/contexts/ToastContext";
@@ -44,11 +44,21 @@ const VARIANT_CONFIG = {
     role: "status" as const,
     ariaLive: "polite" as const,
   },
+  // Neutral-undo (ADR 0001 D4): reversible operations executed directly, paired with an
+  // inline "Deshacer" action via `toast.action`.
+  neutral: {
+    containerClass: "border-border bg-card",
+    iconClass: "text-text-secondary",
+    progressClass: "bg-text-muted",
+    Icon: RotateCcw,
+    role: "status" as const,
+    ariaLive: "polite" as const,
+  },
 } as const;
 
 export default function Toast({ toast, onRemove }: ToastProps) {
   const t = useTranslations("common");
-  const { id, message, variant, duration } = toast;
+  const { id, message, variant, duration, action } = toast;
   const config = VARIANT_CONFIG[variant];
   const { Icon } = config;
 
@@ -61,6 +71,11 @@ export default function Toast({ toast, onRemove }: ToastProps) {
     setVisible(false);
     setTimeout(() => onRemove(id), 300);
   }, [id, onRemove]);
+
+  const handleActionClick = () => {
+    action?.onClick();
+    dismiss();
+  };
 
   useEffect(() => {
     const enterFrame = requestAnimationFrame(() => {
@@ -88,6 +103,15 @@ export default function Toast({ toast, onRemove }: ToastProps) {
     >
       <Icon size={18} className={cn("mt-0.5 shrink-0", config.iconClass)} aria-hidden />
       <p className="text-text-body min-w-0 flex-1 text-sm leading-snug">{message}</p>
+      {action && (
+        <button
+          type="button"
+          onClick={handleActionClick}
+          className="text-accent shrink-0 cursor-pointer text-sm font-semibold hover:underline"
+        >
+          {action.label}
+        </button>
+      )}
       <button
         type="button"
         onClick={dismiss}

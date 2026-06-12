@@ -63,12 +63,109 @@
   },
   "detail": {
     "metaTitle": "Delivery detail",
-    "backToCreate": "Create another delivery",
-    "heroEyebrow": "Delivery created",
-    "title": "{humanReadableId}",
-    "stubDescription": "This delivery was created. The full read-only detail view arrives in the next delivery slice.",
-    "summaryTitle": "Summary",
-    "deliveryDate": "Shipping date: {date}"
+    "backToList": "Deliveries",
+    "hero": {
+      "copyCodeAria": "Copy delivery code",
+      "codeCopied": "Code copied",
+      "eyebrow": "Your delivery · {count, plural, one {# product} other {# products}}",
+      "arrivalLabel": "Expected arrival",
+      "noWindow": "No arrival estimate",
+      "shippedOn": "shipped on {date}",
+      "deliveredTitle": "Delivery received",
+      "deliveredSub": "on {received} · shipped on {shipped}",
+      "cancelledTitle": "Delivery cancelled",
+      "cancelledNote": "{count, plural, one {The product went back} other {The # products went back}} to <strong>Ready at store</strong> and {count, plural, one {is available} other {are available}} for another delivery.",
+      "windowStartsIn": "{days, plural, one {# day} other {# days}} until the window starts",
+      "windowEndsIn": "the window ends in {days, plural, one {# day} other {# days}}",
+      "windowEndedAgo": "the window ended {days, plural, one {# day} other {# days}} ago",
+      "cost": "shipping cost {cost}",
+      "costWithConversion": "shipping cost {cost} (≈ {converted} {base})",
+      "progressAria": "In transit, {pct}% of the window"
+    },
+    "products": {
+      "title": "Products",
+      "fromOrder": "From"
+    },
+    "summary": {
+      "title": "Summary",
+      "store": "Store",
+      "shippedDate": "Shipping date",
+      "expectedArrival": "Expected arrival",
+      "receivedDate": "Received date",
+      "cost": "Shipping cost",
+      "exchangeRate": "Exchange rate",
+      "exchangeRateValue": "1 {from} = {rate} {to}",
+      "sourceOrders": "Source orders"
+    },
+    "actions": {
+      "title": "Actions",
+      "markDelivered": "Mark as delivered",
+      "edit": "Edit delivery",
+      "cancel": "Cancel delivery",
+      "delete": "Delete delivery",
+      "reopen": "Reopen delivery",
+      "deliveredHelper": "Reopen the delivery to edit or delete it.",
+      "cancelledHelper": "On reopen, products go back to <strong>In transit</strong>."
+    },
+    "markDeliveredModal": {
+      "title": "Mark as delivered?",
+      "confirm": "Mark as delivered",
+      "cancel": "Cancel",
+      "dateLabel": "Received date",
+      "requiredSr": "required",
+      "dateHelper": "Past dates or today only.",
+      "dateRequired": "Select the received date.",
+      "dateInFuture": "The date cannot be in the future.",
+      "infoBox": "{count, plural, one {The <strong>product</strong> will move} other {The <strong># products</strong> will move}} to <strong>Delivered</strong> and the source orders will update. You can reopen the delivery if something didn't arrive right."
+    },
+    "cancelModal": {
+      "title": "Cancel delivery?",
+      "confirm": "Cancel delivery",
+      "back": "Go back",
+      "description": "The delivery will move to <strong>Cancelled</strong> and the record is kept. {count, plural, one {The product goes back} other {The # products go back}} to <strong>Ready at store</strong> and {count, plural, one {becomes available} other {become available}} for another delivery.",
+      "reversibleNote": "You can reopen it later from the detail."
+    },
+    "deleteModal": {
+      "title": "Delete delivery?",
+      "confirm": "Delete delivery",
+      "cancel": "Cancel",
+      "typeToConfirmWord": "delete",
+      "typeToConfirmLabel": "Type <strong>{word}</strong> to confirm",
+      "description": "This action cannot be undone. <strong>{id}</strong> will be permanently deleted; products go back to <strong>Ready at store</strong>. Source orders are not touched.",
+      "errorInvalidStatus": "A received delivery cannot be deleted. Reopen it first.",
+      "errorGeneral": "The delivery could not be deleted. Please try again."
+    },
+    "actionsSheet": {
+      "title": "More actions",
+      "close": "Close",
+      "edit": "Edit delivery",
+      "cancel": "Cancel delivery",
+      "delete": "Delete delivery"
+    },
+    "stickyBar": {
+      "ariaLabel": "Delivery actions",
+      "edit": "Edit",
+      "markDelivered": "Mark delivered",
+      "reopen": "Reopen delivery",
+      "moreActions": "More actions"
+    },
+    "note": {
+      "title": "Your private note",
+      "helper": "Tracking number, courier instructions, or the context to pick it back up later.",
+      "placeholder": "Write a note or reminder for this delivery…",
+      "saving": "Saving...",
+      "savedAt": "Saved: {date}",
+      "errorSave": "The note could not be saved. Please try again."
+    },
+    "toast": {
+      "reopened": "Delivery reopened: products go back to In transit.",
+      "undo": "Undo",
+      "undoError": "Could not undo. Please try again.",
+      "reopenError": "The delivery could not be reopened. Please try again.",
+      "reopenConflict": "Cannot reopen: some products are already in another delivery.",
+      "markDeliveredError": "The arrival could not be saved. Please try again.",
+      "cancelError": "The delivery could not be cancelled. Please try again."
+    }
   },
   "list": {
     "title": "Deliveries",

@@ -8,7 +8,7 @@ import type { OrderDetailFull } from "@/lib/data/orders/orderQueries";
 import SetHeaderTitle from "@/app/[locale]/(app)/_components/AppLayout/SetHeaderTitle";
 import OrderOverdueBanner from "./OrderOverdueBanner";
 import CancellationReasonCallout from "./CancellationReasonCallout";
-import CollapsibleSubcard from "./CollapsibleSubcard";
+import CollapsibleSubcard from "@/components/modules/CollapsibleSubcard";
 import OrderItemsReadOnlyList from "./OrderItemsReadOnlyList";
 import OrderHistoryCard from "./OrderHistoryCard";
 import OrderPrivateNoteCard from "./OrderPrivateNoteCard";

@@ -128,6 +128,15 @@ export function ModalFooter({ primaryAction, secondaryAction, tertiaryAction, st
             onClick={primaryAction.onClick}
             loading={primaryAction.loading}
             disabled={primaryAction.disabled}
+            style={
+              // Semantic-token CTAs (M06): success/warning reuse the primary geometry
+              // and swap only the fill color.
+              primaryAction.variant === "success"
+                ? { background: "var(--success)", borderColor: "var(--success)" }
+                : primaryAction.variant === "warning"
+                  ? { background: "var(--warning)", borderColor: "var(--warning)" }
+                  : undefined
+            }
           >
             {primaryAction.label}
           </Button>

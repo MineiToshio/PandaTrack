@@ -63,12 +63,109 @@
   },
   "detail": {
     "metaTitle": "Detalle de entrega",
-    "backToCreate": "Crear otra entrega",
-    "heroEyebrow": "Entrega creada",
-    "title": "{humanReadableId}",
-    "stubDescription": "Esta entrega fue creada. La vista completa de detalle llega en el siguiente slice de entregas.",
-    "summaryTitle": "Resumen",
-    "deliveryDate": "Fecha de envío: {date}"
+    "backToList": "Entregas",
+    "hero": {
+      "copyCodeAria": "Copiar código de entrega",
+      "codeCopied": "Código copiado",
+      "eyebrow": "Tu entrega · {count, plural, one {# producto} other {# productos}}",
+      "arrivalLabel": "Llegada estimada",
+      "noWindow": "Sin estimación de llegada",
+      "shippedOn": "enviada el {date}",
+      "deliveredTitle": "Entrega recibida",
+      "deliveredSub": "el {received} · enviada el {shipped}",
+      "cancelledTitle": "Entrega cancelada",
+      "cancelledNote": "{count, plural, one {El producto volvió} other {Los # productos volvieron}} a <strong>Listo en tienda</strong> y {count, plural, one {quedó disponible} other {quedaron disponibles}} para otra entrega.",
+      "windowStartsIn": "{days, plural, one {queda # día} other {quedan # días}} para el inicio de la ventana",
+      "windowEndsIn": "la ventana termina en {days, plural, one {# día} other {# días}}",
+      "windowEndedAgo": "la ventana terminó hace {days, plural, one {# día} other {# días}}",
+      "cost": "costo de envío {cost}",
+      "costWithConversion": "costo de envío {cost} (≈ {converted} {base})",
+      "progressAria": "En tránsito, {pct}% de la ventana"
+    },
+    "products": {
+      "title": "Productos",
+      "fromOrder": "Desde"
+    },
+    "summary": {
+      "title": "Resumen",
+      "store": "Tienda",
+      "shippedDate": "Fecha de envío",
+      "expectedArrival": "Llegada estimada",
+      "receivedDate": "Fecha de recepción",
+      "cost": "Costo de envío",
+      "exchangeRate": "Tipo de cambio",
+      "exchangeRateValue": "1 {from} = {rate} {to}",
+      "sourceOrders": "Pedidos origen"
+    },
+    "actions": {
+      "title": "Acciones",
+      "markDelivered": "Marcar como llegada",
+      "edit": "Editar entrega",
+      "cancel": "Cancelar entrega",
+      "delete": "Eliminar entrega",
+      "reopen": "Reabrir entrega",
+      "deliveredHelper": "Reabre la entrega para editarla o eliminarla.",
+      "cancelledHelper": "Al reabrir, los productos vuelven a <strong>En camino</strong>."
+    },
+    "markDeliveredModal": {
+      "title": "¿Marcar como llegada?",
+      "confirm": "Marcar como llegada",
+      "cancel": "Cancelar",
+      "dateLabel": "Fecha de recepción",
+      "requiredSr": "obligatorio",
+      "dateHelper": "Solo fechas pasadas o de hoy.",
+      "dateRequired": "Selecciona la fecha de recepción.",
+      "dateInFuture": "La fecha no puede ser futura.",
+      "infoBox": "{count, plural, one {El <strong>producto</strong> pasará} other {Los <strong># productos</strong> pasarán}} a <strong>Entregado</strong> y los pedidos origen se actualizarán. Podrás reabrir la entrega si algo no llegó bien."
+    },
+    "cancelModal": {
+      "title": "¿Cancelar entrega?",
+      "confirm": "Cancelar entrega",
+      "back": "Volver",
+      "description": "La entrega pasará a <strong>Cancelada</strong> y el registro se conserva. {count, plural, one {El producto vuelve} other {Los # productos vuelven}} a <strong>Listo en tienda</strong> y {count, plural, one {queda disponible} other {quedan disponibles}} para otra entrega.",
+      "reversibleNote": "Podrás reabrirla más adelante desde el detalle."
+    },
+    "deleteModal": {
+      "title": "¿Eliminar entrega?",
+      "confirm": "Eliminar entrega",
+      "cancel": "Cancelar",
+      "typeToConfirmWord": "eliminar",
+      "typeToConfirmLabel": "Escribe <strong>{word}</strong> para confirmar",
+      "description": "Esta acción no se puede deshacer. Se eliminará <strong>{id}</strong> de forma permanente; los productos vuelven a <strong>Listo en tienda</strong>. Los pedidos origen no se tocan.",
+      "errorInvalidStatus": "Una entrega recibida no se puede eliminar. Reábrela primero.",
+      "errorGeneral": "No se pudo eliminar la entrega. Intenta de nuevo."
+    },
+    "actionsSheet": {
+      "title": "Más acciones",
+      "close": "Cerrar",
+      "edit": "Editar entrega",
+      "cancel": "Cancelar entrega",
+      "delete": "Eliminar entrega"
+    },
+    "stickyBar": {
+      "ariaLabel": "Acciones de la entrega",
+      "edit": "Editar",
+      "markDelivered": "Marcar llegada",
+      "reopen": "Reabrir entrega",
+      "moreActions": "Más acciones"
+    },
+    "note": {
+      "title": "Tu nota privada",
+      "helper": "Número de tracking, instrucciones del courier o el contexto para retomarla después.",
+      "placeholder": "Escribe una nota o recordatorio para esta entrega…",
+      "saving": "Guardando...",
+      "savedAt": "Guardada: {date}",
+      "errorSave": "No se pudo guardar la nota. Intenta de nuevo."
+    },
+    "toast": {
+      "reopened": "Entrega reabierta: los productos vuelven a En camino.",
+      "undo": "Deshacer",
+      "undoError": "No se pudo deshacer. Intenta de nuevo.",
+      "reopenError": "No se pudo reabrir la entrega. Intenta de nuevo.",
+      "reopenConflict": "No se puede reabrir: algunos productos ya están en otra entrega.",
+      "markDeliveredError": "No se pudo registrar la llegada. Intenta de nuevo.",
+      "cancelError": "No se pudo cancelar la entrega. Intenta de nuevo."
+    }
   },
   "list": {
     "title": "Entregas",

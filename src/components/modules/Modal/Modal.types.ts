@@ -2,15 +2,19 @@ import type { ReactElement, ReactNode, RefObject } from "react";
 
 export type ModalRole = "dialog" | "alertdialog";
 
-export type ModalTone = "default" | "destructive" | "warning" | "info";
+export type ModalTone = "default" | "destructive" | "warning" | "info" | "success";
 
 export type ModalSize = "md" | "lg";
 
 export type ModalAction = {
   label: string;
   onClick: () => void;
-  /** Only meaningful for `primaryAction`. Defaults to `primary`. */
-  variant?: "primary" | "destructive";
+  /**
+   * Only meaningful for `primaryAction`. Defaults to `primary`.
+   * `success` / `warning` paint the primary CTA with the matching semantic token
+   * (M06 — e.g. "Marcar como llegada" / "Cancelar entrega").
+   */
+  variant?: "primary" | "destructive" | "success" | "warning";
   loading?: boolean;
   disabled?: boolean;
 };
@@ -83,6 +87,7 @@ export const TONE_ICON_CLASSES: Record<ModalTone, string> = {
     "[background:color-mix(in_oklch,var(--destructive)_14%,var(--surface-elevated))] [color:var(--destructive)]",
   warning: "[background:color-mix(in_oklch,var(--warning)_14%,var(--surface-elevated))] [color:var(--warning)]",
   info: "[background:color-mix(in_oklch,var(--info)_14%,var(--surface-elevated))] [color:var(--info)]",
+  success: "[background:color-mix(in_oklch,var(--success)_14%,var(--surface-elevated))] [color:var(--success)]",
 };
 
 /** CSS custom property name for each tone — used for inline gradient/ring styles. */
@@ -91,6 +96,7 @@ export const TONE_COLOR_VAR: Record<ModalTone, string> = {
   destructive: "var(--destructive)",
   warning: "var(--warning)",
   info: "var(--info)",
+  success: "var(--success)",
 };
 
 export const SIZE_MAX_WIDTH: Record<ModalSize, string> = {

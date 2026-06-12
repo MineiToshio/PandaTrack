@@ -371,8 +371,125 @@ export async function getDeliveryStoreOptions(userId: string): Promise<EligibleS
 }
 
 // ---------------------------------------------------------------------------
-// Stubs — filled in by WO-03 (detail)
+// Detail
 // ---------------------------------------------------------------------------
 
-// getDeliveryById — WO-03
-// getDeliveryDetail — WO-03
+export type DeliveryDetailItem = {
+  id: string;
+  name: string;
+  quantity: number;
+  productTypeKey: string | null;
+};
+
+export type DeliveryDetailSourceOrderGroup = {
+  orderId: string;
+  orderHumanReadableId: string;
+  orderDate: Date;
+  items: DeliveryDetailItem[];
+};
+
+export type DeliveryDetail = {
+  id: string;
+  humanReadableId: string;
+  status: DeliveryStatus;
+  deliveryDate: Date;
+  expectedArrivalFrom: Date | null;
+  expectedArrivalTo: Date | null;
+  receivedDate: Date | null;
+  cost: number;
+  currencyCode: string;
+  exchangeRate: number | null;
+  note: string | null;
+  updatedAt: Date;
+  store: { id: string; name: string; slug: string };
+  /** Sum of quantities across linked items ("N productos"). */
+  productCount: number;
+  /** Items grouped by source order, ordered by order date (FR-08-18). */
+  sourceOrders: DeliveryDetailSourceOrderGroup[];
+};
+
+export async function getDeliveryDetail(deliveryId: string, userId: string): Promise<DeliveryDetail | null> {
+  const delivery = await prisma.delivery.findFirst({
+    where: { id: deliveryId, userId },
+    select: {
+      id: true,
+      humanReadableId: true,
+      status: true,
+      deliveryDate: true,
+      expectedArrivalFrom: true,
+      expectedArrivalTo: true,
+      receivedDate: true,
+      cost: true,
+      currencyCode: true,
+      exchangeRate: true,
+      note: true,
+      updatedAt: true,
+      store: { select: { id: true, name: true, slug: true } },
+      orderItems: {
+        select: {
+          orderItem: {
+            select: {
+              id: true,
+              name: true,
+              quantity: true,
+              productTypeKey: true,
+              position: true,
+              order: { select: { id: true, humanReadableId: true, orderDate: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!delivery) return null;
+
+  const groupMap = new Map<string, DeliveryDetailSourceOrderGroup>();
+  const sortedLinks = [...delivery.orderItems].sort((a, b) => {
+    const orderDelta = a.orderItem.order.orderDate.getTime() - b.orderItem.order.orderDate.getTime();
+    if (orderDelta !== 0) return orderDelta;
+    return a.orderItem.position - b.orderItem.position;
+  });
+
+  for (const link of sortedLinks) {
+    const { order } = link.orderItem;
+    if (!groupMap.has(order.id)) {
+      groupMap.set(order.id, {
+        orderId: order.id,
+        orderHumanReadableId: order.humanReadableId,
+        orderDate: order.orderDate,
+        items: [],
+      });
+    }
+    groupMap.get(order.id)!.items.push({
+      id: link.orderItem.id,
+      name: link.orderItem.name,
+      quantity: link.orderItem.quantity,
+      productTypeKey: link.orderItem.productTypeKey,
+    });
+  }
+
+  const sourceOrders = Array.from(groupMap.values());
+  const productCount = sourceOrders.reduce(
+    (sum, group) => sum + group.items.reduce((groupSum, item) => groupSum + item.quantity, 0),
+    0,
+  );
+
+  return {
+    id: delivery.id,
+    humanReadableId: delivery.humanReadableId,
+    status: delivery.status,
+    deliveryDate: delivery.deliveryDate,
+    expectedArrivalFrom: delivery.expectedArrivalFrom,
+    expectedArrivalTo: delivery.expectedArrivalTo,
+    receivedDate: delivery.receivedDate,
+    cost: delivery.cost,
+    currencyCode: delivery.currencyCode,
+    exchangeRate: delivery.exchangeRate ? Number(delivery.exchangeRate) : null,
+    note: delivery.note,
+    updatedAt: delivery.updatedAt,
+    store: delivery.store,
+    productCount,
+    sourceOrders,
+  };
+}

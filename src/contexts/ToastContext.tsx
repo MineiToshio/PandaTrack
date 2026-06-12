@@ -3,7 +3,13 @@
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 import ToastContainer from "@/components/core/Toast/ToastContainer";
 
-export type ToastVariant = "success" | "error" | "info" | "warning";
+export type ToastVariant = "success" | "error" | "info" | "warning" | "neutral";
+
+/** Inline CTA rendered next to the message (e.g. "Deshacer" — ADR 0001 D4 neutral-undo). */
+export type ToastAction = {
+  label: string;
+  onClick: () => void;
+};
 
 export type ToastItem = {
   id: string;
@@ -11,12 +17,14 @@ export type ToastItem = {
   variant: ToastVariant;
   /** Duration in milliseconds before the toast auto-dismisses. */
   duration: number;
+  action?: ToastAction;
 };
 
 type AddToastOptions = {
   variant?: ToastVariant;
   /** Duration in milliseconds. Defaults to 4000. */
   duration?: number;
+  action?: ToastAction;
 };
 
 type ToastContextValue = {
@@ -44,6 +52,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       message,
       variant: options?.variant ?? "success",
       duration: options?.duration ?? DEFAULT_DURATION_MS,
+      action: options?.action,
     };
     setToasts((prev) => [...prev, toast]);
   }, []);
