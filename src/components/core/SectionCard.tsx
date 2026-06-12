@@ -9,8 +9,12 @@ export type SectionCardTone = "default" | "warning" | "destructive";
 export type SectionCardTopAccent = "accent" | "cool" | "warm" | "success" | "warning" | "destructive";
 
 export type SectionCardProps = {
-  /** Eyebrow shown above the title (mono uppercase). */
-  eyebrow?: string;
+  /**
+   * Eyebrow shown above the title. Plain `string` renders as the canonical mono uppercase
+   * label; a `ReactNode` (e.g. `<Eyebrow variant="chip">`) renders verbatim so callers can
+   * apply the M07 Chip Eyebrow + Top-Accent pattern (PLAYBOOK §9.17).
+   */
+  eyebrow?: string | ReactNode;
   /** Title rendered as h3 by default. */
   title?: ReactNode;
   /** Optional summary text shown to the right of the title in collapsed mode. */
@@ -64,13 +68,19 @@ const TONE_BORDERS: Record<SectionCardTone, string> = {
   destructive: "[border-left:3px_solid_var(--destructive)]",
 };
 
-const TOP_ACCENT_BORDERS: Record<SectionCardTopAccent, string> = {
-  accent: "[border-top:2px_solid_color-mix(in_oklch,var(--accent)_55%,transparent)]",
-  cool: "[border-top:2px_solid_color-mix(in_oklch,var(--accent-cool)_55%,transparent)]",
-  warm: "[border-top:2px_solid_color-mix(in_oklch,var(--accent-warm)_55%,transparent)]",
-  success: "[border-top:2px_solid_color-mix(in_oklch,var(--success)_55%,transparent)]",
-  warning: "[border-top:2px_solid_color-mix(in_oklch,var(--warning)_55%,transparent)]",
-  destructive: "[border-top:2px_solid_color-mix(in_oklch,var(--destructive)_55%,transparent)]",
+/**
+ * Top-accent token map used to render the M07 Chip Eyebrow + Top-Accent pattern via inline style.
+ * Inline style is required to avoid the PLAYBOOK §6.sexies cascade Bug #1: the base state class
+ * declares the full `border` shorthand which would otherwise reset `border-top` regardless of
+ * Tailwind class order.
+ */
+const TOP_ACCENT_VAR: Record<SectionCardTopAccent, string> = {
+  accent: "var(--accent)",
+  cool: "var(--accent-cool)",
+  warm: "var(--accent-warm)",
+  success: "var(--success)",
+  warning: "var(--warning)",
+  destructive: "var(--destructive)",
 };
 
 export default function SectionCard({
@@ -111,17 +121,20 @@ export default function SectionCard({
   const headerContent = (
     <>
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {eyebrow && (
-          <span
-            className={cn(
-              "[font-family:var(--font-mono)] [font-size:var(--text-eyebrow)]",
-              "[font-weight:var(--font-weight-mono)] uppercase",
-              "[letter-spacing:var(--text-eyebrow--letter-spacing)] [color:var(--text-muted)]",
-            )}
-          >
-            {eyebrow}
-          </span>
-        )}
+        {eyebrow &&
+          (typeof eyebrow === "string" ? (
+            <span
+              className={cn(
+                "[font-family:var(--font-mono)] [font-size:var(--text-eyebrow)]",
+                "[font-weight:var(--font-weight-mono)] uppercase",
+                "[letter-spacing:var(--text-eyebrow--letter-spacing)] [color:var(--text-muted)]",
+              )}
+            >
+              {eyebrow}
+            </span>
+          ) : (
+            eyebrow
+          ))}
         {title && (
           <HeadingTag
             id={headingId}
@@ -154,9 +167,13 @@ export default function SectionCard({
         "overflow-hidden [border-radius:var(--radius-xl)]",
         STATE_CLASSNAMES[state],
         TONE_BORDERS[tone],
-        topAccent && TOP_ACCENT_BORDERS[topAccent],
         className,
       )}
+      style={
+        topAccent
+          ? { borderTop: `2px solid color-mix(in oklch, ${TOP_ACCENT_VAR[topAccent]} 55%, transparent)` }
+          : undefined
+      }
     >
       {(eyebrow || title || trailing) &&
         (collapsible ? (

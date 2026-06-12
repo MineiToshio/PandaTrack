@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/styles";
 import { User } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 
 export type AvatarSize = 24 | 32 | 40 | 56;
@@ -30,10 +30,19 @@ function getInitial(name: string): string | null {
 
 export default function Avatar({ user, size, ariaLabel, className }: AvatarProps) {
   const [imgError, setImgError] = useState(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
   const { px, style, iconSize } = SIZE_MAP[size];
   const resolvedLabel = ariaLabel ?? user.name;
   const initial = user.name ? getInitial(user.name) : null;
   const showImage = Boolean(user.image) && !imgError;
+
+  // SSR-rendered images can fail before hydration attaches onError; detect that case on mount.
+  useEffect(() => {
+    const el = imgRef.current;
+    if (el && el.complete && el.naturalWidth === 0) {
+      setImgError(true);
+    }
+  }, []);
 
   const baseClass = cn(
     "inline-flex flex-shrink-0 items-center justify-center select-none",
@@ -45,6 +54,7 @@ export default function Avatar({ user, size, ariaLabel, className }: AvatarProps
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
+        ref={imgRef}
         src={user.image}
         alt={resolvedLabel}
         width={px}

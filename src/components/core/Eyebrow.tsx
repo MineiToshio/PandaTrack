@@ -66,7 +66,12 @@ export default function Eyebrow({
     return (
       <Tag
         id={id}
-        className={cn(base, "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5", CHIP_TONE[tone], className)}
+        className={cn(
+          base,
+          "inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-0.5",
+          CHIP_TONE[tone],
+          className,
+        )}
       >
         {Icon && <Icon className="size-2.5 shrink-0" aria-hidden="true" />}
         {children}

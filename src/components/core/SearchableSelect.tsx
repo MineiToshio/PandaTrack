@@ -16,11 +16,13 @@ export type SearchableSelectOption = {
 export type SearchableSelectProps = {
   id: string;
   options: SearchableSelectOption[];
-  value: string;
-  onChange: (next: string) => void;
+  value: string | null;
+  onChange: (next: string | null) => void;
   placeholder: string;
   clearLabel: string;
   noResultsLabel: string;
+  /** When false, the selected value cannot be cleared from the UI. */
+  clearable?: boolean;
   error?: boolean;
   disabled?: boolean;
   /** Form input name; emits a hidden input so the value is included in form submission. */
@@ -42,6 +44,7 @@ export default function SearchableSelect({
   placeholder,
   clearLabel,
   noResultsLabel,
+  clearable = true,
   error = false,
   disabled = false,
   name,
@@ -82,7 +85,7 @@ export default function SearchableSelect({
   );
 
   const clear = useCallback(() => {
-    onChange("");
+    onChange(null);
     setQuery("");
     setIsOpen(false);
     setActiveIndex(-1);
@@ -142,7 +145,7 @@ export default function SearchableSelect({
 
   return (
     <div className="relative">
-      {name ? <input type="hidden" name={name} value={value} /> : null}
+      {name ? <input type="hidden" name={name} value={value ?? ""} /> : null}
       <div
         className={cn(
           "flex w-full items-center rounded-[var(--radius-md)] text-sm",
@@ -210,7 +213,7 @@ export default function SearchableSelect({
           />
         )}
         <div className="flex shrink-0 items-center gap-1 pr-2 [color:var(--text-muted)]">
-          {selected ? (
+          {clearable && selected ? (
             <button
               type="button"
               onClick={clear}
