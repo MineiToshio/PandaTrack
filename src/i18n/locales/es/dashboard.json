@@ -4,5 +4,11 @@
     "description": "Tu panel de PandaTrack."
   },
   "title": "Panel",
-  "welcome": "Bienvenido a tu panel."
+  "welcome": "Tu colección, de un vistazo.",
+  "placeholder": {
+    "title": "Tu panel está en construcción",
+    "description": "Pronto verás aquí cuánto llevas pagado, qué está en camino y qué pagos se acercan. Mientras tanto, registra tus pedidos para tener todo listo.",
+    "ctaOrders": "Ver mis pedidos",
+    "ctaStores": "Explorar tiendas"
+  }
 }

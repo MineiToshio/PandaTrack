@@ -4,6 +4,7 @@ import { useCallback, useMemo } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import DateRangePickerInput, { type DateRangePreset } from "@/components/core/DateRangePickerInput";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { addDays, endOfMonth, startOfMonth } from "../../_utils/localDate";
 
 type OrderDeliveryRangeFieldProps = {
   id: string;
@@ -12,20 +13,6 @@ type OrderDeliveryRangeFieldProps = {
   onChange: (from: Date | null, to: Date | null) => void;
   error?: boolean;
 };
-
-function addDays(d: Date, days: number): Date {
-  const next = new Date(d);
-  next.setDate(next.getDate() + days);
-  return next;
-}
-
-function startOfMonth(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), 1);
-}
-
-function endOfMonth(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth() + 1, 0);
-}
 
 export default function OrderDeliveryRangeField({ id, from, to, onChange, error }: OrderDeliveryRangeFieldProps) {
   const t = useTranslations("orders.form");

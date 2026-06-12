@@ -71,8 +71,13 @@
     "deliveryDate": "Fecha de envío: {date}"
   },
   "list": {
-    "eyebrow": "Workspace del coleccionista",
+    "eyebrow": "Tu espacio de trabajo",
     "title": "Entregas",
-    "description": "La lista de entregas y filtros se agregara en un slice posterior."
+    "description": "Sigue cada entrega de tus pedidos, incluso cuando llegan por partes.",
+    "placeholder": {
+      "title": "Esta sección está en camino",
+      "description": "Pronto verás aquí todas tus entregas con su estado. Por ahora puedes crear entregas desde el detalle de un pedido.",
+      "cta": "Ver mis pedidos"
+    }
   }
 }

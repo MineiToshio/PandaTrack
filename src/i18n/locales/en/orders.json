@@ -250,8 +250,8 @@
     "unauthorized": "You need to be signed in to continue.",
     "STORE_NOT_FOUND": "The selected store does not exist.",
     "INVALID_PRODUCT_TYPE": "One of the product types is invalid.",
-    "ITEM_HAS_LIVE_DELIVERY": "An item is linked to an active shipment and cannot be removed.",
-    "STORE_CHANGE_BLOCKED": "You can only change the store while the order is open and has no shipments.",
+    "ITEM_HAS_LIVE_DELIVERY": "An item is linked to an active delivery and cannot be removed.",
+    "STORE_CHANGE_BLOCKED": "You can only change the store while the order is open and has no deliveries.",
     "TOTAL_BELOW_PAID": "Total can't be lower than payments already recorded. Delete a payment or raise the total."
   },
   "detail": {

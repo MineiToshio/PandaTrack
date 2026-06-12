@@ -82,10 +82,10 @@ type ItemTypePickerProps = {
 /**
  * Compact, filterable single-select for the spreadsheet's "Tipo" column.
  *
- * Why not `<SearchSelect>`: that primitive renders a 46px input trigger which
- * is too tall for an inline table cell (the demo HTML uses a 12px font, ~26px
- * tall button — borderless). The dropdown CONTENT here follows the
- * `<SearchSelect>` mental model (search input + filtered listbox + keyboard
+ * Why not `<SearchableSelect>`: that primitive renders a 46px input trigger
+ * which is too tall for an inline table cell (the demo HTML uses a 12px font,
+ * ~26px tall button — borderless). The dropdown CONTENT here follows the
+ * `<SearchableSelect>` mental model (search input + filtered listbox + keyboard
  * nav), so the user experience is consistent with the canonical picker even
  * though the trigger is compact.
  *

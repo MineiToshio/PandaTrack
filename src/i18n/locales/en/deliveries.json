@@ -73,6 +73,11 @@
   "list": {
     "eyebrow": "Collector workspace",
     "title": "Deliveries",
-    "description": "Delivery list and filters will be added in a later slice."
+    "description": "Follow every delivery from your orders, even when they arrive in parts.",
+    "placeholder": {
+      "title": "This section is on its way",
+      "description": "Soon you'll see all your deliveries and their status here. For now, you can create deliveries from an order's detail page.",
+      "cta": "View my orders"
+    }
   }
 }

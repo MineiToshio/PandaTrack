@@ -20,6 +20,7 @@ import {
   isDefaultActiveStatusSet,
   type OrderListActiveFilters,
 } from "../_utils/orderListingParams";
+import { addDays, endOfMonth, startOfMonth, toIsoDateString } from "../_utils/localDate";
 
 type StoreOption = { id: string; name: string };
 
@@ -44,50 +45,24 @@ type DrawerState = {
   fxFlags: string[];
 };
 
-function isoToday(): Date {
-  return new Date();
-}
-
-function toISO(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-function shiftDays(date: Date, days: number): Date {
-  const next = new Date(date);
-  next.setDate(next.getDate() + days);
-  return next;
-}
-
-function startOfThisMonth(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-function endOfMonth(year: number, month: number): Date {
-  // month is 0-based; using day=0 of next month gives last day of current month.
-  return new Date(year, month + 1, 0);
-}
-
 /**
  * Date presets sourced from market research (see agent notes 2026-05-13):
  * order date → backward-looking ranges; delivery → forward-looking + overdue shortcut.
  */
 function resolveDeliveryPreset(value: string): { from?: string; to?: string } {
-  const today = isoToday();
+  const today = new Date();
   switch (value) {
     case "next7":
-      return { from: toISO(today), to: toISO(shiftDays(today, 7)) };
+      return { from: toIsoDateString(today), to: toIsoDateString(addDays(today, 7)) };
     case "next14":
-      return { from: toISO(today), to: toISO(shiftDays(today, 14)) };
+      return { from: toIsoDateString(today), to: toIsoDateString(addDays(today, 14)) };
     case "next30":
-      return { from: toISO(today), to: toISO(shiftDays(today, 30)) };
+      return { from: toIsoDateString(today), to: toIsoDateString(addDays(today, 30)) };
     case "thisMonth":
-      return { from: toISO(startOfThisMonth(today)), to: toISO(endOfMonth(today.getFullYear(), today.getMonth())) };
+      return { from: toIsoDateString(startOfMonth(today)), to: toIsoDateString(endOfMonth(today)) };
     case "nextMonth": {
       const nm = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-      return { from: toISO(nm), to: toISO(endOfMonth(nm.getFullYear(), nm.getMonth())) };
+      return { from: toIsoDateString(nm), to: toIsoDateString(endOfMonth(nm)) };
     }
     default:
       return {};
@@ -415,7 +390,7 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
       </div>
 
       {/* Mobile sticky action row — below the topbar (h-14 = 56px) */}
-      <div className="sticky top-14 z-30 -mx-4 flex items-center gap-2 px-4 py-2 [background:color-mix(in_oklch,var(--background)_92%,transparent)] supports-[backdrop-filter:blur(8px)]:backdrop-blur lg:hidden">
+      <div className="sticky top-14 z-30 -mx-4 flex items-center gap-2 px-4 py-2 [background:color-mix(in_oklab,var(--background)_92%,transparent)] supports-[backdrop-filter:blur(8px)]:backdrop-blur lg:hidden">
         <div className="flex-1">
           <SearchInput
             value={nameQuery}

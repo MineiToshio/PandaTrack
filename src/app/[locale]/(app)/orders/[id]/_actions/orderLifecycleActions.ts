@@ -6,6 +6,7 @@ import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { cancelOrder, deleteOrder, reactivateOrder } from "@/lib/data/orders/orderMutations";
+import { MAX_CANCELLATION_REASON_LENGTH } from "@/lib/orders/orderValidation";
 
 export type OrderLifecycleResult = { ok: true } | { ok: false; error: string };
 
@@ -17,7 +18,7 @@ export async function cancelOrderAction(
   if (!session?.user?.id) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
 
-  const reason = cancellationReason?.trim() ? cancellationReason.trim().slice(0, 500) : null;
+  const reason = cancellationReason?.trim() ? cancellationReason.trim().slice(0, MAX_CANCELLATION_REASON_LENGTH) : null;
 
   try {
     const result = await cancelOrder(orderId, userId, reason);

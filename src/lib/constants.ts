@@ -122,6 +122,7 @@ export const POSTHOG_EVENTS = {
     LOCALE_CHANGED: "app_shell_locale_changed",
     MASCOT_HIDDEN: "app_shell_mascot_hidden",
     MASCOT_SHOWN: "app_shell_mascot_shown",
+    PLACEHOLDER_CTA_CLICKED: "app_shell_placeholder_cta_clicked",
   },
   SETTINGS: {
     ACCOUNT_EMAIL_CHANGE_MODAL_OPENED: "settings_account_email_change_modal_opened",

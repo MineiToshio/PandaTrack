@@ -46,7 +46,7 @@ export default function OrderListLoadingSkeleton({
         </div>
 
         {/* Mobile sticky action row — mirrors the live OrderListFilters mobile row */}
-        <div className="sticky top-14 z-30 -mx-4 flex items-center gap-2 px-4 py-2 [background:color-mix(in_oklch,var(--background)_92%,transparent)] lg:hidden">
+        <div className="sticky top-14 z-30 -mx-4 flex items-center gap-2 px-4 py-2 [background:color-mix(in_oklab,var(--background)_92%,transparent)] lg:hidden">
           <div className={SKEL} style={{ flex: 1, height: 36, borderRadius: 8 }} aria-hidden />
           <div className={SKEL} style={{ width: 32, height: 32, borderRadius: 8 }} aria-hidden />
           <div className={SKEL} style={{ width: 80, height: 32, borderRadius: 8 }} aria-hidden />

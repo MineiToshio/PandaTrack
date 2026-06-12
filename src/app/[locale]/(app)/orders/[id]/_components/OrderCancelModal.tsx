@@ -7,6 +7,7 @@ import Modal from "@/components/modules/Modal/Modal";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import { cancelOrderAction } from "../_actions/orderLifecycleActions";
+import { MAX_CANCELLATION_REASON_LENGTH } from "@/lib/orders/orderValidation";
 
 type OrderCancelModalProps = {
   isOpen: boolean;
@@ -91,7 +92,7 @@ export default function OrderCancelModal({
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={3}
-          maxLength={500}
+          maxLength={MAX_CANCELLATION_REASON_LENGTH}
           disabled={isPending}
           placeholder={t("detail.cancelModal.reasonPlaceholder")}
           className="resize-none"
