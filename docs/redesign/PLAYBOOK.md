@@ -215,6 +215,15 @@ Componente canónico cross-app para navegación "Volver" / "Atrás". Vive típic
 
 Sidebar widths, header height, drawer widths, FAB size — todos como tokens (`--sidebar-w-expanded`, `--header-h`, `--drawer-w`, etc.). **Cero literales** `240px`, `64px`, `440px`.
 
+### Fechas de dominio (display UTC) — L076
+
+Las fechas de dominio (calendar-day: `orderDate`, `deliveryDate`, `expectedArrival*`/`expectedDelivery*`, `receivedDate`, `paymentDate`) se persisten a **medianoche UTC**. Reglas:
+
+- **Display:** SIEMPRE con `src/lib/domainDate.ts` (`formatDomainDate`/`formatDomainShortDate`, que fuerzan `timeZone:"UTC"`). Nunca `toLocaleDateString`/getters locales directos sobre una fecha de dominio — en TZ negativas (América) muestran el día anterior.
+- **Ventanas de rango:** comparar meses/días con getters `getUTC*`, no locales.
+- **Edit forms (prefill al date picker):** convertir el `Date` de servidor con `utcDomainDateToLocal` (UTC-midnight → local-midnight, mismo día) porque `react-day-picker` trabaja en local; re-serializar con getters locales (`toIsoDate`), nunca `toISOString` sobre una fecha local (corrompe en TZ positiva).
+- **NO aplicar UTC a:** timestamps reales (`createdAt`/`updatedAt` → hora local), summaries de create-form (picker-origin local, ya correctas), boundaries de query server-side (UTC intencional), `src/lib/localDate.ts` (filtros/forms en hora local).
+
 ## 3. Patrones canónicos por escenario
 
 ### Confirm modal destructive (Eliminar X)

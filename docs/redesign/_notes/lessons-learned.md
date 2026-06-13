@@ -779,6 +779,17 @@ Cada entrada:
 - **Verificable por:** el botón de submit no contiene `<kbd>`; hay un `<p>`/`<span>` muted con el hint junto al CTA; `⌘/Ctrl+Enter` con foco en el form envía. **Nota de testing:** los `KeyboardEvent` sintéticos vía `dispatchEvent`/`preview_eval` NO disparan el handler delegado de React (verificado: el handler conocido-bueno de deliveries tampoco responde a dispatch sintético) — verificar con tecla real.
 - **Cross-módulo:** sí. Deliveries + Orders; cualquier form con submit shortcut futuro.
 
+## L076 — Fechas de dominio: display en `timeZone:"UTC"`, picker en local-midnight
+
+- **Origen:** S9.2 (2026-06-13) — entrega/pedido datados "12 jun" se mostraban "11 jun" en lista/detalle/edit para usuarios en América (UTC-5).
+- **Síntoma:** off-by-one sistémico en orders + deliveries; en edit, además, guardar sin tocar la fecha la corría un día (corrupción).
+- **Causa raíz:** las fechas de dominio (orderDate, deliveryDate, expectedArrival*/expectedDelivery*, receivedDate, paymentDate) se persisten como `DateTime` a **medianoche UTC** (form envía `yyyy-mm-dd` → Zod `z.coerce.date` lo interpreta UTC). Al volver al cliente son instantes UTC-midnight; formatearlos con `toLocaleDateString`/getters **locales** (sin `timeZone:"UTC"`) los corre al día anterior en TZ negativas. En edit, el `Date` UTC-midnight se alimentaba directo a `react-day-picker` (que trabaja en **local**) y se re-serializaba con getters locales → mostraba y guardaba el día anterior.
+- **Solución aplicada:** helper `src/lib/domainDate.ts` — `formatDomainDate`/`formatDomainShortDate` (fuerzan `timeZone:"UTC"`, no override) para display server-origin; `utcDomainDateToLocal` (UTC-midnight → local-midnight, mismo día calendario) para el prefill de los edit forms. Las ventanas de rango usan getters `getUTC*`.
+- **Regla derivada:** **una fecha de dominio (calendar-day) es UTC end-to-end en persistencia; en display usar SIEMPRE `timeZone:"UTC"`; al entrar a un date picker local convertir a local-midnight y re-serializar con getters locales** (si el picker es local, serializar con `toISOString` corrompe en TZ positiva → usar getters locales). **NO** aplicar UTC a: timestamps reales (`createdAt`/`updatedAt` → hora local del usuario), summaries de create-form (las fechas vienen del picker = local-midnight, ya correctas), boundaries de query server-side (UTC intencional), ni `src/lib/localDate.ts` (helpers de filtros/forms en hora local). Guardar las dos clases de fecha separadas mentalmente: **calendar-day (UTC)** vs **instant (local)**.
+- **Dónde vive ahora:** `src/lib/domainDate.ts` (con JSDoc) + PLAYBOOK §2 Tokens → "Fechas de dominio". Test: `src/lib/domainDate.test.ts` bajo `TZ=America/New_York`.
+- **Verificable por:** el `humanReadableId` (`DLV-/ORD-YYYYMMDD`) sirve de ground-truth — la fecha mostrada debe coincidir con la codificada. Test unitario que falla sin el fix en TZ negativa.
+- **Cross-módulo:** sí. Orders + deliveries; cualquier módulo futuro con fechas de dominio.
+
 ---
 
 ## Cómo agregar una lección nueva
