@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import BackNavLink from "@/components/core/BackNavLink";
 import Eyebrow from "@/components/core/Eyebrow";
 import { ROUTES } from "@/lib/constants";
+import { formatDomainDate } from "@/lib/domainDate";
 import type { OrderDetailFull } from "@/lib/data/orders/orderQueries";
 import SetHeaderTitle from "@/app/[locale]/(app)/_components/AppLayout/SetHeaderTitle";
 import OrderOverdueBanner from "./OrderOverdueBanner";
@@ -23,7 +24,7 @@ type OrderDetailContentProps = {
 };
 
 function formatDate(date: Date, locale: string) {
-  return date.toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
+  return formatDomainDate(date, locale);
 }
 
 export default async function OrderDetailContent({ order, locale, backHref }: OrderDetailContentProps) {

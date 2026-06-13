@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import Input from "@/components/core/Input";
 import StatusChip from "@/components/core/StatusChip";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
+import { formatDomainDate } from "@/lib/domainDate";
 import { foldSearchText } from "@/lib/strings/foldSearchText";
 import { cn } from "@/lib/styles";
 import type { EligibleProduct, EligibleProductsGroup } from "@/lib/data/deliveries/deliveryQueries";
@@ -76,7 +77,7 @@ export default function DeliveryProductsPicker({
   }
 
   function formatDate(date: Date) {
-    return date.toLocaleDateString(locale, { day: "numeric", month: "short", year: "2-digit" });
+    return formatDomainDate(date, locale, { day: "numeric", month: "short", year: "2-digit" });
   }
 
   return (

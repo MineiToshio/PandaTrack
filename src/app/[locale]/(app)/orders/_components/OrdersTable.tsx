@@ -8,6 +8,7 @@ import posthog from "posthog-js";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { formatAmountWithSymbol } from "@/lib/currency";
+import { formatDomainDate } from "@/lib/domainDate";
 import { isOrderOverdue } from "@/lib/orders/orderDerivedState";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
@@ -32,7 +33,7 @@ const HEADER_CELL_CLASS =
   "[font-family:var(--font-mono)] [font-size:11px] [letter-spacing:0.06em] uppercase [color:var(--text-muted)]";
 
 function formatDate(date: Date, locale: string): string {
-  return date.toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
+  return formatDomainDate(date, locale);
 }
 
 export default function OrdersTable({ orders, locale, today, returnTo }: OrdersTableProps) {

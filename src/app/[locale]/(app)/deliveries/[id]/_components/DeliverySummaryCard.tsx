@@ -5,6 +5,7 @@ import { ClipboardList } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Eyebrow from "@/components/core/Eyebrow";
 import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
+import { formatDomainDate } from "@/lib/domainDate";
 import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import type { DeliveryStatus } from "../../../../../../../generated/prisma/client";
@@ -28,7 +29,7 @@ type DeliverySummaryCardProps = {
 };
 
 function formatDate(date: Date, locale: string) {
-  return date.toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
+  return formatDomainDate(date, locale);
 }
 
 function formatWindow(from: Date | null, to: Date | null, locale: string): string {

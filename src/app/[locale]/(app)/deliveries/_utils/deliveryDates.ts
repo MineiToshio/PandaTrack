@@ -1,20 +1,26 @@
+import { formatDomainDate, formatDomainShortDate } from "@/lib/domainDate";
+
 const MS_PER_DAY = 86_400_000;
 
-/** "2 may" — day + short month, no year (list column / mobile meta). */
+/**
+ * "2 may" — day + short month, no year (list column / mobile meta). Domain dates are
+ * stored at midnight UTC, so formatting is pinned to UTC (see `src/lib/domainDate.ts`).
+ */
 export function formatShortDate(date: Date, locale: string): string {
-  return date.toLocaleDateString(locale, { day: "numeric", month: "short" });
+  return formatDomainShortDate(date, locale);
 }
 
 /**
  * Compact expected-arrival window: "15–22 may" (same month), "25 abr – 2 may"
- * (cross-month), or a single short date when only one endpoint exists.
+ * (cross-month), or a single short date when only one endpoint exists. Same-month
+ * detection uses UTC getters so it matches the UTC-pinned display.
  */
 export function formatArrivalWindow(from: Date | null, to: Date | null, locale: string): string | null {
   if (from && to) {
-    const sameMonth = from.getMonth() === to.getMonth() && from.getFullYear() === to.getFullYear();
+    const sameMonth = from.getUTCMonth() === to.getUTCMonth() && from.getUTCFullYear() === to.getUTCFullYear();
     if (sameMonth) {
-      const monthPart = to.toLocaleDateString(locale, { month: "short" });
-      return `${from.getDate()}–${to.getDate()} ${monthPart}`;
+      const monthPart = formatDomainDate(to, locale, { month: "short" });
+      return `${from.getUTCDate()}–${to.getUTCDate()} ${monthPart}`;
     }
     return `${formatShortDate(from, locale)} – ${formatShortDate(to, locale)}`;
   }

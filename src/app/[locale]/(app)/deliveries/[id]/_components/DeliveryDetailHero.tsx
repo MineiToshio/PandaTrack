@@ -8,6 +8,7 @@ import StatusChip from "@/components/core/StatusChip";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { cn } from "@/lib/styles";
 import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
+import { formatDomainDate } from "@/lib/domainDate";
 import type { DeliveryStatus } from "../../../../../../../generated/prisma/client";
 import { getDeliveryOverdueDays } from "../../_utils/deliveryDates";
 
@@ -34,18 +35,22 @@ type DeliveryDetailHeroProps = {
 const MS_PER_DAY = 86_400_000;
 
 function formatDate(date: Date, locale: string) {
-  return date.toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
+  return formatDomainDate(date, locale);
 }
 
-/** "15 – 22 may 2026" / "25 abr – 2 may 2026" / "18 may 2026" — hero-sized window. */
+/**
+ * "15 – 22 may 2026" / "25 abr – 2 may 2026" / "18 may 2026" — hero-sized window.
+ * Same-month detection uses UTC getters so it matches the UTC-pinned display of dates
+ * stored at midnight UTC.
+ */
 function formatHeroWindow(from: Date | null, to: Date | null, locale: string): string | null {
   if (from && to) {
-    const sameMonth = from.getMonth() === to.getMonth() && from.getFullYear() === to.getFullYear();
+    const sameMonth = from.getUTCMonth() === to.getUTCMonth() && from.getUTCFullYear() === to.getUTCFullYear();
     if (sameMonth) {
-      const tail = to.toLocaleDateString(locale, { month: "short", year: "numeric" });
-      return `${from.getDate()} – ${to.getDate()} ${tail}`;
+      const tail = formatDomainDate(to, locale, { month: "short", year: "numeric" });
+      return `${from.getUTCDate()} – ${to.getUTCDate()} ${tail}`;
     }
-    const fromPart = from.toLocaleDateString(locale, { day: "numeric", month: "short" });
+    const fromPart = formatDomainDate(from, locale, { day: "numeric", month: "short" });
     return `${fromPart} – ${formatDate(to, locale)}`;
   }
   const single = from ?? to;

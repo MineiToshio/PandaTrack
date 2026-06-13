@@ -8,6 +8,7 @@ import posthog from "posthog-js";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { formatAmountWithSymbol } from "@/lib/currency";
+import { formatDomainDate } from "@/lib/domainDate";
 import { isOrderOverdue } from "@/lib/orders/orderDerivedState";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
@@ -24,7 +25,7 @@ type OrderCardProps = {
 };
 
 function formatDate(date: Date, locale: string): string {
-  return date.toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
+  return formatDomainDate(date, locale);
 }
 
 export default function OrderCard({ order, locale, today, returnTo }: OrderCardProps) {

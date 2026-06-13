@@ -7,6 +7,7 @@ import CollapsibleSubcard from "@/components/modules/CollapsibleSubcard";
 import Eyebrow from "@/components/core/Eyebrow";
 import StatusChip from "@/components/core/StatusChip";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
+import { formatDomainDate } from "@/lib/domainDate";
 import { ROUTES } from "@/lib/constants";
 import type { DeliveryStatus } from "../../../../../../../generated/prisma/client";
 import type { DeliveryDetailSourceOrderGroup } from "@/lib/data/deliveries/deliveryQueries";
@@ -27,7 +28,7 @@ function itemStateForStatus(status: DeliveryStatus): "IN_TRANSIT" | "DELIVERED" 
 }
 
 function formatDate(date: Date, locale: string) {
-  return date.toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
+  return formatDomainDate(date, locale);
 }
 
 export default function DeliveryProductsCard({

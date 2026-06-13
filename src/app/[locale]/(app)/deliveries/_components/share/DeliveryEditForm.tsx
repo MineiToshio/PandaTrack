@@ -22,6 +22,7 @@ import StoreAvatar from "@/components/core/StoreAvatar";
 import { AsideSummary, AsideSummaryRow } from "@/components/modules/AsideSummary";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { formatAmountWithSymbol } from "@/lib/currency";
+import { utcDomainDateToLocal } from "@/lib/domainDate";
 import { isValidPositiveDecimal } from "@/lib/decimalInput";
 import type { EligibleProductsResult } from "@/lib/data/deliveries/deliveryQueries";
 import type { DeliveryCreateActionResult } from "../../new/_actions/createDeliveryAction";
@@ -83,12 +84,27 @@ export default function DeliveryEditForm({
   const locale = useLocale();
   const router = useRouter();
 
+  // Server domain dates are stored at midnight UTC; the date picker works in local time
+  // and re-serializes with local getters. Convert to local-midnight on the same calendar
+  // day so the picker, the change summary, and the submitted value all agree (avoids the
+  // off-by-one that would both show AND save the wrong day in non-UTC zones).
+  const initialLocalDates = useMemo(
+    () => ({
+      deliveryDate: utcDomainDateToLocal(initialDelivery.deliveryDate),
+      arrivalFrom: initialDelivery.expectedArrivalFrom
+        ? utcDomainDateToLocal(initialDelivery.expectedArrivalFrom)
+        : null,
+      arrivalTo: initialDelivery.expectedArrivalTo ? utcDomainDateToLocal(initialDelivery.expectedArrivalTo) : null,
+    }),
+    [initialDelivery.deliveryDate, initialDelivery.expectedArrivalFrom, initialDelivery.expectedArrivalTo],
+  );
+
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>(initialDelivery.currentProductIds);
   const [productQuery, setProductQuery] = useState("");
   const [data, setData] = useState<DeliveryDataValues>({
-    deliveryDate: initialDelivery.deliveryDate,
-    arrivalFrom: initialDelivery.expectedArrivalFrom,
-    arrivalTo: initialDelivery.expectedArrivalTo,
+    deliveryDate: initialLocalDates.deliveryDate,
+    arrivalFrom: initialLocalDates.arrivalFrom,
+    arrivalTo: initialLocalDates.arrivalTo,
     cost: (initialDelivery.cost / 100).toFixed(2),
     currencyCode: initialDelivery.currencyCode,
     exchangeRate: initialDelivery.exchangeRate != null ? String(initialDelivery.exchangeRate) : "",
@@ -117,10 +133,10 @@ export default function DeliveryEditForm({
   // Per-field dirty flags drive the "Resumen de cambios" highlights.
   const dirty = useMemo(() => {
     const productsDirty = !sameIdSet(selectedProductIds, initialDelivery.currentProductIds);
-    const dateDirty = data.deliveryDate?.getTime() !== initialDelivery.deliveryDate.getTime();
+    const dateDirty = data.deliveryDate?.getTime() !== initialLocalDates.deliveryDate.getTime();
     const arrivalDirty =
-      (data.arrivalFrom?.getTime() ?? null) !== (initialDelivery.expectedArrivalFrom?.getTime() ?? null) ||
-      (data.arrivalTo?.getTime() ?? null) !== (initialDelivery.expectedArrivalTo?.getTime() ?? null);
+      (data.arrivalFrom?.getTime() ?? null) !== (initialLocalDates.arrivalFrom?.getTime() ?? null) ||
+      (data.arrivalTo?.getTime() ?? null) !== (initialLocalDates.arrivalTo?.getTime() ?? null);
     const costDirty = data.cost !== (initialDelivery.cost / 100).toFixed(2);
     const currencyDirty = data.currencyCode !== initialDelivery.currencyCode;
     const fxDirty =
@@ -132,7 +148,7 @@ export default function DeliveryEditForm({
       cost: costDirty || currencyDirty || fxDirty,
       any: productsDirty || dateDirty || arrivalDirty || costDirty || currencyDirty || fxDirty,
     };
-  }, [selectedProductIds, data, initialDelivery]);
+  }, [selectedProductIds, data, initialDelivery, initialLocalDates]);
 
   // Browser unload guard while dirty (WO-05 discard confirmation).
   useEffect(() => {

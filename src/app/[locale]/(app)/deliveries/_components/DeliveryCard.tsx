@@ -9,6 +9,7 @@ import StatusChip from "@/components/core/StatusChip";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { formatAmountWithSymbol } from "@/lib/currency";
+import { formatDomainDate } from "@/lib/domainDate";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import { formatArrivalWindow, formatShortDate, getDeliveryOverdueDays } from "../_utils/deliveryDates";
@@ -20,10 +21,6 @@ type DeliveryCardProps = {
   today: Date;
   returnTo: string;
 };
-
-function formatDate(date: Date, locale: string): string {
-  return date.toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
-}
 
 export default function DeliveryCard({ delivery, locale, today, returnTo }: DeliveryCardProps) {
   const t = useTranslations("deliveries");
@@ -80,7 +77,8 @@ export default function DeliveryCard({ delivery, locale, today, returnTo }: Deli
             {delivery.store.name}
           </p>
           <p className="truncate [font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums">
-            {delivery.humanReadableId} · {t("list.table.shipped", { date: formatDate(delivery.deliveryDate, locale) })}
+            {delivery.humanReadableId} ·{" "}
+            {t("list.table.shipped", { date: formatDomainDate(delivery.deliveryDate, locale) })}
           </p>
         </div>
       </div>

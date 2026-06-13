@@ -6,6 +6,7 @@ import { Trash2, X } from "lucide-react";
 import Typography from "@/components/core/Typography";
 import { Modal } from "@/components/modules/Modal";
 import { formatAmountSymbolOnly } from "@/lib/currency";
+import { formatDomainDate } from "@/lib/domainDate";
 
 type PaymentRecord = { id: string; amount: number; paymentDate: Date };
 
@@ -28,7 +29,7 @@ export default function OrderPaymentRow({ payment, currencyCode, locale, onConfi
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const dateLabel = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(payment.paymentDate));
+  const dateLabel = formatDomainDate(payment.paymentDate, locale, { dateStyle: "medium" });
   const amountLabel = formatAmountSymbolOnly(payment.amount, currencyCode, locale);
 
   async function handleConfirm() {

@@ -9,6 +9,7 @@ import StatusChip from "@/components/core/StatusChip";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { formatAmountWithSymbol } from "@/lib/currency";
+import { formatDomainDate } from "@/lib/domainDate";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import { formatArrivalWindow, formatShortDate, getDeliveryOverdueDays } from "../_utils/deliveryDates";
@@ -28,10 +29,6 @@ const GRID_COLS =
 
 const HEADER_CELL_CLASS =
   "[font-family:var(--font-mono)] [font-size:11px] [letter-spacing:0.06em] uppercase [color:var(--text-muted)]";
-
-function formatDate(date: Date, locale: string): string {
-  return date.toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
-}
 
 export default function DeliveriesTable({ deliveries, locale, today, returnTo }: DeliveriesTableProps) {
   const t = useTranslations("deliveries");
@@ -120,7 +117,7 @@ export default function DeliveriesTable({ deliveries, locale, today, returnTo }:
                 </p>
                 <p className="truncate [font-family:var(--font-mono)] [font-size:12px] [color:var(--text-muted)] tabular-nums">
                   {delivery.humanReadableId} ·{" "}
-                  {t("list.table.shipped", { date: formatDate(delivery.deliveryDate, locale) })}
+                  {t("list.table.shipped", { date: formatDomainDate(delivery.deliveryDate, locale) })}
                 </p>
               </div>
 

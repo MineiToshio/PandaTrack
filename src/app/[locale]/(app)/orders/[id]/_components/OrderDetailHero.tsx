@@ -7,6 +7,7 @@ import StoreAvatar from "@/components/core/StoreAvatar";
 import { useAnimatedNumber } from "@/hooks/useAnimatedNumber";
 import { cn } from "@/lib/styles";
 import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
+import { formatDomainDate } from "@/lib/domainDate";
 import type { OrderStatus } from "../../../../../../../generated/prisma/client";
 import OrderCodeCopyButton from "./OrderCodeCopyButton";
 
@@ -36,7 +37,7 @@ type OrderDetailHeroProps = {
 };
 
 function formatDate(date: Date, locale: string) {
-  return date.toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
+  return formatDomainDate(date, locale);
 }
 
 function statusChipClass(status: OrderStatus): string {
