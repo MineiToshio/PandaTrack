@@ -326,6 +326,19 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
     [validateStep1, validateStep2, buildFormData, totalCost, items, pricedRows, formAction],
   );
 
+  // ⌘/Ctrl+Enter submits from any step (mirrors the deliveries create wizard). Shift is
+  // excluded so it never collides with the item grid's Ctrl+Shift+Enter "insert row".
+  const handleFormKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLFormElement>) => {
+      if ((event.metaKey || event.ctrlKey) && !event.shiftKey && event.key === "Enter") {
+        if (isPending) return;
+        event.preventDefault();
+        formRef.current?.requestSubmit();
+      }
+    },
+    [isPending],
+  );
+
   const handleSaveAnyway = useCallback(() => {
     posthog.capture(POSTHOG_EVENTS.ORDER.DISCREPANCY_RESOLVED, { resolution: "kept_entered" });
     const fd = discrepancyState.pendingFormData;
@@ -425,7 +438,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
         compactEyebrow={tCreate("stepperCompactEyebrow", { current: activeStep, total: steps.length })}
       />
 
-      <form ref={formRef} onSubmit={handleFinalSubmit} noValidate>
+      <form ref={formRef} onSubmit={handleFinalSubmit} onKeyDown={handleFormKeyDown} noValidate>
         <div className="grid gap-6 lg:grid-cols-[1fr_18rem]">
           <div>
             <WizardAccordion
@@ -728,6 +741,8 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                     })}
                   </span>
                 </div>
+                {/* Submit shortcut as plain text near the CTA (deliveries S9-D5 parity), never a kbd chip inside the button. */}
+                <p className="text-right text-[12px] [color:var(--text-muted)]">{tCreate("submitShortcutHint")}</p>
               </WizardStep>
             </WizardAccordion>
           </div>

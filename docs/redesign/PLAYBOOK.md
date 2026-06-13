@@ -1,6 +1,6 @@
 ---
 title: PandaTrack Redesign — Playbook accionable
-last_updated: 2026-05-05
+last_updated: 2026-06-13
 status: vivo · cargar antes de cualquier implementación de UI
 owner: Sergio Minei
 ---
@@ -313,6 +313,25 @@ Referencias de implementación: `OrderCreateForm.tsx` (S7-B Parte 2) y `StoreFor
 - ❌ Mantener `disabled={N > maxAllowedStep}` en `primaryAction` "para que el botón se vea desactivado en pasos locked". Eso NO es lo que el usuario ve: el botón del header del paso locked no es el primaryAction del propio step, es el header click; bloquear `primaryAction.disabled` solo desactiva el botón visible del paso ACTIVO (no del locked) y rompe el patrón canónico de "Continuar siempre habilitado".
 - ❌ Renderizar `<AsideSummary>` en mobile sin `hidden lg:block`. Genera scroll vertical extra sin valor.
 - ❌ Olvidar el `pb-[calc(76px+...)]` del container → el sticky bar tapa el último input del último paso.
+
+### Atajo de submit — CTA limpio + hint de texto (cross-app)
+
+> **Regla vinculante.** El CTA primario de submit de cualquier form (create/edit) se mantiene **limpio** (label + ícono `Check`, sin chip). El atajo de teclado se comunica como **texto plano** junto al CTA, nunca como kbd-chip embebido dentro del botón.
+
+- **Hint:** `<p>`/`<span>` con `text-[12px] [color:var(--text-muted)]` y copy `"o presiona ⌘ Enter"` (key i18n reutilizada por create y edit; es + en en el mismo cambio). En create-wizard vive al pie del body del paso final; en edit vive en el footer junto al CTA. Desktop-only cuando el footer es `hidden md:flex` (el atajo es de teclado).
+- **Cableado:** handler `onKeyDown` en el `<form>`:
+  ```tsx
+  const handleFormKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key === "Enter") {
+      if (isPending /* + guardas del botón */) return;
+      e.preventDefault();
+      formRef.current?.requestSubmit();
+    }
+  };
+  ```
+- **Guardas obligatorias:** (1) **excluir `shiftKey`** para no colisionar con atajos de grid tipo `Ctrl+Shift+Enter` (insertar fila); (2) **espejar el `disabled` del botón** (ej. edit: `!isDirty || totalBelowPaid || isPending`) para que el atajo no envíe un form sin cambios o inválido; (3) en create-wizard dispara el submit final desde cualquier paso (la validación de pasos lo gatea).
+- **El chip kbd embebido** (`Button` prop `kbd`) **se reserva** para atajos de acción contextual de un grid/lista (ej. `ShortcutHint` del item grid de Orders: `Ctrl⇧↵` insertar fila), NO para el submit principal.
+- **Referencia:** `DeliveryCreateWizard`/`DeliveryEditForm` (S9-D5) y `OrderCreateForm`/`OrderEditForm` (P-S9-02). Origen: L075. **Testing:** `⌘Enter` no se verifica con `KeyboardEvent` sintético (no dispara el delegado de React) — usar tecla real.
 
 ### Filter chips display (después de aplicar filtros)
 

@@ -1,6 +1,6 @@
 ---
 title: Lecciones aprendidas — subproyecto rediseño
-last_updated: 2026-05-09
+last_updated: 2026-06-13
 status: vivo
 owner: Sergio Minei
 ---
@@ -767,6 +767,17 @@ Cada entrada:
 - **Regla derivada:** **para dar alpha a tokens neutros/casi acromáticos (`--background`, `--surface*`, `--border`, `--text-*`) usar `color-mix(in oklab, …)` o alpha directo; reservar `in oklch` para tintar tokens de acento de chroma alto** (chips, top-accents, donde ya está calibrado).
 - **Dónde vive ahora:** PLAYBOOK §2 Tokens → Colores.
 - **Verificable por:** screenshot en light theme — la barra sticky debe fundirse con el canvas; si se ve una banda rosada/salmón sobre fondo lavanda, hay un `in oklch` mezclando un token neutro con `transparent`.
+
+## L075 — Atajo de submit: texto plano junto al CTA + cableado `⌘/Ctrl+Enter`, nunca kbd-chip dentro del botón
+
+- **Origen:** P-S9-02 (2026-06-13) — unificación cross-app del atajo de submit. Deliveries (S9-D5) ya usaba el patrón limpio; order-create/order-edit no tenían el atajo (ni hint ni cableado).
+- **Síntoma:** inconsistencia cross-módulo. El brief asumía un "kbd-chip dentro del botón" en orders, pero la realidad era que orders carecía del atajo por completo (sus únicos chips kbd son los del item grid, un feature distinto).
+- **Causa raíz:** el atajo de submit nunca se canonizó como regla. El `Button` core tiene prop `kbd` (chip embebido) que invita a meterlo dentro del CTA.
+- **Solución aplicada:** patrón canónico — CTA de submit limpio (label + `Check`, sin chip) + atajo como **texto plano** junto al CTA (`--text-muted` 12px, "o presiona ⌘ Enter" / "or press ⌘ Enter") + handler `onKeyDown` en el `<form>`: `(metaKey || ctrlKey) && !shiftKey && key === "Enter" → preventDefault + requestSubmit()`. Aplicado a `OrderCreateForm`/`OrderEditForm` con paridad a `DeliveryCreateWizard`/`DeliveryEditForm`.
+- **Regla derivada:** el chip kbd embebido (`Button` prop `kbd`) es para atajos de acción contextual de un grid/lista, **no** para el submit principal. Guardas del handler: (1) excluir `shiftKey` (no chocar con `Ctrl+Shift+Enter` del grid); (2) espejar el `disabled` del botón (ej. edit: `if (isPending || !isDirty || totalBelowPaid) return`) para no enviar un form sin cambios/ inválido; (3) en create-wizard el atajo dispara el submit final desde cualquier paso (la validación lo gatea). i18n: una key reutilizada por create y edit, es+en en el mismo cambio.
+- **Dónde vive ahora:** PLAYBOOK §3 Patrones ("Atajo de submit — CTA limpio + hint de texto").
+- **Verificable por:** el botón de submit no contiene `<kbd>`; hay un `<p>`/`<span>` muted con el hint junto al CTA; `⌘/Ctrl+Enter` con foco en el form envía. **Nota de testing:** los `KeyboardEvent` sintéticos vía `dispatchEvent`/`preview_eval` NO disparan el handler delegado de React (verificado: el handler conocido-bueno de deliveries tampoco responde a dispatch sintético) — verificar con tecla real.
+- **Cross-módulo:** sí. Deliveries + Orders; cualquier form con submit shortcut futuro.
 
 ---
 

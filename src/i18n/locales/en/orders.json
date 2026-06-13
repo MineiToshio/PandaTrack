@@ -52,6 +52,7 @@
     "summaryStep2": "{count, plural, one {# item} other {# items}} · {total}",
     "confirmTotalLabel": "Order total",
     "confirmCta": "Create order",
+    "submitShortcutHint": "or press ⌘ Enter",
     "minProductHint": "At least 1 item is required.",
     "itemsListIntro": "Add the items in this order to calculate the total.",
     "fxOptional": "(optional)",

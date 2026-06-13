@@ -1,16 +1,6 @@
 "use client";
 
-import {
-  AlertTriangle,
-  Calculator,
-  Check,
-  Info,
-  Keyboard,
-  Lock,
-  Plus,
-  RefreshCw,
-  ShoppingCart,
-} from "lucide-react";
+import { AlertTriangle, Calculator, Check, Info, Keyboard, Lock, Plus, RefreshCw, ShoppingCart } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
@@ -35,6 +25,7 @@ import { AsideSummary, AsideSummaryRow } from "@/components/modules/AsideSummary
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { formatAmount } from "@/lib/currency";
+import { utcDomainDateToLocal } from "@/lib/domainDate";
 import { isValidPositiveDecimal, sanitizeDecimalInput } from "@/lib/decimalInput";
 import { fetchTodayRate } from "@/lib/fx/frankfurter";
 import { deriveItemizedTotal, shouldShowDiscrepancyModal } from "@/lib/orders/orderItemUtils";
@@ -104,8 +95,15 @@ function itemRowSignature(row: ItemRow): string {
   return [row.id ?? "", row.name.trim(), row.quantity.trim(), row.unitPrice.trim(), row.productTypeKey].join("|");
 }
 
+// Domain-date state is held in local-midnight Dates (the date picker emits local time and
+// the prefill converts server UTC-midnight to the same local calendar day). Serialize with
+// local getters so the submitted yyyy-mm-dd matches the day shown in every timezone.
 function dateToIso(d: Date | null): string {
-  return d ? d.toISOString().split("T")[0]! : "";
+  if (!d) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCode, action, initialOrder }: Props) {
@@ -138,23 +136,36 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
     [initialOrder.items],
   );
 
+  // Server domain dates are stored at midnight UTC; the picker works in local time and
+  // re-serializes with local getters. Convert to local-midnight on the same calendar day
+  // so the picker, the dirty snapshot, and the submitted value all agree (avoids the
+  // off-by-one that would both show AND save the wrong day in non-UTC zones).
+  const initialLocalDates = useMemo(
+    () => ({
+      orderDate: utcDomainDateToLocal(initialOrder.orderDate),
+      deliveryFrom: initialOrder.expectedDeliveryFrom ? utcDomainDateToLocal(initialOrder.expectedDeliveryFrom) : null,
+      deliveryTo: initialOrder.expectedDeliveryTo ? utcDomainDateToLocal(initialOrder.expectedDeliveryTo) : null,
+    }),
+    [initialOrder.orderDate, initialOrder.expectedDeliveryFrom, initialOrder.expectedDeliveryTo],
+  );
+
   // Snapshot of the initial state — used to compute isDirty by comparing the
   // current editable fields against the canonical pre-edit values.
   const initialSnapshot = useMemo(
     () => ({
-      orderDate: dateToIso(initialOrder.orderDate),
-      deliveryFrom: dateToIso(initialOrder.expectedDeliveryFrom),
-      deliveryTo: dateToIso(initialOrder.expectedDeliveryTo),
+      orderDate: dateToIso(initialLocalDates.orderDate),
+      deliveryFrom: dateToIso(initialLocalDates.deliveryFrom),
+      deliveryTo: dateToIso(initialLocalDates.deliveryTo),
       totalCost: formatCents(initialOrder.totalCost),
       exchangeRate: initialOrder.exchangeRate != null ? String(initialOrder.exchangeRate) : "",
       items: initialItemsRows.map(itemRowSignature).join("§"),
     }),
-    [initialOrder, initialItemsRows],
+    [initialOrder, initialItemsRows, initialLocalDates],
   );
 
-  const [orderDate, setOrderDate] = useState<Date | null>(initialOrder.orderDate);
-  const [deliveryFrom, setDeliveryFrom] = useState<Date | null>(initialOrder.expectedDeliveryFrom);
-  const [deliveryTo, setDeliveryTo] = useState<Date | null>(initialOrder.expectedDeliveryTo);
+  const [orderDate, setOrderDate] = useState<Date | null>(initialLocalDates.orderDate);
+  const [deliveryFrom, setDeliveryFrom] = useState<Date | null>(initialLocalDates.deliveryFrom);
+  const [deliveryTo, setDeliveryTo] = useState<Date | null>(initialLocalDates.deliveryTo);
   const [exchangeRate, setExchangeRate] = useState<string>(
     initialOrder.exchangeRate != null ? String(initialOrder.exchangeRate) : "",
   );
@@ -375,6 +386,20 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
     [validateForm, buildFormData, totalCost, items, pricedRows, formAction],
   );
 
+  // ⌘/Ctrl+Enter saves (mirrors the deliveries edit form). Shift is excluded so it never
+  // collides with the item grid's Ctrl+Shift+Enter "insert row"; the guard mirrors the Save
+  // button's disabled state so the shortcut can't submit an unchanged or invalid form.
+  const handleFormKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLFormElement>) => {
+      if ((event.metaKey || event.ctrlKey) && !event.shiftKey && event.key === "Enter") {
+        if (isPending || !isDirty || totalBelowPaid) return;
+        event.preventDefault();
+        formRef.current?.requestSubmit();
+      }
+    },
+    [isPending, isDirty, totalBelowPaid],
+  );
+
   const handleSaveAnyway = useCallback(() => {
     posthog.capture(POSTHOG_EVENTS.ORDER.DISCREPANCY_RESOLVED, { resolution: "kept_entered" });
     const fd = discrepancyState.pendingFormData;
@@ -469,7 +494,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
         </p>
       )}
 
-      <form ref={formRef} onSubmit={handleSubmit} noValidate>
+      <form ref={formRef} onSubmit={handleSubmit} onKeyDown={handleFormKeyDown} noValidate>
         <div className="grid gap-6 lg:grid-cols-[1fr_18rem]">
           <div className="flex flex-col gap-4">
             {/* SECTION 1 — Datos del pedido */}
@@ -731,6 +756,8 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
               >
                 {isPending ? tEdit("submitting") : tEdit("submit")}
               </Button>
+              {/* Submit shortcut as plain text beside the CTA (deliveries S9-D5 parity), no kbd chip inside the button. */}
+              <span className="text-[12px] [color:var(--text-muted)]">{tCreate("submitShortcutHint")}</span>
             </div>
           </div>
 

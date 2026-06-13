@@ -52,6 +52,7 @@
     "summaryStep2": "{count, plural, one {# ítem} other {# ítems}} · {total}",
     "confirmTotalLabel": "Total del pedido",
     "confirmCta": "Crear pedido",
+    "submitShortcutHint": "o presiona ⌘ Enter",
     "minProductHint": "Mínimo 1 producto requerido.",
     "itemsListIntro": "Añade los productos del pedido para calcular el total.",
     "fxOptional": "(opcional)",
