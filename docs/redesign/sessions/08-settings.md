@@ -103,3 +103,42 @@ Ninguna bloqueante. Propuestas para FRD-07 alignment (P-S8-01 a P-S8-08) listada
 Todos los HTMLs verificados visualmente en preview server (Claude Preview MCP, port 5500) — light y dark theme, viewports desktop (1440px) y phone frame simulado (390px).
 
 Sin código React tocado en esta sesión. Fase B implementación de Settings + uplift cross-module quedó para sesión separada.
+
+---
+
+# Fase B — Settings implementación + uplift cross-module (cierre 2026-06-12)
+
+## Qué corrió
+
+Implementación React/Next completa del módulo Settings + uplift §9.17 a `order-detail` y `store-detail`. El grueso del código se implementó y commiteó previamente (`e1678a9` settings redesign, `4eb7d74` uplift orders/dashboard/deliveries, `4f235fc` limpieza de core components); el cierre de sesión auditó la implementación contra el handoff, corrigió gaps y completó la validación obligatoria.
+
+## Entregado (vs handoff de Fase A)
+
+- ✅ `page.tsx` refactor → `SettingsShell` + `SettingsNav` (tabs verticales desktop + segmented control mobile, `role=tablist/tab`) + 3 panes (`SettingsProfilePane` / `SettingsAccountPane` / `SettingsPrefsPane`).
+- ✅ 7 modales adaptive (M06): `UsernameModal` (cooldown FR-07-33), `DisplayNameModal`, `AvatarModal` (cropper), `AvatarRemoveModal`, `EmailModal`, `PasswordModal` (rules + strength meter), `CurrencyModal` (two-path FR-07-32).
+- ✅ Server actions: `profileActions` (username availability/save + displayName + avatar save/remove), `accountCredentialsActions` (email change, change/set password), `preferencesActions` (savePreferences autosave, updateCurrency con `saveFxRates`, updateLanguage).
+- ✅ Cooldown FR-07-33: `src/lib/auth/usernameChangeCooldown.ts` (7 días, server-side) + `CooldownChip` visible solo durante cooldown activo.
+- ✅ Avatar cropper (P-S8-07): **extraído `<ImageCropper>` compartido** a `src/components/modules/ImageCropper/` (`CropperBody` + `useImageCropperState`, react-easy-crop) — `shape="round"` en AvatarModal, `shape="rect"` en `StoreLogoField` (reuso real).
+- ✅ Password rules (P-S8-08): BetterAuth solo aplica min 8 (sin política custom en `auth.ts`) → display ajustado a esa única regla + strength meter, per la cláusula "si difieren, ajustar el display".
+- ✅ `<Eyebrow variant="chip">` + `<SectionCard topAccent>` (M07) consumidos en los 3 panes; uplift verificado en order-detail y store-detail con vocabulario congelado (`Acciones` accent+rayo, `Tu nota privada` warm, `Pagos` success, etc.).
+- ✅ i18n es+en estructuralmente idénticos.
+- ✅ Deferred respetados: sin densidad (FR-07-31), sin sesiones activas (FR-07-40).
+
+## Fixes del cierre (2026-06-12)
+
+1. **9 tests obsoletos arreglados** (3 archivos): mock de `@/lib/app-url` sin `getPublicSiteUrl` en `auth.test.ts`; `AppNavDrawer.test.tsx` mockeaba `SignOutButton` que `ShellAccountMenu` ya no usa (ahora `authClient.signOut` + `useRouter`); `orderListingParams.test.ts` asumía default de statuses auto-aplicado (decisión nueva: el default vive en el href del nav, parse deja `statuses: []`).
+2. **Categorías favoritas sin traducir** — `SettingsPrefsPane` renderizaba la key cruda (`key.replace(/_/g," ")`); fix: `useTranslations("storeProductTypes")` como el resto de la app.
+3. **Autosave indicator** — "Guardado hace 121s" sin tope; pasados 60s cae al label plano "Guardado".
+4. **4 componentes legacy muertos eliminados**: `SettingsProfileSection`, `SettingsAccountSection`, `SettingsPreferencesSection`, `AvatarField` (0 referencias).
+5. **`e2e/settings.spec.ts` creado** (3 tests): tabs + panes + **flujo crítico FR-07-32** (modal two-path, guardar sin actualizar, fila actualizada). Gotchas: `SegmentedToggle` expone `role=radio` (no button); regex amplios tipo `/tema/` matchean nodos ocultos (p. ej. "Sistema") — usar roles.
+
+## Validación
+
+- `npm run test` ✅ (486 passed) · `npm run type-check` ✅ · `npm run lint` ✅ (0 errores) · `npm run validate-build` ✅.
+- `npx playwright test e2e/settings.spec.ts` ✅ (3/3, incluye FR-07-32) — corrido con `PLAYWRIGHT_PORT` apuntando al dev server activo (`reuseExistingServer`).
+- Verificación visual en preview (light + dark, desktop + 390px): 3 panes, segmented control mobile, bottom sheets Vaul, cropper circular con zoom, password rule con check verde, cooldown chip oculto sin cooldown activo, two-path footer, optimistic close del CurrencyModal con fila actualizada, consistencia §9.17 en order-detail y store-detail.
+
+## Pendientes que NO bloquean (heredados)
+
+- FRD-07 alignment (P-S8-01..04) — sesión dedicada post-Fase B (Round 2 del delta audit).
+- Mascot toggle demo visual (P-S8-05) · MFA flow (P-S8-06, S9+).

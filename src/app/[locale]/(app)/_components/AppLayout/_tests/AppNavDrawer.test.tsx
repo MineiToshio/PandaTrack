@@ -27,6 +27,7 @@ vi.mock("next-intl", () => ({
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/en/dashboard",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
 }));
 
 vi.mock("posthog-js", () => ({
@@ -41,12 +42,8 @@ vi.mock("@/app/[locale]/(landing)/_components/Menu/ThemeToggle", () => ({
   default: () => <div data-testid="drawer-theme-toggle" />,
 }));
 
-vi.mock("@/components/modules/auth/SignOutButton", () => ({
-  default: ({ label, onSignOut }: { label: string; onSignOut?: () => void }) => (
-    <button type="button" data-testid="drawer-sign-out" onClick={onSignOut}>
-      {label}
-    </button>
-  ),
+vi.mock("@/lib/auth/auth-client", () => ({
+  authClient: { signOut: vi.fn() },
 }));
 
 describe("AppNavDrawer", () => {
@@ -87,7 +84,7 @@ describe("AppNavDrawer", () => {
     await user.click(screen.getByRole("button", { name: "collector-fox account actions" }));
 
     expect(screen.getByRole("link", { name: "Settings" })).toBeInTheDocument();
-    expect(screen.getByTestId("drawer-sign-out")).toHaveTextContent("Sign out");
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Privacy Policy" })).toHaveAttribute("target", "_blank");
     expect(screen.getByRole("link", { name: "Terms and Conditions" })).toHaveAttribute("target", "_blank");
   });

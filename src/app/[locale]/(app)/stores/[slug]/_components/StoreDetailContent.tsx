@@ -176,8 +176,8 @@ export default function StoreDetailContent({
           />
         )}
 
-        {/* Two-column layout: main + sticky aside on lg */}
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_21.25rem]">
+        {/* Two-column layout: main + sticky aside on lg. 320px rail matches orders/deliveries detail. */}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
           {/* ── Main column ── */}
           <div className="min-w-0 space-y-3">
             <StoreHero
@@ -378,15 +378,15 @@ export default function StoreDetailContent({
                       />
                     )}
                   </div>
-                  <Button
-                    as="a"
+                  {/* Inline hyperlink recipe (playbook §1, `link` variant is legacy) — matches
+                      the "Ver entregas" link in OrderItemsReadOnlyList. */}
+                  <Link
                     href={`/${locale}${ROUTES.orders}?store=${store.id}`}
-                    variant="link"
-                    leadingIcon={<ExternalLink size={14} aria-hidden="true" />}
-                    className="self-start [font-size:var(--text-caption)]"
+                    className="text-accent inline-flex items-center gap-1.5 self-start [font-size:var(--text-caption)] font-medium underline-offset-2 hover:underline"
                   >
+                    <ExternalLink size={14} aria-hidden="true" />
                     {tStores("redesign.detail.aside.viewLinkedOrders")}
-                  </Button>
+                  </Link>
                 </>
               ) : (
                 <Typography size="xs" className="text-text-muted">

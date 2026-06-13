@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  AlertCircle,
   AlertTriangle,
   Calculator,
   Check,
@@ -28,6 +27,7 @@ import {
 } from "react";
 import BackNavLink from "@/components/core/BackNavLink";
 import Button from "@/components/core/Button/Button";
+import FieldErrorMsg from "@/components/core/FieldErrorMsg";
 import DatePickerInput from "@/components/core/DatePickerInput";
 import Input from "@/components/core/Input";
 import { Modal } from "@/components/modules/Modal";
@@ -437,7 +437,8 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
   return (
     <div
       className={cn(
-        "mx-auto w-full max-w-6xl space-y-4 px-4 lg:px-0",
+        // Width + horizontal padding come from the shell `<main>` (APP_SHELL_MAIN_CLASSNAME).
+        "space-y-4",
         // Reserve space for the sticky mobile actionbar.
         "pb-[calc(76px+env(safe-area-inset-bottom))] md:pb-0",
       )}
@@ -543,12 +544,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
                       locale={locale}
                       disableFuture
                     />
-                    {orderDateError && (
-                      <p className="flex items-center gap-1.5 text-[12px] [color:var(--destructive)]" role="alert">
-                        <AlertCircle size={13} aria-hidden />
-                        {orderDateError}
-                      </p>
-                    )}
+                    {orderDateError && <FieldErrorMsg>{orderDateError}</FieldErrorMsg>}
                   </div>
                   <div className="space-y-1.5">
                     <label htmlFor="delivery-range" className="text-[13px] font-medium [color:var(--text-secondary)]">

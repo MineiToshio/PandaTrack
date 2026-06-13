@@ -43,6 +43,14 @@ export const COLLECTOR_MUTED_INSET_CLASSNAME = "border-border/55 bg-muted/32 rou
 export const COLLECTOR_CARD_SURFACE_CLASSNAME = "border-border bg-surface-2 rounded-2xl border shadow-sm" as const;
 
 /**
+ * Read-only summary panel inside the final "Confirmar" step of create wizards
+ * (orders, deliveries). One source for the recipe so the confirm review reads
+ * identically across modules.
+ */
+export const WIZARD_CONFIRM_PANEL_CLASSNAME =
+  "rounded-[10px] p-4 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]" as const;
+
+/**
  * Shared responsive layout for action clusters inside detail heroes.
  * Mobile stacks actions vertically at full width; larger screens collapse to an inline row.
  */

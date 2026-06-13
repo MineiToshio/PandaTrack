@@ -116,7 +116,8 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
   return (
     <div className="text-foreground">
       <StoreListingShell>
-        <div className="space-y-6">
+        {/* `space-y-5` matches the orders/deliveries list stack rhythm. */}
+        <div className="space-y-5">
           <StoreListingFilters
             locale={locale}
             productTypeOptions={productTypeOptions}
@@ -172,19 +173,15 @@ function StoresEmptyState({ locale, hasFilters }: { locale: string; hasFilters: 
 
   return (
     <EmptyState
-      visual={
-        <span
-          aria-hidden="true"
-          className="inline-flex h-16 w-16 items-center justify-center rounded-full [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_14%,var(--surface-elevated))]"
-        >
-          <Sparkles size={28} aria-hidden="true" />
-        </span>
-      }
+      appearance="card"
+      headingAs="h2"
+      icon={<Sparkles width={28} height={28} />}
+      iconTone={hasFilters ? "neutral" : "accent"}
       title={hasFilters ? tListing("s6.empty.title") : tListing("empty")}
       subtitle={hasFilters ? tListing("s6.empty.subtitle") : undefined}
       actions={
         hasFilters ? (
-          <Button as="a" href={clearHref} variant="ghost" size="sm">
+          <Button as="a" href={clearHref} variant="ghost" size="md">
             {tListing("s6.empty.clearFilters")}
           </Button>
         ) : null

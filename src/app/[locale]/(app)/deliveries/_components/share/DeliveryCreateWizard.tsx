@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Check, Info, Pencil } from "lucide-react";
+import { Check, Info, Pencil } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
@@ -22,6 +22,7 @@ import WizardStep from "@/components/modules/WizardAccordion/WizardStep";
 import { AsideSummary, AsideSummaryRow } from "@/components/modules/AsideSummary";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { WIZARD_CONFIRM_PANEL_CLASSNAME } from "@/lib/styles";
 import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
 import { isValidPositiveDecimal } from "@/lib/decimalInput";
 import type { DeliverySourceOrder, EligibleProductsResult } from "@/lib/data/deliveries/deliveryQueries";
@@ -29,6 +30,7 @@ import type { DeliveryCreateActionResult } from "../../new/_actions/createDelive
 import DeliveryDataFields, { type DeliveryDataErrors, type DeliveryDataValues } from "./DeliveryDataFields";
 import DeliveryProductsPicker from "./DeliveryProductsPicker";
 import DeliveryStoreCombobox, { type DeliveryStoreOption } from "./DeliveryStoreCombobox";
+import FieldErrorMsg from "@/components/core/FieldErrorMsg";
 
 export type DeliveryCreateWizardProps = {
   action: (prev: DeliveryCreateActionResult | null, formData: FormData) => Promise<DeliveryCreateActionResult>;
@@ -312,8 +314,9 @@ export default function DeliveryCreateWizard({
 
   const showFieldAsAttribute = Boolean(sourceOrder && storeId === sourceOrder.storeId && !isChangingStore);
 
+  // Width + horizontal padding come from the shell `<main>` (APP_SHELL_MAIN_CLASSNAME).
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-4 px-4 pb-[calc(76px+env(safe-area-inset-bottom))] md:pb-0 lg:px-0">
+    <div className="space-y-4 pb-[calc(76px+env(safe-area-inset-bottom))] md:pb-0">
       <BackNavLink href={backHref}>{sourceOrder ? t("create.backToOrder") : t("create.backToDeliveries")}</BackNavLink>
       <div className="hidden md:block">
         <h1 className="text-[28px] leading-tight font-semibold [color:var(--text-primary)]">{t("create.title")}</h1>
@@ -409,10 +412,7 @@ export default function DeliveryCreateWizard({
                       error={Boolean(storeError)}
                     />
                     {storeError ? (
-                      <p className="flex items-center gap-1.5 text-[12px] [color:var(--destructive)]" role="alert">
-                        <AlertCircle size={13} aria-hidden />
-                        {storeError}
-                      </p>
+                      <FieldErrorMsg>{storeError}</FieldErrorMsg>
                     ) : (
                       <p className="text-[11.5px] [color:var(--text-muted)]">{t("create.step1.storeHelper")}</p>
                     )}
@@ -436,12 +436,7 @@ export default function DeliveryCreateWizard({
                     ? t("create.step2.fromOrderHelper")
                     : t("create.step2.helper")}
                 </p>
-                {productsError && (
-                  <p className="flex items-center gap-1.5 text-[12px] [color:var(--destructive)]" role="alert">
-                    <AlertCircle size={13} aria-hidden />
-                    {productsError}
-                  </p>
-                )}
+                {productsError && <FieldErrorMsg>{productsError}</FieldErrorMsg>}
                 {!storeId ? (
                   <p className="text-[13px] [color:var(--text-muted)]">{t("create.step2.selectStoreFirst")}</p>
                 ) : groups.length === 0 ? (
@@ -501,7 +496,7 @@ export default function DeliveryCreateWizard({
                 autoAdvance={false}
                 actionsLayout="sticky-on-mobile"
               >
-                <div className="rounded-[10px] p-4 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
+                <div className={WIZARD_CONFIRM_PANEL_CLASSNAME}>
                   <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-[13px]">
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{t("create.review.store")}</dt>
                     <dd className="font-medium">{selectedStore?.storeName ?? "—"}</dd>

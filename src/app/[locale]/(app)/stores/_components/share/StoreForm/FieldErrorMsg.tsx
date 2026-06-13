@@ -1,13 +1,13 @@
 "use client";
 
-import { AlertCircle } from "lucide-react";
 import type { ReactNode } from "react";
+import CoreFieldErrorMsg from "@/components/core/FieldErrorMsg";
 
+/**
+ * StoreForm step wrapper around the canonical core field error. Keeps the step-specific
+ * top margin (`mt-1.5`) so existing callsites stay visually identical; new code outside
+ * StoreForm should use `@/components/core/FieldErrorMsg` directly.
+ */
 export default function FieldErrorMsg({ children }: { children: ReactNode }) {
-  return (
-    <p className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] [color:var(--destructive)]" role="alert">
-      <AlertCircle size={13} aria-hidden />
-      <span>{children}</span>
-    </p>
-  );
+  return <CoreFieldErrorMsg className="mt-1.5 inline-flex">{children}</CoreFieldErrorMsg>;
 }

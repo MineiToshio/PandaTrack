@@ -1,9 +1,8 @@
-import Link from "next/link";
-import { ArrowLeft, Boxes } from "lucide-react";
+import { Boxes } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import BackNavLink from "@/components/core/BackNavLink";
 import Eyebrow from "@/components/core/Eyebrow";
 import { ROUTES } from "@/lib/constants";
-import { cn } from "@/lib/styles";
 import type { OrderDetailFull } from "@/lib/data/orders/orderQueries";
 import SetHeaderTitle from "@/app/[locale]/(app)/_components/AppLayout/SetHeaderTitle";
 import OrderOverdueBanner from "./OrderOverdueBanner";
@@ -47,24 +46,20 @@ export default async function OrderDetailContent({ order, locale, backHref }: Or
     <>
       <SetHeaderTitle title={order.humanReadableId} />
 
-      <Link
+      <BackNavLink
         href={backTarget}
-        className={cn(
-          "text-text-secondary hover:text-text-title inline-flex items-center gap-1.5 text-sm",
-          // Tight gap to the overdue banner below when present; otherwise full mb-4 to
-          // separate from the hero.
-          isOverdue ? "mb-3" : "mb-4",
-        )}
+        // Tight gap to the overdue banner below when present; otherwise full mb-4 to
+        // separate from the hero.
+        className={isOverdue ? "mb-3" : "mb-4"}
       >
-        <ArrowLeft className="size-3.5" aria-hidden />
         {t("detail.backToList")}
-      </Link>
+      </BackNavLink>
 
       {isOverdue && (
         <OrderOverdueBanner overdueDays={overdueDays} expectedDeliveryToLabel={expectedToLabel} locale={locale} />
       )}
 
-      <div className="lg:grid lg:grid-cols-[1fr_320px] lg:items-start lg:gap-6">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6">
         {/* Client coordinator renders BOTH the main column (hero + extras) and the aside
             column. Hero is owned by the client so amount + progress animate in lockstep with
             payment mutations; the rest of the main column (cancellation callout, productos,

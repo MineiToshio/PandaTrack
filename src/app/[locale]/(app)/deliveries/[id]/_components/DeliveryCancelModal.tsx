@@ -40,9 +40,10 @@ export default function DeliveryCancelModal({
       tone="warning"
       icon={<Ban />}
       primaryAction={{
+        // No explicit variant — sensitive confirms paint the CTA `primary` (playbook §3),
+        // matching `OrderCancelModal`.
         label: t("detail.cancelModal.confirm"),
         onClick: handleConfirm,
-        variant: "warning",
       }}
       secondaryAction={{
         label: t("detail.cancelModal.back"),

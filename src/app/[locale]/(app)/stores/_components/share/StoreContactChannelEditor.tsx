@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Check, Pencil, Plus, X } from "lucide-react";
+import { Check, Pencil, Plus, X } from "lucide-react";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react";
 import Button from "@/components/core/Button/Button";
 import Input from "@/components/core/Input";
@@ -9,6 +9,7 @@ import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
 import { getStoreContactChannelIcon } from "@/lib/catalog/storeContactChannelIcons";
 import { STORE_CONTACT_CHANNEL_TYPES, type StoreContactChannelType } from "./StoreContactChannelList";
+import FieldErrorMsg from "@/components/core/FieldErrorMsg";
 
 export type ContactChannelEntry = {
   id: number;
@@ -175,12 +176,7 @@ const StoreContactChannelEditor = forwardRef<StoreContactChannelEditorHandle, St
     const renderValidationError = (errorKey: string) => {
       const msg = labels.validationError?.(errorKey);
       if (!msg) return null;
-      return (
-        <p className="mt-1.5 flex items-center gap-1.5 text-[12px] [color:var(--destructive)]" role="alert">
-          <AlertCircle size={13} aria-hidden />
-          {msg}
-        </p>
-      );
+      return <FieldErrorMsg className="mt-1.5">{msg}</FieldErrorMsg>;
     };
 
     return (

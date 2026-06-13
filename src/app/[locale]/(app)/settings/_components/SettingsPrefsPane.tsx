@@ -54,6 +54,7 @@ export default function SettingsPrefsPane({
 }: SettingsPrefsPaneProps) {
   const t = useTranslations("settings");
   const tCurrencies = useTranslations("settings.preferences.currencies");
+  const tProductTypes = useTranslations("storeProductTypes");
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const budgetId = useId();
@@ -284,7 +285,7 @@ export default function SettingsPrefsPane({
                       aria-hidden="true"
                       className={active ? "[color:var(--accent)]" : "[color:var(--accent-cool)]"}
                     />
-                    {key.replace(/_/g, " ")}
+                    {tProductTypes(key)}
                   </button>
                 );
               })}

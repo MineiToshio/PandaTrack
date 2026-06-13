@@ -52,8 +52,9 @@ export default function PreferencesAutosaveIndicator({
   }
 
   const elapsedSeconds = lastSavedAt != null ? Math.max(1, Math.round((now - lastSavedAt) / 1000)) : null;
+  // Past one minute a rolling seconds counter reads as noise — fall back to the plain label.
   const label =
-    elapsedSeconds == null
+    elapsedSeconds == null || elapsedSeconds >= 60
       ? t("saved")
       : elapsedSeconds < 5
         ? t("savedRecently")

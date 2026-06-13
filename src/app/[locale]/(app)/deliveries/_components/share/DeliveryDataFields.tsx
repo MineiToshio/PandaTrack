@@ -1,6 +1,5 @@
 "use client";
 
-import { AlertCircle } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import DatePickerInput from "@/components/core/DatePickerInput";
 import DateRangePickerInput from "@/components/core/DateRangePickerInput";
@@ -8,6 +7,7 @@ import Input from "@/components/core/Input";
 import Select from "@/components/core/Select";
 import { ALLOWED_COLLECTOR_BASE_CURRENCY_CODES } from "@/lib/catalog/collectorCountries";
 import { sanitizeDecimalInput } from "@/lib/decimalInput";
+import FieldErrorMsg from "@/components/core/FieldErrorMsg";
 
 export type DeliveryDataValues = {
   deliveryDate: Date | null;
@@ -189,10 +189,5 @@ export default function DeliveryDataFields({
 }
 
 function FieldError({ message }: { message: string }) {
-  return (
-    <p className="flex items-center gap-1.5 text-[12px] [color:var(--destructive)]" role="alert">
-      <AlertCircle size={13} aria-hidden />
-      {message}
-    </p>
-  );
+  return <FieldErrorMsg>{message}</FieldErrorMsg>;
 }

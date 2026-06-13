@@ -1,6 +1,5 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import BackNavLink from "@/components/core/BackNavLink";
 import { ROUTES } from "@/lib/constants";
 import type { DeliveryDetail } from "@/lib/data/deliveries/deliveryQueries";
 import SetHeaderTitle from "@/app/[locale]/(app)/_components/AppLayout/SetHeaderTitle";
@@ -27,15 +26,11 @@ export default async function DeliveryDetailContent({
     <>
       <SetHeaderTitle title={delivery.humanReadableId} />
 
-      <Link
-        href={backTarget}
-        className="text-text-secondary hover:text-text-title mb-4 inline-flex items-center gap-1.5 text-sm"
-      >
-        <ArrowLeft className="size-3.5" aria-hidden />
+      <BackNavLink href={backTarget} className="mb-4">
         {t("detail.backToList")}
-      </Link>
+      </BackNavLink>
 
-      <div className="lg:grid lg:grid-cols-[1fr_320px] lg:items-start lg:gap-6">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6">
         {/* The client coordinator owns the optimistic status/receivedDate pair and renders
             both columns; the note card is server-wrapped (autosave is lifecycle-agnostic). */}
         <DeliveryDetailClient

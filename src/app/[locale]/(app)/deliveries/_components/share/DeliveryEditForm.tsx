@@ -27,6 +27,7 @@ import type { EligibleProductsResult } from "@/lib/data/deliveries/deliveryQueri
 import type { DeliveryCreateActionResult } from "../../new/_actions/createDeliveryAction";
 import DeliveryDataFields, { type DeliveryDataErrors, type DeliveryDataValues } from "./DeliveryDataFields";
 import DeliveryProductsPicker from "./DeliveryProductsPicker";
+import FieldErrorMsg from "@/components/core/FieldErrorMsg";
 
 export type DeliveryEditInitialData = {
   id: string;
@@ -303,12 +304,7 @@ export default function DeliveryEditForm({
             {/* Productos (FR-08-24) */}
             <section className="rounded-2xl p-5 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
               <Eyebrow as="h2">{t("edit.productsSection")}</Eyebrow>
-              {productsError && (
-                <p className="mt-2 flex items-center gap-1.5 text-[12px] [color:var(--destructive)]" role="alert">
-                  <AlertCircle size={13} aria-hidden />
-                  {productsError}
-                </p>
-              )}
+              {productsError && <FieldErrorMsg className="mt-2">{productsError}</FieldErrorMsg>}
               <div className="mt-3">
                 <DeliveryProductsPicker
                   groups={products.byOrder}

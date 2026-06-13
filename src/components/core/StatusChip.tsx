@@ -5,7 +5,6 @@ import {
   CheckCircle,
   CircleDashed,
   Clock,
-  Package,
   PackageCheck,
   PackageOpen,
   Truck,
@@ -133,16 +132,20 @@ export default function StatusChip(props: StatusChipProps) {
   let resolved: ResolvedChip;
 
   if (props.kind === "orderStatus") {
+    // ADR 0002 (amended): in-transit states use `truck` and COMPLETED uses `package-check`
+    // so the same state reads with the same icon on every surface (filter pills, list row
+    // chips via `describeOrderListChip`, detail chips). `check-circle` stays reserved for
+    // payment "Pagado".
     const statusMap: Record<typeof props.value, ResolvedChip> = {
       OPEN: { variant: "neutral", icon: <Clock size={14} aria-hidden="true" />, label: t("orderStatus.OPEN") },
       PARTIALLY_IN_TRANSIT: {
         variant: "info",
-        icon: <Package size={14} aria-hidden="true" />,
+        icon: <Truck size={14} aria-hidden="true" />,
         label: t("orderStatus.PARTIALLY_IN_TRANSIT"),
       },
       IN_TRANSIT: {
         variant: "info",
-        icon: <Package size={14} aria-hidden="true" />,
+        icon: <Truck size={14} aria-hidden="true" />,
         label: t("orderStatus.IN_TRANSIT"),
       },
       PARTIALLY_DELIVERED: {
@@ -152,7 +155,7 @@ export default function StatusChip(props: StatusChipProps) {
       },
       COMPLETED: {
         variant: "success",
-        icon: <CheckCircle size={14} aria-hidden="true" />,
+        icon: <PackageCheck size={14} aria-hidden="true" />,
         label: t("orderStatus.COMPLETED"),
       },
       CANCELLED: { variant: "neutral", icon: <Ban size={14} aria-hidden="true" />, label: t("orderStatus.CANCELLED") },

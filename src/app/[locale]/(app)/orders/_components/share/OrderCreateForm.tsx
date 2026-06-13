@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Calculator, Check, Info, Keyboard, Plus, RefreshCw } from "lucide-react";
+import { Calculator, Check, Info, Keyboard, Plus, RefreshCw } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import posthog from "posthog-js";
@@ -17,6 +17,7 @@ import {
 } from "react";
 import BackNavLink from "@/components/core/BackNavLink";
 import Button from "@/components/core/Button/Button";
+import FieldErrorMsg from "@/components/core/FieldErrorMsg";
 import DatePickerInput from "@/components/core/DatePickerInput";
 import Input from "@/components/core/Input";
 import WizardAccordion, { type WizardAccordionHandle } from "@/components/modules/WizardAccordion/WizardAccordion";
@@ -33,7 +34,7 @@ import { formatAmount } from "@/lib/currency";
 import { isValidPositiveDecimal, sanitizeDecimalInput } from "@/lib/decimalInput";
 import { fetchTodayRate } from "@/lib/fx/frankfurter";
 import { deriveItemizedTotal, shouldShowDiscrepancyModal } from "@/lib/orders/orderItemUtils";
-import { cn } from "@/lib/styles";
+import { cn, WIZARD_CONFIRM_PANEL_CLASSNAME } from "@/lib/styles";
 import type { OrderActionResult } from "../../_actions/orderActions";
 import DiscrepancyModal from "./DiscrepancyModal";
 import OrderCurrencyField from "./OrderCurrencyField";
@@ -397,7 +398,8 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
   const calculatedLabel = calculatedCents !== null && currencyCode ? formatAmount(calculatedCents, currencyCode) : null;
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-4 px-4 pb-[calc(76px+env(safe-area-inset-bottom))] md:pb-0 lg:px-0">
+    // Width + horizontal padding come from the shell `<main>` (APP_SHELL_MAIN_CLASSNAME).
+    <div className="space-y-4 pb-[calc(76px+env(safe-area-inset-bottom))] md:pb-0">
       <BackNavLink href={ordersHref}>{tCreate("backToList")}</BackNavLink>
       <h1 className="hidden text-[28px] leading-tight font-semibold [color:var(--text-primary)] md:block">
         {tCreate("title")}
@@ -467,12 +469,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                         }
                       }}
                     />
-                    {storeError && (
-                      <p className="flex items-center gap-1.5 text-[12px] [color:var(--destructive)]" role="alert">
-                        <AlertCircle size={13} aria-hidden />
-                        {storeError}
-                      </p>
-                    )}
+                    {storeError && <FieldErrorMsg>{storeError}</FieldErrorMsg>}
                   </div>
                   <div className="space-y-1.5">
                     <label htmlFor="order-currency" className="text-[13px] font-medium [color:var(--text-secondary)]">
@@ -490,10 +487,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                       baseCurrencyCode={baseCurrencyCode}
                     />
                     {currencyError ? (
-                      <p className="flex items-center gap-1.5 text-[12px] [color:var(--destructive)]" role="alert">
-                        <AlertCircle size={13} aria-hidden />
-                        {currencyError}
-                      </p>
+                      <FieldErrorMsg>{currencyError}</FieldErrorMsg>
                     ) : (
                       <p className="text-[11.5px] [color:var(--text-muted)]">{tCreate("step3Helper")}</p>
                     )}
@@ -516,12 +510,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                       locale={locale}
                       disableFuture
                     />
-                    {orderDateError && (
-                      <p className="flex items-center gap-1.5 text-[12px] [color:var(--destructive)]" role="alert">
-                        <AlertCircle size={13} aria-hidden />
-                        {orderDateError}
-                      </p>
-                    )}
+                    {orderDateError && <FieldErrorMsg>{orderDateError}</FieldErrorMsg>}
                   </div>
                   <div className="space-y-1.5">
                     <label htmlFor="delivery-range" className="text-[13px] font-medium [color:var(--text-secondary)]">
@@ -704,7 +693,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                 <p className="text-[12px] [color:var(--text-muted)]">{tCreate("step3Helper")}</p>
                 <div
                   style={{ viewTransitionName: "order-create-confirm" } as React.CSSProperties}
-                  className="rounded-[10px] p-4 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]"
+                  className={WIZARD_CONFIRM_PANEL_CLASSNAME}
                 >
                   <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-[13px]">
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{tCreate("summaryStore")}</dt>

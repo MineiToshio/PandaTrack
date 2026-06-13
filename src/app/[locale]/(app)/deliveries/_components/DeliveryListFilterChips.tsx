@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { X } from "lucide-react";
 import posthog from "posthog-js";
+import AppliedFilterChip from "@/components/core/AppliedFilterChip";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import {
   buildDeliveryListFilterUrl,
@@ -17,9 +17,6 @@ type DeliveryListFilterChipsProps = {
   filters: DeliveryListActiveFilters;
   storesById: Record<string, string>;
 };
-
-const CHIP_CLASSNAME =
-  "inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[12px] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_10%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--accent)_28%,transparent)] hover:[background:color-mix(in_oklch,var(--accent)_18%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]";
 
 export default function DeliveryListFilterChips({
   basePath,
@@ -125,16 +122,12 @@ export default function DeliveryListFilterChips({
   return (
     <div className="flex flex-wrap items-center gap-2" aria-label={t("list.filters.dialogTitle")}>
       {chips.map((chip) => (
-        <button
+        <AppliedFilterChip
           key={chip.key}
-          type="button"
-          onClick={chip.onRemove}
-          className={CHIP_CLASSNAME}
-          aria-label={t("list.chips.remove", { label: chip.label })}
-        >
-          <span className="whitespace-nowrap">{chip.label}</span>
-          <X size={12} aria-hidden />
-        </button>
+          label={chip.label}
+          removeAriaLabel={t("list.chips.remove", { label: chip.label })}
+          onRemove={chip.onRemove}
+        />
       ))}
       {hasResettableFilters && (
         <button

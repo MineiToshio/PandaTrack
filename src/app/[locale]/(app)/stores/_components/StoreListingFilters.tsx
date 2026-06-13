@@ -2,9 +2,10 @@
 
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Globe, Plus, Store, X } from "lucide-react";
+import { Globe, Plus, Store } from "lucide-react";
 import posthog from "posthog-js";
 import { useCallback, useMemo, useState } from "react";
+import AppliedFilterChip from "@/components/core/AppliedFilterChip";
 import Button from "@/components/core/Button/Button";
 import FilterTriggerButton from "@/components/core/FilterTriggerButton/FilterTriggerButton";
 import SearchInput from "@/components/core/SearchInput";
@@ -406,11 +407,7 @@ export default function StoreListingFilters({
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <FilterTriggerButton
-            appliedCount={drawerAppliedCount}
-            onClick={() => setDrawerOpen(true)}
-            label={tListing("s6.toolbar.filter")}
-          />
+          {/* Toolbar order matches orders/deliveries: search → sort → filter → create. */}
           <Select
             id="store-sort"
             aria-label={tListing("s6.toolbar.sortLabel")}
@@ -419,6 +416,11 @@ export default function StoreListingFilters({
             size="md"
             options={sortOptions}
             className="w-auto"
+          />
+          <FilterTriggerButton
+            appliedCount={drawerAppliedCount}
+            onClick={() => setDrawerOpen(true)}
+            label={tListing("s6.toolbar.filter")}
           />
           <Button
             as="a"
@@ -434,16 +436,12 @@ export default function StoreListingFilters({
       {activeChips.length > 0 && (
         <div className="-mx-1 flex flex-wrap items-center gap-2 px-1">
           {activeChips.map((chip) => (
-            <button
+            <AppliedFilterChip
               key={chip.key}
-              type="button"
-              onClick={chip.onRemove}
-              aria-label={`${tStores("redesign.filter.clear")} ${chip.label}`}
-              className="inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] px-2.5 py-1 text-[12px] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_10%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--accent)_28%,transparent)] hover:[background:color-mix(in_oklch,var(--accent)_18%,transparent)] focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:2px]"
-            >
-              <span className="whitespace-nowrap">{chip.label}</span>
-              <X size={12} aria-hidden />
-            </button>
+              label={chip.label}
+              removeAriaLabel={`${tStores("redesign.filter.clear")} ${chip.label}`}
+              onRemove={chip.onRemove}
+            />
           ))}
           <button
             type="button"

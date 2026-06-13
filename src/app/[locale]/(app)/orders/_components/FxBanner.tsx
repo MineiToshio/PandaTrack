@@ -29,17 +29,8 @@ export default function FxBanner({ count, onOpenModal }: FxBannerProps) {
         <p className="[font-size:var(--text-body)] [color:var(--text-primary)]">{t("fx.banner", { count })}</p>
       </div>
       <div className="flex justify-end">
-        <Button
-          variant="ghost"
-          size="md"
-          leadingIcon={<RefreshCw size={14} aria-hidden />}
-          onClick={onOpenModal}
-          style={{
-            color: "var(--accent)",
-            background: "color-mix(in oklch, var(--accent) 12%, transparent)",
-            borderColor: "color-mix(in oklch, var(--accent) 28%, transparent)",
-          }}
-        >
+        {/* Status-banner CTAs use `tonal`, never `primary` (playbook §1). */}
+        <Button variant="tonal" size="md" leadingIcon={<RefreshCw size={14} aria-hidden />} onClick={onOpenModal}>
           {t("fx.cta")}
         </Button>
       </div>

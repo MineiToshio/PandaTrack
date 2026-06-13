@@ -311,16 +311,17 @@ function ReviewCard({
           </span>
           <RatingStars value={review.overallRating} readOnly size="sm" />
           <span className="[font-size:11px] [color:var(--text-muted)]">{updatedLabel}</span>
+          {/* "link" variant is legacy — tertiary actions use "ghost" (playbook §1) */}
           {isViewer && onOpenEdit && (
             <Button
               type="button"
-              variant="link"
+              variant="ghost"
               size="sm"
-              className="ml-auto !p-0 [font-size:11px]"
+              className="ml-auto"
               onClick={onOpenEdit}
               disabled={disableActions}
               posthogEvent={POSTHOG_EVENTS.STORE.REVIEW_EDIT_CLICKED}
-              leadingIcon={<PenSquare size={11} aria-hidden="true" />}
+              leadingIcon={<PenSquare size={14} aria-hidden="true" />}
             >
               {t("detail.reviews.form.editVisibleCta")}
             </Button>

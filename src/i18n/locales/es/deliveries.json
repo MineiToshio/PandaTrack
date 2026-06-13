@@ -87,6 +87,10 @@
       "infoBanner": "{count, plural, one {El producto pasará} other {Los # productos pasarán}} a <strong>En camino</strong> y el pedido origen se actualizará. Cuando confirmes, te llevamos a la entrega.",
       "submitShortcutHint": "o presiona ⌘ Enter"
     },
+    "summaries": {
+      "step1FromOrder": "{store} · {order}",
+      "step2": "{count, plural, one {# producto} other {# productos}}"
+    },
     "summary": {
       "title": "Resumen",
       "store": "Tienda",

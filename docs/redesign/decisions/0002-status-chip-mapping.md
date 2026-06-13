@@ -46,14 +46,16 @@ DELIVERED
 
 ## Decisión 1 — Mapeo de `OrderStatus` a chip principal
 
-| Enum value             | Copy `es`              | Variant chip      | Ícono Lucide   |
-| ---------------------- | ---------------------- | ----------------- | -------------- |
-| `OPEN`                 | Abierto                | `neutral`         | `clock`        |
-| `PARTIALLY_IN_TRANSIT` | Parcialmente en camino | `info`            | `package`      |
-| `IN_TRANSIT`           | En camino              | `info`            | `package`      |
-| `PARTIALLY_DELIVERED`  | Llegó parcialmente     | `success` (suave) | `package-open` |
-| `COMPLETED`            | Completo               | `success`         | `check-circle` |
-| `CANCELLED`            | Cancelado              | `neutral`         | `ban`          |
+| Enum value             | Copy `es`              | Variant chip      | Ícono Lucide    |
+| ---------------------- | ---------------------- | ----------------- | --------------- |
+| `OPEN`                 | Abierto                | `neutral`         | `clock`         |
+| `PARTIALLY_IN_TRANSIT` | Parcialmente en camino | `info`            | `truck`         |
+| `IN_TRANSIT`           | En camino              | `info`            | `truck`         |
+| `PARTIALLY_DELIVERED`  | Llegó parcialmente     | `success` (suave) | `package-open`  |
+| `COMPLETED`            | Completo               | `success`         | `package-check` |
+| `CANCELLED`            | Cancelado              | `neutral`         | `ban`           |
+
+> **Enmienda 2026-06-12** — la versión original de esta tabla usaba `package` para los estados en camino y `check-circle` para `COMPLETED`. El playbook §9.13 (S7-A.2, L065) lo declaró anti-patrón: `package` confunde "paquete físico" con "estado de orden" y `check-circle` confunde "pagado" con "entregado" (`check-circle` queda reservado para el estado de pago "Pagado"). Los filter pills de Orders y `describeOrderListChip` ya implementaban `truck`/`package-check`; esta enmienda alinea la tabla (y `<StatusChip kind="orderStatus">`) con ese mapeo para que el mismo estado use el mismo ícono en toda superficie.
 
 **Reglas:**
 

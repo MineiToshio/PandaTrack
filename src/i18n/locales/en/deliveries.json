@@ -87,6 +87,10 @@
       "infoBanner": "{count, plural, one {The product will move} other {The # products will move}} to <strong>In transit</strong> and the source order will update. Once you confirm, we'll take you to the delivery.",
       "submitShortcutHint": "or press ⌘ Enter"
     },
+    "summaries": {
+      "step1FromOrder": "{store} · {order}",
+      "step2": "{count, plural, one {# product} other {# products}}"
+    },
     "summary": {
       "title": "Summary",
       "store": "Store",
