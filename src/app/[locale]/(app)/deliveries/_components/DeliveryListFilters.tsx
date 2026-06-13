@@ -330,8 +330,11 @@ export default function DeliveryListFilters({ locale, storeOptions, initial }: D
       </div>
 
       {/* Mobile sticky action row — below the topbar (h-14 = 56px) */}
+      {/* Mobile sticky action row — the search wrapper takes `min-w-0 flex-1` so it absorbs all
+          shrink (an input's intrinsic min-content otherwise keeps the row wider than the viewport
+          — S9.1 overflow); the two buttons stay `shrink-0`. */}
       <div className="sticky top-14 z-30 -mx-4 flex items-center gap-2 px-4 py-2 [background:color-mix(in_oklab,var(--background)_92%,transparent)] supports-[backdrop-filter:blur(8px)]:backdrop-blur lg:hidden">
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <SearchInput
             value={nameQuery}
             onChange={handleSearchChange}
@@ -345,9 +348,16 @@ export default function DeliveryListFilters({ locale, storeOptions, initial }: D
           onClick={() => setDrawerOpen(true)}
           variant="icon-only"
           aria-label={t("list.filters.iconLabel")}
-          className="[background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklch,var(--text-primary)_4%,var(--surface-elevated))]"
+          className="shrink-0 [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklch,var(--text-primary)_4%,var(--surface-elevated))]"
         />
-        <Button as="a" href={newDeliveryHref} variant="primary" size="md" leadingIcon={<Plus size={16} aria-hidden />}>
+        <Button
+          as="a"
+          href={newDeliveryHref}
+          variant="primary"
+          size="md"
+          leadingIcon={<Plus size={16} aria-hidden />}
+          className="shrink-0"
+        >
           {t("list.newDeliveryShort")}
         </Button>
       </div>

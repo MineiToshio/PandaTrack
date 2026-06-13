@@ -389,9 +389,11 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
         </div>
       </div>
 
-      {/* Mobile sticky action row — below the topbar (h-14 = 56px) */}
+      {/* Mobile sticky action row — below the topbar (h-14 = 56px). The search wrapper takes
+          `min-w-0 flex-1` so it absorbs all shrink (an input's intrinsic min-content otherwise
+          keeps the row wider than the viewport — S9.1 overflow); the two buttons stay `shrink-0`. */}
       <div className="sticky top-14 z-30 -mx-4 flex items-center gap-2 px-4 py-2 [background:color-mix(in_oklab,var(--background)_92%,transparent)] supports-[backdrop-filter:blur(8px)]:backdrop-blur lg:hidden">
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           <SearchInput
             value={nameQuery}
             onChange={handleSearchChange}
@@ -407,9 +409,16 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
           aria-label={t("filters.iconLabel")}
           // Match the bordered look of the Search input + Nuevo button so all three controls
           // share the same visual height + container affordance in the mobile action row.
-          className="[background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklch,var(--text-primary)_4%,var(--surface-elevated))]"
+          className="shrink-0 [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklch,var(--text-primary)_4%,var(--surface-elevated))]"
         />
-        <Button as="a" href={newOrderHref} variant="primary" size="md" leadingIcon={<Plus size={16} aria-hidden />}>
+        <Button
+          as="a"
+          href={newOrderHref}
+          variant="primary"
+          size="md"
+          leadingIcon={<Plus size={16} aria-hidden />}
+          className="shrink-0"
+        >
           {t("hero.newOrderShort")}
         </Button>
       </div>
