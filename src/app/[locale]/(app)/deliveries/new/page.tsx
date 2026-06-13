@@ -10,7 +10,8 @@ import {
   type EligibleProductsResult,
 } from "@/lib/data/deliveries/deliveryQueries";
 import { prisma } from "@/lib/prisma";
-import DeliveryCreateForm from "./_components/DeliveryCreateForm";
+import SetHeaderTitle from "@/app/[locale]/(app)/_components/AppLayout/SetHeaderTitle";
+import DeliveryForm from "../_components/share/DeliveryForm";
 import { createDeliveryAction } from "./_actions/createDeliveryAction";
 import DeliveryCreateEmptyState from "./_components/DeliveryCreateEmptyState";
 
@@ -35,7 +36,7 @@ export default async function DeliveriesNewPage({ params, searchParams }: Delive
   if (!session?.user?.id) redirect(`/${locale}/sign-in`);
   const userId = session.user.id;
 
-  await getTranslations({ locale, namespace: "deliveries" });
+  const t = await getTranslations({ locale, namespace: "deliveries" });
 
   const rawParams = await searchParams;
   const rawSourceOrderId = rawParams.sourceOrderId;
@@ -49,23 +50,50 @@ export default async function DeliveriesNewPage({ params, searchParams }: Delive
 
   if (sourceOrderId && !sourceOrder) notFound();
 
+  // FRD empty state: no store has a single eligible product anywhere.
   if (stores.length === 0 && !sourceOrder) {
-    return <DeliveryCreateEmptyState />;
+    return (
+      <>
+        <SetHeaderTitle title={t("create.title")} />
+        <DeliveryCreateEmptyState locale={locale} />
+      </>
+    );
   }
 
-  const relevantStores = sourceOrder ? [{ storeId: sourceOrder.storeId, storeName: sourceOrder.storeName }] : stores;
+  // Every eligible store is loaded so the from-order "Cambiar" escape works. The
+  // source store is kept in the list even when it has no eligibles left.
+  const relevantStores =
+    sourceOrder && !stores.some((store) => store.storeId === sourceOrder.storeId)
+      ? [{ storeId: sourceOrder.storeId, storeName: sourceOrder.storeName }, ...stores]
+      : stores;
+
   const productsEntries = await Promise.all(
-    relevantStores.map(async (store) => [store.storeId, await getEligibleProductsForStore(store.storeId, userId)] as const),
+    relevantStores.map(
+      async (store) => [store.storeId, await getEligibleProductsForStore(store.storeId, userId)] as const,
+    ),
   );
   const productsByStore: Record<string, EligibleProductsResult> = Object.fromEntries(productsEntries);
 
+  const storeOptions = relevantStores.map((store) => ({
+    storeId: store.storeId,
+    storeName: store.storeName,
+    eligibleCount: (productsByStore[store.storeId]?.byOrder ?? []).reduce(
+      (sum, group) => sum + group.products.length,
+      0,
+    ),
+  }));
+
   return (
-    <DeliveryCreateForm
-      action={createDeliveryAction}
-      stores={relevantStores}
-      productsByStore={productsByStore}
-      baseCurrencyCode={user?.baseCurrencyCode ?? null}
-      sourceOrder={sourceOrder}
-    />
+    <>
+      <SetHeaderTitle title={t("create.title")} />
+      <DeliveryForm
+        mode="create"
+        action={createDeliveryAction}
+        stores={storeOptions}
+        productsByStore={productsByStore}
+        baseCurrencyCode={user?.baseCurrencyCode ?? null}
+        sourceOrder={sourceOrder}
+      />
+    </>
   );
 }

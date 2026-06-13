@@ -1,51 +1,151 @@
 {
   "create": {
-    "backToOrder": "Volver al pedido",
-    "backToDeliveries": "Volver a entregas",
-    "heroEyebrow": "Nueva entrega",
     "title": "Nueva entrega",
-    "heroDescriptionFromOrder": "Crea una entrega desde {orderId}. Los productos elegibles de este pedido quedan preseleccionados.",
-    "heroDescriptionStandalone": "Elige una tienda, selecciona productos elegibles y registra la entrega hasta su llegada.",
-    "baseCurrencyBanner": "Elige una moneda base para comparar mejor los costos de entrega entre monedas.",
-    "baseCurrencyCta": "Elegir moneda base",
-    "basicsSectionTitle": "Datos de la entrega",
-    "productsSectionTitle": "Productos",
-    "selectStoreFirst": "Elige una tienda para ver productos elegibles.",
-    "productsNoMatches": "Ningún producto coincide con \"{query}\".",
-    "noProductsForStore": "{storeName} no tiene productos elegibles por ahora.",
-    "thisStore": "Esta tienda",
-    "refreshLink": "Actualizar productos elegibles",
+    "backToOrder": "Volver al pedido",
+    "backToDeliveries": "Entregas",
+    "metaFromOrder": "Los productos elegibles del pedido origen vienen preseleccionados",
+    "metaStandalone": "Elige una tienda, selecciona productos elegibles y registra la entrega hasta su llegada",
+    "stepperAriaLabel": "Pasos del formulario",
+    "stepperCompactEyebrow": "Paso {current} de {total}",
+    "stepContinue": "Continuar",
+    "stepBack": "Atrás",
     "submit": "Crear entrega",
-    "submitting": "Creando..."
+    "submitting": "Creando…",
+    "steps": {
+      "store": "Tienda",
+      "products": "Productos",
+      "data": "Datos de la entrega",
+      "confirm": "Confirmar"
+    },
+    "step1": {
+      "eyebrow": "Paso 1 · Tienda",
+      "title": "¿De qué tienda llega?",
+      "titleFromOrder": "Tienda",
+      "fromOrderHelper": "Pre-llenada desde el pedido origen. Una entrega agrupa productos de una sola tienda.",
+      "fromOrderBadge": "Desde {order}",
+      "changeStore": "Cambiar",
+      "storeLabel": "Tienda",
+      "storePlaceholder": "Busca una tienda…",
+      "storeNoResults": "Sin tiendas que coincidan.",
+      "eligibleCount": "{count, plural, one {# producto sin entregar} other {# productos sin entregar}}",
+      "storeListAriaLabel": "Tiendas con productos elegibles",
+      "storeHelper": "Solo aparecen tiendas con productos pendientes de entrega. Las tiendas sin pedidos abiertos no se listan."
+    },
+    "step2": {
+      "eyebrow": "Paso 2 · Productos",
+      "title": "¿Qué viene en esta entrega?",
+      "helper": "Selecciona los productos que vienen en esta entrega.",
+      "fromOrderHelper": "Los del pedido origen vienen preseleccionados; puedes deseleccionar o sumar de otros pedidos de la misma tienda.",
+      "selectStoreFirst": "Elige una tienda para ver productos elegibles.",
+      "noProductsForStore": "{storeName} no tiene productos elegibles por ahora.",
+      "thisStore": "Esta tienda"
+    },
+    "products": {
+      "searchPlaceholder": "Buscar producto…",
+      "searchAriaLabel": "Buscar producto",
+      "noMatches": "Ningún producto coincide con \"{query}\".",
+      "eligibleCount": "{count, plural, one {# elegible} other {# elegibles}}",
+      "selectAll": "Todo",
+      "note": "Puedes sumar productos de cualquier pedido de esta tienda. Los ya entregados o en otra entrega activa no aparecen aquí.",
+      "selectedCount": "{count, plural, one {# producto seleccionado} other {# productos seleccionados}}",
+      "undo": "Deshacer"
+    },
+    "step3": {
+      "eyebrow": "Paso 3 · Datos de la entrega",
+      "title": "Fechas y costo"
+    },
+    "fields": {
+      "shippedDateLabel": "Fecha de envío",
+      "shippedDatePlaceholder": "Seleccionar fecha",
+      "shippedDateHelper": "Solo fechas pasadas o de hoy.",
+      "arrivalLabel": "Llegada estimada",
+      "arrivalOptional": "(opcional)",
+      "arrivalPlaceholder": "Seleccionar rango",
+      "arrivalClearLabel": "Quitar rango",
+      "arrivalHelper": "Se usará para avisarte si la entrega está atrasada.",
+      "costLabel": "Costo de envío",
+      "costPlaceholder": "0.00",
+      "costHelper": "Usa 0 si no tiene costo.",
+      "currencyLabel": "Moneda",
+      "currencyPlaceholder": "Seleccionar moneda",
+      "currencyHelper": "Tu moneda base es {base}.",
+      "currencySameAsBaseHelper": "Misma moneda que tu base: no necesitas tipo de cambio.",
+      "fxLabel": "Tipo de cambio",
+      "fxPlaceholder": "0.00",
+      "fxHelper": "1 {from} = ? {to}. Solo te lo pedimos porque la moneda difiere de tu base."
+    },
+    "step4": {
+      "eyebrow": "Paso 4 · Confirmar",
+      "title": "Revisa y crea"
+    },
+    "review": {
+      "store": "Tienda",
+      "products": "Productos",
+      "shippedDate": "Fecha de envío",
+      "arrival": "Llegada estimada",
+      "cost": "Costo",
+      "infoBanner": "{count, plural, one {El producto pasará} other {Los # productos pasarán}} a <strong>En camino</strong> y el pedido origen se actualizará. Cuando confirmes, te llevamos a la entrega.",
+      "submitShortcutHint": "o presiona ⌘ Enter"
+    },
+    "summary": {
+      "title": "Resumen",
+      "store": "Tienda",
+      "sourceOrders": "Pedidos origen",
+      "products": "Productos",
+      "shippedDate": "Fecha de envío",
+      "arrival": "Llegada est.",
+      "cost": "Costo envío",
+      "inBase": "En tu base"
+    },
+    "shortcuts": {
+      "title": "Atajos",
+      "submit": "Enviar",
+      "toggleItem": "Marcar producto",
+      "selectAll": "Seleccionar todo",
+      "search": "Buscar"
+    },
+    "validation": {
+      "storeRequired": "Selecciona una tienda.",
+      "productsRequired": "Selecciona al menos un producto.",
+      "shippedDateRequired": "Selecciona la fecha de envío.",
+      "costInvalid": "Ingresa un costo válido. Usa 0 si no tiene costo.",
+      "currencyRequired": "Selecciona una moneda.",
+      "fxRequired": "Ingresa un tipo de cambio válido."
+    },
+    "empty": {
+      "title": "Sin productos elegibles",
+      "description": "No hay productos de pedidos disponibles para una nueva entrega. Los productos actuales ya están entregados, ya están en otra entrega o aún no están disponibles.",
+      "cta": "Ver mis pedidos",
+      "secondaryCta": "Volver a entregas"
+    }
   },
-  "form": {
-    "storeLabel": "Tienda",
-    "storePlaceholder": "Seleccionar tienda",
-    "deliveryDateLabel": "Fecha de envío",
-    "deliveryDatePlaceholder": "Seleccionar fecha",
-    "expectedArrivalLabel": "Llegada estimada (opcional)",
-    "expectedArrivalPlaceholder": "Seleccionar rango",
-    "expectedArrivalClearLabel": "Quitar rango",
-    "selectOrder": "Seleccionar todo",
-    "unselectOrder": "Limpiar pedido",
-    "productQuantity": "Cantidad: {quantity}",
-    "productsSearchPlaceholder": "Buscar producto...",
-    "productsSearchAriaLabel": "Buscar producto",
-    "costLabel": "Costo",
-    "costPlaceholder": "0.00",
-    "currencyLabel": "Moneda",
-    "currencyPlaceholder": "Seleccionar moneda",
-    "exchangeRateLabel": "Tipo de cambio",
-    "exchangeRatePlaceholder": "0.00",
-    "exchangeRateHelper": "{from} a {to}"
-  },
-  "validation": {
-    "storeRequired": "Selecciona una tienda.",
-    "productsRequired": "Selecciona al menos un producto.",
-    "costInvalid": "Ingresa un costo valido. Usa 0.00 si no hay costo de entrega.",
-    "currencyRequired": "Selecciona una moneda.",
-    "exchangeRateRequired": "Ingresa un tipo de cambio valido.",
-    "arrivalToBeforeFrom": "La fecha de fin debe ser posterior a la de inicio."
+  "edit": {
+    "metaTitle": "Editar entrega",
+    "title": "Editar entrega",
+    "backToDetail": "Volver a la entrega",
+    "storeSection": "Tienda",
+    "storeLockedHelper": "La tienda no se puede cambiar: los productos de la entrega dependen de ella. Si te equivocaste de tienda, elimina esta entrega y crea otra.",
+    "productsSection": "Productos",
+    "products": {
+      "inThisDelivery": "En esta entrega",
+      "removalNotice": "Al guardar vuelve a <strong>Listo en tienda</strong>",
+      "note": "Los productos que quites quedan disponibles para otra entrega."
+    },
+    "dataSection": "Datos de la entrega",
+    "discard": "Descartar cambios",
+    "save": "Guardar cambios",
+    "saving": "Guardando…",
+    "errorInvalidStatus": "Solo puedes editar entregas en camino. Reabre la entrega primero.",
+    "changesSummary": {
+      "title": "Resumen de cambios",
+      "removalNote": "{count, plural, one {# producto vuelve} other {# productos vuelven}} a <strong>Listo en tienda</strong> al guardar."
+    },
+    "discardModal": {
+      "title": "¿Salir sin guardar?",
+      "subtitle": "Tienes cambios sin guardar en esta entrega.",
+      "confirm": "Salir",
+      "stay": "Quedarse"
+    }
   },
   "error": {
     "server_error": "Ocurrio un error inesperado. Intenta de nuevo.",
@@ -54,12 +154,6 @@
     "NO_PRODUCTS_SELECTED": "Selecciona al menos un producto.",
     "PRODUCTS_FROM_DIFFERENT_STORE": "Todos los productos de una entrega deben venir de la tienda seleccionada.",
     "PRODUCT_NOT_ELIGIBLE": "Uno o mas productos ya no son elegibles. Actualiza e intenta de nuevo."
-  },
-  "empty": {
-    "title": "Sin productos elegibles",
-    "description": "No hay productos de pedidos disponibles para una nueva entrega.",
-    "body": "Los productos actuales ya estan entregados, ya estan en otra entrega o aun no estan disponibles. Crea un nuevo pedido para registrar productos disponibles.",
-    "cta": "Crear pedido"
   },
   "detail": {
     "metaTitle": "Detalle de entrega",

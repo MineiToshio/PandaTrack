@@ -4,7 +4,7 @@ import { deriveOrderStatus } from "@/lib/orders/orderState";
 import { getNextItemDeliveryState, mapToItemDeliveryState } from "@/lib/deliveries/deliveryState";
 import { generateDeliveryHumanReadableId } from "@/lib/deliveries/deliveryIdentifier";
 import { prisma } from "@/lib/prisma";
-import type { DeliveryCreateInput } from "@/lib/deliveries/deliveryValidation";
+import type { DeliveryCreateInput, DeliveryEditInput } from "@/lib/deliveries/deliveryValidation";
 
 export type CreateDeliveryResult =
   | { ok: true; deliveryId: string; productCount: number; orderCount: number }
@@ -379,7 +379,144 @@ export async function updateDeliveryNote(
 }
 
 // ---------------------------------------------------------------------------
-// Stubs — filled in by WO-05
+// Edit
 // ---------------------------------------------------------------------------
 
-// editDelivery — WO-05
+export type EditDeliveryResult =
+  | { ok: true; productCount: number; addedCount: number; removedCount: number }
+  | {
+      ok: false;
+      error:
+        | "DELIVERY_NOT_FOUND"
+        | "INVALID_STATUS"
+        | "NO_PRODUCTS_SELECTED"
+        | "PRODUCTS_FROM_DIFFERENT_STORE"
+        | "PRODUCT_NOT_ELIGIBLE";
+    };
+
+/**
+ * Edits an IN_TRANSIT delivery: metadata (dates, cost, currency, FX) and product
+ * membership. Added products move to IN_TRANSIT; removed products return to
+ * ARRIVED_AT_STORE (FR-08-24). Status and eligibility are revalidated inside the
+ * transaction so stale edits fail atomically (WO-05). The store never changes.
+ */
+export async function editDelivery(
+  deliveryId: string,
+  userId: string,
+  input: Omit<DeliveryEditInput, "deliveryId"> & { productIds: string[] },
+): Promise<EditDeliveryResult> {
+  const uniqueProductIds = [...new Set(input.productIds)];
+  if (uniqueProductIds.length === 0) {
+    return { ok: false, error: "NO_PRODUCTS_SELECTED" };
+  }
+
+  return prisma
+    .$transaction<EditDeliveryResult>(async (tx) => {
+      const delivery = await tx.delivery.findFirst({
+        where: { id: deliveryId, userId },
+        select: {
+          id: true,
+          status: true,
+          storeId: true,
+          orderItems: { select: { orderItem: { select: { id: true, orderId: true } } } },
+        },
+      });
+
+      if (!delivery) return { ok: false, error: "DELIVERY_NOT_FOUND" };
+      if (delivery.status !== DeliveryStatus.IN_TRANSIT) return { ok: false, error: "INVALID_STATUS" };
+
+      const currentIds = delivery.orderItems.map((link) => link.orderItem.id);
+      const currentIdSet = new Set(currentIds);
+      const selectedIdSet = new Set(uniqueProductIds);
+      const addedIds = uniqueProductIds.filter((id) => !currentIdSet.has(id));
+      const removedIds = currentIds.filter((id) => !selectedIdSet.has(id));
+
+      const selectedItems = await tx.orderItem.findMany({
+        where: { id: { in: uniqueProductIds }, userId },
+        select: {
+          id: true,
+          orderId: true,
+          deliveryState: true,
+          order: { select: { storeId: true, userId: true } },
+        },
+      });
+
+      if (selectedItems.length !== uniqueProductIds.length) {
+        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
+      }
+
+      const hasDifferentStore = selectedItems.some(
+        (item) => item.order.storeId !== delivery.storeId || item.order.userId !== userId,
+      );
+      if (hasDifferentStore) {
+        return { ok: false, error: "PRODUCTS_FROM_DIFFERENT_STORE" };
+      }
+
+      // Added products must still be eligible (kept products are IN_TRANSIT in THIS delivery).
+      const eligibleStates: OrderItemDeliveryState[] = [
+        OrderItemDeliveryState.NONE,
+        OrderItemDeliveryState.ARRIVED_AT_STORE,
+      ];
+      const addedIdSet = new Set(addedIds);
+      const hasIneligibleAdded = selectedItems.some(
+        (item) => addedIdSet.has(item.id) && !eligibleStates.includes(item.deliveryState),
+      );
+      if (hasIneligibleAdded) {
+        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
+      }
+
+      if (addedIds.length > 0) {
+        const stateUpdate = await tx.orderItem.updateMany({
+          where: { id: { in: addedIds }, userId, deliveryState: { in: eligibleStates } },
+          data: { deliveryState: getNextItemDeliveryState("edit-add") },
+        });
+        if (stateUpdate.count !== addedIds.length) {
+          throw new Error("DELIVERY_PRODUCT_CONCURRENT_STATE_CHANGE");
+        }
+        await tx.deliveryOrderItem.createMany({
+          data: addedIds.map((orderItemId) => ({ deliveryId, orderItemId })),
+        });
+      }
+
+      if (removedIds.length > 0) {
+        await tx.orderItem.updateMany({
+          where: { id: { in: removedIds }, userId },
+          data: { deliveryState: getNextItemDeliveryState("edit-remove") },
+        });
+        await tx.deliveryOrderItem.deleteMany({
+          where: { deliveryId, orderItemId: { in: removedIds } },
+        });
+      }
+
+      await tx.delivery.update({
+        where: { id: deliveryId },
+        data: {
+          ...(input.deliveryDate !== undefined ? { deliveryDate: input.deliveryDate } : {}),
+          expectedArrivalFrom: input.expectedArrivalFrom ?? null,
+          expectedArrivalTo: input.expectedArrivalTo ?? null,
+          ...(input.cost !== undefined ? { cost: input.cost } : {}),
+          ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),
+          exchangeRate: input.exchangeRate ?? null,
+        },
+      });
+
+      const affectedOrderIds = [
+        ...delivery.orderItems.map((link) => link.orderItem.orderId),
+        ...selectedItems.map((item) => item.orderId),
+      ];
+      await persistDerivedOrderStatuses(tx, affectedOrderIds);
+
+      return {
+        ok: true,
+        productCount: uniqueProductIds.length,
+        addedCount: addedIds.length,
+        removedCount: removedIds.length,
+      };
+    })
+    .catch((error: unknown) => {
+      if (error instanceof Error && error.message === "DELIVERY_PRODUCT_CONCURRENT_STATE_CHANGE") {
+        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" } as const;
+      }
+      throw error;
+    });
+}

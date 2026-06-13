@@ -1,51 +1,151 @@
 {
   "create": {
-    "backToOrder": "Back to order",
-    "backToDeliveries": "Back to deliveries",
-    "heroEyebrow": "New delivery",
     "title": "New delivery",
-    "heroDescriptionFromOrder": "Create a delivery from {orderId}. Eligible products from this order are preselected.",
-    "heroDescriptionStandalone": "Choose a store, select eligible products, and track the delivery from store to arrival.",
-    "baseCurrencyBanner": "Choose a base currency to make delivery costs easier to compare across currencies.",
-    "baseCurrencyCta": "Choose base currency",
-    "basicsSectionTitle": "Delivery basics",
-    "productsSectionTitle": "Products",
-    "selectStoreFirst": "Choose a store to see eligible products.",
-    "productsNoMatches": "No products match \"{query}\".",
-    "noProductsForStore": "{storeName} has no eligible products right now.",
-    "thisStore": "This store",
-    "refreshLink": "Refresh eligible products",
+    "backToOrder": "Back to order",
+    "backToDeliveries": "Deliveries",
+    "metaFromOrder": "Eligible products from the source order come preselected",
+    "metaStandalone": "Choose a store, select eligible products, and track the delivery until it arrives",
+    "stepperAriaLabel": "Form steps",
+    "stepperCompactEyebrow": "Step {current} of {total}",
+    "stepContinue": "Continue",
+    "stepBack": "Back",
     "submit": "Create delivery",
-    "submitting": "Creating..."
+    "submitting": "Creating…",
+    "steps": {
+      "store": "Store",
+      "products": "Products",
+      "data": "Delivery details",
+      "confirm": "Confirm"
+    },
+    "step1": {
+      "eyebrow": "Step 1 · Store",
+      "title": "Which store is it coming from?",
+      "titleFromOrder": "Store",
+      "fromOrderHelper": "Prefilled from the source order. A delivery groups products from a single store.",
+      "fromOrderBadge": "From {order}",
+      "changeStore": "Change",
+      "storeLabel": "Store",
+      "storePlaceholder": "Search a store…",
+      "storeNoResults": "No matching stores.",
+      "eligibleCount": "{count, plural, one {# undelivered product} other {# undelivered products}}",
+      "storeListAriaLabel": "Stores with eligible products",
+      "storeHelper": "Only stores with products pending delivery appear here. Stores without open orders are not listed."
+    },
+    "step2": {
+      "eyebrow": "Step 2 · Products",
+      "title": "What's in this delivery?",
+      "helper": "Select the products that ship in this delivery.",
+      "fromOrderHelper": "Source-order products come preselected; you can deselect or add from other orders of the same store.",
+      "selectStoreFirst": "Choose a store to see eligible products.",
+      "noProductsForStore": "{storeName} has no eligible products right now.",
+      "thisStore": "This store"
+    },
+    "products": {
+      "searchPlaceholder": "Search product…",
+      "searchAriaLabel": "Search product",
+      "noMatches": "No products match \"{query}\".",
+      "eligibleCount": "{count, plural, one {# eligible} other {# eligible}}",
+      "selectAll": "All",
+      "note": "You can add products from any order of this store. Products already delivered or in another active delivery don't appear here.",
+      "selectedCount": "{count, plural, one {# product selected} other {# products selected}}",
+      "undo": "Undo"
+    },
+    "step3": {
+      "eyebrow": "Step 3 · Delivery details",
+      "title": "Dates and cost"
+    },
+    "fields": {
+      "shippedDateLabel": "Shipping date",
+      "shippedDatePlaceholder": "Select date",
+      "shippedDateHelper": "Past dates or today only.",
+      "arrivalLabel": "Expected arrival",
+      "arrivalOptional": "(optional)",
+      "arrivalPlaceholder": "Select range",
+      "arrivalClearLabel": "Clear range",
+      "arrivalHelper": "Used to warn you when the delivery is overdue.",
+      "costLabel": "Shipping cost",
+      "costPlaceholder": "0.00",
+      "costHelper": "Use 0 when there is no cost.",
+      "currencyLabel": "Currency",
+      "currencyPlaceholder": "Select currency",
+      "currencyHelper": "Your base currency is {base}.",
+      "currencySameAsBaseHelper": "Same currency as your base: no exchange rate needed.",
+      "fxLabel": "Exchange rate",
+      "fxPlaceholder": "0.00",
+      "fxHelper": "1 {from} = ? {to}. We only ask because the currency differs from your base."
+    },
+    "step4": {
+      "eyebrow": "Step 4 · Confirm",
+      "title": "Review and create"
+    },
+    "review": {
+      "store": "Store",
+      "products": "Products",
+      "shippedDate": "Shipping date",
+      "arrival": "Expected arrival",
+      "cost": "Cost",
+      "infoBanner": "{count, plural, one {The product will move} other {The # products will move}} to <strong>In transit</strong> and the source order will update. Once you confirm, we'll take you to the delivery.",
+      "submitShortcutHint": "or press ⌘ Enter"
+    },
+    "summary": {
+      "title": "Summary",
+      "store": "Store",
+      "sourceOrders": "Source orders",
+      "products": "Products",
+      "shippedDate": "Shipping date",
+      "arrival": "Est. arrival",
+      "cost": "Shipping cost",
+      "inBase": "In your base"
+    },
+    "shortcuts": {
+      "title": "Shortcuts",
+      "submit": "Submit",
+      "toggleItem": "Toggle product",
+      "selectAll": "Select all",
+      "search": "Search"
+    },
+    "validation": {
+      "storeRequired": "Select a store.",
+      "productsRequired": "Select at least one product.",
+      "shippedDateRequired": "Select the shipping date.",
+      "costInvalid": "Enter a valid cost. Use 0 when there is no cost.",
+      "currencyRequired": "Select a currency.",
+      "fxRequired": "Enter a valid exchange rate."
+    },
+    "empty": {
+      "title": "No eligible products",
+      "description": "There are no order products available for a new delivery. Current products are already delivered, already in another delivery, or not available yet.",
+      "cta": "View my orders",
+      "secondaryCta": "Back to deliveries"
+    }
   },
-  "form": {
-    "storeLabel": "Store",
-    "storePlaceholder": "Select store",
-    "deliveryDateLabel": "Shipping date",
-    "deliveryDatePlaceholder": "Select date",
-    "expectedArrivalLabel": "Expected arrival (optional)",
-    "expectedArrivalPlaceholder": "Select range",
-    "expectedArrivalClearLabel": "Clear range",
-    "selectOrder": "Select all",
-    "unselectOrder": "Clear order",
-    "productQuantity": "Quantity: {quantity}",
-    "productsSearchPlaceholder": "Search product...",
-    "productsSearchAriaLabel": "Search product",
-    "costLabel": "Cost",
-    "costPlaceholder": "0.00",
-    "currencyLabel": "Currency",
-    "currencyPlaceholder": "Select currency",
-    "exchangeRateLabel": "Exchange rate",
-    "exchangeRatePlaceholder": "0.00",
-    "exchangeRateHelper": "{from} to {to}"
-  },
-  "validation": {
-    "storeRequired": "Select a store.",
-    "productsRequired": "Select at least one product.",
-    "costInvalid": "Enter a valid cost. Use 0.00 when there is no delivery cost.",
-    "currencyRequired": "Select a currency.",
-    "exchangeRateRequired": "Enter a valid exchange rate.",
-    "arrivalToBeforeFrom": "End date must be after start date."
+  "edit": {
+    "metaTitle": "Edit delivery",
+    "title": "Edit delivery",
+    "backToDetail": "Back to the delivery",
+    "storeSection": "Store",
+    "storeLockedHelper": "The store cannot be changed: the delivery's products depend on it. If you picked the wrong store, delete this delivery and create another one.",
+    "productsSection": "Products",
+    "products": {
+      "inThisDelivery": "In this delivery",
+      "removalNotice": "On save it goes back to <strong>Ready at store</strong>",
+      "note": "Products you remove become available for another delivery."
+    },
+    "dataSection": "Delivery details",
+    "discard": "Discard changes",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "errorInvalidStatus": "Only in-transit deliveries can be edited. Reopen the delivery first.",
+    "changesSummary": {
+      "title": "Changes summary",
+      "removalNote": "{count, plural, one {# product goes back} other {# products go back}} to <strong>Ready at store</strong> on save."
+    },
+    "discardModal": {
+      "title": "Leave without saving?",
+      "subtitle": "You have unsaved changes in this delivery.",
+      "confirm": "Leave",
+      "stay": "Stay"
+    }
   },
   "error": {
     "server_error": "An unexpected error occurred. Please try again.",
@@ -54,12 +154,6 @@
     "NO_PRODUCTS_SELECTED": "Select at least one product.",
     "PRODUCTS_FROM_DIFFERENT_STORE": "All products in a delivery must come from the selected store.",
     "PRODUCT_NOT_ELIGIBLE": "One or more products are no longer eligible. Refresh and try again."
-  },
-  "empty": {
-    "title": "No eligible products",
-    "description": "There are no order products ready for a new delivery.",
-    "body": "Current products are either already delivered, already in another delivery, or not available yet. Create a new order to register available products.",
-    "cta": "Create order"
   },
   "detail": {
     "metaTitle": "Delivery detail",

@@ -94,7 +94,7 @@ API: `leadingIcon`, `trailingIcon`, `prefix`, `suffix`, `loading`, `error` (bool
 
 **Excepción full-screen sheet**: cuando contenido es muy largo (>4 secciones / scroll significativo) → full-screen sheet (ver `_notes/demo-screens.html` anchor `#s7-fx-reconciliation-mobile`).
 
-API obligatoria de `<Modal>`: `tone` (`default | destructive | warning | info`), `size` (`md | lg`), `primaryAction`, `secondaryAction`, opcional `tertiaryAction`, `icon` (Lucide en icon-circle tonal de 48px). Para mobile: `ModalSheet` inyecta drag handle + sticky footer automáticamente.
+API obligatoria de `<Modal>`: `tone` (`default | destructive | warning | info | success` — `success` agregado en S9 Fase B para "Marcar como llegada", M06), `size` (`md | lg`), `primaryAction` (`variant: primary | destructive | success | warning` — success/warning pintan el CTA con el token semántico), `secondaryAction`, opcional `tertiaryAction`, `icon` (Lucide en icon-circle tonal de 48px). Para mobile: `ModalSheet` inyecta drag handle + sticky footer automáticamente.
 
 ARIA: usar `role="alertdialog"` para destructivas (Eliminar, Cancelar pedido), `role="dialog"` para forms/pickers.
 
@@ -119,7 +119,7 @@ Spec visual del bottom sheet (resumen):
 
 ### FilterDrawer (`src/components/modules/FilterDrawer/FilterDrawer.tsx`)
 
-Section types soportados: `pills | pills-search | icon-pills | autocomplete | tag-autocomplete | date-range | switches`.
+Section types soportados: `pills | pills-search | icon-pills | autocomplete | tag-autocomplete | date-range | switches | text` (`text` agregado en S9 para el filtro libre "Producto"; value shape `string`).
 
 - `tag-autocomplete` para listas largas tipo país (input + dropdown + tags inline + leading icon search + flag emoji).
 - `pills` para listas cortas tipo presencia (chip-buttons con íconos).
@@ -248,7 +248,7 @@ Sidebar widths, header height, drawer widths, FAB size — todos como tokens (`-
 
 ### Toast con undo (operación reversible)
 
-`<Toast variant="neutral-undo">` con CTA "Deshacer" + atajo `Z`. Lifetime 5s default, 8s para delete entero. ADR 0001 D4.
+Implementado en S9 Fase B vía `useToast()`: `addToast(msg, { variant: "neutral", duration: 5000, action: { label, onClick } })`. El consumidor es dueño del atajo `Z` (listener global con latest-ref mientras la ventana de undo está abierta) y de la mutación inversa que restaura el estado previo. Lifetime 5s default, 8s para delete entero. ADR 0001 D4. Referencia: `DeliveryDetailClient.handleReopen` / `handleUndoReopen`.
 
 ### Section card disabled-gated
 
@@ -396,9 +396,12 @@ Si saltás cualquiera de estos pasos, vas a generar trabajo que después hay que
 | StoreAvatar inicial + bg           | `<StoreAvatar>`                                                                | `core/StoreAvatar.tsx`                                          |
 | Chip de estado por enum            | `<StatusChip>` (discriminated union)                                           | `core/StatusChip.tsx`                                           |
 | Combobox desktop con search        | `<Combobox>` / `<SearchableSelect>`                                            | `core/`                                                         |
-| Toast neutral con undo             | `<Toast variant="neutral-undo">`                                               | `core/Toast`                                                    |
+| Toast neutral con undo             | `useToast().addToast(msg, { variant: "neutral", action })`                     | `core/Toast` + `contexts/ToastContext`                          |
 | Switch / Checkbox / Radio          | `<Switch>` / `<Checkbox>` / `<Radio>`                                          | `core/`                                                         |
 | Sidebar de detalle sticky          | `<DetailSidebar>` (cuando aplique)                                             | `modules/DetailSidebar/`                                        |
+| Paginación de lista (L062)         | `<ListPagination>` (labels traducidos por el consumidor)                       | `modules/ListPagination.tsx` — promovido en S9 Parte 1          |
+| Subcard colapsable de detalle      | `<CollapsibleSubcard>` (eyebrow chip + topAccent)                              | `modules/CollapsibleSubcard.tsx` — promovido en S9 Parte 2      |
+| Código mono con click-to-copy      | `<CodeCopyButton>` (labels por props)                                          | `core/CodeCopyButton.tsx` — promovido en S9 Parte 2             |
 
 **Decisión:**
 

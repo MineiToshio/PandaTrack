@@ -2735,6 +2735,7 @@
     .m01b-icon-circle.tone-warning     { background: color-mix(in oklch, var(--warning)     14%, var(--surface-elevated)); color: var(--warning); }
     .m01b-icon-circle.tone-info        { background: color-mix(in oklch, var(--info)        14%, var(--surface-elevated)); color: var(--info); }
     .m01b-icon-circle.tone-default     { background: color-mix(in oklch, var(--accent)      14%, var(--surface-elevated)); color: var(--accent); }
+    .m01b-icon-circle.tone-success     { background: color-mix(in oklch, var(--success)     14%, var(--surface-elevated)); color: var(--success); }
     .m01b-header-text { flex: 1; min-width: 0; }
     .m01b-header-row { display: flex; align-items: flex-start; justify-content: space-between; }
     .m01b-title { font-size: 17px; font-weight: 700; line-height: 1.3; color: var(--text-primary); margin: 0; }
@@ -3562,6 +3563,37 @@
         <a href="#s8-settings-currency-sheet-mobile" data-screen="s8-settings-currency-sheet-mobile">Sheet · Moneda base (FR-07-32)</a>
       </div>
     </div>
+    <div class="demo-nav-group" id="demo-nav-group-s9">
+      <button class="demo-nav-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="demo-dropdown-s9">
+        S9 · Entregas <i data-lucide="chevron-down"></i>
+      </button>
+      <div class="demo-nav-dropdown" id="demo-dropdown-s9" role="menu">
+        <span class="demo-nav-label">── Desktop ──</span>
+        <a href="#deliveries" data-screen="deliveries">Lista (refactor)</a>
+        <a href="#s9-deliveries-list-empty" data-screen="s9-deliveries-list-empty">Lista · Vacía inicial</a>
+        <a href="#s9-delivery-detail" data-screen="s9-delivery-detail">Detalle · En camino</a>
+        <a href="#s9-delivery-detail-delivered" data-screen="s9-delivery-detail-delivered">Detalle · Llegó</a>
+        <a href="#s9-delivery-detail-cancelled" data-screen="s9-delivery-detail-cancelled">Detalle · Cancelada</a>
+        <a href="#delivery-create" data-screen="delivery-create">Nueva · Desde pedido (refactor)</a>
+        <a href="#s9-delivery-create-standalone" data-screen="s9-delivery-create-standalone">Nueva · Standalone (FR-08-16)</a>
+        <a href="#s9-delivery-create-empty" data-screen="s9-delivery-create-empty">Nueva · Sin elegibles</a>
+        <a href="#s9-delivery-edit" data-screen="s9-delivery-edit">Editar entrega (FR-08-24)</a>
+        <a href="#s9-deliveries-list-empty-filtered" data-screen="s9-deliveries-list-empty-filtered">Lista · Vacía filtrada</a>
+        <a href="#s9-deliveries-list-loading" data-screen="s9-deliveries-list-loading">Lista · Cargando</a>
+        <div class="demo-nav-sep"></div>
+        <span class="demo-nav-label">── Desktop · Modales ──</span>
+        <a href="#s9-delivery-mark-delivered-modal" data-screen="s9-delivery-mark-delivered-modal">Modal · Marcar llegada (FR-08-22)</a>
+        <a href="#s9-delivery-cancel-modal" data-screen="s9-delivery-cancel-modal">Modal · Cancelar entrega</a>
+        <a href="#s9-delivery-delete-modal" data-screen="s9-delivery-delete-modal">Modal · Eliminar entrega</a>
+        <div class="demo-nav-sep"></div>
+        <span class="demo-nav-label">── Móvil ──</span>
+        <a href="#s9-deliveries-list-mobile" data-screen="s9-deliveries-list-mobile">Lista de entregas</a>
+        <a href="#s9-delivery-detail-mobile" data-screen="s9-delivery-detail-mobile">Detalle · En camino</a>
+        <a href="#s9-delivery-create-mobile" data-screen="s9-delivery-create-mobile">Nueva · Paso 2 productos</a>
+        <a href="#s9-mark-delivered-sheet-mobile" data-screen="s9-mark-delivered-sheet-mobile">Sheet · Marcar llegada</a>
+        <a href="#s9-delivery-actions-sheet-mobile" data-screen="s9-delivery-actions-sheet-mobile">Sheet · Más acciones</a>
+      </div>
+    </div>
     <span class="demo-nav-current" id="demo-nav-current" aria-live="polite"></span>
   </nav>
   <div class="palette-switch">
@@ -3765,6 +3797,26 @@
         <tr><td class="idx-session">S8</td><td>Móvil · Sheet · Nombre visible</td>            <td><a class="idx-anchor" href="#s8-settings-displayname-sheet-mobile" data-screen-link="s8-settings-displayname-sheet-mobile">#s8-settings-displayname-sheet-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S8</td><td>Móvil · Sheet · Foto de perfil</td>            <td><a class="idx-anchor" href="#s8-settings-avatar-sheet-mobile" data-screen-link="s8-settings-avatar-sheet-mobile">#s8-settings-avatar-sheet-mobile</a></td>   <td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S8</td><td>Móvil · Sheet · Moneda base (FR-07-32)</td>    <td><a class="idx-anchor" href="#s8-settings-currency-sheet-mobile" data-screen-link="s8-settings-currency-sheet-mobile">#s8-settings-currency-sheet-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <!-- S9 ENTREGAS — Fase A -->
+        <tr><td class="idx-session">S9</td><td>Lista de entregas (refactor)</td>           <td><a class="idx-anchor" href="#deliveries" data-screen-link="deliveries">#deliveries</a></td>                                                                  <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Lista · Vacía inicial</td>                  <td><a class="idx-anchor" href="#s9-deliveries-list-empty" data-screen-link="s9-deliveries-list-empty">#s9-deliveries-list-empty</a></td>                        <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Detalle · En camino</td>                    <td><a class="idx-anchor" href="#s9-delivery-detail" data-screen-link="s9-delivery-detail">#s9-delivery-detail</a></td>                                          <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Detalle · Llegó (DELIVERED)</td>            <td><a class="idx-anchor" href="#s9-delivery-detail-delivered" data-screen-link="s9-delivery-detail-delivered">#s9-delivery-detail-delivered</a></td>            <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Detalle · Cancelada (CANCELLED)</td>        <td><a class="idx-anchor" href="#s9-delivery-detail-cancelled" data-screen-link="s9-delivery-detail-cancelled">#s9-delivery-detail-cancelled</a></td>            <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Nueva · Desde pedido (refactor)</td>        <td><a class="idx-anchor" href="#delivery-create" data-screen-link="delivery-create">#delivery-create</a></td>                                                  <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Nueva · Standalone (FR-08-16)</td>          <td><a class="idx-anchor" href="#s9-delivery-create-standalone" data-screen-link="s9-delivery-create-standalone">#s9-delivery-create-standalone</a></td>          <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Modal · Marcar llegada (FR-08-22)</td>      <td><a class="idx-anchor" href="#s9-delivery-mark-delivered-modal" data-screen-link="s9-delivery-mark-delivered-modal">#s9-delivery-mark-delivered-modal</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Modal · Cancelar entrega</td>               <td><a class="idx-anchor" href="#s9-delivery-cancel-modal" data-screen-link="s9-delivery-cancel-modal">#s9-delivery-cancel-modal</a></td>                        <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Modal · Eliminar entrega</td>               <td><a class="idx-anchor" href="#s9-delivery-delete-modal" data-screen-link="s9-delivery-delete-modal">#s9-delivery-delete-modal</a></td>                        <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Móvil · Lista de entregas</td>              <td><a class="idx-anchor" href="#s9-deliveries-list-mobile" data-screen-link="s9-deliveries-list-mobile">#s9-deliveries-list-mobile</a></td>                      <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Móvil · Detalle · En camino</td>            <td><a class="idx-anchor" href="#s9-delivery-detail-mobile" data-screen-link="s9-delivery-detail-mobile">#s9-delivery-detail-mobile</a></td>                      <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Móvil · Nueva · Paso 2 productos</td>       <td><a class="idx-anchor" href="#s9-delivery-create-mobile" data-screen-link="s9-delivery-create-mobile">#s9-delivery-create-mobile</a></td>                      <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Móvil · Sheet · Marcar llegada</td>         <td><a class="idx-anchor" href="#s9-mark-delivered-sheet-mobile" data-screen-link="s9-mark-delivered-sheet-mobile">#s9-mark-delivered-sheet-mobile</a></td>      <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Móvil · Sheet · Más acciones</td>           <td><a class="idx-anchor" href="#s9-delivery-actions-sheet-mobile" data-screen-link="s9-delivery-actions-sheet-mobile">#s9-delivery-actions-sheet-mobile</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Editar entrega (FR-08-24)</td>              <td><a class="idx-anchor" href="#s9-delivery-edit" data-screen-link="s9-delivery-edit">#s9-delivery-edit</a></td>                                              <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Lista · Vacía filtrada</td>                 <td><a class="idx-anchor" href="#s9-deliveries-list-empty-filtered" data-screen-link="s9-deliveries-list-empty-filtered">#s9-deliveries-list-empty-filtered</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Lista · Cargando (skeleton)</td>            <td><a class="idx-anchor" href="#s9-deliveries-list-loading" data-screen-link="s9-deliveries-list-loading">#s9-deliveries-list-loading</a></td>                  <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S9</td><td>Nueva · Sin productos elegibles</td>        <td><a class="idx-anchor" href="#s9-delivery-create-empty" data-screen-link="s9-delivery-create-empty">#s9-delivery-create-empty</a></td>                        <td><span class="idx-status nuevo">nuevo</span></td></tr>
       </tbody>
     </table>
   </div>
@@ -4660,56 +4712,56 @@
       <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
       <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
       <div class="app-sidebar-footer">
-        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
-          <span class="avatar">S</span>
-          <span class="info">
-            <strong>Sergio Minei</strong>
-            <small>sergio@pandatrack.dev</small>
-          </span>
-          <span class="chev"><i data-lucide="chevrons-up-down"></i></span>
-        </button>
-        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar / expandir sidebar">
-          <i data-lucide="panel-left-close"></i>
-          <span class="label">Colapsar</span>
-        </button>
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
       </div>
     </aside>
-
     <div class="app-content">
       <div class="app-topbar">
-        <a href="#order-detail" class="btn ghost sm" data-screen-link="order-detail"><i data-lucide="arrow-left"></i> Volver</a>
-        <h2 id="delivery-create-title" style="margin-left: 6px;">Anotar entrega</h2>
-        <div class="app-topbar-spacer"></div>
+        <div class="app-topbar-left">
+          <nav class="app-breadcrumb" aria-label="Navegación"><a href="#deliveries" data-screen-link="deliveries" class="app-breadcrumb-link">Entregas</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
+          <p class="app-topbar-title" id="delivery-create-title">Nueva entrega</p>
+        </div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <a href="#s7-order-detail-active" class="back-link" data-screen-link="s7-order-detail-active"><i data-lucide="arrow-left"></i> Volver al pedido</a>
+      <div class="page-heading">
+        <div class="page-heading-title">
+          <h1>Nueva entrega</h1>
+          <span class="page-heading-meta">Los productos elegibles del pedido origen vienen preseleccionados</span>
+        </div>
       </div>
 
       <div class="stepper" id="dc-stepper">
         <button class="step is-done" data-step="1"><span class="step-dot"><i data-lucide="check" style="width: 14px; height: 14px;"></i></span><span>Tienda</span></button>
         <button class="step is-active" data-step="2"><span class="step-dot">2</span><span>Productos</span></button>
-        <button class="step" data-step="3"><span class="step-dot">3</span><span>Costos</span></button>
-        <button class="step" data-step="4"><span class="step-dot">4</span><span>Listo</span></button>
+        <button class="step" data-step="3"><span class="step-dot">3</span><span>Datos de la entrega</span></button>
+        <button class="step" data-step="4"><span class="step-dot">4</span><span>Confirmar</span></button>
       </div>
 
       <div class="form-grid">
         <div class="section-cards" id="dc-wizard" data-wizard data-wizard-start="2">
 
-          <div class="section-card section-card-wizard is-done" data-step="1" data-summary-static="Mercado MX · ↳ Desde PT-002418">
+          <!-- Paso 1 · Tienda (prefilled FR-08-15, field-as-attribute ADR 0001) -->
+          <div class="section-card section-card-wizard is-done" data-step="1" data-summary-static="Solaris Books &amp; Records · ↳ Desde ORD-20260428-01">
             <button class="section-card-head" type="button" data-wizard-step="1">
               <span class="step-num"><span class="num">1</span></span>
               <div class="step-titles">
                 <span class="eyebrow">Paso 1 · Tienda</span>
                 <h3 class="card-title">Tienda</h3>
-                <div class="step-summary" data-summary>Mercado MX · ↳ Desde PT-002418</div>
+                <div class="step-summary" data-summary>Solaris Books &amp; Records · ↳ Desde ORD-20260428-01</div>
               </div>
               <span class="step-chev"><i data-lucide="chevron-down"></i></span>
             </button>
             <div class="section-card-body">
               <div class="section-card-inner">
-                <p class="card-helper">Pre-llenada desde el pedido origen.</p>
+                <p class="card-helper">Pre-llenada desde el pedido origen. Una entrega agrupa productos de una sola tienda.</p>
                 <div class="field-as-attribute">
-                  <div class="store-avatar s40">M</div>
+                  <div class="store-avatar s40">S</div>
                   <div class="body">
-                    <div class="badge">↳ Desde PT-002418</div>
-                    <div class="name">Mercado MX</div>
+                    <div class="badge">↳ Desde ORD-20260428-01</div>
+                    <div class="name">Solaris Books &amp; Records</div>
                   </div>
                   <button class="btn link sm" type="button"><i data-lucide="pencil"></i> Cambiar</button>
                 </div>
@@ -4720,61 +4772,79 @@
             </div>
           </div>
 
+          <!-- Paso 2 · Productos (FR-08-18 agrupados por pedido origen · FR-08-04a binario · FR-08-34 búsqueda) -->
           <div class="section-card section-card-wizard is-active" data-step="2">
             <button class="section-card-head" type="button" data-wizard-step="2">
               <span class="step-num"><span class="num">2</span></span>
               <div class="step-titles">
                 <span class="eyebrow">Paso 2 · Productos</span>
-                <h3 class="card-title">¿Qué llega?</h3>
+                <h3 class="card-title">¿Qué viene en esta entrega?</h3>
                 <div class="step-summary" data-summary>—</div>
               </div>
               <span class="step-chev"><i data-lucide="chevron-down"></i></span>
             </button>
             <div class="section-card-body">
               <div class="section-card-inner">
-                <p class="card-helper">Marca lo que viene en esta entrega. Vienen pre-seleccionados; puedes deseleccionar.</p>
+                <p class="card-helper">Los del pedido origen vienen preseleccionados; puedes deseleccionar o sumar de otros pedidos de la misma tienda.</p>
 
                 <div class="orders-search" style="margin-bottom: 14px;">
                   <i data-lucide="search"></i>
-                  <input class="input" type="text" placeholder="Buscar producto" />
+                  <input class="input" type="text" placeholder="Buscar producto…" aria-label="Buscar producto" />
                 </div>
 
                 <div class="product-group">
                   <button class="product-group-head" type="button">
-                    <span class="id">PT-002418</span>
-                    <span class="count">· 3 items</span>
+                    <span class="id">ORD-20260428-01</span>
+                    <span class="count">· 28 abr 26 · 3 elegibles</span>
                     <span class="all"><span class="check is-checked"><i data-lucide="check"></i></span> Todo</span>
                   </button>
                   <div class="product-row">
                     <span class="check is-checked" data-toggle-check><i data-lucide="check"></i></span>
                     <div class="icon-tile"><i data-lucide="disc"></i></div>
-                    <div class="name">Aphex Twin — Selected Ambient<br><small class="text-muted" style="font-size: 12px;"><span class="chip success" style="padding: 2px 8px; font-size: 11px;"><i data-lucide="check-circle"></i> Listo en tienda</span></small></div>
+                    <div class="name">NGE OST Vol. 2<br><small class="text-muted" style="font-size: 12px;"><span class="chip success" style="padding: 2px 8px; font-size: 11px;"><i data-lucide="check-circle"></i> Listo en tienda</span></small></div>
                     <span class="qty">×1</span>
                     <span></span>
                   </div>
                   <div class="product-row">
                     <span class="check is-checked" data-toggle-check><i data-lucide="check"></i></span>
                     <div class="icon-tile"><i data-lucide="book-open"></i></div>
-                    <div class="name">Berserk Vol. 17<br><small class="text-muted" style="font-size: 12px;"><span class="chip neutral" style="padding: 2px 8px; font-size: 11px;"><i data-lucide="clock"></i> Pendiente en tienda</span></small></div>
+                    <div class="name">Berserk Vol. 41<br><small class="text-muted" style="font-size: 12px;"><span class="chip neutral" style="padding: 2px 8px; font-size: 11px;"><i data-lucide="clock"></i> Pendiente en tienda</span></small></div>
                     <span class="qty">×1</span>
                     <span></span>
                   </div>
                   <div class="product-row">
                     <span class="check is-checked" data-toggle-check><i data-lucide="check"></i></span>
-                    <div class="icon-tile"><i data-lucide="sparkles"></i></div>
-                    <div class="name">Llavero Chainsaw Man<br><small class="text-muted" style="font-size: 12px;"><span class="chip neutral" style="padding: 2px 8px; font-size: 11px;"><i data-lucide="clock"></i> Pendiente en tienda</span></small></div>
-                    <span class="qty">×2</span>
+                    <div class="icon-tile"><i data-lucide="palette"></i></div>
+                    <div class="name">Evangelion Art Book — Platinum Ed.<br><small class="text-muted" style="font-size: 12px;"><span class="chip neutral" style="padding: 2px 8px; font-size: 11px;"><i data-lucide="clock"></i> Pendiente en tienda</span></small></div>
+                    <span class="qty">×1</span>
                     <span></span>
                   </div>
                 </div>
 
+                <!-- Otros pedidos de la misma tienda: elegibles, sin preselección (FR-08-18) -->
                 <div class="product-group">
                   <button class="product-group-head" type="button">
-                    <span class="id">PT-002507</span>
-                    <span class="count">· 2 items</span>
+                    <span class="id">ORD-20260315-02</span>
+                    <span class="count">· 15 mar 26 · 2 elegibles</span>
                     <span class="all"><span class="check"></span> Todo</span>
                   </button>
+                  <div class="product-row">
+                    <span class="check" data-toggle-check></span>
+                    <div class="icon-tile"><i data-lucide="disc"></i></div>
+                    <div class="name">FLCL Vinyl EP<br><small class="text-muted" style="font-size: 12px;"><span class="chip success" style="padding: 2px 8px; font-size: 11px;"><i data-lucide="check-circle"></i> Listo en tienda</span></small></div>
+                    <span class="qty">×1</span>
+                    <span></span>
+                  </div>
+                  <div class="product-row">
+                    <span class="check" data-toggle-check></span>
+                    <div class="icon-tile"><i data-lucide="book-open"></i></div>
+                    <div class="name">Akira 35th Anniversary Box<br><small class="text-muted" style="font-size: 12px;"><span class="chip neutral" style="padding: 2px 8px; font-size: 11px;"><i data-lucide="clock"></i> Pendiente en tienda</span></small></div>
+                    <span class="qty">×1</span>
+                    <span></span>
+                  </div>
                 </div>
+
+                <p class="text-muted" style="font-size: 12px; margin: 10px 0 0;"><i data-lucide="info" style="width:12px;height:12px;vertical-align:-2px;"></i> Puedes sumar productos de cualquier pedido de esta tienda. Los ya entregados o en otra entrega activa no aparecen acá.</p>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
                   <span class="text-muted" style="font-size: 12.5px;">3 productos seleccionados</span>
@@ -4789,11 +4859,12 @@
             </div>
           </div>
 
+          <!-- Paso 3 · Datos de la entrega (FR-08-05/06/07/08/10/11) -->
           <div class="section-card section-card-wizard" data-step="3">
             <button class="section-card-head" type="button" data-wizard-step="3">
               <span class="step-num"><span class="num">3</span></span>
               <div class="step-titles">
-                <span class="eyebrow">Paso 3 · Costos</span>
+                <span class="eyebrow">Paso 3 · Datos de la entrega</span>
                 <h3 class="card-title">Fechas y costo</h3>
                 <div class="step-summary" data-summary>—</div>
               </div>
@@ -4803,35 +4874,37 @@
               <div class="section-card-inner">
                 <div class="grid-2">
                   <div class="field">
-                    <label class="field-label">Fecha de entrega</label>
-                    <input class="input" type="text" value="2026-04-30" />
-                  </div>
-                  <div></div>
-                  <div class="field">
-                    <label class="field-label">ETA desde</label>
-                    <input class="input" type="text" placeholder="—" />
+                    <label class="field-label">Fecha de envío <span style="color:var(--destructive);">*</span></label>
+                    <input class="input" type="date" value="2026-05-08" aria-label="Fecha de envío" />
+                    <p class="card-helper" style="margin-top:6px;">Solo fechas pasadas o de hoy.</p>
                   </div>
                   <div class="field">
-                    <label class="field-label">ETA hasta</label>
-                    <input class="input" type="text" placeholder="—" />
+                    <label class="field-label">Llegada estimada <span class="text-muted" style="font-size:11px;font-weight:400;">(opcional)</span></label>
+                    <button type="button" class="input" style="display:flex;align-items:center;justify-content:space-between;text-align:left;cursor:pointer;height:40px;" aria-haspopup="dialog" aria-expanded="false" aria-label="Seleccionar ventana de llegada">
+                      <span style="font-size:13px;">15 may – 22 may 2026</span>
+                      <i data-lucide="calendar-days" style="width:15px;height:15px;color:var(--text-muted);flex-shrink:0;"></i>
+                    </button>
+                    <p class="card-helper" style="margin-top:6px;">Se usará para avisarte si la entrega está atrasada.</p>
                   </div>
                 </div>
                 <div class="grid-3">
                   <div class="field">
-                    <label class="field-label">Costo de envío</label>
-                    <input class="input num" type="text" value="$24,80" />
+                    <label class="field-label">Costo de envío <span style="color:var(--destructive);">*</span></label>
+                    <input class="input num" type="text" value="3.800" />
+                    <p class="card-helper" style="margin-top:6px;">Usa 0 si no tiene costo.</p>
                   </div>
                   <div class="field">
-                    <label class="field-label">Moneda</label>
-                    <select class="select"><option>USD</option><option>JPY</option></select>
+                    <label class="field-label">Moneda <span style="color:var(--destructive);">*</span></label>
+                    <select class="select"><option selected>JPY</option><option>USD</option><option>EUR</option></select>
+                    <p class="card-helper" style="margin-top:6px;">Tu moneda base es USD.</p>
                   </div>
+                  <!-- FR-08-10: el tipo de cambio solo aparece cuando la moneda difiere de la base del usuario -->
                   <div class="field">
-                    <label class="field-label">Tipo de cambio</label>
-                    <input class="input num" type="text" value="1,00" />
+                    <label class="field-label">Tipo de cambio <span style="color:var(--destructive);">*</span></label>
+                    <input class="input num" type="text" value="0,0065" />
+                    <p class="card-helper" style="margin-top:6px;">1 JPY = 0,0065 USD. Solo te lo pedimos porque la moneda difiere de tu base.</p>
                   </div>
                 </div>
-                <p class="text-muted" style="font-size: 12px; margin: 0;">Aplicado a tu moneda base.</p>
-
                 <div class="wizard-actions">
                   <button class="btn ghost" type="button" data-wizard-prev>Atrás</button>
                   <button class="btn primary" type="button" data-wizard-next>Continuar <i data-lucide="arrow-right"></i></button>
@@ -4840,31 +4913,34 @@
             </div>
           </div>
 
-          <div class="section-card section-card-wizard" data-step="4" data-summary-static="Revisa y anota">
+          <!-- Paso 4 · Confirmar (review real per M04) -->
+          <div class="section-card section-card-wizard" data-step="4" data-summary-static="Revisa y crea la entrega">
             <button class="section-card-head" type="button" data-wizard-step="4">
               <span class="step-num"><span class="num">4</span></span>
               <div class="step-titles">
-                <span class="eyebrow">Paso 4 · Listo</span>
-                <h3 class="card-title">Revisa y anota</h3>
-                <div class="step-summary" data-summary>Cuando confirmes, te llevamos a la entrega</div>
+                <span class="eyebrow">Paso 4 · Confirmar</span>
+                <h3 class="card-title">Revisa y crea</h3>
+                <div class="step-summary" data-summary>—</div>
               </div>
               <span class="step-chev"><i data-lucide="chevron-down"></i></span>
             </button>
             <div class="section-card-body">
               <div class="section-card-inner">
-                <p class="card-helper">Cuando confirmes, te llevamos a la entrega.</p>
+                <div class="summary-list">
+                  <div class="row"><span class="label">Tienda</span><span class="value">Solaris Books &amp; Records</span></div>
+                  <div class="row"><span class="label">Productos</span><span class="value">NGE OST Vol. 2 · Berserk Vol. 41 · Evangelion Art Book</span></div>
+                  <div class="row"><span class="label">Fecha de envío</span><span class="value">8 may 2026</span></div>
+                  <div class="row"><span class="label">Llegada estimada</span><span class="value">15 – 22 may 2026</span></div>
+                  <div class="row"><span class="label">Costo</span><span class="value num">¥3.800 (≈ $24,70 USD)</span></div>
+                </div>
+                <p class="card-helper" style="margin-top:10px;">Los 3 productos pasarán a <strong>En camino</strong> y el pedido origen se actualizará. Cuando confirmes, te llevamos a la entrega.</p>
                 <div class="wizard-actions">
                   <button class="btn ghost" type="button" data-wizard-prev>Atrás</button>
-                  <button class="btn primary" type="button"><i data-lucide="check"></i> Anotar entrega <span class="kbd" style="margin-left: 6px;">⌘↵</span></button>
+                  <button class="btn primary" type="button"><i data-lucide="check"></i> Crear entrega</button>
+                  <span class="text-muted" style="font-size:12px;align-self:center;">o presiona ⌘ Enter</span>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div class="form-footer">
-            <span class="autosave-indicator">
-              <i data-lucide="check"></i> Guardado en este navegador, hace 4s
-            </span>
           </div>
         </div>
 
@@ -4872,12 +4948,13 @@
           <div class="card elevated">
             <span class="eyebrow">Resumen</span>
             <div class="summary-list" style="margin-top: 8px;">
-              <div class="row"><span class="label">Tienda</span><span class="value">Mercado MX</span></div>
-              <div class="row"><span class="label">Pedidos origen</span><span class="value mono">PT-002418</span></div>
+              <div class="row"><span class="label">Tienda</span><span class="value">Solaris Books &amp; Records</span></div>
+              <div class="row"><span class="label">Pedidos origen</span><span class="value mono">ORD-20260428-01</span></div>
               <div class="row"><span class="label">Productos</span><span class="value">3</span></div>
-              <div class="row"><span class="label">Costo envío</span><span class="value num">$24,80 USD</span></div>
-              <div class="row"><span class="label">En tu base</span><span class="value num">$24,80 USD</span></div>
-              <div class="row"><span class="label">Fecha de entrega</span><span class="value">2026-04-30</span></div>
+              <div class="row"><span class="label">Fecha de envío</span><span class="value">8 may 2026</span></div>
+              <div class="row"><span class="label">Llegada est.</span><span class="value">15 – 22 may</span></div>
+              <div class="row"><span class="label">Costo envío</span><span class="value num">¥3.800</span></div>
+              <div class="row"><span class="label">En tu base</span><span class="value num">$24,70 USD</span></div>
             </div>
           </div>
           <div class="card">
@@ -5096,44 +5173,44 @@
       <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
       <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
       <div class="app-sidebar-footer">
-        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
-          <span class="avatar">S</span>
-          <span class="info">
-            <strong>Sergio Minei</strong>
-            <small>sergio@pandatrack.dev</small>
-          </span>
-          <span class="chev"><i data-lucide="chevrons-up-down"></i></span>
-        </button>
-        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar / expandir sidebar">
-          <i data-lucide="panel-left-close"></i>
-          <span class="label">Colapsar</span>
-        </button>
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
       </div>
     </aside>
-
     <div class="app-content">
       <div class="app-topbar">
-        <h2 id="deliveries-title">Entregas</h2>
-        <div class="app-topbar-spacer"></div>
-        <span class="text-muted" style="font-size: 13px;">7 en camino · 24 entregadas</span>
+        <div class="app-topbar-left"><p class="app-topbar-title" id="deliveries-title">Entregas</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <div class="page-heading">
+        <div class="page-heading-title">
+          <h1>Entregas</h1>
+          <span class="page-heading-meta">3 en camino · 24 recibidas</span>
+        </div>
       </div>
 
       <div class="orders-toolbar">
         <div class="orders-search">
           <i data-lucide="search"></i>
-          <input class="input" type="text" placeholder="Buscar entrega o tienda…" />
+          <input class="input" type="search" placeholder="Código o producto (DLV-20260508-01, NGE OST…)" aria-label="Buscar entregas" />
         </div>
-        <button class="btn ghost" data-open-filters="deliveries" style="background:color-mix(in oklch,var(--accent) 10%,transparent);color:var(--accent);border-color:color-mix(in oklch,var(--accent) 28%,transparent);"><i data-lucide="sliders-horizontal"></i> Filtrar <span style="background:var(--accent);color:var(--text-on-accent);font-size:10px;font-weight:700;border-radius:999px;padding:1px 5px;margin-left:2px;">2</span></button>
-        <a href="#delivery-create" class="btn primary" data-screen-link="delivery-create"><i data-lucide="plus"></i> Anotar entrega</a>
+        <button class="btn ghost" data-open-filters="deliveries" style="background:color-mix(in oklch,var(--accent) 10%,transparent);color:var(--accent);border-color:color-mix(in oklch,var(--accent) 28%,transparent);"><i data-lucide="sliders-horizontal"></i> Filtrar <span style="background:var(--accent);color:var(--text-on-accent);font-size:10px;font-weight:700;border-radius:999px;padding:1px 5px;margin-left:2px;">1</span></button>
+        <select class="input" style="min-width:148px;width:auto;" aria-label="Ordenar por">
+          <option selected>Más antiguas</option>
+          <option>Más recientes</option>
+          <option>ETA más próxima</option>
+          <option>Tienda A–Z</option>
+        </select>
+        <a href="#s9-delivery-create-standalone" class="btn primary" data-screen-link="s9-delivery-create-standalone"><i data-lucide="plus"></i> Nueva entrega</a>
       </div>
 
-      <div class="orders-filter-chips" role="list">
-        <span class="filter-chip">En tránsito <i data-lucide="x"></i></span>
-        <span class="filter-chip">Últimos 30 días <i data-lucide="x"></i></span>
+      <div class="orders-filter-chips" aria-label="Filtros activos">
+        <span class="filter-chip">En camino <i data-lucide="x"></i></span>
       </div>
 
+      <!-- Lista tabular (patrón S7) · FR-08-30 default más antiguas → más nuevas · FR-08-31 card fields -->
       <div class="card" style="padding: 4px;">
-        <div class="orders-table-head">
+        <div class="orders-table-head" role="row">
           <div></div>
           <div>Entrega / Tienda</div>
           <div>Productos</div>
@@ -5143,118 +5220,112 @@
           <div></div>
         </div>
 
-        <div class="order-row" data-expandable data-target="order-detail">
-          <div class="store-avatar s32">A</div>
-          <div class="col-store"><strong>AmiAmi</strong><small>PT-DEL-9301 · 28 abr 26</small></div>
+        <!-- Row 1: IN_TRANSIT atrasada (derivada ADR 0002 D3) -->
+        <div class="order-row" data-expandable data-target="s9-delivery-detail" style="view-transition-name:dlv-20260430-01;">
+          <div class="store-avatar s32">H</div>
+          <div class="col-store"><strong>HMV Japan</strong><small>DLV-20260430-01 · enviada 30 abr 26</small></div>
+          <div class="col-product"><span class="count num">2</span> productos</div>
+          <div class="col-status"><span class="chip warning"><i data-lucide="alert-circle"></i> Atrasada 3d</span></div>
+          <div class="col-total num">¥3.200</div>
+          <div class="col-progress text-muted" style="font-size: 12px;">esperada 25–30 abr</div>
+          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip warning"><i data-lucide="alert-circle"></i> Atrasada 3d</span><span class="text-muted" style="font-size:12px;">2 productos · ¥3.200</span></div></div>
+          <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
+          <div class="order-items">
+            <div class="order-items-inner">
+              <!-- FR-08-32: expansión plana, sin agrupar por pedido origen -->
+              <div class="item-row"><div class="item-icon" title="Álbumes / Vinilo"><i data-lucide="disc"></i></div><div class="item-name">Spirited Away OST (2LP)</div><span class="item-qty">×1</span><span class="item-price num">—</span></div>
+              <div class="item-row"><div class="item-icon" title="Álbumes / Vinilo"><i data-lucide="disc"></i></div><div class="item-name">Macross Plus OST</div><span class="item-qty">×1</span><span class="item-price num">—</span></div>
+              <div style="margin-top:10px;"><a href="#s9-delivery-detail" class="btn link sm" data-screen-link="s9-delivery-detail">Abrir detalle <i data-lucide="arrow-right"></i></a></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: IN_TRANSIT (target del detalle activo) -->
+        <div class="order-row" data-expandable data-target="s9-delivery-detail" style="view-transition-name:dlv-20260508-01;">
+          <div class="store-avatar s32">S</div>
+          <div class="col-store"><strong>Solaris Books &amp; Records</strong><small>DLV-20260508-01 · enviada 8 may 26</small></div>
           <div class="col-product"><span class="count num">3</span> productos</div>
           <div class="col-status"><span class="chip info"><i data-lucide="truck"></i> En camino</span></div>
-          <div class="col-total num">$24,80</div>
-          <div class="col-progress text-muted" style="font-size: 12px;">llega 4–8 may</div>
-          <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="chip info"><i data-lucide="truck"></i> En camino</span><span class="text-muted" style="font-size: 12px;">3 productos · $24,80</span></div></div>
+          <div class="col-total num">¥3.800</div>
+          <div class="col-progress text-muted" style="font-size: 12px;">llega 15–22 may</div>
+          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip info"><i data-lucide="truck"></i> En camino</span><span class="text-muted" style="font-size:12px;">3 productos · ¥3.800</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
           <div class="order-items">
             <div class="order-items-inner">
-              <div class="text-muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Desde PT-002411</div>
-              <div class="item-row"><div class="item-icon"><i data-lucide="shapes"></i></div><div class="item-name">Nendoroid Levi</div><span class="item-qty">×1</span><span class="item-price num">—</span></div>
-              <div class="item-row"><div class="item-icon"><i data-lucide="shapes"></i></div><div class="item-name">Pop Up Parade Mikasa</div><span class="item-qty">×1</span><span class="item-price num">—</span></div>
-              <div class="item-row"><div class="item-icon"><i data-lucide="shapes"></i></div><div class="item-name">Nendoroid Eren</div><span class="item-qty">×1</span><span class="item-price num">—</span></div>
+              <div class="item-row"><div class="item-icon" title="Álbumes / Vinilo"><i data-lucide="disc"></i></div><div class="item-name">NGE OST Vol. 2</div><span class="item-qty">×1</span><span class="item-price num">—</span></div>
+              <div class="item-row"><div class="item-icon" title="Manga"><i data-lucide="book-open"></i></div><div class="item-name">Berserk Vol. 41</div><span class="item-qty">×1</span><span class="item-price num">—</span></div>
+              <div class="item-row"><div class="item-icon" title="Arte y libretas"><i data-lucide="palette"></i></div><div class="item-name">Evangelion Art Book — Platinum Ed.</div><span class="item-qty">×1</span><span class="item-price num">—</span></div>
+              <div style="margin-top:10px;"><a href="#s9-delivery-detail" class="btn link sm" data-screen-link="s9-delivery-detail">Abrir detalle <i data-lucide="arrow-right"></i></a></div>
             </div>
           </div>
         </div>
 
-        <div class="order-row" data-expandable data-target="order-detail">
-          <div class="store-avatar s32">H</div>
-          <div class="col-store"><strong>HMV Japan</strong><small>PT-DEL-9298 · 25 abr 26</small></div>
-          <div class="col-product"><span class="count num">2</span> productos</div>
-          <div class="col-status"><span class="chip info"><i data-lucide="truck"></i> En camino</span></div>
-          <div class="col-total num">¥3.200</div>
-          <div class="col-progress text-muted" style="font-size: 12px;">llega 6 may</div>
-          <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="chip info"><i data-lucide="truck"></i> En camino</span><span class="text-muted" style="font-size: 12px;">2 productos · ¥3.200</span></div></div>
-          <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
-          <div class="order-items">
-            <div class="order-items-inner">
-              <div class="text-muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Desde PT-002414</div>
-              <div class="item-row"><div class="item-icon"><i data-lucide="disc"></i></div><div class="item-name">Spy x Family Vinyl OST</div><span class="item-qty">×1</span><span class="item-price num">—</span></div>
-              <div class="item-row"><div class="item-icon"><i data-lucide="disc"></i></div><div class="item-name">Cowboy Bebop OST</div><span class="item-qty">×1</span><span class="item-price num">—</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="order-row" data-expandable data-target="order-detail">
+        <!-- Row 3: IN_TRANSIT lote grande -->
+        <div class="order-row" data-expandable data-target="s9-delivery-detail" style="view-transition-name:dlv-20260505-01;">
           <div class="store-avatar s32">T</div>
-          <div class="col-store"><strong>TCG.cl</strong><small>PT-DEL-9272 · 22 abr 26</small></div>
+          <div class="col-store"><strong>TCG.cl</strong><small>DLV-20260505-01 · enviada 5 may 26</small></div>
           <div class="col-product"><span class="count num">12</span> productos</div>
           <div class="col-status"><span class="chip info"><i data-lucide="truck"></i> En camino</span></div>
           <div class="col-total num">$8,40</div>
-          <div class="col-progress text-muted" style="font-size: 12px;">llega 3 may</div>
-          <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="chip info"><i data-lucide="truck"></i> En camino</span><span class="text-muted" style="font-size: 12px;">12 productos · $8,40</span></div></div>
+          <div class="col-progress text-muted" style="font-size: 12px;">llega 18 may</div>
+          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip info"><i data-lucide="truck"></i> En camino</span><span class="text-muted" style="font-size:12px;">12 productos · $8,40</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
           <div class="order-items">
             <div class="order-items-inner">
-              <div class="text-muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Desde PT-002413</div>
-              <div class="item-row"><div class="item-icon"><i data-lucide="gallery-thumbnails"></i></div><div class="item-name">Pokémon TCG Booster Pack (lote)</div><span class="item-qty">×12</span><span class="item-price num">—</span></div>
+              <div class="item-row"><div class="item-icon" title="Trading Cards"><i data-lucide="gallery-thumbnails"></i></div><div class="item-name">Pokémon TCG Booster Pack (lote)</div><span class="item-qty">×12</span><span class="item-price num">—</span></div>
+              <div style="margin-top:10px;"><a href="#s9-delivery-detail" class="btn link sm" data-screen-link="s9-delivery-detail">Abrir detalle <i data-lucide="arrow-right"></i></a></div>
             </div>
           </div>
         </div>
 
-        <div class="order-row" data-expandable data-target="order-detail">
+        <!-- Row 4: DELIVERED (FR-08-31: muestra fecha de recepción) -->
+        <div class="order-row" data-expandable data-target="s9-delivery-detail-delivered" style="view-transition-name:dlv-20260427-01;opacity:0.75;">
           <div class="store-avatar s32">S</div>
-          <div class="col-store"><strong>Surugaya</strong><small>PT-DEL-9265 · 15 abr 26</small></div>
-          <div class="col-product"><span class="count num">5</span> productos</div>
-          <div class="col-status"><span class="chip success"><i data-lucide="check-circle"></i> Llegó</span></div>
-          <div class="col-total num">¥1.800</div>
-          <div class="col-progress text-muted" style="font-size: 12px;">28 abr</div>
-          <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="chip success"><i data-lucide="check-circle"></i> Llegó</span><span class="text-muted" style="font-size: 12px;">5 productos · ¥1.800</span></div></div>
-          <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
-          <div class="order-items">
-            <div class="order-items-inner">
-              <div class="text-muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Desde PT-002417</div>
-              <div class="item-row"><div class="item-icon"><i data-lucide="book-open"></i></div><div class="item-name">Naruto Vol. 12</div><span class="item-qty">×1</span><span class="item-price num">—</span></div>
-              <div class="item-row"><div class="item-icon"><i data-lucide="book-open"></i></div><div class="item-name">One Piece Vol. 96–98 (pack)</div><span class="item-qty">×3</span><span class="item-price num">—</span></div>
-              <div class="item-row"><div class="item-icon"><i data-lucide="book-open"></i></div><div class="item-name">Vinland Saga Vol. 24</div><span class="item-qty">×1</span><span class="item-price num">—</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="order-row" data-expandable data-target="order-detail">
-          <div class="store-avatar s32">M</div>
-          <div class="col-store"><strong>Mercado MX</strong><small>PT-DEL-9241 · 09 abr 26</small></div>
+          <div class="col-store"><strong>Solaris Books &amp; Records</strong><small>DLV-20260427-01 · enviada 27 abr 26</small></div>
           <div class="col-product"><span class="count num">1</span> producto</div>
-          <div class="col-status"><span class="chip info"><i data-lucide="package"></i> En camino</span></div>
+          <div class="col-status"><span class="chip success"><i data-lucide="check-circle"></i> Llegó</span></div>
           <div class="col-total num">$12,00</div>
-          <div class="col-progress text-muted" style="font-size: 12px;">esperada 5 may</div>
-          <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="chip info"><i data-lucide="package"></i> En camino</span><span class="text-muted" style="font-size: 12px;">1 producto · $12,00</span></div></div>
+          <div class="col-progress text-muted" style="font-size: 12px;">Recibida 2 may</div>
+          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip success"><i data-lucide="check-circle"></i> Llegó</span><span class="text-muted" style="font-size:12px;">1 producto · Recibida 2 may</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
           <div class="order-items">
             <div class="order-items-inner">
-              <div class="text-muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Desde PT-002418</div>
-              <div class="item-row"><div class="item-icon"><i data-lucide="shopping-bag"></i></div><div class="item-name">Llavero Spy x Family</div><span class="item-qty">×1</span><span class="item-price num">—</span></div>
+              <div class="item-row"><div class="item-icon" title="Funkos"><i data-lucide="package"></i></div><div class="item-name">Evangelion Funko Pop! Rei #02</div><span class="item-qty">×1</span><span class="item-price num">—</span></div>
+              <div style="margin-top:10px;"><a href="#s9-delivery-detail-delivered" class="btn link sm" data-screen-link="s9-delivery-detail-delivered">Abrir detalle <i data-lucide="arrow-right"></i></a></div>
             </div>
           </div>
         </div>
 
-        <div class="order-row" data-expandable data-target="order-detail">
+        <!-- Row 5: CANCELLED -->
+        <div class="order-row" data-expandable data-target="s9-delivery-detail-cancelled" style="view-transition-name:dlv-20260402-01;opacity:0.6;">
           <div class="store-avatar s32">e</div>
-          <div class="col-store"><strong>eBay JP</strong><small>PT-DEL-9220 · 02 abr 26</small></div>
+          <div class="col-store"><strong>eBay JP</strong><small>DLV-20260402-01 · enviada 2 abr 26</small></div>
           <div class="col-product"><span class="count num">2</span> productos</div>
-          <div class="col-status"><span class="chip warning"><i data-lucide="alert-circle"></i> Atrasada 2d</span></div>
+          <div class="col-status"><span class="chip neutral"><i data-lucide="ban"></i> Cancelada</span></div>
           <div class="col-total num">$18,50</div>
-          <div class="col-progress text-muted" style="font-size: 12px;">esperada 29 abr</div>
-          <div class="mobile-extra"><div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"><span class="chip warning"><i data-lucide="alert-circle"></i> Atrasada 2d</span><span class="text-muted" style="font-size: 12px;">2 productos · $18,50</span></div></div>
+          <div class="col-progress text-muted" style="font-size: 12px;">—</div>
+          <div class="mobile-extra"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span class="chip neutral"><i data-lucide="ban"></i> Cancelada</span><span class="text-muted" style="font-size:12px;">2 productos · $18,50</span></div></div>
           <button class="expand-toggle" type="button" aria-label="Ver productos" data-expand-btn><i data-lucide="chevron-down"></i></button>
           <div class="order-items">
             <div class="order-items-inner">
-              <div class="text-muted" style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px;">Desde PT-002405</div>
-              <div class="item-row"><div class="item-icon"><i data-lucide="package"></i></div><div class="item-name">Plush Pikachu</div><span class="item-qty">×2</span><span class="item-price num">—</span></div>
+              <div class="item-row"><div class="item-icon" title="Plush"><i data-lucide="package"></i></div><div class="item-name">Plush Pikachu</div><span class="item-qty">×2</span><span class="item-price num">—</span></div>
+              <div style="margin-top:10px;"><a href="#s9-delivery-detail-cancelled" class="btn link sm" data-screen-link="s9-delivery-detail-cancelled">Abrir detalle <i data-lucide="arrow-right"></i></a></div>
             </div>
           </div>
         </div>
 
+        <div style="font-size:12px;color:var(--text-muted);text-align:center;margin:12px 0 0;">Mostrando 1–5 de 7 entregas</div>
         <div class="load-more-wrap">
           <button class="btn ghost"><i data-lucide="chevron-down"></i> Cargar más</button>
         </div>
         <div class="desktop-pagination">
-          <span>« ‹</span><span>Página 1 de 2 · 30 por página</span><span>› »</span>
+          <button class="btn ghost sm" aria-label="Primera página">«</button>
+          <button class="btn ghost sm" aria-label="Página anterior">‹</button>
+          <button class="btn ghost sm page-active" aria-current="page">1</button>
+          <button class="btn ghost sm">2</button>
+          <button class="btn ghost sm" aria-label="Página siguiente">›</button>
+          <button class="btn ghost sm" aria-label="Última página">»</button>
+          <span style="font-size:12px;color:var(--text-muted);margin-left:8px;">7 entregas · 30 por página</span>
         </div>
       </div>
     </div>
@@ -9743,7 +9814,7 @@
                   <div class="item-row"><div class="item-icon" title="Arte y libretas"><i data-lucide="palette"></i></div><div class="item-name">Evangelion Art Book — Platinum Ed.<small><span class="s7-istate none"><i data-lucide="clock"></i> Pendiente</span></small></div><span class="item-qty">×1</span><span class="item-price num">$65,00</span></div>
                   <div class="item-row"><div class="item-icon" title="Trading Cards"><i data-lucide="gallery-thumbnails"></i></div><div class="item-name">Evangelion TCG Booster Pack<small><span class="s7-istate none"><i data-lucide="clock"></i> Pendiente</span></small></div><span class="item-qty">×3</span><span class="item-price num">$24,00</span></div>
                   <div class="item-row"><div class="item-icon" title="Producto (sin tipo)"><i data-lucide="box"></i></div><div class="item-name">Producto sin categoría<small><span class="s7-istate none"><i data-lucide="clock"></i> Pendiente</span></small></div><span class="item-qty">×1</span><span class="item-price num">$12,00</span></div>
-                  <div style="margin-top:12px;"><button class="btn link sm"><i data-lucide="link-2"></i> Crear entrega con estos productos</button></div>
+                  <div style="margin-top:12px;"><a href="#delivery-create" data-screen-link="delivery-create" class="btn link sm"><i data-lucide="link-2"></i> Crear entrega con estos productos</a></div>
                 </div>
               </div>
             </div>
@@ -9788,7 +9859,7 @@
           <div class="card elevated s8-card-accent" style="margin-top:14px;">
             <span class="s8-eyebrow-chip"><i data-lucide="zap"></i>Acciones</span>
             <div class="actions-list" style="margin-top:10px;">
-              <button class="btn primary"><i data-lucide="truck"></i> Crear entrega</button>
+              <a href="#delivery-create" data-screen-link="delivery-create" class="btn primary"><i data-lucide="truck"></i> Crear entrega</a>
               <a href="#s7-order-edit" data-screen-link="s7-order-edit" class="btn ghost"><i data-lucide="pencil"></i> Editar pedido</a>
               <button class="btn ghost"><i data-lucide="ban"></i> Cancelar pedido</button>
               <button class="btn destructive-ghost"><i data-lucide="trash-2"></i> Eliminar pedido</button>
@@ -10038,7 +10109,7 @@
           <div class="card elevated s8-card-accent" style="margin-top:14px;">
             <span class="s8-eyebrow-chip"><i data-lucide="zap"></i>Acciones</span>
             <div class="actions-list" style="margin-top:10px;">
-              <button class="btn primary"><i data-lucide="truck"></i> Crear entrega</button>
+              <a href="#delivery-create" data-screen-link="delivery-create" class="btn primary"><i data-lucide="truck"></i> Crear entrega</a>
               <a href="#s7-order-edit" data-screen-link="s7-order-edit" class="btn ghost"><i data-lucide="pencil"></i> Editar pedido</a>
               <button class="btn destructive-ghost"><i data-lucide="trash-2"></i> Eliminar pedido</button>
             </div>
@@ -10238,7 +10309,7 @@
                   <div class="item-row"><div class="item-icon" title="Arte y libretas"><i data-lucide="palette"></i></div><div class="item-name">Evangelion Art Book — Platinum Ed.<small><span class="s7-istate none"><i data-lucide="clock"></i> Pendiente</span></small></div><span class="item-qty">×1</span><span class="item-price num">$65,00</span></div>
                   <div class="item-row"><div class="item-icon" title="Trading Cards"><i data-lucide="gallery-thumbnails"></i></div><div class="item-name">Evangelion TCG Booster Pack<small><span class="s7-istate none"><i data-lucide="clock"></i> Pendiente</span></small></div><span class="item-qty">×3</span><span class="item-price num">$24,00</span></div>
                   <div class="item-row"><div class="item-icon" title="Producto (sin tipo)"><i data-lucide="box"></i></div><div class="item-name">Producto sin categoría<small><span class="s7-istate none"><i data-lucide="clock"></i> Pendiente</span></small></div><span class="item-qty">×1</span><span class="item-price num">$12,00</span></div>
-                  <div style="margin-top:12px;"><button class="btn link sm"><i data-lucide="link-2"></i> Crear entrega con estos productos</button></div>
+                  <div style="margin-top:12px;"><a href="#delivery-create" data-screen-link="delivery-create" class="btn link sm"><i data-lucide="link-2"></i> Crear entrega con estos productos</a></div>
                 </div>
               </div>
             </div>
@@ -10320,7 +10391,7 @@
           <div class="card elevated" style="margin-top:14px;">
             <span class="eyebrow">Acciones</span>
             <div class="actions-list" style="margin-top:10px;">
-              <button class="btn primary"><i data-lucide="truck"></i> Crear entrega</button>
+              <a href="#delivery-create" data-screen-link="delivery-create" class="btn primary"><i data-lucide="truck"></i> Crear entrega</a>
               <a href="#s7-order-edit" data-screen-link="s7-order-edit" class="btn ghost"><i data-lucide="pencil"></i> Editar pedido</a>
               <button class="btn ghost"><i data-lucide="ban"></i> Cancelar pedido</button>
               <button class="btn destructive-ghost"><i data-lucide="trash-2"></i> Eliminar pedido</button>
@@ -11378,7 +11449,7 @@
           <div class="card elevated s8-card-accent" style="margin-top:14px;">
             <span class="s8-eyebrow-chip"><i data-lucide="zap"></i>Acciones</span>
             <div class="actions-list" style="margin-top:10px;">
-              <button class="btn primary"><i data-lucide="truck"></i> Crear entrega</button>
+              <a href="#delivery-create" data-screen-link="delivery-create" class="btn primary"><i data-lucide="truck"></i> Crear entrega</a>
               <a href="#s7-order-edit" data-screen-link="s7-order-edit" class="btn ghost"><i data-lucide="pencil"></i> Editar pedido</a>
               <button class="btn ghost"><i data-lucide="ban"></i> Cancelar pedido</button>
               <button class="btn destructive-ghost"><i data-lucide="trash-2"></i> Eliminar pedido</button>
@@ -11503,7 +11574,7 @@
           <div class="card elevated" style="margin-top:14px;">
             <span class="eyebrow">Acciones</span>
             <div class="actions-list" style="margin-top:10px;">
-              <button class="btn primary"><i data-lucide="truck"></i> Crear entrega</button>
+              <a href="#delivery-create" data-screen-link="delivery-create" class="btn primary"><i data-lucide="truck"></i> Crear entrega</a>
               <a href="#s7-order-edit" data-screen-link="s7-order-edit" class="btn ghost"><i data-lucide="pencil"></i> Editar pedido</a>
               <button class="btn ghost"><i data-lucide="ban"></i> Cancelar pedido</button>
               <button class="btn destructive-ghost"><i data-lucide="trash-2"></i> Eliminar pedido</button>
@@ -15190,6 +15261,1278 @@
   </div>
 </section>
 
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · DETALLE DE ENTREGA — EN CAMINO (IN_TRANSIT)
+     FR-08-13/14 lifecycle · FR-08-18 productos por pedido origen ·
+     FR-08-25 nota privada · FR-08-26/27 jerarquía de acciones
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-delivery-detail" class="screen" aria-labelledby="s9-delivery-detail-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link is-active"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left">
+          <nav class="app-breadcrumb" aria-label="Navegación"><a href="#deliveries" data-screen-link="deliveries" class="app-breadcrumb-link">Entregas</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
+          <p class="app-topbar-title" id="s9-delivery-detail-title" style="font-family:'JetBrains Mono',ui-monospace,monospace;">DLV-20260508-01</p>
+        </div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <a href="#deliveries" class="back-link" data-screen-link="deliveries"><i data-lucide="arrow-left"></i> Entregas</a>
+      <div class="detail-grid">
+        <div>
+          <!-- Hero de la entrega (patrón order-detail + §9.17) -->
+          <div class="detail-hero s8-card-accent" style="view-transition-name:dlv-20260508-01;">
+            <div class="detail-hero-head">
+              <div class="store-avatar s56">S</div>
+              <div>
+                <div class="name">Solaris Books &amp; Records</div>
+                <div style="display:flex;gap:10px;align-items:center;margin-top:4px;flex-wrap:wrap;">
+                  <button type="button" aria-label="Copiar código de entrega" style="background:none;border:none;padding:2px 0;cursor:pointer;display:inline-flex;align-items:center;gap:5px;color:inherit;">
+                    <span class="id">DLV-20260508-01</span>
+                    <i data-lucide="copy" style="width:11px;height:11px;color:var(--text-muted);" aria-hidden="true"></i>
+                  </button>
+                  <span class="chip info"><i data-lucide="truck"></i> En camino</span>
+                </div>
+              </div>
+            </div>
+            <span class="s8-eyebrow-chip"><i data-lucide="truck"></i>Tu entrega · 3 productos</span>
+            <div style="margin-top:12px;">
+              <div class="text-secondary" style="font-size:13px;">Llegada estimada</div>
+              <div class="detail-hero-amount">15 – 22 may 2026</div>
+              <div class="detail-hero-amount-sub">enviada el <span class="num">8 may 2026</span></div>
+              <div class="progress" aria-label="En tránsito, 40% de la ventana"><span style="width:40%"></span></div>
+              <div class="text-muted" style="font-size:12px;margin-top:6px;">quedan 7 días para el inicio de la ventana · costo de envío <span class="num">¥3.800</span> (≈ $24,70 USD)</div>
+            </div>
+          </div>
+
+          <!-- Productos agrupados por pedido origen (FR-08-18, expandidos por defecto) -->
+          <div style="margin-top:16px;">
+            <div class="subcard is-open s8-card-cool" data-collapsible>
+              <button class="subcard-toggle">
+                <span class="s8-eyebrow-chip tone-cool"><i data-lucide="boxes"></i>Productos</span>
+                <span class="text-muted" style="font-size:12px;">3</span>
+                <span class="chev"><i data-lucide="chevron-down"></i></span>
+              </button>
+              <div class="subcard-body">
+                <div class="subcard-body-inner">
+                  <div class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><i data-lucide="package" style="width:12px;height:12px;"></i> Desde <a href="#s7-order-detail-active" data-screen-link="s7-order-detail-active" style="color:var(--accent);font-family:'JetBrains Mono',ui-monospace,monospace;">ORD-20260428-01</a> · 28 abr 2026</div>
+                  <div class="item-row"><div class="item-icon" title="Álbumes / Vinilo"><i data-lucide="disc"></i></div><div class="item-name">NGE OST Vol. 2<small><span class="s7-istate transit"><i data-lucide="truck"></i> En camino</span></small></div><span class="item-qty">×1</span><span></span></div>
+                  <div class="item-row"><div class="item-icon" title="Manga"><i data-lucide="book-open"></i></div><div class="item-name">Berserk Vol. 41<small><span class="s7-istate transit"><i data-lucide="truck"></i> En camino</span></small></div><span class="item-qty">×1</span><span></span></div>
+                  <div class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 6px;display:flex;align-items:center;gap:6px;"><i data-lucide="package" style="width:12px;height:12px;"></i> Desde <a href="#s7-order-detail-active" data-screen-link="s7-order-detail-active" style="color:var(--accent);font-family:'JetBrains Mono',ui-monospace,monospace;">ORD-20260315-02</a> · 15 mar 2026</div>
+                  <div class="item-row"><div class="item-icon" title="Arte y libretas"><i data-lucide="palette"></i></div><div class="item-name">Evangelion Art Book — Platinum Ed.<small><span class="s7-istate transit"><i data-lucide="truck"></i> En camino</span></small></div><span class="item-qty">×1</span><span></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside>
+          <div class="card elevated s8-card-cool" style="position:sticky;top:80px;">
+            <span class="s8-eyebrow-chip tone-cool"><i data-lucide="clipboard-list"></i>Resumen</span>
+            <div class="summary-list" style="margin-top:10px;">
+              <div class="row"><span class="label">Tienda</span><span class="value"><a href="#store-detail" data-screen-link="store-detail" style="color:var(--accent);">Solaris Books &amp; Records</a></span></div>
+              <div class="row"><span class="label">Fecha de envío</span><span class="value">8 may 2026</span></div>
+              <div class="row"><span class="label">Llegada estimada</span><span class="value">15 – 22 may 2026</span></div>
+              <div class="row"><span class="label">Costo de envío</span><span class="value num">¥3.800</span></div>
+              <div class="row"><span class="label">Tipo de cambio</span><span class="value num">1 JPY = 0,0065 USD</span></div>
+              <div class="row"><span class="label">Pedidos origen</span><span class="value mono">ORD-20260428-01 · ORD-20260315-02</span></div>
+            </div>
+          </div>
+
+          <div class="card elevated s8-card-accent" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="zap"></i>Acciones</span>
+            <div class="actions-list" style="margin-top:10px;">
+              <a href="#s9-delivery-mark-delivered-modal" data-screen-link="s9-delivery-mark-delivered-modal" class="btn primary"><i data-lucide="package-check"></i> Marcar como llegada</a>
+              <button class="btn ghost"><i data-lucide="pencil"></i> Editar entrega</button>
+              <a href="#s9-delivery-cancel-modal" data-screen-link="s9-delivery-cancel-modal" class="btn ghost"><i data-lucide="ban"></i> Cancelar entrega</a>
+              <a href="#s9-delivery-delete-modal" data-screen-link="s9-delivery-delete-modal" class="btn destructive-ghost"><i data-lucide="trash-2"></i> Eliminar entrega</a>
+            </div>
+          </div>
+
+          <div class="card elevated s8-card-warm" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip tone-warm"><i data-lucide="pencil-line"></i>Tu nota privada</span>
+            <p class="text-muted" style="font-size:12px;margin:6px 0 10px;">Número de tracking, instrucciones del courier o el contexto para retomarla después.</p>
+            <textarea class="input" rows="3" placeholder="Escribe una nota o recordatorio para esta entrega…">Tracking JP-7723810: revisar en la web del courier.</textarea>
+            <div class="text-muted" style="font-size:12px;margin-top:6px;"><i data-lucide="check" style="width:12px;height:12px;color:var(--success);vertical-align:-1px;"></i> Guardada hace 4s</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · DETALLE DE ENTREGA — LLEGÓ (DELIVERED)
+     FR-08-22 received date · FR-08-23 reabrir · BR-08-07 delete bloqueado
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-delivery-detail-delivered" class="screen" aria-labelledby="s9-delivery-detail-delivered-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link is-active"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left">
+          <nav class="app-breadcrumb" aria-label="Navegación"><a href="#deliveries" data-screen-link="deliveries" class="app-breadcrumb-link">Entregas</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
+          <p class="app-topbar-title" id="s9-delivery-detail-delivered-title" style="font-family:'JetBrains Mono',ui-monospace,monospace;">DLV-20260427-01</p>
+        </div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <a href="#deliveries" class="back-link" data-screen-link="deliveries"><i data-lucide="arrow-left"></i> Entregas</a>
+      <div class="detail-grid">
+        <div>
+          <div class="detail-hero s8-card-accent" style="view-transition-name:dlv-20260427-01;">
+            <div class="detail-hero-head">
+              <div class="store-avatar s56">S</div>
+              <div>
+                <div class="name">Solaris Books &amp; Records</div>
+                <div style="display:flex;gap:10px;align-items:center;margin-top:4px;flex-wrap:wrap;">
+                  <button type="button" aria-label="Copiar código de entrega" style="background:none;border:none;padding:2px 0;cursor:pointer;display:inline-flex;align-items:center;gap:5px;color:inherit;">
+                    <span class="id">DLV-20260427-01</span>
+                    <i data-lucide="copy" style="width:11px;height:11px;color:var(--text-muted);" aria-hidden="true"></i>
+                  </button>
+                  <span class="chip success"><i data-lucide="check-circle"></i> Llegó</span>
+                </div>
+              </div>
+            </div>
+            <span class="s8-eyebrow-chip tone-success"><i data-lucide="package-check"></i>Tu entrega · 1 producto</span>
+            <div style="margin-top:12px;">
+              <div class="detail-hero-amount" style="font-size:clamp(24px,4vw,30px);text-transform:uppercase;letter-spacing:0.02em;color:var(--success);display:flex;align-items:center;gap:10px;"><i data-lucide="check-circle" style="width:26px;height:26px;"></i> Entrega recibida</div>
+              <div class="detail-hero-amount-sub">el <span class="num">2 may 2026</span> · enviada el <span class="num">27 abr 2026</span></div>
+              <div class="text-muted" style="font-size:12px;margin-top:6px;">costo de envío <span class="num">$12,00 USD</span></div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <div class="subcard is-open s8-card-cool" data-collapsible>
+              <button class="subcard-toggle">
+                <span class="s8-eyebrow-chip tone-cool"><i data-lucide="boxes"></i>Productos</span>
+                <span class="text-muted" style="font-size:12px;">1</span>
+                <span class="chev"><i data-lucide="chevron-down"></i></span>
+              </button>
+              <div class="subcard-body">
+                <div class="subcard-body-inner">
+                  <div class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><i data-lucide="package" style="width:12px;height:12px;"></i> Desde <a href="#s7-order-detail-active" data-screen-link="s7-order-detail-active" style="color:var(--accent);font-family:'JetBrains Mono',ui-monospace,monospace;">ORD-20260428-01</a> · 28 abr 2026</div>
+                  <div class="item-row"><div class="item-icon" title="Funkos"><i data-lucide="package"></i></div><div class="item-name">Evangelion Funko Pop! Rei #02<small><span class="s7-istate delivered"><i data-lucide="package-check"></i> Entregado</span></small></div><span class="item-qty">×1</span><span></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside>
+          <div class="card elevated s8-card-cool" style="position:sticky;top:80px;">
+            <span class="s8-eyebrow-chip tone-cool"><i data-lucide="clipboard-list"></i>Resumen</span>
+            <div class="summary-list" style="margin-top:10px;">
+              <div class="row"><span class="label">Tienda</span><span class="value"><a href="#store-detail" data-screen-link="store-detail" style="color:var(--accent);">Solaris Books &amp; Records</a></span></div>
+              <div class="row"><span class="label">Fecha de envío</span><span class="value">27 abr 2026</span></div>
+              <div class="row"><span class="label">Fecha de recepción</span><span class="value">2 may 2026</span></div>
+              <div class="row"><span class="label">Costo de envío</span><span class="value num">$12,00 USD</span></div>
+              <div class="row"><span class="label">Pedidos origen</span><span class="value mono">ORD-20260428-01</span></div>
+            </div>
+          </div>
+
+          <div class="card elevated s8-card-accent" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="zap"></i>Acciones</span>
+            <div class="actions-list" style="margin-top:10px;">
+              <button class="btn primary"><i data-lucide="rotate-ccw"></i> Reabrir entrega</button>
+              <button class="btn ghost" disabled style="opacity:0.55;cursor:not-allowed;"><i data-lucide="pencil"></i> Editar entrega</button>
+              <button class="btn destructive-ghost" disabled style="opacity:0.55;cursor:not-allowed;"><i data-lucide="trash-2"></i> Eliminar entrega</button>
+            </div>
+            <p class="text-muted" style="font-size:12px;margin:10px 0 0;"><i data-lucide="info" style="width:12px;height:12px;vertical-align:-2px;"></i> Reabre la entrega para editarla o eliminarla.</p>
+          </div>
+
+          <div class="card elevated s8-card-warm" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip tone-warm"><i data-lucide="pencil-line"></i>Tu nota privada</span>
+            <p class="text-muted" style="font-size:12px;margin:6px 0 10px;">Número de tracking, instrucciones del courier o el contexto para retomarla después.</p>
+            <textarea class="input" rows="3" placeholder="Escribe una nota o recordatorio para esta entrega…">Tracking JP-7723810: revisar en la web del courier.</textarea>
+            <div class="text-muted" style="font-size:12px;margin-top:6px;"><i data-lucide="check" style="width:12px;height:12px;color:var(--success);vertical-align:-1px;"></i> Guardada hace 4s</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · DETALLE DE ENTREGA — CANCELADA (CANCELLED)
+     FR-08-25 productos vuelven a Listo en tienda · BR-08-07 delete habilitado
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-delivery-detail-cancelled" class="screen" aria-labelledby="s9-delivery-detail-cancelled-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link is-active"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left">
+          <nav class="app-breadcrumb" aria-label="Navegación"><a href="#deliveries" data-screen-link="deliveries" class="app-breadcrumb-link">Entregas</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
+          <p class="app-topbar-title" id="s9-delivery-detail-cancelled-title" style="font-family:'JetBrains Mono',ui-monospace,monospace;">DLV-20260402-01</p>
+        </div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <a href="#deliveries" class="back-link" data-screen-link="deliveries"><i data-lucide="arrow-left"></i> Entregas</a>
+      <div class="detail-grid">
+        <div>
+          <div class="detail-hero" style="view-transition-name:dlv-20260402-01;border-top:2px solid var(--border-strong);">
+            <div class="detail-hero-head" style="opacity:0.8;">
+              <div class="store-avatar s56">e</div>
+              <div>
+                <div class="name">eBay JP</div>
+                <div style="display:flex;gap:10px;align-items:center;margin-top:4px;flex-wrap:wrap;">
+                  <button type="button" aria-label="Copiar código de entrega" style="background:none;border:none;padding:2px 0;cursor:pointer;display:inline-flex;align-items:center;gap:5px;color:inherit;">
+                    <span class="id">DLV-20260402-01</span>
+                    <i data-lucide="copy" style="width:11px;height:11px;color:var(--text-muted);" aria-hidden="true"></i>
+                  </button>
+                  <span class="chip neutral"><i data-lucide="ban"></i> Cancelada</span>
+                </div>
+              </div>
+            </div>
+            <span class="s8-eyebrow-chip tone-destructive" style="opacity:0.85;"><i data-lucide="ban"></i>Tu entrega · 2 productos</span>
+            <div style="margin-top:12px;">
+              <div class="detail-hero-amount" style="font-size:clamp(24px,4vw,30px);text-transform:uppercase;letter-spacing:0.02em;color:var(--text-muted);display:flex;align-items:center;gap:10px;"><i data-lucide="ban" style="width:26px;height:26px;"></i> Entrega cancelada</div>
+              <div class="detail-hero-amount-sub">enviada el <span class="num">2 abr 2026</span> · cancelada el <span class="num">10 abr 2026</span></div>
+              <div class="text-muted" style="font-size:12px;margin-top:6px;">Los 2 productos volvieron a <strong>Listo en tienda</strong> y quedaron disponibles para otra entrega.</div>
+            </div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <div class="subcard is-open s8-card-cool" data-collapsible>
+              <button class="subcard-toggle">
+                <span class="s8-eyebrow-chip tone-cool"><i data-lucide="boxes"></i>Productos</span>
+                <span class="text-muted" style="font-size:12px;">2</span>
+                <span class="chev"><i data-lucide="chevron-down"></i></span>
+              </button>
+              <div class="subcard-body">
+                <div class="subcard-body-inner">
+                  <div class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><i data-lucide="package" style="width:12px;height:12px;"></i> Desde <a href="#order-detail" data-screen-link="order-detail" style="color:var(--accent);font-family:'JetBrains Mono',ui-monospace,monospace;">ORD-20260328-01</a> · 28 mar 2026</div>
+                  <div class="item-row"><div class="item-icon" title="Plush"><i data-lucide="package"></i></div><div class="item-name">Plush Pikachu<small><span class="s7-istate arrived"><i data-lucide="store"></i> Listo en tienda</span></small></div><span class="item-qty">×2</span><span></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside>
+          <div class="card elevated s8-card-cool" style="position:sticky;top:80px;">
+            <span class="s8-eyebrow-chip tone-cool"><i data-lucide="clipboard-list"></i>Resumen</span>
+            <div class="summary-list" style="margin-top:10px;">
+              <div class="row"><span class="label">Tienda</span><span class="value"><a href="#store-detail" data-screen-link="store-detail" style="color:var(--accent);">eBay JP</a></span></div>
+              <div class="row"><span class="label">Fecha de envío</span><span class="value">2 abr 2026</span></div>
+              <div class="row"><span class="label">Llegada estimada</span><span class="value">—</span></div>
+              <div class="row"><span class="label">Costo de envío</span><span class="value num">$18,50 USD</span></div>
+              <div class="row"><span class="label">Pedidos origen</span><span class="value mono">ORD-20260328-01</span></div>
+            </div>
+          </div>
+
+          <div class="card elevated s8-card-accent" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="zap"></i>Acciones</span>
+            <div class="actions-list" style="margin-top:10px;">
+              <button class="btn primary"><i data-lucide="rotate-ccw"></i> Reabrir entrega</button>
+              <a href="#s9-delivery-delete-modal" data-screen-link="s9-delivery-delete-modal" class="btn destructive-ghost"><i data-lucide="trash-2"></i> Eliminar entrega</a>
+            </div>
+            <p class="text-muted" style="font-size:12px;margin:10px 0 0;"><i data-lucide="info" style="width:12px;height:12px;vertical-align:-2px;"></i> Al reabrir, los productos vuelven a <strong>En camino</strong>.</p>
+          </div>
+
+          <div class="card elevated s8-card-warm" style="margin-top:14px;">
+            <span class="s8-eyebrow-chip tone-warm"><i data-lucide="pencil-line"></i>Tu nota privada</span>
+            <p class="text-muted" style="font-size:12px;margin:6px 0 10px;">Número de tracking, instrucciones del courier o el contexto para retomarla después.</p>
+            <textarea class="input" rows="3" placeholder="Escribe una nota o recordatorio para esta entrega…">Tracking JP-7723810: revisar en la web del courier.</textarea>
+            <div class="text-muted" style="font-size:12px;margin-top:6px;"><i data-lucide="check" style="width:12px;height:12px;color:var(--success);vertical-align:-1px;"></i> Guardada hace 4s</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · NUEVA ENTREGA — ENTRADA STANDALONE (FR-08-16/17)
+     Paso 1 activo: combobox de tienda (solo tiendas con elegibles)
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-delivery-create-standalone" class="screen" aria-labelledby="s9-delivery-create-standalone-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link is-active"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left">
+          <nav class="app-breadcrumb" aria-label="Navegación"><a href="#deliveries" data-screen-link="deliveries" class="app-breadcrumb-link">Entregas</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
+          <p class="app-topbar-title" id="s9-delivery-create-standalone-title" style="">Nueva entrega</p>
+        </div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <a href="#deliveries" class="back-link" data-screen-link="deliveries"><i data-lucide="arrow-left"></i> Entregas</a>
+      <div class="page-heading">
+        <div class="page-heading-title">
+          <h1>Nueva entrega</h1>
+          <span class="page-heading-meta">Elige una tienda, selecciona productos elegibles y registra la entrega hasta su llegada</span>
+        </div>
+      </div>
+      <div class="stepper">
+        <button class="step is-active" type="button"><span class="step-dot">1</span><span>Tienda</span></button>
+        <button class="step" type="button"><span class="step-dot">2</span><span>Productos</span></button>
+        <button class="step" type="button"><span class="step-dot">3</span><span>Datos de la entrega</span></button>
+        <button class="step" type="button"><span class="step-dot">4</span><span>Confirmar</span></button>
+      </div>
+      <div class="form-grid">
+        <div class="section-cards" data-wizard data-wizard-start="1">
+          <div class="section-card section-card-wizard is-active" data-step="1">
+            <button class="section-card-head" type="button" data-wizard-step="1">
+              <span class="step-num"><span class="num">1</span></span>
+              <div class="step-titles"><span class="eyebrow">Paso 1 · Tienda</span><h3 class="card-title">¿De qué tienda llega?</h3><div class="step-summary" data-summary>—</div></div>
+              <span class="step-chev"><i data-lucide="chevron-up"></i></span>
+            </button>
+            <div class="section-card-body"><div class="section-card-inner">
+              <div class="field">
+                <label class="field-label">Tienda <span style="color:var(--destructive);">*</span></label>
+                <div style="position:relative;">
+                  <div class="input" style="display:flex;align-items:center;gap:8px;cursor:text;" role="combobox" aria-expanded="true" aria-haspopup="listbox">
+                    <i data-lucide="search" style="width:14px;height:14px;color:var(--text-muted);flex-shrink:0;"></i>
+                    <span style="font-size:13px;color:var(--text-primary);">hm<span style="display:inline-block;width:1px;height:14px;background:var(--accent);vertical-align:-2px;margin-left:1px;"></span></span>
+                  </div>
+                  <!-- Dropdown abierto: solo tiendas con productos sin entregar (FR-08-17) -->
+                  <div role="listbox" aria-label="Tiendas con productos elegibles" style="margin-top:6px;border:1px solid var(--border-strong);border-radius:12px;background:var(--surface-elevated);box-shadow:0 12px 32px color-mix(in oklab,var(--text-primary) 12%,transparent);overflow:hidden;">
+                    <div role="option" aria-selected="true" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:color-mix(in oklch,var(--accent) 8%,transparent);cursor:pointer;">
+                      <div class="store-avatar" style="width:28px;height:28px;font-size:11px;flex-shrink:0;">H</div>
+                      <span style="flex:1;font-size:13px;font-weight:500;color:var(--text-primary);">HMV Japan</span>
+                      <span class="text-muted" style="font-size:12px;">4 productos sin entregar</span>
+                      <i data-lucide="check" style="width:14px;height:14px;color:var(--accent);"></i>
+                    </div>
+                    <div role="option" aria-selected="false" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-top:1px solid var(--border);">
+                      <div class="store-avatar" style="width:28px;height:28px;font-size:11px;flex-shrink:0;">S</div>
+                      <span style="flex:1;font-size:13px;font-weight:500;color:var(--text-primary);">Solaris Books &amp; Records</span>
+                      <span class="text-muted" style="font-size:12px;">5 productos sin entregar</span>
+                    </div>
+                    <div role="option" aria-selected="false" style="display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;border-top:1px solid var(--border);">
+                      <div class="store-avatar" style="width:28px;height:28px;font-size:11px;flex-shrink:0;">M</div>
+                      <span style="flex:1;font-size:13px;font-weight:500;color:var(--text-primary);">Mercado MX</span>
+                      <span class="text-muted" style="font-size:12px;">1 producto sin entregar</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="card-helper" style="margin-top:8px;">Solo aparecen tiendas con productos pendientes de entrega. Las tiendas sin pedidos abiertos no se listan.</p>
+              </div>
+              <div class="wizard-actions" style="margin-top:16px;">
+                <button class="btn primary" type="button" data-wizard-next>Continuar <i data-lucide="arrow-right"></i></button>
+              </div>
+            </div></div>
+          </div>
+          <div class="section-card section-card-wizard" data-step="2"><button class="section-card-head" type="button" data-wizard-step="2"><span class="step-num"><span class="num">2</span></span><div class="step-titles"><span class="eyebrow">Paso 2 · Productos</span><h3 class="card-title">¿Qué viene en esta entrega?</h3><div class="step-summary" data-summary>—</div></div><span class="step-chev"><i data-lucide="chevron-down"></i></span></button></div>
+          <div class="section-card section-card-wizard" data-step="3"><button class="section-card-head" type="button" data-wizard-step="3"><span class="step-num"><span class="num">3</span></span><div class="step-titles"><span class="eyebrow">Paso 3 · Datos de la entrega</span><h3 class="card-title">Fechas y costo</h3><div class="step-summary" data-summary>—</div></div><span class="step-chev"><i data-lucide="chevron-down"></i></span></button></div>
+          <div class="section-card section-card-wizard" data-step="4"><button class="section-card-head" type="button" data-wizard-step="4"><span class="step-num"><span class="num">4</span></span><div class="step-titles"><span class="eyebrow">Paso 4 · Confirmar</span><h3 class="card-title">Revisa y crea</h3><div class="step-summary" data-summary>—</div></div><span class="step-chev"><i data-lucide="chevron-down"></i></span></button></div>
+        </div>
+        <aside class="form-sidebar">
+          <div class="card elevated">
+            <span class="eyebrow">Resumen</span>
+            <div class="summary-list" style="margin-top:8px;">
+              <div class="row"><span class="label">Tienda</span><span class="value">HMV Japan</span></div>
+              <div class="row"><span class="label">Productos</span><span class="value text-muted">—</span></div>
+              <div class="row"><span class="label">Fecha de envío</span><span class="value text-muted">—</span></div>
+              <div class="row"><span class="label">Costo envío</span><span class="value text-muted">—</span></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · LISTA DE ENTREGAS — VACÍA INICIAL
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-deliveries-list-empty" class="screen" aria-labelledby="s9-deliveries-list-empty-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link is-active"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title" id="s9-deliveries-list-empty-title">Entregas</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <div class="page-heading">
+        <div class="page-heading-title"><h1>Entregas</h1></div>
+      </div>
+      <div class="card" style="padding:56px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;">
+        <div style="width:64px;height:64px;border-radius:20px;background:color-mix(in oklch,var(--accent) 10%,transparent);display:grid;place-items:center;color:var(--accent);margin-bottom:8px;"><i data-lucide="truck" style="width:30px;height:30px;"></i></div>
+        <h3 style="margin:0;font-size:17px;">Sin entregas todavía</h3>
+        <p class="text-secondary" style="margin:0;font-size:13.5px;max-width:420px;line-height:1.55;">Sigue cada entrega de tus pedidos, incluso cuando llegan por partes. Crea la primera desde el detalle de un pedido, o empieza acá.</p>
+        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center;">
+          <a href="#s9-delivery-create-standalone" data-screen-link="s9-delivery-create-standalone" class="btn primary"><i data-lucide="plus"></i> Nueva entrega</a>
+          <a href="#s7-orders-list-default" data-screen-link="s7-orders-list-default" class="btn ghost"><i data-lucide="package"></i> Ver mis pedidos</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · MODAL — MARCAR COMO LLEGADA (FR-08-22)
+     ADR 0008-B · tone-success · fecha de recepción requerida (≤ hoy)
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-delivery-mark-delivered-modal" class="screen" aria-labelledby="s9-mark-delivered-title">
+  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.3;">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#deliveries" class="app-nav-link is-active"><i data-lucide="truck"></i>Entregas</a>
+    </aside>
+    <div class="app-content"><div class="app-topbar"><p class="app-topbar-title">DLV-20260508-01</p></div>
+      <div style="padding:14px 0;">
+        <div style="height:220px;background:var(--surface-elevated);border-radius:16px;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s9-mark-delivered-title">
+    <div class="m01-modal-base m01b-modal">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-success" aria-hidden="true"><i data-lucide="package-check"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s9-mark-delivered-title">¿Marcar como llegada?</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">DLV-20260508-01 · Solaris Books &amp; Records</p>
+        </div>
+      </div>
+      <div class="m01b-body">
+        <div class="field" style="margin-bottom:14px;">
+          <label class="field-label" for="s9-received-date">Fecha de recepción <span style="color:var(--destructive);">*</span></label>
+          <input id="s9-received-date" class="input" type="date" value="2026-05-20" />
+          <p class="field-hint">Solo fechas pasadas o de hoy.</p>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:10px;background:color-mix(in oklch,var(--success) 9%,transparent);border:1px solid color-mix(in oklch,var(--success) 22%,transparent);font-size:12.5px;line-height:1.5;color:var(--text-secondary);">
+          <i data-lucide="info" style="width:14px;height:14px;flex-shrink:0;margin-top:2px;color:var(--success);"></i>
+          <span>Los <strong style="color:var(--text-primary);">3 productos</strong> pasarán a <strong style="color:var(--text-primary);">Entregado</strong> y los pedidos origen se actualizarán. Podrás reabrir la entrega si algo no llegó bien.</span>
+        </div>
+      </div>
+      <div class="m01b-footer">
+        <button class="btn ghost">Cancelar</button>
+        <button class="btn" style="background:var(--success);color:var(--text-on-accent);"><i data-lucide="package-check"></i> Marcar como llegada</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · MODAL — CANCELAR ENTREGA (FR-08-25 · BR-08-07)
+     ADR 0008-B · tone-warning · reversible vía reabrir
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-delivery-cancel-modal" class="screen" aria-labelledby="s9-cancel-modal-title">
+  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.3;">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#deliveries" class="app-nav-link is-active"><i data-lucide="truck"></i>Entregas</a>
+    </aside>
+    <div class="app-content"><div class="app-topbar"><p class="app-topbar-title">DLV-20260508-01</p></div>
+      <div style="padding:14px 0;">
+        <div style="height:220px;background:var(--surface-elevated);border-radius:16px;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s9-cancel-modal-title">
+    <div class="m01-modal-base m01b-modal">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-warning" aria-hidden="true"><i data-lucide="ban"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s9-cancel-modal-title">¿Cancelar entrega?</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">DLV-20260508-01 · Solaris Books &amp; Records</p>
+        </div>
+      </div>
+      <div class="m01b-body">
+        <p style="margin:0 0 12px;font-size:13.5px;color:var(--text-secondary);line-height:1.55;">La entrega pasará a <strong style="color:var(--text-primary);">Cancelada</strong> y el registro se conserva. Los <strong style="color:var(--text-primary);">3 productos</strong> vuelven a <strong style="color:var(--text-primary);">Listo en tienda</strong> y quedan disponibles para otra entrega.</p>
+        <p style="margin:0;font-size:12.5px;color:var(--text-muted);">Podrás reabrirla más adelante desde el detalle.</p>
+      </div>
+      <div class="m01b-footer">
+        <button class="btn ghost">Volver</button>
+        <button class="btn" style="background:var(--warning);color:var(--text-on-accent);"><i data-lucide="ban"></i> Cancelar entrega</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · MODAL — ELIMINAR ENTREGA (FR-08-25 · BR-08-07)
+     ADR 0008-B · tone-destructive · type-to-confirm (paridad S7)
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-delivery-delete-modal" class="screen" aria-labelledby="s9-delete-modal-title">
+  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.3;">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#deliveries" class="app-nav-link is-active"><i data-lucide="truck"></i>Entregas</a>
+    </aside>
+    <div class="app-content"><div class="app-topbar"><p class="app-topbar-title">DLV-20260508-01</p></div>
+      <div style="padding:14px 0;">
+        <div style="height:220px;background:var(--surface-elevated);border-radius:16px;"></div>
+      </div>
+    </div>
+  </div>
+  <div class="m01-overlay" role="alertdialog" aria-modal="true" aria-labelledby="s9-delete-modal-title">
+    <div class="m01-modal-base m01b-modal">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-destructive" aria-hidden="true"><i data-lucide="trash-2"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h2 class="m01b-title" id="s9-delete-modal-title">¿Eliminar entrega?</h2>
+            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle">DLV-20260402-01 · eBay JP</p>
+        </div>
+      </div>
+      <div class="m01b-body">
+        <p style="margin:0 0 14px;font-size:13.5px;color:var(--text-secondary);line-height:1.55;">Esta acción no se puede deshacer. Se eliminará <strong style="color:var(--text-primary);">DLV-20260402-01</strong> de forma permanente; los productos vuelven a <strong style="color:var(--text-primary);">Listo en tienda</strong>. Los pedidos origen no se tocan.</p>
+        <div class="field" style="margin-bottom:0;">
+          <label class="field-label" for="s9-del-confirm">Escribe <strong style="color:var(--text-primary);font-weight:600;">eliminar</strong> para confirmar</label>
+          <input id="s9-del-confirm" class="input" type="text" placeholder="eliminar" autocomplete="off" autocapitalize="off" />
+        </div>
+      </div>
+      <div class="m01b-footer">
+        <button class="btn ghost">Cancelar</button>
+        <button class="btn" disabled style="background:color-mix(in oklch,var(--destructive) 30%,transparent);color:var(--text-on-accent);cursor:not-allowed;opacity:0.6;"><i data-lucide="trash-2"></i> Eliminar entrega</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · MÓVIL — LISTA DE ENTREGAS (390px)
+     Topbar canónico S7-A.6 · cards expandibles · Cargar más (ADR 0001)
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-deliveries-list-mobile" class="screen" aria-labelledby="s9-deliveries-list-mobile-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0 0 calc(64px + env(safe-area-inset-bottom));">
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;position:sticky;top:0;z-index:20;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" id="s9-deliveries-list-mobile-title" style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Entregas</p>
+        </div>
+      </div>
+
+      <div class="s7-mob-search-wrap">
+        <label class="orders-search" style="display:flex;align-items:center;flex:1;min-width:0;">
+          <i data-lucide="search" aria-hidden="true"></i>
+          <input class="input" type="search" placeholder="Código o producto (DLV-20260508-01…)" aria-label="Buscar entregas" />
+        </label>
+        <button class="topbar-iconbtn s7-mob-filter-trigger is-active" type="button" aria-label="Filtros (1 activo)" aria-haspopup="dialog" aria-expanded="false" style="flex-shrink:0;">
+          <i data-lucide="sliders-horizontal"></i>
+          <span class="s7-mob-filter-badge" aria-hidden="true">1</span>
+        </button>
+        <a href="#s9-delivery-create-mobile" data-screen-link="s9-delivery-create-mobile" class="btn primary sm" aria-label="Nueva entrega" style="flex-shrink:0;">
+          <i data-lucide="plus"></i><span>Nueva</span>
+        </a>
+      </div>
+
+      <div class="orders-filter-chips s7-mob-chips" aria-label="Filtros activos">
+        <span class="filter-chip">
+          En camino
+          <button type="button" class="s7-mob-chip-close" aria-label="Quitar filtro En camino"><i data-lucide="x" aria-hidden="true"></i></button>
+        </span>
+      </div>
+
+      <div class="s7-mob-cards" role="list" aria-label="Entregas">
+
+        <a class="s7-order-card s7-mob-card is-expanded" role="listitem" href="#s9-delivery-detail-mobile" data-screen-link="s9-delivery-detail-mobile" style="view-transition-name:dlv-m-20260508-01;" aria-label="Entrega DLV-20260508-01 de Solaris Books and Records, en camino, llega 15 a 22 de mayo. 3 productos listados.">
+          <div class="s7-card-head">
+            <div class="store-avatar s40" aria-hidden="true">S</div>
+            <div class="s7-mob-card-title-wrap">
+              <div class="s7-card-title">Solaris Books &amp; Records</div>
+              <div class="s7-card-date">DLV-20260508-01 · enviada 8 may 2026</div>
+            </div>
+          </div>
+          <div class="s7-card-chips">
+            <span class="chip info"><i data-lucide="truck" aria-hidden="true"></i> En camino</span>
+          </div>
+          <div class="s7-card-meta s7-mob-card-meta">
+            <span>3 productos</span>
+            <span class="s7-meta-dot" aria-hidden="true">·</span>
+            <span>llega 15–22 may</span>
+            <span class="s7-mob-card-total num">¥3.800</span>
+          </div>
+          <div class="s7-mob-card-items">
+            <div class="s7-mob-item-row"><div class="s7-mob-item-icon" title="Álbumes / Vinilo"><i data-lucide="disc"></i></div><span class="s7-mob-item-name">NGE OST Vol. 2</span><span class="s7-mob-item-qty">×1</span><span class="s7-mob-item-price">—</span></div>
+            <div class="s7-mob-item-row"><div class="s7-mob-item-icon" title="Manga"><i data-lucide="book-open"></i></div><span class="s7-mob-item-name">Berserk Vol. 41</span><span class="s7-mob-item-qty">×1</span><span class="s7-mob-item-price">—</span></div>
+            <div class="s7-mob-item-row"><div class="s7-mob-item-icon" title="Arte y libretas"><i data-lucide="palette"></i></div><span class="s7-mob-item-name">Evangelion Art Book</span><span class="s7-mob-item-qty">×1</span><span class="s7-mob-item-price">—</span></div>
+          </div>
+          <div class="s7-mob-card-expand-row" role="button" tabindex="0" aria-expanded="true" aria-label="Ocultar productos">
+            <i data-lucide="chevron-down" aria-hidden="true"></i> Ocultar productos
+          </div>
+        </a>
+
+        <a class="s7-order-card s7-mob-card" role="listitem" href="#s9-delivery-detail-mobile" data-screen-link="s9-delivery-detail-mobile" aria-label="Entrega DLV-20260430-01 de HMV Japan, atrasada 3 días. 2 productos.">
+          <div class="s7-card-head">
+            <div class="store-avatar s40" aria-hidden="true">H</div>
+            <div class="s7-mob-card-title-wrap">
+              <div class="s7-card-title">HMV Japan</div>
+              <div class="s7-card-date">DLV-20260430-01 · enviada 30 abr 2026</div>
+            </div>
+          </div>
+          <div class="s7-card-chips">
+            <span class="chip warning"><i data-lucide="alert-circle" aria-hidden="true"></i> Atrasada 3d</span>
+          </div>
+          <div class="s7-card-meta s7-mob-card-meta">
+            <span>2 productos</span>
+            <span class="s7-meta-dot" aria-hidden="true">·</span>
+            <span>esperada 25–30 abr</span>
+            <span class="s7-mob-card-total num">¥3.200</span>
+          </div>
+          <div class="s7-mob-card-expand-row" role="button" tabindex="0" aria-expanded="false" aria-label="Ver productos">
+            <i data-lucide="chevron-down" aria-hidden="true"></i> Ver 2 productos
+          </div>
+        </a>
+
+        <a class="s7-order-card s7-mob-card" role="listitem" href="#s9-delivery-detail-mobile" data-screen-link="s9-delivery-detail-mobile" style="opacity:0.78;" aria-label="Entrega DLV-20260427-01 de Solaris Books and Records, recibida el 2 de mayo. 1 producto.">
+          <div class="s7-card-head">
+            <div class="store-avatar s40" aria-hidden="true">S</div>
+            <div class="s7-mob-card-title-wrap">
+              <div class="s7-card-title">Solaris Books &amp; Records</div>
+              <div class="s7-card-date">DLV-20260427-01 · enviada 27 abr 2026</div>
+            </div>
+          </div>
+          <div class="s7-card-chips">
+            <span class="chip success"><i data-lucide="check-circle" aria-hidden="true"></i> Llegó</span>
+          </div>
+          <div class="s7-card-meta s7-mob-card-meta">
+            <span>1 producto</span>
+            <span class="s7-meta-dot" aria-hidden="true">·</span>
+            <span>Recibida 2 may</span>
+            <span class="s7-mob-card-total num">$12,00</span>
+          </div>
+          <div class="s7-mob-card-expand-row" role="button" tabindex="0" aria-expanded="false" aria-label="Ver productos">
+            <i data-lucide="chevron-down" aria-hidden="true"></i> Ver 1 producto
+          </div>
+        </a>
+
+      </div>
+      <div class="load-more-wrap" style="padding:0 16px;">
+        <button class="btn ghost" style="width:100%;justify-content:center;"><i data-lucide="chevron-down"></i> Cargar más</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · MÓVIL — DETALLE DE ENTREGA (IN_TRANSIT)
+     Sticky action bar single-primary (§9.16 + ADR 0011)
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-delivery-detail-mobile" class="screen" aria-labelledby="s9-delivery-detail-mobile-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0 0 calc(84px + env(safe-area-inset-bottom));">
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;position:sticky;top:0;z-index:20;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s9-deliveries-list-mobile" data-screen-link="s9-deliveries-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Entregas</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" id="s9-delivery-detail-mobile-title" style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',ui-monospace,monospace;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">DLV-20260508-01</p>
+        </div>
+      </div>
+
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:14px;">
+        <!-- Hero compacto -->
+        <div class="detail-hero s8-card-accent" style="view-transition-name:dlv-m-20260508-01;padding:16px;">
+          <div class="detail-hero-head" style="margin-bottom:8px;">
+            <div class="store-avatar s40">S</div>
+            <div style="min-width:0;">
+              <div class="name" style="font-size:16px;">Solaris Books &amp; Records</div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap;">
+                <span class="id" style="font-size:11px;">DLV-20260508-01</span>
+                <span class="chip info" style="padding:2px 8px;font-size:11px;"><i data-lucide="truck"></i> En camino</span>
+              </div>
+            </div>
+          </div>
+          <span class="s8-eyebrow-chip"><i data-lucide="truck"></i>Tu entrega · 3 productos</span>
+          <div style="margin-top:10px;">
+            <div class="text-secondary" style="font-size:12px;">Llegada estimada</div>
+            <div class="detail-hero-amount" style="font-size:24px;">15 – 22 may 2026</div>
+            <div class="detail-hero-amount-sub" style="font-size:12.5px;margin-bottom:10px;">enviada el 8 may 2026 · <span class="num">¥3.800</span></div>
+            <div class="progress" aria-label="En tránsito, 40% de la ventana"><span style="width:40%"></span></div>
+          </div>
+        </div>
+
+        <!-- Productos agrupados -->
+        <div class="subcard is-open s8-card-cool" data-collapsible>
+          <button class="subcard-toggle">
+            <span class="s8-eyebrow-chip tone-cool"><i data-lucide="boxes"></i>Productos</span>
+            <span class="text-muted" style="font-size:12px;">3</span>
+            <span class="chev"><i data-lucide="chevron-down"></i></span>
+          </button>
+          <div class="subcard-body">
+            <div class="subcard-body-inner">
+              <div class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Desde ORD-20260428-01</div>
+              <div class="item-row"><div class="item-icon"><i data-lucide="disc"></i></div><div class="item-name">NGE OST Vol. 2<small><span class="s7-istate transit"><i data-lucide="truck"></i> En camino</span></small></div><span class="item-qty">×1</span><span></span></div>
+              <div class="item-row"><div class="item-icon"><i data-lucide="book-open"></i></div><div class="item-name">Berserk Vol. 41<small><span class="s7-istate transit"><i data-lucide="truck"></i> En camino</span></small></div><span class="item-qty">×1</span><span></span></div>
+              <div class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.06em;margin:12px 0 6px;">Desde ORD-20260315-02</div>
+              <div class="item-row"><div class="item-icon"><i data-lucide="palette"></i></div><div class="item-name">Evangelion Art Book<small><span class="s7-istate transit"><i data-lucide="truck"></i> En camino</span></small></div><span class="item-qty">×1</span><span></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Resumen -->
+        <div class="card s8-card-cool">
+          <span class="s8-eyebrow-chip tone-cool"><i data-lucide="clipboard-list"></i>Resumen</span>
+          <div class="summary-list" style="margin-top:10px;">
+            <div class="row"><span class="label">Tienda</span><span class="value">Solaris Books &amp; Records</span></div>
+            <div class="row"><span class="label">Fecha de envío</span><span class="value">8 may 2026</span></div>
+            <div class="row"><span class="label">Llegada est.</span><span class="value">15 – 22 may 2026</span></div>
+            <div class="row"><span class="label">Costo</span><span class="value num">¥3.800 (≈ $24,70)</span></div>
+          </div>
+        </div>
+
+        <!-- Nota privada -->
+        <div class="card s8-card-warm">
+          <span class="s8-eyebrow-chip tone-warm"><i data-lucide="pencil-line"></i>Tu nota privada</span>
+          <textarea class="input" rows="3" placeholder="Escribe una nota o recordatorio para esta entrega…" style="margin-top:10px;">Tracking JP-7723810: revisar en la web del courier.</textarea>
+          <div class="text-muted" style="font-size:12px;margin-top:6px;"><i data-lucide="check" style="width:12px;height:12px;color:var(--success);vertical-align:-1px;"></i> Guardada hace 4s</div>
+        </div>
+      </div>
+
+      <!-- Sticky action bar: single-primary (§9.16) + overflow sheet (ADR 0011) -->
+      <div style="position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;gap:10px;align-items:center;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:color-mix(in oklab,var(--background) 92%, transparent);backdrop-filter:blur(12px);border-top:1px solid var(--border);">
+        <a href="#s9-delivery-actions-sheet-mobile" data-screen-link="s9-delivery-actions-sheet-mobile" class="topbar-iconbtn" aria-label="Más acciones" style="flex-shrink:0;width:44px;height:44px;border:1px solid var(--border-strong);border-radius:12px;"><i data-lucide="ellipsis"></i></a>
+        <button class="btn accent" style="flex:1;justify-content:center;"><i data-lucide="pencil"></i> Editar</button>
+        <a href="#s9-mark-delivered-sheet-mobile" data-screen-link="s9-mark-delivered-sheet-mobile" class="btn primary" style="flex:1.4;justify-content:center;"><i data-lucide="package-check"></i> Marcar llegada</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · MÓVIL — NUEVA ENTREGA (paso 2 · productos)
+     Stepper compacto eyebrow · sticky footer CTA
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-delivery-create-mobile" class="screen" aria-labelledby="s9-delivery-create-mobile-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0 0 calc(84px + env(safe-area-inset-bottom));">
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;position:sticky;top:0;z-index:20;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s9-deliveries-list-mobile" data-screen-link="s9-deliveries-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Entregas</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" id="s9-delivery-create-mobile-title" style="font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Nueva entrega</p>
+        </div>
+      </div>
+
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
+        <div class="text-muted" style="font-size:11px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Paso 2 de 4 · Productos</div>
+
+        <div class="field-as-attribute" style="margin:0;">
+          <div class="store-avatar s40">S</div>
+          <div class="body">
+            <div class="badge">↳ Desde ORD-20260428-01</div>
+            <div class="name">Solaris Books &amp; Records</div>
+          </div>
+          <button class="btn link sm" type="button"><i data-lucide="pencil"></i></button>
+        </div>
+
+        <label class="orders-search" style="display:flex;align-items:center;">
+          <i data-lucide="search" aria-hidden="true"></i>
+          <input class="input" type="search" placeholder="Buscar producto…" aria-label="Buscar producto" />
+        </label>
+
+        <div class="product-group">
+          <button class="product-group-head" type="button">
+            <span class="id">ORD-20260428-01</span>
+            <span class="count">· 3 elegibles</span>
+            <span class="all"><span class="check is-checked"><i data-lucide="check"></i></span> Todo</span>
+          </button>
+          <div class="product-row">
+            <span class="check is-checked" data-toggle-check><i data-lucide="check"></i></span>
+            <div class="icon-tile"><i data-lucide="disc"></i></div>
+            <div class="name">NGE OST Vol. 2<br><small class="text-muted" style="font-size:12px;"><span class="chip success" style="padding:2px 8px;font-size:11px;"><i data-lucide="check-circle"></i> Listo en tienda</span></small></div>
+            <span class="qty">×1</span>
+            <span></span>
+          </div>
+          <div class="product-row">
+            <span class="check is-checked" data-toggle-check><i data-lucide="check"></i></span>
+            <div class="icon-tile"><i data-lucide="book-open"></i></div>
+            <div class="name">Berserk Vol. 41<br><small class="text-muted" style="font-size:12px;"><span class="chip neutral" style="padding:2px 8px;font-size:11px;"><i data-lucide="clock"></i> Pendiente en tienda</span></small></div>
+            <span class="qty">×1</span>
+            <span></span>
+          </div>
+          <div class="product-row">
+            <span class="check is-checked" data-toggle-check><i data-lucide="check"></i></span>
+            <div class="icon-tile"><i data-lucide="palette"></i></div>
+            <div class="name">Evangelion Art Book<br><small class="text-muted" style="font-size:12px;"><span class="chip neutral" style="padding:2px 8px;font-size:11px;"><i data-lucide="clock"></i> Pendiente en tienda</span></small></div>
+            <span class="qty">×1</span>
+            <span></span>
+          </div>
+        </div>
+
+        <div class="product-group">
+          <button class="product-group-head" type="button">
+            <span class="id">ORD-20260315-02</span>
+            <span class="count">· 2 elegibles</span>
+            <span class="all"><span class="check"></span> Todo</span>
+          </button>
+        </div>
+
+        <p class="text-muted" style="font-size:12px;margin:0;"><i data-lucide="info" style="width:12px;height:12px;vertical-align:-2px;"></i> Los productos ya entregados o en otra entrega activa no aparecen acá.</p>
+      </div>
+
+      <!-- Sticky footer CTA -->
+      <div style="position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;gap:10px;align-items:center;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:color-mix(in oklab,var(--background) 92%, transparent);backdrop-filter:blur(12px);border-top:1px solid var(--border);">
+        <button class="btn ghost" style="flex-shrink:0;">Atrás</button>
+        <span class="text-muted" style="font-size:12px;flex-shrink:0;">3 seleccionados</span>
+        <button class="btn primary" style="flex:1;justify-content:center;">Continuar <i data-lucide="arrow-right"></i></button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · MÓVIL — SHEET MARCAR COMO LLEGADA (FR-08-22)
+     Bottom sheet (Vaul / M06) con fecha de recepción
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-mark-delivered-sheet-mobile" class="screen" aria-labelledby="s9-mob-delivered-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0;">
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s9-deliveries-list-mobile" data-screen-link="s9-deliveries-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Entregas</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',ui-monospace,monospace;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">DLV-20260508-01</p>
+        </div>
+      </div>
+      <div style="padding:14px 16px;opacity:0.5;">
+        <div style="height:200px;background:var(--surface-elevated);border-radius:16px;"></div>
+      </div>
+    </div>
+    <div class="s7-mob-backdrop" aria-hidden="true"></div>
+    <div class="s7-mob-sheet" role="dialog" aria-modal="true" aria-labelledby="s9-mob-delivered-title">
+      <div class="s7-mob-sheet-handle" aria-hidden="true"></div>
+      <div class="s7-mob-sheet-body" style="padding-top:14px;">
+        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+          <div style="width:40px;height:40px;border-radius:12px;background:color-mix(in oklch,var(--success) 12%,transparent);display:grid;place-items:center;color:var(--success);flex-shrink:0;"><i data-lucide="package-check"></i></div>
+          <div style="min-width:0;flex:1;">
+            <h3 class="s7-mob-sheet-title" id="s9-mob-delivered-title" style="margin:0 0 4px;">¿Marcar como llegada?</h3>
+            <p style="margin:0;font-size:13px;color:var(--text-secondary);line-height:1.5;">Los <strong style="color:var(--text-primary);">3 productos</strong> de <strong style="color:var(--text-primary);">DLV-20260508-01</strong> pasarán a <strong style="color:var(--text-primary);">Entregado</strong>. Podrás reabrirla si algo no llegó bien.</p>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label class="field-label" for="s9m-received-date">Fecha de recepción <span style="color:var(--destructive);">*</span></label>
+          <input id="s9m-received-date" class="input" type="date" value="2026-05-20" />
+          <p class="field-hint">Solo fechas pasadas o de hoy.</p>
+        </div>
+      </div>
+      <div class="s7-mob-sheet-footer">
+        <button type="button" class="btn ghost" style="flex:1;justify-content:center;">Cancelar</button>
+        <button type="button" class="btn" style="flex:1.6;justify-content:center;background:var(--success);color:var(--text-on-accent);"><i data-lucide="package-check"></i> Marcar como llegada</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · MÓVIL — SHEET MÁS ACCIONES (ADR 0011)
+     Overflow del sticky bar: editar / cancelar / eliminar
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-delivery-actions-sheet-mobile" class="screen" aria-labelledby="s9-mob-actions-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0;">
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <nav class="app-breadcrumb" aria-label="Navegación" style="min-width:0;display:flex;align-items:center;gap:6px;"><a href="#s9-deliveries-list-mobile" data-screen-link="s9-deliveries-list-mobile" class="app-breadcrumb-link" style="font-size:13px;color:var(--text-secondary);">Entregas</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true" style="flex-shrink:0;width:14px;height:14px;color:var(--text-muted);"></i>
+          <p class="app-topbar-title" style="font-size:14px;font-weight:600;font-family:'JetBrains Mono',ui-monospace,monospace;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">DLV-20260508-01</p>
+        </div>
+      </div>
+      <div style="padding:14px 16px;opacity:0.5;">
+        <div style="height:200px;background:var(--surface-elevated);border-radius:16px;"></div>
+      </div>
+    </div>
+    <div class="s7-mob-backdrop" aria-hidden="true"></div>
+    <div class="s7-mob-sheet" role="dialog" aria-modal="true" aria-labelledby="s9-mob-actions-title">
+      <div class="s7-mob-sheet-handle" aria-hidden="true"></div>
+      <div class="s7-mob-sheet-body" style="padding-top:10px;">
+        <h3 class="s7-mob-sheet-title" id="s9-mob-actions-title" style="margin:0 0 4px;">Más acciones</h3>
+        <p style="margin:0 0 12px;font-size:12.5px;color:var(--text-muted);">DLV-20260508-01 · Solaris Books &amp; Records</p>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <button type="button" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border:none;background:none;border-radius:12px;font-size:14.5px;font-weight:500;color:var(--text-primary);cursor:pointer;text-align:left;width:100%;">
+            <i data-lucide="pencil" style="width:18px;height:18px;color:var(--text-secondary);"></i> Editar entrega
+          </button>
+          <a href="#s9-delivery-cancel-modal" data-screen-link="s9-delivery-cancel-modal" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:12px;font-size:14.5px;font-weight:500;color:var(--warning);text-decoration:none;">
+            <i data-lucide="ban" style="width:18px;height:18px;"></i> Cancelar entrega
+          </a>
+          <a href="#s9-delivery-delete-modal" data-screen-link="s9-delivery-delete-modal" style="display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:12px;font-size:14.5px;font-weight:500;color:var(--destructive);text-decoration:none;">
+            <i data-lucide="trash-2" style="width:18px;height:18px;"></i> Eliminar entrega
+          </a>
+        </div>
+      </div>
+      <div class="s7-mob-sheet-footer">
+        <button type="button" class="btn ghost" style="flex:1;justify-content:center;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · EDITAR ENTREGA (WO-05 · FR-08-24 · BR-08-04)
+     Misma estructura del create · tienda fija · FX oculto (moneda = base) ·
+     quitar producto lo devuelve a Listo en tienda · aside resalta cambios
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-delivery-edit" class="screen" aria-labelledby="s9-delivery-edit-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link is-active"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left">
+          <nav class="app-breadcrumb" aria-label="Navegación"><a href="#deliveries" data-screen-link="deliveries" class="app-breadcrumb-link">Entregas</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
+          <p class="app-topbar-title" id="s9-delivery-edit-title" style="font-family:'JetBrains Mono',ui-monospace,monospace;">DLV-20260505-01</p>
+        </div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <a href="#s9-delivery-detail" class="back-link" data-screen-link="s9-delivery-detail"><i data-lucide="arrow-left"></i> Volver a la entrega</a>
+      <div class="page-heading">
+        <div class="page-heading-title">
+          <h1>Editar entrega</h1>
+          <span class="page-heading-meta">DLV-20260505-01 · TCG.cl · En camino</span>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="section-cards">
+
+          <!-- Tienda (fija en edición) -->
+          <div class="section-card">
+            <div class="section-card-inner" style="padding:18px 20px;">
+              <span class="eyebrow">Tienda</span>
+              <div class="field-as-attribute" style="margin-top:10px;">
+                <div class="store-avatar s40">T</div>
+                <div class="body">
+                  <div class="name">TCG.cl</div>
+                </div>
+              </div>
+              <p class="card-helper" style="margin-top:8px;">La tienda no se puede cambiar: los productos de la entrega dependen de ella. Si te equivocaste de tienda, elimina esta entrega y crea otra.</p>
+            </div>
+          </div>
+
+          <!-- Productos (FR-08-24: quitar devuelve a Listo en tienda) -->
+          <div class="section-card">
+            <div class="section-card-inner" style="padding:18px 20px;">
+              <span class="eyebrow">Productos</span>
+              <div class="orders-search" style="margin:12px 0 14px;">
+                <i data-lucide="search"></i>
+                <input class="input" type="text" placeholder="Buscar producto…" aria-label="Buscar producto" />
+              </div>
+              <div class="product-group">
+                <button class="product-group-head" type="button">
+                  <span class="id">ORD-20260420-01</span>
+                  <span class="count">· 20 abr 26</span>
+                  <span class="all"><span class="check is-checked"><i data-lucide="check"></i></span> Todo</span>
+                </button>
+                <div class="product-row">
+                  <span class="check is-checked" data-toggle-check><i data-lucide="check"></i></span>
+                  <div class="icon-tile"><i data-lucide="gallery-thumbnails"></i></div>
+                  <div class="name">Pokémon TCG Booster Pack (lote)<br><small class="text-muted" style="font-size:12px;"><span class="chip info" style="padding:2px 8px;font-size:11px;"><i data-lucide="truck"></i> En esta entrega</span></small></div>
+                  <span class="qty">×11</span>
+                  <span></span>
+                </div>
+                <div class="product-row" style="background:color-mix(in oklch,var(--warning) 6%,transparent);border-radius:10px;">
+                  <span class="check" data-toggle-check></span>
+                  <div class="icon-tile"><i data-lucide="gallery-thumbnails"></i></div>
+                  <div class="name">Pokémon TCG Elite Trainer Box<br><small style="font-size:12px;color:var(--warning);"><i data-lucide="corner-down-left" style="width:11px;height:11px;vertical-align:-2px;"></i> Al guardar vuelve a <strong>Listo en tienda</strong></small></div>
+                  <span class="qty">×1</span>
+                  <span></span>
+                </div>
+              </div>
+              <p class="text-muted" style="font-size:12px;margin:10px 0 0;"><i data-lucide="info" style="width:12px;height:12px;vertical-align:-2px;"></i> Los productos que quites quedan disponibles para otra entrega.</p>
+            </div>
+          </div>
+
+          <!-- Datos de la entrega (moneda = base ⇒ sin tipo de cambio, FR-08-10) -->
+          <div class="section-card">
+            <div class="section-card-inner" style="padding:18px 20px;">
+              <span class="eyebrow">Datos de la entrega</span>
+              <div class="grid-2" style="margin-top:12px;">
+                <div class="field">
+                  <label class="field-label">Fecha de envío <span style="color:var(--destructive);">*</span></label>
+                  <input class="input" type="date" value="2026-05-05" aria-label="Fecha de envío" />
+                </div>
+                <div class="field">
+                  <label class="field-label">Llegada estimada <span class="text-muted" style="font-size:11px;font-weight:400;">(opcional)</span></label>
+                  <button type="button" class="input" style="display:flex;align-items:center;justify-content:space-between;text-align:left;cursor:pointer;height:40px;border-color:color-mix(in oklch,var(--accent) 45%,transparent);" aria-haspopup="dialog" aria-expanded="false" aria-label="Seleccionar ventana de llegada">
+                    <span style="font-size:13px;">20 may – 24 may 2026</span>
+                    <i data-lucide="calendar-days" style="width:15px;height:15px;color:var(--text-muted);flex-shrink:0;"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="grid-2">
+                <div class="field">
+                  <label class="field-label">Costo de envío <span style="color:var(--destructive);">*</span></label>
+                  <input class="input num" type="text" value="8,40" />
+                </div>
+                <div class="field">
+                  <label class="field-label">Moneda <span style="color:var(--destructive);">*</span></label>
+                  <select class="select"><option selected>USD</option><option>JPY</option><option>EUR</option></select>
+                  <p class="card-helper" style="margin-top:6px;">Misma moneda que tu base — no necesitas tipo de cambio.</p>
+                </div>
+              </div>
+              <div class="wizard-actions" style="margin-top:8px;">
+                <a href="#s9-delivery-detail" data-screen-link="s9-delivery-detail" class="btn ghost">Descartar cambios</a>
+                <button class="btn primary" type="button"><i data-lucide="check"></i> Guardar cambios</button>
+                <span class="text-muted" style="font-size:12px;align-self:center;">o presiona ⌘ Enter</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="form-sidebar">
+          <!-- Resalta solo lo que cambió (paridad order-edit) -->
+          <div class="card elevated">
+            <span class="eyebrow">Resumen de cambios</span>
+            <div class="summary-list" style="margin-top:8px;">
+              <div class="row"><span class="label">Tienda</span><span class="value">TCG.cl</span></div>
+              <div class="row"><span class="label">Productos</span><span class="value" style="color:var(--warning);font-weight:600;">12 → 11</span></div>
+              <div class="row"><span class="label">Fecha de envío</span><span class="value">5 may 2026</span></div>
+              <div class="row"><span class="label">Llegada est.</span><span class="value" style="color:var(--accent);font-weight:600;">18 may → 20–24 may</span></div>
+              <div class="row"><span class="label">Costo envío</span><span class="value num">$8,40 USD</span></div>
+            </div>
+            <p class="text-muted" style="font-size:12px;margin:10px 0 0;">1 producto vuelve a <strong>Listo en tienda</strong> al guardar.</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · LISTA DE ENTREGAS — VACÍA FILTRADA
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-deliveries-list-empty-filtered" class="screen" aria-labelledby="s9-deliveries-list-empty-filtered-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link is-active"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title" id="s9-deliveries-list-empty-filtered-title">Entregas</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <div class="page-heading">
+        <div class="page-heading-title"><h1>Entregas</h1><span class="page-heading-meta">0 resultados</span></div>
+      </div>
+      <div class="orders-toolbar">
+        <div class="orders-search">
+          <i data-lucide="search"></i>
+          <input class="input" type="search" value="nendoroid" aria-label="Buscar entregas" />
+        </div>
+        <button class="btn ghost" data-open-filters="deliveries" style="background:color-mix(in oklch,var(--accent) 10%,transparent);color:var(--accent);border-color:color-mix(in oklch,var(--accent) 28%,transparent);"><i data-lucide="sliders-horizontal"></i> Filtrar <span style="background:var(--accent);color:var(--text-on-accent);font-size:10px;font-weight:700;border-radius:999px;padding:1px 5px;margin-left:2px;">2</span></button>
+        <select class="input" style="min-width:148px;width:auto;" aria-label="Ordenar por"><option selected>Más antiguas</option></select>
+        <a href="#s9-delivery-create-standalone" class="btn primary" data-screen-link="s9-delivery-create-standalone"><i data-lucide="plus"></i> Nueva entrega</a>
+      </div>
+      <div class="orders-filter-chips" aria-label="Filtros activos">
+        <span class="filter-chip">En camino <i data-lucide="x"></i></span>
+        <span class="filter-chip">nendoroid <i data-lucide="x"></i></span>
+      </div>
+      <div class="card" style="padding:48px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;">
+        <div style="width:56px;height:56px;border-radius:18px;background:color-mix(in oklch,var(--accent) 8%,transparent);display:grid;place-items:center;color:var(--text-muted);margin-bottom:6px;"><i data-lucide="search-x" style="width:26px;height:26px;"></i></div>
+        <h3 style="margin:0;font-size:16px;">Sin resultados con estos filtros</h3>
+        <p class="text-secondary" style="margin:0;font-size:13.5px;max-width:400px;line-height:1.55;">Ninguna entrega coincide con <strong>"nendoroid"</strong> y los filtros activos. Prueba ajustar la búsqueda o limpiarlos.</p>
+        <button class="btn ghost" style="margin-top:14px;"><i data-lucide="filter-x"></i> Limpiar filtros</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · LISTA DE ENTREGAS — CARGANDO (skeleton)
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-deliveries-list-loading" class="screen" aria-labelledby="s9-deliveries-list-loading-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link is-active"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title" id="s9-deliveries-list-loading-title">Entregas</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <div class="page-heading">
+        <div class="page-heading-title"><h1>Entregas</h1><span class="page-heading-meta s7-mob-skel" style="display:inline-block;width:140px;height:16px;border-radius:4px;"></span></div>
+      </div>
+      <div class="orders-toolbar" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px;">
+        <div class="s7-mob-skel" style="flex:1;min-width:240px;height:38px;border-radius:8px;"></div>
+        <div class="s7-mob-skel" style="width:110px;height:38px;border-radius:8px;"></div>
+        <div class="s7-mob-skel" style="width:140px;height:38px;border-radius:8px;"></div>
+      </div>
+      <div class="card" style="padding:4px;" aria-busy="true" aria-label="Cargando entregas">
+        <div class="orders-table-head" role="row" style="opacity:0.6;">
+          <div></div>
+          <div>Entrega / Tienda</div>
+          <div>Productos</div>
+          <div>Estado</div>
+          <div>Costo</div>
+          <div>Llegada est.</div>
+          <div></div>
+        </div>
+        <div class="order-row" role="row" style="cursor:default;pointer-events:none;">
+          <div class="s7-mob-skel" style="width:32px;height:32px;border-radius:999px;"></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><div class="s7-mob-skel" style="height:14px;width:65%;"></div><div class="s7-mob-skel" style="height:11px;width:50%;"></div></div>
+          <div class="s7-mob-skel" style="height:11px;width:60%;justify-self:center;"></div>
+          <div class="s7-mob-skel" style="height:22px;width:110px;border-radius:999px;justify-self:center;"></div>
+          <div class="s7-mob-skel" style="height:13px;width:64px;justify-self:end;"></div>
+          <div class="s7-mob-skel" style="height:12px;width:90px;"></div>
+          <div></div>
+        </div>
+        <div class="order-row" role="row" style="cursor:default;pointer-events:none;">
+          <div class="s7-mob-skel" style="width:32px;height:32px;border-radius:999px;"></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><div class="s7-mob-skel" style="height:14px;width:55%;"></div><div class="s7-mob-skel" style="height:11px;width:42%;"></div></div>
+          <div class="s7-mob-skel" style="height:11px;width:55%;justify-self:center;"></div>
+          <div class="s7-mob-skel" style="height:22px;width:96px;border-radius:999px;justify-self:center;"></div>
+          <div class="s7-mob-skel" style="height:13px;width:58px;justify-self:end;"></div>
+          <div class="s7-mob-skel" style="height:12px;width:78px;"></div>
+          <div></div>
+        </div>
+        <div class="order-row" role="row" style="cursor:default;pointer-events:none;opacity:0.7;">
+          <div class="s7-mob-skel" style="width:32px;height:32px;border-radius:999px;"></div>
+          <div style="display:flex;flex-direction:column;gap:6px;"><div class="s7-mob-skel" style="height:14px;width:70%;"></div><div class="s7-mob-skel" style="height:11px;width:48%;"></div></div>
+          <div class="s7-mob-skel" style="height:11px;width:62%;justify-self:center;"></div>
+          <div class="s7-mob-skel" style="height:22px;width:118px;border-radius:999px;justify-self:center;"></div>
+          <div class="s7-mob-skel" style="height:13px;width:70px;justify-self:end;"></div>
+          <div class="s7-mob-skel" style="height:12px;width:84px;"></div>
+          <div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S9 · NUEVA ENTREGA — SIN PRODUCTOS ELEGIBLES (standalone)
+     Copy del FRD-08 (empty state de elegibilidad)
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s9-delivery-create-empty" class="screen" aria-labelledby="s9-delivery-create-empty-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link is-active"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left">
+          <nav class="app-breadcrumb" aria-label="Navegación"><a href="#deliveries" data-screen-link="deliveries" class="app-breadcrumb-link">Entregas</a></nav>
+          <i data-lucide="chevron-right" class="app-breadcrumb-sep" aria-hidden="true"></i>
+          <p class="app-topbar-title" id="s9-delivery-create-empty-title">Nueva entrega</p>
+        </div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <a href="#deliveries" class="back-link" data-screen-link="deliveries"><i data-lucide="arrow-left"></i> Entregas</a>
+      <div class="page-heading">
+        <div class="page-heading-title"><h1>Nueva entrega</h1></div>
+      </div>
+      <div class="card" style="padding:56px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;">
+        <div style="width:64px;height:64px;border-radius:20px;background:color-mix(in oklch,var(--accent) 8%,transparent);display:grid;place-items:center;color:var(--text-muted);margin-bottom:8px;"><i data-lucide="package-x" style="width:30px;height:30px;"></i></div>
+        <h3 style="margin:0;font-size:17px;">Sin productos elegibles</h3>
+        <p class="text-secondary" style="margin:0;font-size:13.5px;max-width:440px;line-height:1.55;">No hay productos de pedidos disponibles para una nueva entrega. Los productos actuales ya están entregados, ya están en otra entrega o aún no están disponibles.</p>
+        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center;">
+          <a href="#s7-orders-list-default" data-screen-link="s7-orders-list-default" class="btn primary"><i data-lucide="package"></i> Ver mis pedidos</a>
+          <a href="#deliveries" data-screen-link="deliveries" class="btn ghost">Volver a entregas</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <!-- Filter drawer (mobile sheet / desktop drawer derecho) -->
@@ -15350,8 +16693,7 @@
     'orders':          [['Inicio', '#dashboard'], ['Pedidos', '#orders']],
     'order-detail':    [['Inicio', '#dashboard'], ['Pedidos', '#orders'], ['PT-002418', null]],
     'order-create':    [['Inicio', '#dashboard'], ['Pedidos', '#orders'], ['Anotar pedido', null]],
-    'deliveries':      [['Inicio', '#dashboard'], ['Entregas', '#deliveries']],
-    'delivery-create': [['Inicio', '#dashboard'], ['Entregas', '#deliveries'], ['Anotar entrega', null]],
+    // 'deliveries' y 'delivery-create' fueron refactorizadas en S9 con topbar inline (patrón S7) — sin inyección JS.
     'stores':          [['Inicio', '#dashboard'], ['Tiendas', '#stores']],
     'store-detail':    [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Akiba Records', null]],
     'store-create':                      [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Sumar tienda', null]],
@@ -15846,11 +17188,13 @@
       sections: [
         { name: 'Estado de la entrega', type: 'pills', options: ['En camino','Llegó','Cancelada'], selected: ['En camino'] },
         { name: 'Solo atrasadas', type: 'switches', options: [['Atrasada (ETA pasada)', false]] },
-        { name: 'Tienda', type: 'pills-search', placeholder: 'Buscar tienda…', options: ['Mercado MX','Surugaya','AmiAmi','HMV Japan','TCG.cl','eBay JP'] },
-        { name: 'Rango de fechas (entrega)', type: 'date-range' },
-        { name: 'Rango de fechas (ETA)', type: 'date-range' },
+        { name: 'Llegada estimada', type: 'pills', options: ['Vence hoy','Próximos 7 días','Próximos 14 días','Este mes'], selected: [] },
+        { name: 'Rango de llegada (manual)', type: 'date-range' },
+        { name: 'Tienda', type: 'pills-search', placeholder: 'Buscar tienda…', options: ['Solaris Books & Records','HMV Japan','TCG.cl','Surugaya','AmiAmi','eBay JP'] },
+        { name: 'Producto', type: 'pills-search', placeholder: 'Nombre del producto…', options: [] },
+        { name: 'Rango de fechas (envío)', type: 'date-range' },
       ],
-      resultCount: 7,
+      resultCount: 3,
     },
     stores: {
       title: 'Filtrar tiendas',

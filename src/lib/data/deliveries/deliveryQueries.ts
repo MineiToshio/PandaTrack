@@ -12,6 +12,8 @@ export type EligibleProduct = {
   orderItemName: string;
   quantity: number;
   productTypeKey: string | null;
+  /** Current persisted state — drives the picker chip (Listo/Pendiente/En esta entrega). */
+  deliveryState: OrderItemDeliveryState;
   orderId: string;
   orderHumanReadableId: string;
   orderDate: Date;
@@ -137,6 +139,7 @@ export async function getEligibleProductsForStore(
       name: true,
       quantity: true,
       productTypeKey: true,
+      deliveryState: true,
       order: {
         select: {
           id: true,
@@ -162,6 +165,7 @@ export async function getEligibleProductsForStore(
       orderItemName: item.name,
       quantity: item.quantity,
       productTypeKey: item.productTypeKey,
+      deliveryState: item.deliveryState,
       orderId,
       orderHumanReadableId,
       orderDate,
