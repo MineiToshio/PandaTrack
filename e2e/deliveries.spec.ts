@@ -94,7 +94,9 @@ test.describe("Delivery lifecycle journey", () => {
       .first()
       .click();
 
-    // 3. Step 3 keeps the prefilled date + cost 0.00; base currency needs no FX.
+    // 3. Step 3 keeps the prefilled date; shipping cost is required (no default 0).
+    // Base currency needs no FX.
+    await page.getByLabel(/shipping cost/i).fill("12.00");
     await page
       .getByRole("button", { name: /^continue$/i })
       .first()
