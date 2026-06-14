@@ -60,6 +60,13 @@ export type WizardAccordionProps = {
 export type WizardAccordionHandle = {
   /** Activate a specific step. Respects `gated` if enabled. */
   activate: (n: number) => void;
+  /**
+   * Invalidate every step from `n` onward: clears their done/errored marks and,
+   * when the active step is past `n`, returns focus to step `n`. Used when an
+   * earlier answer (e.g. the chosen store) changes and the downstream steps must
+   * be redone from scratch.
+   */
+  invalidateFrom: (n: number) => void;
 };
 
 /**
@@ -233,7 +240,28 @@ const WizardAccordion = forwardRef<WizardAccordionHandle, WizardAccordionProps>(
     [scrollOnAdvance, scrollStepIntoView],
   );
 
-  useImperativeHandle(ref, () => ({ activate }), [activate]);
+  const invalidateFrom = useCallback((n: number) => {
+    setDoneSteps((prev) => {
+      if (![...prev].some((s) => s >= n)) return prev;
+      const next = new Set<number>();
+      prev.forEach((s) => {
+        if (s < n) next.add(s);
+      });
+      doneStepsRef.current = next;
+      return next;
+    });
+    setErroredSteps((prev) => {
+      if (![...prev].some((s) => s >= n)) return prev;
+      const next = new Set<number>();
+      prev.forEach((s) => {
+        if (s < n) next.add(s);
+      });
+      return next;
+    });
+    if (activeStepRef.current > n) setActiveStep(n);
+  }, []);
+
+  useImperativeHandle(ref, () => ({ activate, invalidateFrom }), [activate, invalidateFrom]);
 
   const contextValue = useMemo<WizardAccordionContextValue>(
     () => ({

@@ -44,7 +44,8 @@ export default function AsideSummary({ eyebrow, ariaLabel, children, footer, cla
 
 export type AsideSummaryRowProps = {
   label: string;
-  value: string;
+  /** A single value, or a list rendered one item per line (right-aligned). */
+  value: string | string[];
   /** When true, value renders in `--text-muted` (placeholder state). */
   muted?: boolean;
   /** When true, value renders in `--warning` (edit-mode diff highlight). */
@@ -54,8 +55,14 @@ export type AsideSummaryRowProps = {
 };
 
 export function AsideSummaryRow({ label, value, muted, changed, strong }: AsideSummaryRowProps) {
+  const stacked = Array.isArray(value);
   return (
-    <div className="flex items-center justify-between gap-3 py-2 [border-top:1px_solid_var(--border)] first:[border-top:0]">
+    <div
+      className={cn(
+        "flex justify-between gap-3 py-2 [border-top:1px_solid_var(--border)] first:[border-top:0]",
+        stacked ? "items-start" : "items-center",
+      )}
+    >
       <dt className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">{label}</dt>
       <dd
         className={cn(
@@ -64,7 +71,13 @@ export function AsideSummaryRow({ label, value, muted, changed, strong }: AsideS
           changed ? "[color:var(--warning)]" : muted ? "[color:var(--text-muted)]" : "[color:var(--text-primary)]",
         )}
       >
-        {value}
+        {stacked
+          ? value.map((line) => (
+              <span key={line} className="block">
+                {line}
+              </span>
+            ))
+          : value}
       </dd>
     </div>
   );
