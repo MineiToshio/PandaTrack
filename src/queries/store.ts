@@ -376,6 +376,15 @@ export async function getPublicStoresListingPage(
 }
 
 /**
+ * Light count for the listing header — reuses the same filter where-clause as
+ * `getPublicStoresListingPage` (no item fetch, no duplicated filter logic) so the stores
+ * page can render its count as a separate suspended unit (S10 list-loading pattern, L080).
+ */
+export async function countPublicStores(db: PrismaClient, filters: PublicStoreListingFilters): Promise<number> {
+  return db.store.count({ where: buildPublicStoreListingWhere(filters) });
+}
+
+/**
  * Creates a store and its presences, product type assignments, contact channels, addresses, and import countries
  * in a single transaction. Slug is generated from name; caller must ensure countryCode and productTypeKeys exist
  * in catalogs.
