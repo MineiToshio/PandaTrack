@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { Sparkles } from "lucide-react";
@@ -8,8 +9,10 @@ import { getSession } from "@/lib/auth/auth-server";
 import { prisma } from "@/lib/prisma";
 import {
   DEFAULT_PUBLIC_STORE_PAGE_SIZE,
+  countPublicStores,
   getPublicStoresListingPage,
   getViewerOrderCountsByStoreSlugs,
+  type PublicStoreListingFilters,
 } from "@/queries/store";
 import { listCountryCodes } from "@/queries/country";
 import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
@@ -18,6 +21,7 @@ import { ROUTES } from "@/lib/constants";
 import { parseListingSearchParams } from "./_utils/listingParams";
 import StoreListingContent from "./_components/StoreListingContent";
 import StoreListingFilters from "./_components/StoreListingFilters";
+import StoreListingGridSkeleton from "./_components/StoreListingGridSkeleton";
 import StoreListingGridWrapper from "./_components/StoreListingGridWrapper";
 import StoreListingPagination from "./_components/StoreListingPagination";
 import StoreListingShell from "./_components/StoreListingShell";
@@ -33,26 +37,15 @@ function createStoresPageHref(
   page: number,
 ): string {
   const params = new URLSearchParams();
-
   Object.entries(rawParams).forEach(([key, value]) => {
-    if (key === "page" || value == null) {
-      return;
-    }
-
+    if (key === "page" || value == null) return;
     if (Array.isArray(value)) {
-      value.forEach((item) => {
-        params.append(key, item);
-      });
+      value.forEach((item) => params.append(key, item));
       return;
     }
-
     params.set(key, value);
   });
-
-  if (page > 1) {
-    params.set("page", String(page));
-  }
-
+  if (page > 1) params.set("page", String(page));
   const queryString = params.toString();
   return queryString ? `${basePath}?${queryString}` : basePath;
 }
@@ -70,100 +63,152 @@ export async function generateMetadata({ params }: StoresPageProps): Promise<Met
 
 export default async function StoresPage({ params, searchParams }: StoresPageProps) {
   const { locale } = await params;
-  await getTranslations({ locale, namespace: "storeListing" });
-
   const rawParams = await searchParams;
-  const {
-    nameQuery,
-    productTypeKeys,
-    countryCodes,
-    importCountryCodes,
-    presenceTypes,
-    receivesOrders,
-    hasStock,
-    page,
-  } = parseListingSearchParams(rawParams);
+  const parsed = parseListingSearchParams(rawParams);
+  const filters: PublicStoreListingFilters = {
+    nameQuery: parsed.nameQuery,
+    productTypeKeys: parsed.productTypeKeys.length > 0 ? parsed.productTypeKeys : undefined,
+    countryCodes: parsed.countryCodes.length > 0 ? parsed.countryCodes : undefined,
+    importCountryCodes: parsed.importCountryCodes.length > 0 ? parsed.importCountryCodes : undefined,
+    presenceTypes: parsed.presenceTypes.length > 0 ? parsed.presenceTypes : undefined,
+    receivesOrders: parsed.receivesOrders,
+    hasStock: parsed.hasStock,
+    page: parsed.page,
+    pageSize: DEFAULT_PUBLIC_STORE_PAGE_SIZE,
+  };
+  const hasFilters = Boolean(
+    parsed.nameQuery ||
+    parsed.productTypeKeys.length > 0 ||
+    parsed.countryCodes.length > 0 ||
+    parsed.importCountryCodes.length > 0 ||
+    parsed.presenceTypes.length > 0 ||
+    parsed.receivesOrders ||
+    parsed.hasStock,
+  );
 
-  const [session, listingPage, productTypeOptions, countryOptions] = await Promise.all([
+  const storesBasePath = `/${locale}/stores`;
+  const fingerprint = JSON.stringify(rawParams);
+
+  // Chrome data only (no heavy listing query): catalog options feed the filter drawer.
+  const [tListing, tc, session, productTypeOptions, countryOptions] = await Promise.all([
+    getTranslations({ locale, namespace: "storeListing" }),
+    getTranslations({ locale, namespace: "components" }),
     getSession(),
-    getPublicStoresListingPage(prisma, {
-      nameQuery,
-      productTypeKeys: productTypeKeys.length > 0 ? productTypeKeys : undefined,
-      countryCodes: countryCodes.length > 0 ? countryCodes : undefined,
-      importCountryCodes: importCountryCodes.length > 0 ? importCountryCodes : undefined,
-      presenceTypes: presenceTypes.length > 0 ? presenceTypes : undefined,
-      receivesOrders,
-      hasStock,
-      page,
-      pageSize: DEFAULT_PUBLIC_STORE_PAGE_SIZE,
-    }),
     listActiveStoreProductTypeKeys(prisma),
     listCountryCodes(prisma),
   ]);
-
-  const viewerOrderCountsBySlug =
-    session?.user?.id && listingPage.items.length > 0
-      ? await getViewerOrderCountsByStoreSlugs(
-          prisma,
-          session.user.id,
-          listingPage.items.map((s) => s.slug),
-        )
-      : undefined;
-
-  const storesBasePath = `/${locale}/stores`;
-  const buildPaginationHref = (targetPage: number) => createStoresPageHref(storesBasePath, rawParams, targetPage);
 
   return (
     <div className="text-foreground">
       <StoreListingShell>
         {/* `space-y-5` matches the orders/deliveries list stack rhythm. */}
         <div className="space-y-5">
+          {/* Chrome — renders instantly. Only the count (data) is a skeleton; the title is real. */}
+          <div className="flex items-baseline gap-2.5">
+            <h1 className="[font-size:var(--text-display)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+              {tListing("s6.hero.title")}
+            </h1>
+            <Suspense
+              fallback={
+                <span
+                  className="skeleton rounded-[6px]"
+                  style={{ width: 64, height: 16, display: "inline-block" }}
+                  aria-hidden
+                />
+              }
+            >
+              <StoresCount locale={locale} filters={filters} />
+            </Suspense>
+          </div>
+
           <StoreListingFilters
             locale={locale}
             productTypeOptions={productTypeOptions}
             countryOptions={countryOptions}
-            initialNameQuery={nameQuery ?? ""}
-            initialProductTypeKeys={productTypeKeys}
-            initialCountryCodes={countryCodes}
-            initialImportCountryCodes={importCountryCodes}
-            initialPresenceTypes={presenceTypes}
-            initialReceivesOrders={receivesOrders}
-            initialHasStock={hasStock}
-            totalStores={listingPage.totalCount}
+            initialNameQuery={parsed.nameQuery ?? ""}
+            initialProductTypeKeys={parsed.productTypeKeys}
+            initialCountryCodes={parsed.countryCodes}
+            initialImportCountryCodes={parsed.importCountryCodes}
+            initialPresenceTypes={parsed.presenceTypes}
+            initialReceivesOrders={parsed.receivesOrders}
+            initialHasStock={parsed.hasStock}
           />
+
+          {/* Grid: useTransition swaps to the card skeleton on filter/sort/page changes;
+              the inner Suspense shows the same card-grid skeleton on the initial server load. */}
           <StoreListingGridWrapper>
-            {listingPage.totalCount === 0 ? (
-              <StoresEmptyState
+            <Suspense key={fingerprint} fallback={<StoreListingGridSkeleton loadingLabel={tc("skeleton.loading")} />}>
+              <StoresGridSection
                 locale={locale}
-                hasFilters={Boolean(
-                  nameQuery ||
-                  productTypeKeys.length > 0 ||
-                  countryCodes.length > 0 ||
-                  importCountryCodes.length > 0 ||
-                  presenceTypes.length > 0 ||
-                  receivesOrders ||
-                  hasStock,
-                )}
+                filters={filters}
+                userId={session?.user?.id}
+                hasFilters={hasFilters}
+                buildPaginationHref={(targetPage) => createStoresPageHref(storesBasePath, rawParams, targetPage)}
               />
-            ) : (
-              <>
-                <StoreListingContent
-                  locale={locale}
-                  stores={listingPage.items}
-                  viewerOrderCountsBySlug={viewerOrderCountsBySlug}
-                />
-                <StoreListingPagination
-                  locale={locale}
-                  totalPages={listingPage.totalPages}
-                  currentPage={listingPage.currentPage}
-                  createPageHref={buildPaginationHref}
-                />
-              </>
-            )}
+            </Suspense>
           </StoreListingGridWrapper>
         </div>
       </StoreListingShell>
     </div>
+  );
+}
+
+/** Filtered store count for the heading. Suspended (the counter is a skeleton). */
+async function StoresCount({ locale, filters }: { locale: string; filters: PublicStoreListingFilters }) {
+  const [tListing, totalStores] = await Promise.all([
+    getTranslations({ locale, namespace: "storeListing" }),
+    countPublicStores(prisma, filters),
+  ]);
+  return (
+    <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
+      {tListing("s6.count", { count: totalStores })}
+    </span>
+  );
+}
+
+/** Heavy listing query + card grid + pagination (or empty state). The only part that suspends. */
+async function StoresGridSection({
+  locale,
+  filters,
+  userId,
+  hasFilters,
+  buildPaginationHref,
+}: {
+  locale: string;
+  filters: PublicStoreListingFilters;
+  userId: string | undefined;
+  hasFilters: boolean;
+  buildPaginationHref: (page: number) => string;
+}) {
+  const listingPage = await getPublicStoresListingPage(prisma, filters);
+
+  if (listingPage.totalCount === 0) {
+    return <StoresEmptyState locale={locale} hasFilters={hasFilters} />;
+  }
+
+  const viewerOrderCountsBySlug =
+    userId && listingPage.items.length > 0
+      ? await getViewerOrderCountsByStoreSlugs(
+          prisma,
+          userId,
+          listingPage.items.map((s) => s.slug),
+        )
+      : undefined;
+
+  return (
+    <>
+      <StoreListingContent
+        locale={locale}
+        stores={listingPage.items}
+        viewerOrderCountsBySlug={viewerOrderCountsBySlug}
+      />
+      <StoreListingPagination
+        locale={locale}
+        totalPages={listingPage.totalPages}
+        currentPage={listingPage.currentPage}
+        createPageHref={buildPaginationHref}
+      />
+    </>
   );
 }
 

@@ -23,8 +23,11 @@ function isOrderEditPath(pathname: string, locale: string, orderId: string): boo
 }
 
 /**
- * Syncs the shell topbar for order detail vs edit: edit inserts the order's
- * human-readable id as a middle breadcrumb linking back to the detail route.
+ * Syncs the app shell header with order detail vs edit: detail shows the order's
+ * human-readable id as title; edit shows "Edit" as title and inserts the id as a
+ * breadcrumb linking back to the detail route. Mounted from the detail-segment
+ * layout (above the detail-route Suspense boundary) so the title survives a hard
+ * load / refresh, matching the store-detail pattern.
  */
 export default function OrderSegmentContentHeader({
   locale,
@@ -32,22 +35,25 @@ export default function OrderSegmentContentHeader({
   humanReadableId,
 }: OrderSegmentContentHeaderProps) {
   const pathname = usePathname() ?? "";
-  const { setBreadcrumbMiddle } = useHeaderTitle();
+  const { setTitle, setBreadcrumbMiddle } = useHeaderTitle();
   const detailHref = `/${locale}${ROUTES.orders}/${orderId}`;
 
   useEffect(() => {
     if (isOrderEditPath(pathname, locale, orderId)) {
+      setTitle(null);
       setBreadcrumbMiddle({ label: humanReadableId, href: detailHref });
     } else {
+      setTitle(humanReadableId);
       setBreadcrumbMiddle(null);
     }
-  }, [pathname, locale, orderId, humanReadableId, detailHref, setBreadcrumbMiddle]);
+  }, [pathname, locale, orderId, humanReadableId, detailHref, setTitle, setBreadcrumbMiddle]);
 
   useEffect(() => {
     return () => {
+      setTitle(null);
       setBreadcrumbMiddle(null);
     };
-  }, [setBreadcrumbMiddle]);
+  }, [setTitle, setBreadcrumbMiddle]);
 
   return null;
 }

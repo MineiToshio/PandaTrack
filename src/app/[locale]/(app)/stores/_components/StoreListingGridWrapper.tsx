@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useStoreListingNavigation } from "./StoreListingPendingContext";
 import StoreListingGridSkeleton from "./StoreListingGridSkeleton";
 
@@ -9,5 +10,6 @@ import StoreListingGridSkeleton from "./StoreListingGridSkeleton";
  */
 export default function StoreListingGridWrapper({ children }: { children: React.ReactNode }) {
   const { isPending } = useStoreListingNavigation();
-  return isPending ? <StoreListingGridSkeleton /> : <>{children}</>;
+  const t = useTranslations("components");
+  return isPending ? <StoreListingGridSkeleton loadingLabel={t("skeleton.loading")} /> : <>{children}</>;
 }

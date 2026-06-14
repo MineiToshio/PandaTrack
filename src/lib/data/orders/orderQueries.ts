@@ -84,6 +84,21 @@ export type OrderDetailFull = Omit<OrderDetail, "items"> & {
   flags: OrderFlags;
 };
 
+/**
+ * Minimal order lookup for the shell header (title / breadcrumb) on the detail-segment layout.
+ * Selects only the human-readable id so it can run above the detail-route Suspense boundary
+ * without duplicating the heavy detail query.
+ */
+export async function getOrderHeader(
+  orderId: string,
+  userId: string,
+): Promise<{ id: string; humanReadableId: string } | null> {
+  return prisma.order.findFirst({
+    where: { id: orderId, userId },
+    select: { id: true, humanReadableId: true },
+  });
+}
+
 export async function getOrderById(orderId: string, userId: string): Promise<OrderDetail | null> {
   const row = await prisma.order.findFirst({
     where: { id: orderId, userId },

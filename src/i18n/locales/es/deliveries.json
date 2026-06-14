@@ -101,12 +101,9 @@
       "cost": "Costo envío",
       "inBase": "En tu base"
     },
-    "shortcuts": {
-      "title": "Atajos",
-      "submit": "Enviar",
-      "toggleItem": "Marcar producto",
-      "selectAll": "Seleccionar todo",
-      "search": "Buscar"
+    "ineligible": {
+      "removed": "Quitamos de tu selección: {names}. Ya no están disponibles para una entrega (ya están en otra entrega o entregados). Revisa y guarda de nuevo.",
+      "removedGeneric": "Algunos productos ya no están disponibles para una entrega y los quitamos de tu selección. Revisa y guarda de nuevo."
     },
     "validation": {
       "storeRequired": "Selecciona una tienda.",

@@ -101,12 +101,9 @@
       "cost": "Shipping cost",
       "inBase": "In your base"
     },
-    "shortcuts": {
-      "title": "Shortcuts",
-      "submit": "Submit",
-      "toggleItem": "Toggle product",
-      "selectAll": "Select all",
-      "search": "Search"
+    "ineligible": {
+      "removed": "We removed from your selection: {names}. They're no longer available for a delivery (already in another delivery or delivered). Review and save again.",
+      "removedGeneric": "Some products are no longer available for a delivery, so we removed them from your selection. Review and save again."
     },
     "validation": {
       "storeRequired": "Select a store.",

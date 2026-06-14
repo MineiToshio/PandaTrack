@@ -6,6 +6,7 @@ import { CircleDollarSign, X } from "lucide-react";
 import { cn } from "@/lib/styles";
 import { formatAmountSymbolOnly } from "@/lib/currency";
 import { sanitizeDecimalInput } from "@/lib/decimalInput";
+import { utcDomainDateToLocal } from "@/lib/domainDate";
 
 type OrderInlinePaymentFormProps = {
   currencyCode: string;
@@ -76,8 +77,10 @@ export default function OrderInlinePaymentForm({
   const paymentDate = parseIsoDate(paymentDateStr);
   const parsedAmount = parseDecimalToMinorUnits(amountStr);
   const amountExceedsBalance = parsedAmount !== null && parsedAmount > remainingAmount;
-  const dateBeforeOrder =
-    paymentDate !== null && paymentDate < new Date(orderDate.getFullYear(), orderDate.getMonth(), orderDate.getDate());
+  // `orderDate` is a UTC-midnight domain date; convert to local-midnight on the same
+  // calendar day so the boundary lines up with `paymentDate` (already local-midnight from
+  // the picker) in every timezone — local getters here would shift the day in the Americas.
+  const dateBeforeOrder = paymentDate !== null && paymentDate < utcDomainDateToLocal(orderDate);
   const dateFuture = paymentDate !== null && paymentDate > today;
 
   const canSubmit =

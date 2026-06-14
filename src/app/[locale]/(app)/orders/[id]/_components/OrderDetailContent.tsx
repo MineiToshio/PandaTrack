@@ -5,7 +5,6 @@ import Eyebrow from "@/components/core/Eyebrow";
 import { ROUTES } from "@/lib/constants";
 import { formatDomainDate } from "@/lib/domainDate";
 import type { OrderDetailFull } from "@/lib/data/orders/orderQueries";
-import SetHeaderTitle from "@/app/[locale]/(app)/_components/AppLayout/SetHeaderTitle";
 import OrderOverdueBanner from "./OrderOverdueBanner";
 import CancellationReasonCallout from "./CancellationReasonCallout";
 import CollapsibleSubcard from "@/components/modules/CollapsibleSubcard";
@@ -45,8 +44,6 @@ export default async function OrderDetailContent({ order, locale, backHref }: Or
 
   return (
     <>
-      <SetHeaderTitle title={order.humanReadableId} />
-
       <BackNavLink
         href={backTarget}
         // Tight gap to the overdue banner below when present; otherwise full mb-4 to

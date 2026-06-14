@@ -29,7 +29,7 @@ import type { DeliverySourceOrder, EligibleProductsResult } from "@/lib/data/del
 import type { DeliveryCreateActionResult } from "../../new/_actions/createDeliveryAction";
 import DeliveryDataFields, { type DeliveryDataErrors, type DeliveryDataValues } from "./DeliveryDataFields";
 import DeliveryProductsPicker from "./DeliveryProductsPicker";
-import DeliveryStoreCombobox, { type DeliveryStoreOption } from "./DeliveryStoreCombobox";
+import DeliveryStoreField, { type DeliveryStoreOption } from "./DeliveryStoreField";
 import FieldErrorMsg from "@/components/core/FieldErrorMsg";
 
 export type DeliveryCreateWizardProps = {
@@ -49,6 +49,19 @@ function toIsoDate(date: Date): string {
 
 function isValidNonNegativeDecimal(value: string): boolean {
   return /^\d+(\.\d{1,2})?$/.test(value);
+}
+
+/** Fresh paso-3 defaults. Cost stays empty so the field shows its placeholder
+ * instead of a literal 0 the user would have to clear (shipping is rarely free). */
+function buildInitialDeliveryData(baseCurrencyCode: string | null): DeliveryDataValues {
+  return {
+    deliveryDate: new Date(),
+    arrivalFrom: null,
+    arrivalTo: null,
+    cost: "",
+    currencyCode: baseCurrencyCode ?? "",
+    exchangeRate: "",
+  };
 }
 
 function preselectionForStore(
@@ -91,14 +104,7 @@ export default function DeliveryCreateWizard({
   );
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>(initialSelection);
   const [productQuery, setProductQuery] = useState("");
-  const [data, setData] = useState<DeliveryDataValues>({
-    deliveryDate: new Date(),
-    arrivalFrom: null,
-    arrivalTo: null,
-    cost: "0.00",
-    currencyCode: baseCurrencyCode ?? "",
-    exchangeRate: "",
-  });
+  const [data, setData] = useState<DeliveryDataValues>(() => buildInitialDeliveryData(baseCurrencyCode));
 
   const [storeError, setStoreError] = useState<string | null>(null);
   const [productsError, setProductsError] = useState<string | null>(null);
@@ -131,16 +137,55 @@ export default function DeliveryCreateWizard({
   const selectedStore = useMemo(() => stores.find((s) => s.storeId === storeId) ?? null, [stores, storeId]);
   const showExchangeRate = Boolean(baseCurrencyCode && data.currencyCode && data.currencyCode !== baseCurrencyCode);
 
+  // PRODUCT_NOT_ELIGIBLE recovery: the eligible list is a point-in-time snapshot,
+  // so a product can stop being eligible (e.g. it joined another delivery, or the
+  // page was reopened from cache) between load and submit. Name the offending
+  // products, drop them from the selection, reload fresh eligibility, and send the
+  // user back to paso 2 to retry — instead of a dead-end "not eligible" banner.
+  const handledIneligibleStateRef = useRef<DeliveryCreateActionResult | null>(null);
+  /* eslint-disable react-hooks/set-state-in-effect -- one-shot reconciliation of an
+     async action result (guarded by handledIneligibleStateRef), not a render loop. */
+  useEffect(() => {
+    if (state?.success !== false || state.error !== "PRODUCT_NOT_ELIGIBLE") return;
+    if (handledIneligibleStateRef.current === state) return;
+    handledIneligibleStateRef.current = state;
+
+    const ineligibleIds = state.ineligibleProductIds ?? [];
+    const nameById = new Map(groups.flatMap((g) => g.products.map((p) => [p.orderItemId, p.orderItemName])));
+    const names = ineligibleIds.map((id) => nameById.get(id)).filter((name): name is string => Boolean(name));
+
+    if (ineligibleIds.length > 0) {
+      setSelectedProductIds((current) => current.filter((id) => !ineligibleIds.includes(id)));
+    }
+    setProductsError(
+      names.length > 0
+        ? t("create.ineligible.removed", { names: names.join(", ") })
+        : t("create.ineligible.removedGeneric"),
+    );
+    wizardRef.current?.invalidateFrom(2);
+    router.refresh();
+  }, [state, groups, router, t]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   const handleStoreChange = useCallback(
     (nextStoreId: string) => {
+      const storeChanged = nextStoreId !== storeId;
       setStoreId(nextStoreId);
       setSelectedProductIds(preselectionForStore(productsByStore, sourceOrder, nextStoreId));
       setProductQuery("");
       setStoreError(null);
       setProductsError(null);
       setIsChangingStore(false);
+      // Switching stores invalidates everything chosen downstream: a product
+      // selection only makes sense for its store, so clear the picker, the paso-3
+      // data, and the done/errored marks so pasos 2-4 restart from scratch.
+      if (storeChanged) {
+        setData(buildInitialDeliveryData(baseCurrencyCode));
+        setDataErrors({});
+        wizardRef.current?.invalidateFrom(2);
+      }
     },
-    [productsByStore, sourceOrder],
+    [productsByStore, sourceOrder, storeId, baseCurrencyCode],
   );
 
   const handleProductToggle = useCallback((productId: string) => {
@@ -228,32 +273,16 @@ export default function DeliveryCreateWizard({
     [validateStep1, validateStep2, validateStep3, buildFormData, formAction],
   );
 
-  // Shortcuts (S9 Atajos card): ⌘/Ctrl+Enter submits; `/` focuses the product search;
-  // `A` selects every visible product. Space toggles natively on the focused check.
+  // ⌘/Ctrl+Enter submits from any step (mirrors the order-create wizard).
   const handleFormKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLFormElement>) => {
       if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        if (isPending) return;
         event.preventDefault();
         formRef.current?.requestSubmit();
-        return;
-      }
-      const target = event.target as HTMLElement | null;
-      const isTyping =
-        target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
-      if (isTyping) return;
-      if (event.key === "/" && activeStep === 2) {
-        event.preventDefault();
-        document.getElementById(searchInputId)?.focus();
-        return;
-      }
-      if ((event.key === "a" || event.key === "A") && activeStep === 2 && !event.metaKey && !event.ctrlKey) {
-        event.preventDefault();
-        const allVisibleIds = groups.flatMap((group) => group.products.map((p) => p.orderItemId));
-        setSelectedProductIds(allVisibleIds);
-        setProductsError(null);
       }
     },
-    [activeStep, groups],
+    [isPending],
   );
 
   const steps: StepperStep[] = useMemo(
@@ -309,7 +338,12 @@ export default function DeliveryCreateWizard({
     selectedProductIds.length > 0 ? t("create.summaries.step2", { count: selectedProductIds.length }) : undefined;
   const step3Summary = data.deliveryDate && costLabel ? `${fmtDate(data.deliveryDate)} · ${costLabel}` : undefined;
 
-  const serverError = state?.success === false && state.error !== "validation" ? state.error : null;
+  // PRODUCT_NOT_ELIGIBLE is handled inline at paso 2 (names + auto-remove), so it
+  // never surfaces as the generic top banner.
+  const serverError =
+    state?.success === false && state.error !== "validation" && state.error !== "PRODUCT_NOT_ELIGIBLE"
+      ? state.error
+      : null;
   const backHref = sourceOrder ? `/${locale}${ROUTES.orders}/${sourceOrder.orderId}` : `/${locale}${ROUTES.deliveries}`;
 
   const showFieldAsAttribute = Boolean(sourceOrder && storeId === sourceOrder.storeId && !isChangingStore);
@@ -400,15 +434,11 @@ export default function DeliveryCreateWizard({
                     <label htmlFor="delivery-store" className="text-[13px] font-medium [color:var(--text-secondary)]">
                       {t("create.step1.storeLabel")} <span className="[color:var(--destructive)]">*</span>
                     </label>
-                    <DeliveryStoreCombobox
+                    <DeliveryStoreField
                       id="delivery-store"
                       stores={stores}
                       value={storeId}
                       onChange={handleStoreChange}
-                      placeholder={t("create.step1.storePlaceholder")}
-                      noResultsLabel={t("create.step1.storeNoResults")}
-                      eligibleCountLabel={(count) => t("create.step1.eligibleCount", { count })}
-                      listAriaLabel={t("create.step1.storeListAriaLabel")}
                       error={Boolean(storeError)}
                     />
                     {storeError ? (
@@ -544,7 +574,7 @@ export default function DeliveryCreateWizard({
                 />
                 <AsideSummaryRow
                   label={t("create.summary.sourceOrders")}
-                  value={sourceOrderCodes.length > 0 ? sourceOrderCodes.join(" · ") : "—"}
+                  value={sourceOrderCodes.length > 0 ? sourceOrderCodes : "—"}
                   muted={sourceOrderCodes.length === 0}
                 />
                 <AsideSummaryRow
@@ -571,47 +601,10 @@ export default function DeliveryCreateWizard({
                   />
                 )}
               </AsideSummary>
-              <ShortcutsCard />
             </div>
           )}
         </div>
       </form>
-    </div>
-  );
-}
-
-/** Aside "Atajos" card — keyboard shortcut reference (S9 demo `#delivery-create`). */
-function ShortcutsCard() {
-  const t = useTranslations("deliveries");
-  const rows: Array<{ key: string; label: string; keys: string }> = [
-    { key: "submit", label: t("create.shortcuts.submit"), keys: "⌘ ↵" },
-    { key: "toggle", label: t("create.shortcuts.toggleItem"), keys: "Space" },
-    { key: "selectAll", label: t("create.shortcuts.selectAll"), keys: "A" },
-    { key: "search", label: t("create.shortcuts.search"), keys: "/" },
-  ];
-  return (
-    <div className="rounded-[var(--radius-xl)] p-4 [background:var(--surface-elevated)] [border:1px_solid_var(--border)] md:p-5">
-      <p className="font-mono text-[11px] font-medium tracking-[0.08em] [color:var(--text-muted)] uppercase">
-        {t("create.shortcuts.title")}
-      </p>
-      <dl className="mt-3 flex flex-col">
-        {rows.map((row) => (
-          <div
-            key={row.key}
-            className="flex items-center justify-between gap-3 py-2 [border-top:1px_solid_var(--border)] first:[border-top:0]"
-          >
-            <dt className="text-[12.5px] [color:var(--text-secondary)]">{row.label}</dt>
-            <dd>
-              <kbd
-                style={{ fontFamily: "inherit" }}
-                className="inline-flex items-center rounded-[3px] px-1.5 py-px text-[11px] leading-[1.4] tracking-wide [color:var(--text-secondary)] [background:var(--surface)] [border:1px_solid_var(--border)]"
-              >
-                {row.keys}
-              </kbd>
-            </dd>
-          </div>
-        ))}
-      </dl>
     </div>
   );
 }

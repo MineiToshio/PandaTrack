@@ -43,6 +43,36 @@ function buildListUrl(
   return qs ? `${basePath}?${qs}` : basePath;
 }
 
+function buildActiveFilters(parsed: ReturnType<typeof parseDeliveryListingParams>): DeliveryListActiveFilters {
+  const toIso = (date: Date | undefined) => (date ? date.toISOString().slice(0, 10) : undefined);
+  return {
+    nameQuery: parsed.nameQuery,
+    statuses: parsed.statuses,
+    overdueOnly: parsed.overdueOnly,
+    arrivalFromIso: toIso(parsed.arrivalFrom),
+    arrivalToIso: toIso(parsed.arrivalTo),
+    storeId: parsed.storeId,
+    productQuery: parsed.productQuery,
+    shippedFromIso: toIso(parsed.shippedFrom),
+    shippedToIso: toIso(parsed.shippedTo),
+    sort: parsed.sort,
+  };
+}
+
+function hasActiveFilter(parsed: ReturnType<typeof parseDeliveryListingParams>): boolean {
+  return (
+    Boolean(parsed.nameQuery) ||
+    parsed.statuses.length > 0 ||
+    parsed.overdueOnly ||
+    Boolean(parsed.arrivalFrom) ||
+    Boolean(parsed.arrivalTo) ||
+    Boolean(parsed.storeId) ||
+    Boolean(parsed.productQuery) ||
+    Boolean(parsed.shippedFrom) ||
+    Boolean(parsed.shippedTo)
+  );
+}
+
 export async function generateMetadata({ params }: DeliveriesPageProps): Promise<Metadata> {
   const { locale } = await params;
   return buildPageMetadata({
@@ -58,12 +88,11 @@ export default async function DeliveriesPage({ params, searchParams }: Deliverie
   const { locale } = await params;
   const session = await getSession();
   if (!session?.user?.id) redirect(`/${locale}/sign-in`);
+  const userId = session.user.id;
   const rawParams = await searchParams;
   const basePath = `/${locale}${ROUTES.deliveries}`;
 
-  // Canonical default (BP-01): a bare URL (no `status` key at all) redirects to the
-  // "En camino" view so the default is visible and removable as a chip. An explicit
-  // empty `status=` (chip removal / clear) means "all statuses" and is left alone.
+  // Canonical default (BP-01): a bare URL (no `status` key) redirects to the "En camino" view.
   if (rawParams.status === undefined) {
     const canonicalParams = new URLSearchParams();
     Object.entries(rawParams).forEach(([key, value]) => {
@@ -78,117 +107,41 @@ export default async function DeliveriesPage({ params, searchParams }: Deliverie
     redirect(`${basePath}?${canonicalParams.toString()}`);
   }
 
-  // Suspense key forces the async data-fetching subtree to remount on every URL params
-  // change, surfacing the skeleton between navigations.
-  const fingerprint = JSON.stringify(rawParams);
-
-  return (
-    <Suspense key={fingerprint} fallback={<DeliveriesListFallback locale={locale} />}>
-      <DeliveriesListView locale={locale} userId={session.user.id} rawParams={rawParams} basePath={basePath} />
-    </Suspense>
-  );
-}
-
-async function DeliveriesListFallback({ locale }: { locale: string }) {
-  const t = await getTranslations({ locale, namespace: "deliveries" });
-  return (
-    <DeliveryListLoadingSkeleton
-      title={t("list.title")}
-      headers={{
-        delivery: t("list.table.headerDelivery"),
-        products: t("list.table.headerProducts"),
-        status: t("list.table.headerStatus"),
-        cost: t("list.table.headerCost"),
-        arrival: t("list.table.headerArrival"),
-      }}
-    />
-  );
-}
-
-async function DeliveriesListView({
-  locale,
-  userId,
-  rawParams,
-  basePath,
-}: {
-  locale: string;
-  userId: string;
-  rawParams: Record<string, string | string[] | undefined>;
-  basePath: string;
-}) {
   const parsed = parseDeliveryListingParams(rawParams);
-  const toIso = (date: Date | undefined) => (date ? date.toISOString().slice(0, 10) : undefined);
-
-  const activeFilters: DeliveryListActiveFilters = {
-    nameQuery: parsed.nameQuery,
-    statuses: parsed.statuses,
-    overdueOnly: parsed.overdueOnly,
-    arrivalFromIso: toIso(parsed.arrivalFrom),
-    arrivalToIso: toIso(parsed.arrivalTo),
-    storeId: parsed.storeId,
-    productQuery: parsed.productQuery,
-    shippedFromIso: toIso(parsed.shippedFrom),
-    shippedToIso: toIso(parsed.shippedTo),
-    sort: parsed.sort,
-  };
-
-  const [listing, storeOptions, t, inTransitCount, deliveredCount] = await Promise.all([
-    getDeliveriesList(userId, {
-      nameQuery: parsed.nameQuery,
-      statuses: parsed.statuses.length > 0 ? parsed.statuses : undefined,
-      storeId: parsed.storeId,
-      productQuery: parsed.productQuery,
-      overdueOnly: parsed.overdueOnly,
-      arrivalFrom: parsed.arrivalFrom,
-      arrivalTo: parsed.arrivalTo,
-      shippedFrom: parsed.shippedFrom,
-      shippedTo: parsed.shippedTo,
-      sort: parsed.sort,
-      page: parsed.page,
-      pageSize: DELIVERY_LIST_PAGE_SIZE,
-    }),
-    getDeliveryStoreOptions(userId),
-    getTranslations({ locale, namespace: "deliveries" }),
-    prisma.delivery.count({ where: { userId, status: "IN_TRANSIT" } }),
-    prisma.delivery.count({ where: { userId, status: "DELIVERED" } }),
-  ]);
-
-  const today = new Date();
-  const currentListUrl = buildListUrl(basePath, rawParams, listing.page);
-  // "Limpiar filtros" lands on `?status=` (all statuses, no filter). The bare URL is
-  // reserved for the canonical redirect above.
+  const activeFilters = buildActiveFilters(parsed);
+  const fingerprint = JSON.stringify(rawParams);
   const resetHref = `${basePath}?status=`;
 
+  // Chrome data only (no heavy list query): store options feed the filter drawer + chips.
+  const [storeOptions, t, tc] = await Promise.all([
+    getDeliveryStoreOptions(userId),
+    getTranslations({ locale, namespace: "deliveries" }),
+    getTranslations({ locale, namespace: "components" }),
+  ]);
   const storesById: Record<string, string> = {};
   storeOptions.forEach((store) => {
     storesById[store.storeId] = store.storeName;
   });
 
-  const buildPaginationHref = (targetPage: number) => buildListUrl(basePath, rawParams, targetPage);
-  const hasAnyFilter =
-    Boolean(parsed.nameQuery) ||
-    parsed.statuses.length > 0 ||
-    parsed.overdueOnly ||
-    Boolean(parsed.arrivalFrom) ||
-    Boolean(parsed.arrivalTo) ||
-    Boolean(parsed.storeId) ||
-    Boolean(parsed.productQuery) ||
-    Boolean(parsed.shippedFrom) ||
-    Boolean(parsed.shippedTo);
-
   return (
     <div className="text-foreground">
       <div className="space-y-5">
-        {/* Desktop page-heading; mobile gets title from app-topbar */}
+        {/* Chrome — renders instantly. Only the counter (data) is a skeleton; the title is real. */}
         <div className="hidden flex-wrap items-baseline gap-2.5 lg:flex">
           <h1 className="[font-size:var(--text-display)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
             {t("list.title")}
           </h1>
-          <span className="[font-size:var(--text-caption)] [color:var(--text-muted)] tabular-nums">
-            {listing.totalCount === 0 && hasAnyFilter
-              ? t("list.heading.zeroResults")
-              : t("list.heading.meta", { inTransit: inTransitCount, delivered: deliveredCount })}
-          </span>
+          <Suspense
+            fallback={
+              <span
+                className="skeleton rounded-[6px]"
+                style={{ width: 140, height: 16, display: "inline-block" }}
+                aria-hidden
+              />
+            }
+          >
+            <DeliveriesHeadingCount locale={locale} userId={userId} />
+          </Suspense>
         </div>
 
         <DeliveryListFilters
@@ -199,26 +152,106 @@ async function DeliveriesListView({
 
         <DeliveryListFilterChips locale={locale} basePath={basePath} filters={activeFilters} storesById={storesById} />
 
-        <DeliveryListContent
-          locale={locale}
-          deliveries={listing.deliveries}
-          totalCount={listing.totalCount}
-          hasAnyFilter={hasAnyFilter}
-          searchTerm={parsed.nameQuery}
-          today={today}
-          returnTo={currentListUrl}
-          resetHref={resetHref}
-        />
-
-        <DeliveryListPagination
-          locale={locale}
-          totalPages={listing.totalPages}
-          currentPage={listing.page}
-          totalCount={listing.totalCount}
-          pageSize={listing.pageSize}
-          createPageHref={buildPaginationHref}
-        />
+        {/* Data region — only this suspends, with a layout-matching (table desktop / cards mobile) skeleton. */}
+        <Suspense
+          key={fingerprint}
+          fallback={
+            <DeliveryListLoadingSkeleton
+              loadingLabel={tc("skeleton.loading")}
+              headers={{
+                delivery: t("list.table.headerDelivery"),
+                products: t("list.table.headerProducts"),
+                status: t("list.table.headerStatus"),
+                cost: t("list.table.headerCost"),
+                arrival: t("list.table.headerArrival"),
+              }}
+            />
+          }
+        >
+          <DeliveriesTableSection
+            locale={locale}
+            userId={userId}
+            parsed={parsed}
+            rawParams={rawParams}
+            basePath={basePath}
+            resetHref={resetHref}
+          />
+        </Suspense>
       </div>
     </div>
+  );
+}
+
+/** Global delivery counts for the heading meta. Suspended (Sergio: the counter is a skeleton). */
+async function DeliveriesHeadingCount({ locale, userId }: { locale: string; userId: string }) {
+  const [t, inTransitCount, deliveredCount] = await Promise.all([
+    getTranslations({ locale, namespace: "deliveries" }),
+    prisma.delivery.count({ where: { userId, status: "IN_TRANSIT" } }),
+    prisma.delivery.count({ where: { userId, status: "DELIVERED" } }),
+  ]);
+  return (
+    <span className="[font-size:var(--text-caption)] [color:var(--text-muted)] tabular-nums">
+      {t("list.heading.meta", { inTransit: inTransitCount, delivered: deliveredCount })}
+    </span>
+  );
+}
+
+/** Heavy list query + table/cards + pagination. The only part that suspends on filter changes. */
+async function DeliveriesTableSection({
+  locale,
+  userId,
+  parsed,
+  rawParams,
+  basePath,
+  resetHref,
+}: {
+  locale: string;
+  userId: string;
+  parsed: ReturnType<typeof parseDeliveryListingParams>;
+  rawParams: Record<string, string | string[] | undefined>;
+  basePath: string;
+  resetHref: string;
+}) {
+  const listing = await getDeliveriesList(userId, {
+    nameQuery: parsed.nameQuery,
+    statuses: parsed.statuses.length > 0 ? parsed.statuses : undefined,
+    storeId: parsed.storeId,
+    productQuery: parsed.productQuery,
+    overdueOnly: parsed.overdueOnly,
+    arrivalFrom: parsed.arrivalFrom,
+    arrivalTo: parsed.arrivalTo,
+    shippedFrom: parsed.shippedFrom,
+    shippedTo: parsed.shippedTo,
+    sort: parsed.sort,
+    page: parsed.page,
+    pageSize: DELIVERY_LIST_PAGE_SIZE,
+  });
+
+  const today = new Date();
+  const currentListUrl = buildListUrl(basePath, rawParams, listing.page);
+  const buildPaginationHref = (targetPage: number) => buildListUrl(basePath, rawParams, targetPage);
+
+  return (
+    <>
+      <DeliveryListContent
+        locale={locale}
+        deliveries={listing.deliveries}
+        totalCount={listing.totalCount}
+        hasAnyFilter={hasActiveFilter(parsed)}
+        searchTerm={parsed.nameQuery}
+        today={today}
+        returnTo={currentListUrl}
+        resetHref={resetHref}
+      />
+
+      <DeliveryListPagination
+        locale={locale}
+        totalPages={listing.totalPages}
+        currentPage={listing.page}
+        totalCount={listing.totalCount}
+        pageSize={listing.pageSize}
+        createPageHref={buildPaginationHref}
+      />
+    </>
   );
 }

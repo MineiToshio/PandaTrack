@@ -11,6 +11,8 @@ export type CreateDeliveryResult =
   | {
       ok: false;
       error: "STORE_NOT_FOUND" | "NO_PRODUCTS_SELECTED" | "PRODUCTS_FROM_DIFFERENT_STORE" | "PRODUCT_NOT_ELIGIBLE";
+      /** OrderItem ids that were no longer eligible — drives the client retry copy. */
+      ineligibleProductIds?: string[];
     };
 
 /**
@@ -90,7 +92,12 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
       });
 
       if (selectedItems.length !== uniqueProductIds.length) {
-        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
+        const foundIds = new Set(selectedItems.map((item) => item.id));
+        return {
+          ok: false,
+          error: "PRODUCT_NOT_ELIGIBLE",
+          ineligibleProductIds: uniqueProductIds.filter((id) => !foundIds.has(id)),
+        };
       }
 
       const hasDifferentStore = selectedItems.some(
@@ -104,9 +111,11 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
         OrderItemDeliveryState.NONE,
         OrderItemDeliveryState.ARRIVED_AT_STORE,
       ];
-      const hasIneligibleProduct = selectedItems.some((item) => !eligibleStates.includes(item.deliveryState));
-      if (hasIneligibleProduct) {
-        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
+      const ineligibleProductIds = selectedItems
+        .filter((item) => !eligibleStates.includes(item.deliveryState))
+        .map((item) => item.id);
+      if (ineligibleProductIds.length > 0) {
+        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE", ineligibleProductIds };
       }
 
       const humanReadableId = await generateDeliveryHumanReadableId(tx, userId, input.deliveryDate);

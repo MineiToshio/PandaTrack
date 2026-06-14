@@ -27,7 +27,6 @@ type StoreListingFiltersProps = {
   initialPresenceTypes: string[];
   initialReceivesOrders: boolean;
   initialHasStock: boolean;
-  totalStores: number;
 };
 
 type ListingFilterValues = {
@@ -71,7 +70,6 @@ export default function StoreListingFilters({
   initialPresenceTypes,
   initialReceivesOrders,
   initialHasStock,
-  totalStores,
 }: StoreListingFiltersProps) {
   const pathname = usePathname();
   const { navigate, isPending } = useStoreListingNavigation();
@@ -386,15 +384,7 @@ export default function StoreListingFilters({
   const newStoreHref = `/${locale}${ROUTES.stores}/new`;
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-baseline gap-2.5">
-        <h1 className="[font-size:var(--text-display)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
-          {tListing("s6.hero.title")}
-        </h1>
-        <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
-          {tListing("s6.count", { count: totalStores })}
-        </span>
-      </div>
+    <section>
       <div className="flex flex-col gap-2 md:flex-row md:items-center">
         <div className="flex-1">
           <SearchInput
@@ -434,7 +424,7 @@ export default function StoreListingFilters({
         </div>
       </div>
       {activeChips.length > 0 && (
-        <div className="-mx-1 flex flex-wrap items-center gap-2 px-1">
+        <div className="-mx-1 mt-5 flex flex-wrap items-center gap-2 px-1">
           {activeChips.map((chip) => (
             <AppliedFilterChip
               key={chip.key}
