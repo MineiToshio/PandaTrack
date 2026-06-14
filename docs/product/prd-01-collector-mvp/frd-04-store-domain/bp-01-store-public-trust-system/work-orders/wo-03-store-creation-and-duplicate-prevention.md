@@ -36,18 +36,18 @@ Ship the end-to-end create-store flow with validation, duplicate warnings, stabl
 
 ## Requirements
 
-- `FR-01-06`: Authenticated users must be able to create stores.
-- `FR-01-07`: Admin-created stores must default to `APPROVED`.
-- `FR-01-08`: Normal-user-created stores must default to public `PENDING`.
-- `FR-01-09`: The create flow must validate country codes and product-type keys against seeded catalogs before persisting.
-- `FR-01-10`: Store creation must support both blur-time duplicate suggestions and submit-time duplicate confirmation.
+- `FR-04-06`: Authenticated users must be able to create stores.
+- `FR-04-07`: Admin-created stores must default to `APPROVED`.
+- `FR-04-08`: Normal-user-created stores must default to public `PENDING`.
+- `FR-04-09`: The create flow must validate country codes and product-type keys against seeded catalogs before persisting.
+- `FR-04-10`: Store creation must support both blur-time duplicate suggestions and submit-time duplicate confirmation.
 
 Relevant acceptance criteria copied from the FRD:
 
-- `AC-01-01` Create store as non-admin
-- `AC-01-02` Create store as admin
-- `AC-01-03` Blur duplicate suggestions
-- `AC-01-04` Submit duplicate confirmation
+- `AC-04-01` Create store as non-admin
+- `AC-04-02` Create store as admin
+- `AC-04-03` Blur duplicate suggestions
+- `AC-04-04` Submit duplicate confirmation
 
 ## Blueprints
 

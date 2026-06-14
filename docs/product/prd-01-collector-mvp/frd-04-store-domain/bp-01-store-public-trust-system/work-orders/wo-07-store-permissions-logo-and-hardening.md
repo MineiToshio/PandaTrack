@@ -38,11 +38,11 @@ Finish the remaining hardening work required for the store MVP after governance 
 
 ## Requirements
 
-- `FR-01-31`: Business stores must support logo upload backed by external storage.
+- `FR-04-31`: Business stores must support logo upload backed by external storage.
 
 Relevant business rules:
 
-- `BR-01-11`: Store edit routes must follow the canonical pattern `/stores/[slug]/edit`.
+- `BR-04-11`: Store edit routes must follow the canonical pattern `/stores/[slug]/edit`.
 
 Relevant acceptance signals:
 

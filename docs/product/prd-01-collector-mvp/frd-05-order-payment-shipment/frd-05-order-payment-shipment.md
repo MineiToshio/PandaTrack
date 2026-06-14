@@ -8,10 +8,10 @@ parent: PRD-01
 children:
   - BP-01
   - BP-02
-last_updated: 2026-04-26
+last_updated: 2026-06-13
 source_features:
   - FEAT-0014
-implementation_status: IN_PROGRESS
+implementation_status: IMPLEMENTED
 ---
 
 # FRD-05 Order and Payment Tracking
@@ -34,16 +34,19 @@ Give collectors one reliable place to record what they bought, what it cost, how
 - private app navigation already exposes `Orders` and `Pre-orders` entry points
 - [`FRD-07`](../frd-07-user-settings/frd-07-user-settings.md) already defines a user-level base currency preference that this domain can consume
 - store discovery and store detail flows already exist, which makes store selection a prerequisite rather than a parallel domain problem
-
-### Planned
-
-- order persistence and human-readable order identifiers
+- order persistence and human-readable order identifiers (`ORD-YYYYMMDD-NN`)
+- create flow as a 3-step wizard (data → products and costs → confirm) with forward gating and free backward navigation, plus a reactive summary rail; edit flow as an all-open form with store and currency locked
 - spreadsheet-style item entry with quantity, optional unit price, and optional product type
-- required total-cost capture with discrepancy confirmation when item totals do not match
-- one exchange-rate context per order when order currency differs from the user's base currency
-- payment records with remaining-balance guidance and delete support
-- order detail view with inline private note editing
-- orders list with filters, overdue-delivery signals, and payment-progress summaries
+- required total-cost capture with discrepancy confirmation when item totals do not match (two-option modal — see `FR-05-13`)
+- one exchange-rate context per order when order currency differs from the user's base currency, with a Frankfurter-backed "Today" prefill helper (`FR-05-16`)
+- payment records with remaining-balance guidance and delete support; add-payment is an inline expand inside the payments card and deletions use an optimistic update plus a neutral-undo toast
+- order detail view with inline private note editing (autosave on blur, ~800ms debounce)
+- orders list with filters, overdue-delivery signals, and payment-progress summaries; default sort is most-recent first (`FR-05-28`)
+- currency reconciliation: `Needs currency update` filter, `pendingFxCount` derived in `getOrdersList`, and the shared `FxReconciliationModal` bulk flow
+
+### Redesign-owned patterns (documented in `docs/redesign`, not minted as FRs)
+
+- view-transition `order-{id}` between list rows and detail hero; single-primary sticky action bar on detail/create/edit (layout varies by status); `MobilePicker` bottom sheets for store / currency / date-range; amount quick-picks in the payment form ("remaining balance" and "half"); reactive `AsideSummary` in create/edit. See `docs/redesign/modules/orders.md` and the redesign PLAYBOOK/ADRs.
 
 ## User Stories
 
@@ -78,22 +81,22 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - `FR-05-10`: Each order item may store an optional product type selected from the shared catalog.
 - `FR-05-11`: Each order must store a required total cost.
 - `FR-05-12`: The system must derive the itemized total as the sum of `quantity x unit price` across all items that have prices.
-- `FR-05-13`: When every order item has a unit price and the derived itemized total differs from the entered total cost, the save flow must present a modal that lets the user keep the entered total, replace it with the derived total, or stop saving.
+- `FR-05-13`: When every order item has a unit price and the derived itemized total differs from the entered total cost, the save flow must present a modal that lets the user either go back and correct the order or save with the entered total anyway. **Redesign change (CB-02, 2026-05-17):** the modal now offers **two** options ("Go back and correct" / "Save anyway") instead of three. The "replace with the derived total" option was dropped because the entered total is always authoritative; auto-replacing it created confusion.
 - `FR-05-14`: Each order must store an order currency selected by the user.
 - `FR-05-15`: The order currency field must default to the user's saved base currency when present.
-- `FR-05-16`: When the order currency differs from the user's base currency, the order form must require one exchange-rate value that converts from order currency into base currency.
-- `FR-05-17`: Order detail must let the user add and delete multiple payment records over time.
+- `FR-05-16`: When the order currency differs from the user's base currency, the order form must require one exchange-rate value that converts from order currency into base currency. **Redesign note:** the field offers a "Today" prefill helper that calls the Frankfurter API (no API key, 5s timeout) from the client to suggest the current rate; the collector can still edit the value.
+- `FR-05-17`: Order detail must let the user add and delete multiple payment records over time. **Redesign note:** "Add payment" is implemented as an inline expand inside the payments card (not a separate modal); the amount field offers quick-picks for the remaining balance and half of it.
 - `FR-05-18`: Each payment record must store amount and payment date.
 - `FR-05-19`: The payment flow must prevent creating a payment whose amount exceeds the current remaining balance.
 - `FR-05-20`: The order detail view must show paid amount, remaining amount, and payment percentage.
-- `FR-05-21`: The order detail view must expose one inline-editable private note field that can be saved without entering full order edit mode, including saving an empty value to clear the note.
+- `FR-05-21`: The order detail view must expose one inline-editable private note field that can be saved without entering full order edit mode, including saving an empty value to clear the note. **Redesign note:** the note autosaves on blur with a ~800ms debounce and shows a "saved Ns ago" indicator; the save waits for server confirmation (not optimistic).
 - `FR-05-22`: The order detail view must expose an automatic history list that records major order lifecycle events. **As implemented (2026-04-24):** the list is **read-only**; users cannot delete individual history entries from the UI (aligned with [`WO-05`](bp-02-order-workspace-and-list-experience/work-orders/wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md) and migration `20260423000000_simplify_order_history_event_types`).
-- `FR-05-23`: The order detail view must expose `Create delivery` as the primary action plus one secondary affordance. That secondary affordance may be a split action composed of visible `Edit` plus a small overflow trigger that opens `View store`, `Cancel`, and `Delete` as appropriate for the order status.
+- `FR-05-23`: The order detail view must expose `Create delivery` as the primary action plus secondary affordances for `Edit`, `View store`, `Cancel`, and `Delete` as appropriate for the order status. **Redesign change (ADR 0011, 2026-05-12):** the secondary affordances are presented as an inline "Actions" card at the foot of the detail scroll (action rows: Edit, Cancel, Delete in red), not as a split button or an overflow (`⋯`) trigger in the header. This applies on both desktop and mobile.
 - `FR-05-24`: An order may be physically deleted only when none of its items is linked to a non-cancelled delivery. When the rule is not met, the delete affordance must be rendered as disabled with a tooltip that explains the collector must first unlink the affected items from their delivery.
 - `FR-05-25`: An order may be cancelled only when none of its items is linked to a non-cancelled delivery. When the rule is not met, the cancel affordance must be rendered as disabled with a tooltip that explains the collector must first unlink the affected items from their delivery. Cancelling an order moves it to `CANCELLED` without removing its historical record.
 - `FR-05-26`: The orders list must support filters for order-date range, store, product type, status, and free-text product-name matching.
 - `FR-05-27`: Orders list filters must persist in the URL and render removable chips in the same interaction pattern used by `Stores`.
-- `FR-05-28`: The orders list must sort by oldest order date first by default.
+- `FR-05-28`: The orders list must sort by **most recent order date first by default**. **Redesign change (CB-01):** the original default was oldest-first; it was flipped because collectors manage recent orders first while older ones are usually closed. (The sort control still offers oldest-first and other options.)
 - `FR-05-29`: Each order card in the list must show store identity, order date, status, expected delivery range, total cost, and payment progress.
 - `FR-05-30`: The orders list must visually indicate when an order has passed its expected delivery range without being completed.
 - `FR-05-31`: Each order card must expand to show the order items associated with the order. Payment progress is communicated through the collapsed card's paid-versus-total summary and percentage; individual payment records are accessible from the order detail view.
@@ -116,12 +119,12 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - `BR-05-07`: One exchange-rate value per order is sufficient for MVP and applies to reporting derived from that order.
 - `BR-05-08`: Notes are user-authored free text and are separate from automatic history.
 - `BR-05-09`: Automatic history entries are system-owned audit-style records. **As implemented (2026-04-24):** the product does **not** offer per-entry delete for history on the order detail view; the collector cannot remove individual rows from the automatic history list.
-- `BR-05-10`: Payments may be deleted and the paid-versus-remaining summary must recalculate immediately after deletion.
+- `BR-05-10`: Payments may be deleted and the paid-versus-remaining summary must recalculate immediately after deletion. **Redesign note:** deletion applies optimistically and surfaces a 5s neutral-undo toast (keyboard `Z`) so the collector can reverse it.
 - `BR-05-11`: Changing an order's store is allowed only while the order remains `OPEN` and has no associated deliveries.
 - `BR-05-12`: Cancelled orders remain visible in historical lists and filter results when the chosen filters include them.
 - `BR-05-15`: When an order is cancelled, its `OrderPayment` records are deleted. Cancellation does not cascade into deliveries because cancellation is only permitted when no item is linked to a non-cancelled delivery (`FR-05-25`). Physical deletion follows the same eligibility rule (`FR-05-24`) and, when permitted, cascades payment records and any residual links to already-cancelled deliveries together with the order row.
 - `BR-05-16`: Cancel and delete require a confirmation modal. The modal must name the order and, when payment records exist, state that those payments will be removed as part of the operation. The modal never mentions delivery-link removal because the cancel/delete affordances are blocked when non-cancelled delivery links exist.
-- `BR-05-17`: An order in `CANCELLED` state may be returned to `OPEN` without preconditions. Payment records removed during cancellation are not restored.
+- `BR-05-17`: An order in `CANCELLED` state may be returned to `OPEN` without preconditions. Payment records removed during cancellation are not restored. **Redesign note:** reactivation runs directly without a confirmation modal because it is a reversible action.
 - `BR-05-18`: Physical deletion of an order is blocked whenever at least one of its items is linked to a non-cancelled delivery, matching the cancel eligibility rule. The collector must unlink the affected items from their delivery before deleting or cancelling the order.
 - `BR-05-13`: The `Needs currency update` indicator must represent reconciliation state against the collector's current base currency rather than a simple order-status proxy.
 - `BR-05-14`: Bulk reconciliation may apply one entered rate to all affected orders within the same currency pair, while preserving order-level manual edits when the user chooses to defer.
@@ -140,7 +143,7 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - Given an order contains quantities and unit prices for every item
 - When the user saves a total cost that differs from the derived total
 - Then the app shows the discrepancy modal
-- And the user can keep the entered total, replace it with the derived total, or go back without saving
+- And the user can either go back and correct the order or save with the entered total anyway (the entered total is authoritative; see `FR-05-13`)
 
 ### `AC-05-03`
 
@@ -197,7 +200,7 @@ As a collector, I want the orders list to show overdue estimated-arrival ranges 
 - order note is one inline-editable textarea, not a list of note records
 - payment records store amount and date and may be deleted
 - discrepancy handling is a save-time modal, not a passive warning
-- order actions in detail view follow the pattern: primary action plus a single `More` menu that groups secondary navigation and destructive actions
+- order actions in detail view follow the pattern: primary action (`Create delivery`) plus an inline "Actions" card that groups secondary navigation and destructive actions (ADR 0011 replaced the earlier "single More menu" affordance — see `FR-05-23`)
 - the order detail header displays store name and order date as the primary title; the human-readable identifier (`ORD-YYYYMMDD-NN`) appears as secondary metadata
 - when the collector opens store detail from order detail, the store page back link honors the encoded `?returnTo=` order-detail URL so the collector can return to the same order context instead of falling back to the store listing
 - a cancelled order may be reactivated to `OPEN`; payment records removed during cancellation are not restored

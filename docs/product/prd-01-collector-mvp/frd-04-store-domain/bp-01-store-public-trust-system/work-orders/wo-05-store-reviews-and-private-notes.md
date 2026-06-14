@@ -37,9 +37,9 @@ Add the first trust-and-memory layer around stores through public reviews and pr
 
 ## Requirements
 
-- `FR-01-24`: Users must be able to create or edit one public review per store.
-- `FR-01-25`: Store-level aggregate trust fields must be persisted instead of recalculated on every read.
-- `FR-01-26`: Users must be able to save private notes on stores.
+- `FR-04-24`: Users must be able to create or edit one public review per store.
+- `FR-04-25`: Store-level aggregate trust fields must be persisted instead of recalculated on every read.
+- `FR-04-26`: Users must be able to save private notes on stores.
 
 Relevant acceptance signals:
 

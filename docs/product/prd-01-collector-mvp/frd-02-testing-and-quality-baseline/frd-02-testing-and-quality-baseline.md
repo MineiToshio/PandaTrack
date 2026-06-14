@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-03-21
+last_updated: 2026-06-13
 source_features:
   - FEAT-0010
 implementation_status: IMPLEMENTED
@@ -56,6 +56,7 @@ This FRD defines PandaTrack's risk-based automated testing strategy for AI-assis
   - `e2e/landing.spec.ts`
   - `e2e/auth.spec.ts`
   - `e2e/app-layout.spec.ts`
+- The redesign added browser-testing conventions captured in `.cursor/rules/browser-testing-patterns.mdc`: `screen.*` queries for Portal-rendered components (not `container.*`), the React-aware setter pattern for `dispatchEvent` on controlled inputs, the `preview_eval` split-call rule for navigation, the dev-credentials login workflow for protected `(app)/*` routes in E2E, and the mobile-viewport simulation strategy. These complement (do not replace) the risk-based strategy above and were applied as redesign module specs grew their own coverage (e.g. `e2e/settings.spec.ts`, deliveries E2E).
 
 ## Linked Blueprint
 

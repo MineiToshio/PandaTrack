@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-03-21
+last_updated: 2026-06-13
 source_features:
   - FEAT-0008
   - FEAT-0009
@@ -120,6 +120,7 @@ As a returning collector, I want Google and email/password to map to the same ac
 - Private gate enforcement: `src/app/[locale]/(app)/layout.tsx`
 - Recovery pages: `src/app/[locale]/(auth)/forgot-password/page.tsx` and `reset-password/page.tsx`
 - E2E: `e2e/auth.spec.ts`
+- Redesign notes (visual / cross-concern with FRD-07, no change to auth behavior): the sign-in and sign-up pages were restyled with the redesign tokens and components; the sign-out action in `ShellAccountMenu.tsx` uses the destructive (red, borderless) styling formalized in redesign ADR 0012 (account destructive-action styling); avatar upload/replace in account identity reuses the shared `ImageCropper` inside the adaptive `Modal` (centered dialog on desktop, bottom sheet on mobile).
 
 ## Linked Blueprint
 

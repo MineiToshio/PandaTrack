@@ -7,10 +7,10 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-04-14
+last_updated: 2026-06-13
 source_features:
   - FEAT-0013
-implementation_status: IN_PROGRESS
+implementation_status: IMPLEMENTED
 ---
 
 # FRD-07 User Settings and Account Preferences
@@ -47,11 +47,14 @@ Give every authenticated collector one clear place to manage their account ident
 - current user model fields for `name`, `email`, `emailVerified`, and `image`
 - current verification banner and seven-day blocking lifecycle
 - seeded country and store product-type catalogs that can be reused by settings
+- redesigned settings vertical (`SettingsShell` + `SettingsNav`) exposing `Profile`, `Account`, and `Preferences` on one route, with vertical tabs on desktop and a sticky segmented control on mobile (see `BR-07-01` note)
+- seven adaptive modals (username with live cooldown, display name with counter, avatar with circular crop, avatar removal, email change, password change with inline rules and strength meter, base-currency change with the two-path confirmation in `FR-07-32`)
+- collector preferences persisted on `User` (`WO-05`): preferred country, base currency, preferred product types, and budget amount plus reset day, saved through autosaving server actions; the base-currency change is gated behind the `FR-07-32` confirmation flow rather than the autosave path
+- avatar crop reuses the shared `ImageCropper` module (circular avatar / rectangular store logo) extracted from the store-logo pattern
 
 ### Planned
 
-- user country, currency, preferred product types, and budget settings (`WO-05`)
-- store-entry defaults derived from saved user preferences (`WO-06`)
+- store-entry defaults derived from saved user preferences (`WO-06`, `FR-07-28`): the private navigation still links to a bare `/{locale}/stores` URL and the listing reads filters from the URL only; preference-based prefill is not yet wired
 
 ## User Stories
 
@@ -104,13 +107,13 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - `FR-07-29`: Direct navigation to `/{locale}/stores` without query params, or with user-supplied query params, must continue to honor the URL as the canonical listing input.
 - `FR-07-30`: The settings page must expose `Profile`, `Account`, and `Preferences` as three distinct sections on the same route. The `Account` section contains email and password management controls.
 - `FR-07-31`: When a credential-account user successfully submits an email change, the system must send an informational security notification to the old email address that includes the support contact (`hello@pandatrack.app`) and does not include an approval or reversal link.
-- `FR-07-32`: When the user changes their saved base currency, the settings flow must present an explicit confirmation step that explains the change affects currency reconciliation for orders impacting current and future budget periods, offers bulk update by currency pair, and warns that skipping reconciliation now requires manual per-order updates later.
-- `FR-07-33`: Username changes must be rate-limited to **one successful change per user per seven days**, using the same window semantics as email-change rate limiting.
+- `FR-07-32`: When the user changes their saved base currency, the settings flow must present an explicit confirmation step that explains the change affects currency reconciliation for orders impacting current and future budget periods, offers bulk update by currency pair, and warns that skipping reconciliation now requires manual per-order updates later. **Implemented** as a two-path confirmation footer: "Save and update exchange rates" (Path A — bulk update of eligible orders) versus "Save without updating" (Path B — skip and reconcile manually later), backed by the `updateCurrency({ saveFxRates })` server action.
+- `FR-07-33`: Username changes must be rate-limited to **one successful change per user per seven days**, using the same window semantics as email-change rate limiting. The username modal surfaces this as a live cooldown chip (remaining days plus the exact next-eligible date) that disappears once the window expires and keeps the modal save action disabled while the cooldown is active.
 - `FR-07-34`: Budget-period boundaries and budget-reset execution must use the user's configured timezone when available; if user timezone is missing, the system must fall back to `UTC`.
 
 ## Business Rules
 
-- `BR-07-01`: The settings route remains one page in MVP and must expose `Profile`, `Account`, and `Preferences` as sections on the same page rather than separate routes or tabs.
+- `BR-07-01`: The settings route remains one page in MVP and must expose `Profile`, `Account`, and `Preferences` as sections on the same page rather than separate routes or tabs. **Redesign note (ADR 0001 D15):** the single-route, no-extra-navigation intent is preserved, but the section switcher is presented as vertical tabs on desktop and a sticky segmented control on mobile (in-page panes, not separate routes) — overriding the original "sections not tabs" wording while keeping `FR-07-30` (one route, three sections) intact.
 - `BR-07-02`: The shell identity surface uses username as the primary human-facing account identifier rather than email.
 - `BR-07-03`: The canonical account affordance for settings and sign-out lives in the lower shell navigation area rather than in the content header.
 - `BR-07-04`: On desktop, the identity surface appears above the sidebar expand/collapse control and opens an upward menu.
@@ -237,6 +240,8 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - The account menu should close on outside click, route change, and any menu-action selection
 - Preference-driven store listing URLs: primary shell navigation implements [`FR-07-28`](frd-07-user-settings.md#functional-requirements) per [WO-06 _store-entry-defaults-from-user-preferences_](bp-01-user-settings-identity-and-preferences/work-orders/wo-06-store-entry-defaults-from-user-preferences.md) and [BP-01](bp-01-user-settings-identity-and-preferences/bp-01-user-settings-identity-and-preferences.md) (**FRD-07**). Any future dashboard (or other) links to the same listing must follow the shared builder rule in [FRD-06 · Cross-domain notes](../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md#cross-domain-notes).
 - Settings success feedback follows the app-wide toast pattern: validation errors and save/server errors for profile fields stay **inline** (see field stack and placement rules in `docs/design/interface-patterns.md` — _Success vs. Error Feedback Placement_); confirmed saves (username, display name, avatar upload, avatar removal, password change, password setup) show a transient toast notification via `src/contexts/ToastContext.tsx`. See `docs/design/interface-patterns.md` — _Toast Notifications_ for the full rule and component references.
+- The profile-image crop reuses the shared `ImageCropper` module (`src/components/modules/`) — extracted from the store-logo crop pattern and parameterized for a circular avatar preview versus the rectangular store-logo preview — rather than introducing a second bespoke cropper.
+- The `Preferences` section also surfaces an `Interfaz` card with **theme** (light / dark) and **language** (es / en) toggles. These are **presentation controls, not persisted user preferences**: theme is held in the client `ThemeContext` (no `system` option, per redesign ADR 0003) and language is written to the `NEXT_LOCALE` cookie consumed by next-intl (there is no `preferredLanguageCode` field on `User`). Both mirror the equivalent toggles in the app-shell header defined by [FRD-03 · Collector App Shell](../frd-03-collector-app-shell/frd-03-collector-app-shell.md); they are not part of the settings data model and add no new functional requirements here.
 
 ## Confirmed
 
@@ -280,6 +285,8 @@ As a product owner, I want settings behavior to respect whether a user signed up
 - provider unlink flows in MVP
 - in-product email notification opt-out controls in MVP
 - additional menu destinations beyond `Settings`, `Sign out`, `Privacy Policy`, and `Terms and Conditions`
+- list-density preference (`dense` / `comfortable`) — considered during the settings redesign (S8) and **deferred**; revisit if real demand emerges
+- active-session management UI in settings (viewing active sessions / "sign out other sessions") — **deferred**; the underlying capability remains in Better Auth but has no dedicated settings surface in MVP
 
 ## Linked Blueprints
 

@@ -7,10 +7,10 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-04-30
+last_updated: 2026-06-12
 source_features:
   - FEAT-0015
-implementation_status: PLANNED
+implementation_status: IMPLEMENTED
 ---
 
 # FRD-08 Delivery Management
@@ -27,18 +27,17 @@ Give collectors a reliable way to consolidate products from one store into deliv
 
 ### Implemented
 
-- no delivery implementation exists yet in PandaTrack
-- the private app shell will expose a `Deliveries` navigation surface aligned to this FRD under `/{locale}/deliveries`
-- [`FRD-05`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md) now defines the order-product structure that delivery eligibility depends on
+- the full delivery vertical ships under `/{locale}/deliveries`: list (filters, removable URL chips, oldest-first sort, pagination, loading/empty/empty-filtered states), detail (per-status hero, source-order-grouped products, summary, private note), create (from-order and standalone entry points, eligibility empty state), and edit
+- delivery lifecycle actions: mark delivered (with required received date), reopen, cancel, delete, plus inline private-note save — each re-derives affected `OrderStatus` in the same transaction
+- delivery persistence, eligibility queries, and `arrived at store` / `in transit` / `delivered to user` progression (data foundation from BP-01 WO-01/WO-02, lifecycle UI from the S9 redesign)
+- `Delivery.receivedDate` column added (migration `20260612224123_add-delivery-received-date`) to back FR-08-22 and FR-08-31
+- human-readable delivery id format `DLV-YYYYMMDD-NN`
+- [`FRD-05`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md) defines the order-product structure that delivery eligibility depends on
 
-### Planned
+### Known issues
 
-- delivery persistence and product eligibility rules
-- store-scoped product selection across multiple orders
-- `arrived at store`, `in transit`, and `delivered to user` progression
-- delivery create/edit/detail/list views
-- delivery cancel, delete, delivered, and reopen flows
-- one private note field per delivery
+- shipping/received dates can display one day early in negative timezones (domain dates persisted at UTC midnight formatted without `timeZone: "UTC"`); systemic across orders and deliveries — tracked for a dedicated fix
+- mobile list action row overflows the viewport by a few pixels at 390px (shared pattern with the order list)
 
 ## User Stories
 
@@ -79,7 +78,7 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - `FR-08-21`: A product may belong to only one delivery at a time.
 - `FR-08-22`: Marking a delivery as delivered must require the collector to select the received date, then mark every associated product as delivered to the user.
 - `FR-08-23`: Reopening a delivered or cancelled delivery must recalculate delivery-related product states so they are editable again, restoring the detail view to an editable lifecycle state.
-- `FR-08-24`: Removing a product from a delivery during edit must recalculate that product's delivery-related state.
+- `FR-08-24`: Removing a product from a delivery during edit must recalculate that product's delivery-related state. The delivery's store is immutable in edit mode (its products depend on the store); changing stores requires deleting the delivery and creating a new one. Edit is only permitted while the delivery is `IN_TRANSIT`; a `DELIVERED` or `CANCELLED` delivery must be reopened first (the edit route redirects to detail otherwise).
 - `FR-08-25`: Cancelling or deleting a delivery must return all of its still-unfulfilled products to `arrived at store`. Physical delete is allowed only while the delivery is `IN_TRANSIT` or `CANCELLED`; a `DELIVERED` delivery must be reopened first.
 - `FR-08-26`: Delivery detail must expose one inline-editable private note field that can be saved without entering full edit mode, including saving an empty value to clear the note.
 - `FR-08-27`: Delivery detail actions must follow the same action hierarchy as orders: one primary action, one secondary action, and destructive actions inside `More`.

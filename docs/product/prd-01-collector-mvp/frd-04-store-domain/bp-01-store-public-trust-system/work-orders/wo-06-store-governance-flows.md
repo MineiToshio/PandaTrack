@@ -39,10 +39,10 @@ Add the first store-governance submission flows so the public store layer can im
 
 ## Requirements
 
-- `FR-01-27`: Users must be able to report stores.
-- `FR-01-28`: Users must be able to request new product types.
-- `FR-01-29`: Approved stores must support change requests instead of direct edits by normal users.
-- `FR-01-30`: Pending stores must be editable only by their creator and admins.
+- `FR-04-27`: Users must be able to report stores.
+- `FR-04-28`: Users must be able to request new product types.
+- `FR-04-29`: Approved stores must support change requests instead of direct edits by normal users.
+- `FR-04-30`: Pending stores must be editable only by their creator and admins.
 
 Relevant acceptance signals:
 
