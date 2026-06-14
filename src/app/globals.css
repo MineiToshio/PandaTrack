@@ -585,6 +585,38 @@
 }
 
 /* ───────────────────────────────────────────────────────────
+   Skeleton shimmer — canonical loading atom (ADR 0013 / S10).
+   Neutral `--text-primary` mix in oklab (L074: oklch drifts the hue
+   toward pink on low-chroma tokens). Reduced-motion → static fill.
+   ─────────────────────────────────────────────────────────── */
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton {
+  /* color-mix lives in custom properties (not directly as gradient color-stops): Lightning CSS
+     (Tailwind v4) drops a rule whose gradient stop is `color-mix(…) <position%>`. Indirecting
+     through `var()` keeps the rule intact and the recipe identical. */
+  --skeleton-base: color-mix(in oklab, var(--text-primary) 8%, transparent);
+  --skeleton-highlight: color-mix(in oklab, var(--text-primary) 16%, transparent);
+  background: linear-gradient(90deg, var(--skeleton-base), var(--skeleton-highlight), var(--skeleton-base));
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background: var(--skeleton-base);
+  }
+}
+
+/* ───────────────────────────────────────────────────────────
    10. Base styles
    ─────────────────────────────────────────────────────────── */
 html {

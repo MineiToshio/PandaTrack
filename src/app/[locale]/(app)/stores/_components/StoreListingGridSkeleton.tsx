@@ -3,12 +3,14 @@ import { cn } from "@/lib/styles";
 /** Matches `DEFAULT_PUBLIC_STORE_PAGE_SIZE` without importing the server-only query module. */
 const SKELETON_COUNT = 12;
 
+// Canonical skeleton atom (ADR 0013): `.skeleton` shimmer from globals.css, static under
+// `prefers-reduced-motion`. Replaces the prior `animate-pulse` + `--border` fill (no motion-safe guard).
 function SkeletonPill({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-full [background:var(--border)]", className)} />;
+  return <div aria-hidden className={cn("skeleton rounded-full", className)} />;
 }
 
 function SkeletonBlock({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-[var(--radius-sm)] [background:var(--border)]", className)} />;
+  return <div aria-hidden className={cn("skeleton rounded-[var(--radius-sm)]", className)} />;
 }
 
 function StoreCardSkeleton() {
@@ -53,13 +55,13 @@ function StoreCardSkeleton() {
   );
 }
 
-export default function StoreListingGridSkeleton() {
+export default function StoreListingGridSkeleton({ loadingLabel }: { loadingLabel?: string }) {
   return (
     <ul
       className="grid grid-cols-1 gap-[14px] sm:grid-cols-2 lg:grid-cols-3"
       role="list"
       aria-busy="true"
-      aria-label="Cargando tiendas…"
+      aria-label={loadingLabel}
     >
       {Array.from({ length: SKELETON_COUNT }, (_, i) => (
         <li key={i} aria-hidden="true">

@@ -41,9 +41,18 @@
     "primarySidebar": "Barra lateral principal"
   },
   "error": {
-    "title": "Algo salió mal",
-    "description": "No pudimos cargar esta sección de la app. Inténtalo de nuevo.",
-    "retry": "Reintentar"
+    "eyebrow": "Algo falló",
+    "title": "Algo se rompió de nuestro lado",
+    "description": "No pudimos cargar esta página. Vuelve a intentarlo; si sigue sin funcionar, prueba de nuevo en un momento.",
+    "retry": "Reintentar",
+    "goHome": "Ir al inicio"
+  },
+  "notFound": {
+    "eyebrow": "Error 404",
+    "title": "Esta página no existe",
+    "description": "Puede que el enlace esté roto o que el contenido se haya movido. Volvamos a un lugar conocido.",
+    "homeCta": "Volver al inicio",
+    "ordersCta": "Ver mis pedidos"
   },
   "placeholder": "Contenido próximamente.",
   "pageHero": {

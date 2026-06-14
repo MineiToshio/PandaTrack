@@ -1,12 +1,16 @@
+import { getTranslations } from "next-intl/server";
+import OrderDetailLoadingSkeleton from "./_components/OrderDetailLoadingSkeleton";
+
+type OrderDetailLoadingProps = { params?: Promise<{ locale: string }> };
+
 /**
- * Detail-route loading boundary. Without this file Next.js would fall back to the parent
- * `/orders/loading.tsx` (the list skeleton) during list → detail navigation, which is
- * misleading — we're not reloading the list, we're opening a single order.
- *
- * Returning `null` keeps the existing list rendered (via view-transition) until the detail
- * page is ready. A proper detail skeleton can replace this when the detail screen ships
- * in Part 3 (S7-B detail).
+ * Detail-route loading boundary. Renders a structure-matching skeleton (S10 / ADR 0013)
+ * while Next resolves the server work for a single order. Replaces the prior `null`
+ * placeholder now that the detail screen has shipped.
  */
-export default function OrderDetailLoading() {
-  return null;
+export default async function OrderDetailLoading({ params }: OrderDetailLoadingProps) {
+  // `loading.tsx` doesn't receive params reliably in Next 15+ — fall back to `es` if absent.
+  const resolved = params ? await params : { locale: "es" };
+  const t = await getTranslations({ locale: resolved.locale, namespace: "components" });
+  return <OrderDetailLoadingSkeleton label={t("skeleton.loading")} />;
 }

@@ -102,5 +102,15 @@
       "unpaid": "Unpaid",
       "overdue": "{days, plural, one {# day overdue} other {# days overdue}}"
     }
+  },
+  "sectionError": {
+    "title": "Couldn't load",
+    "retry": "Try again",
+    "offline": {
+      "title": "No connection"
+    }
+  },
+  "skeleton": {
+    "loading": "Loading…"
   }
 }

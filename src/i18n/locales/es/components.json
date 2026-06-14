@@ -102,5 +102,15 @@
       "unpaid": "Sin pagar",
       "overdue": "Atrasado {days, plural, one {# día} other {# días}}"
     }
+  },
+  "sectionError": {
+    "title": "No se pudo cargar",
+    "retry": "Reintentar",
+    "offline": {
+      "title": "Sin conexión"
+    }
+  },
+  "skeleton": {
+    "loading": "Cargando…"
   }
 }

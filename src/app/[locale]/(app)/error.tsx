@@ -2,10 +2,11 @@
 
 import { useEffect } from "react";
 import * as Sentry from "@sentry/nextjs";
-import { useTranslations } from "next-intl";
+import { RotateCw, TriangleAlert } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
-import Typography from "@/components/core/Typography";
-import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
+import EmptyState from "@/components/modules/EmptyState";
+import { ROUTES } from "@/lib/constants";
 
 type AppShellErrorProps = {
   error: Error & { digest?: string };
@@ -14,31 +15,41 @@ type AppShellErrorProps = {
 
 export default function AppShellError({ error, reset }: AppShellErrorProps) {
   const t = useTranslations("appLayout.error");
+  const locale = useLocale();
 
   useEffect(() => {
     Sentry.captureException(error, {
-      tags: {
-        area: "app_shell",
-      },
-      extra: {
-        digest: error.digest,
-      },
+      tags: { area: "app_shell" },
+      extra: { digest: error.digest },
     });
   }, [error]);
 
   return (
-    <div className="bg-background flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-6 py-12">
-      <div className="bg-surface border-border w-full max-w-xl rounded-xl border p-6 text-center shadow-sm">
-        <SectionTitleWithAccent as="h2" className="justify-center">
-          {t("title")}
-        </SectionTitleWithAccent>
-        <Typography size="md" className="text-text-body mt-3">
-          {t("description")}
-        </Typography>
-        <Button type="button" variant="primary" className="mt-6" onClick={reset}>
-          {t("retry")}
-        </Button>
-      </div>
-    </div>
+    <EmptyState
+      appearance="page"
+      role="alert"
+      headingAs="h1"
+      iconTone="destructive"
+      icon={<TriangleAlert width={32} height={32} aria-hidden />}
+      eyebrow={t("eyebrow")}
+      title={t("title")}
+      subtitle={t("description")}
+      actions={
+        <>
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            onClick={reset}
+            leadingIcon={<RotateCw size={16} aria-hidden />}
+          >
+            {t("retry")}
+          </Button>
+          <Button as="a" href={`/${locale}${ROUTES.dashboard}`} variant="ghost" size="md">
+            {t("goHome")}
+          </Button>
+        </>
+      }
+    />
   );
 }
