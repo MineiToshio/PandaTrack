@@ -43,6 +43,7 @@ owner: Sergio Minei
 - [`components/IconButton.md`](./components/IconButton.md) — icon-only con `label` obligatorio (TypeScript rechaza sin él). `shape: 'pill' | 'square'`.
 - [`components/FilterTriggerButton.md`](./components/FilterTriggerButton.md) — trigger canónico del `FilterDrawer` cross-app. Estado active (fondo tinted accent + badge count) cuando `appliedCount ≥ 1`. Variants `label` (toolbar) e `icon-only` (topbar mobile). Regla: count = chips visibles, búsqueda excluida. (M05)
 - `Pill` — atomic toggle pill estilo `.filter-pill` del demo HTML. Idle/selected via prop `selected`. Caller controla semántica (role/aria-checked) via spread props. Consumido por FilterDrawer y futuros filtros cross-app (M04, sin spec individual).
+- [`components/Skeleton.md`](./components/Skeleton.md) — átomo canónico de carga (ADR 0013). Variants `text | circle | rect | pill`, shimmer `.skeleton`, reduced-motion estático. Atom `aria-hidden`; el contenedor posee `aria-busy` + label.
 
 ### Tier 2 — Molecules (composición de atoms + tokens)
 
@@ -60,6 +61,7 @@ owner: Sergio Minei
 - `CollapsibleSection` — card colapsable con eyebrow + count opcional + chevron toggle. Animation `grid-template-rows 1fr→0fr`. Heredera de `<StoreSubcard>` original (M04, sin spec individual).
 - `ChannelRow` — icon-tile + label + value + trailing slot. Patrón `.channel-row` del demo. Border-bottom auto-collapse en first/last (M04, sin spec individual).
 - `SummaryStatRow` — label muted + value bold tabular-nums. Dashed border-bottom entre rows. Para sidebars Resumen y mini-cards (M04, sin spec individual).
+- [`components/SectionError.md`](./components/SectionError.md) — error de sección con retry (ADR 0013). Vocabulario §9.17 Chip-Eyebrow + Top-Accent, tone `destructive | warning`, retry default `router.refresh()`. No captura a Sentry.
 
 ### Tier 3 — Organisms (composición compleja)
 

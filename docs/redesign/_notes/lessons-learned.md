@@ -792,6 +792,77 @@ Cada entrada:
 
 ---
 
+## L077 — Auditar consumidores reales antes de "consolidar": un target planeado puede ser dead code
+
+- **Origen:** S10 (2026-06-13) — la auditoría de Fase A listó `StoreEmptyStateBox` como "usado en secciones de detalle (sin reseñas / sin direcciones)" y planeó consolidarlo sobre una variante `compact` nueva de `EmptyState`.
+- **Síntoma:** en Fase B, `grep -rn "StoreEmptyStateBox" src/` (excluyendo su definición) devolvió **cero consumidores**. El "consolidar" se volvió "eliminar dead code", y la variante `compact` (cuyo único consumidor previsto era ese componente) quedó sin razón de existir.
+- **Causa raíz:** la auditoría afirmó "está en uso" por el nombre/propósito del componente, sin verificar los imports. El componente había quedado huérfano en un refactor previo (S6).
+- **Solución aplicada:** borrar `StoreEmptyStateBox` (dead code), **no** agregar `compact` a `EmptyState` (se sumó `page` —que sí tiene consumidores reales: error.tsx/not-found.tsx— en su lugar), y reconciliar spec/ADR/PLAYBOOK con la realidad shipped en el mismo cambio.
+- **Regla derivada:** **antes de planear consolidar/extender por un consumidor asumido, verificar los consumidores reales con grep.** Un componente exportado sin imports es dead code → eliminar, no consolidar. No agregar variantes/appearances especulativas cuyo único consumidor previsto no existe (AGENTS.md §9/§10). Si la auditoría de Fase A se equivoca, corregir el spec/ADR en Fase B (docs-alignment), no shipear el plan equivocado.
+- **Dónde vive ahora:** ADR 0013 "Refinamientos de Fase B" + `screens/cross-cutting-states.md` §1.1.
+- **Cross-módulo:** sí. Aplica a toda auditoría que proponga consolidar/eliminar.
+
+---
+
+## L078 — `aria-busy` + `aria-live` con todos los hijos `aria-hidden` no anuncia nada: el contenedor necesita `aria-label`
+
+- **Origen:** S10 (2026-06-13) — review adversarial sobre los skeletons de lista (`OrderListLoadingSkeleton`, `DeliveryListLoadingSkeleton`).
+- **Síntoma:** el contenedor del skeleton tenía `aria-busy="true" aria-live="polite"` pero **ningún nombre accesible** y todos sus descendientes `aria-hidden`. Un lector de pantalla no recibía ninguna pista de "cargando".
+- **Causa raíz:** un live region anuncia **cambios de contenido dentro de una región persistente**, no la aparición de una región vacía que luego se **desmonta** entera cuando llega el contenido real. Con todos los hijos `aria-hidden` no hay texto que anunciar, y el `<h1>` no-hidden era desktop-only + estático.
+- **Solución aplicada:** dar al contenedor `aria-busy` un `aria-label` localizado (`components.skeleton.loading` = "Cargando…", plumbed desde `loading.tsx`/`page.tsx` server o desde el wrapper client con `useTranslations`). Se quitó el `aria-live` ineficaz; el patrón canónico es `aria-busy` + `aria-label` (igual que `OrderDetailLoadingSkeleton`). El `aria-label` hardcodeado en español de `StoreListingGridSkeleton` ("Cargando tiendas…") se movió a i18n.
+- **Regla derivada:** **el contenedor de un skeleton lleva `aria-busy="true"` + un `aria-label` localizado que describe qué carga** (no confiar en `aria-live` cuando la región es 100% `aria-hidden` y se desmonta al cargar). El átomo de skeleton es `aria-hidden`. Ya en PLAYBOOK §10.2 + `screens/cross-cutting-states.md` §8.
+- **Dónde vive ahora:** los 3 skeletons de lista + `OrderDetailLoadingSkeleton`; key `components.skeleton.loading` (es+en).
+- **Cross-módulo:** sí. Cualquier skeleton/loading region futura.
+
+---
+
+## L079 — Lightning CSS (Tailwind v4) descarta una regla con `color-mix(…) <posición%>` como color-stop de gradiente
+
+- **Origen:** S10 (2026-06-13) — Sergio reportó que la tabla de loading "se ve vacía, sin animación".
+- **Síntoma:** los `<span className="skeleton">` rendereaban (148 en el DOM) pero el computed style era `animation-name: none`, `background-image: none`. La regla `.skeleton` y su `@keyframes skeleton-shimmer` estaban **ausentes del CSS compilado** (`grep skeleton` en el chunk servido = 0), aunque el source en `globals.css` estaba bien formado. Otras reglas de `globals.css` (`.numeric`, `wizard-pulse`, `order-item-in`) sí sobrevivían.
+- **Causa raíz:** la receta original usaba `color-mix(in oklab, var(--text-primary) 6%, transparent) 0%` **como color-stop de un `linear-gradient`** (función color-mix seguida de una posición `%`). El procesador CSS de Tailwind v4 (**Lightning CSS**) descarta la regla completa (y arrastró el `@keyframes` adyacente) ante ese patrón. El mismo `color-mix(in oklab/oklch, var(…), transparent)` **sí** sobrevive como valor plano de `background`/`box-shadow` (por eso los icon-wells de `EmptyState` y `wizard-pulse` funcionan) — el problema es específico de **color-mix como color-stop con posición dentro de un gradiente**.
+- **Solución aplicada:** indireccionar el `color-mix` por **custom properties locales** y usar `var()` en los color-stops (sin posiciones explícitas):
+  ```css
+  .skeleton {
+    --skeleton-base: color-mix(in oklab, var(--text-primary) 8%, transparent);
+    --skeleton-highlight: color-mix(in oklab, var(--text-primary) 16%, transparent);
+    background: linear-gradient(90deg, var(--skeleton-base), var(--skeleton-highlight), var(--skeleton-base));
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.4s linear infinite;
+  }
+  ```
+  Verificado en el browser: `animation-name: skeleton-shimmer`, gradient aplicado. (Se subió el contraste a 8/16 % para que lea claro como "cargando".)
+- **Regla derivada:** **nunca poner `color-mix(...)` directamente como color-stop de un `linear-gradient`/`radial-gradient` en CSS que pase por Lightning CSS (Tailwind v4).** Indireccionar por custom property y referenciar con `var()`. Vale para cualquier gradiente con tokens semánticos. **Verificación obligatoria:** un cambio de CSS "no se ve" → inspeccionar el computed style del elemento real (no confiar en el source); si la propiedad está en `none`/inicial, la regla fue descartada en compilación → `grep` el chunk `.css` servido.
+- **Dónde vive ahora:** `src/app/globals.css` (`.skeleton` con custom props + comentario). Se actualizó la receta en `screens/cross-cutting-states.md` §2.1, `components/Skeleton.md` y PLAYBOOK §10.2.
+- **Cross-módulo:** sí. Cualquier gradiente con `color-mix` en el proyecto (Tailwind v4 + Lightning CSS).
+
+---
+
+## L080 — Loading de listas: chrome fuera del `<Suspense>`, solo los datos skeletonean (y el skeleton coincide con el layout)
+
+- **Origen:** S10 post-gate (2026-06-13) — Sergio: "el título, la búsqueda, los filtros, el sort, el botón de nueva entrega no necesitan esperar al servidor; muéstralos desde el inicio. Solo el contador del título y la tabla deben ser skeleton. Y en tiendas no uses el skeleton de tabla, son cards; en mobile también son cards."
+- **Síntoma:** los skeletons de lista (S7/S9) reemplazaban **toda** la pantalla (incluido el toolbar) por barras, porque el `<Suspense>` envolvía el view completo (chrome + datos). Se leía como regresión.
+- **Causa raíz:** el view suspendido renderizaba heading + toolbar + chips + tabla; el fallback redibujaba el chrome como skeleton.
+- **Solución aplicada (pedidos + entregas):** el **chrome** (título + `*ListFilters` toolbar + chips) renderiza a nivel de página, alimentado por queries **livianas** (store options para el drawer). Solo la **región de datos** (tabla/cards + paginación) va en `<Suspense key={fingerprint}>` con un skeleton **data-only que coincide con el layout** (tabla en desktop / cards en mobile). El **contador** del heading es su propia unidad: `<Suspense>` **sin key** (skeleton bar en carga inicial; estable al filtrar) alimentado por counts **globales** (no el listado filtrado). Se quitó `loading.tsx` de ambas rutas (el chrome a nivel de página + el Suspense de datos lo reemplazan; en nav-into-route Next mantiene la página anterior durante la query liviana).
+- **Regla derivada:** **el `<Suspense>` de una lista envuelve SOLO la región de datos; el chrome (título/toolbar/chips) vive afuera y es instantáneo. El contador es una unidad suspendida aparte (counts globales, Suspense sin key). El skeleton de datos coincide con el layout real (tabla-desktop/cards-mobile; card-grid donde son cards — NUNCA tabla para grids).** Verificable por DOM durante un delay temporal en la sección de datos: `h1` real + toolbar real + `.skeleton` solo en contador y datos.
+- **Tiendas (mismo patrón, mecanismo distinto):** `/stores` usa `StoreListingShell` + `useTransition` (el toolbar persiste en transiciones vía isPending) Y ahora también un `<Suspense>` para el skeleton de carga inicial. El contador se desacopló del query pesado con **`countPublicStores(db, filters)`** (reusa `buildPublicStoreListingWhere`, sin duplicar lógica de filtros) → contador en su propio `<Suspense>` (skeleton). El título + toolbar se sacaron a nivel de página (el toolbar `StoreListingFilters` quedó toolbar-only, sin `totalStores`); el grid pesado va en `<StoresGridSection>` suspendido con **card-grid skeleton (NUNCA tabla)**. Verificado: `dataSkeletonIsCardGrid: true`, `dataSkeletonIsTable: false`. **Técnica reusable:** cuando el contador sale del query pesado, exponer un `count*(db, filters)` que reuse el where-builder y suspenderlo aparte.
+- **Dónde vive ahora:** `orders/page.tsx`, `deliveries/page.tsx` (chrome + `*HeadingCount` suspendido + `*DataSection`/`*TableSection` suspendido); `Order/DeliveryListLoadingSkeleton` ahora son data-only. PLAYBOOK §10.1.
+- **Cross-módulo:** sí. Cualquier página de lista futura.
+
+---
+
+## L081 — Título del shell en rutas de detalle con `loading.tsx`: setearlo desde el `layout`, no desde el contenido del `page`
+
+- **Origen:** Pase de pulido de UI (2026-06-13) — Sergio: "sigue revisando la app y corrige detalles de diseño". El breadcrumb del detalle de pedido mostraba "Pedidos › Detalle" (genérico) en vez del código del pedido.
+- **Síntoma:** en hard load / refresh / link directo a `/orders/[id]` el topbar mostraba el título fallback ("Detalle"/"Detail") en vez de `ORD-XXXX`. En navegación SPA (click desde la lista) sí mostraba el código. Detalle de tienda y entrega mostraban su nombre/código siempre.
+- **Causa raíz:** `orders/[id]/loading.tsx` (única ruta de detalle con `loading.tsx`) crea un `<Suspense>` a nivel de ruta alrededor del `page`. El `<SetHeaderTitle>` vivía DENTRO de ese boundary (en `OrderDetailContent`). En hard load el shell (`ContentHeader`) hidrata con el fallback ANTES de que el contenido streameado resuelva, y el set del título desde dentro del boundary no persiste. Deliveries no tiene `loading.tsx` (sin boundary) → funciona; Stores setea el título desde su `layout.tsx` (ARRIBA del boundary) → funciona.
+- **Solución aplicada:** se replicó el patrón de Stores. `orders/[id]/layout.tsx` monta `OrderSegmentContentHeader` (client, `usePathname`) ARRIBA del boundary; setea `title` en detalle y `breadcrumbMiddle` (código→detalle) en edit. Query liviana `getOrderHeader(id, userId)` (solo `humanReadableId`) para no duplicar el query pesado. Se quitó el `<SetHeaderTitle>` de `OrderDetailContent` y el `<OrderSegmentContentHeader>` del edit page (ahora lo provee el layout para todo el subtree `[id]`).
+- **Regla derivada:** **si una ruta de detalle conserva `loading.tsx` (Suspense a nivel de ruta), el setter del título/breadcrumb del shell DEBE vivir en el `layout` del segmento (arriba del boundary), nunca en el contenido del `page` (abajo del boundary). Sin `loading.tsx`, el setter en el contenido sirve. Patrón canónico: `stores/[slug]/layout.tsx` + `*SegmentContentHeader`.** Verificable por DOM en hard load: `header p.truncate` = código/nombre de la entidad, no el fallback.
+- **Dónde vive ahora:** `orders/[id]/layout.tsx`, `OrderSegmentContentHeader.tsx` (ahora setea title + breadcrumb), `getOrderHeader` en `orderQueries.ts`. Análogo a `stores/[slug]/layout.tsx`. Relacionada con L080: L080 sacó `loading.tsx` de las LISTAS; las rutas de DETALLE lo conservan para el skeleton estructural (ADR 0013), así que necesitan el setter en el layout.
+- **Cross-módulo:** sí. Cualquier ruta de detalle futura con skeleton de ruta (`loading.tsx`).
+
+---
+
 ## Cómo agregar una lección nueva
 
 1. Numerar `L0XX` siguiendo el orden cronológico.

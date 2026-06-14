@@ -54,7 +54,7 @@ Estructura:
 - Descripción en `text-secondary` 14px, `line-height: 1.5`.
 - Fila de chips de presencia + stock + pre-órdenes. Cada uno es un `StatusChip` ([spec](../components/StatusChip.md)) con tono semántico: `info` para presencia (física/online), `success` para "Tiene stock", `warning` para "Acepta pre-órdenes".
 
-Para tienda PERSON: sin logo, sin address, sin contact channels en el payload público (FR-01-21). El hero muestra icono `user` en el avatar con tint muted y omite los chips de canales.
+Para tienda PERSON: sin logo, sin address, sin contact channels en el payload público (FR-04-21). El hero muestra icono `user` en el avatar con tint muted y omite los chips de canales.
 
 ## 5. Subcards del detalle
 
@@ -118,7 +118,7 @@ Usa `DetailSidebar` ([spec](../components/DetailSidebar.md)) como contenedor. La
 
 ## 8. Variante: tienda PERSON
 
-`#s6-store-detail-person` (Collectibles CO). Hero sin presencia física, sin canales de contacto, sin dirección. Avatar con icono `user`. El subcard "Canales de contacto" y "Direcciones" no aparecen. FRD FR-01-21 / FR-01-23.
+`#s6-store-detail-person` (Collectibles CO). Hero sin presencia física, sin canales de contacto, sin dirección. Avatar con icono `user`. El subcard "Canales de contacto" y "Direcciones" no aparecen. FRD FR-04-21 / FR-04-23.
 
 ## 9. Variante: modal de reporte
 
@@ -132,7 +132,7 @@ Razones disponibles: Info incorrecta, Posible estafa o fraude, Contenido inaprop
 
 `#s6-store-detail-reports-summary`: sección expandida dentro del flujo del detalle. Dos bloques:
 
-1. **Reportes de la comunidad**: counts agrupados por razón. Identidades y free-text de otros users ocultos (BR-01-13). El viewer ve su propio reporte si tiene uno abierto (con CTA "Editar reporte").
+1. **Reportes de la comunidad**: counts agrupados por razón. Identidades y free-text de otros users ocultos (BR-04-13). El viewer ve su propio reporte si tiene uno abierto (con CTA "Editar reporte").
 2. **Solicitudes de cambio**: resumen de change requests pendientes. El viewer ve su propio change request si tiene uno abierto (con CTA "Continuar edición").
 
 ## 11. Tokens relevantes

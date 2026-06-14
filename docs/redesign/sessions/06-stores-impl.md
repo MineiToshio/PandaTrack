@@ -184,7 +184,7 @@ Como `storeType` es inmutable en edit, el step 1 "Tipo" se omite y el flow arran
 1. **Logo upload modal con nuevo `<Modal>`.** El `StoreLogoField` existente sigue usando su modal interno; el componente Modal nuevo está disponible cuando se decida migrar.
 2. **Toast post-submit "Tienda creada — pendiente de revisión"** (P-S6-03). Las keys `redesign.toast.created` están listas pero no se cableó el toast al success del action (queda como mejora UX).
 3. **Autosave en localStorage** (P-S6-04). No implementado — propuesta no aprobada explícitamente.
-4. **Inactividad warning visual** (FR-01-19). El handoff lo flageó como no bloqueante; pendiente.
+4. **Inactividad warning visual** (FR-04-19). El handoff lo flageó como no bloqueante; pendiente.
 5. **Migración de otros consumidores de Modal viejo** (StoreGovernanceSummaryModal, StoreProductTypeRequestModal, StoreMultiTagAutocomplete). Visualmente reciben el ADR 0008 automáticamente; la migración a la nueva API (icon/tone/primaryAction) es opcional y se hereda a S7+.
 6. **`<DetailSidebar>` aplicado al detail page.** El layout actual del detail page conserva sus secciones existentes; el wrapper `<DetailSidebar>` está disponible para futuras pantallas.
 

@@ -409,27 +409,30 @@ Si saltás cualquiera de estos pasos, vas a generar trabajo que después hay que
 
 **Lista vinculante de patrones cross-module reutilizables** (origen: Stores S6, consumidores: Orders S7, Deliveries S8…):
 
-| Patrón                             | Componente canónico                                                            | Ubicación                                                       |
-| ---------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------- |
-| Aside Resumen del form-grid        | `<AsideSummary>` + `<AsideSummaryRow>`                                         | `src/components/modules/AsideSummary/`                          |
-| Wizard con stepper + cards         | `<WizardAccordion>` + `<WizardStep>` + `<Stepper>`                             | `src/components/modules/WizardAccordion/`, `core/Stepper.tsx`   |
-| Stepper full-width arriba del grid | `<Stepper>` montado fuera de `<WizardAccordion showStepper={false}>`           | `core/Stepper.tsx` — patrón documentado en S7-B Parte 2         |
-| CTAs Continuar / Atrás de wizard   | `primaryAction={{ label }}` + `secondaryAction={{ label }}` (sin icons manual) | `<WizardStep>` API — los iconos default (ArrowRight) los agrega |
-| Back-link sobre page-heading       | `<BackNavLink>`                                                                | `core/BackNavLink.tsx`                                          |
-| Modal adaptive (centered + sheet)  | `<Modal>`                                                                      | `modules/Modal/`                                                |
-| Filter drawer (lista módulo)       | `<FilterDrawer>`                                                               | `modules/FilterDrawer/`                                         |
-| Picker mobile (lista + search)     | `<MobilePicker>`                                                               | `modules/MobilePicker/`                                         |
-| Input + helper text + error inline | `<Input>` con `error` + `helperText` props                                     | `core/Input.tsx`                                                |
-| Eyebrow mono uppercase             | `<Eyebrow>`                                                                    | `core/Eyebrow.tsx`                                              |
-| StoreAvatar inicial + bg           | `<StoreAvatar>`                                                                | `core/StoreAvatar.tsx`                                          |
-| Chip de estado por enum            | `<StatusChip>` (discriminated union)                                           | `core/StatusChip.tsx`                                           |
-| Combobox desktop con search        | `<Combobox>` / `<SearchableSelect>`                                            | `core/`                                                         |
-| Toast neutral con undo             | `useToast().addToast(msg, { variant: "neutral", action })`                     | `core/Toast` + `contexts/ToastContext`                          |
-| Switch / Checkbox / Radio          | `<Switch>` / `<Checkbox>` / `<Radio>`                                          | `core/`                                                         |
-| Sidebar de detalle sticky          | `<DetailSidebar>` (cuando aplique)                                             | `modules/DetailSidebar/`                                        |
-| Paginación de lista (L062)         | `<ListPagination>` (labels traducidos por el consumidor)                       | `modules/ListPagination.tsx` — promovido en S9 Parte 1          |
-| Subcard colapsable de detalle      | `<CollapsibleSubcard>` (eyebrow chip + topAccent)                              | `modules/CollapsibleSubcard.tsx` — promovido en S9 Parte 2      |
-| Código mono con click-to-copy      | `<CodeCopyButton>` (labels por props)                                          | `core/CodeCopyButton.tsx` — promovido en S9 Parte 2             |
+| Patrón                             | Componente canónico                                                                       | Ubicación                                                       |
+| ---------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Aside Resumen del form-grid        | `<AsideSummary>` + `<AsideSummaryRow>`                                                    | `src/components/modules/AsideSummary/`                          |
+| Wizard con stepper + cards         | `<WizardAccordion>` + `<WizardStep>` + `<Stepper>`                                        | `src/components/modules/WizardAccordion/`, `core/Stepper.tsx`   |
+| Stepper full-width arriba del grid | `<Stepper>` montado fuera de `<WizardAccordion showStepper={false}>`                      | `core/Stepper.tsx` — patrón documentado en S7-B Parte 2         |
+| CTAs Continuar / Atrás de wizard   | `primaryAction={{ label }}` + `secondaryAction={{ label }}` (sin icons manual)            | `<WizardStep>` API — los iconos default (ArrowRight) los agrega |
+| Back-link sobre page-heading       | `<BackNavLink>`                                                                           | `core/BackNavLink.tsx`                                          |
+| Modal adaptive (centered + sheet)  | `<Modal>`                                                                                 | `modules/Modal/`                                                |
+| Filter drawer (lista módulo)       | `<FilterDrawer>`                                                                          | `modules/FilterDrawer/`                                         |
+| Picker mobile (lista + search)     | `<MobilePicker>`                                                                          | `modules/MobilePicker/`                                         |
+| Input + helper text + error inline | `<Input>` con `error` + `helperText` props                                                | `core/Input.tsx`                                                |
+| Eyebrow mono uppercase             | `<Eyebrow>`                                                                               | `core/Eyebrow.tsx`                                              |
+| StoreAvatar inicial + bg           | `<StoreAvatar>`                                                                           | `core/StoreAvatar.tsx`                                          |
+| Chip de estado por enum            | `<StatusChip>` (discriminated union)                                                      | `core/StatusChip.tsx`                                           |
+| Combobox desktop con search        | `<Combobox>` / `<SearchableSelect>`                                                       | `core/`                                                         |
+| Toast neutral con undo             | `useToast().addToast(msg, { variant: "neutral", action })`                                | `core/Toast` + `contexts/ToastContext`                          |
+| Switch / Checkbox / Radio          | `<Switch>` / `<Checkbox>` / `<Radio>`                                                     | `core/`                                                         |
+| Sidebar de detalle sticky          | `<DetailSidebar>` (cuando aplique)                                                        | `modules/DetailSidebar/`                                        |
+| Paginación de lista (L062)         | `<ListPagination>` (labels traducidos por el consumidor)                                  | `modules/ListPagination.tsx` — promovido en S9 Parte 1          |
+| Subcard colapsable de detalle      | `<CollapsibleSubcard>` (eyebrow chip + topAccent)                                         | `modules/CollapsibleSubcard.tsx` — promovido en S9 Parte 2      |
+| Código mono con click-to-copy      | `<CodeCopyButton>` (labels por props)                                                     | `core/CodeCopyButton.tsx` — promovido en S9 Parte 2             |
+| Skeleton de carga (átomo)          | `<Skeleton>` (variant text/circle/rect/pill) + composites                                 | `core/Skeleton.tsx` — S10 (átomo `.skeleton`, shimmer)          |
+| Empty state (centrado)             | `<EmptyState>` (appearance card/plain/page · iconTone neutral/accent/warning/destructive) | `modules/EmptyState.tsx` — extendido en S10                     |
+| Error de sección con retry         | `<SectionError>` (tone destructive/warning · onRetry default `router.refresh()`)          | `modules/SectionError.tsx` — S10                                |
 
 **Decisión:**
 
@@ -837,6 +840,63 @@ Para cada card afectada por el patrón:
 3. Sin regresión de layout — la card no crece > 2px en altura.
 4. Light y dark — los `color-mix` con tokens semánticos se adaptan solos. Probar ambos themes.
 5. Labels recurrentes (`Acciones`, `Tu nota privada`, etc.) usan el mismo tono+ícono que en el resto de la app (vocabulario congelado).
+
+## 10. Estados transversales — empty / loading / error (S10)
+
+Reglas del sistema de estados. Spec completo: `docs/redesign/screens/cross-cutting-states.md`. Decisión: ADR 0013. Demo: anchors `#s10-*`.
+
+### 10.1 Loading — skeleton vs spinner vs nada
+
+- **Skeleton** (vía `loading.tsx` / `<Suspense>`) cuando Next resuelve trabajo **server** de una pantalla con layout predecible (listas, detalle, form). Llega por SSR.
+- **Spinner** (`<Loader2>`) solo para acciones **cortas que el usuario dispara**: submit pendiente (`<Button loading>`), `<Input loading>` de búsqueda, autosave. **Nunca** como fallback de ruta.
+- **Nada** en mutaciones optimistas — el cambio se aplica local de inmediato (`optimistic-client-updates.mdc`).
+- **Prohibido fake client fallback** (`dynamic(..., { loading })`) para Client Components que igual se renderizan server-side (`ssr: true`). El skeleton no aparece y suma complejidad (`react-next-components.mdc`).
+- **Arquitectura de loading de listas (L080):** el `<Suspense>` envuelve **solo la región de datos** (tabla/cards + paginación). El **chrome** (título + toolbar de filtros/búsqueda/sort/nuevo + chips) renderiza a nivel de página y es **instantáneo** (alimentado por queries livianas: store options). El **contador** del heading es una unidad suspendida aparte (`<Suspense>` sin key, counts globales → skeleton solo en carga inicial). El **skeleton de datos coincide con el layout real**: tabla-desktop/cards-mobile, o **card-grid donde son cards (NUNCA tabla para grids)**. Referencia: `orders/page.tsx`, `deliveries/page.tsx`, `stores/page.tsx`. **Tiendas** usa `useTransition` (toolbar persiste en transiciones) + `<Suspense>` para el skeleton inicial, con **card-grid skeleton (nunca tabla)**; su contador se desacopló del query pesado con `countPublicStores(db, filters)` (reusa el where-builder) y se suspende aparte. Técnica reusable cuando el contador sale del query pesado (L080).
+- **Título/breadcrumb del shell en rutas de detalle con `loading.tsx` (L081):** si una ruta de detalle conserva un `loading.tsx` (Suspense a nivel de ruta), el setter del título del shell (`SetHeaderTitle` / `*SegmentContentHeader`) DEBE montarse desde el `layout.tsx` del segmento (ARRIBA del boundary), nunca desde el contenido del `page` (abajo del boundary): en hard load el shell hidrata con el fallback antes de que resuelva el contenido streameado y el set queda atrapado → el topbar muestra "Detalle" en vez del código. Patrón canónico: `stores/[slug]/layout.tsx` + `StoreSegmentContentHeader`; replicado en `orders/[id]/layout.tsx`. Sin `loading.tsx` (p. ej. deliveries) el setter en el contenido del `page` sirve. Verificable por DOM en hard load: `header p.truncate` = código/nombre, no el fallback.
+
+### 10.2 Skeleton canónico — `<Skeleton>` (átomo `.skeleton`)
+
+- **Una sola receta:** `linear-gradient` shimmer con mezcla neutra sobre `--text-primary` (6→12→6 %), `1.4s linear infinite`. **Shimmer, no pulse.** Clase CSS shipped `.skeleton` (keyframe `skeleton-shimmer`); el demo la prototipó como `.s10-skel`. Supersede `.skeleton` (S6), `.s7-mob-skel` (S7) y las recetas pulse del React.
+- **Relleno con `--text-primary` mix, NO `--border`** (mantiene contraste en canvas/surface/elevated; `--border` se aplana en dark).
+- **`prefers-reduced-motion: reduce` → estático** (mix 9 %, sin animación). **Obligatorio** — usar `motion-safe:` en Tailwind (corrige el bug de `StoreListingGridSkeleton`).
+- **a11y:** el átomo es `aria-hidden`; el **contenedor** lleva `aria-busy="true"` + `aria-label`/`aria-live`.
+- Composiciones canónicas: `list-row`, `card`, `detail-hero`, `form`. Reflejan el layout real que reemplazan (el shimmer no debe "saltar" cuando llega el contenido).
+
+### 10.3 Empty — `<EmptyState>` (anatomía única, dos clases)
+
+- Card dashed sobre `--surface-elevated`, círculo 64 px, título + subtítulo + CTAs. Cambia solo **tono del ícono** + copy:
+  - **Primera vez:** `iconTone="accent"`, CTA primary (verbo+objeto). Voz forward-looking ("Anota tu primer…").
+  - **Sin resultados:** `iconTone="neutral"`, CTA ghost "Limpiar filtros". Voz que ofrece salida.
+- `appearance="page"` para estados centrados full-page (route error / 404 / offline). El `compact` planeado se descartó y `StoreEmptyStateBox` se eliminó como dead code. `appearance="plain"` legacy.
+- **Excepción:** `StoreEmptyCatalogTag` es empty a nivel chip, no región — no se consolida.
+- El slot `visual` queda reservado para una futura mascota _sleeping_; **S10 no monta mascota**.
+
+### 10.4 Error — route vs section vs 404 vs offline
+
+- **Error de RUTA (full-page, `error.tsx`):** bloque centrado, icon-well **`destructive`** (`TriangleAlert`), eyebrow mono, retry (`reset()`) + ghost "Ir al inicio". Mantiene el shell. `role="alert"`. Sentry con `tags.area`.
+- **`global-error.tsx`:** fallback catastrófico del root layout. Self-contained, **sin i18n** (copy bilingüe inline), estilos inline + tokens. Sentry bare.
+- **Error de SECCIÓN (`<SectionError>`):** una región falló y el resto vive. Vocabulario §9.17 (Chip-Eyebrow + Top-Accent) tono **`destructive`** + retry ghost. Retry default = `router.refresh()`. `role="alert"` + `aria-live="polite"`. Variante `tone="warning"` = offline.
+- **404 (`not-found.tsx`):** mismo bloque, tono **`neutral`** (`Compass`). Un 404 **no es un error** → nunca `destructive`. Sin Sentry.
+- **Offline:** tono **`warning`** (`WifiOff`, transitorio). Sin Sentry.
+
+### 10.5 Tonos de estado (vocabulario congelado)
+
+| Estado                 | Tono          | Ícono Lucide    |
+| ---------------------- | ------------- | --------------- |
+| Empty · primera vez    | `accent`      | contextual      |
+| Empty · sin resultados | `neutral`     | `SearchX`       |
+| Error de ruta          | `destructive` | `TriangleAlert` |
+| Error de sección       | `destructive` | `TriangleAlert` |
+| 404                    | `neutral`     | `Compass`       |
+| Offline                | `warning`     | `WifiOff`       |
+
+### 10.6 Sentry — una sola captura por error
+
+`error.tsx` / `global-error.tsx` capturan el render; los server actions capturan los suyos. **`<SectionError>` NO captura** (es presentación; la captura vive en el fetch fallible que lo origina). `not-found` y offline no capturan. Nunca duplicar (`sentry-error-handling.mdc`).
+
+### 10.7 Anti-patrones (S10)
+
+- ❌ Receta de skeleton ad-hoc por módulo · ❌ `animate-pulse` sin `motion-safe:` · ❌ fake client fallback para UI SSR · ❌ mascota en errores/confirmaciones · ❌ `destructive` para un 404 · ❌ doble captura en Sentry · ❌ cerrar el shell en `error.tsx`/`not-found.tsx` · ❌ spinner como fallback de ruta.
 
 ## Referencias
 

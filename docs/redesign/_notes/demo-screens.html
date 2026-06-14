@@ -3372,6 +3372,113 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+
+    /* ─── S10 · Estados transversales (loading / empty / error) ──────────
+       Canonical primitives for empty/loading/error so every module derives
+       its states from the same recipes. Skeleton atom promotes `.s7-mob-skel`
+       to a session-neutral name (`.skeleton` S6 and `.s7-mob-skel` S7 are its
+       predecessors; S10 supersedes both with one shimmer recipe).            */
+
+    /* Skeleton atom — neutral --text-primary mix works on any surface. */
+    .s10-skel {
+      /* Neutral mix uses `in oklab` (L074): on `--text-primary` oklch can drift the hue
+         toward pink for low-chroma tokens. oklab keeps it a clean neutral on every surface. */
+      background: linear-gradient(90deg,
+        color-mix(in oklab, var(--text-primary) 6%, transparent) 0%,
+        color-mix(in oklab, var(--text-primary) 12%, transparent) 50%,
+        color-mix(in oklab, var(--text-primary) 6%, transparent) 100%);
+      background-size: 200% 100%;
+      animation: s10-skel-shimmer 1.4s linear infinite;
+      border-radius: 6px;
+    }
+    @keyframes s10-skel-shimmer {
+      from { background-position: 200% 0; }
+      to   { background-position: -200% 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .s10-skel { animation: none; background: color-mix(in oklab, var(--text-primary) 9%, transparent); }
+    }
+    .s10-skel-circle { border-radius: 999px; flex: 0 0 auto; }
+    .s10-skel-line   { height: 12px; border-radius: 4px; }
+    .s10-skel-card {
+      background: var(--surface-elevated); border: 1px solid var(--border);
+      border-radius: var(--radius-xl); padding: 16px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+
+    /* Reference/anatomy showcase layout (loading + empty spec sheets). */
+    .s10-spec { display: flex; flex-direction: column; gap: 18px; }
+    .s10-spec-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-xl); padding: 18px 20px;
+    }
+    .s10-spec-card .eyebrow { margin-bottom: 4px; }
+    .s10-spec-help { font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin: 2px 0 16px; max-width: 64ch; }
+    .s10-spec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .s10-spec-cell {
+      border: 1px dashed var(--border); border-radius: var(--radius-lg);
+      padding: 16px; display: flex; flex-direction: column; gap: 12px;
+      background: color-mix(in oklab, var(--surface-elevated) 60%, transparent);
+    }
+    .s10-spec-tag {
+      font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text-muted);
+    }
+
+    /* Full-page state (route error, 404, offline) — sibling of `.s7-empty`. */
+    .s10-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 64px 24px; min-height: 58vh; gap: 0;
+    }
+    .s10-state-icon {
+      width: 72px; height: 72px; border-radius: 50%;
+      display: grid; place-items: center; margin-bottom: 18px;
+    }
+    .s10-state-icon svg { width: 32px; height: 32px; }
+    .s10-state-icon.tone-destructive { background: color-mix(in oklch, var(--destructive) 12%, transparent); color: var(--destructive); }
+    .s10-state-icon.tone-warning     { background: color-mix(in oklch, var(--warning) 13%, transparent);     color: var(--warning); }
+    .s10-state-icon.tone-accent      { background: color-mix(in oklch, var(--accent) 10%, transparent);      color: var(--accent); }
+    .s10-state-icon.tone-neutral     { background: color-mix(in oklch, var(--text-primary) 6%, transparent); color: var(--text-muted); }
+    .s10-state-eyebrow {
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px;
+    }
+    .s10-state-title { font-size: 20px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+    .s10-state-sub { font-size: 14px; color: var(--text-secondary); max-width: 440px; line-height: 1.55; margin-bottom: 26px; }
+    .s10-state-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+    /* Section-level error — a region failed while the rest of the page lives.
+       Built on the §9.17 Chip-Eyebrow + Top-Accent vocabulary (destructive). */
+    .s10-section-error {
+      background: var(--surface-elevated); border: 1px solid var(--border);
+      border-top: 2px solid color-mix(in oklch, var(--destructive) 55%, transparent);
+      border-radius: var(--radius-xl); padding: 18px 20px;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+    }
+    .s10-section-error.tone-warning { border-top-color: color-mix(in oklch, var(--warning) 55%, transparent); }
+    .s10-section-error-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 3px 10px; border-radius: 999px;
+      background: color-mix(in oklch, var(--destructive) 12%, transparent);
+      color: var(--destructive); border: 1px solid color-mix(in oklch, var(--destructive) 26%, transparent);
+    }
+    .s10-section-error.tone-warning .s10-section-error-chip {
+      background: color-mix(in oklch, var(--warning) 13%, transparent);
+      color: var(--warning); border-color: color-mix(in oklch, var(--warning) 28%, transparent);
+    }
+    .s10-section-error-chip svg { width: 13px; height: 13px; }
+    .s10-section-error-msg { font-size: 14px; color: var(--text-secondary); line-height: 1.5; max-width: 54ch; }
+    @media (max-width: 767px) {
+      .s10-state { padding: 48px 20px; min-height: 64vh; }
+      .s10-state-actions { flex-direction: column; width: 100%; }
+      .s10-state-actions .btn { width: 100%; justify-content: center; }
+    }
+    /* Phone simulation (L066): real-viewport media queries don't fire inside the
+       390px container, so the mobile treatment is also scoped to the `-mobile` screens. */
+    section[id$="-mobile"].is-active .s10-state { padding: 48px 20px; min-height: 64vh; }
+    section[id$="-mobile"].is-active .s10-state-actions { flex-direction: column; width: 100%; }
+    section[id$="-mobile"].is-active .s10-state-actions .btn { width: 100%; justify-content: center; }
   </style>
 </head>
 <body>
@@ -3592,6 +3699,32 @@
         <a href="#s9-delivery-create-mobile" data-screen="s9-delivery-create-mobile">Nueva · Paso 2 productos</a>
         <a href="#s9-mark-delivered-sheet-mobile" data-screen="s9-mark-delivered-sheet-mobile">Sheet · Marcar llegada</a>
         <a href="#s9-delivery-actions-sheet-mobile" data-screen="s9-delivery-actions-sheet-mobile">Sheet · Más acciones</a>
+      </div>
+    </div>
+    <div class="demo-nav-group" id="demo-nav-group-s10">
+      <button class="demo-nav-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="demo-dropdown-s10">
+        S10 · Estados <i data-lucide="chevron-down"></i>
+      </button>
+      <div class="demo-nav-dropdown" id="demo-dropdown-s10" role="menu">
+        <span class="demo-nav-label">── Loading ──</span>
+        <a href="#s10-skeleton-anatomy" data-screen="s10-skeleton-anatomy">Skeleton · Anatomía</a>
+        <a href="#s10-detail-loading" data-screen="s10-detail-loading">Skeleton · Detalle (hero)</a>
+        <a href="#s10-form-loading" data-screen="s10-form-loading">Skeleton · Formulario</a>
+        <div class="demo-nav-sep"></div>
+        <span class="demo-nav-label">── Empty ──</span>
+        <a href="#s10-empty-anatomy" data-screen="s10-empty-anatomy">Empty · 2 clases (referencia)</a>
+        <div class="demo-nav-sep"></div>
+        <span class="demo-nav-label">── Error ──</span>
+        <a href="#s10-route-error" data-screen="s10-route-error">Error · Ruta (full-page)</a>
+        <a href="#s10-section-error" data-screen="s10-section-error">Error · Sección (con reintentar)</a>
+        <a href="#s10-not-found" data-screen="s10-not-found">404 · No encontrado</a>
+        <a href="#s10-offline" data-screen="s10-offline">Sin conexión (offline)</a>
+        <div class="demo-nav-sep"></div>
+        <span class="demo-nav-label">── Móvil ──</span>
+        <a href="#s10-detail-loading-mobile" data-screen="s10-detail-loading-mobile">Skeleton · Detalle</a>
+        <a href="#s10-route-error-mobile" data-screen="s10-route-error-mobile">Error · Ruta</a>
+        <a href="#s10-section-error-mobile" data-screen="s10-section-error-mobile">Error · Sección</a>
+        <a href="#s10-not-found-mobile" data-screen="s10-not-found-mobile">404 · No encontrado</a>
       </div>
     </div>
     <span class="demo-nav-current" id="demo-nav-current" aria-live="polite"></span>
@@ -3817,6 +3950,18 @@
         <tr><td class="idx-session">S9</td><td>Lista · Vacía filtrada</td>                 <td><a class="idx-anchor" href="#s9-deliveries-list-empty-filtered" data-screen-link="s9-deliveries-list-empty-filtered">#s9-deliveries-list-empty-filtered</a></td><td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S9</td><td>Lista · Cargando (skeleton)</td>            <td><a class="idx-anchor" href="#s9-deliveries-list-loading" data-screen-link="s9-deliveries-list-loading">#s9-deliveries-list-loading</a></td>                  <td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S9</td><td>Nueva · Sin productos elegibles</td>        <td><a class="idx-anchor" href="#s9-delivery-create-empty" data-screen-link="s9-delivery-create-empty">#s9-delivery-create-empty</a></td>                        <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S10</td><td>Loading · Skeleton anatomía</td>           <td><a class="idx-anchor" href="#s10-skeleton-anatomy" data-screen-link="s10-skeleton-anatomy">#s10-skeleton-anatomy</a></td>                                  <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S10</td><td>Loading · Detalle (hero + subcards)</td>   <td><a class="idx-anchor" href="#s10-detail-loading" data-screen-link="s10-detail-loading">#s10-detail-loading</a></td>                                        <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S10</td><td>Loading · Formulario / wizard</td>         <td><a class="idx-anchor" href="#s10-form-loading" data-screen-link="s10-form-loading">#s10-form-loading</a></td>                                              <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S10</td><td>Empty · 2 clases (referencia)</td>         <td><a class="idx-anchor" href="#s10-empty-anatomy" data-screen-link="s10-empty-anatomy">#s10-empty-anatomy</a></td>                                          <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S10</td><td>Error · Ruta (full-page)</td>              <td><a class="idx-anchor" href="#s10-route-error" data-screen-link="s10-route-error">#s10-route-error</a></td>                                                <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S10</td><td>Error · Sección (con reintentar)</td>      <td><a class="idx-anchor" href="#s10-section-error" data-screen-link="s10-section-error">#s10-section-error</a></td>                                          <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S10</td><td>404 · No encontrado</td>                   <td><a class="idx-anchor" href="#s10-not-found" data-screen-link="s10-not-found">#s10-not-found</a></td>                                                    <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S10</td><td>Sin conexión (offline)</td>                <td><a class="idx-anchor" href="#s10-offline" data-screen-link="s10-offline">#s10-offline</a></td>                                                          <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S10</td><td>Móvil · Loading detalle</td>               <td><a class="idx-anchor" href="#s10-detail-loading-mobile" data-screen-link="s10-detail-loading-mobile">#s10-detail-loading-mobile</a></td>                  <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S10</td><td>Móvil · Error de ruta</td>                 <td><a class="idx-anchor" href="#s10-route-error-mobile" data-screen-link="s10-route-error-mobile">#s10-route-error-mobile</a></td>                        <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S10</td><td>Móvil · Error de sección</td>              <td><a class="idx-anchor" href="#s10-section-error-mobile" data-screen-link="s10-section-error-mobile">#s10-section-error-mobile</a></td>                  <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S10</td><td>Móvil · 404 No encontrado</td>             <td><a class="idx-anchor" href="#s10-not-found-mobile" data-screen-link="s10-not-found-mobile">#s10-not-found-mobile</a></td>                              <td><span class="idx-status nuevo">nuevo</span></td></tr>
       </tbody>
     </table>
   </div>
@@ -16527,6 +16672,611 @@
         <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center;">
           <a href="#s7-orders-list-default" data-screen-link="s7-orders-list-default" class="btn primary"><i data-lucide="package"></i> Ver mis pedidos</a>
           <a href="#deliveries" data-screen-link="deliveries" class="btn ghost">Volver a entregas</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     S10 · ESTADOS TRANSVERSALES (loading / empty / error)
+     No agrega pantallas de producto: unifica y eleva a sistema los estados
+     que aparecen ad-hoc en todos los módulos. Skeleton atom = `.s10-skel`
+     (supersede `.skeleton` S6 y `.s7-mob-skel` S7). Empty = referencia única
+     de las 2 clases del EmptyState. Error = route full-page + section inline
+     + 404 + offline (todo nuevo — el demo no tenía errores).
+     ═══════════════════════════════════════════════════════════════════════ -->
+
+<!-- ─── S10-A · DESKTOP: SKELETON ANATOMÍA (átomo + composiciones) ─────── -->
+<section id="s10-skeleton-anatomy" class="screen" aria-labelledby="s10-skeleton-anatomy-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link is-active"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
+          <span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+        </button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title" id="s10-skeleton-anatomy-title">Loading · Skeleton</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <div class="page-heading">
+        <div class="page-heading-title"><h1>Loading · Skeleton</h1><span class="page-heading-meta">referencia del sistema</span></div>
+      </div>
+      <div class="s10-spec">
+        <!-- Atom -->
+        <div class="s10-spec-card">
+          <span class="eyebrow">Átomo · s10-skel</span>
+          <p class="s10-spec-help">Una sola receta de shimmer (mezcla neutra sobre <code>--text-primary</code>, funciona en canvas, surface y surface-elevated). Con <code>prefers-reduced-motion</code> cae a relleno estático sin animación. Todas las formas se componen con este átomo + <code>border-radius</code>.</p>
+          <div class="s10-spec-grid">
+            <div class="s10-spec-cell">
+              <div class="s10-skel s10-skel-line" style="height:13px;width:90%;"></div>
+              <div class="s10-skel s10-skel-line" style="height:13px;width:70%;"></div>
+              <div class="s10-skel s10-skel-line" style="height:13px;width:80%;"></div>
+              <span class="s10-spec-tag">text · líneas</span>
+            </div>
+            <div class="s10-spec-cell" style="align-items:center;justify-content:center;">
+              <div class="s10-skel s10-skel-circle" style="width:48px;height:48px;"></div>
+              <span class="s10-spec-tag">circle · avatar</span>
+            </div>
+            <div class="s10-spec-cell">
+              <div class="s10-skel" style="height:64px;width:100%;border-radius:12px;"></div>
+              <span class="s10-spec-tag">rect · bloque</span>
+            </div>
+            <div class="s10-spec-cell" style="align-items:flex-start;">
+              <div class="s10-skel" style="height:24px;width:96px;border-radius:999px;"></div>
+              <div class="s10-skel" style="height:24px;width:72px;border-radius:999px;"></div>
+              <span class="s10-spec-tag">pill · chip</span>
+            </div>
+          </div>
+        </div>
+        <!-- Composites -->
+        <div class="s10-spec-card">
+          <span class="eyebrow">Composiciones canónicas</span>
+          <p class="s10-spec-help">Las pantallas ad-hoc actuales (OrderListLoadingSkeleton, DeliveryListLoadingSkeleton, StoreListingGridSkeleton) migran a estas composiciones. Cada una refleja el layout real que reemplaza durante la carga server-side, para que el shimmer no “salte” cuando llega el contenido.</p>
+          <div class="s10-spec-grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));">
+            <div class="s10-spec-cell">
+              <span class="s10-spec-tag">list-row</span>
+              <div style="display:flex;align-items:center;gap:12px;width:100%;">
+                <div class="s10-skel s10-skel-circle" style="width:36px;height:36px;"></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:0;">
+                  <div class="s10-skel s10-skel-line" style="height:13px;width:70%;"></div>
+                  <div class="s10-skel s10-skel-line" style="height:11px;width:50%;"></div>
+                </div>
+                <div class="s10-skel" style="height:22px;width:84px;border-radius:999px;flex:0 0 auto;"></div>
+              </div>
+            </div>
+            <div class="s10-spec-cell">
+              <span class="s10-spec-tag">card</span>
+              <div class="s10-skel-card" style="width:100%;">
+                <div style="display:flex;gap:10px;align-items:center;">
+                  <div class="s10-skel s10-skel-circle" style="width:40px;height:40px;"></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:0;">
+                    <div class="s10-skel s10-skel-line" style="height:13px;width:65%;"></div>
+                    <div class="s10-skel s10-skel-line" style="height:11px;width:45%;"></div>
+                  </div>
+                </div>
+                <div class="s10-skel" style="height:22px;width:120px;border-radius:999px;"></div>
+                <div class="s10-skel" style="height:6px;width:100%;border-radius:999px;"></div>
+              </div>
+            </div>
+            <div class="s10-spec-cell">
+              <span class="s10-spec-tag">detail-hero</span>
+              <div class="s10-skel-card" style="width:100%;gap:14px;">
+                <div style="display:flex;gap:12px;align-items:center;">
+                  <div class="s10-skel s10-skel-circle" style="width:48px;height:48px;"></div>
+                  <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;">
+                    <div class="s10-skel s10-skel-line" style="height:16px;width:55%;"></div>
+                    <div class="s10-skel s10-skel-line" style="height:12px;width:35%;"></div>
+                  </div>
+                  <div class="s10-skel" style="height:24px;width:96px;border-radius:999px;flex:0 0 auto;"></div>
+                </div>
+                <div class="s10-skel" style="height:1px;width:100%;border-radius:0;"></div>
+                <div style="display:flex;gap:14px;">
+                  <div class="s10-skel" style="height:40px;flex:1;border-radius:10px;"></div>
+                  <div class="s10-skel" style="height:40px;flex:1;border-radius:10px;"></div>
+                  <div class="s10-skel" style="height:40px;flex:1;border-radius:10px;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="s10-spec-cell">
+              <span class="s10-spec-tag">form</span>
+              <div style="width:100%;display:flex;flex-direction:column;gap:14px;">
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  <div class="s10-skel s10-skel-line" style="height:11px;width:30%;"></div>
+                  <div class="s10-skel" style="height:38px;width:100%;border-radius:8px;"></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  <div class="s10-skel s10-skel-line" style="height:11px;width:24%;"></div>
+                  <div class="s10-skel" style="height:38px;width:100%;border-radius:8px;"></div>
+                </div>
+                <div class="s10-skel" style="height:40px;width:140px;border-radius:8px;align-self:flex-end;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S10-B · DESKTOP: LOADING DETALLE (hero + subcards + aside) ─────── -->
+<section id="s10-detail-loading" class="screen" aria-labelledby="s10-detail-loading-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link is-active"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
+          <span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+        </button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title" id="s10-detail-loading-title">Pedidos</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <a href="#orders" data-screen-link="orders" class="back-link"><i data-lucide="arrow-left"></i> Pedidos</a>
+      <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;margin-top:8px;" aria-busy="true" aria-label="Cargando el pedido">
+        <div style="display:flex;flex-direction:column;gap:16px;min-width:0;">
+          <!-- detail-hero -->
+          <div class="card" style="display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;gap:14px;align-items:center;">
+              <div class="s10-skel s10-skel-circle" style="width:52px;height:52px;"></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;">
+                <div class="s10-skel s10-skel-line" style="height:18px;width:48%;"></div>
+                <div class="s10-skel s10-skel-line" style="height:12px;width:32%;"></div>
+              </div>
+              <div class="s10-skel" style="height:26px;width:108px;border-radius:999px;flex:0 0 auto;"></div>
+            </div>
+            <div class="s10-skel" style="height:1px;width:100%;border-radius:0;"></div>
+            <div style="display:flex;gap:16px;">
+              <div class="s10-skel" style="height:48px;flex:1;border-radius:12px;"></div>
+              <div class="s10-skel" style="height:48px;flex:1;border-radius:12px;"></div>
+              <div class="s10-skel" style="height:48px;flex:1;border-radius:12px;"></div>
+            </div>
+          </div>
+          <!-- products subcard -->
+          <div class="card" style="display:flex;flex-direction:column;gap:14px;">
+            <div class="s10-skel s10-skel-line" style="height:14px;width:120px;"></div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="s10-skel" style="width:28px;height:28px;border-radius:8px;flex:0 0 auto;"></div>
+              <div class="s10-skel s10-skel-line" style="height:13px;flex:1;max-width:60%;"></div>
+              <div class="s10-skel s10-skel-line" style="height:13px;width:70px;"></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="s10-skel" style="width:28px;height:28px;border-radius:8px;flex:0 0 auto;"></div>
+              <div class="s10-skel s10-skel-line" style="height:13px;flex:1;max-width:50%;"></div>
+              <div class="s10-skel s10-skel-line" style="height:13px;width:70px;"></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div class="s10-skel" style="width:28px;height:28px;border-radius:8px;flex:0 0 auto;"></div>
+              <div class="s10-skel s10-skel-line" style="height:13px;flex:1;max-width:55%;"></div>
+              <div class="s10-skel s10-skel-line" style="height:13px;width:70px;"></div>
+            </div>
+          </div>
+        </div>
+        <aside style="display:flex;flex-direction:column;gap:16px;">
+          <div class="card" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="s10-skel s10-skel-line" style="height:12px;width:80px;"></div>
+            <div class="s10-skel" style="height:36px;width:100%;border-radius:8px;"></div>
+            <div class="s10-skel" style="height:36px;width:100%;border-radius:8px;"></div>
+          </div>
+          <div class="card" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="s10-skel s10-skel-line" style="height:12px;width:64px;"></div>
+            <div class="s10-skel" style="height:8px;width:100%;border-radius:999px;"></div>
+            <div style="display:flex;justify-content:space-between;gap:12px;">
+              <div class="s10-skel s10-skel-line" style="height:12px;width:80px;"></div>
+              <div class="s10-skel s10-skel-line" style="height:12px;width:60px;"></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S10-C · DESKTOP: LOADING FORMULARIO / WIZARD ──────────────────── -->
+<section id="s10-form-loading" class="screen" aria-labelledby="s10-form-loading-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link is-active"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
+          <span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+        </button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title" id="s10-form-loading-title">Anotar pedido</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <a href="#orders" data-screen-link="orders" class="back-link"><i data-lucide="arrow-left"></i> Pedidos</a>
+      <div style="display:grid;grid-template-columns:1fr 288px;gap:20px;align-items:start;margin-top:8px;" aria-busy="true" aria-label="Cargando el formulario">
+        <div style="display:flex;flex-direction:column;gap:16px;min-width:0;">
+          <!-- stepper skeleton -->
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="s10-skel s10-skel-circle" style="width:28px;height:28px;"></div>
+            <div class="s10-skel" style="height:2px;flex:1;border-radius:0;"></div>
+            <div class="s10-skel s10-skel-circle" style="width:28px;height:28px;"></div>
+            <div class="s10-skel" style="height:2px;flex:1;border-radius:0;"></div>
+            <div class="s10-skel s10-skel-circle" style="width:28px;height:28px;"></div>
+          </div>
+          <!-- active step card skeleton -->
+          <div class="card" style="display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="s10-skel s10-skel-line" style="height:11px;width:120px;"></div>
+              <div class="s10-skel s10-skel-line" style="height:16px;width:50%;"></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div class="s10-skel s10-skel-line" style="height:11px;width:25%;"></div>
+              <div class="s10-skel" style="height:38px;width:100%;border-radius:8px;"></div>
+            </div>
+            <div style="display:flex;gap:14px;">
+              <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+                <div class="s10-skel s10-skel-line" style="height:11px;width:40%;"></div>
+                <div class="s10-skel" style="height:38px;width:100%;border-radius:8px;"></div>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+                <div class="s10-skel s10-skel-line" style="height:11px;width:40%;"></div>
+                <div class="s10-skel" style="height:38px;width:100%;border-radius:8px;"></div>
+              </div>
+            </div>
+            <div class="s10-skel" style="height:42px;width:160px;border-radius:8px;align-self:flex-end;"></div>
+          </div>
+        </div>
+        <aside>
+          <div class="card" style="display:flex;flex-direction:column;gap:12px;">
+            <div class="s10-skel s10-skel-line" style="height:12px;width:72px;"></div>
+            <div style="display:flex;justify-content:space-between;gap:12px;"><div class="s10-skel s10-skel-line" style="height:12px;width:80px;"></div><div class="s10-skel s10-skel-line" style="height:12px;width:48px;"></div></div>
+            <div style="display:flex;justify-content:space-between;gap:12px;"><div class="s10-skel s10-skel-line" style="height:12px;width:64px;"></div><div class="s10-skel s10-skel-line" style="height:12px;width:56px;"></div></div>
+            <div style="display:flex;justify-content:space-between;gap:12px;"><div class="s10-skel s10-skel-line" style="height:12px;width:72px;"></div><div class="s10-skel s10-skel-line" style="height:12px;width:40px;"></div></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S10-D · DESKTOP: EMPTY · 2 CLASES (referencia única) ───────────── -->
+<section id="s10-empty-anatomy" class="screen" aria-labelledby="s10-empty-anatomy-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link is-active"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
+          <span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+        </button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title" id="s10-empty-anatomy-title">Empty · referencia</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <div class="page-heading">
+        <div class="page-heading-title"><h1>Empty · 2 clases</h1><span class="page-heading-meta">referencia cross-módulo</span></div>
+      </div>
+      <div class="s10-spec">
+        <div class="s10-spec-card">
+          <span class="eyebrow">Una sola anatomía, dos tonos</span>
+          <p class="s10-spec-help">Todos los empties de lista/flujo derivan del <code>&lt;EmptyState appearance="card"&gt;</code>: card con borde dashed sobre <code>--surface-elevated</code>, círculo de 64px, título, subtítulo y CTAs. Cambia solo el <strong>tono del ícono</strong> y el copy: <strong>accent</strong> para primera vez (invitar), <strong>neutral</strong> para sin-resultados (limpiar).</p>
+          <div class="s10-spec-grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px;">
+            <!-- Class 1: first-run (accent) -->
+            <div>
+              <span class="s10-spec-tag" style="display:block;margin-bottom:8px;">Clase 1 · primera vez · iconTone="accent"</span>
+              <div style="border:1px dashed var(--border);background:var(--surface-elevated);border-radius:var(--radius-2xl);padding:44px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                <span style="width:64px;height:64px;border-radius:999px;display:grid;place-items:center;margin-bottom:8px;background:color-mix(in oklch,var(--accent) 10%,transparent);color:var(--accent);"><i data-lucide="package-open" style="width:28px;height:28px;"></i></span>
+                <h2 style="font-size:17px;font-weight:600;color:var(--text-primary);margin:0;">Aún no hay pedidos</h2>
+                <p style="font-size:14px;color:var(--text-secondary);line-height:1.5;max-width:42ch;margin:0;">Anota tu primer pedido y empieza a seguir tus compras desde aquí.</p>
+                <div style="margin-top:16px;"><a href="#s7-order-create-step-1" data-screen-link="s7-order-create-step-1" class="btn primary"><i data-lucide="plus"></i> Anotar primer pedido</a></div>
+              </div>
+            </div>
+            <!-- Class 2: no-results (neutral) -->
+            <div>
+              <span class="s10-spec-tag" style="display:block;margin-bottom:8px;">Clase 2 · sin resultados · iconTone="neutral"</span>
+              <div style="border:1px dashed var(--border);background:var(--surface-elevated);border-radius:var(--radius-2xl);padding:44px 24px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;">
+                <span style="width:64px;height:64px;border-radius:999px;display:grid;place-items:center;margin-bottom:8px;background:color-mix(in oklch,var(--text-primary) 5%,transparent);color:var(--text-secondary);"><i data-lucide="search-x" style="width:28px;height:28px;"></i></span>
+                <h2 style="font-size:17px;font-weight:600;color:var(--text-primary);margin:0;">Sin resultados</h2>
+                <p style="font-size:14px;color:var(--text-secondary);line-height:1.5;max-width:42ch;margin:0;">Ningún pedido coincide con los filtros actuales. Prueba ajustando o limpiando los filtros.</p>
+                <div style="margin-top:16px;"><button type="button" class="btn ghost"><i data-lucide="x"></i> Limpiar filtros</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S10-E · DESKTOP: ERROR DE RUTA (full-page, para error.tsx) ─────── -->
+<section id="s10-route-error" class="screen" aria-labelledby="s10-route-error-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link is-active"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
+          <span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+        </button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title" id="s10-route-error-title">Pedidos</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <div class="s10-state" role="alert">
+        <span class="s10-state-icon tone-destructive" aria-hidden="true"><i data-lucide="triangle-alert"></i></span>
+        <span class="s10-state-eyebrow">Algo falló</span>
+        <h1 class="s10-state-title">Algo se rompió de nuestro lado</h1>
+        <p class="s10-state-sub">No pudimos cargar esta página. Vuelve a intentarlo; si sigue sin funcionar, prueba de nuevo en un momento.</p>
+        <div class="s10-state-actions">
+          <button type="button" class="btn primary"><i data-lucide="rotate-cw"></i> Reintentar</button>
+          <a href="#dashboard" data-screen-link="dashboard" class="btn ghost">Ir al inicio</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S10-F · DESKTOP: ERROR DE SECCIÓN (una región falló; resto vive) ─ -->
+<section id="s10-section-error" class="screen" aria-labelledby="s10-section-error-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link is-active"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
+          <span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+        </button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title" id="s10-section-error-title">PT-002418</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <a href="#orders" data-screen-link="orders" class="back-link"><i data-lucide="arrow-left"></i> Pedidos</a>
+      <div style="display:flex;flex-direction:column;gap:16px;margin-top:8px;">
+        <!-- Loaded section (rest of the page lives) -->
+        <div class="card" style="border-top:2px solid color-mix(in oklch,var(--accent-cool) 55%,transparent);display:flex;flex-direction:column;gap:12px;">
+          <span class="eyebrow" style="display:inline-flex;align-items:center;gap:6px;color:var(--accent-cool);"><i data-lucide="boxes" style="width:13px;height:13px;"></i> Productos</span>
+          <div style="display:flex;align-items:center;gap:12px;border-top:1px solid var(--border);padding-top:12px;">
+            <span style="width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:color-mix(in oklch,var(--accent-cool) 10%,transparent);color:var(--accent-cool);"><i data-lucide="disc-3" style="width:15px;height:15px;"></i></span>
+            <span style="flex:1;font-size:14px;color:var(--text-primary);">Evangelion OST · Vinyl 2LP</span>
+            <span style="font-size:13px;color:var(--text-secondary);" class="num">¥6.800</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span style="width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:color-mix(in oklch,var(--accent-cool) 10%,transparent);color:var(--accent-cool);"><i data-lucide="shapes" style="width:15px;height:15px;"></i></span>
+            <span style="flex:1;font-size:14px;color:var(--text-primary);">Nendoroid Rei Ayanami</span>
+            <span style="font-size:13px;color:var(--text-secondary);" class="num">¥5.200</span>
+          </div>
+        </div>
+        <!-- Failed section -->
+        <div class="s10-section-error" role="alert" aria-live="polite">
+          <span class="s10-section-error-chip"><i data-lucide="triangle-alert"></i> No se pudo cargar</span>
+          <p class="s10-section-error-msg">No pudimos cargar los pagos de este pedido. El resto de la página funciona con normalidad.</p>
+          <button type="button" class="btn ghost" style="margin-top:2px;"><i data-lucide="rotate-cw"></i> Reintentar</button>
+        </div>
+        <!-- Another loaded section -->
+        <div class="card" style="border-top:2px solid color-mix(in oklch,var(--accent-cool) 55%,transparent);display:flex;flex-direction:column;gap:10px;">
+          <span class="eyebrow" style="display:inline-flex;align-items:center;gap:6px;color:var(--accent-cool);"><i data-lucide="clock-3" style="width:13px;height:13px;"></i> Historial</span>
+          <p style="font-size:13px;color:var(--text-secondary);border-top:1px solid var(--border);padding-top:12px;margin:0;">Pedido creado el 28 de abril de 2026 · Última actualización hace 2 días.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S10-G · DESKTOP: 404 NO ENCONTRADO (not-found.tsx) ─────────────── -->
+<section id="s10-not-found" class="screen" aria-labelledby="s10-not-found-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
+          <span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+        </button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title" id="s10-not-found-title">No encontrado</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <div class="s10-state">
+        <span class="s10-state-icon tone-neutral" aria-hidden="true"><i data-lucide="compass"></i></span>
+        <span class="s10-state-eyebrow">Error 404</span>
+        <h1 class="s10-state-title">Esta página no existe</h1>
+        <p class="s10-state-sub">Puede que el enlace esté roto o que el contenido se haya movido. Volvamos a un lugar conocido.</p>
+        <div class="s10-state-actions">
+          <a href="#dashboard" data-screen-link="dashboard" class="btn primary"><i data-lucide="home"></i> Volver al inicio</a>
+          <a href="#orders" data-screen-link="orders" class="btn ghost">Ver mis pedidos</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S10-H · DESKTOP: SIN CONEXIÓN (offline, opcional) ──────────────── -->
+<section id="s10-offline" class="screen" aria-labelledby="s10-offline-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link is-active"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
+          <span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>sergio@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+        </button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <div class="app-topbar-left"><p class="app-topbar-title" id="s10-offline-title">Pedidos</p></div>
+        <div class="app-topbar-right"><span class="app-lang-toggle">ES</span><button class="topbar-iconbtn" type="button" aria-label="Cambiar tema"><i data-lucide="sun"></i></button></div>
+      </div>
+      <div class="s10-state" role="status" aria-live="polite">
+        <span class="s10-state-icon tone-warning" aria-hidden="true"><i data-lucide="wifi-off"></i></span>
+        <span class="s10-state-eyebrow">Sin conexión</span>
+        <h1 class="s10-state-title">Parece que estás sin conexión</h1>
+        <p class="s10-state-sub">Revisa tu red y vuelve a intentarlo. Tus cambios guardados están a salvo.</p>
+        <div class="s10-state-actions">
+          <button type="button" class="btn primary"><i data-lucide="rotate-cw"></i> Reintentar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S10 · MÓVIL: LOADING DETALLE ──────────────────────────────────── -->
+<section id="s10-detail-loading-mobile" class="screen" aria-labelledby="s10-detail-loading-mobile-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0 0 calc(64px + env(safe-area-inset-bottom));">
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" id="s10-detail-loading-mobile-title" style="font-size:14px;font-weight:600;">PT-002418</p>
+        </div>
+      </div>
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:14px;" aria-busy="true" aria-label="Cargando el pedido">
+        <div class="s10-skel-card">
+          <div style="display:flex;gap:12px;align-items:center;">
+            <div class="s10-skel s10-skel-circle" style="width:48px;height:48px;"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;">
+              <div class="s10-skel s10-skel-line" style="height:16px;width:60%;"></div>
+              <div class="s10-skel s10-skel-line" style="height:12px;width:40%;"></div>
+            </div>
+          </div>
+          <div class="s10-skel" style="height:24px;width:120px;border-radius:999px;"></div>
+          <div class="s10-skel" style="height:8px;width:100%;border-radius:999px;"></div>
+        </div>
+        <div class="s10-skel-card">
+          <div class="s10-skel s10-skel-line" style="height:13px;width:96px;"></div>
+          <div style="display:flex;align-items:center;gap:10px;"><div class="s10-skel" style="width:26px;height:26px;border-radius:8px;flex:0 0 auto;"></div><div class="s10-skel s10-skel-line" style="height:13px;flex:1;"></div></div>
+          <div style="display:flex;align-items:center;gap:10px;"><div class="s10-skel" style="width:26px;height:26px;border-radius:8px;flex:0 0 auto;"></div><div class="s10-skel s10-skel-line" style="height:13px;flex:1;max-width:70%;"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S10 · MÓVIL: ERROR DE RUTA ────────────────────────────────────── -->
+<section id="s10-route-error-mobile" class="screen" aria-labelledby="s10-route-error-mobile-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0 0 calc(64px + env(safe-area-inset-bottom));display:flex;flex-direction:column;">
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" id="s10-route-error-mobile-title" style="font-size:14px;font-weight:600;">Pedidos</p>
+        </div>
+      </div>
+      <div class="s10-state" role="alert">
+        <span class="s10-state-icon tone-destructive" aria-hidden="true"><i data-lucide="triangle-alert"></i></span>
+        <span class="s10-state-eyebrow">Algo falló</span>
+        <h1 class="s10-state-title">Algo se rompió de nuestro lado</h1>
+        <p class="s10-state-sub">No pudimos cargar esta página. Vuelve a intentarlo en un momento.</p>
+        <div class="s10-state-actions">
+          <button type="button" class="btn primary"><i data-lucide="rotate-cw"></i> Reintentar</button>
+          <a href="#dashboard" data-screen-link="dashboard" class="btn ghost">Ir al inicio</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S10 · MÓVIL: ERROR DE SECCIÓN ─────────────────────────────────── -->
+<section id="s10-section-error-mobile" class="screen" aria-labelledby="s10-section-error-mobile-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0 0 calc(64px + env(safe-area-inset-bottom));">
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" id="s10-section-error-mobile-title" style="font-size:14px;font-weight:600;">PT-002418</p>
+        </div>
+      </div>
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:14px;">
+        <div class="card" style="border-top:2px solid color-mix(in oklch,var(--accent-cool) 55%,transparent);display:flex;flex-direction:column;gap:10px;">
+          <span class="eyebrow" style="display:inline-flex;align-items:center;gap:6px;color:var(--accent-cool);"><i data-lucide="boxes" style="width:13px;height:13px;"></i> Productos</span>
+          <div style="display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);padding-top:10px;"><span style="width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:color-mix(in oklch,var(--accent-cool) 10%,transparent);color:var(--accent-cool);"><i data-lucide="disc-3" style="width:14px;height:14px;"></i></span><span style="flex:1;font-size:13px;color:var(--text-primary);">Evangelion OST · 2LP</span></div>
+        </div>
+        <div class="s10-section-error" role="alert" aria-live="polite">
+          <span class="s10-section-error-chip"><i data-lucide="triangle-alert"></i> No se pudo cargar</span>
+          <p class="s10-section-error-msg">No pudimos cargar los pagos de este pedido. El resto de la página funciona con normalidad.</p>
+          <button type="button" class="btn ghost" style="margin-top:2px;width:100%;justify-content:center;"><i data-lucide="rotate-cw"></i> Reintentar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── S10 · MÓVIL: 404 NO ENCONTRADO ────────────────────────────────── -->
+<section id="s10-not-found-mobile" class="screen" aria-labelledby="s10-not-found-mobile-title">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0 0 calc(64px + env(safe-area-inset-bottom));display:flex;flex-direction:column;">
+      <div class="app-topbar" style="padding:0 12px 0 8px;gap:6px;">
+        <div class="app-topbar-left" style="min-width:0;gap:6px;">
+          <button class="topbar-iconbtn" type="button" aria-label="Abrir menú" style="width:36px;height:36px;flex-shrink:0;"><i data-lucide="menu"></i></button>
+          <p class="app-topbar-title" id="s10-not-found-mobile-title" style="font-size:14px;font-weight:600;">No encontrado</p>
+        </div>
+      </div>
+      <div class="s10-state">
+        <span class="s10-state-icon tone-neutral" aria-hidden="true"><i data-lucide="compass"></i></span>
+        <span class="s10-state-eyebrow">Error 404</span>
+        <h1 class="s10-state-title">Esta página no existe</h1>
+        <p class="s10-state-sub">Puede que el enlace esté roto o que el contenido se haya movido.</p>
+        <div class="s10-state-actions">
+          <a href="#dashboard" data-screen-link="dashboard" class="btn primary"><i data-lucide="home"></i> Volver al inicio</a>
+          <a href="#orders" data-screen-link="orders" class="btn ghost">Ver mis pedidos</a>
         </div>
       </div>
     </div>

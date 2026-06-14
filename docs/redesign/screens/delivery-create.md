@@ -2,7 +2,7 @@
 title: Delivery create & edit
 session: 09
 status: spec-complete
-last_updated: 2026-06-12
+last_updated: 2026-06-14
 demo_anchors:
   - "#delivery-create"
   - "#s9-delivery-create-standalone"
@@ -26,24 +26,30 @@ app-topbar   → breadcrumb "Entregas › Nueva entrega" (o DLV-… en edición)
 back-link    → "← Volver al pedido" (from-order) / "← Entregas" (standalone) / "← Volver a la entrega" (edit)
 page-heading → h1 + meta contextual
 stepper      → 4 pasos: Tienda · Productos · Datos de la entrega · Confirmar
-form-grid    → wizard accordion + form-sidebar (Resumen + Atajos)
+form-grid    → wizard accordion + form-sidebar (solo Resumen)
 ```
 
 Wizard accordion canónico: un paso expandido a la vez, "Continuar" SIEMPRE habilitado + validación inline al click (PLAYBOOK §3).
 
+> **Iteración humana R3 (2026-06-14):** se retiró la card "Atajos" del aside (los atajos `/`, `A`, `Space` no aportaban y confundían; paridad con order-create que no la tiene). El único atajo que sobrevive es **⌘/Ctrl + Enter para enviar**, como texto plano junto al CTA del paso 4 (igual que orders).
+
 ## 2. Entry points (FR-08-15 / FR-08-16)
 
 ### 2.1 Desde pedido (`#delivery-create`) — `/deliveries/new?sourceOrderId={id}`
+
 - Paso 1 **done** con `field-as-attribute` (ADR 0001 D2): badge "↳ Desde ORD-…" + tienda + botón Cambiar.
 - Paso 2 activo: productos del pedido origen **pre-seleccionados**; los demás pedidos elegibles de la misma tienda aparecen como grupos adicionales **expandidos y desmarcados** (iteración humana R2: la opción de sumar de otros pedidos debe ser visible, no colapsada).
 - Back-link "Volver al pedido".
 - Entry points reales en order-detail: botón primary "Crear entrega" del aside Acciones + link "Crear entrega con estos productos" al pie del subcard Productos (ambos cableados en el demo S7).
 
 ### 2.2 Standalone (`#s9-delivery-create-standalone`) — `/deliveries/new`
+
 - Paso 1 activo: **combobox de tienda** con dropdown abierto, búsqueda con fold de acentos. **Solo lista tiendas con ≥1 producto elegible** (FR-08-17), cada opción muestra "N productos sin entregar". Helper: "Solo aparecen tiendas con productos pendientes de entrega. Las tiendas sin pedidos abiertos no se listan."
-- Al elegir tienda se cargan los productos elegibles del paso 2 (la búsqueda de producto se resetea al cambiar tienda, FR-08-34).
+- **Componente canónico compartido** (iteración humana R3, 2026-06-14): el campo usa `components/modules/StoreCombobox` — el mismo combobox que order-create (`OrderStoreField` pasa a ser su adaptador). El adaptador de entregas (`DeliveryStoreField`) inyecta el meta "productos sin entregar" y omite el escape hatch "crear tienda" (una tienda inelegible no se arregla aquí). Variante mobile vía `MobilePicker`, igual que orders.
+- Al elegir tienda se cargan los productos elegibles del paso 2. **Cambiar de tienda invalida todo lo elegido aguas abajo**: limpia la selección de productos y su búsqueda (FR-08-34), resetea los datos del paso 3 y borra los checks "done" de los pasos 2-4 para reiniciarlos desde cero (no tiene sentido conservar productos de otra tienda).
 
 ### 2.3 Sin productos elegibles (`#s9-delivery-create-empty`)
+
 Si no existe ninguna tienda con elegibles: empty state con icono `package-x`, título "Sin productos elegibles" y el copy FRD ("No hay productos de pedidos disponibles… ya están entregados, ya están en otra entrega o aún no están disponibles."). CTAs: `[Ver mis pedidos]` primary + `[Volver a entregas]` ghost.
 
 ## 3. Paso 2 · Productos (FR-08-04 / 04a / 18 / 19 / 34)
@@ -53,16 +59,17 @@ Si no existe ninguna tienda con elegibles: empty state con icono `package-x`, t�
 - Búsqueda client-side case/accent-insensitive; grupos sin matches se ocultan; empty inline si nada coincide.
 - Nota fija: "Puedes sumar productos de cualquier pedido de esta tienda. Los ya entregados o en otra entrega activa no aparecen acá." (FR-08-19: los inelegibles NO se muestran deshabilitados — directamente no aparecen).
 - Footer del paso: contador "N productos seleccionados" + "Deshacer". Validación: ≥1 producto (FR-08-04).
+- **Recuperación ante elegibilidad obsoleta (R3):** la lista elegible es un snapshot del render; un producto puede dejar de ser elegible entre la carga y el submit (entró a otra entrega, o la página se reabrió desde caché). Si `createDelivery` devuelve `PRODUCT_NOT_ELIGIBLE`, ahora reporta los `ineligibleProductIds`; el wizard **nombra** los productos afectados, los **quita** de la selección, refresca la elegibilidad (`router.refresh`) y devuelve al usuario al paso 2 — en vez del banner muerto "no elegible". Responde al "¿cuáles?" y al "¿por qué me los muestran?" del usuario.
 
 ## 4. Paso 3 · Datos de la entrega (FR-08-05/06/07/08/09/10/11)
 
-| Campo | Regla |
-| --- | --- |
-| Fecha de envío * | date, prefill hoy, **solo pasadas o de hoy** (FR-08-05/06) |
-| Llegada estimada (opcional) | rango via DateRangePicker (componente S7); `hasta ≥ desde` (FR-08-11) |
-| Costo de envío * | ≥ 0, helper "Usa 0 si no tiene costo." (FR-08-07) |
-| Moneda * | select; default = moneda base del usuario (FR-08-09); helper "Tu moneda base es USD." |
-| Tipo de cambio * condicional | **Solo se renderiza si moneda ≠ base** (FR-08-10, paridad orders). Helper: "1 JPY = 0,0065 USD. Solo te lo pedimos porque la moneda difiere de tu base." |
+| Campo                         | Regla                                                                                                                                                    |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fecha de envío \*             | date, prefill hoy, **solo pasadas o de hoy** (FR-08-05/06)                                                                                               |
+| Llegada estimada (opcional)   | rango via DateRangePicker (componente S7); `hasta ≥ desde` (FR-08-11)                                                                                    |
+| Costo de envío \*             | ≥ 0, **inicia vacío** (placeholder `0.00`, no un 0 prellenado — el envío casi nunca es gratis; R3); helper "Usa 0 si no tiene costo." (FR-08-07)         |
+| Moneda \*                     | select; default = moneda base del usuario (FR-08-09); helper "Tu moneda base es USD."                                                                    |
+| Tipo de cambio \* condicional | **Solo se renderiza si moneda ≠ base** (FR-08-10, paridad orders). Helper: "1 JPY = 0,0065 USD. Solo te lo pedimos porque la moneda difiere de tu base." |
 
 El demo muestra ambos lados de la condición: create en JPY (campo visible) y edit en USD (campo ausente).
 
@@ -70,14 +77,14 @@ El demo muestra ambos lados de la condición: create en JPY (campo visible) y ed
 
 Review **real** (lección M04): summary-list con Tienda / Productos (nombres) / Fecha de envío / Llegada estimada / Costo (con conversión "≈ $X USD" si aplica) + helper "Los N productos pasarán a **En camino** y el pedido origen se actualizará. Cuando confirmes, te llevamos a la entrega."
 
-CTA: `[Crear entrega]` primary **sin chip kbd dentro del botón** — el atajo va como texto plano al lado: "o presiona ⌘ Enter" (iteración humana R2). El atajo completo vive en la card Atajos del aside.
+CTA: `[Crear entrega]` primary **sin chip kbd dentro del botón** — el atajo va como texto plano al lado: "o presiona ⌘ Enter" (iteración humana R2). Es el **único** atajo del flujo (R3): ⌘/Ctrl + Enter envía desde cualquier paso.
 
 Post-submit: redirect a `/deliveries/{id}` (FRD). Productos pasan a `IN_TRANSIT`; `OrderStatus` de los pedidos origen se re-deriva en la misma transacción (data layer WO-01).
 
 ## 6. Aside (form-sidebar)
 
-- **Resumen** reactivo (patrón AsideSummary S7): Tienda · Pedidos origen (`MonoCode`) · Productos · Fecha de envío · Llegada est. · Costo envío · "En tu base" (conversión).
-- **Atajos**: ⌘↵ enviar · Space toggle item · A select-all · / buscar · Esc cancelar.
+- **Resumen** reactivo (patrón AsideSummary S7): Tienda · Pedidos origen · Productos · Fecha de envío · Llegada est. · Costo envío · "En tu base" (conversión). **Pedidos origen apila un código por línea** (R3): con varios pedidos los `ORD-…` no caben lado a lado y se truncaban; `AsideSummaryRow` acepta `string[]` y los renderiza uno debajo de otro.
+- ~~Atajos~~ — card retirada en R3 (ver §1).
 
 ## 7. Modo edición (`#s9-delivery-edit`) — FR-08-24 / BR-08-04
 

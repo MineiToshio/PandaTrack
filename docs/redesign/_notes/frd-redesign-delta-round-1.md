@@ -1,13 +1,15 @@
 ---
 title: FRD ↔ Rediseño Delta Audit — Round 1
-last_updated: 2026-05-19
+last_updated: 2026-06-13
 scope: 6 FRDs (PRD-01 FRDs 01/02/03/04/05 + PRD-00 FRD-02)
-out_of_scope: FRD-07 (S8 Fase B en curso — Round 2), FRD-08 (pending S9), PRD-00 FRD-01 (pending S11)
-status: read-only audit — FRDs no actualizados
+out_of_scope: FRD-07 (cerrado en Round 2 — `frd-redesign-delta-frd07.md`), FRD-08 (cerrado — `frd-redesign-delta-frd08.md`), PRD-00 FRD-01 (pending S11)
+status: ✅ reconciliado — los 6 FRDs sincronizados (2026-06-13). Ver banners por sección.
 owner: Sergio Minei
 ---
 
 # FRD ↔ Rediseño Delta Audit — Round 1
+
+> **✅ RECONCILIACIÓN COMPLETA (2026-06-13).** Los 6 FRDs de este audit fueron sincronizados FRD por FRD (orden de prioridad: FRD-03 → FRD-05 → FRD-04 → FRD-02 → PRD-00 FRD-02 → FRD-01). Cada sección lleva un banner "✅ RECONCILIADO" con el detalle de qué se aplicó. Los deltas funcionales/comportamiento/removido entraron a los FRDs owner; los "patrón nuevo" cross-app quedaron redesign-owned (referenciados, no minteados como FRs). **Los 3 flagged se resolvieron el 2026-06-13** (a pedido de Sergio): (1) ✅ renumeración `FR-01-*`/`BR-01-*`/`AC-01-*` → `FR-04-*`/`BR-04-*`/`AC-04-*` en FRD-04 + work orders + docs de stores del rediseño (flagged #1); (2) ✅ ADR 0012 del sign-out destructive (flagged #3); (3) ✅ enumeración completa de los PostHog events (116/7 categorías) en el FRD de observabilidad. FRD-07 y FRD-08 se cerraron en sus propios delta notes. **Sin pendientes.**
 
 ## Resumen ejecutivo
 
@@ -44,6 +46,8 @@ owner: Sergio Minei
 ## FRD-03 Collector App Shell
 
 **Estado de partida:** `docs/product/prd-01-collector-mvp/frd-03-collector-app-shell/frd-03-collector-app-shell.md` · `last_updated: 2026-04-03` · `implementation_status: IMPLEMENTED`
+
+> **✅ RECONCILIADO (2026-06-13).** FRD-03 sincronizado: `last_updated → 2026-06-13`; Current State reescrita (PUSH/FLOAT sidebar, AppNavDrawer único nav mobile, header estático, account trigger lower-shell, sección "Removed during the redesign" para MobileTabBar/FAB/MascotBubble, sección "Adopted cross-app redesign patterns"); notas a FR-03-03/04/05/06/07/08. D3-01..D3-06 aplicados a FRs/Current State. D3-07/08/09/10 (patrones nuevos cross-app) quedan **redesign-owned** (referenciados en Current State, no minteados como FRs — viven en PLAYBOOK/ADRs). Planned Alignment → Implemented.
 
 ### Deltas detectados
 
@@ -84,6 +88,8 @@ owner: Sergio Minei
 ## FRD-05 Order Payment Shipment
 
 **Estado de partida:** `docs/product/prd-01-collector-mvp/frd-05-order-payment-shipment/frd-05-order-payment-shipment.md` · `last_updated: 2026-04-26` · `implementation_status: IN_PROGRESS`
+
+> **✅ RECONCILIADO (2026-06-13).** FRD-05 sincronizado: `status → IMPLEMENTED`, `last_updated → 2026-06-13`; Current State reescrita (Planned → Implemented + bloque "Redesign-owned patterns"). Deltas funcionales/comportamiento aplicados: D5-01 (FR-05-28 sort más-recientes), D5-02 (FR-05-13 + AC-05-02 modal 2 opciones), D5-03 (FR-05-23 inline Actions card + bullet Confirmed corregido), D5-04 (FR-05-21 autosave 800ms), D5-05 (FR-05-17 inline expand + quick-picks), D5-06 (BR-05-10 optimistic + undo toast), D5-07 (BR-05-17 reactivar sin modal), D5-17 (FR-05-16 Frankfurter prefill). Patrones nuevos D5-08..D5-16 → **redesign-owned** (view-transition, wizard 3 pasos, edit all-open, AsideSummary, sticky bar, MobilePicker, pendingFxCount) referenciados en Current State, no minteados como FRs (D5-15 FxReconciliationModal ya estaba en Implementation Notes). Inconsistencia interna #2 (More menu) corregida.
 
 ### Deltas detectados
 
@@ -128,11 +134,13 @@ owner: Sergio Minei
 
 **Estado de partida:** `docs/product/prd-01-collector-mvp/frd-04-store-domain/frd-04-store-domain.md` · `last_updated: 2026-04-27` · `implementation_status: IMPLEMENTED`
 
+> **✅ RECONCILIADO (2026-06-13).** FRD-04 sincronizado: `last_updated → 2026-06-13`; Current State amplía implementaciones S6 (FilterDrawer, FilterTriggerButton, wizard autosave, staged-add, crop logo, chip eyebrow + Actions card); D4-01 (status chip no en card) + D4-06 (staged-add) → Current Implementation Notes; D4-02 (crop) → FR-01-31; D4-03/D4-04 (FilterDrawer UX + badge) → FR-04-13; FR-04-33/34 (private person stores) movidos de "Planned Enhancements" → Implemented. (Nota: D4-02 crop entró en el FR que ahora es **FR-04-31**, ex `FR-01-31`.) Patrones nuevos D4-05/07/08 referenciados (redesign-owned). **Renumeración aplicada (flagged #1, 2026-06-13):** todo el bloque mal numerado `FR-01-*`/`BR-01-*`/`AC-01-*` del FRD-04 (y de sus work orders bajo `bp-01-store-public-trust-system/` + los docs de stores del rediseño `modules/stores.md`, `screens/store-detail.md`, `screens/store-create.md`, `sessions/06-stores-impl.md`) renumerado a `FR-04-*`/`BR-04-*`/`AC-04-*`. Resuelve la colisión de namespace con el FRD-01 real (account) y el FRD-01 de landing (PRD-00), que viven en árboles separados y no se tocaron. Secuencias completas verificadas: FR-04-01..34, BR-04-01..21, AC-04-01..15, sin duplicados ni huecos.
+
 ### Deltas detectados
 
 | ID    | FR/BR afectado                 | Cambio                                                                                                                                                                                                            | Categoría      | Origen                                 | Decisión rediseño                                                                                   |
 | ----- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| D4-01 | FR-01-16 / BR-04-20            | FRD: implica chips de status visibles en toda vista. Redesign: **chip de status NO se muestra en el directorio público** (lista pública). Solo visible en página de detalle para el owner y directorio interno.   | funcional      | S6.1 (decisión humana 2026-05-03)      | `StoreCard` no renderiza status chips. Detalle sí muestra chips de status al owner/admin.           |
+| D4-01 | FR-04-16 / BR-04-20            | FRD: implica chips de status visibles en toda vista. Redesign: **chip de status NO se muestra en el directorio público** (lista pública). Solo visible en página de detalle para el owner y directorio interno.   | funcional      | S6.1 (decisión humana 2026-05-03)      | `StoreCard` no renderiza status chips. Detalle sí muestra chips de status al owner/admin.           |
 | D4-02 | FR-04-09 / FR-04-12            | Logo upload: FRD no especifica paso de crop. Redesign introduce un **paso intermedio de crop/ajuste en Modal** antes de confirmar el logo.                                                                        | comportamiento | M06 (2026-05-11), ADR 0008             | `AvatarField` integra Cropper en `<Modal size="lg" dismissible>`.                                   |
 | D4-03 | FR-04-11 / FR-04-12 / FR-04-13 | FilterDrawer: FRD especifica los campos de filtro pero no el comportamiento del drawer. Redesign: drawer **no cierra al click fuera** (solo X y Esc). FRD no menciona esta restricción UX.                        | comportamiento | M03-fix (2026-05-04) — decisión humana | `FilterDrawer.tsx`: backdrop no cierra, solo X y Esc cierran.                                       |
 | D4-04 | (sin FR)                       | **FilterTriggerButton con badge count y estado activo.** Cuando hay ≥1 filtro del drawer aplicado, el botón "Filtrar" cambia a fondo tintado + badge count. FRD no menciona este patrón.                          | patrón nuevo   | M05 (2026-05-09)                       | `src/components/core/FilterTriggerButton/`. Reglas: count = chips visibles; búsqueda no incrementa. |
@@ -158,6 +166,8 @@ Estos FRs **ya están en el FRD-04 como "Planned Enhancements"** y fueron implem
 
 **Estado de partida:** `docs/product/prd-01-collector-mvp/frd-01-account-access-and-recovery/frd-01-account-access-and-recovery.md` · `last_updated: 2026-03-21` · `implementation_status: IMPLEMENTED`
 
+> **✅ RECONCILIADO (2026-06-13).** FRD-01 sincronizado: `last_updated → 2026-06-13`; Implementation Notes con nota de rediseño (D1-03 restyle visual de sign-in/up, D1-01 sign-out destructive en ShellAccountMenu, D1-02 avatar cropper vía `ImageCropper` + Modal adaptive). Todos visuales/cross-concern, sin cambio de comportamiento de auth. **ADR formal del sign-out destructive creado (flagged #3, 2026-06-13):** [`decisions/0012-account-destructive-action-styling.md`](../decisions/0012-account-destructive-action-styling.md); FRD-01 Implementation Notes referencia ADR 0012.
+
 ### Deltas detectados
 
 | ID    | FR/BR afectado                       | Cambio                                                                                                                                                                                                                     | Categoría    | Origen                          | Decisión rediseño                                                 |
@@ -177,6 +187,8 @@ Estos FRs **ya están en el FRD-04 como "Planned Enhancements"** y fueron implem
 ## FRD-02 Testing and Quality Baseline (PRD-01)
 
 **Estado de partida:** `docs/product/prd-01-collector-mvp/frd-02-testing-and-quality-baseline/frd-02-testing-and-quality-baseline.md` · `last_updated: 2026-03-21` · `implementation_status: IMPLEMENTED`
+
+> **✅ RECONCILIADO (2026-06-13).** FRD-02 sincronizado: `last_updated → 2026-06-13`; Implementation Notes referencia `.cursor/rules/browser-testing-patterns.mdc` (D2-01..D2-05: Portal `screen.*`, React-aware `dispatchEvent`, `preview_eval` split-call, dev-credentials login, mobile viewport sim) + menciona el crecimiento del suite e2e. No se minteó FR-02-07 (opcional; la nota cubre el delta con el cambio más chico y seguro).
 
 ### Deltas detectados
 
@@ -199,6 +211,8 @@ Estos FRs **ya están en el FRD-04 como "Planned Enhancements"** y fueron implem
 ## PRD-00 FRD-02 Growth and Observability Foundation
 
 **Estado de partida:** `docs/product/prd-00-pre-release-validation/frd-02-growth-and-observability-foundation/frd-02-growth-and-observability-foundation.md` · `last_updated: 2026-03-21` · `implementation_status: IMPLEMENTED`
+
+> **✅ RECONCILIADO (2026-06-13).** PRD-00 FRD-02 sincronizado: `last_updated → 2026-06-13`; Confirmed Implementation Signals registra que `POSTHOG_EVENTS` creció a categorías por módulo (LANDING/AUTH/APP_SHELL/SETTINGS/ORDER/DELIVERY/STORE) y referencia `.cursor/rules/posthog-events.mdc` para naming/enforcement (D0-01..D0-04). **Enumeración completa agregada (2026-06-13, por pedido de Sergio):** nueva sección "PostHog Event Taxonomy (snapshot 2026-06-13)" en el FRD con tabla por categoría — **116 eventos / 7 categorías** (LANDING 13 · AUTH 21 · APP_SHELL 10 · SETTINGS 9 · ORDER 24 · DELIVERY 17 · STORE 22). Nota: el "73" del audit estaba desactualizado (DELIVERY creció de 2→17 en S9). `src/lib/constants.ts` sigue siendo la fuente de verdad; la tabla es snapshot de trazabilidad.
 
 ### Deltas detectados
 
@@ -258,11 +272,11 @@ Postergar toda la reconciliación a la sesión de audit final S13. Riesgo: conte
 
 Las siguientes son observaciones detectadas fuera del scope del delta. **No se aplicaron cambios.** Se listan para que Sergio decida si merecen follow-up.
 
-1. **FRD-04 §Functional Requirements tiene FRs mal numerados.** Después de `FR-04-17`, el documento usa `FR-01-19`, `FR-01-20`, `FR-01-21`, etc. (prefijo `01` en lugar de `04`). Esto es un error tipográfico en el FRD existente que debería corregirse en la sesión de reconciliación.
+1. **FRD-04 §Functional Requirements tiene FRs mal numerados.** ✅ **RESUELTO (2026-06-13).** El documento usaba `FR-01-19`, `FR-01-20`, etc. (prefijo `01` en lugar de `04`) y todo el bloque de BR/AC también. Renumerado a `FR-04-*`/`BR-04-*`/`AC-04-*` en el FRD, sus work orders y los docs de stores del rediseño. Ver banner de la sección FRD-04.
 
 2. **FRD-05 Implementation Notes menciona "More menu"** en la sección §Confirmed, pero el rediseño eliminó ese patrón por la inline card (ADR 0011). Esta inconsistencia interna ya existe en el FRD antes de la reconciliación.
 
-3. **ADR faltante para sign-out destructive styling** (`ShellAccountMenu.tsx` sign-out rojo sin borde). Esta decisión de diseño no tiene ADR ni referencia en ningún doc. Candidato para ADR 0012 si se quiere documentar la regla "acciones destructivas de cuenta = variant destructive sin borde" como estándar cross-app.
+3. **ADR faltante para sign-out destructive styling** (`ShellAccountMenu.tsx` sign-out rojo sin borde). ✅ **RESUELTO (2026-06-13):** creado [`decisions/0012-account-destructive-action-styling.md`](../decisions/0012-account-destructive-action-styling.md) — contrato "acciones destructivas de cuenta usan `--destructive` (sin borde en menú, outline como botón standalone); estilo ≠ confirmación". FRD-01 referencia ADR 0012.
 
 4. **Subagente 3 (FRD-05) produjo respuesta vacía.** Los deltas de FRD-05 en este documento fueron construidos desde lectura directa de `modules/orders.md` + `cross-cutting-changes.md` por el agente coordinador. La cobertura es completa con los documentos disponibles, pero una segunda pasada con lectura de `screens/order-detail.md` §6 completo podría revelar deltas adicionales en el área de payment y history interactions.
 

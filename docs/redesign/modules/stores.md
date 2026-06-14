@@ -47,20 +47,20 @@ Las siguientes funcionalidades del FRD-04 están representadas en el demo aproba
 | FR-04-16    | Listing incluye PENDING + APPROVED (ambos PUBLIC)                                                           | `store-list`                                                        |
 | FR-04-17    | Ruta canónica `/{locale}/stores/[slug]`                                                                     | `store-detail`                                                      |
 | FR-04-18    | Disclaimer para tiendas PENDING                                                                             | `#s6-store-detail-pending`                                          |
-| FR-01-19    | Warning inactividad                                                                                         | No en demo — Fase B agrega según spec                               |
-| FR-01-20…23 | Business expone canales/direcciones; Person los omite                                                       | `#s6-store-detail-person`                                           |
+| FR-04-19    | Warning inactividad                                                                                         | No en demo — Fase B agrega según spec                               |
+| FR-04-20…23 | Business expone canales/direcciones; Person los omite                                                       | `#s6-store-detail-person`                                           |
 | FR-04-33…34 | Flag `isPrivate` solo para PERSON, toggle en creación                                                       | `#s6-store-create-step-1-type`                                      |
-| FR-01-24    | Reseñas: 1 por user por tienda, batch de 5 progresivo                                                       | `store-detail` sección Reseñas                                      |
-| FR-01-25    | Campos de trust agregados persistidos (no recalculados)                                                     | Subyace al hero (rating)                                            |
-| FR-01-26    | Nota privada con guardado de valor vacío para borrar                                                        | `store-detail` sidebar                                              |
-| FR-01-27    | Report: 1 abierto por user/tienda; update al existente; nuevo tras resolución                               | `#s6-store-detail-report-modal`, `#s6-store-detail-reports-summary` |
-| FR-01-28    | Solicitud de nuevo product type desde create y edit                                                         | `#s6-store-create-category-request`                                 |
-| FR-01-29…30 | APPROVED → change request; PENDING → edición directa por creator/admins                                     | `#s6-store-create-edit-mode`                                        |
-| FR-01-31    | Logo upload para BUSINESS                                                                                   | `#s6-store-create-logo-upload`, `#s6-store-create-step-2-logo-set`  |
-| FR-01-32    | Layout detalle: columna principal, sales/shopping bajo el hero                                              | `store-detail` hero + chips presencia                               |
-| BR-01-07    | Reviews sin order vinculado en MVP; disclosure progresivo 5+5                                               | `store-detail` sección Reseñas                                      |
-| BR-01-08…09 | Duplicados solo bloquean en mismo país y sobre threshold                                                    | `store-create` detección                                            |
-| BR-01-10    | Redirect a detail tras create exitoso                                                                       | Post-submit paso 5                                                  |
+| FR-04-24    | Reseñas: 1 por user por tienda, batch de 5 progresivo                                                       | `store-detail` sección Reseñas                                      |
+| FR-04-25    | Campos de trust agregados persistidos (no recalculados)                                                     | Subyace al hero (rating)                                            |
+| FR-04-26    | Nota privada con guardado de valor vacío para borrar                                                        | `store-detail` sidebar                                              |
+| FR-04-27    | Report: 1 abierto por user/tienda; update al existente; nuevo tras resolución                               | `#s6-store-detail-report-modal`, `#s6-store-detail-reports-summary` |
+| FR-04-28    | Solicitud de nuevo product type desde create y edit                                                         | `#s6-store-create-category-request`                                 |
+| FR-04-29…30 | APPROVED → change request; PENDING → edición directa por creator/admins                                     | `#s6-store-create-edit-mode`                                        |
+| FR-04-31    | Logo upload para BUSINESS                                                                                   | `#s6-store-create-logo-upload`, `#s6-store-create-step-2-logo-set`  |
+| FR-04-32    | Layout detalle: columna principal, sales/shopping bajo el hero                                              | `store-detail` hero + chips presencia                               |
+| BR-04-07    | Reviews sin order vinculado en MVP; disclosure progresivo 5+5                                               | `store-detail` sección Reseñas                                      |
+| BR-04-08…09 | Duplicados solo bloquean en mismo país y sobre threshold                                                    | `store-create` detección                                            |
+| BR-04-10    | Redirect a detail tras create exitoso                                                                       | Post-submit paso 5                                                  |
 | BR-04-20    | Tiendas PENDING soportan mismas interacciones que APPROVED (solo cambia disclaimer + SEO)                   | `store-detail`                                                      |
 | BR-04-21    | Tiendas privadas excluidas de listing público                                                               | `store-list` query                                                  |
 
@@ -92,7 +92,7 @@ Estos ítems **no están en el FRD actual** o representan cambios de scope. Fase
 | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
 | P-S6-01 | Ordenar por en lista: "Mejor calificadas / Alfabético / Más recientes". El FRD no define ordenamiento — el demo lo muestra.                              | Demo A.1         |
 | P-S6-02 | Distinción visual BUSINESS/PERSON en card de lista mediante icono de tipo inline. El FRD solo define comportamiento de payload, no presentación en card. | Demo A.1         |
-| P-S6-03 | Toast post-submit de creación con copy "Tienda creada — pendiente de revisión". El FRD define redirect (BR-01-10) pero no Toast.                         | Demo paso 5      |
+| P-S6-03 | Toast post-submit de creación con copy "Tienda creada — pendiente de revisión". El FRD define redirect (BR-04-10) pero no Toast.                         | Demo paso 5      |
 | P-S6-04 | Autosave en localStorage durante el wizard. El FRD no menciona persistencia temporal.                                                                    | Demo form-footer |
 
 > **Decisión requerida:** confirmar P-S6-01 a P-S6-04 antes de arrancar Fase B. Si se aprueban, Fase B los implementa. Si se rechazan, se omiten del scope.
@@ -201,11 +201,11 @@ Ver §Inventario de componentes core consumidos por este módulo.
 
 - **Store PERSON privada:** el `Switch` "Perfil privado" solo aparece cuando tipo = PERSON. Si el user elige BUSINESS después de haber activado el switch, el switch se oculta y el valor se descarta sin error.
 - **Detección de duplicados:** el alert inline aparece on-blur con ≥2 chars trimmed. Si el user borra el campo y lo deja vacío, el alert desaparece silenciosamente (sin error).
-- **Duplicado cross-country:** si los candidatos son de otro país, el alert inline muestra los candidatos informativamente pero el submit no bloquea (BR-01-09).
+- **Duplicado cross-country:** si los candidatos son de otro país, el alert inline muestra los candidatos informativamente pero el submit no bloquea (BR-04-09).
 - **Logo upload cancelado:** si el user abre el modal de recorte y lo cierra sin guardar, el campo logo vuelve al estado anterior (vacío o con logo previo).
-- **Nota privada vacía:** guardar una nota vacía borra la nota existente (FR-01-26). No requiere confirmación.
+- **Nota privada vacía:** guardar una nota vacía borra la nota existente (FR-04-26). No requiere confirmación.
 - **Tienda PERSON en detalle:** los subcards "Canales de contacto" y "Direcciones" no se renderizan (no solo se vacían — la sección entera desaparece). El sidebar "Acciones" no incluye "Reportar" para la propia tienda personal.
-- **Reseña del viewer:** siempre aparece primera en la lista aunque no sea la más reciente (FR-01-24).
+- **Reseña del viewer:** siempre aparece primera en la lista aunque no sea la más reciente (FR-04-24).
 - **Wizard autosave:** persiste en `localStorage` bajo clave `pt-store-draft`. Se limpia tras submit exitoso o al navegar fuera y confirmar descarte.
 
 ### Copy aprobada (keys i18n)
@@ -321,7 +321,7 @@ Keys en namespace `stores` (español). El inglés se completa en S12.
 ### Preguntas abiertas
 
 1. **Propuestas P-S6-01 a P-S6-04** requieren decisión explícita antes de arrancar Fase B (ver §Propuestas de cambio funcional).
-2. **Inactividad warning (FR-01-19):** el FRD lo define pero el demo no lo muestra. Fase B debe implementarlo siguiendo el patrón del disclaimer PENDING (mismo componente, tono `warning`). No bloquea arranque.
+2. **Inactividad warning (FR-04-19):** el FRD lo define pero el demo no lo muestra. Fase B debe implementarlo siguiendo el patrón del disclaimer PENDING (mismo componente, tono `warning`). No bloquea arranque.
 3. **`isPrivate` en schema:** FRD §Planned Enhancements confirma que requiere campo `isPrivate` boolean en `Store`. Fase B debe verificar si la migración ya existe o crearla.
 4. **Moderación de logo:** FRD §Open Questions menciona que los logo replacements deben stagear fuera del key público hasta moderación. Fuera del scope de S6 pero a registrar para S-admin.
 

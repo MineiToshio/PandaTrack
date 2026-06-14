@@ -177,7 +177,7 @@ Se activa al hacer blur sobre el campo Nombre (paso 2) cuando hay ≥2 caractere
 
 **Modal de confirmación (on submit):** si al submit persiste similitud con tienda del mismo país. `Modal` ([spec](../components/Modal.md)) con lista de candidatos + acciones: "Cancelar" (ghost) y "Crear de todos modos" (primary). Sin botón "Esta es mi tienda" (eliminado en A.2).
 
-El modal de duplicado bloquea el submit hasta resolución (BR-01-08). Tiendas en diferentes países no bloquean (BR-01-09).
+El modal de duplicado bloquea el submit hasta resolución (BR-04-08). Tiendas en diferentes países no bloquean (BR-04-09).
 
 ## 9. Upload de logo (`#s6-store-create-logo-upload`)
 
