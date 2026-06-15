@@ -6,9 +6,9 @@ export default function LandingLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <>
+    <div className="mk-public">
       <Header />
       {children}
-    </>
+    </div>
   );
 }

@@ -1,201 +1,163 @@
 {
   "meta": {
     "title": "PandaTrack",
-    "description": "Tiendas, pedidos y envíos en un solo lugar. Tu centro de mando para coleccionables y pedidos."
+    "description": "Reúne tus pedidos de cualquier tienda y controla pre-reservas, pagos y entregas en un solo lugar. Tu colección, bajo control."
   },
   "ogEyebrow": "Para coleccionistas",
-  "ogHeadline": "Tiendas, pedidos y envíos en un solo lugar.",
-  "ogSubline": "Registra pedidos, sigue preventas y envíos. Sin pedidos perdidos ni pagos por sorpresa.",
-  "features": {
-    "sectionTitle": "Todo tu coleccionismo, en un solo sistema",
-    "sectionSubtitle": "Descubre tiendas confiables, registra pedidos, controla preventas y sigue envíos, con un dashboard que te dice qué viene y qué falta pagar.",
-    "cards": {
-      "stores": {
-        "title": "Tiendas confiables",
-        "description": "Descubre tiendas según tu tipo de colección y guarda tus favoritas en un solo lugar. Revisa referencias y feedback para hacer pedidos con más seguridad.",
-        "bullets": ["Descubre por tipo de producto", "Reviews de la comunidad"]
-      },
-      "purchases": {
-        "title": "Pedidos ordenados",
-        "description": "Registra cada pedido con tienda, items, fechas y notas sin complicarte. Mantén un historial claro para saber qué pediste y cuándo.",
-        "bullets": ["Items por pedido", "Estados y fechas"]
-      },
-      "preorders": {
-        "title": "Preventas sin sorpresas",
-        "description": "Lleva el control de adelantos y saldos sin perderte entre pagos parciales. Visualiza cuánto falta pagar y qué montos vienen por mes.",
-        "bullets": ["Depósitos y saldo", "Pagos por mes"]
-      },
-      "shipments": {
-        "title": "Envíos bajo control",
-        "description": "Sigue envíos aunque un pedido salga en partes o en diferentes fechas. Ve qué está en espera, qué se envió y qué fue entregado.",
-        "bullets": ["Múltiples envíos", "En ruta y entregado"]
-      }
+  "ogHeadline": "Toda tu colección, bajo control.",
+  "ogSubline": "Reúne tus pedidos, pre-reservas, pagos y entregas en un solo lugar. Recibe un aviso antes de cada fecha clave.",
+  "header": {
+    "nav": {
+      "forYou": "Para quién",
+      "features": "Funciones",
+      "faq": "Preguntas"
     },
-    "reminders": {
-      "heading": "Recordatorios y alertas útiles",
-      "description": "Recibe recordatorios para pedir updates y no olvidar preventas largas. Define un presupuesto y recibe alertas cuando te estés acercando al límite.",
-      "chips": ["Recordatorios", "Presupuesto"]
+    "signIn": "Iniciar sesión",
+    "signUp": "Crear cuenta",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
+    "menuDialogLabel": "Menú del sitio",
+    "mainNavAriaLabel": "Navegación principal",
+    "brandHome": "PandaTrack, ir al inicio"
+  },
+  "hero": {
+    "eyebrow": "Para coleccionistas",
+    "title": "Toda tu colección, <hl>bajo control</hl>.",
+    "subtitle": "Reúne tus pedidos de cualquier tienda, controla pre-reservas, pagos y entregas, y recibe un aviso antes de cada fecha clave.",
+    "ctaPrimary": "Crear cuenta gratis",
+    "ctaSecondary": "Ver cómo funciona",
+    "trust": "Gratis para empezar · Sin tarjeta",
+    "demo": {
+      "windowLabel": "Demo de PandaTrack: un coleccionable recorre el ciclo —tienda, pedido, pago y entrega— y todo se ve y se maneja en un solo panel.",
+      "caption": "El viaje de tu coleccionable",
+      "steps": {
+        "store": "Tienda",
+        "order": "Pedido",
+        "payment": "Pago",
+        "delivery": "Entrega"
+      },
+      "panelTitle": "Tu colección",
+      "panelBadge": "Panel",
+      "stats": {
+        "spent": "Gastado",
+        "pending": "Pendiente",
+        "incoming": "En camino"
+      },
+      "item1": {
+        "title": "Nendoroid Hatsune Miku",
+        "store": "Akiba Store · Japón",
+        "chip": "Pre-reserva"
+      },
+      "item2": {
+        "title": "Chainsaw Man Vol. 11",
+        "store": "HMV Japan",
+        "chip": "En camino"
+      }
     }
   },
   "userFit": {
-    "title": "¿Es PandaTrack perfecto para mí?",
-    "subtitle": "Si coleccionar te encanta, pero el seguimiento de tus pedidos ya se volvió un caos… sí, esto es para ti.",
+    "eyebrow": "El día a día de coleccionar",
+    "title": "Tu colección crece. El desorden, también.",
+    "subtitle": "Cuando compras en varias tiendas, es fácil perder el hilo de qué pagaste, qué falta y qué está por llegar.",
     "cards": {
       "card1": {
-        "title": "¿Dónde quedó ese pedido?",
-        "description": "Pediste por Instagram, pagaste por WhatsApp y la confirmación llegó al correo… y ahora el pedido quedó perdido entre chats y capturas. Si te pasó, ya sabes el estrés que es."
+        "title": "Pedidos por todas partes",
+        "description": "Confirmaciones en el correo, capturas en el teléfono, mensajes en chats. Tu colección vive en diez lugares distintos."
       },
       "card2": {
-        "title": "¿Qué tengo en camino?",
-        "description": "Algunas cosas llegan rápido y otras se quedan “en el limbo” por semanas. Y tú pensando otra vez: “¿en qué estado va mi pedido?”. Tranquilo, a muchos nos ha pasado."
+        "title": "«¿Esto ya lo pagué?»",
+        "description": "Entre señas, saldos y pre-reservas, recordar cuánto debes y a quién se vuelve un dolor de cabeza."
       },
       "card3": {
-        "title": "No más pagos de improvisto",
-        "description": "Preventa por aquí, 20% por allá y “el resto cuando llegue”… hasta que aparece un pago que no tenías en el radar. Tenerlo claro con tiempo se siente increíble."
+        "title": "Entregas que no sabes dónde están",
+        "description": "Pedidos que llegan por partes y fechas que se te pasan. Te enteras tarde, o nunca."
       }
     }
   },
-  "header": {
-    "cta": "Unirme a la lista",
-    "openMenu": "Abrir menú",
-    "closeMenu": "Cerrar menú",
-    "scrollToTop": "Volver arriba",
-    "menuDialogLabel": "Menú del sitio",
-    "mainNavAriaLabel": "Navegación principal",
-    "nav": {
-      "forYou": "Para quién es",
-      "features": "Características",
-      "faq": "Preguntas frecuentes"
+  "features": {
+    "eyebrow": "Todo en un solo lugar",
+    "title": "Lo que necesitas para llevar tu colección al día",
+    "subtitle": "Desde la compra hasta que llega a tus manos, PandaTrack te acompaña en cada paso.",
+    "cards": {
+      "stores": {
+        "title": "Tiendas de confianza",
+        "description": "Guarda las tiendas donde compras y reconoce de un vistazo a las que ya conoces."
+      },
+      "orders": {
+        "title": "Tus pedidos, ordenados",
+        "description": "Registra cada pedido de cualquier tienda, con sus productos y su costo, en una sola lista clara."
+      },
+      "preorders": {
+        "title": "Pre-reservas sin sorpresas",
+        "description": "Lleva la cuenta de lo que ya señaste y lo que aún falta pagar, pedido por pedido."
+      },
+      "deliveries": {
+        "title": "Entregas, incluso divididas",
+        "description": "Sigue cada entrega y maneja sin problema los pedidos que llegan en varios envíos."
+      },
+      "reminders": {
+        "title": "Avisos a tiempo",
+        "description": "Te recordamos un pago o una fecha clave antes de que se te pase, por ti."
+      },
+      "dashboard": {
+        "title": "Todo de un vistazo",
+        "description": "Ve el estado de tus pedidos, los próximos pagos y cuánto llevas gastado, todo en una pantalla."
+      }
     }
   },
   "banner": {
-    "title": "¿Listo para tomar el control de tu colección?",
-    "subtitle": "Únete a la lista de espera y sé de los primeros en probar PandaTrack. Sin pedidos perdidos ni pagos por sorpresa.",
-    "cta": "Unirme a la lista de espera"
-  },
-  "hero": {
-    "eyebrow": "Control total de tu colección",
-    "title": "PandaTrack: tu centro de mando para pedidos y coleccionables",
-    "subtitle": "Registra tiendas, pedidos y envíos; mantén tu colección al día y guarda lo que quieres en tu wishlist. Todo en un solo lugar.",
-    "primaryCta": "Unirme a la lista de espera",
-    "secondaryCta": "Ver características",
-    "featuresTitle": "Todo lo que necesitas en un vistazo",
-    "features": {
-      "stores": {
-        "title": "Base de datos de tiendas",
-        "description": "Guarda tiendas, precios y referencias favoritas."
-      },
-      "purchases": {
-        "title": "Seguimiento de pedidos",
-        "description": "Lleva un historial claro de lo que pediste."
-      },
-      "shipments": {
-        "title": "Seguimiento de envíos",
-        "description": "Controla estados, fechas y entregas."
-      },
-      "collection": {
-        "title": "Mantenimiento de colección",
-        "description": "Ordena, cataloga y valora tu colección."
-      },
-      "wishlist": {
-        "title": "Wishlist inteligente",
-        "description": "No pierdas de vista las piezas que buscas."
-      }
-    },
-    "image": {
-      "src": "/images/hero_es.webp",
-      "alt": "Dashboard de PandaTrack con pedidos, envíos, pagos y tiendas en un solo lugar",
-      "disclaimer": "Prototipo inicial. La app final puede variar.",
-      "title": "Vista general de PandaTrack",
-      "description": "Aquí irá una imagen destacada de la app con métricas, colecciones y envíos.",
-      "placeholder": "Placeholder de imagen"
-    }
+    "eyebrow": "Empieza hoy",
+    "title": "Tu colección merece estar en orden",
+    "subtitle": "Crea tu cuenta gratis y reúne tus pedidos, pagos y entregas en un solo lugar. Toma menos de un minuto.",
+    "cta": "Crear cuenta gratis"
   },
   "faqs": {
-    "sectionTitle": "¿Preguntas? Te respondemos.",
-    "sectionSubtitle": "Todo lo que necesitas saber sobre PandaTrack y cómo puede ayudarte a tener tu colección bajo control.",
+    "eyebrow": "Preguntas frecuentes",
+    "title": "Lo que sueles preguntarte",
     "items": [
       {
-        "question": "¿Qué es PandaTrack?",
-        "answer": "PandaTrack es una app web que concentra todos tus pedidos de coleccionables: tiendas, pedidos, preventas, envíos y pagos. Sin rebuscar entre chats o correos."
-        
+        "question": "¿PandaTrack es gratis?",
+        "answer": "Sí, es gratis para empezar y no necesitas tarjeta. Puedes registrar tus tiendas, pedidos y entregas sin pagar nada."
       },
       {
-        "question": "¿Para quién es?",
-        "answer": "Para quienes hacen pedidos en varias tiendas (Instagram, WhatsApp, webs) y quieren un solo lugar para ver qué pidieron, qué viene en camino y qué falta pagar."
+        "question": "¿Funciona con cualquier tienda?",
+        "answer": "Sí. PandaTrack no depende de ninguna tienda en particular: registras tus pedidos vengan de donde vengan, online o en persona."
       },
       {
-        "question": "¿Por qué no usar solo el correo o una hoja?",
-        "answer": "Correos y hojas dispersan la info. PandaTrack está hecho para coleccionistas: un solo dashboard, estados claros y recordatorios para no dejar nada en el olvido."
+        "question": "¿Tengo que cargar todo a mano?",
+        "answer": "Tú agregas cada pedido para tener el control de lo que sigues. Lo diseñamos para que sea rápido: en pocos toques queda guardado."
       },
       {
-        "question": "¿Qué puedo seguir?",
-        "answer": "Tiendas donde haces pedidos, cada pedido con ítems y fechas, preventas con adelantos y saldo pendiente, y envíos, incluso envíos parciales por pedido."
+        "question": "¿Mis datos están seguros?",
+        "answer": "Tu colección es solo tuya. Guardamos tu información de forma privada y nunca la compartimos con las tiendas ni con otros coleccionistas."
       },
       {
-        "question": "¿Voy a ver qué me falta pagar?",
-        "answer": "Sí. Ves saldos pendientes y pagos próximos por mes, para que los pagos de preventas no te pillen por sorpresa."
-      },
-      {
-        "question": "¿Y los envíos?",
-        "answer": "Puedes seguir varios envíos por pedido, transportista y código cuando exista, y estado: en tienda, enviado, en camino o entregado."
-      },
-      {
-        "question": "¿Hay recordatorios?",
-        "answer": "Puedes configurar recordatorios para seguir preventas largas, preparar pagos próximos y avisos cuando un envío lleve mucho sin novedades."
-      },
-      {
-        "question": "¿Puedo poner un presupuesto?",
-        "answer": "Presupuesto mensual opcional con alertas al acercarte al límite, para que coleccionar siga siendo divertido sin estrés."
-      },
-      {
-        "question": "¿Cuándo puedo usarlo?",
-        "answer": "Estamos construyendo la primera versión. Únete a la lista de espera y te avisamos en cuanto PandaTrack esté listo para probar."
-      },
-      {
-        "question": "¿Cómo me apunto a la lista?",
-        "answer": "Deja tu correo en el formulario de abajo. Solo te escribimos cuando estemos listos. Sin spam, solo un aviso."
+        "question": "¿En qué idiomas está?",
+        "answer": "PandaTrack está disponible en español e inglés, y puedes cambiar de idioma cuando quieras desde tu cuenta."
       }
     ]
   },
-  "waitlist": {
-    "title": "Te falta un paso para una colección más tranquila.",
-    "subtitle": "Deja tu correo y te avisamos el día que PandaTrack esté listo. Sin spam, solo un mensaje cuando sea tu turno.",
-    "cta": "Avísame cuando esté listo",
-    "fields": {
-      "email": "Correo",
-      "emailPlaceholder": "tu@ejemplo.com",
-      "name": "Nombre",
-      "namePlaceholder": "Tu nombre",
-      "nameOptional": "Opcional",
-      "comment": "Feature o petición",
-      "commentPlaceholder": "¿Algo que te gustaría ver en PandaTrack?",
-      "commentOptional": "Opcional"
-    },
-    "success": "Estás en la lista. Te avisamos cuando PandaTrack esté listo.",
-    "share": {
-      "heading": "¡Listo! Ya estás en la lista.",
-      "subtext": "¿Conoces a otro coleccionista? Compárteselo y ayúdanos a lanzar más rápido.",
-      "shareMessage": "Estoy en el waitlist de PandaTrack - una app para organizar pedidos, envíos y preventas de coleccionismo en un solo lugar. Únete aquí:",
-      "shareButton": "Compartir",
-      "copyLinkButton": "Copiar link",
-      "copiedFeedback": "¡Copiado!",
-      "copyFallbackLabel": "Copia el enlace manualmente",
-      "whatsapp": "WhatsApp",
-      "x": "X (Twitter)",
-      "facebook": "Facebook"
-    },
-    "error": "Algo falló. Intenta de nuevo o escríbenos por correo.",
-    "validation": {
-      "emailRequired": "El correo es obligatorio",
-      "emailInvalid": "Introduce un correo válido"
-    }
-  },
   "footer": {
-    "copyright": "© {year} PandaTrack. Todos los derechos reservados.",
-    "madeBy": "Hecho por Panda D. Collector",
-    "terms": "Términos de servicio",
-    "privacy": "Política de privacidad",
-    "legalNavAriaLabel": "Enlaces legales"
+    "tagline": "Toda tu colección en un solo lugar: pedidos, pre-reservas y entregas.",
+    "cols": {
+      "product": "Producto",
+      "account": "Cuenta",
+      "legal": "Legal"
+    },
+    "links": {
+      "forYou": "Para quién",
+      "features": "Funciones",
+      "faq": "Preguntas",
+      "signUp": "Crear cuenta",
+      "signIn": "Iniciar sesión",
+      "privacy": "Privacidad",
+      "terms": "Términos"
+    },
+    "copyright": "© {year} PandaTrack · Hecho para coleccionistas",
+    "social": {
+      "email": "Email",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp"
+    }
   }
 }

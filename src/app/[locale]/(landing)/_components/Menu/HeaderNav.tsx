@@ -2,7 +2,6 @@
 
 import AnchorLink from "@/components/core/AnchorLink";
 import { useTranslations } from "next-intl";
-import { cn } from "@/lib/styles";
 
 export type HeaderNavItem = {
   key: string;
@@ -11,33 +10,20 @@ export type HeaderNavItem = {
 
 type HeaderNavProps = {
   items: HeaderNavItem[];
-  className?: string;
-  itemClassName?: string;
-  onNavigate?: () => void;
 };
 
-export default function HeaderNav({ items, className, itemClassName, onNavigate }: HeaderNavProps) {
+/**
+ * Marketing in-page nav (`.mk-nav`). Smooth-scrolls to landing sections; the
+ * sticky-header offset comes from the global `scroll-padding-top` rule.
+ */
+export default function HeaderNav({ items }: HeaderNavProps) {
   const t = useTranslations("landing.header.nav");
   const tHeader = useTranslations("landing.header");
 
   return (
-    <nav
-      aria-label={tHeader("mainNavAriaLabel")}
-      className={cn("font-secondary text-text-body flex items-center gap-6 text-sm", className)}
-    >
+    <nav className="mk-nav" aria-label={tHeader("mainNavAriaLabel")}>
       {items.map((item) => (
-        <AnchorLink
-          key={item.href}
-          href={item.href}
-          className={cn(
-            "hover:text-text-title relative shrink-0 whitespace-nowrap transition-colors",
-            "after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-right after:scale-x-0 after:bg-current after:content-['']",
-            "after:transition-transform after:duration-300 after:ease-out",
-            "hover:after:origin-left hover:after:scale-x-100",
-            itemClassName,
-          )}
-          onClick={onNavigate}
-        >
+        <AnchorLink key={item.href} href={item.href}>
           {t(item.key)}
         </AnchorLink>
       ))}

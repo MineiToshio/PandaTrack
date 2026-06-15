@@ -1,5 +1,5 @@
 /**
- * Kit.com (ConvertKit) API client for waitlist and audience management.
+ * Kit.com (ConvertKit) API client for authenticated-user audience management.
  * @see https://developers.kit.com/api-reference/overview
  */
 
@@ -14,12 +14,7 @@ function parseTagId(raw: string | undefined): number | undefined {
 }
 
 export const KIT_TAG = {
-  waitlist: parseTagId(process.env.KIT_TAG_ID_WAITLIST),
   appUser: parseTagId(process.env.KIT_TAG_ID_APP_USER),
-  locale: {
-    es: parseTagId(process.env.KIT_TAG_ID_ES),
-    en: parseTagId(process.env.KIT_TAG_ID_EN),
-  },
 } as const;
 
 function getApiKey(): string {
@@ -93,10 +88,6 @@ export async function syncAuthenticatedUserToKit(email: string, firstName?: stri
   }
 }
 
-function getTagIdForLocale(locale: string): number | undefined {
-  return locale === "es" ? KIT_TAG.locale.es : locale === "en" ? KIT_TAG.locale.en : undefined;
-}
-
 /**
  * Tags an existing subscriber by email. Subscriber must exist (create first if needed).
  * @see https://developers.kit.com/api-reference/tags/tag-a-subscriber-by-email-address
@@ -117,24 +108,4 @@ export async function tagSubscriberByEmail(tagId: number, email: string): Promis
     const messages = Array.isArray(body?.errors) ? body.errors : [response.statusText];
     throw new Error(`Kit tag subscriber failed: ${messages.join(", ")}`);
   }
-}
-
-/**
- * Tags a subscriber by locale when a tag ID is configured for that locale.
- * No-op when locale is not supported or tag ID is not set. Use for waitlist language segmentation.
- */
-export async function tagSubscriberByLocale(locale: string, email: string): Promise<void> {
-  const tagId = getTagIdForLocale(locale);
-  if (tagId === undefined) return;
-  await tagSubscriberByEmail(tagId, email);
-}
-
-/**
- * Tags a subscriber as waitlist when a tag ID is configured.
- * No-op when KIT_TAG_ID_WAITLIST is not set.
- */
-export async function tagWaitlistSubscriber(email: string): Promise<void> {
-  const tagId = KIT_TAG.waitlist;
-  if (tagId === undefined) return;
-  await tagSubscriberByEmail(tagId, email);
 }

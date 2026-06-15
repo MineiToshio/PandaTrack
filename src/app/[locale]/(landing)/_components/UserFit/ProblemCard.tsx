@@ -1,71 +1,28 @@
-import IconBox from "@/components/core/IconBox";
-import Typography from "@/components/core/Typography";
-import { cn } from "@/lib/styles";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
-type FeatureCardProps = {
+type ProblemCardProps = {
   index: string;
+  /** Icon-tile + bottom-bar color (a `--accent*` / status token). */
+  tile: string;
   icon: ReactNode;
-  accentClassName: string;
   title: string;
   description: string;
-  hoverBorderClassName?: string;
-  hoverTitleClassName?: string;
-  className?: string;
 };
 
-export default function FeatureCard({
-  index,
-  icon,
-  accentClassName,
-  title,
-  description,
-  hoverBorderClassName,
-  hoverTitleClassName,
-  className,
-}: FeatureCardProps) {
+/**
+ * User-fit problem card (`.mk-fit-card`): index + icon-tile + copy + bottom bar
+ * in the card's `--tile` color that grows to full width on hover.
+ */
+export default function ProblemCard({ index, tile, icon, title, description }: ProblemCardProps) {
   return (
-    <article
-      className={cn(
-        "group bg-card relative flex flex-col overflow-hidden rounded-2xl border-2 border-transparent p-6 shadow-sm",
-        "transition-all duration-400 ease-out",
-        "hover:scale-[1.04] hover:shadow-xl hover:shadow-black/15",
-        "focus-within:scale-[1.04] focus-within:shadow-xl focus-within:shadow-black/15",
-        hoverBorderClassName,
-        className,
-      )}
-    >
-      <span
-        className="text-muted-foreground/20 pointer-events-none absolute top-4 right-4 font-mono text-7xl leading-none font-bold select-none"
-        aria-hidden
-      >
+    <article className="mk-fit-card" style={{ "--tile": tile } as CSSProperties}>
+      <span className="mk-fit-index" aria-hidden="true">
         {index}
       </span>
-      <IconBox
-        variant="filled"
-        accentClassName={accentClassName}
-        className="mb-4 transition-shadow duration-400 ease-out group-hover:shadow-lg group-hover:shadow-black/25"
-      >
-        {icon}
-      </IconBox>
-      <h3
-        className={cn(
-          "text-text-title mb-2 text-lg font-semibold transition-colors duration-300 ease-out",
-          hoverTitleClassName,
-        )}
-      >
-        {title}
-      </h3>
-      <Typography size="sm" className="text-text-body leading-relaxed">
-        {description}
-      </Typography>
-      <div
-        className={cn(
-          "mt-4 h-1 w-12 rounded-full transition-[width] duration-300 ease-out group-hover:w-full",
-          accentClassName,
-        )}
-        aria-hidden
-      />
+      <span className="mk-icon-tile">{icon}</span>
+      <h3>{title}</h3>
+      <p>{description}</p>
+      <div className="mk-fit-bar" aria-hidden="true" />
     </article>
   );
 }

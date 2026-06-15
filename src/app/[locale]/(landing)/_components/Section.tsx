@@ -1,54 +1,43 @@
-import Heading from "@/components/core/Heading";
-import Typography from "@/components/core/Typography";
-import { cn } from "@/lib/styles";
 import type { ReactNode } from "react";
+import { cn } from "@/lib/styles";
 
 type SectionProps = {
-  children: ReactNode;
-  title?: string;
+  id: string;
+  headingId: string;
+  eyebrow: string;
+  /** Lucide icon for the eyebrow chip (sized by `.mk-eyebrow svg`). */
+  eyebrowIcon: ReactNode;
+  title: string;
   subtitle?: string;
-  headingId?: string;
-  sectionId?: string;
-  ariaLabelledby?: string;
-  background?: ReactNode;
-  className?: string;
+  /** Tinted accent-wash background + top/bottom border (`.mk-section.tinted`). */
+  tinted?: boolean;
+  children: ReactNode;
 };
 
+/**
+ * Marketing section scaffold (`.mk-section`): centered head with eyebrow chip +
+ * h2 + optional subtitle, then content. Shared by user-fit, features and FAQ.
+ */
 export default function Section({
-  children,
+  id,
+  headingId,
+  eyebrow,
+  eyebrowIcon,
   title,
   subtitle,
-  headingId,
-  sectionId,
-  ariaLabelledby,
-  background,
-  className,
+  tinted,
+  children,
 }: SectionProps) {
-  const hasHeader = title != null && subtitle != null && headingId != null;
-
   return (
-    <section
-      id={sectionId}
-      aria-labelledby={ariaLabelledby ?? (hasHeader ? headingId : undefined)}
-      className={cn("bg-background text-foreground w-full px-4 py-16 md:px-6 md:py-24 lg:px-8", className)}
-    >
-      {background}
-      <div className="relative mx-auto max-w-6xl">
-        {hasHeader && (
-          <header className={cn("mx-auto max-w-3xl text-center", "mb-12 md:mb-16")}>
-            <Heading
-              as="h2"
-              id={headingId}
-              size="md"
-              className="text-text-title text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl"
-            >
-              {title}
-            </Heading>
-            <Typography size="md" className="text-text-body mt-4 leading-relaxed md:text-lg">
-              {subtitle}
-            </Typography>
-          </header>
-        )}
+    <section id={id} aria-labelledby={headingId} className={cn("mk-section", tinted && "tinted")}>
+      <div className="mk-container">
+        <div className="mk-section-head">
+          <span className="mk-eyebrow">
+            {eyebrowIcon} {eyebrow}
+          </span>
+          <h2 id={headingId}>{title}</h2>
+          {subtitle ? <p>{subtitle}</p> : null}
+        </div>
         {children}
       </div>
     </section>
