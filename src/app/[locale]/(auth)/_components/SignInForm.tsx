@@ -65,11 +65,11 @@ export default function SignInForm({ callbackURL, signUpHref, forgotPasswordHref
   return (
     <AuthFormLayout
       title={t("title")}
+      description={t("subtitle")}
       googleVariant="signIn"
       callbackURL={callbackURL}
-      footerLinkHref={signUpHref}
-      footerLinkLabel={t("linkToSignUp")}
-      dividerLabel={tAuth("dividerOr")}
+      dividerLabel={tAuth("divider")}
+      foot={{ prefix: t("footPrefix"), linkHref: signUpHref, linkLabel: t("footLink") }}
     >
       <EmailPasswordForm
         idPrefix="signin"
@@ -81,6 +81,7 @@ export default function SignInForm({ callbackURL, signUpHref, forgotPasswordHref
         isPending={isPending}
         submitLabel={t("submit")}
         emailLabel={t("email")}
+        emailPlaceholder={t("emailPlaceholder")}
         passwordLabel={t("password")}
         passwordAuxiliaryHref={forgotPasswordHref}
         passwordAuxiliaryLabel={t("forgotPassword")}

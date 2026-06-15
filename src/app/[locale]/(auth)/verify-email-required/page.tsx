@@ -1,3 +1,4 @@
+import { ShieldAlert } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import VerificationResend from "@/components/modules/auth/VerificationResend";
@@ -30,18 +31,22 @@ export default async function VerifyEmailRequiredPage({ params, searchParams }: 
   const t = await getTranslations({ locale, namespace: "auth.verifyGate" });
 
   return (
-    <main className="bg-background text-foreground flex min-h-screen items-center px-4 py-8">
-      <AuthStatusCard title={t("title")} description={t("description")} helpText={t("helpText")}>
-        <VerificationResend
-          locale={locale}
-          returnTo={returnTo}
-          buttonLabel={t("resend")}
-          pendingLabel={t("resendPending")}
-          successMessage={t("resendSuccess")}
-          errorMessage={t("resendError")}
-          shownEvent={POSTHOG_EVENTS.AUTH.PRIVATE_ACCESS_BLOCKED_UNVERIFIED}
-        />
-      </AuthStatusCard>
-    </main>
+    <AuthStatusCard
+      icon={<ShieldAlert aria-hidden="true" />}
+      tone="warning"
+      title={t("title")}
+      description={t("description")}
+      note={t("helpText")}
+    >
+      <VerificationResend
+        locale={locale}
+        returnTo={returnTo}
+        buttonLabel={t("resend")}
+        pendingLabel={t("resendPending")}
+        successMessage={t("resendSuccess")}
+        errorMessage={t("resendError")}
+        shownEvent={POSTHOG_EVENTS.AUTH.PRIVATE_ACCESS_BLOCKED_UNVERIFIED}
+      />
+    </AuthStatusCard>
   );
 }

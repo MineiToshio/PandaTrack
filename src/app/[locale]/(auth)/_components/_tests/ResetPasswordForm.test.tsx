@@ -16,6 +16,9 @@ const translationMap = {
   title: "Create a new password",
   description: "Enter your new password to finish account recovery.",
   password: "New password",
+  passwordRepeat: "Repeat password",
+  passwordHelp: "At least 8 characters.",
+  passwordMismatch: "Passwords don't match.",
   submit: "Update password",
   helper: "This reset link can only be used once and expires after 60 minutes.",
   error: "We couldn't reset your password. Please try again.",
@@ -113,6 +116,7 @@ describe("ResetPasswordForm", () => {
     );
 
     await user.type(screen.getByLabelText(translationMap.password), "new-password-123");
+    await user.type(screen.getByLabelText(translationMap.passwordRepeat), "new-password-123");
     await user.click(getSubmitButton());
 
     expect(resetPasswordMock).toHaveBeenCalledWith({
@@ -126,7 +130,7 @@ describe("ResetPasswordForm", () => {
       locale: "en",
     });
     expect(await screen.findByRole("heading", { level: 1 })).toBeInTheDocument();
-    expect(screen.getByRole("link")).toHaveAttribute("href", "/en/sign-in");
+    expect(screen.getByRole("button", { name: translationMap.goToSignIn })).toBeInTheDocument();
   });
 
   it("switches to the invalid fallback when the API rejects the token", async () => {
@@ -148,6 +152,7 @@ describe("ResetPasswordForm", () => {
     );
 
     await user.type(screen.getByLabelText(translationMap.password), "new-password-123");
+    await user.type(screen.getByLabelText(translationMap.passwordRepeat), "new-password-123");
     await user.click(getSubmitButton());
 
     expect(posthog.capture).toHaveBeenCalledWith(POSTHOG_EVENTS.AUTH.RESET_PASSWORD_FAILED, {
@@ -173,6 +178,7 @@ describe("ResetPasswordForm", () => {
     );
 
     await user.type(screen.getByLabelText(translationMap.password), "new-password-123");
+    await user.type(screen.getByLabelText(translationMap.passwordRepeat), "new-password-123");
     await user.click(getSubmitButton());
 
     expect(Sentry.captureException).toHaveBeenCalledWith(networkError);
@@ -181,5 +187,29 @@ describe("ResetPasswordForm", () => {
       error_code: "network_error",
     });
     expect(await screen.findByRole("alert")).toHaveTextContent(translationMap.error);
+  });
+
+  it("blocks submission and shows an error when the passwords do not match", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ResetPasswordForm
+        token="valid-token"
+        signInHref="/en/sign-in"
+        forgotPasswordHref="/en/forgot-password"
+        initialState="ready"
+        invalidDescription={translationMap.invalidDescription}
+      />,
+    );
+
+    await user.type(screen.getByLabelText(translationMap.password), "new-password-123");
+    await user.type(screen.getByLabelText(translationMap.passwordRepeat), "different-456");
+    await user.click(getSubmitButton());
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(translationMap.passwordMismatch);
+    expect(resetPasswordMock).not.toHaveBeenCalled();
+    expect(posthog.capture).not.toHaveBeenCalledWith(POSTHOG_EVENTS.AUTH.RESET_PASSWORD_SUBMITTED, {
+      locale: "en",
+    });
   });
 });
