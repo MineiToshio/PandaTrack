@@ -3479,6 +3479,376 @@
     section[id$="-mobile"].is-active .s10-state { padding: 48px 20px; min-height: 64vh; }
     section[id$="-mobile"].is-active .s10-state-actions { flex-direction: column; width: 100%; }
     section[id$="-mobile"].is-active .s10-state-actions .btn { width: 100%; justify-content: center; }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       S11 · LANDING (go-live) + AUTH + LEGAL · superficies públicas
+       Paradigma de layout NUEVO: marketing full-bleed (mk-*), auth cards
+       centradas (auth-*), documento legal (legal-*). NO usan el app-shell.
+       Registro EXPRESIVO de Velvet: mismos tokens, extremo dramático del
+       sistema (gradients de héroe, display grande, glows, ritmo generoso).
+       ═══════════════════════════════════════════════════════════════════ */
+
+    /* ─── Public chrome compartido ──────────────────────────────────────
+       mk-header = barra completa de la landing. mk-minibar = barra slim de
+       auth + legal (logo home + theme/lang). En el demo NO son sticky para
+       no chocar con el .demo-header sticky; en producción la landing es
+       sticky top-0 (anotado en spec). */
+    .mk-public { background: var(--background); color: var(--text-primary); min-height: 100%; }
+    /* Bleed: rompe el max-width/padding de <main> para que la superficie pública
+       sea edge-to-edge en desktop, sin tocar el flujo vertical superior (así el
+       header no queda detrás del .demo-header sticky). NO usar en el frame phone. */
+    .mk-bleed { width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); margin-bottom: -120px; }
+    @media (min-width: 1024px) { .mk-bleed { margin-bottom: -160px; } }
+    .mk-container { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+    @media (min-width: 768px) { .mk-container { padding: 0 32px; } }
+
+    .mk-header {
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in oklch, var(--surface) 80%, transparent);
+      backdrop-filter: saturate(160%) blur(10px);
+      -webkit-backdrop-filter: saturate(160%) blur(10px);
+    }
+    .mk-header-inner { display: flex; align-items: center; gap: 16px; height: 64px; }
+    .mk-brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 16px; letter-spacing: -0.01em; color: var(--text-primary); flex-shrink: 0; }
+    .mk-brand-mark {
+      width: 30px; height: 30px; border-radius: 9px;
+      background: linear-gradient(135deg, color-mix(in oklch, var(--accent) 22%, var(--surface-elevated)), color-mix(in oklch, var(--accent-warm) 20%, var(--surface-elevated)));
+      border: 1px solid color-mix(in oklch, var(--accent) 30%, var(--border));
+      color: var(--accent); display: grid; place-items: center; font-weight: 800; font-size: 15px;
+    }
+    .mk-nav { display: none; align-items: center; gap: 4px; margin-left: 8px; }
+    @media (min-width: 900px) { .mk-nav { display: flex; } }
+    .mk-nav a {
+      padding: 8px 12px; border-radius: 8px; font-size: 14px; color: var(--text-secondary);
+      font-weight: 500; transition: color 150ms, background 150ms;
+    }
+    .mk-nav a:hover { color: var(--text-primary); background: color-mix(in oklch, var(--text-primary) 5%, transparent); }
+    .mk-header-spacer { flex: 1; }
+    .mk-header-actions { display: none; align-items: center; gap: 10px; }
+    @media (min-width: 900px) { .mk-header-actions { display: flex; } }
+    .mk-burger { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: transparent; border: 1px solid var(--border-strong); color: var(--text-primary); margin-left: auto; }
+    @media (min-width: 900px) { .mk-burger { display: none; } }
+
+    /* mini toggles (theme + lang) reutilizados por header / minibar */
+    .mk-utils { display: inline-flex; align-items: center; gap: 8px; }
+    .mk-lang { display: inline-flex; align-items: center; gap: 2px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12px; color: var(--text-muted); }
+    .mk-lang .is-cur { color: var(--text-primary); font-weight: 600; }
+    .mk-lang .sep { opacity: 0.5; }
+    .mk-theme { display: inline-flex; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 999px; padding: 2px; }
+    .mk-theme button { width: 28px; height: 26px; display: grid; place-items: center; border: 0; background: transparent; border-radius: 999px; color: var(--text-muted); }
+    .mk-theme button svg { width: 14px; height: 14px; }
+    .mk-theme button[aria-pressed="true"] { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-1); }
+
+    /* mk-minibar — auth + legal */
+    .mk-minibar { border-bottom: 1px solid var(--border); background: color-mix(in oklch, var(--surface) 80%, transparent); }
+    .mk-minibar-inner { display: flex; align-items: center; gap: 12px; height: 60px; }
+
+    /* ─── HERO ──────────────────────────────────────────────────────── */
+    .mk-hero { position: relative; overflow: hidden; }
+    .mk-hero-glow {
+      position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.9;
+      background:
+        radial-gradient(60% 55% at 78% 8%, color-mix(in oklch, var(--accent) 22%, transparent), transparent 70%),
+        radial-gradient(50% 50% at 8% 30%, color-mix(in oklch, var(--accent-warm) 18%, transparent), transparent 70%),
+        radial-gradient(55% 60% at 50% 100%, color-mix(in oklch, var(--accent-cool) 14%, transparent), transparent 70%);
+    }
+    .mk-hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr; gap: 40px; align-items: center; padding: 56px 0 64px; }
+    @media (min-width: 900px) { .mk-hero-grid { grid-template-columns: 1.05fr 0.95fr; gap: 56px; padding: 88px 0 96px; } }
+    .mk-hero-copy { max-width: 600px; }
+    .mk-hero h1 {
+      font-weight: 700; letter-spacing: -0.025em; line-height: 1.04; margin: 18px 0 0;
+      font-size: clamp(38px, 6vw, 60px);
+    }
+    .mk-grad-text {
+      background: linear-gradient(105deg, var(--accent), color-mix(in oklch, var(--accent-warm) 80%, var(--accent)));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .mk-hero-sub { font-size: clamp(16px, 2vw, 19px); color: var(--text-secondary); line-height: 1.55; margin: 20px 0 0; max-width: 52ch; }
+    .mk-hero-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+    .mk-hero-cta .btn { min-height: 48px; padding: 13px 22px; font-size: 15px; }
+    .mk-hero-trust { display: flex; align-items: center; gap: 10px; margin-top: 22px; font-size: 13px; color: var(--text-muted); }
+    .mk-hero-trust .dot { width: 4px; height: 4px; border-radius: 999px; background: var(--success); }
+
+    /* hero visual — mock ventana de la app */
+    .mk-hero-visual { position: relative; }
+    .mk-window {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+      box-shadow: var(--shadow-3); overflow: hidden;
+    }
+    .mk-window-bar { display: flex; align-items: center; gap: 6px; padding: 11px 14px; border-bottom: 1px solid var(--border); background: var(--surface-elevated); }
+    .mk-window-dot { width: 9px; height: 9px; border-radius: 999px; background: color-mix(in oklch, var(--text-primary) 18%, transparent); }
+    .mk-window-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .mk-mini-stat { display: flex; gap: 12px; }
+    .mk-mini-stat > div { flex: 1; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+    .mk-mini-stat .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    .mk-mini-stat .val { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; margin-top: 4px; }
+    .mk-mini-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-elevated); }
+    .mk-mini-ava { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; flex-shrink: 0; }
+    .mk-mini-row .body { flex: 1; min-width: 0; }
+    .mk-mini-row .body strong { display: block; font-size: 13px; font-weight: 600; }
+    .mk-mini-row .body small { display: block; font-size: 11px; color: var(--text-muted); }
+    .mk-float-chip {
+      position: absolute; bottom: -14px; left: -14px; display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 13px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border-strong);
+      box-shadow: var(--shadow-2); font-size: 12px; font-weight: 600; color: var(--text-primary);
+    }
+    .mk-float-chip svg { width: 14px; height: 14px; color: var(--success); }
+
+    /* Hero · collage "vitrina del coleccionista" — 3 objetos núcleo (pedido + tienda + entrega)
+       Reemplaza la barra de flujo abstracta: muestra UI real para que un visitante
+       entienda de un vistazo qué hace el producto. Animación = entrada escalonada
+       (las piezas sueltas se reúnen en un lugar), una sola vez, + float ambiental. */
+    @keyframes mk-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+    @keyframes mk-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+    .mk-window-anim { animation: mk-rise 560ms cubic-bezier(.2, 0, 0, 1) both, mk-float 6s ease-in-out 720ms infinite; }
+    .mk-rise-in { animation: mk-rise 560ms cubic-bezier(.2, 0, 0, 1) both; }
+    /* Ribbon de ciclo de vida dentro de la ventana: un objeto-héroe (el coleccionable)
+       viaja tienda→pedido→pago→entrega; cada estación se ilumina al pasar (1 a la vez,
+       escalonado). Investigación deep-research wf_eee2eca5 (NN/g motion + Evil Martians):
+       el objeto que viaja lleva la narrativa; abajo converge el panel "Tu colección". */
+    .mk-journey { position: relative; padding: 16px 14px 14px; border-bottom: 1px solid var(--border); background: color-mix(in oklch, var(--surface-elevated) 60%, var(--surface)); }
+    .mk-journey-cap { display: block; text-align: center; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 12px; }
+    .mk-journey-rail { position: relative; height: 28px; margin-bottom: 8px; }
+    .mk-journey-line { position: absolute; top: 50%; transform: translateY(-50%); left: 12.5%; right: 12.5%; height: 2px; border-radius: 999px; background: color-mix(in oklch, var(--text-primary) 10%, transparent); overflow: hidden; }
+    .mk-journey-line::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 30%; background: linear-gradient(90deg, transparent, var(--accent)); animation: mk-journey-fill 6.4s ease-in-out infinite; }
+    .mk-journey-token { position: absolute; top: 50%; left: 12.5%; transform: translate(-50%, -50%); width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: var(--surface); color: var(--accent); border: 1px solid var(--accent); box-shadow: 0 3px 10px color-mix(in oklch, var(--accent) 38%, transparent); z-index: 2; animation: mk-journey-travel 6.4s ease-in-out infinite; }
+    .mk-journey-token svg { width: 15px; height: 15px; }
+    @keyframes mk-journey-travel { 0%, 6% { left: 12.5%; } 25%, 31% { left: 37.5%; } 50%, 56% { left: 62.5%; } 75%, 100% { left: 87.5%; } }
+    @keyframes mk-journey-fill { 0%, 6% { width: 0%; } 25%, 31% { width: 33.33%; } 50%, 56% { width: 66.66%; } 75%, 100% { width: 100%; } }
+    .mk-journey-steps { position: relative; display: flex; justify-content: space-between; }
+    .mk-journey-step { --tile: var(--accent); display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; min-width: 0; color: var(--text-muted); animation: mk-journey-step 6.4s ease-in-out infinite; animation-delay: calc(var(--s) * 1.6s); }
+    .mk-journey-tile { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: color-mix(in oklch, currentColor 12%, var(--surface)); color: currentColor; border: 1px solid color-mix(in oklch, currentColor 26%, transparent); animation: mk-journey-pop 6.4s ease-in-out infinite; animation-delay: calc(var(--s) * 1.6s); }
+    .mk-journey-tile svg { width: 18px; height: 18px; }
+    .mk-journey-step .jl { font-size: 11px; font-weight: 600; color: currentColor; white-space: nowrap; }
+    @keyframes mk-journey-step { 0%, 100% { color: var(--text-muted); } 5%, 16% { color: var(--tile); } 24% { color: var(--text-muted); } }
+    @keyframes mk-journey-pop { 0%, 100% { transform: scale(1); } 5%, 16% { transform: scale(1.12); } 24% { transform: scale(1); } }
+    .mk-dash-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .mk-dash-head .eyebrow { color: var(--accent); }
+    .mk-dash-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: var(--text-muted); font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    .mk-dash-badge svg { width: 12px; height: 12px; }
+    .mk-mini-row .chip { margin-left: auto; flex-shrink: 0; }
+
+    /* Banner full-bleed impactante (ocupa todo el ancho) */
+    .mk-banner-section { position: relative; overflow: hidden; text-align: center; border-block: 1px solid color-mix(in oklch, var(--accent) 22%, var(--border)); background: radial-gradient(80% 140% at 50% 0%, color-mix(in oklch, var(--accent) 18%, transparent), transparent 64%), linear-gradient(180deg, color-mix(in oklch, var(--accent) 7%, var(--background)), var(--background)); }
+    .mk-banner-inner { max-width: 640px; margin: 0 auto; }
+    .mk-banner-section h2 { font-size: clamp(28px, 4vw, 44px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.08; margin: 14px 0 0; }
+    .mk-banner-section p { font-size: 17px; color: var(--text-secondary); margin: 16px auto 0; max-width: 46ch; line-height: 1.55; }
+    .mk-banner-section .btn { min-height: 50px; padding: 14px 28px; font-size: 16px; margin-top: 30px; }
+
+    /* ─── Section scaffold ──────────────────────────────────────────── */
+    .mk-section { padding: 56px 0; position: relative; }
+    @media (min-width: 768px) { .mk-section { padding: 80px 0; } }
+    .mk-section.tinted { background: color-mix(in oklch, var(--accent) 4%, var(--background)); border-block: 1px solid var(--border); }
+    .mk-section-head { max-width: 620px; margin: 0 auto 44px; text-align: center; }
+    .mk-section-head h2 { font-size: clamp(26px, 3.5vw, 38px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.12; margin: 12px 0 0; }
+    .mk-section-head p { font-size: 16px; color: var(--text-secondary); line-height: 1.55; margin: 14px 0 0; }
+    .mk-eyebrow {
+      display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', ui-monospace, monospace;
+      font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent);
+      padding: 5px 11px; border-radius: 999px; background: color-mix(in oklch, var(--accent) 10%, transparent);
+      border: 1px solid color-mix(in oklch, var(--accent) 22%, transparent);
+    }
+    .mk-eyebrow svg { width: 13px; height: 13px; }
+
+    /* ─── Feature grid (features.json) ──────────────────────────────── */
+    .mk-feature-grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
+    @media (min-width: 640px) { .mk-feature-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1000px) { .mk-feature-grid { grid-template-columns: repeat(3, 1fr); } }
+    .mk-feature-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 22px;
+      transition: border-color 180ms, transform 180ms, box-shadow 180ms;
+    }
+    .mk-feature-card:hover { border-color: color-mix(in oklch, var(--accent) 35%, var(--border)); transform: translateY(-3px); box-shadow: var(--shadow-2); }
+    .mk-icon-tile {
+      width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 16px;
+      background: color-mix(in oklch, var(--tile, var(--accent)) 12%, transparent);
+      color: var(--tile, var(--accent)); border: 1px solid color-mix(in oklch, var(--tile, var(--accent)) 24%, transparent);
+    }
+    .mk-icon-tile svg { width: 22px; height: 22px; }
+    .mk-feature-card h3 { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 6px; }
+    .mk-feature-card p { font-size: 14px; color: var(--text-secondary); line-height: 1.55; margin: 0; }
+    .mk-feature-bullets { list-style: none; padding: 0; margin: 14px 0 0; display: flex; flex-direction: column; gap: 8px; }
+    .mk-feature-bullets li { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+    .mk-feature-bullets svg { width: 15px; height: 15px; color: var(--success); flex-shrink: 0; margin-top: 1px; }
+
+    /* ─── User-fit / problem cards ──────────────────────────────────── */
+    .mk-fit-grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
+    @media (min-width: 880px) { .mk-fit-grid { grid-template-columns: repeat(3, 1fr); } }
+    .mk-fit-card {
+      position: relative; overflow: hidden; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 18px; padding: 30px 28px; transition: border-color 180ms, transform 180ms, box-shadow 180ms;
+    }
+    .mk-fit-card:hover { border-color: color-mix(in oklch, var(--tile, var(--accent)) 40%, var(--border)); transform: translateY(-4px); box-shadow: var(--shadow-2); }
+    .mk-fit-index { position: absolute; top: 16px; right: 22px; font-family: 'JetBrains Mono', monospace; font-size: 40px; font-weight: 700; color: color-mix(in oklch, var(--text-primary) 8%, transparent); }
+    .mk-fit-card h3 { font-size: 19px; font-weight: 600; margin: 20px 0 8px; letter-spacing: -0.01em; }
+    .mk-fit-card p { font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin: 0; }
+    /* Barra inferior: color del ícono de la card (--tile) y crece a ancho completo en hover */
+    .mk-fit-bar { height: 3px; width: 40px; border-radius: 999px; background: var(--tile, var(--accent)); margin-top: 22px; transition: width 280ms cubic-bezier(.2, 0, 0, 1); }
+    .mk-fit-card:hover .mk-fit-bar { width: 100%; }
+
+    /* ─── Banner CTA ────────────────────────────────────────────────── */
+    .mk-banner-card {
+      position: relative; overflow: hidden; border-radius: 24px; padding: 48px 28px; text-align: center;
+      border: 1px solid color-mix(in oklch, var(--accent) 24%, var(--border));
+      background:
+        radial-gradient(70% 120% at 50% 0%, color-mix(in oklch, var(--accent) 16%, transparent), transparent 70%),
+        var(--surface);
+    }
+    @media (min-width: 768px) { .mk-banner-card { padding: 64px 40px; } }
+    .mk-banner-card h2 { font-size: clamp(26px, 3.5vw, 40px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; margin: 14px 0 0; }
+    .mk-banner-card p { font-size: 16px; color: var(--text-secondary); margin: 16px auto 0; max-width: 48ch; line-height: 1.55; }
+    .mk-banner-card .btn { min-height: 48px; padding: 13px 26px; font-size: 15px; margin-top: 28px; }
+
+    /* ─── FAQ accordion ─────────────────────────────────────────────── */
+    .mk-faq { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+    .mk-faq-item { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); overflow: hidden; }
+    .mk-faq-q {
+      width: 100%; display: flex; align-items: center; gap: 14px; padding: 18px 20px; background: transparent; border: 0;
+      text-align: left; font-size: 15px; font-weight: 600; color: var(--text-primary);
+    }
+    .mk-faq-q .chev { margin-left: auto; color: var(--text-muted); transition: transform 200ms; flex-shrink: 0; }
+    .mk-faq-q .chev svg { width: 18px; height: 18px; }
+    .mk-faq-item.is-open .mk-faq-q .chev { transform: rotate(180deg); }
+    .mk-faq-a { max-height: 0; overflow: hidden; transition: max-height 240ms ease; }
+    .mk-faq-item.is-open .mk-faq-a { max-height: 320px; }
+    .mk-faq-a p { padding: 0 20px 20px; margin: 0; font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+    /* ─── Footer ────────────────────────────────────────────────────── */
+    .mk-footer { border-top: 1px solid var(--border); background: var(--surface); padding: 44px 0 28px; }
+    .mk-footer-top { display: flex; flex-direction: column; gap: 24px; padding-bottom: 28px; border-bottom: 1px solid var(--border); }
+    @media (min-width: 768px) { .mk-footer-top { flex-direction: row; justify-content: space-between; align-items: flex-start; } }
+    .mk-footer-tagline { font-size: 13px; color: var(--text-muted); max-width: 32ch; margin: 12px 0 0; line-height: 1.5; }
+    .mk-footer-cols { display: flex; gap: 56px; flex-wrap: wrap; }
+    .mk-footer-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin: 0 0 12px; }
+    .mk-footer-col a { display: block; font-size: 14px; color: var(--text-secondary); padding: 4px 0; }
+    .mk-footer-col a:hover { color: var(--text-primary); }
+    .mk-footer-bottom { display: flex; flex-direction: column-reverse; gap: 14px; padding-top: 22px; align-items: center; }
+    @media (min-width: 768px) { .mk-footer-bottom { flex-direction: row; justify-content: space-between; } }
+    .mk-footer-copy { font-size: 12px; color: var(--text-muted); }
+    .mk-footer-social { display: inline-flex; gap: 8px; }
+    .mk-footer-social a { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 9px; border: 1px solid var(--border); color: var(--text-secondary); }
+    .mk-footer-social a:hover { color: var(--text-primary); border-color: var(--border-strong); }
+    .mk-footer-social svg { width: 17px; height: 17px; }
+
+    /* ─── Burger sheet (landing mobile) ─────────────────────────────── */
+    .mk-sheet { position: absolute; inset: 0; z-index: 60; display: none; }
+    .mk-sheet.is-open { display: block; }
+    .mk-sheet-backdrop { position: absolute; inset: 0; background: var(--surface-overlay, color-mix(in oklch, var(--text-primary) 45%, transparent)); }
+    .mk-sheet-panel {
+      position: absolute; top: 0; right: 0; bottom: 0; width: 84%; max-width: 320px; background: var(--surface);
+      border-left: 1px solid var(--border-strong); padding: 18px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .mk-sheet-panel a.mk-sheet-link { padding: 13px 12px; border-radius: 10px; font-size: 16px; font-weight: 500; color: var(--text-primary); }
+    .mk-sheet-panel a.mk-sheet-link:hover { background: color-mix(in oklch, var(--text-primary) 5%, transparent); }
+    .mk-sheet-head { display: flex; align-items: center; margin-bottom: 8px; }
+    .mk-sheet-close { margin-left: auto; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 9px; border: 1px solid var(--border); background: transparent; color: var(--text-primary); }
+
+    /* ═══ AUTH · cards centradas ════════════════════════════════════ */
+    .auth-wrap {
+      min-height: 100%; display: flex; flex-direction: column; align-items: center;
+      padding: 40px 16px 56px; position: relative; overflow: hidden;
+    }
+    .auth-glow {
+      position: absolute; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(50% 40% at 50% 0%, color-mix(in oklch, var(--accent) 14%, transparent), transparent 70%);
+    }
+    .auth-card {
+      position: relative; z-index: 1; width: 100%; max-width: 408px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 20px; box-shadow: var(--shadow-2); padding: 30px 26px;
+    }
+    @media (min-width: 768px) { .auth-card { padding: 36px 32px; } }
+    .auth-logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; letter-spacing: -0.01em; margin-bottom: 26px; }
+    .auth-head { margin-bottom: 22px; }
+    .auth-head h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.015em; margin: 0; }
+    .auth-head p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; margin: 8px 0 0; }
+    .auth-google {
+      width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      min-height: 44px; padding: 11px 16px; border-radius: 10px; border: 1px solid var(--border-strong);
+      background: var(--surface-elevated); color: var(--text-primary); font-size: 14px; font-weight: 500;
+      transition: background 150ms, border-color 150ms;
+    }
+    .auth-google:hover { background: color-mix(in oklch, var(--text-primary) 5%, var(--surface-elevated)); }
+    .auth-google svg { width: 18px; height: 18px; }
+    .auth-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; color: var(--text-muted); font-size: 12px; }
+    .auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+    .auth-field { margin-bottom: 16px; }
+    .auth-label { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
+    .auth-label .opt { font-weight: 400; color: var(--text-muted); }
+    .auth-input-wrap { position: relative; }
+    .auth-eye {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px;
+      display: grid; place-items: center; background: transparent; border: 0; border-radius: 8px; color: var(--text-muted);
+    }
+    .auth-eye:hover { color: var(--text-primary); }
+    .auth-eye svg { width: 17px; height: 17px; }
+    .auth-input-wrap .input { padding-right: 42px; }
+    .auth-help { font-size: 12px; color: var(--text-muted); margin: 6px 0 0; line-height: 1.45; }
+    .auth-error { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--destructive); margin: 6px 0 0; }
+    .auth-error svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; }
+    .input.is-error, .input.is-error:focus { border-color: var(--destructive); box-shadow: 0 0 0 3px color-mix(in oklch, var(--destructive) 16%, transparent); }
+    .auth-form-error {
+      display: flex; align-items: flex-start; gap: 8px; padding: 11px 13px; border-radius: 10px; margin-bottom: 16px;
+      background: color-mix(in oklch, var(--destructive) 10%, transparent); border: 1px solid color-mix(in oklch, var(--destructive) 26%, transparent);
+      color: var(--destructive); font-size: 13px; line-height: 1.45;
+    }
+    .auth-form-error svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; }
+    .auth-row-between { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 16px; }
+    .auth-check { display: flex; align-items: flex-start; gap: 9px; font-size: 13px; color: var(--text-secondary); line-height: 1.45; }
+    .auth-check input { margin-top: 1px; width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
+    .auth-check a { color: var(--accent); font-weight: 500; }
+    .auth-link { color: var(--accent); font-size: 13px; font-weight: 500; }
+    .auth-link:hover { text-decoration: underline; }
+    .auth-submit { min-height: 46px; font-size: 15px; margin-top: 4px; }
+    .auth-foot { text-align: center; font-size: 14px; color: var(--text-secondary); margin-top: 20px; }
+    .auth-foot a { color: var(--accent); font-weight: 600; }
+    .auth-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); margin-bottom: 18px; }
+    .auth-back:hover { color: var(--text-primary); }
+    .auth-back svg { width: 15px; height: 15px; }
+
+    /* auth status card (verify-email) */
+    .auth-status-icon {
+      width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; margin-bottom: 20px;
+      background: color-mix(in oklch, var(--accent) 12%, transparent); color: var(--accent);
+      border: 1px solid color-mix(in oklch, var(--accent) 24%, transparent);
+    }
+    .auth-status-icon.tone-warning { background: color-mix(in oklch, var(--warning) 14%, transparent); color: var(--warning); border-color: color-mix(in oklch, var(--warning) 28%, transparent); }
+    .auth-status-icon.tone-success { background: color-mix(in oklch, var(--success) 14%, transparent); color: var(--success); border-color: color-mix(in oklch, var(--success) 28%, transparent); }
+    .auth-status-icon svg { width: 28px; height: 28px; }
+    .auth-note { display: flex; gap: 9px; padding: 12px 14px; border-radius: 10px; background: var(--surface-elevated); border: 1px solid var(--border); font-size: 13px; color: var(--text-secondary); line-height: 1.5; margin-top: 18px; }
+    .auth-note svg { width: 16px; height: 16px; color: var(--text-muted); flex-shrink: 0; margin-top: 1px; }
+
+    /* ═══ LEGAL · documento standalone ══════════════════════════════ */
+    .legal-doc { max-width: 760px; margin: 0 auto; padding: 36px 20px 64px; }
+    @media (min-width: 768px) { .legal-doc { padding: 52px 20px 80px; } }
+    .legal-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
+    .legal-back:hover { color: var(--text-primary); }
+    .legal-back svg { width: 15px; height: 15px; }
+    .legal-head { padding-bottom: 24px; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+    .legal-head h1 { font-size: clamp(28px, 4vw, 38px); font-weight: 700; letter-spacing: -0.02em; margin: 12px 0 0; }
+    .legal-updated { font-size: 13px; color: var(--text-muted); margin: 12px 0 0; display: inline-flex; align-items: center; gap: 6px; }
+    .legal-updated svg { width: 14px; height: 14px; }
+    .legal-intro { font-size: 16px; color: var(--text-secondary); line-height: 1.6; margin: 0 0 8px; }
+    .legal-section { margin-top: 30px; }
+    .legal-section h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 10px; scroll-margin-top: 80px; }
+    .legal-section p { font-size: 15px; color: var(--text-secondary); line-height: 1.65; margin: 0 0 12px; }
+    .legal-toc { margin: 0 0 28px; padding: 16px 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+    .legal-toc h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin: 0 0 10px; }
+    .legal-toc ol { margin: 0; padding-left: 18px; columns: 2; column-gap: 28px; }
+    .legal-toc li { font-size: 13px; padding: 3px 0; }
+    .legal-toc a { color: var(--text-secondary); }
+    .legal-toc a:hover { color: var(--accent); }
+
+    /* ─── S11 · overrides para el frame phone (-mobile) ─────────────── */
+    section[id$="-mobile"].is-active .mk-hero-grid,
+    section[id$="-mobile"].is-active .mk-feature-grid,
+    section[id$="-mobile"].is-active .mk-fit-grid { grid-template-columns: 1fr !important; }
+    section[id$="-mobile"].is-active .mk-section { padding: 36px 0 !important; }
+    section[id$="-mobile"].is-active .mk-hero-grid { padding: 32px 0 40px !important; }
+    section[id$="-mobile"].is-active .mk-nav,
+    section[id$="-mobile"].is-active .mk-header-actions { display: none !important; }
+    section[id$="-mobile"].is-active .mk-burger { display: inline-grid !important; }
+    section[id$="-mobile"].is-active .auth-card { box-shadow: none; border-radius: 16px; }
+    section[id$="-mobile"].is-active .mk-footer-cols { gap: 32px; }
   </style>
 </head>
 <body>
@@ -3727,6 +4097,33 @@
         <a href="#s10-not-found-mobile" data-screen="s10-not-found-mobile">404 · No encontrado</a>
       </div>
     </div>
+    <div class="demo-nav-group" id="demo-nav-group-s11">
+      <button class="demo-nav-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="demo-dropdown-s11">
+        S11 · Landing+Auth <i data-lucide="chevron-down"></i>
+      </button>
+      <div class="demo-nav-dropdown" id="demo-dropdown-s11" role="menu">
+        <span class="demo-nav-label">── Landing (go-live) ──</span>
+        <a href="#s11-landing" data-screen="s11-landing">Landing · Completa</a>
+        <div class="demo-nav-sep"></div>
+        <span class="demo-nav-label">── Auth ──</span>
+        <a href="#s11-sign-up" data-screen="s11-sign-up">Crear cuenta</a>
+        <a href="#s11-sign-in" data-screen="s11-sign-in">Iniciar sesión</a>
+        <a href="#s11-sign-in-error" data-screen="s11-sign-in-error">Iniciar sesión · Error</a>
+        <a href="#s11-forgot-password" data-screen="s11-forgot-password">Olvidé mi contraseña</a>
+        <a href="#s11-reset-password" data-screen="s11-reset-password">Restablecer contraseña</a>
+        <a href="#s11-verify-email" data-screen="s11-verify-email">Verificar email · Enviado</a>
+        <a href="#s11-verify-email-required" data-screen="s11-verify-email-required">Verificar email · Bloqueo (día 7)</a>
+        <div class="demo-nav-sep"></div>
+        <span class="demo-nav-label">── Legal ──</span>
+        <a href="#s11-legal-privacy" data-screen="s11-legal-privacy">Privacidad</a>
+        <a href="#s11-legal-terms" data-screen="s11-legal-terms">Términos</a>
+        <div class="demo-nav-sep"></div>
+        <span class="demo-nav-label">── Móvil ──</span>
+        <a href="#s11-landing-mobile" data-screen="s11-landing-mobile">Landing</a>
+        <a href="#s11-sign-in-mobile" data-screen="s11-sign-in-mobile">Iniciar sesión</a>
+        <a href="#s11-legal-privacy-mobile" data-screen="s11-legal-privacy-mobile">Privacidad</a>
+      </div>
+    </div>
     <span class="demo-nav-current" id="demo-nav-current" aria-live="polite"></span>
   </nav>
   <div class="palette-switch">
@@ -3962,6 +4359,20 @@
         <tr><td class="idx-session">S10</td><td>Móvil · Error de ruta</td>                 <td><a class="idx-anchor" href="#s10-route-error-mobile" data-screen-link="s10-route-error-mobile">#s10-route-error-mobile</a></td>                        <td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S10</td><td>Móvil · Error de sección</td>              <td><a class="idx-anchor" href="#s10-section-error-mobile" data-screen-link="s10-section-error-mobile">#s10-section-error-mobile</a></td>                  <td><span class="idx-status nuevo">nuevo</span></td></tr>
         <tr><td class="idx-session">S10</td><td>Móvil · 404 No encontrado</td>             <td><a class="idx-anchor" href="#s10-not-found-mobile" data-screen-link="s10-not-found-mobile">#s10-not-found-mobile</a></td>                              <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <!-- S11 LANDING (go-live) + AUTH + LEGAL -->
+        <tr><td class="idx-session">S11</td><td>Landing · Completa (go-live, sign-up)</td>  <td><a class="idx-anchor" href="#s11-landing" data-screen-link="s11-landing">#s11-landing</a></td>                                                       <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S11</td><td>Auth · Crear cuenta</td>                    <td><a class="idx-anchor" href="#s11-sign-up" data-screen-link="s11-sign-up">#s11-sign-up</a></td>                                                       <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S11</td><td>Auth · Iniciar sesión</td>                  <td><a class="idx-anchor" href="#s11-sign-in" data-screen-link="s11-sign-in">#s11-sign-in</a></td>                                                       <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S11</td><td>Auth · Iniciar sesión · Error</td>          <td><a class="idx-anchor" href="#s11-sign-in-error" data-screen-link="s11-sign-in-error">#s11-sign-in-error</a></td>                                     <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S11</td><td>Auth · Olvidé mi contraseña</td>            <td><a class="idx-anchor" href="#s11-forgot-password" data-screen-link="s11-forgot-password">#s11-forgot-password</a></td>                               <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S11</td><td>Auth · Restablecer contraseña</td>          <td><a class="idx-anchor" href="#s11-reset-password" data-screen-link="s11-reset-password">#s11-reset-password</a></td>                                   <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S11</td><td>Auth · Verificar email · Enviado</td>       <td><a class="idx-anchor" href="#s11-verify-email" data-screen-link="s11-verify-email">#s11-verify-email</a></td>                                         <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S11</td><td>Auth · Verificar email · Bloqueo día 7</td> <td><a class="idx-anchor" href="#s11-verify-email-required" data-screen-link="s11-verify-email-required">#s11-verify-email-required</a></td>                 <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S11</td><td>Legal · Privacidad</td>                     <td><a class="idx-anchor" href="#s11-legal-privacy" data-screen-link="s11-legal-privacy">#s11-legal-privacy</a></td>                                     <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S11</td><td>Legal · Términos</td>                       <td><a class="idx-anchor" href="#s11-legal-terms" data-screen-link="s11-legal-terms">#s11-legal-terms</a></td>                                           <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S11</td><td>Móvil · Landing</td>                        <td><a class="idx-anchor" href="#s11-landing-mobile" data-screen-link="s11-landing-mobile">#s11-landing-mobile</a></td>                                   <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S11</td><td>Móvil · Iniciar sesión</td>                 <td><a class="idx-anchor" href="#s11-sign-in-mobile" data-screen-link="s11-sign-in-mobile">#s11-sign-in-mobile</a></td>                                   <td><span class="idx-status nuevo">nuevo</span></td></tr>
+        <tr><td class="idx-session">S11</td><td>Móvil · Privacidad</td>                     <td><a class="idx-anchor" href="#s11-legal-privacy-mobile" data-screen-link="s11-legal-privacy-mobile">#s11-legal-privacy-mobile</a></td>                       <td><span class="idx-status nuevo">nuevo</span></td></tr>
       </tbody>
     </table>
   </div>
@@ -17283,6 +17694,964 @@
   </div>
 </section>
 
+<!-- ═══════════════════════════════════════════════════════════════
+     S11 · LANDING (go-live) — DESKTOP
+     ═══════════════════════════════════════════════════════════════ -->
+<section id="s11-landing" class="screen" aria-labelledby="s11-landing-h1">
+  <div class="mk-public mk-bleed">
+    <!-- Header marketing (sticky top-0 en producción; estático en el demo) -->
+    <header class="mk-header">
+      <div class="mk-container mk-header-inner">
+        <a href="#s11-landing" data-screen-link="s11-landing" class="mk-brand"><span class="mk-brand-mark">P</span> PandaTrack</a>
+        <nav class="mk-nav" aria-label="Navegación">
+          <a href="#s11-landing" data-s11-scroll="s11-fit">Para quién</a>
+          <a href="#s11-landing" data-s11-scroll="s11-feat">Funciones</a>
+          <a href="#s11-landing" data-s11-scroll="s11-faq">Preguntas</a>
+        </nav>
+        <div class="mk-header-spacer"></div>
+        <div class="mk-header-actions">
+          <div class="mk-utils">
+            <span class="mk-lang"><span class="is-cur">ES</span><span class="sep">/</span><span>EN</span></span>
+            <div class="mk-theme" role="group" aria-label="Tema">
+              <button type="button" data-theme-set="light" aria-label="Tema claro"><i data-lucide="sun"></i></button>
+              <button type="button" data-theme-set="dark" aria-label="Tema oscuro"><i data-lucide="moon"></i></button>
+            </div>
+          </div>
+          <a href="#s11-sign-in" data-screen-link="s11-sign-in" class="btn ghost sm">Iniciar sesión</a>
+          <a href="#s11-sign-up" data-screen-link="s11-sign-up" class="btn primary sm">Crear cuenta</a>
+        </div>
+        <button class="mk-burger" type="button" aria-label="Abrir menú" data-s11-burger-open><i data-lucide="menu"></i></button>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="mk-hero">
+      <div class="mk-hero-glow" aria-hidden="true"></div>
+      <div class="mk-container">
+        <div class="mk-hero-grid">
+          <div class="mk-hero-copy">
+            <span class="mk-eyebrow"><i data-lucide="sparkles"></i> Para coleccionistas</span>
+            <h1 id="s11-landing-h1">Toda tu colección, <span class="mk-grad-text">bajo control</span>.</h1>
+            <p class="mk-hero-sub">Reúne tus pedidos de cualquier tienda, controla pre-reservas, pagos y entregas, y recibe un aviso antes de cada fecha clave.</p>
+            <div class="mk-hero-cta">
+              <a href="#s11-sign-up" data-screen-link="s11-sign-up" class="btn primary"><i data-lucide="sparkles"></i> Crear cuenta gratis</a>
+              <a href="#s11-landing" data-s11-scroll="s11-feat" class="btn ghost">Ver cómo funciona</a>
+            </div>
+            <p class="mk-hero-trust"><span class="dot" aria-hidden="true"></span> Gratis para empezar · Sin tarjeta</p>
+          </div>
+          <div class="mk-hero-visual">
+            <div class="mk-window mk-window-anim" role="img" aria-label="Demo de PandaTrack: un coleccionable recorre el ciclo —tienda, pedido, pago y entrega— y todo se ve y se maneja en un solo panel.">
+              <div class="mk-window-bar"><span class="mk-window-dot"></span><span class="mk-window-dot"></span><span class="mk-window-dot"></span></div>
+              <div class="mk-journey" aria-hidden="true">
+                <span class="mk-journey-cap">El viaje de tu coleccionable</span>
+                <div class="mk-journey-rail">
+                  <div class="mk-journey-line"></div>
+                  <div class="mk-journey-token"><i data-lucide="book-open"></i></div>
+                </div>
+                <div class="mk-journey-steps">
+                  <div class="mk-journey-step" style="--s:0; --tile:var(--accent-cool);"><span class="mk-journey-tile"><i data-lucide="store"></i></span><span class="jl">Tienda</span></div>
+                  <div class="mk-journey-step" style="--s:1; --tile:var(--accent);"><span class="mk-journey-tile"><i data-lucide="package"></i></span><span class="jl">Pedido</span></div>
+                  <div class="mk-journey-step" style="--s:2; --tile:var(--accent-warm);"><span class="mk-journey-tile"><i data-lucide="wallet"></i></span><span class="jl">Pago</span></div>
+                  <div class="mk-journey-step" style="--s:3; --tile:var(--success);"><span class="mk-journey-tile"><i data-lucide="truck"></i></span><span class="jl">Entrega</span></div>
+                </div>
+              </div>
+              <div class="mk-window-body">
+                <div class="mk-dash-head">
+                  <span class="eyebrow">Tu colección</span>
+                  <span class="mk-dash-badge"><i data-lucide="layout-dashboard"></i> Panel</span>
+                </div>
+                <div class="mk-mini-stat">
+                  <div><div class="lbl">Gastado</div><div class="val num">$486</div></div>
+                  <div><div class="lbl">Pendiente</div><div class="val num" style="color:var(--warning);">$152</div></div>
+                  <div><div class="lbl">En camino</div><div class="val num">3</div></div>
+                </div>
+                <div class="mk-mini-row">
+                  <span class="mk-mini-ava" style="background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);"><i data-lucide="package"></i></span>
+                  <span class="body"><strong>Nendoroid Hatsune Miku</strong><small>Akiba Store · Japón</small></span>
+                  <span class="chip warning"><i data-lucide="wallet"></i> Pre-reserva</span>
+                </div>
+                <div class="mk-mini-row">
+                  <span class="mk-mini-ava" style="background:color-mix(in oklch,var(--accent-warm) 16%,transparent);color:var(--accent-warm);"><i data-lucide="book-open"></i></span>
+                  <span class="body"><strong>Chainsaw Man Vol. 11</strong><small>HMV Japan</small></span>
+                  <span class="chip info"><i data-lucide="truck"></i> En camino</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- User-fit / problema -->
+    <section class="mk-section" id="s11-fit">
+      <div class="mk-container">
+        <div class="mk-section-head">
+          <span class="mk-eyebrow"><i data-lucide="target"></i> El día a día de coleccionar</span>
+          <h2>Tu colección crece. El desorden, también.</h2>
+          <p>Cuando compras en varias tiendas, es fácil perder el hilo de qué pagaste, qué falta y qué está por llegar.</p>
+        </div>
+        <div class="mk-fit-grid">
+          <article class="mk-fit-card" style="--tile:var(--accent);">
+            <span class="mk-fit-index" aria-hidden="true">01</span>
+            <span class="mk-icon-tile"><i data-lucide="layers"></i></span>
+            <h3>Pedidos por todas partes</h3>
+            <p>Confirmaciones en el correo, capturas en el teléfono, mensajes en chats. Tu colección vive en diez lugares distintos.</p>
+            <div class="mk-fit-bar" aria-hidden="true"></div>
+          </article>
+          <article class="mk-fit-card" style="--tile:var(--accent-warm);">
+            <span class="mk-fit-index" aria-hidden="true">02</span>
+            <span class="mk-icon-tile"><i data-lucide="wallet"></i></span>
+            <h3>«¿Esto ya lo pagué?»</h3>
+            <p>Entre señas, saldos y pre-reservas, recordar cuánto debes y a quién se vuelve un dolor de cabeza.</p>
+            <div class="mk-fit-bar" aria-hidden="true"></div>
+          </article>
+          <article class="mk-fit-card" style="--tile:var(--accent-cool);">
+            <span class="mk-fit-index" aria-hidden="true">03</span>
+            <span class="mk-icon-tile"><i data-lucide="truck"></i></span>
+            <h3>Entregas que no sabes dónde están</h3>
+            <p>Pedidos que llegan por partes y fechas que se te pasan. Te enteras tarde, o nunca.</p>
+            <div class="mk-fit-bar" aria-hidden="true"></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="mk-section tinted" id="s11-feat">
+      <div class="mk-container">
+        <div class="mk-section-head">
+          <span class="mk-eyebrow"><i data-lucide="layout-grid"></i> Todo en un solo lugar</span>
+          <h2>Lo que necesitas para llevar tu colección al día</h2>
+          <p>Desde la compra hasta que llega a tus manos, PandaTrack te acompaña en cada paso.</p>
+        </div>
+        <div class="mk-feature-grid">
+          <article class="mk-feature-card">
+            <span class="mk-icon-tile" style="--tile:var(--accent);"><i data-lucide="store"></i></span>
+            <h3>Tiendas de confianza</h3>
+            <p>Guarda las tiendas donde compras y reconoce de un vistazo a las que ya conoces.</p>
+          </article>
+          <article class="mk-feature-card">
+            <span class="mk-icon-tile" style="--tile:var(--accent-cool);"><i data-lucide="shopping-bag"></i></span>
+            <h3>Tus pedidos, ordenados</h3>
+            <p>Registra cada pedido de cualquier tienda, con sus productos y su costo, en una sola lista clara.</p>
+          </article>
+          <article class="mk-feature-card">
+            <span class="mk-icon-tile" style="--tile:var(--success);"><i data-lucide="badge-dollar-sign"></i></span>
+            <h3>Pre-reservas sin sorpresas</h3>
+            <p>Lleva la cuenta de lo que ya señaste y lo que aún falta pagar, pedido por pedido.</p>
+          </article>
+          <article class="mk-feature-card">
+            <span class="mk-icon-tile" style="--tile:var(--accent-warm);"><i data-lucide="truck"></i></span>
+            <h3>Entregas, incluso divididas</h3>
+            <p>Sigue cada entrega y maneja sin problema los pedidos que llegan en varios envíos.</p>
+          </article>
+          <article class="mk-feature-card">
+            <span class="mk-icon-tile" style="--tile:var(--info);"><i data-lucide="bell"></i></span>
+            <h3>Avisos a tiempo</h3>
+            <p>Te recordamos un pago o una fecha clave antes de que se te pase, por ti.</p>
+          </article>
+          <article class="mk-feature-card">
+            <span class="mk-icon-tile" style="--tile:var(--accent);"><i data-lucide="line-chart"></i></span>
+            <h3>Todo de un vistazo</h3>
+            <p>Ve el estado de tus pedidos, los próximos pagos y cuánto llevas gastado, todo en una pantalla.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Banner CTA · full-width -->
+    <section class="mk-section mk-banner-section">
+      <div class="mk-container">
+        <div class="mk-banner-inner">
+          <span class="mk-eyebrow"><i data-lucide="sparkles"></i> Empieza hoy</span>
+          <h2>Tu colección merece estar en orden</h2>
+          <p>Crea tu cuenta gratis y reúne tus pedidos, pagos y entregas en un solo lugar. Toma menos de un minuto.</p>
+          <a href="#s11-sign-up" data-screen-link="s11-sign-up" class="btn primary"><i data-lucide="arrow-right"></i> Crear cuenta gratis</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="mk-section tinted" id="s11-faq">
+      <div class="mk-container">
+        <div class="mk-section-head">
+          <span class="mk-eyebrow"><i data-lucide="help-circle"></i> Preguntas frecuentes</span>
+          <h2>Lo que sueles preguntarte</h2>
+        </div>
+        <div class="mk-faq">
+          <div class="mk-faq-item is-open">
+            <button class="mk-faq-q" type="button" data-s11-faq><span>¿PandaTrack es gratis?</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="mk-faq-a"><p>Sí, es gratis para empezar y no necesitas tarjeta. Puedes registrar tus tiendas, pedidos y entregas sin pagar nada.</p></div>
+          </div>
+          <div class="mk-faq-item">
+            <button class="mk-faq-q" type="button" data-s11-faq><span>¿Funciona con cualquier tienda?</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="mk-faq-a"><p>Sí. PandaTrack no depende de ninguna tienda en particular: registras tus pedidos vengan de donde vengan, online o en persona.</p></div>
+          </div>
+          <div class="mk-faq-item">
+            <button class="mk-faq-q" type="button" data-s11-faq><span>¿Tengo que cargar todo a mano?</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="mk-faq-a"><p>Tú agregas cada pedido para tener el control de lo que sigues. Lo diseñamos para que sea rápido: en pocos toques queda guardado.</p></div>
+          </div>
+          <div class="mk-faq-item">
+            <button class="mk-faq-q" type="button" data-s11-faq><span>¿Mis datos están seguros?</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="mk-faq-a"><p>Tu colección es solo tuya. Guardamos tu información de forma privada y nunca la compartimos con las tiendas ni con otros coleccionistas.</p></div>
+          </div>
+          <div class="mk-faq-item">
+            <button class="mk-faq-q" type="button" data-s11-faq><span>¿En qué idiomas está?</span><span class="chev"><i data-lucide="chevron-down"></i></span></button>
+            <div class="mk-faq-a"><p>PandaTrack está disponible en español e inglés, y puedes cambiar de idioma cuando quieras desde tu cuenta.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="mk-footer">
+      <div class="mk-container">
+        <div class="mk-footer-top">
+          <div>
+            <span class="mk-brand"><span class="mk-brand-mark">P</span> PandaTrack</span>
+            <p class="mk-footer-tagline">Toda tu colección en un solo lugar: pedidos, pre-reservas y entregas.</p>
+          </div>
+          <div class="mk-footer-cols">
+            <div class="mk-footer-col">
+              <h4>Producto</h4>
+              <a href="#s11-landing" data-s11-scroll="s11-feat">Funciones</a>
+              <a href="#s11-landing" data-s11-scroll="s11-faq">Preguntas</a>
+            </div>
+            <div class="mk-footer-col">
+              <h4>Cuenta</h4>
+              <a href="#s11-sign-up" data-screen-link="s11-sign-up">Crear cuenta</a>
+              <a href="#s11-sign-in" data-screen-link="s11-sign-in">Iniciar sesión</a>
+            </div>
+            <div class="mk-footer-col">
+              <h4>Legal</h4>
+              <a href="#s11-legal-privacy" data-screen-link="s11-legal-privacy">Privacidad</a>
+              <a href="#s11-legal-terms" data-screen-link="s11-legal-terms">Términos</a>
+            </div>
+          </div>
+        </div>
+        <div class="mk-footer-bottom">
+          <span class="mk-footer-copy">© 2026 PandaTrack · Hecho para coleccionistas</span>
+          <div class="mk-footer-social">
+            <a href="#" aria-label="Email"><i data-lucide="mail"></i></a>
+            <a href="#" aria-label="Instagram"><i data-lucide="message-circle"></i></a>
+            <a href="#" aria-label="Compartir"><i data-lucide="send"></i></a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S11 · AUTH — DESKTOP
+     ═══════════════════════════════════════════════════════════════ -->
+<!-- Crear cuenta -->
+<section id="s11-sign-up" class="screen" aria-labelledby="s11-signup-h1">
+  <div class="mk-public mk-bleed">
+    <header class="mk-minibar">
+      <div class="mk-container mk-minibar-inner">
+        <a href="#s11-landing" data-screen-link="s11-landing" class="mk-brand"><span class="mk-brand-mark">P</span> PandaTrack</a>
+        <div class="mk-header-spacer"></div>
+        <div class="mk-utils">
+          <span class="mk-lang"><span class="is-cur">ES</span><span class="sep">/</span><span>EN</span></span>
+          <div class="mk-theme" role="group" aria-label="Tema">
+            <button type="button" data-theme-set="light" aria-label="Tema claro"><i data-lucide="sun"></i></button>
+            <button type="button" data-theme-set="dark" aria-label="Tema oscuro"><i data-lucide="moon"></i></button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="auth-wrap">
+      <div class="auth-glow" aria-hidden="true"></div>
+      <div class="auth-card">
+        <div class="auth-head">
+          <h1 id="s11-signup-h1">Crea tu cuenta</h1>
+          <p>Empieza a organizar tu colección. Es gratis.</p>
+        </div>
+        <button type="button" class="auth-google">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continuar con Google
+        </button>
+        <div class="auth-divider">o con tu email</div>
+        <div class="auth-field">
+          <label class="auth-label" for="su-email">Email</label>
+          <input class="input" id="su-email" type="email" placeholder="tu@email.com" />
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="su-pass">Contraseña</label>
+          <div class="auth-input-wrap">
+            <input class="input" id="su-pass" type="password" value="MiClave2026" />
+            <button type="button" class="auth-eye" data-s11-eye aria-label="Mostrar contraseña"><i data-lucide="eye"></i></button>
+          </div>
+          <p class="auth-help">Mínimo 8 caracteres.</p>
+        </div>
+        <label class="auth-check" style="margin-bottom:18px;">
+          <input type="checkbox" />
+          <span>Acepto los <a href="#s11-legal-terms" data-screen-link="s11-legal-terms">Términos</a> y la <a href="#s11-legal-privacy" data-screen-link="s11-legal-privacy">Política de privacidad</a>.</span>
+        </label>
+        <button type="button" class="btn primary full auth-submit">Crear cuenta</button>
+        <p class="auth-foot">¿Ya tienes cuenta? <a href="#s11-sign-in" data-screen-link="s11-sign-in">Inicia sesión</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Iniciar sesión -->
+<section id="s11-sign-in" class="screen" aria-labelledby="s11-signin-h1">
+  <div class="mk-public mk-bleed">
+    <header class="mk-minibar">
+      <div class="mk-container mk-minibar-inner">
+        <a href="#s11-landing" data-screen-link="s11-landing" class="mk-brand"><span class="mk-brand-mark">P</span> PandaTrack</a>
+        <div class="mk-header-spacer"></div>
+        <div class="mk-utils">
+          <span class="mk-lang"><span class="is-cur">ES</span><span class="sep">/</span><span>EN</span></span>
+          <div class="mk-theme" role="group" aria-label="Tema">
+            <button type="button" data-theme-set="light" aria-label="Tema claro"><i data-lucide="sun"></i></button>
+            <button type="button" data-theme-set="dark" aria-label="Tema oscuro"><i data-lucide="moon"></i></button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="auth-wrap">
+      <div class="auth-glow" aria-hidden="true"></div>
+      <div class="auth-card">
+        <div class="auth-head">
+          <h1 id="s11-signin-h1">Bienvenido de nuevo</h1>
+          <p>Inicia sesión para seguir con tu colección.</p>
+        </div>
+        <button type="button" class="auth-google">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continuar con Google
+        </button>
+        <div class="auth-divider">o con tu email</div>
+        <div class="auth-field">
+          <label class="auth-label" for="si-email">Email</label>
+          <input class="input" id="si-email" type="email" placeholder="tu@email.com" />
+        </div>
+        <div class="auth-field">
+          <div class="auth-label"><label for="si-pass">Contraseña</label><a href="#s11-forgot-password" data-screen-link="s11-forgot-password" class="auth-link">¿La olvidaste?</a></div>
+          <div class="auth-input-wrap">
+            <input class="input" id="si-pass" type="password" value="MiClave2026" />
+            <button type="button" class="auth-eye" data-s11-eye aria-label="Mostrar contraseña"><i data-lucide="eye"></i></button>
+          </div>
+        </div>
+        <button type="button" class="btn primary full auth-submit" style="margin-top:6px;">Iniciar sesión</button>
+        <p class="auth-foot">¿No tienes cuenta? <a href="#s11-sign-up" data-screen-link="s11-sign-up">Crea una gratis</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Iniciar sesión · Error -->
+<section id="s11-sign-in-error" class="screen" aria-labelledby="s11-signinerr-h1">
+  <div class="mk-public mk-bleed">
+    <header class="mk-minibar">
+      <div class="mk-container mk-minibar-inner">
+        <a href="#s11-landing" data-screen-link="s11-landing" class="mk-brand"><span class="mk-brand-mark">P</span> PandaTrack</a>
+        <div class="mk-header-spacer"></div>
+        <div class="mk-utils">
+          <span class="mk-lang"><span class="is-cur">ES</span><span class="sep">/</span><span>EN</span></span>
+          <div class="mk-theme" role="group" aria-label="Tema">
+            <button type="button" data-theme-set="light" aria-label="Tema claro"><i data-lucide="sun"></i></button>
+            <button type="button" data-theme-set="dark" aria-label="Tema oscuro"><i data-lucide="moon"></i></button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="auth-wrap">
+      <div class="auth-glow" aria-hidden="true"></div>
+      <div class="auth-card">
+        <div class="auth-head">
+          <h1 id="s11-signinerr-h1">Bienvenido de nuevo</h1>
+          <p>Inicia sesión para seguir con tu colección.</p>
+        </div>
+        <div class="auth-form-error" role="alert"><i data-lucide="alert-circle"></i><span>Email o contraseña incorrectos. Revisa los datos e inténtalo de nuevo.</span></div>
+        <div class="auth-field">
+          <label class="auth-label" for="sie-email">Email</label>
+          <input class="input is-error" id="sie-email" type="email" value="sergio@pandatrack.dev" aria-invalid="true" />
+        </div>
+        <div class="auth-field">
+          <div class="auth-label"><label for="sie-pass">Contraseña</label><a href="#s11-forgot-password" data-screen-link="s11-forgot-password" class="auth-link">¿La olvidaste?</a></div>
+          <div class="auth-input-wrap">
+            <input class="input is-error" id="sie-pass" type="password" value="incorrecta" aria-invalid="true" />
+            <button type="button" class="auth-eye" data-s11-eye aria-label="Mostrar contraseña"><i data-lucide="eye"></i></button>
+          </div>
+        </div>
+        <button type="button" class="btn primary full auth-submit" style="margin-top:6px;">Iniciar sesión</button>
+        <p class="auth-foot">¿No tienes cuenta? <a href="#s11-sign-up" data-screen-link="s11-sign-up">Crea una gratis</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Olvidé mi contraseña -->
+<section id="s11-forgot-password" class="screen" aria-labelledby="s11-forgot-h1">
+  <div class="mk-public mk-bleed">
+    <header class="mk-minibar">
+      <div class="mk-container mk-minibar-inner">
+        <a href="#s11-landing" data-screen-link="s11-landing" class="mk-brand"><span class="mk-brand-mark">P</span> PandaTrack</a>
+        <div class="mk-header-spacer"></div>
+        <div class="mk-utils">
+          <span class="mk-lang"><span class="is-cur">ES</span><span class="sep">/</span><span>EN</span></span>
+          <div class="mk-theme" role="group" aria-label="Tema">
+            <button type="button" data-theme-set="light" aria-label="Tema claro"><i data-lucide="sun"></i></button>
+            <button type="button" data-theme-set="dark" aria-label="Tema oscuro"><i data-lucide="moon"></i></button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="auth-wrap">
+      <div class="auth-glow" aria-hidden="true"></div>
+      <div class="auth-card">
+        <a href="#s11-sign-in" data-screen-link="s11-sign-in" class="auth-back"><i data-lucide="arrow-left"></i> Volver a iniciar sesión</a>
+        <div class="auth-head">
+          <h1 id="s11-forgot-h1">¿Olvidaste tu contraseña?</h1>
+          <p>Escribe tu email y te enviaremos un enlace para crear una nueva.</p>
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="fp-email">Email</label>
+          <input class="input" id="fp-email" type="email" placeholder="tu@email.com" />
+        </div>
+        <button type="button" class="btn primary full auth-submit">Enviar enlace</button>
+        <div class="auth-note"><i data-lucide="info"></i><span>Por tu seguridad, siempre mostramos este mensaje, exista o no una cuenta con ese email.</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Restablecer contraseña -->
+<section id="s11-reset-password" class="screen" aria-labelledby="s11-reset-h1">
+  <div class="mk-public mk-bleed">
+    <header class="mk-minibar">
+      <div class="mk-container mk-minibar-inner">
+        <a href="#s11-landing" data-screen-link="s11-landing" class="mk-brand"><span class="mk-brand-mark">P</span> PandaTrack</a>
+        <div class="mk-header-spacer"></div>
+        <div class="mk-utils">
+          <span class="mk-lang"><span class="is-cur">ES</span><span class="sep">/</span><span>EN</span></span>
+          <div class="mk-theme" role="group" aria-label="Tema">
+            <button type="button" data-theme-set="light" aria-label="Tema claro"><i data-lucide="sun"></i></button>
+            <button type="button" data-theme-set="dark" aria-label="Tema oscuro"><i data-lucide="moon"></i></button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="auth-wrap">
+      <div class="auth-glow" aria-hidden="true"></div>
+      <div class="auth-card">
+        <div class="auth-head">
+          <h1 id="s11-reset-h1">Crea una nueva contraseña</h1>
+          <p>Elige una contraseña que no uses en otro sitio.</p>
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="rp-pass">Nueva contraseña</label>
+          <div class="auth-input-wrap">
+            <input class="input" id="rp-pass" type="password" value="MiClaveNueva2026" />
+            <button type="button" class="auth-eye" data-s11-eye aria-label="Mostrar contraseña"><i data-lucide="eye"></i></button>
+          </div>
+          <p class="auth-help">Mínimo 8 caracteres.</p>
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="rp-pass2">Repetir contraseña</label>
+          <div class="auth-input-wrap">
+            <input class="input" id="rp-pass2" type="password" value="MiClaveNueva2026" />
+            <button type="button" class="auth-eye" data-s11-eye aria-label="Mostrar contraseña"><i data-lucide="eye"></i></button>
+          </div>
+        </div>
+        <button type="button" class="btn primary full auth-submit">Guardar contraseña</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Verificar email · Enviado -->
+<section id="s11-verify-email" class="screen" aria-labelledby="s11-verify-h1">
+  <div class="mk-public mk-bleed">
+    <header class="mk-minibar">
+      <div class="mk-container mk-minibar-inner">
+        <a href="#s11-landing" data-screen-link="s11-landing" class="mk-brand"><span class="mk-brand-mark">P</span> PandaTrack</a>
+        <div class="mk-header-spacer"></div>
+        <div class="mk-utils">
+          <span class="mk-lang"><span class="is-cur">ES</span><span class="sep">/</span><span>EN</span></span>
+          <div class="mk-theme" role="group" aria-label="Tema">
+            <button type="button" data-theme-set="light" aria-label="Tema claro"><i data-lucide="sun"></i></button>
+            <button type="button" data-theme-set="dark" aria-label="Tema oscuro"><i data-lucide="moon"></i></button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="auth-wrap">
+      <div class="auth-glow" aria-hidden="true"></div>
+      <div class="auth-card">
+        <span class="auth-status-icon" aria-hidden="true"><i data-lucide="mail-check"></i></span>
+        <div class="auth-head">
+          <h1 id="s11-verify-h1">Revisa tu correo</h1>
+          <p>Te enviamos un enlace de verificación a <strong>sergio@pandatrack.dev</strong>. Ábrelo para activar tu cuenta.</p>
+        </div>
+        <button type="button" class="btn ghost full">Reenviar enlace</button>
+        <div class="auth-note"><i data-lucide="info"></i><span>¿No lo ves? Revisa spam o promociones. El enlace vence en 60 minutos.</span></div>
+        <p class="auth-foot"><a href="#s11-sign-in" data-screen-link="s11-sign-in">Volver a iniciar sesión</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Verificar email · Bloqueo día 7 -->
+<section id="s11-verify-email-required" class="screen" aria-labelledby="s11-verifyreq-h1">
+  <div class="mk-public mk-bleed">
+    <header class="mk-minibar">
+      <div class="mk-container mk-minibar-inner">
+        <a href="#s11-landing" data-screen-link="s11-landing" class="mk-brand"><span class="mk-brand-mark">P</span> PandaTrack</a>
+        <div class="mk-header-spacer"></div>
+        <div class="mk-utils">
+          <span class="mk-lang"><span class="is-cur">ES</span><span class="sep">/</span><span>EN</span></span>
+          <div class="mk-theme" role="group" aria-label="Tema">
+            <button type="button" data-theme-set="light" aria-label="Tema claro"><i data-lucide="sun"></i></button>
+            <button type="button" data-theme-set="dark" aria-label="Tema oscuro"><i data-lucide="moon"></i></button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="auth-wrap">
+      <div class="auth-glow" aria-hidden="true"></div>
+      <div class="auth-card">
+        <span class="auth-status-icon tone-warning" aria-hidden="true"><i data-lucide="shield-alert"></i></span>
+        <div class="auth-head">
+          <h1 id="s11-verifyreq-h1">Verifica tu email para continuar</h1>
+          <p>Pasaron los 7 días de prueba. Verifica <strong>sergio@pandatrack.dev</strong> para seguir usando PandaTrack.</p>
+        </div>
+        <button type="button" class="btn primary full auth-submit">Reenviar enlace de verificación</button>
+        <p class="auth-foot"><a href="#s11-sign-in" data-screen-link="s11-sign-in">Cerrar sesión</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S11 · LEGAL — DESKTOP
+     ═══════════════════════════════════════════════════════════════ -->
+<!-- Privacidad -->
+<section id="s11-legal-privacy" class="screen" aria-labelledby="s11-privacy-h1">
+  <div class="mk-public mk-bleed">
+    <header class="mk-minibar">
+      <div class="mk-container mk-minibar-inner">
+        <a href="#s11-landing" data-screen-link="s11-landing" class="mk-brand"><span class="mk-brand-mark">P</span> PandaTrack</a>
+        <div class="mk-header-spacer"></div>
+        <div class="mk-utils">
+          <span class="mk-lang"><span class="is-cur">ES</span><span class="sep">/</span><span>EN</span></span>
+          <div class="mk-theme" role="group" aria-label="Tema">
+            <button type="button" data-theme-set="light" aria-label="Tema claro"><i data-lucide="sun"></i></button>
+            <button type="button" data-theme-set="dark" aria-label="Tema oscuro"><i data-lucide="moon"></i></button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="legal-doc">
+      <a href="#s11-landing" data-screen-link="s11-landing" class="legal-back"><i data-lucide="arrow-left"></i> Volver al inicio</a>
+      <div class="legal-head">
+        <span class="mk-eyebrow"><i data-lucide="shield"></i> Legal</span>
+        <h1 id="s11-privacy-h1">Política de privacidad</h1>
+        <p class="legal-updated"><i data-lucide="calendar"></i> Última actualización: febrero de 2026</p>
+      </div>
+      <p class="legal-intro">PandaTrack está pensado para coleccionistas que quieren un solo lugar donde seguir pedidos y envíos. Nos tomamos tu privacidad en serio. Esta política explica qué datos recogemos, cómo los usamos y qué derechos tienes.</p>
+      <nav class="legal-toc" aria-label="Secciones">
+        <h4>En esta página</h4>
+        <ol>
+          <li><a href="#priv-who">Quiénes somos</a></li>
+          <li><a href="#priv-data">Datos que recogemos</a></li>
+          <li><a href="#priv-use">Cómo usamos tus datos</a></li>
+          <li><a href="#priv-legal">Base legal</a></li>
+          <li><a href="#priv-sharing">Compartir datos y terceros</a></li>
+          <li><a href="#priv-retention">Conservación</a></li>
+          <li><a href="#priv-rights">Tus derechos</a></li>
+          <li><a href="#priv-cookies">Cookies</a></li>
+          <li><a href="#priv-security">Seguridad</a></li>
+          <li><a href="#priv-children">Menores</a></li>
+          <li><a href="#priv-changes">Cambios en esta política</a></li>
+          <li><a href="#priv-contact">Contacto</a></li>
+        </ol>
+      </nav>
+      <div class="legal-section" id="priv-who">
+        <h2>1 · Quiénes somos</h2>
+        <p>PandaTrack es una aplicación web que te ayuda a organizar tu coleccionismo: descubrir y guardar tiendas, registrar pedidos e ítems, seguir reservas y pagos, y controlar envíos. Tratamos tus datos para ofrecer este servicio, mejorar el producto y comunicarnos contigo de acuerdo con esta política.</p>
+      </div>
+      <div class="legal-section" id="priv-data">
+        <h2>2 · Datos que recogemos</h2>
+        <p>Recogemos la información que nos facilitas directamente (p. ej. correo al unirte a la lista de espera o crear una cuenta, datos de perfil, datos de tiendas y pedidos que añades). Podemos recoger datos técnicos como dirección IP, tipo de navegador e información de uso (p. ej. qué funciones usas) para operar y mejorar el Servicio. Podemos usar cookies y tecnologías similares, como se describe en la sección de Cookies.</p>
+      </div>
+      <div class="legal-section" id="priv-use">
+        <h2>3 · Cómo usamos tus datos</h2>
+        <p>Usamos tus datos para ofrecer y mejorar PandaTrack, enviarte avisos importantes (p. ej. notificación de lanzamiento si te uniste a la lista de espera), responder a tus solicitudes y cumplir la ley. Podemos usar datos agregados y no identificables para análisis y desarrollo del producto. No vendemos tus datos personales a terceros para su marketing.</p>
+      </div>
+      <div class="legal-section" id="priv-legal">
+        <h2>4 · Base legal (EEE/Reino Unido)</h2>
+        <p>Cuando aplique, nos apoyamos en: (1) tu consentimiento (p. ej. para la lista de espera o emails de marketing), (2) ejecución de un contrato (p. ej. para prestar el Servicio), (3) intereses legítimos (p. ej. seguridad, análisis, mejora del producto) y (4) obligación legal cuando sea necesario.</p>
+      </div>
+      <div class="legal-section" id="priv-sharing">
+        <h2>5 · Compartir datos y terceros</h2>
+        <p>Podemos compartir tus datos con proveedores que nos ayudan a operar la app (p. ej. alojamiento, email, análisis), bajo condiciones estrictas de confidencialidad y tratamiento de datos. Podemos revelar datos cuando lo exija la ley o para proteger nuestros derechos y seguridad. No vendemos ni alquilamos tu información personal.</p>
+      </div>
+      <div class="legal-section" id="priv-retention">
+        <h2>6 · Conservación</h2>
+        <p>Conservamos tus datos solo el tiempo necesario para prestar el Servicio, cumplir la ley o resolver disputas. Cuando elimines tu cuenta o nos pidas eliminar tus datos, lo haremos según nuestros procedimientos internos de conservación y borrado, salvo cuando debamos conservar datos por motivos legales.</p>
+      </div>
+      <div class="legal-section" id="priv-rights">
+        <h2>7 · Tus derechos</h2>
+        <p>Según dónde vivas, puedes tener derecho a acceder, rectificar o eliminar tus datos, a restringir u oponerte al tratamiento, a la portabilidad y a retirar el consentimiento. También puedes tener derecho a reclamar ante una autoridad de control. Para ejercer tus derechos, contacta con nosotros usando los datos de la sección Contacto.</p>
+      </div>
+      <div class="legal-section" id="priv-cookies">
+        <h2>8 · Cookies y tecnologías similares</h2>
+        <p>Usamos cookies y tecnologías similares para el funcionamiento del sitio, recordar tus preferencias y entender cómo usas PandaTrack. Puedes controlar las cookies desde la configuración de tu navegador. Algunas funciones pueden no trabajar correctamente si desactivas ciertas cookies.</p>
+      </div>
+      <div class="legal-section" id="priv-security">
+        <h2>9 · Seguridad</h2>
+        <p>Aplicamos medidas técnicas y organizativas adecuadas para proteger tus datos frente a acceso no autorizado, pérdida o uso indebido. Ningún sistema es totalmente seguro; te recomendamos usar una contraseña fuerte y mantener seguros los datos de tu cuenta.</p>
+      </div>
+      <div class="legal-section" id="priv-children">
+        <h2>10 · Menores</h2>
+        <p>El Servicio no está dirigido a menores de 13 años (o la edad mínima aplicable). No recogemos conscientemente datos personales de menores. Si crees que hemos recogido datos de un menor, contacta con nosotros para poder eliminarlos.</p>
+      </div>
+      <div class="legal-section" id="priv-changes">
+        <h2>11 · Cambios en esta política</h2>
+        <p>Podemos actualizar esta Política de privacidad de vez en cuando. Publicaremos la nueva versión en esta página y actualizaremos la fecha de «Última actualización». Para cambios importantes podemos notificártelo por correo o en la app. Te recomendamos consultar esta página periódicamente.</p>
+      </div>
+      <div class="legal-section" id="priv-contact">
+        <h2>12 · Contacto</h2>
+        <p>Si tienes preguntas sobre esta Política de privacidad o sobre tus datos, contacta con nosotros usando los datos de nuestra web o de la app. Estamos comprometidos con la transparencia y atenderemos tus solicitudes conforme a la ley aplicable.</p>
+      </div>
+      <a href="#s11-landing" data-screen-link="s11-landing" class="legal-back" style="margin-top:32px;"><i data-lucide="arrow-left"></i> Volver al inicio</a>
+    </div>
+  </div>
+</section>
+
+<!-- Términos -->
+<section id="s11-legal-terms" class="screen" aria-labelledby="s11-terms-h1">
+  <div class="mk-public mk-bleed">
+    <header class="mk-minibar">
+      <div class="mk-container mk-minibar-inner">
+        <a href="#s11-landing" data-screen-link="s11-landing" class="mk-brand"><span class="mk-brand-mark">P</span> PandaTrack</a>
+        <div class="mk-header-spacer"></div>
+        <div class="mk-utils">
+          <span class="mk-lang"><span class="is-cur">ES</span><span class="sep">/</span><span>EN</span></span>
+          <div class="mk-theme" role="group" aria-label="Tema">
+            <button type="button" data-theme-set="light" aria-label="Tema claro"><i data-lucide="sun"></i></button>
+            <button type="button" data-theme-set="dark" aria-label="Tema oscuro"><i data-lucide="moon"></i></button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="legal-doc">
+      <a href="#s11-landing" data-screen-link="s11-landing" class="legal-back"><i data-lucide="arrow-left"></i> Volver al inicio</a>
+      <div class="legal-head">
+        <span class="mk-eyebrow"><i data-lucide="scroll-text"></i> Legal</span>
+        <h1 id="s11-terms-h1">Términos de servicio</h1>
+        <p class="legal-updated"><i data-lucide="calendar"></i> Última actualización: febrero de 2026</p>
+      </div>
+      <p class="legal-intro">Bienvenido a PandaTrack. Ayudamos a los coleccionistas a tener todos sus pedidos y envíos en un solo lugar para que el seguimiento sea sencillo y sin estrés. Al usar PandaTrack aceptas estos términos. Por favor, léelos con atención.</p>
+      <nav class="legal-toc" aria-label="Secciones">
+        <h4>En esta página</h4>
+        <ol>
+          <li><a href="#terms-accept">Aceptación de los términos</a></li>
+          <li><a href="#terms-service">Descripción del servicio</a></li>
+          <li><a href="#terms-elig">Requisitos y cuenta</a></li>
+          <li><a href="#terms-conduct">Uso aceptable</a></li>
+          <li><a href="#terms-ip">Propiedad intelectual</a></li>
+          <li><a href="#terms-privacy">Privacidad</a></li>
+          <li><a href="#terms-disclaimers">Exención de responsabilidad</a></li>
+          <li><a href="#terms-changes">Cambios en los términos</a></li>
+          <li><a href="#terms-contact">Contacto</a></li>
+        </ol>
+      </nav>
+      <div class="legal-section" id="terms-accept">
+        <h2>1 · Aceptación de los términos</h2>
+        <p>Al acceder o usar PandaTrack (el «Servicio»), aceptas quedar vinculado por estos Términos de servicio. Si no estás de acuerdo, no uses el Servicio. Podemos actualizar estos términos de vez en cuando; el uso continuado tras los cambios implica que aceptas los términos actualizados.</p>
+      </div>
+      <div class="legal-section" id="terms-service">
+        <h2>2 · Descripción del servicio</h2>
+        <p>PandaTrack es una aplicación web para el seguimiento de pedidos y artículos de colección. Te permite descubrir y guardar tiendas, registrar pedidos e ítems, seguir reservas y pagos, y controlar envíos en un solo panel. El Servicio está pensado para uso personal y no comercial, para organizar tu actividad como coleccionista. Nuestro objetivo es darte una única fuente de verdad sobre qué pediste, qué está en camino y qué te queda por pagar.</p>
+      </div>
+      <div class="legal-section" id="terms-elig">
+        <h2>3 · Requisitos y cuenta</h2>
+        <p>Debes tener al menos 13 años (o la edad mínima en tu país) para usar el Servicio. Eres responsable de mantener seguras las credenciales de tu cuenta y de toda la actividad que se realice con ella. Debes facilitar información veraz al registrarte y mantenerla actualizada.</p>
+      </div>
+      <div class="legal-section" id="terms-conduct">
+        <h2>4 · Uso aceptable</h2>
+        <p>Aceptas usar el Servicio solo para fines lícitos y de acuerdo con estos términos. No puedes usar el Servicio para acosar a otros, difundir información falsa o engañosa sobre tiendas o vendedores, eludir controles de acceso o seguridad, ni usar medios automatizados para extraer datos o sobrecargar el Servicio. Podemos suspender o cerrar cuentas que incumplan estas normas.</p>
+      </div>
+      <div class="legal-section" id="terms-ip">
+        <h2>5 · Propiedad intelectual</h2>
+        <p>PandaTrack y su contenido, funciones y diseño son propiedad nuestra o de nuestros licenciantes. No puedes copiar, modificar ni crear obras derivadas del Servicio ni usar nuestras marcas sin permiso por escrito. Tú conservas la propiedad de los datos que añades (p. ej. nombres de tiendas, detalles de pedidos); nos concedes los derechos necesarios para operar y mejorar el Servicio.</p>
+      </div>
+      <div class="legal-section" id="terms-privacy">
+        <h2>6 · Privacidad</h2>
+        <p>Tu privacidad nos importa. Cómo recogemos, usamos y protegemos tus datos se describe en nuestra Política de privacidad. Al usar el Servicio también aceptas esa política.</p>
+      </div>
+      <div class="legal-section" id="terms-disclaimers">
+        <h2>7 · Exención de responsabilidad y limitación</h2>
+        <p>El Servicio se ofrece «tal cual» y «según disponibilidad». No garantizamos un funcionamiento ininterrumpido o libre de errores. PandaTrack te ayuda a organizar tu propia información de pedidos; no procesamos pagos ni enviamos productos. No somos responsables de las acciones de tiendas, vendedores o transportistas. En la máxima medida permitida por la ley, no seremos responsables por daños indirectos, incidentales o consecuentes derivados del uso del Servicio.</p>
+      </div>
+      <div class="legal-section" id="terms-changes">
+        <h2>8 · Cambios en los términos</h2>
+        <p>Podemos modificar estos términos para reflejar actualizaciones del producto o requisitos legales. Publicaremos los términos actualizados en esta página y cambiaremos la fecha de «Última actualización». Si los cambios son importantes, podemos notificártelo por correo o en la app. El uso continuado del Servicio después de que entren en vigor los cambios implica que aceptas los nuevos términos.</p>
+      </div>
+      <div class="legal-section" id="terms-contact">
+        <h2>9 · Contacto</h2>
+        <p>Si tienes dudas sobre estos Términos de servicio, puedes contactarnos mediante los datos que aparecen en nuestra web o en la app. Estaremos encantados de aclarar cómo funciona PandaTrack y cómo tratamos tus datos.</p>
+      </div>
+      <a href="#s11-landing" data-screen-link="s11-landing" class="legal-back" style="margin-top:32px;"><i data-lucide="arrow-left"></i> Volver al inicio</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     S11 · MÓVIL (390px)
+     ═══════════════════════════════════════════════════════════════ -->
+<!-- Landing móvil -->
+<section id="s11-landing-mobile" class="screen" aria-labelledby="s11-landing-mob-h1">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0;">
+      <div class="mk-public">
+        <header class="mk-header">
+          <div class="mk-container mk-header-inner" style="height:56px;padding:0 16px;">
+            <a href="#s11-landing-mobile" class="mk-brand" style="font-size:15px;"><span class="mk-brand-mark">P</span> PandaTrack</a>
+            <button class="mk-burger" type="button" aria-label="Abrir menú" data-s11-burger-open><i data-lucide="menu"></i></button>
+          </div>
+        </header>
+        <section class="mk-hero">
+          <div class="mk-hero-glow" aria-hidden="true"></div>
+          <div class="mk-container" style="padding:0 16px;">
+            <div class="mk-hero-grid">
+              <div class="mk-hero-copy">
+                <span class="mk-eyebrow"><i data-lucide="sparkles"></i> Para coleccionistas</span>
+                <h1 id="s11-landing-mob-h1" style="font-size:32px;">Toda tu colección, <span class="mk-grad-text">bajo control</span>.</h1>
+                <p class="mk-hero-sub">Pedidos de cualquier tienda, pre-reservas, pagos y entregas, siempre a la vista.</p>
+                <div class="mk-hero-cta">
+                  <a href="#s11-sign-up" data-screen-link="s11-sign-up" class="btn primary full"><i data-lucide="sparkles"></i> Crear cuenta gratis</a>
+                  <a href="#s11-sign-in" data-screen-link="s11-sign-in" class="btn ghost full">Ya tengo cuenta</a>
+                </div>
+                <p class="mk-hero-trust"><span class="dot" aria-hidden="true"></span> Gratis · Sin tarjeta</p>
+              </div>
+              <div class="mk-hero-visual">
+                <div class="mk-window mk-window-anim" role="img" aria-label="Demo de PandaTrack: un coleccionable recorre tienda, pedido, pago y entrega, y todo se ve en un solo panel.">
+                  <div class="mk-window-bar"><span class="mk-window-dot"></span><span class="mk-window-dot"></span><span class="mk-window-dot"></span></div>
+                  <div class="mk-journey" aria-hidden="true">
+                    <span class="mk-journey-cap">El viaje de tu coleccionable</span>
+                    <div class="mk-journey-rail">
+                      <div class="mk-journey-line"></div>
+                      <div class="mk-journey-token"><i data-lucide="book-open"></i></div>
+                    </div>
+                    <div class="mk-journey-steps">
+                      <div class="mk-journey-step" style="--s:0; --tile:var(--accent-cool);"><span class="mk-journey-tile"><i data-lucide="store"></i></span><span class="jl">Tienda</span></div>
+                      <div class="mk-journey-step" style="--s:1; --tile:var(--accent);"><span class="mk-journey-tile"><i data-lucide="package"></i></span><span class="jl">Pedido</span></div>
+                      <div class="mk-journey-step" style="--s:2; --tile:var(--accent-warm);"><span class="mk-journey-tile"><i data-lucide="wallet"></i></span><span class="jl">Pago</span></div>
+                      <div class="mk-journey-step" style="--s:3; --tile:var(--success);"><span class="mk-journey-tile"><i data-lucide="truck"></i></span><span class="jl">Entrega</span></div>
+                    </div>
+                  </div>
+                  <div class="mk-window-body">
+                    <div class="mk-dash-head">
+                      <span class="eyebrow">Tu colección</span>
+                      <span class="mk-dash-badge"><i data-lucide="layout-dashboard"></i> Panel</span>
+                    </div>
+                    <div class="mk-mini-stat">
+                      <div><div class="lbl">Gastado</div><div class="val num">$486</div></div>
+                      <div><div class="lbl">Pendiente</div><div class="val num" style="color:var(--warning);">$152</div></div>
+                      <div><div class="lbl">En camino</div><div class="val num">3</div></div>
+                    </div>
+                    <div class="mk-mini-row">
+                      <span class="mk-mini-ava" style="background:color-mix(in oklch,var(--accent) 14%,transparent);color:var(--accent);"><i data-lucide="package"></i></span>
+                      <span class="body"><strong>Nendoroid Hatsune Miku</strong><small>Akiba Store</small></span>
+                      <span class="chip warning"><i data-lucide="wallet"></i> Pre-reserva</span>
+                    </div>
+                    <div class="mk-mini-row">
+                      <span class="mk-mini-ava" style="background:color-mix(in oklch,var(--accent-warm) 16%,transparent);color:var(--accent-warm);"><i data-lucide="book-open"></i></span>
+                      <span class="body"><strong>Chainsaw Man Vol. 11</strong><small>HMV Japan</small></span>
+                      <span class="chip info"><i data-lucide="truck"></i> En camino</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="mk-section tinted">
+          <div class="mk-container" style="padding:0 16px;">
+            <div class="mk-section-head" style="margin-bottom:28px;">
+              <span class="mk-eyebrow"><i data-lucide="layout-grid"></i> Funciones</span>
+              <h2>Todo en una app</h2>
+            </div>
+            <div class="mk-feature-grid">
+              <article class="mk-feature-card">
+                <span class="mk-icon-tile" style="--tile:var(--accent);"><i data-lucide="store"></i></span>
+                <h3>Tiendas de confianza</h3>
+                <p>Guarda las tiendas donde compras y reconoce a las que ya conoces.</p>
+              </article>
+              <article class="mk-feature-card">
+                <span class="mk-icon-tile" style="--tile:var(--success);"><i data-lucide="badge-dollar-sign"></i></span>
+                <h3>Pre-reservas sin sorpresas</h3>
+                <p>Lo que ya señaste y lo que aún falta pagar, siempre claro.</p>
+              </article>
+              <article class="mk-feature-card">
+                <span class="mk-icon-tile" style="--tile:var(--accent-warm);"><i data-lucide="truck"></i></span>
+                <h3>Entregas, incluso divididas</h3>
+                <p>Sigue cada entrega hasta tus manos, aunque llegue en varios envíos.</p>
+              </article>
+            </div>
+          </div>
+        </section>
+        <section class="mk-section">
+          <div class="mk-container" style="padding:0 16px;">
+            <div class="mk-banner-card" style="padding:36px 22px;">
+              <h2>Tu colección merece estar en orden</h2>
+              <p>Crea tu cuenta gratis y reúne todo en un solo lugar. Toma menos de un minuto.</p>
+              <a href="#s11-sign-up" data-screen-link="s11-sign-up" class="btn primary full"><i data-lucide="arrow-right"></i> Crear cuenta gratis</a>
+            </div>
+          </div>
+        </section>
+        <footer class="mk-footer">
+          <div class="mk-container" style="padding:0 16px;">
+            <div class="mk-footer-top">
+              <div>
+                <span class="mk-brand"><span class="mk-brand-mark">P</span> PandaTrack</span>
+                <p class="mk-footer-tagline">Toda tu colección en un solo lugar: pedidos, pre-reservas y entregas.</p>
+              </div>
+              <div class="mk-footer-cols">
+                <div class="mk-footer-col">
+                  <h4>Cuenta</h4>
+                  <a href="#s11-sign-up" data-screen-link="s11-sign-up">Crear cuenta</a>
+                  <a href="#s11-sign-in" data-screen-link="s11-sign-in">Iniciar sesión</a>
+                </div>
+                <div class="mk-footer-col">
+                  <h4>Legal</h4>
+                  <a href="#s11-legal-privacy-mobile" data-screen-link="s11-legal-privacy-mobile">Privacidad</a>
+                  <a href="#s11-legal-terms" data-screen-link="s11-legal-terms">Términos</a>
+                </div>
+              </div>
+            </div>
+            <div class="mk-footer-bottom">
+              <span class="mk-footer-copy">© 2026 PandaTrack</span>
+              <div class="mk-footer-social">
+                <a href="#" aria-label="Email"><i data-lucide="mail"></i></a>
+                <a href="#" aria-label="Instagram"><i data-lucide="message-circle"></i></a>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </div>
+      <!-- Burger sheet -->
+      <div class="mk-sheet" data-s11-sheet>
+        <div class="mk-sheet-backdrop" data-s11-burger-close></div>
+        <div class="mk-sheet-panel">
+          <div class="mk-sheet-head">
+            <span class="mk-brand" style="font-size:15px;"><span class="mk-brand-mark">P</span> PandaTrack</span>
+            <button class="mk-sheet-close" type="button" aria-label="Cerrar menú" data-s11-burger-close><i data-lucide="x"></i></button>
+          </div>
+          <a href="#s11-landing-mobile" class="mk-sheet-link" data-s11-burger-close>Para quién</a>
+          <a href="#s11-landing-mobile" class="mk-sheet-link" data-s11-burger-close>Funciones</a>
+          <a href="#s11-landing-mobile" class="mk-sheet-link" data-s11-burger-close>Preguntas</a>
+          <div style="height:1px;background:var(--border);margin:10px 0;"></div>
+          <div class="mk-utils" style="padding:6px 12px;">
+            <span class="mk-lang"><span class="is-cur">ES</span><span class="sep">/</span><span>EN</span></span>
+            <div class="mk-theme" role="group" aria-label="Tema">
+              <button type="button" data-theme-set="light" aria-label="Tema claro"><i data-lucide="sun"></i></button>
+              <button type="button" data-theme-set="dark" aria-label="Tema oscuro"><i data-lucide="moon"></i></button>
+            </div>
+          </div>
+          <a href="#s11-sign-in" data-screen-link="s11-sign-in" class="btn ghost full" style="margin-top:8px;" data-s11-burger-close>Iniciar sesión</a>
+          <a href="#s11-sign-up" data-screen-link="s11-sign-up" class="btn primary full" style="margin-top:8px;" data-s11-burger-close>Crear cuenta</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Iniciar sesión móvil -->
+<section id="s11-sign-in-mobile" class="screen" aria-labelledby="s11-signin-mob-h1">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0;">
+      <div class="mk-public">
+        <header class="mk-minibar">
+          <div class="mk-container mk-minibar-inner" style="height:56px;padding:0 16px;">
+            <a href="#s11-landing-mobile" data-screen-link="s11-landing-mobile" class="mk-brand" style="font-size:15px;"><span class="mk-brand-mark">P</span> PandaTrack</a>
+            <div class="mk-header-spacer"></div>
+            <div class="mk-theme" role="group" aria-label="Tema">
+              <button type="button" data-theme-set="light" aria-label="Tema claro"><i data-lucide="sun"></i></button>
+              <button type="button" data-theme-set="dark" aria-label="Tema oscuro"><i data-lucide="moon"></i></button>
+            </div>
+          </div>
+        </header>
+        <div class="auth-wrap" style="padding:28px 16px 40px;">
+          <div class="auth-glow" aria-hidden="true"></div>
+          <div class="auth-card">
+            <div class="auth-head">
+              <h1 id="s11-signin-mob-h1">Bienvenido de nuevo</h1>
+              <p>Inicia sesión para seguir con tu colección.</p>
+            </div>
+            <button type="button" class="auth-google">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+              Continuar con Google
+            </button>
+            <div class="auth-divider">o con tu email</div>
+            <div class="auth-field">
+              <label class="auth-label" for="sim-email">Email</label>
+              <input class="input" id="sim-email" type="email" placeholder="tu@email.com" />
+            </div>
+            <div class="auth-field">
+              <div class="auth-label"><label for="sim-pass">Contraseña</label><a href="#s11-forgot-password" data-screen-link="s11-forgot-password" class="auth-link">¿La olvidaste?</a></div>
+              <div class="auth-input-wrap">
+                <input class="input" id="sim-pass" type="password" value="MiClave2026" />
+                <button type="button" class="auth-eye" data-s11-eye aria-label="Mostrar contraseña"><i data-lucide="eye"></i></button>
+              </div>
+            </div>
+            <button type="button" class="btn primary full auth-submit" style="margin-top:6px;">Iniciar sesión</button>
+            <p class="auth-foot">¿No tienes cuenta? <a href="#s11-sign-up" data-screen-link="s11-sign-up">Crea una gratis</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Privacidad móvil -->
+<section id="s11-legal-privacy-mobile" class="screen" aria-labelledby="s11-privacy-mob-h1">
+  <div class="app-shell" style="--sidebar-width:0px;">
+    <div class="app-content" style="padding:0;">
+      <div class="mk-public">
+        <header class="mk-minibar">
+          <div class="mk-container mk-minibar-inner" style="height:56px;padding:0 16px;">
+            <a href="#s11-landing-mobile" data-screen-link="s11-landing-mobile" class="mk-brand" style="font-size:15px;"><span class="mk-brand-mark">P</span> PandaTrack</a>
+            <div class="mk-header-spacer"></div>
+            <div class="mk-theme" role="group" aria-label="Tema">
+              <button type="button" data-theme-set="light" aria-label="Tema claro"><i data-lucide="sun"></i></button>
+              <button type="button" data-theme-set="dark" aria-label="Tema oscuro"><i data-lucide="moon"></i></button>
+            </div>
+          </div>
+        </header>
+        <div class="legal-doc" style="padding:24px 16px 48px;">
+          <a href="#s11-landing-mobile" data-screen-link="s11-landing-mobile" class="legal-back"><i data-lucide="arrow-left"></i> Volver al inicio</a>
+          <div class="legal-head">
+            <span class="mk-eyebrow"><i data-lucide="shield"></i> Legal</span>
+            <h1 id="s11-privacy-mob-h1">Política de privacidad</h1>
+            <p class="legal-updated"><i data-lucide="calendar"></i> Última actualización: febrero de 2026</p>
+          </div>
+          <p class="legal-intro">PandaTrack está pensado para coleccionistas que quieren un solo lugar donde seguir pedidos y envíos. Nos tomamos tu privacidad en serio. Esta política explica qué datos recogemos, cómo los usamos y qué derechos tienes.</p>
+          <div class="legal-section">
+            <h2>1 · Quiénes somos</h2>
+            <p>PandaTrack es una aplicación web que te ayuda a organizar tu coleccionismo: descubrir y guardar tiendas, registrar pedidos e ítems, seguir reservas y pagos, y controlar envíos.</p>
+          </div>
+          <div class="legal-section">
+            <h2>2 · Datos que recogemos</h2>
+            <p>La información que nos facilitas directamente (correo, perfil, tiendas y pedidos que añades) y datos técnicos como IP, navegador e información de uso para operar y mejorar el Servicio.</p>
+          </div>
+          <div class="legal-section">
+            <h2>3 · Cómo usamos tus datos</h2>
+            <p>Para ofrecer y mejorar PandaTrack, enviarte avisos importantes, responder a tus solicitudes y cumplir la ley. No vendemos tus datos personales a terceros para su marketing.</p>
+          </div>
+          <a href="#s11-landing-mobile" data-screen-link="s11-landing-mobile" class="legal-back" style="margin-top:28px;"><i data-lucide="arrow-left"></i> Volver al inicio</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <!-- Filter drawer (mobile sheet / desktop drawer derecho) -->
@@ -17683,6 +19052,19 @@
     's8-settings-displayname-sheet-mobile': 'S8 · Sheet · Nombre visible',
     's8-settings-avatar-sheet-mobile':   'S8 · Sheet · Foto de perfil',
     's8-settings-currency-sheet-mobile': 'S8 · Sheet · Moneda base (FR-07-32)',
+    's11-landing':               'S11 · Landing (go-live)',
+    's11-sign-up':               'S11 · Crear cuenta',
+    's11-sign-in':               'S11 · Iniciar sesión',
+    's11-sign-in-error':         'S11 · Iniciar sesión · Error',
+    's11-forgot-password':       'S11 · Olvidé mi contraseña',
+    's11-reset-password':        'S11 · Restablecer contraseña',
+    's11-verify-email':          'S11 · Verificar email · Enviado',
+    's11-verify-email-required': 'S11 · Verificar email · Bloqueo día 7',
+    's11-legal-privacy':         'S11 · Privacidad',
+    's11-legal-terms':           'S11 · Términos',
+    's11-landing-mobile':        'S11 · Móvil · Landing',
+    's11-sign-in-mobile':        'S11 · Móvil · Iniciar sesión',
+    's11-legal-privacy-mobile':  'S11 · Móvil · Privacidad',
   };
 
   function showScreen(id) {
@@ -18239,6 +19621,55 @@
     // Edit screen reuses same hint pattern with class selectors
     document.querySelectorAll('.s7-mod-key-ref').forEach(el => { el.textContent = '⌘'; });
     document.querySelectorAll('.s7-alt-key-ref').forEach(el => { el.textContent = '⌥'; });
+  })();
+
+  // ── S11 · Landing + Auth interacciones (demo-only) ──────────
+  (function () {
+    // Scroll interno de la landing (no usa el hash router para no saltar de pantalla)
+    document.querySelectorAll('[data-s11-scroll]').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        const target = document.getElementById(link.dataset.s11Scroll);
+        if (target) {
+          const y = target.getBoundingClientRect().top + window.scrollY - 60;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      });
+    });
+
+    // Burger sheet (landing móvil)
+    document.querySelectorAll('[data-s11-burger-open]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        btn.closest('.screen')?.querySelector('[data-s11-sheet]')?.classList.add('is-open');
+      });
+    });
+    document.querySelectorAll('[data-s11-burger-close]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.closest('[data-s11-sheet]')?.classList.remove('is-open');
+      });
+    });
+
+    // Password visibility toggle
+    document.querySelectorAll('[data-s11-eye]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const input = btn.closest('.auth-input-wrap')?.querySelector('.input');
+        if (!input) return;
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        btn.innerHTML = '<i data-lucide="' + (show ? 'eye-off' : 'eye') + '"></i>';
+        btn.setAttribute('aria-label', show ? 'Ocultar contraseña' : 'Mostrar contraseña');
+        lucide.createIcons();
+      });
+    });
+
+    // FAQ accordion
+    document.querySelectorAll('[data-s11-faq]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.closest('.mk-faq-item')?.classList.toggle('is-open');
+      });
+    });
   })();
 
   // ── Initial Lucide pass ─────────────────────────────────────
