@@ -11,7 +11,9 @@
     "switchToDark": "Cambiar a modo oscuro"
   },
   "legal": {
-    "backToHome": "← Volver al inicio"
+    "eyebrow": "Legal",
+    "backToHome": "Volver al inicio",
+    "tableOfContents": "En esta página"
   },
   "dismiss": "Cerrar"
 }

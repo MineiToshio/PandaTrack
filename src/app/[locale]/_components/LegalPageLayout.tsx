@@ -1,12 +1,8 @@
+import { ArrowLeft, Calendar, ScrollText, Shield } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import Heading from "@/components/core/Heading";
-import Typography from "@/components/core/Typography";
+import PublicMinibar from "@/app/[locale]/_components/public/PublicMinibar";
 import { ROUTES } from "@/lib/constants";
-import { cn } from "@/lib/styles";
-
-const LEGAL_BACK_LINK_CLASS =
-  "text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md inline-flex items-center gap-1 text-sm font-medium transition-colors";
 
 type LegalPageLayoutProps = {
   namespace: "terms" | "privacy";
@@ -18,59 +14,65 @@ function splitBodyIntoParagraphs(body: string): string[] {
   return body.split(/\n\n+/).filter((block) => block.trim().length > 0);
 }
 
+/**
+ * Standalone legal document (`.legal-doc`): public minibar + back-link, head
+ * (eyebrow + title + updated date), intro, table of contents, numbered
+ * sections. Content stays verbatim from i18n (privacy.json / terms.json).
+ */
 export default function LegalPageLayout({ namespace, sectionKeys, locale }: LegalPageLayoutProps) {
   const t = useTranslations(namespace);
   const tLegal = useTranslations("common.legal");
+  const homeHref = `/${locale}${ROUTES.home}`;
+  const EyebrowIcon = namespace === "privacy" ? Shield : ScrollText;
 
   return (
-    <main className={cn("bg-background text-foreground min-h-screen px-4 py-12 md:px-6 md:py-16 lg:px-8")}>
-      <div className="mx-auto max-w-3xl">
-        <Link href={`/${locale}${ROUTES.home}`} className={LEGAL_BACK_LINK_CLASS}>
-          {tLegal("backToHome")}
+    <div className="mk-public flex min-h-screen flex-col">
+      <PublicMinibar />
+      <main className="legal-doc">
+        <Link href={homeHref} className="legal-back">
+          <ArrowLeft aria-hidden="true" /> {tLegal("backToHome")}
         </Link>
 
-        <header className="mt-8 mb-10">
-          <Heading as="h1" size="md" className="text-text-title mb-2">
-            {t("title")}
-          </Heading>
-          <Typography size="xs" className="text-muted-foreground" as="p">
-            {t("lastUpdated")}
-          </Typography>
-        </header>
-
-        <Typography size="md" className="text-text-body mb-10 leading-relaxed">
-          {t("intro")}
-        </Typography>
-
-        <div className="space-y-10">
-          {sectionKeys.map((key) => {
-            const title = t(`${key}Title`);
-            const body = t(`${key}Body`);
-            const paragraphs = splitBodyIntoParagraphs(body);
-
-            return (
-              <section key={key} id={key} aria-labelledby={`${key}-heading`} className="scroll-mt-24">
-                <Heading as="h2" id={`${key}-heading`} size="xs" className="text-text-title mb-3 font-semibold">
-                  {title}
-                </Heading>
-                <div className="space-y-3">
-                  {paragraphs.map((paragraph, index) => (
-                    <Typography key={index} size="sm" className="text-text-body leading-relaxed" as="p">
-                      {paragraph}
-                    </Typography>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+        <div className="legal-head">
+          <span className="mk-eyebrow">
+            <EyebrowIcon aria-hidden="true" /> {tLegal("eyebrow")}
+          </span>
+          <h1>{t("title")}</h1>
+          <p className="legal-updated">
+            <Calendar aria-hidden="true" /> {t("lastUpdated")}
+          </p>
         </div>
 
-        <footer className="border-border mt-14 border-t pt-8">
-          <Link href={`/${locale}${ROUTES.home}`} className={LEGAL_BACK_LINK_CLASS}>
-            {tLegal("backToHome")}
-          </Link>
-        </footer>
-      </div>
-    </main>
+        <p className="legal-intro">{t("intro")}</p>
+
+        <nav className="legal-toc" aria-label={tLegal("tableOfContents")}>
+          <h4>{tLegal("tableOfContents")}</h4>
+          <ol>
+            {sectionKeys.map((key) => (
+              <li key={key}>
+                <a href={`#${key}`}>{t(`${key}Title`)}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+
+        {sectionKeys.map((key) => {
+          const paragraphs = splitBodyIntoParagraphs(t(`${key}Body`));
+
+          return (
+            <section key={key} id={key} aria-labelledby={`${key}-heading`} className="legal-section scroll-mt-20">
+              <h2 id={`${key}-heading`}>{t(`${key}Title`)}</h2>
+              {paragraphs.map((paragraph, index) => (
+                <p key={index}>{paragraph}</p>
+              ))}
+            </section>
+          );
+        })}
+
+        <Link href={homeHref} className="legal-back mt-8">
+          <ArrowLeft aria-hidden="true" /> {tLegal("backToHome")}
+        </Link>
+      </main>
+    </div>
   );
 }

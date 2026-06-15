@@ -11,7 +11,9 @@
     "switchToDark": "Switch to dark mode"
   },
   "legal": {
-    "backToHome": "← Back to home"
+    "eyebrow": "Legal",
+    "backToHome": "Back to home",
+    "tableOfContents": "On this page"
   },
   "dismiss": "Dismiss"
 }
