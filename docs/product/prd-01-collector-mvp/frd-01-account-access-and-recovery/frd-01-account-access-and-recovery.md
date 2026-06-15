@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-06-13
+last_updated: 2026-06-15
 source_features:
   - FEAT-0008
   - FEAT-0009
@@ -19,6 +19,14 @@ implementation_status: IMPLEMENTED
 ## Overview
 
 This FRD defines the identity and access layer for PandaTrack's collector workspace.
+
+> **Implementation note (redesign S11, 2026-06-15).** The six auth screens (sign-up,
+> sign-in, sign-in error, forgot-password, reset-password, verify-email and the day-7
+> verification gate) were restyled to the public auth-card layout (slim minibar +
+> centered card + accent glow, multicolor Google button, top error banner, tonal status
+> icons). This is a **presentation-only** change — flow and acceptance criteria are
+> unchanged. The reset screen now confirms the password against a "repeat password" field
+> before submitting (UX guard; no AC change). See `docs/redesign/screens/auth.md`.
 
 It consolidates:
 

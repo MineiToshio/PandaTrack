@@ -3,17 +3,30 @@ id: FRD-01
 type: FRD
 slug: pre-release-landing
 title: Pre-release Landing and Waitlist Capture
-status: ACTIVE
+status: SUPERSEDED
 parent: PRD-00
 children:
   - BP-01
-last_updated: 2026-03-21
+last_updated: 2026-06-15
 source_features:
   - FEAT-0001
-implementation_status: IMPLEMENTED
+implementation_status: SUPERSEDED_BY_GO_LIVE
+superseded_by: docs/redesign/modules/landing-onboarding.md
 ---
 
 # FRD-01 Pre-release Landing and Waitlist Capture
+
+> **SUPERSEDED — go-live transition (redesign S11, 2026-06-15).** The pre-release
+> waitlist landing this FRD describes has been replaced by the **go-live landing with
+> sign-up** (collector MVP entry). The waitlist form, success/share state, and the
+> Kit (ConvertKit) + Google Sheets + referral integrations were removed from the
+> landing; every CTA now points to `/sign-up` (with a secondary `/sign-in`). The
+> redesigned landing belongs to the collector MVP rather than this pre-release FRD —
+> the transition was anticipated below under "Superseded or transitional". The shipped
+> behavior and copy live in `docs/redesign/modules/landing-onboarding.md` and
+> `docs/redesign/screens/landing.md`. The functional requirements below are retained
+> for historical context; the waitlist-specific ones (FR-01-02..07) are **no longer in
+> effect**.
 
 ## Overview
 
@@ -27,18 +40,24 @@ It is reverse-engineered from:
 
 ## Current State
 
-### Implemented
+> Updated 2026-06-15 (redesign S11 go-live). The lists below reflect the **shipped go-live landing**, not the original pre-release waitlist flow.
 
-- localized home route with hero, problem framing, features, banner, FAQs, waitlist, and footer
-- CTA flow anchored to the waitlist section
-- waitlist form with required email and optional name/comment
-- success/share state after submission
-- server action that validates, submits, and maps errors into UI states
+### Implemented (go-live)
+
+- localized home route with hero (animated product window), problem framing, features, full-width banner, FAQ accordion, and footer
+- auth-first CTA flow: every CTA points to `/sign-up`; the header also exposes `/sign-in`
+- marketing header with smooth in-page scroll nav + mobile burger sheet; public theme/language toggles
+
+### Removed in the go-live transition
+
+- waitlist form (required email + optional name/comment) and the success/share state
+- Kit (ConvertKit), Google Sheets, and referral-share integrations and their env vars
+- waitlist PostHog events (replaced by the sign-up funnel events)
 
 ### Superseded or transitional
 
-- this flow represents the pre-auth entry model
-- later auth-first CTA behavior belongs to the collector MVP rather than this FRD
+- this FRD represents the pre-auth (waitlist) entry model and is now **superseded**
+- the auth-first go-live landing belongs to the collector MVP (PRD-01); implementation is tracked in `docs/redesign/modules/landing-onboarding.md`
 
 ## User Stories
 

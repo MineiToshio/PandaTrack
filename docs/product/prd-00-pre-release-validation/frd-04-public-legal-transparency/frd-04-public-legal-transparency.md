@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-00
 children:
   - BP-01
-last_updated: 2026-03-21
+last_updated: 2026-06-15
 source_features:
   - FEAT-0006
   - FEAT-0007
@@ -19,6 +19,13 @@ implementation_status: IMPLEMENTED
 ## Overview
 
 This FRD defines the public privacy and terms pages that support PandaTrack's pre-release trust and compliance posture.
+
+> **Implementation note (redesign S11, 2026-06-15).** The privacy and terms pages were
+> restyled to the standalone legal-document layout (`LegalPageLayout`: public minibar,
+> back-link, eyebrow + updated-date head, table of contents, numbered sections). This is
+> a **presentation-only** change — no functional requirement changed; content still comes
+> verbatim from i18n (`privacy.json` / `terms.json`, FR-04-03). See
+> `docs/redesign/screens/legal.md`.
 
 ## Functional Requirements
 
