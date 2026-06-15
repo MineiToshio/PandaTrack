@@ -13,7 +13,7 @@ test.describe("Auth critical flows", () => {
 
     await page.getByRole("button", { name: "Sign in" }).click();
 
-    await expect(page.locator('p[role="alert"]')).toBeVisible();
+    await expect(page.locator(".auth-form-error")).toBeVisible();
 
     await page.locator('a[href="/en/forgot-password"]').click();
 
@@ -35,13 +35,13 @@ test.describe("Auth critical flows", () => {
 
     await page.goto("/en/forgot-password");
     await page.getByLabel("Email").fill("collector@example.com");
-    await page.getByRole("button", { name: "Send reset link" }).click();
+    await page.getByRole("button", { name: "Send link" }).click();
 
     await expect(page.getByRole("status")).toBeVisible();
     await expect(page.getByRole("status")).not.toContainText("wait");
-    await expect(page.getByRole("button", { name: "Send reset link" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Send link" })).toBeEnabled();
 
-    await page.getByRole("button", { name: "Send reset link" }).click();
+    await page.getByRole("button", { name: "Send link" }).click();
 
     await expect(page.getByRole("status")).toContainText("wait");
     expect(requestCount).toBe(1);
@@ -68,7 +68,8 @@ test.describe("Auth critical flows", () => {
 
     await page.goto("/en/reset-password?token=valid-token");
     await page.getByLabel("New password").fill("new-password-123");
-    await page.getByRole("button", { name: "Update password" }).click();
+    await page.getByLabel("Repeat password").fill("new-password-123");
+    await page.getByRole("button", { name: "Save password" }).click();
 
     await expect(page.getByRole("heading", { level: 1, name: "Password updated" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Go to sign in" })).toBeVisible();
@@ -89,8 +90,8 @@ test.describe("Auth critical flows", () => {
     await page.goto("/en/sign-up");
     await page.getByLabel("Email").fill("collector@example.com");
     await page.locator('input[name="password"]').fill("correct horse battery staple");
-    await page.getByRole("button", { name: "Sign up" }).click();
+    await page.getByRole("button", { name: "Create account" }).click();
 
-    await expect(page.locator('p[role="alert"]')).toBeVisible();
+    await expect(page.locator(".auth-form-error")).toBeVisible();
   });
 });
