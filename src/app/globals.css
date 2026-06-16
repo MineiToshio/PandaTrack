@@ -5,7 +5,7 @@
 
 /* ═══════════════════════════════════════════════════════════
    PANDATRACK DESIGN SYSTEM
-   Token system — see docs/redesign/tokens-css.md
+   Token system — see docs/design/tokens-css.md
    ═══════════════════════════════════════════════════════════ */
 
 /* ───────────────────────────────────────────────────────────
@@ -191,29 +191,23 @@
 
   /* ── Backward-compatibility aliases for legacy Tailwind utilities ──
      Map old tokens directly to new ones to avoid conflicts
-     with font-size names now using --text-title / --text-body */
-  --color-background: var(--background);
+     with font-size names now using --text-title / --text-body.
+     Canonical system colors (background, surface, border, accent,
+     success, warning, destructive, info) are declared once above. */
   --color-foreground: var(--foreground);
-  --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-card: var(--card);
   --color-popover: var(--popover);
-  --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-info: var(--info);
   --color-highlight: var(--highlight);
   --color-highlight-foreground: var(--highlight-foreground);
   --color-link: var(--link);
@@ -679,32 +673,6 @@ body {
   align-items: center;
   gap: 16px;
   height: 64px;
-}
-.mk-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: -0.01em;
-  color: var(--text-primary);
-  flex-shrink: 0;
-}
-.mk-brand-mark {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  background: linear-gradient(
-    135deg,
-    color-mix(in oklch, var(--accent) 22%, var(--surface-elevated)),
-    color-mix(in oklch, var(--accent-warm) 20%, var(--surface-elevated))
-  );
-  border: 1px solid color-mix(in oklch, var(--accent) 30%, var(--border));
-  color: var(--accent);
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  font-size: 15px;
 }
 .mk-nav {
   display: none;

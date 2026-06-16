@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/styles";
+import Logo from "@/components/core/Logo";
 
 type BrandMarkProps = {
   /** When set, renders a link to this href (e.g. the localized home). Otherwise a plain span. */
@@ -10,27 +10,15 @@ type BrandMarkProps = {
   className?: string;
 };
 
-/**
- * Public brand lockup: gradient "P" tile + wordmark. Shared by the marketing
- * header, the public minibar (auth/legal) and the footer. Visual: `.mk-brand`.
- */
+/** Public wordmark. Shared by the marketing header, minibar, and footer. */
 export default function BrandMark({ href, ariaLabel, className }: BrandMarkProps) {
-  const content = (
-    <>
-      <span className="mk-brand-mark" aria-hidden="true">
-        {APP_NAME.charAt(0)}
-      </span>
-      {APP_NAME}
-    </>
-  );
-
   if (href) {
     return (
-      <Link href={href} className={cn("mk-brand", className)} aria-label={ariaLabel}>
-        {content}
+      <Link href={href} aria-label={ariaLabel} className={cn("inline-flex flex-shrink-0 items-center", className)}>
+        <Logo />
       </Link>
     );
   }
 
-  return <span className={cn("mk-brand", className)}>{content}</span>;
+  return <Logo className={className} />;
 }
