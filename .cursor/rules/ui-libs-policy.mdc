@@ -8,7 +8,7 @@ alwaysApply: true
 PandaTrack is built with **hand-rolled UI primitives** (Modal, Sheet, FilterDrawer, Portal, Button, Input, Select, Combobox, Chip, etc.). External UI primitive libraries and design systems are **not allowed as top-level dependencies** unless explicitly approved by an ADR.
 
 The full policy lives in
-[`docs/redesign/decisions/0010-ui-primitive-libraries-policy.md`](../../docs/redesign/decisions/0010-ui-primitive-libraries-policy.md).
+[`docs/design/decisions/0010-ui-primitive-libraries-policy.md`](../../docs/design/decisions/0010-ui-primitive-libraries-policy.md).
 Read it before adding any UI dependency.
 
 ## Hard rules
@@ -25,7 +25,7 @@ Read it before adding any UI dependency.
 
 If you genuinely need a new UI lib, before installing it:
 
-1. Open an ADR in `docs/redesign/decisions/` with: motivation, alternatives considered (including DIY estimate), bundle impact, maintenance cost, and a justification for why hand-rolling is not viable.
+1. Open an ADR in `docs/design/decisions/` with: motivation, alternatives considered (including DIY estimate), bundle impact, maintenance cost, and a justification for why hand-rolling is not viable.
 2. Get explicit human approval on the ADR.
 3. Update ADR 0010 ("Excepciones aprobadas" section) with the new entry.
 4. Update this rule's approved list.

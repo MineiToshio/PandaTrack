@@ -1,6 +1,6 @@
 # Visual Foundations
 
-This document defines PandaTrack's visual language: semantic design variables, typography, color, spacing, surfaces, radius, elevation, shadows, and gradients.
+This document is the source of truth for the PandaTrack **Velvet** visual foundations: the theme model, the semantic color tokens, typography, spacing, border radius, surfaces and elevation, gradients, and the rules that hold the system together. Every value here is normative. Components consume the semantic tokens defined below — never hardcoded colors, sizes, or radii. The literal CSS-variable declarations (the `oklch(...)` values) live in [`tokens-css.md`](tokens-css.md) and in `src/app/globals.css`; this file documents the contract, the intent, and the durable reasoning.
 
 ## Number and currency formatting
 
@@ -32,457 +32,338 @@ This document defines PandaTrack's visual language: semantic design variables, t
 - Use `.toFixed(1)` or `.toFixed(2)` for display — these always produce period-separated output.
 - Do not pass them through `Intl.NumberFormat` with a non-`"en"` locale.
 
-## Typography
-
-### Font Families
-
-#### Primary body font: Open Sans
-
-Defined in `src/lib/fonts.ts` as `--font-regular` and mapped to Tailwind `font-sans`.
-
-Use for:
-
-- paragraphs
-- form labels
-- helper text
-- table and list content
-- buttons by default
-- dense app content
-
-#### Secondary display and structural font: Roboto Condensed
-
-Defined as `--font-secondary`.
-
-Use for:
-
-- compact navigation
-- structural labels that need stronger editorial rhythm
-- selective section emphasis
-
-Rule:
-
-- do not use `font-secondary` for long reading blocks or form-heavy content
-
-#### Brand font: Zilla Slab Highlight
-
-Defined as `--font-logo`.
-
-Use only for:
-
-- PandaTrack wordmark and logo
-
-Rule:
-
-- never use the logo font for body copy, headings, controls, or cards
-
-### Type Scale
-
-#### Body scale
-
-Implemented in `src/components/core/Typography.tsx`.
-
-| Variable | Current class mapping  | Use                                                   |
-| -------- | ---------------------- | ----------------------------------------------------- |
-| `2xs`    | `text-xs`              | fine print, disclaimers, metadata labels              |
-| `xs`     | `text-xs sm:text-sm`   | helper text, compact descriptions, secondary labels   |
-| `sm`     | `text-sm sm:text-base` | standard supporting text, card details, form guidance |
-| `md`     | `text-base sm:text-lg` | default paragraph and section text                    |
-| `lg`     | `text-lg sm:text-xl`   | prominent body copy, intro text                       |
-
-Rules:
-
-- use `md` as the default paragraph size
-- use `sm` for dense app UI
-- use `xs` and `2xs` only for secondary information
-
-#### Heading scale
-
-Implemented in `src/components/core/Heading.tsx`.
-
-| Variable | Current class mapping              | Use                                                                                                             |
-| -------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `lg`     | `text-5xl md:text-6xl lg:text-7xl` | hero headlines only                                                                                             |
-| `md`     | `text-4xl md:text-5xl lg:text-6xl` | large section headers and high-impact titles                                                                    |
-| `sm`     | `text-2xl md:text-3xl lg:text-4xl` | **private-app screen titles (`h1`)** when the page stacks major sections below; large marketing section headers |
-| `xs`     | `text-lg font-semibold`            | **major section titles (`h2`) under that private-app `h1`**; card titles, modal titles, compact in-card headers |
-
-Rules:
-
-- one dominant `h1` per screen; it must read as the strongest heading on the page (larger and heavier than in-page section `h2`s)
-- `lg` and `md` belong mostly to landing and high-visibility sections
-- on private-app pages that combine a top hero header with sibling section panels, use `Heading size="sm"` for the page `h1` and `Heading size="xs"` for each major section `h2`; do not shrink the `h1` with body utilities such as `text-base`, or section headings will visually outrank the page title
-- titles inside modals, tab panels, and dense summary surfaces must still read as titles, not helper text
-
-### Font Weights
-
-Observed weight system:
-
-- `400` regular
-- `500` medium
-- `600` semibold
-- `700` bold
-
-Guidance:
-
-- `400`: default reading text
-- `500`: labels, metadata, minor emphasis
-- `600`: section labels, key values, card headings
-- `700`: hero headlines and major promotional emphasis
-
-Rules:
-
-- prefer weight changes only when they signal hierarchy
-- avoid light weights in product UI
-
-### Letter Spacing And Text Transform
-
-Observed patterns:
-
-- headings use tighter tracking
-- eyebrow labels use wide tracking with uppercase
-- body copy uses normal tracking
-
-Rules:
-
-- tight tracking is for display headings only
-- wide uppercase tracking is reserved for eyebrow labels, micro-badges, and high-level categorization
-
 ## Color System
 
-### Theme Model
+### Theme model
 
-Theme variables live in `src/app/globals.css`:
+Light and dark are **siblings, not inversions.** Every token has an independently calculated value for each mode. There are no tokens that "flip" and there is never a `filter: invert(1)`. The two modes are designed to feel like the same product viewed under different light, not like a photo and its negative.
 
-- `:root` is the dark baseline
-- `:root[data-theme="light"]` defines explicit light theme
-- `@media (prefers-color-scheme: light)` defines the light fallback when no explicit theme is selected
+Two hard constraints anchor the whole palette:
 
-### Color Roles
+- **Never pure black or pure white.** The light canvas is a warm lead-violet "old letter paper", not hospital white; the dark canvas is a deep night blue-violet, not `#000`. Even `--text-on-accent` (the one near-white) carries a faint chroma in light mode.
+- **WCAG 2.2 AA is inviolable** for every foreground/background pair. Body, labels, and chip text meet ≥4.5:1; UI components, focus rings, and functional borders meet ≥3:1; text over `--accent` targets ≥4.5:1. `--text-muted` is held to 4.5:1 even at 12–13px so that timestamps and helper text stay legible at the smallest sizes the system renders.
 
-#### Foundations
+The theme toggle exposes **only `light` and `dark`** — there is no separate "system / auto" token set; the two values above are the entire surface.
 
-| Variable     | Dark      | Light     | Purpose                          |
-| ------------ | --------- | --------- | -------------------------------- |
-| `background` | `#0b0f14` | `#f8fafc` | page background                  |
-| `foreground` | `#e6edf3` | `#0f172a` | default high-contrast foreground |
-| `surface`    | `#111826` | `#ffffff` | primary elevated surface         |
-| `surface-2`  | `#0f172a` | `#f1f5f9` | secondary or nested surface      |
-| `card`       | `#111826` | `#ffffff` | card and dialog surfaces         |
-| `popover`    | `#111826` | `#ffffff` | floating overlays                |
+### The Velvet palette
 
-#### Borders and inputs
+**Velvet is the default palette.** It is a nocturnal atelier: deep violet in light (a lead-violet canvas with the feel of antique letter paper) and a night blue-violet in dark. The character is "collectible / hobby warmth" — premium and elegant without being childish or clinical.
 
-| Variable | Dark      | Light     | Purpose        |
-| -------- | --------- | --------- | -------------- |
-| `border` | `#1f2a3a` | `#e2e8f0` | default border |
-| `input`  | `#1f2a3a` | `#e2e8f0` | input border   |
-| `ring`   | `#8b5cf6` | `#7c3aed` | focus ring     |
+The Velvet base hue is approximately **h≈285 in light** and **h≈265 in dark** for surfaces and text, with the accent landing at **h≈290** in both modes.
 
-#### Brand and action colors
+Four alternative palettes share the **exact same semantic token names** and differ only in their values:
 
-| Variable     | Dark      | Light     | Purpose                                      |
-| ------------ | --------- | --------- | -------------------------------------------- |
-| `primary`    | `#8b5cf6` | `#7c3aed` | main CTA, selected states, key emphasis      |
-| `secondary`  | `#6d28d9` | `#5b21b6` | deeper brand support                         |
-| `accent`     | `#f59e0b` | `#d97706` | highlight, warmth, warning-adjacent emphasis |
-| `highlight`  | `#a78bfa` | `#7c3aed` | glow, gradients, softer brand accent         |
-| `link`       | `#a78bfa` | `#6d28d9` | inline links                                 |
-| `link-hover` | `#c4b5fd` | `#7c3aed` | link hover                                   |
+| Palette    | Character                              |
+| ---------- | -------------------------------------- |
+| **Velvet** | Premium "elegant night" — **default**  |
+| Lilac      | Cheerful diary without losing elegance |
+| Plum       | Editorial boutique with presence       |
+| Lagoon     | Analytical calm, dashboard-leaning     |
+| Forest     | Sustainable / herbarium / collected    |
 
-#### Text roles
+Switching palette changes token _values_, never token _names_. Status colors do **not** change with the palette (see below). All contrast and usage rules in this document apply to every palette; Velvet is documented as the reference set.
 
-| Variable     | Dark      | Light     | Purpose                       |
-| ------------ | --------- | --------- | ----------------------------- |
-| `text-title` | `#f2f6fb` | `#0f172a` | titles and key labels         |
-| `text-body`  | `#d6dee6` | `#1f2937` | default body copy             |
-| `text-muted` | `#a8b3c0` | `#64748b` | secondary and supporting text |
+### Semantic tokens
 
-#### Semantic feedback
+The literal `oklch(...)` values for every token (light and dark) live in [`tokens-css.md`](tokens-css.md) and `src/app/globals.css`. Below is the contract: what each token means, where it is allowed, and where it is banned. Velvet values are quoted inline where they carry meaning; treat the CSS mirror as authoritative for the exact numbers.
 
-| Variable      | Dark      | Light     | Purpose                                 |
-| ------------- | --------- | --------- | --------------------------------------- |
-| `destructive` | `#ef4444` | `#dc2626` | destructive actions and critical errors |
-| `success`     | `#22c55e` | `#16a34a` | success confirmations                   |
-| `warning`     | `#f59e0b` | `#d97706` | warnings and cautionary messaging       |
-| `info`        | `#38bdf8` | `#0ea5e9` | informational emphasis                  |
+#### Surfaces
 
-### Applied semantic color patterns in collector UI
+| Token                | Velvet light                 | Velvet dark                  | Use                                                                                                                                                                                                              |
+| -------------------- | ---------------------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--background`       | `oklch(93% 0.020 285)`       | `oklch(10% 0.028 265)`       | Root app canvas. Never inside cards or sub-surfaces.                                                                                                                                                             |
+| `--surface`          | `oklch(96.5% 0.014 285)`     | `oklch(13% 0.028 265)`       | Default card, list, primary detail panel. Never as an accent.                                                                                                                                                    |
+| `--surface-elevated` | `oklch(95% 0.016 285)`       | `oklch(16% 0.030 265)`       | Only when there is real hierarchy against `--surface` (sub-card inside a card, drawer/sheet body, popover, scroll-spy header). In light it is **slightly darker** than `--surface` (paper-overlap), not lighter. |
+| `--surface-overlay`  | `oklch(8% 0.020 285 / 0.55)` | `oklch(4% 0.020 265 / 0.65)` | Only the modal scrim, sheet backdrop, command-palette overlay. Never as a content background.                                                                                                                    |
 
-Reuse these meanings before introducing new chip or badge colors.
+There is intentionally no `--surface-warm` token: `--surface` is already a warm lead-violet, an extra warm surface would be imperceptible and would break the `background → surface → surface-elevated` ladder. When a sub-card needs warm differentiation, mix the accent into the surface (`color-mix(in oklch, var(--accent-warm) 14%, var(--surface))`).
 
-#### Store taxonomy and trust chips
+#### Borders
 
-- product types: `primary` tint (`border-primary/15 bg-primary/8 text-primary`)
-- import countries: `success` tint (`border-success/15 bg-success/8`)
-- presence and online/offline reach: `info` tint (`border-info/15 bg-info/8`)
-- hero metadata pills: neutral `bg-background/80` surface with semantic icon color when needed
+| Token             | Role                                                                                                                                                            |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--border`        | **Decorative** divider, card outline, idle input. Low contrast (~1.5–1.7:1). Never the sole functional separation between two semantic zones.                   |
+| `--border-strong` | **Functional**, ≥3:1. Focused input pre-ring, separator between semantic zones, avatar-fallback border, any border that carries meaning. Never pure decoration. |
 
-#### Order state and finance chips
+If a border must do real separating work, escalate from `--border` to `--border-strong`.
 
-- open state: `info`
-- in transit and partially in transit: `primary`
-- partially delivered: `highlight`
-- completed: `success`
-- unpaid or attention-needed financial state: `warning`
-- destructive or invalid state: `destructive`
+#### Text
 
-Rules:
+| Token              | Role                                                                                                                                                                                                                                                                                                                                   |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--text-primary`   | Body, headings, central dashboard numbers, the label of a focused input. Never for secondary metadata.                                                                                                                                                                                                                                 |
+| `--text-secondary` | Subtitles, field labels, short descriptions, breadcrumbs. **Code identifiers (`PT-XXXXXX` and derivatives) live here** — they are the outdoor-critical case and need the higher contrast (see [ADR 0007](decisions/0007-text-muted-outdoor-code-mono-reassignment.md)). Use only when a nearby `--text-primary` defines the hierarchy. |
+| `--text-muted`     | Timestamps, uppercase eyebrows, helper text 11–13px, non-identifier inline mono. Holds **4.5:1 even at 12–13px**. Never for primary body, the first visible label of a field, or code identifiers (those go in `--text-secondary`).                                                                                                    |
+| `--text-on-accent` | Text over solid `--accent` only (primary CTA, accent-solid badge). Near-white in both modes. Never over an accent tint or state layer.                                                                                                                                                                                                 |
 
-- use semantic tint plus label together - never rely on color alone to communicate meaning
-- keep the tint soft (`/8` to `/20` backgrounds, `/15` to `/40` borders) so chips stay readable in dense dark UI
-- prefer icon color to carry the strongest semantic cue inside neutral hero pills instead of tinting the whole pill
+`--text-on-accent` is intentionally near-white in both modes to match the mental model "button = white text". In dark mode this is a deliberate, human-ratified exception to the strict AA math against the bright accent. Any `<Button>` or accent badge consumes `var(--text-on-accent)`; nothing hardcodes `text-white`.
 
-### Theme Rules
+#### Accents
 
-- use semantic variables, not theme-blind colors
-- define every new theme-dependent variable for both themes
-- verify hierarchy and contrast in both themes
+| Token           | Velvet light          | Velvet dark           | Role                                                                                                                                                                                                                                                                                                 |
+| --------------- | --------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--accent`      | `oklch(46% 0.20 290)` | `oklch(74% 0.19 290)` | Primary CTA, primary link, focus-ring base, progress bar, avatar fallback (14% bg tint / 28% border tint). Never category icons or non-interactive decoration.                                                                                                                                       |
+| `--accent-warm` | `oklch(64% 0.20 22)`  | `oklch(80% 0.15 25)`  | **Decorative only.** Achievement halo, "accent soft" chip tint, and the dashboard micro-stat **icon-tile** (soft-tint circle with a warm Lucide glyph inside — see [ADR 0005](decisions/0005-dashboard-microstat-icon-tile.md)). Never text over `--background`, never a CTA, never a metric figure. |
+| `--accent-cool` | `oklch(58% 0.10 215)` | `oklch(74% 0.11 215)` | **Icon color only, always with an adjacent label** ([ADR 0006](decisions/0006-color-blindness-icon-label-contract.md)): category Lucide icons, and inline info when it coexists with `--accent`. Never a background, border, text color, CTA, focus, semantic status, or icon-only-without-label.    |
 
-## Spacing System
+`--accent-warm` cannot carry small text on the light canvas (it fails AA there across palettes), which is exactly why it is reserved for non-text decoration. The metric figure it "owns" (the dashboard slot for upcoming payments) is rendered in `--text-primary` with a warm icon-tile decorator, not in warm color.
 
-### Base Unit
+`--accent-cool` (a soft blue-grey, h215) lives close to `--info` (h245) in normal trichromatic vision but collapses to the same region under deuteranopia/protanopia. Moving the hues does not fix this; the robust mitigation is structural — see the color-blindness contract below.
 
-PandaTrack behaves like a 4px-based system with most layout decisions landing on 8px multiples.
+#### Status (shared across all palettes)
 
-Rule:
+| Token           | Velvet light          | Velvet dark           | Meaning                                                                                                                                                                                                                          |
+| --------------- | --------------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--success`     | `oklch(58% 0.15 152)` | `oklch(74% 0.16 152)` | Confirmed payment, completed delivery, achievement chip, success toast. Never non-semantic decoration.                                                                                                                           |
+| `--warning`     | `oklch(70% 0.16 75)`  | `oklch(82% 0.15 75)`  | Overdue payment, "N days late". Never "waiting without urgency" (that is `--info`).                                                                                                                                              |
+| `--destructive` | `oklch(54% 0.21 25)`  | `oklch(70% 0.18 25)`  | Delete confirmation, error feedback, destructive toast. Never decoration or "attention without risk".                                                                                                                            |
+| `--info`        | `oklch(58% 0.14 245)` | `oklch(78% 0.13 245)` | "Pending, no urgency" — **chip always carries a `clock` icon + a text label** ([ADR 0006](decisions/0006-color-blindness-icon-label-contract.md)), neutral inline notice. Never a CTA, focus, category icon, or color-only chip. |
 
-- 4px is the foundational unit
-- 8px is the default composition rhythm
+`--info` sits at **h245** (a franker blue) specifically to read distinctly from `--accent-cool` (h215) in normal vision. Status tokens are identical across all five palettes.
 
-### Recommended scale
+**Chip recipes.** Status chips are built with `color-mix`, not bespoke colors:
 
-| Value   | Usage                                |
-| ------- | ------------------------------------ |
-| `4px`   | ultra-tight inline spacing           |
-| `8px`   | default small gap                    |
-| `12px`  | compact grouped controls             |
-| `16px`  | default component padding            |
-| `20px`  | emphasized control spacing           |
-| `24px`  | standard card, modal, header padding |
-| `32px`  | section spacing                      |
-| `40px`  | generous section spacing             |
-| `48px+` | hero and large composition spacing   |
+```css
+background: color-mix(in oklch, var(--success) 14%, var(--background));
+border: 1px solid color-mix(in oklch, var(--success) 28%, var(--background));
+color: var(--success-chip-text); /* light: dedicated chip-text alias; dark: the status base token */
+```
 
-### Spacing Rules
+In light mode the base status color does not reach 4.5:1 on a 14% chip, so each status has a darker `--{status}-chip-text` alias for light; in dark the chip text is the base status token. These aliases are also shared across all palettes.
 
-- use 8px rhythm by default
-- use 4px increments only when finer control is genuinely needed
-- avoid arbitrary spacing values when an existing step already works
+#### Focus and state layers
 
-### Layout Containers
+| Token / state  | Recipe                                                                                                                                                                                       |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--focus-ring` | Accent-derived ring (`oklch(46% 0.20 290 / 0.55)` light, `oklch(74% 0.19 290 / 0.65)` dark). Outline of any `:focus-visible`. Never a fill, never on `:hover`.                               |
+| `hover`        | `color-mix(in oklch, var(--text-primary) 6%, transparent)` (light) / `8%` (dark), applied as an overlay above the control surface.                                                           |
+| `pressed`      | `color-mix(in oklch, var(--text-primary) 12%, transparent)` (light) / `14%` (dark), replacing the hover layer during `:active`.                                                              |
+| `selected`     | bg `color-mix(in oklch, var(--accent) 14%, var(--surface))`, border `color-mix(in oklch, var(--accent) 28%, var(--surface))`. Active filter chip, active sidebar item, selected list option. |
+| `disabled`     | text → `var(--text-muted)`, border → `var(--border)`. **Never `opacity`.** Low contrast is achieved with semantic tokens, not a global `opacity:.5`.                                         |
+
+### Categorical palette
 
-Observed patterns:
+There is **no categorical palette** in the system (see [ADR 0004](decisions/0004-categorical-palette-removal.md)). Category identity is carried by **Lucide icons in `--accent-cool` with an adjacent label**, not by per-category colors. The MVP ships no charts or analytical views; carrying unused color tokens would be visual and technical debt and would tempt accidental decorative use. When a future data-visualization need arrives, a fresh `--chart-1…N` set is to be **designed from scratch** with proper data-viz calibration (perceptual uniformity, color-blind safety, ordered sequences) — not revived from any historical reserve.
 
-- `max-w-6xl` for landing and large app content
-- **Private collector shell** (`src/app/[locale]/(app)/`): one shared content column for every route. The `<main>` element uses `APP_SHELL_MAIN_CLASSNAME` in `src/lib/constants.ts` (`max-w-6xl` plus `px-4 py-6 sm:px-6 sm:py-8 lg:px-8`). The sticky top header row uses the same max width via `APP_SHELL_CONTENT_MAX_WIDTH_CLASSNAME` so breadcrumbs and page titles align with the main column. Do not wrap individual pages in another `mx-auto max-w-*` shell. For form-heavy flows (for example store create/edit), constrain the form stack with `APP_SHELL_FORM_RAIL_CLASSNAME` (`max-w-3xl`) **inside** the main region, not by changing the page wrapper.
-- `max-w-xl` and `max-w-sm` for auth and modal-width content
-- page padding commonly uses `px-4`, `sm:px-6`, `lg:px-8`
+## Typography
 
-## Surface System
-
-### Surface Hierarchy
-
-#### Level 0: Page background
-
-Use `bg-background` for the canvas.
-
-#### Level 1: Primary containers
-
-Use `bg-surface` or `bg-card` with `border-border` for:
-
-- cards
-- auth panels
-- sidebars
-- dialogs
-- filter shells
-
-#### Level 2: Nested sections
-
-Use muted or translucent nested surfaces for:
-
-- grouped form sections
-- metadata panels
-- inset summaries
-- nested action zones
-
-Common patterns:
-
-- `bg-muted/35`
-- `bg-background/70`
-- `bg-background/90`
-- `COLLECTOR_MUTED_INSET_CLASSNAME` from `src/lib/styles.ts` for compact secondary groups inside cards and listing modules
-
-#### Collector app surface family: listings and detail panels
-
-Use one shared panel family for:
-
-- entity listing cards
-- transaction listing cards
-- active-filter shells
-- profile detail sections
-- detail sections with repeated summary panels
-
-Base token set:
-
-- `COLLECTOR_CARD_SURFACE_CLASSNAME` from `src/lib/styles.ts`
-- `bg-surface-2`
-- `border-border`
-- `rounded-2xl`
-- `border`
-- `shadow-sm`
-
-Rules:
-
-- start from this shared surface for repeated app cards before adding page-specific chrome
-- add hover motion, inner separators, sticky positioning, or denser padding on top of the shared token set instead of redefining the base panel
-- use `COLLECTOR_MUTED_INSET_CLASSNAME` as the preferred second visual level inside these cards for grouped metadata, compact summaries, and nested read-only rows
-- when a detail panel needs a tighter inset card inside the main section, keep it neutral (`bg-card`, `border-border/70`, `rounded-2xl`, `shadow-sm`) so the outer section remains the dominant surface
-
-#### Repeated elevated panels on a washed background
-
-When the **page canvas** uses a very soft vertical tint (see Gradients / private shell below) and you need **several sibling panels** (detail sections, rails, full-width blocks) to feel like one family:
-
-- prefer **one shared class or component** for those panels so opacity, border, and ring stay in sync
-- typical stack: semi-opaque canvas-relative fill (`bg-background/80` to `bg-background/90`), defined border (`border-border/60` to `border-border/70`), **inset** brand ring for depth (`ring-1 ring-inset ring-primary/10` to `ring-primary/15`), `rounded-3xl`, `border`, `shadow-sm`, responsive padding `p-5 sm:p-6`
-- allow **dense exceptions** (alerts, compact callouts) by overriding padding only, not the whole token set
-
-**Metric or KPI tiles** in a **horizontal row** should stay visually quiet: prefer a **thin solid brand top edge** (`border-t-2` + `border-t-primary` at moderate opacity) over repeating **gradient strips** on every tile, so the grid does not compete with the hero or with the numbers.
-
-### Maximum Visual Depth
-
-Avoid turning the UI into a visible stack of boxes inside boxes inside boxes.
-
-#### 🚨 Anti-Pattern: Box-in-Box Syndrome
-
-**NEVER** encase every piece of information in its own bordered container. This creates a noisy, heavy, and claustrophobic interface.
-
-- **Do not** put a card inside a card inside a card.
-- **Do not** use borders to separate every single group of data.
-- **Instead**, use whitespace (margins/padding), typography (size/weight/color), and subtle dividers (`border-b` or `border-t`) to establish hierarchy.
-- Let the content breathe on the page background (`bg-background`) whenever possible.
-
-Rule of thumb:
-
-- one main surface is expected
-- a second visual level is acceptable for grouped content
-- a third visual level should be rare and justified
-- beyond that, prefer flatter layouts with dividers, headings, spacing, and inline grouping
-
-Prefer solving dense content with:
-
-- section titles
-- spacing
-- divider lines
-- compact labels
-- grid or list layouts
-- tabs when the content represents parallel sections
-- a soft second-level subsection container when sibling groups need to feel clearly separated
-
-Avoid solving dense content with:
-
-- repeated nested cards
-- multiple bordered containers inside already elevated containers
-- different tinted backgrounds at every level
-- stacking rounded boxes when the content could read as one structured section
+### Families
+
+| Family                  | Token            | Role                                                                        |
+| ----------------------- | ---------------- | --------------------------------------------------------------------------- |
+| Inter Variable          | `--font-sans`    | Body, UI, forms, controls, lists, tables — every tier at or below Subtitle. |
+| Inter Display           | `--font-display` | Display and Title (hero numbers, ceremonial headings, dashboard hero).      |
+| JetBrains Mono Variable | `--font-mono`    | Code, mono badges, IDs, uppercase eyebrows, secondary tabular numerals.     |
+
+Inter Display is the optical cut of the same Inter family activated at large sizes (via the `opsz` axis), so body and display never produce a metric jump. The font wiring lives in `src/lib/fonts.ts`.
+
+Declared stacks:
+
+- `--font-sans`: `"Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif`
+- `--font-display`: `"Inter Display", "Inter Variable", "Inter", system-ui, sans-serif`
+- `--font-mono`: `"JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace`
+
+**Zilla Slab is used only for the logo / wordmark.** It is wired as `--font-logo` and consumed exclusively by the Logo component, the favicon, and OG images (`src/lib/og.ts`). It must **never** be used for UI text — no headings, body, controls, cards, or any product copy. This is a hard boundary: the logo is the only place Zilla Slab appears.
+
+### Type scale
+
+Each tier exposes three Tailwind v4 sub-properties: `--text-{name}` (size), `--text-{name}--line-height`, and `--text-{name}--letter-spacing`. Weights are listed light / dark; the dark value is reduced to compensate for optical thickening (see "Weights").
+
+| Tier     | Tailwind class  | Size                                | Line-height | Letter-spacing | Weight (light / dark)        | Family           | Use                                                        |
+| -------- | --------------- | ----------------------------------- | ----------- | -------------- | ---------------------------- | ---------------- | ---------------------------------------------------------- |
+| Display  | `text-display`  | `clamp(2.5rem, 4vw + 1rem, 3.5rem)` | 64px        | `-0.03em`      | 700 / 670                    | `--font-display` | Dashboard hero number, primary "next payment" amount.      |
+| Title    | `text-title`    | 32px                                | 40px        | `-0.02em`      | 600 / 580                    | `--font-display` | Page titles, detail-section headings.                      |
+| Subtitle | `text-subtitle` | 22px                                | 28px        | `-0.01em`      | 600 / 600                    | `--font-sans`    | Card headings, modal title, sub-section.                   |
+| Body-L   | `text-body-lg`  | 17px                                | 26px        | `0`            | 400 / 400                    | `--font-sans`    | Hero descriptive subtitle, empty-state body, modal intro.  |
+| Body     | `text-body`     | 15px                                | 22px        | `0`            | 400 / 400 (medium 500 / 480) | `--font-sans`    | Default body: card, paragraph, label, value.               |
+| Caption  | `text-caption`  | 13px                                | 18px        | `+0.005em`     | 500 / 500                    | `--font-sans`    | Helper text, footnote, microcopy.                          |
+| Mono-L   | `text-mono-lg`  | 15px                                | 22px        | `0`            | 500 / 500                    | `--font-mono`    | Codes shown in detail cards.                               |
+| Mono     | `text-mono`     | 13px                                | 18px        | `+0.02em`      | 500 / 500                    | `--font-mono`    | Inline mono in body, mono badge, micro-stat tabular label. |
+| Eyebrow  | `text-eyebrow`  | 11px                                | 14px        | `+0.08em`      | 500 / 500                    | `--font-mono`    | Ceremonial uppercase eyebrow.                              |
+
+The body scale and heading scale are implemented in `src/components/core/Typography.tsx` and `src/components/core/Heading.tsx`. One dominant `h1` per screen; it must read as the strongest heading on the page, larger and heavier than in-page section `h2`s.
+
+### Weights
+
+Auxiliary weight tokens decouple components from raw numbers, so mode-specific weight reduction happens in one place:
+
+```
+--font-weight-regular: 400
+--font-weight-medium: 500
+--font-weight-semibold: 600
+--font-weight-display: 700   (dark: 670)
+--font-weight-title: 600     (dark: 580)
+--font-weight-medium-body: 500 (dark: 480)
+--font-weight-mono: 500
+```
+
+Components consume `var(--font-weight-display)` and friends — never a literal `font-weight: 700`. The only typographic differences between modes are these reduced display/title/body-medium weights and body color resolving to 96% L (not 100%) in dark via `--text-primary`. Italics are prohibited in every tier.
+
+### Letter-spacing and feature settings
+
+| Tier                      | `font-feature-settings`  | Why                                                                                   |
+| ------------------------- | ------------------------ | ------------------------------------------------------------------------------------- |
+| Display / Title           | `"ss01", "cv11", "tnum"` | Inter Display editorial alternates, serif-free `1` for hero numbers, tabular nums.    |
+| Subtitle / Body / Caption | (none by default)        | Neutral body. Activate `tnum` only when rendering figures via the `.numeric` utility. |
+| Mono-L / Mono / Eyebrow   | `"calt", "ss01"`         | JetBrains Mono contextual alternates (separates `1` from `l`, `0` from `O`).          |
+
+**Cross-cutting rule:** every figure the system renders uses `font-variant-numeric: tabular-nums` + `font-feature-settings: "tnum"`, exposed as the `.numeric` utility.
+
+## Spacing
+
+The base step is `--spacing = 0.25rem` (4px), with 8px as the default composition rhythm. Named scale:
+
+| Token         | px  | Typical use                                                          |
+| ------------- | --- | -------------------------------------------------------------------- |
+| `--space-0`   | 0   | Reset; never to separate legible content.                            |
+| `--space-px`  | 1   | Hairline borders.                                                    |
+| `--space-0_5` | 2   | Fine typographic adjustments, badge-dot micro-padding.               |
+| `--space-1`   | 4   | Icon-to-icon gap within a group.                                     |
+| `--space-1_5` | 6   | Auxiliary.                                                           |
+| `--space-2`   | 8   | Chip vertical padding, label-to-input gap.                           |
+| `--space-3`   | 12  | Input/button internal padding, gap between fields in a row.          |
+| `--space-4`   | 16  | Small card base padding, vertical gap between fields.                |
+| `--space-5`   | 20  | Section-card internal padding on mobile.                             |
+| `--space-6`   | 24  | Section-card internal padding on desktop; gap between section cards. |
+| `--space-8`   | 32  | Gap between page blocks.                                             |
+| `--space-10`  | 40  | Auxiliary; control-height baseline.                                  |
+| `--space-12`  | 48  | Gap between thematic sections; desktop header height.                |
+| `--space-16`  | 64  | Collapsed sidebar width; empty-state top padding.                    |
+| `--space-24`  | 96  | Full-page empty-state vertical padding.                              |
+| `--space-32`  | 128 | Landing hero vertical padding (desktop).                             |
+| `--space-48`  | 192 | Landing splash only. Never inside the admin app.                     |
+
+Binding applications:
+
+- Section-card padding: `--space-6` (24px) desktop / `--space-5` (20px) mobile.
+- Form field row gap: `--space-4`; label-to-input column gap: `--space-2`.
+- Section-to-section gap: `--space-6` mobile / `--space-8` desktop.
+
+### Layout magic numbers
+
+These are shell contracts, not spacing. No component declares a literal `240px`, `64px`, or `440px` for layout — it references the token.
+
+| Token                     | px    | Use                                                                    |
+| ------------------------- | ----- | ---------------------------------------------------------------------- |
+| `--sidebar-w-expanded`    | 240   | Expanded admin sidebar (push, not overlay, at `≥ lg`).                 |
+| `--sidebar-w-collapsed`   | 64    | Collapsed sidebar (icons only).                                        |
+| `--header-h`              | 56    | Sticky mobile header.                                                  |
+| `--header-h-desktop`      | 64    | Sticky desktop header.                                                 |
+| `--drawer-w`              | 440   | Right-side filter drawer (desktop); becomes a bottom sheet below `md`. |
+| `--sheet-max-h`           | 92svh | Mobile bottom-sheet max height.                                        |
+| `--modal-max-w`           | 512   | Centered modal default.                                                |
+| `--modal-max-w-lg`        | 768   | Large centered modal (multi-step forms).                               |
+| `--toast-max-w`           | 352   | Single-toast max width.                                                |
+| `--container-max-w`       | 1280  | Admin page max width.                                                  |
+| `--container-max-w-prose` | 672   | Prose / reading max width.                                             |
+| `--fab-size`              | 56    | FAB diameter (mobile).                                                 |
+| `--fab-offset`            | 16    | FAB offset from the viewport edge.                                     |
 
 ## Border Radius
 
-| Radius          | Typical Tailwind class            | Use                                                             |
-| --------------- | --------------------------------- | --------------------------------------------------------------- |
-| small           | `rounded-md`                      | form fields, buttons, compact controls                          |
-| medium          | `rounded-lg`                      | nav items, segmented controls, utility cards                    |
-| large           | `rounded-xl`                      | cards, accordions, elevated groups                              |
-| extra large     | `rounded-2xl`                     | prominent cards, detail modules, modal controls                 |
-| hero or feature | `rounded-3xl` or `rounded-[28px]` | hero media, standout containers, modal shells                   |
-| pill            | `rounded-full`                    | eyebrow labels, back links, toggles, circular decorative shapes |
+Seven radius tokens:
 
-Rules:
+| Token           | px  |
+| --------------- | --- |
+| `--radius-xs`   | 4   |
+| `--radius-sm`   | 6   |
+| `--radius-md`   | 8   |
+| `--radius-lg`   | 12  |
+| `--radius-xl`   | 16  |
+| `--radius-2xl`  | 20  |
+| `--radius-pill` | ∞   |
 
-- `rounded-md` is the default for fields and standard buttons
-- `rounded-xl` and `rounded-2xl` are preferred for card-based product UI
-- reserve `rounded-full` for eyebrow labels, back navigation, toggles, and truly circular decorative or icon-based shapes
-- status tags, data tags, filter chips, and compact badges should default to `rounded-lg`, `rounded-xl`, or `rounded-2xl`
-- count badges inside tags should not default to fully circular shapes
+Per-component assignment:
 
-## Borders, Elevation, And Shadows
+| Component                                                 | Token                                                                        |
+| --------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| input, button                                             | `--radius-md`                                                                |
+| icon button, chip / badge, FAB, mobile avatar             | `--radius-pill`                                                              |
+| list card, sub-card inside section, toast, popover / menu | `--radius-lg`                                                                |
+| section card (form), centered modal, command palette      | `--radius-xl`                                                                |
+| desktop avatar                                            | `--radius-lg`                                                                |
+| mobile sheet                                              | `--radius-2xl` (top corners only: `var(--radius-2xl) var(--radius-2xl) 0 0`) |
+| desktop filter drawer                                     | `--radius-xl` (left corners only: `var(--radius-xl) 0 0 var(--radius-xl)`)   |
+| tooltip                                                   | `--radius-sm`                                                                |
+| skeleton placeholder                                      | inherits from its component                                                  |
 
-Observed pattern:
+**Fine-detail note.** The Checkbox check mark is a hand-rolled glyph with a **1.5px stroke** — a deliberate sub-token detail that is not expressible as one of the seven radius tokens and must be preserved when the component is touched.
 
-- borders are used more often than heavy shadows
-- shadows exist mainly as soft depth for hero cards, detail cards, and modal surfaces
+## Surfaces & Elevation
 
-Rules:
+Elevation uses the same identifiers in both modes (`--elevation-1` … `--elevation-4`) with mode-specific values. **Light uses real soft shadows** with low-alpha cool slate (`rgba(20, 22, 30, …)`). **Dark uses composition, not real shadows** — an inset top highlight + a border ring + a punctual accent micro-glow. This keeps depth readable on the dark canvas without the muddy halos that real shadows produce there.
 
-- use borders as the first separation tool
-- use shadows as secondary depth
-- avoid strong drop shadows in dense app screens
+### Light (real soft shadows)
 
-### Shadow Levels
+| Token           | Value                                                                  | Use                                             |
+| --------------- | ---------------------------------------------------------------------- | ----------------------------------------------- |
+| `--elevation-1` | `0 1px 2px rgba(20, 22, 30, 0.04)`                                     | List cards.                                     |
+| `--elevation-2` | `0 4px 12px rgba(20, 22, 30, 0.06), 0 1px 2px rgba(20, 22, 30, 0.04)`  | Section cards, popover, dropdown, right drawer. |
+| `--elevation-3` | `0 12px 24px rgba(20, 22, 30, 0.08), 0 2px 6px rgba(20, 22, 30, 0.06)` | Modal, sheet, mascot bubble.                    |
+| `--elevation-4` | `0 24px 48px rgba(20, 22, 30, 0.12)`                                   | Command palette, expanded assistant.            |
 
-#### Level 0: No shadow
+### Dark (compositions, no real shadow)
 
-Use for standard layout blocks and dense app surfaces already separated by border and contrast.
+Each dark elevation is an inset highlight plus a border ring, with `--elevation-3` and `--elevation-4` adding a faint accent / accent-cool glow:
 
-#### Level 1: Soft elevation
+- `--elevation-1`: `inset 0 1px 0 rgba(255,255,255,0.03)` + `0 0 0 1px var(--border)`.
+- `--elevation-2`: `inset 0 1px 0 rgba(255,255,255,0.04)` + `0 0 0 1px var(--border-strong)`.
+- `--elevation-3`: the above (stronger inset) + a `--accent` 6% micro-glow.
+- `--elevation-4`: the above + an `--accent-cool` 12% wide glow.
 
-Use for:
+(Exact composite declarations live in [`tokens-css.md`](tokens-css.md).)
 
-- standard cards that need gentle lift
-- hover states on selectable rows or cards
-- summary panels that need slightly more separation
+### Per-component elevation
 
-#### Level 2: Elevated surface
+| Component                                                                      | Elevation                               |
+| ------------------------------------------------------------------------------ | --------------------------------------- |
+| List card                                                                      | `1`                                     |
+| Row hover                                                                      | `0` (uses a state layer, does not lift) |
+| Section card (form), popover / dropdown, right drawer, neutral-undo toast, FAB | `2`                                     |
+| Mobile sheet, centered modal, mascot bubble                                    | `3`                                     |
+| Achievement toast                                                              | `3` + achievement halo (composition)    |
+| Command palette                                                                | `4`                                     |
 
-Use for:
+The achievement halo is an ad-hoc composition over `--elevation-3` (a warm ring + warm wide glow built from `--accent-warm`), not a reusable token.
 
-- modals
-- floating drawers
-- spotlight cards
-- hero media containers
-- sticky elements that should feel above the page
-
-#### Level 3: Atmospheric glow or dramatic emphasis
-
-Use only for marketing hero treatments, celebratory states, or standout showcase panels.
-
-### Shadow Rules
-
-- in the private app, start with border and surface contrast before shadow
-- in dark theme, subtle shadows are acceptable when hierarchy is already clear
-- hover elevation should usually be one level stronger than resting elevation
-- selectable listing cards use this exact pattern: resting `shadow-sm`, hover `shadow-md` plus a light border emphasis and slight `-translate-y-0.5`
+**Depth discipline.** Borders separate before shadows do. One main surface per region is expected; a second visual level is fine for grouped content; a third should be rare and justified. Do not nest cards inside cards inside cards — resolve dense content with whitespace, typography, dividers, and section headings rather than stacking bordered containers.
 
 ## Gradients
 
-Gradients are part of PandaTrack's visual personality, but they should signal emphasis, not become the default fill for everything.
+Gradients are part of PandaTrack's personality but signal emphasis; they are not a default fill.
 
-### When gradients are appropriate
+**Appropriate:** hero sections, primary page-intro panels, spotlight containers, decorative glow backgrounds, highlighted headings or accents.
 
-Use gradients for:
+**Not appropriate as a default for:** standard cards, most forms, dense data areas, repeated list items, low-priority controls.
 
-- hero sections
-- primary page-intro panels
-- spotlight containers
-- decorative glow backgrounds
-- highlighted headings or accents
+Rules:
 
-### When gradients are not appropriate
-
-Do not use gradients as the default for:
-
-- standard cards
-- most forms
-- dense data areas
-- repeated list items
-- low-priority controls
-
-### Gradient Rules
-
-- keep gradients soft and layered, not loud
-- prefer brand-adjacent blends such as `primary`, `highlight`, `accent`, and `info`
-- in the private app, gradients should appear mainly on page intros, hero-like summaries, or elevated callout surfaces
-- reuse the shared Tailwind stop bundles in `src/lib/styles.ts`: `TINTED_SURFACE_GRADIENT_STOPS` (pair with `bg-linear-to-br` or `bg-linear-to-r`) and `TINTED_SURFACE_GRADIENT_TOP_WASH` (pair with `bg-linear-to-b` for vertical fades to transparent) so heroes, modals, and marketing section overlays stay aligned
+- Keep gradients soft and layered, not loud.
+- Prefer brand-adjacent blends built from `--accent`, `--accent-warm`, and the status / info tints rather than bespoke color stops.
+- In the private app, gradients appear mainly on page intros, hero-like summaries, or elevated callout surfaces.
 
 ### Private-app page wash (authenticated shell)
 
-The authenticated app may use a **very soft vertical wash** on the root canvas (brand-adjacent `via` / `to` stops at **low opacity**, for example primary and accent in the **~3%** opacity range) so the UI keeps personality without forcing **different panel tints** per section. **Elevated panels** (see above) should rely on their own border, ring, and fill for contrast against this wash, not on one-off background colors per block.
+The authenticated app may apply a **very soft vertical wash** to the root canvas — brand-adjacent stops (accent / accent-warm) at very low opacity, roughly the **~3%** range — so the UI keeps personality without forcing a different panel tint per section. Elevated panels rely on their own border, ring, and fill for contrast against this wash, not on one-off per-block background colors. When several sibling panels must read as one family on top of the wash, drive them from one shared class or component so opacity, border, and ring stay in sync. KPI / metric tiles in a horizontal row stay visually quiet (prefer a thin solid brand top edge over a gradient strip per tile) so the grid does not compete with the hero or the numbers.
+
+## Layout primitives: z-index, breakpoints, motion
+
+These foundation tokens exist and are normative, but their detail is owned by adjacent documents so this file stays focused on the visual language:
+
+- **Z-index** — the stacking scale (`--z-sticky`, `--z-sidebar`, `--z-header`, `--z-mascot`, `--z-popover`, `--z-drawer`, `--z-sheet`, `--z-modal-backdrop`, `--z-modal`, `--z-toast`, `--z-command`, `--z-tooltip`, `--z-fab`) is declared in [`tokens-css.md`](tokens-css.md). Always use a token; never a literal `z-index` value.
+- **Breakpoints** — the breakpoint tokens (`--breakpoint-xs` … `--breakpoint-2xl`, with PandaTrack's extra `xs` at 360px) live in [`tokens-css.md`](tokens-css.md); the mobile cutoff (`< md` mobile, `≥ md` desktop) and the responsive rules that consume them are in [`interface-patterns.md`](interface-patterns.md).
+- **Motion** — durations, easings, the transform/opacity rule, reduced-motion policy, and View Transitions are owned by [`motion.md`](motion.md). Their literal CSS values are in [`tokens-css.md`](tokens-css.md).
+
+## Rules & anti-patterns
+
+- **Golden rule: ≤3–4 chromatic tokens visible per screen.** A typical screen uses `--accent` plus one status, optionally one punctual `--accent-warm` or `--accent-cool` element. Six or more visible colors at once means the screen is broken.
+- **Light and dark are siblings.** Define every theme-dependent value for both modes; never invert.
+- **Color is never the only signal.** Status and category meaning always pair color with an icon and a text label ([ADR 0006](decisions/0006-color-blindness-icon-label-contract.md)).
+- **`--accent-cool` is icon-only.** Never a background, border, text color, or CTA.
+- **`--accent-warm` is decorative.** Never small text on the canvas, never a metric figure, never a CTA.
+- **Disabled uses the muted token, not `opacity`.**
+- **No theme-blind colors.** `#fff`, `text-white`, `#000`, and literal hex in app UI are banned — always a semantic token.
+- **No hardcoded spacing, radius, or layout sizes.** Reference the scale and the layout magic-number tokens, never literal `px` values.
+- **No categorical color palette.** Category identity is a Lucide icon + label; any future data-viz palette is designed fresh ([ADR 0004](decisions/0004-categorical-palette-removal.md)).
+
+> _Historical note: this Velvet system replaced an earlier indigo-and-amber design language. References to that prior palette in legacy material are historical only and must not be replicated in code._

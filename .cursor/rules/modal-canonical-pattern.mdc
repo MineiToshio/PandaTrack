@@ -74,9 +74,11 @@ Spinners that block the very value the mutation updates (the hero amount behind 
 
 - **Component (CODE):** `src/components/modules/Modal/Modal.tsx` — the only place that owns the canonical behavior.
 - **Component (SHEET):** `src/components/modules/Sheet` — mobile counterpart, same Semantic Depth language.
-- **Spec:** `docs/redesign/components/Modal.md` — API + tokens + states + edge cases.
-- **ADR:** `docs/redesign/decisions/0008-modal-enhancement.md` — decision rationale + alternatives considered.
-- **Demo HTML reference (visual):** `docs/redesign/_notes/demo-screens.html` anchors `#m01-vb-*` (Semantic Depth approved variant).
+- **Component map:** `docs/design/components.md` — canonical components and their source paths.
+- **ADR:** `docs/design/decisions/0008-modal-enhancement.md` — decision rationale + alternatives considered.
+- **Pattern context:** `docs/design/interface-patterns.md` — Modals & overlays section.
+- **Deep spec (historical reference):** `docs/redesign/components/Modal.md` — API + tokens + states + edge cases (workshop artifact pending archival; the code is authoritative).
+- **Demo HTML reference (historical visual):** `docs/redesign/_notes/demo-screens.html` anchors `#m01-vb-*` (Semantic Depth approved variant).
 
 The legacy demo modal selectors (`.report-modal`, `.report-modal-overlay` in the demo HTML) have been visually mapped to the canonical pattern, so they are no longer a source of confusion. If you spot a new "flat" modal pattern anywhere in the demo or in code, treat it as a bug — the answer is always to use `<Modal>` from `src/components/modules/Modal/Modal.tsx`.
 

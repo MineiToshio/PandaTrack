@@ -22,7 +22,14 @@ Use this index to find documentation by domain.
 
 - `docs/design/README.md`: design-system entry point and file-selection guide
 - `docs/design/visual-foundations.md`: typography, color, spacing, surfaces, radius, shadows, and gradients
-- `docs/design/interface-patterns.md`: hierarchy, tabs, modals, right sidebars, controls, motion, navigation, and status patterns
+- `docs/design/tokens-css.md`: literal CSS-variable contract (mirror of `src/app/globals.css`)
+- `docs/design/interface-patterns.md`: layout/shell, hierarchy, tabs, modals, right sidebars, controls, navigation, status patterns, and the Chip-Eyebrow + Top-Accent system
+- `docs/design/motion.md`: motion token taxonomy, transform/opacity rule, reduced-motion, View Transitions
+- `docs/design/states.md`: cross-cutting empty / loading / error states
+- `docs/design/ux-copy.md`: voice, tone-by-context, and in-app copy patterns
+- `docs/design/components.md`: component map — what exists, when to use which, and where the canonical code lives
+- `docs/design/PLAYBOOK.md`: operational UI-implementation playbook (mandatory pre-implementation workflow + anti-patterns)
+- `docs/design/decisions/`: accepted design ADRs (0001–0014)
 
 ## Development
 
