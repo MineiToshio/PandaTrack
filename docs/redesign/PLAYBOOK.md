@@ -191,6 +191,7 @@ Componente canónico cross-app para navegación "Volver" / "Atrás". Vive típic
 - `--text-on-accent` light = blanco; dark = oscuro. Decisión S3-B para AA. Si te molesta visualmente, no cambies sin abrir un ADR.
 - Status enums usan tokens semánticos: `--success`, `--warning`, `--destructive`, `--info`. Nunca hex literales.
 - **Alpha sobre tokens neutros (`--background`, `--surface*`, `--border`, `--text-*`): usar `color-mix(in oklab, …, transparent)`, NO `in oklch`** — en oklch el hue deriva hacia rojo al mezclar con `transparent` y los tokens de chroma bajo se ven rosados (L074). `in oklch` queda reservado para tintar tokens de acento de chroma alto (chips, top-accents).
+  - **Convención blanket, enforced por guardia (S13).** No _toda_ mezcla neutra en oklch drifta: si ambos endpoints comparten el hue Velvet (285) el hue se preserva (idéntico a oklab). Pero la regla es **blanket** — no es evidente en tiempo de autoría cuál instancia va a derivar — y la guardia `src/test/design-token-guard.test.ts` falla la suite ante cualquier `color-mix(in oklch, var(--<neutral>))`. La misma guardia bloquea clases Tailwind theme-blind (`text-white`/`bg-{color}-{n}`/etc.) en `.tsx`. Cero-dep (sin ESLint plugin ni stylelint), por ADR 0010.
 
 ### Borders
 
@@ -720,18 +721,27 @@ Los dos elementos siempre se aplican juntos. Un chip sin top-border, o un top-bo
 
 **Vocabulario cross-módulo congelado** — estos labels NO varían su tono+ícono entre pantallas:
 
-| Eyebrow                                     | Tono                      | Ícono lucide |
-| ------------------------------------------- | ------------------------- | ------------ |
-| `Acciones`                                  | `accent`                  | `Zap`        |
-| `Tu nota privada`                           | `warm`                    | `PencilLine` |
-| `Reseñas`                                   | `warm`                    | `Star`       |
-| `Productos`                                 | `cool`                    | `Boxes`      |
-| `Historial`                                 | `cool`                    | `Clock3`     |
-| `Pagos`                                     | (state-aware — ver abajo) | `Wallet`     |
-| `Tu pedido · {curr}`                        | `accent`                  | `Package`    |
-| `Categorías` / `Categorías e importaciones` | `cool`                    | `Tags`       |
-| `Canales de contacto`                       | `cool`                    | `AtSign`     |
-| `Direcciones`                               | `cool`                    | `MapPin`     |
+| Eyebrow                                      | Tono                      | Ícono lucide    |
+| -------------------------------------------- | ------------------------- | --------------- |
+| `Acciones`                                   | `accent`                  | `Zap`           |
+| `Tu nota privada`                            | `warm`                    | `PencilLine`    |
+| `Reseñas`                                    | `warm`                    | `Star`          |
+| `Productos`                                  | `cool`                    | `Boxes`         |
+| `Historial`                                  | `cool`                    | `Clock3`        |
+| `Pagos`                                      | (state-aware — ver abajo) | `Wallet`        |
+| `Tu pedido · {curr}` / `Tu entrega · {curr}` | `accent`                  | `Package`       |
+| `Tus pedidos aquí` (recap "tus cosas")       | `accent`                  | `Package`       |
+| `Resumen` (recap de datos del sistema)       | `cool`                    | `ClipboardList` |
+| `Categorías` / `Categorías e importaciones`  | `cool`                    | `Tags`          |
+| `Canales de contacto`                        | `cool`                    | `AtSign`        |
+| `Direcciones`                                | `cool`                    | `MapPin`        |
+
+**Slot resumen del aside — dos familias (congelado en S13, F-04).** El primer card del aside de detalle puede ser uno de dos slots semánticamente distintos; NO se unifican porque comunican cosas distintas:
+
+- **Recap "tus cosas"** (la actividad/identidad del viewer): `accent` + `Package`. Espeja el hero `Tu pedido`/`Tu entrega`. Ejemplo: store-detail "Tus pedidos aquí" (pedidos del viewer en esa tienda).
+- **Recap de datos del sistema** (atributos factuales de la entidad): `cool` + `ClipboardList`. Misma familia que `Productos`/`Historial`/`Categorías`. Ejemplo: delivery-detail "Resumen" (tienda, fechas, pedidos origen).
+
+Elegí la familia por lo que el card comunica, no por su posición. Order-detail no tiene slot resumen propio (lo cubre el hero + la card `Pagos`).
 
 **Pagos — tono derivado del estado del pedido** (`derivePaymentsTone` en `OrderPaymentsAsideCard.tsx`):
 
@@ -841,6 +851,12 @@ Para cada card afectada por el patrón:
 3. Sin regresión de layout — la card no crece > 2px en altura.
 4. Light y dark — los `color-mix` con tokens semánticos se adaptan solos. Probar ambos themes.
 5. Labels recurrentes (`Acciones`, `Tu nota privada`, etc.) usan el mismo tono+ícono que en el resto de la app (vocabulario congelado).
+
+### 9.18 Wordmark / logo — Zilla solo para el logo (congelado en S13, F-03)
+
+La fuente **Zilla Slab Highlight** (`--font-logo` / clase `font-logo`) está **acotada exclusivamente al logo de marca**: el wordmark del app shell (`Logo.tsx`), el favicon (`icon.svg`) y el logo de las imágenes OG. **No se usa en body, headings ni ningún otro texto.** No expandir su uso.
+
+Las superficies públicas (landing/auth/legal) usan un **lockup distinto y deliberado** (S11): `BrandMark` con Inter + un tile "P" con gradiente accent. Esto es intencional — chrome interno (Zilla) vs marca pública compacta (Inter + "P") son dos contextos. No unificar sin decisión explícita.
 
 ## 10. Estados transversales — empty / loading / error (S10)
 

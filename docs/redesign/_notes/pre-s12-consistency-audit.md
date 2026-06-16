@@ -14,6 +14,17 @@ scope: smoke-check de seguridad antes de S12 (Motion). NO es la auditoría final
 > regresiones visuales, incoherencias cross-superficie y deriva de patrones tras el cambio acumulado.
 > No es la auditoría exhaustiva S13 — es un smoke-check enfocado en lo que S12 va a tocar.
 
+> **Cierre S13 (2026-06-16).** La auditoría final dispuso todos los hallazgos diferidos de este doc (detalle en [`s13-final-audit.md`](./s13-final-audit.md)):
+>
+> - **F-01, F-02, F-05, F-06** → ✅ ya arreglados pre-S12 (ver más abajo).
+> - **F-03 (wordmark Zilla vs Inter)** → 👍 aceptar + documentar: Zilla ya está acotado al logo (`Logo`/favicon/OG), no leakea; el `BrandMark` público es el lockup S11 aprobado. Decisión de Sergio: "Zilla es solo para el logo".
+> - **F-04 (slot "Resumen")** → 👍 aceptar + congelar regla: no es drift, son dos familias de slot (accent "tus cosas" vs cool "recap de datos"), cada una consistente.
+> - **F-07 (aria-labels hardcodeados)** → 🔧 arreglado: DateInput/Toast/Sheet/WizardStep ruteados por i18n.
+> - **F-08 (tooltips landing + LanguageToggle)** → 🔧 arreglado: `SimpleIconSvg` decorativo + fallback de LanguageToggle por i18n.
+> - **F-09 (paleta de imágenes de marca), F-10 (global-error dark-only)** → 👍 aceptar-intencional (hex requerido para render de imágenes/email/fallback catastrófico).
+> - **F-11 (color barra de pago)** → 👍 intencional: regla coherente success/warning/accent (verificada en fuente).
+> - **F-12 (avatar settings vs sidebar)** → 👍 intencional: two-source (foto OAuth global vs avatar curado de la app). Sin cambio.
+
 ## 1. Resumen ejecutivo
 
 **12 hallazgos** + varias observaciones de baja confianza. **Cero bloqueantes.** El sistema Velvet está
