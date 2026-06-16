@@ -8,7 +8,7 @@
       "cancel": "Cancelar",
       "save": "Guardar",
       "delete": "Eliminar",
-      "retry": "Dale otra vez"
+      "retry": "Vuelve a intentarlo"
     }
   },
   "input": {
@@ -29,7 +29,7 @@
   },
   "select": {
     "placeholder": {
-      "default": "Elegí una opción",
+      "default": "Elige una opción",
       "currency": "Moneda",
       "country": "País"
     },
@@ -45,7 +45,7 @@
     "selected": "{count, plural, one {# seleccionado} other {# seleccionados}}"
   },
   "dateInput": {
-    "placeholder": "Elegí una fecha",
+    "placeholder": "Elige una fecha",
     "clear": "Limpiar fecha"
   },
   "dateRangeInput": {

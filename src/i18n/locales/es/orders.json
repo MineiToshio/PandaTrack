@@ -37,7 +37,7 @@
     "step3Helper": "Una vez creado, no podrás cambiar la tienda ni la moneda.",
     "step3InfoBanner": "El pedido se creará en estado <strong>Abierto</strong>. Podrás registrar pagos y entregas desde el detalle.",
     "lockedStepTitle": "Disponible al continuar",
-    "lockedStepToast": "Completá el paso anterior para continuar.",
+    "lockedStepToast": "Completa el paso anterior para continuar.",
     "summaryTitle": "Resumen",
     "summaryStore": "Tienda",
     "summaryCurrency": "Moneda",
@@ -110,7 +110,7 @@
       "description": "Antes de crear un pedido necesitas registrar al menos una tienda donde hayas hecho la compra.",
       "cta": "Crear primera tienda",
       "backToList": "Volver a Pedidos",
-      "mobileTitle": "Primero creá una tienda",
+      "mobileTitle": "Primero crea una tienda",
       "mobileDescription": "Para crear un pedido necesitas al menos una tienda. Es donde vas a registrar la compra: nombre, contacto y monedas."
     }
   },
