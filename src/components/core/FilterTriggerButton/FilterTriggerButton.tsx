@@ -31,7 +31,7 @@ export default function FilterTriggerButton({
   appliedCount,
   onClick,
   variant = "label",
-  label = "Filtrar",
+  label,
   "aria-label": ariaLabel,
   disabled,
   className,

@@ -86,7 +86,7 @@ export default function OrderAddProductSheet({
         // Layout mirrors the create-order wizard's mobile sticky bar (`OrderEditForm`
         // sticky toolbar): compact secondary on the left, flex-1 primary on the right
         // with a leading icon. The user reads the primary as the main affordance
-        // ("Añadir"/"Guardar"), and "Cancelar" stays out of the way as a small ghost.
+        // (add/save), and the cancel action stays out of the way as a small ghost.
         <div className="flex items-stretch gap-2">
           {mode === "edit" && onDelete && (
             <Button

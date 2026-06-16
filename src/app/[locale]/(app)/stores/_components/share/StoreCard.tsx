@@ -52,7 +52,7 @@ const MAX_CHIP_SLOTS = 4;
  */
 export default function StoreCard({ store, locale, labels, viewerOrderCount, className }: StoreCardProps) {
   const detailHref = `/${locale}${ROUTES.stores}/${store.slug}`;
-  // When there are more types than the slot cap, reserve one slot for the "+N más" pill
+  // When there are more types than the slot cap, reserve one slot for the overflow ("+N") pill
   // so it always fits within the 2-row chip area alongside the visible chips.
   const hasOverflow = store.productTypeKeys.length > MAX_CHIP_SLOTS;
   const visibleCategories = store.productTypeKeys.slice(0, hasOverflow ? MAX_CHIP_SLOTS - 1 : MAX_CHIP_SLOTS);

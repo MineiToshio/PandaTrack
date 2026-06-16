@@ -3,7 +3,8 @@
     "en": "EN",
     "es": "ES",
     "ariaEn": "Cambiar a inglés",
-    "ariaEs": "Cambiar a español"
+    "ariaEs": "Cambiar a español",
+    "regionLabel": "Idioma"
   },
   "themeToggle": {
     "label": "Tema",
@@ -16,6 +17,7 @@
     "tableOfContents": "En esta página"
   },
   "dismiss": "Cerrar",
+  "close": "Cerrar",
   "notFound": {
     "eyebrow": "Error 404",
     "title": "Esta página no existe",

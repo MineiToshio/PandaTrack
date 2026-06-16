@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import IconButton from "@/components/core/IconButton";
 import Portal from "@/components/core/Portal";
@@ -57,6 +58,7 @@ export default function Sheet({
   bodyClassName,
   className,
 }: SheetProps) {
+  const t = useTranslations("common");
   const generatedId = useId();
   const titleId = `${generatedId}-title`;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -166,7 +168,7 @@ export default function Sheet({
               </h2>
               {dismissible && (
                 <IconButton
-                  aria-label="Close"
+                  aria-label={t("close")}
                   size="sm"
                   variant="ghost"
                   icon={<X size={18} aria-hidden="true" />}

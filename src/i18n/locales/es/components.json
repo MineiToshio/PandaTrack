@@ -48,6 +48,12 @@
     "placeholder": "Elige una fecha",
     "clear": "Limpiar fecha"
   },
+  "toast": {
+    "regionLabel": "Notificaciones"
+  },
+  "wizard": {
+    "stepActions": "Acciones del paso"
+  },
   "dateRangeInput": {
     "placeholderFrom": "Desde",
     "placeholderTo": "Hasta",

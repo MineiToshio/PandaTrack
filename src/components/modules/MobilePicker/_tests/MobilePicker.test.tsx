@@ -3,6 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 import { Disc } from "lucide-react";
 import { MobilePicker } from "@/components/modules/MobilePicker";
 
+// MobilePicker renders <Sheet>, which calls useTranslations. Stub next-intl to `namespace.key`.
+vi.mock("next-intl", () => ({
+  useTranslations: (namespace: string) => (key: string) => `${namespace}.${key}`,
+}));
+
 const options = [
   { value: "music", label: "Música", icon: <Disc /> },
   { value: "manga", label: "Manga", icon: <Disc /> },

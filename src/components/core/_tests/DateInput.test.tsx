@@ -2,6 +2,11 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import DateInput from "@/components/core/DateInput";
 
+// Minimal next-intl mock — returns `namespace.key` so label assertions are stable
+vi.mock("next-intl", () => ({
+  useTranslations: (namespace: string) => (key: string) => `${namespace}.${key}`,
+}));
+
 describe("DateInput — trigger rendering", () => {
   it("shows placeholder when value is null", () => {
     render(<DateInput value={null} onChange={vi.fn()} placeholder="Choose a date" />);
@@ -45,19 +50,19 @@ describe("DateInput — popover", () => {
 describe("DateInput — clear", () => {
   it("shows clear button when value is set and not disabled", () => {
     render(<DateInput value="2025-06-15" onChange={vi.fn()} />);
-    expect(screen.getByRole("button", { name: "Clear date" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "components.dateInput.clear" })).toBeTruthy();
   });
 
   it("calls onChange with null when clear button is clicked", () => {
     const onChange = vi.fn();
     render(<DateInput value="2025-06-15" onChange={onChange} />);
-    fireEvent.click(screen.getByRole("button", { name: "Clear date" }));
+    fireEvent.click(screen.getByRole("button", { name: "components.dateInput.clear" }));
     expect(onChange).toHaveBeenCalledWith(null);
   });
 
   it("does not show clear button when value is null", () => {
     render(<DateInput value={null} onChange={vi.fn()} />);
-    expect(screen.queryByRole("button", { name: "Clear date" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "components.dateInput.clear" })).toBeNull();
   });
 });
 

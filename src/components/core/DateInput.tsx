@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/styles";
 import { CalendarDays, ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { DayPicker, type ChevronProps } from "react-day-picker";
 
@@ -69,6 +70,7 @@ export default function DateInput({
   locale = "en-US",
   className,
 }: DateInputProps) {
+  const t = useTranslations("components.dateInput");
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -154,7 +156,7 @@ export default function DateInput({
           {value && !isDisabled && (
             <span
               role="button"
-              aria-label="Clear date"
+              aria-label={t("clear")}
               onClick={handleClear}
               className="flex items-center hover:[color:var(--text-primary)]"
             >

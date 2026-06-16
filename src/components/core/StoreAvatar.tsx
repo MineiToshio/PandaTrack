@@ -115,7 +115,7 @@ export default function StoreAvatar({
         className={cn(baseContainerClass)}
         style={{
           ...containerStyle,
-          background: "color-mix(in oklch, var(--text-muted) 12%, var(--surface-elevated))",
+          background: "color-mix(in oklab, var(--text-muted) 12%, var(--surface-elevated))",
           border: "1px solid var(--border)",
           color: "var(--text-muted)",
         }}

@@ -28,10 +28,10 @@ function SocialLink({ href, label, platform, icon, external }: SocialLinkProps) 
   );
 }
 
-function SimpleIconSvg({ path, title }: { path: string; title: string }) {
+// Decorative — the wrapping link carries the localized accessible name (`SocialLink` aria-label).
+function SimpleIconSvg({ path }: { path: string }) {
   return (
-    <svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true">
-      <title>{title}</title>
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true">
       <path d={path} />
     </svg>
   );
@@ -86,14 +86,14 @@ export default function Footer({ locale }: FooterProps) {
               label={t("social.tiktok")}
               platform="tiktok"
               external
-              icon={<SimpleIconSvg path={siTiktok.path} title="TikTok" />}
+              icon={<SimpleIconSvg path={siTiktok.path} />}
             />
             <SocialLink
               href={CONTACT_INFO.whatsapp}
               label={t("social.whatsapp")}
               platform="whatsapp"
               external
-              icon={<SimpleIconSvg path={siWhatsapp.path} title="WhatsApp" />}
+              icon={<SimpleIconSvg path={siWhatsapp.path} />}
             />
           </div>
         </div>

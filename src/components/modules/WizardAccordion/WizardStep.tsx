@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, Check, ChevronRight, ChevronUp, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useId, useRef, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import Button from "@/components/core/Button/Button";
 import { cn } from "@/lib/styles";
@@ -89,6 +90,7 @@ export default function WizardStep({
   actionsLayout = "inline",
   className,
 }: WizardStepProps) {
+  const t = useTranslations("components.wizard");
   const ctx = useWizardAccordion();
   const generatedId = useId();
   const headingId = `${generatedId}-title`;
@@ -351,7 +353,7 @@ export default function WizardStep({
             {!isAllOpen && actionsLayout === "sticky-on-mobile" && (primaryAction || secondaryAction) && (
               <div
                 role="group"
-                aria-label="Acciones del paso"
+                aria-label={t("stepActions")}
                 className={cn(
                   "fixed inset-x-0 bottom-0 z-30 flex items-center gap-2 px-4 py-3 md:hidden",
                   "[background:var(--surface-elevated)] [border-top:1px_solid_var(--border)]",
