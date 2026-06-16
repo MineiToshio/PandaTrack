@@ -632,6 +632,30 @@
   }
 }
 
+/* Hand-rolled check/dot zoom for Checkbox & Radio — replaces the inert
+   `animate-in zoom-in-50` (tailwindcss-animate not installed; ADR 0010 / cross-cutting
+   S12.1). Matches the zoom-in-50 feel: scale 0.5 → 1 + fade in. */
+@keyframes check-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-check-zoom {
+  animation: check-zoom-in var(--motion-fast) var(--ease-out-expressive) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-check-zoom {
+    animation: none;
+  }
+}
+
 /* ───────────────────────────────────────────────────────────
    10. Base styles
    ─────────────────────────────────────────────────────────── */

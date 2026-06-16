@@ -137,7 +137,7 @@ export default function Radio<T extends string = string>({
                       aria-hidden="true"
                       className={cn(
                         "rounded-[var(--radius-pill)]",
-                        "motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:[animation-duration:var(--motion-fast)]",
+                        "animate-check-zoom",
                         dot,
                         isDisabled ? "[background:var(--text-muted)]" : "[background:var(--accent)]",
                       )}

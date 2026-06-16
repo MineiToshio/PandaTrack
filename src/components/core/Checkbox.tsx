@@ -87,7 +87,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
                 size={iconSize}
                 aria-hidden="true"
                 className={cn(
-                  "motion-safe:animate-in motion-safe:zoom-in-50 [color:var(--text-on-accent)] motion-safe:[animation-duration:var(--motion-fast)]",
+                  "animate-check-zoom [color:var(--text-on-accent)]",
                   disabled && "[color:var(--text-muted)]",
                 )}
               />
@@ -96,7 +96,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
                 size={iconSize}
                 aria-hidden="true"
                 className={cn(
-                  "motion-safe:animate-in motion-safe:zoom-in-50 [color:var(--text-on-accent)] motion-safe:[animation-duration:var(--motion-fast)]",
+                  "animate-check-zoom [color:var(--text-on-accent)]",
                   disabled && "[color:var(--text-muted)]",
                 )}
               />
