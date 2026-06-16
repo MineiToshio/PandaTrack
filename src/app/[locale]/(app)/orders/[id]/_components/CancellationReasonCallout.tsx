@@ -26,7 +26,7 @@ export default async function CancellationReasonCallout({ reason, locale }: Canc
       aria-label={label}
       className="border-border mt-3.5 flex items-start gap-2.5 rounded-[10px] border py-3 pr-3.5 pl-[11px]"
       style={{
-        background: "color-mix(in oklch, var(--text-primary) 5%, transparent)",
+        background: "color-mix(in oklab, var(--text-primary) 5%, transparent)",
         borderLeft: "3px solid var(--text-muted)",
       }}
     >

@@ -363,11 +363,11 @@
    6. State layers — reusable color-mix recipes
    ─────────────────────────────────────────────────────────── */
 .state-hover {
-  background-color: color-mix(in oklch, var(--text-primary) var(--state-hover-mix), transparent);
+  background-color: color-mix(in oklab, var(--text-primary) var(--state-hover-mix), transparent);
 }
 
 .state-pressed {
-  background-color: color-mix(in oklch, var(--text-primary) var(--state-pressed-mix), transparent);
+  background-color: color-mix(in oklab, var(--text-primary) var(--state-pressed-mix), transparent);
 }
 
 .state-selected {
@@ -683,7 +683,7 @@ body {
 /* ── Marketing header ── */
 .mk-header {
   border-bottom: 1px solid var(--border);
-  background: color-mix(in oklch, var(--surface) 80%, transparent);
+  background: color-mix(in oklab, var(--surface) 80%, transparent);
   backdrop-filter: saturate(160%) blur(10px);
   -webkit-backdrop-filter: saturate(160%) blur(10px);
 }
@@ -742,7 +742,7 @@ body {
 }
 .mk-nav a:hover {
   color: var(--text-primary);
-  background: color-mix(in oklch, var(--text-primary) 5%, transparent);
+  background: color-mix(in oklab, var(--text-primary) 5%, transparent);
 }
 .mk-header-spacer {
   flex: 1;
@@ -825,7 +825,7 @@ body {
 /* ── Minibar (auth + legal) ── */
 .mk-minibar {
   border-bottom: 1px solid var(--border);
-  background: color-mix(in oklch, var(--surface) 80%, transparent);
+  background: color-mix(in oklab, var(--surface) 80%, transparent);
 }
 .mk-minibar-inner {
   display: flex;
@@ -933,7 +933,7 @@ body {
   width: 9px;
   height: 9px;
   border-radius: 999px;
-  background: color-mix(in oklch, var(--text-primary) 18%, transparent);
+  background: color-mix(in oklab, var(--text-primary) 18%, transparent);
 }
 .mk-window-body {
   padding: 16px;
@@ -1030,7 +1030,7 @@ body {
   position: relative;
   padding: 16px 14px 14px;
   border-bottom: 1px solid var(--border);
-  background: color-mix(in oklch, var(--surface-elevated) 60%, var(--surface));
+  background: color-mix(in oklab, var(--surface-elevated) 60%, var(--surface));
 }
 .mk-journey-cap {
   display: block;
@@ -1056,7 +1056,7 @@ body {
   right: 12.5%;
   height: 2px;
   border-radius: 999px;
-  background: color-mix(in oklch, var(--text-primary) 10%, transparent);
+  background: color-mix(in oklab, var(--text-primary) 10%, transparent);
   overflow: hidden;
 }
 .mk-journey-line::after {
@@ -1395,7 +1395,7 @@ body {
   font-family: var(--font-mono);
   font-size: 40px;
   font-weight: 700;
-  color: color-mix(in oklch, var(--text-primary) 8%, transparent);
+  color: color-mix(in oklab, var(--text-primary) 8%, transparent);
 }
 .mk-fit-card h3 {
   font-size: 19px;
@@ -1594,7 +1594,7 @@ body {
   color: var(--text-primary);
 }
 .mk-sheet-panel a.mk-sheet-link:hover {
-  background: color-mix(in oklch, var(--text-primary) 5%, transparent);
+  background: color-mix(in oklab, var(--text-primary) 5%, transparent);
 }
 .mk-sheet-head {
   display: flex;

@@ -52,6 +52,12 @@ export type BuildPageMetadataOptions = {
   pathSegment: PageCanonicalSegment;
   titleKey: string;
   descriptionKey?: string;
+  /**
+   * Render the title as `absolute` so the root layout's `%s | PandaTrack` template is not
+   * applied. Use for the homepage, whose title is already the brand — otherwise it renders
+   * as "PandaTrack | PandaTrack".
+   */
+  absoluteTitle?: boolean;
 };
 
 /**
@@ -73,12 +79,14 @@ export async function buildPageMetadata({
   pathSegment,
   titleKey,
   descriptionKey,
+  absoluteTitle,
 }: BuildPageMetadataOptions): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace });
   const baseUrl = getSiteUrl();
   const path = buildCanonicalPath(locale, pathSegment);
   const canonical = path ? `${baseUrl}${path}` : baseUrl;
-  const title = t(titleKey);
+  const titleText = t(titleKey);
+  const title = absoluteTitle ? { absolute: titleText } : titleText;
   const description = descriptionKey ? t(descriptionKey) : undefined;
 
   return {
@@ -86,7 +94,7 @@ export async function buildPageMetadata({
     ...(description && { description }),
     alternates: { canonical },
     openGraph: {
-      title,
+      title: titleText,
       ...(description && { description }),
       url: canonical,
       siteName: APP_NAME,

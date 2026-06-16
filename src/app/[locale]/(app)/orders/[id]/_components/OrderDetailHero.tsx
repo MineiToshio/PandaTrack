@@ -224,7 +224,7 @@ export default function OrderDetailHero({
             aria-valuemax={100}
             aria-label={t("detail.hero.paidPercent", { pct: pctForDisplay })}
             className="mt-4 h-1 w-full overflow-hidden rounded-full"
-            style={{ background: "color-mix(in oklch, var(--text-primary) 8%, transparent)" }}
+            style={{ background: "color-mix(in oklab, var(--text-primary) 8%, transparent)" }}
           >
             <span className="block h-full rounded-full" style={progressFillStyle} />
           </div>

@@ -15,5 +15,14 @@
     "backToHome": "Volver al inicio",
     "tableOfContents": "En esta página"
   },
-  "dismiss": "Cerrar"
+  "dismiss": "Cerrar",
+  "notFound": {
+    "eyebrow": "Error 404",
+    "title": "Esta página no existe",
+    "description": "Puede que el enlace esté roto o que el contenido se haya movido. Volvamos a un lugar conocido.",
+    "homeCta": "Volver al inicio"
+  },
+  "meta": {
+    "description": "Reúne tus pedidos de cualquier tienda y controla pre-reservas, pagos y entregas en un solo lugar."
+  }
 }

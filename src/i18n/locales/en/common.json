@@ -15,5 +15,14 @@
     "backToHome": "Back to home",
     "tableOfContents": "On this page"
   },
-  "dismiss": "Dismiss"
+  "dismiss": "Dismiss",
+  "notFound": {
+    "eyebrow": "Error 404",
+    "title": "This page doesn't exist",
+    "description": "The link may be broken or the content may have moved. Let's get you back to familiar ground.",
+    "homeCta": "Back to home"
+  },
+  "meta": {
+    "description": "Bring together your orders from any store and track pre-orders, payments, and deliveries in one place."
+  }
 }

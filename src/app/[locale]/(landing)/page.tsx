@@ -24,6 +24,7 @@ export async function generateMetadata({ params }: HomeProps): Promise<Metadata>
     pathSegment: "",
     titleKey: "meta.title",
     descriptionKey: "meta.description",
+    absoluteTitle: true,
   });
 }
 

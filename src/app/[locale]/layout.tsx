@@ -2,7 +2,7 @@ import { routing } from "@/i18n/routing";
 import { isLocale } from "@/types/locale";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getMessages, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import "../globals.css";
 import { interFont, logoFont, monoFont, regularFont, secondaryFont } from "@/lib/fonts";
@@ -21,10 +21,11 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
   if (!isLocale(locale)) return {};
   const baseUrl = getSiteUrl();
   const imageUrl = `${baseUrl.replace(/\/$/, "")}/${locale}/opengraph-image`;
+  const t = await getTranslations({ locale, namespace: "common" });
   return {
     metadataBase: new URL(baseUrl),
     title: { default: APP_NAME, template: `%s | ${APP_NAME}` },
-    description: "Track your collection efficiently",
+    description: t("meta.description"),
     openGraph: {
       images: [imageUrl],
     },
