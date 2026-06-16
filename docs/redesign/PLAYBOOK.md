@@ -409,30 +409,31 @@ Si saltás cualquiera de estos pasos, vas a generar trabajo que después hay que
 
 **Lista vinculante de patrones cross-module reutilizables** (origen: Stores S6, consumidores: Orders S7, Deliveries S8…):
 
-| Patrón                             | Componente canónico                                                                       | Ubicación                                                       |
-| ---------------------------------- | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| Aside Resumen del form-grid        | `<AsideSummary>` + `<AsideSummaryRow>`                                                    | `src/components/modules/AsideSummary/`                          |
-| Wizard con stepper + cards         | `<WizardAccordion>` + `<WizardStep>` + `<Stepper>`                                        | `src/components/modules/WizardAccordion/`, `core/Stepper.tsx`   |
-| Stepper full-width arriba del grid | `<Stepper>` montado fuera de `<WizardAccordion showStepper={false}>`                      | `core/Stepper.tsx` — patrón documentado en S7-B Parte 2         |
-| CTAs Continuar / Atrás de wizard   | `primaryAction={{ label }}` + `secondaryAction={{ label }}` (sin icons manual)            | `<WizardStep>` API — los iconos default (ArrowRight) los agrega |
-| Back-link sobre page-heading       | `<BackNavLink>`                                                                           | `core/BackNavLink.tsx`                                          |
-| Modal adaptive (centered + sheet)  | `<Modal>`                                                                                 | `modules/Modal/`                                                |
-| Filter drawer (lista módulo)       | `<FilterDrawer>`                                                                          | `modules/FilterDrawer/`                                         |
-| Picker mobile (lista + search)     | `<MobilePicker>`                                                                          | `modules/MobilePicker/`                                         |
-| Input + helper text + error inline | `<Input>` con `error` + `helperText` props                                                | `core/Input.tsx`                                                |
-| Eyebrow mono uppercase             | `<Eyebrow>`                                                                               | `core/Eyebrow.tsx`                                              |
-| StoreAvatar inicial + bg           | `<StoreAvatar>`                                                                           | `core/StoreAvatar.tsx`                                          |
-| Chip de estado por enum            | `<StatusChip>` (discriminated union)                                                      | `core/StatusChip.tsx`                                           |
-| Combobox desktop con search        | `<Combobox>` / `<SearchableSelect>`                                                       | `core/`                                                         |
-| Toast neutral con undo             | `useToast().addToast(msg, { variant: "neutral", action })`                                | `core/Toast` + `contexts/ToastContext`                          |
-| Switch / Checkbox / Radio          | `<Switch>` / `<Checkbox>` / `<Radio>`                                                     | `core/`                                                         |
-| Sidebar de detalle sticky          | `<DetailSidebar>` (cuando aplique)                                                        | `modules/DetailSidebar/`                                        |
-| Paginación de lista (L062)         | `<ListPagination>` (labels traducidos por el consumidor)                                  | `modules/ListPagination.tsx` — promovido en S9 Parte 1          |
-| Subcard colapsable de detalle      | `<CollapsibleSubcard>` (eyebrow chip + topAccent)                                         | `modules/CollapsibleSubcard.tsx` — promovido en S9 Parte 2      |
-| Código mono con click-to-copy      | `<CodeCopyButton>` (labels por props)                                                     | `core/CodeCopyButton.tsx` — promovido en S9 Parte 2             |
-| Skeleton de carga (átomo)          | `<Skeleton>` (variant text/circle/rect/pill) + composites                                 | `core/Skeleton.tsx` — S10 (átomo `.skeleton`, shimmer)          |
-| Empty state (centrado)             | `<EmptyState>` (appearance card/plain/page · iconTone neutral/accent/warning/destructive) | `modules/EmptyState.tsx` — extendido en S10                     |
-| Error de sección con retry         | `<SectionError>` (tone destructive/warning · onRetry default `router.refresh()`)          | `modules/SectionError.tsx` — S10                                |
+| Patrón                               | Componente canónico                                                                       | Ubicación                                                       |
+| ------------------------------------ | ----------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Aside Resumen del form-grid          | `<AsideSummary>` + `<AsideSummaryRow>`                                                    | `src/components/modules/AsideSummary/`                          |
+| Wizard con stepper + cards           | `<WizardAccordion>` + `<WizardStep>` + `<Stepper>`                                        | `src/components/modules/WizardAccordion/`, `core/Stepper.tsx`   |
+| Stepper full-width arriba del grid   | `<Stepper>` montado fuera de `<WizardAccordion showStepper={false}>`                      | `core/Stepper.tsx` — patrón documentado en S7-B Parte 2         |
+| CTAs Continuar / Atrás de wizard     | `primaryAction={{ label }}` + `secondaryAction={{ label }}` (sin icons manual)            | `<WizardStep>` API — los iconos default (ArrowRight) los agrega |
+| Back-link sobre page-heading         | `<BackNavLink>`                                                                           | `core/BackNavLink.tsx`                                          |
+| Modal adaptive (centered + sheet)    | `<Modal>`                                                                                 | `modules/Modal/`                                                |
+| Filter drawer (lista módulo)         | `<FilterDrawer>`                                                                          | `modules/FilterDrawer/`                                         |
+| Picker mobile (lista + search)       | `<MobilePicker>`                                                                          | `modules/MobilePicker/`                                         |
+| Input + helper text + error inline   | `<Input>` con `error` + `helperText` props                                                | `core/Input.tsx`                                                |
+| Eyebrow mono uppercase               | `<Eyebrow>`                                                                               | `core/Eyebrow.tsx`                                              |
+| StoreAvatar inicial + bg             | `<StoreAvatar>`                                                                           | `core/StoreAvatar.tsx`                                          |
+| Chip de estado por enum              | `<StatusChip>` (discriminated union)                                                      | `core/StatusChip.tsx`                                           |
+| Combobox desktop con search          | `<Combobox>` / `<SearchableSelect>`                                                       | `core/`                                                         |
+| Toast neutral con undo               | `useToast().addToast(msg, { variant: "neutral", action })`                                | `core/Toast` + `contexts/ToastContext`                          |
+| Switch / Checkbox / Radio            | `<Switch>` / `<Checkbox>` / `<Radio>`                                                     | `core/`                                                         |
+| Sidebar de detalle sticky            | `<DetailSidebar>` (cuando aplique)                                                        | `modules/DetailSidebar/`                                        |
+| Paginación de lista (L062)           | `<ListPagination>` (labels traducidos por el consumidor)                                  | `modules/ListPagination.tsx` — promovido en S9 Parte 1          |
+| Subcard colapsable de detalle        | `<CollapsibleSubcard>` (eyebrow chip + topAccent)                                         | `modules/CollapsibleSubcard.tsx` — promovido en S9 Parte 2      |
+| Código mono con click-to-copy        | `<CodeCopyButton>` (labels por props)                                                     | `core/CodeCopyButton.tsx` — promovido en S9 Parte 2             |
+| Skeleton de carga (átomo)            | `<Skeleton>` (variant text/circle/rect/pill) + composites                                 | `core/Skeleton.tsx` — S10 (átomo `.skeleton`, shimmer)          |
+| Empty state (centrado)               | `<EmptyState>` (appearance card/plain/page · iconTone neutral/accent/warning/destructive) | `modules/EmptyState.tsx` — extendido en S10                     |
+| Error de sección con retry           | `<SectionError>` (tone destructive/warning · onRetry default `router.refresh()`)          | `modules/SectionError.tsx` — S10                                |
+| Link list→detail con view-transition | `<ViewTransitionLink>` (drop-in de `<Link>`, triple-gate + fallback gracioso)             | `core/ViewTransitionLink.tsx` — S12                             |
 
 **Decisión:**
 
@@ -898,8 +899,54 @@ Reglas del sistema de estados. Spec completo: `docs/redesign/screens/cross-cutti
 
 - ❌ Receta de skeleton ad-hoc por módulo · ❌ `animate-pulse` sin `motion-safe:` · ❌ fake client fallback para UI SSR · ❌ mascota en errores/confirmaciones · ❌ `destructive` para un 404 · ❌ doble captura en Sentry · ❌ cerrar el shell en `error.tsx`/`not-found.tsx` · ❌ spinner como fallback de ruta.
 
+## 11. Motion — sistema de movimiento (S12)
+
+> Detalle completo en `docs/redesign/screens/motion-system.md` + ADR 0014. Acá la versión accionable.
+> **REGLA CERO:** las primitivas de motion ya existen (`globals.css` §1) — se construye encima, no se resetean.
+
+### 11.1 Tokens (no inventar otros)
+
+- **Duraciones:** `--motion-fast` 150ms (hover/focus/control) · `--motion-base` 280ms (modal/sheet/drawer/page/VT) · `--motion-slow` 480ms (expresivo/indeterminate). Count-roll = 600ms (hook). **`--motion-instant` 100ms** (flips discretos — toggle/checkmark/count tick).
+- **Easings:** `--ease-emphasis` (= M3 Standard; opacity/color/UI chica) · `--ease-out-expressive` (= M3 Emphasized decelerate; enters de superficie) · `--ease-bounce` (celebraciones, solo low-frequency) · `--ease-vt-signature` (**solo** view-transitions, nunca reusar).
+- **Regla dura:** animar **solo `transform`/`opacity`**. Nunca `width`/`height`/`top`/`left`/`margin`. INP ≤ 200ms p75.
+- **`prefers-reduced-motion`:** el bloque global (`globals.css` §12) es el **piso**; cada superficie nueva ships su `motion-safe:`/`motion-reduce:` explícito. **reduced ≠ none** (cross-fade sutil, no matar el feedback).
+
+### 11.2 Patrones canónicos
+
+- **Toggle** (Switch/Checkbox/Radio): translate/zoom `--motion-fast` + `--ease-emphasis`; reduced → instant.
+- **Optimistic + undo** (toast neutral-undo): ventana **5s** reversible / **8s** delete entero, pausa on-hover, countdown hairline (`scaleX`, no `width`), atajo `Z`, `aria-live=polite`. Modal/sheet cierran sincrónico (Optimistic Confirmation), el padre es dueño del rollback+toast.
+- **Progress de pago:** fill por `transform: scaleX()` origin-left (no `width`); cifra con `useAnimatedNumber` (600ms cubic-out, reduced → snap).
+- **Count change:** `useAnimatedNumber` + `tabular-nums` en toda cifra que actualiza por update optimista.
+- **Success micro-moment:** asentamiento, no confeti (morph "$0 → Pago completado" gated en el count a 0). `--ease-bounce` + emoji + (futuro) mascota **solo** en celebración genuina de bajo riesgo.
+- **List→detail VT** (`src/components/core/ViewTransitionLink.tsx`): drop-in de `<Link>` que envuelve `router.push` en `document.startViewTransition`. Contrato de nombres `order-{id}`/`dlv-{id}`/`store-{slug}` (en el wrapper de card/row/hero, NO en el link) + firma `--ease-vt-signature`. **Triple gate:** nunca bajo automatización (`navigator.webdriver` → e2e determinista) · ON en dev/preview (revisable) · flag PostHog `FEATURE_FLAGS.LIST_DETAIL_VIEW_TRANSITIONS` en prod (kill sin redeploy). **Fallback gracioso** (modificadores / middle-click / sin soporte de browser / flag-off → navegación nativa de `<Link>`); reduced-motion → cross-fade ~150ms explícito (`globals.css §12`). **Opción A:** el `<ViewTransition>` canary de React queda fuera del path (`next.config.ts` sin `experimental.viewTransition`). No hacerlo dependencia dura.
+
+### 11.3 Anti-patrones (motion)
+
+- ❌ Animar props de layout (`width`/`height`/`top`/`left`) · ❌ `transition-all` (scopear a `[transform,opacity]`) · ❌ easing inventado por componente · ❌ hover-motion decorativo en superficies no interactivas · ❌ `--ease-bounce`/emoji fuera de momentos celebratorios · ❌ animar para tapar latencia de fetch · ❌ hacer el `<ViewTransition>` de React (canary) dependencia dura · ❌ confiar **solo** en el piso global de reduced-motion · ❌ duraciones hardcoded (`duration-300`) en vez de tokens.
+
+## 12. Voice — voz constante, tono por contexto (S12)
+
+> Detalle completo en `docs/redesign/screens/voice-library.md`. Términos canónicos: `docs/product/glossary.md`. Voz base: `principles.md` §7.
+
+### 12.1 Voz constante (4 pilares)
+
+Clara y directa (una idea por línea, voz activa, brevedad > ingenio) · Cómplice no corporativa (`tú` siempre, cero "Le informamos"/"Sistema"/"Disculpe las molestias") · Traductora del dominio (glosario + el **dato es el héroe**) · Humor seco y puntual (solo si sale natural; "si dudás, cara seria"; máx **1 emoji**, solo en celebración).
+
+### 12.2 Tono por contexto (la matriz)
+
+- **Polo neutro/claro** (Linear): plata/pagos/totales, tracking de entrega, **destructivas**, **errores**, confirmaciones, atraso/vencido. Serio, task-first, sin emoji, el dato manda.
+- **Polo juguetón** (Arc/Duolingo): empty states, onboarding, **éxito/achievement**. Cálido, exclamación OK, personalidad de coleccionista, 1 emoji puntual.
+- **Regla de oro:** ante la duda, **bajá al polo neutro**. Claridad **siempre** > entretenimiento. El delight mal puesto (sobre plata/error/entrega fallida) saca al usuario del producto.
+
+### 12.3 Anti-patrones (voice)
+
+- ❌ Delight/emoji/exclamación sobre plata, errores o acciones destructivas · ❌ Voseo / argentinismos ("dale", "podés", "agregá" — usar neutro, PLAYBOOK §5.2) · ❌ > 1 emoji o emoji fuera de celebración · ❌ Corporativismo ("Operación exitosa", "Ha ocurrido") · ❌ Cringe/TikTok-talk ("bestie", "no cap") · ❌ Traducir es↔en literal (se **reinterpreta**; el `en` gana calidez por contracciones) · ❌ Cifra sin contexto ("$48,50" suelto, no "$48,50 de $120").
+
 ## Referencias
 
+- `docs/redesign/screens/motion-system.md` — sistema de motion (tokens, reglas, microinteracciones, view transitions).
+- `docs/redesign/screens/voice-library.md` — voice library (voz constante + matriz de tono).
+- `docs/redesign/decisions/0014-motion-system-and-view-transitions.md` — ADR del sistema de motion + VT.
 - `docs/redesign/methodology.md` — metodología completa del subproyecto.
 - `docs/redesign/_notes/cross-cutting-changes.md` — backlog M01-M03, S5.1, S6.1-S6.3.
 - `docs/redesign/_notes/lessons-learned.md` — diario de aprendizajes con origen y contexto.
