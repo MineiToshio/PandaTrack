@@ -106,7 +106,7 @@ export default function MascotBubble({ locale, visible = true, onHide }: MascotB
         aria-label={t("contextMenu.open")}
         aria-expanded={menuOpen}
         aria-haspopup="menu"
-        className="border-border focus-visible:ring-focus-ring relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+        className="border-border focus-visible:ring-focus-ring relative flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border transition-transform hover:scale-105 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none motion-reduce:transition-none"
         style={{
           background: "color-mix(in oklch, var(--accent-cool) 16%, var(--surface))",
           boxShadow: "var(--elevation-3)",
@@ -126,7 +126,7 @@ export default function MascotBubble({ locale, visible = true, onHide }: MascotB
           ref={menuRef}
           role="menu"
           aria-label={t("contextMenu.open")}
-          className="border-border bg-popover absolute right-0 bottom-full mb-3 min-w-[11rem] overflow-hidden rounded-2xl border shadow-xl"
+          className="animate-mascot-menu border-border bg-popover absolute right-0 bottom-full mb-3 min-w-[11rem] overflow-hidden rounded-2xl border shadow-xl"
         >
           <div className="flex flex-col gap-0.5 p-1.5">
             <button

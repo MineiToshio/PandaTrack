@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import ViewTransitionLink from "@/components/core/ViewTransitionLink";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -75,8 +75,9 @@ export default function OrderCard({ order, locale, today, returnTo }: OrderCardP
       )}
       style={{ viewTransitionName: `order-${order.id}` }}
     >
-      <Link
+      <ViewTransitionLink
         href={detailHref}
+        viewTransitionEntity="order"
         aria-label={`${order.store.name} · ${order.humanReadableId}`}
         className="absolute inset-0 rounded-[var(--radius-2xl)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
       />

@@ -70,7 +70,6 @@ export default function UserAvatarHero({ displayName, imageUrl, size = "s56", cl
           fill
           sizes={`${pixelSize}px`}
           className="object-cover"
-          unoptimized
           onError={() => setImgError(true)}
         />
       ) : (

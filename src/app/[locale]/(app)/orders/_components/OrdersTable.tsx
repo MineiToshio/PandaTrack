@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import ViewTransitionLink from "@/components/core/ViewTransitionLink";
 import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -113,8 +113,9 @@ export default function OrdersTable({ orders, locale, today, returnTo }: OrdersT
               )}
               style={{ viewTransitionName: `order-${order.id}` }}
             >
-              <Link
+              <ViewTransitionLink
                 href={detailHref}
+                viewTransitionEntity="order"
                 aria-label={`${order.store.name} · ${order.humanReadableId}`}
                 className="absolute inset-0 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
               />
@@ -258,13 +259,14 @@ export default function OrdersTable({ orders, locale, today, returnTo }: OrdersT
                     </p>
                   )}
                   <div className="pointer-events-auto relative mt-1">
-                    <Link
+                    <ViewTransitionLink
                       href={detailHref}
+                      viewTransitionEntity="order"
                       className="inline-flex items-center gap-1 [font-size:var(--text-caption)] [color:var(--accent)] hover:underline"
                     >
                       {t("card.openDetail")}
                       <ChevronRight width={12} height={12} aria-hidden />
-                    </Link>
+                    </ViewTransitionLink>
                   </div>
                 </div>
               )}

@@ -192,4 +192,16 @@ export const POSTHOG_EVENTS = {
     REVIEW_DELETED: "store_review_deleted",
     NOTE_SAVED: "store_note_saved",
   },
+  NAVIGATION: {
+    VIEW_TRANSITION_NAVIGATED: "view_transition_navigated",
+  },
+} as const;
+
+/**
+ * PostHog runtime feature flags. Gate optional or risky behavior so it can be ramped or
+ * killed without a redeploy. Keys must match the PostHog dashboard flag keys exactly.
+ */
+export const FEATURE_FLAGS = {
+  /** List → detail shared-element View Transitions (ADR 0014 D2). Off in prod until ramped. */
+  LIST_DETAIL_VIEW_TRANSITIONS: "list-detail-view-transitions",
 } as const;

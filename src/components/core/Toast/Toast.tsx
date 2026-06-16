@@ -56,6 +56,9 @@ const VARIANT_CONFIG = {
   },
 } as const;
 
+/** Exit transition length — kept in sync with --motion-base (the container transition). */
+const EXIT_ANIMATION_MS = 280;
+
 export default function Toast({ toast, onRemove }: ToastProps) {
   const t = useTranslations("common");
   const { id, message, variant, duration, action } = toast;
@@ -69,7 +72,7 @@ export default function Toast({ toast, onRemove }: ToastProps) {
     if (dismissedRef.current) return;
     dismissedRef.current = true;
     setVisible(false);
-    setTimeout(() => onRemove(id), 300);
+    setTimeout(() => onRemove(id), EXIT_ANIMATION_MS);
   }, [id, onRemove]);
 
   const handleActionClick = () => {
@@ -96,7 +99,7 @@ export default function Toast({ toast, onRemove }: ToastProps) {
       aria-live={config.ariaLive}
       aria-atomic="true"
       className={cn(
-        "relative flex w-full items-start gap-3 overflow-hidden rounded-xl border px-4 py-3 shadow-lg transition-all duration-300 ease-out",
+        "relative flex w-full items-start gap-3 overflow-hidden rounded-xl border px-4 py-3 shadow-lg transition-[transform,opacity] [transition-duration:var(--motion-base)] [transition-timing-function:var(--ease-emphasis)]",
         config.containerClass,
         visible ? "translate-x-0 opacity-100" : "translate-x-4 opacity-0",
       )}
@@ -121,8 +124,8 @@ export default function Toast({ toast, onRemove }: ToastProps) {
         <X size={16} aria-hidden />
       </button>
       <div
-        className={cn("absolute bottom-0 left-0 h-0.5", config.progressClass)}
-        style={{ animation: `toast-progress ${duration}ms linear forwards` }}
+        className={cn("toast-countdown absolute inset-x-0 bottom-0 h-0.5", config.progressClass)}
+        style={{ animationDuration: `${duration}ms` }}
         aria-hidden
       />
     </div>

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useToast } from "@/contexts/ToastContext";
+import { useToast, NEUTRAL_UNDO_DURATION_MS } from "@/contexts/ToastContext";
 import { ROUTES } from "@/lib/constants";
 import type { DeliveryStatus } from "../../../../../../../generated/prisma/client";
 import type { DeliveryDetail } from "@/lib/data/deliveries/deliveryQueries";
@@ -28,8 +28,8 @@ type DeliveryDetailClientProps = {
   noteCard: ReactNode;
 };
 
-/** Undo window for the reopen neutral-undo toast (ADR 0001 D4). */
-const UNDO_TOAST_DURATION_MS = 5000;
+/** Undo window for the reopen neutral-undo toast (ADR 0001 D4) — light reversible (5s). */
+const UNDO_TOAST_DURATION_MS = NEUTRAL_UNDO_DURATION_MS;
 
 /**
  * Coordinator for the delivery detail. Owns the live `status` + `receivedDate` pair so the

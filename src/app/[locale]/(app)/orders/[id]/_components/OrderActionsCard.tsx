@@ -194,7 +194,7 @@ function CancelAction({ tooltip, onClick, label }: { tooltip: string | null; onC
   );
   if (tooltip) {
     return (
-      <Tooltip content={tooltip} side="bottom" asDiv>
+      <Tooltip content={tooltip} side="bottom" asDiv className="w-full" triggerClassName="w-full">
         {button}
       </Tooltip>
     );
@@ -219,7 +219,7 @@ function DeleteAction({ tooltip, onClick, label }: { tooltip: string | null; onC
   );
   if (tooltip) {
     return (
-      <Tooltip content={tooltip} side="bottom" asDiv>
+      <Tooltip content={tooltip} side="bottom" asDiv className="w-full" triggerClassName="w-full">
         {button}
       </Tooltip>
     );

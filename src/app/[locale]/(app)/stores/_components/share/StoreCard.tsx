@@ -1,4 +1,4 @@
-import Link from "next/link";
+import ViewTransitionLink from "@/components/core/ViewTransitionLink";
 import { MapPin, Minus, Store as StoreIcon, User as UserIcon } from "lucide-react";
 import Chip from "@/components/core/Chip";
 import StarRating from "@/components/core/StarRating";
@@ -62,13 +62,15 @@ export default function StoreCard({ store, locale, labels, viewerOrderCount, cla
   const hasImports = store.importCountryCodes.length > 0;
 
   return (
-    <Link
+    <ViewTransitionLink
       href={detailHref}
+      viewTransitionEntity="store"
       aria-label={labels.ariaLabel(store.name)}
+      style={{ viewTransitionName: `store-${store.slug}` }}
       className={cn(
         "group flex h-[279px] flex-col gap-3 overflow-hidden rounded-[var(--radius-xl)] p-[18px]",
         "[background:var(--surface)] [border:1px_solid_var(--border)]",
-        "[transition:border-color_150ms,transform_150ms,box-shadow_150ms]",
+        "transition-[border-color,transform,box-shadow] [transition-duration:var(--motion-fast)] motion-reduce:transition-none",
         "hover:[transform:translateY(-2px)] hover:[border-color:var(--border-strong)] hover:[box-shadow:var(--shadow-2)]",
         "[outline:none] focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:2px]",
         className,
@@ -158,6 +160,6 @@ export default function StoreCard({ store, locale, labels, viewerOrderCount, cla
           <StarRating value={store.averageRating} size={14} />
         </div>
       </div>
-    </Link>
+    </ViewTransitionLink>
   );
 }

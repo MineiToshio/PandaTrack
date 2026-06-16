@@ -71,7 +71,7 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
               aria-hidden="true"
               className={cn(
                 "block rounded-[var(--radius-pill)]",
-                "transition-[background-color] [transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
+                "transition-[background-color] [transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)] motion-reduce:transition-none",
                 track,
                 checked && !isDisabled
                   ? "[background:var(--accent)]"

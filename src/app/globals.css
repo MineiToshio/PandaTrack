@@ -120,6 +120,7 @@
   --z-tooltip: 110;
 
   /* Motion — durations */
+  --motion-instant: 100ms; /* discrete feedback: toggle flip, checkmark, count tick — snappier than --motion-fast */
   --motion-fast: 150ms;
   --motion-base: 280ms;
   --motion-slow: 480ms;
@@ -498,40 +499,29 @@
   }
 }
 
-@keyframes button-ripple {
-  0% {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0.35;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0;
-  }
-}
-
 @keyframes toast-progress {
   from {
-    width: 100%;
+    transform: scaleX(1);
   }
   to {
-    width: 0%;
+    transform: scaleX(0);
   }
 }
 
-@keyframes order-item-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Countdown hairline for auto-dismissing toasts — transform-only (scaleX from a left
+   origin, never `width`); the per-toast duration is supplied inline. Reduced-motion hides
+   the bar while the JS dismiss timer keeps running ("barra oculta, timer sigue"). */
+.toast-countdown {
+  transform-origin: left;
+  animation-name: toast-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
 }
 
-.order-item-animate {
-  opacity: 0;
-  animation: order-item-in 0.3s ease forwards;
+@media (prefers-reduced-motion: reduce) {
+  .toast-countdown {
+    display: none;
+  }
 }
 
 @keyframes progress-indeterminate {
@@ -613,6 +603,32 @@
   .skeleton {
     animation: none;
     background: var(--skeleton-base);
+  }
+}
+
+/* ───────────────────────────────────────────────────────────
+   Mascot context menu — subtle pop-in from the bubble corner.
+   Reduced-motion → none (the menu still appears, just instant).
+   ─────────────────────────────────────────────────────────── */
+@keyframes mascot-menu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-mascot-menu {
+  transform-origin: bottom right;
+  animation: mascot-menu-pop var(--motion-fast) var(--ease-out-expressive) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-mascot-menu {
+    animation: none;
   }
 }
 
@@ -1937,9 +1953,15 @@ body {
     scroll-behavior: auto !important;
   }
 
-  ::view-transition-group(*),
+  /* View transitions: reduced ≠ none (ADR 0014 D1.4). Drop the shared-element morph
+     (group snaps instantly, no slide/scale) but keep a gentle ~150ms opacity cross-fade
+     so list → detail still reads as a transition, not a hard cut. */
+  ::view-transition-group(*) {
+    animation-duration: 0.01ms !important;
+  }
+
   ::view-transition-old(*),
   ::view-transition-new(*) {
-    animation-duration: 0.01ms !important;
+    animation-duration: 150ms !important;
   }
 }

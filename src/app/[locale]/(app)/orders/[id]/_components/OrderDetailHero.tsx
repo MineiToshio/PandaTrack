@@ -118,8 +118,12 @@ export default function OrderDetailHero({
   const isFullyPaid = showActiveLayout && remainingAmount === 0;
   const showPaidStatus = isFullyPaid && Math.round(animatedAmount) === 0;
 
+  // Transform-only fill (scaleX from the left, never animating `width`): the hook drives the
+  // value per frame and snaps under reduced-motion. The track clips the rounded ends, so the
+  // fill itself stays square-edged to avoid border-radius distortion when scaled.
   const progressFillStyle: React.CSSProperties = {
-    width: `${Math.min(100, Math.max(0, animatedPct))}%`,
+    transform: `scaleX(${Math.min(100, Math.max(0, animatedPct)) / 100})`,
+    transformOrigin: "left",
     background:
       completedUnpaid || isOverdue
         ? "linear-gradient(90deg, var(--warning), var(--accent-warm))"
@@ -226,7 +230,7 @@ export default function OrderDetailHero({
             className="mt-4 h-1 w-full overflow-hidden rounded-full"
             style={{ background: "color-mix(in oklab, var(--text-primary) 8%, transparent)" }}
           >
-            <span className="block h-full rounded-full" style={progressFillStyle} />
+            <span className="block h-full w-full" style={progressFillStyle} />
           </div>
         )}
 

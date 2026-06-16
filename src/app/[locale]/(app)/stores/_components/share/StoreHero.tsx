@@ -46,6 +46,7 @@ export default function StoreHero({ store, labels, className }: StoreHeroProps) 
 
   return (
     <section
+      style={{ viewTransitionName: `store-${store.slug}` }}
       className={cn(
         "rounded-[18px] p-5 md:p-[22px]",
         "[background:var(--surface-elevated)] [border:1px_solid_var(--border)]",

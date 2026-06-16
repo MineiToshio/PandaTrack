@@ -89,7 +89,7 @@ export default function Stepper({
               <span
                 key={step.n}
                 className={cn(
-                  "h-1 flex-1 rounded-full transition-colors",
+                  "h-1 flex-1 rounded-full transition-colors [transition-duration:var(--motion-fast)]",
                   isFilled ? "[background:var(--accent)]" : "[background:var(--border-strong)]",
                   state === "errored" && "[background:var(--destructive)]",
                 )}
@@ -121,7 +121,7 @@ export default function Stepper({
             );
 
           const bulletClass = cn(
-            "inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full transition-colors",
+            "inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full transition-colors [transition-duration:var(--motion-fast)]",
             state === "todo" &&
               "[background:var(--surface-elevated)] [border:1.5px_solid_var(--border-strong)] [color:var(--text-muted)]",
             state === "active" &&
