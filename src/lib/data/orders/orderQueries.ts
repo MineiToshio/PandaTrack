@@ -350,16 +350,15 @@ export type OrdersListPageResult = {
   pendingFxCount: number;
 };
 
-function startOfCurrentMonth(now: Date): Date {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-}
-
 function buildFxPendingWhere(userId: string, baseCurrencyCode: string | null | undefined) {
   if (!baseCurrencyCode) return null;
+  // An order is FX-pending when it was explicitly flagged on a base-currency change
+  // (`needsExchangeRateUpdate`) and still holds a foreign currency. Cancelled orders are
+  // excluded; reactivating one re-surfaces it because the flag is preserved.
   return {
     userId,
+    needsExchangeRateUpdate: true,
     status: { not: "CANCELLED" as OrderStatus },
-    orderDate: { gte: startOfCurrentMonth(new Date()) },
     currencyCode: { not: baseCurrencyCode },
   };
 }
@@ -400,7 +399,7 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
 
   const trimmedQuery = nameQuery?.trim();
   const fxFilterBase = fxPendingOnly && baseCurrencyCode ? { currencyCode: { not: baseCurrencyCode } } : {};
-  const fxFilterDate = fxPendingOnly && baseCurrencyCode ? { orderDate: { gte: startOfCurrentMonth(new Date()) } } : {};
+  const fxFilterFlag = fxPendingOnly && baseCurrencyCode ? { needsExchangeRateUpdate: true } : {};
 
   // Delivery filter — "Por recibir" wins over an explicit range when both are present.
   // `deliveryOverdueOnly`: window already started (`expectedDeliveryFrom <= today`) and
@@ -437,7 +436,7 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
         }
       : {}),
     ...fxFilterBase,
-    ...(Object.keys(fxFilterDate).length > 0 && !(dateFrom || dateTo) ? fxFilterDate : {}),
+    ...fxFilterFlag,
     ...deliveryWhere,
   };
 

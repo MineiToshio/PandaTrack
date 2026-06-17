@@ -200,16 +200,15 @@ On confirm, the mutation executes atomically inside a single `prisma.$transactio
 
 ### Cancel rules
 
-When eligibility is met, show the same context-aware confirmation modal adapted for cancellation wording. The collector is informed that existing payment records for the order will be removed.
+When eligibility is met, show the same context-aware confirmation modal adapted for cancellation wording. The collector is informed that the order will be archived (transitioned to `CANCELLED`); its payment records are preserved, not removed.
 
 On confirm, the mutation executes atomically inside a single `prisma.$transaction`:
 
 1. Re-validate the shared eligibility rule.
-2. Delete all `OrderPayment` records for this order.
-3. Update `Order.status` to `CANCELLED`.
-4. Append an `ORDER_CANCELLED` history entry.
+2. Update `Order.status` to `CANCELLED`.
+3. Append an `ORDER_CANCELLED` history entry.
 
-`OrderItem`, `OrderHistory`, and links to already-cancelled deliveries are preserved so the cancelled order keeps its historical record intact.
+`OrderPayment` records, `OrderItem`, `OrderHistory`, and links to already-cancelled deliveries are all preserved so the cancelled order keeps its full historical and payment record intact. Payments are only ever removed by a physical delete (where the `OrderPayment` rows are cascade-deleted with the order).
 
 ### Reactivation
 
@@ -218,7 +217,7 @@ A `CANCELLED` order may be returned to `OPEN` without preconditions via `reactiv
 1. Update `Order.status` to `OPEN`.
 2. Append an `ORDER_REACTIVATED` history entry.
 
-Payment records removed during cancellation are not restored. Existing history entries (including `ORDER_CANCELLED`) are preserved so the lifecycle remains auditable.
+Payment records are preserved through cancellation and remain attached to the order, so they are still visible after reactivation. Existing history entries (including `ORDER_CANCELLED`) are preserved so the lifecycle remains auditable.
 
 ## Module Structure
 
@@ -261,8 +260,8 @@ All query and mutation functions accept `userId` as an explicit parameter and sc
 - The order form defaults `currencyCode` to the user's saved `baseCurrencyCode` when set.
 - Attempting to delete an order with a delivered delivery is blocked with a clear error.
 - Deleting an order with payments or in-transit deliveries shows a confirmation modal before proceeding.
-- Cancelling an order removes its payment records and sets its status to `CANCELLED`.
-- A cancelled order can be returned to `OPEN`; payment records and deliveries are not restored.
+- Cancelling an order preserves its payment records and sets its status to `CANCELLED`.
+- A cancelled order can be returned to `OPEN`; its preserved payment records remain attached and visible (deliveries are not re-linked).
 - Deleting an order that is the sole source of a delivery's items removes the delivery entirely.
 - Deleting an order that shares a delivery with another order removes only the link; the delivery remains.
 

@@ -7,8 +7,8 @@ status: ACTIVE
 parent: BP-02
 source_features:
   - FEAT-0014
-last_updated: 2026-04-26
-implementation_status: IN_PROGRESS
+last_updated: 2026-06-16
+implementation_status: IMPLEMENTED
 ---
 
 # WO-06 Orders List, Filters, Expansion Rows, and Overdue Payment Signals
@@ -32,7 +32,8 @@ WO-06 does not introduce any Prisma migration. It adds `getOrdersList` to the ex
 
 - Paginated orders list route at `/orders`, replacing the current placeholder
 - Filter sidebar (drawer, same pattern as Stores) with date range, store, product type, status, and free-text product-name filters
-- URL-backed filter state: `?q`, `?productType`, `?status`, `?store`, `?dateFrom`, `?dateTo`, `?page`
+- URL-backed filter state: `?q`, `?productType`, `?status`, `?store`, `?dateFrom`, `?dateTo`, `?sort`, `?page`
+- User-facing sort control with five options (`recent`, `oldest`, `store-asc`, `payment-asc`, `total-desc`), default `recent` (`FR-05-28`)
 - Default active-orders filter when no URL params are present
 - Grouped `Solo activas` chip when the URL status set matches the default active set exactly
 - Removable filter chips for all active filters
@@ -42,7 +43,7 @@ WO-06 does not introduce any Prisma migration. It adds `getOrdersList` to the ex
 - `Impago` pill for `COMPLETED` orders with pending payment
 - Expandable cards revealing associated items (name, quantity, delivery state badge)
 - Empty states for no orders and for no results matching active filters
-- Pagination with `?page=` and `pageSize = 20`
+- Pagination with `?page=` and `pageSize = 30` (`ORDER_LIST_PAGE_SIZE`)
 - Back navigation from detail to list preserving filter state via `?returnTo=`
 - `isOrderOverdue` pure helper with unit tests
 - PostHog analytics events
@@ -73,8 +74,8 @@ WO-06 does not introduce any Prisma migration. It adds `getOrdersList` to the ex
 
 ## Route
 
-| Route                 | File                                        | Purpose                               |
-| --------------------- | ------------------------------------------- | ------------------------------------- |
+| Route              | File                                     | Purpose                               |
+| ------------------ | ---------------------------------------- | ------------------------------------- |
 | `/[locale]/orders` | `src/app/[locale]/(app)/orders/page.tsx` | Server-rendered paginated orders list |
 
 The existing `page.tsx` currently renders `AppPlaceholderPage` and is replaced entirely by this slice.
@@ -179,9 +180,10 @@ On expand, a section below the collapsed content reveals the order items:
 [item name]  ×  [quantity]   [delivery state badge]
 ```
 
-Items render in `position ASC` order. Delivery state badges use three states and localized labels:
+Items render in `position ASC` order. Delivery state chips (`orderItemDeliveryChip.tsx`) use four states and localized labels:
 
 - `open` → "Pendiente" / "Pending"
+- `arrived_at_store` → "Listo en tienda" / "Ready at store"
 - `in_transit` → "En tránsito" / "In transit"
 - `delivered` → "Entregado" / "Delivered"
 
@@ -252,7 +254,7 @@ interface OrderListItem {
     id: string;
     name: string;
     quantity: number;
-    deliveryState: "open" | "in_transit" | "delivered";
+    deliveryState: "open" | "arrived_at_store" | "in_transit" | "delivered";
   }>;
   paidAmount: number; // Int — sum of OrderPayment.amount for this order
   paymentPercentage: number; // derived: Math.round((paidAmount / totalCost) * 100)
@@ -263,7 +265,7 @@ interface OrderListResult {
   orders: OrderListItem[];
   totalCount: number;
   page: number;
-  pageSize: number; // 20
+  pageSize: number; // 30
 }
 ```
 
@@ -319,11 +321,11 @@ export function isOrderOverdue(order: { expectedDeliveryTo: Date | null; status:
 
 ### Pagination
 
-`pageSize = 20`. Prisma query uses `skip = (page - 1) * pageSize` and `take = pageSize`. Invalid or missing `?page=` values default to `1`.
+`pageSize = 30` (`ORDER_LIST_PAGE_SIZE`). Prisma query uses `skip = (page - 1) * pageSize` and `take = pageSize`. Invalid or missing `?page=` values default to `1`.
 
-### Default order sort
+### Order sort
 
-Orders are sorted by `orderDate ASC` (oldest first) as specified by `FR-05-28`. Sort order is not configurable by the user in this slice.
+The orders list exposes a **user-facing sort control** (`FR-05-28`), backed by a `?sort` URL param. `ORDER_LIST_SORT_VALUES` (in `src/lib/orders/orderListSort.ts`) defines the five available sorts: `recent`, `oldest`, `store-asc`, `payment-asc`, and `total-desc`. The default is `recent` (`DEFAULT_ORDER_LIST_SORT`), for which `resolveOrderBy` returns `{ orderDate: "desc" }` (most recent first). `parseOrderListingParams` validates the `?sort` value against `ORDER_LIST_SORT_VALUES` and falls back to `recent` when absent or invalid; the default value is omitted from the canonical URL.
 
 ### Monetary formatting
 
@@ -440,7 +442,7 @@ All event names are added to `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 
 ### Pagination
 
-- A user with more than 20 orders sees pagination controls. Navigating to page 2 updates `?page=2` in the URL and shows the next 20 orders.
+- A user with more than 30 orders sees pagination controls. Navigating to page 2 updates `?page=2` in the URL and shows the next 30 orders.
 - Direct URL access to `?page=2` with active filters renders the correct page and preserves the filter chips.
 
 ### Back navigation

@@ -7,11 +7,11 @@ status: SUPERSEDED
 parent: PRD-00
 children:
   - BP-01
-last_updated: 2026-06-15
+last_updated: 2026-06-16
 source_features:
   - FEAT-0001
 implementation_status: SUPERSEDED_BY_GO_LIVE
-superseded_by: docs/redesign/modules/landing-onboarding.md
+superseded_by: docs/product/prd-00-pre-release-validation/frd-01-pre-release-landing/fdd-01-pre-release-landing.md
 ---
 
 # FRD-01 Pre-release Landing and Waitlist Capture
@@ -22,11 +22,12 @@ superseded_by: docs/redesign/modules/landing-onboarding.md
 > Kit (ConvertKit) + Google Sheets + referral integrations were removed from the
 > landing; every CTA now points to `/sign-up` (with a secondary `/sign-in`). The
 > redesigned landing belongs to the collector MVP rather than this pre-release FRD —
-> the transition was anticipated below under "Superseded or transitional". The shipped
-> behavior and copy live in `docs/redesign/modules/landing-onboarding.md` and
-> `docs/redesign/screens/landing.md`. The functional requirements below are retained
-> for historical context; the waitlist-specific ones (FR-01-02..07) are **no longer in
-> effect**.
+> the transition was anticipated below under "Superseded or transitional". The durable
+> design record for the shipped landing is
+> [`fdd-01-pre-release-landing.md`](./fdd-01-pre-release-landing.md) and the
+> self-contained prototype at [`prototype/pre-release-landing.html`](./prototype/pre-release-landing.html).
+> The functional requirements below are retained for historical context; the
+> waitlist-specific ones (FR-01-02..07) are **no longer in effect**.
 
 ## Overview
 
@@ -40,7 +41,7 @@ It is reverse-engineered from:
 
 ## Current State
 
-> Updated 2026-06-15 (redesign S11 go-live). The lists below reflect the **shipped go-live landing**, not the original pre-release waitlist flow.
+> Updated 2026-06-16 (S16 doc-alignment pass). The lists below reflect the **shipped go-live landing**, not the original pre-release waitlist flow.
 
 ### Implemented (go-live)
 
@@ -57,7 +58,11 @@ It is reverse-engineered from:
 ### Superseded or transitional
 
 - this FRD represents the pre-auth (waitlist) entry model and is now **superseded**
-- the auth-first go-live landing belongs to the collector MVP (PRD-01); implementation is tracked in `docs/redesign/modules/landing-onboarding.md`
+- the auth-first go-live landing belongs to the collector MVP (PRD-01); the durable design
+  record is
+  [`fdd-01-pre-release-landing.md`](./fdd-01-pre-release-landing.md) and
+  [`prototype/pre-release-landing.html`](./prototype/pre-release-landing.html)
+  (the workshop artifacts in `docs/redesign/` are disposable and being archived)
 
 ## User Stories
 
@@ -82,7 +87,7 @@ As a visitor who joined the waitlist, I want an immediate success/share state so
 - `FR-01-05`: Successful submissions must switch the UI into a success/share state.
 - `FR-01-06`: Validation errors must render as user-facing field or form feedback.
 - `FR-01-07`: Recoverable submission failures must show a generic non-breaking error state.
-- `FR-01-08`: The waitlist flow must preserve locale-specific copy and behavior in `es` and `en`.
+- `FR-01-08`: The landing must render locale-specific copy and behavior in `es` (default) and `en`. _(still in effect — "waitlist flow" phrasing was pre-go-live; the requirement applies to the full landing)_
 
 ## Business Rules
 
@@ -97,7 +102,10 @@ As a visitor who joined the waitlist, I want an immediate success/share state so
 
 - Given a visitor opens the localized home route
 - When the page loads
-- Then hero, user-fit, feature, banner, FAQ, waitlist, and footer sections are visible.
+- Then hero, user-fit, features, banner, FAQ, and footer sections are visible.
+
+> **Note (go-live):** the waitlist section was removed; the shipped section order is
+> hero → user-fit → features → banner → faqs → footer. The CTAs navigate to `/sign-up`.
 
 ### `AC-01-02`
 
@@ -119,11 +127,63 @@ As a visitor who joined the waitlist, I want an immediate success/share state so
 
 ## Implementation Notes
 
+### Shipped go-live landing (authority)
+
+The waitlist route group, `Waitlist.tsx`, `WaitlistForm.tsx`, `WaitlistShare.tsx`,
+`submitWaitlist.ts`, and `waitlistSchema.ts` were fully removed at the go-live
+transition. **No waitlist code remains in `src/`.**
+
+Current implementation entry points:
+
 - Route: `src/app/[locale]/(landing)/page.tsx`
-- Waitlist UI: `src/app/[locale]/(landing)/_components/Waitlist/*`
-- Tests:
-  - `src/app/[locale]/(landing)/_components/Waitlist/_tests/*`
-  - `e2e/landing.spec.ts`
+- Layout (marketing wrapper): `src/app/[locale]/(landing)/layout.tsx`
+- Sections: `Hero`, `UserFit`, `Features`, `Banner`, `Faqs`, `Footer`
+  under `src/app/[locale]/(landing)/_components/`
+- Header (includes `Header`, `BurgerMenu`, `HeaderNav`):
+  `src/app/[locale]/(landing)/_components/Menu/` (`HeaderNav.tsx` is a client component).
+  The header/sheet consume the public toggles `PublicLanguageToggle`/`PublicThemeToggle`
+  from `_components/public/` — the `LanguageToggle`/`ThemeToggle` copies under `Menu/`
+  are used by the app shell, not the landing.
+- Public shared components (brand mark, minibar toggles):
+  `src/app/[locale]/_components/public/`
+- Structured data: `LandingJsonLd` (`(landing)/_components/LandingJsonLd.tsx`) emits
+  `WebSite` + `SoftwareApplication` JSON-LD for the home route.
+- OG image: `src/app/[locale]/opengraph-image.tsx` serves the landing Open Graph image.
+- Locale copy (no `waitlist` keys): `src/i18n/locales/{es,en}/landing.json`
+- E2E coverage: `e2e/landing.spec.ts` (verifies sign-up CTA, FAQ accordion,
+  absence of waitlist form)
+
+### In-page section IDs (production)
+
+| Section  | HTML id     | Nav target  |
+| -------- | ----------- | ----------- |
+| User-fit | `#user-fit` | `#user-fit` |
+| Features | `#features` | `#features` |
+| FAQ      | `#faqs`     | `#faqs`     |
+
+These differ from the prototype anchor names (`#s11-fit`, `#s11-feat`, `#s11-faq`),
+which are demo-scoped. The FDD `demo_anchors` field lists the prototype anchors; the
+table above is what ships.
+
+### Analytics
+
+PostHog events fired by the landing (from `POSTHOG_EVENTS.LANDING` in
+`src/lib/constants.ts`):
+
+| Event name                | Where fired                                   | Properties                          |
+| ------------------------- | --------------------------------------------- | ----------------------------------- |
+| `hero_cta_clicked`        | Hero primary CTA (`Button` → `/sign-up`)      | `location: "hero"`, `destination`   |
+| `banner_cta_clicked`      | Banner CTA (`Button` → `/sign-up`)            | `location: "banner"`, `destination` |
+| `header_cta_clicked`      | Header "Crear cuenta" (`Button` → `/sign-up`) | `location: "header"`, `destination` |
+| `mobile_menu_opened`      | Burger button (`data-ph-event`)               | —                                   |
+| `mobile_menu_nav_clicked` | Sheet nav links + sheet "Crear cuenta"        | `destination`, `cta_type` (on CTA)  |
+| `faq_item_toggled`        | `FaqAccordion` every toggle                   | `faq_id`, `faq_question`, `action`  |
+| `social_link_clicked`     | Footer social icons (`data-ph-event`)         | `platform`                          |
+
+The header "Iniciar sesión" link does not fire a dedicated landing event (it is a plain
+`<Button as="a">` without `posthogEvent`). The mobile sheet "Iniciar sesión" Button
+also fires no event — it only carries `onClick={onClose}`. Only the mobile sheet nav
+links and the sheet "Crear cuenta" Button emit `mobile_menu_nav_clicked`.
 
 ## Linked Blueprint
 

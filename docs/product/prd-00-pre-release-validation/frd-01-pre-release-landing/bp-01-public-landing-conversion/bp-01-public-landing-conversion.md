@@ -3,52 +3,71 @@ id: BP-01
 type: BLUEPRINT
 slug: public-landing-conversion
 title: Public Landing Conversion
-status: ACTIVE
+status: SUPERSEDED
 parent: FRD-01
 children:
   - WO-01
   - WO-02
-last_updated: 2026-03-21
-implementation_status: IMPLEMENTED
+last_updated: 2026-06-16
+implementation_status: SUPERSEDED_BY_GO_LIVE
 ---
 
 # BP-01 Public Landing Conversion
 
-## Purpose
+> **SUPERSEDED — go-live transition (redesign S11, 2026-06-15).** This blueprint
+> describes the pre-release architecture (waitlist-first). The waitlist form, server
+> action, validation schema, and external integrations were removed. The shipped
+> go-live landing is a static SSR marketing page with auth-first CTAs only.
+> See [`frd-01-pre-release-landing.md`](../frd-01-pre-release-landing.md) and
+> [`fdd-01-pre-release-landing.md`](../fdd-01-pre-release-landing.md) for the current
+> authoritative state.
 
-Describe how PandaTrack's pre-release public landing converts visitors into waitlist submissions through a localized narrative page, a server-backed waitlist form, and a success/share state.
+## Purpose (historical)
 
-## Runtime Components
+Described how PandaTrack's pre-release public landing would convert visitors into
+waitlist submissions through a localized narrative page, a server-backed waitlist form,
+and a success/share state.
 
-- Landing route composition in `src/app/[locale]/(landing)/page.tsx`
-- Marketing sections under `src/app/[locale]/(landing)/_components/*`
-- Waitlist client UI in `Waitlist.tsx`, `WaitlistForm.tsx`, and `WaitlistShare.tsx`
-- Server action in `submitWaitlist.ts`
-- Validation schema in `waitlistSchema.ts`
-- Locale copy in `src/i18n/locales/{es,en}/landing.json`
+## Runtime Components (go-live — shipped)
 
-## Contracts
+- Landing route: `src/app/[locale]/(landing)/page.tsx`
+- Layout (marketing wrapper): `src/app/[locale]/(landing)/layout.tsx`
+- Marketing sections (`Hero`, `UserFit`, `Features`, `Banner`, `Faqs`, `Footer`,
+  `Section`): `src/app/[locale]/(landing)/_components/`
+- Header + mobile burger sheet (`Header`, `BurgerMenu`, `HeaderNav`):
+  `src/app/[locale]/(landing)/_components/Menu/`
+- Public shared components (brand mark + the toggles the landing actually consumes,
+  `PublicLanguageToggle`/`PublicThemeToggle`): `src/app/[locale]/_components/public/`
+  (the `LanguageToggle`/`ThemeToggle` copies under `Menu/` are consumed by the app shell,
+  not the landing)
+- Locale copy (landing namespace, no waitlist keys):
+  `src/i18n/locales/{es,en}/landing.json`
 
-- Input contract:
-  - `email` required
-  - `name` optional
-  - `comment` optional
-  - `locale` best-effort hidden context
-- Output contract:
-  - success
-  - field-level validation error
-  - generic submit error
+> **Removed at go-live:** `Waitlist.tsx`, `WaitlistForm.tsx`, `WaitlistShare.tsx`,
+> `submitWaitlist.ts`, `waitlistSchema.ts`, and all ConvertKit / Google Sheets env vars.
+> No waitlist code remains in `src/`.
 
-## Architecture Notes
+## Contracts (go-live — shipped)
 
-- Rendering is server-first for the page shell and content.
-- The form owns the interactive state transitions for loading, error, success, and share behavior.
-- Submission logic is isolated in the server action so external integrations stay out of the visual components.
+This is a fully static, SSR-delivered page. There are no form submissions or server
+mutations. Every CTA is a plain navigation link:
 
-## Risks
+- Primary CTA → `/{locale}/sign-up`
+- Secondary auth link → `/{locale}/sign-in`
 
-- Waitlist integrations must not leak secrets or provider details to the client.
-- Validation and UX messaging must stay aligned across locales.
+## Architecture Notes (go-live)
+
+- Page is server-rendered; all sections are Server Components (no `"use client"`
+  boundary on page or sections).
+- `Header` and `BurgerMenu` are client components (state for burger open/close + focus
+  trap).
+- `FaqAccordion` is a client component (accordion toggle state + PostHog capture).
+- No server actions, no form state, no external integrations.
+
+## Risks (historical — resolved)
+
+- Waitlist integrations leaking secrets: resolved by removal.
+- Locale/UX alignment: still applies — locale copy lives in `src/i18n/locales/`.
 
 ## Linked Work Orders
 

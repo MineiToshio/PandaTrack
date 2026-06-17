@@ -8,8 +8,8 @@ parent: BP-01
 source_features:
   - FEAT-0015
 source_issue: 103
-last_updated: 2026-04-30
-implementation_status: PLANNED
+last_updated: 2026-06-16
+implementation_status: IMPLEMENTED
 ---
 
 # WO-07 Deliveries List Filters
@@ -64,15 +64,19 @@ The deliveries list route remains `/{locale}/deliveries`.
 
 ### Supported query params
 
-- `status`
-- `store`
-- `q`
-- `shippingDateFrom`
-- `shippingDateTo`
-- `expectedArrivalFrom`
-- `expectedArrivalTo`
-- `expectedArrivalPreset`
+> Implementation note (S16 sync): the param names below reflect what the route actually parses in `deliveryListingParams.ts`. Earlier drafts of this WO used `shippingDateFrom/To`, `expectedArrivalFrom/To`, and a single `expectedArrivalPreset` param; the shipped contract differs and is authoritative.
+
+- `q` — free-text search over the delivery identifier and included product names
+- `status` — repeatable; bare URL canonicalizes to `IN_TRANSIT`, explicit empty `status=` means all statuses
+- `store` — single store id
+- `product` — product-name-only free text
+- `overdue` — boolean (`true` / `1`); the only persisted expected-arrival preset
+- `arrivalFrom` / `arrivalTo` — manual expected-arrival range (interval overlap)
+- `shippedFrom` / `shippedTo` — shipping-date range (backed by `Delivery.deliveryDate`)
+- `sort` — `oldest` (default, omitted from URL) / `recent` / `eta-asc` / `store-asc`
 - `page`
+
+The non-overdue expected-arrival presets (`Due today`, `Next 7 days`, `Next 14 days`, `This month`) do not persist as their own param: choosing one populates `arrivalFrom` / `arrivalTo`, and editing that range manually clears the preset selection in the UI.
 
 ### Default route behavior
 

@@ -138,19 +138,20 @@ pagination            desktop numeric Pagination / mobile "Cargar más"
 ```
 
 The defining choice: the body is a **responsive CSS card grid** (1 col `<640px` → 2 cols
-`640–1024px` → 3 cols `>1024px`, gap `--space-16`), **not** the tabular row pattern used by
+`640–1024px` → 3 cols `>1024px`, grid `gap-[14px]`), **not** the tabular row pattern used by
 orders/deliveries. Each cell is a `.store-card` anchor (`<a href>` to the detail), so the
 whole card is one keyboardable link.
 
-**StoreCard anatomy** (prototype `.store-card`):
-`.store-avatar.s56` (name initial, accent tint for `BUSINESS`; `user` icon + muted tint for
-`PERSON`) → store name with an inline type icon (`store` 12px / `user` 12px muted) →
-`map-pin` + city + country code → a row of `chip neutral` type/presence signals
-(`Tienda`, `Web`, plus trust chips like `chip info` `Recibe pedidos` / `Pre-órdenes`) →
-`chip accent` category chips (+`chip neutral` "+N más") → an "Importa de" line in
-`text-muted` → a stats row (rating bold `.num` + review count + viewer's order count +
-`.stars`). **Moderation status chips are not rendered on cards** (S6.1 decision, FRD Current
-Implementation Notes); status appears only on detail.
+**StoreCard anatomy** (component `StoreCard`, fixed-height card): `StoreAvatar` s56 (accent
+tint for `BUSINESS`; `user` icon + muted tint for `PERSON`) → store name with an inline type
+icon (`store` 12px / `user` 12px muted) → `map-pin` + country name → a row of `chip accent`
+**product-type** chips (icon + label) with a `chip neutral` `"+N más"` overflow pill → an
+"Importa de" text line in `text-muted` (or a muted "no imports" fallback) → a top-bordered
+stats row (rating number bold `.num` + review count, the viewer's order count when present,
+and a `StarRating` on the right). **No neutral type/presence signal chips and no trust chips
+render on the card** — only product-type chips. `StoreCommerceSignalPills` exists in the
+`share/` folder but is **not used** by `StoreCard`. **Moderation status chips are not rendered
+on cards** (S6.1 decision, FRD Current Implementation Notes); status appears only on detail.
 
 Active filters surface above the grid as removable `.filter-chip` pills
 (`Recibe pedidos ×`, `Vinyl ×`, `Envía a CO ×`); free-text search is **not** counted as a
@@ -171,8 +172,10 @@ detail-grid
 **StoreHero** (prototype `.detail-hero`, a `.card`-style surface): `detail-hero-head` =
 `store-avatar s56` + identity block (display name + `map-pin` city/country + a status
 `chip`) + a right-aligned rating block (`.stars` + `"4.7 · 92 reseñas"`). Below the head:
-the description in `text-secondary`, then a presence/trust chip row
-(`chip neutral` `Tienda física` / `Web`, `chip info` `Envía a 12 países`). The richer
+the description in `text-secondary`, then (BUSINESS only) a commercial chip row that renders
+only the signals that apply: `chip info` `Tienda física` (`store`) / `chip info` `Web`
+(`globe`), `chip success` for in-stock, and `chip warning` for accepts-pre-orders. There is
+**no** "Envía a N países" chip. The richer
 "other user" variant additionally adopts the system Chip-Eyebrow + Top-Accent surface
 treatment on the aside cards (`.s8-card-warm`, `.s8-eyebrow-chip`).
 
@@ -188,20 +191,24 @@ header is `.subcard-toggle` with `.eyebrow` + a `text-muted` count + `.chev`):
   `IconButton`.
 - **Reseñas** — a prominent rating block (38px number + `.stars` 20px + count, separated by
   `border-bottom`), the viewer's own review form on a tinted panel, then `.review-row`s
-  (`store-avatar s32` + name + `.stars` + `when` + text) and a ghost reveal CTA
-  (`"Ver todas las N reseñas"`, 5 + 5 increments — FR-04-24, BR-04-07).
+  (`store-avatar s32` + name + `.stars` + `when` + text). The community-reviews surface is
+  authenticated-only: the full list is loaded server-side **only when a session is present**, so
+  anonymous visitors load no reviews and the list does not render for them. For a signed-in
+  viewer the section shows a 4-review community preview and a single full-width ghost reveal CTA
+  (`"Ver todas las N reseñas"`) that expands to all remaining reviews in one click — there is
+  no incremental batching (FR-04-24, BR-04-07).
 
 **Aside rail** (prototype `aside` › `.card.elevated`): the order is frozen
 **Resumen → Acciones → Tu nota privada**; the cards inside change by viewer role (§5.6).
 
 **State variants** (prototype anchors in parentheses):
 
-| State / viewer                                         | Treatment                                                                                                                                                       |
-| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `APPROVED` owner (`#s6-store-detail-published-viewer`) | Owner aside: "Resumen" internal metrics, "Editar tienda" primary, pending-reports count chip, private note                                                      |
-| `APPROVED` other user (`#s6-store-detail-other-user`)  | Viewer aside: "Anotar pedido aquí" primary, "Guardar tienda", "Sugerir cambios", "Reportar tienda" destructive-ghost; warm-toned private note (`.s8-card-warm`) |
-| `PENDING` (`#s6-store-detail-pending`)                 | A soft disclaimer banner before the hero ("En revisión…"), visible only to creator/admins; detail metadata is non-indexable (BR-04-04)                          |
-| `PERSON` (`#s6-store-detail-person`)                   | No logo, no Contactos subcard, no Direcciones subcard; avatar is the `user` icon (FR-04-21/23, AC-04-05)                                                        |
+| State / viewer                                         | Treatment                                                                                                                                                                                                                             |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APPROVED` owner (`#s6-store-detail-published-viewer`) | Owner aside: viewer "Resumen", "Anotar pedido aquí" primary, "Editar tienda" ghost, "Reportar tienda" destructive-ghost, private note; pending reports surface via the governance-summary banner above the layout (not an aside chip) |
+| `APPROVED` other user (`#s6-store-detail-other-user`)  | Viewer aside: "Anotar pedido aquí" primary, "Sugerir cambios" ghost (signed-in), "Reportar tienda" destructive-ghost; warm-toned private note (`.s8-card-warm`). No "Guardar tienda" action exists                                    |
+| `PENDING` (`#s6-store-detail-pending`)                 | A soft disclaimer banner before the hero ("En revisión…"), visible only to creator/admins; detail metadata is non-indexable (BR-04-04)                                                                                                |
+| `PERSON` (`#s6-store-detail-person`)                   | No logo, no Contactos subcard, no Direcciones subcard; avatar is the `user` icon (FR-04-21/23, AC-04-05)                                                                                                                              |
 
 **404-guard on private Person stores:** a `private` Person store renders for its creator
 only; any other viewer must get a not-found response, not a hidden page
@@ -264,16 +271,16 @@ system; the definitions live in
 
 ### 3.1 Color roles
 
-| Role in this FRD                                       | Token / class                                | Where                                |
-| ------------------------------------------------------ | -------------------------------------------- | ------------------------------------ |
-| Primary CTA (`Nueva tienda`, `Crear tienda`, `Editar`) | `--accent` (Button primary)                  | toolbar, wizard step 5, owner aside  |
-| Category & selected affordances                        | `chip accent` / `.cat-chip` (accent ~10%)    | StoreCard, detail categorías, step 3 |
-| Type / presence neutral signals                        | `chip neutral`                               | StoreCard, hero presence row         |
-| Presence / "ships to" / pending status                 | `--info` (`chip info`)                       | hero, StoreCard trust chips, Resumen |
-| Stock available                                        | `--success` (`chip success`)                 | hero stock chip, autosave check      |
-| Accepts pre-orders / FLAGGED warning                   | `--warning` (`chip warning`)                 | hero pre-orders chip, FLAGGED banner |
-| Warm private-note surface                              | `s8-card-warm` + `s8-eyebrow-chip tone-warm` | aside "Tu nota privada"              |
-| Destructive (report)                                   | `--destructive`                              | Button destructive-ghost (report)    |
+| Role in this FRD                                       | Token / class                                | Where                                                              |
+| ------------------------------------------------------ | -------------------------------------------- | ------------------------------------------------------------------ |
+| Primary CTA (`Nueva tienda`, `Crear tienda`, `Editar`) | `--accent` (Button primary)                  | toolbar, wizard step 5, owner aside                                |
+| Category & selected affordances                        | `chip accent` / `.cat-chip` (accent ~10%)    | StoreCard, detail categorías, step 3                               |
+| Neutral signals (import countries, overflow, Persona)  | `chip neutral`                               | detail "Importa desde", card "+N más"                              |
+| Presence (physical/online) / pending status            | `--info` (`chip info`)                       | hero presence chips, pending chip                                  |
+| Stock available                                        | `--success` (`chip success`)                 | hero stock chip, autosave check                                    |
+| Accepts pre-orders / FLAGGED warning                   | `--warning` (`chip warning`)                 | hero pre-orders chip (FLAGGED banner is prototype-only — see §5.3) |
+| Warm private-note surface                              | `s8-card-warm` + `s8-eyebrow-chip tone-warm` | aside "Tu nota privada"                                            |
+| Destructive (report)                                   | `--destructive`                              | Button destructive-ghost (report)                                  |
 
 The **Chip-Eyebrow + Top-Accent** pattern (`s8-eyebrow-chip` + `s8-card-*`) is the system's
 section-identity device — see [interface-patterns.md](../../../design/interface-patterns.md).
@@ -330,9 +337,11 @@ or reinvent system primitives.
 | `Skeleton`                             | core        | list loading                                                                                                                      |
 | `Toast`                                | module      | create/edit/report confirmations                                                                                                  |
 
-New data needs (Phase B, not design): `getStoresForList`, store detail queries, and the
-create/edit/review/note/report/change-request mutations. These are implementation contracts,
-not design surfaces.
+New data needs (Phase B, not design): the listing/detail queries and the
+create/edit/review/note/report/change-request mutations. The named query and action
+contracts are owned by the FRD — see [Screens and Data Contract](./frd-04-store-domain.md#screens-and-data-contract)
+(e.g. `getPublicStoresListingPage`, `getStoreBySlug`, `getStoreGovernanceSummary`).
+These are implementation contracts, not design surfaces.
 
 ---
 
@@ -371,26 +380,38 @@ count; free text does not increment that count.
 | Moderation `APPROVED` | `Aprobada`         | `accent`  | (detail only)    |
 | Moderation `PENDING`  | `En revisión`      | `info`    | `clock`          |
 | Moderation `FLAGGED`  | `Con reportes`     | `warning` | `alert-circle`   |
-| Presence physical     | `Tienda física`    | `neutral` | `store`          |
-| Presence online       | `Web`              | `neutral` | `globe`          |
-| Ships to N countries  | `Envía a N países` | `info`    | `send`           |
-| Receives orders       | `Recibe pedidos`   | `info`    | `check-circle`   |
-| Accepts pre-orders    | `Pre-órdenes`      | `info`    | `calendar-clock` |
+| Presence physical     | `Tienda física`    | `info`    | `store`          |
+| Presence online       | `Web`              | `info`    | `globe`          |
+| Has stock             | (in-stock label)   | `success` | `package-check`  |
+| Accepts pre-orders    | (pre-orders label) | `warning` | `calendar-clock` |
 
-Moderation chips render on **detail only**, not on list cards (S6.1). Person stores omit the
-contact/presence channel chips entirely.
+The commercial chips (physical / online / stock / pre-orders) render on the **detail hero**
+(BUSINESS only); moderation chips render on **detail only**, not on list cards (S6.1). The
+`FLAGGED` "Con reportes" mapping is **prototype-only and not reachable on the shipped public
+detail page**: `getStoreBySlug` resolves only `PENDING`/`APPROVED` stores, so `FLAGGED` (and
+`REJECTED`) stores 404 rather than rendering a warning chip or banner. There is **no** "Envía a
+N países" chip anywhere. Person stores omit the contact/presence chips entirely.
 
 ### 5.4 Detail actions by viewer role (§2.2 aside)
 
 One primary, ghost secondaries, destructive last — the same action grammar as the rest of the
-app. Resolved per role (prototype + FRD US-03/05, BR-04-12):
+app. As shipped, the **Acciones** card composes the same three building blocks for every
+viewer and only toggles the edit affordance by auth/permission (prototype + FRD US-03/05,
+BR-04-12):
 
-| Viewer               | Aside actions                                                                                                         |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Unauthenticated      | A single CTA: `"Inicia sesión para anotar pedidos"`                                                                   |
-| Authenticated, other | `"Anotar pedido aquí"` (primary) · `"Guardar tienda"` · `"Sugerir cambios"` · `"Reportar tienda"` (destructive-ghost) |
-| Owner                | `"Editar tienda"` (primary) · `"Ver reportes pendientes"` with a `warning` count chip · private note                  |
-| Admin                | Management card (approve / reject / flag, reports queue) + optional personal-use actions                              |
+- **"Anotar pedido aquí"** (primary, `plus-circle`) — rendered **unconditionally for all
+  viewers**, including anonymous ones; it links to the new-order route. There is **no** distinct
+  "Inicia sesión para anotar pedidos" sign-in CTA.
+- **Edit affordance** — rendered only when `canAccessEditRoute` (a session exists). Its label
+  and icon swap by permission: direct **"Editar tienda"** (`pencil`) when `canDirectlyEdit`,
+  otherwise the change-request variant **"Sugerir cambios"** (`git-pull-request-arrow`).
+- **"Reportar tienda"** (destructive-ghost, `flag`) — always rendered; the report submit itself
+  still requires authentication.
+
+There is **no** "Guardar tienda" / watchlist action anywhere in the code. The owner's pending
+reports surface is the governance-summary banner above the layout, not an aside button. The
+private note (`StoreNoteForm`) occupies the third aside slot for any viewer. Admin moderation
+tooling beyond this is an Open Question, not yet built.
 
 ### 5.5 Create-flow interactions
 

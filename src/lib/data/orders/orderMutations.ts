@@ -141,6 +141,9 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
         ...(input.expectedDeliveryTo !== undefined ? { expectedDeliveryTo: input.expectedDeliveryTo } : {}),
         ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),
         ...(input.exchangeRate !== undefined ? { exchangeRate: input.exchangeRate } : {}),
+        // Re-entering the exchange rate clears any pending FX-reconciliation flag: the
+        // collector has just affirmed the rate for this order's currency.
+        ...(input.exchangeRate !== undefined ? { needsExchangeRateUpdate: false } : {}),
         ...(input.totalCost !== undefined ? { totalCost: input.totalCost } : {}),
         ...(input.note !== undefined ? { note: input.note } : {}),
       },
@@ -237,6 +240,28 @@ export async function reactivateOrder(orderId: string, userId: string): Promise<
 
     return { ok: true };
   });
+}
+
+/**
+ * Re-flag the user's orders for FX reconciliation after a base-currency change. Every order
+ * whose currency now differs from the new base has a stale stored `exchangeRate`, so it is
+ * marked `needsExchangeRateUpdate`; orders already in the new base currency are unmarked.
+ *
+ * This only sets the flag — it never mutates `exchangeRate`. The collector reconciles the real
+ * rates per-row in the orders FX modal (the deliberate "no silent bulk rate mutation" rule).
+ * Cancelled orders are flagged too so a later reactivation surfaces them.
+ */
+export async function flagOrdersForFxReconciliation(userId: string, newBaseCurrencyCode: string): Promise<void> {
+  await prisma.$transaction([
+    prisma.order.updateMany({
+      where: { userId, currencyCode: { not: newBaseCurrencyCode } },
+      data: { needsExchangeRateUpdate: true },
+    }),
+    prisma.order.updateMany({
+      where: { userId, currencyCode: newBaseCurrencyCode },
+      data: { needsExchangeRateUpdate: false },
+    }),
+  ]);
 }
 
 type SetItemDeliveryStateResult =

@@ -5,7 +5,7 @@ slug: dashboard-output-model
 title: Dashboard Output Model
 status: DRAFT
 parent: BP-01
-last_updated: 2026-04-03
+last_updated: 2026-06-16
 implementation_status: PLANNED
 ---
 

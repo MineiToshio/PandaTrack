@@ -380,7 +380,7 @@ Everything below already exists in the catalog — see
 | `MobilePicker`                         | module      | mobile store / currency / product-type / date-range pickers                                                                   |
 | `EmptyState`                           | module      | initial empty, filtered empty, no-eligible-stores                                                                             |
 | `Skeleton`                             | core        | list loading                                                                                                                  |
-| `Toast`                                | core        | neutral-undo payment delete (`BR-05-10`), payment-complete achievement, save confirmations                                    |
+| `Toast`                                | core        | payment-complete achievement, save confirmations, add-payment failure reverts                                                 |
 | `MascotBubble`                         | core        | celebratory register only — empty states and the payment-complete toast                                                       |
 
 Implementation contracts (not design surfaces): the `getOrdersList` / `getOrderDetail`
@@ -435,8 +435,9 @@ Adding a payment is an **inline expand inside the Pagos card** on desktop
 the outstanding balance while entering an amount. The amount field offers two quick-pick
 `filter-pill`s: `"Saldo pendiente ($X)"` and `"Mitad ($X/2)"`, both computed on the
 **remaining balance** (never the gross total). A payment greater than the remaining balance
-is rejected (`FR-05-19`). Deleting a `pay-row` is optimistic with a 5s neutral-undo toast
-(keyboard `Z`). A payment that exactly clears the balance fires a celebratory toast with
+is rejected (`FR-05-19`). Deleting a `pay-row` opens a destructive confirmation modal
+(`role="alertdialog"`) and is awaited — the row is removed only after the server confirms;
+there is no optimistic delete and no undo toast. A payment that exactly clears the balance fires a celebratory toast with
 `MascotBubble celebrating` (`"¡Cubierto! Una pre-orden menos. ✨"`).
 
 ### 5.4 Lifecycle actions (`FR-05-23`, ADR 0011 — the action hierarchy)

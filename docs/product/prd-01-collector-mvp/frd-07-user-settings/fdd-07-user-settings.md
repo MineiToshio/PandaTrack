@@ -321,7 +321,8 @@ here. The Settings-specific instances of the system states are field-level:
 - **Validation (inline)**: username format / availability errors and field-level save errors
   render **below the input**, never as a toast (interface-patterns.md — _Success vs. Error
   Feedback Placement_; FRD Implementation Notes). The username states are
-  `checking / available / taken / cooldown`.
+  `available / taken / cooldown` (a `checking` state exists in the type and copy but is
+  currently dead code — `UsernameModal` never enters it).
 - **Confirmation (toast)**: successful username, display-name, avatar upload/remove, and
   password changes show a transient toast (`ToastContext`).
 - **Disabled-by-cooldown**: while `FR-07-33` is active, the username modal save is
@@ -366,8 +367,9 @@ Behavior follows the `optimistic-client-updates.mdc` policy and
 
 - **Modal/sheet flows close synchronously** on submit (Optimistic Confirmation); the row
   value updates locally and reverts with a toast on failure (the parent coordinator owns
-  rollback). Username and avatar changes additionally refresh the **shell identity surface**
-  in-session without a full reload (`FR-07-13`, `AC-07-04`).
+  rollback). Username and avatar changes update the settings pane's local state immediately;
+  as implemented they do **not** refresh the **shell identity surface** in-session — the shell
+  reflects the new values on the next full load (`FR-07-13`, `AC-07-04`).
 - **Presentation toggles are immediate**: theme and language apply on click (theme via
   `ThemeContext`, language via `NEXT_LOCALE` + a localized-route redirect); they are not
   persisted preferences.

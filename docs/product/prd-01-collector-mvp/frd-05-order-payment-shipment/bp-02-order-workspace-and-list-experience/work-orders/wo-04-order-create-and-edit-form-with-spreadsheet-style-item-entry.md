@@ -7,8 +7,8 @@ status: ACTIVE
 parent: BP-02
 source_features:
   - FEAT-0014
-last_updated: 2026-04-22
-implementation_status: IN_PROGRESS
+last_updated: 2026-06-16
+implementation_status: IMPLEMENTED
 ---
 
 # WO-04 Order Create and Edit Form With Spreadsheet-Style Item Entry
@@ -42,7 +42,7 @@ WO-04 does not include any Prisma migration. It consumes the modules and schemas
 - Keyboard shortcut discoverability: help icon + tooltip next to the "Agregar artículo" button lists every shortcut
 - Product-type inheritance on new rows (new rows inherit the nearest preceding non-empty product type)
 - Drag-and-drop item reorder with keyboard accessibility
-- Total-cost entry and discrepancy modal (three-way decision)
+- Total-cost entry and discrepancy modal (two-option decision: Save anyway / Go back — `FR-05-13`), plus an inline "use calculated total" button on the field
 - Redirect to order detail after successful save
 - Discard-changes confirmation in edit mode
 - PostHog analytics events
@@ -260,7 +260,7 @@ Behavior notes:
 
 ### Discrepancy modal
 
-Appears only when every item has a non-null `unitPrice` AND `itemizedTotal !== totalCost`. Three options: keep entered total · use calculated total · go back without saving. Copy and i18n keys follow the WO-02 spec (`orders.discrepancyModal.*`).
+Appears only when every item has a non-null `unitPrice` AND `itemizedTotal !== totalCost`. Per `FR-05-13` the modal (`DiscrepancyModal.tsx`) exposes **two** options: **Save anyway** (`onSaveAnyway`) and **Go back and correct** (`onGoBack`). "Use calculated total" is **not** a modal option — it is a separate inline button on the total field in the form (`useCalculatedTotal`, which calls `setTotalCost` to the calculated value before any save). Copy and i18n keys follow the WO-02 spec (`orders.discrepancyModal.*`).
 
 ### Post-save redirect
 
@@ -319,13 +319,13 @@ The form body uses `APP_SHELL_FORM_RAIL_CLASSNAME` to keep fields at a comfortab
 
 All event names are centralized in `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 
-| Event constant                   | When it fires                                                                                                                      |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `order_created`                  | Create server action completes successfully                                                                                        |
-| `order_edited`                   | Edit server action completes successfully                                                                                          |
-| `order_create_discarded`         | User confirms leaving the create form without saving                                                                               |
-| `order_discrepancy_modal_opened` | Discrepancy modal appears at save time                                                                                             |
-| `order_discrepancy_resolved`     | User picks one of the three discrepancy options; include property `resolution: "kept_entered" \| "used_calculated" \| "cancelled"` |
+| Event constant                   | When it fires                                                                                                                                                                                                                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `order_created`                  | Create server action completes successfully                                                                                                                                                                                                                         |
+| `order_edited`                   | Edit server action completes successfully                                                                                                                                                                                                                           |
+| `order_create_discarded`         | User confirms leaving the create form without saving                                                                                                                                                                                                                |
+| `order_discrepancy_modal_opened` | Discrepancy modal appears at save time                                                                                                                                                                                                                              |
+| `order_discrepancy_resolved`     | User resolves the discrepancy modal; as shipped the property is `resolution: "kept_entered"` (Save anyway) or `"cancelled"` (Go back) — `"used_calculated"` is not fired from the modal because "use calculated total" is an inline form button, not a modal option |
 
 ## Blueprints
 
@@ -412,9 +412,9 @@ All event names are centralized in `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 ### Discrepancy modal
 
 - When every item has a unit price and the derived total differs from the entered total, the discrepancy modal appears.
-- Choosing "Use calculated total" replaces the entered total and saves the order.
-- Choosing "Keep entered total" saves with the manually entered total.
-- Choosing "Go back" closes the modal without saving.
+- Choosing "Save anyway" saves with the manually entered total.
+- Choosing "Go back and correct" closes the modal without saving.
+- The inline "use calculated total" button on the field (outside the modal) replaces the entered total with the calculated value; saving afterward with matching totals does not open the modal.
 - When at least one item has no unit price, the modal does not appear regardless of total values.
 
 ### Edit and discard

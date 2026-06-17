@@ -5,7 +5,7 @@ slug: runtime-monitoring-baseline
 title: Runtime Monitoring Baseline
 status: ACTIVE
 parent: BP-01
-last_updated: 2026-03-21
+last_updated: 2026-06-16
 source_features:
   - FEAT-0003
 implementation_status: IMPLEMENTED
@@ -15,18 +15,23 @@ implementation_status: IMPLEMENTED
 
 ## Summary
 
-Enable Sentry across the public app so unexpected client, server, edge, and global errors are observable.
+Enable Sentry across all execution contexts (client, server, edge, global boundary) so unexpected errors are observable without blocking normal user paths.
 
 ## In Scope
 
-- client/server/edge Sentry setup
-- request error capture
-- global error capture
+- client Sentry init with Session Replay (`src/instrumentation-client.ts`)
+- server Sentry init (`sentry.server.config.ts`) and edge Sentry init (`sentry.edge.config.ts`)
+- `onRequestError` hook for automatic server/edge request error capture
+- `onRouterTransitionStart` hook for client navigation traces
+- `global-error.tsx` root-layout boundary
+- `(app)/error.tsx` app-shell subtree boundary with `area: "app_shell"` tag
+- Sentry webpack plugin (source map upload, debug-log tree shaking)
 
 ## Out of Scope
 
 - operational alert routing
 - incident triage workflow
+- per-module Sentry context enrichment (owned by the individual feature FRDs)
 
 ## Requirements
 

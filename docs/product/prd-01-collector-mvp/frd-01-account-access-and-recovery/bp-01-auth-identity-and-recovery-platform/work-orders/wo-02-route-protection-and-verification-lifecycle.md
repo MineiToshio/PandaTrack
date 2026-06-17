@@ -5,7 +5,7 @@ slug: route-protection-and-verification-lifecycle
 title: Route Protection and Verification Lifecycle
 status: ACTIVE
 parent: BP-01
-last_updated: 2026-03-21
+last_updated: 2026-06-16
 source_features:
   - FEAT-0008
 implementation_status: IMPLEMENTED
@@ -20,9 +20,10 @@ Protect the private app, enforce verification grace and blocking logic, and supp
 ## In Scope
 
 - private route enforcement
-- verification snapshot logic
-- day-six reminder behavior
-- verification banner and blocked gate
+- verification snapshot logic (four states, grace anchor)
+- day-six reminder behavior (one-time per grace window)
+- verification banner (grace) and blocked gate (day 7)
+- emailed-link confirm route
 
 ## Out of Scope
 
@@ -35,6 +36,10 @@ Protect the private app, enforce verification grace and blocking logic, and supp
 - `FR-01-04`
 - `FR-01-06`
 - `FR-01-07`
+- `FR-01-16`
+- `FR-01-17`
+- `FR-01-18`
+- `FR-01-19`
 
 ## Blueprints
 

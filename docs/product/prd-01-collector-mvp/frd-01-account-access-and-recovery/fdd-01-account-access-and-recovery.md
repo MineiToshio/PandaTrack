@@ -76,8 +76,9 @@ the redesign only restyles the six screens. The one UX guard added (no AC change
 
 Requirements traced throughout: `FR-01-01 … FR-01-12`, `BR-01-01 … BR-01-07`,
 `AC-01-01 … AC-01-05` (see [`frd-01-account-access-and-recovery.md`](./frd-01-account-access-and-recovery.md)).
-Account destructive-action styling (sign-out copy in the gate footer) is governed by
-[ADR 0012](../../../design/decisions/0012-account-destructive-action-styling.md);
+Account destructive-action (sign-out) styling is governed by
+[ADR 0012](../../../design/decisions/0012-account-destructive-action-styling.md); note the
+prototype shows a sign-out footer on the day-7 gate but the shipped gate omits it (see §2.7);
 cross-cutting states by [ADR 0013](../../../design/decisions/0013-cross-cutting-state-system.md).
 
 ---
@@ -121,7 +122,7 @@ mk-public mk-bleed
 `auth-head` `"Crea tu cuenta"` + sub `"Empieza a organizar tu colección. Es gratis."` →
 the multicolor `auth-google` button → `auth-divider` `"o con tu email"` → Email field →
 Password field (`auth-input-wrap` + `auth-eye` toggle) with helper `"Mínimo 8 caracteres."`
-→ a required terms `auth-check` (`"Acepto los Términos y la Política de privacidad."`) →
+→ a terms `auth-check` (`"Acepto los Términos y la Política de privacidad."`) — presentational only, uncontrolled, with no `required` attribute and no submit-blocking validation →
 primary `"Crear cuenta"` → `auth-foot` `"¿Ya tienes cuenta? Inicia sesión"` (FR-01-01,
 FR-01-02, BR-01-03).
 
@@ -174,8 +175,10 @@ Same status-card skeleton, but the `auth-status-icon` carries **`tone-warning`**
 <strong>…</strong> para seguir usando PandaTrack."` → **primary** (not ghost) action
 `"Reenviar enlace de verificación"` → `auth-foot` `"Cerrar sesión"`. This screen renders
 **in place of the app shell** when an unverified email/password account crosses the seven-day
-grace window (AC-01-03, BR-01-05). Its footer "Cerrar sesión" is an account-exit action
-whose styling follows [ADR 0012](../../../design/decisions/0012-account-destructive-action-styling.md).
+grace window (AC-01-03, BR-01-05). The prototype's footer "Cerrar sesión" is an account-exit
+action whose styling follows [ADR 0012](../../../design/decisions/0012-account-destructive-action-styling.md).
+Shipped divergence: the live gate omits this footer — it renders only the status card + resend,
+with no sign-out control (the `verifyGate.signOut` i18n key is unused).
 
 ---
 
@@ -199,7 +202,7 @@ system; the definitions live in
 | Form / field error                         | `--destructive`                            | `auth-form-error`, `.input.is-error`, inline `auth-error`         |
 | Day-7 gate status icon                     | `--warning` (`tone-warning`)               | `auth-status-icon` on `#s11-verify-email-required`                |
 | Verification "ok" tone (reserved)          | `--success` (`tone-success`)               | success status states                                             |
-| Account exit (sign-out copy)               | `--destructive`                            | gate footer per ADR 0012                                          |
+| Account exit (sign-out copy)               | `--destructive`                            | sign-out per ADR 0012 (gate footer in prototype only; see §2.7)   |
 
 The **Google brand button** (`auth-google`) is the deliberate exception: its multicolor
 logo (`#4285F4` / `#34A853` / `#FBBC05` / `#EA4335`) is a fixed brand asset and is

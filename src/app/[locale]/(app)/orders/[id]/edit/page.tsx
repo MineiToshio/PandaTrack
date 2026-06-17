@@ -6,6 +6,7 @@ import { getSession } from "@/lib/auth/auth-server";
 import { getOrderById } from "@/lib/data/orders/orderQueries";
 import { getOrderableStores } from "@/lib/data/stores/storeQueries";
 import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
+import { ROUTES } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { editOrderAction } from "../../_actions/orderActions";
 import OrderForm from "../../_components/share/OrderForm";
@@ -40,6 +41,12 @@ export default async function OrdersEditPage({ params }: Props) {
   ]);
 
   if (!order) notFound();
+
+  // A cancelled order is not editable (the edit mutation rejects with ORDER_NOT_EDITABLE).
+  // Mirror the delivery-edit guard: redirect to detail so the collector reactivates first.
+  if (order.status === "CANCELLED") {
+    redirect(`/${locale}${ROUTES.orders}/${id}`);
+  }
 
   const productTypeKeys = productTypeRows.map((r) => r.key);
 

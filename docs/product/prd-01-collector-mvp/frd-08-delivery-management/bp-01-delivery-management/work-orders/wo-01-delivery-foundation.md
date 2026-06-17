@@ -86,12 +86,12 @@ Persisted on `OrderItem.deliveryState`. Represents the three product milestones 
 | `userId`              | `String`                              | FK to `User`, cascade delete. Duplicated from the parent store context for direct auth without join (`data-layer-user-id-duplication.mdc`). |
 | `status`              | `DeliveryStatus @default(IN_TRANSIT)` | Always `IN_TRANSIT` at creation. Never edited directly (`FR-08-13`).                                                                        |
 | `deliveryDate`        | `DateTime`                            | Required shipping date. Past or current dates only (`FR-08-05`).                                                                            |
-| `expectedArrivalFrom` | `DateTime?`                           | Optional start of expected arrival range (`FR-08-10`).                                                                                      |
-| `expectedArrivalTo`   | `DateTime?`                           | Optional end of expected arrival range (`FR-08-10`).                                                                                        |
-| `cost`                | `Int`                                 | Required, including `0` (`FR-08-06`). Minor units (cents × 100), same convention as `Order.totalCost`.                                      |
-| `currencyCode`        | `String`                              | Required 3-letter ISO code (`FR-08-07`).                                                                                                    |
-| `exchangeRate`        | `Decimal?`                            | Required only when `currencyCode` differs from `user.baseCurrencyCode` (`FR-08-09`). Precision: 2 decimal places, range 0.01–99999.99.      |
-| `note`                | `String?`                             | Private note field (`FR-08-25`). Max 2000 characters.                                                                                       |
+| `expectedArrivalFrom` | `DateTime?`                           | Optional start of expected arrival range (`FR-08-11`).                                                                                      |
+| `expectedArrivalTo`   | `DateTime?`                           | Optional end of expected arrival range (`FR-08-11`).                                                                                        |
+| `cost`                | `Int`                                 | Required, including `0` (`FR-08-07`). Minor units (cents × 100), same convention as `Order.totalCost`.                                      |
+| `currencyCode`        | `String`                              | Required 3-letter ISO code (`FR-08-08`).                                                                                                    |
+| `exchangeRate`        | `Decimal?`                            | Required only when `currencyCode` differs from `user.baseCurrencyCode` (`FR-08-10`). Precision: 2 decimal places, range 0.01–99999.99.      |
+| `note`                | `String?`                             | Private note field (`FR-08-26`). Max 2000 characters.                                                                                       |
 | `createdAt`           | `DateTime @default(now())`            |                                                                                                                                             |
 | `updatedAt`           | `DateTime @updatedAt`                 |                                                                                                                                             |
 

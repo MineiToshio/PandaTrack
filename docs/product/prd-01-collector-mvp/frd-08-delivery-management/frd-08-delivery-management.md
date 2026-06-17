@@ -77,7 +77,7 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - `FR-08-20`: When a product is added to a delivery, it must automatically become `IN_TRANSIT` regardless of its prior state (`NONE` or `ARRIVED_AT_STORE`).
 - `FR-08-21`: A product may belong to only one delivery at a time.
 - `FR-08-22`: Marking a delivery as delivered must require the collector to select the received date, then mark every associated product as delivered to the user.
-- `FR-08-23`: Reopening a delivered or cancelled delivery must recalculate delivery-related product states so they are editable again, restoring the detail view to an editable lifecycle state.
+- `FR-08-23`: Reopening a delivered or cancelled delivery must recalculate delivery-related product states so they are editable again, restoring the detail view to an editable lifecycle state. Reopen returns the delivery to `IN_TRANSIT`, returns its products to `IN_TRANSIT`, and clears the stored received date. Reopen is only valid from `DELIVERED` or `CANCELLED`; reopening an `IN_TRANSIT` delivery is rejected. When reopening a `CANCELLED` delivery, any product that was re-attached to another active (non-cancelled) delivery while this one was cancelled blocks the reopen (the one-delivery-per-product rule in `BR-08-08`); the collector must resolve that conflict first.
 - `FR-08-24`: Removing a product from a delivery during edit must recalculate that product's delivery-related state. The delivery's store is immutable in edit mode (its products depend on the store); changing stores requires deleting the delivery and creating a new one. Edit is only permitted while the delivery is `IN_TRANSIT`; a `DELIVERED` or `CANCELLED` delivery must be reopened first (the edit route redirects to detail otherwise).
 - `FR-08-25`: Cancelling or deleting a delivery must return all of its still-unfulfilled products to `arrived at store`. Physical delete is allowed only while the delivery is `IN_TRANSIT` or `CANCELLED`; a `DELIVERED` delivery must be reopened first.
 - `FR-08-26`: Delivery detail must expose one inline-editable private note field that can be saved without entering full edit mode, including saving an empty value to clear the note.
@@ -89,6 +89,7 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - `FR-08-32`: Each delivery card must expand to show the products included in that delivery as one flat list, without source-order grouping.
 - `FR-08-33`: The deliveries list must expose a visible primary action to create a new delivery, following the collector-workspace listing pattern used by orders and stores.
 - `FR-08-34`: The delivery product selector must expose an in-section product-name search input that filters the already-loaded eligible products in place. Matching must be case-insensitive and accent-insensitive. Source-order groups with no matching products must be hidden, and when no products match the current query the section must show an empty-state message instead of the product list. Filtering must be entirely client-side and must not refetch eligible products.
+- `FR-08-35`: The deliveries list must expose a user-selectable sort control inside the filter surface with four options: `oldest` (shipping date ascending — the default per `FR-08-30`), `recent` (shipping date descending), `eta-asc` (expected-arrival start ascending, deliveries without an expected arrival sorted last), and `store-asc` (store name ascending). The active sort persists in the URL via a `sort` param, which is omitted from the URL when it equals the default (`oldest`).
 
 ## Business Rules
 
@@ -102,6 +103,7 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
   - cancel preserves the delivery record with `CANCELLED`
   - delete removes it physically when delete rules allow it
   - delete must stay visible in the detail action menu so the collector can discover the rule, but a `DELIVERED` delivery cannot be deleted until it is reopened
+- `BR-08-08`: A product belongs to at most one active (non-cancelled) delivery at a time (`FR-08-21`). Because cancelling a delivery returns its products to `arrived at store`, those products can be selected into a new delivery while the original stays `CANCELLED`. Reopening the original cancelled delivery is therefore blocked when any of its products now belongs to another active delivery, so reopen can never resurrect a duplicate delivery membership. The blocked reopen is surfaced as an expected, non-destructive error, not a silent failure.
 
 ## Acceptance Criteria
 
@@ -138,6 +140,20 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - When the action completes
 - Then all affected products recalculate to the correct post-action state
 
+### `AC-08-06`
+
+- Given a cancelled delivery whose products were re-added to another active delivery
+- When the collector tries to reopen the original cancelled delivery
+- Then the reopen is blocked with an expected error
+- And the original delivery stays `CANCELLED`
+
+### `AC-08-07`
+
+- Given the collector opens the deliveries list
+- When they change the sort control to `recent`, `eta-asc`, or `store-asc`
+- Then the list re-orders accordingly
+- And the selected sort persists in the URL (and is omitted when it is the default `oldest`)
+
 ## Implementation Notes
 
 - This FRD depends on [`FRD-05`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md) for order items, delivery eligibility, and order completion derivation.
@@ -149,6 +165,96 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - Delivery routes in the collector app use `/{locale}/deliveries`. Deleting a delivery from detail returns the collector to the deliveries list.
 - In UI copy, `Delivery.deliveryDate` is presented as shipping date. It is the date the shipment is created/sent, not the date the collector receives it.
 - The received date is captured only by the mark-delivered flow, is required for that action, and must allow only past or current dates.
+
+## Lifecycle Interaction Model
+
+Each detail action has a distinct confirmation and feedback contract. The visual treatment of toasts, the undo affordance, and the mobile sticky-bar / actions-sheet chrome are owned by the [delivery FDD](fdd-08-delivery-management.md); this section fixes only the functional behavior.
+
+| Action            | Confirmation                                | Apply / feedback model                                                                                                                      | Post-action target               |
+| ----------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| Save private note | none (inline)                               | inline save; a toast is shown only when the stored value actually changed                                                                   | stays on detail                  |
+| Mark delivered    | modal (captures the required received date) | optimistic confirmation: the modal closes on submit and the new state shows immediately; on server failure it rolls back and shows an error | stays on detail                  |
+| Cancel            | confirmation modal                          | optimistic confirmation; rolls back on failure                                                                                              | stays on detail                  |
+| Reopen            | none (not destructive)                      | executes directly with a neutral undo affordance; undo runs the inverse mutation within a short window                                      | stays on detail                  |
+| Delete            | confirmation modal (stated as permanent)    | awaited (not optimistic, because it is irreversible): the modal stays until the server confirms                                             | redirects to the deliveries list |
+
+## Error Contract
+
+Delivery mutations return typed, expected error codes (not exceptions) so flows can recover without noisy monitoring. Unexpected failures are captured once with delivery-safe context. Expected codes:
+
+- create / edit: `STORE_NOT_FOUND`, `NO_PRODUCTS_SELECTED`, `PRODUCTS_FROM_DIFFERENT_STORE`, `PRODUCT_NOT_ELIGIBLE` (carries the offending product ids so the selector can refresh), `EXCHANGE_RATE_REQUIRED` (currency differs from base and no rate was supplied), and — edit only — `INVALID_STATUS` (the delivery is no longer `IN_TRANSIT`). A concurrent product-state change is reconciled into `PRODUCT_NOT_ELIGIBLE`.
+- mark delivered / cancel / delete / reopen / note: `DELIVERY_NOT_FOUND`; lifecycle guards return `INVALID_STATUS` (mark delivered and cancel require `IN_TRANSIT`; delete rejects `DELIVERED`; reopen rejects `IN_TRANSIT`); reopen additionally returns `PRODUCTS_IN_OTHER_DELIVERY` per `BR-08-08`.
+- The validation layer rejects malformed input before these run (future shipping/received dates, `expectedArrivalTo` before `expectedArrivalFrom`, negative or over-cap cost, unsupported currency, out-of-range exchange rate, empty product set).
+
+## Analytics
+
+Delivery events are namespaced under `POSTHOG_EVENTS.DELIVERY` in `src/lib/constants.ts`:
+
+- create/edit flow: `delivery_create_flow_opened`, `delivery_created`, `delivery_edit_flow_opened`, `delivery_edited`
+- lifecycle: `delivery_marked_delivered`, `delivery_reopened`, `delivery_cancelled`, `delivery_deleted`, `delivery_note_saved`, `delivery_note_deleted`
+- list: `deliveries_list_filtered`, `deliveries_list_filter_chip_removed`, `deliveries_list_filters_reset`, `deliveries_list_card_expanded`, `deliveries_list_card_collapsed`
+- mobile detail chrome: `delivery_detail_sticky_primary_clicked`, `delivery_detail_actions_sheet_opened`
+
+Mutation events carry counts (product / affected-order / added / removed) but never the free-text note value.
+
+## Screens and Data Contract
+
+Each delivery route under `/{locale}/(app)/deliveries`. All routes are authenticated and scoped to the session user; a delivery that does not belong to the user resolves to 404 (not 403) to avoid enumeration. Visual layout is owned by the [FDD](fdd-08-delivery-management.md); this section fixes purpose, data loaded, actions, and states.
+
+### List — `/{locale}/deliveries`
+
+- **Purpose:** the deliveries workspace, opened focused on active follow-up work.
+- **Data loaded:** `getDeliveriesList(userId, filters)` (paginated cards with aggregated product count, 30/page); `getDeliveryStoreOptions(userId)` (distinct stores that appear in the user's deliveries, for the filter picker); heading counts for `IN_TRANSIT` and `DELIVERED`.
+- **Actions:** navigation only — `New delivery` → `/new`; each card → detail carrying the current list URL via `?returnTo=`. No mutations.
+- **States:** loading skeleton; empty (`noDeliveries`, with create / browse-orders CTAs); empty-filtered (`noResults`, keeps chips, offers reset). Default URL canonicalizes to `?status=IN_TRANSIT` (see filter contract).
+
+### Detail — `/{locale}/deliveries/[id]`
+
+- **Purpose:** inspect one delivery and run its lifecycle actions.
+- **Data loaded:** `getDeliveryDetail(deliveryId, userId)` → summary, products grouped by source order (sorted by order date then item position), aggregated product count, current lifecycle state, action-availability flags, `receivedDate` when delivered, and the private note; plus the user's base currency for FX display.
+- **Actions:** `saveDeliveryNoteAction`, `markDeliveredAction`, `reopenDeliveryAction`, `cancelDeliveryAction`, `deleteDeliveryAction` (behavior per Lifecycle Interaction Model); `Edit` → `/[id]/edit`.
+- **States:** per-status hero (IN_TRANSIT = expected-arrival window + overdue signal; DELIVERED = received + shipped + cost; CANCELLED = shipped + products-returned note); 404 when not owned.
+
+### Create — `/{locale}/deliveries/new` (optional `?sourceOrderId=`)
+
+- **Purpose:** create one store-scoped delivery from eligible products, via two entry points (`FR-08-15`/`FR-08-16`).
+- **Data loaded:** `getStoresWithEligibleProducts(userId)` (stores with ≥1 product in `NONE`/`ARRIVED_AT_STORE`); from-order entry additionally validates and loads `getDeliverySourceOrder(orderId, userId)`; once a store is known, `getEligibleProductsForStore(storeId, userId)` (grouped by source order, ineligible excluded entirely per `BR-08-03`).
+- **Actions:** `createDeliveryAction`.
+- **States:** eligibility empty state when no store has eligible products and no `sourceOrderId` (`FR-08-17`); in-section client-side product search (`FR-08-34`); field validation errors; concurrent-ineligible recovery (`PRODUCT_NOT_ELIGIBLE` carries product ids so the selector can refresh).
+
+### Edit — `/{locale}/deliveries/[id]/edit`
+
+- **Purpose:** adjust an existing delivery's product membership and metadata.
+- **Guard:** editable only while `IN_TRANSIT`; a `DELIVERED`/`CANCELLED` delivery redirects to detail with a reopen-first message (`FR-08-24`).
+- **Data loaded:** `getDeliveryDetail` for current values; `getEligibleProductsForStore(storeId, userId, excludeDeliveryId)` so the delivery's own products stay selectable alongside other eligible products of the same store. The store itself is immutable (read-only display, never re-selected).
+- **Actions:** `editDeliveryAction`.
+- **States:** unsaved-changes navigation guard; field validation; atomic stale-edit failure (membership/metadata revalidated inside the transaction — no partial save).
+
+## State Model
+
+### Delivery lifecycle (`DeliveryStatus`)
+
+A delivery is created `IN_TRANSIT` and never has its status edited through a free field (`FR-08-13`); status moves only through lifecycle actions:
+
+| From                       | Action            | To           | Product effect                                     | Order re-derivation         |
+| -------------------------- | ----------------- | ------------ | -------------------------------------------------- | --------------------------- |
+| —                          | create            | `IN_TRANSIT` | selected products → `IN_TRANSIT`                   | yes                         |
+| `IN_TRANSIT`               | mark delivered    | `DELIVERED`  | all products → `DELIVERED`; sets `receivedDate`    | yes                         |
+| `IN_TRANSIT`               | cancel            | `CANCELLED`  | products → `ARRIVED_AT_STORE`                      | yes                         |
+| `IN_TRANSIT`               | edit (add/remove) | `IN_TRANSIT` | added → `IN_TRANSIT`; removed → `ARRIVED_AT_STORE` | yes                         |
+| `DELIVERED`                | reopen            | `IN_TRANSIT` | products → `IN_TRANSIT`; clears `receivedDate`     | yes                         |
+| `CANCELLED`                | reopen            | `IN_TRANSIT` | products → `IN_TRANSIT`; clears `receivedDate`     | yes (blocked by `BR-08-08`) |
+| `IN_TRANSIT` / `CANCELLED` | delete            | (removed)    | still-unfulfilled products → `ARRIVED_AT_STORE`    | yes                         |
+
+`DELIVERED` cannot be deleted directly and cannot be edited directly — reopen first (`BR-08-07`, `FR-08-24`).
+
+### Product delivery state (`OrderItemDeliveryState`)
+
+Persisted on `OrderItem.deliveryState`. Four values: `NONE`, `ARRIVED_AT_STORE`, `IN_TRANSIT`, `DELIVERED`. Eligibility for a new/edited delivery = `NONE` or `ARRIVED_AT_STORE` only. Once a product has been in a delivery it never returns to `NONE`; its resting state after cancel/delete/edit-remove is `ARRIVED_AT_STORE`.
+
+### Order-status re-derivation
+
+Every delivery mutation that changes product-to-delivery associations re-derives, within the same transaction, the `OrderStatus` of each affected order by mapping product states (`NONE`/`ARRIVED_AT_STORE` → `open`, `IN_TRANSIT` → `in_transit`, `DELIVERED` → `delivered`) into the pure `deriveOrderStatus` from [`FRD-05`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md). Orders already `CANCELLED` are skipped (the order lifecycle owns that status), and a write happens only when the derived status differs from the stored one.
 
 ## Confirmed
 

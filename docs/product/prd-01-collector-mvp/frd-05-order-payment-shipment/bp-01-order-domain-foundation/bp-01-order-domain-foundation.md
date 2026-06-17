@@ -9,8 +9,8 @@ children:
   - WO-01
   - WO-02
   - WO-03
-last_updated: 2026-04-24
-implementation_status: PLANNED
+last_updated: 2026-06-16
+implementation_status: IMPLEMENTED
 ---
 
 # BP-01 Order Domain Foundation
@@ -37,7 +37,7 @@ Define the persistence, state, and monetary contracts that make order and paymen
 - Order history should be append-oriented and human-readable. **As implemented (2026-04-24):** the app does not expose per-entry user deletion of history rows on the order detail view (`deleteOrderHistoryEntry` removed); history remains a read-only audit trail in the UI. See [`FRD-05`](../frd-05-order-payment-shipment.md) `FR-05-22` / `BR-05-09` and [`BP-02 · WO-05`](../bp-02-order-workspace-and-list-experience/work-orders/wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md).
 - Delete and cancel must remain separate operations, but share one eligibility rule:
   - both are blocked when any item is linked to a non-cancelled delivery; the collector must first unlink the item from its delivery to unblock the operation
-  - cancel preserves the order record, moves it to `CANCELLED`, and removes the order's payment records so balance reporting stays coherent
+  - cancel preserves the order record, moves it to `CANCELLED`, and **keeps** the order's payment records so the reactivate flow can still show the payment trail (`cancelOrder` does not delete payments — see [`FRD-05`](../frd-05-order-payment-shipment.md) `BR-05-15`)
   - delete physically removes the order and its payment records; there is no delivery cascade because the eligibility rule prevents deletion while live delivery links exist
 
 ## Contracts

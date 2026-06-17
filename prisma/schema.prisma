@@ -434,6 +434,10 @@ model Order {
   expectedDeliveryTo   DateTime?
   currencyCode         String
   exchangeRate         Decimal?
+  // Set true when the user changes their base currency, for every order whose currencyCode
+  // differs from the new base — its stored exchangeRate is now stale and must be reconciled.
+  // Cleared when the rate is (re)entered: on create, on edit, and on bulk FX reconciliation.
+  needsExchangeRateUpdate Boolean            @default(false)
   totalCost            Int
   note                 String?
   status               OrderStatus           @default(OPEN)

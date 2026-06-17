@@ -420,7 +420,7 @@
       "metaOrdered": "Ordered on {date}",
       "metaPaidPct": "{pct}% paid",
       "metaEstimate": "estimated delivery {date}",
-      "cancelledOn": "Cancelled on {date} · No payments recorded",
+      "cancelledOn": "Cancelled on {date}",
       "copyCodeAria": "Copy order code",
       "codeCopied": "Code copied",
       "chipOverdue": "{days}d overdue",

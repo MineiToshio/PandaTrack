@@ -55,13 +55,18 @@ prototype happens to show. **The real subject of this FDD is the shell itself.**
 
 ### Screens in this FDD
 
-| #   | Screen                            | Route             | Prototype anchor |
-| --- | --------------------------------- | ----------------- | ---------------- |
-| 1   | App shell + dashboard placeholder | `/{locale}` (`/`) | `#dashboard`     |
+| #   | Screen                            | Route                 | Prototype anchor |
+| --- | --------------------------------- | --------------------- | ---------------- |
+| 1   | App shell + dashboard placeholder | `/{locale}/dashboard` | `#dashboard`     |
 
 The single anchor frames the four shell regions described in §2: the sidebar, the top bar,
 the content frame, and (functionally, not in the desktop-only prototype markup) the mobile
 burger drawer.
+
+Workspaces feed the shell a per-page title / middle crumb through `SetHeaderTitle.tsx` (a
+client component that writes the current header title via context and clears it on unmount),
+so the otherwise route-derived top-bar title can be made dynamic (e.g. a store name on a
+detail route).
 
 Requirements traced throughout: `FR-03-01 … FR-03-08`, `BR-03-01 … BR-03-05`,
 `AC-03-01 … AC-03-04` (see [`frd-03-collector-app-shell.md`](./frd-03-collector-app-shell.md)).
@@ -95,29 +100,34 @@ app-sidebar-footer       account affordance (avatar + username) + collapse contr
 - **Brand (top):** the `Logo` wordmark — the one place Zilla Slab appears
   ([components.md](../../../design/components.md)).
 - **Navigation:** five `app-nav-link`s, each an icon + label. The active route carries
-  `is-active` (raised to `--text-primary`, accent-tinted state layer). The icons are
-  `layout-dashboard` (`"Hoy"`), `package` (`"Pedidos"`), `truck` (`"Entregas"`),
-  `store` (`"Tiendas"`), `settings` (`"Ajustes"`). **`Settings` lives in the lower account
-  area conceptually but is surfaced as a primary nav row in the prototype's placeholder;**
-  the functional contract (FR-03-06) keeps account actions in the lower shell, not the
-  header.
+  `is-active` (accent-tinted state layer + `aria-current`). The **shipped** icons (lucide,
+  `Sidebar.tsx` / `AppNavDrawer.tsx`) are `LayoutDashboard` (`"Panel"`), `Store` (`"Tiendas"`),
+  `ShoppingBag` (`"Pedidos"`), `Package` (`"Entregas"`), `Settings` (`"Ajustes"`), in that nav
+  order (Dashboard · Stores · Orders · Deliveries · Settings). The disposable prototype uses
+  placeholder glyphs (`package`/`truck`) and a different ordering/label (`"Hoy"`); the shipped
+  copy/icons above are authoritative. **`Settings` is a row in the desktop sidebar but is
+  omitted from the mobile drawer's primary list** — it is reached from the lower account menu
+  (FR-03-06 / BR-03-06), which keeps account actions in the lower shell, not the header.
 - **User footer (`.app-sidebar-footer` / `ShellAccountMenu`):** the account trigger
   (avatar + username) with the **collapse control (`.app-sidebar-collapse-btn`) directly
   beneath it.** The avatar never moves to the top bar (BR-03-04). The prototype's placeholder
   footer also shows the legacy mascot status chip (`🐼 Pan · ON`); that mascot affordance is
   **not** an FRD-03 deliverable and is retained only as placeholder dressing.
 
-**Three sidebar states (FR-03-03, the PUSH model — ADR 0003):**
+**Three sidebar states (FR-03-03 — shipped: PUSH toggle + FLOAT hover; cf. ADR 0003):**
 
-| State             | Width   | Behavior                                                                                                                  |
-| ----------------- | ------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Expanded          | `240px` | Full nav with labels; default.                                                                                            |
-| Collapsed (rail)  | `64px`  | Icons only; labels hidden (`font-size: 0`), brand mark compacts, footer compacts, collapse chevron rotates `180deg`.      |
-| Collapsed + hover | `240px` | The rail **pushes**: `:has(.app-sidebar:hover)` grows the grid column and the content moves right — it never floats over. |
+| State             | Width   | Behavior                                                                                                                                                                                                                                                                                                                        |
+| ----------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Expanded          | `240px` | Full nav with labels; default.                                                                                                                                                                                                                                                                                                  |
+| Collapsed (rail)  | `64px`  | Icons only; labels hidden (`font-size: 0`), brand mark compacts, footer compacts. The prototype rotates the collapse chevron `180deg`; the shipped control swaps `PanelLeftClose`/`PanelLeftOpen` icons instead (no rotation — see §3.3).                                                                                       |
+| Collapsed + hover | `240px` | In the **prototype** the rail pushes (`:has(.app-sidebar:hover)` grows the grid column). In the **shipped React shell** the collapsed rail **floats** on hover/focus: it widens to `240px`, raises its `z-index` and casts a shadow over the content, and does **not** shift the content column. Only the pinned toggle pushes. |
 
-The grid column animates (`grid-template-columns 220ms cubic-bezier(0.2,0,0,1)`) so the
-content frame slides predictably. Hover-expand is **PUSH, never overlay** — preserving
-predictability is the whole point (interface-patterns.md). The collapse state **persists per
+The prototype's grid column animates (`grid-template-columns 220ms cubic-bezier(0.2,0,0,1)`)
+so the frame slides predictably. **Accepted divergence (Sergio confirmed 2026-06-16):** the shipped
+shell intentionally reflects only the pinned `expanded` state into `--sidebar-current-w` (so the
+toggle = PUSH), while hover/focus-expand is FLOAT (overlay). This is the desired behavior — the
+prototype/ADR 0003 PUSH-on-hover is superseded by the shipped FLOAT-on-hover; no change to `src/`.
+See `frd-03-collector-app-shell.md · FR-03-03`. The collapse state **persists per
 user**; FR-03-07 reflects it through the shared `--sidebar-current-w` CSS variable on the
 content grid.
 
@@ -158,7 +168,9 @@ Below `1024px` the `.app-sidebar` is `display: none` and the **burger-triggered 
 (`AppNavDrawer`) is the single primary navigation surface** (FR-03-04). The `[☰]` control in
 the top bar opens it; the **same account affordance that lives in the expanded sidebar footer
 appears in the drawer** (do not split core account actions between header and drawer —
-BR-03-05). The drawer is an anchored inline expansion, not a floating panel.
+BR-03-05). The drawer is a **fixed-position overlay dialog** (`role="dialog"`,
+`aria-modal="true"`, `fixed inset-0 z-50` with a backdrop button and a left-anchored sliding
+`<aside>` panel), not an anchored inline expansion.
 
 > **Removed during the redesign (do not reintroduce):** the 4-tab `MobileTabBar` (its token
 > `--mobile-tab-bar-h` and `mobileTabBar.*` i18n keys were dropped — S5.2), and the floating
@@ -207,8 +219,10 @@ Standard system values, no overrides. The notable shell-specific choice is the *
 frame**: the prototype wraps the whole shell in a single rounded card
 (`border-radius: 24px`, `box-shadow: var(--shadow-2)`, `overflow: hidden`) so the app reads
 as one contained surface. Elevation is border-led (the sidebar is separated by a
-`border-right`, not a drop shadow). The collapse chevron is the only rotating affordance
-(`rotate(180deg)` in the collapsed state).
+`border-right`, not a drop shadow). The disposable prototype rotates a single collapse
+chevron (`rotate(180deg)`); the **shipped** collapse control instead swaps between two
+distinct Lucide icons — `PanelLeftClose` (expanded) and `PanelLeftOpen` (collapsed) — with
+no rotation.
 
 ---
 
@@ -243,13 +257,17 @@ to the design system and to the individual workspace FDDs, not to FRD-03.
 ### 5.1 Sidebar collapse, hover-expand & persistence (FR-03-03 / FR-03-07)
 
 - **Collapse toggle:** the `.app-sidebar-collapse-btn` beneath the account trigger toggles
-  the `data-sidebar` state between `expanded` and `collapsed`; the chevron rotates `180deg`.
-- **Hover-expand (PUSH):** while collapsed, `:has(.app-sidebar:hover)` grows the grid column
-  to `240px` and the content **moves right** — the sidebar never overlays content. Leaving the
-  hover returns it to the `64px` rail.
-- **Persistence:** the collapse choice persists per user and is reflected on the content grid
-  through `--sidebar-current-w` (the implementation's shared hook). Reopening the app restores
-  the last state.
+  the sidebar state between `expanded` and `collapsed`. In the prototype its chevron rotates
+  `180deg`; the **shipped** control swaps two distinct Lucide icons instead — `PanelLeftClose`
+  (expanded) and `PanelLeftOpen` (collapsed) — with no rotation (§3.3).
+- **Hover/focus-expand:** while collapsed, hovering or focusing into the rail grows it to
+  `240px`. In the prototype this PUSHes the grid; **in the shipped shell it FLOATs** (overlays
+  the content with a raised `z-index` + shadow, content stays put). Leaving the hover / blurring
+  out returns it to the `64px` rail. Expansion is never hover-only — focus reveals it too.
+- **Persistence:** only the **pinned** collapse choice persists (`localStorage["appShellSidebarExpanded"]`,
+  default expanded, read after mount) and is reflected on the content column through
+  `--sidebar-current-w` (the `useSidebarState` hook). The transient FLOAT state is not persisted.
+  Reopening the app restores the last pinned state.
 - **Label reveal:** when the rail expands (by toggle or hover), labels fade in with a slight
   delay (`opacity 180ms … 60ms`) so they don't pop before the width has grown.
 
@@ -268,6 +286,9 @@ to the design system and to the individual workspace FDDs, not to FRD-03.
 - **Language toggle:** switches `es` ⇄ `en`; the routed locale segment drives copy.
 - **Mobile burger:** `[☰]` opens the `AppNavDrawer`; the drawer carries the same account
   affordance as the desktop footer.
+- **Lang + theme on small screens (FR-03-06):** the header's lang and theme toggles are
+  `lg:flex` (hidden below `1024px`); on mobile/tablet they live in the drawer's preferences
+  section instead, so the controls are always reachable.
 
 ### 5.4 Cross-cutting states
 
@@ -283,8 +304,8 @@ placeholder's empty / loading / per-bento-error behaviors documented in the work
 Shell motion is restrained and system-level — see [motion.md](../../../design/motion.md):
 
 - Grid column animates on collapse / hover-expand (`220ms cubic-bezier(0.2,0,0,1)`).
-- Sidebar width + padding animate (`200ms`); labels fade with a `60ms` delay; the collapse
-  chevron rotates (`200ms`).
+- Sidebar width + padding animate (`200ms`); labels fade with a `60ms` delay. (The prototype
+  also rotates the collapse chevron `200ms`; the shipped control swaps icons instead — §3.3.)
 - **Reduced motion:** the prototype gates non-essential animation behind
   `@media (prefers-reduced-motion: reduce)`; the collapse/expand collapses to an instant or
   fade with no spring. Hover/press, focus, and the transform/opacity rule are inherited
@@ -302,18 +323,21 @@ shell's copy is almost entirely **navigation labels**, which use the canonical g
 
 Key strings (es), by surface:
 
-| Surface                | Tone              | String       |
-| ---------------------- | ----------------- | ------------ |
-| Nav · dashboard        | direct, present   | `"Hoy"`      |
-| Nav · orders           | glossary noun     | `"Pedidos"`  |
-| Nav · deliveries       | glossary noun     | `"Entregas"` |
-| Nav · stores           | glossary noun     | `"Tiendas"`  |
-| Nav · settings         | glossary noun     | `"Ajustes"`  |
-| Collapse control label | quiet, functional | `"Colapsar"` |
+| Surface                | Tone              | String (es)                | i18n key (`appLayout`) |
+| ---------------------- | ----------------- | -------------------------- | ---------------------- |
+| Nav · dashboard        | glossary noun     | `"Panel"`                  | `nav.dashboard`        |
+| Nav · stores           | glossary noun     | `"Tiendas"`                | `nav.stores`           |
+| Nav · orders           | glossary noun     | `"Pedidos"`                | `nav.purchases`        |
+| Nav · deliveries       | glossary noun     | `"Entregas"`               | `nav.deliveries`       |
+| Nav · settings         | glossary noun     | `"Ajustes"`                | `nav.settings`         |
+| Collapse control label | quiet, functional | `"Contraer barra lateral"` | `sidebar.collapse`     |
+| Expand control label   | quiet, functional | `"Expandir barra lateral"` | `sidebar.expand`       |
 
-The dashboard label is `"Hoy"` (not "Inicio"/"Dashboard") — a present-tense, collector-facing
-voice for "what do I have to deal with today". The top-bar title shown by the placeholder
-(`"Dashboard"`) is presentational chrome and not a user-voice string the shell owns.
+The **shipped** dashboard label is `"Panel"` (`en`: `"Dashboard"`) — the workshop's earlier
+`"Hoy"` was not adopted in the locale files; `"Panel"` is authoritative. The shipped orders
+label maps through the `nav.purchases` key (`"Pedidos"` / `"Orders"`). The top-bar title shown
+by the placeholder is the same presentational `nav.*` label and is not a separate user-voice
+string the shell owns.
 
 ---
 
@@ -342,14 +366,16 @@ Baseline is WCAG 2.2 AA in both themes. System-wide a11y rules live in
 [interface-patterns.md → Accessibility](../../../design/interface-patterns.md). What matters
 specifically for the shell:
 
-- **Sidebar is a landmark:** `.app-sidebar` is an `<aside>` with `aria-label`
-  (`"Navegación principal"`), so assistive tech can jump to navigation.
+- **Sidebar is a landmark:** the sidebar is an `<aside>` with `aria-label`
+  (`accessibility.primarySidebar` = `"Barra lateral principal"`), so assistive tech can jump
+  to the chrome. The inner `<nav>` carries its own `aria-label`
+  (`accessibility.mainNavigation` = `"Navegación principal"`).
 - **Active route is announced, not color-only:** the active nav row carries an active
   semantic (`aria-current`) in addition to the accent state layer — status is never carried by
   color alone ([ADR 0006](../../../design/decisions/0006-color-blindness-icon-label-contract.md)).
-- **Collapse control is keyboard-operable and labelled:** the collapse button has a textual
-  `"Colapsar"` label (visible when expanded, retained as an accessible name when collapsed)
-  and a discernible state.
+- **Collapse control is keyboard-operable and labelled:** the collapse button's accessible
+  name is `sidebar.collapse` = `"Contraer barra lateral"` when expanded and `sidebar.expand`
+  = `"Expandir barra lateral"` when collapsed (see §6), and it has a discernible state.
 - **Hover-expand has a keyboard-equivalent:** expansion is not hover-only — focusing into the
   collapsed rail or toggling the collapse control reveals the labels (FR-03-04's intent that
   the experience never depends on hover).
@@ -359,10 +385,18 @@ specifically for the shell:
   is dismissible by keyboard; it does not trap focus permanently.
 - **One primary heading per view:** the top-bar title is presentational, leaving the single
   `h1` to `<main>` so the heading outline stays correct for screen-reader navigation.
+- **Skip link:** a skip-to-content link targets `#main-content` (`AppLayout`). Known gap: its
+  copy `"Saltar al contenido"` is a hardcoded Spanish literal, not an i18n key, so it does not
+  switch to `en`.
 
 ---
 
 ## 9. Sources & provenance
+
+> **Dead code (do not treat as authoritative):** `AppLayout/AppSidebar.tsx` is unused (no
+> importers), and `AppLayout/useSidebarState.ts` is a stale local copy that lacks
+> `floatingOpen` — the shell uses `src/hooks/useSidebarState.ts`. The hook test under
+> `AppLayout/_tests/useSidebarState.test.ts` targets the dead local copy, not the live hook.
 
 - **Pixel truth:** [`./prototype/collector-app-shell.html`](./prototype/collector-app-shell.html)
   (self-contained; opens standalone in light + dark; default palette Velvet; renders the full

@@ -8,39 +8,39 @@ parent: BP-02
 source_features:
   - FEAT-0014
 source_issue: 104
-last_updated: 2026-04-19
-implementation_status: PLANNED
+last_updated: 2026-06-16
+implementation_status: IMPLEMENTED
 ---
 
 # WO-07 Currency Reconciliation Filter and Bulk FX Reconciliation
 
 ## Summary
 
-Add the `Needs currency update` filter to the orders list and implement the bulk FX reconciliation flow that lets collectors apply a new exchange rate to multiple orders at once after changing their base currency in Settings. The reconciliation flow is exposed as a shared modal (`FxReconciliationModal`) triggered both from a persistent orders-list banner and from the Settings currency-change confirmation. Reconciliation scope is bounded to orders from the current month onward so that dashboard rollups can make a clean cut at the month the base currency changed.
+Add the `Needs currency update` filter to the orders list and implement the bulk FX reconciliation flow that lets collectors apply a new exchange rate to multiple orders at once. The reconciliation flow is exposed as a modal (`FxReconciliationModal`) triggered from a persistent orders-list banner (the banner + modal trigger are wired together by `FxAnnouncer`). FX-pending eligibility is driven by a **persisted per-order flag**, `Order.needsExchangeRateUpdate`: changing the base currency in Settings flags every order whose currency differs from the new base, and reconciling (or editing) an order clears the flag. There is **no** monthly cadence — tracking is per-order and triggered by the base-currency change, with no recurring "your rates are stale" nag.
+
+> **Design note (as shipped):** FX-pending tracking is **flag-based**. A `Order.needsExchangeRateUpdate Boolean @default(false)` column (added by migration `20260616230000_add_order_needs_exchange_rate_update`) records whether an order's stored exchange rate has gone stale relative to the current base currency. The flag is **set** on a base-currency change (`flagOrdersForFxReconciliation` in `src/lib/data/orders/orderMutations.ts`, called from `updateCurrencyAction` only when the base currency actually changed) and **cleared** on order create (defaults `false`), on edit when an `exchangeRate` is submitted, and on bulk reconciliation. Reconciling an order therefore **removes** it from the FX-pending set, so the banner/count converges to zero. The FX-pending predicate (`buildFxPendingWhere` in `src/lib/data/orders/orderQueries.ts`) reads this flag; the earlier `startOfCurrentMonth` / current-month scope has been **removed**.
 
 ## Prerequisites
 
 This work order must not begin until the following slices are fully implemented:
 
-- **FRD-07 · BP-01 · [WO-05](../../../frd-07-user-settings/bp-01-user-settings-identity-and-preferences/work-orders/wo-05-preferences-currency-country-product-types-and-budget.md)** — Base currency preference field in User Settings. `user.baseCurrencyCode` must be readable from the session and the currency-change confirmation modal must mark eligible orders before this slice can integrate.
+- **FRD-07 · BP-01 · [WO-05](../../../frd-07-user-settings/bp-01-user-settings-identity-and-preferences/work-orders/wo-05-preferences-currency-country-product-types-and-budget.md)** — Base currency preference field in User Settings. `user.baseCurrencyCode` must be readable from the session, and the currency-change flow flags eligible orders (`flagOrdersForFxReconciliation`) before this slice can surface them.
 - **FRD-05 · BP-02 · [WO-06](./wo-06-orders-list-filters-expansion-rows-and-overdue-payment-signals.md)** — Orders list with URL-backed filters. WO-07 extends the existing `parseOrderListingParams` and filter sidebar rather than building a separate list.
-- **FRD-05 · BP-01 · WO-01** — `Order` Prisma schema must include `needsExchangeRateUpdate: Boolean @default(false)`. WO-01 owns the `Order` model; this field must be added as part of WO-01's schema before WO-07 implementation begins.
+- **FRD-05 · BP-01 · WO-01** — `Order` Prisma schema must expose `currencyCode` and `status`. FX-pending eligibility reads the persisted `Order.needsExchangeRateUpdate` flag (added by this WO's migration) together with these columns.
 
 ## In Scope
 
+- Persisted `Order.needsExchangeRateUpdate Boolean @default(false)` column (migration `20260616230000_add_order_needs_exchange_rate_update`), set on base-currency change and cleared on create/edit/reconcile
 - `Needs currency update` filter option added to the orders list filter sidebar
-- URL param `?fxStatus=needs_reconciliation` for the filter
+- URL param `?fxPending=true` for the filter (`parseOrderListingParams` reads `raw.fxPending`; `buildOrderListFilterUrl` emits `fxPending=true`)
 - Filter chip label `Currency update needed` / `Actualización de divisa pendiente`
-- Reconciliation eligibility: orders where `needsExchangeRateUpdate = true` AND `status != CANCELLED` (set by FRD-07 WO-05 when base currency changes for orders where `currencyCode !== newBaseCurrencyCode` AND `orderDate >= first day of the current month`)
-- `FxReconciliationModal` shared component at `src/components/modules/FxReconciliationModal.tsx` — simple, non-multi-step modal used by both Settings and the orders list banner
-- Modal shows one group per currency pair (`from → to`) with the affected order count and one exchange rate input per group
-- Apply one exchange rate per group to all eligible orders in that pair; each group is an independent atomic Prisma transaction
-- Defer behavior: leaving a group's rate field empty skips it; deferred orders keep `needsExchangeRateUpdate = true` and remain in the filter and banner
-- `needsExchangeRateUpdate: Boolean @default(false)` field on `Order` — set to `true` by FRD-07 WO-05 on currency change, cleared to `false` by this slice's bulk reconciliation action or by a manual `exchangeRate` save in WO-04
-- Persistent `info` banner in the orders list when the collector has one or more orders with `needsExchangeRateUpdate = true`; shows count and CTA to open `FxReconciliationModal`
-- Visual `warning` badge on the order detail view (WO-05 extension) when the displayed order has `needsExchangeRateUpdate = true`
-- Inline field warning in the order edit form (WO-04 extension) on the `exchangeRate` field when `needsExchangeRateUpdate = true`
-- Reactivation edge case: when a `CANCELLED` order is reactivated to `OPEN`, the reactivation server action in WO-05 checks if `currencyCode !== user.baseCurrencyCode` and sets `needsExchangeRateUpdate = true` when true
+- Reconciliation eligibility, **flag-based**: orders where `needsExchangeRateUpdate == true` AND `status != CANCELLED` AND `currencyCode !== user.baseCurrencyCode` (see `buildFxPendingWhere` in `src/lib/data/orders/orderQueries.ts`; returns `null` when the user has no base currency)
+- `flagOrdersForFxReconciliation(userId, newBaseCurrencyCode)` in `src/lib/data/orders/orderMutations.ts` — two `updateMany` calls inside one `$transaction` that set the flag on foreign-currency orders and clear it on base-currency orders; flag-only, never mutates `exchangeRate`
+- `FxReconciliationModal` component at `src/app/[locale]/(app)/orders/_components/FxReconciliationModal.tsx` — simple, non-multi-step modal rendered via `FxAnnouncer`
+- Modal shows one group per currency pair (`from → to`) with the affected order count and one exchange rate input per group; each group offers a `Hoy` / `Today` button that prefills the latest rate from Frankfurter, and an expandable list of the affected orders
+- Apply the entered exchange rate per `orderId` to all eligible orders; `updateExchangeRatesAction` runs one `updateMany` per `orderId` inside a single `prisma.$transaction`, writing `{ exchangeRate, needsExchangeRateUpdate: false }` so reconciled orders leave the FX-pending set
+- Defer behavior: leaving a group's rate field empty skips it; those orders keep `needsExchangeRateUpdate == true`, so they remain in the filter and banner
+- Persistent `info` banner in the orders list when one or more orders are flagged FX-pending; shows count and CTA to open `FxReconciliationModal`
 - PostHog analytics events for filter use and bulk reconciliation actions
 - Spanish and English localization
 
@@ -50,9 +50,9 @@ This work order must not begin until the following slices are fully implemented:
 - Changing the user's base currency preference (FRD-07)
 - Retroactive rewriting of stored `totalCost` or payment amounts (amounts stay anchored to order currency per FRD-05 confirmed decisions)
 - Dashboard rollups and budget calculations (FRD-06)
-- API-sourced exchange rate suggestions (rates are entered manually)
-- Orders from months prior to the current month at the time of currency change (preserved in DB but outside reconciliation scope)
-- `CANCELLED` orders (excluded from reconciliation; reactivated orders are re-evaluated at the moment of reactivation)
+- API-sourced exchange rate suggestions for the bulk flow (the `Today` button is a manual prefill; entered rates are confirmed by the collector)
+- A recurring / monthly FX-staleness cadence (deliberately not built — tracking is per-order and base-change-triggered, with no monthly nag)
+- `CANCELLED` orders (excluded from the FX-pending view, but the flag is **preserved** through cancellation; reactivating an order naturally re-surfaces it because the predicate only excludes cancelled status — there is no separate reactivation-time FX code path, and none is needed)
 
 ## Requirements
 
@@ -64,34 +64,42 @@ This work order must not begin until the following slices are fully implemented:
 
 ## Blueprints
 
-- [BP-02](../bp-02-order-workspace-and-list-experience.md) list filter contract — `fxStatus` URL param and `FxReconciliationModal` entry point
-- [BP-02](../bp-02-order-workspace-and-list-experience.md) `fxStatus` URL param convention
+- [BP-02](../bp-02-order-workspace-and-list-experience.md) list filter contract — `fxPending` URL param and `FxReconciliationModal` entry point
+- [BP-02](../bp-02-order-workspace-and-list-experience.md) `fxPending=true` URL param convention
 
 ## Module Structure
 
 Placement must be validated against `.cursor/rules/project-structure.mdc` and `.cursor/rules/react-next-components.mdc` at implementation time.
 
 ```
-src/components/modules/
-  FxReconciliationModal.tsx         Client — shared reconciliation modal; used by Settings and
-                                              the orders list banner; receives eligible currency-pair
-                                              groups as props and calls applyBulkExchangeRateAction
-
+prisma/
+  schema.prisma                     Extended — Order.needsExchangeRateUpdate Boolean @default(false)
+  migrations/20260616230000_add_order_needs_exchange_rate_update/
+    migration.sql                   Adds the needsExchangeRateUpdate column
+src/lib/data/orders/
+  orderQueries.ts                   Extended — buildFxPendingWhere reads needsExchangeRateUpdate;
+                                              getOrdersList returns pendingFxCount
+  orderMutations.ts                 Extended — flagOrdersForFxReconciliation (set/clear flag);
+                                              editOrder clears the flag when an exchangeRate is submitted
+  _tests/
+    fxReconciliationFlag.test.ts    Unit — covers flagOrdersForFxReconciliation
 src/app/[locale]/(app)/orders/
-  page.tsx                          Extended — resolves needsExchangeRateUpdate count for banner
-                                              in parallel with getOrdersList via Promise.all
+  page.tsx                          Extended — getOrdersList returns pendingFxCount
+                                              and the FX-pending orders feed FxAnnouncer
   _components/
-    OrderListContent.tsx            Extended — renders FxReconciliationBanner when count > 0
-    FxReconciliationBanner.tsx      Client — info banner with count + CTA to open modal
+    FxAnnouncer.tsx                 Client — combines the banner + modal trigger; renders
+                                              FxBanner and FxReconciliationModal together
+    FxBanner.tsx                    Client — info banner with count + CTA to open the modal
+    FxReconciliationModal.tsx       Client — reconciliation modal; receives the FX-pending
+                                              orders, groups by currency pair, calls
+                                              updateExchangeRatesAction
   _utils/
-    orderListingParams.ts           Extended — parseOrderListingParams handles
-                                              ?fxStatus=needs_reconciliation
+    orderListingParams.ts           Extended — parseOrderListingParams reads ?fxPending=true
   _actions/
-    fxReconciliationActions.ts      Server Actions — applyBulkExchangeRateAction,
-                                                     getEligibleOrdersForReconciliation
+    orderFxActions.ts               Server Action — updateExchangeRatesAction
 ```
 
-`applyBulkExchangeRateAction` lives in the orders `_actions/` folder and delegates writes to `src/lib/data/orders/orderMutations.ts`. `getEligibleOrdersForReconciliation` is added to `src/lib/data/orders/orderQueries.ts`.
+`updateExchangeRatesAction` lives in `src/app/[locale]/(app)/orders/_actions/orderFxActions.ts` and writes `{ exchangeRate, needsExchangeRateUpdate: false }` via `prisma.order.updateMany` inside one `prisma.$transaction` (scoped to `userId`). The FX-pending count and the eligible-orders set are computed by `getOrdersList` / `buildFxPendingWhere` in `src/lib/data/orders/orderQueries.ts` from the persisted flag.
 
 ## UX Notes
 
@@ -101,11 +109,11 @@ The `Needs currency update` option is added to the orders list filter sidebar (W
 
 - Filter label: `Needs currency update` / `Actualización de divisa pendiente`
 - Active chip label: `Currency update needed` / `Actualización de divisa pendiente`
-- Removing the chip removes `?fxStatus=needs_reconciliation` from the URL
+- Removing the chip removes `?fxPending=true` from the URL
 
 ### Orders list banner
 
-A persistent `info` banner appears at the top of the orders list content area (below the filter chips row, above the order cards) when the collector has one or more orders with `needsExchangeRateUpdate = true`.
+A persistent `info` banner appears at the top of the orders list content area (below the filter chips row, above the order cards) when one or more orders are flagged FX-pending (`pendingFxCount > 0`).
 
 Visual treatment: `info` variant (`bg-info/12 border border-info/35 rounded-xl`), consistent with the base-currency info banner in WO-04.
 
@@ -115,7 +123,7 @@ Copy (ES): _"Tienes [N] [pedido / pedidos] con el tipo de cambio desactualizado.
 
 Copy (EN): _"You have [N] [order / orders] with an outdated exchange rate. Update them so your reports reflect your current base currency."_ · CTA: **"Update exchange rates"**
 
-The CTA opens `FxReconciliationModal`. The banner disappears once all eligible orders are reconciled (`needsExchangeRateUpdate = false` for all). Singular / plural copy is resolved from the count at render time.
+The CTA opens `FxReconciliationModal`. The banner disappears once no order is flagged FX-pending. **As shipped:** reconciling an order through the modal clears its `needsExchangeRateUpdate` flag, so the order leaves the count immediately on the next refetch and the banner converges to zero as the collector works through the set. The count also drops when an order is edited with a fresh exchange rate, or when a subsequent base-currency change clears the flag for orders now matching the base. Singular / plural copy is resolved from the count at render time.
 
 ### FxReconciliationModal
 
@@ -125,236 +133,184 @@ Structure:
 
 1. **Title** (ES): "Actualizar tipos de cambio" · (EN): "Update exchange rates"
 2. **Description** (ES): "Ingresa el tipo de cambio actual para cada divisa. Se aplicará a todos los pedidos del grupo." · (EN): "Enter the current exchange rate for each currency. It will be applied to all orders in the group."
-3. **Per-group row:**
+3. **Per-group row** (one per `from → to` currency pair):
    - Group label: e.g., `USD → PEN · 2 pedidos` / `USD → PEN · 2 orders`
    - Exchange rate input: label `1 [fromCurrency] =`, placeholder `0.00`, suffix showing the target currency code
+   - `Hoy` / `Today` button: prefills the rate input with the latest market rate for that pair, fetched from Frankfurter (`fetchTodayRate` in `src/lib/fx/frankfurter.ts`); shows a loading state and an inline error if the fetch fails
+   - Expandable list of the affected orders in the group (toggle), so the collector can see which orders the rate will touch
    - Inline validation error below each input when the value is out of range
 4. **Footer actions:**
    - `Cancelar` / `Cancel` (ghost) — closes modal without changes
    - `Aplicar` / `Apply` (primary) — submits all groups that have a value; groups with empty inputs are skipped (treated as deferred)
 
-**Defer behavior.** Leaving a group's input empty is the deferral mechanism — no explicit "Defer" button. Deferred orders keep `needsExchangeRateUpdate = true` and remain in the banner and filter.
+**Defer behavior.** Leaving a group's input empty is the deferral mechanism — no explicit "Defer" button. Those orders keep `needsExchangeRateUpdate == true`, so they remain in the banner and filter.
 
-**Success feedback.** On successful apply the modal closes and a toast confirms: `Tipos de cambio actualizados` / `Exchange rates updated`. The banner count updates optimistically before the response settles.
+**Success feedback (as shipped).** The action is **awaited** (not optimistic): on success the modal shows a success toast (`fx.modal.successToast`), closes, and calls `router.refresh()` to refetch the server-rendered list. Because the action clears `needsExchangeRateUpdate` on every reconciled order, that refetch recomputes a lower `pendingFxCount` and the reconciled orders drop out of the banner and filter.
 
-**Error feedback.** If a group's transaction fails, the modal stays open and shows an inline error above the footer. Groups that already succeeded are committed and not retried.
+**Error feedback (as shipped).** On `{ success: false }` the modal shows an error toast (`fx.modal.errorToast`) and stays open. Because all writes run in one `prisma.$transaction`, a failed write rolls back every update together — there is no per-group partial commit.
 
-### Order detail view indicator (WO-05 extension)
+### Order detail / edit form indicators (not yet rendered)
 
-When the displayed order has `needsExchangeRateUpdate = true`, show a `warning` badge next to the exchange rate in the financial summary section:
+The originally specified per-order FX indicators — a `warning` badge on the order detail financial summary and an inline `warning` on the edit-form `exchangeRate` field — are **not currently rendered**. The persisted `Order.needsExchangeRateUpdate` flag now exists and the edit form already clears it whenever an `exchangeRate` is submitted, so these indicators **could** now be driven directly by reading the flag on the detail/edit query — but no badge or inline warning is wired up in the components today. Adding them is a small follow-up, not a blocked design decision.
 
-- Icon: `AlertTriangle` from `lucide-react` (warning semantic color)
-- Tooltip / helper text (ES): _"El tipo de cambio está desactualizado. Edita el pedido para actualizarlo."_ · (EN): _"Exchange rate is outdated. Edit the order to update it."_
+### Settings entry point (FRD-07 WO-05 integration — shipped)
 
-### Order edit form indicator (WO-04 extension)
-
-When the order being edited has `needsExchangeRateUpdate = true` and the exchange rate field is visible, show an inline `warning` message below the field:
-
-Copy (ES): _"Este tipo de cambio está desactualizado desde tu último cambio de moneda base. Actualízalo para reflejar la conversión correcta."_
-
-Copy (EN): _"This exchange rate is outdated since your last base currency change. Update it to reflect the correct conversion."_
-
-The WO-04 edit server action must set `needsExchangeRateUpdate = false` when a new `exchangeRate` is saved for an order that had the flag set.
-
-### Settings entry point (FRD-07 WO-05 integration)
-
-After the collector confirms the currency change in Settings, the two save options are:
-
-- **"Guardar y actualizar tipos de cambio"** / **"Save and update exchange rates"** (primary): save preferences → mark eligible orders (`needsExchangeRateUpdate = true`) → open `FxReconciliationModal`
-- **"Guardar sin actualizar"** / **"Save without updating"** (secondary): save preferences → mark eligible orders → close modal, show toast: _"Preferencias guardadas. Puedes actualizar los tipos de cambio desde tu lista de pedidos cuando estés listo."_ / _"Preferences saved. You can update exchange rates from your orders list when you're ready."_
-
-The button copy in `SettingsPreferencesSection.tsx` must be updated (`currencyChangeModal.saveAndReconcile` → `currencyChangeModal.saveAndUpdate`, `currencyChangeModal.saveSkip` → `currencyChangeModal.saveWithoutUpdating`) alongside the corresponding locale keys.
+The Settings-side flow is **implemented**. On a confirmed base-currency change, `updateCurrencyAction` (`src/app/[locale]/(app)/settings/_actions/preferencesActions.ts`) calls `flagOrdersForFxReconciliation` (only when the base currency actually changed), flagging every foreign-currency order, then — on Path A ("Save and update exchange rates") — returns `redirectToFxReconcile: true` so the client navigates to `/{locale}/orders`, where the reconciliation banner + `FxReconciliationModal` surface the flagged orders. The action **never** mutates `exchangeRate`; it only sets the flag.
 
 ## Technical Notes
 
-### `needsExchangeRateUpdate` field
+### FX-pending eligibility (persisted flag)
 
-Added to the `Order` Prisma model in **FRD-05 · BP-01 · WO-01**:
-
-```prisma
-needsExchangeRateUpdate Boolean @default(false)
-```
-
-Lifecycle:
-
-| Event                                                    | Result                                                                                         |
-| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| FRD-07 WO-05 saves new `baseCurrencyCode`                | `true` for all eligible orders of this user (month filter + currency mismatch + not CANCELLED) |
-| WO-07 `applyBulkExchangeRateAction` succeeds for a group | `false` for all orders in that group                                                           |
-| WO-04 edit server action saves a new `exchangeRate`      | `false` for the edited order                                                                   |
-| WO-05 order detail reactivates a CANCELLED order         | `true` when `currencyCode !== user.baseCurrencyCode`; unchanged otherwise                      |
-
-### `getEligibleOrdersForReconciliation` query shape
-
-Added to `src/lib/data/orders/orderQueries.ts`:
+Eligibility reads the persisted `Order.needsExchangeRateUpdate` column via `buildFxPendingWhere` in `src/lib/data/orders/orderQueries.ts`:
 
 ```ts
-interface FxCurrencyPairGroup {
-  fromCurrency: string;
-  toCurrency: string; // always user.baseCurrencyCode
-  orderCount: number;
-  orderIds: string[];
+function buildFxPendingWhere(userId: string, baseCurrencyCode: string | null | undefined) {
+  if (!baseCurrencyCode) return null;
+  return {
+    userId,
+    needsExchangeRateUpdate: true,
+    status: { not: "CANCELLED" as OrderStatus },
+    currencyCode: { not: baseCurrencyCode },
+  };
 }
-
-async function getEligibleOrdersForReconciliation(
-  userId: string,
-  baseCurrencyCode: string,
-): Promise<FxCurrencyPairGroup[]>;
 ```
 
-Query: `Order` records where `userId = userId AND needsExchangeRateUpdate = true AND status != CANCELLED`. Groups by `currencyCode`. The `toCurrency` is always `baseCurrencyCode` passed from the session.
+The same predicate drives the banner count. The list filter (`?fxPending=true`) applies the equivalent constraints inline in `getOrdersList` via `fxFilterBase` (`{ currencyCode: { not: base } }`) + `fxFilterFlag` (`{ needsExchangeRateUpdate: true }`). An order leaves the FX-pending set when its flag is cleared (reconciled, edited with a fresh rate, or the base currency changes to its currency), or it is cancelled. The `startOfCurrentMonth` / current-month scope has been **removed** — there is no monthly window.
 
-### Banner count query
+### Setting and clearing the flag
 
-`page.tsx` runs `prisma.order.count({ where: { userId, needsExchangeRateUpdate: true, status: { not: "CANCELLED" } } })` in parallel with `getOrdersList` via `Promise.all`. Banner renders only when `count > 0`. Fails silently — banner is hidden on count query error to avoid blocking the list.
+- **Set** on base-currency change: `flagOrdersForFxReconciliation(userId, newBaseCurrencyCode)` in `src/lib/data/orders/orderMutations.ts` runs two `updateMany` calls inside one `$transaction` — `needsExchangeRateUpdate: true` where `currencyCode != newBase`, and `false` where `currencyCode == newBase`. It does **not** mutate `exchangeRate`.
+- **Cleared** on order create (defaults `false` — a fresh rate is captured at creation), on edit when `input.exchangeRate !== undefined` (`editOrder` writes `needsExchangeRateUpdate: false`), and on bulk reconciliation (`updateExchangeRatesAction` writes `{ exchangeRate, needsExchangeRateUpdate: false }`).
+- **Preserved** through cancellation: cancelled orders keep their flag, so reactivating one re-surfaces it (the predicate excludes cancelled status only). No separate reactivation-time FX code path exists or is needed.
 
-### `applyBulkExchangeRateAction`
+### Banner count
+
+`getOrdersList` returns `pendingFxCount` alongside the list: it runs `prisma.order.count({ where: buildFxPendingWhere(...) })` in the same `Promise.all` as the list query (returns `0` when the user has no base currency). The banner renders only when `pendingFxCount > 0`. The FX-pending orders themselves are passed to `FxAnnouncer` from `page.tsx`.
+
+### `updateExchangeRatesAction`
+
+Lives in `src/app/[locale]/(app)/orders/_actions/orderFxActions.ts`:
 
 ```ts
-type BulkFxGroup = {
-  fromCurrency: string;
-  exchangeRate: number; // validated: min(0.01), max(99999.99)
-};
+const updateSchema = z.object({
+  updates: z
+    .array(z.object({ orderId: z.string().min(1), exchangeRate: z.number().positive().finite() }))
+    .min(1)
+    .max(500),
+});
 
-type ApplyBulkExchangeRateResult =
-  | { ok: true; reconciledCount: number }
-  | { ok: false; error: "unauthorized" | "validation" | "partial_failure" | "generic"; failedCurrency?: string };
-
-async function applyBulkExchangeRateAction(groups: BulkFxGroup[]): Promise<ApplyBulkExchangeRateResult>;
+async function updateExchangeRatesAction(input: {
+  updates: Array<{ orderId: string; exchangeRate: number }>;
+}): Promise<UpdateExchangeRatesResult>;
 ```
 
-For each group with a provided `exchangeRate`:
-
-1. Validate `exchangeRate` with `z.number().min(0.01).max(99999.99)` and `fromCurrency` against `ALLOWED_COLLECTOR_BASE_CURRENCY_CODES`
-2. Run a Prisma transaction: `updateMany` scoped to `userId`, `currencyCode = fromCurrency`, `needsExchangeRateUpdate = true`; sets `exchangeRate` and `needsExchangeRateUpdate = false`
-3. Groups are processed sequentially; each is an independent transaction
-
-Groups with no `exchangeRate` value are skipped without error.
+- Input is a flat array of `{ orderId, exchangeRate }` (one entry per order, not per currency-code group).
+- `exchangeRate` validation is `z.number().positive().finite()` only — **no** `min`, `max`, or decimal-precision constraint.
+- Writes run as **one `prisma.order.updateMany` per `orderId`** (scoped to `id` + session `userId`), each setting `{ exchangeRate, needsExchangeRateUpdate: false }`, all inside a **single `prisma.$transaction`** — not sequential per-currency transactions. Clearing the flag is what removes the order from the FX-pending set.
+- Result: `{ success: true; updatedCount }` or `{ success: false; error: "unauthorized" | "invalid" | "server_error" }`.
+- Calls `revalidatePath("/[locale]/orders", "page")` on success.
 
 ### `parseOrderListingParams` extension
 
-`fxStatus` is added to the existing utility in `src/app/[locale]/(app)/orders/_utils/orderListingParams.ts`:
-
-```ts
-interface OrderListFilters {
-  // ... existing filters from WO-06
-  fxStatus?: "needs_reconciliation";
-}
-```
-
-When `fxStatus=needs_reconciliation` is present, `getOrdersList` adds `needsExchangeRateUpdate: true` to the Prisma `where` clause.
-
-### Optimistic updates
-
-`FxReconciliationBanner` and `FxReconciliationModal` are Client Components. After `applyBulkExchangeRateAction` resolves, the banner count decrements optimistically (or hides when count reaches 0) without a full page refetch per `.cursor/rules/optimistic-client-updates.mdc`. On failure the optimistic count reverts.
+The `fxPending` boolean is read from `raw.fxPending` in `src/app/[locale]/(app)/orders/_utils/orderListingParams.ts` (`fxPendingOnly`), and `buildOrderListFilterUrl` emits `fxPending=true`. When `fxPendingOnly` is set (and a base currency exists), `getOrdersList` adds `{ currencyCode: { not: baseCurrencyCode } }` (`fxFilterBase`) and `{ needsExchangeRateUpdate: true }` (`fxFilterFlag`) to the list `where` clause.
 
 ## Security Notes
 
-- `applyBulkExchangeRateAction` resolves `userId` from the active session only — never from the client payload
-- All `updateMany` calls include `userId` in the `where` clause to prevent cross-user order mutation
-- `exchangeRate` values are validated with Zod before any database write
-- `fromCurrency` in each group is validated against `ALLOWED_COLLECTOR_BASE_CURRENCY_CODES`
-- The banner count query is always scoped to `userId`
+- `updateExchangeRatesAction` resolves `userId` from the active session only — never from the client payload
+- Each `updateMany` call includes `userId` in the `where` clause (alongside the `orderId`) to prevent cross-user order mutation
+- `exchangeRate` values are validated with Zod (`positive().finite()`) before any database write
+- The FX-pending count query (`buildFxPendingWhere`) is always scoped to `userId`
 
 ## Observability Notes
 
-- Unexpected failures in `applyBulkExchangeRateAction` are captured with Sentry, including `userId` and `fromCurrency`
-- Expected Zod validation errors are not sent to Sentry
-- Banner count query failures are caught and logged; the banner is hidden on error (fail-safe, not fail-open)
+- Unexpected failures in `updateExchangeRatesAction` are captured with Sentry (tagged `orders.fx-reconciliation`)
+- Expected Zod validation errors return `{ success: false, error: "invalid" }` and are not sent to Sentry
 
 ## Analytics
 
-All event names are added to `POSTHOG_EVENTS` in `src/lib/constants.ts`.
-
-| Event constant                      | When it fires                                                                                    |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `orders_fx_filter_applied`          | Collector activates the `?fxStatus=needs_reconciliation` filter                                  |
-| `orders_fx_banner_cta_clicked`      | Collector clicks the banner CTA to open `FxReconciliationModal`                                  |
-| `orders_fx_reconciliation_applied`  | `applyBulkExchangeRateAction` completes successfully; include `groupCount` and `reconciledCount` |
-| `orders_fx_reconciliation_deferred` | Modal closed without applying any rate (all groups empty or cancelled)                           |
-| `orders_fx_reconciliation_partial`  | Some groups applied, some skipped; include `appliedCount` and `skippedCount`                     |
+As shipped, the FX banner and `FxReconciliationModal` do **not** fire dedicated PostHog events. Activating the FX-pending filter is covered by the generic `POSTHOG_EVENTS.ORDER.LIST_FILTERED` event emitted from the orders list filters (`OrderListFilters.tsx`); there are no `orders_fx_*` events in `POSTHOG_EVENTS`. Adding FX-specific reconciliation analytics is open as a future enhancement.
 
 ## Dependencies
 
-- **FRD-05 · BP-01 · WO-01** must add `needsExchangeRateUpdate: Boolean @default(false)` to the `Order` Prisma model before this WO is implemented.
-- **FRD-07 · BP-01 · WO-05** must: (a) mark eligible orders with `needsExchangeRateUpdate = true` when currency changes; (b) open `FxReconciliationModal` when the collector chooses "Save and update exchange rates"; (c) update button copy to `currencyChangeModal.saveAndUpdate` and `currencyChangeModal.saveWithoutUpdating`.
-- **FRD-05 · BP-02 · WO-05** (order detail action menu) must: (a) show the `AlertTriangle` warning badge when `needsExchangeRateUpdate = true`; (b) set `needsExchangeRateUpdate = true` on reactivation when `currencyCode !== user.baseCurrencyCode`.
-- **FRD-05 · BP-02 · WO-04** (order edit form) must: (a) show the inline `warning` message on the `exchangeRate` field when `needsExchangeRateUpdate = true`; (b) set `needsExchangeRateUpdate = false` when a new `exchangeRate` is saved.
+- **FRD-05 · BP-01 · WO-01** provides the `Order` model with `currencyCode` and `status`, which the FX-pending predicate reads alongside the new `needsExchangeRateUpdate` flag. This WO adds that column via migration `20260616230000_add_order_needs_exchange_rate_update`.
+- **FRD-07 · BP-01 · WO-05** owns the user's `baseCurrencyCode` preference and the Settings-side trigger. Its `updateCurrencyAction` calls `flagOrdersForFxReconciliation` on a real base-currency change, flagging the orders this WO then surfaces. This integration is **shipped**.
+- **Not yet rendered:** per-order FX indicators on the order detail (WO-05) and edit form (WO-04). These are now feasible off the persisted flag (the edit form already clears it) but no badge / inline warning is wired up today.
 
 ## Assumptions
 
-- Dashboard rollup logic (FRD-06) will treat the month of the base currency change as the boundary: orders from prior months remain in DB and are shown in order currency where needed, but are excluded from single-currency budget totals until FRD-06 defines the exact rollup rules.
+- Dashboard rollup logic (FRD-06) can use `needsExchangeRateUpdate` as the per-order signal that a stored conversion is stale: flagged orders are shown in order currency where needed but excluded from single-currency budget totals until reconciled, per the exact rollup rules FRD-06 defines. There is no monthly boundary — staleness is tracked per order from the base-currency change.
 - The existing `Modal` core component (`src/components/core/`) is sufficient for `FxReconciliationModal`; no new modal primitive is needed.
 - Plural/singular copy for the banner (`pedido` / `pedidos`, `order` / `orders`) is resolved from the count at render time using the existing next-intl plural API.
 
 ## Unit Tests
 
-### Eligibility query
+### FX-pending eligibility (`buildFxPendingWhere`, flag-based)
 
-| Scenario                              | `needsExchangeRateUpdate` | `status`    | `orderDate`   | Expected |
-| ------------------------------------- | ------------------------- | ----------- | ------------- | -------- |
-| Eligible — current month, active      | `true`                    | `OPEN`      | current month | included |
-| Excluded — CANCELLED                  | `true`                    | `CANCELLED` | current month | excluded |
-| Excluded — already reconciled         | `false`                   | `OPEN`      | current month | excluded |
-| Excluded — prior month (flag not set) | `false`                   | `OPEN`      | prior month   | excluded |
+Eligibility is decided by the persisted `needsExchangeRateUpdate` flag together with `currencyCode` and `status`.
 
-### `applyBulkExchangeRateAction` validation
+| Scenario                             | `needsExchangeRateUpdate` | `currencyCode` vs base | `status`    | Expected                       |
+| ------------------------------------ | ------------------------- | ---------------------- | ----------- | ------------------------------ |
+| Eligible — flagged, active, ≠base    | `true`                    | differs                | `OPEN`      | included                       |
+| Excluded — not flagged               | `false`                   | differs                | `OPEN`      | excluded                       |
+| Excluded — CANCELLED (flag kept)     | `true`                    | differs                | `CANCELLED` | excluded                       |
+| Excluded — matches base currency     | `true`                    | same                   | `OPEN`      | excluded                       |
+| Excluded — user has no base currency | `true`                    | n/a                    | `OPEN`      | excluded (predicate is `null`) |
 
-| Scenario              | `exchangeRate` | Expected      |
-| --------------------- | -------------- | ------------- |
-| Valid rate            | `3.78`         | Accepted      |
-| At minimum            | `0.01`         | Accepted      |
-| At maximum            | `99999.99`     | Accepted      |
-| Below minimum         | `0.009`        | Rejected      |
-| Above maximum         | `100000`       | Rejected      |
-| Omitted (deferred)    | omitted        | Group skipped |
-| Invalid currency code | `"FAKE"`       | Rejected      |
+### `flagOrdersForFxReconciliation`
+
+Covered by `src/lib/data/orders/_tests/fxReconciliationFlag.test.ts`:
+
+| Scenario                                          | Expected                                                                              |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Flags orders whose currency differs from new base | `updateMany` with `{ currencyCode: { not: base } }` → `needsExchangeRateUpdate: true` |
+| Clears flag on orders already in new base         | `updateMany` with `{ currencyCode: base }` → `needsExchangeRateUpdate: false`         |
+| Atomicity                                         | both `updateMany` calls run inside a single `$transaction`                            |
+
+### `updateExchangeRatesAction` validation
+
+The schema is `z.number().positive().finite()` — **no** `min`, `max`, or precision bounds.
+
+| Scenario              | `exchangeRate` | Expected              |
+| --------------------- | -------------- | --------------------- |
+| Valid rate            | `3.78`         | Accepted              |
+| Very small positive   | `0.001`        | Accepted (no `min`)   |
+| Very large            | `100000`       | Accepted (no `max`)   |
+| Zero                  | `0`            | Rejected (`positive`) |
+| Negative              | `-1`           | Rejected (`positive`) |
+| Non-finite            | `Infinity`     | Rejected (`finite`)   |
+| Empty `updates` array | `[]`           | Rejected (`min(1)`)   |
 
 ## E2E Acceptance Tests
 
 ### Filter
 
-- Activating `?fxStatus=needs_reconciliation` shows only orders with `needsExchangeRateUpdate = true`
+- Activating `?fxPending=true` shows only flagged FX-pending orders (`needsExchangeRateUpdate == true`, currency ≠ base, not CANCELLED)
 - The active chip reads `Currency update needed` / `Actualización de divisa pendiente`
-- Removing the chip returns to the previous filter state without the `fxStatus` param
+- Removing the chip returns to the previous filter state without the `fxPending` param
 
 ### Banner
 
-- A collector with eligible orders sees the banner with the correct singular/plural count
+- A collector with FX-pending orders sees the banner with the correct singular/plural count
 - The banner CTA opens `FxReconciliationModal`
-- After all eligible orders are reconciled, the banner disappears
-- A collector with no eligible orders does not see the banner
+- The banner count drops as orders are reconciled and the banner disappears once no order is flagged FX-pending; reconciling, editing with a fresh rate, or changing the base back all clear the flag
+- A collector with no FX-pending orders does not see the banner
+
+### Settings → orders handoff
+
+- Changing the base currency and confirming flags every foreign-currency order; on "Save and update exchange rates" the collector lands on `/orders` with the FX-pending banner already showing the flagged count
 
 ### FxReconciliationModal — apply
 
 - The modal shows one group per currency pair with its order count
-- Entering a valid rate and clicking "Apply" updates all orders in that group (`needsExchangeRateUpdate = false`)
-- The banner count updates optimistically before the server confirms
-- A success toast confirms the update
-- The filter list removes reconciled orders
+- Each group offers a `Today` button that prefills the latest Frankfurter rate, and an expandable list of the affected orders
+- Entering a valid rate and clicking "Apply" updates the orders' `exchangeRate` and clears their flag
+- After the action resolves, the reconciled orders leave the filter/banner because `needsExchangeRateUpdate` is now `false`
 
 ### FxReconciliationModal — defer
 
 - Leaving a group's rate field empty and clicking "Apply" skips that group
-- Deferred orders keep `needsExchangeRateUpdate = true` and remain in the banner and filter
+- Those orders keep `needsExchangeRateUpdate == true` and remain in the banner and filter
 
-### Order detail — indicator
+### Not yet rendered
 
-- An order with `needsExchangeRateUpdate = true` shows the `AlertTriangle` badge next to the exchange rate
-- After reconciliation (bulk or individual) the badge disappears
-
-### Order edit form — indicator
-
-- Opening the edit form for an order with `needsExchangeRateUpdate = true` shows the inline warning on the exchange rate field
-- Saving a new exchange rate clears the warning on subsequent loads
-
-### Reactivation edge case
-
-- Reactivating a cancelled order whose `currencyCode !== user.baseCurrencyCode` sets `needsExchangeRateUpdate = true`
-- That order then appears in the banner count and the reconciliation filter
-
-### Settings entry point
-
-- Changing base currency and clicking "Save and update exchange rates" saves preferences, marks eligible orders, and opens `FxReconciliationModal`
-- Clicking "Save without updating" saves preferences, marks eligible orders, closes the modal, and shows the informational toast
-- On next visit to `/orders`, the banner reflects the marked orders
+- Per-order FX indicators (order detail badge, edit-form inline warning) are **not currently rendered**. They are now feasible off the persisted `needsExchangeRateUpdate` flag but no component surfaces them today, so no E2E coverage is asserted for them.

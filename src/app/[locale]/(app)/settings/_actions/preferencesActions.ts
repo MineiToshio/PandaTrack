@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import * as Sentry from "@sentry/nextjs";
 import { getSession } from "@/lib/auth/auth-server";
 import { getCollectorPreferencesSnapshot, parseAndApplyCollectorPreferencesPatch } from "@/queries/userSettings";
+import { flagOrdersForFxReconciliation } from "@/lib/data/orders/orderMutations";
 import { routing } from "@/i18n/routing";
 
 export type PreferencesErrorCode = "unauthorized" | "validation" | "generic";
@@ -129,6 +130,13 @@ export async function updateCurrencyAction(input: UpdateCurrencyInput): Promise<
 
     if (!result.ok) {
       return { ok: false, error: "validation" };
+    }
+
+    // Only when the base currency actually changed: flag every order in a different currency
+    // for FX reconciliation (its stored rate is now stale). Flag-only — rates are reconciled
+    // by the collector in the orders FX modal, never silently here.
+    if (current.baseCurrencyCode !== trimmed) {
+      await flagOrdersForFxReconciliation(session.user.id, trimmed);
     }
 
     return { ok: true, redirectToFxReconcile: input.saveFxRates };

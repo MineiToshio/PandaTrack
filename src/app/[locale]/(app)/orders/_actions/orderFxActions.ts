@@ -37,7 +37,8 @@ export async function updateExchangeRatesAction(input: {
       parsed.data.updates.map((u) =>
         prisma.order.updateMany({
           where: { id: u.orderId, userId },
-          data: { exchangeRate: u.exchangeRate },
+          // Reconciling clears the pending flag so the order leaves the FX-pending set.
+          data: { exchangeRate: u.exchangeRate, needsExchangeRateUpdate: false },
         }),
       ),
     );

@@ -61,8 +61,8 @@ requirement changed (see [`frd-04-public-legal-transparency.md`](./frd-04-public
 | 2   | Terms of service (desktop) | `/{locale}/terms`   | `#s11-legal-terms`          |
 | 3   | Privacy policy (mobile)    | `/{locale}/privacy` | `#s11-legal-privacy-mobile` |
 
-The privacy document carries **12 numbered sections** (`#priv-who … #priv-contact`); the
-terms document carries **9** (`#terms-accept … #terms-contact`). The mobile variant renders
+The privacy document carries **12 sections** (anchor ids `#whoWeAre … #contact`); the
+terms document carries **9** (`#acceptance … #contact`). The mobile variant renders
 the privacy document and intentionally **drops the table of contents** (see §7).
 
 Requirements traced throughout: `FR-04-01 … FR-04-05`, `AC-04-01 … AC-04-03` (see
@@ -90,7 +90,7 @@ legal-doc             centered reading column, max-width 760px
   legal-head          mk-eyebrow chip "Legal" · <h1> · legal-updated date line
   legal-intro         opening paragraph
   legal-toc           "En esta página" — 2-column ordered index of internal anchors
-  legal-section × N    numbered <h2> + body paragraph(s)
+  legal-section × N    plain <h2> + body paragraph(s)
   legal-back (bottom) "← Volver al inicio"  (repeated)
 ```
 
@@ -121,30 +121,31 @@ underline (`padding-bottom: 24px`):
 `"En esta página"` over an `<ol>` laid out in **2 columns** (`columns: 2; column-gap: 28px`)
 of internal anchor links. Each `<li>` links to a `legal-section` id.
 
-**`legal-section`** repeats N times: a numbered `<h2>` (`19px`, weight 600, with
-`scroll-margin-top: 80px` so anchored jumps clear the sticky minibar) followed by one or more
-body paragraphs (`15px`, `--text-secondary`, `line-height 1.65`). Section numbering is part of
-the heading copy verbatim from i18n, formatted `"N · Título"` (for example `"1 · Quiénes
-somos"`, `"7 · Tus derechos"`).
+**`legal-section`** repeats N times: a plain (unnumbered) `<h2>` (`19px`, weight 600) followed
+by one or more body paragraphs (`15px`, `--text-secondary`, `line-height 1.65`). Headings are
+plain title text from i18n with no number prefix and no CSS counter (for example `"Quiénes
+somos"`, `"Tus derechos"`); the only numbering shown is the auto-numbering of the table-of-contents
+`<ol>`. The anchor target is the `<section id={key}>`, which carries a `scroll-mt-20` offset so an
+anchored jump lands with a gap above it; the minibar is not sticky.
 
 ### 2.2 Privacy vs terms — the only content divergence
 
 The two documents share the identical `legal-doc` skeleton; they differ only in eyebrow icon,
 title, and the section list:
 
-| Document | Eyebrow icon  | Sections | Anchor range                     |
-| -------- | ------------- | -------- | -------------------------------- |
-| Privacy  | `shield`      | 12       | `#priv-who … #priv-contact`      |
-| Terms    | `scroll-text` | 9        | `#terms-accept … #terms-contact` |
+| Document | Eyebrow icon  | Sections | Anchor range             |
+| -------- | ------------- | -------- | ------------------------ |
+| Privacy  | `shield`      | 12       | `#whoWeAre … #contact`   |
+| Terms    | `scroll-text` | 9        | `#acceptance … #contact` |
 
-Privacy sections (verbatim `es` headings): `1 · Quiénes somos`, `2 · Datos que recogemos`,
-`3 · Cómo usamos tus datos`, `4 · Base legal (EEE/Reino Unido)`, `5 · Compartir datos y
-terceros`, `6 · Conservación`, `7 · Tus derechos`, `8 · Cookies y tecnologías similares`,
-`9 · Seguridad`, `10 · Menores`, `11 · Cambios en esta política`, `12 · Contacto`.
+Privacy sections (verbatim `es` headings, plain text — no number prefix): `Quiénes somos`,
+`Datos que recogemos`, `Cómo usamos tus datos`, `Base legal (EEE/Reino Unido)`, `Compartir
+datos y terceros`, `Conservación`, `Tus derechos`, `Cookies y tecnologías similares`,
+`Seguridad`, `Menores`, `Cambios en esta política`, `Contacto`.
 
-Terms sections: `1 · Aceptación de los términos`, `2 · Descripción del servicio`,
-`3 · Requisitos y cuenta`, `4 · Uso aceptable`, `5 · Propiedad intelectual`, `6 · Privacidad`,
-`7 · Exención de responsabilidad y limitación`, `8 · Cambios en los términos`, `9 · Contacto`.
+Terms sections: `Aceptación de los términos`, `Descripción del servicio`, `Requisitos y
+cuenta`, `Uso aceptable`, `Propiedad intelectual`, `Privacidad`, `Exención de responsabilidad
+y limitación`, `Cambios en los términos`, `Contacto`.
 
 ---
 
@@ -228,8 +229,9 @@ absence is deliberate, not an omission.
 ### 5.2 In-page navigation (the table of contents)
 
 The one meaningful interaction is **anchored navigation**: each `legal-toc` link targets a
-`legal-section` id. Following a link scrolls to that section, and `scroll-margin-top: 80px` on
-each `<h2>` ensures the landed heading clears the sticky minibar rather than hiding under it.
+`legal-section` id. Following a link scrolls to that section; the `<section>` (the anchor target)
+carries a `scroll-mt-20` offset so the landed section sits with a gap above it rather than pinned
+flush to the viewport top. The minibar is not sticky/fixed — it scrolls away with the page.
 TOC links and the back-link tint to `--accent` on hover.
 
 ### 5.3 Back to home (FR-04-05 / AC-04-03)
@@ -308,8 +310,9 @@ specifically for long-form legal documents:
 - **Table of contents as navigation**: `legal-toc` is a `<nav aria-label="Secciones">`
   wrapping an `<ol>`; its anchor links are keyboard-operable with visible focus, giving a
   skip-to-content equivalent for a long page.
-- **Anchored headings clear the chrome**: `scroll-margin-top` on each `<h2>` keeps a jumped-to
-  heading visible below the sticky minibar, so keyboard/anchor users never land on hidden text.
+- **Anchored sections land with a gap**: the `scroll-mt-20` offset on each `<section>` (the
+  anchor target) keeps a jumped-to section from being pinned flush to the viewport top, so
+  keyboard/anchor users always land with breathing room above the heading.
 - **Icon-only controls labelled**: the theme toggle buttons carry `aria-label` (`"Tema
 claro"` / `"Tema oscuro"`); the back-link is text + icon (not icon-only).
 - **Reading contrast & measure**: body text on `--text-secondary` is contrast-verified in

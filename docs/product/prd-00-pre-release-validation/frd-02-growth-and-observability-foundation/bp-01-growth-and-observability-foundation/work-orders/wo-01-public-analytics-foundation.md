@@ -5,7 +5,7 @@ slug: public-analytics-foundation
 title: Public Analytics Foundation
 status: ACTIVE
 parent: BP-01
-last_updated: 2026-03-21
+last_updated: 2026-06-16
 source_features:
   - FEAT-0002
 implementation_status: IMPLEMENTED
@@ -15,14 +15,14 @@ implementation_status: IMPLEMENTED
 
 ## Summary
 
-Establish the PostHog event model for landing interactions and waitlist outcomes.
+Establish the PostHog event model for landing interactions and sign-up conversion outcomes.
 
 ## In Scope
 
-- centralized event names
-- CTA interaction tracking
-- waitlist success/failure tracking
-- server-side identify on successful waitlist submit
+- centralized `POSTHOG_EVENTS` constants in `src/lib/constants.ts`
+- CTA interaction tracking via declarative `data-ph-event` attributes
+- sign-up and sign-in conversion tracking (`AUTH` category)
+- server-side PostHog capture for auth flows and Server Actions
 
 ## Out of Scope
 
@@ -32,8 +32,8 @@ Establish the PostHog event model for landing interactions and waitlist outcomes
 ## Requirements
 
 - `FR-02-01`
-- `FR-02-02`
-- `FR-02-03`
+- `FR-02-02` (superseded — waitlist removed 2026-06-15; sign-up conversion tracked via AUTH events)
+- `FR-02-03` (superseded — user identification now via sign-up/sign-in flows)
 
 ## Blueprints
 
@@ -42,4 +42,4 @@ Establish the PostHog event model for landing interactions and waitlist outcomes
 ## E2E Acceptance Tests
 
 - Landing CTA interactions emit the expected event contract
-- Waitlist success and failure produce distinct analytics outcomes
+- Sign-up success and failure produce distinct analytics outcomes (`AUTH.SIGNUP_SUCCESS` / `AUTH.SIGNUP_FAILED`)
