@@ -14,6 +14,13 @@
       "runtimeArgs": ["serve", "docs/redesign/_notes", "-l", "5500", "--no-clipboard"],
       "port": 5500,
       "autoPort": false
+    },
+    {
+      "name": "frd-prototypes",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", ".", "-l", "5610", "--no-clipboard"],
+      "port": 5610,
+      "autoPort": false
     }
   ]
 }

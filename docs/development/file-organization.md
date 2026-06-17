@@ -8,14 +8,14 @@ For the full detail on code file placement rules, read `.cursor/rules/project-st
 
 ## `docs/` folder structure
 
-| Folder | What goes here |
-|--------|---------------|
-| `docs/design/` | Design system decisions: visual language, interface patterns, UX copy, and any reusable visual or interaction rule. One focused file per topic. |
-| `docs/development/` | Technical implementation notes for specific domains or cross-cutting concerns (auth, i18n, analytics, testing, database schema, lib utilities, OG images, etc.). One file per topic. |
-| `docs/process/` | Workflow, delivery, review, and quality standards (definition of done, review checklist, GitHub workflow, AI delivery process). |
-| `docs/product/` | Product definition: PRDs, FRDs, Blueprints, and Work Orders in their canonical hierarchy. See `docs/templates/product-docs-guide.md` for structure and naming rules. |
-| `docs/templates/` | Blank templates only. No implementation content here. |
-| `docs/tooling/` | Docs about the tooling layer: Cursor rules index, hooks, commands. |
+| Folder              | What goes here                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `docs/design/`      | Design system decisions: visual language, interface patterns, UX copy, and any reusable visual or interaction rule. One focused file per topic.                                                                                                                                                                                                                                                         |
+| `docs/development/` | Technical implementation notes for specific domains or cross-cutting concerns (auth, i18n, analytics, testing, database schema, lib utilities, OG images, etc.). One file per topic.                                                                                                                                                                                                                    |
+| `docs/process/`     | Workflow, delivery, review, and quality standards (definition of done, review checklist, GitHub workflow, AI delivery process).                                                                                                                                                                                                                                                                         |
+| `docs/product/`     | Product definition: PRDs, FRDs, Blueprints, and Work Orders in their canonical hierarchy. See `docs/templates/product-docs-guide.md` for structure and naming rules. A UI-bearing FRD also keeps its durable design record directly inside the FRD folder: `fdd-XX-<slug>.md` (mirrors the FRD filename) + a self-contained `prototype/<slug>.html` — see `.cursor/rules/frd-design-documentation.mdc`. |
+| `docs/templates/`   | Blank templates only. No implementation content here.                                                                                                                                                                                                                                                                                                                                                   |
+| `docs/tooling/`     | Docs about the tooling layer: Cursor rules index, hooks, commands.                                                                                                                                                                                                                                                                                                                                      |
 
 ### Before adding a new file to `docs/`
 
@@ -38,11 +38,11 @@ Read `.cursor/rules/project-structure.mdc` for the full rules. The most common d
 
 ### Components
 
-| Scope | Location |
-|-------|----------|
-| App-wide, simple, highly reusable | `src/components/core/` |
-| App-wide, complex, multi-component | `src/components/modules/` |
-| Specific to one page | `_components/` next to the owning `page.tsx` |
+| Scope                                                 | Location                                                      |
+| ----------------------------------------------------- | ------------------------------------------------------------- |
+| App-wide, simple, highly reusable                     | `src/components/core/`                                        |
+| App-wide, complex, multi-component                    | `src/components/modules/`                                     |
+| Specific to one page                                  | `_components/` next to the owning `page.tsx`                  |
 | Shared across sibling pages in the same route subtree | `_components/share/` inside the nearest common parent segment |
 
 Single-file component → flat file. Multi-file component (has co-located hooks, utils, tests) → folder with the same name as the main file. Never use `index.tsx`.
