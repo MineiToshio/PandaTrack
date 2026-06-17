@@ -40,7 +40,7 @@ demo_anchors:
 
 > **What this document is.** The FDD is "the prototype in words": the durable, text
 > form of the visual and interaction design for FRD-04, so the feature's design is
-> reconstructible without depending on the disposable `docs/redesign/` workshop. It
+> reconstructible without depending on the redesign subproject. It
 > pairs with the self-contained prototype at [`./prototype/store-domain.html`](./prototype/store-domain.html)
 > (the pixel truth) and is governed by the design system in
 > [`docs/design/`](../../../design/README.md) (the system rules).
@@ -549,7 +549,5 @@ specifically here:
   0002/0003/0006/0007/0008/0009/0013/0014.
 - **Functional contract**: [`frd-04-store-domain.md`](./frd-04-store-domain.md) and its
   blueprint/work-orders.
-- **Workshop raw material (disposable)**: `docs/redesign/screens/store-list.md`,
-  `store-detail.md`, `store-create.md`, and `docs/redesign/_notes/store-detail-pendings.md`
-  (anchors in the frontmatter). These are being archived; this FDD + the prototype are the
+- **Workshop raw material (historical)**: distilled from the redesign subproject; see git history. This FDD + the prototype are the
   durable record.

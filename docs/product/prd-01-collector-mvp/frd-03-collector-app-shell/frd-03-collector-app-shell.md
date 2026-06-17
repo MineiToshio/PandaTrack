@@ -39,7 +39,7 @@ This FRD defines the private collector workspace shell that gives PandaTrack a s
 
 ### Adopted cross-app redesign patterns
 
-These are owned by the redesign design system (documented in `docs/redesign/PLAYBOOK.md` and the ADRs there), not introduced as shell-specific functional requirements: the **adaptive `Modal`** (renders a centered dialog on desktop and a bottom sheet on mobile), the **single-primary sticky action bar** for detail/create/edit screens, and the **Chip Eyebrow + Top-Accent** section-card treatment.
+These are owned by the redesign design system (documented in `docs/design/PLAYBOOK.md` and the ADRs in `docs/design/decisions/`), not introduced as shell-specific functional requirements: the **adaptive `Modal`** (renders a centered dialog on desktop and a bottom sheet on mobile), the **single-primary sticky action bar** for detail/create/edit screens, and the **Chip Eyebrow + Top-Accent** section-card treatment.
 
 ## Functional Requirements
 

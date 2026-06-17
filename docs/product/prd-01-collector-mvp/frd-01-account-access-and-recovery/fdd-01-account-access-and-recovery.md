@@ -23,7 +23,7 @@ demo_anchors:
 
 > **What this document is.** The FDD is "the prototype in words": the durable, text
 > form of the visual and interaction design for FRD-01, so the feature's design is
-> reconstructible without depending on the disposable `docs/redesign/` workshop. It
+> reconstructible without depending on the redesign subproject. It
 > pairs with the self-contained prototype at [`./prototype/account-access-and-recovery.html`](./prototype/account-access-and-recovery.html)
 > (the pixel truth) and is governed by the design system in
 > [`docs/design/`](../../../design/README.md) (the system rules).
@@ -106,7 +106,7 @@ mk-public mk-bleed
   ES/EN toggle and the `mk-theme` light/dark group. It is deliberately lighter than the
   landing header: no nav, no marketing CTAs. Note for parity: on the **landing** header
   the "Iniciar sesión" CTA is rendered `variant="secondary"` (filled, equal visual weight
-  to "Crear cuenta") — see [modules/landing-onboarding.md](../../../redesign/modules/landing-onboarding.md);
+  to "Crear cuenta") — see the redesign subproject's landing-onboarding copy (historical);
   inside the auth cards the primary action is always the form CTA, not a header button.
 - **`auth-wrap`**: a centered flex column that vertically anchors the card; on mobile its
   padding tightens to `28px 16px 40px` (prototype `#s11-sign-in-mobile`).
@@ -405,6 +405,4 @@ contraseña"` ↔ "Ocultar contraseña") that tracks the visibility state.
   and its linked blueprint.
 - **Glossary**: [glossary.md](../../glossary.md) (`cuenta ↔ account`, `pedido ↔ order`,
   `tienda ↔ store`).
-- **Workshop raw material (disposable)**: `docs/redesign/screens/auth.md` and
-  `docs/redesign/modules/landing-onboarding.md` (approved `es` copy block). These are being
-  archived; this FDD + the prototype are the durable record.
+- **Workshop raw material (historical)**: distilled from the redesign subproject; see git history. This FDD + the prototype are the durable record.

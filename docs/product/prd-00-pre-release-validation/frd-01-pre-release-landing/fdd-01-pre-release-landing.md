@@ -20,7 +20,7 @@ demo_anchors:
 
 > **What this document is.** The FDD is "the prototype in words": the durable, text
 > form of the visual and interaction design for FRD-01, so the feature's design is
-> reconstructible without depending on the disposable `docs/redesign/` workshop. It
+> reconstructible without depending on the redesign subproject. It
 > pairs with the self-contained prototype at [`./prototype/pre-release-landing.html`](./prototype/pre-release-landing.html)
 > (the pixel truth) and is governed by the design system in
 > [`docs/design/`](../../../design/README.md) (the system rules).
@@ -60,7 +60,7 @@ self-contained product window where one hero object (the collectible) travels th
 lifecycle ribbon `Tienda → Pedido → Pago → Entrega` and converges on a "Tu colección"
 dashboard panel. It carries the whole product story in one motion, and it is the feature's
 defining visual (§5, §6 of the redesign spec; backed by the spec's referenced hero
-deep-research, cited via [`landing.md`](../../../redesign/screens/landing.md) — not the
+deep-research, cited from the redesign subproject's landing copy deck (historical) — not the
 research artifact itself).
 
 ### Screens in this FDD
@@ -301,8 +301,8 @@ coleccionable"` over a `mk-journey-rail` (`mk-journey-line` with a travelling fi
   manageable here.
 
 The rationale (one hero object advancing a sequenced path → dashboard destination; only one
-thing moves at a time) comes from the deep-research **referenced by the spec** (cite
-[`landing.md`](../../../redesign/screens/landing.md) §6, not the research file).
+thing moves at a time) comes from the deep-research **referenced by the spec** (cited from the
+redesign subproject's landing copy deck (historical), not the research file).
 
 ### 5.6 Motion mechanics & reduced-motion
 
@@ -402,7 +402,5 @@ specifically here:
   — retained for historical context; the go-live behavior designed here supersedes the
   waitlist requirements.
 - **Glossary**: [glossary.md](../../glossary.md) — canonical es↔en product terms.
-- **Workshop raw material (disposable)**: `docs/redesign/screens/landing.md` and
-  `docs/redesign/modules/landing-onboarding.md` (copy deck + hero rationale, which itself
-  references the hero deep-research). These are being archived; this FDD + the prototype are
+- **Workshop raw material (historical)**: distilled from the redesign subproject; see git history. This FDD + the prototype are
   the durable record.

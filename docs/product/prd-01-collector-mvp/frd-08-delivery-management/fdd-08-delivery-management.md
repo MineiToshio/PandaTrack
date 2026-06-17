@@ -34,7 +34,7 @@ demo_anchors:
 
 > **What this document is.** The FDD is "the prototype in words": the durable, text
 > form of the visual and interaction design for FRD-08, so the feature's design is
-> reconstructible without depending on the disposable `docs/redesign/` workshop. It
+> reconstructible without depending on the redesign subproject. It
 > pairs with the self-contained prototype at [`./prototype/delivery-management.html`](./prototype/delivery-management.html)
 > (the pixel truth) and is governed by the design system in
 > [`docs/design/`](../../../design/README.md) (the system rules).
@@ -259,30 +259,30 @@ Everything below already exists in the catalog — see
 [components.md](../../../design/components.md). Delivery Management is an **assembly of
 existing components**; it must not fork or reinvent any of them.
 
-| Component                              | Tier        | Role in FRD-08                                                                                                    |
-| -------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------- |
-| `Sidebar`, `Header`                    | module      | App shell chrome (PUSH sidebar, breadcrumbs/lang/theme topbar)                                                    |
-| `StoreAvatar`                          | core        | s32 in list rows, s56 in detail hero                                                                              |
-| `MonoCode`                             | core        | `DLV-…` and `ORD-…` identifiers                                                                                   |
+| Component                              | Tier        | Role in FRD-08                                                                                              |
+| -------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| `Sidebar`, `Header`                    | module      | App shell chrome (PUSH sidebar, breadcrumbs/lang/theme topbar)                                              |
+| `StoreAvatar`                          | core        | s32 in list rows, s56 in detail hero                                                                        |
+| `MonoCode`                             | core        | `DLV-…` and `ORD-…` identifiers                                                                             |
 | `StatusChip`                           | core        | Delivery + item status, per [ADR 0002](../../../design/decisions/0002-status-chip-mapping.md)               |
-| `Button`                               | core        | primary / ghost / destructive-ghost hierarchy                                                                     |
-| `CodeCopyButton`                       | core        | copy the `DLV-…` in the hero                                                                                      |
-| `ViewTransitionLink`                   | core        | list row → detail (`view-transition-name: dlv-{humanId}`)                                                         |
-| `FilterTriggerButton` + `FilterDrawer` | module      | list filtering (FR-08-28/29)                                                                                      |
-| `AppliedFilterChip`                    | core        | removable active-filter chips                                                                                     |
-| `Pagination` / `ListPagination`        | core/module | desktop numeric / mobile "Cargar más" (ADR 0001)                                                                  |
-| `WizardAccordion`                      | module      | 4-step create flow                                                                                                |
-| `StoreCombobox`                        | module      | standalone store selection (eligible stores only)                                                                 |
-| `Checkbox`                             | core        | binary per-product selection (atomic unit, no qty selector — FR-08-04a)                                           |
-| `DateInput` / `DateRangePickerInput`   | core        | shipping date / estimated arrival range                                                                           |
-| `Select`                               | core        | sort, currency                                                                                                    |
-| `CollapsibleSubcard`                   | module      | Productos subcard, eligible-product groups                                                                        |
-| `AsideSummary` / `DetailSidebar`       | module      | Resumen / Acciones / Nota rail                                                                                    |
-| `PrivateNoteCard`                      | module      | inline-editable private note                                                                                      |
+| `Button`                               | core        | primary / ghost / destructive-ghost hierarchy                                                               |
+| `CodeCopyButton`                       | core        | copy the `DLV-…` in the hero                                                                                |
+| `ViewTransitionLink`                   | core        | list row → detail (`view-transition-name: dlv-{humanId}`)                                                   |
+| `FilterTriggerButton` + `FilterDrawer` | module      | list filtering (FR-08-28/29)                                                                                |
+| `AppliedFilterChip`                    | core        | removable active-filter chips                                                                               |
+| `Pagination` / `ListPagination`        | core/module | desktop numeric / mobile "Cargar más" (ADR 0001)                                                            |
+| `WizardAccordion`                      | module      | 4-step create flow                                                                                          |
+| `StoreCombobox`                        | module      | standalone store selection (eligible stores only)                                                           |
+| `Checkbox`                             | core        | binary per-product selection (atomic unit, no qty selector — FR-08-04a)                                     |
+| `DateInput` / `DateRangePickerInput`   | core        | shipping date / estimated arrival range                                                                     |
+| `Select`                               | core        | sort, currency                                                                                              |
+| `CollapsibleSubcard`                   | module      | Productos subcard, eligible-product groups                                                                  |
+| `AsideSummary` / `DetailSidebar`       | module      | Resumen / Acciones / Nota rail                                                                              |
+| `PrivateNoteCard`                      | module      | inline-editable private note                                                                                |
 | `Modal` (`ModalDialog` / `ModalSheet`) | module      | mark-delivered / cancel / delete overlays — [ADR 0008](../../../design/decisions/0008-modal-enhancement.md) |
-| `MobilePicker`                         | module      | mobile date/currency pickers                                                                                      |
-| `EmptyState`                           | module      | initial empty, filtered empty, no-eligible-products                                                               |
-| `Skeleton`                             | core        | list loading                                                                                                      |
+| `MobilePicker`                         | module      | mobile date/currency pickers                                                                                |
+| `EmptyState`                           | module      | initial empty, filtered empty, no-eligible-products                                                         |
+| `Skeleton`                             | core        | list loading                                                                                                |
 
 New data needs (Phase B, not design): a `getDeliveriesForList` query and `markDelivered` /
 `reopen` / `cancel` / `delete` / `updateNote` mutations. These are implementation contracts,
@@ -459,7 +459,5 @@ entrega"`).
   0001/0002/0003/0006/0007/0008/0011/0013.
 - **Functional contract**: [`frd-08-delivery-management.md`](./frd-08-delivery-management.md)
   and its blueprint/work-orders.
-- **Workshop raw material (disposable)**: `docs/redesign/screens/delivery-list.md`,
-  `delivery-detail.md`, `delivery-create.md`, and `docs/redesign/_notes/demo-screens.html`
-  (anchors in the frontmatter). These are being archived; this FDD + the prototype are the
+- **Workshop raw material (historical)**: distilled from the redesign subproject; see git history. This FDD + the prototype are the
   durable record.

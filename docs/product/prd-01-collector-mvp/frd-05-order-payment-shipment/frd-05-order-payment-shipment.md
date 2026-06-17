@@ -44,9 +44,9 @@ Give collectors one reliable place to record what they bought, what it cost, how
 - orders list with filters, overdue-delivery signals, and payment-progress summaries; default sort is most-recent first (`FR-05-28`)
 - currency reconciliation: `Needs currency update` filter, `pendingFxCount` derived in `getOrdersList`, and the shared `FxReconciliationModal` bulk flow
 
-### Redesign-owned patterns (documented in `docs/redesign`, not minted as FRs)
+### Redesign-owned patterns (documented in `docs/design`, not minted as FRs)
 
-- view-transition `order-{id}` between list rows and detail hero; single-primary sticky action bar on detail/create/edit (layout varies by status); `MobilePicker` bottom sheets for store / currency / date-range; amount quick-picks in the payment form ("remaining balance" and "half"); reactive `AsideSummary` in create/edit. See `docs/redesign/modules/orders.md` and the redesign PLAYBOOK/ADRs.
+- view-transition `order-{id}` between list rows and detail hero; single-primary sticky action bar on detail/create/edit (layout varies by status); `MobilePicker` bottom sheets for store / currency / date-range; amount quick-picks in the payment form ("remaining balance" and "half"); reactive `AsideSummary` in create/edit. See `docs/design/` (interface patterns, components, ADRs) and the order design record `fdd-05-order-payment-shipment.md`.
 
 ## User Stories
 

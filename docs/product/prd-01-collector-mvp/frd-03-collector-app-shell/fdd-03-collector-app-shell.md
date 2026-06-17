@@ -16,7 +16,7 @@ demo_anchors:
 
 > **What this document is.** The FDD is "the prototype in words": the durable, text
 > form of the visual and interaction design for FRD-03, so the feature's design is
-> reconstructible without depending on the disposable `docs/redesign/` workshop. It
+> reconstructible without depending on the redesign subproject. It
 > pairs with the self-contained prototype at [`./prototype/collector-app-shell.html`](./prototype/collector-app-shell.html)
 > (the pixel truth) and is governed by the design system in
 > [`docs/design/`](../../../design/README.md) (the system rules).
@@ -48,8 +48,8 @@ Because the shell has no content of its own, the prototype renders it around a *
 representative screen** — the **dashboard placeholder** (`#dashboard`). The dashboard is
 **out of scope for the MVP as a feature**: it is a placeholder that exists only to give the
 shell something to frame. The bento of KPIs, the "Anotar pago" inline flow, the activity
-feed, and the mascot that the workshop spec
-([`docs/redesign/screens/dashboard.md`](../../../redesign/screens/dashboard.md)) describes
+feed, and the mascot that the dashboard placeholder (out of MVP scope) — explored in the
+redesign subproject (historical) — describes
 are **not** FRD-03 deliverables and are documented here only as the placeholder content the
 prototype happens to show. **The real subject of this FDD is the shell itself.**
 
@@ -412,8 +412,5 @@ specifically for the shell:
   [0013](../../../design/decisions/0013-cross-cutting-state-system.md).
 - **Functional contract:** [`frd-03-collector-app-shell.md`](./frd-03-collector-app-shell.md)
   and its linked blueprint.
-- **Workshop raw material (disposable):**
-  [`docs/redesign/screens/dashboard.md`](../../../redesign/screens/dashboard.md) — the
-  dashboard placeholder wireframe (out of scope for the MVP; documents the mascot, walking
-  strip, FAB, and bento that the shell merely frames). This is being archived; this FDD + the
+- **Workshop raw material (historical):** distilled from the redesign subproject; see git history. This FDD + the
   prototype are the durable record of the shell.

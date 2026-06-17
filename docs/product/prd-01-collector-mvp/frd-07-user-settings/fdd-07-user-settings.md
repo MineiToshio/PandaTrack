@@ -32,7 +32,7 @@ demo_anchors:
 
 > **What this document is.** The FDD is "the prototype in words": the durable, text
 > form of the visual and interaction design for FRD-07, so the feature's design is
-> reconstructible without depending on the disposable `docs/redesign/` workshop. It
+> reconstructible without depending on the redesign subproject. It
 > pairs with the self-contained prototype at [`./prototype/user-settings.html`](./prototype/user-settings.html)
 > (the pixel truth) and is governed by the design system in
 > [`docs/design/`](../../../design/README.md) (the system rules).
@@ -480,7 +480,4 @@ specifically here:
   ux-copy, and ADRs 0001/0002/0003/0006/0007/0008/0012/0013.
 - **Functional contract**: [`frd-07-user-settings.md`](./frd-07-user-settings.md) and its
   blueprint/work-orders (`BP-01`, `WO-01 … WO-06`).
-- **Workshop raw material (disposable)**: `docs/redesign/screens/settings.md` and
-  `docs/redesign/_notes/demo-screens.html` (origin of the Chip-Eyebrow + Top-Accent pattern,
-  workshop PLAYBOOK §9.17, now graduated to interface-patterns.md §7). These are being
-  archived; this FDD + the prototype are the durable record.
+- **Workshop raw material (historical)**: distilled from the redesign subproject; see git history. This FDD + the prototype are the durable record.

@@ -62,7 +62,7 @@ It is reverse-engineered from:
   record is
   [`fdd-01-pre-release-landing.md`](./fdd-01-pre-release-landing.md) and
   [`prototype/pre-release-landing.html`](./prototype/pre-release-landing.html)
-  (the workshop artifacts in `docs/redesign/` are disposable and being archived)
+  (historical: explored in the redesign subproject)
 
 ## User Stories
 

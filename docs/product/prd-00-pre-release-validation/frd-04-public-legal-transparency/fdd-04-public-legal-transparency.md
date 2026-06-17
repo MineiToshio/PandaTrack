@@ -18,7 +18,7 @@ demo_anchors:
 
 > **What this document is.** The FDD is "the prototype in words": the durable, text
 > form of the visual and interaction design for FRD-04, so the feature's design is
-> reconstructible without depending on the disposable `docs/redesign/` workshop. It
+> reconstructible without depending on the redesign subproject. It
 > pairs with the self-contained prototype at [`./prototype/public-legal-transparency.html`](./prototype/public-legal-transparency.html)
 > (the pixel truth) and is governed by the design system in
 > [`docs/design/`](../../../design/README.md) (the system rules).
@@ -331,6 +331,4 @@ claro"` / `"Tema oscuro"`); the back-link is text + icon (not icon-only).
   tokens-css, interface-patterns, components, motion, states, ux-copy, and ADR 0007.
 - **Functional contract**: [`frd-04-public-legal-transparency.md`](./frd-04-public-legal-transparency.md)
   and its blueprint (`bp-01-legal-page-publishing`).
-- **Workshop raw material (disposable)**: `docs/redesign/screens/legal.md` (legal-doc layout,
-  anchors, and decisions A.2) and `docs/redesign/modules/landing-onboarding.md`. These are
-  being archived; this FDD + the prototype are the durable record.
+- **Workshop raw material (historical)**: distilled from the redesign subproject; see git history. This FDD + the prototype are the durable record.

@@ -27,7 +27,7 @@ These are **static, SSR-delivered, content-only** pages. They fetch nothing, mut
 > back-link, eyebrow + updated-date head, intro, table of contents, sections).
 > This was a **presentation-only** change — no functional requirement changed; content still
 > comes verbatim from i18n (FR-04-03). The look-and-feel is documented in the FDD; the
-> disposable workshop note was `docs/redesign/screens/legal.md`.
+> this was explored in the redesign subproject (historical).
 
 ## Current State
 
