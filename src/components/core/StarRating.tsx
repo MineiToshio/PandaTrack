@@ -12,7 +12,7 @@ export type StarRatingProps = {
 };
 
 /**
- * Inline 5-star rating display matching `.stars` from `_notes/demo-screens.html`.
+ * Inline 5-star rating display. Visual contract: see the Velvet design system at `docs/design/` (`components.md`).
  * Filled stars use `var(--accent-warm)`; empty stars use a 14% mix of `--text-primary`.
  * Half stars are rounded to nearest whole.
  */

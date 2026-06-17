@@ -54,9 +54,9 @@ import ModalSheet from "./ModalSheet";
  * - `info` — explanatory / decision with multiple non-destructive paths.
  *
  * ## Related
- * - Spec: `docs/redesign/components/Modal.md`
- * - ADRs: `docs/redesign/decisions/0008-modal-enhancement.md`,
- *   `docs/redesign/decisions/0010-ui-primitive-libraries-policy.md`.
+ * - Spec: `docs/design/components.md` + `docs/design/interface-patterns.md` (Modals & overlays).
+ * - ADRs: `docs/design/decisions/0008-modal-enhancement.md`,
+ *   `docs/design/decisions/0010-ui-primitive-libraries-policy.md`.
  * - Cursor rules: `.cursor/rules/modal-canonical-pattern.mdc`,
  *   `.cursor/rules/ui-libs-policy.mdc`.
  */

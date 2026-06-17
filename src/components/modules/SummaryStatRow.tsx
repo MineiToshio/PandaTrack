@@ -9,7 +9,7 @@ export type SummaryStatRowProps = {
 
 /**
  * Label/value row for sidebar summary blocks (detail asides, dashboards, mini-cards).
- * Visual contract aligned with `_notes/demo-screens.html § .summary-row`:
+ * Visual contract: see the Velvet design system at `docs/design/` (`components.md`):
  *   - 13.5px font, same size on label and value (no visual mismatch).
  *   - Label: `--text-secondary`. Value: `font-weight: 500` and tabular nums.
  *   - Solid `border-top` between consecutive rows — first row has no rule above,

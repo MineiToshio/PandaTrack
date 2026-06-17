@@ -18,7 +18,7 @@ type LangToggleProps = {
 };
 
 /**
- * Compact mono-uppercase language toggle button (`.lang-toggle` from `_notes/demo-screens.html`).
+ * Compact mono-uppercase language toggle button. Visual contract: see the Velvet design system at `docs/design/` (`components.md`).
  * Single button that links to the same path under the alternate locale, displaying the CURRENT
  * locale code (so the user knows what they have, and clicking switches).
  */

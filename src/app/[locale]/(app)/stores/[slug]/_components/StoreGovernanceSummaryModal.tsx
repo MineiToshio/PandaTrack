@@ -22,7 +22,7 @@ type StoreGovernanceSummaryModalProps = {
   summary: StoreGovernanceSummary;
   /**
    * Trigger surface variant.
-   *  - `banner` (default): thin info-tinted banner per `_notes/demo-screens.html § s6-store-detail-other-user`.
+   *  - `banner` (default): thin info-tinted banner (see the Stores prototype at `docs/product/prd-01-collector-mvp/frd-04-store-domain/prototype/store-domain.html`).
    *  - `card`: legacy detail-card surface with warning Scale icon and full title/description.
    */
   triggerVariant?: "banner" | "card";
@@ -354,7 +354,7 @@ export default function StoreGovernanceSummaryModal({
 
 /**
  * Section group with an icon + eyebrow heading row, then arbitrary panel content.
- * Mirrors `_notes/demo-screens.html § s6-store-detail-reports-summary` section layout.
+ * See the Stores prototype at `docs/product/prd-01-collector-mvp/frd-04-store-domain/prototype/store-domain.html`.
  */
 function SectionGroup({
   icon,

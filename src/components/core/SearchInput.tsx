@@ -44,7 +44,7 @@ const SIZE_CLASSES = {
 
 /**
  * Search field with an integrated submit button (Search icon) and loading state.
- * Submits on button click or Enter. Aligns with Input.md search type spec.
+ * Submits on button click or Enter. Aligns with the Input component spec (`docs/design/components.md`).
  */
 export default function SearchInput({
   value,

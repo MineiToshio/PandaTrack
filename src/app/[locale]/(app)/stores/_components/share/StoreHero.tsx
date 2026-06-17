@@ -28,12 +28,14 @@ export type StoreHeroProps = {
 };
 
 /**
- * Detail hero card matching `_notes/demo-screens.html` variants:
- *  - `#store-detail` / `#s6-store-detail-published-viewer` — base/owner
- *  - `#s6-store-detail-pending` — info-tinted logo + "En revisión" chip
- *  - `#s6-store-detail-person` — User-icon avatar + "Persona" chip + info note
+ * Detail hero card with three variants:
+ *  - base/owner — published store
+ *  - pending — info-tinted logo + "En revisión" chip
+ *  - person — User-icon avatar + "Persona" chip + info note
  *
  * Layout: avatar (s56) + identity column + rating block (right-aligned) → description → chips row.
+ * Visual contract: see the Stores prototype at `docs/product/prd-01-collector-mvp/frd-04-store-domain/prototype/store-domain.html`
+ * and the Velvet design system at `docs/design/`.
  */
 export default function StoreHero({ store, labels, className }: StoreHeroProps) {
   const isPerson = store.storeType === "PERSON";

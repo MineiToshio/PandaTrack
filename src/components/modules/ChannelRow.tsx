@@ -25,7 +25,7 @@ export type ChannelRowProps = {
 
 /**
  * Generic icon-tile + label + value + trailing-action row.
- * Visual contract aligned with `_notes/demo-screens.html § .channel-row` — used for
+ * Visual contract: see the Velvet design system at `docs/design/` (`components.md`) — used for
  * contact channels, addresses, and similar list-of-key-value-with-icon patterns.
  *
  * Layout switches to `items-start` when `valueLines` is provided so the icon aligns

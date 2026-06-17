@@ -632,8 +632,8 @@ body {
 
 /* ───────────────────────────────────────────────────────────
    13. S11 — public surfaces (marketing landing / auth / legal)
-   Ported 1:1 from docs/redesign/_notes/demo-screens.html (#s11-*),
-   the approved visual truth. Velvet-only, theme-aware via tokens.
+   Ported 1:1 from the S11 redesign demo (#s11-*), the approved
+   visual truth at the time. Velvet-only, theme-aware via tokens.
    Demo→src token map: --shadow-1/2/3 → --shadow-elevation-1/2/3;
    'JetBrains Mono' → var(--font-mono). Geometry literals are kept as
    in the demo (consistent with this file's existing scaffolding);

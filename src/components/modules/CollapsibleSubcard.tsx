@@ -32,7 +32,7 @@ const TOP_ACCENT_VAR: Record<EyebrowTone, string> = {
 };
 
 /**
- * Demo `.subcard` (CSS lines 986-1016 of `demo-screens.html`):
+ * `.subcard` treatment (see the Velvet design system at `docs/design/`, `interface-patterns.md`):
  *   - bg `--surface-elevated`, border 1px `--border`, radius **12px**, shadow-2, overflow hidden
  *   - `.subcard-toggle`: padding 14px 16px, gap 12px, chevron 18px right
  *   - `.subcard-body-inner`: padding 0 16px 16px (NO top — toggle's bottom-padding already spaces it)

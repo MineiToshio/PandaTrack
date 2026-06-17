@@ -30,7 +30,7 @@ const TONE_VAR: Record<AlertBannerTone, string> = {
 
 /**
  * Tonal alert banner with color-mix tinted background, border, and icon.
- * Visual contract aligned with `_notes/demo-screens.html § .store-banner` and the inline
+ * Visual contract: see the Velvet design system at `docs/design/` (`components.md`) and the inline
  * private/pending/inactive alerts used across detail pages.
  *
  * For dense status enums use `<StatusChip>`. For brand banners use a custom card.

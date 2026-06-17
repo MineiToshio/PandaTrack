@@ -6,7 +6,7 @@ import { cn } from "@/lib/styles";
 export type PillProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   /** Visual selected state. Drives accent border + accent text + 12% accent background. */
   selected?: boolean;
-  /** Optional leading icon (Lucide). Rendered at 13×13 px to match the demo `.filter-pill svg` rule. */
+  /** Optional leading icon (Lucide). Rendered at 13×13 px to match the `.filter-pill svg` rule. */
   icon?: ReactNode;
   children: ReactNode;
 };
@@ -27,7 +27,7 @@ const PILL_SELECTED_CLASS =
   "[border:1px_solid_var(--accent)] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_12%,transparent)]";
 
 /**
- * Atomic toggle pill. Visual contract aligned with `_notes/demo-screens.html § .filter-pill`.
+ * Atomic toggle pill. Visual contract: see the Velvet design system at `docs/design/` (`components.md`).
  *
  * Caller controls semantics via standard button attributes:
  *   - role="checkbox" + aria-checked for multi-select filter pills

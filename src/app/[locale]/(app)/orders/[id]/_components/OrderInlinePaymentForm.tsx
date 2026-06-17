@@ -44,15 +44,16 @@ function parseIsoDate(value: string): Date | null {
 /**
  * Inline "Nuevo pago" panel rendered inside the Pagos aside card.
  *
- * Mirrors demo CSS `.pay-inline-panel` exactly (line 1510 of demo-screens.html):
+ * Visual contract: see the Orders prototype at `docs/product/prd-01-collector-mvp/frd-05-order-payment-shipment/prototype/order-payment-shipment.html`.
+ * The `.pay-inline-panel` treatment:
  *   - Negative side margins (`-18px` mobile / `-22px` ≥768px) so the panel BLEEDS to
  *     the edges of the parent `.card.elevated` and the `border-top` spans 100% width
  *   - Distinct background `var(--surface)` (the card uses `--surface-elevated`) so the
  *     panel reads as a layered surface, not the same plane as the totals above it
  *   - `border-radius: 0 0 15px 15px` so the bottom corners hug the card's rounded shell
  *
- * Children layout matches demo `#s7-order-detail-pay-modal .pay-inline-panel` (no
- * currency select — the order's currency is fixed per Sergio's spec).
+ * Children layout follows the same panel (no currency select — the order's currency is
+ * fixed per spec).
  */
 export default function OrderInlinePaymentForm({
   currencyCode,

@@ -18,7 +18,7 @@ import { ModalBody, ModalFooter, ModalHeader } from "./ModalContent";
  *
  * Do NOT import this file directly from feature code. The smart wrapper
  * `<Modal>` (Modal.tsx) chooses between this and `<ModalSheet>` based on
- * viewport. See `docs/redesign/decisions/0008-modal-enhancement.md`.
+ * viewport. See `docs/design/decisions/0008-modal-enhancement.md`.
  */
 export default function ModalDialog({
   isOpen,

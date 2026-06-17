@@ -13,7 +13,7 @@ type ThemeToggleProps = {
 };
 
 /**
- * Compact segmented theme toggle (`theme-toggle-compact` from `_notes/demo-screens.html`).
+ * Compact segmented theme toggle. Visual contract: see the Velvet design system at `docs/design/` (`components.md`).
  * Two pill-shaped buttons (light + dark) inside a rounded container; the active mode is highlighted
  * via `aria-pressed` + accent tint background.
  */

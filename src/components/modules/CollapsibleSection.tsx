@@ -35,7 +35,7 @@ export type CollapsibleSectionProps = {
 
 /**
  * Collapsible card section with eyebrow + optional count + chevron toggle.
- * Visual contract aligned with `_notes/demo-screens.html § .subcard`.
+ * Visual contract: see the Velvet design system at `docs/design/` (`interface-patterns.md`).
  *
  * Use for grouping detail-page content (Categorías, Canales, Direcciones, Reseñas).
  * Animation uses the `grid-template-rows: 1fr → 0fr` trick for height transitions
