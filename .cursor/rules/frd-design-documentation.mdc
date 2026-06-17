@@ -90,9 +90,16 @@ adapt the router's default/fallback screen to the FRD's home screen (the slice h
 - **English prose, `es` copy quoted** — same convention as `docs/design/` topic docs.
 - **Relative Markdown links only** — repository-relative, no machine-specific absolute paths.
   Verify links resolve (depth from the FRD folder to `docs/design/` is `../../../design/`).
-- **Keep the FDD and prototype in sync with shipped behavior.** A user-requested UX/flow/copy
-  change to a UI FRD must update the owning FDD (and prototype when the visual changes) in the
-  same change — this is part of implementation completion, not optional follow-up.
+- **Authority order: shipped implementation → FDD prose → prototype.** The FDD prose is the
+  authoritative design record and MUST stay aligned with what is actually implemented. The
+  `prototype/<slug>.html` is a **non-authoritative visual aid** — a guide to intent, not the final
+  source of truth. It is allowed to drift from the shipped pixels (it is not kept pixel-synced), and
+  where the prototype and the FDD/implementation disagree, the FDD + implementation win. Do not treat
+  a prototype detail as a requirement; confirm against the FDD prose and the code.
+- **Keep the FDD aligned with shipped behavior.** A user-requested UX/flow/copy change to a UI FRD
+  must update the owning FDD in the same change (part of implementation completion, not optional
+  follow-up). Refreshing the prototype is best-effort — do it when convenient, but a stale prototype
+  is not a blocker as long as the FDD is correct.
 - **Conflict resolution.** System-wide rule conflict → `docs/design/` wins. FRD-specific
   visual conflict → the prototype wins until the FDD is corrected in the same change.
 

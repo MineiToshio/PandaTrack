@@ -151,7 +151,7 @@ Structure:
 
 ### Order detail / edit form indicators (not yet rendered)
 
-The originally specified per-order FX indicators — a `warning` badge on the order detail financial summary and an inline `warning` on the edit-form `exchangeRate` field — are **not currently rendered**. The persisted `Order.needsExchangeRateUpdate` flag now exists and the edit form already clears it whenever an `exchangeRate` is submitted, so these indicators **could** now be driven directly by reading the flag on the detail/edit query — but no badge or inline warning is wired up in the components today. Adding them is a small follow-up, not a blocked design decision.
+The per-order FX indicators are **implemented**, driven by the persisted `Order.needsExchangeRateUpdate` flag (added to the `getOrderById` / `getOrderDetail` payloads): a `warning` chip (`FX update pending` / `Tipo de cambio pendiente`) renders in the order-detail hero next to the status/overdue/unpaid chips (hidden on cancelled orders), and an inline `warning` (`exchangeRateOutdatedWarning`) renders under the edit-form `exchangeRate` field. Both clear naturally once the order is reconciled or its rate is re-submitted (the flag flips to `false`).
 
 ### Settings entry point (FRD-07 WO-05 integration — shipped)
 
@@ -234,7 +234,7 @@ As shipped, the FX banner and `FxReconciliationModal` do **not** fire dedicated 
 
 - **FRD-05 · BP-01 · WO-01** provides the `Order` model with `currencyCode` and `status`, which the FX-pending predicate reads alongside the new `needsExchangeRateUpdate` flag. This WO adds that column via migration `20260616230000_add_order_needs_exchange_rate_update`.
 - **FRD-07 · BP-01 · WO-05** owns the user's `baseCurrencyCode` preference and the Settings-side trigger. Its `updateCurrencyAction` calls `flagOrdersForFxReconciliation` on a real base-currency change, flagging the orders this WO then surfaces. This integration is **shipped**.
-- **Not yet rendered:** per-order FX indicators on the order detail (WO-05) and edit form (WO-04). These are now feasible off the persisted flag (the edit form already clears it) but no badge / inline warning is wired up today.
+- **Implemented:** per-order FX indicators — a warning chip on the order-detail hero and an inline warning on the edit-form `exchangeRate` field, both driven by the persisted `needsExchangeRateUpdate` flag.
 
 ## Assumptions
 
@@ -313,4 +313,4 @@ The schema is `z.number().positive().finite()` — **no** `min`, `max`, or preci
 
 ### Not yet rendered
 
-- Per-order FX indicators (order detail badge, edit-form inline warning) are **not currently rendered**. They are now feasible off the persisted `needsExchangeRateUpdate` flag but no component surfaces them today, so no E2E coverage is asserted for them.
+- Per-order FX indicators (order-detail hero chip, edit-form inline warning) are **implemented** and covered by `e2e/orders.spec.ts` (the FX reconciliation test asserts the detail chip and the edit-form warning appear once an order is flagged).

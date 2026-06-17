@@ -29,7 +29,7 @@ All authenticated `(app)` routes render inside one shell with a left navigation 
 
 - **Expanded** — full width: logo plus name, labeled nav links, full account widget.
 - **Collapsed** — narrow rail: nav icons only, compact logo, avatar.
-- **Hover-expand on the collapsed rail uses PUSH, never overlay.** When the collapsed rail expands on hover, the shell grid grows and the main content moves to the right. The sidebar must never float over the content. Preserving predictability is the whole point of PUSH (see [ADR 0003](decisions/0003-demo-decisions.md)).
+- **The manual collapse/expand toggle PUSHes; hover-expand FLOATs.** The pinned toggle changes the shell grid width so the main content reflows (PUSH). Hover/focus-expand on the collapsed rail FLOATs instead: the rail widens to full width and overlays the content (raised `z-index` + shadow) without shifting the content column. This supersedes the original PUSH-on-hover rule (see [ADR 0003](decisions/0003-demo-decisions.md), updated 2026-06-17) — FLOAT-on-hover is the shipped, intended behavior.
 - **Mobile / tablet** — the sidebar collapses into a burger-triggered drawer. The same account affordance that lives in the expanded sidebar footer appears in the drawer; do not split core account actions between the header and the drawer.
 
 The sidebar collapse state persists per user.

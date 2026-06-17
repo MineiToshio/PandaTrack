@@ -2,8 +2,8 @@
 title: S16 — Alineación funcional docs/product ↔ implementación (rebuild-complete)
 last_updated: 2026-06-16
 owner: Sergio Minei
-status: done (docs-only, sin commitear — Sergio commitea)
-scope: docs-only — documenta la implementación EXISTENTE, no cambia `src/`
+status: done (docs + cambios de `src/` autorizados por Sergio, sin commitear — Sergio commitea)
+scope: mayormente docs (alinear docs/product a la implementación); incluye cambios de `src/` autorizados por Sergio durante la sesión — ver §"Contradicciones código↔doc"
 ---
 
 # S16 — Functional alignment: docs/product ↔ implementación
@@ -105,7 +105,7 @@ no solo el de escribir.
 
 ## Mapa rebuild-complete (final)
 
-Total: **62 archivos docs cambiados** (+2223/−762), **cero cambios en `src/`**, sin commitear.
+Total: **62 archivos docs cambiados** (+2223/−762) + **cambios de `src/` autorizados por Sergio** (surface del flag FX stale-rate en detalle/edición de pedidos + `orderQueries`/i18n/e2e; FAQ accordion a disclosures múltiples) — ver §"Contradicciones código↔doc". Sin commitear.
 
 | FRD           | Módulo                         | Estado S16                                       |
 | ------------- | ------------------------------ | ------------------------------------------------ |
@@ -136,8 +136,11 @@ currency≠base ∧ status≠CANCELLED` (se quitó el scope mensual/`startOfCurr
    el rate (`editOrder`), y al reconciliar (`updateExchangeRatesAction`). Converge: reconciliar saca al
    pedido del set; cancelados quedan flaggeados y reaparecen al reactivar. Test nuevo
    `fxReconciliationFlag.test.ts` (3 casos). Docs revertidos al modelo flag (FRD-05/07, BP-02, WO-05,
-   WO-07). Validación full verde. Pendiente menor (no implementado, ahora viable con el flag):
-   indicadores FX por pedido (badge en detalle / inline en edit) — quedan como follow-up.
+   WO-07). Validación full verde. **E2E `e2e/orders.spec.ts`** cubre el flujo completo (cambiar base →
+   flag → banner/fxPending → reconciliar en el modal → se limpia); pasa. **Indicadores FX por pedido —
+   IMPLEMENTADOS (follow-up post-gate):** chip `warning` en el hero del detalle (`detail.hero.chipFxPending`,
+   oculto en cancelados) + warning inline en el campo FX del edit (`form.exchangeRateOutdatedWarning`),
+   ambos leen el flag (en `getOrderById`/`getOrderDetail`); el e2e FX afirma ambos.
 2. **Cancelar pedido preserva los pagos (FRD-05) — RESUELTO.** Confirmado por Sergio: preserve-on-cancel
    es lo correcto (borrar-en-cancel era el bug que rompía Reactivar). Doc actualizado (BR-05-15/16/17 sin
    "pending review"). **Bug de copy encontrado y arreglado:** el hero del pedido cancelado afirmaba
@@ -145,15 +148,22 @@ currency≠base ∧ status≠CANCELLED` (se quitó el scope mensual/`startOfCurr
    borrar-en-cancel) — `detail.hero.cancelledOn` reducido a solo la fecha (es+en).
 3. **Sidebar hover-expand FLOAT vs PUSH (FRD-03) — RESUELTO.** Sergio confirma: FLOAT (lo implementado)
    es lo querido; no se toca `src/`. FDD-03 actualizado: divergencia aceptada (FLOAT supersede el
-   PUSH-on-hover del prototipo/ADR 0003). Pendiente menor para S17/design-docs: reconciliar
-   interface-patterns/ADR 0003 a FLOAT.
+   PUSH-on-hover del prototipo/ADR 0003). **Docs de diseño reconciliadas (follow-up post-gate):**
+   `docs/design/interface-patterns.md` §sidebar e `docs/design/decisions/0003` actualizadas a FLOAT
+   (toggle manual = PUSH; hover-expand = FLOAT), con nota de supersesión.
 4. **Edit de pedido CANCELLED — RESUELTO (código).** Sergio: primero hay que reactivar para editar.
    Implementado guard de ruta en `orders/[id]/edit/page.tsx` que redirige un pedido `CANCELLED` al
    detalle (paridad con delivery-edit); la mutation ya rechazaba con `ORDER_NOT_EDITABLE` como red de
-   seguridad. FRD-05 Screens actualizado. Validación: test 544 ✅ · type-check ✅ · lint 0 ✅ ·
-   validate-build ✅ (sin verificación browser — requiere sembrar pedido cancelado; ofrecido e2e).
-5. **Menores aún ABIERTOS:** FAQ landing single-open (código) vs FDD §5.3 "uno o varios"; FR-02-02/03
-   observabilidad ¿superseded o removed? (decisión de producto).
+   seguridad. FRD-05 Screens actualizado. Validación full verde + **E2E `e2e/orders.spec.ts`** verifica
+   el guard (pedido cancelado → /edit redirige al detalle; reactivar → /edit vuelve a servir el form);
+   pasa. Catálogo E2E de FRD-02 actualizado (8º spec).
+5. **Menores (follow-up post-gate):** **FAQ landing — RESUELTO:** Sergio eligió alinear el código al
+   FDD → `FaqAccordion` ahora es **multi-open** (varios abiertos a la vez, primer item por default,
+   `Set<string>`); e2e `landing.spec.ts` reforzado para afirmarlo. **FR-02-02/03 observabilidad —
+   se deja como "superseded"** (decisión de Sergio: mi recomendación; formalizar como "removed" + FR
+   de conversión AUTH solo si/ cuando se sincronice GitHub). **Nota de autoridad de prototipos:**
+   `frd-design-documentation.mdc` ahora declara el orden implementación → FDD prosa → prototipo (el
+   HTML es ayuda visual no-autoritativa, puede divergir).
 
 ## Divergencias prototipo (S15) ↔ FDD corregido — para S17
 

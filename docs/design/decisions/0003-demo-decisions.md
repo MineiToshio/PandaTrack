@@ -138,7 +138,7 @@ Es contrato vinculante. Cualquier desviación requiere un nuevo ADR que lo super
 
 - **Expanded:** 240px de ancho. Logo + nombre, nav links con texto, user widget completo.
 - **Collapsed:** 64px de ancho. Solo íconos del nav, logo "P", avatar del user.
-- **Hover-expand sobre collapsed:** **modo PUSH** — el grid del shell se expande de `64px 1fr` a `240px 1fr` con transición de 220ms. El contenido principal **se mueve hacia la derecha**, no se solapa. El sidebar nunca flota sobre el contenido.
+- **Hover-expand sobre collapsed:** **modo FLOAT** (actualizado 2026-06-17, supersede la decisión original de PUSH-en-hover). La rail colapsada se ensancha a ancho completo y **flota sobre el contenido** (sube su `z-index` + sombra), sin mover la columna de contenido. Solo el **toggle manual** de colapsar/expandir usa PUSH (cambia el ancho del grid y el contenido reflowa). El FLOAT-en-hover es lo shipeado e intencional (confirmado por Sergio); se tomó el "Rollback" que esta misma ADR anticipaba abajo. _(Texto original: "modo PUSH — el grid del shell se expande … el contenido principal se mueve hacia la derecha, no se solapa.")_
 
 **Persistencia:** `localStorage["pandatrack-sidebar"]` con valor `"collapsed"` o `"expanded"` (default `"expanded"`).
 

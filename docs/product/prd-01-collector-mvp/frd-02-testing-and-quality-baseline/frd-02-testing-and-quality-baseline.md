@@ -93,15 +93,16 @@ This FRD defines PandaTrack's risk-based automated testing strategy for AI-assis
 
 All specs live in `e2e/`. "Yes" specs skip their tests when credentials are absent; "Mixed" specs always run their unauthenticated tests (e.g. the standalone delivery-create redirect) and skip only the authenticated ones.
 
-| Spec file                   | Domain                                                                              | Auth-gated tests |
-| --------------------------- | ----------------------------------------------------------------------------------- | ---------------- |
-| `e2e/landing.spec.ts`       | Landing CTAs, FAQ, waitlist                                                         | No               |
-| `e2e/auth.spec.ts`          | Sign-in redirect, password recovery, sign-up error mapping                          | No               |
-| `e2e/app-layout.spec.ts`    | Mobile drawer, sidebar persistence, desktop account menu, breadcrumbs               | Yes              |
-| `e2e/settings.spec.ts`      | Settings tabs, currency change modal                                                | Yes              |
-| `e2e/stores.spec.ts`        | Store create form, logo control toggle, logo crop reopen, required-field validation | Yes              |
-| `e2e/store-listing.spec.ts` | Stores/store-detail unauthenticated redirect                                        | No               |
-| `e2e/deliveries.spec.ts`    | Delivery create, mark delivered, reopen, delete + order re-derivation               | Mixed            |
+| Spec file                   | Domain                                                                               | Auth-gated tests |
+| --------------------------- | ------------------------------------------------------------------------------------ | ---------------- |
+| `e2e/landing.spec.ts`       | Landing CTAs, FAQ, waitlist                                                          | No               |
+| `e2e/auth.spec.ts`          | Sign-in redirect, password recovery, sign-up error mapping                           | No               |
+| `e2e/app-layout.spec.ts`    | Mobile drawer, sidebar persistence, desktop account menu, breadcrumbs                | Yes              |
+| `e2e/settings.spec.ts`      | Settings tabs, currency change modal                                                 | Yes              |
+| `e2e/stores.spec.ts`        | Store create form, logo control toggle, logo crop reopen, required-field validation  | Yes              |
+| `e2e/store-listing.spec.ts` | Stores/store-detail unauthenticated redirect                                         | No               |
+| `e2e/deliveries.spec.ts`    | Delivery create, mark delivered, reopen, delete + order re-derivation                | Mixed            |
+| `e2e/orders.spec.ts`        | Order create-route auth redirect, cancelled-order edit guard, FX reconciliation flag | Mixed            |
 
 ## Design-Token Guard
 
