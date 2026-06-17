@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
@@ -74,7 +75,8 @@ export async function saveStoreReview(
         authorName: session.user.name ?? null,
       },
     };
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error);
     return { success: false, error: "saveReviewFailed" };
   }
 }

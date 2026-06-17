@@ -1,7 +1,7 @@
 export const APP_NAME = "PandaTrack";
 export const EMAIL_FROM_NAME = APP_NAME;
 
-export const THEME_STORAGE_KEY = "theme";
+export const THEME_STORAGE_KEY = "pandatrack-theme";
 
 /** Local storage key for private app sidebar expanded/collapsed preference. */
 export const APP_SHELL_SIDEBAR_STORAGE_KEY = "appShellSidebarExpanded";
@@ -52,10 +52,6 @@ export const ROUTES = {
  */
 export const RETURN_TO_ORDER_CREATE = "order-create";
 
-/** Query param for referral links (e.g. waitlist share). Value used in share/copy link. */
-export const REFERRAL_QUERY_KEY = "ref";
-export const REFERRAL_VALUE_WAITLIST = "waitlist";
-
 export const CONTACT_INFO = {
   email: "panda.d.collector@gmail.com",
   tiktok: "https://www.tiktok.com/@pandadcollector",
@@ -80,14 +76,6 @@ export const POSTHOG_EVENTS = {
     MOBILE_MENU_NAV_CLICKED: "mobile_menu_nav_clicked",
     FAQ_ITEM_TOGGLED: "faq_item_toggled",
     SOCIAL_LINK_CLICKED: "social_link_clicked",
-    WAITLIST: {
-      SUBMITTED: "waitlist_submitted",
-      SUCCESS: "waitlist_success",
-      FAILED: "waitlist_failed",
-      SHARE_LINK_CLICKED: "waitlist_share_link_clicked",
-      SHARE_NATIVE_CLICKED: "waitlist_share_native_clicked",
-      SHARE_COPY_LINK_CLICKED: "waitlist_share_copy_link_clicked",
-    },
   },
   AUTH: {
     SIGNUP_SUBMITTED: "auth_signup_submitted",
@@ -120,6 +108,9 @@ export const POSTHOG_EVENTS = {
     ACCOUNT_MENU_ITEM_CLICKED: "app_shell_account_menu_item_clicked",
     THEME_CHANGED: "app_shell_theme_changed",
     LOCALE_CHANGED: "app_shell_locale_changed",
+    MASCOT_HIDDEN: "app_shell_mascot_hidden",
+    MASCOT_SHOWN: "app_shell_mascot_shown",
+    PLACEHOLDER_CTA_CLICKED: "app_shell_placeholder_cta_clicked",
   },
   SETTINGS: {
     ACCOUNT_EMAIL_CHANGE_MODAL_OPENED: "settings_account_email_change_modal_opened",
@@ -154,10 +145,28 @@ export const POSTHOG_EVENTS = {
     LIST_CARD_EXPANDED: "orders_list_card_expanded",
     LIST_CARD_COLLAPSED: "orders_list_card_collapsed",
     LIST_PAGE_CHANGED: "orders_list_page_changed",
+    ITEM_MARKED_ARRIVED: "order_item_marked_arrived",
+    ITEM_REVERTED_PENDING: "order_item_reverted_pending",
+    STICKY_BAR_PRIMARY_CLICKED: "order_detail_sticky_primary_clicked",
   },
   DELIVERY: {
     CREATE_FLOW_OPENED: "delivery_create_flow_opened",
     CREATED: "delivery_created",
+    EDIT_FLOW_OPENED: "delivery_edit_flow_opened",
+    EDITED: "delivery_edited",
+    LIST_FILTERED: "deliveries_list_filtered",
+    LIST_FILTER_CHIP_REMOVED: "deliveries_list_filter_chip_removed",
+    LIST_FILTERS_RESET: "deliveries_list_filters_reset",
+    LIST_CARD_EXPANDED: "deliveries_list_card_expanded",
+    LIST_CARD_COLLAPSED: "deliveries_list_card_collapsed",
+    MARKED_DELIVERED: "delivery_marked_delivered",
+    REOPENED: "delivery_reopened",
+    CANCELLED: "delivery_cancelled",
+    DELETED: "delivery_deleted",
+    NOTE_SAVED: "delivery_note_saved",
+    NOTE_DELETED: "delivery_note_deleted",
+    STICKY_BAR_PRIMARY_CLICKED: "delivery_detail_sticky_primary_clicked",
+    ACTIONS_SHEET_OPENED: "delivery_detail_actions_sheet_opened",
   },
   STORE: {
     CREATED: "store_created",
@@ -183,4 +192,16 @@ export const POSTHOG_EVENTS = {
     REVIEW_DELETED: "store_review_deleted",
     NOTE_SAVED: "store_note_saved",
   },
+  NAVIGATION: {
+    VIEW_TRANSITION_NAVIGATED: "view_transition_navigated",
+  },
+} as const;
+
+/**
+ * PostHog runtime feature flags. Gate optional or risky behavior so it can be ramped or
+ * killed without a redeploy. Keys must match the PostHog dashboard flag keys exactly.
+ */
+export const FEATURE_FLAGS = {
+  /** List → detail shared-element View Transitions (ADR 0014 D2). Off in prod until ramped. */
+  LIST_DETAIL_VIEW_TRANSITIONS: "list-detail-view-transitions",
 } as const;

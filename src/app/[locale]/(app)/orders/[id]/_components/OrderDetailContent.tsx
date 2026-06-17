@@ -1,12 +1,18 @@
-import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
-import { deriveHasUnpaidBalance } from "@/lib/orders/orderState";
+import { Boxes } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import BackNavLink from "@/components/core/BackNavLink";
+import Eyebrow from "@/components/core/Eyebrow";
+import { ROUTES } from "@/lib/constants";
+import { formatDomainDate } from "@/lib/domainDate";
 import type { OrderDetailFull } from "@/lib/data/orders/orderQueries";
-import SetHeaderTitle from "@/app/[locale]/(app)/_components/AppLayout/SetHeaderTitle";
-import OrderSummaryHeader from "./OrderSummaryHeader";
-import OrderItemsList from "./OrderItemsList";
-import OrderHistoryList from "./OrderHistoryList";
-import OrderNoteForm from "./OrderNoteForm";
-import OrderPaymentsPanel from "./OrderPaymentsPanel";
+import OrderOverdueBanner from "./OrderOverdueBanner";
+import CancellationReasonCallout from "./CancellationReasonCallout";
+import CollapsibleSubcard from "@/components/modules/CollapsibleSubcard";
+import OrderItemsReadOnlyList from "./OrderItemsReadOnlyList";
+import OrderHistoryCard from "./OrderHistoryCard";
+import OrderPrivateNoteCard from "./OrderPrivateNoteCard";
+import OrderActionsCard from "./OrderActionsCard";
+import OrderDetailClient from "./OrderDetailClient";
 
 type OrderDetailContentProps = {
   order: OrderDetailFull;
@@ -16,80 +22,126 @@ type OrderDetailContentProps = {
   detailHref: string;
 };
 
-export default function OrderDetailContent({
-  order,
-  locale,
-  baseCurrencyCode,
-  backHref,
-  detailHref,
-}: OrderDetailContentProps) {
-  const summary = calculatePaymentSummary(order.totalCost, order.payments);
-  const hasUnpaidBalance = deriveHasUnpaidBalance(order.totalCost, summary.paidAmount);
+function formatDate(date: Date, locale: string) {
+  return formatDomainDate(date, locale);
+}
+
+export default async function OrderDetailContent({ order, locale, backHref }: OrderDetailContentProps) {
+  const t = await getTranslations({ locale, namespace: "orders" });
+
+  const isCancelled = order.status === "CANCELLED";
+  const isCompleted = order.status === "COMPLETED";
+  const today = new Date();
+  const isOverdue =
+    !isCancelled && !isCompleted && order.expectedDeliveryTo !== null && order.expectedDeliveryTo < today;
+  const overdueDays =
+    isOverdue && order.expectedDeliveryTo
+      ? Math.max(1, Math.ceil((today.getTime() - order.expectedDeliveryTo.getTime()) / 86_400_000))
+      : 0;
+
+  const backTarget = backHref ?? `/${locale}${ROUTES.orders}`;
+  const expectedToLabel = order.expectedDeliveryTo ? formatDate(order.expectedDeliveryTo, locale) : "";
 
   return (
-    <div className="space-y-8">
-      <SetHeaderTitle title={order.humanReadableId} />
-      <OrderSummaryHeader
-        order={{
-          id: order.id,
-          humanReadableId: order.humanReadableId,
-          store: order.store,
-          orderDate: order.orderDate,
-          expectedDeliveryFrom: order.expectedDeliveryFrom,
-          expectedDeliveryTo: order.expectedDeliveryTo,
-          currencyCode: order.currencyCode,
-          exchangeRate: order.exchangeRate,
-          status: order.status,
-          hasUnpaidBalance,
-          eligibility: order.eligibility,
-          flags: order.flags,
-        }}
-        locale={locale}
-        baseCurrencyCode={baseCurrencyCode}
-        backHref={backHref}
-        detailHref={detailHref}
-      />
+    <>
+      <BackNavLink
+        href={backTarget}
+        // Tight gap to the overdue banner below when present; otherwise full mb-4 to
+        // separate from the hero.
+        className={isOverdue ? "mb-3" : "mb-4"}
+      >
+        {t("detail.backToList")}
+      </BackNavLink>
 
-      {/* Mobile: flex column with explicit order so the visual sequence is
-          items → payments → note → history. Desktop: 2-column grid where the
-          right wrapper groups payments + history into a single sticky block. */}
-      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[1fr_360px] lg:items-start lg:gap-8">
-        {/* Right column on desktop. `contents` on mobile dissolves the wrapper
-            so its children become direct flex items of the outer container. */}
-        <div className="contents lg:sticky lg:top-[calc(var(--app-banner-offset,0px)+3.5rem+2rem)] lg:col-start-2 lg:row-start-1 lg:block lg:space-y-6">
-          <div className="order-2 lg:order-none">
-            <OrderPaymentsPanel
+      {isOverdue && (
+        <OrderOverdueBanner overdueDays={overdueDays} expectedDeliveryToLabel={expectedToLabel} locale={locale} />
+      )}
+
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start lg:gap-6">
+        {/* Client coordinator renders BOTH the main column (hero + extras) and the aside
+            column. Hero is owned by the client so amount + progress animate in lockstep with
+            payment mutations; the rest of the main column (cancellation callout, productos,
+            history) is passed as `mainColumnExtras` so server-rendered subcards stay outside
+            the client boundary. */}
+        <OrderDetailClient
+          order={{
+            id: order.id,
+            humanReadableId: order.humanReadableId,
+            store: order.store,
+            storeName: order.store.name,
+            totalCost: order.totalCost,
+            status: order.status,
+            currencyCode: order.currencyCode,
+            exchangeRate: order.exchangeRate,
+            needsExchangeRateUpdate: order.needsExchangeRateUpdate,
+            orderDate: order.orderDate,
+            expectedDeliveryFrom: order.expectedDeliveryFrom,
+            expectedDeliveryTo: order.expectedDeliveryTo,
+            note: order.note,
+            updatedAt: order.updatedAt,
+            initialPayments: order.payments,
+            eligibility: order.eligibility,
+            flags: order.flags,
+          }}
+          isOverdue={isOverdue}
+          overdueDays={overdueDays}
+          locale={locale}
+          mainColumnExtras={
+            <>
+              {isCancelled && order.cancellationReason && (
+                <CancellationReasonCallout reason={order.cancellationReason} locale={locale} />
+              )}
+
+              {/* Productos — collapsible like Historial. Header title is inverted vs demo:
+                  `{count} productos` (count first) reads more naturally than `PRODUCTOS 7`.
+                  When cancelled we dim ONLY the body (not the eyebrow / count / chevron)
+                  per demo `s7-order-detail-cancelled` `.subcard-body-inner{opacity:0.6}`. */}
+              <CollapsibleSubcard
+                eyebrow={
+                  <Eyebrow variant="chip" tone="cool" icon={Boxes}>
+                    {t("detail.items.headerCount", { count: order.items.length })}
+                  </Eyebrow>
+                }
+                topAccent="cool"
+                defaultOpen
+                bodyClassName={isCancelled ? "opacity-60" : undefined}
+              >
+                <OrderItemsReadOnlyList
+                  orderId={order.id}
+                  items={order.items}
+                  currencyCode={order.currencyCode}
+                  locale={locale}
+                  isOrderCancelled={isCancelled}
+                  showCreateDeliveryLink={!isCancelled}
+                />
+              </CollapsibleSubcard>
+
+              {/* Desktop only: history collapsible at the bottom of main column */}
+              <div className="hidden lg:block">
+                <OrderHistoryCard history={order.history} locale={locale} isCancelled={isCancelled} />
+              </div>
+            </>
+          }
+          actionsCard={
+            <OrderActionsCard
               orderId={order.id}
-              totalCost={order.totalCost}
-              initialPayments={order.payments}
-              initialSummary={summary}
-              hasUnpaidBalance={hasUnpaidBalance}
+              humanReadableId={order.humanReadableId}
+              storeName={order.store.name}
               status={order.status}
-              currencyCode={order.currencyCode}
-              orderDate={order.orderDate}
+              eligibility={order.eligibility}
               locale={locale}
             />
-          </div>
-          <div className="order-4 lg:order-none">
-            <OrderHistoryList initialHistory={order.history} locale={locale} />
-          </div>
-        </div>
-
-        {/* Left column on desktop, also dissolved on mobile via `contents`. */}
-        <div className="contents lg:col-start-1 lg:row-start-1 lg:block lg:max-w-3xl lg:space-y-6">
-          <div className="order-1 lg:order-none">
-            <OrderItemsList orderId={order.id} items={order.items} currencyCode={order.currencyCode} locale={locale} />
-          </div>
-          <div className="order-3 lg:order-none">
-            <OrderNoteForm
+          }
+          noteCard={
+            <OrderPrivateNoteCard
               orderId={order.id}
               initialNote={order.note}
               initialUpdatedAt={order.note ? order.updatedAt : null}
               locale={locale}
             />
-          </div>
-        </div>
+          }
+        />
       </div>
-    </div>
+    </>
   );
 }

@@ -1,0 +1,132 @@
+---
+description: Browser-based testing patterns — Portal queries, dispatchEvent for React inputs, preview_eval navigation, dev login workflow
+globs: "src/**/*.test.tsx,src/**/*.test.ts,e2e/**/*.spec.ts"
+alwaysApply: false
+---
+
+# Browser-based testing patterns — PandaTrack
+
+Patterns and gotchas discovered while testing UI in this repo. Read whenever you write or fix unit tests for React components, e2e tests with Playwright, or interactive browser sessions via the `mcp__Claude_Preview__*` tools.
+
+## Tests with Portal — use `screen.*`, NOT `container.querySelector`
+
+Components that render via `<Portal>` to `document.body` (Modal, Sheet, FilterDrawer floating, DetailSidebar floating, Toast, any dropdown using a portal) escape the `container` returned by Testing Library's `render`.
+
+**Wrong:**
+
+```tsx
+const { container } = render(<Modal isOpen title="x" onClose={…} />);
+const modal = container.querySelector('[role="dialog"]'); // ← null
+```
+
+**Correct:**
+
+```tsx
+import { render, screen } from "@testing-library/react";
+
+render(<Modal isOpen title="x" onClose={…} />);
+const modal = screen.getByRole("dialog");
+const title = screen.getByText("x");
+```
+
+If you must use a query selector for a complex case, target `document.body`:
+
+```tsx
+const portal = document.body.querySelector('[role="dialog"]');
+```
+
+## `dispatchEvent` + React controlled inputs — use the prototype setter
+
+React does NOT listen to `Event` instances dispatched directly on a controlled input element — the setter is intercepted via the React synthetic event system. Calling `input.value = "x"` followed by `input.dispatchEvent(new Event('input'))` does nothing in a controlled component.
+
+**Correct pattern for filling a controlled input from `preview_eval` or low-level browser script:**
+
+```js
+const input = document.querySelector('#store-name');
+const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+setter.call(input, 'Akiba Records');
+input.dispatchEvent(new Event('input', { bubbles: true }));
+```
+
+For `<textarea>`:
+
+```js
+const textarea = document.querySelector('#store-description');
+const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
+setter.call(textarea, 'Long description text');
+textarea.dispatchEvent(new Event('input', { bubbles: true }));
+```
+
+For triggering blur (so post-blur validation runs):
+
+```js
+input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+input.dispatchEvent(new FocusEvent('blur', { bubbles: false }));
+input.blur();
+```
+
+If you can use Testing Library's `fireEvent.change` or `userEvent.type`, prefer those — they handle the React semantics automatically. The manual setter pattern is only for cases where you're driving the browser from outside React's render loop (`preview_eval`, custom debug scripts).
+
+## `mcp__Claude_Preview__preview_fill` already does the right thing
+
+`preview_fill` uses the React-aware setter internally. Use it whenever possible instead of writing manual `preview_eval` for input filling. The manual pattern above is only for cases `preview_fill` does not cover (e.g. non-input elements with custom controlled state).
+
+## `preview_eval` with `window.location.href` — never chain `await` after navigating
+
+When the page navigates, the Chrome DevTools evaluation context is destroyed before any pending `await` can resolve. The promise hangs in a dead context and `preview_eval` returns `Inspected target navigated or closed`.
+
+**Wrong:**
+
+```js
+await new Promise(resolve => {
+  window.location.href = '/es/stores';
+  setTimeout(resolve, 2000);
+}); // ← throws "Inspected target navigated or closed"
+```
+
+**Correct:** split into two `preview_eval` calls.
+
+```js
+// Call 1 — just navigate, return synchronously:
+window.location.href = '/es/stores';
+'navigating';
+
+// Call 2 (separate preview_eval, after a wait via the host):
+document.title; // verify you arrived
+```
+
+If you need to wait between calls, use the host's wait mechanism (e.g. `mcp__Claude_Preview__preview_eval` again after a brief delay, or rely on the next interactive screenshot to confirm arrival).
+
+## Routes under `[locale]/(app)/*` require auth
+
+Any route under `(app)` is protected by Better Auth middleware and redirects unauthenticated visitors to `/sign-in`. Before testing or screenshotting any `(app)` route, log in.
+
+Dev credentials live in agent memory (`reference_dev_credentials.md`). The login workflow:
+
+1. Navigate to `/<locale>/sign-in` via `preview_eval` (using the split-call pattern above).
+2. Take a screenshot to confirm you're on the sign-in form.
+3. Fill the email and password fields with `mcp__Claude_Preview__preview_fill` (or the manual setter pattern as fallback).
+4. Submit. The submit button's `type="submit"` is reliable, but if there are multiple buttons in the form, combine with text:
+
+   ```js
+   Array.from(document.querySelectorAll('button[type="submit"]'))
+     .find(btn => btn.textContent?.includes('Iniciar sesión'))
+     ?.click();
+   ```
+
+5. Wait 2 to 2.5 seconds for the redirect + hydration.
+6. Verify you arrived at the intended `(app)` route via screenshot or `document.location.pathname`.
+
+If you don't have access to the dev credentials, ask the human — do not try to bypass auth or skip the test.
+
+## When this rule applies
+
+- Writing or fixing unit tests under `src/**/*.test.tsx` / `*.test.ts`.
+- Writing or fixing e2e tests under `e2e/**/*.spec.ts`.
+- Driving the browser via `mcp__Claude_Preview__*` tools to verify a fix or audit a screen.
+- Any debugging session that involves dispatching events programmatically into a React component.
+
+## Skip if
+
+- Your testing is purely server-side (server actions, queries, Prisma) with no React render.
+- You're using `userEvent` or `fireEvent` from Testing Library exclusively (those handle the React semantics for you).

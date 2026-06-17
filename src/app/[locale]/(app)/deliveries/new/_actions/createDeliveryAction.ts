@@ -10,7 +10,7 @@ import { prisma } from "@/lib/prisma";
 
 export type DeliveryCreateActionResult =
   | { success: true; deliveryId: string }
-  | { success: false; error: string; fieldErrors?: Record<string, string[]> };
+  | { success: false; error: string; fieldErrors?: Record<string, string[]>; ineligibleProductIds?: string[] };
 
 function parseDecimalToMinorUnits(value: string | null): number | null {
   if (value === null || value.trim() === "") return null;
@@ -90,7 +90,7 @@ export async function createDeliveryAction(
   try {
     const result = await createDelivery(userId, parsed.data);
     if (!result.ok) {
-      return { success: false, error: result.error };
+      return { success: false, error: result.error, ineligibleProductIds: result.ineligibleProductIds };
     }
 
     const posthog = getPostHogClient();

@@ -1,200 +1,163 @@
 {
   "meta": {
     "title": "PandaTrack",
-    "description": "Track stores, orders, and shipments in one place. Your command center for collectibles and orders."
+    "description": "Bring together your orders from any store and stay on top of pre-orders, payments and deliveries in one place. Your collection, under control."
   },
   "ogEyebrow": "For collectors",
-  "ogHeadline": "Track stores, orders and shipments in one place.",
-  "ogSubline": "Log orders, follow pre-orders and deliveries. No more lost orders or surprise payments.",
-  "features": {
-    "sectionTitle": "All your collecting, in one place",
-    "sectionSubtitle": "Find trusted stores, log orders, manage pre-orders and track shipments, with a dashboard that shows what's due and what's left to pay.",
-    "cards": {
-      "stores": {
-        "title": "Stores you trust",
-        "description": "Find stores that match your type of collection and save your favorites in one place. Check references and feedback to buy with confidence.",
-        "bullets": ["Browse by product type", "Community reviews"]
-      },
-      "purchases": {
-        "title": "Orders, all sorted",
-        "description": "Log each order with store, items, dates and notes without the fuss. Keep a clear history of what you ordered and when.",
-        "bullets": ["Items per order", "Status and dates"]
-      },
-      "preorders": {
-        "title": "Pre-orders, no surprises",
-        "description": "Stay on top of deposits and balances without losing track of partial payments. See what's left to pay and what's due each month.",
-        "bullets": ["Deposits and balance", "Payments per month"]
-      },
-      "shipments": {
-        "title": "Shipments in check",
-        "description": "Track shipments even when an order ships in parts or on different dates. See what's pending, what shipped and what's delivered.",
-        "bullets": ["Multiple shipments", "In transit and delivered"]
-      }
-    },
-    "reminders": {
-      "heading": "Handy reminders and alerts",
-      "description": "Get reminders to request updates and not forget long pre-orders. Set a budget and get alerts when you're approaching your limit.",
-      "chips": ["Reminders", "Budget"]
-    }
-  },
-  "userFit": {
-    "title": "Is PandaTrack right for me?",
-    "subtitle": "If you love collecting but keeping track of your orders has become chaos… yes, this is for you.",
-    "cards": {
-      "card1": {
-        "title": "Where did that order go?",
-        "description": "Bought on Instagram, paid via WhatsApp, confirmation in your inbox… and now it’s lost in chats and screenshots. If that sounds familiar, you know the stress."
-      },
-      "card2": {
-        "title": "What do I have on the way?",
-        "description": "Some orders arrive fast, others sit in “limbo” for weeks. And there you are again: “what’s the status of my order?”. Don’t worry, you’re not alone."
-      },
-      "card3": {
-        "title": "No more surprise payments",
-        "description": "Pre-order here, 20% deposit there, “the rest when it arrives”… until a payment shows up you didn’t see coming. Having it clear ahead of time feels amazing."
-      }
-    }
-  },
+  "ogHeadline": "Your whole collection, under control.",
+  "ogSubline": "Bring your orders, pre-orders, payments and deliveries together in one place. Get a heads-up before every key date.",
   "header": {
-    "cta": "Join the waitlist",
-    "openMenu": "Open menu",
-    "closeMenu": "Close menu",
-    "scrollToTop": "Scroll to top",
-    "menuDialogLabel": "Site menu",
-    "mainNavAriaLabel": "Main navigation",
     "nav": {
       "forYou": "Who it's for",
       "features": "Features",
       "faq": "FAQ"
+    },
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "menuDialogLabel": "Site menu",
+    "mainNavAriaLabel": "Main navigation",
+    "brandHome": "PandaTrack, go to home"
+  },
+  "hero": {
+    "eyebrow": "For collectors",
+    "title": "Your whole collection, <hl>under control</hl>.",
+    "subtitle": "Bring together your orders from any store, keep tabs on pre-orders, payments and deliveries, and get a heads-up before every key date.",
+    "ctaPrimary": "Create free account",
+    "ctaSecondary": "See how it works",
+    "trust": "Free to start · No card",
+    "demo": {
+      "windowLabel": "PandaTrack demo: a collectible travels through the cycle —store, order, payment and delivery— and everything is viewed and managed in a single panel.",
+      "caption": "Your collectible's journey",
+      "steps": {
+        "store": "Store",
+        "order": "Order",
+        "payment": "Payment",
+        "delivery": "Delivery"
+      },
+      "panelTitle": "Your collection",
+      "panelBadge": "Panel",
+      "stats": {
+        "spent": "Spent",
+        "pending": "Pending",
+        "incoming": "Incoming"
+      },
+      "item1": {
+        "title": "Nendoroid Hatsune Miku",
+        "store": "Akiba Store · Japan",
+        "chip": "Pre-order"
+      },
+      "item2": {
+        "title": "Chainsaw Man Vol. 11",
+        "store": "HMV Japan",
+        "chip": "On the way"
+      }
+    }
+  },
+  "userFit": {
+    "eyebrow": "Collecting, day to day",
+    "title": "Your collection grows. So does the clutter.",
+    "subtitle": "When you buy from several stores, it's easy to lose track of what you paid, what's left and what's on the way.",
+    "cards": {
+      "card1": {
+        "title": "Orders everywhere",
+        "description": "Confirmations in your inbox, screenshots on your phone, messages in chats. Your collection lives in ten different places."
+      },
+      "card2": {
+        "title": "«Did I already pay for this?»",
+        "description": "Between deposits, balances and pre-orders, remembering how much you owe and to whom becomes a headache."
+      },
+      "card3": {
+        "title": "Deliveries you can't keep track of",
+        "description": "Orders that arrive in parts and dates that slip by. You find out late, or never."
+      }
+    }
+  },
+  "features": {
+    "eyebrow": "All in one place",
+    "title": "Everything you need to keep your collection up to date",
+    "subtitle": "From the purchase to the moment it reaches your hands, PandaTrack is with you every step of the way.",
+    "cards": {
+      "stores": {
+        "title": "Trusted stores",
+        "description": "Save the stores you buy from and recognize at a glance the ones you already know."
+      },
+      "orders": {
+        "title": "Your orders, organized",
+        "description": "Log every order from any store, with its products and cost, in one clear list."
+      },
+      "preorders": {
+        "title": "Pre-orders without surprises",
+        "description": "Keep track of what you've put a deposit on and what's still left to pay, order by order."
+      },
+      "deliveries": {
+        "title": "Deliveries, even split ones",
+        "description": "Follow every delivery and easily handle orders that arrive in several shipments."
+      },
+      "reminders": {
+        "title": "Reminders on time",
+        "description": "We remind you of a payment or a key date before it slips by, for you."
+      },
+      "dashboard": {
+        "title": "Everything at a glance",
+        "description": "See the status of your orders, upcoming payments and how much you've spent, all on one screen."
+      }
     }
   },
   "banner": {
-    "title": "Ready to take control of your collection?",
-    "subtitle": "Join the waitlist and be among the first to try PandaTrack. No more lost orders or surprise payments.",
-    "cta": "Join the waitlist"
-  },
-  "hero": {
-    "eyebrow": "Total control over your collection",
-    "title": "PandaTrack: your command center for orders and collectibles",
-    "subtitle": "Track stores, orders, and shipments; keep your collection updated and save what you want on your wishlist. Everything in one place.",
-    "primaryCta": "Join the waitlist",
-    "secondaryCta": "View features",
-    "featuresTitle": "Everything you need at a glance",
-    "features": {
-      "stores": {
-        "title": "Store database",
-        "description": "Save stores, prices, and favorite references."
-      },
-      "purchases": {
-        "title": "Order tracking",
-        "description": "Keep a clear history of what you ordered."
-      },
-      "shipments": {
-        "title": "Shipment tracking",
-        "description": "Monitor statuses, dates, and deliveries."
-      },
-      "collection": {
-        "title": "Collection management",
-        "description": "Organize, catalog, and value your collection."
-      },
-      "wishlist": {
-        "title": "Smart wishlist",
-        "description": "Never lose sight of the pieces you want."
-      }
-    },
-    "image": {
-      "src": "/images/hero_en.webp",
-      "alt": "PandaTrack dashboard showing orders, shipments, payments, and stores in one place",
-      "disclaimer": "Initial prototype. The final app may look different.",
-      "title": "PandaTrack overview",
-      "description": "A featured image of the app with metrics, collections, and shipments will live here.",
-      "placeholder": "Image placeholder"
-    }
+    "eyebrow": "Start today",
+    "title": "Your collection deserves to be in order",
+    "subtitle": "Create your free account and bring your orders, payments and deliveries together in one place. It takes less than a minute.",
+    "cta": "Create free account"
   },
   "faqs": {
-    "sectionTitle": "Questions? We've got answers.",
-    "sectionSubtitle": "Everything you need to know about PandaTrack and how it can help you stay on top of your collection.",
+    "eyebrow": "Frequently asked questions",
+    "title": "What people usually ask",
     "items": [
       {
-        "question": "What is PandaTrack?",
-        "answer": "PandaTrack is a web app that keeps all your collectible orders in one place: stores, orders, pre-orders, shipments, and payments. No more digging through chats or inboxes."
+        "question": "Is PandaTrack free?",
+        "answer": "Yes, it's free to start and you don't need a card. You can register your stores, orders and deliveries without paying anything."
       },
       {
-        "question": "Who is it for?",
-        "answer": "Collectors who buy from multiple stores (Instagram, WhatsApp, websites) and want one place to see what they ordered, what's on the way, and what they still need to pay."
+        "question": "Does it work with any store?",
+        "answer": "Yes. PandaTrack doesn't depend on any particular store: you log your orders wherever they come from, online or in person."
       },
       {
-        "question": "Why not just use my email or a spreadsheet?",
-        "answer": "Emails and spreadsheets scatter info across threads and tabs. PandaTrack is built for collectors: one dashboard, clear statuses, and reminders so nothing slips through."
+        "question": "Do I have to enter everything by hand?",
+        "answer": "You add each order to stay in control of what you're tracking. We designed it to be fast: a few taps and it's saved."
       },
       {
-        "question": "What can I track?",
-        "answer": "Stores you buy from, each order with items and dates, pre-orders with deposits and remaining balance, and shipments, including split shipments per order."
+        "question": "Is my data safe?",
+        "answer": "Your collection is yours alone. We keep your information private and never share it with stores or other collectors."
       },
       {
-        "question": "Will I see what I still owe?",
-        "answer": "Yes. You get a clear view of remaining balances and upcoming payments by month, so pre-order payments don't catch you off guard."
-      },
-      {
-        "question": "What about shipments?",
-        "answer": "Track multiple shipments per order, carrier and tracking when available, and status: waiting at store, shipped, in transit, or delivered."
-      },
-      {
-        "question": "Are there reminders?",
-        "answer": "You can set reminders to follow up on long pre-orders, prepare for upcoming payments, and nudge when a shipment goes quiet for too long."
-      },
-      {
-        "question": "Can I set a budget?",
-        "answer": "Optional monthly budget with alerts when you're approaching your limit, so collecting stays fun without the stress."
-      },
-      {
-        "question": "When can I use it?",
-        "answer": "We're building the first version now. Join the waitlist and we'll notify you as soon as PandaTrack is ready to try."
-      },
-      {
-        "question": "How do I join the waitlist?",
-        "answer": "Drop your email in the form below. We'll only reach out when we're ready for you. No spam, just one heads-up."
+        "question": "What languages is it in?",
+        "answer": "PandaTrack is available in Spanish and English, and you can switch languages anytime from your account."
       }
     ]
   },
-  "waitlist": {
-    "title": "You're one step away from a calmer collection.",
-    "subtitle": "Leave your email and we'll tell you the day PandaTrack is ready. No spam, just one message when it's your turn.",
-    "cta": "Notify me when it's ready",
-    "fields": {
-      "email": "Email",
-      "emailPlaceholder": "you@example.com",
-      "name": "Name",
-      "namePlaceholder": "Your name",
-      "nameOptional": "Optional",
-      "comment": "Feature or request",
-      "commentPlaceholder": "Something you'd love to see in PandaTrack?",
-      "commentOptional": "Optional"
-    },
-    "success": "You're on the list. We'll be in touch when PandaTrack is ready.",
-    "share": {
-      "heading": "You're on the list.",
-      "subtext": "Know another collector? Share PandaTrack and help us launch sooner.",
-      "shareMessage": "I'm on the PandaTrack waitlist - an app to organize orders, shipping, and pre-orders for collectibles in one place. Join here:",
-      "shareButton": "Share",
-      "copyLinkButton": "Copy link",
-      "copiedFeedback": "Copied!",
-      "copyFallbackLabel": "Copy the link manually",
-      "whatsapp": "WhatsApp",
-      "x": "X (Twitter)",
-      "facebook": "Facebook"
-    },
-    "error": "Something went wrong. Please try again or email us directly.",
-    "validation": {
-      "emailRequired": "Email is required",
-      "emailInvalid": "Please enter a valid email"
-    }
-  },
   "footer": {
-    "copyright": "© {year} PandaTrack. All rights reserved.",
-    "madeBy": "Made by Panda D. Collector",
-    "terms": "Terms of Service",
-    "privacy": "Privacy Policy",
-    "legalNavAriaLabel": "Legal"
+    "tagline": "Your whole collection in one place: orders, pre-orders and deliveries.",
+    "cols": {
+      "product": "Product",
+      "account": "Account",
+      "legal": "Legal"
+    },
+    "links": {
+      "forYou": "Who it's for",
+      "features": "Features",
+      "faq": "FAQ",
+      "signUp": "Create account",
+      "signIn": "Sign in",
+      "privacy": "Privacy",
+      "terms": "Terms"
+    },
+    "copyright": "© {year} PandaTrack · Made for collectors",
+    "social": {
+      "email": "Email",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp"
+    }
   }
 }

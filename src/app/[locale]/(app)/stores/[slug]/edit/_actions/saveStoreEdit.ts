@@ -10,7 +10,6 @@ import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import {
   getPendingStoreLogoObjectKey,
   getStoreLogoObjectKey,
-  parseStoreLogoCropArea,
   processStoreLogoFile,
   StoreLogoError,
 } from "@/lib/store/logo";
@@ -63,9 +62,6 @@ export async function saveStoreEdit(
     }))
     .filter((channel) => channel.type.trim().length > 0);
 
-  const addressCountryCodes = formData
-    .getAll("addressCountryCode")
-    .filter((value): value is string => typeof value === "string");
   const addressCities = formData.getAll("addressCity").filter((value): value is string => typeof value === "string");
   const addressAddressLines = formData
     .getAll("addressAddressLine")
@@ -75,20 +71,13 @@ export async function saveStoreEdit(
     .filter((value): value is string => typeof value === "string");
   const addresses: EditableAddressInput[] = addressAddressLines
     .map((addressLine, index) => ({
-      countryCode: addressCountryCodes[index] ?? "",
       city: addressCities[index] || undefined,
       addressLine,
       reference: addressReferences[index] || undefined,
     }))
-    .filter((address) => address.addressLine.trim().length > 0 && address.countryCode.length === 2);
+    .filter((address) => address.addressLine.trim().length > 0);
   const logoFileValue = formData.get("logoFile");
   const logoFile = logoFileValue instanceof File && logoFileValue.size > 0 ? logoFileValue : null;
-  const logoCropArea = parseStoreLogoCropArea({
-    x: formData.get("logoCropX"),
-    y: formData.get("logoCropY"),
-    width: formData.get("logoCropWidth"),
-    height: formData.get("logoCropHeight"),
-  });
 
   const parsed = editStoreSchema.safeParse({
     slug: formData.get("slug"),
@@ -101,13 +90,13 @@ export async function saveStoreEdit(
     productTypeKeys: formData.getAll("productTypeKeys").filter((value): value is string => typeof value === "string"),
     hasStock: formData.get("hasStock") === "on" ? true : undefined,
     receivesOrders: formData.get("receivesOrders") === "on" ? true : undefined,
+    isPrivate: formData.get("isPrivate") === "on" ? true : undefined,
     contactChannels,
     addresses,
     importCountries: formData
       .getAll("importCountries")
       .filter((value): value is string => typeof value === "string" && value.length === 2),
     logoAction: formData.get("logoAction") ?? "keep",
-    logoCropArea,
     comment: formData.get("comment") ?? undefined,
   });
 
@@ -134,13 +123,11 @@ export async function saveStoreEdit(
   const currentLogoUrl = viewerContext.openChangeRequest?.changes.logoUrl ?? store.logoUrl;
   const isBusinessLogoSet = store.storeType === "BUSINESS" && parsed.data.logoAction === "set";
 
-  if (isBusinessLogoSet && (!logoFile || !parsed.data.logoCropArea)) {
+  if (isBusinessLogoSet && !logoFile) {
     return {
       success: false,
       error: "validation_failed",
-      fieldErrors: {
-        logo: ["logoRequired"],
-      },
+      fieldErrors: { logo: ["logoRequired"] },
     };
   }
 
@@ -152,7 +139,7 @@ export async function saveStoreEdit(
       nextLogoUrl = null;
     }
 
-    if (isBusinessLogoSet && logoFile && parsed.data.logoCropArea) {
+    if (isBusinessLogoSet && logoFile) {
       try {
         posthogClient.capture({
           distinctId: session.user.id,
@@ -164,7 +151,7 @@ export async function saveStoreEdit(
           },
         });
 
-        const processedLogoBuffer = await processStoreLogoFile(logoFile, parsed.data.logoCropArea);
+        const processedLogoBuffer = await processStoreLogoFile(logoFile);
         const objectKey = canDirectEdit
           ? getStoreLogoObjectKey(store.id)
           : getPendingStoreLogoObjectKey(store.id, session.user.id);
@@ -233,6 +220,7 @@ export async function saveStoreEdit(
         productTypeKeys: parsed.data.productTypeKeys,
         hasStock: parsed.data.hasStock,
         receivesOrders: parsed.data.receivesOrders,
+        isPrivate: parsed.data.isPrivate,
         contactChannels: parsed.data.contactChannels,
         addresses: parsed.data.addresses,
         importCountries: parsed.data.importCountries,
@@ -272,6 +260,7 @@ export async function saveStoreEdit(
         productTypeKeys: parsed.data.productTypeKeys,
         hasStock: parsed.data.hasStock,
         receivesOrders: parsed.data.receivesOrders,
+        isPrivate: parsed.data.isPrivate,
         contactChannels: parsed.data.contactChannels,
         addresses: parsed.data.addresses,
         importCountries: parsed.data.importCountries,

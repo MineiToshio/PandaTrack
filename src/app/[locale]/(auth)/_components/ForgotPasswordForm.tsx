@@ -1,13 +1,12 @@
 "use client";
 
+import { AlertCircle, Info } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import posthog from "posthog-js";
 import * as Sentry from "@sentry/nextjs";
 import Button from "@/components/core/Button/Button";
 import Input from "@/components/core/Input";
-import Label from "@/components/core/Label";
-import Typography from "@/components/core/Typography";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import {
   getPasswordRecoveryActiveThrottleState,
@@ -60,7 +59,6 @@ function getStoredPasswordRecoveryThrottleState(email: string) {
 export default function ForgotPasswordForm({ locale, signInHref }: ForgotPasswordFormProps) {
   const t = useTranslations("auth.forgotPassword");
   const tErrors = useTranslations("auth.errors");
-  const tAuth = useTranslations("auth");
   const [email, setEmail] = useState("");
   const [feedback, setFeedback] = useState<ForgotPasswordFeedback>(null);
   const [isPending, setIsPending] = useState(false);
@@ -138,18 +136,26 @@ export default function ForgotPasswordForm({ locale, signInHref }: ForgotPasswor
     <AuthFormLayout
       title={t("title")}
       description={t("description")}
-      footerLinkHref={signInHref}
-      footerLinkLabel={t("linkToSignIn")}
-      dividerLabel={tAuth("dividerOr")}
+      backLink={{ href: signInHref, label: t("linkToSignIn") }}
     >
-      <form className="space-y-4" onSubmit={handleSubmit} noValidate>
-        <div className="space-y-2">
-          <Label htmlFor="forgot-password-email">{t("email")}</Label>
+      <form onSubmit={handleSubmit} noValidate>
+        {feedback?.tone === "alert" ? (
+          <div className="auth-form-error" role="alert">
+            <AlertCircle aria-hidden="true" />
+            <span>{feedback.message}</span>
+          </div>
+        ) : null}
+
+        <div className="auth-field">
+          <label className="auth-label" htmlFor="forgot-password-email">
+            {t("email")}
+          </label>
           <Input
             id="forgot-password-email"
             type="email"
             name="email"
             autoComplete="email"
+            placeholder={t("emailPlaceholder")}
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             disabled={isPending}
@@ -157,19 +163,29 @@ export default function ForgotPasswordForm({ locale, signInHref }: ForgotPasswor
             error={feedback?.tone === "alert"}
           />
         </div>
-        {feedback?.tone === "status" ? (
-          <Typography size="xs" className="text-text-body" role="status" aria-live="polite">
-            {feedback.message}
-          </Typography>
-        ) : null}
-        {feedback?.tone === "alert" ? (
-          <Typography size="xs" className="text-destructive" role="alert">
-            {feedback.message}
-          </Typography>
-        ) : null}
-        <Button type="submit" className="w-full" disabled={isPending}>
-          {isPending ? "..." : t("submit")}
+
+        <Button
+          type="submit"
+          variant="primary"
+          fullWidth
+          className="auth-submit"
+          loading={isPending}
+          disabled={isPending}
+        >
+          {t("submit")}
         </Button>
+
+        {feedback?.tone === "status" ? (
+          <div className="auth-note" role="status" aria-live="polite">
+            <Info aria-hidden="true" />
+            <span>{feedback.message}</span>
+          </div>
+        ) : (
+          <div className="auth-note">
+            <Info aria-hidden="true" />
+            <span>{t("neutralNote")}</span>
+          </div>
+        )}
       </form>
     </AuthFormLayout>
   );

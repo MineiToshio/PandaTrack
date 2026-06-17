@@ -4,13 +4,15 @@ import { deriveOrderStatus } from "@/lib/orders/orderState";
 import { getNextItemDeliveryState, mapToItemDeliveryState } from "@/lib/deliveries/deliveryState";
 import { generateDeliveryHumanReadableId } from "@/lib/deliveries/deliveryIdentifier";
 import { prisma } from "@/lib/prisma";
-import type { DeliveryCreateInput } from "@/lib/deliveries/deliveryValidation";
+import type { DeliveryCreateInput, DeliveryEditInput } from "@/lib/deliveries/deliveryValidation";
 
 export type CreateDeliveryResult =
   | { ok: true; deliveryId: string; productCount: number; orderCount: number }
   | {
       ok: false;
       error: "STORE_NOT_FOUND" | "NO_PRODUCTS_SELECTED" | "PRODUCTS_FROM_DIFFERENT_STORE" | "PRODUCT_NOT_ELIGIBLE";
+      /** OrderItem ids that were no longer eligible — drives the client retry copy. */
+      ineligibleProductIds?: string[];
     };
 
 /**
@@ -90,7 +92,12 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
       });
 
       if (selectedItems.length !== uniqueProductIds.length) {
-        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
+        const foundIds = new Set(selectedItems.map((item) => item.id));
+        return {
+          ok: false,
+          error: "PRODUCT_NOT_ELIGIBLE",
+          ineligibleProductIds: uniqueProductIds.filter((id) => !foundIds.has(id)),
+        };
       }
 
       const hasDifferentStore = selectedItems.some(
@@ -104,9 +111,11 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
         OrderItemDeliveryState.NONE,
         OrderItemDeliveryState.ARRIVED_AT_STORE,
       ];
-      const hasIneligibleProduct = selectedItems.some((item) => !eligibleStates.includes(item.deliveryState));
-      if (hasIneligibleProduct) {
-        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
+      const ineligibleProductIds = selectedItems
+        .filter((item) => !eligibleStates.includes(item.deliveryState))
+        .map((item) => item.id);
+      if (ineligibleProductIds.length > 0) {
+        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE", ineligibleProductIds };
       }
 
       const humanReadableId = await generateDeliveryHumanReadableId(tx, userId, input.deliveryDate);
@@ -165,12 +174,358 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
 }
 
 // ---------------------------------------------------------------------------
-// Stubs — filled in by WO-02 through WO-05
+// Lifecycle
 // ---------------------------------------------------------------------------
 
-// editDelivery — WO-05
-// markDeliveryDelivered — WO-04
-// reopenDelivery — WO-04
-// cancelDelivery — WO-04
-// deleteDelivery — WO-04
-// updateDeliveryNote — WO-04
+export type DeliveryLifecycleError =
+  | "DELIVERY_NOT_FOUND"
+  | "INVALID_STATUS"
+  | "PRODUCTS_IN_OTHER_DELIVERY"
+  | "RECEIVED_DATE_REQUIRED";
+
+export type DeliveryLifecycleResult = { ok: true; productCount: number } | { ok: false; error: DeliveryLifecycleError };
+
+type DeliveryWithItems = {
+  id: string;
+  status: DeliveryStatus;
+  orderItems: Array<{ orderItem: { id: string; orderId: string } }>;
+};
+
+async function findDeliveryWithItems(
+  tx: Prisma.TransactionClient,
+  deliveryId: string,
+  userId: string,
+): Promise<DeliveryWithItems | null> {
+  return tx.delivery.findFirst({
+    where: { id: deliveryId, userId },
+    select: {
+      id: true,
+      status: true,
+      orderItems: { select: { orderItem: { select: { id: true, orderId: true } } } },
+    },
+  });
+}
+
+function collectItemAndOrderIds(delivery: DeliveryWithItems): { itemIds: string[]; orderIds: string[] } {
+  const itemIds = delivery.orderItems.map((link) => link.orderItem.id);
+  const orderIds = delivery.orderItems.map((link) => link.orderItem.orderId);
+  return { itemIds, orderIds };
+}
+
+/**
+ * Marks an IN_TRANSIT delivery as DELIVERED: persists the required received date
+ * and moves every linked product to DELIVERED, re-deriving the source order
+ * statuses in the same transaction (FR-08-22).
+ */
+export async function markDeliveryDelivered(
+  deliveryId: string,
+  userId: string,
+  receivedDate: Date,
+): Promise<DeliveryLifecycleResult> {
+  return prisma.$transaction(async (tx) => {
+    const delivery = await findDeliveryWithItems(tx, deliveryId, userId);
+    if (!delivery) return { ok: false, error: "DELIVERY_NOT_FOUND" };
+    if (delivery.status !== DeliveryStatus.IN_TRANSIT) return { ok: false, error: "INVALID_STATUS" };
+
+    const { itemIds, orderIds } = collectItemAndOrderIds(delivery);
+
+    await tx.delivery.update({
+      where: { id: deliveryId },
+      data: { status: DeliveryStatus.DELIVERED, receivedDate },
+    });
+
+    if (itemIds.length > 0) {
+      await tx.orderItem.updateMany({
+        where: { id: { in: itemIds }, userId },
+        data: { deliveryState: getNextItemDeliveryState("mark-delivered") },
+      });
+    }
+
+    await persistDerivedOrderStatuses(tx, orderIds);
+
+    return { ok: true, productCount: itemIds.length };
+  });
+}
+
+/**
+ * Reopens a DELIVERED or CANCELLED delivery back to IN_TRANSIT (FR-08-23).
+ * Clears the received date and moves linked products back to IN_TRANSIT.
+ * Reopening a cancelled delivery is rejected when any of its products joined
+ * another live delivery in the meantime (FR-08-21: one delivery per product).
+ */
+export async function reopenDelivery(deliveryId: string, userId: string): Promise<DeliveryLifecycleResult> {
+  return prisma.$transaction(async (tx) => {
+    const delivery = await findDeliveryWithItems(tx, deliveryId, userId);
+    if (!delivery) return { ok: false, error: "DELIVERY_NOT_FOUND" };
+    if (delivery.status === DeliveryStatus.IN_TRANSIT) return { ok: false, error: "INVALID_STATUS" };
+
+    const { itemIds, orderIds } = collectItemAndOrderIds(delivery);
+
+    if (delivery.status === DeliveryStatus.CANCELLED && itemIds.length > 0) {
+      const conflicting = await tx.deliveryOrderItem.count({
+        where: {
+          orderItemId: { in: itemIds },
+          deliveryId: { not: deliveryId },
+          delivery: { status: { not: DeliveryStatus.CANCELLED } },
+        },
+      });
+      if (conflicting > 0) return { ok: false, error: "PRODUCTS_IN_OTHER_DELIVERY" };
+    }
+
+    await tx.delivery.update({
+      where: { id: deliveryId },
+      data: { status: DeliveryStatus.IN_TRANSIT, receivedDate: null },
+    });
+
+    if (itemIds.length > 0) {
+      await tx.orderItem.updateMany({
+        where: { id: { in: itemIds }, userId },
+        data: { deliveryState: getNextItemDeliveryState("reopen") },
+      });
+    }
+
+    await persistDerivedOrderStatuses(tx, orderIds);
+
+    return { ok: true, productCount: itemIds.length };
+  });
+}
+
+/**
+ * Cancels an IN_TRANSIT delivery: the record is kept, products return to
+ * ARRIVED_AT_STORE and become eligible again (FR-08-25).
+ */
+export async function cancelDelivery(deliveryId: string, userId: string): Promise<DeliveryLifecycleResult> {
+  return prisma.$transaction(async (tx) => {
+    const delivery = await findDeliveryWithItems(tx, deliveryId, userId);
+    if (!delivery) return { ok: false, error: "DELIVERY_NOT_FOUND" };
+    if (delivery.status !== DeliveryStatus.IN_TRANSIT) return { ok: false, error: "INVALID_STATUS" };
+
+    const { itemIds, orderIds } = collectItemAndOrderIds(delivery);
+
+    await tx.delivery.update({
+      where: { id: deliveryId },
+      data: { status: DeliveryStatus.CANCELLED },
+    });
+
+    if (itemIds.length > 0) {
+      await tx.orderItem.updateMany({
+        where: { id: { in: itemIds }, userId },
+        data: { deliveryState: getNextItemDeliveryState("cancel") },
+      });
+    }
+
+    await persistDerivedOrderStatuses(tx, orderIds);
+
+    return { ok: true, productCount: itemIds.length };
+  });
+}
+
+/**
+ * Physically deletes a delivery. Only allowed while IN_TRANSIT or CANCELLED
+ * (BR-08-07 — a DELIVERED delivery must be reopened first). Products still in
+ * transit return to ARRIVED_AT_STORE; source orders are re-derived but never
+ * deleted (FR-08-25).
+ */
+export async function deleteDelivery(deliveryId: string, userId: string): Promise<DeliveryLifecycleResult> {
+  return prisma.$transaction(async (tx) => {
+    const delivery = await findDeliveryWithItems(tx, deliveryId, userId);
+    if (!delivery) return { ok: false, error: "DELIVERY_NOT_FOUND" };
+    if (delivery.status === DeliveryStatus.DELIVERED) return { ok: false, error: "INVALID_STATUS" };
+
+    const { itemIds, orderIds } = collectItemAndOrderIds(delivery);
+
+    if (delivery.status === DeliveryStatus.IN_TRANSIT && itemIds.length > 0) {
+      await tx.orderItem.updateMany({
+        where: { id: { in: itemIds }, userId },
+        data: { deliveryState: getNextItemDeliveryState("delete") },
+      });
+    }
+
+    // Cascade removes the delivery_order_item links.
+    await tx.delivery.delete({ where: { id: deliveryId } });
+
+    await persistDerivedOrderStatuses(tx, orderIds);
+
+    return { ok: true, productCount: itemIds.length };
+  });
+}
+
+export type UpdateDeliveryNoteResult =
+  | { ok: true; note: string | null; updatedAt: Date; changed: boolean }
+  | { ok: false; error: "DELIVERY_NOT_FOUND" };
+
+/** Saves the private note; an empty/whitespace note clears the field (BR-08-06). */
+export async function updateDeliveryNote(
+  deliveryId: string,
+  userId: string,
+  rawNote: string | null,
+): Promise<UpdateDeliveryNoteResult> {
+  return prisma.$transaction(async (tx) => {
+    const delivery = await tx.delivery.findFirst({
+      where: { id: deliveryId, userId },
+      select: { note: true, updatedAt: true },
+    });
+
+    if (!delivery) return { ok: false, error: "DELIVERY_NOT_FOUND" };
+
+    const newTrimmed = rawNote?.trim() ?? "";
+    const oldTrimmed = delivery.note?.trim() ?? "";
+
+    if (newTrimmed === oldTrimmed) {
+      return { ok: true, note: delivery.note, updatedAt: delivery.updatedAt, changed: false };
+    }
+
+    const persistedNote = newTrimmed.length > 0 ? newTrimmed : null;
+
+    const updated = await tx.delivery.update({
+      where: { id: deliveryId },
+      data: { note: persistedNote },
+      select: { updatedAt: true },
+    });
+
+    return { ok: true, note: persistedNote, updatedAt: updated.updatedAt, changed: true };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Edit
+// ---------------------------------------------------------------------------
+
+export type EditDeliveryResult =
+  | { ok: true; productCount: number; addedCount: number; removedCount: number }
+  | {
+      ok: false;
+      error:
+        | "DELIVERY_NOT_FOUND"
+        | "INVALID_STATUS"
+        | "NO_PRODUCTS_SELECTED"
+        | "PRODUCTS_FROM_DIFFERENT_STORE"
+        | "PRODUCT_NOT_ELIGIBLE";
+    };
+
+/**
+ * Edits an IN_TRANSIT delivery: metadata (dates, cost, currency, FX) and product
+ * membership. Added products move to IN_TRANSIT; removed products return to
+ * ARRIVED_AT_STORE (FR-08-24). Status and eligibility are revalidated inside the
+ * transaction so stale edits fail atomically (WO-05). The store never changes.
+ */
+export async function editDelivery(
+  deliveryId: string,
+  userId: string,
+  input: Omit<DeliveryEditInput, "deliveryId"> & { productIds: string[] },
+): Promise<EditDeliveryResult> {
+  const uniqueProductIds = [...new Set(input.productIds)];
+  if (uniqueProductIds.length === 0) {
+    return { ok: false, error: "NO_PRODUCTS_SELECTED" };
+  }
+
+  return prisma
+    .$transaction<EditDeliveryResult>(async (tx) => {
+      const delivery = await tx.delivery.findFirst({
+        where: { id: deliveryId, userId },
+        select: {
+          id: true,
+          status: true,
+          storeId: true,
+          orderItems: { select: { orderItem: { select: { id: true, orderId: true } } } },
+        },
+      });
+
+      if (!delivery) return { ok: false, error: "DELIVERY_NOT_FOUND" };
+      if (delivery.status !== DeliveryStatus.IN_TRANSIT) return { ok: false, error: "INVALID_STATUS" };
+
+      const currentIds = delivery.orderItems.map((link) => link.orderItem.id);
+      const currentIdSet = new Set(currentIds);
+      const selectedIdSet = new Set(uniqueProductIds);
+      const addedIds = uniqueProductIds.filter((id) => !currentIdSet.has(id));
+      const removedIds = currentIds.filter((id) => !selectedIdSet.has(id));
+
+      const selectedItems = await tx.orderItem.findMany({
+        where: { id: { in: uniqueProductIds }, userId },
+        select: {
+          id: true,
+          orderId: true,
+          deliveryState: true,
+          order: { select: { storeId: true, userId: true } },
+        },
+      });
+
+      if (selectedItems.length !== uniqueProductIds.length) {
+        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
+      }
+
+      const hasDifferentStore = selectedItems.some(
+        (item) => item.order.storeId !== delivery.storeId || item.order.userId !== userId,
+      );
+      if (hasDifferentStore) {
+        return { ok: false, error: "PRODUCTS_FROM_DIFFERENT_STORE" };
+      }
+
+      // Added products must still be eligible (kept products are IN_TRANSIT in THIS delivery).
+      const eligibleStates: OrderItemDeliveryState[] = [
+        OrderItemDeliveryState.NONE,
+        OrderItemDeliveryState.ARRIVED_AT_STORE,
+      ];
+      const addedIdSet = new Set(addedIds);
+      const hasIneligibleAdded = selectedItems.some(
+        (item) => addedIdSet.has(item.id) && !eligibleStates.includes(item.deliveryState),
+      );
+      if (hasIneligibleAdded) {
+        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
+      }
+
+      if (addedIds.length > 0) {
+        const stateUpdate = await tx.orderItem.updateMany({
+          where: { id: { in: addedIds }, userId, deliveryState: { in: eligibleStates } },
+          data: { deliveryState: getNextItemDeliveryState("edit-add") },
+        });
+        if (stateUpdate.count !== addedIds.length) {
+          throw new Error("DELIVERY_PRODUCT_CONCURRENT_STATE_CHANGE");
+        }
+        await tx.deliveryOrderItem.createMany({
+          data: addedIds.map((orderItemId) => ({ deliveryId, orderItemId })),
+        });
+      }
+
+      if (removedIds.length > 0) {
+        await tx.orderItem.updateMany({
+          where: { id: { in: removedIds }, userId },
+          data: { deliveryState: getNextItemDeliveryState("edit-remove") },
+        });
+        await tx.deliveryOrderItem.deleteMany({
+          where: { deliveryId, orderItemId: { in: removedIds } },
+        });
+      }
+
+      await tx.delivery.update({
+        where: { id: deliveryId },
+        data: {
+          ...(input.deliveryDate !== undefined ? { deliveryDate: input.deliveryDate } : {}),
+          expectedArrivalFrom: input.expectedArrivalFrom ?? null,
+          expectedArrivalTo: input.expectedArrivalTo ?? null,
+          ...(input.cost !== undefined ? { cost: input.cost } : {}),
+          ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),
+          exchangeRate: input.exchangeRate ?? null,
+        },
+      });
+
+      const affectedOrderIds = [
+        ...delivery.orderItems.map((link) => link.orderItem.orderId),
+        ...selectedItems.map((item) => item.orderId),
+      ];
+      await persistDerivedOrderStatuses(tx, affectedOrderIds);
+
+      return {
+        ok: true,
+        productCount: uniqueProductIds.length,
+        addedCount: addedIds.length,
+        removedCount: removedIds.length,
+      };
+    })
+    .catch((error: unknown) => {
+      if (error instanceof Error && error.message === "DELIVERY_PRODUCT_CONCURRENT_STATE_CHANGE") {
+        return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" } as const;
+      }
+      throw error;
+    });
+}

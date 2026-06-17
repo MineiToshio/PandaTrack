@@ -7,13 +7,26 @@ status: DRAFT
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-04-04
+last_updated: 2026-06-16
 source_features:
   - FUTURE-DASHBOARD-ATTENTION
-implementation_status: PLANNED
+implementation_status: PLACEHOLDER
 ---
 
 # FRD-06 Dashboard and Reminders
+
+## Current State
+
+**The dashboard is a placeholder.** The route `/{locale}/dashboard` is implemented and reachable after sign-in, but it renders a coming-soon card with two navigation CTAs instead of real data. None of the functional requirements below are implemented. All work orders under BP-01 are unstarted.
+
+The placeholder provides:
+
+- a page title and welcome subtitle (from the `dashboard` locale namespace) plus a hero eyebrow (from the `appLayout` namespace, `pageHero.eyebrow`)
+- a coming-soon card (`AppComingSoonCard`) with two anchor buttons: **View my orders** (`/{locale}/orders`) and **Explore stores** (`/{locale}/stores`). The Stores CTA href is built with a hardcoded `` `/${locale}${ROUTES.stores}` ``, not the shared preference-driven helper — an existing inconsistency with the cross-domain note below, not only a prospective one.
+- SEO metadata (`meta.title` / `meta.description`) via `buildPageMetadata`
+- PostHog CTA tracking via `POSTHOG_EVENTS.APP_SHELL.PLACEHOLDER_CTA_CLICKED` (see Analytics section)
+
+The FDD and interactive prototype for the planned dashboard are **not yet authored** (S15 produced FDDs for other UI-bearing FRDs; FRD-06 was deferred because it is a placeholder). Visuals, layout, and component breakdown will be defined when the feature moves to active implementation.
 
 ## Purpose
 
@@ -61,12 +74,37 @@ The dashboard is the main decision screen after sign-in. Its job is not to show 
 - push notifications
 - WhatsApp notifications
 
+## Screens and Data Contract
+
+> The real data contract will be documented here when implementation begins. The section below describes ONLY what is currently live.
+
+### `/{locale}/dashboard` — Placeholder page
+
+- **Purpose**: holds the dashboard route slot and directs users to active sections while the feature is built.
+- **Component**: `src/app/[locale]/(app)/dashboard/page.tsx` (Server Component)
+- **Data loaded**: none. No queries are issued. Translations are loaded from the `dashboard` and `appLayout` namespaces via `getTranslations`. The `dashboard` namespace is backed by both locale files (`src/i18n/locales/es/dashboard.json` and `src/i18n/locales/en/dashboard.json`).
+- **Server actions invoked**: none.
+- **States**:
+  - **Normal (only state)**: renders `AppPlaceholderPage` with hero (`eyebrow`, `title`, `welcome`) and `AppComingSoonCard` with two CTA buttons.
+  - No loading, empty, error, or 404 states — the page is fully static.
+- **Guards**: the route lives under `(app)/`, so it requires an authenticated session (enforced by the app shell middleware). No additional role or ownership guard.
+- **SEO metadata**: generated via `buildPageMetadata` with `namespace: "dashboard"`, `pathSegment: "dashboard"`, keys `meta.title` and `meta.description`.
+
+## Analytics
+
+> Analytics for the real dashboard cards and reminders are not yet implemented. The following event is the only one currently in use on this route.
+
+| Event constant                                     | Event string                          | Trigger                                                                                                                                           |
+| -------------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POSTHOG_EVENTS.APP_SHELL.PLACEHOLDER_CTA_CLICKED` | `"app_shell_placeholder_cta_clicked"` | User clicks either CTA on the placeholder card. Props: `{ source: "dashboard", target: "orders" }` or `{ source: "dashboard", target: "stores" }` |
+
 ## Open Questions
 
 - exact reminder trigger thresholds are not yet defined
 - exact email cadence is not yet defined
 - it is not yet decided whether reminders appear as a feed, cards, badges, or a mixed model
 - it is not yet decided whether historical dashboard analytics need filtering by store, month, or category in MVP
+- FDD and prototype are not yet authored for this FRD; they will be created before implementation starts (per `frd-design-documentation.mdc`)
 
 ## Cross-domain notes
 

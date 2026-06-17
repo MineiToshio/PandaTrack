@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -6,19 +7,20 @@ import { getSession } from "@/lib/auth/auth-server";
 import { prisma } from "@/lib/prisma";
 import { getOrdersList } from "@/lib/data/orders/orderQueries";
 import { getOrderableStores } from "@/lib/data/stores/storeQueries";
-import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
-import AppPageHero from "@/components/modules/AppPageHero";
-import { APP_SHELL_FORM_RAIL_CLASSNAME, ROUTES } from "@/lib/constants";
+import { ROUTES } from "@/lib/constants";
 import {
-  buildOrderListFilterUrl,
-  hasOnlyDefaultActiveFilters,
+  DEFAULT_ORDER_LIST_SORT,
   ORDER_LIST_PAGE_SIZE,
   parseOrderListingParams,
+  type OrderListActiveFilters,
 } from "./_utils/orderListingParams";
 import OrderListContent from "./_components/OrderListContent";
 import OrderListFilters from "./_components/OrderListFilters";
 import OrderListFilterChips from "./_components/OrderListFilterChips";
 import OrderListPagination from "./_components/OrderListPagination";
+import FxAnnouncer from "./_components/FxAnnouncer";
+import OrderListLoadingSkeleton from "./_components/OrderListLoadingSkeleton";
+import type { FxPendingOrder } from "./_components/FxReconciliationModal";
 
 type OrdersPageProps = {
   params: Promise<{ locale: string }>;
@@ -44,6 +46,46 @@ function buildListUrl(
   return qs ? `${basePath}?${qs}` : basePath;
 }
 
+function startOfMonth(now: Date): Date {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+}
+
+function buildActiveFilters(parsed: ReturnType<typeof parseOrderListingParams>): OrderListActiveFilters {
+  const toIso = (date: Date | undefined) => (date ? date.toISOString().slice(0, 10) : undefined);
+  return {
+    nameQuery: parsed.nameQuery,
+    productTypeKeys: parsed.productTypeKeys,
+    storeId: parsed.storeId,
+    statuses: parsed.statuses,
+    paymentStates: parsed.paymentStates,
+    fxPendingOnly: parsed.fxPendingOnly,
+    sort: parsed.sort,
+    appliedDefaultStatuses: parsed.appliedDefaultStatuses,
+    dateFromIso: toIso(parsed.dateFrom),
+    dateToIso: toIso(parsed.dateTo),
+    deliveryFromIso: toIso(parsed.deliveryFrom),
+    deliveryToIso: toIso(parsed.deliveryTo),
+    deliveryOverdueOnly: parsed.deliveryOverdueOnly,
+  };
+}
+
+function hasActiveFilter(parsed: ReturnType<typeof parseOrderListingParams>): boolean {
+  return (
+    Boolean(parsed.nameQuery) ||
+    parsed.productTypeKeys.length > 0 ||
+    Boolean(parsed.storeId) ||
+    parsed.statuses.length > 0 ||
+    parsed.paymentStates.length > 0 ||
+    parsed.fxPendingOnly ||
+    Boolean(parsed.dateFrom) ||
+    Boolean(parsed.dateTo) ||
+    Boolean(parsed.deliveryFrom) ||
+    Boolean(parsed.deliveryTo) ||
+    parsed.deliveryOverdueOnly ||
+    parsed.sort !== DEFAULT_ORDER_LIST_SORT
+  );
+}
+
 export async function generateMetadata({ params }: OrdersPageProps): Promise<Metadata> {
   const { locale } = await params;
   return buildPageMetadata({
@@ -60,102 +102,176 @@ export default async function OrdersPage({ params, searchParams }: OrdersPagePro
   const session = await getSession();
   if (!session?.user?.id) redirect(`/${locale}/sign-in`);
   const userId = session.user.id;
-
   const rawParams = await searchParams;
-  const parsed = parseOrderListingParams(rawParams);
   const basePath = `/${locale}${ROUTES.orders}`;
-  const dateFromIso = parsed.dateFrom ? parsed.dateFrom.toISOString().slice(0, 10) : undefined;
-  const dateToIso = parsed.dateTo ? parsed.dateTo.toISOString().slice(0, 10) : undefined;
-  const activeFilters = {
-    nameQuery: parsed.nameQuery,
-    productTypeKeys: parsed.productTypeKeys,
-    storeId: parsed.storeId,
-    statuses: parsed.statuses,
-    appliedDefaultStatuses: false,
-    dateFromIso,
-    dateToIso,
-  };
+  const fingerprint = JSON.stringify(rawParams);
 
-  if (parsed.appliedDefaultStatuses) {
-    redirect(
-      buildOrderListFilterUrl(basePath, activeFilters, {
-        appliedDefaultStatuses: false,
-        page: parsed.page,
-      }),
-    );
-  }
+  const parsed = parseOrderListingParams(rawParams);
+  const activeFilters = buildActiveFilters(parsed);
+  // "Limpiar filtros" lands on the bare /orders URL: no filter at all.
+  const resetHref = basePath;
 
-  const [listing, storeOptions, productTypeOptions, t] = await Promise.all([
-    getOrdersList(userId, {
-      nameQuery: parsed.nameQuery,
-      productTypeKeys: parsed.productTypeKeys.length > 0 ? parsed.productTypeKeys : undefined,
-      storeId: parsed.storeId,
-      statuses: parsed.statuses.length > 0 ? parsed.statuses : undefined,
-      dateFrom: parsed.dateFrom,
-      dateTo: parsed.dateTo,
-      page: parsed.page,
-      pageSize: ORDER_LIST_PAGE_SIZE,
-    }),
+  // Chrome data only (no heavy list query): store options feed the filter drawer + chips.
+  const [storeOptions, t, tc] = await Promise.all([
     getOrderableStores(),
-    listActiveStoreProductTypeKeys(prisma),
     getTranslations({ locale, namespace: "orderListing" }),
+    getTranslations({ locale, namespace: "components" }),
   ]);
-
-  const today = new Date();
-  const showingFrom = listing.totalCount === 0 ? 0 : (listing.page - 1) * listing.pageSize + 1;
-  const showingTo = Math.min(listing.page * listing.pageSize, listing.totalCount);
-  const currentListUrl = buildListUrl(basePath, rawParams, listing.page);
-
   const storesById: Record<string, string> = {};
   storeOptions.forEach((store) => {
     storesById[store.id] = store.name;
   });
 
-  const buildPaginationHref = (targetPage: number) => buildListUrl(basePath, rawParams, targetPage);
-
-  const hasActiveFiltersBeyondDefault = !hasOnlyDefaultActiveFilters(activeFilters);
-
   return (
     <div className="text-foreground">
-      <div className={`${APP_SHELL_FORM_RAIL_CLASSNAME} space-y-6`}>
-        <AppPageHero eyebrow={t("hero.eyebrow")} title={t("hero.title")} description={t("hero.description")} />
+      <div className="space-y-5">
+        {/* Chrome — renders instantly. Only the counter (data) is a skeleton; the title is real. */}
+        <div className="hidden flex-wrap items-baseline gap-2.5 lg:flex">
+          <h1 className="[font-size:var(--text-display)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+            {t("hero.title")}
+          </h1>
+          <Suspense
+            fallback={
+              <span
+                className="skeleton rounded-[6px]"
+                style={{ width: 120, height: 16, display: "inline-block" }}
+                aria-hidden
+              />
+            }
+          >
+            <OrdersHeadingCount locale={locale} userId={userId} />
+          </Suspense>
+        </div>
 
         <OrderListFilters
           locale={locale}
-          totalCount={listing.totalCount}
-          showingFrom={showingFrom}
-          showingTo={showingTo}
           storeOptions={storeOptions.map((store) => ({ id: store.id, name: store.name }))}
-          productTypeOptions={productTypeOptions}
-          initial={{
-            nameQuery: parsed.nameQuery ?? "",
-            storeId: parsed.storeId ?? "",
-            productTypeKeys: parsed.productTypeKeys,
-            statuses: parsed.statuses,
-            appliedDefaultStatuses: parsed.appliedDefaultStatuses,
-            dateFromIso,
-            dateToIso,
-          }}
+          initial={activeFilters}
         />
 
         <OrderListFilterChips locale={locale} basePath={basePath} filters={activeFilters} storesById={storesById} />
 
-        <OrderListContent
-          locale={locale}
-          orders={listing.orders}
-          totalCount={listing.totalCount}
-          hasActiveFiltersBeyondDefault={hasActiveFiltersBeyondDefault}
-          today={today}
-          returnTo={currentListUrl}
-        />
-
-        <OrderListPagination
-          locale={locale}
-          totalPages={listing.totalPages}
-          currentPage={listing.page}
-          createPageHref={buildPaginationHref}
-        />
+        {/* Data region — only this suspends, with a layout-matching (table desktop / cards mobile) skeleton. */}
+        <Suspense key={fingerprint} fallback={<OrderListLoadingSkeleton loadingLabel={tc("skeleton.loading")} />}>
+          <OrdersDataSection
+            locale={locale}
+            userId={userId}
+            parsed={parsed}
+            rawParams={rawParams}
+            basePath={basePath}
+            resetHref={resetHref}
+          />
+        </Suspense>
       </div>
     </div>
+  );
+}
+
+/** Global active/closed order counts for the heading meta. Suspended (the counter is a skeleton). */
+async function OrdersHeadingCount({ locale, userId }: { locale: string; userId: string }) {
+  const [t, totalAcrossUser, closedCount] = await Promise.all([
+    getTranslations({ locale, namespace: "orderListing" }),
+    prisma.order.count({ where: { userId } }),
+    prisma.order.count({ where: { userId, status: { in: ["COMPLETED", "CANCELLED"] } } }),
+  ]);
+  const activeCount = Math.max(0, totalAcrossUser - closedCount);
+  return (
+    <span className="[font-size:var(--text-caption)] [color:var(--text-muted)] tabular-nums">
+      {t("heading.meta", { active: activeCount, closed: closedCount })}
+    </span>
+  );
+}
+
+/** Heavy list query + FX reconciliation + table/cards + pagination. The only part that suspends. */
+async function OrdersDataSection({
+  locale,
+  userId,
+  parsed,
+  rawParams,
+  basePath,
+  resetHref,
+}: {
+  locale: string;
+  userId: string;
+  parsed: ReturnType<typeof parseOrderListingParams>;
+  rawParams: Record<string, string | string[] | undefined>;
+  basePath: string;
+  resetHref: string;
+}) {
+  const userRow = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { baseCurrencyCode: true },
+  });
+  const baseCurrencyCode = userRow?.baseCurrencyCode ?? null;
+
+  const listing = await getOrdersList(userId, {
+    nameQuery: parsed.nameQuery,
+    productTypeKeys: parsed.productTypeKeys.length > 0 ? parsed.productTypeKeys : undefined,
+    storeId: parsed.storeId,
+    statuses: parsed.statuses.length > 0 ? parsed.statuses : undefined,
+    paymentStates: parsed.paymentStates.length > 0 ? parsed.paymentStates : undefined,
+    dateFrom: parsed.dateFrom,
+    dateTo: parsed.dateTo,
+    deliveryFrom: parsed.deliveryFrom,
+    deliveryTo: parsed.deliveryTo,
+    deliveryOverdueOnly: parsed.deliveryOverdueOnly,
+    fxPendingOnly: parsed.fxPendingOnly,
+    baseCurrencyCode,
+    sort: parsed.sort,
+    page: parsed.page,
+    pageSize: ORDER_LIST_PAGE_SIZE,
+  });
+
+  const today = new Date();
+  const currentListUrl = buildListUrl(basePath, rawParams, listing.page);
+  const buildPaginationHref = (targetPage: number) => buildListUrl(basePath, rawParams, targetPage);
+
+  const fxPendingOrders: FxPendingOrder[] =
+    listing.pendingFxCount > 0 && baseCurrencyCode
+      ? await prisma.order
+          .findMany({
+            where: {
+              userId,
+              status: { not: "CANCELLED" },
+              orderDate: { gte: startOfMonth(today) },
+              currencyCode: { not: baseCurrencyCode },
+            },
+            select: { id: true, humanReadableId: true, totalCost: true, currencyCode: true },
+            orderBy: { orderDate: "desc" },
+            take: 500,
+          })
+          .then((rows) =>
+            rows.map((row) => ({
+              id: row.id,
+              humanReadableId: row.humanReadableId,
+              totalCost: row.totalCost,
+              currencyCode: row.currencyCode,
+            })),
+          )
+      : [];
+
+  return (
+    <>
+      <FxAnnouncer count={listing.pendingFxCount} baseCurrencyCode={baseCurrencyCode} orders={fxPendingOrders} />
+
+      <OrderListContent
+        locale={locale}
+        orders={listing.orders}
+        totalCount={listing.totalCount}
+        hasActiveFiltersBeyondDefault={hasActiveFilter(parsed)}
+        today={today}
+        returnTo={currentListUrl}
+        resetHref={resetHref}
+      />
+
+      <OrderListPagination
+        locale={locale}
+        totalPages={listing.totalPages}
+        currentPage={listing.page}
+        totalCount={listing.totalCount}
+        pageSize={listing.pageSize}
+        createPageHref={buildPaginationHref}
+      />
+    </>
   );
 }

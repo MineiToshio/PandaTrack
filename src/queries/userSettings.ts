@@ -33,6 +33,10 @@ export type SettingsPageSnapshot = {
   budgetAmount: number | null;
   budgetResetDayOfMonth: number | null;
   preferredProductTypeKeys: string[];
+  /** Timestamp of the last username change. Drives the 7-day cooldown chip (FR-07-33). */
+  usernameChangedAt: Date | null;
+  /** Timestamp of the credential account's last update. Approximates password last-changed. Null when the user has no credential provider. */
+  passwordChangedAt: Date | null;
 };
 
 /**
@@ -76,7 +80,14 @@ export async function getSettingsPageSnapshot(userId: string): Promise<SettingsP
       baseCurrencyCode: true,
       budgetAmount: true,
       budgetResetDayOfMonth: true,
+      usernameChangedAt: true,
       preferredProductTypes: { select: { productTypeKey: true }, orderBy: { productTypeKey: "asc" } },
+      accounts: {
+        where: { providerId: "credential" },
+        select: { updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+        take: 1,
+      },
     },
   });
 
@@ -95,6 +106,8 @@ export async function getSettingsPageSnapshot(userId: string): Promise<SettingsP
     budgetAmount: row.budgetAmount,
     budgetResetDayOfMonth: row.budgetResetDayOfMonth,
     preferredProductTypeKeys: row.preferredProductTypes.map((rowItem) => rowItem.productTypeKey),
+    usernameChangedAt: row.usernameChangedAt,
+    passwordChangedAt: row.accounts[0]?.updatedAt ?? null,
   };
 }
 

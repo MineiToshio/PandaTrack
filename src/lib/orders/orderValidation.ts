@@ -7,6 +7,7 @@ const MIN_PAYMENT_AMOUNT = 1;
 const MAX_PAYMENT_AMOUNT = 999_999_999;
 const MIN_EXCHANGE_RATE = 0.01;
 const MAX_EXCHANGE_RATE = 99_999.99;
+export const MAX_CANCELLATION_REASON_LENGTH = 500;
 
 const currencyCodeSchema = z
   .string()

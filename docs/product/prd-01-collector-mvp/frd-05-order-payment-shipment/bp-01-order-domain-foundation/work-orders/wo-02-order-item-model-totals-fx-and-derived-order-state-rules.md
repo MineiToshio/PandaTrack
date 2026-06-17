@@ -127,7 +127,7 @@ Evaluate top-to-bottom and return the first match:
 ### `deriveOrderStatus` function contract
 
 ```ts
-type ItemDeliveryState = "open" | "in_transit" | "delivered";
+type ItemDeliveryState = "open" | "arrived_at_store" | "in_transit" | "delivered";
 
 interface OrderItemState {
   itemId: string;
@@ -138,6 +138,7 @@ function deriveOrderStatus(items: OrderItemState[]): Exclude<OrderStatus, "CANCE
 ```
 
 - The caller maps delivery records to `ItemDeliveryState` before calling this function.
+- `arrived_at_store` is a distinct delivery state, but for order-status derivation it is treated the same as `open` (the order has no active in-transit/delivered movement for that item).
 - `CANCELLED` is never returned; it is set exclusively by the cancel mutation.
 - An empty `items` array returns `OPEN`.
 - This function is pure: no side effects, no database access.
@@ -176,13 +177,16 @@ If either condition is false, the save proceeds without the modal.
 
 **Modal options and i18n keys:**
 
-| Action                 | i18n key                                | Copy ES                              | Copy EN                           |
-| ---------------------- | --------------------------------------- | ------------------------------------ | --------------------------------- |
-| Keep entered total     | `orders.discrepancyModal.keepEntered`   | "Mantener el total ingresado"        | "Keep entered total"              |
-| Use calculated total   | `orders.discrepancyModal.useCalculated` | "Usar el total calculado ({amount})" | "Use calculated total ({amount})" |
-| Go back without saving | `orders.discrepancyModal.goBack`        | "Volver"                             | "Go back"                         |
+The modal exposes exactly two actions: a primary "save anyway" and a secondary "go back".
+
+| Action                           | i18n key                             | Copy ES                  | Copy EN        |
+| -------------------------------- | ------------------------------------ | ------------------------ | -------------- |
+| Save anyway (keep entered total) | `orders.discrepancyModal.saveAnyway` | "Guardar de todos modos" | "Save anyway"  |
+| Go back without saving           | `orders.discrepancyModal.goBack`     | "Volver y corregir"      | "Back to edit" |
 
 The modal body must display both the entered total and the calculated total formatted in the order's currency so the user can compare before deciding.
+
+Reconciling the entered total to the calculated sum is **not** a modal option. It is a separate inline action on the order form itself (the "use calculated total" button, key `orders.itemEntry.useCalculatedTotal`), which the user can press before saving to overwrite the entered total; once totals match, the discrepancy modal no longer appears.
 
 ### Exchange-rate validation
 
@@ -295,7 +299,8 @@ Module paths must be validated against `.cursor/rules/project-structure.mdc` and
 
 - Saving an itemized order derives totals correctly from quantity and unit price.
 - The discrepancy modal appears only when every item has a unit price and the derived total differs from the manually entered total.
-- Choosing "Use calculated total" replaces the entered total and saves the order.
+- The discrepancy modal offers exactly two choices: "Save anyway" (persists the entered total as-is) and "Back to edit" (dismisses without saving).
+- Using the inline "use calculated total" button on the form overwrites the entered total with the calculated sum; saving afterward (with totals now matching) does not trigger the discrepancy modal.
 - Fully delivered orders (all items in `DELIVERED` deliveries) move to `COMPLETED` even when payment is still owed.
 - `COMPLETED` orders with outstanding balance show the unpaid signal in both list and detail.
 - Dragging an item row to a new position persists the updated order after save.

@@ -1,3 +1,4 @@
+import { MailCheck } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
@@ -58,36 +59,43 @@ export default async function VerifyEmailStatusPage({ params, searchParams }: Ve
   const copyKey = getStatusCopyKey(error);
 
   return (
-    <main className="bg-background text-foreground flex min-h-screen items-center px-4 py-8">
-      <AuthStatusCard title={t(copyKey.title)} description={t(copyKey.description)}>
-        {session ? (
-          <VerificationResend
-            locale={locale}
-            returnTo={returnTo}
-            buttonLabel={t("resend")}
-            pendingLabel={t("resendPending")}
-            successMessage={t("resendSuccess")}
-            errorMessage={t("resendError")}
-          />
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <Typography size="sm" className="text-text-title">
-                {t("signInTitle")}
-              </Typography>
-              <Typography size="xs" className="text-text-muted mt-2">
-                {t("signInDescription")}
-              </Typography>
-            </div>
-            <Link
-              href={buildAuthAlternativeHref(ROUTES.signIn, locale, returnTo)}
-              className={`${buttonVariants({ variant: "primary" })} w-full sm:w-auto`}
-            >
-              {t("signInCta")}
-            </Link>
+    <AuthStatusCard
+      icon={<MailCheck aria-hidden="true" />}
+      tone="accent"
+      title={t(copyKey.title)}
+      description={t(copyKey.description)}
+      note={t("linkExpiryNote")}
+      footLink={
+        session ? { href: buildAuthAlternativeHref(ROUTES.signIn, locale, returnTo), label: t("signInCta") } : undefined
+      }
+    >
+      {session ? (
+        <VerificationResend
+          locale={locale}
+          returnTo={returnTo}
+          buttonLabel={t("resend")}
+          pendingLabel={t("resendPending")}
+          successMessage={t("resendSuccess")}
+          errorMessage={t("resendError")}
+        />
+      ) : (
+        <div className="space-y-4">
+          <div>
+            <Typography size="sm" className="text-text-title">
+              {t("signInTitle")}
+            </Typography>
+            <Typography size="xs" className="text-text-muted mt-2">
+              {t("signInDescription")}
+            </Typography>
           </div>
-        )}
-      </AuthStatusCard>
-    </main>
+          <Link
+            href={buildAuthAlternativeHref(ROUTES.signIn, locale, returnTo)}
+            className={`${buttonVariants({ variant: "primary" })} w-full sm:w-auto`}
+          >
+            {t("signInCta")}
+          </Link>
+        </div>
+      )}
+    </AuthStatusCard>
   );
 }

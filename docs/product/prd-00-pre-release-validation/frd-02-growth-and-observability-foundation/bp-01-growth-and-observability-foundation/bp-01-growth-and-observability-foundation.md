@@ -8,7 +8,7 @@ parent: FRD-02
 children:
   - WO-01
   - WO-02
-last_updated: 2026-03-21
+last_updated: 2026-06-16
 implementation_status: IMPLEMENTED
 ---
 
@@ -20,16 +20,24 @@ Describe the technical layer that captures public behavior through PostHog and u
 
 ## Runtime Components
 
-- Analytics constants in `src/lib/constants.ts`
-- Client helpers in `src/lib/analytics/posthogDataAttributes.ts`
-- Server analytics client in `src/lib/analytics/posthog-server.ts`
-- Sentry instrumentation and runtime hooks
+- `src/lib/constants.ts` — `POSTHOG_EVENTS` (111 events, 8 categories) and `FEATURE_FLAGS` (runtime PostHog flags)
+- `src/lib/analytics/posthogDataAttributes.ts` — `getPosthogDataAttributes()` and `serializePosthogProps()` helpers
+- `src/lib/analytics/posthog-server.ts` — `getPostHogClient()` singleton for server-side capture via `posthog-node`
+- `src/instrumentation-client.ts` — PostHog browser init + delegated click delegate; Sentry client init + `onRouterTransitionStart`
+- `src/instrumentation.ts` — Next.js `register()` hook; loads server/edge Sentry configs; exports `onRequestError`
+- `sentry.server.config.ts` — Sentry init for Node.js runtime
+- `sentry.edge.config.ts` — Sentry init for edge runtime
+- `src/app/global-error.tsx` — root-layout error boundary (Sentry capture + self-contained fallback UI)
+- `src/app/[locale]/(app)/error.tsx` — app-shell subtree error boundary (Sentry capture with `area: "app_shell"` tag)
+- `next.config.ts` — PostHog ingest reverse proxy (`/ingest/*` rewrites) + Sentry webpack plugin (`withSentryConfig`)
 
 ## Architecture Notes
 
-- Client capture is primarily declarative through `data-ph-event` and related helpers.
-- Server capture is reserved for conversion outcomes and flows where the client cannot be trusted as the final source of truth.
-- Monitoring stays non-blocking and should avoid noisy duplicate reporting.
+- Client capture is primarily declarative through `data-ph-event` and related helpers; a single delegated listener on `document` handles all clicks.
+- Server capture is reserved for conversion outcomes and flows where the client cannot be trusted as the final source of truth (e.g., Server Actions for store mutations and auth flows).
+- The PostHog ingest proxy routes browser events through the app domain (`/ingest`) to reduce ad-blocker interference.
+- Monitoring stays non-blocking and avoids noisy duplicate reporting; each error boundary captures once.
+- Session Replay is enabled at 10% session sampling and 100% error session sampling.
 
 ## Linked Work Orders
 

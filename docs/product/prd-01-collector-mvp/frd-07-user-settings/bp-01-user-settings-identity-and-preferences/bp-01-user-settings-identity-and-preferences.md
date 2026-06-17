@@ -12,8 +12,8 @@ children:
   - WO-04
   - WO-05
   - WO-06
-last_updated: 2026-04-14
-implementation_status: IN_PROGRESS
+last_updated: 2026-06-16
+implementation_status: IMPLEMENTED
 ---
 
 # BP-01 User Settings, Identity, and Preferences
@@ -53,7 +53,7 @@ Describe the technical layer that powers profile editing, account-management con
   - once the collector uploads a replacement, the field must point to the Cloudflare R2 asset URL
   - removing the effective avatar always clears the field and returns the UI to the username-initial fallback instead of restoring a provider image automatically
 - User-managed avatar assets use the stable object key `user-images/{userId}.webp` so replacements overwrite the current file in MVP.
-- Successful profile-basic saves must update the settings preview and shell identity surfaces immediately in client state without a full page refresh.
+- Successful profile-basic saves update the settings pane's own client state immediately without a full page refresh. As implemented, the shell identity surface is **not** refreshed in-session (the settings panes do not call the shell identity context); it reflects the new values on the next full load (`FR-07-13`). In-session shell refresh remains a future enhancement.
 - Email-change rules must branch by account-provider posture:
   - credential-only: email change allowed
   - Google-only: email change blocked
@@ -67,7 +67,7 @@ Describe the technical layer that powers profile editing, account-management con
 - Preference-driven store defaults should be implemented as URL generation from navigation entry points rather than hidden server-side filtering so the listing remains URL-canonical.
 - Privacy Policy and Terms and Conditions links stay visible inside the user menu as shell-level trust and compliance exits.
 - `Settings` should live in the account menu rather than in the primary shell navigation once this slice ships.
-- Settings mutations use a split feedback pattern: validation errors and field-level errors appear **inline** — **below** the affected control (after label and helper), with **live username feedback** (availability, checking, format/taken hints) **directly under** the username input and **submit or server-only errors** (for example rate limit after save) **after** that live-feedback block so the failure sits just above the save button; see `docs/design/interface-patterns.md` — _Success vs. Error Feedback Placement_. Confirmed successful saves (username, display name, avatar upload/replace/remove, password) surface as transient toast notifications via the app-wide `ToastProvider`. This keeps forms clean and avoids layout shifts from success copy appearing and disappearing inside the form body.
+- Settings mutations use a split feedback pattern: validation errors and field-level errors appear **inline** — **below** the affected control (after label and helper), with **live username feedback** (availability / format / taken hints) **directly under** the username input and **submit or server-only errors** (for example rate limit after save) **after** that live-feedback block so the failure sits just above the save button; see `docs/design/interface-patterns.md` — _Success vs. Error Feedback Placement_. Confirmed successful saves (username, display name, avatar upload/replace/remove, password) surface as transient toast notifications via the app-wide `ToastProvider`. This keeps forms clean and avoids layout shifts from success copy appearing and disappearing inside the form body.
 
 ## Contracts
 
@@ -86,7 +86,7 @@ Describe the technical layer that powers profile editing, account-management con
   - output: persisted valid lowercase username and collision-safe fallback handling
 - Avatar contract:
   - input: provider image URL or source image up to 10 MB
-  - output: effective avatar URL in `User.image`, with cropped optimized asset in `user-images/{userId}.webp` when the collector uploads a replacement, **persisting on crop-modal confirm** (no extra “save photo” control), immediate client-side identity refresh after successful changes, and username-initial fallback after successful removal
+  - output: effective avatar URL in `User.image`, with cropped optimized asset in `user-images/{userId}.webp` when the collector uploads a replacement, **persisting on crop-modal confirm** (no extra “save photo” control), immediate update of the settings pane's local state after successful changes (the shell identity surface is not refreshed in-session — it updates on the next full load, `FR-07-13`), and username-initial fallback after successful removal
   - removal: explicit **confirmation modal** (copy explains effect and that the exact image cannot be restored; new upload remains possible); no second remove control outside the avatar field
 - Account-management contract:
   - input: auth-method posture plus email/password change request plus current password for email-change operations

@@ -1,0 +1,44 @@
+---
+description: UI primitive libraries are hand-rolled by default; only explicitly approved deps may be added.
+alwaysApply: true
+---
+
+# UI primitive libraries — approval policy (ADR 0010)
+
+PandaTrack is built with **hand-rolled UI primitives** (Modal, Sheet, FilterDrawer, Portal, Button, Input, Select, Combobox, Chip, etc.). External UI primitive libraries and design systems are **not allowed as top-level dependencies** unless explicitly approved by an ADR.
+
+The full policy lives in
+[`docs/design/decisions/0010-ui-primitive-libraries-policy.md`](../../docs/design/decisions/0010-ui-primitive-libraries-policy.md).
+Read it before adding any UI dependency.
+
+## Hard rules
+
+1. **Default: hand-roll.** Build new primitives in `src/components/core/` or `src/components/modules/` following the existing patterns. Reuse before you add.
+2. **Approved libs (closed list — extending it requires a new ADR):**
+   - **`vaul`** — only for the bottom sheet variant of the canonical `<Modal>` (ADR 0008 Extension). The drag-to-dismiss + iOS safe area + scroll lock behavior is too risky to hand-roll. No other consumer may import `vaul` directly.
+3. **Banned as top-level deps:**
+   - `@radix-ui/*` — Vaul depends on `@radix-ui/react-dialog` and `@radix-ui/react-portal` transitively; that is acceptable because our code never imports `@radix-ui/*` directly. Adding it to `package.json` (`dependencies` or `devDependencies`) is forbidden.
+   - `@headlessui/react`, `@floating-ui/react`, Mantine, Chakra UI, MUI, Ant Design, Shopify Polaris React, shadcn/ui, etc. — any "design system" or "UI primitive library" not listed above.
+4. **Auditing:** `grep "@radix-ui" package.json` must return empty. `grep "vaul" package.json` must return present. CI / lint or a manual audit step should fail when a banned dep slips in.
+
+## Workflow for adding a new UI lib
+
+If you genuinely need a new UI lib, before installing it:
+
+1. Open an ADR in `docs/design/decisions/` with: motivation, alternatives considered (including DIY estimate), bundle impact, maintenance cost, and a justification for why hand-rolling is not viable.
+2. Get explicit human approval on the ADR.
+3. Update ADR 0010 ("Excepciones aprobadas" section) with the new entry.
+4. Update this rule's approved list.
+5. Then run `npm install`.
+
+Do **not** install first and document later. Do **not** import from a banned package even if it is already present transitively — promote it to top-level requires an ADR.
+
+## Quick triage when reviewing a PR
+
+- New entry in `package.json dependencies`? Check it against the approved list.
+- New `import` from `@radix-ui/*`, `@headlessui/*`, `@floating-ui/*`, `mantine`, `chakra-ui`, `@mui/*`, `@shopify/polaris`, etc.? Block the change.
+- New "wrapper" component around a banned lib? Block.
+
+## When in doubt
+
+Stop and ask. The cost of stopping is one message. The cost of adopting a new UI primitive without governance is months of unwinding it.

@@ -14,6 +14,10 @@
     "newStore": "New store",
     "editStore": "Edit"
   },
+  "orders": {
+    "newOrder": "New order",
+    "editOrder": "Edit order"
+  },
   "sidebar": {
     "expand": "Expand sidebar",
     "collapse": "Collapse sidebar"
@@ -33,12 +37,22 @@
   "accessibility": {
     "mainNavigation": "Main navigation",
     "breadcrumbNavigation": "Breadcrumb",
-    "languageNavigation": "Language"
+    "languageNavigation": "Language",
+    "primarySidebar": "Primary sidebar"
   },
   "error": {
-    "title": "Something went wrong",
-    "description": "We could not load this app area. Please try again.",
-    "retry": "Try again"
+    "eyebrow": "Something went wrong",
+    "title": "Something broke on our end",
+    "description": "We couldn't load this page. Try again; if it keeps failing, try again in a moment.",
+    "retry": "Try again",
+    "goHome": "Go home"
+  },
+  "notFound": {
+    "eyebrow": "Error 404",
+    "title": "This page doesn't exist",
+    "description": "The link may be broken or the content may have moved. Let's get you back on track.",
+    "homeCta": "Back to home",
+    "ordersCta": "View my orders"
   },
   "placeholder": "Content coming soon.",
   "pageHero": {

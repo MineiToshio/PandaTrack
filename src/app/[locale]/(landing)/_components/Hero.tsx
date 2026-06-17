@@ -1,141 +1,155 @@
-import Image from "next/image";
-import { useTranslations } from "next-intl";
+import type { CSSProperties } from "react";
+import { BookOpen, LayoutDashboard, Package, Sparkles, Store, Truck, Wallet } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 import AnchorLink from "@/components/core/AnchorLink";
+import Button from "@/components/core/Button/Button";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
-import { POSTHOG_EVENTS } from "@/lib/constants";
-import { cn, TINTED_SURFACE_GRADIENT_TOP_WASH } from "@/lib/styles";
-import Heading from "@/components/core/Heading";
-import Typography from "@/components/core/Typography";
+import Chip from "@/components/core/Chip";
+import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { cn } from "@/lib/styles";
 
-const ANIMATION_DURATION_MS = 600;
-const STAGGER_MS = 80;
+/** Journey stations: hero object travels store → order → payment → delivery. */
+const JOURNEY_STEPS = [
+  { key: "store", tile: "var(--accent-cool)", Icon: Store },
+  { key: "order", tile: "var(--accent)", Icon: Package },
+  { key: "payment", tile: "var(--accent-warm)", Icon: Wallet },
+  { key: "delivery", tile: "var(--success)", Icon: Truck },
+] as const;
 
-const HERO_IMAGE_WIDTH = 647;
-const HERO_IMAGE_HEIGHT = 1383;
+/** Illustrative sample figures for the decorative product window (aria-hidden). */
+const DEMO_STATS: { key: string; value: string; accent?: string }[] = [
+  { key: "spent", value: "$486" },
+  { key: "pending", value: "$152", accent: "var(--warning)" },
+  { key: "incoming", value: "3" },
+];
 
 export default function Hero() {
+  const locale = useLocale();
   const t = useTranslations("landing.hero");
+  const tDemo = useTranslations("landing.hero.demo");
+
+  const signUpHref = `/${locale}${ROUTES.signUp}`;
 
   return (
-    <section id="get-started" className="bg-background text-foreground relative w-full overflow-hidden">
-      <div
-        className="bg-primary/25 pointer-events-none absolute top-1/4 -left-1/4 size-[480px] rounded-full opacity-40 blur-[120px]"
-        style={{
-          animation: `hero-glow-pulse 8s ease-in-out infinite`,
-        }}
-        aria-hidden
-      />
-      <div
-        className="bg-highlight/20 pointer-events-none absolute top-1/2 -right-1/4 size-[400px] rounded-full opacity-40 blur-[100px]"
-        style={{
-          animation: `hero-glow-pulse 10s ease-in-out infinite 1s`,
-        }}
-        aria-hidden
-      />
-      <div
-        className="bg-accent/15 pointer-events-none absolute bottom-1/4 left-1/3 size-[320px] rounded-full opacity-40 blur-[80px]"
-        style={{
-          animation: `hero-glow-pulse 9s ease-in-out infinite 0.5s`,
-        }}
-        aria-hidden
-      />
-      <div
-        className={cn(
-          TINTED_SURFACE_GRADIENT_TOP_WASH,
-          "pointer-events-none absolute inset-0 bg-linear-to-b opacity-40",
-        )}
-        aria-hidden
-      />
-
-      <div className="relative mx-auto grid w-full max-w-6xl gap-12 px-4 py-16 md:grid-cols-[1.2fr_0.8fr] md:items-center md:px-6 md:py-24 lg:px-8">
-        <div className="flex flex-col gap-6">
-          <span
-            className="bg-eyebrow-bg text-eyebrow-fg ring-eyebrow-ring w-fit rounded-full px-4 py-2 text-xs font-semibold tracking-[0.2em] uppercase ring-1"
-            style={{
-              animation: `hero-fade-in-up ${ANIMATION_DURATION_MS}ms ease-out both`,
-              animationDelay: "0ms",
-            }}
-          >
-            {t("eyebrow")}
-          </span>
-          <Heading
-            as="h1"
-            size="lg"
-            className="text-text-title"
-            style={{
-              animation: `hero-fade-in-up ${ANIMATION_DURATION_MS}ms ease-out both`,
-              animationDelay: `${STAGGER_MS}ms`,
-            }}
-          >
-            <span className="from-primary via-highlight to-info bg-linear-to-r bg-clip-text text-transparent">
-              {t("title")}
+    <section className="mk-hero">
+      <div className="mk-hero-glow" aria-hidden="true" />
+      <div className="mk-container">
+        <div className="mk-hero-grid">
+          <div className="mk-hero-copy">
+            <span className="mk-eyebrow">
+              <Sparkles aria-hidden="true" /> {t("eyebrow")}
             </span>
-          </Heading>
-          <Typography
-            size="lg"
-            className="text-text-body max-w-xl"
-            style={{
-              animation: `hero-fade-in-up ${ANIMATION_DURATION_MS}ms ease-out both`,
-              animationDelay: `${STAGGER_MS * 2}ms`,
-            }}
-          >
-            {t("subtitle")}
-          </Typography>
-          <div
-            className="flex flex-wrap items-center gap-3"
-            style={{
-              animation: `hero-fade-in-up ${ANIMATION_DURATION_MS}ms ease-out both`,
-              animationDelay: `${STAGGER_MS * 3}ms`,
-            }}
-          >
-            <AnchorLink
-              href="#waitlist"
-              className={cn(
-                buttonVariants({ variant: "primary", size: "lg" }),
-                "animate-[hero-cta-glow_2.5s_ease-in-out_infinite]",
-              )}
-              posthogEvent={POSTHOG_EVENTS.LANDING.HERO_CTA_CLICKED}
-              posthogProps={{ location: "hero", cta_type: "primary" }}
-            >
-              {t("primaryCta")}
-            </AnchorLink>
-            <AnchorLink href="#features" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>
-              {t("secondaryCta")}
-            </AnchorLink>
+            <h1>{t.rich("title", { hl: (chunks) => <span className="mk-grad-text">{chunks}</span> })}</h1>
+            <p className="mk-hero-sub">{t("subtitle")}</p>
+            <div className="mk-hero-cta">
+              <Button
+                as="a"
+                href={signUpHref}
+                variant="primary"
+                size="lg"
+                leadingIcon={<Sparkles className="size-[18px]" aria-hidden="true" />}
+                posthogEvent={POSTHOG_EVENTS.LANDING.HERO_CTA_CLICKED}
+                posthogProps={{ location: "hero", destination: "sign-up" }}
+              >
+                {t("ctaPrimary")}
+              </Button>
+              <AnchorLink href="#features" className={cn(buttonVariants({ variant: "ghost", size: "lg" }))}>
+                {t("ctaSecondary")}
+              </AnchorLink>
+            </div>
+            <p className="mk-hero-trust">
+              <span className="dot" aria-hidden="true" /> {t("trust")}
+            </p>
           </div>
-        </div>
 
-        <div
-          className="relative flex flex-col items-center justify-self-center"
-          style={{
-            animation: `hero-fade-in-up ${ANIMATION_DURATION_MS}ms ease-out both`,
-            animationDelay: `${STAGGER_MS * 2}ms`,
-          }}
-        >
-          <div
-            className="bg-primary/20 pointer-events-none absolute -inset-4 rounded-[28px] blur-2xl"
-            style={{ animation: "hero-glow-pulse 6s ease-in-out infinite" }}
-            aria-hidden
-          />
-          <div
-            className="border-border bg-surface shadow-primary/10 relative w-fit overflow-hidden rounded-3xl border shadow-xl"
-            style={{
-              animation: "hero-float 5s ease-in-out infinite",
-            }}
-          >
-            <Image
-              src={t("image.src")}
-              alt={t("image.alt")}
-              width={HERO_IMAGE_WIDTH}
-              height={HERO_IMAGE_HEIGHT}
-              className="block h-auto w-full max-w-[280px] sm:max-w-[300px] md:max-w-[340px]"
-              sizes="(max-width: 640px) 280px, (max-width: 768px) 300px, 340px"
-              priority
-            />
+          <div className="mk-hero-visual">
+            <div className="mk-window mk-window-anim" role="img" aria-label={tDemo("windowLabel")}>
+              <div className="mk-window-bar" aria-hidden="true">
+                <span className="mk-window-dot" />
+                <span className="mk-window-dot" />
+                <span className="mk-window-dot" />
+              </div>
+
+              <div className="mk-journey" aria-hidden="true">
+                <span className="mk-journey-cap">{tDemo("caption")}</span>
+                <div className="mk-journey-rail">
+                  <div className="mk-journey-line" />
+                  <div className="mk-journey-token">
+                    <BookOpen />
+                  </div>
+                </div>
+                <div className="mk-journey-steps">
+                  {JOURNEY_STEPS.map(({ key, tile, Icon }, index) => (
+                    <div
+                      key={key}
+                      className="mk-journey-step"
+                      style={{ "--s": index, "--tile": tile } as CSSProperties}
+                    >
+                      <span className="mk-journey-tile">
+                        <Icon />
+                      </span>
+                      <span className="jl">{tDemo(`steps.${key}`)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mk-window-body" aria-hidden="true">
+                <div className="mk-dash-head">
+                  <span className="mk-eyebrow-plain">{tDemo("panelTitle")}</span>
+                  <span className="mk-dash-badge">
+                    <LayoutDashboard /> {tDemo("panelBadge")}
+                  </span>
+                </div>
+                <div className="mk-mini-stat">
+                  {DEMO_STATS.map(({ key, value, accent }) => (
+                    <div key={key}>
+                      <div className="lbl">{tDemo(`stats.${key}`)}</div>
+                      <div className="val numeric" style={accent ? { color: accent } : undefined}>
+                        {value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mk-mini-row">
+                  <span
+                    className="mk-mini-ava"
+                    style={{
+                      background: "color-mix(in oklch, var(--accent) 14%, transparent)",
+                      color: "var(--accent)",
+                    }}
+                  >
+                    <Package className="size-4" />
+                  </span>
+                  <span className="body">
+                    <strong>{tDemo("item1.title")}</strong>
+                    <small>{tDemo("item1.store")}</small>
+                  </span>
+                  <Chip variant="warning" size="sm" className="ml-auto shrink-0" icon={<Wallet className="size-3" />}>
+                    {tDemo("item1.chip")}
+                  </Chip>
+                </div>
+                <div className="mk-mini-row">
+                  <span
+                    className="mk-mini-ava"
+                    style={{
+                      background: "color-mix(in oklch, var(--accent-warm) 16%, transparent)",
+                      color: "var(--accent-warm)",
+                    }}
+                  >
+                    <BookOpen className="size-4" />
+                  </span>
+                  <span className="body">
+                    <strong>{tDemo("item2.title")}</strong>
+                    <small>{tDemo("item2.store")}</small>
+                  </span>
+                  <Chip variant="info" size="sm" className="ml-auto shrink-0" icon={<Truck className="size-3" />}>
+                    {tDemo("item2.chip")}
+                  </Chip>
+                </div>
+              </div>
+            </div>
           </div>
-          <Typography as="p" size="2xs" className="text-text-muted mt-3 text-center">
-            {t("image.disclaimer")}
-          </Typography>
         </div>
       </div>
     </section>

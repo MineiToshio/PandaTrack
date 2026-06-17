@@ -4,5 +4,11 @@
     "description": "Your PandaTrack dashboard."
   },
   "title": "Dashboard",
-  "welcome": "Welcome to your dashboard."
+  "welcome": "Your collection, at a glance.",
+  "placeholder": {
+    "title": "Your dashboard is in the works",
+    "description": "Soon you'll see how much you've paid, what's on the way, and which payments are coming up. In the meantime, log your orders so everything is ready.",
+    "ctaOrders": "View my orders",
+    "ctaStores": "Explore stores"
+  }
 }

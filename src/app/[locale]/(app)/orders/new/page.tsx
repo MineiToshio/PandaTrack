@@ -7,7 +7,7 @@ import { getOrderableStores } from "@/lib/data/stores/storeQueries";
 import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
 import { prisma } from "@/lib/prisma";
 import { createOrderAction } from "../_actions/orderActions";
-import OrderEmptyState from "../_components/share/OrderEmptyState";
+import OrderCreateEmptyStores from "../_components/share/OrderCreateEmptyStores";
 import OrderForm from "../_components/share/OrderForm";
 
 type Props = {
@@ -41,7 +41,7 @@ export default async function OrdersNewPage({ params }: Props) {
   const productTypeKeys = productTypeRows.map((r) => r.key);
 
   if (stores.length === 0) {
-    return <OrderEmptyState />;
+    return <OrderCreateEmptyStores />;
   }
 
   return (

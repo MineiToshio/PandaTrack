@@ -3,14 +3,28 @@
     "en": "EN",
     "es": "ES",
     "ariaEn": "Cambiar a inglés",
-    "ariaEs": "Cambiar a español"
+    "ariaEs": "Cambiar a español",
+    "regionLabel": "Idioma"
   },
   "themeToggle": {
+    "label": "Tema",
     "switchToLight": "Cambiar a modo claro",
     "switchToDark": "Cambiar a modo oscuro"
   },
   "legal": {
-    "backToHome": "← Volver al inicio"
+    "eyebrow": "Legal",
+    "backToHome": "Volver al inicio",
+    "tableOfContents": "En esta página"
   },
-  "dismiss": "Cerrar"
+  "dismiss": "Cerrar",
+  "close": "Cerrar",
+  "notFound": {
+    "eyebrow": "Error 404",
+    "title": "Esta página no existe",
+    "description": "Puede que el enlace esté roto o que el contenido se haya movido. Volvamos a un lugar conocido.",
+    "homeCta": "Volver al inicio"
+  },
+  "meta": {
+    "description": "Reúne tus pedidos de cualquier tienda y controla pre-reservas, pagos y entregas en un solo lugar."
+  }
 }

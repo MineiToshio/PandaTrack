@@ -1,9 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { betterAuthMock, prismaAdapterMock, getAppBaseUrlMock, handlePasswordRecoveryRequestMock } = vi.hoisted(() => ({
+const {
+  betterAuthMock,
+  prismaAdapterMock,
+  getAppBaseUrlMock,
+  getPublicSiteUrlMock,
+  handlePasswordRecoveryRequestMock,
+} = vi.hoisted(() => ({
   betterAuthMock: vi.fn(() => ({ api: {} })),
   prismaAdapterMock: vi.fn(() => "prisma-adapter"),
   getAppBaseUrlMock: vi.fn(() => "https://pandatrack.app"),
+  getPublicSiteUrlMock: vi.fn(() => "https://pandatrack.app"),
   handlePasswordRecoveryRequestMock: vi.fn(),
 }));
 
@@ -29,6 +36,7 @@ vi.mock("@/lib/prisma", () => ({
 
 vi.mock("@/lib/app-url", () => ({
   getAppBaseUrl: getAppBaseUrlMock,
+  getPublicSiteUrl: getPublicSiteUrlMock,
 }));
 
 vi.mock("@/lib/auth/authPasswordRecovery", () => ({

@@ -1,0 +1,113 @@
+"use server";
+
+import * as Sentry from "@sentry/nextjs";
+import { getSession } from "@/lib/auth/auth-server";
+import { getPostHogClient } from "@/lib/analytics/posthog-server";
+import { POSTHOG_EVENTS } from "@/lib/constants";
+import { editDelivery } from "@/lib/data/deliveries/deliveryMutations";
+import { deliveryEditSchema } from "@/lib/deliveries/deliveryValidation";
+import { prisma } from "@/lib/prisma";
+import type { DeliveryCreateActionResult } from "../../../new/_actions/createDeliveryAction";
+
+function parseDecimalToMinorUnits(value: string | null): number | null {
+  if (value === null || value.trim() === "") return null;
+  const parsed = parseFloat(value);
+  if (Number.isNaN(parsed)) return null;
+  return Math.round(parsed * 100);
+}
+
+function parseProductIds(raw: FormDataEntryValue | null): string[] {
+  if (typeof raw !== "string" || raw.trim() === "") return [];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((value): value is string => typeof value === "string");
+  } catch {
+    return [];
+  }
+}
+
+/** Same result contract as create so the shared form consumes one shape. */
+export async function editDeliveryAction(
+  _prev: DeliveryCreateActionResult | null,
+  formData: FormData,
+): Promise<DeliveryCreateActionResult> {
+  const session = await getSession();
+  if (!session?.user?.id) {
+    return { success: false, error: "unauthorized" };
+  }
+  const userId = session.user.id;
+
+  const exchangeRateRaw = formData.get("exchangeRate");
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } });
+  const exchangeRate =
+    typeof exchangeRateRaw === "string" && exchangeRateRaw.trim() !== "" ? parseFloat(exchangeRateRaw) : null;
+
+  const raw = {
+    deliveryId: formData.get("deliveryId") ?? undefined,
+    deliveryDate: formData.get("deliveryDate") ?? undefined,
+    expectedArrivalFrom: formData.get("expectedArrivalFrom") || null,
+    expectedArrivalTo: formData.get("expectedArrivalTo") || null,
+    cost: parseDecimalToMinorUnits(typeof formData.get("cost") === "string" ? String(formData.get("cost")) : null),
+    currencyCode: formData.get("currencyCode") ?? undefined,
+    exchangeRate,
+    productIds: parseProductIds(formData.get("productIds")),
+  };
+
+  const parsed = deliveryEditSchema.safeParse(raw);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: "validation",
+      fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+    };
+  }
+
+  if (
+    user?.baseCurrencyCode &&
+    parsed.data.currencyCode &&
+    parsed.data.currencyCode !== user.baseCurrencyCode &&
+    parsed.data.exchangeRate == null
+  ) {
+    return {
+      success: false,
+      error: "validation",
+      fieldErrors: { exchangeRate: ["EXCHANGE_RATE_REQUIRED"] },
+    };
+  }
+
+  const { deliveryId, ...input } = parsed.data;
+
+  try {
+    const result = await editDelivery(deliveryId, userId, { ...input, productIds: input.productIds ?? [] });
+    if (!result.ok) {
+      return { success: false, error: result.error };
+    }
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: userId,
+      event: POSTHOG_EVENTS.DELIVERY.EDITED,
+      properties: {
+        deliveryId,
+        product_count: result.productCount,
+        added_count: result.addedCount,
+        removed_count: result.removedCount,
+      },
+    });
+    await posthog.shutdown();
+
+    return { success: true, deliveryId };
+  } catch (error) {
+    Sentry.withScope((scope) => {
+      scope.setTag("feature", "delivery_edit");
+      scope.setContext("deliveryEdit", {
+        deliveryId,
+        productCount: parsed.data.productIds?.length ?? 0,
+        hasExchangeRate: parsed.data.exchangeRate != null,
+      });
+      Sentry.captureException(error);
+    });
+    return { success: false, error: "server_error" };
+  }
+}

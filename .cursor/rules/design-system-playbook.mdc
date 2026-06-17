@@ -1,0 +1,61 @@
+---
+description: Design System Playbook — required reading before implementing or refactoring any UI in src/
+alwaysApply: true
+---
+
+# Design System Playbook — required reading
+
+Before implementing, refactoring, or auditing any UI in `src/`, you MUST read:
+
+**`docs/design/PLAYBOOK.md`**
+
+The playbook is the operational layer of the design system — the mandatory workflow, anti-patterns, and self-audit checklist for building UI in this repo. Each rule exists because something went wrong once. **Do not re-debate rules already in the playbook** — implement according to the playbook. The spec it points to (tokens, foundations, patterns, motion, states, voice) lives in the other `docs/design/` documents.
+
+## What the playbook covers
+
+1. **Component canonical sources** — when to use `<Button>` primary vs ghost vs destructive, when to use `<Modal>` vs `<Sheet>`, when `<Combobox>` vs `<MultiTagAutocomplete>`, etc.
+2. **Token conventions** — `--border` vs `--border-strong`, `--text-on-accent` light vs dark, status enum tokens, layout magic numbers.
+3. **Canonical patterns by scenario** — confirm modal destructive, autocomplete with tags, filter chips display, section card disabled-gated, field-as-attribute, toast neutral-undo.
+4. **Anti-patterns explicit** — no `<select>` HTML native, no Portal+div modals, no hardcoded `text-white`, no hardcoded literals, no inventing variants without ADR.
+5. **Mandatory workflow before implementing UI** — read playbook, demo HTML, component spec, ADRs, tokens.
+6. **Self-audit checklist before closing** — TodoWrite, visual verification vs demo, comparative audit, validation, snippet-in-report.
+7. **Cross-cutting handling during a session** — flag instead of silent fix.
+8. **What to update when a module closes** — playbook, the relevant `docs/design/` topic doc, ADR.
+
+## Related sources of truth
+
+Permanent design system (`docs/design/`):
+
+- `docs/design/README.md` — design-system index + file-selection guide.
+- `docs/design/visual-foundations.md` — color, typography, spacing, radius, surfaces, gradients.
+- `docs/design/tokens-css.md` — literal CSS-variable contract (mirror of `src/app/globals.css`).
+- `docs/design/interface-patterns.md` — layout, shell, modals, forms, chips, responsive, a11y.
+- `docs/design/motion.md` — motion system.
+- `docs/design/states.md` — cross-cutting empty/loading/error states.
+- `docs/design/ux-copy.md` — voice + tone library.
+- `docs/design/components.md` — component map (what exists, when to use, canonical `src/` path).
+- `docs/design/decisions/` — accepted ADRs (0001–0014).
+
+This system was produced by a redesign subproject, kept only as historical context (not a source of rules or specs to follow). The authoritative sources are `docs/design/` and the code in `src/`. For the visual reference of a screen, use its per-FRD prototype (`docs/product/<prd>/<frd>/prototype/<slug>.html`).
+
+## Reinforcing rules also `alwaysApply: true`
+
+- `coding-standards.mdc` — base coding behavior.
+- `english-code-only.mdc` — code in English, copy in i18n.
+- `validation-checklist.mdc` — final validation commands.
+- `theme-light-dark.mdc` — both themes are first-class.
+- `modal-canonical-pattern.mdc` — Modal canonical component (this rule's sibling for Modal specifically).
+
+## When this rule applies
+
+- Any creation, refactor, or audit of UI components in `src/components/`.
+- Any creation, refactor, or audit of pages in `src/app/`.
+- Any audit of a screen against its per-FRD prototype (`docs/product/<prd>/<frd>/prototype/<slug>.html`).
+
+## Skip if
+
+- Pure data-layer / Prisma / server-action changes with zero UI touch.
+- Pure documentation work in `docs/product/` (FRDs, etc.) without code consequences.
+- Test infrastructure that does not render UI.
+
+For everything else: read the playbook first.

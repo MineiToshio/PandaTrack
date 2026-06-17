@@ -8,7 +8,7 @@
     "eyebrow": "Explora y compara",
     "title": "Directorio de tiendas"
   },
-  "backToListing": "Volver al listado",
+  "backToListing": "Tiendas",
   "backToOrder": "Volver al pedido {orderId}",
   "browseStores": "Ver tiendas",
   "searchPlaceholder": "Buscar por nombre de tienda",
@@ -39,6 +39,39 @@
   },
   "ratingCount": "{count, plural, one {# reseña} other {# reseñas}}",
   "pendingBadge": "Pendiente de revisión",
+  "s6": {
+    "hero": {
+      "eyebrow": "DIRECTORIO",
+      "title": "Dónde comprar",
+      "subtitle": "Tiendas curadas por la comunidad. Filtra por país o categoría."
+    },
+    "toolbar": {
+      "searchPlaceholder": "Buscar por nombre…",
+      "filter": "Filtrar",
+      "new": "Nueva tienda",
+      "sortLabel": "Ordenar por"
+    },
+    "sort": {
+      "topRated": "Mejor calificadas",
+      "alphabetical": "Alfabético A–Z",
+      "newest": "Más recientes"
+    },
+    "count": "{count, plural, one {# tienda} other {# tiendas}}",
+    "importCountriesLabel": "Importa de ·",
+    "noImportCountries": "Sin países de importación declarados",
+    "loadMore": "Cargar más",
+    "empty": {
+      "title": "Sin resultados",
+      "subtitle": "Prueba con otros filtros o amplía la búsqueda.",
+      "clearFilters": "Limpiar filtros"
+    },
+    "card": {
+      "ariaLabel": "Ver detalle de {name}",
+      "ratingFallback": "Sin reseñas",
+      "ordersForViewer": "{count, plural, one {# pedido tuyo} other {# pedidos tuyos}}",
+      "ordersForViewerLabel": "tus pedidos"
+    }
+  },
   "cards": {
     "country": "País",
     "productTypes": "Tipos de producto",
@@ -49,8 +82,8 @@
     "receivesOrdersNo": "No acepta pedidos",
     "hasStockYes": "Vende con stock",
     "hasStockNo": "No vende con stock",
-    "receivesOrdersTooltip": "Indica si la tienda acepta pedidos o encargos: puede gestionar el pedido aunque el artículo no esté en inventario fijo.",
-    "hasStockTooltip": "Indica si la tienda vende desde inventario propio: artículos disponibles o rotación habitual, sin depender solo de encargos puntuales.",
+    "receivesOrdersTooltip": "Indica si la tienda acepta pedidos o encargos: puede gestionar el pedido aunque el producto no esté en inventario fijo.",
+    "hasStockTooltip": "Indica si la tienda vende desde inventario propio: productos disponibles o rotación habitual, sin depender solo de encargos puntuales.",
     "storeTypeBusiness": "Negocio",
     "storeTypePerson": "Vendedor"
   }

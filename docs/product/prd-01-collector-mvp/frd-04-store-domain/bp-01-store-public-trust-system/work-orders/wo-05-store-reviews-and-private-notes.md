@@ -37,9 +37,9 @@ Add the first trust-and-memory layer around stores through public reviews and pr
 
 ## Requirements
 
-- `FR-01-24`: Users must be able to create or edit one public review per store.
-- `FR-01-25`: Store-level aggregate trust fields must be persisted instead of recalculated on every read.
-- `FR-01-26`: Users must be able to save private notes on stores.
+- `FR-04-24`: Users must be able to create or edit one public review per store.
+- `FR-04-25`: Store-level aggregate trust fields must be persisted instead of recalculated on every read.
+- `FR-04-26`: Users must be able to save private notes on stores.
 
 Relevant acceptance signals:
 
@@ -47,8 +47,8 @@ Relevant acceptance signals:
 - aggregate values update on create and edit
 - private notes remain user-scoped and never leak into public payloads
 - review composer stays hidden until the user explicitly opens it
-- the signed-in user's existing review renders first in the public list and is always included in the first batch of five (it counts as one of the five; the other four slots are the most recently updated reviews from other users)
-- the public review list renders 5 reviews initially and reveals 5 more per user action until the list is exhausted
+- the signed-in user's existing review renders first in the public list, pinned above the community reviews and outside the community preview count; the rest are the most recently updated reviews from other users
+- the community-reviews surface is authenticated-only: for a signed-in user the detail loads the full review set server-side, while anonymous visitors load no reviews and see no community-reviews surface. For signed-in users the public review list shows a 4-review community preview and reveals all remaining reviews in a single "Ver todas" action (no incremental batching)
 - `overallRating` supports `0.5` increments
 - public comments preserve intentional line breaks in read mode
 
@@ -67,7 +67,7 @@ Relevant acceptance signals:
 - Aggregate rating/count update after review changes.
 - User opens the review composer from the reviews section instead of seeing it expanded by default.
 - User sees their own review first (even when it is not among the most recently updated reviews) and can reopen the composer from its edit button.
-- User sees only the first 5 public reviews initially and can reveal 5 more per click until all reviews are visible.
+- A signed-in user sees a 4-review community preview initially and can reveal all remaining reviews in a single "Ver todas" click (for the signed-in user the full set is already loaded server-side; there is no incremental batching). An anonymous visitor loads no reviews and sees no community-reviews surface.
 - User can create and read a private note in authenticated context.
 - User can clear an existing private note by saving an empty value, using the same inline-note behavior as order and delivery detail.
 - Private note content never appears on public store detail.

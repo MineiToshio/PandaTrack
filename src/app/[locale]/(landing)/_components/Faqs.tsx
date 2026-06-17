@@ -1,5 +1,6 @@
+import { HelpCircle } from "lucide-react";
 import { useMessages, useTranslations } from "next-intl";
-import Section from "@/app/[locale]/(landing)/_components/Section";
+import Section from "./Section";
 import FaqAccordion, { type FaqItem } from "@/components/modules/FaqAccordion/FaqAccordion";
 
 function getFaqItemsFromMessages(messages: unknown): FaqItem[] {
@@ -21,25 +22,14 @@ export default function Faqs() {
 
   return (
     <Section
-      sectionId="faqs"
-      ariaLabelledby="faqs-heading"
-      title={t("sectionTitle")}
-      subtitle={t("sectionSubtitle")}
+      id="faqs"
       headingId="faqs-heading"
-      className="relative"
-      background={
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.35]"
-          style={{
-            background: "radial-gradient(ellipse 70% 50% at 50% 0%, var(--muted) 0%, transparent 55%)",
-          }}
-          aria-hidden
-        />
-      }
+      eyebrow={t("eyebrow")}
+      eyebrowIcon={<HelpCircle aria-hidden="true" />}
+      title={t("title")}
+      tinted
     >
-      <div className="mx-auto max-w-3xl">
-        <FaqAccordion items={items} />
-      </div>
+      <FaqAccordion items={items} />
     </Section>
   );
 }

@@ -1,0 +1,168 @@
+# Component Map
+
+This file is the catalog of PandaTrack's reusable interface components: what exists, when to use which, where the canonical code lives, and which tokens and decisions govern each. It is the map an agent or contributor consults **before building any UI**, so that new screens reuse the existing system instead of reinventing it.
+
+## How this catalog enforces the visual line
+
+The product's visual consistency is guaranteed by three layers that reinforce each other — none is optional:
+
+1. **This catalog** — the authoritative list of canonical components and their source paths. Reuse before you create.
+2. **`docs/design/PLAYBOOK.md`** — the operational workflow, anti-patterns, and self-audit checklist for building UI in this repo.
+3. **The `.cursor/rules/*.mdc` rules** (several `alwaysApply: true`) — `design-system-playbook.mdc`, `modal-canonical-pattern.mdc`, `ui-libs-policy.mdc`, `optimistic-client-updates.mdc`, `theme-light-dark.mdc`. These are mandatory constraints, not guidance.
+
+**The built component is the source of truth for its own behavior.** For a component that already exists in `src/`, read its code + JSDoc + types for the exact API. This catalog tells you _which_ component to use and _why_; the code tells you _how_. When a component needs a capability it doesn't have, **extend the canonical component in place — never fork it and never roll a parallel one.**
+
+## Reuse rule (mandatory)
+
+Before creating any component:
+
+1. Search this catalog and `src/components/core/` + `src/components/modules/` for an existing one.
+2. If one exists, use it. If it's close but missing something, extend it in place.
+3. Only if nothing fits, create a new one — in the smallest valid scope (route-level `_components/` first, then `src/components/`), following the existing patterns, theme-safe, with both light and dark covered.
+4. Adding a new UI primitive **library** requires an ADR (see [ADR 0010](decisions/0010-ui-primitive-libraries-policy.md)). Hand-roll by default; `vaul` is the only approved primitive lib (used transitively by `<Modal>`'s sheet).
+
+Companion docs: foundations & tokens in [visual-foundations.md](visual-foundations.md) and [tokens-css.md](tokens-css.md); composition patterns in [interface-patterns.md](interface-patterns.md); motion in [motion.md](motion.md); empty/loading/error in [states.md](states.md); copy/voice in [ux-copy.md](ux-copy.md).
+
+---
+
+## Canonical patterns to never reinvent
+
+These have one — and only one — canonical implementation. Copying a similar-looking pattern from anywhere else is a bug.
+
+| Pattern                                        | Canonical component                                       | Rule                                                                                                                                                                               |
+| ---------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Any modal / dialog / confirm / form-in-overlay | `<Modal>` — `src/components/modules/Modal/Modal.tsx`      | One modal component; adaptive desktop dialog + mobile sheet. Never a `Portal`+`div`+backdrop. See [modal-canonical-pattern.mdc] + [ADR 0008](decisions/0008-modal-enhancement.md). |
+| Mobile bottom sheet                            | `<Sheet>` — `src/components/modules/Sheet/`               | Same Semantic Depth language; the only approved consumer of `vaul`.                                                                                                                |
+| List/collection filtering                      | `<FilterDrawer>` — `src/components/modules/FilterDrawer/` | Unified filter surface; paired with `<FilterTriggerButton>` + applied filter chips. Not a `<Modal>`.                                                                               |
+| Boolean on/off                                 | `<Switch>` — `src/components/core/Switch.tsx`             | Never `<input type="checkbox">` for a boolean setting.                                                                                                                             |
+| Native dropdown                                | `<Select>` / `<Combobox>` / `<SearchableSelect>`          | Never a native `<select>` element.                                                                                                                                                 |
+| Empty / loading / error                        | `<EmptyState>` / `<Skeleton>` / `<SectionError>`          | See [states.md](states.md). No ad-hoc per-module skeletons.                                                                                                                        |
+
+---
+
+## Tier 1 — Primitives (`src/components/core/`)
+
+Single-purpose building blocks. Theme-safe, token-driven.
+
+### Typography & identity
+
+| Component    | Path                  | When to use                                                                                                                                          |
+| ------------ | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Typography` | `core/Typography.tsx` | Body text scale. The body type authority.                                                                                                            |
+| `Heading`    | `core/Heading.tsx`    | Heading scale.                                                                                                                                       |
+| `MonoCode`   | `core/MonoCode.tsx`   | Monospace code identifiers (`PT-XXXXXX`); renders in `--text-secondary` per [ADR 0007](decisions/0007-text-muted-outdoor-code-mono-reassignment.md). |
+| `Logo`       | `core/Logo.tsx`       | The wordmark. The **only** place Zilla Slab appears (see [visual-foundations.md](visual-foundations.md)).                                            |
+| `Eyebrow`    | `core/Eyebrow.tsx`    | Section eyebrow label; part of the Chip-Eyebrow + Top-Accent pattern (see [interface-patterns.md](interface-patterns.md)).                           |
+
+### Actions
+
+| Component                    | Path                                          | When to use                                                                                  |
+| ---------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `Button`                     | `core/Button/`                                | All buttons. Variant hierarchy primary / accent / ghost / destructive; one primary per area. |
+| `IconButton`                 | `core/IconButton.tsx`                         | Icon-only action; requires an accessible label.                                              |
+| `FAB`                        | `core/FAB.tsx`                                | Floating primary action (mobile create flows).                                               |
+| `AnchorLink` / `BackNavLink` | `core/AnchorLink.tsx`, `core/BackNavLink.tsx` | In-text link; canonical back/up navigation.                                                  |
+| `CodeCopyButton`             | `core/CodeCopyButton.tsx`                     | Copy-to-clipboard for an identifier.                                                         |
+| `ViewTransitionLink`         | `core/ViewTransitionLink.tsx`                 | List→detail navigation with View Transitions (see [motion.md](motion.md)).                   |
+
+### Form controls
+
+| Component                                                | Path                                                                                    | When to use                                                                                                                                  |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Input` / `Textarea` / `PasswordInput` / `SearchInput`   | `core/Input.tsx`, `core/Textarea.tsx`, `core/PasswordInput.tsx`, `core/SearchInput.tsx` | Text entry.                                                                                                                                  |
+| `Select` / `Combobox` / `SearchableSelect`               | `core/Select.tsx`, `core/Combobox.tsx`, `core/SearchableSelect.tsx`                     | Single choice; combobox for type-ahead. Never native `<select>`.                                                                             |
+| `MultiTagAutocomplete`                                   | `core/MultiTagAutocomplete.tsx`                                                         | Multi-value tag entry.                                                                                                                       |
+| `Checkbox` / `Radio` / `Switch`                          | `core/Checkbox.tsx`, `core/Radio.tsx`, `core/Switch.tsx`                                | Multi-select / single-select / boolean. Checkbox check uses a hand-rolled 1.5px stroke (see [visual-foundations.md](visual-foundations.md)). |
+| `ToggleChoiceGroup`                                      | `core/ToggleChoiceGroup.tsx`                                                            | Segmented single choice.                                                                                                                     |
+| `DateInput` / `DatePickerInput` / `DateRangePickerInput` | `core/DateInput.tsx`, `core/DatePickerInput.tsx`, `core/DateRangePickerInput.tsx`       | Date / date-range entry.                                                                                                                     |
+| `RatingStars` / `StarRating`                             | `core/RatingStars.tsx`, `core/StarRating.tsx`                                           | Rating input / display.                                                                                                                      |
+| `Label` / `FieldErrorMsg`                                | `core/Label.tsx`, `core/FieldErrorMsg.tsx`                                              | Field label; inline field error.                                                                                                             |
+| `Stepper`                                                | `core/Stepper.tsx`                                                                      | Numeric stepper; wizard step indicator.                                                                                                      |
+
+### Surfaces, status & feedback
+
+| Component                             | Path                                                           | When to use                                                                                                                                                                                                               |
+| ------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Card` / `SectionCard`                | `core/Card.tsx`, `core/SectionCard.tsx`                        | Elevated panel; titled section card.                                                                                                                                                                                      |
+| `Chip` / `Pill` / `AppliedFilterChip` | `core/Chip.tsx`, `core/Pill.tsx`, `core/AppliedFilterChip.tsx` | Generic chip; pill; applied-filter chip.                                                                                                                                                                                  |
+| `StatusChip`                          | `core/StatusChip.tsx`                                          | Domain status (order/delivery/item) — enums + neutral + derived per [ADR 0002](decisions/0002-status-chip-mapping.md). Icon+label, never color alone ([ADR 0006](decisions/0006-color-blindness-icon-label-contract.md)). |
+| `Avatar` / `StoreAvatar`              | `core/Avatar.tsx`, `core/StoreAvatar.tsx`                      | User avatar; store avatar (neutral mixes use `oklab`).                                                                                                                                                                    |
+| `IconBox`                             | `core/IconBox.tsx`                                             | Tonal soft-tint icon tile (micro-stats, [ADR 0005](decisions/0005-dashboard-microstat-icon-tile.md)).                                                                                                                     |
+| `Skeleton`                            | `core/Skeleton.tsx`                                            | Loading placeholder — see [states.md](states.md).                                                                                                                                                                         |
+| `Toast`                               | `core/Toast/`                                                  | Transient feedback + neutral-undo — see [interface-patterns.md](interface-patterns.md).                                                                                                                                   |
+| `Tooltip`                             | `core/Tooltip.tsx`                                             | Hover/focus hint.                                                                                                                                                                                                         |
+| `Pagination`                          | `core/Pagination.tsx`                                          | Page controls.                                                                                                                                                                                                            |
+| `Portal`                              | `core/Portal.tsx`                                              | Low-level portal primitive (used by overlays; not for hand-rolling modals).                                                                                                                                               |
+| `ThemeToggle` / `LangToggle`          | `core/ThemeToggle.tsx`, `core/LangToggle.tsx`                  | Light/dark toggle; locale toggle.                                                                                                                                                                                         |
+
+---
+
+## Tier 2 — Composite modules (`src/components/modules/`)
+
+Multi-part organisms and orchestration.
+
+### Shell & page chrome
+
+| Component                                     | Path                                                                 | When to use                                                                                                                           |
+| --------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `Sidebar`                                     | `modules/Sidebar.tsx`                                                | Collector app PUSH sidebar (collapsed rail expands on hover; burger drawer on mobile) — [ADR 0003](decisions/0003-demo-decisions.md). |
+| `Header`                                      | `modules/Header.tsx`                                                 | App header: breadcrumbs + lang + theme.                                                                                               |
+| `AppPageHero`                                 | `modules/AppPageHero.tsx`                                            | Private-app page intro header.                                                                                                        |
+| `SectionTitleWithAccent` / `SectionAccentBar` | `modules/SectionTitleWithAccent.tsx`, `modules/SectionAccentBar.tsx` | In-page section title row (accent bar + title).                                                                                       |
+| `Tabs`                                        | `modules/Tabs/`                                                      | Tabbed navigation within a page.                                                                                                      |
+
+### Overlays
+
+| Component      | Path                      | When to use                                                                                                                                                                              |
+| -------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Modal`        | `modules/Modal/Modal.tsx` | **The** canonical modal (Semantic Depth, adaptive). Internals: `ModalDialog` (desktop), `ModalSheet` (mobile), `ModalContent` (shared). [ADR 0008](decisions/0008-modal-enhancement.md). |
+| `Sheet`        | `modules/Sheet/`          | Mobile bottom sheet (same language; only approved `vaul` consumer).                                                                                                                      |
+| `FilterDrawer` | `modules/FilterDrawer/`   | List filtering surface.                                                                                                                                                                  |
+| `MobilePicker` | `modules/MobilePicker/`   | Mobile-native-style picker.                                                                                                                                                              |
+
+### Content & detail
+
+| Component                                                          | Path                                                                                                 | When to use                                                                                                                                        |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AsideSummary` / `DetailSidebar`                                   | `modules/AsideSummary/`, `modules/DetailSidebar.tsx`                                                 | Detail-screen sticky rail (Resumen / Acciones / Nota privada).                                                                                     |
+| `SectionSurfaceCard` / `CollapsibleSection` / `CollapsibleSubcard` | `modules/SectionSurfaceCard.tsx`, `modules/CollapsibleSection.tsx`, `modules/CollapsibleSubcard.tsx` | Surface section; collapsible region; collapsible subcard (state-aware defaults per [ADR 0011](decisions/0011-mobile-detail-secondary-actions.md)). |
+| `SummaryStatRow`                                                   | `modules/SummaryStatRow.tsx`                                                                         | Dashboard micro-stat row ([ADR 0005](decisions/0005-dashboard-microstat-icon-tile.md)).                                                            |
+| `PrivateNoteCard`                                                  | `modules/PrivateNoteCard.tsx`                                                                        | Private note block on detail screens.                                                                                                              |
+| `ChannelRow`                                                       | `modules/ChannelRow.tsx`                                                                             | Store contact/channel row.                                                                                                                         |
+| `ListPagination`                                                   | `modules/ListPagination.tsx`                                                                         | List pagination ("load more" on mobile).                                                                                                           |
+| `StoreCombobox`                                                    | `modules/StoreCombobox/`                                                                             | Store selection combobox.                                                                                                                          |
+
+### Forms
+
+| Component             | Path                        | When to use                                           |
+| --------------------- | --------------------------- | ----------------------------------------------------- |
+| `WizardAccordion`     | `modules/WizardAccordion/`  | Multi-step form (3+ steps); step CTAs never disabled. |
+| `FilterTriggerButton` | `core/FilterTriggerButton/` | Opens the `FilterDrawer`; shows active-filter count.  |
+| `FaqAccordion`        | `modules/FaqAccordion/`     | FAQ / disclosure list (landing).                      |
+| `ImageCropper`        | `modules/ImageCropper/`     | Avatar / image crop.                                  |
+
+### States, feedback & marketing
+
+| Component         | Path                          | When to use                                                                                                              |
+| ----------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `EmptyState`      | `modules/EmptyState.tsx`      | Empty / no-results (and error bases) — [states.md](states.md), [ADR 0013](decisions/0013-cross-cutting-state-system.md). |
+| `SectionError`    | `modules/SectionError.tsx`    | In-page section failure with retry — [states.md](states.md).                                                             |
+| `AlertBanner`     | `modules/AlertBanner.tsx`     | Inline info / warning / error banner.                                                                                    |
+| `MascotBubble`    | `modules/MascotBubble.tsx`    | The panda mascot. **Never** in errors or confirmations (see [states.md](states.md), [ux-copy.md](ux-copy.md)).           |
+| `OgImageTemplate` | `modules/OgImageTemplate.tsx` | OG image template (see AGENTS.md §OG).                                                                                   |
+| `auth/`           | `modules/auth/`               | Auth-flow building blocks.                                                                                               |
+
+---
+
+## Per-component deep specs
+
+Detailed per-component specs (anatomy, all variants, edge cases, full state recipes) were authored during the redesign subproject (historical context only). They are not a source of truth: **the code is authoritative**, and the durable system contract is this catalog plus the topic docs in `docs/design/`.
+
+## Rules & anti-patterns
+
+- **Reuse before create.** A new component that duplicates an existing one is a defect.
+- **Never fork a canonical component.** Extend it in place (`<Modal>`, `<Sheet>`, `<FilterDrawer>`, `<Button>`, …).
+- **No native `<select>`**, no `Portal`+`div` ad-hoc modals, no `<input type="checkbox">` for booleans.
+- **No new UI primitive library** without an ADR ([ADR 0010](decisions/0010-ui-primitive-libraries-policy.md)).
+- **Theme-safe always.** Both light and dark, semantic tokens only — no `text-white` / hardcoded hex.
+- **Status by icon + label**, never color alone ([ADR 0006](decisions/0006-color-blindness-icon-label-contract.md)).

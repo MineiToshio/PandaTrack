@@ -47,9 +47,9 @@ export default function ContentHeader({
   burgerButtonRef,
 }: ContentHeaderProps) {
   const t = useTranslations("appLayout");
-  const { title: titleOverride, breadcrumbAfterStores } = useHeaderTitle();
+  const { title: titleOverride, breadcrumbMiddle } = useHeaderTitle();
   const pageHeader = getPageHeader(pathname, locale);
-  const displayBreadcrumbs = toDisplayBreadcrumbs(pageHeader.breadcrumbs, breadcrumbAfterStores);
+  const displayBreadcrumbs = toDisplayBreadcrumbs(pageHeader.breadcrumbs, breadcrumbMiddle);
   const pageTitle = titleOverride ?? t(pageHeader.titleKey);
   const appShellBreadcrumbLabel = t("accessibility.breadcrumbNavigation");
   const appShellLanguageLabel = t("accessibility.languageNavigation");

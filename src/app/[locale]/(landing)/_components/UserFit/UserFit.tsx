@@ -1,54 +1,39 @@
+import { Layers, Target, Truck, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { PackageSearch, Truck, Wallet } from "lucide-react";
-import Section from "@/app/[locale]/(landing)/_components/Section";
-import ProblemCard from "@/app/[locale]/(landing)/_components/UserFit/ProblemCard";
+import Section from "../Section";
+import ProblemCard from "./ProblemCard";
 
 export default function UserFit() {
   const t = useTranslations("landing.userFit");
 
   return (
     <Section
-      sectionId="user-fit"
-      ariaLabelledby="user-fit-heading"
+      id="user-fit"
+      headingId="user-fit-heading"
+      eyebrow={t("eyebrow")}
+      eyebrowIcon={<Target aria-hidden="true" />}
       title={t("title")}
       subtitle={t("subtitle")}
-      headingId="user-fit-heading"
-      className="relative"
-      background={
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.35]"
-          style={{
-            background: "radial-gradient(ellipse 70% 50% at 50% 0%, var(--muted) 0%, transparent 55%)",
-          }}
-          aria-hidden
-        />
-      }
     >
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="mk-fit-grid">
         <ProblemCard
           index="01"
-          icon={<PackageSearch className="h-6 w-6" strokeWidth={2} />}
-          accentClassName="bg-primary"
-          hoverBorderClassName="hover:border-primary/40"
-          hoverTitleClassName="group-hover:text-primary"
+          tile="var(--accent)"
+          icon={<Layers aria-hidden="true" />}
           title={t("cards.card1.title")}
           description={t("cards.card1.description")}
         />
         <ProblemCard
           index="02"
-          icon={<Truck className="h-6 w-6" strokeWidth={2} />}
-          accentClassName="bg-info"
-          hoverBorderClassName="hover:border-info/40"
-          hoverTitleClassName="group-hover:text-info"
+          tile="var(--accent-warm)"
+          icon={<Wallet aria-hidden="true" />}
           title={t("cards.card2.title")}
           description={t("cards.card2.description")}
         />
         <ProblemCard
           index="03"
-          icon={<Wallet className="h-6 w-6" strokeWidth={2} />}
-          accentClassName="bg-accent"
-          hoverBorderClassName="hover:border-accent/40"
-          hoverTitleClassName="group-hover:text-accent"
+          tile="var(--accent-cool)"
+          icon={<Truck aria-hidden="true" />}
           title={t("cards.card3.title")}
           description={t("cards.card3.description")}
         />

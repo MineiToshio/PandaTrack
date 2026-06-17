@@ -11,6 +11,8 @@ const PRIMARY_SEGMENTS: NavItemId[] = ["dashboard", "stores", "orders", "deliver
 const NESTED_SEGMENT_LABELS: Partial<Record<NavItemId, Record<string, string>>> = {
   orders: {
     "pre-orders": "nav.preOrders",
+    new: "orders.newOrder",
+    edit: "orders.editOrder",
   },
   stores: {
     new: "stores.newStore",
@@ -71,8 +73,13 @@ export function getBreadcrumbs(pathname: string, locale: string): BreadcrumbItem
 
   for (let i = 1; i < lastIndex; i++) {
     const segment = segments[i];
-    // .../stores/:slug/edit: skip the slug segment; the store name crumb comes from header context.
-    if (primary === "stores" && i === 1 && segment !== "new" && segments[lastIndex] === "edit") {
+    // .../{stores|orders}/:id/edit: skip the id segment; the entity name crumb comes from header context.
+    if (
+      (primary === "stores" || primary === "orders") &&
+      i === 1 &&
+      segment !== "new" &&
+      segments[lastIndex] === "edit"
+    ) {
       continue;
     }
     const nestedLabels = NESTED_SEGMENT_LABELS[primary];

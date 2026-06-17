@@ -7,7 +7,6 @@ import Footer from "./_components/Footer";
 import Hero from "./_components/Hero";
 import LandingJsonLd from "./_components/LandingJsonLd";
 import UserFit from "./_components/UserFit/UserFit";
-import Waitlist from "./_components/Waitlist/Waitlist";
 import { buildPageMetadata } from "@/lib/seo";
 import { APP_NAME } from "@/lib/constants";
 
@@ -25,6 +24,7 @@ export async function generateMetadata({ params }: HomeProps): Promise<Metadata>
     pathSegment: "",
     titleKey: "meta.title",
     descriptionKey: "meta.description",
+    absoluteTitle: true,
   });
 }
 
@@ -33,15 +33,16 @@ export default async function Home({ params }: HomeProps) {
   const t = await getTranslations({ locale, namespace: "landing" });
 
   return (
-    <main className="bg-background text-foreground min-h-screen">
+    <>
       <LandingJsonLd locale={locale} name={APP_NAME} description={t("meta.description")} />
-      <Hero />
-      <UserFit />
-      <Features />
-      <Banner />
-      <Faqs />
-      <Waitlist />
+      <main>
+        <Hero />
+        <UserFit />
+        <Features />
+        <Banner />
+        <Faqs />
+      </main>
       <Footer locale={locale} />
-    </main>
+    </>
   );
 }

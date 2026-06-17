@@ -1,6 +1,5 @@
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
-import { APP_SHELL_FORM_RAIL_CLASSNAME } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { listCountryCodes } from "@/queries/country";
 import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
@@ -34,9 +33,7 @@ export default async function StoresNewPage({ params, searchParams }: StoresNewP
 
   return (
     <div className="text-foreground">
-      <div className={APP_SHELL_FORM_RAIL_CLASSNAME}>
-        <CreateStoreForm countries={countries} productTypes={productTypes} returnTo={returnTo} />
-      </div>
+      <CreateStoreForm countries={countries} productTypes={productTypes} returnTo={returnTo} />
     </div>
   );
 }

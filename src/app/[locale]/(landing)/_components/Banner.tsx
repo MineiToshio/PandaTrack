@@ -1,56 +1,35 @@
-import AnchorLink from "@/components/core/AnchorLink";
-import { useTranslations } from "next-intl";
-import Heading from "@/components/core/Heading";
-import Typography from "@/components/core/Typography";
-import { buttonVariants } from "@/components/core/Button/buttonVariants";
-import { cn, TINTED_SURFACE_GRADIENT_TOP_WASH } from "@/lib/styles";
-import { POSTHOG_EVENTS } from "@/lib/constants";
+import { ArrowRight, Sparkles } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import Button from "@/components/core/Button/Button";
+import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 
-const BANNER_CTA_ANIMATION = "banner-cta-subtle 3s ease-in-out infinite";
-
+/** Full-width gradient CTA band (`.mk-banner-section`) → sign-up. */
 export default function Banner() {
+  const locale = useLocale();
   const t = useTranslations("landing.banner");
+  const signUpHref = `/${locale}${ROUTES.signUp}`;
 
   return (
-    <section
-      id="waitlist-banner"
-      aria-labelledby="banner-heading"
-      className="bg-surface text-foreground relative w-full px-4 py-16 md:px-6 md:py-24 lg:px-8"
-    >
-      <div
-        className={cn(
-          TINTED_SURFACE_GRADIENT_TOP_WASH,
-          "pointer-events-none absolute inset-0 bg-linear-to-b opacity-90",
-        )}
-        aria-hidden
-      />
-      <div className="relative mx-auto max-w-6xl">
-        <div className="mx-auto max-w-3xl text-center">
-          <Heading
-            as="h2"
-            id="banner-heading"
-            size="md"
-            className="text-text-title text-3xl font-bold tracking-tight md:text-4xl lg:text-5xl"
+    <section className="mk-section mk-banner-section" aria-labelledby="banner-heading">
+      <div className="mk-container">
+        <div className="mk-banner-inner">
+          <span className="mk-eyebrow">
+            <Sparkles aria-hidden="true" /> {t("eyebrow")}
+          </span>
+          <h2 id="banner-heading">{t("title")}</h2>
+          <p>{t("subtitle")}</p>
+          <Button
+            as="a"
+            href={signUpHref}
+            variant="primary"
+            size="lg"
+            className="mt-8"
+            leadingIcon={<ArrowRight className="size-[18px]" aria-hidden="true" />}
+            posthogEvent={POSTHOG_EVENTS.LANDING.BANNER_CTA_CLICKED}
+            posthogProps={{ location: "banner", destination: "sign-up" }}
           >
-            {t("title")}
-          </Heading>
-          <Typography size="md" className="text-text-body mt-4 leading-relaxed md:text-lg">
-            {t("subtitle")}
-          </Typography>
-          <div className="mt-8 flex justify-center">
-            <AnchorLink
-              href="#waitlist"
-              className={cn(
-                buttonVariants({ variant: "primary", size: "lg" }),
-                "transition-transform duration-300 ease-out hover:scale-[1.02]",
-              )}
-              style={{ animation: BANNER_CTA_ANIMATION }}
-              posthogEvent={POSTHOG_EVENTS.LANDING.BANNER_CTA_CLICKED}
-              posthogProps={{ location: "banner" }}
-            >
-              {t("cta")}
-            </AnchorLink>
-          </div>
+            {t("cta")}
+          </Button>
         </div>
       </div>
     </section>

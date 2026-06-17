@@ -10,8 +10,8 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-04-26
-implementation_status: IN_PROGRESS
+last_updated: 2026-06-16
+implementation_status: IMPLEMENTED
 ---
 
 # BP-02 Order Workspace and List Experience
@@ -60,10 +60,10 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
   - output: availability and disabled-state reasons for `Create delivery`, `Edit`, `View store`, `Cancel`, `Delete`, and `Reactivate` so the UI can render each affordance enabled, disabled with tooltip, or hidden according to the status-driven action bar above
   - shared eligibility rule: `Cancel` and `Delete` share the same block condition — at least one item linked to a non-cancelled delivery — and must surface the same unlink-first tooltip when disabled
 - list filter contract:
-  - input: date range, store, product type, status, free-text product query, `fxStatus` reconciliation flag
+  - input: date range, store, product type, status, free-text product query, `fxPending` reconciliation flag
   - output: URL-canonical filter state plus result chips
-  - `fxStatus=needs_reconciliation` maps to `needsExchangeRateUpdate: true` in the Prisma query; handled by `parseOrderListingParams` in `src/app/[locale]/(app)/orders/_utils/orderListingParams.ts`
-  - `FxReconciliationModal` at `src/components/modules/FxReconciliationModal.tsx` is the reconciliation entry point; triggered from the orders list banner and from the Settings currency-change confirmation
+  - `fxPending=true` maps to the persisted-flag FX-pending predicate (`needsExchangeRateUpdate = true` AND currency ≠ base currency AND status ≠ `CANCELLED`). Handled by `parseOrderListingParams` in `src/app/[locale]/(app)/orders/_utils/orderListingParams.ts` and `buildFxPendingWhere` in `src/lib/data/orders/orderQueries.ts`
+  - `FxReconciliationModal` at `src/app/[locale]/(app)/orders/_components/FxReconciliationModal.tsx` is the reconciliation entry point (triggered from the orders list banner via `FxAnnouncer`); applying a rate there clears `needsExchangeRateUpdate`. The Settings currency-change flags the affected orders via `flagOrdersForFxReconciliation` and, on Path A, redirects here to reconcile
 
 ## Operational Priorities
 

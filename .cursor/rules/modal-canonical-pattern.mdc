@@ -1,0 +1,87 @@
+---
+description: Canonical Modal component — single source for every modal/dialog/overlay in the app
+alwaysApply: true
+---
+
+# Canonical Modal component — `src/components/modules/Modal/Modal.tsx`
+
+**There is ONE modal component in this app: `<Modal>` from `@/components/modules/Modal/Modal`.** Any confirm dialog, destructive prompt, info overlay, form-in-modal, decision overlay, report flow, duplicate alert, or any other modal-like surface MUST consume this component.
+
+Hard rules:
+
+1. **Do NOT create a new modal component.** If `<Modal>` does not yet support what you need (a new tone, a new size, a new layout slot), extend `<Modal>` itself — add the prop or variant in place. Never fork it.
+2. **Do NOT roll a dialog from scratch** with a `<Portal>` + `<div>` + your own backdrop. That bypasses the canonical pattern, focus trap, ARIA semantics, and motion language.
+3. **Do NOT copy the visual from any legacy "flat" modal** (older duplicate-detected / category-request / store-report markup). The CSS for legacy modal selectors (`.report-modal`, `.report-modal-overlay`) has been updated to match the canonical pattern, but the canonical source of truth for any new implementation is this component, not legacy markup.
+4. **Sheet is the mobile counterpart** (`@/components/modules/Sheet`). It uses the same Semantic Depth language. For bottom-sheet patterns on mobile, use `<Sheet>`, not a custom dialog.
+
+Canonical visual = **Semantic Depth** (locked in ADR 0008):
+
+Canonical visual = **Semantic Depth**:
+
+- Header with circular icon-tile in tone color (destructive / warning / info / success / default → `--accent`).
+- Backdrop blur (`backdrop-filter: blur(8px)`) covering the full viewport (sidebar + header included).
+- Spring entry animation `scale 0.96 → 1` with `--ease-out-expressive`, duration `--motion-base`. Backdrop fade 200ms.
+- Border-radius `--radius-2xl` (20px) on the panel.
+- `--text-on-accent` for primary CTA text (light token in light mode, dark token in dark mode).
+- Focus trap, Esc closes, click-outside behavior per component spec.
+- `prefers-reduced-motion` fallback (no scale, opacity only).
+
+## How to use the canonical Modal
+
+```tsx
+import Modal from "@/components/modules/Modal/Modal";
+import { Trash2 } from "lucide-react";
+
+<Modal
+  isOpen={isOpen}
+  onClose={handleClose}
+  title="Eliminar tienda"
+  subtitle="Esta acción no se puede deshacer."
+  icon={<Trash2 />}
+  tone="destructive"
+  primaryAction={{ label: "Eliminar tienda", onClick: handleDelete, variant: "destructive" }}
+  secondaryAction={{ label: "Cancelar", onClick: handleClose }}
+>
+  Akiba Records y toda su información serán eliminados permanentemente.
+</Modal>
+```
+
+The component covers: `tone` (default/destructive/warning/info), `size` (md/lg), `primaryAction` / `secondaryAction` / `tertiaryAction`, `dismissible`, `role` (`dialog` | `alertdialog`), focus management, keyboard, ARIA, motion, `prefers-reduced-motion` fallback. Read the component JSDoc for the full API.
+
+## Submit dismissal — Optimistic Confirmation
+
+Modals and sheets that wrap a mutation MUST close synchronously on submit, not after awaiting the Server Action. See `optimistic-client-updates.mdc` § "Modal / sheet dismissal — Optimistic Confirmation" for the full pattern. Quick recipe:
+
+```tsx
+// Inside the modal wrapper:
+onSubmit={async (...args) => {
+  void parentOnSubmit(...args); // fire-and-forget — parent owns optimistic patch + rollback + toast
+  onClose();
+  return { ok: true };          // inner form skips spinner + inline error
+}}
+```
+
+Spinners that block the very value the mutation updates (the hero amount behind a payment sheet, the row being deleted behind a confirm) are an anti-pattern in this codebase. The only modal flows that may keep the awaited-then-close behavior are irreversible destructive flows with no undo, server-computed identifiers the UI must display verbatim, or other cases listed under "Permitted exceptions" in `optimistic-client-updates.mdc`.
+
+## When you find a screen needing a modal
+
+1. Open `src/components/modules/Modal/Modal.tsx` and read the JSDoc + the `ModalProps` type.
+2. Compose the screen using `<Modal>` with the right `tone` for the case.
+3. Reach for `<Sheet>` instead if the case is mobile-bottom-sheet (same family, same language).
+4. Only if a real new prop/behavior is missing → extend `<Modal>` itself in this file. Never fork.
+
+## Source-of-truth files
+
+- **Component (CODE):** `src/components/modules/Modal/Modal.tsx` — the only place that owns the canonical behavior.
+- **Component (SHEET):** `src/components/modules/Sheet` — mobile counterpart, same Semantic Depth language.
+- **Component map:** `docs/design/components.md` — canonical components and their source paths.
+- **ADR:** `docs/design/decisions/0008-modal-enhancement.md` — decision rationale + alternatives considered.
+- **Pattern context:** `docs/design/interface-patterns.md` — Modals & overlays section.
+
+The legacy modal selectors (`.report-modal`, `.report-modal-overlay`) have been visually mapped to the canonical pattern, so they are no longer a source of confusion. If you spot a new "flat" modal pattern anywhere in code, treat it as a bug — the answer is always to use `<Modal>` from `src/components/modules/Modal/Modal.tsx`.
+
+## When this rule applies
+
+- Any new modal/dialog/overlay being created in `src/`.
+- Any audit or fix to existing modals (DuplicateAlertInline, ReportReasonPicker, confirm modals, store report modals, etc.).
+- Any inline alert that visually behaves like a modal panel.

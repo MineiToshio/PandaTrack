@@ -14,7 +14,7 @@ import {
 import { generateStoreSlug } from "@/lib/store/slug";
 
 const DEFAULT_DUPLICATE_CANDIDATES_LIMIT = 5;
-export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = 10;
+export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = 12;
 const DEFAULT_PUBLIC_STORE_REVIEW_LIMIT = 10;
 
 export interface DuplicateCandidate {
@@ -32,7 +32,6 @@ export interface ContactChannelInput {
 }
 
 export interface AddressInput {
-  countryCode: string;
   city?: string | null;
   addressLine: string;
   reference?: string | null;
@@ -117,6 +116,7 @@ export interface CreateStoreInput {
   approvedByUserId?: string | null;
   hasStock?: boolean | null;
   receivesOrders?: boolean | null;
+  isPrivate?: boolean;
   contactChannels?: ContactChannelInput[];
   addresses?: AddressInput[];
   importCountries?: string[];
@@ -131,6 +131,8 @@ export interface StoreDetail {
   storeType: "BUSINESS" | "PERSON";
   countryCode: string;
   isActive: boolean;
+  isPrivate: boolean;
+  createdByUserId: string;
   createdAt: Date;
   receivesOrders: boolean | null;
   hasStock: boolean | null;
@@ -145,7 +147,6 @@ export interface StoreDetail {
   contactChannels?: Array<{ type: StoreContactChannelType; value: string; label?: string | null }>;
   /** Only for BUSINESS stores; public addresses only. */
   addresses?: Array<{
-    countryCode: string;
     city?: string | null;
     addressLine: string;
     reference?: string | null;
@@ -255,6 +256,7 @@ function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prism
   return {
     visibility: "PUBLIC",
     status: { in: ["PENDING", "APPROVED"] },
+    isPrivate: false,
     ...(trimmedName && {
       name: { contains: trimmedName, mode: "insensitive" },
     }),
@@ -374,6 +376,15 @@ export async function getPublicStoresListingPage(
 }
 
 /**
+ * Light count for the listing header — reuses the same filter where-clause as
+ * `getPublicStoresListingPage` (no item fetch, no duplicated filter logic) so the stores
+ * page can render its count as a separate suspended unit (S10 list-loading pattern, L080).
+ */
+export async function countPublicStores(db: PrismaClient, filters: PublicStoreListingFilters): Promise<number> {
+  return db.store.count({ where: buildPublicStoreListingWhere(filters) });
+}
+
+/**
  * Creates a store and its presences, product type assignments, contact channels, addresses, and import countries
  * in a single transaction. Slug is generated from name; caller must ensure countryCode and productTypeKeys exist
  * in catalogs.
@@ -400,6 +411,7 @@ export async function createStore(db: PrismaClient, input: CreateStoreInput): Pr
       approvedAt: input.status === "APPROVED" ? new Date() : null,
       hasStock: input.hasStock ?? null,
       receivesOrders: input.receivesOrders ?? null,
+      isPrivate: input.isPrivate === true && input.storeType === "PERSON" ? true : false,
       presences: {
         create: presenceTypes.map((presenceType) => ({ presenceType })),
       },
@@ -419,7 +431,6 @@ export async function createStore(db: PrismaClient, input: CreateStoreInput): Pr
       ...(addresses.length > 0 && {
         addresses: {
           create: addresses.map((a, i) => ({
-            countryCode: a.countryCode,
             city: a.city?.trim() || null,
             addressLine: a.addressLine.trim(),
             reference: a.reference?.trim() || null,
@@ -460,6 +471,8 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
       storeType: true,
       countryCode: true,
       isActive: true,
+      isPrivate: true,
+      createdByUserId: true,
       createdAt: true,
       receivesOrders: true,
       hasStock: true,
@@ -492,7 +505,6 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
       addresses: {
         where: { isPublic: true },
         select: {
-          countryCode: true,
           city: true,
           addressLine: true,
           reference: true,
@@ -518,6 +530,8 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
     storeType: store.storeType,
     countryCode: store.countryCode,
     isActive: store.isActive,
+    isPrivate: store.isPrivate,
+    createdByUserId: store.createdByUserId,
     createdAt: store.createdAt,
     receivesOrders: store.receivesOrders,
     hasStock: store.hasStock,
@@ -538,7 +552,6 @@ export async function getStoreBySlug(db: PrismaClient, slug: string): Promise<St
         label: ch.label,
       })),
       addresses: store.addresses.map((a) => ({
-        countryCode: a.countryCode,
         city: a.city,
         addressLine: a.addressLine,
         reference: a.reference,
@@ -919,4 +932,77 @@ export async function upsertStoreNote(db: PrismaClient, input: UpsertStoreNoteIn
       updatedAt: note.updatedAt,
     };
   });
+}
+
+export type ViewerStoreActivity = {
+  /** Total number of orders the viewer has placed at this store. */
+  ordersTotal: number;
+  /** Orders that are not in a terminal state (excludes COMPLETED and CANCELLED). */
+  ordersActive: number;
+  /** Total spend grouped by currency. Empty array when the viewer has no orders. */
+  totalSpentByCurrency: Array<{ currencyCode: string; totalMinorUnits: number }>;
+};
+
+/**
+ * Aggregates the viewer's order activity at a single store for the detail-page sidebar:
+ * total orders, active orders, and total spend grouped by currency.
+ *
+ * Only orders owned by `userId` at `storeId` are counted. Returns zeroed totals
+ * when the viewer has not placed any order at this store.
+ */
+export async function getViewerStoreActivity(
+  db: PrismaClient,
+  userId: string,
+  storeId: string,
+): Promise<ViewerStoreActivity> {
+  const orders = await db.order.findMany({
+    where: { userId, storeId },
+    select: { status: true, currencyCode: true, totalCost: true },
+  });
+
+  if (orders.length === 0) {
+    return { ordersTotal: 0, ordersActive: 0, totalSpentByCurrency: [] };
+  }
+
+  let ordersActive = 0;
+  const spendByCurrency = new Map<string, number>();
+  for (const order of orders) {
+    if (order.status !== "COMPLETED" && order.status !== "CANCELLED") {
+      ordersActive += 1;
+    }
+    const prev = spendByCurrency.get(order.currencyCode) ?? 0;
+    spendByCurrency.set(order.currencyCode, prev + order.totalCost);
+  }
+
+  // Sort currencies by spend descending so the dominant currency renders first.
+  const totalSpentByCurrency = Array.from(spendByCurrency.entries())
+    .map(([currencyCode, totalMinorUnits]) => ({ currencyCode, totalMinorUnits }))
+    .sort((a, b) => b.totalMinorUnits - a.totalMinorUnits);
+
+  return { ordersTotal: orders.length, ordersActive, totalSpentByCurrency };
+}
+
+/**
+ * Returns a map of store slug → total order count for the given viewer.
+ * Only stores present in `slugs` are included; stores with zero orders are omitted.
+ * Counts all orders regardless of status (OPEN, COMPLETED, CANCELLED…).
+ */
+export async function getViewerOrderCountsByStoreSlugs(
+  db: PrismaClient,
+  userId: string,
+  slugs: string[],
+): Promise<Record<string, number>> {
+  if (slugs.length === 0) return {};
+
+  const orders = await db.order.findMany({
+    where: { userId, store: { slug: { in: slugs } } },
+    select: { store: { select: { slug: true } } },
+  });
+
+  const result: Record<string, number> = {};
+  for (const o of orders) {
+    const slug = o.store.slug;
+    result[slug] = (result[slug] ?? 0) + 1;
+  }
+  return result;
 }

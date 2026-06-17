@@ -13,8 +13,8 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-04-30
-implementation_status: PLANNED
+last_updated: 2026-06-16
+implementation_status: IMPLEMENTED
 ---
 
 # BP-01 Delivery Management
@@ -75,6 +75,9 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
   - input: `markDelivered` with required received date, `reopen`, `cancel`, `delete`, `updatePrivateNote`, and `updateProductMembership` (from edit)
   - output: updated delivery state, updated product states, and re-derived `OrderStatus` for every affected order
   - mark-delivered guard: received date is required, must be past or current, and is persisted with the delivered state
+  - lifecycle state guards: `markDelivered` and `cancel` require `IN_TRANSIT`; `delete` rejects `DELIVERED`; `reopen` requires a non-`IN_TRANSIT` source and clears the received date as it returns the delivery to `IN_TRANSIT`
+  - reopen reassignment guard: reopening a `CANCELLED` delivery is rejected when any of its products now belongs to another active (non-cancelled) delivery, preserving the one-delivery-per-product rule (`BR-08-08`)
+  - error contract: every mutation returns a typed expected-error union rather than throwing — create/edit can return `STORE_NOT_FOUND`, `NO_PRODUCTS_SELECTED`, `PRODUCTS_FROM_DIFFERENT_STORE`, `PRODUCT_NOT_ELIGIBLE` (with offending product ids), `EXCHANGE_RATE_REQUIRED`, and `INVALID_STATUS` (edit only); lifecycle/note mutations can return `DELIVERY_NOT_FOUND`, `INVALID_STATUS`, and (reopen) `PRODUCTS_IN_OTHER_DELIVERY`. Concurrent product-state changes are reconciled into `PRODUCT_NOT_ELIGIBLE`. Only unexpected failures are captured in monitoring.
 - detail action chrome contract
   - `IN_TRANSIT`: primary `Mark delivered`, visible `Edit`, overflow `Cancel` and `Delete`
   - `DELIVERED`: primary `Reopen`; additional actions remain in the secondary / overflow affordances
@@ -87,16 +90,19 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
 - deliveries list contract
   - route: `/{locale}/deliveries`
   - visible primary action: `New delivery`, following the same collector-listing hero pattern used by orders and stores
-  - output: paginated delivery cards sorted from oldest date to newest by default
+  - output: paginated delivery cards sorted from oldest date to newest by default (`DELIVERY_LIST_PAGE_SIZE` = 30 per page)
   - each card shows store, shipping date, expected arrival range, and status; delivered cards also show received date
   - card expansion renders a flat product list only; it does not group by source order and does not show source-order secondary metadata in this slice
+  - sort: a `sort` param selects one of `oldest` (default), `recent`, `eta-asc`, `store-asc`; it is omitted from the URL when it equals the default (`FR-08-35`)
 - list filter contract
-  - input: status, one store, product-name text, shipping-date range, `expectedArrival` manual range or preset
+  - input: status, one store, product-name text, shipping-date range, `expectedArrival` manual range or `OVERDUE` toggle
   - output: URL-canonical filter state and removable chips patterned after `Stores`
-  - default state: `status=IN_TRANSIT` is applied and materialized in the URL when no filter params are present
+  - URL params (actual): `q` (free text over delivery id + product name), `status` (repeatable), `store`, `product` (product-name-only text), `overdue` (boolean), `arrivalFrom` / `arrivalTo`, `shippedFrom` / `shippedTo`, `sort`, `page`
+  - default state: `status=IN_TRANSIT` is applied and materialized in the URL when no filter params are present; an explicit empty `status=` means "all statuses" and is preserved
   - product-name query matches any included product by substring, case-insensitive and accent-insensitive
   - expected-arrival manual range matches by interval overlap rather than full containment
-  - `OVERDUE` expected-arrival preset is an active-follow-up shortcut and must keep the visible status-filter state aligned to active deliveries
+  - expected-arrival presets (`Due today`, `Next 7 days`, `Next 14 days`, `This month`) only populate the manual `arrivalFrom` / `arrivalTo` range and do not persist as their own param; they are mutually exclusive with a manually edited range
+  - the `OVERDUE` shortcut is the one expected-arrival preset that persists (as the `overdue` boolean param). It is an active-follow-up shortcut (IN_TRANSIT deliveries past their expected-arrival end) and keeps the visible status-filter state aligned to active deliveries
 
 ## Operational Priorities
 

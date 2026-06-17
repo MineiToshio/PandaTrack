@@ -20,13 +20,19 @@ const NAV_ROUTE_ITEMS: NavItem[] = [
   {
     id: "orders",
     pathSegment: "orders",
-    href: (locale) => `/${locale}${ROUTES.orders}`,
+    // Sidebar / burger menu entry-point preselects the "Solo activas" filter (FRD BP-02).
+    // Other entry-points (chip clears, browser address, back-nav) land on a bare URL and
+    // do NOT auto-apply the default — see `parseOrderListingParams`.
+    href: (locale) =>
+      `/${locale}${ROUTES.orders}?status=OPEN&status=PARTIALLY_IN_TRANSIT&status=IN_TRANSIT&status=PARTIALLY_DELIVERED`,
     labelKey: "nav.purchases",
   },
   {
     id: "deliveries",
     pathSegment: "deliveries",
-    href: (locale) => `/${locale}${ROUTES.deliveries}`,
+    // Entry-point carries the canonical "En camino" default (BP-01); the page also
+    // canonicalizes bare URLs to this filter. Explicit empty `status=` means "all".
+    href: (locale) => `/${locale}${ROUTES.deliveries}?status=IN_TRANSIT`,
     labelKey: "nav.deliveries",
   },
   {
@@ -41,6 +47,10 @@ const PRIMARY_NAV_ITEM_IDS: NavItemId[] = ["dashboard", "stores", "orders", "del
 
 export function getPrivateAppNavItems(): NavItem[] {
   return NAV_ROUTE_ITEMS.filter((item) => PRIMARY_NAV_ITEM_IDS.includes(item.id));
+}
+
+export function getAllNavItems(): NavItem[] {
+  return NAV_ROUTE_ITEMS;
 }
 
 /**

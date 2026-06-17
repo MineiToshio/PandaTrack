@@ -3,14 +3,28 @@
     "en": "EN",
     "es": "ES",
     "ariaEn": "Switch to English",
-    "ariaEs": "Switch to Spanish"
+    "ariaEs": "Switch to Spanish",
+    "regionLabel": "Language"
   },
   "themeToggle": {
+    "label": "Theme",
     "switchToLight": "Switch to light mode",
     "switchToDark": "Switch to dark mode"
   },
   "legal": {
-    "backToHome": "← Back to home"
+    "eyebrow": "Legal",
+    "backToHome": "Back to home",
+    "tableOfContents": "On this page"
   },
-  "dismiss": "Dismiss"
+  "dismiss": "Dismiss",
+  "close": "Close",
+  "notFound": {
+    "eyebrow": "Error 404",
+    "title": "This page doesn't exist",
+    "description": "The link may be broken or the content may have moved. Let's get you back to familiar ground.",
+    "homeCta": "Back to home"
+  },
+  "meta": {
+    "description": "Bring together your orders from any store and track pre-orders, payments, and deliveries in one place."
+  }
 }

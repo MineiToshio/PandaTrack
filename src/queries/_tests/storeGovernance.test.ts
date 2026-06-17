@@ -13,6 +13,7 @@ const BASE_STORE: EditableStore = {
   createdByUserId: "user-1",
   hasStock: true,
   receivesOrders: true,
+  isPrivate: false,
   presenceTypes: ["ONLINE"],
   productTypeKeys: ["figures"],
   importCountryCodes: ["JP"],

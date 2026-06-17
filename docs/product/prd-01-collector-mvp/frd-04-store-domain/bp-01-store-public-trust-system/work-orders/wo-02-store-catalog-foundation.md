@@ -31,10 +31,10 @@ Seed the baseline country and store product-type catalogs so store creation, lis
 
 ## Requirements
 
-- `FR-01-09`: The create flow must validate country codes and product-type keys against seeded catalogs before persisting.
-- `FR-01-11`: Public store listing must support text search by name.
-- `FR-01-12`: Public store listing must support filters for product type, country, import country, and presence.
-- `FR-01-25`: Store-level aggregate trust fields must be persisted instead of recalculated on every read.
+- `FR-04-09`: The create flow must validate country codes and product-type keys against seeded catalogs before persisting.
+- `FR-04-11`: Public store listing must support text search by name.
+- `FR-04-12`: Public store listing must support filters for product type, country, import country, and presence.
+- `FR-04-25`: Store-level aggregate trust fields must be persisted instead of recalculated on every read.
 
 Relevant acceptance signals:
 

@@ -8,9 +8,15 @@ const DEFAULT_FILTERS: OrderListActiveFilters = {
   productTypeKeys: ["manga", "figure"],
   storeId: "store-1",
   statuses: ["OPEN", "IN_TRANSIT"],
+  paymentStates: [],
+  fxPendingOnly: false,
+  sort: "recent",
   appliedDefaultStatuses: false,
   dateFromIso: "2026-01-10",
   dateToIso: "2026-02-20",
+  deliveryFromIso: undefined,
+  deliveryToIso: undefined,
+  deliveryOverdueOnly: false,
 };
 
 describe("buildOrderListFilterUrl", () => {

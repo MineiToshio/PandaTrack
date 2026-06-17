@@ -1,5 +1,5 @@
 ---
-description: Optimistic client updates for user-visible mutations — apply state changes locally in parallel with the server write so feedback is immediate and no second database fetch is required
+description: Optimistic client updates for user-visible mutations — apply state changes locally in parallel with the server write so feedback is immediate and no second database fetch is required. This is the DEFAULT pattern; non-optimistic flows must justify the exception.
 globs: "src/app/**/*.{ts,tsx},src/components/**/*.{ts,tsx}"
 alwaysApply: true
 ---
@@ -8,7 +8,9 @@ alwaysApply: true
 
 ## Rule
 
-Every mutation dispatched from a Client Component that updates state the user is observing must apply the change to the local client state **in parallel** with the server write. The user must see the effect of their action immediately, without waiting for the server round-trip or a refetch.
+**Optimistic UI is the default pattern for every user-triggered mutation in this codebase.** Every mutation dispatched from a Client Component that updates state the user is observing must apply the change to the local client state **in parallel** with the server write. The user must see the effect of their action immediately, without waiting for the server round-trip or a refetch.
+
+If a mutation is implemented without optimistic UI, the change description (PR, ADR, or task summary) must name which "Permitted exception" below justifies it. Reviewers must reject silently-non-optimistic mutations.
 
 ## Required pattern
 
@@ -44,6 +46,24 @@ The server write is always the authoritative source of truth. Optimistic UI neve
 - toggle state (favorite, pin, archive, mark-read)
 - inline text edits (notes, titles, descriptions)
 
+## Modal / sheet dismissal — Optimistic Confirmation
+
+When a mutation is initiated from inside a `<Modal>` / `<ModalSheet>` / bottom-sheet, the surface must close **immediately** on submit. Do **not** await the Server Action before dismissing. This is the "Optimistic Confirmation" variant of the pattern — the modal closes, the user sees the optimistic state behind it (animated counters, list inserts, status changes), and the server processes in the background.
+
+Reference implementation: `OrderPaymentMobileSheet` + `OrderDetailClient.handleAddPayment` (S7 order detail).
+
+Required wiring for any modal-initiated mutation:
+
+1. The modal's `onSubmit` wrapper fires the mutation with `void onSubmit(...)` (no `await`).
+2. The modal's `onSubmit` wrapper calls `onClose()` synchronously immediately after dispatch.
+3. The wrapper returns `{ ok: true }` to the inner form so the form does not render a pending spinner or a now-stale error inline (the form may be unmounted before the server responds).
+4. The **parent coordinator** that owns the mutation handler is responsible for: (a) the optimistic local patch, (b) the rollback on failure, (c) the error toast on failure. The modal contributes none of that — by the time the server responds the modal is gone.
+5. The toast must come from the shared `useToast()` provider (`@/contexts/ToastContext`) so it appears above the closed surface and persists past route changes.
+
+Rationale: an awaited submit inside a fullscreen sheet forces the user to stare at a spinner that covers the very value (hero amount, progress bar, list row) the mutation is meant to update. Closing the sheet first lets the user watch the optimistic animation play out — the whole point of optimistic UI.
+
+This applies to add-payment, cancel, delete, edit-note, and any other action surfaced through a modal. The only modal flows that may keep the awaited-then-close behavior are those listed in "Permitted exceptions" below (irreversible destructive flows, server-computed identifiers, etc.).
+
 ## Permitted exceptions
 
 Skip the optimistic path only when one of these applies:
@@ -63,3 +83,5 @@ Before merging a change that adds or modifies a client-side mutation:
 - [ ] A revert path exists for every failure branch the Server Action can produce.
 - [ ] The error surface is accessible (`role="alert"` / `aria-live="polite"`) and human-readable.
 - [ ] No `router.refresh()` or route-level refetch is used solely to update UI the client could have updated locally.
+- [ ] If the mutation is initiated from a modal / sheet: the surface closes **synchronously** on submit (no `await` before `onClose()`); the parent coordinator owns rollback + toast.
+- [ ] If the mutation skips the optimistic path: a justification mapped to one of the "Permitted exceptions" is recorded in the PR description or commit message.

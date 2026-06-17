@@ -1,235 +1,66 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { useEffect, useId, useRef, useEffectEvent } from "react";
-import { X } from "lucide-react";
-import Heading from "@/components/core/Heading";
-import Portal from "@/components/core/Portal";
-import Typography from "@/components/core/Typography";
-import { cn, TINTED_SURFACE_GRADIENT_STOPS, TINTED_SURFACE_GRADIENT_TOP_WASH } from "@/lib/styles";
-import { FOCUS_OPTIONS_NO_SCROLL, getFocusableElements } from "@/lib/a11y/focusable";
-
-export type ModalRole = "dialog" | "alertdialog";
-
-export type ModalProps = {
-  /** Whether the modal is visible. */
-  isOpen: boolean;
-  /** Called when the modal should close (backdrop click, Escape key, or explicit close action). */
-  onClose: () => void;
-  /** Modal title. Required for accessibility (aria-labelledby). */
-  title: string;
-  /** Optional description under the title. Used for aria-describedby when provided. */
-  description?: string | ReactNode;
-  /** Content rendered below the title/description (e.g. actions or custom body). */
-  children: React.ReactNode;
-  /** Role: "dialog" for general dialogs, "alertdialog" for confirmations that require a choice. */
-  role?: ModalRole;
-  /** When true, clicking the backdrop calls onClose. Default true for dialog, often false for alertdialog. */
-  closeOnBackdropClick?: boolean;
-  /** Ref to focus when the modal opens. If not set, the first focusable element in the panel receives focus. */
-  initialFocusRef?: React.RefObject<HTMLElement | null>;
-  /** Ref to focus when the modal closes. */
-  returnFocusRef?: React.RefObject<HTMLElement | null>;
-  /** Optional class name for the content panel. */
-  className?: string;
-  /** Optional class name for the scrollable body region below the modal header. */
-  bodyClassName?: string;
-  /** Optional id for the title element (for aria-labelledby). Auto-generated if not provided. */
-  titleId?: string;
-  /** Optional id for the description element (for aria-describedby). Auto-generated if not provided. */
-  descriptionId?: string;
-  /** Accessible label for the optional close button. */
-  closeButtonLabel?: string;
-};
+import { useIsMobile } from "@/hooks/useIsMobile";
+import type { ModalProps } from "./Modal.types";
+import ModalDialog from "./ModalDialog";
+import ModalSheet from "./ModalSheet";
 
 /**
- * Reusable modal with backdrop, focus management, and Escape key support.
- * Use for confirmations, forms, or any overlay that requires user attention.
+ * # Modal — canonical adaptive modal (ADR 0008 + Extension)
+ *
+ * **THIS IS THE ONLY MODAL COMPONENT IN THE APP.** Any confirm dialog,
+ * destructive prompt, info overlay, form-in-modal, or decision overlay
+ * across PandaTrack MUST consume this component. Do not create new modal
+ * components. Do not roll a dialog from scratch with a portal + div.
+ * Do not copy the visual from legacy modals you may find in the demo
+ * HTML — those have been mapped to this same canonical pattern.
+ *
+ * If you need behavior this component does not yet support, extend it
+ * here (add a prop, a tone, a size) — do not fork it.
+ *
+ * ## Adaptive behavior
+ * - **Desktop (≥768px)**: renders `<ModalDialog>` — centered hand-rolled
+ *   dialog with Semantic Depth visual contract.
+ * - **Mobile (<768px)**: renders `<ModalSheet>` — bottom sheet using Vaul
+ *   for drag-to-dismiss + iOS safe area + scroll lock. Same Semantic
+ *   Depth language (icon-circle, tones, backdrop blur).
+ *
+ * The choice is automatic via `useIsMobile()`. Consumers see a single
+ * public API.
+ *
+ * ## Visual contract (Semantic Depth, both variants)
+ * - Backdrop `blur(8px)` with light/dark calibrated tints.
+ * - Icon-circle 48px tonal (default `--accent`, destructive, warning, info).
+ * - Border-radius 20px (`--radius-2xl`); top corners only on mobile sheet.
+ * - Spring enter (`280ms linear stops`) on desktop, slide-up on mobile.
+ * - `prefers-reduced-motion` → fade only, no scale.
+ * - Focus trap, Esc to close, backdrop click / drag-down to close (when
+ *   `dismissible`).
+ *
+ * ## API summary
+ * - Required: `isOpen`, `onClose`, `title`.
+ * - Visual: `icon` + `tone` (header), `size` (`md` 460px / `lg` 768px —
+ *   desktop only), `subtitle` (or legacy `description`).
+ * - Actions: `primaryAction`, `secondaryAction`, `tertiaryAction`.
+ * - Behavior: `dismissible` (default `true`), `role` (`dialog` |
+ *   `alertdialog`).
+ * - Backward-compat aliases preserved: `description`,
+ *   `closeOnBackdropClick`, `closeButtonLabel`.
+ *
+ * ## When to use which `tone`
+ * - `default` — informational, neutral confirm, form modal.
+ * - `destructive` — irreversible action (delete, cancel order, remove store).
+ * - `warning` — caution / non-destructive but sensitive (report, flag, dispute).
+ * - `info` — explanatory / decision with multiple non-destructive paths.
+ *
+ * ## Related
+ * - Spec: `docs/design/components.md` + `docs/design/interface-patterns.md` (Modals & overlays).
+ * - ADRs: `docs/design/decisions/0008-modal-enhancement.md`,
+ *   `docs/design/decisions/0010-ui-primitive-libraries-policy.md`.
+ * - Cursor rules: `.cursor/rules/modal-canonical-pattern.mdc`,
+ *   `.cursor/rules/ui-libs-policy.mdc`.
  */
-export default function Modal({
-  isOpen,
-  onClose,
-  title,
-  description,
-  children,
-  role = "dialog",
-  closeOnBackdropClick = true,
-  initialFocusRef,
-  returnFocusRef,
-  className,
-  bodyClassName,
-  titleId: titleIdProp,
-  descriptionId: descriptionIdProp,
-  closeButtonLabel,
-}: ModalProps) {
-  const generatedTitleId = useId();
-  const generatedDescriptionId = useId();
-  const titleId = titleIdProp ?? generatedTitleId;
-  const descriptionId = descriptionIdProp ?? generatedDescriptionId;
-  const panelRef = useRef<HTMLDivElement>(null);
-  const previousActiveElementRef = useRef<Element | null>(null);
-  const onCloseEvent = useEffectEvent(onClose);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onCloseEvent();
-        return;
-      }
-
-      if (event.key !== "Tab" || !panelRef.current) return;
-
-      const focusableElements = getFocusableElements(panelRef.current);
-      if (focusableElements.length === 0) {
-        event.preventDefault();
-        panelRef.current.focus(FOCUS_OPTIONS_NO_SCROLL);
-        return;
-      }
-
-      const firstFocusable = focusableElements[0];
-      const lastFocusable = focusableElements[focusableElements.length - 1];
-      const activeElement = document.activeElement;
-
-      if (event.shiftKey && activeElement === firstFocusable) {
-        event.preventDefault();
-        lastFocusable.focus(FOCUS_OPTIONS_NO_SCROLL);
-      } else if (!event.shiftKey && activeElement === lastFocusable) {
-        event.preventDefault();
-        firstFocusable.focus(FOCUS_OPTIONS_NO_SCROLL);
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const returnFocusNode = returnFocusRef?.current ?? null;
-    previousActiveElementRef.current = document.activeElement ?? null;
-
-    const focusTarget = initialFocusRef?.current ?? panelRef.current;
-    if (focusTarget) {
-      if (initialFocusRef?.current) {
-        initialFocusRef.current.focus(FOCUS_OPTIONS_NO_SCROLL);
-      } else {
-        const firstFocusable = getFocusableElements(focusTarget)[0];
-        if (firstFocusable) {
-          firstFocusable.focus(FOCUS_OPTIONS_NO_SCROLL);
-        } else {
-          focusTarget.focus(FOCUS_OPTIONS_NO_SCROLL);
-        }
-      }
-    }
-
-    return () => {
-      const node = (returnFocusRef != null ? returnFocusNode : previousActiveElementRef.current) as HTMLElement | null;
-      if (node && typeof node.focus === "function") {
-        node.focus(FOCUS_OPTIONS_NO_SCROLL);
-      }
-    };
-  }, [isOpen, initialFocusRef, returnFocusRef]);
-
-  if (!isOpen) return null;
-
-  const handleBackdropClick = () => {
-    if (closeOnBackdropClick) onClose();
-  };
-
-  return (
-    <Portal>
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        role={role}
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={description != null && description !== "" ? descriptionId : undefined}
-      >
-        <button
-          type="button"
-          className="from-background/82 via-background/64 to-background/82 absolute inset-0 bg-linear-to-br backdrop-blur-md"
-          onClick={handleBackdropClick}
-          aria-hidden
-          tabIndex={-1}
-        />
-        <div
-          ref={panelRef}
-          tabIndex={-1}
-          className={cn(
-            "border-border/70 bg-card/95 text-foreground relative z-10 w-full max-w-xl overflow-hidden rounded-[28px] border shadow-[0_32px_90px_-40px_rgba(15,23,42,0.6)] backdrop-blur",
-            className,
-          )}
-          role="document"
-        >
-          <div
-            className={cn(
-              TINTED_SURFACE_GRADIENT_TOP_WASH,
-              "pointer-events-none absolute inset-x-0 top-0 h-[min(52%,18rem)] min-h-44 bg-linear-to-b sm:min-h-52",
-            )}
-            aria-hidden
-          />
-          <div
-            className="bg-primary/10 pointer-events-none absolute -top-10 right-0 size-32 rounded-full blur-3xl sm:size-36"
-            aria-hidden
-          />
-          <div
-            className="bg-highlight/10 pointer-events-none absolute top-24 -left-10 size-28 rounded-full blur-3xl sm:top-28 sm:size-32"
-            aria-hidden
-          />
-
-          <div className="relative flex max-h-[min(85vh,48rem)] flex-col">
-            <div className="border-border flex items-start justify-between gap-4 border-b px-5 py-5 sm:px-6 sm:py-6">
-              <div className="min-w-0 flex-1 space-y-2">
-                <span
-                  className={cn(
-                    "inline-flex h-2 w-16 shrink-0 rounded-full bg-linear-to-r",
-                    TINTED_SURFACE_GRADIENT_STOPS,
-                  )}
-                  aria-hidden
-                />
-                <div className="space-y-2">
-                  <Heading
-                    as="h2"
-                    id={titleId}
-                    size="xs"
-                    className="text-text-title text-xl leading-tight font-semibold tracking-tight sm:text-2xl"
-                  >
-                    {title}
-                  </Heading>
-                  {description != null && description !== "" ? (
-                    typeof description === "string" ? (
-                      <Typography id={descriptionId} size="xs" className="text-text-body w-full leading-6">
-                        {description}
-                      </Typography>
-                    ) : (
-                      <div id={descriptionId} className="text-text-body w-full text-xs leading-6 sm:text-sm">
-                        {description}
-                      </div>
-                    )
-                  ) : null}
-                </div>
-              </div>
-
-              {closeButtonLabel ? (
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="border-border bg-background/82 text-text-muted hover:border-foreground/55 hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background active:border-foreground/65 inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-2xl border transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                  aria-label={closeButtonLabel}
-                >
-                  <X className="size-4" aria-hidden />
-                </button>
-              ) : null}
-            </div>
-
-            <div className={cn("overflow-y-auto px-5 py-5 sm:px-6 sm:py-6", bodyClassName)}>{children}</div>
-          </div>
-        </div>
-      </div>
-    </Portal>
-  );
+export default function Modal(props: ModalProps) {
+  const isMobile = useIsMobile();
+  return isMobile ? <ModalSheet {...props} /> : <ModalDialog {...props} />;
 }

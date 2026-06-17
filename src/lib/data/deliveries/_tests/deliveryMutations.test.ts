@@ -287,7 +287,32 @@ describe("createDelivery", () => {
 
     const result = await createDelivery("user-1", { ...input, productIds: ["item-1"] });
 
-    expect(result).toEqual({ ok: false, error: "PRODUCT_NOT_ELIGIBLE" });
+    expect(result).toEqual({ ok: false, error: "PRODUCT_NOT_ELIGIBLE", ineligibleProductIds: ["item-1"] });
+    expect(tx.delivery.create).not.toHaveBeenCalled();
+  });
+
+  it("reports the missing ids when a selected product no longer exists", async () => {
+    const tx = makeCreateTx({
+      orderItem: {
+        // "item-1" exists and is eligible; "item-2" is gone (filtered out by the query).
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "item-1",
+            orderId: "order-1",
+            deliveryState: OrderItemDeliveryState.NONE,
+            order: { storeId: "store-1", userId: "user-1" },
+          },
+        ]),
+        updateMany: vi.fn(),
+      } as unknown as Prisma.TransactionClient["orderItem"],
+    });
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: Prisma.TransactionClient) => unknown) =>
+      callback(tx),
+    );
+
+    const result = await createDelivery("user-1", { ...input, productIds: ["item-1", "item-2"] });
+
+    expect(result).toEqual({ ok: false, error: "PRODUCT_NOT_ELIGIBLE", ineligibleProductIds: ["item-2"] });
     expect(tx.delivery.create).not.toHaveBeenCalled();
   });
 });

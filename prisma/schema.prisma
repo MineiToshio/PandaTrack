@@ -187,7 +187,6 @@ model Verification {
 model Country {
   code           String               @id
   stores         Store[]
-  storeAddresses StoreAddress[]
   storeImports   StoreImportCountry[]
   usersPreferred User[]
 
@@ -204,6 +203,7 @@ model Store {
   status              StoreStatus               @default(PENDING)
   visibility          StoreVisibility           @default(PUBLIC)
   isActive            Boolean                   @default(true)
+  isPrivate           Boolean                   @default(false)
   hasStock            Boolean?
   receivesOrders      Boolean?
   countryCode         String
@@ -235,6 +235,7 @@ model Store {
   @@index([status])
   @@index([visibility])
   @@index([isActive])
+  @@index([isPrivate])
   @@index([status, visibility, isActive])
   @@map("store")
 }
@@ -271,7 +272,6 @@ model StoreContactChannel {
 model StoreAddress {
   id          String   @id @default(cuid())
   storeId     String
-  countryCode String
   city        String?
   district    String?
   addressLine String
@@ -281,10 +281,8 @@ model StoreAddress {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  country     Country  @relation(fields: [countryCode], references: [code], onDelete: Restrict)
 
   @@index([storeId])
-  @@index([countryCode])
   @@map("store_address")
 }
 
@@ -436,9 +434,14 @@ model Order {
   expectedDeliveryTo   DateTime?
   currencyCode         String
   exchangeRate         Decimal?
+  // Set true when the user changes their base currency, for every order whose currencyCode
+  // differs from the new base — its stored exchangeRate is now stale and must be reconciled.
+  // Cleared when the rate is (re)entered: on create, on edit, and on bulk FX reconciliation.
+  needsExchangeRateUpdate Boolean            @default(false)
   totalCost            Int
   note                 String?
   status               OrderStatus           @default(OPEN)
+  cancellationReason   String?
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   store                Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
@@ -514,6 +517,7 @@ model Delivery {
   deliveryDate        DateTime
   expectedArrivalFrom DateTime?
   expectedArrivalTo   DateTime?
+  receivedDate        DateTime?
   cost                Int
   currencyCode        String
   exchangeRate        Decimal?

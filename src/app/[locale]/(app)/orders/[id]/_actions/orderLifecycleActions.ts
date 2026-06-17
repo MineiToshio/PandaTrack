@@ -6,20 +6,30 @@ import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { cancelOrder, deleteOrder, reactivateOrder } from "@/lib/data/orders/orderMutations";
+import { MAX_CANCELLATION_REASON_LENGTH } from "@/lib/orders/orderValidation";
 
 export type OrderLifecycleResult = { ok: true } | { ok: false; error: string };
 
-export async function cancelOrderAction(orderId: string): Promise<OrderLifecycleResult> {
+export async function cancelOrderAction(
+  orderId: string,
+  cancellationReason: string | null = null,
+): Promise<OrderLifecycleResult> {
   const session = await getSession();
   if (!session?.user?.id) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
 
+  const reason = cancellationReason?.trim() ? cancellationReason.trim().slice(0, MAX_CANCELLATION_REASON_LENGTH) : null;
+
   try {
-    const result = await cancelOrder(orderId, userId);
+    const result = await cancelOrder(orderId, userId, reason);
     if (!result.ok) return { ok: false, error: result.error };
 
     const posthog = getPostHogClient();
-    posthog.capture({ distinctId: userId, event: POSTHOG_EVENTS.ORDER.CANCELLED, properties: { orderId } });
+    posthog.capture({
+      distinctId: userId,
+      event: POSTHOG_EVENTS.ORDER.CANCELLED,
+      properties: { orderId, hasReason: reason !== null },
+    });
     await posthog.shutdown();
 
     return { ok: true };

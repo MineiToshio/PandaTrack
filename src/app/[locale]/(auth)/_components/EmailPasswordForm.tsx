@@ -1,11 +1,11 @@
 "use client";
 
+import { AlertCircle } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import Button from "@/components/core/Button/Button";
 import Input from "@/components/core/Input";
-import Label from "@/components/core/Label";
 import PasswordInput from "@/components/core/PasswordInput";
-import Typography from "@/components/core/Typography";
 
 type EmailPasswordFormProps = {
   idPrefix: string;
@@ -17,17 +17,22 @@ type EmailPasswordFormProps = {
   isPending: boolean;
   submitLabel: string;
   emailLabel: string;
+  emailPlaceholder?: string;
   passwordLabel: string;
+  passwordHelp?: string;
   passwordAuxiliaryHref?: string;
   passwordAuxiliaryLabel?: string;
   passwordAutoComplete: "current-password" | "new-password";
   hideEmailField?: boolean;
+  /** Optional content rendered between the fields and the submit button (e.g. terms). */
+  beforeSubmit?: ReactNode;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 };
 
 /**
- * Shared email + password form content for sign-in and sign-up.
- * Renders form element, two fields, error message, and submit button.
+ * Shared email + password form body for sign-in and sign-up. Top error banner
+ * (`.auth-form-error`), `.auth-field` rows, full-width submit. Reuses core
+ * `<Input>` / `<PasswordInput>` (eye toggle + error border live there).
  */
 export default function EmailPasswordForm({
   idPrefix,
@@ -39,26 +44,39 @@ export default function EmailPasswordForm({
   isPending,
   submitLabel,
   emailLabel,
+  emailPlaceholder,
   passwordLabel,
+  passwordHelp,
   passwordAuxiliaryHref,
   passwordAuxiliaryLabel,
   passwordAutoComplete,
   hideEmailField = false,
+  beforeSubmit,
   onSubmit,
 }: EmailPasswordFormProps) {
   const emailId = `${idPrefix}-email`;
   const passwordId = `${idPrefix}-password`;
 
   return (
-    <form className="space-y-4" onSubmit={onSubmit} noValidate>
+    <form onSubmit={onSubmit} noValidate>
+      {error ? (
+        <div className="auth-form-error" role="alert">
+          <AlertCircle aria-hidden="true" />
+          <span>{error}</span>
+        </div>
+      ) : null}
+
       {hideEmailField ? null : (
-        <div className="space-y-2">
-          <Label htmlFor={emailId}>{emailLabel}</Label>
+        <div className="auth-field">
+          <label className="auth-label" htmlFor={emailId}>
+            {emailLabel}
+          </label>
           <Input
             id={emailId}
             type="email"
             name="email"
             autoComplete="email"
+            placeholder={emailPlaceholder}
             value={email}
             onChange={(e) => onEmailChange(e.target.value)}
             disabled={isPending}
@@ -67,14 +85,12 @@ export default function EmailPasswordForm({
           />
         </div>
       )}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <Label htmlFor={passwordId}>{passwordLabel}</Label>
+
+      <div className="auth-field">
+        <div className="auth-label">
+          <label htmlFor={passwordId}>{passwordLabel}</label>
           {passwordAuxiliaryHref && passwordAuxiliaryLabel ? (
-            <Link
-              href={passwordAuxiliaryHref}
-              className="text-link focus-visible:ring-ring rounded text-xs font-medium hover:underline focus-visible:ring-2 focus-visible:outline-none"
-            >
+            <Link href={passwordAuxiliaryHref} className="auth-link">
               {passwordAuxiliaryLabel}
             </Link>
           ) : null}
@@ -89,14 +105,20 @@ export default function EmailPasswordForm({
           required
           error={!!error}
         />
+        {passwordHelp ? <p className="auth-help">{passwordHelp}</p> : null}
       </div>
-      {error && (
-        <Typography size="xs" className="text-destructive" role="alert">
-          {error}
-        </Typography>
-      )}
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "..." : submitLabel}
+
+      {beforeSubmit}
+
+      <Button
+        type="submit"
+        variant="primary"
+        fullWidth
+        className="auth-submit"
+        loading={isPending}
+        disabled={isPending}
+      >
+        {submitLabel}
       </Button>
     </form>
   );

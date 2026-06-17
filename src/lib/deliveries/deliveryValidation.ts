@@ -72,6 +72,7 @@ export const deliveryEditSchema = z
 
 export const deliveryMarkDeliveredSchema = z.object({
   deliveryId: z.string().cuid({ message: "INVALID_DELIVERY_ID" }),
+  receivedDate: z.coerce.date().refine((d) => d <= new Date(), { message: "RECEIVED_DATE_IN_FUTURE" }),
 });
 
 export const deliveryReopenSchema = z.object({

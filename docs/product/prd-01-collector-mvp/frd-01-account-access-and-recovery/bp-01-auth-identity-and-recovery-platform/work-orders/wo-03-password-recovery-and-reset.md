@@ -5,7 +5,7 @@ slug: password-recovery-and-reset
 title: Password Recovery and Reset
 status: ACTIVE
 parent: BP-01
-last_updated: 2026-03-21
+last_updated: 2026-06-16
 source_features:
   - FEAT-0009
 implementation_status: IMPLEMENTED
@@ -19,9 +19,11 @@ Ship forgot-password and reset-password flows with neutral account handling, sin
 
 ## In Scope
 
-- forgot-password request flow
-- reset-password token flow
-- localized recovery UI
+- forgot-password request flow (neutral, anti-enumeration)
+- reset-password token flow with repeat-password match guard
+- escalating recovery throttle (server + client)
+- single-use tokens + session revocation on reset
+- localized recovery + verification emails
 - token expiry and invalid-link states
 
 ## Out of Scope
@@ -34,6 +36,9 @@ Ship forgot-password and reset-password flows with neutral account handling, sin
 - `FR-01-09`
 - `FR-01-10`
 - `FR-01-11`
+- `FR-01-20`
+- `FR-01-21`
+- `FR-01-23`
 
 ## Blueprints
 

@@ -33,11 +33,11 @@ Establish the schema and persistence foundation required for the store domain so
 
 ## Requirements
 
-- `FR-01-01`: The system must model stores as a first-class domain entity.
-- `FR-01-02`: A store must support `BUSINESS` and `PERSON` types.
-- `FR-01-03`: A store must support repeatable presence values `ONLINE` and `PHYSICAL`.
-- `FR-01-04`: A store must support core identity fields including `name`, `slug`, `description`, `countryCode`, moderation state, and activity state.
-- `FR-01-05`: A store must support related metadata for product types, import countries, contact channels, and addresses.
+- `FR-04-01`: The system must model stores as a first-class domain entity.
+- `FR-04-02`: A store must support `BUSINESS` and `PERSON` types.
+- `FR-04-03`: A store must support repeatable presence values `ONLINE` and `PHYSICAL`.
+- `FR-04-04`: A store must support core identity fields including `name`, `slug`, `description`, `countryCode`, moderation state, and activity state.
+- `FR-04-05`: A store must support related metadata for product types, import countries, contact channels, and addresses.
 
 Relevant acceptance signals:
 

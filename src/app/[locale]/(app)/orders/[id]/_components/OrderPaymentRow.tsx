@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Trash2 } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import Typography from "@/components/core/Typography";
-import Modal from "@/components/modules/Modal/Modal";
-import Button from "@/components/core/Button/Button";
-import { formatAmount } from "@/lib/currency";
+import { Modal } from "@/components/modules/Modal";
+import { formatAmountSymbolOnly } from "@/lib/currency";
+import { formatDomainDate } from "@/lib/domainDate";
 
 type PaymentRecord = { id: string; amount: number; paymentDate: Date };
 
@@ -14,23 +14,23 @@ type OrderPaymentRowProps = {
   payment: PaymentRecord;
   currencyCode: string;
   locale: string;
-  onDeleted: (id: string) => void;
+  /** Parent owns the payments list and removes the row when this resolves with `ok: true`. */
   onConfirmDelete: (paymentId: string) => Promise<{ ok: boolean; error?: string }>;
 };
 
-export default function OrderPaymentRow({
-  payment,
-  currencyCode,
-  locale,
-  onDeleted,
-  onConfirmDelete,
-}: OrderPaymentRowProps) {
+/**
+ * Single row of the payments list. Layout mirrors the demo's `.pay-row`:
+ * date (left) · amount (right, mono) · delete × button (far right, muted).
+ * The amount always carries two decimals so it lines up across rows.
+ */
+export default function OrderPaymentRow({ payment, currencyCode, locale, onConfirmDelete }: OrderPaymentRowProps) {
   const t = useTranslations("orders");
   const [modalOpen, setModalOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const dateLabel = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(payment.paymentDate));
+  const dateLabel = formatDomainDate(payment.paymentDate, locale, { dateStyle: "medium" });
+  const amountLabel = formatAmountSymbolOnly(payment.amount, currencyCode, locale);
 
   async function handleConfirm() {
     setIsPending(true);
@@ -39,7 +39,6 @@ export default function OrderPaymentRow({
     setIsPending(false);
     if (result.ok) {
       setModalOpen(false);
-      onDeleted(payment.id);
     } else {
       setError(t("detail.payments.errorDelete"));
     }
@@ -47,22 +46,20 @@ export default function OrderPaymentRow({
 
   return (
     <>
-      <li className="flex items-center justify-between gap-3 py-2.5">
-        <div className="min-w-0 flex-1">
-          <Typography size="sm" className="text-text-body font-medium tabular-nums">
-            {formatAmount(payment.amount, currencyCode)}
-          </Typography>
-          <Typography size="xs" className="text-text-muted">
-            {dateLabel}
-          </Typography>
-        </div>
+      {/* Demo `.pay-row`: gap 12px · py 6px · font 14px. No inter-row border — payments
+          read as a single block; the only visible separator is the one between the last
+          payment and the `Total pagado` row (rendered by the parent aside card). */}
+      <li className="flex items-center gap-3 py-1.5 text-[14px]">
+        <span className="text-text-muted flex-1 font-mono text-[12px] tabular-nums">{dateLabel}</span>
+        <span className="text-text-title font-semibold tabular-nums">{amountLabel}</span>
+        {/* Demo `.pay-row .pay-delete`: 28×28 · rounded 6px · transparent bg · muted icon */}
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          aria-label={t("detail.payments.deleteLabel")}
-          className="text-text-muted hover:text-destructive focus-visible:ring-ring focus-visible:ring-offset-background shrink-0 cursor-pointer rounded p-1 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+          aria-label={t("detail.payments.deleteLabelDetailed", { amount: amountLabel, date: dateLabel })}
+          className="text-text-muted hover:text-text-title focus-visible:ring-ring focus-visible:ring-offset-background grid size-7 shrink-0 cursor-pointer place-items-center rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
-          <Trash2 className="size-3.5" aria-hidden />
+          <X className="size-[13px]" aria-hidden />
         </button>
       </li>
 
@@ -70,29 +67,29 @@ export default function OrderPaymentRow({
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         title={t("detail.payments.deleteModalTitle")}
-        description={t("detail.payments.deleteModalDescription")}
+        subtitle={t("detail.payments.deleteModalDescription")}
+        icon={<Trash2 size={20} aria-hidden="true" />}
+        tone="destructive"
         role="alertdialog"
-        closeOnBackdropClick={false}
+        dismissible={false}
+        primaryAction={{
+          label: isPending ? "…" : t("detail.payments.deleteConfirm"),
+          onClick: handleConfirm,
+          variant: "destructive",
+          loading: isPending,
+          disabled: isPending,
+        }}
+        secondaryAction={{
+          label: t("detail.payments.deleteCancel"),
+          onClick: () => setModalOpen(false),
+          disabled: isPending,
+        }}
       >
         {error && (
-          <Typography size="sm" className="text-destructive mb-4" role="alert">
+          <Typography size="sm" className="text-destructive" role="alert">
             {error}
           </Typography>
         )}
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" size="md" onClick={() => setModalOpen(false)} disabled={isPending}>
-            {t("detail.payments.deleteCancel")}
-          </Button>
-          <Button
-            variant="outline"
-            size="md"
-            onClick={handleConfirm}
-            disabled={isPending}
-            className="border-destructive text-destructive hover:bg-destructive/10"
-          >
-            {isPending ? "…" : t("detail.payments.deleteConfirm")}
-          </Button>
-        </div>
       </Modal>
     </>
   );

@@ -2,29 +2,24 @@ import { Mail } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { siTiktok, siWhatsapp } from "simple-icons";
-import Typography from "@/components/core/Typography";
+import AnchorLink from "@/components/core/AnchorLink";
+import BrandMark from "@/app/[locale]/_components/public/BrandMark";
 import { CONTACT_INFO, POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { cn } from "@/lib/styles";
-
-const ICON_SIZE = 18;
-const FOCUS_VISIBLE_CLASS =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md";
 
 type SocialLinkProps = {
   href: string;
-  ariaLabel: string;
+  label: string;
   platform: string;
   icon: React.ReactNode;
+  external?: boolean;
 };
 
-function SocialLink({ href, ariaLabel, platform, icon }: SocialLinkProps) {
+function SocialLink({ href, label, platform, icon, external }: SocialLinkProps) {
   return (
     <a
       href={href}
-      className={cn("hover:text-foreground inline-flex items-center gap-1.5 transition-colors", FOCUS_VISIBLE_CLASS)}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={ariaLabel}
+      aria-label={label}
+      {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
       data-ph-event={POSTHOG_EVENTS.LANDING.SOCIAL_LINK_CLICKED}
       data-ph-props={JSON.stringify({ platform })}
     >
@@ -33,17 +28,10 @@ function SocialLink({ href, ariaLabel, platform, icon }: SocialLinkProps) {
   );
 }
 
+// Decorative — the wrapping link carries the localized accessible name (`SocialLink` aria-label).
 function SimpleIconSvg({ path }: { path: string }) {
   return (
-    <svg
-      role="img"
-      viewBox="0 0 24 24"
-      xmlns="http://www.w3.org/2000/svg"
-      width={ICON_SIZE}
-      height={ICON_SIZE}
-      fill="currentColor"
-      aria-hidden
-    >
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true">
       <path d={path} />
     </svg>
   );
@@ -58,52 +46,57 @@ export default function Footer({ locale }: FooterProps) {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-background text-foreground w-full px-4 py-8 md:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row sm:items-start">
-        <div className="text-muted-foreground flex flex-col items-center gap-1 text-center text-sm sm:items-start sm:text-left">
-          <Typography as="p" size="sm">
-            {t("copyright", { year })}
-          </Typography>
-          <Typography
-            as="p"
-            size="sm"
-            className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:justify-start"
-          >
-            <span>{t("madeBy")}</span>
+    <footer className="mk-footer">
+      <div className="mk-container">
+        <div className="mk-footer-top">
+          <div>
+            <BrandMark />
+            <p className="mk-footer-tagline">{t("tagline")}</p>
+          </div>
+          <div className="mk-footer-cols">
+            <div className="mk-footer-col">
+              <h4>{t("cols.product")}</h4>
+              <AnchorLink href="#user-fit">{t("links.forYou")}</AnchorLink>
+              <AnchorLink href="#features">{t("links.features")}</AnchorLink>
+              <AnchorLink href="#faqs">{t("links.faq")}</AnchorLink>
+            </div>
+            <div className="mk-footer-col">
+              <h4>{t("cols.account")}</h4>
+              <Link href={`/${locale}${ROUTES.signUp}`}>{t("links.signUp")}</Link>
+              <Link href={`/${locale}${ROUTES.signIn}`}>{t("links.signIn")}</Link>
+            </div>
+            <div className="mk-footer-col">
+              <h4>{t("cols.legal")}</h4>
+              <Link href={`/${locale}${ROUTES.privacy}`}>{t("links.privacy")}</Link>
+              <Link href={`/${locale}${ROUTES.terms}`}>{t("links.terms")}</Link>
+            </div>
+          </div>
+        </div>
+        <div className="mk-footer-bottom">
+          <span className="mk-footer-copy">{t("copyright", { year })}</span>
+          <div className="mk-footer-social">
             <SocialLink
               href={`mailto:${CONTACT_INFO.email}`}
-              ariaLabel={CONTACT_INFO.email}
+              label={t("social.email")}
               platform="email"
-              icon={<Mail size={ICON_SIZE} aria-hidden />}
+              icon={<Mail aria-hidden="true" />}
             />
             <SocialLink
               href={CONTACT_INFO.tiktok}
-              ariaLabel={`TikTok ${CONTACT_INFO.tiktok}`}
+              label={t("social.tiktok")}
               platform="tiktok"
+              external
               icon={<SimpleIconSvg path={siTiktok.path} />}
             />
             <SocialLink
               href={CONTACT_INFO.whatsapp}
-              ariaLabel={`WhatsApp ${CONTACT_INFO.whatsapp}`}
+              label={t("social.whatsapp")}
               platform="whatsapp"
+              external
               icon={<SimpleIconSvg path={siWhatsapp.path} />}
             />
-          </Typography>
+          </div>
         </div>
-        <nav aria-label={t("legalNavAriaLabel")} className="flex gap-6">
-          <Link
-            href={`/${locale}${ROUTES.terms}`}
-            className={cn("text-muted-foreground hover:text-foreground text-sm transition-colors", FOCUS_VISIBLE_CLASS)}
-          >
-            {t("terms")}
-          </Link>
-          <Link
-            href={`/${locale}${ROUTES.privacy}`}
-            className={cn("text-muted-foreground hover:text-foreground text-sm transition-colors", FOCUS_VISIBLE_CLASS)}
-          >
-            {t("privacy")}
-          </Link>
-        </nav>
       </div>
     </footer>
   );

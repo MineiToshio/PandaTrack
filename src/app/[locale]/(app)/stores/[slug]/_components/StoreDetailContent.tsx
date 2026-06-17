@@ -1,54 +1,53 @@
-import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import {
-  BadgeCheck,
-  Box,
-  Building2,
+  AtSign,
   CircleAlert,
+  Clock,
+  Copy,
   ExternalLink,
   Flag,
-  Globe,
-  Link2,
+  GitPullRequestArrow,
+  Lock,
   Mail,
-  MapPinned,
+  Map as MapIcon,
+  MapPin,
+  Package,
   Pencil,
   Phone,
-  Store,
+  PlusCircle,
+  Star,
+  Tags,
+  Zap,
 } from "lucide-react";
+import { formatAmount } from "@/lib/currency";
 import { siFacebook, siInstagram, siTiktok, siWhatsapp } from "simple-icons";
-import Heading from "@/components/core/Heading";
-import Typography from "@/components/core/Typography";
-import { ROUTES } from "@/lib/constants";
-import { buttonVariants } from "@/components/core/Button/buttonVariants";
-import {
-  COLLECTOR_CARD_SURFACE_CLASSNAME,
-  cn,
-  DETAIL_HERO_ACTION_BUTTON_CLASSNAME,
-  DETAIL_HERO_ACTIONS_CLASSNAME,
-  TINTED_SURFACE_GRADIENT_STOPS,
-} from "@/lib/styles";
-import SectionSurfaceCard from "@/components/modules/SectionSurfaceCard";
-import type { PublicStoreReview, StoreDetail, StoreViewerNote, StoreViewerReview } from "@/queries/store";
-import type { EditableStore, StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
 import BackNavLink from "@/components/core/BackNavLink";
-import StoreReviewAggregateBadge from "./StoreReviewAggregateBadge";
+import Button from "@/components/core/Button/Button";
+import Chip from "@/components/core/Chip";
+import Eyebrow from "@/components/core/Eyebrow";
+import Typography from "@/components/core/Typography";
+import AlertBanner from "@/components/modules/AlertBanner";
+import ChannelRow from "@/components/modules/ChannelRow";
+import DetailSidebar from "@/components/modules/DetailSidebar";
+import SummaryStatRow from "@/components/modules/SummaryStatRow";
+import { ROUTES } from "@/lib/constants";
+import type {
+  PublicStoreReview,
+  StoreDetail,
+  StoreViewerNote,
+  StoreViewerReview,
+  ViewerStoreActivity,
+} from "@/queries/store";
+import type { EditableStore, StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
+import StoreHero from "../../_components/share/StoreHero";
+import CollapsibleSection from "@/components/modules/CollapsibleSection";
 import StorePublicReviewsSection from "./StorePublicReviewsSection";
 import StoreReviewsStateProvider from "./StoreReviewsStateProvider";
 import StoreNoteForm from "./StoreNoteForm";
-import StoreEmptyCatalogTag from "../../_components/StoreEmptyCatalogTag";
 import StoreGovernanceSummaryModal from "./StoreGovernanceSummaryModal";
 import StoreReportModal from "./StoreReportModal";
-import CollectorCountryFlagEmoji from "../../_components/share/CollectorCountryFlagEmoji";
-import {
-  STORE_CATALOG_IMPORT_COUNTRY_CHIP_CLASSNAME,
-  STORE_CATALOG_PRODUCT_TYPE_CHIP_CLASSNAME,
-  STORE_HERO_META_PILL_CLASSNAME,
-  STORE_PRESENCE_CHIP_CLASSNAME,
-} from "../../_components/share/storePublicChipClassnames";
-import StoreCommerceSignalPills from "../../_components/share/StoreCommerceSignalPills";
-import { getCollectorCountryFlagEmoji } from "@/lib/catalog/collectorCountries";
 
 type StoreDetailContentProps = {
   locale: string;
@@ -59,15 +58,16 @@ type StoreDetailContentProps = {
   viewerNote: StoreViewerNote | null;
   governanceSummary: StoreGovernanceSummary;
   governanceViewerContext: StoreGovernanceViewerContext;
+  viewerActivity: ViewerStoreActivity;
   canAccessEditRoute: boolean;
   canDirectlyEdit: boolean;
   backHref?: string | null;
   backOrderLabel?: string | null;
 };
 
-function SimpleIconSvg({ path, size = 16 }: { path: string; size?: number }) {
+function SimpleIconSvg({ path, size = 14 }: { path: string; size?: number }) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" width={size} height={size} aria-hidden>
+    <svg viewBox="0 0 24 24" fill="currentColor" width={size} height={size} aria-hidden="true">
       <path d={path} />
     </svg>
   );
@@ -89,14 +89,10 @@ function getContactIcon(type: NonNullable<StoreDetail["contactChannels"]>[number
   if (type === "WHATSAPP") return <SimpleIconSvg path={siWhatsapp.path} />;
   if (type === "FACEBOOK") return <SimpleIconSvg path={siFacebook.path} />;
   if (type === "TIKTOK") return <SimpleIconSvg path={siTiktok.path} />;
-  if (type === "EMAIL") return <Mail className="size-4" aria-hidden />;
-  if (type === "PHONE") return <Phone className="size-4" aria-hidden />;
-  return <Link2 className="size-4" aria-hidden />;
+  if (type === "EMAIL") return <Mail size={14} aria-hidden="true" />;
+  if (type === "PHONE") return <Phone size={14} aria-hidden="true" />;
+  return <ExternalLink size={14} aria-hidden="true" />;
 }
-
-const DETAIL_SECTION_PANEL_CLASSNAME = `${COLLECTOR_CARD_SURFACE_CLASSNAME} flex flex-col gap-5 px-4 pt-3 pb-4 sm:px-5 sm:pt-3 sm:pb-5`;
-
-const DETAIL_INSET_CARD_CLASSNAME = "border-border/70 bg-card rounded-2xl border shadow-sm";
 
 export default function StoreDetailContent({
   locale,
@@ -107,6 +103,7 @@ export default function StoreDetailContent({
   viewerNote,
   governanceSummary,
   governanceViewerContext,
+  viewerActivity,
   canAccessEditRoute,
   canDirectlyEdit,
   backHref,
@@ -116,6 +113,7 @@ export default function StoreDetailContent({
   const tCountries = useTranslations("countries");
   const tProductTypes = useTranslations("storeProductTypes");
   const tListing = useTranslations("storeListing");
+  const tChannelTypes = useTranslations("stores.contactChannelTypes");
 
   const isPendingReview = store.status === "PENDING";
   const isInactive = !store.isActive;
@@ -124,25 +122,12 @@ export default function StoreDetailContent({
     governanceSummary.totalChangeRequests > 0 ||
     governanceViewerContext.openChangeRequest != null ||
     governanceViewerContext.openReport != null;
-  const showStoreStatusCard = isPendingReview || isInactive || hasGovernanceSummaryContent;
   const isBusiness = store.storeType === "BUSINESS";
-  const receivesOrdersLabel =
-    store.receivesOrders == null
-      ? tStores("detail.receivesOrdersUnknown")
-      : store.receivesOrders
-        ? tListing("cards.receivesOrdersYes")
-        : tListing("cards.receivesOrdersNo");
-  const hasStockLabel =
-    store.hasStock == null
-      ? tStores("detail.hasStockUnknown")
-      : store.hasStock
-        ? tListing("cards.hasStockYes")
-        : tListing("cards.hasStockNo");
   const contactChannelsCount = store.contactChannels?.length ?? 0;
   const addressesCount = store.addresses?.length ?? 0;
-  const storeCountryFlagEmoji = getCollectorCountryFlagEmoji(store.countryCode);
   const editModeLabel = canDirectlyEdit ? tStores("edit.direct.shortLabel") : tStores("edit.changeRequest.shortLabel");
-  const backLabel = backHref && backOrderLabel ? tListing("backToOrder", { orderId: backOrderLabel }) : tListing("backToListing");
+  const backLabel =
+    backHref && backOrderLabel ? tListing("backToOrder", { orderId: backOrderLabel }) : tListing("backToListing");
 
   return (
     <StoreReviewsStateProvider
@@ -151,342 +136,320 @@ export default function StoreDetailContent({
       reviews={reviews}
       viewerReview={viewerReview}
     >
-      <div className="text-foreground">
+      <div className="text-foreground space-y-4">
         <BackNavLink href={backHref ?? `/${locale}${ROUTES.stores}`}>{backLabel}</BackNavLink>
 
-        <section
-          aria-labelledby="store-detail-heading"
-          className={cn(
-            TINTED_SURFACE_GRADIENT_STOPS,
-            "border-border/70 relative mt-6 overflow-hidden rounded-2xl border bg-linear-to-br p-5 shadow-sm sm:p-6",
-            "animate-[hero-fade-in-up_460ms_ease-out_both] motion-reduce:animate-none",
-          )}
-        >
-          <header className="relative z-10">
-            <div className="flex items-start gap-4 sm:gap-5">
-              {isBusiness && store.logoUrl ? (
-                <div
-                  className={cn(
-                    "border-border/40 bg-background/85 relative size-16 shrink-0 overflow-hidden rounded-2xl border shadow-sm sm:size-20",
-                    "animate-[hero-float_5s_ease-in-out_infinite] motion-reduce:animate-none",
-                  )}
-                >
-                  <Image
-                    src={store.logoUrl}
-                    alt={tStores("logo.detailAlt", { storeName: store.name })}
-                    width={80}
-                    height={80}
-                    className="size-full object-cover"
-                    unoptimized
-                  />
-                </div>
-              ) : (
-                <div
-                  className={cn(
-                    "border-border/40 bg-background/85 text-primary flex size-16 shrink-0 items-center justify-center rounded-2xl border shadow-sm sm:size-20",
-                    "animate-[hero-float_5s_ease-in-out_infinite] motion-reduce:animate-none",
-                  )}
-                >
-                  <Building2 className="size-7 sm:size-9" aria-hidden />
-                </div>
-              )}
-
-              <div className="min-w-0 flex-1">
-                <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-x-4">
-                  <div className="min-w-0">
-                    <Heading as="h1" size="sm" className="text-text-title" id="store-detail-heading">
-                      {store.name}
-                    </Heading>
-
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <span className={STORE_HERO_META_PILL_CLASSNAME}>
-                        {storeCountryFlagEmoji ? (
-                          <CollectorCountryFlagEmoji countryCode={store.countryCode} className="shrink-0" />
-                        ) : (
-                          <MapPinned className="size-3.5 shrink-0" aria-hidden />
-                        )}
-                        {tCountries(store.countryCode)}
-                      </span>
-                      <span className={STORE_HERO_META_PILL_CLASSNAME}>
-                        {store.status === "PENDING" ? (
-                          <CircleAlert className="text-warning size-3.5 shrink-0" aria-hidden />
-                        ) : (
-                          <BadgeCheck className="text-success size-3.5 shrink-0" aria-hidden />
-                        )}
-                        {store.status === "PENDING" ? tStores("detail.statusPending") : tStores("detail.statusApproved")}
-                      </span>
-                      <StoreReviewAggregateBadge />
-                    </div>
-
-                    {store.description ? (
-                      <Typography size="sm" className="text-text-body mt-4 max-w-3xl leading-relaxed">
-                        {store.description}
-                      </Typography>
-                    ) : (
-                      <Typography size="sm" className="text-text-muted mt-4">
-                        {tStores("detail.noDescription")}
-                      </Typography>
-                    )}
-                  </div>
-
-                  <div className="mt-4 lg:mt-0 lg:justify-self-end">
-                    <div className={DETAIL_HERO_ACTIONS_CLASSNAME}>
-                      <StoreReportModal
-                        locale={locale}
-                        storeSlug={store.slug}
-                        existingReport={governanceViewerContext.openReport}
-                        triggerClassName={DETAIL_HERO_ACTION_BUTTON_CLASSNAME}
-                        showTriggerLabel
-                        triggerIcon={<Flag className="size-4 shrink-0" aria-hidden />}
-                      />
-                      {canAccessEditRoute && (
-                        <Link
-                          href={`/${locale}${ROUTES.stores}/${editableStore.slug}/edit`}
-                          className={cn(
-                            buttonVariants({ variant: "secondary", size: "md" }),
-                            DETAIL_HERO_ACTION_BUTTON_CLASSNAME,
-                          )}
-                        >
-                          <Pencil className="size-4 shrink-0" aria-hidden />
-                          {editModeLabel}
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </header>
-        </section>
-
-        {/* ── Status alerts ── */}
-        {showStoreStatusCard && (
-          <div className={cn(COLLECTOR_CARD_SURFACE_CLASSNAME, "mt-6 p-4 sm:p-4")}>
-            {isPendingReview && (
-              <div className="flex items-start gap-2.5" role="note">
-                <CircleAlert className="text-warning mt-0.5 size-4 shrink-0" aria-hidden />
-                <div className="min-w-0">
-                  <Typography size="sm" className="text-text-title font-semibold">
-                    {tStores("detail.pendingDisclaimerTitle")}
-                  </Typography>
-                  <Typography size="xs" className="text-text-body mt-1">
-                    {tStores("detail.pendingDisclaimerMessage")}
-                  </Typography>
-                </div>
-              </div>
-            )}
-            {isInactive && (
-              <div
-                className={cn("flex items-start gap-2.5", isPendingReview && "border-border/50 mt-4 border-t pt-4")}
-                role="alert"
-              >
-                <CircleAlert className="text-destructive mt-0.5 size-4 shrink-0" aria-hidden />
-                <div className="min-w-0">
-                  <Typography size="sm" className="text-text-title font-semibold">
-                    {tStores("detail.inactiveWarningTitle")}
-                  </Typography>
-                  <Typography size="xs" className="text-text-body mt-1">
-                    {tStores("detail.inactiveWarningMessage")}
-                  </Typography>
-                </div>
-              </div>
-            )}
-            {hasGovernanceSummaryContent && (
-              <StoreGovernanceSummaryModal
-                locale={locale}
-                storeSlug={store.slug}
-                summary={governanceSummary}
-                showTopSeparator={isPendingReview || isInactive}
-                viewerOpenReport={governanceViewerContext.openReport}
-                viewerOpenChangeRequest={governanceViewerContext.openChangeRequest}
-              />
-            )}
-          </div>
+        {store.isPrivate && (
+          <AlertBanner tone="info" icon={<Lock size={14} aria-hidden="true" />}>
+            {tStores("redesign.detail.privateBadge")}
+          </AlertBanner>
         )}
 
-        <div className="mt-6 space-y-5">
-          <section className={DETAIL_SECTION_PANEL_CLASSNAME} aria-label={tStores("detail.quickSummaryLabel")}>
-            <div className="grid gap-4 md:grid-cols-2 md:gap-5">
-              <div className="space-y-2.5">
-                <Typography as="span" size="2xs" className="text-text-muted block uppercase tracking-[0.18em]">
-                  {tStores("detail.presenceLabel")}
-                </Typography>
-                <div className="flex flex-wrap gap-2">
-                  {store.presenceTypes.map((presenceType) => (
-                    <span key={presenceType} className={STORE_PRESENCE_CHIP_CLASSNAME}>
-                      <Globe className="size-3.5" aria-hidden />
-                      {tListing(`presence.${presenceType}`)}
-                    </span>
-                  ))}
+        {/* Status alerts (PENDING / inactive / governance) — tonal banner per demo `s6-store-detail-pending` */}
+        {isPendingReview && (
+          <AlertBanner
+            tone="warning"
+            icon={<Clock size={16} aria-hidden="true" />}
+            title={tStores("detail.pendingDisclaimerTitle")}
+          >
+            {tStores("detail.pendingDisclaimerMessage")}
+          </AlertBanner>
+        )}
+        {isInactive && (
+          <AlertBanner
+            tone="destructive"
+            icon={<CircleAlert size={16} aria-hidden="true" />}
+            title={tStores("detail.inactiveWarningTitle")}
+          >
+            {tStores("detail.inactiveWarningMessage")}
+          </AlertBanner>
+        )}
+        {hasGovernanceSummaryContent && (
+          <StoreGovernanceSummaryModal
+            locale={locale}
+            storeSlug={store.slug}
+            storeName={store.name}
+            summary={governanceSummary}
+            triggerVariant="banner"
+            viewerOpenReport={governanceViewerContext.openReport}
+            viewerOpenChangeRequest={governanceViewerContext.openChangeRequest}
+          />
+        )}
+
+        {/* Two-column layout: main + sticky aside on lg. 320px rail matches orders/deliveries detail. */}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          {/* ── Main column ── */}
+          <div className="min-w-0 space-y-3">
+            <StoreHero
+              store={store}
+              labels={{
+                countryName: (code) => tCountries(code),
+                ratingCount: (count) => tListing("ratingCount", { count }),
+                ratingFallback: tStores("redesign.detail.ratingFallback"),
+                presencePhysical: tStores("redesign.detail.presence.physical"),
+                presenceOnline: tStores("redesign.detail.presence.online"),
+                hasStock: tStores("redesign.detail.hasStock"),
+                acceptsPreorders: tStores("redesign.detail.acceptsPreorders"),
+                personChip: tStores("redesign.detail.personChip"),
+                personNote: isBusiness ? undefined : tStores("redesign.detail.personNote"),
+                pendingChip: tStores("redesign.detail.pendingChip"),
+              }}
+            />
+
+            <CollapsibleSection
+              eyebrow={
+                <Eyebrow variant="chip" tone="cool" icon={Tags}>
+                  {tStores("redesign.detail.categoriesTitle")}
+                </Eyebrow>
+              }
+              topAccent="cool"
+            >
+              <div className="space-y-4">
+                <div>
+                  <Eyebrow as="p">{tStores("create.productTypesLabel")}</Eyebrow>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {store.productTypeKeys.length > 0 ? (
+                      store.productTypeKeys.map((key) => (
+                        <Chip key={key} variant="accent">
+                          {tProductTypes(key)}
+                        </Chip>
+                      ))
+                    ) : (
+                      <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
+                        {tStores("detail.noProductTypes")}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <Eyebrow as="p">{tStores("redesign.detail.importsFrom")}</Eyebrow>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {store.importCountryCodes.length > 0 ? (
+                      store.importCountryCodes.map((code) => (
+                        <Chip key={code} variant="neutral">
+                          {tCountries(code)}
+                        </Chip>
+                      ))
+                    ) : (
+                      <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
+                        {tStores("detail.noImportCountries")}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
+            </CollapsibleSection>
 
-              <div className="space-y-2.5">
-                <Typography as="span" size="2xs" className="text-text-muted block uppercase tracking-[0.18em]">
-                  {tStores("detail.businessSignalsTitle")}
-                </Typography>
-                <div className="flex flex-wrap gap-2">
-                  <StoreCommerceSignalPills
-                    receivesOrders={store.receivesOrders}
-                    hasStock={store.hasStock}
-                    receivesOrdersLabel={receivesOrdersLabel}
-                    hasStockLabel={hasStockLabel}
-                    receivesOrdersTooltip={tListing("cards.receivesOrdersTooltip")}
-                    hasStockTooltip={tListing("cards.hasStockTooltip")}
-                  />
+            {isBusiness && contactChannelsCount > 0 && (
+              <CollapsibleSection
+                eyebrow={
+                  <Eyebrow variant="chip" tone="cool" icon={AtSign}>
+                    {tStores("redesign.detail.channelsTitle")}
+                  </Eyebrow>
+                }
+                count={contactChannelsCount}
+                topAccent="cool"
+              >
+                <div className="flex flex-col">
+                  {store.contactChannels?.map((ch) => {
+                    const href = buildContactHref(ch.type, ch.value);
+                    if (!href) return null;
+                    return (
+                      <ChannelRow
+                        key={`${ch.type}-${ch.value}`}
+                        icon={getContactIcon(ch.type)}
+                        label={ch.label ?? tChannelTypes(ch.type)}
+                        value={ch.value}
+                        trailing={
+                          ch.type === "EMAIL" || ch.type === "PHONE" ? (
+                            <a
+                              href={href}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]"
+                              aria-label={tChannelTypes(ch.type)}
+                            >
+                              <Copy size={14} aria-hidden="true" />
+                            </a>
+                          ) : (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]"
+                              aria-label={tChannelTypes(ch.type)}
+                            >
+                              <ExternalLink size={14} aria-hidden="true" />
+                            </a>
+                          )
+                        }
+                      />
+                    );
+                  })}
                 </div>
-              </div>
-            </div>
-          </section>
+              </CollapsibleSection>
+            )}
 
-          <div className="grid gap-5 lg:grid-cols-2">
-            <SectionSurfaceCard
-              title={tStores("detail.productTypesLabel")}
-              titleAs="h2"
-              titleId="section-product-types"
-              icon={Box}
-              iconClassName="text-highlight"
-              className="h-full"
+            {isBusiness && addressesCount > 0 && (
+              <CollapsibleSection
+                eyebrow={
+                  <Eyebrow variant="chip" tone="cool" icon={MapPin}>
+                    {tStores("redesign.detail.addressesTitle")}
+                  </Eyebrow>
+                }
+                count={addressesCount}
+                topAccent="cool"
+              >
+                <div className="flex flex-col">
+                  {store.addresses?.map((address, index) => {
+                    // Postal-style multi-line: street → reference → city, country.
+                    // Each part flows on its own line and wraps independently so long
+                    // addresses (e.g. Japanese full addresses) stay fully visible.
+                    const lines = [
+                      address.addressLine,
+                      address.reference ?? "",
+                      [address.city, tCountries(store.countryCode)].filter(Boolean).join(", "),
+                    ];
+                    return (
+                      <ChannelRow
+                        key={`${address.addressLine}-${index}`}
+                        icon={<MapPin size={14} aria-hidden="true" />}
+                        label={tStores("redesign.detail.addressDefaultLabel")}
+                        valueLines={lines}
+                        trailing={
+                          <span
+                            aria-hidden="true"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)]"
+                          >
+                            <MapIcon size={13} aria-hidden="true" />
+                          </span>
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              </CollapsibleSection>
+            )}
+
+            <CollapsibleSection
+              eyebrow={
+                <Eyebrow variant="chip" tone="warm" icon={Star}>
+                  {tStores("redesign.detail.reviewsTitle")}
+                </Eyebrow>
+              }
+              topAccent="warm"
             >
-              {store.productTypeKeys.length > 0 ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {store.productTypeKeys.map((productTypeKey) => (
-                    <span key={productTypeKey} className={STORE_CATALOG_PRODUCT_TYPE_CHIP_CLASSNAME}>
-                      <Box className="size-3.5" aria-hidden />
-                      {tProductTypes(productTypeKey)}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-3">
-                  <StoreEmptyCatalogTag className="px-3 py-1.5">
-                    {tStores("detail.noProductTypes")}
-                  </StoreEmptyCatalogTag>
-                </div>
-              )}
-            </SectionSurfaceCard>
-
-            <SectionSurfaceCard
-              title={tStores("detail.importCountriesLabel")}
-              titleAs="h2"
-              titleId="section-import-countries"
-              icon={Globe}
-              iconClassName="text-info"
-              className="h-full"
-            >
-              {store.importCountryCodes.length > 0 ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {store.importCountryCodes.map((countryCode) => (
-                    <span key={countryCode} className={STORE_CATALOG_IMPORT_COUNTRY_CHIP_CLASSNAME}>
-                      <CollectorCountryFlagEmoji countryCode={countryCode} className="shrink-0" />
-                      {tCountries(countryCode)}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-3">
-                  <StoreEmptyCatalogTag className="px-3 py-1.5">
-                    {tStores("detail.noImportCountries")}
-                  </StoreEmptyCatalogTag>
-                </div>
-              )}
-            </SectionSurfaceCard>
+              <StorePublicReviewsSection locale={locale} storeSlug={store.slug} />
+            </CollapsibleSection>
           </div>
 
-          <SectionSurfaceCard
-            title={tStores("create.contactChannelsLabel")}
-            titleAs="h2"
-            titleId="section-contact"
-            icon={Link2}
-            iconClassName="text-success"
-          >
-            {isBusiness && contactChannelsCount > 0 ? (
-              <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
-                {store.contactChannels?.map((ch) => {
-                  const href = buildContactHref(ch.type, ch.value);
-                  if (!href) return null;
-
-                  return (
-                    <li key={`${ch.type}-${ch.value}`}>
-                      <a
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={cn(
-                          DETAIL_INSET_CARD_CLASSNAME,
-                          "group focus-visible:ring-ring hover:border-primary/30 flex items-center gap-3 p-3 transition-colors focus-visible:ring-2 focus-visible:outline-none",
-                        )}
-                      >
-                        <span className="bg-primary/12 text-primary border-border/50 flex size-9 shrink-0 items-center justify-center rounded-xl border">
-                          {getContactIcon(ch.type)}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <Typography as="span" size="2xs" className="text-text-muted block">
-                            {ch.label ?? tStores(`contactChannelTypes.${ch.type}`)}
-                          </Typography>
-                          <Typography as="span" size="sm" className="text-text-body block truncate font-medium">
-                            {ch.value}
-                          </Typography>
-                        </span>
-                        <ExternalLink className="text-text-muted group-hover:text-primary size-3.5 shrink-0 transition-colors" />
-                      </a>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <Typography size="sm" className="text-text-muted mt-2">
-                {isBusiness ? tStores("detail.noContactChannels") : tStores("detail.notAvailableForStoreType")}
-              </Typography>
-            )}
-          </SectionSurfaceCard>
-
-          <SectionSurfaceCard
-            title={tStores("create.addressesLabel")}
-            titleAs="h2"
-            titleId="section-addresses"
-            icon={MapPinned}
-            iconClassName="text-accent"
-          >
-            {isBusiness && addressesCount > 0 ? (
-              <ul className="mt-3 grid gap-2.5 sm:grid-cols-2" role="list">
-                {store.addresses?.map((address, index) => (
-                  <li key={`${address.countryCode}-${address.addressLine}-${index}`}>
-                    <div className={cn(DETAIL_INSET_CARD_CLASSNAME, "space-y-2.5 px-4 py-3")}>
-                      <div className="flex items-center gap-2">
-                        <Store className="text-primary size-4 shrink-0" aria-hidden />
-                        <Typography size="sm" className="text-text-title min-w-0 flex-1 font-semibold">
-                          {address.city
-                            ? `${address.city}, ${tCountries(address.countryCode)}`
-                            : tCountries(address.countryCode)}
-                        </Typography>
-                      </div>
-                      <Typography size="sm" className="text-text-body">
-                        {address.addressLine}
-                      </Typography>
-                      {address.reference ? (
-                        <Typography size="xs" className="text-text-muted">
-                          {address.reference}
-                        </Typography>
-                      ) : null}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <Typography size="sm" className="text-text-muted mt-2">
-                {isBusiness ? tStores("detail.noAddresses") : tStores("detail.notAvailableForStoreType")}
-              </Typography>
-            )}
-          </SectionSurfaceCard>
+          {/* ── Sticky aside ── */}
+          <DetailSidebar
+            ariaLabel={tStores("detail.quickSummaryLabel")}
+            labels={{
+              resumen: tStores("redesign.detail.aside.resumen"),
+              acciones: tStores("redesign.detail.aside.acciones"),
+              notaPrivada: tStores("redesign.detail.aside.notaPrivada"),
+              notaPrivadaEyebrow: tStores("redesign.detail.aside.notaPrivada"),
+            }}
+            accents={{
+              resumen: { tone: "accent", icon: Package, topAccent: "accent" },
+              acciones: { tone: "accent", icon: Zap, topAccent: "accent" },
+            }}
+            resumen={
+              viewerActivity.ordersTotal > 0 ? (
+                <>
+                  {/* Rows wrap in a single container so the sidebar's flex gap doesn't
+                      pull them apart from their border-top separators. */}
+                  <div className="flex flex-col">
+                    <SummaryStatRow
+                      label={tStores("redesign.detail.aside.ordersTotalLabel")}
+                      value={String(viewerActivity.ordersTotal)}
+                    />
+                    <SummaryStatRow
+                      label={tStores("redesign.detail.aside.ordersActiveLabel")}
+                      value={String(viewerActivity.ordersActive)}
+                    />
+                    {viewerActivity.totalSpentByCurrency.length > 0 && (
+                      <SummaryStatRow
+                        label={tStores("redesign.detail.aside.totalSpentLabel")}
+                        value={viewerActivity.totalSpentByCurrency
+                          .map(({ currencyCode, totalMinorUnits }) => formatAmount(totalMinorUnits, currencyCode))
+                          .join(" · ")}
+                      />
+                    )}
+                  </div>
+                  {/* Inline hyperlink recipe (playbook §1, `link` variant is legacy) — matches
+                      the "Ver entregas" link in OrderItemsReadOnlyList. */}
+                  <Link
+                    href={`/${locale}${ROUTES.orders}?store=${store.id}`}
+                    className="text-accent inline-flex items-center gap-1.5 self-start [font-size:var(--text-caption)] font-medium underline-offset-2 hover:underline"
+                  >
+                    <ExternalLink size={14} aria-hidden="true" />
+                    {tStores("redesign.detail.aside.viewLinkedOrders")}
+                  </Link>
+                </>
+              ) : (
+                <Typography size="xs" className="text-text-muted">
+                  {tStores("redesign.detail.aside.noOrdersYet")}
+                </Typography>
+              )
+            }
+            acciones={
+              <>
+                <Button
+                  as="a"
+                  href={`/${locale}${ROUTES.ordersNew}?store=${store.id}`}
+                  variant="primary"
+                  leadingIcon={<PlusCircle size={16} aria-hidden="true" />}
+                  fullWidth
+                  className="justify-start"
+                >
+                  {tStores("redesign.detail.actions.anotarPedido")}
+                </Button>
+                {canAccessEditRoute && (
+                  <Button
+                    as="a"
+                    href={`/${locale}${ROUTES.stores}/${editableStore.slug}/edit`}
+                    variant="ghost"
+                    leadingIcon={
+                      canDirectlyEdit ? (
+                        <Pencil size={16} aria-hidden="true" />
+                      ) : (
+                        <GitPullRequestArrow size={16} aria-hidden="true" />
+                      )
+                    }
+                    fullWidth
+                    className="justify-start"
+                  >
+                    {editModeLabel}
+                  </Button>
+                )}
+                <StoreReportModal
+                  locale={locale}
+                  storeSlug={store.slug}
+                  storeName={store.name}
+                  existingReport={governanceViewerContext.openReport}
+                  triggerClassName="w-full justify-start"
+                  triggerVariant="destructive-ghost"
+                  showTriggerLabel
+                  triggerIcon={<Flag size={16} aria-hidden="true" />}
+                />
+              </>
+            }
+            notaPrivada={
+              <StoreNoteForm key={store.slug} locale={locale} storeSlug={store.slug} existingNote={viewerNote} />
+            }
+          />
         </div>
 
-        {/* ── Reviews & Notes (full width) ── */}
-        <div className="mt-6 space-y-5">
-          <StorePublicReviewsSection locale={locale} storeSlug={store.slug} />
-          <StoreNoteForm key={store.slug} locale={locale} storeSlug={store.slug} existingNote={viewerNote} />
-        </div>
+        {/* Hidden h1 for SR (the visible title is in StoreHero) */}
+        <h1 id="store-detail-heading" className="sr-only">
+          {store.name}
+        </h1>
       </div>
     </StoreReviewsStateProvider>
   );
 }
+
+// Re-exported for the Link href; helps the diff tracker. Used as side-effect import target.
+export { Link };

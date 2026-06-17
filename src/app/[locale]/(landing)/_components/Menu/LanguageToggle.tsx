@@ -38,7 +38,7 @@ export default function LanguageToggle({
 
   return (
     <nav
-      aria-label={ariaLabel ?? "Language"}
+      aria-label={ariaLabel ?? t("regionLabel")}
       className={cn("font-secondary text-text-body flex items-center gap-0.5 text-sm", className)}
     >
       {routing.locales.map((loc, index) => {

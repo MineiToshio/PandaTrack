@@ -233,7 +233,7 @@ Role:
 
 - public reviews are persisted and aggregated at the store level
 - when a signed-in viewer has a review, it is surfaced first in the public review list
-- review lists reveal more entries in increments instead of rendering every review immediately
+- the public review list shows a 4-review community preview and reveals all remaining reviews in a single "Ver todas" action instead of rendering every review immediately
 - one private note per signed-in viewer can be saved and edited from the detail page without entering full store edit mode
 - saving an empty trimmed store-note value clears the persisted note, matching the inline-note behavior used by order and delivery detail
 

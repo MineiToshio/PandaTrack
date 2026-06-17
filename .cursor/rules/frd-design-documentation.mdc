@@ -1,0 +1,111 @@
+---
+description: Per-FRD design record (fdd-XX-<slug>.md + self-contained prototype/) inside docs/product/.../frd-XX/
+alwaysApply: false
+---
+
+# FRD design documentation — PandaTrack
+
+Use this rule whenever you create, change, or audit the **design** of a UI-bearing FRD: its
+screens, their layout, visual treatment, components, interactions, states, copy, responsive
+behavior, or accessibility. It defines where the durable design record of an FRD lives and
+what shape it takes, so every UI FRD is reconstructible on its own, without depending on the
+redesign subproject that originally produced it.
+
+This rule is about the **design record of a specific FRD**. It does not replace the
+design **system** (`docs/design/` — tokens, components, patterns, motion, states, voice),
+which remains the source of truth for system-wide rules. The FDD **references** the system;
+it never re-defines it.
+
+## Canonical location & files
+
+The design record sits **directly inside** the FRD folder, mirroring the FRD's own naming —
+no `design/` subfolder:
+
+```text
+docs/product/<prd>/frd-XX-<slug>/
+  frd-XX-<slug>.md          # functional contract (existing)
+  fdd-XX-<slug>.md          # the Feature Design Document — "the prototype in words"
+  prototype/
+    <slug>.html             # self-contained visual reference (opens standalone)
+  bp-01-<slug>/             # blueprint + work-orders (existing)
+```
+
+The FDD filename mirrors the FRD filename with the `fdd-` prefix (`frd-08-delivery-management.md`
+→ `fdd-08-delivery-management.md`). The prototype HTML inside `prototype/` is named after the
+FRD slug (`<slug>.html`).
+
+- **System-level** design showcases (modal patterns, cross-cutting states, component/token
+  galleries) do **not** belong to any FRD — they live in `docs/design/`. Only **product
+  screens** of an FRD go in that FRD's `fdd-XX-*.md` + `prototype/`.
+- FRDs with **no UI** (testing baselines, platform foundations, observability) do not get an
+  FDD or prototype.
+
+## The FDD (`fdd-XX-<slug>.md`)
+
+The FDD is the text form of the FRD's visual + interaction design. It pairs with the
+prototype (pixel truth) and is governed by `docs/design/` (system rules).
+
+**Frontmatter** (product-doc style, see `docs/templates/product-docs-guide.md`): `id`
+(`FDD-XX`), `type: FDD`, `slug`, `title`, `status`, `parent` (`FRD-XX`), `last_updated`,
+plus `prototype:` (relative path) and `demo_anchors:` (the source anchors it distills).
+
+**Required sections** (in order):
+
+1. **Overview & screens covered** — what the feature is + a table of every screen with its
+   route and prototype anchor.
+2. **Layout & structure per screen** — the content column only; the app shell is referenced,
+   not redefined.
+3. **Visual treatment** — color roles, surfaces, typography, shape/radius/elevation, **citing
+   `docs/design` tokens**. Record how the FRD *applies* the system; do not restate token
+   values.
+4. **Components consumed** — a table linking to `docs/design/components.md`. The FRD is an
+   assembly of existing components; flag any genuinely new reusable component (it needs a
+   `docs/design/` entry, not an FDD-local definition).
+5. **Interactions & states** — empty / loading / error, hover / press, optimistic behavior,
+   motion — linking `docs/design/states.md` and `docs/design/motion.md`.
+6. **Copy & voice** — key user-facing strings + tone by surface, linking `docs/design/ux-copy.md`
+   and `docs/product/glossary.md`. Quote copy verbatim in the default locale (`es`).
+7. **Responsive** — only the FRD-specific breakpoint behavior.
+8. **Accessibility** — only what is specific to this FRD beyond the system baseline.
+9. **Sources & provenance** — prototype path, the `docs/design/` rules and ADRs relied on,
+   and the functional FRD. The redesign subproject that originally produced the design is
+   historical context only — mention it in prose if useful, but do not cite it as a live
+   source (no paths/links into it); the FDD + prototype must stand on their own.
+
+**The golden rule:** reference the system, describe what is **specific** to the FRD, cite
+the prototype for the pixel.
+
+## The prototype (`prototype/<slug>.html`)
+
+A single self-contained HTML file that **opens standalone** — no dependency on the
+redesign subproject. It inlines the shared `<style>` and the shared `<script>` for the
+interactions it uses (theme + palette toggles, sidebar, wizard accordion, filter drawer,
+tabs, expand/collapse), and includes only the `<section>`s of that FRD. The default palette
+is **Velvet** and both light and dark must render correctly.
+
+When extracted from the workshop demo, keep storage keys distinct from the master demo and
+adapt the router's default/fallback screen to the FRD's home screen (the slice has no
+`#dashboard`).
+
+## Authoring & maintenance
+
+- **English prose, `es` copy quoted** — same convention as `docs/design/` topic docs.
+- **Relative Markdown links only** — repository-relative, no machine-specific absolute paths.
+  Verify links resolve (depth from the FRD folder to `docs/design/` is `../../../design/`).
+- **Authority order: shipped implementation → FDD prose → prototype.** The FDD prose is the
+  authoritative design record and MUST stay aligned with what is actually implemented. The
+  `prototype/<slug>.html` is a **non-authoritative visual aid** — a guide to intent, not the final
+  source of truth. It is allowed to drift from the shipped pixels (it is not kept pixel-synced), and
+  where the prototype and the FDD/implementation disagree, the FDD + implementation win. Do not treat
+  a prototype detail as a requirement; confirm against the FDD prose and the code.
+- **Keep the FDD aligned with shipped behavior.** A user-requested UX/flow/copy change to a UI FRD
+  must update the owning FDD in the same change (part of implementation completion, not optional
+  follow-up). Refreshing the prototype is best-effort — do it when convenient, but a stale prototype
+  is not a blocker as long as the FDD is correct.
+- **Conflict resolution.** System-wide rule conflict → `docs/design/` wins. FRD-specific
+  visual conflict → the prototype wins until the FDD is corrected in the same change.
+
+## Reference implementation
+
+`docs/product/prd-01-collector-mvp/frd-08-delivery-management/` (its `fdd-08-delivery-management.md`
++ `prototype/delivery-management.html`) is the pilot and canonical example of this convention.

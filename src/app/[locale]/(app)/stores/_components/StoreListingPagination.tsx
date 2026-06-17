@@ -1,4 +1,4 @@
-import Link from "next/link";
+import PaginationLink from "./PaginationLink";
 import { getTranslations } from "next-intl/server";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import { cn } from "@/lib/styles";
@@ -73,12 +73,12 @@ export default async function StoreListingPagination({
           {tListing("pagination.previous")}
         </span>
       ) : (
-        <Link
+        <PaginationLink
           href={createPageHref(previousPage)}
           className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "min-h-9 rounded-lg px-3")}
         >
           {tListing("pagination.previous")}
-        </Link>
+        </PaginationLink>
       )}
 
       {paginationTokens.map((token) => {
@@ -92,7 +92,7 @@ export default async function StoreListingPagination({
 
         const isCurrentPage = token.page === currentPage;
         return (
-          <Link
+          <PaginationLink
             key={`store-page-${token.page}`}
             href={createPageHref(token.page)}
             aria-current={isCurrentPage ? "page" : undefined}
@@ -103,7 +103,7 @@ export default async function StoreListingPagination({
             )}
           >
             {token.page}
-          </Link>
+          </PaginationLink>
         );
       })}
 
@@ -118,12 +118,12 @@ export default async function StoreListingPagination({
           {tListing("pagination.next")}
         </span>
       ) : (
-        <Link
+        <PaginationLink
           href={createPageHref(nextPage)}
           className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "min-h-9 rounded-lg px-3")}
         >
           {tListing("pagination.next")}
-        </Link>
+        </PaginationLink>
       )}
     </nav>
   );

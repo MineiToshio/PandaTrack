@@ -2,10 +2,10 @@ import { routing } from "@/i18n/routing";
 import { isLocale } from "@/types/locale";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getMessages, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import "../globals.css";
-import { logoFont, regularFont, secondaryFont } from "@/lib/fonts";
+import { interFont, logoFont, monoFont, regularFont, secondaryFont } from "@/lib/fonts";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { getSiteUrl } from "@/lib/seo";
 import { APP_NAME } from "@/lib/constants";
@@ -21,10 +21,11 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
   if (!isLocale(locale)) return {};
   const baseUrl = getSiteUrl();
   const imageUrl = `${baseUrl.replace(/\/$/, "")}/${locale}/opengraph-image`;
+  const t = await getTranslations({ locale, namespace: "common" });
   return {
     metadataBase: new URL(baseUrl),
     title: { default: APP_NAME, template: `%s | ${APP_NAME}` },
-    description: "Track your collection efficiently",
+    description: t("meta.description"),
     openGraph: {
       images: [imageUrl],
     },
@@ -35,36 +36,40 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
+/** Inline script that runs before hydration to set data-theme on <html>,
+ *  preventing a flash of wrong theme. Reads pandatrack-theme from localStorage;
+ *  defaults to prefers-color-scheme inference. */
+const themeInitScript = `(function(){
+  var THEME_KEY='pandatrack-theme';
+  var el=document.documentElement;
+  try{
+    var theme=localStorage.getItem(THEME_KEY);
+    if(theme!=='light'&&theme!=='dark'){
+      theme=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+    }
+    el.dataset.theme=theme;
+  }catch(e){
+    el.dataset.theme='light';
+  }
+})();`;
+
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
   const { locale } = await params;
 
-  // Ensure that the incoming `locale` is valid
   if (!isLocale(locale)) {
     notFound();
   }
 
-  // Providing all messages to the client
-  // side is the easiest way to get started
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-(function() {
-  var key = 'theme';
-  var stored = localStorage.getItem(key);
-  if (stored === 'light' || stored === 'dark') {
-    document.documentElement.setAttribute('data-theme', stored);
-  }
-})();
-            `.trim(),
-          }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
-      <body className={`${regularFont.variable} ${secondaryFont.variable} ${logoFont.variable} antialiased`}>
+      <body
+        className={`${interFont.variable} ${monoFont.variable} ${regularFont.variable} ${secondaryFont.variable} ${logoFont.variable} antialiased`}
+      >
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>{children}</ThemeProvider>
         </NextIntlClientProvider>

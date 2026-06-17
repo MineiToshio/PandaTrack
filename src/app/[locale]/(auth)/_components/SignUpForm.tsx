@@ -3,11 +3,12 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import posthog from "posthog-js";
 import AuthFormLayout from "./AuthFormLayout";
 import EmailPasswordForm from "./EmailPasswordForm";
 import { authClient } from "@/lib/auth/auth-client";
-import { POSTHOG_EVENTS } from "@/lib/constants";
+import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 
 type SignUpFormProps = {
   callbackURL: string;
@@ -24,6 +25,9 @@ export default function SignUpForm({ callbackURL, signInHref }: SignUpFormProps)
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+
+  const termsHref = `/${locale}${ROUTES.terms}`;
+  const privacyHref = `/${locale}${ROUTES.privacy}`;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -69,11 +73,11 @@ export default function SignUpForm({ callbackURL, signInHref }: SignUpFormProps)
   return (
     <AuthFormLayout
       title={t("title")}
+      description={t("subtitle")}
       googleVariant="signUp"
       callbackURL={callbackURL}
-      footerLinkHref={signInHref}
-      footerLinkLabel={t("linkToSignIn")}
-      dividerLabel={tAuth("dividerOr")}
+      dividerLabel={tAuth("divider")}
+      foot={{ prefix: t("footPrefix"), linkHref: signInHref, linkLabel: t("footLink") }}
     >
       <EmailPasswordForm
         idPrefix="signup"
@@ -85,8 +89,21 @@ export default function SignUpForm({ callbackURL, signInHref }: SignUpFormProps)
         isPending={isPending}
         submitLabel={t("submit")}
         emailLabel={t("email")}
+        emailPlaceholder={t("emailPlaceholder")}
         passwordLabel={t("password")}
+        passwordHelp={t("passwordHelp")}
         passwordAutoComplete="new-password"
+        beforeSubmit={
+          <label className="auth-check mb-[18px]">
+            <input type="checkbox" />
+            <span>
+              {t.rich("terms", {
+                terms: (chunks) => <Link href={termsHref}>{chunks}</Link>,
+                privacy: (chunks) => <Link href={privacyHref}>{chunks}</Link>,
+              })}
+            </span>
+          </label>
+        }
         onSubmit={handleSubmit}
       />
     </AuthFormLayout>

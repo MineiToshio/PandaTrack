@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
@@ -7,12 +8,9 @@ import * as Sentry from "@sentry/nextjs";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
-import { buttonVariants } from "@/components/core/Button/buttonVariants";
-import Typography from "@/components/core/Typography";
+import PasswordInput from "@/components/core/PasswordInput";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { cn } from "@/lib/styles";
 import AuthFormLayout from "./AuthFormLayout";
-import EmailPasswordForm from "./EmailPasswordForm";
 import { authClient } from "@/lib/auth/auth-client";
 
 type ResetPasswordFormState = "ready" | "invalid" | "success";
@@ -45,6 +43,7 @@ export default function ResetPasswordForm({
   const t = useTranslations("auth.resetPassword");
   const tErrors = useTranslations("auth.errors");
   const [password, setPassword] = useState("");
+  const [passwordRepeat, setPasswordRepeat] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [state, setState] = useState<ResetPasswordFormState>(initialState);
@@ -64,6 +63,11 @@ export default function ResetPasswordForm({
 
     if (!passwordTrimmed) {
       setError(tErrors("generic"));
+      return;
+    }
+
+    if (passwordTrimmed !== passwordRepeat.trim()) {
+      setError(t("passwordMismatch"));
       return;
     }
 
@@ -101,6 +105,7 @@ export default function ResetPasswordForm({
       posthog.capture(POSTHOG_EVENTS.AUTH.RESET_PASSWORD_SUCCESS, { locale });
       setState("success");
       setPassword("");
+      setPasswordRepeat("");
     } catch (resetError) {
       Sentry.captureException(resetError);
       posthog.capture(POSTHOG_EVENTS.AUTH.RESET_PASSWORD_FAILED, {
@@ -115,32 +120,21 @@ export default function ResetPasswordForm({
 
   if (state === "invalid") {
     return (
-      <AuthFormLayout
-        title={t("invalidTitle")}
-        description={t("invalidDescription")}
-        footerLinkHref={signInHref}
-        footerLinkLabel={t("linkToSignIn")}
-        dividerLabel={t("dividerLabel")}
-      >
-        <div className="space-y-4">
-          <Link href={forgotPasswordHref} className={cn(buttonVariants({ variant: "primary" }), "w-full")}>
-            {t("requestAnotherLink")}
-          </Link>
-        </div>
+      <AuthFormLayout title={t("invalidTitle")} description={t("invalidDescription")}>
+        <Button as="a" href={forgotPasswordHref} variant="primary" fullWidth className="auth-submit">
+          {t("requestAnotherLink")}
+        </Button>
+        <p className="auth-foot">
+          <Link href={signInHref}>{t("linkToSignIn")}</Link>
+        </p>
       </AuthFormLayout>
     );
   }
 
   if (state === "success") {
     return (
-      <AuthFormLayout
-        title={t("successTitle")}
-        description={t("successDescription")}
-        footerLinkHref={signInHref}
-        footerLinkLabel={t("linkToSignIn")}
-        dividerLabel={t("dividerLabel")}
-      >
-        <Button className="w-full" onClick={() => router.push(signInHref)}>
+      <AuthFormLayout title={t("successTitle")} description={t("successDescription")}>
+        <Button variant="primary" fullWidth className="auth-submit" onClick={() => router.push(signInHref)}>
           {t("goToSignIn")}
         </Button>
       </AuthFormLayout>
@@ -148,33 +142,59 @@ export default function ResetPasswordForm({
   }
 
   return (
-    <AuthFormLayout
-      title={t("title")}
-      description={t("description")}
-      footerLinkHref={signInHref}
-      footerLinkLabel={t("linkToSignIn")}
-      dividerLabel={t("dividerLabel")}
-    >
-      <EmailPasswordForm
-        idPrefix="reset-password"
-        email=""
-        password={password}
-        onEmailChange={() => {}}
-        onPasswordChange={setPassword}
-        error={error}
-        isPending={isPending}
-        submitLabel={t("submit")}
-        emailLabel=""
-        passwordLabel={t("password")}
-        passwordAutoComplete="new-password"
-        hideEmailField
-        onSubmit={handleSubmit}
-      />
-      {!error ? (
-        <Typography size="xs" className="text-text-muted mt-3" role="status" aria-live="polite">
-          {t("helper")}
-        </Typography>
-      ) : null}
+    <AuthFormLayout title={t("title")} description={t("description")}>
+      <form onSubmit={handleSubmit} noValidate>
+        {error ? (
+          <div className="auth-form-error" role="alert">
+            <AlertCircle aria-hidden="true" />
+            <span>{error}</span>
+          </div>
+        ) : null}
+
+        <div className="auth-field">
+          <label className="auth-label" htmlFor="reset-password">
+            {t("password")}
+          </label>
+          <PasswordInput
+            id="reset-password"
+            name="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            disabled={isPending}
+            required
+            error={!!error}
+          />
+          <p className="auth-help">{t("passwordHelp")}</p>
+        </div>
+
+        <div className="auth-field">
+          <label className="auth-label" htmlFor="reset-password-repeat">
+            {t("passwordRepeat")}
+          </label>
+          <PasswordInput
+            id="reset-password-repeat"
+            name="passwordRepeat"
+            autoComplete="new-password"
+            value={passwordRepeat}
+            onChange={(event) => setPasswordRepeat(event.target.value)}
+            disabled={isPending}
+            required
+            error={!!error}
+          />
+        </div>
+
+        <Button
+          type="submit"
+          variant="primary"
+          fullWidth
+          className="auth-submit"
+          loading={isPending}
+          disabled={isPending}
+        >
+          {t("submit")}
+        </Button>
+      </form>
     </AuthFormLayout>
   );
 }

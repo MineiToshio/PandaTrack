@@ -1,26 +1,20 @@
-import Section from "@/app/[locale]/(landing)/_components/Section";
-import FeaturesGrid from "./FeaturesGrid";
+import { LayoutGrid } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Section from "../Section";
+import FeaturesGrid from "./FeaturesGrid";
 
-export default function FeaturesSection() {
+export default function Features() {
   const t = useTranslations("landing.features");
+
   return (
     <Section
-      sectionId="features"
-      ariaLabelledby="features-heading"
-      title={t("sectionTitle")}
-      subtitle={t("sectionSubtitle")}
+      id="features"
       headingId="features-heading"
-      className="relative"
-      background={
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.35]"
-          style={{
-            background: "radial-gradient(ellipse 70% 50% at 50% 0%, var(--muted) 0%, transparent 55%)",
-          }}
-          aria-hidden
-        />
-      }
+      eyebrow={t("eyebrow")}
+      eyebrowIcon={<LayoutGrid aria-hidden="true" />}
+      title={t("title")}
+      subtitle={t("subtitle")}
+      tinted
     >
       <FeaturesGrid />
     </Section>

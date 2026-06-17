@@ -1,4 +1,22 @@
+import { Inter, JetBrains_Mono } from "next/font/google";
 import localFont from "next/font/local";
+
+/* ── New design system fonts ── */
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  axes: ["opsz"], // activates Inter Display optical cut at large sizes
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+});
+
+/* ── Legacy fonts — kept for backward compatibility ── */
 
 const openSans = localFont({
   src: [
@@ -47,4 +65,10 @@ const zilla = localFont({
   variable: "--font-logo",
 });
 
-export { openSans as regularFont, robotoCondensed as secondaryFont, zilla as logoFont };
+export {
+  inter as interFont,
+  jetbrainsMono as monoFont,
+  openSans as regularFont,
+  robotoCondensed as secondaryFont,
+  zilla as logoFont,
+};

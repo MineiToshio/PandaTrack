@@ -86,7 +86,7 @@ Product architecture:
 - Use semantic HTML (`button`, `nav`, `main`, `section`, etc.).
 - Use `cn()` from `@/lib/styles` for class composition.
 - Use theme-aware semantic design variables, not hardcoded light/dark colors.
-- Treat `docs/design/README.md` and the files in `docs/design/` as the source of truth for typography, color, spacing, radius, surfaces, and shared UI hierarchy decisions. Review the relevant design doc before introducing or changing reusable interface patterns.
+- Treat `docs/design/README.md` and the files in `docs/design/` as the source of truth for typography, color, spacing, radius, surfaces, and shared UI hierarchy decisions. Review the relevant design doc before introducing or changing reusable interface patterns. The folder also holds the operational `docs/design/PLAYBOOK.md` (mandatory pre-implementation workflow + anti-patterns), `docs/design/components.md` (component map), and `docs/design/decisions/` (accepted design ADRs).
 - Validate responsive behavior across mobile/tablet/desktop. No overlap or accidental overflow.
 
 ### Accessibility

@@ -1,70 +1,68 @@
-"use client";
-
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import Heading from "@/components/core/Heading";
 import GoogleSignInButton from "./GoogleSignInButton";
+
+type AuthFootLink = {
+  prefix: string;
+  linkHref: string;
+  linkLabel: string;
+};
 
 type AuthFormLayoutProps = {
   title: string;
   description?: string;
+  /** Optional top back-link (e.g. forgot-password → sign-in). */
+  backLink?: { href: string; label: string };
   googleVariant?: "signIn" | "signUp";
   callbackURL?: string;
-  footerLinkHref: string;
-  footerLinkLabel: string;
-  dividerLabel: string;
+  dividerLabel?: string;
+  /** Optional bottom foot line: plain prefix + accent link. */
+  foot?: AuthFootLink;
   children: React.ReactNode;
 };
 
 /**
- * Shared layout for sign-in and sign-up pages: full-screen centering,
- * title, Google CTA, "or" divider, and footer link. Form content is passed as children.
+ * Auth card (`.auth-card`): optional back-link, head (h1 + subtitle),
+ * optional Google + divider, form content, optional foot link. The page
+ * centering + minibar live in `(auth)/layout.tsx`.
  */
 export default function AuthFormLayout({
   title,
   description,
+  backLink,
   googleVariant,
   callbackURL,
-  footerLinkHref,
-  footerLinkLabel,
   dividerLabel,
+  foot,
   children,
 }: AuthFormLayoutProps) {
   return (
-    <div className="bg-background text-foreground flex min-h-screen flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm space-y-6">
-        <header className="text-center">
-          <Heading as="h1" size="sm" className="text-text-title">
-            {title}
-          </Heading>
-          {description ? <p className="text-text-muted mt-2 text-sm">{description}</p> : null}
-        </header>
+    <div className="auth-card">
+      {backLink ? (
+        <Link href={backLink.href} className="auth-back">
+          <ArrowLeft aria-hidden="true" /> {backLink.label}
+        </Link>
+      ) : null}
 
-        {googleVariant && callbackURL ? (
-          <>
-            <GoogleSignInButton callbackURL={callbackURL} variant={googleVariant} />
-
-            <div className="relative">
-              <div className="border-border absolute inset-0 flex items-center" aria-hidden>
-                <span className="border-border w-full border-t" />
-              </div>
-              <div className="text-text-muted relative flex justify-center text-xs">
-                <span className="bg-background px-2">{dividerLabel}</span>
-              </div>
-            </div>
-          </>
-        ) : null}
-
-        {children}
-
-        <p className="text-text-muted text-center text-sm">
-          <Link
-            href={footerLinkHref}
-            className="text-link focus-visible:ring-ring rounded hover:underline focus-visible:ring-2 focus-visible:outline-none"
-          >
-            {footerLinkLabel}
-          </Link>
-        </p>
+      <div className="auth-head">
+        <h1>{title}</h1>
+        {description ? <p>{description}</p> : null}
       </div>
+
+      {googleVariant && callbackURL ? (
+        <>
+          <GoogleSignInButton callbackURL={callbackURL} variant={googleVariant} />
+          {dividerLabel ? <div className="auth-divider">{dividerLabel}</div> : null}
+        </>
+      ) : null}
+
+      {children}
+
+      {foot ? (
+        <p className="auth-foot">
+          {foot.prefix} <Link href={foot.linkHref}>{foot.linkLabel}</Link>
+        </p>
+      ) : null}
     </div>
   );
 }

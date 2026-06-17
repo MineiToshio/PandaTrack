@@ -5,7 +5,7 @@ slug: landing-and-auth-baseline-coverage
 title: Landing and Auth Baseline Coverage
 status: ACTIVE
 parent: BP-01
-last_updated: 2026-03-21
+last_updated: 2026-06-16
 source_features:
   - FEAT-0010
 implementation_status: IMPLEMENTED
@@ -19,10 +19,10 @@ Add the first high-value unit and integration coverage for landing and auth beha
 
 ## In Scope
 
-- analytics helper tests
-- waitlist tests
-- auth redirect tests
-- verification and recovery helper tests
+- analytics helper tests (`src/lib/analytics/posthogDataAttributes.test.ts`)
+- auth redirect and session logic tests (`src/lib/auth/_tests/`)
+- auth verification, password recovery, and throttle tests (`src/lib/auth/_tests/`)
+- account-capabilities and cooldown tests (`src/lib/auth/_tests/`)
 
 ## Out of Scope
 
@@ -36,6 +36,6 @@ Add the first high-value unit and integration coverage for landing and auth beha
 
 - `BP-01`
 
-## E2E Acceptance Tests
+## Acceptance Tests
 
-- High-value landing and auth module behavior is covered through repository tests
+- High-value landing and auth module behavior is covered through Vitest tests under `src/lib/auth/_tests/` and `src/lib/analytics/`

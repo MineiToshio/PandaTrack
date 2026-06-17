@@ -8,8 +8,8 @@ parent: BP-01
 source_features:
   - FEAT-0015
 source_issue: 100
-last_updated: 2026-04-30
-implementation_status: PLANNED
+last_updated: 2026-06-16
+implementation_status: IMPLEMENTED
 ---
 
 # WO-04 Delivery Detail Actions

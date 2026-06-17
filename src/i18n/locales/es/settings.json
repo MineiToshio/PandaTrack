@@ -3,61 +3,96 @@
     "title": "Ajustes",
     "description": "Gestiona tu cuenta y preferencias en PandaTrack."
   },
-  "hero": {
-    "eyebrow": "Ajustes del coleccionista"
-  },
   "title": "Ajustes",
-  "intro": "Gestiona tu perfil, datos de acceso y preferencias en un solo lugar.",
   "returnToOrderCreate": "Volver al formulario de nuevo pedido",
+  "topbar": {
+    "menu": "Abrir menú"
+  },
+  "tabs": {
+    "profile": "Perfil",
+    "account": "Cuenta",
+    "preferences": "Preferencias",
+    "preferencesShort": "Prefs",
+    "ariaLabel": "Secciones de ajustes"
+  },
   "profile": {
-    "title": "Perfil",
+    "eyebrow": "Perfil",
+    "title": "Tu identidad pública",
+    "subtitle": "Así te ven los demás en la app.",
+    "rows": {
+      "avatar": "Avatar",
+      "username": "Nombre de usuario",
+      "displayName": "Nombre visible"
+    },
+    "avatar": {
+      "initialFallback": "Letra inicial · sin foto subida",
+      "changeCta": "Subir foto",
+      "replaceCta": "Cambiar foto",
+      "removeCta": "Eliminar foto",
+      "modal": {
+        "title": "Foto de perfil",
+        "subtitle": "Arrastra una imagen o elige una desde tu equipo.",
+        "dropzoneTitle": "Arrastra tu foto aquí",
+        "dropzoneDescription": "PNG, JPEG o WebP, hasta 10 MB.",
+        "browseCta": "Elegir archivo",
+        "editorDescription": "Arrastra para reposicionar y usa el control deslizante para hacer zoom.",
+        "zoomLabel": "Zoom",
+        "cancel": "Cancelar",
+        "confirm": "Usar esta foto",
+        "pending": "Guardando…",
+        "successUploaded": "Foto de perfil actualizada."
+      },
+      "removeModal": {
+        "title": "¿Eliminar tu foto de perfil?",
+        "subtitle": "Tu cuenta volverá a mostrar la inicial de tu nombre.",
+        "body": "Podrás subir una foto nueva cuando quieras.",
+        "cancel": "Cancelar",
+        "confirm": "Sí, eliminar foto",
+        "pending": "Eliminando…",
+        "success": "Foto de perfil eliminada."
+      }
+    },
     "username": {
-      "label": "Nombre de usuario",
-      "helper": "Se usa como identidad de cuenta. Entre 3 y 30 caracteres; solo letras, números y guiones simples. Solo puedes guardar un cambio una vez cada 7 días.",
-      "save": "Guardar nombre de usuario",
-      "pending": "Guardando...",
-      "checking": "Verificando...",
-      "available": "El nombre de usuario está disponible.",
-      "taken": "Este nombre de usuario ya está en uso.",
-      "sameAsCurrent": "Este ya es tu nombre de usuario.",
+      "modal": {
+        "title": "Cambiar nombre de usuario",
+        "subtitle": "Solo letras, números y guiones simples. Entre 3 y 30 caracteres.",
+        "label": "Nombre de usuario",
+        "hint": "3–30 caracteres · letras, números y guiones medios. Sin espacios.",
+        "cancel": "Cancelar",
+        "save": "Guardar",
+        "pending": "Guardando…",
+        "checking": "Verificando…",
+        "available": "Disponible.",
+        "taken": "Este nombre de usuario ya está en uso.",
+        "sameAsCurrent": "Este ya es tu nombre de usuario."
+      },
+      "cooldown": {
+        "chipDays": "Próximo cambio en {days} días.",
+        "chipDay": "Próximo cambio en {days} día.",
+        "modalSubtitle": "El cambio es posible cada 7 días · quedan {days} días",
+        "modalSubtitleSingular": "El cambio es posible cada 7 días · queda {days} día",
+        "modalChip": "Próximo cambio: {date}",
+        "blockedHint": "Disponible el {date}."
+      },
       "success": "Nombre de usuario actualizado.",
       "validation": {
-        "format": "El nombre de usuario solo puede contener letras, números y guiones simples, sin guiones al inicio o al final.",
-        "length": "El nombre de usuario debe tener entre 3 y 30 caracteres.",
+        "format": "Solo letras, números y guiones simples, sin guiones al inicio o al final.",
+        "length": "Debe tener entre 3 y 30 caracteres.",
         "reserved": "Este nombre de usuario no está disponible.",
         "blocked": "Este nombre de usuario contiene un término no permitido."
       }
     },
     "displayName": {
-      "label": "Nombre visible",
-      "helper": "Se muestra junto a tu nombre de usuario. Máximo 50 caracteres.",
-      "save": "Guardar nombre",
-      "pending": "Guardando...",
+      "modal": {
+        "title": "Cambiar nombre visible",
+        "subtitle": "Aparece junto a tu nombre de usuario. Máximo 50 caracteres.",
+        "label": "Nombre visible",
+        "cancel": "Cancelar",
+        "save": "Guardar",
+        "pending": "Guardando…",
+        "counter": "{count}/{max}"
+      },
       "success": "Nombre visible actualizado."
-    },
-    "avatar": {
-      "label": "Foto de perfil",
-      "helper": "Se usa como avatar en toda la aplicación. PNG, JPEG o WebP, hasta 10 MB.",
-      "emptyTitle": "Subir una foto de perfil",
-      "emptyDescription": "Arrastra o haz clic para elegir un archivo.",
-      "uploadCta": "Elegir archivo",
-      "replaceCta": "Reemplazar",
-      "removeCta": "Eliminar foto",
-      "removeDialogTitle": "¿Quitar tu foto de perfil?",
-      "removeDialogLead": "Tu cuenta mostrará la inicial de tu nombre en lugar de esta imagen en toda la app.",
-      "removeDialogIrreversible": "No podrás recuperar esta misma foto. Siempre puedes subir una nueva cuando quieras.",
-      "removeDialogCancel": "Cancelar",
-      "removeDialogConfirm": "Sí, eliminar foto",
-      "removeDialogPending": "Eliminando…",
-      "editorTitle": "Recorta tu foto",
-      "editorDescription": "Arrastra para reposicionar y usa el control deslizante para hacer zoom.",
-      "zoomLabel": "Zoom",
-      "editorCancel": "Cancelar",
-      "editorConfirm": "Usar esta foto",
-      "acceptedFormats": "PNG, JPEG, WebP",
-      "pending": "Guardando...",
-      "successUploaded": "Foto de perfil actualizada.",
-      "successRemoved": "Foto de perfil eliminada."
     },
     "errors": {
       "validation": "Revisa el campo e inténtalo de nuevo.",
@@ -71,105 +106,68 @@
       "generic": "Algo salió mal. Inténtalo de nuevo."
     }
   },
-  "preferences": {
-    "title": "Preferencias",
-    "intro": "Establece tus valores predeterminados de país, intereses de colección, moneda base y presupuesto. Todos los campos son opcionales.",
-    "currency": {
-      "label": "Moneda base",
-      "helper": "Se usa para el seguimiento del presupuesto y resúmenes de pedidos.",
-      "placeholder": "Buscar moneda…",
-      "clear": "Limpiar moneda",
-      "noResults": "No se encontró ninguna moneda."
-    },
-    "country": {
-      "label": "País preferido",
-      "helper": "Se usa como valor predeterminado al explorar tiendas.",
-      "placeholder": "Buscar país…",
-      "clear": "Quitar país preferido",
-      "noResults": "No se encontró ningún país."
-    },
-    "productTypes": {
-      "label": "¿Qué tipos de productos coleccionas?",
-      "helper": "Se muestran como filtros predeterminados al explorar tiendas.",
-      "placeholder": "Agregar tipos de producto…",
-      "removeAriaLabel": "Quitar {label}"
-    },
-    "budgetAmount": {
-      "label": "Presupuesto mensual",
-      "helper": "Un número entero positivo en tu moneda base. Déjalo vacío si no quieres definir un presupuesto.",
-      "placeholder": "ej. 200",
-      "currencyRequired": "Define una moneda base para habilitar el campo de presupuesto."
-    },
-    "budgetResetDay": {
-      "label": "El presupuesto se reinicia el",
-      "helper": "Elige el día del mes en el que arranca un nuevo período de presupuesto.",
-      "dayOption": "Día {day} del mes",
-      "dayAriaLabel": "Día {day} del mes",
-      "summaryDay": "Se reinicia el día {day} de cada mes.",
-      "summaryLastDay": "Se reinicia el último día de cada mes (día 31, o el último día válido en meses más cortos)."
-    },
-    "save": "Guardar preferencias",
-    "pending": "Guardando…",
-    "success": "Preferencias guardadas.",
-    "currencyChangeModal": {
-      "title": "¿Cambiar moneda base?",
-      "description": "Cambiar la moneda base afecta el seguimiento de los períodos de presupuesto desde este mes en adelante. Es posible que los pedidos que impactan períodos actuales y futuros necesiten actualizar su tipo de cambio. Puedes revisar y actualizar los pedidos afectados después de guardar, o hacerlo manualmente por pedido más adelante.",
-      "saveAndReconcile": "Guardar y conciliar",
-      "saveSkip": "Guardar sin conciliar",
-      "cancel": "Cancelar"
-    },
-    "errors": {
-      "unauthorized": "Necesitas iniciar sesión.",
-      "validation": "Revisa los campos e inténtalo de nuevo.",
-      "generic": "Algo salió mal. Inténtalo de nuevo."
-    },
-    "currencies": {
-      "ARS": "Peso argentino",
-      "BRL": "Real brasileño",
-      "CAD": "Dólar canadiense",
-      "CLP": "Peso chileno",
-      "CNY": "Yuan chino",
-      "COP": "Peso colombiano",
-      "EUR": "Euro",
-      "GBP": "Libra esterlina",
-      "JPY": "Yen japonés",
-      "KRW": "Won surcoreano",
-      "MXN": "Peso mexicano",
-      "PEN": "Sol peruano",
-      "USD": "Dólar estadounidense"
-    }
-  },
   "account": {
-    "title": "Cuenta",
-    "email": {
-      "label": "Correo electrónico",
-      "helper": "Es el correo con el que inicias sesión y recibirás avisos importantes. Puedes cambiarlo aquí como máximo una vez cada 7 días.",
-      "changeButton": "Cambiar correo",
-      "googleHelper": "Tu cuenta usa Google. Para cambiar el correo, actualízalo directamente en tu cuenta de Google.",
-      "pendingVerification": "Hemos enviado un enlace de verificación a {email}. Verifícalo para completar el cambio."
+    "eyebrow": "Cuenta",
+    "title": "Email, contraseña y acceso",
+    "subtitle": "Los cambios sensibles requieren tu contraseña actual.",
+    "rows": {
+      "email": "Email",
+      "password": "Contraseña"
     },
-    "emailModal": {
-      "title": "Cambiar correo",
-      "descriptionIntro": "Introduce tu nuevo correo y tu contraseña actual para confirmar.",
-      "descriptionIrreversible": "Este cambio es <b>inmediato e irreversible</b>. El <b>nuevo correo</b> será el que uses para <b>iniciar sesión</b> a partir de entonces.",
-      "descriptionCooldown": "Este cambio solo lo puedes realizar una vez <b>cada 7 días</b>. Revisa bien antes de confirmar.",
-      "newEmail": "Nuevo correo",
-      "currentPassword": "Contraseña actual",
-      "cancel": "Cancelar",
-      "confirm": "Confirmar cambio",
-      "pending": "Guardando..."
+    "email": {
+      "verifiedChip": "Verificado",
+      "changeButton": "Cambiar",
+      "googleHelper": "Tu cuenta usa Google. Para cambiar el correo, actualízalo en tu cuenta de Google.",
+      "pendingVerification": "Hemos enviado un enlace de verificación a {email}. Verifícalo para completar el cambio.",
+      "modal": {
+        "title": "Cambiar email",
+        "subtitle": "Este cambio es inmediato e irreversible.",
+        "introBlock": "Introduce tu nuevo correo y tu contraseña actual para confirmar. El nuevo correo será el que uses para iniciar sesión.",
+        "cooldownBlock": "Solo puedes hacer este cambio una vez cada 7 días. Revisa bien antes de confirmar.",
+        "newEmailLabel": "Nuevo correo",
+        "newEmailPlaceholder": "nuevo@correo.com",
+        "currentPasswordLabel": "Contraseña actual",
+        "cancel": "Cancelar",
+        "confirm": "Confirmar cambio",
+        "pending": "Guardando…"
+      }
+    },
+    "password": {
+      "summary": "Última actualización hace {months} meses.",
+      "summaryRecent": "Última actualización reciente.",
+      "summaryUnknown": "Tu contraseña no se ha cambiado todavía.",
+      "summaryUnset": "Aún no has configurado una contraseña.",
+      "changeButton": "Cambiar",
+      "setButton": "Establecer",
+      "modal": {
+        "changeTitle": "Cambiar contraseña",
+        "setTitle": "Establecer contraseña",
+        "subtitle": "Mínimo 8 caracteres.",
+        "currentPasswordLabel": "Contraseña actual",
+        "newPasswordLabel": "Nueva contraseña",
+        "confirmPasswordLabel": "Confirmar nueva contraseña",
+        "showPassword": "Mostrar contraseña",
+        "hidePassword": "Ocultar contraseña",
+        "cancel": "Cancelar",
+        "save": "Guardar contraseña",
+        "pending": "Guardando…"
+      },
+      "rules": {
+        "minLength": "Mínimo 8 caracteres"
+      },
+      "strength": {
+        "weak": "Débil",
+        "fair": "Aceptable",
+        "good": "Buena",
+        "excellent": "Excelente",
+        "label": "Fortaleza"
+      },
+      "validation": {
+        "confirmMismatch": "Las contraseñas no coinciden."
+      }
     },
     "validation": {
       "fillRequiredFields": "Completa los campos marcados para continuar."
-    },
-    "password": {
-      "helper": "Usa una contraseña fuerte y no la reutilices en otros sitios.",
-      "changeTitle": "Cambiar contraseña",
-      "setTitle": "Establecer contraseña",
-      "currentPassword": "Contraseña actual",
-      "newPassword": "Nueva contraseña",
-      "save": "Guardar contraseña",
-      "pending": "Guardando..."
     },
     "success": {
       "passwordUpdated": "Tu contraseña se actualizó.",
@@ -186,6 +184,109 @@
       "passwordTooShort": "La contraseña es demasiado corta.",
       "passwordTooLong": "La contraseña es demasiado larga.",
       "passwordAlreadySet": "Esta cuenta ya tiene una contraseña configurada.",
+      "generic": "Algo salió mal. Inténtalo de nuevo."
+    }
+  },
+  "preferences": {
+    "interfaz": {
+      "eyebrow": "Interfaz",
+      "title": "Tema e idioma",
+      "subtitle": "Los cambios son inmediatos.",
+      "themeRow": {
+        "label": "Tema",
+        "helper": "Elige entre light y dark.",
+        "options": {
+          "light": "Light",
+          "dark": "Dark"
+        }
+      },
+      "langRow": {
+        "label": "Idioma",
+        "helper": "Cómo se muestran los textos.",
+        "options": {
+          "es": "Español",
+          "en": "English"
+        }
+      }
+    },
+    "collector": {
+      "eyebrow": "Coleccionista",
+      "title": "País, moneda y categorías",
+      "subtitle": "Cambiar la moneda base no convierte tus datos anteriores.",
+      "rows": {
+        "country": "País",
+        "currency": "Moneda base",
+        "categories": "Categorías favoritas",
+        "budget": "Presupuesto mensual"
+      },
+      "country": {
+        "empty": "Sin país preferido",
+        "changeButton": "Cambiar",
+        "placeholder": "Buscar país…",
+        "noResults": "No se encontró ningún país."
+      },
+      "currency": {
+        "empty": "Sin moneda base",
+        "summary": "Aplicada a totales y resúmenes.",
+        "changeButton": "Cambiar",
+        "placeholder": "Buscar moneda…",
+        "noResults": "No se encontró ninguna moneda."
+      },
+      "categories": {
+        "helper": "Se muestran como filtros predeterminados al explorar tiendas.",
+        "removeAriaLabel": "Quitar {label}"
+      },
+      "budget": {
+        "placeholder": "ej. 200",
+        "resetLabel": "reset día",
+        "resetSummary": "Se reinicia el día {day} de cada mes.",
+        "resetSummaryLast": "Se reinicia el último día de cada mes.",
+        "currencyRequired": "Define una moneda base para habilitar el presupuesto.",
+        "dayOption": "Día {day}",
+        "dayAriaLabel": "Día {day} del mes"
+      }
+    },
+    "autosave": {
+      "saving": "Guardando…",
+      "saved": "Guardado",
+      "savedAgo": "Guardado hace {seconds}s",
+      "savedRecently": "Guardado hace un momento",
+      "error": "No se pudo guardar."
+    },
+    "currencyModal": {
+      "title": "Cambiar moneda base",
+      "subtitle": "Este cambio afecta tus reportes y totales.",
+      "intro": "Tus pedidos pasados se mantienen en su moneda original. Esto cambia cómo se totaliza tu resumen.",
+      "listAriaLabel": "Seleccionar moneda base",
+      "warning": "Cambiar la moneda base no convierte tus pedidos anteriores. Los totales históricos seguirán en su moneda original hasta que los actualices manualmente.",
+      "cancel": "Cancelar",
+      "saveWithout": "Guardar sin actualizar",
+      "saveAndUpdate": "Guardar y actualizar",
+      "pending": "Guardando…",
+      "successSaved": "Moneda base actualizada.",
+      "successRedirect": "Moneda base actualizada. Revisando tipos de cambio…"
+    },
+    "signOut": {
+      "mobile": "Cerrar sesión"
+    },
+    "currencies": {
+      "ARS": "Peso argentino",
+      "BRL": "Real brasileño",
+      "CAD": "Dólar canadiense",
+      "CLP": "Peso chileno",
+      "CNY": "Yuan chino",
+      "COP": "Peso colombiano",
+      "EUR": "Euro",
+      "GBP": "Libra esterlina",
+      "JPY": "Yen japonés",
+      "KRW": "Won surcoreano",
+      "MXN": "Peso mexicano",
+      "PEN": "Sol peruano",
+      "USD": "Dólar estadounidense"
+    },
+    "errors": {
+      "unauthorized": "Necesitas iniciar sesión.",
+      "validation": "Revisa los campos e inténtalo de nuevo.",
       "generic": "Algo salió mal. Inténtalo de nuevo."
     }
   }

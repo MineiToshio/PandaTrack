@@ -1,18 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
-import Logo from "@/components/core/Logo";
-import HeaderNav, { HeaderNavItem } from "./HeaderNav";
-import AnchorLink from "@/components/core/AnchorLink";
-import { cn } from "@/lib/styles";
-import { buttonVariants } from "@/components/core/Button/buttonVariants";
-import { useTranslations } from "next-intl";
-import IconButton from "@/components/core/IconButton";
 import { Menu } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { useRef, useState } from "react";
+import Button from "@/components/core/Button/Button";
+import BrandMark from "@/app/[locale]/_components/public/BrandMark";
+import PublicLanguageToggle from "@/app/[locale]/_components/public/PublicLanguageToggle";
+import PublicThemeToggle from "@/app/[locale]/_components/public/PublicThemeToggle";
+import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import BurgerMenu from "./BurgerMenu";
-import LanguageToggle from "./LanguageToggle";
-import ThemeToggle from "./ThemeToggle";
-import { POSTHOG_EVENTS } from "@/lib/constants";
+import HeaderNav, { HeaderNavItem } from "./HeaderNav";
 
 const NAV_ITEMS: HeaderNavItem[] = [
   { key: "forYou", href: "#user-fit" },
@@ -21,67 +18,60 @@ const NAV_ITEMS: HeaderNavItem[] = [
 ];
 
 export default function Header() {
+  const locale = useLocale();
   const t = useTranslations("landing.header");
-  const menuOpenButtonRef = useRef<HTMLButtonElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const handleOpenMenu = () => {
-    setIsMenuOpen(true);
-  };
+  const homeHref = `/${locale}${ROUTES.home}`;
+  const signInHref = `/${locale}${ROUTES.signIn}`;
+  const signUpHref = `/${locale}${ROUTES.signUp}`;
 
-  const handleCloseMenu = () => {
-    setIsMenuOpen(false);
-  };
-
-  const handleLogoClick = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  const handleOpenMenu = () => setIsMenuOpen(true);
+  const handleCloseMenu = () => setIsMenuOpen(false);
 
   return (
     <>
-      <header className="border-border bg-background text-foreground sticky top-0 z-40 w-full border-b">
-        <div className="mx-auto flex w-full max-w-6xl min-w-0 items-center justify-between gap-3 px-4 py-4 sm:gap-4 sm:px-6">
-          <button
-            type="button"
-            onClick={handleLogoClick}
-            aria-label={t("scrollToTop")}
-            className="shrink-0 cursor-pointer border-none bg-transparent p-0"
-          >
-            <Logo />
-          </button>
-          <div className="hidden min-w-0 flex-1 justify-center lg:flex lg:gap-6">
-            <HeaderNav items={NAV_ITEMS} />
-          </div>
-          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            <LanguageToggle className="hidden lg:flex" />
-            <ThemeToggle className="hidden lg:flex" />
-            <AnchorLink
-              href="#waitlist"
-              className={cn(buttonVariants({ variant: "primary", size: "sm" }), "whitespace-nowrap sm:h-10 sm:px-4")}
+      <header className="mk-header sticky top-0 z-30">
+        <div className="mk-container mk-header-inner">
+          <BrandMark href={homeHref} ariaLabel={t("brandHome")} />
+          <HeaderNav items={NAV_ITEMS} />
+          <div className="mk-header-spacer" />
+          <div className="mk-header-actions">
+            <div className="mk-utils">
+              <PublicLanguageToggle />
+              <PublicThemeToggle />
+            </div>
+            <Button as="a" href={signInHref} variant="secondary" size="sm" className="whitespace-nowrap">
+              {t("signIn")}
+            </Button>
+            <Button
+              as="a"
+              href={signUpHref}
+              variant="primary"
+              size="sm"
+              className="whitespace-nowrap"
               posthogEvent={POSTHOG_EVENTS.LANDING.HEADER_CTA_CLICKED}
-              posthogProps={{ location: "header" }}
+              posthogProps={{ location: "header", destination: "sign-up" }}
             >
-              {t("cta")}
-            </AnchorLink>
-            <IconButton
-              ref={menuOpenButtonRef}
-              Icon={Menu}
-              variant="outline"
-              className="lg:hidden"
-              aria-label={t("openMenu")}
-              data-ph-event={POSTHOG_EVENTS.LANDING.MOBILE_MENU_OPENED}
-              onClick={handleOpenMenu}
-            />
+              {t("signUp")}
+            </Button>
           </div>
+          <button
+            ref={menuButtonRef}
+            type="button"
+            className="mk-burger"
+            aria-label={t("openMenu")}
+            aria-haspopup="dialog"
+            aria-expanded={isMenuOpen}
+            data-ph-event={POSTHOG_EVENTS.LANDING.MOBILE_MENU_OPENED}
+            onClick={handleOpenMenu}
+          >
+            <Menu aria-hidden="true" />
+          </button>
         </div>
       </header>
-      <BurgerMenu
-        isOpen={isMenuOpen}
-        onClose={handleCloseMenu}
-        items={NAV_ITEMS}
-        ctaLabel={t("cta")}
-        returnFocusRef={menuOpenButtonRef}
-      />
+      <BurgerMenu isOpen={isMenuOpen} onClose={handleCloseMenu} items={NAV_ITEMS} returnFocusRef={menuButtonRef} />
     </>
   );
 }

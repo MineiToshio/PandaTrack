@@ -1,0 +1,122 @@
+{
+  "button": {
+    "loading": {
+      "label": "Cargando"
+    },
+    "commonLabels": {
+      "confirm": "Confirmar",
+      "cancel": "Cancelar",
+      "save": "Guardar",
+      "delete": "Eliminar",
+      "retry": "Vuelve a intentarlo"
+    }
+  },
+  "input": {
+    "loading": {
+      "label": "Cargando"
+    }
+  },
+  "label": {
+    "optional": "opcional"
+  },
+  "avatar": {
+    "fallbackAlt": "Avatar de {name}",
+    "status": {
+      "online": "En línea",
+      "offline": "Desconectado"
+    },
+    "imageLoadError": "No pudimos cargar el avatar"
+  },
+  "select": {
+    "placeholder": {
+      "default": "Elige una opción",
+      "currency": "Moneda",
+      "country": "País"
+    },
+    "empty": "Sin opciones todavía.",
+    "triggerAria": {
+      "collapsed": "Abrir lista",
+      "expanded": "Cerrar lista"
+    }
+  },
+  "combobox": {
+    "searchPlaceholder": "Buscar…",
+    "noResults": "Sin resultados.",
+    "selected": "{count, plural, one {# seleccionado} other {# seleccionados}}"
+  },
+  "dateInput": {
+    "placeholder": "Elige una fecha",
+    "clear": "Limpiar fecha"
+  },
+  "toast": {
+    "regionLabel": "Notificaciones"
+  },
+  "wizard": {
+    "stepActions": "Acciones del paso"
+  },
+  "dateRangeInput": {
+    "placeholderFrom": "Desde",
+    "placeholderTo": "Hasta",
+    "error": {
+      "toAfterFrom": "La fecha «Hasta» tiene que ser posterior a «Desde»."
+    }
+  },
+  "pagination": {
+    "ariaLabel": "Paginación",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "page": "Página {page}",
+    "loadMore": "Cargar más",
+    "loading": "Cargando",
+    "loadedOf": "{loaded} de {total}"
+  },
+  "mascotBubble": {
+    "contextMenu": {
+      "open": "Abrir menú de mascota",
+      "hide": "Ocultar mascota",
+      "theme": "Cambiar tema",
+      "settings": "Configuración"
+    },
+    "altSleeping": "Felix dormido",
+    "altCelebrating": "Felix festejando",
+    "altIdle": "Felix"
+  },
+  "statusChip": {
+    "orderStatus": {
+      "OPEN": "Abierto",
+      "PARTIALLY_IN_TRANSIT": "Parcialmente en camino",
+      "IN_TRANSIT": "En camino",
+      "PARTIALLY_DELIVERED": "Llegó parcialmente",
+      "COMPLETED": "Completo",
+      "CANCELLED": "Cancelado"
+    },
+    "deliveryStatus": {
+      "IN_TRANSIT": "En camino",
+      "DELIVERED": "Llegó",
+      "CANCELLED": "Cancelada",
+      "overdue": "Atrasada {days}d"
+    },
+    "itemDeliveryState": {
+      "NONE": "Pendiente en tienda",
+      "ARRIVED_AT_STORE": "Listo en tienda",
+      "IN_TRANSIT": "En camino",
+      "DELIVERED": "Entregado"
+    },
+    "derived": {
+      "paid": "Pagado",
+      "partial": "{pct}% pagado",
+      "unpaid": "Sin pagar",
+      "overdue": "Atrasado {days, plural, one {# día} other {# días}}"
+    }
+  },
+  "sectionError": {
+    "title": "No se pudo cargar",
+    "retry": "Reintentar",
+    "offline": {
+      "title": "Sin conexión"
+    }
+  },
+  "skeleton": {
+    "loading": "Cargando…"
+  }
+}

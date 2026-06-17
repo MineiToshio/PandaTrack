@@ -7,10 +7,10 @@ import {
 } from "../orderListingParams";
 
 describe("parseOrderListingParams", () => {
-  it("applies the default active status set when no status param is present", () => {
+  it("leaves statuses empty when no status param is present (defaults live in the nav href)", () => {
     const result = parseOrderListingParams({});
-    expect(result.statuses).toEqual(DEFAULT_ACTIVE_STATUSES);
-    expect(result.appliedDefaultStatuses).toBe(true);
+    expect(result.statuses).toEqual([]);
+    expect(result.appliedDefaultStatuses).toBe(false);
     expect(result.page).toBe(1);
   });
 
@@ -89,9 +89,15 @@ describe("hasOnlyDefaultActiveFilters", () => {
         productTypeKeys: [],
         storeId: undefined,
         statuses: DEFAULT_ACTIVE_STATUSES,
+        paymentStates: [],
+        fxPendingOnly: false,
+        sort: "recent",
         appliedDefaultStatuses: false,
         dateFromIso: undefined,
         dateToIso: undefined,
+        deliveryFromIso: undefined,
+        deliveryToIso: undefined,
+        deliveryOverdueOnly: false,
       }),
     ).toBe(true);
   });
@@ -103,9 +109,15 @@ describe("hasOnlyDefaultActiveFilters", () => {
         productTypeKeys: [],
         storeId: undefined,
         statuses: DEFAULT_ACTIVE_STATUSES,
+        paymentStates: [],
+        fxPendingOnly: false,
+        sort: "recent",
         appliedDefaultStatuses: false,
         dateFromIso: undefined,
         dateToIso: undefined,
+        deliveryFromIso: undefined,
+        deliveryToIso: undefined,
+        deliveryOverdueOnly: false,
       }),
     ).toBe(false);
   });

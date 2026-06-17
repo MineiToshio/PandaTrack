@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/auth-server";
@@ -33,25 +34,30 @@ export async function deleteStoreReview(
     return { success: false, error: "validation_failed" };
   }
 
-  const result = await deleteStoreReviewQuery(prisma, {
-    reviewId: parsed.data.reviewId,
-    userId: session.user.id,
-  });
+  try {
+    const result = await deleteStoreReviewQuery(prisma, {
+      reviewId: parsed.data.reviewId,
+      userId: session.user.id,
+    });
 
-  if (!result) {
-    return { success: false, error: "reviewNotFound" };
+    if (!result) {
+      return { success: false, error: "reviewNotFound" };
+    }
+
+    getPostHogClient().capture({
+      distinctId: session.user.id,
+      event: POSTHOG_EVENTS.STORE.REVIEW_DELETED,
+      properties: {
+        store_slug: result.slug,
+      },
+    });
+
+    revalidatePath(`/${parsed.data.locale}${ROUTES.stores}`);
+    revalidatePath(`/${parsed.data.locale}${ROUTES.stores}/${result.slug}`);
+
+    return { success: true };
+  } catch (error) {
+    Sentry.captureException(error);
+    return { success: false, error: "deleteReviewFailed" };
   }
-
-  getPostHogClient().capture({
-    distinctId: session.user.id,
-    event: POSTHOG_EVENTS.STORE.REVIEW_DELETED,
-    properties: {
-      store_slug: result.slug,
-    },
-  });
-
-  revalidatePath(`/${parsed.data.locale}${ROUTES.stores}`);
-  revalidatePath(`/${parsed.data.locale}${ROUTES.stores}/${result.slug}`);
-
-  return { success: true };
 }

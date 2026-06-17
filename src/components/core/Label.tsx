@@ -1,42 +1,61 @@
 import { cn } from "@/lib/styles";
-import { VariantProps, cva } from "class-variance-authority";
-import { LabelHTMLAttributes, forwardRef } from "react";
+import { useTranslations } from "next-intl";
+import type { LabelHTMLAttributes, ReactNode } from "react";
 
-/**
- * Label typography and sizes align with Typography so form labels feel consistent
- * with the rest of the design system.
- */
-const labelVariants = cva("block font-medium", {
-  variants: {
-    size: {
-      "2xs": "text-xs sm:text-xs",
-      xs: "text-xs sm:text-sm",
-      sm: "text-sm sm:text-base",
-      md: "text-base sm:text-lg",
-      lg: "text-lg sm:text-xl",
-    },
-    color: {
-      foreground: "text-foreground",
-      title: "text-text-title",
-    },
-    spacing: {
-      default: "mb-1.5",
-      tight: "mb-0",
-    },
-  },
-  defaultVariants: {
-    size: "sm",
-    color: "foreground",
-    spacing: "default",
-  },
-});
+// "xs" and "2xs" kept for backward compatibility with legacy consumers; they render as "sm".
+export type LabelSize = "sm" | "md" | "xs" | "2xs" | "lg";
 
-type LabelProps = LabelHTMLAttributes<HTMLLabelElement> & VariantProps<typeof labelVariants>;
+export type LabelProps = LabelHTMLAttributes<HTMLLabelElement> & {
+  children: ReactNode;
+  /** Marks field as required — renders an asterisk in --accent. */
+  required?: boolean;
+  /** Marks field as optional — renders "(opcional / optional)" text in --text-muted. */
+  optional?: boolean;
+  /** Visually dims label when the associated control is disabled. No opacity (ADR 0001 D3). */
+  disabled?: boolean;
+  size?: LabelSize;
+  // Legacy props kept for backward compatibility — silently accepted, no visual effect.
+  color?: string;
+  spacing?: string;
+};
 
-const Label = forwardRef<HTMLLabelElement, LabelProps>(({ className, size, color, spacing, ...props }, ref) => (
-  <label ref={ref} className={cn(labelVariants({ size, color, spacing, className }))} {...props} />
-));
+export default function Label({
+  children,
+  required,
+  optional,
+  disabled,
+  size = "md",
+  className,
+  color: _color,
+  spacing: _spacing,
+  ...rest
+}: LabelProps) {
+  const t = useTranslations("label");
 
-Label.displayName = "Label";
-
-export default Label;
+  return (
+    <label
+      className={cn(
+        "[font-family:var(--font-sans)] [font-weight:var(--font-weight-medium)]",
+        "mb-[var(--space-2)] block",
+        size === "md" || size === "lg"
+          ? "[font-size:var(--text-body)] [line-height:var(--text-body--line-height)]"
+          : "[font-size:var(--text-caption)] [line-height:var(--text-caption--line-height)]",
+        disabled ? "[color:var(--text-muted)]" : "[color:var(--text-primary)]",
+        className,
+      )}
+      {...rest}
+    >
+      {children}
+      {required && (
+        <span className="ml-[var(--space-0_5)] [color:var(--accent)]" aria-hidden="true">
+          *
+        </span>
+      )}
+      {optional && !required && (
+        <span className="ml-[var(--space-1)] [color:var(--text-muted)]" aria-hidden="true">
+          ({t("optional")})
+        </span>
+      )}
+    </label>
+  );
+}

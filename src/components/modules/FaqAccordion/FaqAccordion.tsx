@@ -17,72 +17,54 @@ type FaqAccordionProps = {
   className?: string;
 };
 
+/**
+ * Accessible disclosure accordion (`.mk-faq`). First item open by default.
+ * `aria-expanded` / `aria-controls` on each trigger; collapse uses a max-height
+ * transition. Emits FAQ_ITEM_TOGGLED on every toggle. Multiple items may be open at
+ * once (independent disclosures); the first item is open by default.
+ */
 export default function FaqAccordion({ items, className }: FaqAccordionProps) {
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openIds, setOpenIds] = useState<Set<string>>(() => new Set(items[0]?.id ? [items[0].id] : []));
 
-  const toggle = useCallback(
-    (id: string, question: string) => {
-      const wasOpen = openId === id;
-      setOpenId((prev) => (prev === id ? null : id));
-
-      // Track FAQ item toggle
+  const toggle = useCallback((id: string, question: string) => {
+    setOpenIds((prev) => {
+      const wasOpen = prev.has(id);
       posthog.capture(POSTHOG_EVENTS.LANDING.FAQ_ITEM_TOGGLED, {
         faq_id: id,
         faq_question: question,
         action: wasOpen ? "collapsed" : "expanded",
       });
-    },
-    [openId],
-  );
+      const next = new Set(prev);
+      if (wasOpen) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
 
   return (
-    <div className={cn("space-y-2", className)} role="list">
+    <div className={cn("mk-faq", className)}>
       {items.map((item) => {
-        const isOpen = openId === item.id;
+        const isOpen = openIds.has(item.id);
         const panelId = `faq-panel-${item.id}`;
         const triggerId = `faq-trigger-${item.id}`;
 
         return (
-          <div
-            key={item.id}
-            className={cn(
-              "border-border bg-card overflow-hidden rounded-xl border transition-all duration-300 ease-out",
-              "hover:border-primary/30 focus-within:ring-ring focus-within:ring-offset-background focus-within:ring-2 focus-within:ring-offset-2",
-              isOpen && "border-primary/50 ring-primary/20 ring-1",
-            )}
-            role="listitem"
-          >
+          <div key={item.id} className={cn("mk-faq-item", isOpen && "is-open")}>
             <button
               type="button"
               id={triggerId}
+              className="mk-faq-q"
               aria-expanded={isOpen}
               aria-controls={panelId}
               onClick={() => toggle(item.id, item.question)}
-              className="text-foreground hover:bg-surface-2/50 flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-colors"
             >
-              <span className="text-text-title font-semibold">{item.question}</span>
-              <ChevronDown
-                className={cn(
-                  "text-muted-foreground h-5 w-5 shrink-0 transition-transform duration-200",
-                  isOpen && "rotate-180",
-                )}
-                aria-hidden
-              />
+              <span>{item.question}</span>
+              <span className="chev">
+                <ChevronDown aria-hidden="true" />
+              </span>
             </button>
-            <div
-              id={panelId}
-              role="region"
-              aria-labelledby={triggerId}
-              className={cn(
-                "grid transition-all duration-300 ease-out",
-                isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
-              )}
-            >
-              <div className="overflow-hidden">
-                <div className="border-border/50 text-text-body border-t px-5 py-4 text-sm leading-relaxed">
-                  {item.answer}
-                </div>
-              </div>
+            <div id={panelId} role="region" aria-labelledby={triggerId} className="mk-faq-a">
+              <p>{item.answer}</p>
             </div>
           </div>
         );

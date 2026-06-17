@@ -8,13 +8,30 @@ export type BackNavLinkProps = LinkProps & {
   children: ReactNode;
   className?: string;
   /**
-   * `pill`: page-level back control (default), distinct from primary actions.
+   * `text`: text-link back control (default, canonical — matches demo Orders `.back-link`).
+   *   Subtle muted text, arrow-left icon 12px, no background/border/shadow.
+   * `pill`: legacy floating pill with backdrop blur (still available, e.g. order detail header).
    * `button`: same geometry and tokens as `Button` outline `md` for form footers next to submit.
    */
-  appearance?: "pill" | "button";
+  appearance?: "text" | "pill" | "button";
 };
 
-export default function BackNavLink({ children, className, appearance = "pill", ...linkProps }: BackNavLinkProps) {
+export default function BackNavLink({ children, className, appearance = "text", ...linkProps }: BackNavLinkProps) {
+  if (appearance === "text") {
+    return (
+      <Link
+        {...linkProps}
+        className={cn(
+          "text-text-muted hover:text-foreground focus-visible:ring-ring focus-visible:ring-offset-background inline-flex items-center gap-1.5 px-0 py-0.5 text-[13px] no-underline transition-colors focus-visible:rounded-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+          className,
+        )}
+      >
+        <ArrowLeft className="size-3 shrink-0" aria-hidden />
+        {children}
+      </Link>
+    );
+  }
+
   const isButtonAppearance = appearance === "button";
 
   return (

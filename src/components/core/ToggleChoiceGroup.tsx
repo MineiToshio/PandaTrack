@@ -7,6 +7,8 @@ export type ToggleChoiceOption = {
   value: string;
   label: string;
   icon?: ReactNode;
+  /** Optional secondary text shown below the label. Only rendered for `appearance="tile"`. */
+  description?: string;
 };
 
 type ToggleChoiceGroupShared = {
@@ -23,6 +25,11 @@ type ToggleChoiceGroupShared = {
   appearance?: "chip" | "tile";
   /** Rendered after option buttons (e.g. auxiliary chip actions). */
   trailingSlot?: ReactNode;
+  /**
+   * When true, all option buttons are non-interactive and hidden inputs are still emitted
+   * so the current value continues to submit with the parent form.
+   */
+  disabled?: boolean;
 };
 
 export type ToggleChoiceGroupProps =
@@ -43,21 +50,27 @@ const CONTAINER_CLASS: Record<NonNullable<ToggleChoiceGroupShared["appearance"]>
 };
 
 const BUTTON_CLASS: Record<NonNullable<ToggleChoiceGroupShared["appearance"]>, string> = {
-  chip: "border-border bg-background text-text-body focus-visible:ring-ring inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-xl border px-4 text-sm transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
-  tile: "border-border bg-background text-text-body focus-visible:ring-ring inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg border px-4 py-3 text-left text-sm transition focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+  chip: "inline-flex cursor-pointer items-center gap-2 rounded-[var(--radius-pill)] [background:var(--surface-elevated)] [border:1.5px_solid_var(--border-strong)] px-3 py-1.5 text-[13px] [color:var(--text-secondary)] transition focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:2px]",
+  tile: "flex min-h-11 cursor-pointer items-start gap-3 rounded-lg [background:var(--surface)] [border:1px_solid_var(--border-strong)] px-4 py-3 text-left text-sm [color:var(--text-secondary)] transition focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:2px]",
 };
 
-function pressedButtonClass(isSelected: boolean) {
+function pressedButtonClass(appearance: NonNullable<ToggleChoiceGroupShared["appearance"]>, isSelected: boolean) {
+  if (appearance === "chip") {
+    return isSelected
+      ? "[background:color-mix(in_oklch,var(--accent)_10%,transparent)] [border-color:var(--accent)] [color:var(--accent)]"
+      : "hover:[border-color:color-mix(in_oklch,var(--accent)_50%,var(--border-strong))]";
+  }
   return isSelected
-    ? "border-primary bg-primary/10 text-text-title hover:bg-primary/15"
-    : "hover:border-primary/50 hover:bg-muted/25";
+    ? "[background:color-mix(in_oklch,var(--accent)_8%,transparent)] [border-color:var(--accent)] [color:var(--text-primary)]"
+    : "hover:[border-color:color-mix(in_oklch,var(--accent)_40%,var(--border-strong))]";
 }
 
 export default function ToggleChoiceGroup(props: ToggleChoiceGroupProps) {
   const appearance = props.appearance ?? "chip";
-  const { options, className, formName, itemClassName, trailingSlot } = props;
+  const { options, className, formName, itemClassName, trailingSlot, disabled } = props;
 
   const handleClick = (optionValue: string) => {
+    if (disabled) return;
     if (props.mode === "single") {
       props.onChange(optionValue);
       return;
@@ -89,20 +102,50 @@ export default function ToggleChoiceGroup(props: ToggleChoiceGroupProps) {
       {formName && props.mode === "single" ? <input type="hidden" name={formName} value={props.value} /> : null}
       {options.map((option) => {
         const selected = isSelected(option.value);
+        const renderTileBody = appearance === "tile" && option.description;
         return (
           <button
             key={option.value}
             type="button"
             aria-pressed={selected}
+            disabled={disabled}
             onClick={() => handleClick(option.value)}
-            className={cn(BUTTON_CLASS[appearance], pressedButtonClass(selected), itemClassName)}
+            className={cn(
+              BUTTON_CLASS[appearance],
+              pressedButtonClass(appearance, selected),
+              itemClassName,
+              disabled && "cursor-not-allowed opacity-60",
+            )}
           >
             {option.icon ? (
-              <span className="[&>svg]:size-3.5" aria-hidden>
-                {option.icon}
-              </span>
+              appearance === "tile" ? (
+                <span
+                  aria-hidden
+                  className="flex size-9 flex-shrink-0 items-center justify-center rounded-[var(--radius-md)] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_14%,var(--surface-elevated))] [&>svg]:size-4"
+                >
+                  {option.icon}
+                </span>
+              ) : (
+                <span
+                  aria-hidden
+                  className={cn("[&>svg]:size-3.5", selected ? "[color:var(--accent)]" : "[color:var(--accent-cool)]")}
+                >
+                  {option.icon}
+                </span>
+              )
             ) : null}
-            {option.label}
+            {renderTileBody ? (
+              <span className="min-w-0 flex-1">
+                <span className="block [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+                  {option.label}
+                </span>
+                <span className="mt-0.5 block [font-size:var(--text-caption)] [color:var(--text-muted)]">
+                  {option.description}
+                </span>
+              </span>
+            ) : (
+              option.label
+            )}
           </button>
         );
       })}

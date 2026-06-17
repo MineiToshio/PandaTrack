@@ -1,13 +1,8 @@
 "use client";
 
-import { useActionState, useState, type ChangeEvent } from "react";
 import { useTranslations } from "next-intl";
-import { NotebookPen } from "lucide-react";
-import Button from "@/components/core/Button/Button";
-import Textarea from "@/components/core/Textarea";
-import Typography from "@/components/core/Typography";
+import PrivateNoteCard, { type PrivateNoteSaveResult } from "@/components/modules/PrivateNoteCard";
 import type { StoreViewerNote } from "@/queries/store";
-import SectionSurfaceCard from "@/components/modules/SectionSurfaceCard";
 import { saveStoreNote } from "../_actions/saveStoreNote";
 
 type StoreNoteFormProps = {
@@ -22,114 +17,43 @@ function translateNoteError(t: ReturnType<typeof useTranslations>, errorKey: str
     : t("error.validation_failed");
 }
 
+/**
+ * Stores-detail wrapper around the canonical `<PrivateNoteCard>` module. Owns the stores-namespace
+ * i18n strings and the `saveStoreNote` server action; UI + autosave behavior live in the module.
+ */
 export default function StoreNoteForm({ locale, storeSlug, existingNote }: StoreNoteFormProps) {
   const t = useTranslations("stores");
-  const [state, formAction, isPending] = useActionState(saveStoreNote, null);
-  const persistedContent = existingNote?.content ?? "";
-  const [draftContent, setDraftContent] = useState(persistedContent);
 
-  const handleDraftChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
-    setDraftContent(event.target.value);
+  const handleSave = async (note: string | null): Promise<PrivateNoteSaveResult> => {
+    const formData = new FormData();
+    formData.set("slug", storeSlug);
+    formData.set("locale", locale);
+    formData.set("content", note ?? "");
+    const result = await saveStoreNote(null, formData);
+    if (result?.success === false) {
+      const errorKey = ("error" in result && result.error) || (result.fieldErrors?.content?.[0] ?? "validation_failed");
+      return { ok: false, error: translateNoteError(t, errorKey) };
+    }
+    return { ok: true, updatedAt: new Date() };
   };
 
-  const persistedNormalized = persistedContent.trim();
-  const draftNormalized = draftContent.trim();
-  const canSubmit = draftNormalized.length > 0 && draftNormalized !== persistedNormalized;
-  const submitDisabled = isPending || !canSubmit;
-  const submitCtaVisible = existingNote
-    ? t("detail.privateNote.form.updateCta")
-    : t("detail.privateNote.form.submitCta");
-  const submitDisabledAriaLabel =
-    !isPending && !canSubmit
-      ? `${submitCtaVisible}. ${
-          draftNormalized.length === 0
-            ? t("detail.privateNote.form.submitDisabledEmpty")
-            : t("detail.privateNote.form.submitDisabledUnchanged")
-        }`
-      : undefined;
-
-  const fieldErrors = state?.success === false ? state.fieldErrors : undefined;
-  const contentError = fieldErrors?.content?.[0];
-  const formError = state?.success === false && "error" in state && state.error ? state.error : null;
-  const updatedAtLabel = existingNote
-    ? new Intl.DateTimeFormat(locale, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(existingNote.updatedAt)
-    : null;
-
   return (
-    <SectionSurfaceCard
+    <PrivateNoteCard
       title={t("detail.privateNote.title")}
-      titleAs="h2"
-      titleId="store-private-note-heading"
-      icon={NotebookPen}
-      iconClassName="text-info"
-    >
-      <div className="space-y-1">
-        <Typography size="sm" className="text-text-muted">
-          {t("detail.privateNote.description")}
-        </Typography>
-      </div>
-
-      <form action={formAction} className="mt-5 space-y-4" aria-busy={isPending}>
-        <input type="hidden" name="slug" value={storeSlug} />
-        <input type="hidden" name="locale" value={locale} />
-
-        <div>
-          <Textarea
-            id="store-private-note"
-            name="content"
-            value={draftContent}
-            onChange={handleDraftChange}
-            rows={6}
-            maxLength={2000}
-            disabled={isPending}
-            error={Boolean(contentError)}
-            aria-invalid={Boolean(contentError)}
-            aria-labelledby="store-private-note-heading"
-            placeholder={t("detail.privateNote.form.contentPlaceholder")}
-            className="resize-y"
-          />
-          {updatedAtLabel && (
-            <Typography size="xs" className="text-text-muted mt-2">
-              {t("detail.privateNote.lastUpdated", { date: updatedAtLabel })}
-            </Typography>
-          )}
-          {contentError && (
-            <Typography size="xs" className="text-destructive mt-1" role="alert">
-              {translateNoteError(t, contentError)}
-            </Typography>
-          )}
-        </div>
-
-        {state?.success && (
-          <Typography size="xs" className="text-text-body" role="status" aria-live="polite">
-            {t("detail.privateNote.form.success")}
-          </Typography>
-        )}
-
-        {formError && (
-          <Typography size="xs" className="text-destructive" role="alert">
-            {translateNoteError(t, formError)}
-          </Typography>
-        )}
-
-        <Button
-          type="submit"
-          variant="secondary"
-          size="md"
-          disabled={submitDisabled}
-          aria-label={submitDisabledAriaLabel}
-          className="w-full sm:w-auto"
-        >
-          {isPending
-            ? t("detail.privateNote.form.submitting")
-            : existingNote
-              ? t("detail.privateNote.form.updateCta")
-              : t("detail.privateNote.form.submitCta")}
-        </Button>
-      </form>
-    </SectionSurfaceCard>
+      subtitle={t("detail.privateNote.description")}
+      initialNote={existingNote?.content ?? null}
+      initialUpdatedAt={existingNote?.updatedAt ?? null}
+      locale={locale}
+      maxLength={2000}
+      rows={4}
+      placeholder={t("detail.privateNote.form.contentPlaceholder")}
+      onSave={handleSave}
+      labels={{
+        saving: t("detail.privateNote.form.submitting"),
+        savedAt: (time) => t("detail.privateNote.lastUpdated", { date: time }),
+        errorGeneric: t("detail.privateNote.form.errors.validation_failed"),
+      }}
+      inputId={`store-note-${storeSlug}`}
+    />
   );
 }

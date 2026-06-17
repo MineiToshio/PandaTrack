@@ -12,13 +12,18 @@ const { useStoreReviewsStateMock } = vi.hoisted(() => ({
 vi.mock("next-intl", () => ({
   useTranslations: (namespace: string) => (key: string, values?: { count?: number }) => {
     if (namespace === "stores") {
-      if (key === "detail.reviews.title") return "Community reviews";
-      if (key === "detail.reviews.description") return "Public reviews help collectors judge store trust.";
-      if (key === "detail.reviews.form.openCreateCta") return "Write a review";
-      if (key === "detail.reviews.showMoreCta") {
-        return `View ${values?.count ?? 0} more reviews`;
+      if (key === "redesign.detail.reviewsHeader.viewAll") {
+        return `See all ${values?.count ?? 0} reviews`;
       }
-
+      if (key === "redesign.detail.reviewsHeader.beTheFirst") {
+        return "Be the first to review this store.";
+      }
+      if (key === "redesign.detail.reviewsHeader.totalCount") {
+        return `${values?.count ?? 0} reviews`;
+      }
+      if (key === "redesign.detail.reviewsHeader.noAverage") {
+        return "—";
+      }
       return key;
     }
 
@@ -38,8 +43,20 @@ vi.mock("../_actions/deleteStoreReview", () => ({
   deleteStoreReview: vi.fn(),
 }));
 
+vi.mock("../StoreReviewForm", () => ({
+  default: () => <div data-testid="review-form" />,
+}));
+
 vi.mock("@/components/core/RatingStars", () => ({
   default: () => <div data-testid="rating-stars" />,
+}));
+
+vi.mock("@/components/core/StarRating", () => ({
+  default: () => <div data-testid="star-rating" />,
+}));
+
+vi.mock("@/components/core/Avatar", () => ({
+  default: () => <div data-testid="avatar" />,
 }));
 
 vi.mock("@/components/modules/Modal", () => ({
@@ -70,25 +87,22 @@ describe("StorePublicReviewsSection", () => {
     });
   });
 
-  it("reveals community reviews in batches of five", async () => {
+  it("shows the first 4 community reviews and expands to all on click", async () => {
     const user = userEvent.setup();
 
     render(<StorePublicReviewsSection locale="en" storeSlug="test-store" />);
 
     expect(screen.getByText("Review comment 1")).toBeInTheDocument();
+    expect(screen.getByText("Review comment 4")).toBeInTheDocument();
+    expect(screen.queryByText("Review comment 5")).not.toBeInTheDocument();
+
+    const expandCta = screen.getByRole("button", { name: "See all 12 reviews" });
+    expect(expandCta).toBeInTheDocument();
+
+    await user.click(expandCta);
+
     expect(screen.getByText("Review comment 5")).toBeInTheDocument();
-    expect(screen.queryByText("Review comment 6")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "View 5 more reviews" })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "View 5 more reviews" }));
-
-    expect(screen.getByText("Review comment 10")).toBeInTheDocument();
-    expect(screen.queryByText("Review comment 11")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "View 2 more reviews" })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "View 2 more reviews" }));
-
     expect(screen.getByText("Review comment 12")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /View .* more reviews/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /See all .* reviews/ })).not.toBeInTheDocument();
   });
 });

@@ -1,171 +1,324 @@
 # UX Copy
 
-This document defines PandaTrack's voice, tone, and writing principles for in-app microcopy: empty states, info banners, error messages, helper text, confirmation dialogs, and CTAs.
+This document defines PandaTrack's voice, tone, and writing rules for in-app copy: empty states, info banners, error messages, helper text, confirmation dialogs, success toasts, and CTAs. It is normative — any new or revised user-facing string is calibrated against it before merge.
 
-This is the companion to `interface-patterns.md` (which covers placement and component choice) and `visual-foundations.md` (which covers visual treatment). Read this file when writing or reviewing any user-facing string inside the private collector workspace.
+It is the companion to `interface-patterns.md` (placement and component choice) and `visual-foundations.md` (visual treatment). For the _copy that lives inside_ state surfaces (empty / error / loading) see `states.md`; for the success micro-moments copy rides on (toasts, achievement celebrations) see `motion.md`. The matching repository rule is `.cursor/rules/role-copywriting-marketing.mdc`.
 
-## Product Voice
+## The model: one voice, many tones
 
-PandaTrack speaks like a knowledgeable friend who helps collectors stay on top of their orders, not like a system log or a legal notice.
+PandaTrack follows the Mailchimp model: **the voice is constant, the tone varies by context.** The voice — who we sound like — never changes across the app. The tone — how warm or serious that voice is on a given screen — flexes with the reader's emotional state on that surface.
 
-**Core traits:**
+Two principles sit above everything:
 
-- **Human, not mechanical.** Sentences should sound like something a person would say, not a status code.
-- **Warm and supportive.** Sound like someone helping, not issuing instructions. Use "we" for what PandaTrack does and "you" for what the user does. Small words like "just", "solo", "por ti" make a task feel light.
-- **Benefit-led.** Lead with what the user gains, not with what the system needs.
-- **Written for someone discovering the app.** Never assume the reader has seen other screens. Describe benefits as concrete outcomes a first-time user can picture (e.g. "see how much you've spent in total"), not as references to product areas they may not have discovered yet (e.g. "in your dashboard and reports").
-- **Contextual.** Every message should answer the implicit question "why does this matter to me right now?"
-- **Concise but complete.** Cut filler words, but never cut the context the user needs to act.
-- **Direct.** No hedging, no excessive politeness, no exclamation marks as a substitute for substance.
+- **Clarity beats entertainment.** Personality is a garnish, never the dish. If wit and clarity ever conflict, clarity wins.
+- **Task first, personality second.** On functional surfaces (payment status, totals, tracking) deliver the task's information first; voice and tone come after. Warmth comes from conversational cadence, not from cleverness.
 
-**Target audience:** collectors aged roughly 18–25 who are comfortable with digital apps but should never feel like they are reading documentation.
+> **When in doubt, go neutral.** Misplaced delight — on money, on a failed delivery, on an error — pushes the user out of the product faster than coldness ever does.
 
-## Tone by Surface
+The copy itself lives in `src/i18n/locales/{es,en}/*.json`. **This document is the arbiter; the JSON is the artifact.** Because the product is Spanish-first, all examples below are Spanish (neutral Spanish — see §5).
 
-| Surface              | Tone                                                                     |
-| -------------------- | ------------------------------------------------------------------------ |
-| Empty states         | Warm, motivational, action-oriented                                      |
-| Info banners         | Helpful, non-alarmist, benefit-framed                                    |
-| Error messages       | Clear, non-blaming, actionable                                           |
-| Confirmation dialogs | Direct, specific about consequences                                      |
-| Helper text          | Concise, answers "why does this field exist?"                            |
-| Success toasts       | Affirming, short, no exclamation marks unless the moment truly earns one |
-| CTAs                 | Action verb first, specific, never vague                                 |
+---
 
-## Writing Rules
+## 1. The voice (constant — never changes)
+
+Four pillars define the voice. They hold on every screen; only the tone (§2) moves.
+
+### Pillar 1 — Clear and direct
+
+One idea per line. Active voice. Brevity over wit.
+
+- Active, not passive: "Cancela este pedido", not "Este pedido será cancelado".
+- One idea per line. If a sentence runs past ~12 words, split it. If a screen needs more than ~30 words of copy, the screen is mis-designed, not under-written.
+- The data is the hero (Pillar 3); copy frames it, it doesn't bury it.
+- If nothing natural comes in 5 seconds, write the shortest useful thing. "Listo" beats a forced joke.
+
+### Pillar 2 — Complicit, not corporate
+
+Sound like a friend who knows the domain, not like a system log or a legal notice.
+
+- **`tú` always, never `usted`.** No exceptions in product copy. (Legal text in `terms` / `privacy` keeps its own formal register and is out of scope for this rule.)
+- Zero corporativism. Banned phrasings: _"Le informamos"_, _"Ha ocurrido"_, _"Tenga en cuenta"_, _"Disculpe las molestias"_, _"Sistema"_, _"Procesamiento"_, _"Operación exitosa"_, and _"Por favor"_ in CTAs and validations (real courtesies are fine).
+- Errors don't blame and don't grovel: assume the fault when it's ours, never apologize to the user for something they didn't do.
+
+### Pillar 3 — Domain translator
+
+Use the glossary terms; let the number speak.
+
+- Use the canonical product terms — **pedido, entrega, tienda, producto, pago, pre-reserva, moneda, moneda base** (§7). No synonyms.
+- **The data is the hero.** The figure or date leads; the copy frames it: _"Te quedan $48,50 de $120"_, not a bare _"$48,50"_ and not _"$48,50"_ drowned in prose.
+- No technical jargon. When a technical term is unavoidable, explain it in the same sentence.
+
+### Pillar 4 — Dry, punctual humor
+
+Personality only when it comes naturally and the risk is low.
+
+- Max **1 emoji** per message, and only in celebratory moments (✨ achievement, 🎉 collection milestone, 🌱 first order). Never in errors, never in ordinary CTAs.
+- No meme storm: ban _"bestie"_, _"no cap"_, _"slay"_, _"literally me"_, emoji loops.
+- "If in doubt, straight face."
+
+### The sweet spot — between two banned poles
+
+Every pillar lives between a cold failure and a cringe failure:
+
+- ❌ **Cold / corporate:** _"Ha ocurrido un error en el procesamiento de su solicitud."_
+- ✅ **Sweet spot:** _"Algo se rompió de este lado. Vuelve a intentarlo."_
+- ❌ **Cringe / TikTok-talk:** _"Ups bestie 💀 algo salió mal lol no cap fr"_
+
+Either pole pushes the user out of the product.
+
+---
+
+## 2. The tone (variable) — the tone-by-context matrix
+
+The axis is the **reader's emotional state** on the surface. There are two poles; the voice (§1) stays intact in both — only the temperature changes.
+
+| Pole                  | When                                                                                                    | Temperature                         | Emoji       | Exclamation |
+| --------------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------- | ----------- | ----------- |
+| **Neutral / serious** | Money, payments, totals, delivery tracking, **destructive actions**, **errors**, confirmations, overdue | Serious, task-first, the data leads | **No**      | No          |
+| **Playful / warm**    | Empty states, onboarding, **success / achievement**                                                     | Warm, collector personality         | 1, punctual | OK          |
+
+Playful warmth is **reserved** for celebratory moments. It never sits on a trust surface (money, delivery, errors).
+
+### 2.1 The full matrix
+
+| Context / surface           | Reader state         | Pole                    | Tone rule                                               | Example ✅ (neutral es)                                        |
+| --------------------------- | -------------------- | ----------------------- | ------------------------------------------------------- | -------------------------------------------------------------- |
+| Payment status / balance    | focused, calculating | **Neutral**             | Figure first, no joke                                   | _"Te quedan $48,50 de $120."_                                  |
+| Total / roll-up             | scanning             | **Neutral**             | Data is hero, `tabular-nums`                            | _"$1.240 en 8 pedidos."_                                       |
+| Confirm destructive         | hesitating, at risk  | **Neutral**             | Name what's lost, don't dramatize                       | _"¿Borrar este pedido? Sus pagos también se van."_             |
+| Error 500 / server          | frustrated           | **Neutral**             | Assume the fault, offer an action, don't apologize      | _"Algo se rompió de este lado. Vuelve a intentarlo."_          |
+| Validation error            | correcting           | **Neutral**             | Name the problem + the fix; keep what they typed        | _"La fecha de entrega no puede ser anterior a la del pedido."_ |
+| Overdue payment             | worried (money)      | **Neutral (sensitive)** | Treat it as someone's life: zero euphoria, zero mascot  | _"Pago vencido hace 3 días."_                                  |
+| Empty · first time          | exploring, no data   | **Playful**             | Invite the first action (declarative)                   | _"Sin pre-reservas todavía. Suma una y empezamos."_            |
+| Empty · no results          | filtering            | **Neutral-warm**        | Offer to clear filters, no blame                        | _"Nada con esos filtros. ¿Quitamos alguno?"_                   |
+| Onboarding / first step     | new, motivated       | **Playful**             | Complicit, brief, second person                         | _"Vamos por tu primera tienda."_                               |
+| Success / achievement toast | satisfied            | **Playful**             | Exclamation OK, 1 emoji, brief                          | _"Listo. Pieza nueva en tu colección. 🎉"_                     |
+| Achievement (milestone)     | celebrating          | **Playful**             | The one place for bounce easing + emoji                 | _"Pre-reserva 100% pagada. 🎉"_                                |
+| Primary CTA                 | decided              | **Neutral-warm**        | Verb + object, short                                    | _"Anotar pago"_ · _"Crear pedido"_                             |
+| Helper / placeholder        | minor doubt          | **Neutral-warm**        | Guide, don't scold                                      | _"¿Para cuándo?"_ (date picker)                                |
+| Loading                     | waiting              | **Neutral**             | Prefer a textless skeleton; if text is needed, one word | _"Buscando…"_                                                  |
+
+> **Rule of thumb:** when unsure, drop to the neutral pole. Clarity first, always.
+
+---
+
+## 3. Do / Don't by surface
+
+Each surface has a cold anti-pattern, a cringe anti-pattern, and a sweet spot. Aim for the sweet spot every time.
+
+### 3.1 Empty state — _playful_
+
+- ❌ Cold: _"No se encontraron pre-reservas registradas en el sistema."_
+- ❌ Cringe: _"Ups, nada por acá bestie 👀 suma algo no seas tímido"_
+- ✅ Sweet spot: _"Sin pre-reservas todavía. Suma una y empezamos."_
+
+### 3.2 Error — _neutral, assume the fault_
+
+- ❌ Cold: _"Ha ocurrido un error en el servidor. Por favor, contacte al administrador."_
+- ❌ Cringe / over-apology: _"Uff perdón perdón se rompió todo 😭 mil disculpas"_
+- ✅ Sweet spot: _"Algo se rompió de este lado. Vuelve a intentarlo."_
+
+Friendly but not exaggerated: neither the cold "Incorrecto." nor the grovel.
+
+### 3.3 Destructive confirmation — _neutral, name the consequence_
+
+- ❌ Cold: _"¿Está seguro que desea eliminar este pedido? Esta acción es irreversible."_
+- ❌ Cringe: _"¿Seguro seguro? 😳 no hay vuelta atrás eh"_
+- ✅ Sweet spot: _"¿Borrar este pedido? Sus pagos también se van."_
+
+### 3.4 Onboarding — _playful, complicit_
+
+- ❌ Cold: _"Para comenzar, deberá crear su primera tienda."_
+- ❌ Cringe: _"Arranca fuerte 🚀 crea tu primera tienda y rómpela"_
+- ✅ Sweet spot: _"Vamos por tu primera tienda."_
+
+### 3.5 Success toast — _neutral on the figure, warm around it_
+
+- ❌ Cold: _"El pago ha sido procesado exitosamente. Saldo restante: $48,50 USD."_
+- ❌ Cringe: _"GG 🤑 plata anotada bestie te quedan $48,50"_
+- ✅ Sweet spot: _"Listo. Te quedan $48,50."_
+
+Exclamation is OK for a genuine milestone ("¡Listo!"), never the encyclopedic "Has procesado exitosamente…".
+
+### 3.6 Helper / microcopy — _neutral-warm, guide_
+
+- ❌ Cold: _"Seleccione una fecha del calendario."_
+- ❌ Cringe: _"¿Cuándo cae? 📅 tú dale fecha"_
+- ✅ Sweet spot: _"¿Para cuándo?"_
+
+---
+
+## 4. Writing rules
+
+These apply across all surfaces and refine the four pillars.
 
 ### Always give context
 
-Never name a state without explaining its consequence or benefit.
+Never name a state without explaining its consequence or benefit. The data is the hero, but a bare figure isn't context.
 
 - Bad: "No base currency configured. Exchange rate unavailable."
-- Good: "We'll show you how much you've spent in total, even when you buy from stores in different countries. Just choose your base currency and we'll convert each order to it for you."
+- Good: "Te mostramos cuánto llevas gastado en total, aunque compres en tiendas de distintos países. Elige tu moneda base y convertimos cada pedido por ti."
 
-The bad version names an absence. The good version explains what becomes possible.
+The bad version names an absence; the good version explains what becomes possible.
 
 ### Lead with the benefit
 
-Start messages with what the user gains, not with what they are missing or what went wrong.
+Start with what the user gains, not with what's missing or what went wrong.
 
-- Bad: "You don't have a profile photo."
-- Good: "Add a photo so stores and other collectors can recognize you."
+- Bad: "No tienes foto de perfil."
+- Good: "Agrega una foto para que las tiendas y otros coleccionistas te reconozcan."
 
 ### Write for someone discovering the app
 
-The reader may be on their very first screen. They may not know yet that PandaTrack has a dashboard, a budget, or reports. Describe benefits as outcomes a first-time user can picture right now, not as references to features they haven't seen yet.
+The reader may be on their very first screen and may not know there's a dashboard, a budget, or reports. Describe benefits as outcomes they can picture now, not as references to features they haven't found yet.
 
-- Bad: "See your budget, dashboard, and reports in one currency."
-- Good: "See how much you've spent in total, even when you buy from stores in different countries."
-
-If a benefit only makes sense after the user has explored the app, rephrase it as the tangible outcome behind that feature.
+- Bad: "Ve tu presupuesto, panel y reportes en una sola moneda."
+- Good: "Ve cuánto llevas gastado en total, aunque compres en tiendas de distintos países."
 
 ### Be specific about consequences in destructive actions
 
-Confirmation dialogs must say exactly what will be lost or removed.
+Confirmation dialogs must say exactly what will be lost. When the action is irreversible, name it.
 
-- Bad: "Are you sure?"
-- Good: "Leave without saving? Changes you made will not be saved."
-- Good: "Cancel this order? The 2 recorded payments will be removed and 1 in-transit delivery will be unlinked."
+- Bad: "¿Estás seguro?"
+- Good: "¿Salir sin guardar? Se perderán los cambios."
+- Good: "¿Cancelar este pedido? Se quitan los 2 pagos registrados y se desvincula 1 entrega en tránsito."
 
 ### Write CTAs as verb + object
 
-The label should describe the action, not just confirm it.
+The label describes the action, not just confirms it.
 
-- Bad: "Accept", "Yes", "OK", "Set it up now", "Configurar ahora"
-- Good: "Create store", "Choose base currency", "Delete order", "Back to form"
+- Bad: "Aceptar", "Sí", "OK", "Configurar ahora"
+- Good: "Crear tienda", "Elegir moneda base", "Borrar pedido", "Volver al formulario"
 
-Exception: "Cancel" and "Leave" are acceptable for cancel/back actions where the object is implicit from context.
+Exception: "Cancelar" and "Volver" are fine for cancel/back actions where the object is implicit.
 
 ### Required vs optional field labels
 
-Forms use a single, consistent convention across the app: required is the default and is unmarked; optional fields are explicitly tagged. Do not mix asterisks and "optional" tags within or across forms.
+Forms use one consistent convention: required is the default and is unmarked; optional fields are tagged explicitly. Never mix asterisks and tags.
 
-- Required field label: the field name only. No asterisk, no "required".
-  - Good (es): `"costLabel": "Costo"`
-  - Good (en): `"costLabel": "Cost"`
-- Optional field label: append `(opcional)` (es) / `(optional)` (en) to the translation string itself.
+- Required: the field name only. No asterisk, no "requerido".
+  - Good (es): `"costLabel": "Costo"` · Good (en): `"costLabel": "Cost"`
+- Optional: append `(opcional)` / `(optional)` inside the string.
   - Good (es): `"expectedArrivalLabel": "Llegada estimada (opcional)"`
   - Good (en): `"expectedArrivalLabel": "Expected arrival (optional)"`
-- Bad: `"Costo *"`, `"Cost *"`, `"Costo (requerido)"`, mixing asterisks for required with `(opcional)` for optional in the same screen.
+- Bad: `"Costo *"`, `"Costo (requerido)"`, mixing asterisks-for-required with `(opcional)` in the same screen.
 
-See `interface-patterns.md` → "Form field required vs optional labeling" for the matching component-level rule.
+See `interface-patterns.md` → "Form field required vs optional labeling" for the matching component rule.
 
 ### Keep helper text functional
 
-Helper text below a field should answer "why does this field exist or what should I put here?", not repeat the label.
+Helper text answers "why does this field exist / what goes here?", never repeats the label.
 
-- Bad: label "Base currency", helper "Select your base currency."
-- Good: label "Base currency", helper "Used to convert your order costs and calculate your budget."
+- Bad: label "Moneda base", helper "Selecciona tu moneda base."
+- Good: label "Moneda base", helper "Se usa para convertir los costos de tus pedidos y calcular tu presupuesto."
 
-### Avoid jargon
+---
 
-Use plain language. When a technical term is unavoidable, explain it in the same sentence.
+## 5. Neutral Spanish (hard constraint)
 
-- Bad: "Exchange rate required for cross-currency orders."
-- Good: "Enter how many [base currency] equal 1 [order currency] to calculate the cost in your local currency."
+All copy uses **international neutral Spanish.** The informal, complicit `tú` voice from §1 stays; what gets neutralized is the dialect. No voseo, no regionalisms.
 
-## Pattern Reference
+- ❌ Voseo / regional: "dejás", "podés", "anotá", "tenés", "querés", "necesitás", "agregá", "elegí", "guardá", "dale".
+- ✅ Neutral `tú`: "deja", "puedes", "anota", "tienes", "quieres", "necesitas", "agrega", "elige", "guarda".
+
+### es ↔ en parity = reinterpret, don't translate
+
+Write the pair together; do not translate literally. The `en` earns warmth through contractions, not added words.
+
+- _"Te quedan $48,50"_ (es) → _"$48,50 to go"_ (en) — **not** _"$48,50 left to you"_.
+- Prefer _"You'll"_ over _"You will"_ in `en`.
+
+Keep sentence length and structure comparable across locales: don't over-explain in one and under-explain in the other.
+
+---
+
+## 6. Pattern reference
+
+Durable structure per surface, aligned with the matrix (§2).
 
 ### Empty states
 
-Structure: icon + title + one supporting sentence + primary CTA.
+Structure: icon + title + one supporting sentence + primary CTA. The title names what's missing in a forward-looking way (not as a problem); the sentence says what becomes possible; the CTA starts with a verb. Tone: **playful** (first-time) or **neutral-warm** (no results).
 
-The title names what is missing in a forward-looking way, not as a problem. The supporting sentence explains what becomes possible once the gap is filled. The CTA starts with a verb.
-
-Example: no stores
-
-> **"Start with a store"**
-> To create an order, you'll need at least one store on record. Add your first one and come back when you're ready.
-> `[Create store]`
+> **"Sin pre-reservas todavía"**
+> Suma una y empezamos a seguir tus pagos.
+> `[Crear pre-reserva]`
 
 ### Info banners
 
-Use for non-blocking guidance that helps the user unlock more value. Never use `warning` treatment for informational content, only for genuine risks.
+Use for non-blocking guidance that unlocks value. Never use `warning` treatment for informational content — only for genuine risk. Tone: **neutral-warm**. Structure: short benefit statement (concrete outcome, not feature name) + inline link CTA.
 
-Structure: short benefit statement (as a concrete outcome, not a feature name) + inline link CTA.
-
-Example: no base currency
-
-> ℹ "We'll show you how much you've spent in total, even when you buy from stores in different countries. Just choose your base currency and we'll convert each order to it for you." `[Choose base currency →]`
+> ℹ "Te mostramos cuánto llevas gastado en total, aunque compres en tiendas de distintos países. Elige tu moneda base y convertimos cada pedido por ti." `[Elegir moneda base →]`
 
 ### Error messages
 
-Structure: what happened (in plain language) + what to do.
+Structure: what happened (plain language) + what to do. Don't blame the user; don't hide the failure behind passive voice. Tone: **neutral**.
 
-Do not blame the user. Do not use passive voice to hide what failed.
+- Bad: "Ha ocurrido un error."
+- Good: "No pudimos guardar el pedido. Revisa tu conexión y vuelve a intentarlo."
+- Good (field-level): "El nombre del producto es obligatorio."
 
-- Bad: "An error occurred."
-- Good: "We couldn't save the order. Check your connection and try again."
-- Good (field-level): "Item name is required."
+### Confirmation dialogs (destructive)
 
-### Confirmation dialogs for destructive actions
+Structure: question + specific consequence. Always name what's permanently removed or changed. Tone: **neutral**.
 
-Structure: question + specific consequence.
-
-Always mention what will be permanently removed or changed when the action is irreversible.
-
-- "Delete this order? The 3 recorded payments will also be removed. This cannot be undone."
-- "Cancel this order? Payments and linked deliveries will be disconnected."
+- "¿Borrar este pedido? También se quitan los 3 pagos registrados."
+- "¿Cancelar este pedido? Se desvinculan los pagos y las entregas asociadas."
 
 ### Success toasts
 
-One short sentence. Past tense. No exclamation marks unless the moment is genuinely celebratory (first order, milestone).
+One short sentence, past tense. No exclamation unless the moment is genuinely celebratory (first order, milestone). Tone: **neutral** on the figure, **playful** for a true achievement. See `motion.md` for the celebration micro-moment.
 
-- "Order created."
-- "Changes saved."
-- "Store deleted."
+- "Pedido creado."
+- "Cambios guardados."
+- "Listo. Pieza nueva en tu colección. 🎉" (milestone only)
 
-## Language and Locale
+### CTA labels
 
-- Write copy in both `es` (default) and `en` for every user-facing string.
-- `es` is the primary locale; when in doubt about tone, write `es` first.
-- Keep the same sentence length and structure across locales. Do not over-explain in one locale and under-explain in the other.
-- All copy lives in `src/i18n/locales/{locale}/` JSON files. Never hardcode user-facing strings in components.
+Verb + object, short, specific. See "Write CTAs as verb + object" (§4).
 
-## Product Terminology
+### Helper text
 
-The product glossary is the source of truth for the canonical names of product concepts in both `es` and `en`. Read it before writing copy or naming any product-related UI string, identifier, or documentation entry.
+Concise; answers "why this field exists". See "Keep helper text functional" (§4).
+
+### Required / optional field labels
+
+Required unmarked, optional tagged. See "Required vs optional field labels" (§4).
+
+---
+
+## 7. Product terminology
+
+The product glossary is the source of truth for the canonical names of product concepts in both `es` and `en`. Read it before writing copy or naming any product UI string. This document does not redefine terms — it consumes them.
 
 - Glossary: `docs/product/glossary.md`.
-- Required pairs include `pedido` ↔ `order` (never `orden` / `purchase`) and `entrega` ↔ `delivery` (never `envío` / `shipment`).
-- Add new concepts to the glossary in the same change that introduces them.
+- **No synonyms.** Never `orden` for `pedido`; never `envío` for `entrega`. Required pairs include `pedido` ↔ `order`, `entrega` ↔ `delivery`, `tienda` ↔ `store`, `producto` ↔ `product`, `pre-reserva` ↔ `pre-order`, `pago` ↔ `payment`, `moneda base` ↔ `base currency`.
+- Add new product concepts to the glossary in the same change that introduces them.
+
+Enforcement is layered: the glossary fixes the _terms_; this document's matrix (§2) fixes the _tone_ per surface — the dimension the glossary doesn't cover. Both are checked before a new `i18n` key merges. The glossary rule is enforced by `.cursor/rules/role-copywriting-marketing.mdc` and `.cursor/rules/english-code-only.mdc`.
+
+---
+
+## Rules & anti-patterns
+
+**Rules**
+
+- Voice is constant; tone varies by reader state. When in doubt, go neutral.
+- One idea per line, active voice, ~12 words max; ~30 words max per screen.
+- `tú` always; the data is the hero; figures carry context.
+- Neutral Spanish — no voseo. es ↔ en is reinterpreted, not literal-translated.
+- ≤ 1 emoji, celebratory moments only.
+- Every new string is placed in the matrix and checked against the glossary before merge.
+
+**Review checklist:** glossary term? · correct matrix pole? · `tú`, active voice, one idea per line? · neutral Spanish? · ≤ 1 emoji and only celebratory? · is the data the hero? · es/en reinterpreted, not translated?
+
+**Anti-patterns**
+
+- Corporativism: "Le informamos", "Ha ocurrido", "Tenga en cuenta", "Disculpe las molestias", "Sistema", "Procesamiento", "Operación exitosa".
+- Apologizing for the user's nonexistent fault; passive voice hiding what failed.
+- Cringe / meme storm: "bestie", "no cap", "slay", emoji loops; emoji or jokes on errors and ordinary CTAs.
+- Voseo / regionalisms in copy ("dejás", "podés", "anotá").
+- Bare figures without context; synonyms outside the glossary (`orden`, `envío`).
+- Delight on a trust surface (money, delivery, error). Hardcoded strings in components — copy belongs in `src/i18n/locales/{es,en}/*.json`.
+
+> Historical note: this voice system was distilled during the "Velvet" redesign; the prior design system's copy conventions are superseded by this document.

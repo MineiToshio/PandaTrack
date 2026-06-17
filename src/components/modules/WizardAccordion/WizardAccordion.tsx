@@ -1,0 +1,322 @@
+"use client";
+
+import {
+  Children,
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react";
+import Stepper, { type StepperStep } from "@/components/core/Stepper";
+import { cn } from "@/lib/styles";
+import { WizardAccordionContext, type WizardAccordionContextValue, type WizardLayout } from "./WizardContext";
+
+export type WizardAccordionProps = {
+  /** 1-indexed initial active step. Default `1`. */
+  startStep?: number;
+  /** Pre-marked done steps (1-indexed). Default `[]`. */
+  initialDoneSteps?: number[];
+  /** Notifies the parent when the active step changes. */
+  onStepChange?: (n: number) => void;
+  /** Notifies the parent when the set of done steps changes. */
+  onDoneStepsChange?: (steps: number[]) => void;
+  /** Notifies the parent when the set of errored steps changes. */
+  onErroredStepsChange?: (steps: number[]) => void;
+  /**
+   * Optional explicit step list. When provided, the accordion renders a `<Stepper>` at the top
+   * and uses `steps.length` as `totalSteps` (overriding the children-count fallback).
+   * Useful when steps are conditionally rendered or when label/visual concerns differ from `<WizardStep>` children.
+   */
+  steps?: StepperStep[];
+  /** When true (default when `steps` is provided), shows the `<Stepper>` indicator at the top. */
+  showStepper?: boolean;
+  /** Localized name for the stepper navigation landmark. */
+  stepperAriaLabel?: string;
+  /**
+   * When true, blocks navigation to steps beyond `max(doneSteps) + 1`. Default `false`
+   * (free navigation, ADR 0001 D12 OC3).
+   */
+  gated?: boolean;
+  /** When true, scrolls the next step into view after advancing. Default `false`. */
+  scrollOnAdvance?: boolean;
+  /**
+   * Layout mode. Default `"wizard"` (single active step).
+   * Use `"all-open"` for editing flows where the user wants to see and modify every
+   * section without progressive disclosure — every step body stays expanded and
+   * the per-step submit/back buttons are not rendered (parent owns the submit footer).
+   */
+  layout?: WizardLayout;
+  /** Children — list of `<WizardStep>` nodes. */
+  children: ReactNode;
+  /** Optional className on the wrapping list. */
+  className?: string;
+};
+
+export type WizardAccordionHandle = {
+  /** Activate a specific step. Respects `gated` if enabled. */
+  activate: (n: number) => void;
+  /**
+   * Invalidate every step from `n` onward: clears their done/errored marks and,
+   * when the active step is past `n`, returns focus to step `n`. Used when an
+   * earlier answer (e.g. the chosen store) changes and the downstream steps must
+   * be redone from scratch.
+   */
+  invalidateFrom: (n: number) => void;
+};
+
+/**
+ * WizardAccordion — one expanded step at a time orchestrator.
+ * Implements ADR 0003 D5 (single active step). Free navigation by default
+ * (ADR 0001 D12 OC3); set `gated` to enforce sequential progression.
+ *
+ * Optionally renders a `<Stepper>` at the top when `steps` is provided.
+ * Expose an imperative `activate(n)` via ref for external steppers.
+ */
+const WizardAccordion = forwardRef<WizardAccordionHandle, WizardAccordionProps>(function WizardAccordion(
+  {
+    startStep = 1,
+    initialDoneSteps = [],
+    onStepChange,
+    onDoneStepsChange,
+    onErroredStepsChange,
+    steps,
+    showStepper,
+    stepperAriaLabel,
+    gated = false,
+    scrollOnAdvance = false,
+    layout = "wizard",
+    children,
+    className,
+  },
+  ref,
+) {
+  const stepNodes = Children.toArray(children).filter((child): child is ReactElement =>
+    Boolean(child && typeof child === "object" && "props" in (child as ReactElement)),
+  );
+  const totalSteps = steps?.length ?? stepNodes.length;
+  const initialClamped = Math.min(Math.max(startStep, 1), Math.max(totalSteps, 1));
+  const [activeStep, setActiveStep] = useState<number>(initialClamped);
+  const [doneSteps, setDoneSteps] = useState<Set<number>>(() => new Set(initialDoneSteps));
+  const [erroredSteps, setErroredSteps] = useState<Set<number>>(() => new Set());
+
+  const onStepChangeRef = useRef(onStepChange);
+  const onDoneStepsChangeRef = useRef(onDoneStepsChange);
+  const onErroredStepsChangeRef = useRef(onErroredStepsChange);
+  const doneStepsRef = useRef(doneSteps);
+  const activeStepRef = useRef(activeStep);
+  const isFirstStepRender = useRef(true);
+  const isFirstDoneRender = useRef(true);
+  const isFirstErroredRender = useRef(true);
+  useEffect(() => {
+    onStepChangeRef.current = onStepChange;
+  }, [onStepChange]);
+  useEffect(() => {
+    onDoneStepsChangeRef.current = onDoneStepsChange;
+  }, [onDoneStepsChange]);
+  useEffect(() => {
+    onErroredStepsChangeRef.current = onErroredStepsChange;
+  }, [onErroredStepsChange]);
+  useEffect(() => {
+    if (isFirstErroredRender.current) {
+      isFirstErroredRender.current = false;
+      return;
+    }
+    onErroredStepsChangeRef.current?.(Array.from(erroredSteps));
+  }, [erroredSteps]);
+  useEffect(() => {
+    doneStepsRef.current = doneSteps;
+    if (isFirstDoneRender.current) {
+      isFirstDoneRender.current = false;
+      return;
+    }
+    onDoneStepsChangeRef.current?.(Array.from(doneSteps));
+  }, [doneSteps]);
+  useEffect(() => {
+    activeStepRef.current = activeStep;
+    if (isFirstStepRender.current) {
+      isFirstStepRender.current = false;
+      return;
+    }
+    onStepChangeRef.current?.(activeStep);
+  }, [activeStep]);
+
+  const computeMaxAllowed = useCallback(() => {
+    const done = doneStepsRef.current;
+    if (done.size === 0) return 1;
+    let maxDone = 0;
+    done.forEach((s) => {
+      if (s > maxDone) maxDone = s;
+    });
+    return Math.min(maxDone + 1, totalSteps);
+  }, [totalSteps]);
+
+  const activate = useCallback(
+    (n: number) => {
+      if (gated && n > computeMaxAllowed()) return;
+      if (activeStepRef.current === n) return;
+      setActiveStep(n);
+    },
+    [gated, computeMaxAllowed],
+  );
+
+  const canActivate = useCallback(
+    (n: number) => {
+      if (n < 1 || n > totalSteps) return false;
+      if (!gated) return true;
+      return n <= computeMaxAllowed();
+    },
+    [gated, computeMaxAllowed, totalSteps],
+  );
+
+  // Registry for the active step's sticky-mobile pulse function. Used by locked
+  // step header clicks to nudge the user toward the bottom action bar.
+  const stickyPulseRef = useRef<(() => void) | null>(null);
+  const registerStickyPulse = useCallback((fn: (() => void) | null) => {
+    stickyPulseRef.current = fn;
+  }, []);
+  const pulseStickyHint = useCallback(() => {
+    stickyPulseRef.current?.();
+  }, []);
+
+  const scrollStepIntoView = useCallback((n: number) => {
+    if (typeof window === "undefined") return;
+    requestAnimationFrame(() => {
+      const target = document.querySelector<HTMLElement>(`[data-wizard-step="${n}"]`);
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, []);
+
+  const markDoneAndAdvance = useCallback(
+    (n: number) => {
+      // Update the ref synchronously so any subsequent gate check sees the new max-done.
+      const nextDone = new Set(doneStepsRef.current);
+      nextDone.add(n);
+      doneStepsRef.current = nextDone;
+      setDoneSteps(nextDone);
+      const nextStep = Math.min(n + 1, totalSteps);
+      if (activeStepRef.current !== nextStep) setActiveStep(nextStep);
+      if (scrollOnAdvance) scrollStepIntoView(nextStep);
+    },
+    [totalSteps, scrollOnAdvance, scrollStepIntoView],
+  );
+
+  const reportValidation = useCallback((n: number, isValid: boolean) => {
+    if (isValid) {
+      setErroredSteps((prev) => {
+        if (!prev.has(n)) return prev;
+        const next = new Set(prev);
+        next.delete(n);
+        return next;
+      });
+    } else {
+      setErroredSteps((prev) => (prev.has(n) ? prev : new Set([...prev, n])));
+      // Remove the failed step (and any later steps) from doneSteps so the user can't skip ahead.
+      setDoneSteps((prev) => {
+        const next = new Set<number>();
+        prev.forEach((s) => {
+          if (s < n) next.add(s);
+        });
+        if (next.size === prev.size) return prev;
+        doneStepsRef.current = next;
+        return next;
+      });
+    }
+  }, []);
+
+  const goBack = useCallback(
+    (n: number) => {
+      const target = Math.max(1, n - 1);
+      // Going back is always allowed, even when the current step has errors.
+      // Bypass `activate`'s gating to make this work.
+      if (activeStepRef.current !== target) setActiveStep(target);
+      if (scrollOnAdvance) scrollStepIntoView(target);
+    },
+    [scrollOnAdvance, scrollStepIntoView],
+  );
+
+  const invalidateFrom = useCallback((n: number) => {
+    setDoneSteps((prev) => {
+      if (![...prev].some((s) => s >= n)) return prev;
+      const next = new Set<number>();
+      prev.forEach((s) => {
+        if (s < n) next.add(s);
+      });
+      doneStepsRef.current = next;
+      return next;
+    });
+    setErroredSteps((prev) => {
+      if (![...prev].some((s) => s >= n)) return prev;
+      const next = new Set<number>();
+      prev.forEach((s) => {
+        if (s < n) next.add(s);
+      });
+      return next;
+    });
+    if (activeStepRef.current > n) setActiveStep(n);
+  }, []);
+
+  useImperativeHandle(ref, () => ({ activate, invalidateFrom }), [activate, invalidateFrom]);
+
+  const contextValue = useMemo<WizardAccordionContextValue>(
+    () => ({
+      activeStep,
+      doneSteps,
+      erroredSteps,
+      totalSteps,
+      layout,
+      activate,
+      canActivate,
+      markDoneAndAdvance,
+      goBack,
+      reportValidation,
+      pulseStickyHint,
+      registerStickyPulse,
+    }),
+    [
+      activeStep,
+      doneSteps,
+      erroredSteps,
+      totalSteps,
+      layout,
+      activate,
+      canActivate,
+      markDoneAndAdvance,
+      goBack,
+      reportValidation,
+      pulseStickyHint,
+      registerStickyPulse,
+    ],
+  );
+
+  // The stepper is meaningless without a single "active step", so hide it in all-open layout.
+  const shouldShowStepper = layout === "all-open" ? false : (showStepper ?? Boolean(steps));
+  const doneStepsArray = useMemo(() => Array.from(doneSteps), [doneSteps]);
+
+  return (
+    <WizardAccordionContext.Provider value={contextValue}>
+      <div className={cn("flex flex-col gap-4 md:gap-6", className)}>
+        {shouldShowStepper && steps && (
+          <Stepper
+            steps={steps}
+            activeStep={activeStep}
+            doneSteps={doneStepsArray}
+            erroredSteps={Array.from(erroredSteps)}
+            onStepClick={activate}
+            ariaLabel={stepperAriaLabel}
+          />
+        )}
+        <ol role="list" className="flex flex-col gap-4 md:gap-6">
+          {stepNodes}
+        </ol>
+      </div>
+    </WizardAccordionContext.Provider>
+  );
+});
+
+export default WizardAccordion;

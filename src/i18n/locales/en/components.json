@@ -1,0 +1,122 @@
+{
+  "button": {
+    "loading": {
+      "label": "Loading"
+    },
+    "commonLabels": {
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "save": "Save",
+      "delete": "Delete",
+      "retry": "Try again"
+    }
+  },
+  "input": {
+    "loading": {
+      "label": "Loading"
+    }
+  },
+  "label": {
+    "optional": "optional"
+  },
+  "avatar": {
+    "fallbackAlt": "Avatar for {name}",
+    "status": {
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "imageLoadError": "Failed to load avatar"
+  },
+  "select": {
+    "placeholder": {
+      "default": "Choose an option",
+      "currency": "Currency",
+      "country": "Country"
+    },
+    "empty": "No options yet.",
+    "triggerAria": {
+      "collapsed": "Open list",
+      "expanded": "Close list"
+    }
+  },
+  "combobox": {
+    "searchPlaceholder": "Search…",
+    "noResults": "No results.",
+    "selected": "{count, plural, one {# selected} other {# selected}}"
+  },
+  "dateInput": {
+    "placeholder": "Choose a date",
+    "clear": "Clear date"
+  },
+  "toast": {
+    "regionLabel": "Notifications"
+  },
+  "wizard": {
+    "stepActions": "Step actions"
+  },
+  "dateRangeInput": {
+    "placeholderFrom": "From",
+    "placeholderTo": "To",
+    "error": {
+      "toAfterFrom": "\"To\" date must come after \"From\"."
+    }
+  },
+  "pagination": {
+    "ariaLabel": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {page}",
+    "loadMore": "Load more",
+    "loading": "Loading",
+    "loadedOf": "{loaded} of {total}"
+  },
+  "mascotBubble": {
+    "contextMenu": {
+      "open": "Open mascot menu",
+      "hide": "Hide mascot",
+      "theme": "Toggle theme",
+      "settings": "Settings"
+    },
+    "altSleeping": "Felix sleeping",
+    "altCelebrating": "Felix celebrating",
+    "altIdle": "Felix"
+  },
+  "statusChip": {
+    "orderStatus": {
+      "OPEN": "Open",
+      "PARTIALLY_IN_TRANSIT": "Partially in transit",
+      "IN_TRANSIT": "In transit",
+      "PARTIALLY_DELIVERED": "Partially delivered",
+      "COMPLETED": "Completed",
+      "CANCELLED": "Cancelled"
+    },
+    "deliveryStatus": {
+      "IN_TRANSIT": "In transit",
+      "DELIVERED": "Delivered",
+      "CANCELLED": "Cancelled",
+      "overdue": "Overdue {days}d"
+    },
+    "itemDeliveryState": {
+      "NONE": "Pending at store",
+      "ARRIVED_AT_STORE": "Ready at store",
+      "IN_TRANSIT": "In transit",
+      "DELIVERED": "Delivered"
+    },
+    "derived": {
+      "paid": "Paid",
+      "partial": "{pct}% paid",
+      "unpaid": "Unpaid",
+      "overdue": "{days, plural, one {# day overdue} other {# days overdue}}"
+    }
+  },
+  "sectionError": {
+    "title": "Couldn't load",
+    "retry": "Try again",
+    "offline": {
+      "title": "No connection"
+    }
+  },
+  "skeleton": {
+    "loading": "Loading…"
+  }
+}

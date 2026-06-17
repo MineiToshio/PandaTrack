@@ -1,6 +1,7 @@
 "use client";
 
 import { type FormEvent, useRef, useState } from "react";
+
 import { flushSync } from "react-dom";
 import { useTranslations } from "next-intl";
 import Button from "@/components/core/Button/Button";
@@ -43,7 +44,9 @@ export default function StoreReviewForm({
   const [state, setState] = useState<SaveStoreReviewResult | null>(null);
   const formRef = useRef<HTMLFormElement | null>(null);
   const [ratingValue, setRatingValue] = useState(existingReview?.overallRating ?? 0);
-  const startedAsEditRef = useRef(existingReview != null);
+  // Capture initial edit-mode flag once at mount. We use useState (not useRef)
+  // so the value is readable during render without violating react-hooks/refs.
+  const [startedAsEdit] = useState(() => existingReview != null);
 
   const fieldErrors = state?.success === false ? state.fieldErrors : undefined;
   const overallRatingError = fieldErrors?.overallRating?.[0];
@@ -111,11 +114,6 @@ export default function StoreReviewForm({
         <Typography size="sm" className="text-text-muted">
           {t("detail.reviews.form.description")}
         </Typography>
-        {updatedAtLabel && (
-          <Typography size="xs" className="text-text-muted">
-            {t("detail.reviews.form.lastUpdated", { date: updatedAtLabel })}
-          </Typography>
-        )}
       </div>
 
       <div>
@@ -167,6 +165,11 @@ export default function StoreReviewForm({
             {translateReviewError(t, commentError)}
           </Typography>
         )}
+        {updatedAtLabel && (
+          <Typography size="xs" className="text-text-muted mt-1.5">
+            {t("detail.reviews.form.lastUpdated", { date: updatedAtLabel })}
+          </Typography>
+        )}
       </div>
 
       {state?.success && (
@@ -184,10 +187,10 @@ export default function StoreReviewForm({
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button type="submit" variant="primary" size="lg" disabled={isPending} className="w-full sm:w-auto">
           {isPending
-            ? startedAsEditRef.current
+            ? startedAsEdit
               ? t("detail.reviews.form.updating")
               : t("detail.reviews.form.submitting")
-            : startedAsEditRef.current
+            : startedAsEdit
               ? t("detail.reviews.form.updateCta")
               : t("detail.reviews.form.submitCta")}
         </Button>

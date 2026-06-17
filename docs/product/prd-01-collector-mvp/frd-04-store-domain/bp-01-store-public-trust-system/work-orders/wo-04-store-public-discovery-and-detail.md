@@ -38,26 +38,26 @@ Ship the public store listing and detail experience, including search, filters, 
 
 ## Requirements
 
-- `FR-01-11`: Public store listing must support text search by name.
-- `FR-01-12`: Public store listing must support filters for product type, country, import country, and presence.
-- `FR-01-13`: Public store listing must also support filters for `receivesOrders` and `hasStock`.
-- `FR-01-14`: Multi-select values within one filter family must use OR logic.
-- `FR-01-15`: Different filter families must combine with AND logic.
-- `FR-01-16`: Public listing must include both `PENDING` and `APPROVED` stores that are `PUBLIC`.
-- `FR-01-17`: Public detail must resolve through the canonical route `/{locale}/stores/[slug]`.
-- `FR-01-18`: Public detail must show a pending disclaimer for `PENDING` stores.
-- `FR-01-19`: Public detail must show an inactivity warning for inactive stores.
-- `FR-01-20`: Business stores may expose public contact channels and public addresses.
-- `FR-01-21`: Person stores must not expose logo, public contact channels, or public addresses.
-- `FR-01-22`: Business-store detail payloads must include public contact and address data when present.
-- `FR-01-23`: Person-store detail payloads must omit those fields from the public payload.
+- `FR-04-11`: Public store listing must support text search by name.
+- `FR-04-12`: Public store listing must support filters for product type, country, import country, and presence.
+- `FR-04-13`: Public store listing must also support filters for `receivesOrders` and `hasStock`.
+- `FR-04-14`: Multi-select values within one filter family must use OR logic.
+- `FR-04-15`: Different filter families must combine with AND logic.
+- `FR-04-16`: Public listing must include both `PENDING` and `APPROVED` stores that are `PUBLIC`.
+- `FR-04-17`: Public detail must resolve through the canonical route `/{locale}/stores/[slug]`.
+- `FR-04-18`: Public detail must show a pending disclaimer for `PENDING` stores.
+- `FR-04-19`: Public detail must show an inactivity warning for inactive stores.
+- `FR-04-20`: Business stores may expose public contact channels and public addresses.
+- `FR-04-21`: Person stores must not expose logo, public contact channels, or public addresses.
+- `FR-04-22`: Business-store detail payloads must include public contact and address data when present.
+- `FR-04-23`: Person-store detail payloads must omit those fields from the public payload.
 
 Relevant acceptance criteria copied from the FRD:
 
-- `AC-01-05` Person-store visibility
-- `AC-01-06` Pending visibility and SEO
-- `AC-01-07` Listing filter logic
-- `AC-01-08` Detail page reading order
+- `AC-04-05` Person-store visibility
+- `AC-04-06` Pending visibility and SEO
+- `AC-04-07` Listing filter logic
+- `AC-04-08` Detail page reading order
 
 ## Blueprints
 

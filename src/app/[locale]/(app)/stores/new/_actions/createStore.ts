@@ -8,7 +8,7 @@ import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { createStore as createStoreQuery, deleteStoreById, updateStoreLogoUrl } from "@/queries/store";
 import { listExistingCountryCodes } from "@/queries/country";
 import { listExistingStoreProductTypeKeys } from "@/queries/storeProductType";
-import { getStoreLogoObjectKey, parseStoreLogoCropArea, processStoreLogoFile, StoreLogoError } from "@/lib/store/logo";
+import { getStoreLogoObjectKey, processStoreLogoFile, StoreLogoError } from "@/lib/store/logo";
 import { uploadStoreLogoBuffer } from "@/lib/store/logoStorage";
 import { createStoreSchema, type CreateStoreInput } from "../_schemas/createStoreSchema";
 import type { StoreStatus } from "../../../../../../../generated/prisma/client";
@@ -36,20 +36,18 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
     }))
     .filter((ch) => ch.type.trim().length > 0);
 
-  const addressCountryCodes = formData.getAll("addressCountryCode").filter((v): v is string => typeof v === "string");
   const addressCities = formData.getAll("addressCity").filter((v): v is string => typeof v === "string");
   const addressAddressLines = formData.getAll("addressAddressLine").filter((v): v is string => typeof v === "string");
   const addressReferences = formData.getAll("addressReference").filter((v): v is string => typeof v === "string");
   const addressIsPrimaries = formData.getAll("addressIsPrimary").filter((v): v is string => typeof v === "string");
   const addresses = addressAddressLines
     .map((addressLine, i) => ({
-      countryCode: addressCountryCodes[i] ?? "",
       city: addressCities[i] || undefined,
       addressLine,
       reference: addressReferences[i] || undefined,
       isPrimary: addressIsPrimaries.includes(String(i)) ? true : undefined,
     }))
-    .filter((a) => a.addressLine.trim().length > 0 && a.countryCode.length === 2);
+    .filter((a) => a.addressLine.trim().length > 0);
 
   const raw = {
     name: formData.get("name") ?? undefined,
@@ -60,18 +58,13 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
     productTypeKeys: formData.getAll("productTypeKeys").filter((v): v is string => typeof v === "string"),
     hasStock: formData.get("hasStock") === "on" ? true : undefined,
     receivesOrders: formData.get("receivesOrders") === "on" ? true : undefined,
+    isPrivate: formData.get("isPrivate") === "on" ? true : undefined,
     contactChannels: contactChannels as { type: string; value: string; label?: string }[],
     addresses,
     importCountries: formData
       .getAll("importCountries")
       .filter((v): v is string => typeof v === "string" && v.length === 2),
     logoAction: formData.get("logoAction") ?? "keep",
-    logoCropArea: parseStoreLogoCropArea({
-      x: formData.get("logoCropX"),
-      y: formData.get("logoCropY"),
-      width: formData.get("logoCropWidth"),
-      height: formData.get("logoCropHeight"),
-    }),
   };
   const logoFileValue = formData.get("logoFile");
   const logoFile = logoFileValue instanceof File && logoFileValue.size > 0 ? logoFileValue : null;
@@ -85,11 +78,11 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
     productTypeKeys: raw.productTypeKeys,
     hasStock: raw.hasStock,
     receivesOrders: raw.receivesOrders,
+    isPrivate: raw.isPrivate,
     contactChannels: raw.contactChannels,
     addresses: raw.addresses,
     importCountries: raw.importCountries,
     logoAction: raw.logoAction,
-    logoCropArea: raw.logoCropArea,
   });
 
   if (!parsed.success) {
@@ -104,21 +97,15 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
 
   const input = parsed.data as CreateStoreInput;
   const isBusinessLogoSet = input.storeType === "BUSINESS" && input.logoAction === "set";
-  if (isBusinessLogoSet && (!logoFile || !input.logoCropArea)) {
+  if (isBusinessLogoSet && !logoFile) {
     return {
       success: false,
       error: "validation_failed",
-      fieldErrors: {
-        logo: ["logoRequired"],
-      },
+      fieldErrors: { logo: ["logoRequired"] },
     };
   }
 
-  const allCountryCodes = [
-    input.countryCode,
-    ...(input.addresses?.map((a) => a.countryCode) ?? []),
-    ...(input.importCountries ?? []),
-  ].filter(Boolean);
+  const allCountryCodes = [input.countryCode, ...(input.importCountries ?? [])].filter(Boolean);
   const uniqueCountryCodes = [...new Set(allCountryCodes)];
 
   const [countriesExist, productTypesExist] = await Promise.all([
@@ -147,9 +134,9 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
   const posthogClient = getPostHogClient();
 
   let processedLogoBuffer: Buffer | null = null;
-  if (isBusinessLogoSet && logoFile && input.logoCropArea) {
+  if (isBusinessLogoSet && logoFile) {
     try {
-      processedLogoBuffer = await processStoreLogoFile(logoFile, input.logoCropArea);
+      processedLogoBuffer = await processStoreLogoFile(logoFile);
     } catch (error) {
       const errorCode = error instanceof StoreLogoError ? error.code : "logoProcessingFailed";
 
@@ -205,6 +192,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
         approvedByUserId: isAdmin ? session.user.id : null,
         hasStock: input.hasStock ?? null,
         receivesOrders: input.receivesOrders ?? null,
+        isPrivate: input.storeType === "PERSON" ? Boolean(input.isPrivate) : false,
         contactChannels: input.storeType === "BUSINESS" ? input.contactChannels : [],
         addresses: input.storeType === "BUSINESS" ? input.addresses : [],
         importCountries: input.importCountries?.length ? input.importCountries : undefined,
