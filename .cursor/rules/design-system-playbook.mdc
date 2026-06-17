@@ -20,7 +20,7 @@ The playbook is the operational layer of the design system — the mandatory wor
 5. **Mandatory workflow before implementing UI** — read playbook, demo HTML, component spec, ADRs, tokens.
 6. **Self-audit checklist before closing** — TodoWrite, visual verification vs demo, comparative audit, validation, snippet-in-report.
 7. **Cross-cutting handling during a session** — flag instead of silent fix.
-8. **What to update when a module closes** — playbook, lessons-learned, cross-cutting registry, ADR.
+8. **What to update when a module closes** — playbook, the relevant `docs/design/` topic doc, ADR.
 
 ## Related sources of truth
 
@@ -36,13 +36,7 @@ Permanent design system (`docs/design/`):
 - `docs/design/components.md` — component map (what exists, when to use, canonical `src/` path).
 - `docs/design/decisions/` — accepted ADRs (0001–0014).
 
-Historical workshop reference (`docs/redesign/`, pending archival):
-
-- `docs/redesign/methodology.md` — full redesign methodology (phases, iteration, validation).
-- `docs/redesign/_notes/lessons-learned.md` — journal of why each rule exists. Context, not daily reference.
-- `docs/redesign/_notes/cross-cutting-changes.md` — backlog of mini-corrective sessions (M0X / SN.X).
-- `docs/redesign/components/` — detailed per-component specs (reference; the code is authoritative).
-- `docs/redesign/_notes/demo-screens.html` — historical visual reference of the demo (anchors `#m01-vb-*` for modals; module anchors `#s6-*`, `#s7-*`, etc.).
+This system was produced by a redesign subproject, kept only as historical context (not a source of rules or specs to follow). The authoritative sources are `docs/design/` and the code in `src/`. For the visual reference of a screen, use its per-FRD prototype (`docs/product/<prd>/<frd>/prototype/<slug>.html`).
 
 ## Reinforcing rules also `alwaysApply: true`
 
@@ -56,8 +50,7 @@ Historical workshop reference (`docs/redesign/`, pending archival):
 
 - Any creation, refactor, or audit of UI components in `src/components/`.
 - Any creation, refactor, or audit of pages in `src/app/`.
-- Any work on the demo HTML in `docs/redesign/_notes/demo-screens.html`.
-- Any audit of a screen against the demo.
+- Any audit of a screen against its per-FRD prototype (`docs/product/<prd>/<frd>/prototype/<slug>.html`).
 
 ## Skip if
 

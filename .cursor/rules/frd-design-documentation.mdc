@@ -8,8 +8,8 @@ alwaysApply: false
 Use this rule whenever you create, change, or audit the **design** of a UI-bearing FRD: its
 screens, their layout, visual treatment, components, interactions, states, copy, responsive
 behavior, or accessibility. It defines where the durable design record of an FRD lives and
-what shape it takes, so every UI FRD is reconstructible without the disposable
-`docs/redesign/` workshop.
+what shape it takes, so every UI FRD is reconstructible on its own, without depending on the
+redesign subproject that originally produced it.
 
 This rule is about the **design record of a specific FRD**. It does not replace the
 design **system** (`docs/design/` — tokens, components, patterns, motion, states, voice),
@@ -68,15 +68,17 @@ plus `prototype:` (relative path) and `demo_anchors:` (the source anchors it dis
 7. **Responsive** — only the FRD-specific breakpoint behavior.
 8. **Accessibility** — only what is specific to this FRD beyond the system baseline.
 9. **Sources & provenance** — prototype path, the `docs/design/` rules and ADRs relied on,
-   the functional FRD, and the (disposable) workshop raw material.
+   and the functional FRD. The redesign subproject that originally produced the design is
+   historical context only — mention it in prose if useful, but do not cite it as a live
+   source (no paths/links into it); the FDD + prototype must stand on their own.
 
 **The golden rule:** reference the system, describe what is **specific** to the FRD, cite
 the prototype for the pixel.
 
 ## The prototype (`prototype/<slug>.html`)
 
-A single self-contained HTML file that **opens standalone** — no dependency on
-`docs/redesign/`. It inlines the shared `<style>` and the shared `<script>` for the
+A single self-contained HTML file that **opens standalone** — no dependency on the
+redesign subproject. It inlines the shared `<style>` and the shared `<script>` for the
 interactions it uses (theme + palette toggles, sidebar, wizard accordion, filter drawer,
 tabs, expand/collapse), and includes only the `<section>`s of that FRD. The default palette
 is **Velvet** and both light and dark must render correctly.
