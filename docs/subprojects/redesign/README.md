@@ -1,9 +1,23 @@
 ---
 title: PandaTrack Redesign — Subproyecto
-last_updated: 2026-06-16
+last_updated: 2026-06-17
 owner: Sergio Minei
+status: implemented
+completed: 2026-06-17
 ---
 
+> # ✅ SUBPROYECTO COMPLETO (S1–S17)
+>
+> El rediseño de PandaTrack está **implementado y cerrado**. Esta carpeta es el **historial preservado** del subproyecto; no es la fuente de verdad operativa. Las fuentes de verdad permanentes son:
+>
+> - **Sistema de diseño** → [`docs/design/`](../../design/) (foundations, tokens, patterns, motion, states, voice, components) + ADRs 0001–0014 en [`docs/design/decisions/`](../../design/decisions/).
+> - **Diseño por feature** → el `fdd-XX-<slug>.md` + `prototype/<slug>.html` dentro de cada `docs/product/<prd>/frd-XX/`.
+> - **Implementación** → `src/`.
+>
+> **Cierre (post-S14):** **S15 ✅** prototipos HTML + FDD por FRD (8 FRDs con UI). **S16 ✅** alineación funcional FRD/WO rebuild-complete. **S17 ✅ (2026-06-17)** desacople total + aislamiento: la carpeta se movió de `docs/redesign/` → `docs/subprojects/redesign/`, y las referencias externas (~90) se limpiaron de modo que los docs/reglas permanentes **no dependen** del subproyecto — contenido de sistema → `docs/design/`, y solo menciones históricas en prosa (sin rutas/links hacia acá). Guardia cero-dep `src/test/redesign-archive-guard.test.ts` que falla si reaparece `docs/redesign` o una ruta `subprojects/redesign` en zonas permanentes. Detalle en [`sessions/17-decoupling-and-archive.md`](./sessions/17-decoupling-and-archive.md).
+>
+> ---
+>
 > **Estado actual:** S1-S6 ✅ done · M01-M07 ✅ done · S5.2 + S5.3 ✅ done · S7 (Orders end-to-end) ✅ done · S8 (Settings A+B) ✅ done · **S9 (Entregas A+B) ✅ done (2026-06-12), FRD-08 sincronizado** · **cross-cuttings S9.1 + S9.2 + P-S9-02 ✅ resueltos (2026-06-13)** · **deuda de alineación docs/product cerrada (2026-06-13): FRD-07 sincronizado + Round 1 (44 deltas en 6 FRDs) reconciliado** · **S10 (Estados transversales A+B) ✅ done (2026-06-13)** · **S11 (Landing+Onboarding, go-live) Fase A + Fase B ✅ done (2026-06-15)** — landing go-live + auth + legal en `src/`, validación verde (test/type-check/lint/build/e2e), docs/product alineada (FRD-01 PRD-00 superseded). **S12 (Motion + Voice) Fase A + Fase B ✅ done (2026-06-15)** — specs de motion + voice (`screens/motion-system.md` · `screens/voice-library.md`) + ADR 0014 + PLAYBOOK §11/§12, y **Fase B implementada en `src/`**: tokens/cleanup, View Transitions list→detail gateadas vía `ViewTransitionLink` (Opción A no-canary), Toast `scaleX` + ventanas undo centralizadas, progress fill `scaleX`, `motion-reduce` explícitos y neutralización de copy (voseo) en i18n. Validación verde (test 542 · type-check · lint 0 · build · e2e); review visual + spot-check Safari pendientes de Sergio. **S13 (pasada final de auditoría) ✅ done (2026-06-16)** — auditoría exhaustiva S1–S12 + gate de Sergio + remediación acotada (L074 StoreAvatar oklab, 5 keyframes muertos, aria-labels por i18n, Footer/LanguageToggle, guardia de tokens cero-dep en `src/test/design-token-guard.test.ts`); F-03 Zilla y F-04 slot "Resumen" = aceptar+documentar; validación verde (test 544 · type-check · lint 0 · build · e2e 15). **S14 (graduación del sistema a `docs/design/`) ✅ done (2026-06-16, docs-only, SIN commitear)** — el sistema Velvet final destilado a `docs/design/` (README + visual-foundations + tokens-css + interface-patterns + motion + states + ux-copy + components + PLAYBOOK), ADRs 0001–0014 graduados a `docs/design/decisions/`, y reglas de diseño (`design-system-playbook`/`modal-canonical-pattern`/`ui-libs-policy` + `docs/tooling/cursor/rules.md` + AGENTS.md + comentario de `globals.css`) re-apuntadas a los nuevos hogares. `docs/design/` es ahora el estándar oficial; `docs/redesign/` queda como referencia histórica hasta su barrido total + archivado en S17. Próxima: **S15 (prototipos HTML por FRD + FDDs)**. **Plan revisado post-S4** (ver [`methodology.md`](./methodology.md)): cada sesión tiene **Fase A (docs) + Fase B (implementación inmediata)** con gate humano en el medio. Todo va a branch `redesign`. Dashboard fuera de scope. Última sesión (S14) reemplaza `docs/design/` con el sistema final.
 >
 > **S5 Fase B completada ✅ (2026-05-02).** App shell PUSH sidebar · Header con breadcrumbs + core toggles · MobileTabBar con FAB elevado central · MascotBubble idle · ProgressBar · Pagination · FAB · useSidebarState shared hook · AppLayout refactorizado. i18n completo. 388 tests ✅, build limpio ✅. Ver [`sessions/05-app-shell.md`](./sessions/05-app-shell.md). _(MobileTabBar eliminada en S5.2 — ver abajo.)_
