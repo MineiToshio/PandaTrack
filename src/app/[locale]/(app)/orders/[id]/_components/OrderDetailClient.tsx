@@ -31,6 +31,7 @@ type OrderDetailClientProps = {
     status: OrderStatus;
     currencyCode: string;
     exchangeRate: number | null;
+    needsExchangeRateUpdate: boolean;
     orderDate: Date;
     expectedDeliveryFrom: Date | null;
     expectedDeliveryTo: Date | null;
@@ -158,6 +159,7 @@ export default function OrderDetailClient({
             expectedDeliveryTo: order.expectedDeliveryTo,
             currencyCode: order.currencyCode,
             exchangeRate: order.exchangeRate,
+            needsExchangeRateUpdate: order.needsExchangeRateUpdate,
             totalCost: order.totalCost,
             status: order.status,
           }}

@@ -182,6 +182,7 @@
     "exchangeRateHint": "PandaTrack uses this number to convert this order into your base currency. That way what you see when you open the app and your budget stay in the same currency. Enter how many {to} equal 1 {from}, using the real rate you paid (bank or card).",
     "exchangeRatePlaceholder": "0.00",
     "exchangeRateHelper": "{from} → {to}",
+    "exchangeRateOutdatedWarning": "Rate may be outdated after your base-currency change — review it.",
     "baseCurrencyBannerText": "We'll show you how much you've spent in total, even when you buy from stores in different countries. Just choose your base currency and we'll convert each order to it for you.",
     "baseCurrencyBannerCta": "Choose base currency →",
     "itemsSectionTitle": "Items",
@@ -424,7 +425,8 @@
       "copyCodeAria": "Copy order code",
       "codeCopied": "Code copied",
       "chipOverdue": "{days}d overdue",
-      "chipUnpaid": "Outstanding balance"
+      "chipUnpaid": "Outstanding balance",
+      "chipFxPending": "FX update pending"
     },
     "stickyBar": {
       "ariaLabel": "Order actions",

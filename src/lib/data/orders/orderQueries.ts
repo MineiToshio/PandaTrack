@@ -42,6 +42,8 @@ export type OrderPayment = {
 export type OrderDetail = OrderListItem & {
   note: string | null;
   cancellationReason: string | null;
+  /** True when this order's stored exchange rate is stale after a base-currency change. */
+  needsExchangeRateUpdate: boolean;
   updatedAt: Date;
   hasUnpaidBalance: boolean;
   paidAmount: number;
@@ -112,6 +114,7 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
       expectedDeliveryTo: true,
       currencyCode: true,
       exchangeRate: true,
+      needsExchangeRateUpdate: true,
       totalCost: true,
       note: true,
       status: true,
@@ -154,6 +157,7 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
     expectedDeliveryTo: row.expectedDeliveryTo,
     currencyCode: row.currencyCode,
     exchangeRate: row.exchangeRate ? Number(row.exchangeRate) : null,
+    needsExchangeRateUpdate: row.needsExchangeRateUpdate,
     totalCost: row.totalCost,
     note: row.note,
     cancellationReason: row.cancellationReason,
@@ -196,6 +200,7 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
       expectedDeliveryTo: true,
       currencyCode: true,
       exchangeRate: true,
+      needsExchangeRateUpdate: true,
       totalCost: true,
       note: true,
       status: true,
@@ -269,6 +274,7 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
     expectedDeliveryTo: row.expectedDeliveryTo,
     currencyCode: row.currencyCode,
     exchangeRate: row.exchangeRate ? Number(row.exchangeRate) : null,
+    needsExchangeRateUpdate: row.needsExchangeRateUpdate,
     totalCost: row.totalCost,
     note: row.note,
     cancellationReason: row.cancellationReason,
@@ -598,6 +604,7 @@ export async function listOrders(userId: string, filters: OrderListFilters = {})
       expectedDeliveryTo: true,
       currencyCode: true,
       exchangeRate: true,
+      needsExchangeRateUpdate: true,
       totalCost: true,
       status: true,
       createdAt: true,

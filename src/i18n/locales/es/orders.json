@@ -182,6 +182,7 @@
     "exchangeRateHint": "PandaTrack usa este número para pasar este pedido a tu moneda base. Así lo que ves al abrir la app y tu presupuesto se leen en la misma moneda. Escribe cuántas unidades de {to} equivalen a 1 {from}, con el tipo real con el que pagaste (banco o tarjeta).",
     "exchangeRatePlaceholder": "0.00",
     "exchangeRateHelper": "{from} → {to}",
+    "exchangeRateOutdatedWarning": "El tipo de cambio puede estar desactualizado tras cambiar tu moneda base. Verifícalo.",
     "baseCurrencyBannerText": "Te mostramos cuánto llevas gastado en total, aunque tengas pedidos en tiendas de distintos países. Solo elige tu moneda base y convertimos cada pedido a esa moneda por ti.",
     "baseCurrencyBannerCta": "Elegir moneda base →",
     "itemsSectionTitle": "Productos",
@@ -424,7 +425,8 @@
       "copyCodeAria": "Copiar código de pedido",
       "codeCopied": "Código copiado",
       "chipOverdue": "Atrasado {days}d",
-      "chipUnpaid": "Saldo pendiente"
+      "chipUnpaid": "Saldo pendiente",
+      "chipFxPending": "Tipo de cambio pendiente"
     },
     "stickyBar": {
       "ariaLabel": "Acciones del pedido",

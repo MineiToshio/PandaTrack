@@ -23,6 +23,7 @@ type OrderDetailHeroProps = {
     expectedDeliveryTo: Date | null;
     currencyCode: string;
     exchangeRate: number | null;
+    needsExchangeRateUpdate: boolean;
     totalCost: number;
     status: OrderStatus;
   };
@@ -177,6 +178,12 @@ export default function OrderDetailHero({
               <span className="border-warning/35 bg-warning/15 text-warning inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
                 <AlertTriangle className="size-3.5" aria-hidden />
                 {t("detail.hero.chipUnpaid")}
+              </span>
+            )}
+            {order.needsExchangeRateUpdate && !isCancelled && (
+              <span className="border-warning/35 bg-warning/15 text-warning inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
+                <AlertTriangle className="size-3.5" aria-hidden />
+                {t("detail.hero.chipFxPending")}
               </span>
             )}
           </div>

@@ -56,6 +56,8 @@ export type InitialOrderData = {
   expectedDeliveryTo: Date | null;
   currencyCode: string;
   exchangeRate: number | null;
+  /** True when the stored rate is stale after a base-currency change — shows an inline warning. */
+  needsExchangeRateUpdate: boolean;
   totalCost: number;
   /** Sum of payments already recorded — minimum the user can lower `totalCost` to. */
   paidAmount: number;
@@ -725,6 +727,12 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
                           {fxLoading ? tCreate("fxTodayLoading") : tCreate("fxTodayButton")}
                         </Button>
                       </div>
+                      {initialOrder.needsExchangeRateUpdate && (
+                        <p className="text-warning flex items-center gap-1.5 text-[12px]" role="status">
+                          <AlertTriangle size={13} aria-hidden />
+                          {tForm("exchangeRateOutdatedWarning")}
+                        </p>
+                      )}
                       {fxError ? (
                         <p className="text-[12px] [color:var(--destructive)]" role="alert">
                           {fxError}

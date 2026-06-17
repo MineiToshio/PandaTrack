@@ -73,6 +73,7 @@ export default async function OrderDetailContent({ order, locale, backHref }: Or
             status: order.status,
             currencyCode: order.currencyCode,
             exchangeRate: order.exchangeRate,
+            needsExchangeRateUpdate: order.needsExchangeRateUpdate,
             orderDate: order.orderDate,
             expectedDeliveryFrom: order.expectedDeliveryFrom,
             expectedDeliveryTo: order.expectedDeliveryTo,
