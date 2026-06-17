@@ -20,27 +20,31 @@ type FaqAccordionProps = {
 /**
  * Accessible disclosure accordion (`.mk-faq`). First item open by default.
  * `aria-expanded` / `aria-controls` on each trigger; collapse uses a max-height
- * transition. Emits FAQ_ITEM_TOGGLED on every toggle.
+ * transition. Emits FAQ_ITEM_TOGGLED on every toggle. Multiple items may be open at
+ * once (independent disclosures); the first item is open by default.
  */
 export default function FaqAccordion({ items, className }: FaqAccordionProps) {
-  const [openId, setOpenId] = useState<string | null>(items[0]?.id ?? null);
+  const [openIds, setOpenIds] = useState<Set<string>>(() => new Set(items[0]?.id ? [items[0].id] : []));
 
   const toggle = useCallback((id: string, question: string) => {
-    setOpenId((prev) => {
-      const wasOpen = prev === id;
+    setOpenIds((prev) => {
+      const wasOpen = prev.has(id);
       posthog.capture(POSTHOG_EVENTS.LANDING.FAQ_ITEM_TOGGLED, {
         faq_id: id,
         faq_question: question,
         action: wasOpen ? "collapsed" : "expanded",
       });
-      return wasOpen ? null : id;
+      const next = new Set(prev);
+      if (wasOpen) next.delete(id);
+      else next.add(id);
+      return next;
     });
   }, []);
 
   return (
     <div className={cn("mk-faq", className)}>
       {items.map((item) => {
-        const isOpen = openId === item.id;
+        const isOpen = openIds.has(item.id);
         const panelId = `faq-panel-${item.id}`;
         const triggerId = `faq-trigger-${item.id}`;
 

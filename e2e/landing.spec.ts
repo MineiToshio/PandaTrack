@@ -17,7 +17,7 @@ test.describe("Landing go-live funnel", () => {
     await expect(page).toHaveURL(/\/en\/sign-in$/);
   });
 
-  test("FAQ accordion opens the first item by default and toggles others", async ({ page }) => {
+  test("FAQ accordion opens the first item by default and allows multiple open at once", async ({ page }) => {
     await page.goto("/en");
 
     const firstTrigger = page.getByRole("button", { name: "Is PandaTrack free?" });
@@ -28,7 +28,14 @@ test.describe("Landing go-live funnel", () => {
 
     await secondTrigger.click();
 
+    // Multiple disclosures stay open independently: opening the second does NOT close the first.
     await expect(secondTrigger).toHaveAttribute("aria-expanded", "true");
+    await expect(firstTrigger).toHaveAttribute("aria-expanded", "true");
+
+    // Toggling an item closes only itself.
+    await secondTrigger.click();
+    await expect(secondTrigger).toHaveAttribute("aria-expanded", "false");
+    await expect(firstTrigger).toHaveAttribute("aria-expanded", "true");
   });
 
   test("no waitlist form remains on the landing", async ({ page }) => {
