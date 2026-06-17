@@ -5,11 +5,11 @@ last_extended: 2026-05-11
 status: accepted
 session: M01-modal-enhancement + S7-A.2-adaptive-modal
 owner: Sergio Minei
-updates: components/Modal.md, components/Sheet.md
+updates: redesign subproject — Modal + Sheet component specs (historical)
 sources:
-  - _notes/demo-screens.html (18 secciones M01 — versiones A, B, C × 6 casos de uso)
-  - _notes/demo-screens.html (S7 mobile sections — bottom sheets aplicados)
-  - _notes/cross-cutting-changes.md (entrada M01)
+  - redesign subproject demo — 18 secciones M01 (versiones A, B, C × 6 casos de uso) (historical)
+  - redesign subproject demo — S7 mobile sections (bottom sheets aplicados) (historical)
+  - redesign subproject cross-cutting register — entrada M01 (historical)
 ---
 
 # ADR 0008 — Modal Enhancement · Semantic Depth
@@ -18,7 +18,7 @@ sources:
 
 Durante la exploración del módulo S6 (Tiendas), el componente `<Modal>` fue marcado como cross-cutting change M01 (Tipo 2 — cambio mayor de componente core). El diagnóstico: el modal se percibía como **plano y genérico** — un recuadro blanco con título, body y botones sin ninguna señal visual que comunicara tono, urgencia o identidad Atelier.
 
-La spec original de `Modal.md` (S4) definía:
+La spec original de la spec de Modal del subproyecto (histórico) (S4) definía:
 
 - Backdrop `--surface-overlay` sin blur
 - `border-radius: var(--radius-xl)` (16px)
@@ -30,7 +30,7 @@ El diseño no comunicaba semántica de acción (destructiva vs informativa vs fo
 
 ## Exploración
 
-Se implementaron 3 versiones × 6 casos de uso reales en el demo HTML (`_notes/demo-screens.html`, secciones `m01-va-*`, `m01-vb-*`, `m01-vc-*`) y se evaluaron con el humano:
+Se implementaron 3 versiones × 6 casos de uso reales en el demo del subproyecto de rediseño (histórico) y se evaluaron con el humano:
 
 ### Versión A — Editorial Quiet
 
@@ -139,14 +139,14 @@ Equivalente a `--ease-out-expressive` (spring) con `--motion-base` (280ms).
 - **Bajo.** Cambio puramente visual — no afecta el contrato funcional del modal ni la API TypeScript de manera rompedora (solo se agregan props opcionales).
 - `description` prop se renombra a `subtitle` semánticamente (posición: en el header, no en el body). La prop `description` queda como alias deprecado en S12.
 - El backdrop unificado (backdrop + card en un div flex) simplifica la implementación vs el enfoque anterior de dos capas separadas.
-- `border-radius: 20px` supera `--radius-xl` (16px) actual. Se asigna a `--radius-2xl` — confirmar valor en `tokens.md` antes de S12.
+- `border-radius: 20px` supera `--radius-xl` (16px) actual. Se asigna a `--radius-2xl` — confirmar valor en el sistema de tokens antes de S12.
 
 ## Implicancias
 
-1. `components/Modal.md` — actualizado en este cierre: API TypeScript, estados visuales, motion, tokens.
-2. `_notes/cross-cutting-changes.md` — M01 marcado `✅ aplicado`.
-3. `_notes/demo-screens.html` — 18 secciones M01 sirven como referencia visual vinculante. La implementación React en S12 debe replicar Version B.
-4. `tokens.md` — confirmar `--radius-2xl: 20px` en S12 si no está definido.
+1. la spec de Modal del subproyecto (histórico) — actualizado en este cierre: API TypeScript, estados visuales, motion, tokens.
+2. registro de cross-cutting del subproyecto — M01 aplicado (histórico).
+3. El demo del subproyecto (histórico) definió la referencia visual; la implementación React de S12 replicó la Version B.
+4. el sistema de tokens — confirmar `--radius-2xl: 20px` en S12 si no está definido.
 5. ADR 0001 D4 (toast > modal z-index) sigue válido — `--z-toast: 90` > `--z-modal: 80`.
 
 ## Audit AA — contraste
@@ -168,7 +168,7 @@ Verificación de pares foreground/background del modal Version B contra WCAG AA 
 
 Nota: el 14% de mezcla en los icon-circle backgrounds produce un tinte suave; el color del ícono mismo (`--destructive`, `--warning`, etc.) es el texto-grande semántico y cumple 3:1 contra el fondo tonal. Los tones siguen ADR 0006 (ícono + label — la semántica no descansa solo en el color).
 
-> **Sheet mobile**: `<Sheet>` (contraparte mobile del modal) aplica el mismo `backdrop-filter: blur(8px)` con los oklch calibrados — decisión confirmada en cierre de M01. `--surface-overlay` eliminado también en Sheet. Ver `components/Sheet.md` (estado Backdrop).
+> **Sheet mobile**: `<Sheet>` (contraparte mobile del modal) aplica el mismo `backdrop-filter: blur(8px)` con los oklch calibrados — decisión confirmada en cierre de M01. `--surface-overlay` eliminado también en Sheet. Ver la spec de Sheet del subproyecto (histórico) (estado Backdrop).
 
 ## Confianza
 
@@ -176,9 +176,9 @@ Nota: el 14% de mezcla en los icon-circle backgrounds produce un tinte suave; el
 
 ## Próximos pasos
 
-1. `components/Modal.md` actualizado ✅ (en este cierre).
+1. la spec de Modal del subproyecto (histórico) actualizado ✅ (en este cierre).
 2. En S12 (implementación): replicar Version B en React usando los tokens y recetas de este ADR.
-3. Confirmar `--radius-2xl: 20px` en `tokens.md` al inicio de S12.
+3. Confirmar `--radius-2xl: 20px` en el sistema de tokens al inicio de S12.
 
 ---
 
@@ -322,12 +322,12 @@ Con la arquitectura final (Modal smart wrapper + ModalDialog + ModalSheet + Moda
 
 ### Implicancias adicionales (de esta extensión)
 
-1. `components/Modal.md` debe agregarse una sección "Variante responsive (mobile bottom sheet)" referenciando esta extensión.
-2. `components/Sheet.md` debe absorber esta spec como su contrato visual canónico (ya estaba alineado parcialmente per nota en Version B).
+1. la spec de Modal del subproyecto (histórico) debe agregarse una sección "Variante responsive (mobile bottom sheet)" referenciando esta extensión.
+2. la spec de Sheet del subproyecto (histórico) debe absorber esta spec como su contrato visual canónico (ya estaba alineado parcialmente per nota en Version B).
 3. `PLAYBOOK.md` §1 (Modal) + §3 (patrones canónicos) deben referenciar la arquitectura: callsites usan `<Modal>` (smart wrapper); ModalDialog/ModalSheet son internos.
 4. En Fase B de cualquier módulo: usar `<Modal>` desde día 1 — automáticamente es adaptive (renderiza ModalDialog en desktop, ModalSheet en mobile). Prohibido implementar modales centrados manualmente en mobile.
 5. **Governance de libs UI**: ver ADR 0010 — `vaul` es la única lib UI aprobada como dep top-level. Radix Dialog NO se importa directamente (queda transitivo dentro de Vaul).
-5. Mantener cursor rule `modal-canonical-pattern.mdc` vigente. Extender para mencionar que bottom sheet mobile NO es excepción al canónico — es el mismo componente en variante responsive.
+6. Mantener cursor rule `modal-canonical-pattern.mdc` vigente. Extender para mencionar que bottom sheet mobile NO es excepción al canónico — es el mismo componente en variante responsive.
 
 ### Fuentes externas (citadas en investigación)
 

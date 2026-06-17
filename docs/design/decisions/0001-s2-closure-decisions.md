@@ -3,12 +3,7 @@ title: ADR 0001 — Decisiones de cierre de Sesión 2 (post-research)
 date: 2026-05-01
 status: accepted
 session: 02-postresearch
-sources:
-  - _notes/research-status-colors.md
-  - _notes/research-form-patterns.md
-  - _notes/research-toasts-lifecycle.md
-  - _notes/research-dashboard-lists.md
-  - _notes/research-settings-avatar.md
+sources: redesign subproject — S2 post-research notes (status colors, form patterns, toasts lifecycle, dashboard lists, settings/avatar) (historical)
 ---
 
 # ADR 0001 — Decisiones de cierre de Sesión 2 (post-research)
@@ -17,13 +12,13 @@ sources:
 
 Al cerrar Sesión 2 quedaron abiertos:
 
-- 4 gaps de Atelier (`_notes/atelier-gaps.md`).
-- 41 supuestos asumidos por el agente (`_notes/assumptions-s2.md`).
+- 4 gaps de Atelier (gap analysis del subproyecto, histórico).
+- 41 supuestos asumidos por el agente (registro de supuestos del subproyecto, histórico).
 - Convención técnica `view-transition-name: order-{humanId}` pendiente de elevar a ADR.
 
 Para no entrar a S3 (sistema de tokens) con decisiones débiles, se lanzaron **5 agentes de research en paralelo** que documentaron benchmarks de Linear, Stripe, Vercel, Notion, Shopify, Apple, GitHub, Cash App, YNAB, Pokémon Center, FedEx y otros, cuestionaron sus propias conclusiones contra Regla Cero + decálogo + dirección Atelier, y devolvieron recomendaciones con nivel de confianza explícito. Este ADR consolida y formaliza las decisiones tomadas.
 
-Los 5 documentos de research viven en `_notes/research-*.md` y son la **fuente fáctica** de cada decisión; este ADR es el **contrato vinculante** que las congela.
+Los 5 documentos de research del subproyecto son la **fuente fáctica** de cada decisión (histórico); este ADR es el **contrato vinculante** que las congela.
 
 ---
 
@@ -85,7 +80,7 @@ Los 5 documentos de research viven en `_notes/research-*.md` y son la **fuente f
 **Decisión.** La section card gated **no usa opacity reducida**. Mantiene eyebrow + title al 100% (intactos) y reemplaza su contenido con un sub-bloque guía:
 
 - Ícono Lucide `lock` 24px en `--text-muted` (NO destructive — no es error, es secuencia).
-- Copy guía en `--text-muted` Body 13px: ej. "Selecciona una tienda primero." (alineado al glosario `principles.md §7`).
+- Copy guía en `--text-muted` Body 13px: ej. "Selecciona una tienda primero." (alineado al glosario de los principios de diseño del subproyecto §7, histórico).
 - Padding generoso 32px vertical para que el bloque guía se sienta intencional, no roto.
 - Border `--border` (no strong) para señalar "presente pero secundario".
 
@@ -131,7 +126,7 @@ Los 5 documentos de research viven en `_notes/research-*.md` y son la **fuente f
 
 **Origen:** cross-screen consistency S2.
 
-**Decisión.** La convención de `view-transition-name` para la firma canónica list→detail descrita en `directions.md §4.8` queda fijada como contrato vinculante:
+**Decisión.** La convención de `view-transition-name` para la firma canónica list→detail descrita en las direcciones visuales del subproyecto §4.8 queda fijada como contrato vinculante:
 
 ```
 view-transition-name: order-{humanId}
@@ -179,7 +174,7 @@ Aplica a:
 
 **Confianza:** alto.
 
-**Costo:** medio — `order-detail.md` debe re-organizarse.
+**Costo:** medio — el wireframe de detalle de pedido del subproyecto debe re-organizarse (histórico).
 
 **Rollback:** si en S6+ un usuario power solicita ver delete sin overflow, agregar atajo de teclado `⌘+⌫`.
 
@@ -368,7 +363,7 @@ Aplica a:
 
 **Costo:** bajo (componente core S4).
 
-**Rollback:** si la prueba 5 falla, alternativa documentada en `_notes/s2-validation-plan.md` Validation 5.
+**Rollback:** si la prueba 5 falla, alternativa documentada en el plan de validación del subproyecto, Validation 5 (histórico).
 
 ---
 
@@ -449,7 +444,7 @@ Aplica a:
 ## Próximos pasos
 
 1. **Wireframes** afectados se actualizan en este mismo cierre (delivery-create, order-detail, order-create, dashboard, orders-list, settings).
-2. **`atelier-gaps.md`** marca los 4 gaps como ✅ resolved con referencia a este ADR.
-3. **`assumptions-s2.md`** marca cada supuesto como ✅ confirmed / ⚙️ changed / ⏳ pending validation.
-4. **`directions.md`** se actualizará en S3 con los nuevos tokens y recetas (sólo el ADR; el doc base se mantiene como referencia histórica de S1).
+2. **el gap analysis del subproyecto** marca los 4 gaps como ✅ resolved con referencia a este ADR.
+3. **los supuestos de S2 del subproyecto** marca cada supuesto como ✅ confirmed / ⚙️ changed / ⏳ pending validation.
+4. **las direcciones visuales del subproyecto** se actualizará en S3 con los nuevos tokens y recetas (sólo el ADR; el doc base se mantiene como referencia histórica de S1).
 5. **Las 5 validaciones** del plan se ejecutan en paralelo a S3 — no son bloqueantes para arrancar tokens.

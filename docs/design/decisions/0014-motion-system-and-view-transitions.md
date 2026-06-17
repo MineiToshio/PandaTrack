@@ -5,8 +5,8 @@ status: accepted
 session: 12-motion-voice (Fase A) — decisiones del gate resueltas 2026-06-15 (Sergio delegó las decisiones técnicas a Claude)
 owner: Sergio Minei
 trigger: S12 eleva el movimiento a sistema sobre S1–S11. Cierra los gaps del research (curvas M3/Apple con nombre, timings de tracking) y resuelve que la view-transition list→detail está stageada pero INERTE (sin trigger). Define la política de cableado con el caveat del componente React canary.
-updates: docs/redesign/screens/motion-system.md, docs/redesign/PLAYBOOK.md (§ motion), docs/redesign/principles.md §4 (operacionalizada, no reemplazada)
-related: ADR 0001 D4 (toast neutral-undo) · D5 (firma view-transition) · D7 (view-transition de orden), ADR 0013 (skeleton shimmer / reduced-motion), principles.md §4, _notes/s3-draft-elevation-motion.md, _notes/s12-motion-voice-research.md, .cursor/rules/optimistic-client-updates.mdc
+updates: redesign subproject — motion-system spec + PLAYBOOK (§ motion) + principles §4 (operacionalizada, no reemplazada; historical)
+related: ADR 0001 D4 (toast neutral-undo) · D5 (firma view-transition) · D7 (view-transition de orden), ADR 0013 (skeleton shimmer / reduced-motion), principios de diseño del subproyecto §4 (histórico), borradores de elevación/motion y research de motion-voice del subproyecto (histórico), .cursor/rules/optimistic-client-updates.mdc
 ---
 
 # ADR 0014 — Sistema de motion + política de View Transitions
@@ -14,7 +14,7 @@ related: ADR 0001 D4 (toast neutral-undo) · D5 (firma view-transition) · D7 (v
 ## Contexto
 
 Hasta S11, el movimiento se construyó por sesión: tokens de duración/easing definidos en S3
-(`globals.css` §1, alineados con `principles.md` §4), microinteracciones agregadas ad-hoc por módulo
+(`globals.css` §1, alineados con los principios de diseño del subproyecto §4, histórico), microinteracciones agregadas ad-hoc por módulo
 (count-roll en S7, toast neutral-undo en S7/S9, shimmer en S10, spring de modal en M01). No había una
 **spec de sistema** que: (a) pusiera nombre M3/Apple a las curvas para auditar uso, (b) congelara la
 regla transform/opacity y la cobertura `prefers-reduced-motion` como contrato, (c) resolviera el estado
@@ -44,7 +44,7 @@ REGLA CERO de S12: respetar las primitivas existentes, construir la capa expresi
 2. **Crosswalk M3 / Apple HIG documentado** (no son tokens nuevos): `--ease-emphasis` = M3 _Standard_;
    `--ease-out-expressive` = M3 _Emphasized decelerate_ ≈ SwiftUI `.smooth`; `--ease-bounce` = M3
    _Emphasized_ con overshoot ≈ SwiftUI `.bouncy`. Cierra el gap #1 del research. Detalle en
-   `screens/motion-system.md` §1.2.
+   la spec de motion del subproyecto §1.2 (histórico).
 3. **Reglas duras congeladas:** animar **solo** `transform`/`opacity`; **nunca** props de layout
    (`width`/`height`/`top`/`left`); INP ≤ 200 ms p75.
 4. **`prefers-reduced-motion` con política "reduced ≠ none":** el bloque global (`globals.css` §12) es el
@@ -101,7 +101,7 @@ Sergio delegó las decisiones técnicas a Claude ("decide lo más adecuado para 
 ### A3. Agregar muchos tokens nuevos (un easing/duración por superficie)
 
 - **Pros:** control fino por caso.
-- **Cons:** rompe el vocabulario reducido de `principles.md` §4; cada componente con su easing = el
+- **Cons:** rompe el vocabulario reducido de los principios de diseño del subproyecto §4 (histórico); cada componente con su easing = el
   anti-patrón que el sistema evita.
 - **Por qué no:** la taxonomía es **aditiva y mínima** (a lo sumo `--motion-instant` + opcional
   `--ease-accelerate`), con crosswalk documentado sobre lo existente.
@@ -134,7 +134,7 @@ Sergio delegó las decisiones técnicas a Claude ("decide lo más adecuado para 
 
 - **Fase A (esta sesión):** specs + ADR + PLAYBOOK. Sin tocar `src/` salvo (opcional) showcases CSS en el
   demo. Gate humano.
-- **Fase B — ✅ implementada (2026-06-15):** el orden de `screens/motion-system.md` §8.1 se ejecutó en 6
+- **Fase B — ✅ implementada (2026-06-15):** el orden de la spec de motion del subproyecto §8.1 (histórico) se ejecutó en 6
   chunks — VT Opción A detrás de flag (componente `src/components/core/ViewTransitionLink.tsx`, triple-gate:
   automatización / dev-preview / flag PostHog `list-detail-view-transitions`), cleanup de keyframes muertos,
   `--motion-instant`, `scaleX` en el countdown del toast + el progress fill, ventanas undo centralizadas
@@ -146,10 +146,10 @@ Sergio delegó las decisiones técnicas a Claude ("decide lo más adecuado para 
 
 ## References
 
-- Spec: `docs/redesign/screens/motion-system.md`
-- Voice: `docs/redesign/screens/voice-library.md`
-- Insumo: `docs/redesign/_notes/s12-motion-voice-research.md`
-- Origen de tokens: `docs/redesign/_notes/s3-draft-elevation-motion.md` · `principles.md` §4
+- Spec: `docs/design/motion.md`
+- Voice: `docs/design/ux-copy.md`
+- Insumo: investigación de motion + voice del subproyecto de rediseño (histórico)
+- Origen de tokens: borradores de elevación/motion del subproyecto de rediseño · principios de diseño del subproyecto §4 (histórico)
 - ADR 0001 D4/D5/D7 (toast undo, firma VT, view-transition de orden)
 - ADR 0013 (skeleton shimmer / reduced-motion estático)
 - `.cursor/rules/optimistic-client-updates.mdc`

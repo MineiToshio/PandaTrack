@@ -4,10 +4,8 @@ date: 2026-05-02
 status: accepted
 session: 03-tokens (research follow-up)
 owner: Sergio Minei
-refines: tokens.md §1.3, §10
-sources:
-  - _notes/s3-research-text-muted-outdoor.md
-  - _notes/s2-validation-plan.md (Validation #4)
+refines: sistema de tokens del subproyecto §1.3, §10 (histórico)
+sources: redesign subproject — S3 text-muted outdoor research note + S2 validation plan (Validation #4) (historical)
 ---
 
 # ADR 0007 — Reasignación del code mono identificador a `--text-secondary`
@@ -18,9 +16,9 @@ sources:
 
 `--text-muted` se usa para timestamps, code mono, eyebrows uppercase y helper text — todos a 11–13px. **El caso outdoor-crítico** es el **code mono identificador `PT-XXXXXX`** del pedido: glyphs densos, función dependiente del reconocimiento exacto del string, y aparece en listas mobile que el usuario ve en la calle, transporte público, exteriores.
 
-Validation #4 del `_notes/s2-validation-plan.md` plantea probar lectura de `--text-muted` en mobile bajo sol. Quedó pendiente cuando S3 cerró tokens.
+La Validation #4 del plan de validación del subproyecto (histórico) plantea probar lectura de `--text-muted` en mobile bajo sol. Quedó pendiente cuando S3 cerró tokens.
 
-Agente D (`_notes/s3-research-text-muted-outdoor.md`) investigó:
+Agente D (research de text-muted outdoor del subproyecto, histórico) investigó:
 
 - Strava, Komoot, AllTrails, Garmin Connect — apps outdoor-heavy usan ≥6.3:1 para metadata.
 - Citymapper, Cash App, Venmo — apps mobile-general usan 4.9–5.5:1 (alineado con PandaTrack actual).
@@ -76,9 +74,9 @@ Si Validation #4 humana muestra que **incluso `--text-secondary` (6.32:1) falla 
 
 ## Implicancias
 
-1. `tokens.md` §1.3 — actualizar regla de uso de `--text-muted` ("nunca code mono identificador") y `--text-secondary` ("también: code mono identificador `PT-XXXXXX` y derivados").
-2. `tokens.md` §10 — actualizar tabla de jerarquía con la regla refinada.
-3. `_notes/s2-validation-plan.md` Validation #4 — refinada: setup split (versión actual `--text-muted` para timestamps vs versión propuesta `--text-secondary` para code mono) en mid-tier (Pixel 6a) + high-tier (iPhone 15 Pro). Detalle en `_notes/s3-research-text-muted-outdoor.md` §9.
+1. el sistema de tokens §1.3 — actualizar regla de uso de `--text-muted` ("nunca code mono identificador") y `--text-secondary` ("también: code mono identificador `PT-XXXXXX` y derivados").
+2. el sistema de tokens §10 — actualizar tabla de jerarquía con la regla refinada.
+3. La Validation #4 del plan de validación del subproyecto (histórico) — refinada: setup split (versión actual `--text-muted` para timestamps vs versión propuesta `--text-secondary` para code mono) en mid-tier (Pixel 6a) + high-tier (iPhone 15 Pro). Detalle en el research de text-muted outdoor del subproyecto §9 (histórico).
 4. S4 `<OrderRow>` y `<DeliveryRow>` consumen `var(--text-secondary)` para el span del code mono.
 5. S4 `<StoreCard>` consume `var(--text-secondary)` para el slug si es identificador primario.
 
@@ -88,6 +86,6 @@ Si Validation #4 humana muestra que **incluso `--text-secondary` (6.32:1) falla 
 
 ## Próximos pasos
 
-1. Aplicar a `tokens.md` §1.3 + §10 (✅ aplicado en este mismo cierre).
+1. Aplicar a el sistema de tokens §1.3 + §10 (✅ aplicado en este mismo cierre).
 2. Validation #4 humana refinada (paralelo a S4) — humano fuera del agente.
 3. S4 implementa `<OrderRow>` con code mono en `--text-secondary` desde el día uno (no migración posterior).

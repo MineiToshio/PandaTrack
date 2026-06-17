@@ -154,9 +154,9 @@ Multi-part organisms and orchestration.
 
 ---
 
-## Per-component deep specs (reference)
+## Per-component deep specs
 
-Detailed per-component specs (anatomy, all variants, edge cases, full state recipes) authored during the redesign live in `docs/redesign/components/` and remain available as historical reference. They are a workshop artifact: where they and the built component disagree, **the code is authoritative**. These specs will be archived with the rest of `docs/redesign/`; the durable system contract is this catalog plus the topic docs in `docs/design/`.
+Detailed per-component specs (anatomy, all variants, edge cases, full state recipes) were authored during the redesign subproject (historical context only). They are not a source of truth: **the code is authoritative**, and the durable system contract is this catalog plus the topic docs in `docs/design/`.
 
 ## Rules & anti-patterns
 

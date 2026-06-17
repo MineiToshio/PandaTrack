@@ -4,27 +4,26 @@ date: 2026-05-02
 status: accepted
 session: 03-tokens (research follow-up)
 owner: Sergio Minei
-refines: tokens.md §1.4, §1.5, §10, §12
-sources:
-  - _notes/s3-research-colorblind-info.md
+refines: sistema de tokens del subproyecto §1.4, §1.5, §10, §12 (histórico)
+sources: redesign subproject — S3 colorblind/info research note (historical)
 ---
 
 # ADR 0006 — Contrato icon+label para `--info` y `--accent-cool`
 
 ## Contexto
 
-El sistema de tokens S3 (`docs/redesign/tokens.md`) define dos tokens azulados que pueden coexistir en la misma row:
+El sistema de tokens S3 (`docs/design/tokens-css.md`) define dos tokens azulados que pueden coexistir en la misma row:
 
 - `--info` (status semántico, h245 azul franco): chip "Pendiente sin urgencia" + ícono Lucide `clock`.
 - `--accent-cool` (acento secundario sereno, h215 azul-gris suave): íconos Lucide de categoría.
 
 ΔE perceptual entre ambos en visión tricromática estándar es suficiente (Δh = 30°). **Pero** en deuteranopia / protanopia (~6% de hombres CIS combinados, ~0.5% de mujeres), ambos colapsan a tonos muy similares — el riesgo de confusión visual es real.
 
-S3 documentó este riesgo en `tokens.md` §12 y `_notes/s3-red-team.md` objeción #3. Quedó como riesgo abierto hasta validación.
+S3 documentó este riesgo en el sistema de tokens §12 y en el red-team del subproyecto, objeción #3 (histórico). Quedó como riesgo abierto hasta validación.
 
 ## Datos del research follow-up
 
-Agente B (`_notes/s3-research-colorblind-info.md`) investigó:
+Agente B (research de daltonismo/info del subproyecto, histórico) investigó:
 
 - **Brettel/Viénot/Mollon (1997)** — modelo de transformación dichromat: en deutan/protan ambos hues h215 y h245 caen del mismo lado del _neutral point_ (498nm) y se proyectan al mismo cuadrante de la _confusion plane_. Δh = 30° vs Δh = 15° es **estructuralmente irrelevante post-proyección**.
 - **5 design systems revisados** (Material Design 3, IBM Carbon, Shopify Polaris, Atlassian Design, GitHub Primer) — **ninguno usa dos hues azules**. Todos resuelven con un solo blue + acento secundario en otra familia cromática (purple, magenta).
@@ -94,7 +93,7 @@ El sistema de linting (S12) debe:
 
 ## Plan de validación humana (informativo, no bloqueante)
 
-1. **Chrome DevTools color vision deficiency emulator:** abrir el demo (`_notes/demo-screens.html`) en cada paleta + modo, activar emulator deutan/protan/tritan/achromatopsia, validar que el chip "Pendiente en tienda" sigue siendo identificable como status pendiente y que los íconos de categoría siguen leyéndose como categoría (no como status).
+1. **Chrome DevTools color vision deficiency emulator:** abrir el demo del subproyecto de rediseño (histórico) en cada paleta + modo, activar emulator deutan/protan/tritan/achromatopsia, validar que el chip "Pendiente en tienda" sigue siendo identificable como status pendiente y que los íconos de categoría siguen leyéndose como categoría (no como status).
 2. **Sim Daltonism (macOS) + Coblis (web):** cross-check del paso anterior con segunda herramienta.
 3. **Test con usuario real con deuteranopia / protanopia:** programado para S6+ alta fidelidad. Si el usuario reporta que confunde "Pendiente" con un ícono de categoría, escalar revisitando la posición visual o introduciendo patrón visual adicional (rayas, fondo punteado, peso tipográfico distinto del label).
 
@@ -123,17 +122,17 @@ Estas alternativas se evalúan sólo si el contrato falla en uso real.
 
 ## Implicancias
 
-1. `tokens.md` §1.4 (acentos) — sumar regla "`--accent-cool`: nunca background, border, texto, CTA. Sólo color de ícono o tinte ≤14%."
-2. `tokens.md` §1.5 (status) — sumar regla "Chip de info SIEMPRE con ícono + label, nunca color-only."
-3. `tokens.md` §10 — ya documenta "`--accent-cool` (azul-gris suave h215) — Sólo color de íconos Lucide de categoría". Reforzar con explicit "siempre con label adyacente".
-4. `tokens.md` §12 — cerrar el riesgo abierto de daltonismo (gap 6) marcándolo como **mitigado por contrato ADR 0006**.
-5. `_notes/s3-red-team.md` objeción #3 — actualizar con cierre.
+1. el sistema de tokens §1.4 (acentos) — sumar regla "`--accent-cool`: nunca background, border, texto, CTA. Sólo color de ícono o tinte ≤14%."
+2. el sistema de tokens §1.5 (status) — sumar regla "Chip de info SIEMPRE con ícono + label, nunca color-only."
+3. el sistema de tokens §10 — ya documenta "`--accent-cool` (azul-gris suave h215) — Sólo color de íconos Lucide de categoría". Reforzar con explicit "siempre con label adyacente".
+4. el sistema de tokens §12 — cerrar el riesgo abierto de daltonismo (gap 6) marcándolo como **mitigado por contrato ADR 0006**.
+5. El red-team del subproyecto, objeción #3 (histórico) — actualizar con cierre.
 6. S4 — componente core `<StatusChip>` consume el contrato vía discriminated union TypeScript.
 7. S12 — sumar lint rule `no-accent-cool-as-bg` o equivalente.
 
 ## Próximos pasos
 
-1. Aplicar regulaciones a `tokens.md` §1.4, §1.5, §10, §12 (✅ aplicado en este mismo cierre).
-2. Actualizar `_notes/s3-red-team.md` objeción #3 (✅ aplicado).
+1. Aplicar regulaciones a el sistema de tokens §1.4, §1.5, §10, §12 (✅ aplicado en este mismo cierre).
+2. Actualizar el red-team del subproyecto, objeción #3 (histórico) (✅ aplicado).
 3. S4 implementa `<StatusChip>` con TypeScript discriminated union enforce.
 4. S12 implementa lint rule.

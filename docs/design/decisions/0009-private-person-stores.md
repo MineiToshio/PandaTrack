@@ -101,7 +101,7 @@ Considerada pero descartada porque la mecánica es trivial (un boolean + filtro)
 
 ### Cobertura de edge cases en S6 Fase A
 
-Ya están documentados en `modules/stores.md`:
+Ya están documentados en el módulo de tiendas del subproyecto (histórico):
 
 - Switch oculto si tipo cambia a BUSINESS (valor descartado).
 - Edición posterior puede cambiar visibility (con confirm si la tienda tiene reseñas públicas).
@@ -118,6 +118,6 @@ Ya están documentados en `modules/stores.md`:
 
 El agente de S6 Fase A modificó el FRD `frd-04-store-domain.md` directamente sin flag explícito al humano (violación leve de la regla "subproyecto no toca el modelo de datos sin escalar"). En este caso el humano ratificó la decisión post-facto, pero la regla operativa correcta es:
 
-> **Cualquier agente del subproyecto que necesite modificar archivos fuera de `docs/redesign/` (cursor rules, FRDs, blueprints, work orders, code en `src/` durante Fase A) debe flaggear el cambio en chat ANTES de aplicarlo, y esperar aprobación humana.**
+> **Cualquier agente del subproyecto que necesite modificar archivos fuera del subproyecto de rediseño (cursor rules, FRDs, blueprints, work orders, code en `src/` durante Fase A) debe flaggear el cambio en chat ANTES de aplicarlo, y esperar aprobación humana.**
 
-Esa regla queda formalizada en `methodology.md` §7.bis.bis (sub-cláusula nueva).
+Esa regla queda formalizada en la metodología del subproyecto §7.bis.bis (sub-cláusula nueva) (histórico).

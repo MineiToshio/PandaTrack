@@ -2,7 +2,7 @@
 
 This folder is the permanent home for the architectural decision records (ADRs) that define PandaTrack's design system. Each ADR captures one decision: its context, the decision itself, the alternatives considered, and the consequences. They remain in force unless a later ADR supersedes them.
 
-These decisions originated in the redesign subproject (`docs/redesign/`, a temporary workshop) and were graduated here so they survive when that workshop is archived. The content is preserved as written; only the home changed.
+These decisions originated in the redesign subproject (historical context) and were graduated here as their permanent home. The content is preserved as written; only the home changed.
 
 ## How to use this folder
 

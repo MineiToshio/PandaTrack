@@ -5,7 +5,7 @@ status: accepted
 session: S7-A.2 — adaptive modal pattern decision
 owner: Sergio Minei
 trigger: S7-A.2 adaptive modal pattern requires drawer/sheet behavior in mobile
-updates: components/Modal.md, PLAYBOOK.md, package.json
+updates: la spec de Modal del subproyecto (histórico), PLAYBOOK.md, package.json
 ---
 
 # ADR 0010 — UI Primitive Libraries Approval Policy
@@ -110,7 +110,7 @@ Dos enfoques posibles:
 
 ## Próximos pasos
 
-1. Agregar cursor rule `ui-libs-policy.mdc` en `.cursor/rules/` (requiere flag §7.alpha — fuera de `docs/redesign/`).
+1. Agregar cursor rule `ui-libs-policy.mdc` en `.cursor/rules/` (requiere flag §7.alpha — fuera del subproyecto de rediseño).
 2. Actualizar `docs/tooling/cursor/rules.md` con la nueva rule.
 3. En Fase B Parte 0 (Modal adaptive): instalar `vaul` y verificar que `@radix-ui/*` queda como transitive only.
 4. Auditar `package.json` después de cada `npm install` en sesiones futuras.

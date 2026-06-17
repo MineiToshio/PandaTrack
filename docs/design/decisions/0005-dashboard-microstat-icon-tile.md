@@ -5,12 +5,9 @@ status: accepted
 session: 03-tokens (research follow-up)
 owner: Sergio Minei
 refines: decisions/0001-s2-closure-decisions.md (Decisión 8)
-sources:
-  - _notes/s3-research-accent-warm-metric.md
-  - _notes/s3-contrast-audit.md
+sources: redesign subproject — S3 research notes (accent-warm metric + contrast audit) (historical)
 confirmed_by: |
-  Research follow-up B (daltonismo `_notes/s3-research-colorblind-info.md`), C (paleta categórica
-  `_notes/s3-research-categorical-palette.md`) y D (text-muted outdoor `_notes/s3-research-text-muted-outdoor.md`)
+  Research follow-up B (daltonismo), C (paleta categórica) y D (text-muted outdoor) del subproyecto (histórico)
   confirman que ninguna decisión cross-research entra en conflicto con este patrón. El uso de
   los 4 tiles cromáticos (indigo / coral / ámbar / verde) es robusto bajo simulación de
   daltonismo gracias a la dualidad glyph + label fija (ADR 0006).
@@ -37,7 +34,7 @@ Tres caminos posibles:
 - (b) Cifra neutra (`--text-primary`) + decorador asociado con el color funcional.
 - (c) Chip warm soft envolviendo el label + cifra neutra debajo.
 
-Una pasada de research (`_notes/s3-research-accent-warm-metric.md`) revisó 11 apps reales (Shopify Polaris, IBM Carbon, Material 3, Tailwind UI Stats, Plausible, Robinhood, Apple Health, YNAB, Cash App, Dell Design System, Power BI canónico) y 6+ artículos de research (Refactoring UI, WCAG 2.2, Smashing, phData, insightsoftware, Datarocks). **Convergencia masiva** en el patrón: la cifra grande es texto neutro; el color funcional vive en un decorador asociado (badge, tile, ring, sparkline, ícono). Robinhood es excepción explícita por polaridad binaria semántica (sube/baja) — caso que NO aplica a "Próximos 30 días" (planeación neutra).
+Una pasada de research del subproyecto (histórico) revisó 11 apps reales (Shopify Polaris, IBM Carbon, Material 3, Tailwind UI Stats, Plausible, Robinhood, Apple Health, YNAB, Cash App, Dell Design System, Power BI canónico) y 6+ artículos de research (Refactoring UI, WCAG 2.2, Smashing, phData, insightsoftware, Datarocks). **Convergencia masiva** en el patrón: la cifra grande es texto neutro; el color funcional vive en un decorador asociado (badge, tile, ring, sparkline, ícono). Robinhood es excepción explícita por polaridad binaria semántica (sube/baja) — caso que NO aplica a "Próximos 30 días" (planeación neutra).
 
 ## Decisión
 
@@ -86,14 +83,14 @@ Los 4 glyphs deben ser de la misma familia visual (line weight, fill style). Dec
 
 1. **Convergencia masiva** (11+ apps + 6+ artículos): el patrón "cifra neutra + decorador asociado" es estándar de facto en KPI cards modernas.
 2. **Resuelve WCAG por construcción** sin tocar `--accent-warm` cross-paleta — el warm vive como **non-text** (icon-tile bg + glyph), donde el mínimo es 1.4.11 ≥3:1, no 4.5:1.
-3. **Preserva el carácter "coral cálido vibrante"** del `--accent-warm` (`directions.md` §4.4 + ADR 0003 D1) sin oscurecerlo a marrón rojizo.
+3. **Preserva el carácter "coral cálido vibrante"** del `--accent-warm` (las direcciones visuales del subproyecto §4.4 + ADR 0003 D1) sin oscurecerlo a marrón rojizo.
 4. **Diferenciación del slot 2** queda asegurada por 4 vectores independientes:
    - El glyph Lucide específico (distinto del slot 1).
    - El color del glyph y del tile (warm vs indigo).
    - La posición fija (segunda columna).
    - El label "Próximos 30 días".
      Pintar la cifra agregaría un 5to vector redundante a costo de romper AA.
-5. **Compatible con regla de oro** `tokens.md` §10 ("máx 3-4 tokens cromáticos visibles por pantalla"): los 4 hues funcionan como acentos puntuales en tiles 32-36px, no como tintes de superficie ni de cifra.
+5. **Compatible con regla de oro** el sistema de tokens §10 ("máx 3-4 tokens cromáticos visibles por pantalla"): los 4 hues funcionan como acentos puntuales en tiles 32-36px, no como tintes de superficie ni de cifra.
 6. **Decálogo §9 ("dato como héroe")**: la cifra es lo más legible posible — `--text-primary` da 13:1+, vs warm que da 3.01:1 marginal.
 7. **Decálogo §1 (light + dark hermanos)**: el tile soft-tint funciona idénticamente en ambos modos por la receta `color-mix` con `--surface` actual de la paleta.
 
@@ -133,7 +130,7 @@ Si validación humana paralela a S3 (Validation #1 — test de 5 segundos sobre 
 
 ## Riesgos abiertos
 
-1. **Daltonismo (deuteranopia/protanopia):** los 4 tiles indigo/coral/ámbar/verde podrían colapsar a 2-3 zonas perceptuales. Mitigación: los 4 slots tienen labels y glyphs distintos — la diferenciación NO depende del color. Validar en S4 con simulador (gap §12 de `tokens.md`).
+1. **Daltonismo (deuteranopia/protanopia):** los 4 tiles indigo/coral/ámbar/verde podrían colapsar a 2-3 zonas perceptuales. Mitigación: los 4 slots tienen labels y glyphs distintos — la diferenciación NO depende del color. Validar en S4 con simulador (gap §12 de el sistema de tokens).
 2. **Confusión tile vs chip status:** el icon-tile decorativo y los chips de status (success/warning/info) usan ambos `color-mix 14%`. Mitigación: el icon-tile es **circular**; los chips status son **pill horizontales con texto**. Forma + posición diferencian roles.
 3. **Mobile 360px:** un grid de 4 stats con icon-tile 32-36px puede desbordar. Mitigación: `< sm` colapsa a 2x2; el icon-tile baja a 28-32px.
 4. **Lilac warm tile bg vs `--surface`:** Lilac warm L=0.72 puede dar marginal 2.x:1 en tile soft. Mitigación: si en cross-paleta validation alguna paleta no llega a 3:1, subir mix a 18% o 20% para esa paleta — la receta lo permite sin tocar el token.
@@ -141,7 +138,7 @@ Si validación humana paralela a S3 (Validation #1 — test de 5 segundos sobre 
 
 ## Próximos pasos
 
-1. `tokens.md` §1.4 + §10 actualizados con la regla "icon-tile circular soft-tint" como **patrón canónico** del `--accent-warm` (✅ aplicado en este cierre).
+1. el sistema de tokens §1.4 + §10 actualizados con la regla "icon-tile circular soft-tint" como **patrón canónico** del `--accent-warm` (✅ aplicado en este cierre).
 2. `tokens-css.md` §10 nuevo — receta vinculante del icon-tile (✅ aplicado).
 3. S4 implementa `<MicroStatCard>` con prop `accentToken` y la receta del icon-tile + cifra `--text-primary` + label + glyph.
 4. S6 cuando haga alta fidelidad del dashboard, valida visualmente el ritmo cromático.

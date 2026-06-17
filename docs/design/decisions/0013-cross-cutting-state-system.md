@@ -4,9 +4,9 @@ date: 2026-06-13
 status: accepted
 session: 10-cross-cutting-states (accepted — gate approved, shipped S10)
 owner: Sergio Minei
-trigger: S10 unifica los estados empty/loading/error que aparecían ad-hoc en cada módulo (S6/S7/S9) y diseña por primera vez los estados de error con identidad de rediseño; cierra el gap G8 (Skeleton primitive) de s4-gaps.md
-updates: docs/redesign/screens/cross-cutting-states.md, docs/redesign/PLAYBOOK.md, docs/redesign/_notes/demo-screens.html (dropdown S10)
-related: ADR 0001 D3 (disabled sin opacity), ADR 0008 (Modal canonical — confirm overlays ≠ states), ADR 0006 (icon+label contract), §9.17 PLAYBOOK (Chip-Eyebrow + Top-Accent), gap G8 + G12 (s4-gaps.md)
+trigger: S10 unifica los estados empty/loading/error que aparecían ad-hoc en cada módulo (S6/S7/S9) y diseña por primera vez los estados de error con identidad de rediseño; cierra el gap G8 (Skeleton primitive) (gap analysis del subproyecto, histórico)
+updates: redesign subproject — cross-cutting-states spec + PLAYBOOK + demo (S10, historical)
+related: ADR 0001 D3 (disabled sin opacity), ADR 0008 (Modal canonical — confirm overlays ≠ states), ADR 0006 (icon+label contract), §9.17 PLAYBOOK (Chip-Eyebrow + Top-Accent), gap G8 + G12 (gap analysis del subproyecto, histórico)
 ---
 
 # ADR 0013 — Cross-cutting state system (skeleton / empty / error)
@@ -89,7 +89,7 @@ Un **404 no es un error** (el contenido no existe / se movió) → `neutral`, no
 ### D5 — Mascota excluida de los estados S10
 
 `MascotBubble` está desmontado (cross-cutting S5.3) y los sprites diferidos (D3-03). Anti-patrón vinculante
-(`directions.md` §4.10): **la mascota nunca aparece en errores ni confirmaciones**. Decisión:
+(las direcciones visuales del subproyecto §4.10): **la mascota nunca aparece en errores ni confirmaciones**. Decisión:
 
 - Errores (route / section / 404 / offline): mascota **prohibida**.
 - Empties: S10 **no** monta mascota; el icon-well canónico es suficiente. El slot `visual` de `EmptyState`
@@ -110,7 +110,7 @@ Cada error se reporta **una sola vez**:
 
 - Empty/loading/error dejan de ser folklore por módulo: una receta de skeleton, una anatomía de empty, un
   sistema de error con tonos definidos. Reconocible como descendiente del demo.
-- Cierra G8 (Skeleton primitive) y G12 (EmptyState wrapper sizing) de `s4-gaps.md`.
+- Cierra G8 (Skeleton primitive) y G12 (EmptyState wrapper sizing) (gap analysis del subproyecto, histórico).
 - Corrige el bug de accesibilidad de `StoreListingGridSkeleton` (animación sin `motion-safe`).
 - Da por primera vez un 404 y un error de sección con identidad; reduce el "página default de Next" a un
   fallback catastrófico bien diseñado.
@@ -134,11 +134,11 @@ Cada error se reporta **una sola vez**:
 
 ## Referencias
 
-- Spec: `docs/redesign/screens/cross-cutting-states.md`
-- Demo: anchors `#s10-*` en `docs/redesign/_notes/demo-screens.html`
+- Spec: `docs/design/states.md`
+- Demo: anchors `#s10-*` del demo del subproyecto de rediseño (histórico)
 - PLAYBOOK §9.17 (Chip-Eyebrow + Top-Accent), §1 (componentes core)
-- `s4-gaps.md` G8 (Skeleton), G12 (EmptyState sizing)
+- gap analysis del subproyecto (histórico) — G8 (Skeleton), G12 (EmptyState sizing)
 - `react-next-components.mdc` (loading UI vs `next/dynamic`)
 - `sentry-error-handling.mdc` (captura sin duplicar)
-- `MascotBubble.md` + `directions.md` §4.10 (mascota nunca en errores)
+- la spec de MascotBubble del subproyecto (histórico) + las direcciones visuales del subproyecto §4.10 (mascota nunca en errores)
 - ADR 0008 (Modal canonical — los overlays de decisión ≠ estados de página)

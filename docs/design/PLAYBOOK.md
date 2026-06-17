@@ -11,7 +11,7 @@ owner: Sergio Minei
 
 Este playbook es la capa **operativa** del sistema de diseño: el flujo obligatorio, los anti-patrones y el checklist de auto-auditoría para construir UI en este repo. El **spec** (tokens, foundations, patterns, motion, states, voice) vive en los demás documentos de `docs/design/` — este playbook **apunta** a ellos como autoridad y no los duplica. Cada regla acá apareció porque algo salió mal una vez. Si la regla ya está acá, **no la re-debates** — implementá según el playbook.
 
-> Las referencias a `docs/redesign/` (demo HTML, methodology, lessons-learned, cross-cutting-changes) son artefactos del taller de rediseño que permanecen como referencia histórica hasta su archivado. La fuente de verdad permanente del sistema es `docs/design/` + el código en `src/`.
+> La fuente de verdad permanente del sistema es `docs/design/` + el código en `src/`. Este sistema lo produjo un subproyecto de rediseño que se conserva solo como contexto histórico (no es fuente de reglas ni de specs a seguir).
 
 ## 1. Componentes core — cuándo usar qué
 
@@ -94,7 +94,7 @@ API: `leadingIcon`, `trailingIcon`, `prefix`, `suffix`, `loading`, `error` (bool
 - **NO** `@radix-ui/*` como dep directa en `package.json`.
 - `lucide-react` (ya existente).
 
-**Excepción full-screen sheet**: cuando contenido es muy largo (>4 secciones / scroll significativo) → full-screen sheet (ver `_notes/demo-screens.html` anchor `#s7-fx-reconciliation-mobile`).
+**Excepción full-screen sheet**: cuando contenido es muy largo (>4 secciones / scroll significativo) → full-screen sheet (ver el prototipo de FRD-05, pantalla de reconciliación FX en mobile).
 
 API obligatoria de `<Modal>`: `tone` (`default | destructive | warning | info | success` — `success` agregado en S9 Fase B para "Marcar como llegada", M06), `size` (`md | lg`), `primaryAction` (`variant: primary | destructive | success | warning` — success/warning pintan el CTA con el token semántico), `secondaryAction`, opcional `tertiaryAction`, `icon` (Lucide en icon-circle tonal de 48px). Para mobile: `ModalSheet` inyecta drag handle + sticky footer automáticamente.
 
@@ -183,7 +183,7 @@ Componente canónico cross-app para navegación "Volver" / "Atrás". Vive típic
 - ❌ Duplicar el breadcrumb del shell con un back-link redundante (los dos siempre existen — el breadcrumb es navegación, el back-link es atajo a la pantalla padre).
 - ❌ Variants nuevas del componente sin abrir mini-sesión / ADR. Si necesitás un patrón nuevo, extendé en lugar de forkear.
 
-**Demo de referencia:** `.back-link` CSS en `_notes/demo-screens.html` líneas 757-763. Anchors visibles: `#s7-order-detail-active`, `#s7-order-create-step-1`, `#s7-order-edit`, `#s7-order-detail-mobile`.
+**Referencia visual:** el patrón `back-link` (detalle/crear/editar de pedido) vive en el prototipo de FRD-05 y en `docs/design/interface-patterns.md`.
 
 ## 2. Tokens — convenciones cross-app
 
@@ -398,7 +398,7 @@ Spec completo: `docs/design/components.md`. Demo visual: `#s7-orders-list-filter
 
 1. **Leer este playbook completo** (sí, todo).
 2. **`ls src/components/core/` y `src/components/modules/`** — **inventario obligatorio antes de crear nada**. Cualquier patrón visual replicado en el módulo nuevo casi seguro existe ya en el módulo cerrado anterior (Stores → Orders → Deliveries). **Ver §5.1 — Regla de reuse obligatorio.**
-3. **Leer el HTML demo** del componente/pantalla afectada en `docs/redesign/_notes/demo-screens.html`. Los anchors están agrupados en la nav lateral del demo por sesión (`#s6-`, `#s7-`, `#m01-`).
+3. **Leer el prototipo del FRD afectado** en `docs/product/<prd>/<frd>/prototype/<slug>.html` (la verdad visual permanente de cada pantalla).
 4. **Leer la spec del componente** en `docs/design/components.md<Name>.md`.
 5. **Leer ADRs aplicables** en `docs/design/decisions/`.
 6. **Verificar tokens correctos** consultando `docs/design/visual-foundations.md`.
@@ -461,14 +461,14 @@ Todo el copy en español **usa español neutro internacional**. Sin modismos reg
 
 Se aplica a TODO `src/i18n/locales/es/*.json` y todo lo que escriba un agente para usuarios hispanohablantes. Cualquier PR que introduzca voseo/modismos será rebotado.
 
-**Si encontrás argentinismos heredados** en docs (specs, lessons, demo-screens.html) o en código durante una sesión, **flageá pero no fixees silenciosamente** — abrí un cross-cutting para limpiar el copy en un pase dedicado. Lo que sí podés y debés hacer: en el copy nuevo que vas a escribir en tu sesión, usar siempre neutro desde el primer minuto.
+**Si encontrás argentinismos heredados** en docs o en código durante una sesión, **flageá pero no fixees silenciosamente** — dejalo señalado para un pase dedicado de copy. Lo que sí podés y debés hacer: en el copy nuevo que vas a escribir en tu sesión, usar siempre neutro desde el primer minuto.
 
 ## 6. Cómo verificar tu propio output (auto-audit antes de cerrar)
 
 Antes de marcar una sesión como cerrada:
 
 1. **TodoWrite** con cada item granular en `completed`.
-2. **Verificación visual** vs HTML demo (anchor por anchor).
+2. **Verificación visual** vs el prototipo del FRD (pantalla por pantalla).
 3. **Auditoría comparativa** contra handoff brief / specs (tabla con ✅/❌ por item).
 4. **Validación**: `npm run type-check`, `lint`, `test`, `validate-build`.
 5. **Snippet de cada cambio leído del archivo** en el reporte final, no descripciones genéricas.
@@ -480,24 +480,23 @@ Si algún paso queda con ❌, **NO cerrar** — seguir trabajando.
 Si encontrás algo roto FUERA del scope (ej. otro componente core con tokens mal, otro patrón inconsistente):
 
 1. **Flaggear al humano**, no fixear silencioso.
-2. Anotarlo en `_notes/cross-cutting-changes.md` con tipo (1/2/3/4) según `methodology.md` §7.quater.
+2. Dejarlo registrado (tarea / issue) para atención dedicada.
 3. Continuar con el scope original.
-4. El humano decide si se atiende inline o como mini-sesión separada (M0X / SN.X).
+4. El humano decide si se atiende inline o como trabajo separado.
 
 ## 8. Qué actualizar al cierre de cada módulo
 
 Cuando un módulo (S6 Stores, S7 Orders, etc.) cierra Fase B y queda aprobado:
 
 1. Si surgió un patrón nuevo replicable cross-módulo → agregarlo a este playbook.
-2. Si se aprendió algo del proceso → agregarlo a `_notes/lessons-learned.md`.
-3. Si se cerró un cambio cross-cutting → marcar status ✅ en `_notes/cross-cutting-changes.md`.
-4. Si una decisión de UI se tomó que vale para futuros módulos → ADR + actualizar este playbook.
+2. Si se aprendió algo durable del proceso → documentarlo en el doc de `docs/design/` correspondiente.
+3. Si una decisión de UI se tomó que vale para futuros módulos → ADR + actualizar este playbook.
 
 Esto NO es opcional. Sin esto, los siguientes módulos repiten errores.
 
 ## 9. Reglas adicionales aprendidas en S6 (consolidación post-módulo)
 
-Reglas accionables descubiertas implementando Stores. Aplican a todos los módulos siguientes. Para contexto histórico de cada una ver `_notes/lessons-learned.md` L013-L058.
+Reglas accionables descubiertas implementando Stores. Aplican a todos los módulos siguientes.
 
 ### 9.1 Componentes core — patrones nuevos
 
@@ -553,7 +552,7 @@ Reglas accionables descubiertas implementando Stores. Aplican a todos los módul
 - **Componentes core de S4/S5 que aparecen en demo: audit visual cada Fase B** (L042). Specs solo detallaban API, no visual final. Re-auditar cada componente core consumido contra el demo en cada Fase B donde aparece.
 - **Inventario de componentes consumidos: describir USO del módulo, no replicar spec** (L043). Plantilla mental: `[ComponentName] ([spec link]) [tono/variante/tamaño] para [propósito específico del módulo]`. La estructura interna del componente NO aparece — eso vive en su spec.
 - **Cierre de Fase A: recorrer FRD por features visibles en demo sin cobertura** (L044). Listar como `P-SX-NN` (Propuesta-SesiónX-NN) para decisión humana antes de Fase B. NO asumir que "está en el demo" = aprobación de implementación.
-- **Cláusula spec vigente: enumerar mini-sesiones cross-cutting abiertas** (L045). Al escribir handoff, consultar `cross-cutting-changes.md` y listar componentes del inventario con mini-sesiones 🟡 + política (esperar cierre vs implementar y revisar después).
+- **Cláusula spec vigente: enumerar mini-sesiones cross-cutting abiertas** (L045). Al escribir handoff, listar componentes del inventario con mini-sesiones abiertas + política (esperar cierre vs implementar y revisar después).
 - **Roadmap de sesiones es plan, no trigger automático** (L049). Un módulo no está "listo para avanzar" hasta que humano confirma visualmente contra demo. Al generar handoff, preguntar al humano qué hace en la próxima conversación, no inferirlo del plan.
 - **README "sesión vigente" describe estado real** (L050). Solo trabajo que ya ocurrió o compromisos confirmados. Para "lo que sigue": `próxima: X (requisitos previos: Y)`. Antes de editar el campo, verificar contra `git log`.
 - **Session doc: lista archivos desde `git status`, NO memoria** (L051). `git status` y `git log --oneline -10` antes de listar archivos modificados. Separar "modificados en esta sesión" vs "tocados en sesiones previas".
@@ -680,9 +679,9 @@ Descubierto en S7-A.2 (rediseño mobile de Orders). Aplica a TODOS los modales/s
   - **Action sheet** (mobile-only para "⋯ Más acciones"): sin icon-circle, lista `.s7-mob-action-list` de filas con icono + label, filas destructivas en `--destructive`. No tiene footer — cada fila ES la acción.
   - **Picker sheet** (selector de opciones tipo "tipo de producto"): search input opcional arriba + lista `.s7-mob-picker-list` (icon + label + check selectivo). Tap en opción = seleccionar y cerrar (no footer).
 
-### 9.16 Mobile viewport simulation en demo HTML (S7-A.2)
+### 9.16 Mobile viewport simulation (histórico — demo del subproyecto)
 
-Reglas para agregar nuevas pantallas mobile al demo HTML (`_notes/demo-screens.html`). Aplica solo al demo — Fase B implementa con responsive real (no simulation).
+Nota histórica: reglas que se usaron para simular viewports mobile en el demo del subproyecto de rediseño (la implementación real en `src/` usa responsive real, no simulation). Se conservan como contexto.
 
 - **Naming convention: anchors mobile deben terminar en `-mobile`** (L070). El selector canónico de mobile viewport simulation es `section[id$="-mobile"]`. IDs como `s7-X-mobile-Y` NO matchean. Convención: `s7-<screen-name>-<variant>-mobile`.
 
@@ -944,7 +943,7 @@ Reglas del sistema de estados. Spec completo: `docs/design/states.md`. Decisión
 
 ## 12. Voice — voz constante, tono por contexto (S12)
 
-> Detalle completo en `docs/design/ux-copy.md`. Términos canónicos: `docs/product/glossary.md`. Voz base: `principles.md` §7.
+> Detalle completo en `docs/design/ux-copy.md`. Términos canónicos: `docs/product/glossary.md`.
 
 ### 12.1 Voz constante (4 pilares)
 
@@ -979,10 +978,4 @@ Refuerzo (cursor rules):
 - `.cursor/rules/modal-canonical-pattern.mdc` — refuerzo canónico del Modal.
 - `.cursor/rules/design-system-playbook.mdc` — refuerzo de este playbook.
 
-Referencia histórica del taller de rediseño (en `docs/redesign/`, pendiente de archivado):
-
-- `docs/redesign/methodology.md` — metodología completa del subproyecto.
-- `docs/redesign/_notes/cross-cutting-changes.md` — backlog M01-M03, S5.1, S6.1-S6.3.
-- `docs/redesign/_notes/lessons-learned.md` — diario de aprendizajes con origen y contexto.
-- `docs/redesign/components/` — specs detalladas por componente (referencia; el código es la autoridad).
-- `docs/redesign/_notes/demo-screens.html` — fuente de verdad visual histórica del demo.
+Este sistema lo produjo un subproyecto de rediseño, conservado solo como contexto histórico (no es fuente de reglas ni de specs a seguir). La autoridad permanente es `docs/design/` + el código en `src/`.

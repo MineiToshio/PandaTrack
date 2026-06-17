@@ -11,7 +11,7 @@ supersedes: parts of S1 direction-chosen
 
 ## Contexto
 
-Después de cerrar S2 con los 6 wireframes lo-fi y el ADR 0001, se construyó un demo HTML self-contained en [`_notes/demo-screens.html`](../_notes/demo-screens.html) que **renderiza la dirección Atelier en pixeles reales**. Durante la iteración del demo con feedback humano se tomaron decisiones que afectan la dirección visual elegida en S1, la consistencia cross-pantalla, el comportamiento de componentes core (sidebar, wizard, drawer) y la organización de información (sidebar derecha en pantallas de detalle).
+Después de cerrar S2 con los 6 wireframes lo-fi y el ADR 0001, se construyó un demo HTML self-contained en el subproyecto de rediseño (histórico) que **renderiza la dirección Atelier en pixeles reales**. Durante la iteración del demo con feedback humano se tomaron decisiones que afectan la dirección visual elegida en S1, la consistencia cross-pantalla, el comportamiento de componentes core (sidebar, wizard, drawer) y la organización de información (sidebar derecha en pantallas de detalle).
 
 Este ADR consolida **8 decisiones** que aplican al demo y que deben aplicarse cuando se ejecute la implementación real (S3 tokens, S4 componentes core, S6+ alta fidelidad).
 
@@ -378,4 +378,4 @@ Los enums de estados se alinean con el [ADR 0002](./0002-status-chip-mapping.md)
    - Sidebar colapsable con push (Decisión 3).
    - Header con breadcrumbs + lang + theme (Decisión 4).
 4. **Sesión 6 — Dashboard alta fi** y siguientes deben respetar los 4 micro-stats del ADR 0001 + la estructura del sidebar derecha del ADR 0003.
-5. **Antes de implementar** ejecutar la pasada de alineación FRD ↔ rediseño descrita en `_notes/demo-screens-readme.md`.
+5. **Antes de implementar** ejecutar la pasada de alineación FRD ↔ rediseño descrita en las notas del demo del subproyecto (histórico).

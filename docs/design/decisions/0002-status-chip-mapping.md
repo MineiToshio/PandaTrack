@@ -10,7 +10,7 @@ owner: Sergio Minei
 
 ## Contexto
 
-Los wireframes lo-fi de S2 (`screens/orders-list.md`, `screens/order-detail.md`, `screens/delivery-create.md`) usan chips de status con copy mock: "Activo", "Aún no llega", "Pagado", "Atrasado N días". Al revisar el demo `_notes/demo-screens.html` con feedback humano, varios de esos chips no se mapean limpiamente al modelo de Prisma. "Activo" no existe como estado, "Aún no llega" es semánticamente débil, "Pagado" y "Atrasado" son derivados (no enum values).
+Los wireframes lo-fi de S2 del subproyecto (histórico) usan chips de status con copy mock: "Activo", "Aún no llega", "Pagado", "Atrasado N días". Al revisar el demo del subproyecto de rediseño (histórico) con feedback humano, varios de esos chips no se mapean limpiamente al modelo de Prisma. "Activo" no existe como estado, "Aún no llega" es semánticamente débil, "Pagado" y "Atrasado" son derivados (no enum values).
 
 Este ADR formaliza el mapeo entre los enums reales del schema (`prisma/schema.prisma`) y la representación visual en chips.
 
@@ -167,6 +167,6 @@ Si la validación humana en S6 muestra que "Parcialmente en camino" es muy largo
 
 ## Próximos pasos
 
-1. Aplicado al demo: `_notes/demo-screens.html` ya usa este mapeo en lista de Pedidos, lista de Entregas, Detalle de pedido, productos en Nueva entrega y filtros del drawer.
-2. Pendiente: actualizar wireframes lo-fi `screens/orders-list.md` y `screens/delivery-create.md` para usar copy de este ADR (en lugar de "Activo"/"Aún no llega" placeholder).
+1. Aplicado al demo: el demo del subproyecto de rediseño (histórico) ya usa este mapeo en lista de Pedidos, lista de Entregas, Detalle de pedido, productos en Nueva entrega y filtros del drawer.
+2. Pendiente: actualizar los wireframes lo-fi del subproyecto (listas de pedidos y nueva entrega, histórico) para usar copy de este ADR (en lugar de "Activo"/"Aún no llega" placeholder).
 3. Pendiente para S4: implementar `<StatusChip>` core con este contrato.

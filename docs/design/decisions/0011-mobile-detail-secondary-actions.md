@@ -5,7 +5,7 @@ status: accepted
 session: S7-A.6 — mobile topbar realignment + secondary actions pattern; extended 2026-05-12 in S7-A.7 (sticky bar single-primary + Pagos card state-aware default)
 owner: Sergio Minei
 trigger: S7-A.5 documented "Topbar mobile alignment a patrón implementación" as pending; user surfaced that the `⋯`/[Más] bottom sheet pattern for secondary actions on order detail is not intuitive and conflicts with the static `ContentHeader.tsx` shell
-updates: screens/order-list.md, screens/order-detail.md, screens/order-create.md, screens/order-edit.md, design/interface-patterns.md, _notes/cross-cutting-changes.md, _notes/demo-screens.html
+updates: redesign subproject — order list/detail/create/edit screen specs + cross-cutting register + demo (historical); design/interface-patterns.md
 related: ADR 0003 D8 (FilterDrawer responsive), ADR 0008 (Modal canonical), ADR 0008 Extensión (adaptive modal pattern), ADR 0010 (UI primitive libraries policy)
 ---
 
