@@ -1,6 +1,6 @@
-# Cursor commands
+# Agent commands
 
-Project-specific commands are in `.cursor/commands/`. Type `/` in Agent Chat to see them.
+Project-specific commands are in `.claude/commands/`. In Claude Code, type `/` to see them; in Codex, reference the command file directly.
 
 ## release-tag-and-notes
 
@@ -19,7 +19,7 @@ Creates a new version tag (from the latest tag + major/minor/patch), pushes it t
 5. Builds a changelog from commits between the **previous tag** and the **new tag** (tag-to-tag).
 6. Returns markdown ready for copy/paste into the GitHub Release description, with a `[SCREENSHOTS]` placeholder.
 
-See `.cursor/commands/release-tag-and-notes.md` for the full step-by-step instructions the agent follows.
+See `.claude/commands/release-tag-and-notes.md` for the full step-by-step instructions the agent follows.
 
 ## implement-feature-slice
 
@@ -40,7 +40,7 @@ Implements one slice issue from GitHub with minimal scoped changes and GitHub-sy
    - Use `npm run validate-build` for build validation when full validation is required (not `npm run build`; that one runs migrate deploy and is for the Vercel pipeline).
 7. Returns functional test steps and test cases so implementation can be manually verified.
 
-See `.cursor/commands/implement-feature-slice.md` for the full command behavior.
+See `.claude/commands/implement-feature-slice.md` for the full command behavior.
 
 ## mark-ticket-done
 
@@ -60,7 +60,7 @@ Marks one GitHub slice ticket as done and cascades completion upward through the
 6. If all sibling `FRDs` are complete, also marks the parent `PRD` as `DONE`.
 7. Syncs the parent Epic checklist and, if all slices are complete, also marks the Epic as `Done`.
 
-See `.cursor/commands/mark-ticket-done.md` for the full command behavior.
+See `.claude/commands/mark-ticket-done.md` for the full command behavior.
 
 ## create-frd-package
 
@@ -81,7 +81,7 @@ Creates a new `FRD` package under an existing `PRD` and mirrors it into GitHub u
 6. Creates one GitHub ticket per `Work Order`, following the hybrid tracking rules, with every newly created `Work Order` starting in `status: DRAFT`.
 7. Uses qualified **FRD-XX** labels and repository-relative links for any cross-FRD citation, per `docs/templates/product-docs-guide.md` (**Cross-FRD references**).
 
-See `.cursor/commands/create-frd-package.md` for the full command behavior.
+See `.claude/commands/create-frd-package.md` for the full command behavior.
 
 ## enrich-work-order-context
 
@@ -103,4 +103,4 @@ Deepens one existing Work Order through a structured discovery pass before updat
 6. Updates the `Work Order`, promotes that `Work Order` to `status: ACTIVE`, and synchronizes approved changes upward into the `Blueprint`, `FRD`, and `PRD` only where appropriate.
 7. Keeps references to other FRDs unambiguous (qualified ids and file links per `docs/templates/product-docs-guide.md`, **Cross-FRD references**).
 
-See `.cursor/commands/enrich-work-order-context.md` for the full command behavior.
+See `.claude/commands/enrich-work-order-context.md` for the full command behavior.

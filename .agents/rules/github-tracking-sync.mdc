@@ -35,7 +35,7 @@ GitHub issues must mirror the approved docs, not replace them.
 ## Architecture changes
 
 - If implementation changes core architecture decisions, update ADR references in the epic issue.
-- Create or update an ADR following `.cursor/rules/adr-decision-records.mdc`.
+- Create or update an ADR following `.agents/rules/adr-decision-records.mdc`.
 
 ## Minimum issue sync checklist
 

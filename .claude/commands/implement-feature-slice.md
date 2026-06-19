@@ -75,7 +75,7 @@ Implement one GitHub slice ticket that mirrors a `Work Order`, using the hybrid 
 
 5. Implement only this slice
 - Keep changes minimal and scoped.
-- Follow `AGENTS.md` and `.cursor/rules/*.mdc`.
+- Follow `AGENTS.md` and `.agents/rules/*.mdc`.
 - Respect architecture and code organization conventions.
 - Do not include unrelated refactors.
 - If the slice introduces or wires an external service or third-party integration (for example S3-compatible storage, analytics, email, OAuth, or similar), also update the relevant docs and environment examples in the same change so the integration is actually operable by another developer.
@@ -101,7 +101,7 @@ Implement one GitHub slice ticket that mirrors a `Work Order`, using the hybrid 
 For token retrieval, stable IDs, and `curl` patterns to update the Project `4` `Status` field, see `docs/process/github-project-tracking.md` → **GitHub GraphQL API**.
 
 7. Validate
-- Choose validation scope using `.cursor/rules/validation-checklist.mdc`.
+- Choose validation scope using `.agents/rules/validation-checklist.mdc`.
 - For behavioral or higher-risk implementation changes, run:
   - `npm run test`
   - `npm run type-check`

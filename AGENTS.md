@@ -22,20 +22,20 @@ When instructions conflict, use this order:
 
 1. User request
 2. This `AGENTS.md`
-3. `.cursor/rules/*.mdc`
+3. `.agents/rules/*.mdc`
 4. `docs/` (all documentation files in this folder)
 
 If still ambiguous, choose the smallest safe change and note assumptions.
 
 ### AI rule enforcement
 
-- `.cursor/rules/*.mdc` remains the source of truth for these repository implementation rules, even though the folder name references Cursor.
-- These rules apply to any AI agent working in this repository, including Cursor, Codex, Claude Code, or any other implementation agent.
-- `docs/tooling/cursor/rules.md` is the required index for identifying which rule files must be read for a given task.
-- Before implementing, reviewing, or validating a change, any AI agent must first consult `docs/tooling/cursor/rules.md`, identify the matching rules, then read the corresponding `.cursor/rules/*.mdc` files.
+- `.agents/rules/*.mdc` is the source of truth for these repository implementation rules. The folder is named `.agents/` to be agent-neutral (it is not specific to any one tool).
+- These rules apply to any AI agent working in this repository, including Claude Code, Codex, or any other implementation agent.
+- `docs/tooling/agents/rules.md` is the required index for identifying which rule files must be read for a given task.
+- Before implementing, reviewing, or validating a change, any AI agent must first consult `docs/tooling/agents/rules.md`, identify the matching rules, then read the corresponding `.agents/rules/*.mdc` files.
 - Treat the matching rules as mandatory implementation constraints, not optional guidance. The implementation must satisfy both the user request and the applicable repository rules.
 - Re-check the matching rules when the task expands in scope (for example UI plus backend, or implementation plus docs/testing).
-- If any file under `.cursor/rules/` is added, removed, renamed, or materially changed, update `docs/tooling/cursor/rules.md` in the same change so the rule index stays accurate.
+- If any file under `.agents/rules/` is added, removed, renamed, or materially changed, update `docs/tooling/agents/rules.md` in the same change so the rule index stays accurate.
 
 ### Product and execution source of truth
 
@@ -77,7 +77,7 @@ Product architecture:
 ### Reuse and structure
 
 - Reuse components from `src/components/core` and `src/components/modules` before adding new ones.
-- Follow project structure rules in `.cursor/rules/project-structure.mdc`.
+- Follow project structure rules in `.agents/rules/project-structure.mdc`.
 - Keep shared utilities in `src/lib`, shared hooks in `src/hooks`, shared types in `src/types`.
 - Place page-scoped code in route-level `_components`, `_utils`, `_hooks`, `_actions`, `_types`, `_schemas`.
 
@@ -190,7 +190,7 @@ If a command cannot be run, state it explicitly and why.
 - Do not introduce unrelated refactors.
 - Document assumptions when requirements are incomplete.
 - Prefer small, reviewable diffs.
-- Start each implementation by identifying the applicable repository rules through `docs/tooling/cursor/rules.md` and enforcing them throughout the change.
+- Start each implementation by identifying the applicable repository rules through `docs/tooling/agents/rules.md` and enforcing them throughout the change.
 - When multiple rule files apply, satisfy all of them together and resolve ambiguity using the source-of-truth order above.
 - Do not finalize work until the relevant rule-driven requirements for implementation, docs, tests, accessibility, theming, analytics, and validation have been checked according to the task scope and risk level.
 - For UI work, ensure the result aligns with `docs/design/README.md` and the relevant file in `docs/design/`; if the implementation introduces a reusable visual rule not captured there, update the matching design document in the same change.
@@ -211,21 +211,21 @@ Hooks run automatically during the agent loop to enforce formatting, block sensi
 
 Key points:
 
-- Scripts live in `.cursor/hooks/` — **single source of truth** for hook logic.
-- Cursor reads `.cursor/hooks.json`; Claude Code reads `.claude/settings.json`. Both point to the same scripts.
-- Do not duplicate hook logic. If you add or change a hook, update the script in `.cursor/hooks/`, register it in both config files, and update `docs/tooling/cursor/hooks.md`.
+- Scripts live in `.claude/hooks/` — **single source of truth** for hook logic.
+- Claude Code reads `.claude/settings.json` to wire these scripts into its agent loop. Codex does not run hooks.
+- Do not duplicate hook logic. If you add or change a hook, update the script in `.claude/hooks/`, register it in `.claude/settings.json`, and update `docs/tooling/agents/hooks.md`.
 
-See `docs/tooling/cursor/hooks.md` for the full reference (configured hooks, payload format, and how to add new ones).
+See `docs/tooling/agents/hooks.md` for the full reference (configured hooks, payload format, and how to add new ones).
 
 ## 12) Command-file enforcement for Codex
 
-When the user references a file under `.cursor/commands/*.md`, treat that file as an execution contract, not as optional context.
+When the user references a file under `.claude/commands/*.md`, treat that file as an execution contract, not as optional context.
 
 Required behavior:
 
 - If the user includes text on the same line as the referenced command file, interpret that text as the command input payload automatically.
 - Do not require the user to restate the command instructions in natural language when the command file and its inputs are already provided.
-- Default to the simplest Cursor-like invocation model: command file reference plus positional input values.
+- Default to the simplest invocation model: command file reference plus positional input values.
 - Treat the referenced command file as the active execution authority for that turn.
 - Command-file workflow takes priority over generic skill workflows or default process habits that would otherwise delay implementation.
 - Do not pause for unrelated brainstorming, spec-writing, or approval gates when executing a command file unless:

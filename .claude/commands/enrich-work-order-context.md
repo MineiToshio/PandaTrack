@@ -25,7 +25,7 @@ The command must treat the referenced `Work Order` as the entry point, but it mu
 - If the referenced Work Order is also linked to GitHub tracking, keep GitHub issue content aligned after doc approval when practical.
 - Before asking any clarification questions, provide a concise Spanish summary of what the target `Work Order` does today so the user has shared context for the discovery conversation.
 - Treat implementation-critical undefined decisions as blockers, not as minor omissions. If a missing technical or operational decision would likely cause rework during implementation, the command must surface it explicitly before docs are approved.
-- Treat established repository conventions as already-made decisions. Any question that is already answered by `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*.mdc`, `docs/tooling/cursor/rules.md`, `docs/design/`, `docs/development/`, applicable ADRs under `docs/` or skills under `.agents/skills/` must not be asked. Instead, surface the applicable convention inline as an inferred assumption and cite the owning file.
+- Treat established repository conventions as already-made decisions. Any question that is already answered by `AGENTS.md`, `CLAUDE.md`, `.agents/rules/*.mdc`, `docs/tooling/agents/rules.md`, `docs/design/`, `docs/development/`, applicable ADRs under `docs/` or skills under `.agents/skills/` must not be asked. Instead, surface the applicable convention inline as an inferred assumption and cite the owning file.
 
 ## Planning objective
 
@@ -46,8 +46,8 @@ Before asking questions or drafting changes, resolve the target context in this 
 
 0. resolve repository conventions (always first)
 - read `AGENTS.md` and `CLAUDE.md` to capture mandatory baseline behavior
-- open `docs/tooling/cursor/rules.md` and identify every rule family that could apply to the target `Work Order` based on its scope (frontend, data, auth, i18n, analytics, error handling, design, accessibility, testing, migrations, env vars, optimistic updates, icons, theming, etc.)
-- read each matching `.cursor/rules/*.mdc` file fully enough to know what it already mandates
+- open `docs/tooling/agents/rules.md` and identify every rule family that could apply to the target `Work Order` based on its scope (frontend, data, auth, i18n, analytics, error handling, design, accessibility, testing, migrations, env vars, optimistic updates, icons, theming, etc.)
+- read each matching `.agents/rules/*.mdc` file fully enough to know what it already mandates
 - scan `docs/design/README.md` and `docs/development/` for any doc that already owns the decision (file placement, lib inventory, schema, i18n, og images, etc.)
 - scan `docs/` for existing ADRs that already settle a relevant decision
 - record the resulting list of binding conventions so they can be reused in the `Convention-driven assumptions` section of the proposal, and so no question is asked about a decision that is already defined
@@ -110,7 +110,7 @@ Before asking questions, produce an internal role-by-role gap analysis that iden
 Before building the question list, filter out every candidate question whose answer is already defined by a repository convention. For each filtered item, produce a one-line inferred assumption that:
 
 - states the concrete decision being applied (in product/system terms, not just the category)
-- cites the owning file by repository-relative path (for example `AGENTS.md §4`, `.cursor/rules/next-intl-translation-apis.mdc`, `.cursor/rules/optimistic-client-updates.mdc`, `docs/design/interface-patterns.md`, `docs/development/database-schema.md`)
+- cites the owning file by repository-relative path (for example `AGENTS.md §4`, `.agents/rules/next-intl-translation-apis.mdc`, `.agents/rules/optimistic-client-updates.mdc`, `docs/design/interface-patterns.md`, `docs/development/database-schema.md`)
 
 Typical categories that must not become questions because existing conventions already define them:
 
@@ -362,7 +362,7 @@ After discovery and before any file edits, return a proposal in Spanish with:
 - concise restatement of the Work Order goal and what seems missing today
 
 2. `Convention-driven assumptions (not asked)`
-- decisions inferred from `AGENTS.md`, `CLAUDE.md`, matching `.cursor/rules/*.mdc`, `docs/design/`, `docs/development/`, or applicable ADRs
+- decisions inferred from `AGENTS.md`, `CLAUDE.md`, matching `.agents/rules/*.mdc`, `docs/design/`, `docs/development/`, or applicable ADRs
 - one line per assumption with the applied convention and the owning file path
 - the user can still override any assumption, but these are not phrased as open questions
 
@@ -441,7 +441,7 @@ If the required GitHub Project or issue-body sync cannot be completed with avail
 - Do not leave critical ambiguity unresolved while pretending the `Work Order` is implementation-ready.
 - Do not overwrite existing intent in docs without reconciling it explicitly.
 - Do not treat infrastructure, storage, naming, error-recovery, or observability choices as “implementation details” when they are necessary to prevent downstream execution chaos; surface them during discovery at the correct doc layer.
-- Do not ask the user about any decision already defined by `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/*.mdc`, `docs/tooling/cursor/rules.md`, `docs/design/`, `docs/development/`, or an applicable ADR. Apply the rule, state it as an inferred assumption with the owning file path, and move on.
+- Do not ask the user about any decision already defined by `AGENTS.md`, `CLAUDE.md`, `.agents/rules/*.mdc`, `docs/tooling/agents/rules.md`, `docs/design/`, `docs/development/`, or an applicable ADR. Apply the rule, state it as an inferred assumption with the owning file path, and move on.
 - Do not use bare document or code references in questions. Every `WO-NN`, `BP-NN`, `FRD-XX`, ADR id, issue number, or file path must be accompanied by an inline paraphrase of the relevant content so the question is self-contained.
 
 ## Final response format

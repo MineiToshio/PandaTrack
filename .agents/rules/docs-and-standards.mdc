@@ -1,5 +1,5 @@
 ---
-description: When to document in docs/, when to create new Cursor rules, and how to keep both focused
+description: When to document in docs/, when to create new repository rules, and how to keep both focused
 alwaysApply: true
 ---
 
@@ -67,18 +67,18 @@ When you add or update something in `docs/`, place it in the right file and keep
 
 ---
 
-## 2. Create a new Cursor rule only when it is a recurring standard
+## 2. Create a new repository rule only when it is a recurring standard
 
 Not every instruction should become a rule. Create a new rule only when it will guide future implementations in a consistent way.
 
-When the user explicitly describes a pattern they want applied across the project, consider capturing it in a Cursor rule. That does not always mean creating a new file: depending on the case, it may be better to update an existing rule (e.g. `coding-standards.mdc`, `project-structure.mdc`) to add the new convention, so the rule set stays small and consistent.
+When the user explicitly describes a pattern they want applied across the project, consider capturing it in a repository rule. That does not always mean creating a new file: depending on the case, it may be better to update an existing rule (e.g. `coding-standards.mdc`, `project-structure.mdc`) to add the new convention, so the rule set stays small and consistent.
 
 ### Create a new rule when all of the following are true:
 
 - **Recurring**: It is a pattern that will apply again (how we write or structure code), not a one-off feature request.
 - **Future-facing**: It describes how to do things from now on, not a single fix or single feature.
 - **Concise and actionable**: It can be written in a short, clear way (ideally under 50 lines) with concrete do/don’t or examples.
-- **No duplication**: It does not repeat or contradict an existing rule in `.cursor/rules/`. If it extends one, consider updating that rule instead of adding a new file.
+- **No duplication**: It does not repeat or contradict an existing rule in `.agents/rules/`. If it extends one, consider updating that rule instead of adding a new file.
 
 ### Do not create a new rule when:
 
@@ -90,6 +90,6 @@ When the user explicitly describes a pattern they want applied across the projec
 
 1. Check existing rules (e.g. `coding-standards.mdc`, `quality-docs-cleanup.mdc`, `project-structure.mdc`) to avoid overlap.
 2. If in doubt, add a short comment in code or a note in the relevant `docs/` file instead of creating a new rule.
-3. New rules live in `.cursor/rules/` as `.mdc` files, with a clear `description` in the frontmatter and focused content.
+3. New rules live in `.agents/rules/` as `.mdc` files, with a clear `description` in the frontmatter and focused content.
 
 This keeps the rule set small and useful so that documentation and standards stay maintainable.

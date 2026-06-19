@@ -256,8 +256,8 @@ Each `Work Order` must:
   - `Blueprints`
   - `E2E Acceptance Tests`
 - explicitly include, unless the slice is the foundation `Work Order` described in `## Work Order splitting rules`:
-  - automated tests of the type that applies to the slice (unit, integration, or E2E, per `.cursor/rules/testing-strategy.mdc` and `.cursor/rules/validation-checklist.mdc`); at minimum one E2E acceptance path
-  - PostHog analytics events for the user-visible actions the slice introduces, following `.cursor/rules/posthog-events.mdc`
+  - automated tests of the type that applies to the slice (unit, integration, or E2E, per `.agents/rules/testing-strategy.mdc` and `.agents/rules/validation-checklist.mdc`); at minimum one E2E acceptance path
+  - PostHog analytics events for the user-visible actions the slice introduces, following `.agents/rules/posthog-events.mdc`
 
 Each `Work Order` created here should be treated as an initial slice definition, not as a fully enriched implementation brief.
 

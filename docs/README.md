@@ -55,6 +55,6 @@ Use this index to find documentation by domain.
 
 ## Tooling
 
-- `docs/tooling/cursor/commands.md`: Cursor command usage
-- `docs/tooling/cursor/hooks.md`: Cursor hooks usage
-- `docs/tooling/cursor/rules.md`: Cursor rules index, when each rule must be read, and maintenance expectations
+- `docs/tooling/agents/commands.md`: Agent command usage
+- `docs/tooling/agents/hooks.md`: Agent hooks usage
+- `docs/tooling/agents/rules.md`: Repository rules index, when each rule must be read, and maintenance expectations

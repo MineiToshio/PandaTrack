@@ -169,7 +169,7 @@ pandatrack/
 └── next.config.ts
 ```
 
-Route-level code (actions, hooks, utils, types) lives in `_actions/`, `_hooks/`, `_utils/`, `_types/` next to `_components/` for that route. See [.cursor/rules/project-structure.mdc](.cursor/rules/project-structure.mdc) for full conventions.
+Route-level code (actions, hooks, utils, types) lives in `_actions/`, `_hooks/`, `_utils/`, `_types/` next to `_components/` for that route. See [.agents/rules/project-structure.mdc](.agents/rules/project-structure.mdc) for full conventions.
 
 ---
 
@@ -198,7 +198,7 @@ Details: [docs/development/i18n.md](docs/development/i18n.md).
 
 ## Contributing
 
-1. Follow the conventions in [AGENTS.md](AGENTS.md) and `.cursor/rules/`.
+1. Follow the conventions in [AGENTS.md](AGENTS.md) and `.agents/rules/`.
 2. Keep code and comments in English; user-facing copy goes in locale JSON files.
 3. Before submitting: `npm run type-check`, `npm run lint`, and ensure `npm run validate-build` succeeds.
 

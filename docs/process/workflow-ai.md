@@ -1,6 +1,6 @@
 # AI Workflow
 
-This workflow is optimized for building features with Codex and Cursor using a hybrid model:
+This workflow is optimized for building features with Codex and Claude Code using a hybrid model:
 
 - `docs/product` is the source of truth for product definition
 - GitHub Project is the source of truth for execution status
@@ -27,7 +27,7 @@ This workflow is optimized for building features with Codex and Cursor using a h
 
 ## 3) Implement with AI agents
 
-1. Run implementation prompt (Codex or Cursor)
+1. Run implementation prompt (Codex or Claude Code)
 2. Keep changes minimal and scoped to the feature
 3. Evaluate unit, integration, and E2E coverage needs based on feature risk
 4. Re-run with focused prompts for missing pieces (tests, i18n, analytics, accessibility)

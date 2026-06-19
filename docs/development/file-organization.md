@@ -2,7 +2,7 @@
 
 Read this document before creating any new file in the repository. It defines where each type of file belongs so agents and contributors place things consistently the first time.
 
-For the full detail on code file placement rules, read `.cursor/rules/project-structure.mdc`. This document is the quick-reference companion — it covers both `docs/` and `src/` so the right destination is clear regardless of what kind of work is being done.
+For the full detail on code file placement rules, read `.agents/rules/project-structure.mdc`. This document is the quick-reference companion — it covers both `docs/` and `src/` so the right destination is clear regardless of what kind of work is being done.
 
 ---
 
@@ -13,10 +13,10 @@ For the full detail on code file placement rules, read `.cursor/rules/project-st
 | `docs/design/`      | Design system decisions: visual language, interface patterns, UX copy, and any reusable visual or interaction rule. One focused file per topic.                                                                                                                                                                                                                                                         |
 | `docs/development/` | Technical implementation notes for specific domains or cross-cutting concerns (auth, i18n, analytics, testing, database schema, lib utilities, OG images, etc.). One file per topic.                                                                                                                                                                                                                    |
 | `docs/process/`     | Workflow, delivery, review, and quality standards (definition of done, review checklist, GitHub workflow, AI delivery process).                                                                                                                                                                                                                                                                         |
-| `docs/product/`     | Product definition: PRDs, FRDs, Blueprints, and Work Orders in their canonical hierarchy. See `docs/templates/product-docs-guide.md` for structure and naming rules. A UI-bearing FRD also keeps its durable design record directly inside the FRD folder: `fdd-XX-<slug>.md` (mirrors the FRD filename) + a self-contained `prototype/<slug>.html` — see `.cursor/rules/frd-design-documentation.mdc`. |
+| `docs/product/`     | Product definition: PRDs, FRDs, Blueprints, and Work Orders in their canonical hierarchy. See `docs/templates/product-docs-guide.md` for structure and naming rules. A UI-bearing FRD also keeps its durable design record directly inside the FRD folder: `fdd-XX-<slug>.md` (mirrors the FRD filename) + a self-contained `prototype/<slug>.html` — see `.agents/rules/frd-design-documentation.mdc`. |
 | `docs/subprojects/` | Preserved history of completed internal initiatives that ran as their own mini-project (research, iteration, gate). Not an operational source of truth — durable results graduate to their permanent home (`docs/design/`, `docs/product/`, `src/`). One subfolder per subproject + an index `README.md`. See `docs/subprojects/README.md`.                                                             |
 | `docs/templates/`   | Blank templates only. No implementation content here.                                                                                                                                                                                                                                                                                                                                                   |
-| `docs/tooling/`     | Docs about the tooling layer: Cursor rules index, hooks, commands.                                                                                                                                                                                                                                                                                                                                      |
+| `docs/tooling/`     | Docs about the tooling layer: rules index, hooks, commands.                                                                                                                                                                                                                                                                                                                                             |
 
 ### Before adding a new file to `docs/`
 
@@ -29,7 +29,7 @@ For the full detail on code file placement rules, read `.cursor/rules/project-st
 
 ## `src/` code file placement — quick reference
 
-Read `.cursor/rules/project-structure.mdc` for the full rules. The most common decisions:
+Read `.agents/rules/project-structure.mdc` for the full rules. The most common decisions:
 
 ### Routes and pages
 

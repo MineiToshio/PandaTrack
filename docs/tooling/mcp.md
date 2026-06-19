@@ -4,7 +4,7 @@ Model Context Protocol (MCP) servers extend AI agents with external tool capabil
 
 ## Project-level servers
 
-Configured in `.cursor/mcp.json` (used by Cursor) and picked up by Claude Code via the user-level MCP config.
+Configured via Claude Code's MCP config (`claude mcp add`, or a gitignored project-level `.mcp.json`). Codex reads its own MCP configuration.
 
 | Server     | Transport | Endpoint                             | Purpose                                                                                          |
 | ---------- | --------- | ------------------------------------ | ------------------------------------------------------------------------------------------------ |
@@ -14,7 +14,7 @@ Configured in `.cursor/mcp.json` (used by Cursor) and picked up by Claude Code v
 
 The GitHub server requires a Personal Access Token with `repo` and `project` scopes. The token is passed as an `Authorization: Bearer <token>` header. Store the token in an environment variable or secret manager — **never hardcode it in committed files**.
 
-> **Security note:** `.cursor/mcp.json` is gitignored (or should be). Verify with `git check-ignore -v .cursor/mcp.json`. If it is tracked, rotate the token immediately and add the file to `.gitignore`.
+> **Security note:** never commit the token. A project-level `.mcp.json` is gitignored; if a token ever appears in a committed file (any config or `.claude/settings.local.json`), rotate it immediately.
 
 ### Available tools (github)
 
@@ -31,7 +31,7 @@ A non-exhaustive list of the tools exposed by this server:
 
 ## User-level servers
 
-Configured at the Claude Code user level (not committed to the repo). These are available in Claude Code sessions but not in Cursor.
+Configured at the Claude Code user level (not committed to the repo). These are available in Claude Code sessions.
 
 | Server               | Purpose                                                                                                   |
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
@@ -45,7 +45,7 @@ Configured at the Claude Code user level (not committed to the repo). These are 
 
 ## Adding a new MCP server
 
-1. For project-wide servers (all devs and AI agents need it): add to `.cursor/mcp.json`. Document it in this file.
+1. For project-wide servers (all devs and AI agents need it): add via `claude mcp add` (or a gitignored project `.mcp.json`). Document it in this file.
 2. For personal/user-level servers: configure via `claude mcp add` or your IDE's user settings. No commit needed.
 3. Add tool permissions to `.claude/settings.local.json` as they are approved during use.
 4. Update this file with the new server's name, transport, and available tools.
@@ -53,5 +53,4 @@ Configured at the Claude Code user level (not committed to the repo). These are 
 ## References
 
 - [Claude Code MCP docs](https://docs.anthropic.com/en/docs/claude-code/mcp)
-- [Cursor MCP docs](https://docs.cursor.com/advanced/model-context-protocol)
 - [MCP specification](https://modelcontextprotocol.io)

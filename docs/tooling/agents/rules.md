@@ -1,14 +1,14 @@
-# Cursor Rules Index
+# Repository Rules Index
 
-This document is the operational index for `.cursor/rules/*.mdc`.
+This document is the operational index for `.agents/rules/*.mdc`.
 
 Use it to decide which repository rules must be read before implementing, reviewing, or documenting a change.
 
-Even though the files live under `.cursor/rules/`, these rules apply to any AI agent working in this repository, not only Cursor.
+These rules apply to any AI agent working in this repository (Claude Code, Codex, or any other), regardless of the folder name.
 
 ## Source of truth
 
-- `.cursor/rules/*.mdc` is the source of truth for these repository implementation rules.
+- `.agents/rules/*.mdc` is the source of truth for these repository implementation rules.
 - This document is the navigation and reinforcement layer for those rules.
 - If this document and a rule file ever diverge, follow the `.mdc` file and update this document in the same change.
 
@@ -17,7 +17,7 @@ Even though the files live under `.cursor/rules/`, these rules apply to any AI a
 Before implementing a task:
 
 1. Read this document and identify the rules that match the requested work.
-2. Read every matching `.cursor/rules/*.mdc` file before writing code.
+2. Read every matching `.agents/rules/*.mdc` file before writing code.
 3. Apply those rules during implementation, review, and validation.
 4. If a rule is added, removed, renamed, or materially changed, update this document in the same change.
 
@@ -48,7 +48,7 @@ Read these on every implementation because they define project-wide defaults:
 - `product-doc-cross-frd-references.mdc`: Use when creating or editing `docs/product` text that cites another FRD's blueprint, work order, or `FR-XX-NN` requirement; also applies to **Create FRD Package** and **Enrich Work Order Context** command runs.
 - `docs-and-standards.mdc`: Use when behavior, architecture, `src/lib`, database shape, reusable process knowledge, or undocumented product decisions change. It requires proactive `docs/product` updates in the same change when shipped behavior is new, changed, or previously undocumented, and requires documentation paths to stay repository-relative instead of machine-specific absolute paths.
 - `quality-docs-cleanup.mdc`: Use when adding comments, JSDoc, utilities, cleanup, or lint-related exceptions.
-- **`docs/development/file-organization.md`** (not a cursor rule — a reference doc): Read before creating any new file, whether code or documentation. It defines which subfolder of `docs/` and `src/` each file type belongs in, the promotion rule, and common placement mistakes to avoid.
+- **`docs/development/file-organization.md`** (not a rule — a reference doc): Read before creating any new file, whether code or documentation. It defines which subfolder of `docs/` and `src/` each file type belongs in, the promotion rule, and common placement mistakes to avoid.
 
 ### Core coding and language
 
@@ -58,7 +58,7 @@ Read these on every implementation because they define project-wide defaults:
 
 ### React, Next.js, and frontend structure
 
-- **`docs/design/README.md`** (not a cursor rule — a reference doc): **Read before any UI implementation.** It is the source of truth for the design system and contains a file selection guide: open `visual-foundations.md` for colors, typography, spacing, surfaces; open `interface-patterns.md` for layout, tabs, modals, sidebars, states, status chips, responsive; open `ux-copy.md` for any user-facing string. If a change introduces a new reusable visual rule, update the matching file in `docs/design/` in the same change.
+- **`docs/design/README.md`** (not a rule — a reference doc): **Read before any UI implementation.** It is the source of truth for the design system and contains a file selection guide: open `visual-foundations.md` for colors, typography, spacing, surfaces; open `interface-patterns.md` for layout, tabs, modals, sidebars, states, status chips, responsive; open `ux-copy.md` for any user-facing string. If a change introduces a new reusable visual rule, update the matching file in `docs/design/` in the same change.
 - `frd-design-documentation.mdc`: Use when creating, changing, or auditing the **design** of a UI-bearing FRD (its screens' layout, visual treatment, components, interactions, states, copy, responsive, a11y). It defines the per-FRD design record — `fdd-XX-<slug>.md` ("the prototype in words") + the self-contained `prototype/<slug>.html`, both directly inside `docs/product/.../frd-XX/` (mirroring the FRD filename, no `design/` subfolder) — so each UI FRD is reconstructible on its own, without depending on the redesign subproject that originally produced it. The FDD references `docs/design/` for system rules and never re-defines them.
 - `react-next-components.mdc`: Use when creating or refactoring React components, pages, layouts, hooks, client boundaries, or component composition. It also reinforces subtree reuse before creating parallel route-local components, and defines when loading UI, skeletons, and `next/dynamic` are appropriate (avoid fake client fallbacks for SSR-delivered UI).
 - `project-structure.mdc`: Use when deciding where files should live or when adding new route-level or shared modules, including `_components/share/` folders for route-subtree reuse and promotion from child pages when reuse appears.
@@ -77,7 +77,7 @@ Read these on every implementation because they define project-wide defaults:
 - `role-copywriting-marketing.mdc`: Use when writing or editing user-facing copy such as landing text, CTAs, emails, empty states, and notifications.
 - `next-intl-translation-apis.mdc`: Use when wiring translation APIs into components or framework functions.
 - `english-code-only.mdc`: Use alongside copy work to keep code in English while keeping user-facing text in locale files.
-- **`docs/product/glossary.md`** (not a cursor rule — a reference doc): Source of truth for canonical product terminology across `es` and `en`. Read before writing or editing any user-facing copy, identifier, or product doc that references `pedido` ↔ `order`, `entrega` ↔ `delivery`, `tienda` ↔ `store`, etc. Add new product concepts to it in the same change that introduces them.
+- **`docs/product/glossary.md`** (not a rule — a reference doc): Source of truth for canonical product terminology across `es` and `en`. Read before writing or editing any user-facing copy, identifier, or product doc that references `pedido` ↔ `order`, `entrega` ↔ `delivery`, `tienda` ↔ `store`, etc. Add new product concepts to it in the same change that introduces them.
 
 ### Data, backend, integrations, and environment
 
@@ -141,13 +141,13 @@ Read these on every implementation because they define project-wide defaults:
 
 ## Tooling references
 
-For Claude Code configuration (entry point, commands symlink, hooks wiring, permissions, MCP servers) see `docs/tooling/claude/setup.md`.
+For Claude Code configuration (entry point, commands, hooks wiring, permissions, MCP servers) see `docs/tooling/claude/setup.md`.
 
 ## Maintenance requirement
 
 Update this document in the same change when any of the following happens:
 
-- A new file is added under `.cursor/rules/`
+- A new file is added under `.agents/rules/`
 - A rule file is removed or renamed
 - A rule scope changes materially
 - A new workflow requires agents to consult a different rule set

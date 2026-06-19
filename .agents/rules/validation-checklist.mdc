@@ -14,7 +14,7 @@ When finalizing changes or running the validation checklist, always decide valid
 Use this when the change is limited to repository/process documentation or rules, for example:
 
 - `docs/**/*.md`
-- `.cursor/rules/*.mdc`
+- `.agents/rules/*.mdc`
 - `AGENTS.md`
 - `docs/tooling/**/*.md`
 
