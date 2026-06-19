@@ -8,7 +8,7 @@ The product's visual consistency is guaranteed by three layers that reinforce ea
 
 1. **This catalog** — the authoritative list of canonical components and their source paths. Reuse before you create.
 2. **`docs/design/PLAYBOOK.md`** — the operational workflow, anti-patterns, and self-audit checklist for building UI in this repo.
-3. **The `.cursor/rules/*.mdc` rules** (several `alwaysApply: true`) — `design-system-playbook.mdc`, `modal-canonical-pattern.mdc`, `ui-libs-policy.mdc`, `optimistic-client-updates.mdc`, `theme-light-dark.mdc`. These are mandatory constraints, not guidance.
+3. **The `.agents/rules/*.mdc` rules** (several `alwaysApply: true`) — `design-system-playbook.mdc`, `modal-canonical-pattern.mdc`, `ui-libs-policy.mdc`, `optimistic-client-updates.mdc`, `theme-light-dark.mdc`. These are mandatory constraints, not guidance.
 
 **The built component is the source of truth for its own behavior.** For a component that already exists in `src/`, read its code + JSDoc + types for the exact API. This catalog tells you _which_ component to use and _why_; the code tells you _how_. When a component needs a capability it doesn't have, **extend the canonical component in place — never fork it and never roll a parallel one.**
 

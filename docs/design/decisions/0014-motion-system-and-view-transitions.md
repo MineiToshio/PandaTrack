@@ -6,7 +6,7 @@ session: 12-motion-voice (Fase A) — decisiones del gate resueltas 2026-06-15 (
 owner: Sergio Minei
 trigger: S12 eleva el movimiento a sistema sobre S1–S11. Cierra los gaps del research (curvas M3/Apple con nombre, timings de tracking) y resuelve que la view-transition list→detail está stageada pero INERTE (sin trigger). Define la política de cableado con el caveat del componente React canary.
 updates: redesign subproject — motion-system spec + PLAYBOOK (§ motion) + principles §4 (operacionalizada, no reemplazada; historical)
-related: ADR 0001 D4 (toast neutral-undo) · D5 (firma view-transition) · D7 (view-transition de orden), ADR 0013 (skeleton shimmer / reduced-motion), principios de diseño del subproyecto §4 (histórico), borradores de elevación/motion y research de motion-voice del subproyecto (histórico), .cursor/rules/optimistic-client-updates.mdc
+related: ADR 0001 D4 (toast neutral-undo) · D5 (firma view-transition) · D7 (view-transition de orden), ADR 0013 (skeleton shimmer / reduced-motion), principios de diseño del subproyecto §4 (histórico), borradores de elevación/motion y research de motion-voice del subproyecto (histórico), .agents/rules/optimistic-client-updates.mdc
 ---
 
 # ADR 0014 — Sistema de motion + política de View Transitions
@@ -152,4 +152,4 @@ Sergio delegó las decisiones técnicas a Claude ("decide lo más adecuado para 
 - Origen de tokens: borradores de elevación/motion del subproyecto de rediseño · principios de diseño del subproyecto §4 (histórico)
 - ADR 0001 D4/D5/D7 (toast undo, firma VT, view-transition de orden)
 - ADR 0013 (skeleton shimmer / reduced-motion estático)
-- `.cursor/rules/optimistic-client-updates.mdc`
+- `.agents/rules/optimistic-client-updates.mdc`

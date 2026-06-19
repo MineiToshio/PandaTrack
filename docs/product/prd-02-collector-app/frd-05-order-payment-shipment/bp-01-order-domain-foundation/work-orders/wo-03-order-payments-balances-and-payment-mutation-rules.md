@@ -134,7 +134,7 @@ These notes are consumed by [BP-02 · WO-05](../../bp-02-order-workspace-and-lis
 | `src/lib/orders/orderValidation.ts`            | `addPaymentSchema` and `deletePaymentSchema` (extends WO-01 base schemas)                                          |
 | `src/lib/orders/paymentSummary.ts`             | Pure `calculatePaymentSummary(totalCost, payments)` returning `paidAmount`, `remainingAmount`, `paymentPercentage` |
 
-Module paths must be validated against `.cursor/rules/project-structure.mdc` and `.cursor/rules/prisma-data-layer.mdc` at implementation time.
+Module paths must be validated against `.agents/rules/project-structure.mdc` and `.agents/rules/prisma-data-layer.mdc` at implementation time.
 
 ## Unit Tests
 

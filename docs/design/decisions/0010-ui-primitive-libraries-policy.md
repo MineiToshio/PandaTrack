@@ -95,13 +95,13 @@ Dos enfoques posibles:
    - Verificar si la lib está en la lista aprobada.
    - Si NO está, abrir nuevo ADR con justificación. NO instalar la lib hasta aprobación humana explícita.
 
-4. **`.cursor/rules/` deberían reflejar esta política**: agregar regla nueva `ui-libs-policy.mdc` que referencie este ADR. Cualquier `npm install <ui-lib>` requiere auditoría contra este ADR.
+4. **`.agents/rules/` deberían reflejar esta política**: agregar regla nueva `ui-libs-policy.mdc` que referencie este ADR. Cualquier `npm install <ui-lib>` requiere auditoría contra este ADR.
 
-5. **`docs/tooling/cursor/rules.md`** debe incluir la nueva rule en su índice.
+5. **`docs/tooling/agents/rules.md`** debe incluir la nueva rule en su índice.
 
 ## Costo y riesgo
 
-- **Costo de adoptar**: ~30 minutos para crear este ADR + actualizar refs + agregar cursor rule. Negligible.
+- **Costo de adoptar**: ~30 minutos para crear este ADR + actualizar refs + agregar la regla. Negligible.
 - **Riesgo de NO adoptar**: alto. Sin governance, el proyecto puede acumular 5-10 deps UI en 6 meses sin decisión consciente. Refactoring para revertir es costoso.
 
 ## Confianza
@@ -110,8 +110,8 @@ Dos enfoques posibles:
 
 ## Próximos pasos
 
-1. Agregar cursor rule `ui-libs-policy.mdc` en `.cursor/rules/` (requiere flag §7.alpha — fuera del subproyecto de rediseño).
-2. Actualizar `docs/tooling/cursor/rules.md` con la nueva rule.
+1. Agregar la regla `ui-libs-policy.mdc` en `.agents/rules/` (requiere flag §7.alpha — fuera del subproyecto de rediseño).
+2. Actualizar `docs/tooling/agents/rules.md` con la nueva rule.
 3. En Fase B Parte 0 (Modal adaptive): instalar `vaul` y verificar que `@radix-ui/*` queda como transitive only.
 4. Auditar `package.json` después de cada `npm install` en sesiones futuras.
 

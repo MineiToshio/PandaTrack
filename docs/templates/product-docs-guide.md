@@ -65,7 +65,7 @@ Examples:
 
 Prefer a short **Cross-domain notes** (or equivalent) section in an FRD when a dependency spans FRDs, and link to it from the consuming doc.
 
-### GitHub and Cursor commands
+### GitHub and agent commands
 
 Authoring flows such as **Create FRD Package** and **Enrich Work Order Context** must apply these rules whenever new or updated text mentions another FRD's blueprints, work orders, or functional requirements.
 

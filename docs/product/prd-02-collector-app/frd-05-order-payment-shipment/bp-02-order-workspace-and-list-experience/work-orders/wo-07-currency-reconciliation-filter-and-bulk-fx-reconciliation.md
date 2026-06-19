@@ -69,7 +69,7 @@ This work order must not begin until the following slices are fully implemented:
 
 ## Module Structure
 
-Placement must be validated against `.cursor/rules/project-structure.mdc` and `.cursor/rules/react-next-components.mdc` at implementation time.
+Placement must be validated against `.agents/rules/project-structure.mdc` and `.agents/rules/react-next-components.mdc` at implementation time.
 
 ```
 prisma/

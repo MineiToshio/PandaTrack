@@ -38,7 +38,7 @@ This slice establishes the primary / secondary / `More` menu hierarchy used by d
   - `DELIVERED`: primary `Reopen`, with additional secondary / overflow actions; `Delete` remains visible but requires reopening first
   - `CANCELLED`: primary `Reopen`, overflow `Delete`
 - reuse of the existing order-detail split secondary pattern: labeled secondary action plus adjacent chevron overflow trigger, extracted into a shared component instead of duplicated inside orders and deliveries
-- optimistic UI updates per [`optimistic-client-updates`](../../../../../.cursor/rules/optimistic-client-updates.mdc)
+- optimistic UI updates per [`optimistic-client-updates`](../../../../../.agents/rules/optimistic-client-updates.mdc)
 - confirmations for destructive actions (cancel and delete), with delete explicitly described as permanent and not reversible
 - required received-date input for the mark-delivered flow, defaulted to the current date and constrained to past or current dates
 - redirect to the deliveries list route after a successful delete
@@ -77,7 +77,7 @@ This slice establishes the primary / secondary / `More` menu hierarchy used by d
 
 ## Analytics
 
-- PostHog events per action: `delivery_note_saved`, `delivery_marked_delivered`, `delivery_reopened`, `delivery_cancelled`, `delivery_deleted` (final event names to be finalized under [`posthog-events`](../../../../../.cursor/rules/posthog-events.mdc) conventions)
+- PostHog events per action: `delivery_note_saved`, `delivery_marked_delivered`, `delivery_reopened`, `delivery_cancelled`, `delivery_deleted` (final event names to be finalized under [`posthog-events`](../../../../../.agents/rules/posthog-events.mdc) conventions)
 - Each event includes delivery status before/after and counts of affected orders and products
 - The delivered event includes whether a received date was set, but does not include the free-text note value.
 

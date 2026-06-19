@@ -57,8 +57,8 @@ import ModalSheet from "./ModalSheet";
  * - Spec: `docs/design/components.md` + `docs/design/interface-patterns.md` (Modals & overlays).
  * - ADRs: `docs/design/decisions/0008-modal-enhancement.md`,
  *   `docs/design/decisions/0010-ui-primitive-libraries-policy.md`.
- * - Cursor rules: `.cursor/rules/modal-canonical-pattern.mdc`,
- *   `.cursor/rules/ui-libs-policy.mdc`.
+ * - Cursor rules: `.agents/rules/modal-canonical-pattern.mdc`,
+ *   `.agents/rules/ui-libs-policy.mdc`.
  */
 export default function Modal(props: ModalProps) {
   const isMobile = useIsMobile();

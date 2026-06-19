@@ -160,7 +160,7 @@ Shared elements carry unique names per entity, so only the navigated pair morphs
 
 ### 6.2 Optimistic + undo window (neutral-undo toast)
 
-The canonical reversible-mutation pattern (see `.cursor/rules/optimistic-client-updates.mdc`).
+The canonical reversible-mutation pattern (see `.agents/rules/optimistic-client-updates.mdc`).
 
 - **Undo window:** **5s** for light reversibles (reopen, soft-delete of a payment, bulk select);
   **8s** for whole-entity delete/cancel (more data at stake).

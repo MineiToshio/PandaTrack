@@ -41,7 +41,7 @@ owner: Sergio Minei
 ```css
 @import "tailwindcss";
 @source not "../../docs/**";
-@source not "../../.cursor/**";
+@source not "../../.agents/**";
 @source not "../../*.md";
 
 @theme {

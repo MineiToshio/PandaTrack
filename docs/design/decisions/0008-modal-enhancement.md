@@ -327,7 +327,7 @@ Con la arquitectura final (Modal smart wrapper + ModalDialog + ModalSheet + Moda
 3. `PLAYBOOK.md` §1 (Modal) + §3 (patrones canónicos) deben referenciar la arquitectura: callsites usan `<Modal>` (smart wrapper); ModalDialog/ModalSheet son internos.
 4. En Fase B de cualquier módulo: usar `<Modal>` desde día 1 — automáticamente es adaptive (renderiza ModalDialog en desktop, ModalSheet en mobile). Prohibido implementar modales centrados manualmente en mobile.
 5. **Governance de libs UI**: ver ADR 0010 — `vaul` es la única lib UI aprobada como dep top-level. Radix Dialog NO se importa directamente (queda transitivo dentro de Vaul).
-6. Mantener cursor rule `modal-canonical-pattern.mdc` vigente. Extender para mencionar que bottom sheet mobile NO es excepción al canónico — es el mismo componente en variante responsive.
+6. Mantener la regla `modal-canonical-pattern.mdc` vigente. Extender para mencionar que bottom sheet mobile NO es excepción al canónico — es el mismo componente en variante responsive.
 
 ### Fuentes externas (citadas en investigación)
 

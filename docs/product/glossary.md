@@ -48,5 +48,5 @@ Consequences for product surfaces:
 ## Cross-references
 
 - UX voice and writing rules: `docs/design/ux-copy.md`.
-- Repository implementation rules that depend on this glossary: `.cursor/rules/role-copywriting-marketing.mdc`, `.cursor/rules/english-code-only.mdc`.
+- Repository implementation rules that depend on this glossary: `.agents/rules/role-copywriting-marketing.mdc`, `.agents/rules/english-code-only.mdc`.
 - Locale files: `src/i18n/locales/{es,en}/*.json`.

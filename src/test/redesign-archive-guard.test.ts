@@ -53,7 +53,7 @@ function matchesForbidden(line: string): boolean {
 }
 
 // Roots that may legitimately reference the old token, scanned by allowlist below.
-const SCAN_ROOTS = ["docs", "src", ".cursor", ".claude"];
+const SCAN_ROOTS = ["docs", "src", ".agents/rules", ".claude"];
 const SCAN_FILES = ["AGENTS.md", "CLAUDE.md"];
 const SCAN_EXTENSIONS = [".md", ".mdc", ".css", ".ts", ".tsx", ".json", ".html"];
 

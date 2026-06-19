@@ -24,7 +24,7 @@ The visual line is held by three reinforcing layers — none optional:
 
 1. **The spec** — the topic docs in this folder define the WHAT and WHY.
 2. **The playbook** — [PLAYBOOK.md](PLAYBOOK.md) defines the HOW (workflow + anti-patterns + self-audit). Each topic doc also carries its own inline "Rules & anti-patterns" block, so the constraints reach you even when you load only one file.
-3. **The cursor rules** — several `.cursor/rules/*.mdc` (several `alwaysApply: true`) make the above mandatory: `design-system-playbook.mdc`, `modal-canonical-pattern.mdc`, `ui-libs-policy.mdc`, `optimistic-client-updates.mdc`, `theme-light-dark.mdc`.
+3. **The repository rules** — several `.agents/rules/*.mdc` (several `alwaysApply: true`) make the above mandatory: `design-system-playbook.mdc`, `modal-canonical-pattern.mdc`, `ui-libs-policy.mdc`, `optimistic-client-updates.mdc`, `theme-light-dark.mdc`.
 
 ## Why modular, not one file
 

@@ -7,7 +7,7 @@ owner: Sergio Minei
 
 # PandaTrack — Playbook de implementación de UI
 
-> ⚠️ **Lectura obligatoria** antes de implementar / refactorear cualquier UI en `src/`. Reforzado por el cursor rule `.cursor/rules/design-system-playbook.mdc` con `alwaysApply: true`.
+> ⚠️ **Lectura obligatoria** antes de implementar / refactorear cualquier UI en `src/`. Reforzado por la regla `.agents/rules/design-system-playbook.mdc` con `alwaysApply: true`.
 
 Este playbook es la capa **operativa** del sistema de diseño: el flujo obligatorio, los anti-patrones y el checklist de auto-auditoría para construir UI en este repo. El **spec** (tokens, foundations, patterns, motion, states, voice) vive en los demás documentos de `docs/design/` — este playbook **apunta** a ellos como autoridad y no los duplica. Cada regla acá apareció porque algo salió mal una vez. Si la regla ya está acá, **no la re-debates** — implementá según el playbook.
 
@@ -100,7 +100,7 @@ API obligatoria de `<Modal>`: `tone` (`default | destructive | warning | info | 
 
 ARIA: usar `role="alertdialog"` para destructivas (Eliminar, Cancelar pedido), `role="dialog"` para forms/pickers.
 
-Reforzado por cursor rule `.cursor/rules/modal-canonical-pattern.mdc`. Detalle en `docs/design/components.md` y ADR 0008.
+Reforzado por la regla `.agents/rules/modal-canonical-pattern.mdc`. Detalle en `docs/design/components.md` y ADR 0008.
 
 ### Sheet / Drawer (`src/components/modules/Sheet`) — variante mobile del Modal
 
@@ -973,9 +973,9 @@ Fuente de verdad permanente (`docs/design/`):
 - `docs/design/components.md` — mapa de componentes (qué existe, cuándo usar, ruta canónica en `src/`).
 - `docs/design/decisions/` — ADRs aceptados (0001–0014).
 
-Refuerzo (cursor rules):
+Refuerzo (reglas):
 
-- `.cursor/rules/modal-canonical-pattern.mdc` — refuerzo canónico del Modal.
-- `.cursor/rules/design-system-playbook.mdc` — refuerzo de este playbook.
+- `.agents/rules/modal-canonical-pattern.mdc` — refuerzo canónico del Modal.
+- `.agents/rules/design-system-playbook.mdc` — refuerzo de este playbook.
 
 Este sistema lo produjo un subproyecto de rediseño, conservado solo como contexto histórico (no es fuente de reglas ni de specs a seguir). La autoridad permanente es `docs/design/` + el código en `src/`.

@@ -266,7 +266,7 @@ Do **not** use tabs for sequential/top-to-bottom reading, side-by-side compariso
 
 ### The canonical adaptive `<Modal>` (Semantic Depth, ADR 0008)
 
-There is exactly **one** modal component in the app: `<Modal>` (`src/components/modules/Modal/Modal.tsx`). The code is the source of truth for the contract; the component map (`docs/design/components.md`) and the cursor rule `.cursor/rules/modal-canonical-pattern.mdc` reinforce it.
+There is exactly **one** modal component in the app: `<Modal>` (`src/components/modules/Modal/Modal.tsx`). The code is the source of truth for the contract; the component map (`docs/design/components.md`) and the repository rule `.agents/rules/modal-canonical-pattern.mdc` reinforce it.
 
 - **Forbidden:** building a dialog/overlay from an ad-hoc `<Portal>` plus `<div>`, or copying the visual of any legacy modal.
 - The public `<Modal>` is a smart wrapper that renders adaptively by viewport (see [ADR 0008](decisions/0008-modal-enhancement.md)):

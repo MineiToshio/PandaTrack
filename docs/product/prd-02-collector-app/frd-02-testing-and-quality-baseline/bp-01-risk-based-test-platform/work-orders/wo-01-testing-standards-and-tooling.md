@@ -25,7 +25,7 @@ Define the repository testing strategy and establish the base tooling for unit, 
 - Playwright baseline (`playwright.config.ts`, `e2e/_helpers/auth.ts`)
 - design-token guard (`src/test/design-token-guard.test.ts`, `FR-02-07`)
 - shared test factory (`src/test/createTestUserData.ts`)
-- browser-testing patterns rule (`.cursor/rules/browser-testing-patterns.mdc`)
+- browser-testing patterns rule (`.agents/rules/browser-testing-patterns.mdc`)
 
 ## Out of Scope
 

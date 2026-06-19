@@ -122,7 +122,7 @@ Legitimate hardcoded colors (OG images, transactional emails, the `global-error`
 
 ## Browser-Testing Patterns Rule
 
-`.cursor/rules/browser-testing-patterns.mdc` captures conventions established during the redesign phase and applies to any code in `src/**/*.test.tsx`, `src/**/*.test.ts`, or `e2e/**/*.spec.ts`:
+`.agents/rules/browser-testing-patterns.mdc` captures conventions established during the redesign phase and applies to any code in `src/**/*.test.tsx`, `src/**/*.test.ts`, or `e2e/**/*.spec.ts`:
 
 - **Portal queries**: use `screen.*` (not `container.querySelector`) for Modal, Sheet, FilterDrawer, Toast, and any component that portals to `document.body`.
 - **React-aware `dispatchEvent`**: use `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set` before dispatching `input` events on controlled inputs from outside React's render loop; prefer `fireEvent.change` / `userEvent.type` when possible.

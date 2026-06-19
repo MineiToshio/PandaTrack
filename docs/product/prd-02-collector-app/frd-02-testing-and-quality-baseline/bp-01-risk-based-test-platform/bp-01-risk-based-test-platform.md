@@ -30,7 +30,7 @@ Describe how PandaTrack chooses test types, organizes test files, and validates 
 - `e2e/` domain-based specs (7 spec files across landing, auth, app-layout, settings, stores, store-listing, deliveries)
 - colocated `_tests/` folders inside feature modules
 - strategy doc: `docs/development/testing.md`
-- browser-testing patterns rule: `.cursor/rules/browser-testing-patterns.mdc`
+- browser-testing patterns rule: `.agents/rules/browser-testing-patterns.mdc`
 
 ## Architecture Notes
 

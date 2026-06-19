@@ -234,7 +234,7 @@ Item deletions performed during an edit session are **pending until the user sav
 | `src/lib/data/orders/orderQueries.ts`   | Extend with `hasUnpaidBalance` in detail query shape                           |
 | `src/lib/data/orders/orderMutations.ts` | Extend with item create, update, reorder, and delete operations                |
 
-Module paths must be validated against `.cursor/rules/project-structure.mdc` and `.cursor/rules/prisma-data-layer.mdc` at implementation time, as the cursor rules are the authority on file placement.
+Module paths must be validated against `.agents/rules/project-structure.mdc` and `.agents/rules/prisma-data-layer.mdc` at implementation time, as the repository rules are the authority on file placement.
 
 ## Security Notes
 

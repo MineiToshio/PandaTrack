@@ -119,7 +119,7 @@ Delivery links to cancelled deliveries do not block the operation (WO-02 already
 
 ## Module Structure
 
-Placement must be validated against `.cursor/rules/project-structure.mdc` and `.cursor/rules/react-next-components.mdc` at implementation time. The intended layout:
+Placement must be validated against `.agents/rules/project-structure.mdc` and `.agents/rules/react-next-components.mdc` at implementation time. The intended layout:
 
 ```
 src/app/[locale]/(app)/orders/[id]/
@@ -292,7 +292,7 @@ All copy lives in `src/i18n/locales/{locale}/orders.json` under the namespace `o
 
 ## Optimistic Updates
 
-Where `.cursor/rules/optimistic-client-updates.mdc` applies:
+Where `.agents/rules/optimistic-client-updates.mdc` applies:
 
 | Mutation          | Client behavior                                              | Server / revert                                                                                         |
 | ----------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |

@@ -2,7 +2,7 @@
 
 This document defines PandaTrack's voice, tone, and writing rules for in-app copy: empty states, info banners, error messages, helper text, confirmation dialogs, success toasts, and CTAs. It is normative — any new or revised user-facing string is calibrated against it before merge.
 
-It is the companion to `interface-patterns.md` (placement and component choice) and `visual-foundations.md` (visual treatment). For the _copy that lives inside_ state surfaces (empty / error / loading) see `states.md`; for the success micro-moments copy rides on (toasts, achievement celebrations) see `motion.md`. The matching repository rule is `.cursor/rules/role-copywriting-marketing.mdc`.
+It is the companion to `interface-patterns.md` (placement and component choice) and `visual-foundations.md` (visual treatment). For the _copy that lives inside_ state surfaces (empty / error / loading) see `states.md`; for the success micro-moments copy rides on (toasts, achievement celebrations) see `motion.md`. The matching repository rule is `.agents/rules/role-copywriting-marketing.mdc`.
 
 ## The model: one voice, many tones
 
@@ -295,7 +295,7 @@ The product glossary is the source of truth for the canonical names of product c
 - **No synonyms.** Never `orden` for `pedido`; never `envío` for `entrega`. Required pairs include `pedido` ↔ `order`, `entrega` ↔ `delivery`, `tienda` ↔ `store`, `producto` ↔ `product`, `pre-reserva` ↔ `pre-order`, `pago` ↔ `payment`, `moneda base` ↔ `base currency`.
 - Add new product concepts to the glossary in the same change that introduces them.
 
-Enforcement is layered: the glossary fixes the _terms_; this document's matrix (§2) fixes the _tone_ per surface — the dimension the glossary doesn't cover. Both are checked before a new `i18n` key merges. The glossary rule is enforced by `.cursor/rules/role-copywriting-marketing.mdc` and `.cursor/rules/english-code-only.mdc`.
+Enforcement is layered: the glossary fixes the _terms_; this document's matrix (§2) fixes the _tone_ per surface — the dimension the glossary doesn't cover. Both are checked before a new `i18n` key merges. The glossary rule is enforced by `.agents/rules/role-copywriting-marketing.mdc` and `.agents/rules/english-code-only.mdc`.
 
 ---
 
