@@ -285,7 +285,7 @@ Bad (bare reference, no context):
 
 Good (self-contained, paraphrased, with paths and options):
 
-> **Context.** `WO-03` (`docs/product/prd-01-collector-mvp/frd-05-order-payment-shipment/bp-01-order-domain-foundation/work-orders/wo-03-...md`) defined three order states: `DRAFT`, `ACTIVE`, `ARCHIVED`, where `ACTIVE` enables payments and shipments. This slice adds the cancel action from the order detail view.
+> **Context.** `WO-03` (`docs/product/prd-02-collector-app/frd-05-order-payment-shipment/bp-01-order-domain-foundation/work-orders/wo-03-...md`) defined three order states: `DRAFT`, `ACTIVE`, `ARCHIVED`, where `ACTIVE` enables payments and shipments. This slice adds the cancel action from the order detail view.
 > **Decision.** Should cancellation produce a new terminal `CANCELLED` state, or reuse `ARCHIVED` with a reason?
 > **Options.**
 > - A. New terminal `CANCELLED` state (blocks payments/shipments; requires migration and its own badge in the list). *Recommended* for UI and reporting clarity.

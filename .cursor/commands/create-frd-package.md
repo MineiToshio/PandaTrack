@@ -495,10 +495,10 @@ Use repository-relative paths in Epic and ticket bodies.
 
 Examples:
 
-- `docs/product/prd-01-collector-mvp/prd-01-collector-mvp.md`
-- `docs/product/prd-01-collector-mvp/frd-04-store-domain/frd-04-store-domain.md`
-- `docs/product/prd-01-collector-mvp/frd-04-store-domain/bp-01-store-public-trust-system/bp-01-store-public-trust-system.md`
-- `docs/product/prd-01-collector-mvp/frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-01-store-persistence-foundation.md`
+- `docs/product/prd-02-collector-app/prd-02-collector-app.md`
+- `docs/product/prd-02-collector-app/frd-04-store-domain/frd-04-store-domain.md`
+- `docs/product/prd-02-collector-app/frd-04-store-domain/bp-01-store-public-trust-system/bp-01-store-public-trust-system.md`
+- `docs/product/prd-02-collector-app/frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-01-store-persistence-foundation.md`
 
 Optional GitHub links may be added as convenience only when useful, but the path is the source-of-truth reference.
 

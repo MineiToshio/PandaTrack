@@ -91,8 +91,8 @@ Use repository paths as the canonical reference format in GitHub, not branch-spe
 
 Examples:
 
-- `PRD Path: docs/product/prd-01-collector-mvp/prd-01-collector-mvp.md`
-- `FRD Path: docs/product/prd-01-collector-mvp/frd-04-store-domain/frd-04-store-domain.md`
+- `PRD Path: docs/product/prd-02-collector-app/prd-02-collector-app.md`
+- `FRD Path: docs/product/prd-02-collector-app/frd-04-store-domain/frd-04-store-domain.md`
 
 Optional clickable GitHub links may be added as convenience only when they point to a currently valid branch, but the path remains the source-of-truth reference.
 

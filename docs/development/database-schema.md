@@ -77,7 +77,7 @@ Reference for what each table and attribute is for, where it is used, and why it
 - **name / description** – Public-facing identity; description can be empty.
 - **logoUrl** – Logo for business stores; person stores do not show it on the public profile.
 - **storeType** – BUSINESS vs PERSON; drives visibility rules (contact/address/logo visibility).
-- **status** – PENDING, APPROVED, REJECTED, FLAGGED; controls indexing and who can edit (see `docs/product/prd-01-collector-mvp/frd-04-store-domain/frd-04-store-domain.md`).
+- **status** – PENDING, APPROVED, REJECTED, FLAGGED; controls indexing and who can edit (see `docs/product/prd-02-collector-app/frd-04-store-domain/frd-04-store-domain.md`).
 - **visibility** – PUBLIC vs PRIVATE.
 - **isActive** – Whether the store is still operating; inactive stores stay visible but should show a warning.
 - **hasStock / receivesOrders** – Optional hints for discovery and filters.

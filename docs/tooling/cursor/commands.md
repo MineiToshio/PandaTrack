@@ -68,8 +68,8 @@ Creates a new `FRD` package under an existing `PRD` and mirrors it into GitHub u
 
 **You can pass context after the command**, e.g.:
 
-- `/create-frd-package prd-01-collector-mvp Add order tracking with partial payments and split shipments`
-- `/create-frd-package docs/product/prd-00-pre-release-validation Add a public referral flow for the waitlist`
+- `/create-frd-package prd-02-collector-app Add order tracking with partial payments and split shipments`
+- `/create-frd-package docs/product/prd-01-public-landing Add a public referral flow for the waitlist`
 
 **What it does:**
 
@@ -91,7 +91,7 @@ Deepens one existing Work Order through a structured discovery pass before updat
 
 - `/enrich-work-order-context 75`
 - `/enrich-work-order-context WO-06 quiero aterrizar mejor validaciones, UX y seguridad`
-- `/enrich-work-order-context docs/product/prd-01-collector-mvp/frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-06-store-governance-flows.md`
+- `/enrich-work-order-context docs/product/prd-02-collector-app/frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-06-store-governance-flows.md`
 
 **What it does:**
 
