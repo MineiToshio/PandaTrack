@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 /**
- * Cursor hook: beforeShellExecution
+ * Claude Code hook: PreToolUse → Bash
  * Allows most commands; requires user approval for destructive operations
  * (e.g. prisma force-reset, git push --force) before they run.
+ *
+ * Emits the Claude Code PreToolUse schema (`hookSpecificOutput.permissionDecision`);
+ * the legacy `{ permission }` field is not honored by Claude Code.
  */
 
 /** Patterns that require explicit approval. Each has a regex and a short label for the message. */
@@ -32,15 +35,20 @@ async function main() {
 
   if (reason) {
     const out = {
-      permission: "ask",
-      user_message: `This command may cause data loss or overwrite history: "${reason}". Approve only if you intended to run it.`,
-      agent_message: `The command was flagged as destructive (${reason}). The user must approve it before it runs.`,
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "ask",
+        permissionDecisionReason: `This command was flagged as destructive (${reason}) and may cause data loss or overwrite history. Approve only if intended.`,
+      },
     };
     process.stdout.write(JSON.stringify(out) + "\n");
     process.exit(0);
   }
 
-  process.stdout.write(JSON.stringify({ permission: "allow" }) + "\n");
+  const out = {
+    hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "allow" },
+  };
+  process.stdout.write(JSON.stringify(out) + "\n");
   process.exit(0);
 }
 

@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .cursor/hooks/format-after-edit.mjs"
+            "command": "node .claude/hooks/format-after-edit.mjs"
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .cursor/hooks/pre-code-edit.mjs"
+            "command": "node .claude/hooks/pre-code-edit.mjs"
           }
         ]
       },
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .cursor/hooks/allow-shell.mjs"
+            "command": "node .claude/hooks/allow-shell.mjs"
           }
         ]
       },
@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node .cursor/hooks/block-sensitive-read.mjs"
+            "command": "node .claude/hooks/block-sensitive-read.mjs"
           }
         ]
       }

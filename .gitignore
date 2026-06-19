@@ -49,9 +49,9 @@ generated/prisma
 .env.sentry-build-plugin
 .env.local
 
-# cursor mcp local credentials
-.cursor/mcp.json
-.cursor/mcp.local.json
+# local MCP credentials
+.mcp.json
+.mcp.local.json
 
 # claude local settings
 .claude/settings.local.json

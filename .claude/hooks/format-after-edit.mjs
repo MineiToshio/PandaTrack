@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Cursor hook: afterFileEdit
- * Runs Prettier on the file(s) the agent just edited so formatting stays consistent.
- * Reads JSON from stdin (file_path, edits); runs Prettier on file_path; exits 0.
+ * Claude Code hook: PostToolUse → Edit | Write
+ * Runs Prettier on the file the agent just edited so formatting stays consistent.
+ * Reads JSON from stdin (tool_input.file_path); runs Prettier on the file; exits 0.
  */
 
 import fs from "node:fs";
@@ -17,7 +17,7 @@ async function main() {
   const filePath = payload.file_path ?? payload.tool_input?.file_path;
   if (!filePath || typeof filePath !== "string") process.exit(0);
 
-  const projectRoot = process.env.CURSOR_PROJECT_DIR || process.cwd();
+  const projectRoot = process.env.CLAUDE_PROJECT_DIR || process.cwd();
   const configPath = path.join(projectRoot, ".prettierrc.json");
   const resolvedPath = path.isAbsolute(filePath) ? filePath : path.join(projectRoot, filePath);
   if (!fs.existsSync(resolvedPath)) process.exit(0);

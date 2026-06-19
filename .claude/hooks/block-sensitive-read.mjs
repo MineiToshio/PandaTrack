@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 /**
- * Cursor hook: beforeReadFile
+ * Claude Code hook: PreToolUse → Read
  * Blocks the agent from reading sensitive files (.env, .env.local, etc.)
  * to avoid leaking secrets into the model context.
+ *
+ * Emits the Claude Code PreToolUse schema (`hookSpecificOutput.permissionDecision`);
+ * the legacy `{ permission }` field is not honored by Claude Code.
  */
 
 import path from "node:path";
@@ -36,14 +39,20 @@ async function main() {
 
   if (isSensitive(filePath)) {
     const out = {
-      permission: "deny",
-      user_message: "Reading this file is blocked to protect secrets.",
+      hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "deny",
+        permissionDecisionReason: "Reading this file is blocked to protect secrets (.env files are excluded from the model context).",
+      },
     };
     process.stdout.write(JSON.stringify(out) + "\n");
     process.exit(0);
   }
 
-  process.stdout.write(JSON.stringify({ permission: "allow" }) + "\n");
+  const out = {
+    hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "allow" },
+  };
+  process.stdout.write(JSON.stringify(out) + "\n");
   process.exit(0);
 }
 
