@@ -32,14 +32,14 @@ docs/product/
 - prefix by type
 - short number
 - descriptive slug
-- number PRDs by product phase, not only by implementation order
-- number FRDs within each PRD according to the product map for that phase
+- number PRDs by durable product surface/line (e.g. public landing, collector app), not by temporary phase, release order, or maturity stage like "MVP"
+- number FRDs within each PRD according to the product map for that surface
 - keep blueprint and work-order numbering local to their parent folder when that improves readability
 
 Examples:
 
-- `prd-00-pre-release-validation`
-- `prd-01-collector-mvp`
+- `prd-01-public-landing`
+- `prd-02-collector-app`
 - `frd-01-account-access-and-recovery`
 - `frd-04-store-domain`
 - `bp-01-store-public-trust-system`

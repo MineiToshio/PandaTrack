@@ -48,7 +48,7 @@ const MAX_CHIP_SLOTS = 4;
  * Avatar 56px (accent tint for BUSINESS, muted for PERSON) + identity + categories + import countries + stats.
  * Anchored — the entire card is a clickable link to the store detail.
  *
- * Visual contract: see the Stores prototype at `docs/product/prd-01-collector-mvp/frd-04-store-domain/prototype/store-domain.html`
+ * Visual contract: see the Stores prototype at `docs/product/prd-02-collector-app/frd-04-store-domain/prototype/store-domain.html`
  * and the Velvet design system at `docs/design/` (`components.md`).
  */
 export default function StoreCard({ store, locale, labels, viewerOrderCount, className }: StoreCardProps) {

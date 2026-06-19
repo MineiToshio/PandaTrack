@@ -8,8 +8,8 @@ Use this index to find documentation by domain.
 
 - `docs/product/README.md`: index for product docs
 - `docs/product/README.md`: product-documentation index and hierarchy
-- `docs/product/prd-00-pre-release-validation/prd-00-pre-release-validation.md`: pre-release public validation PRD
-- `docs/product/prd-01-collector-mvp/prd-01-collector-mvp.md`: collector MVP PRD
+- `docs/product/prd-01-public-landing/prd-01-public-landing.md`: pre-release public validation PRD
+- `docs/product/prd-02-collector-app/prd-02-collector-app.md`: collector app PRD
 
 ## Process
 

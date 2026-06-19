@@ -5,7 +5,7 @@ status: accepted
 session: Round 1 / FRD-07 alignment closure (2026-06-13) — formalizes a pattern shipped in S5 (ShellAccountMenu) and S8 (Settings) without a prior ADR
 owner: Sergio Minei
 trigger: FRD ↔ rediseño delta audit flagged that the destructive (red) styling of sign-out in `ShellAccountMenu.tsx` had no ADR and no FRD reference (Round 1 flagged item #3 / delta D1-01)
-updates: docs/product/prd-01-collector-mvp/frd-01-account-access-and-recovery/frd-01-account-access-and-recovery.md (plus the redesign subproject's Round-1 delta audit, historical)
+updates: docs/product/prd-02-collector-app/frd-01-account-access-and-recovery/frd-01-account-access-and-recovery.md (plus the redesign subproject's Round-1 delta audit, historical)
 related: ADR 0001 D3 (disabled sin opacity), ADR 0011 (mobile detail secondary actions — destructive row at end, red), ADR 0008 (Modal canonical — confirm dialogs)
 ---
 

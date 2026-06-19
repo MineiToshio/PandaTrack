@@ -44,7 +44,7 @@ function parseIsoDate(value: string): Date | null {
 /**
  * Inline "Nuevo pago" panel rendered inside the Pagos aside card.
  *
- * Visual contract: see the Orders prototype at `docs/product/prd-01-collector-mvp/frd-05-order-payment-shipment/prototype/order-payment-shipment.html`.
+ * Visual contract: see the Orders prototype at `docs/product/prd-02-collector-app/frd-05-order-payment-shipment/prototype/order-payment-shipment.html`.
  * The `.pay-inline-panel` treatment:
  *   - Negative side margins (`-18px` mobile / `-22px` ≥768px) so the panel BLEEDS to
  *     the edges of the parent `.card.elevated` and the `border-top` spans 100% width

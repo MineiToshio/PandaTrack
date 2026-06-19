@@ -34,7 +34,7 @@ export type StoreHeroProps = {
  *  - person — User-icon avatar + "Persona" chip + info note
  *
  * Layout: avatar (s56) + identity column + rating block (right-aligned) → description → chips row.
- * Visual contract: see the Stores prototype at `docs/product/prd-01-collector-mvp/frd-04-store-domain/prototype/store-domain.html`
+ * Visual contract: see the Stores prototype at `docs/product/prd-02-collector-app/frd-04-store-domain/prototype/store-domain.html`
  * and the Velvet design system at `docs/design/`.
  */
 export default function StoreHero({ store, labels, className }: StoreHeroProps) {

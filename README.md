@@ -48,7 +48,7 @@ The first version focuses on the "discover → buy → wait → receive" workflo
 - Budget setup and alerts.
 - Deeper analytics and smarter reminders.
 
-See [docs/product/README.md](docs/product/README.md) for the active product-documentation tree, including [docs/product/prd-00-pre-release-validation/prd-00-pre-release-validation.md](docs/product/prd-00-pre-release-validation/prd-00-pre-release-validation.md) and [docs/product/prd-01-collector-mvp/prd-01-collector-mvp.md](docs/product/prd-01-collector-mvp/prd-01-collector-mvp.md).
+See [docs/product/README.md](docs/product/README.md) for the active product-documentation tree, including [docs/product/prd-01-public-landing/prd-01-public-landing.md](docs/product/prd-01-public-landing/prd-01-public-landing.md) and [docs/product/prd-02-collector-app/prd-02-collector-app.md](docs/product/prd-02-collector-app/prd-02-collector-app.md).
 
 ---
 

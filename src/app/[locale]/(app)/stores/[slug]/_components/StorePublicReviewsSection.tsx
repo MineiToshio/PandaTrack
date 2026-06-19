@@ -29,7 +29,7 @@ type StorePublicReviewsSectionProps = {
 
 /**
  * Public reviews block for the store detail page.
- * Visual contract: see the Stores prototype at `docs/product/prd-01-collector-mvp/frd-04-store-domain/prototype/store-domain.html`
+ * Visual contract: see the Stores prototype at `docs/product/prd-02-collector-app/frd-04-store-domain/prototype/store-domain.html`
  * and the Velvet design system at `docs/design/`. Reviews subcards:
  *   - Big aggregate header (38px number + 20px stars + count copy).
  *   - Inline accent-tinted composer when the viewer hasn't reviewed yet.
@@ -359,7 +359,7 @@ type InlineReviewComposerProps = {
 
 /**
  * Compact accent-tinted review composer (see the Stores prototype at
- * `docs/product/prd-01-collector-mvp/frd-04-store-domain/prototype/store-domain.html`):
+ * `docs/product/prd-02-collector-app/frd-04-store-domain/prototype/store-domain.html`):
  *   - Small heading "Comparte tu reseña pública"
  *   - Click-to-rate stars
  *   - 2-row textarea with placeholder

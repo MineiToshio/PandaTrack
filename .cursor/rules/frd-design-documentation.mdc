@@ -107,5 +107,5 @@ adapt the router's default/fallback screen to the FRD's home screen (the slice h
 
 ## Reference implementation
 
-`docs/product/prd-01-collector-mvp/frd-08-delivery-management/` (its `fdd-08-delivery-management.md`
+`docs/product/prd-02-collector-app/frd-08-delivery-management/` (its `fdd-08-delivery-management.md`
 + `prototype/delivery-management.html`) is the pilot and canonical example of this convention.

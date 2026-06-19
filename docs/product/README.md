@@ -13,24 +13,26 @@ This folder is the product source of truth for PandaTrack.
 
 It follows a hierarchical 80/90-style documentation model:
 
-- `PRD` defines the product or release
+- `PRD` defines a durable product surface or line (a public landing, an app), not a temporary phase or a maturity stage like "MVP"
 - each `PRD` contains one or more `FRDs`
 - each `FRD` contains one or more `Blueprints`
 - each `Blueprint` contains its `Work Orders`
 
 ## Active Product Tree
 
-- `prd-00-pre-release-validation/`
-  - Documents the public pre-release phase used to validate demand, collect waitlist interest, and establish public-web foundations.
-  - Covers the landing, waitlist capture, analytics, observability, localization, SEO, and legal transparency layers that shipped before the collector workspace.
-- `prd-01-collector-mvp/`
-  - Documents the authenticated collector product.
-  - Covers account access and recovery, testing baseline, app shell, store domain, and draft collector workflow domains that feed the later dashboard experience.
+PandaTrack is one product with two durable surfaces, one PRD each. They coexist; they are not sequential phases.
+
+- `prd-01-public-landing/`
+  - Documents PandaTrack's public-facing surface: the landing, early-interest/waitlist capture, and the public-web foundations.
+  - Covers the landing, waitlist capture, analytics, observability, localization, SEO, and legal transparency layers. It began as a pre-release validation surface and remains the public entry point.
+- `prd-02-collector-app/`
+  - Documents the authenticated collector application. Its current release is an MVP, but the PRD identity is the app, not the MVP stage.
+  - Covers account access and recovery, testing baseline, app shell, store domain, and the collector workflow domains that feed the dashboard experience.
 
 ## Naming Standard
 
-- `prd-00-pre-release-validation`
-- `prd-01-collector-mvp`
+- `prd-01-public-landing`
+- `prd-02-collector-app`
 - `frd-01-account-access-and-recovery`
 - `frd-04-store-domain`
 - `bp-01-collector-workspace-shell`
