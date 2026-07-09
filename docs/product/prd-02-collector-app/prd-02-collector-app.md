@@ -14,7 +14,7 @@ children:
   - FRD-06
   - FRD-07
   - FRD-08
-last_updated: 2026-06-18
+last_updated: 2026-06-20
 ---
 
 # PRD-02 PandaTrack Collector App
@@ -101,8 +101,8 @@ A collector with lower order volume who still wants:
 4. Order tracking
 5. Payment tracking
 6. Delivery tracking
-7. Dashboard clarity
-8. Reminders and alerts
+7. Dashboard clarity ([`FRD-06`](frd-06-dashboard/frd-06-dashboard.md) is dashboard-only)
+8. Reminders and alerts (planned as a separate upcoming FRD delivered as a PWA with Web Push; this is why reminders are no longer bundled into the dashboard FRD)
 9. User settings required to support the above
 
 ## Scope
@@ -188,7 +188,7 @@ A collector with lower order volume who still wants:
 2. User can review their username, profile image, and account entry options.
 3. User can update personal profile fields and account credentials according to the linked auth method.
 4. User can define country, base currency, collected product types, and budget defaults.
-5. The store listing can open with defaults aligned to the user's saved preferences when the user enters it from private shell navigation ([`FR-07-28`](frd-07-user-settings/frd-07-user-settings.md#functional-requirements); **FRD-07** · [BP-01](frd-07-user-settings/bp-01-user-settings-identity-and-preferences/bp-01-user-settings-identity-and-preferences.md) · [WO-06 _store-entry-defaults-from-user-preferences_](frd-07-user-settings/bp-01-user-settings-identity-and-preferences/work-orders/wo-06-store-entry-defaults-from-user-preferences.md)). Other surfaces that link to the same listing should follow the same URL rule once they exist ([FRD-06 cross-domain notes](frd-06-dashboard-reminders/frd-06-dashboard-reminders.md#cross-domain-notes)).
+5. The store listing can open with defaults aligned to the user's saved preferences when the user enters it from private shell navigation ([`FR-07-28`](frd-07-user-settings/frd-07-user-settings.md#functional-requirements); **FRD-07** · [BP-01](frd-07-user-settings/bp-01-user-settings-identity-and-preferences/bp-01-user-settings-identity-and-preferences.md) · [WO-06 _store-entry-defaults-from-user-preferences_](frd-07-user-settings/bp-01-user-settings-identity-and-preferences/work-orders/wo-06-store-entry-defaults-from-user-preferences.md)). Other surfaces that link to the same listing should follow the same URL rule once they exist ([FRD-06 cross-domain notes](frd-06-dashboard/frd-06-dashboard.md#cross-domain-notes)).
 
 ### Receive reminders
 
@@ -233,6 +233,6 @@ A collector with lower order volume who still wants:
 - `docs/product/prd-02-collector-app/frd-03-collector-app-shell/frd-03-collector-app-shell.md`
 - `docs/product/prd-02-collector-app/frd-04-store-domain/frd-04-store-domain.md`
 - `docs/product/prd-02-collector-app/frd-05-order-payment-shipment/frd-05-order-payment-shipment.md`
-- `docs/product/prd-02-collector-app/frd-06-dashboard-reminders/frd-06-dashboard-reminders.md`
+- `docs/product/prd-02-collector-app/frd-06-dashboard/frd-06-dashboard.md`
 - `docs/product/prd-02-collector-app/frd-07-user-settings/frd-07-user-settings.md`
 - `docs/product/prd-02-collector-app/frd-08-delivery-management/frd-08-delivery-management.md`

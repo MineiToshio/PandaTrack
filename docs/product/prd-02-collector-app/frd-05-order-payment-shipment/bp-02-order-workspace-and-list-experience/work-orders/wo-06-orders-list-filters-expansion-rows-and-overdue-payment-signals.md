@@ -54,7 +54,7 @@ WO-06 does not introduce any Prisma migration. It adds `getOrdersList` to the ex
 - Order create and edit form ([WO-04](./wo-04-order-create-and-edit-form-with-spreadsheet-style-item-entry.md))
 - Order detail view ([WO-05](./wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md))
 - Delivery allocation screens ([FRD-08](../../../frd-08-delivery-management/frd-08-delivery-management.md))
-- Dashboard rollups ([FRD-06](../../../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md))
+- Dashboard rollups ([FRD-06](../../../frd-06-dashboard/frd-06-dashboard.md))
 - `Needs currency update` filter and bulk FX reconciliation (`FR-05-36` through `FR-05-38`) — planned as future `WO-07` under `BP-02` once FRD-07 base-currency settings are complete
 - Rate limiting
 - Prisma migrations

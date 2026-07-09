@@ -24,7 +24,7 @@ Build the private-shell `Stores` navigation target URL from the authenticated us
 - **Partial preferences:** include **only** query params for preference dimensions the user has **saved**; omit missing dimensions entirely (no placeholder params).
 - **Catalog sanity:** when resolving the user's saved country or product-type keys at link-build time, **omit** any value that does not exist in the **active** `Country` / `StoreProductType` catalog used by the listing (inactive types, removed codes, etc.).
 - **Shell re-entry:** each activation of the shell `Stores` nav item builds the href from **current** saved preferences again, even if the user had previously navigated to a bare `/{locale}/stores` or different filters (the shell link is not a no-op based on current pathname).
-- Doc alignment with store-domain listing behavior and with FRD-06 for **future** dashboard CTAs ([FRD-06 · Cross-domain notes](../../../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md#cross-domain-notes); see Assumptions).
+- Doc alignment with store-domain listing behavior and with FRD-06 for **future** dashboard CTAs ([FRD-06 · Cross-domain notes](../../../frd-06-dashboard/frd-06-dashboard.md#cross-domain-notes); see Assumptions).
 
 ## Out of Scope
 
@@ -44,7 +44,7 @@ Build the private-shell `Stores` navigation target URL from the authenticated us
 ## Assumptions
 
 - **Preferred country** maps to the listing filter **`country`** (store country), not `importCountry`, matching `FR-07-28` wording.
-- **MVP implementation** touches only shell navigation surfaces that already link to `ROUTES.stores`. When FRD-06 introduces dashboard (or other) links to the same listing, those links **must** reuse the **same URL-building helper** and rules; the reminder lives in [FRD-06 · Cross-domain notes](../../../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md#cross-domain-notes) so the dashboard slice does not ship a divergent pattern.
+- **MVP implementation** touches only shell navigation surfaces that already link to `ROUTES.stores`. When FRD-06 introduces dashboard (or other) links to the same listing, those links **must** reuse the **same URL-building helper** and rules; the reminder lives in [FRD-06 · Cross-domain notes](../../../frd-06-dashboard/frd-06-dashboard.md#cross-domain-notes) so the dashboard slice does not ship a divergent pattern.
 - `WO-05` (and `WO-01` persistence) has landed so preferred country and product-type junction data are readable for the session user.
 
 ## UX Notes

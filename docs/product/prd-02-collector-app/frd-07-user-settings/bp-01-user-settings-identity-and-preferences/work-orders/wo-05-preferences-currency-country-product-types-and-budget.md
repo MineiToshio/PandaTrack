@@ -58,7 +58,7 @@ Implement the `Preferences` section of `/settings` so each collector can save op
 
 ## Cross-domain notes
 
-- **Orders** already persist **order currency** and optional **exchange rate into the user's base currency at save time** (`FR-05-14`–`FR-05-16`, `BR-05-07` in [`FRD-05`](../../../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md#functional-requirements)). Changing **base currency** in settings does **not** rewrite old orders; **dashboard** rollups must follow [`FR-06-13`](../../../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md#functional-requirements) ([`FRD-06`](../../../frd-06-dashboard-reminders/frd-06-dashboard-reminders.md)) so totals in the **new** base currency do not silently mix stale conversion context.
+- **Orders** already persist **order currency** and optional **exchange rate into the user's base currency at save time** (`FR-05-14`–`FR-05-16`, `BR-05-07` in [`FRD-05`](../../../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md#functional-requirements)). Changing **base currency** in settings does **not** rewrite old orders; **dashboard** rollups must follow [`FR-06-13`](../../../frd-06-dashboard/frd-06-dashboard.md#functional-requirements) ([`FRD-06`](../../../frd-06-dashboard/frd-06-dashboard.md)) so totals in the **new** base currency do not silently mix stale conversion context.
 - **Upcoming payments** and order surfaces should continue to show amounts in **order currency** where that is the faithful representation.
 
 ## Assumptions
