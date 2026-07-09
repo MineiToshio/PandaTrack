@@ -3,12 +3,12 @@ id: WO-02
 type: WORK_ORDER
 slug: cash-and-obligations-zone
 title: Cash and Obligations Zone
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0016
 source_issue: 107
-implementation_status: PLANNED
+implementation_status: IN_PROGRESS
 last_updated: 2026-07-09
 ---
 

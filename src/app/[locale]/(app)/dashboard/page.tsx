@@ -1,11 +1,14 @@
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
-import { LayoutDashboard } from "lucide-react";
-import Button from "@/components/core/Button/Button";
-import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import Heading from "@/components/core/Heading";
+import { getSession } from "@/lib/auth/auth-server";
+import { getDashboardData } from "@/lib/data/dashboard/dashboardQueries";
+import { POSTHOG_EVENTS } from "@/lib/constants";
 import { buildPageMetadata } from "@/lib/seo";
-import AppComingSoonCard from "../_components/AppComingSoonCard";
-import AppPlaceholderPage from "../_components/AppPlaceholderPage";
+import DashboardBudgetZone from "./_components/DashboardBudgetZone";
+import DashboardCashZone from "./_components/DashboardCashZone";
+import DashboardUpcomingPaymentsZone from "./_components/DashboardUpcomingPaymentsZone";
+import DashboardZoneView from "./_components/DashboardZoneView";
 
 type DashboardPageProps = {
   params: Promise<{ locale: string }>;
@@ -24,47 +27,48 @@ export async function generateMetadata({ params }: DashboardPageProps): Promise<
 
 export default async function DashboardPage({ params }: DashboardPageProps) {
   const { locale } = await params;
+  const session = await getSession();
 
-  const [tDashboard, tLayout] = await Promise.all([
+  // The (app) layout guarantees an authenticated session before this renders; narrow for types.
+  if (!session) {
+    return null;
+  }
+
+  const [t, data] = await Promise.all([
     getTranslations({ locale, namespace: "dashboard" }),
-    getTranslations({ locale, namespace: "appLayout" }),
+    getDashboardData(session.user.id),
   ]);
 
+  const displayName = session.user.name?.trim();
+  const greeting = displayName ? t("page.greeting", { name: displayName }) : t("page.greetingGuest");
+
   return (
-    <AppPlaceholderPage
-      eyebrow={tLayout("pageHero.eyebrow")}
-      title={tDashboard("title")}
-      description={tDashboard("welcome")}
-    >
-      <AppComingSoonCard
-        icon={LayoutDashboard}
-        title={tDashboard("placeholder.title")}
-        description={tDashboard("placeholder.description")}
-        actions={
-          <>
-            <Button
-              as="a"
-              href={`/${locale}${ROUTES.orders}`}
-              variant="primary"
-              size="md"
-              data-ph-event={POSTHOG_EVENTS.APP_SHELL.PLACEHOLDER_CTA_CLICKED}
-              data-ph-props={JSON.stringify({ source: "dashboard", target: "orders" })}
-            >
-              {tDashboard("placeholder.ctaOrders")}
-            </Button>
-            <Button
-              as="a"
-              href={`/${locale}${ROUTES.stores}`}
-              variant="ghost"
-              size="md"
-              data-ph-event={POSTHOG_EVENTS.APP_SHELL.PLACEHOLDER_CTA_CLICKED}
-              data-ph-props={JSON.stringify({ source: "dashboard", target: "stores" })}
-            >
-              {tDashboard("placeholder.ctaStores")}
-            </Button>
-          </>
-        }
-      />
-    </AppPlaceholderPage>
+    <div className="flex flex-col gap-6">
+      <DashboardZoneView event={POSTHOG_EVENTS.DASHBOARD.CASH_ZONE_VIEWED} />
+
+      <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <Heading as="h1" size="sm">
+          {greeting}
+        </Heading>
+        {data.baseCurrencyCode && (
+          <span className="[font-size:13px] whitespace-nowrap [color:var(--text-muted)]">
+            {t("page.baseCurrencyReminder", { currency: data.baseCurrencyCode })}
+          </span>
+        )}
+      </header>
+
+      <div className="grid grid-cols-1 gap-[18px] lg:grid-cols-12 lg:items-start lg:gap-5">
+        <div className="lg:col-span-8">
+          <DashboardCashZone data={data} locale={locale} />
+        </div>
+        {/* Right column of the top row. The arrival-punctuality card joins this stack later. */}
+        <div className="flex flex-col gap-[18px] lg:col-span-4">
+          <DashboardBudgetZone data={data} locale={locale} />
+        </div>
+        <div className="lg:col-span-6">
+          <DashboardUpcomingPaymentsZone data={data} locale={locale} />
+        </div>
+      </div>
+    </div>
   );
 }

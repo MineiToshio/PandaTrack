@@ -3,13 +3,13 @@ id: WO-03
 type: WORK_ORDER
 slug: budget-consumption-zone
 title: Budget Consumption Zone
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0016
 source_issue: 108
-implementation_status: PLANNED
-last_updated: 2026-06-20
+implementation_status: IN_PROGRESS
+last_updated: 2026-07-09
 ---
 
 # WO-03 Budget Consumption Zone
@@ -60,3 +60,10 @@ Implement the dashboard's budget zone end-to-end: how much the collector has dis
 
 - PostHog event when the budget zone is viewed
 - PostHog event when the configure-budget CTA is clicked
+
+## Implementation Decisions
+
+- **Thresholds compare exact minor units, not the display percentage.** The displayed percentage floors (`Math.floor`), so a cycle at 100.4% of budget would have rounded down into the amber band. Status is therefore resolved as `over` when `consumedMinor > budgetAmountMinor`, and `warning` when `consumedMinor * 100 >= budgetAmountMinor * 80`. A cycle can legitimately display "100%" while showing the red over-budget state.
+- **The non-color cue for over-budget** is a diagonal hatch layered over the red fill, plus a `TriangleAlert` chip with a text label and a caption explaining the hatch. Each band's chip pairs an icon with a label, so no state relies on hue alone.
+- **The zone names the configured reset day**, not the current cycle's clamped start day: a collector who set day 31 reads "day 31" even in a cycle that started on the 30th of a short month. The aggregation layer therefore exposes `budget.resetDayOfMonth` alongside `cycleStart`. A null reset day renders as "the last day of the month".
+- **The `FR-06-13` partial signal is a muted caption, not the `fx-warning` banner.** The FDD scopes that banner to the cash and collection zones; this Work Order still requires a partial note when the cycle disbursement comes from a partial rollup, so the budget zone renders a quiet caption when `budget.consumedIsPartial` is true.

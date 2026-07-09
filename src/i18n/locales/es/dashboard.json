@@ -5,10 +5,63 @@
   },
   "title": "Panel",
   "welcome": "Tu colección, de un vistazo.",
-  "placeholder": {
-    "title": "Tu panel está en construcción",
-    "description": "Pronto verás aquí cuánto llevas pagado, qué está en camino y qué pagos se acercan. Mientras tanto, registra tus pedidos para tener todo listo.",
-    "ctaOrders": "Ver mis pedidos",
-    "ctaStores": "Explorar tiendas"
+  "page": {
+    "greeting": "Hola, {name}",
+    "greetingGuest": "Hola",
+    "baseCurrencyReminder": "todo en {currency}"
+  },
+  "cash": {
+    "eyebrow": "Caja y obligaciones",
+    "title": "Lo que tienes que tener listo",
+    "seeOrders": "Ver pedidos",
+    "currentMonthLabel": "A pagar este mes",
+    "overdueNote": "Incluye {amount} ya atrasados de pedidos cuya llegada estimada ya pasó.",
+    "upcomingMonthsLabel": "Próximos meses",
+    "upcomingMonthsHelper": "Obligaciones futuras por fecha estimada de pago.",
+    "upcomingMonthsChartLabel": "Obligaciones de los próximos meses: {summary}",
+    "upcomingMonthsEmpty": "Sin obligaciones futuras con fecha estimada.",
+    "paidVsPendingLabel": "Pagado vs pendiente",
+    "committedLine": "Comprometido {amount} en toda la colección.",
+    "paidVsPendingChartLabel": "Del total comprometido {committed}, pagado {paid} y pendiente {pending}",
+    "paidLegend": "Pagado {amount}",
+    "pendingLegend": "Pendiente · deuda viva {amount}",
+    "noDateNote": "Además, {amount} en pedidos sin fecha de llegada estimada, informativo y fuera de los totales por mes.",
+    "partialWarning": "{count, plural, one {# pedido guardó su tipo de cambio con otra moneda base} other {# pedidos guardaron su tipo de cambio con otra moneda base}}. Sus saldos quedan fuera de estos totales hasta reconciliarlos, así que las cifras son parciales.",
+    "reconcileLink": "Reconciliar tipo de cambio",
+    "empty": {
+      "title": "No debes nada por ahora",
+      "body": "Cuando registres pedidos con pagos pendientes, verás aquí lo que te toca tener listo cada mes: totales, atrasos y próximos vencimientos."
+    }
+  },
+  "budget": {
+    "eyebrow": "Presupuesto",
+    "title": "Este ciclo",
+    "titleUnset": "Aún sin definir",
+    "cycleHelper": "Consumido en el ciclo actual (reinicia el día {day}).",
+    "cycleHelperLastDay": "Consumido en el ciclo actual (reinicia el último día del mes).",
+    "meterAriaOk": "{percent}% del presupuesto consumido",
+    "meterAriaOver": "{percent}% del presupuesto consumido, excedido",
+    "chipUnder": "{percent}% · vas bien",
+    "chipWarning": "{percent}% · cerca del tope",
+    "chipOver": "{percent}% · pasado",
+    "remaining": "Quedan {amount}",
+    "overAmount": "{amount} de más",
+    "overHatchCaption": "La trama diagonal marca el exceso aunque no distingas el color.",
+    "partialNote": "Solo cuenta pedidos con tipo de cambio reconciliado, así que la cifra es parcial.",
+    "notConfiguredBody": "Pon un tope mensual y te avisamos con color cuando te acerques. Sin presupuesto no hay porcentaje que mostrar.",
+    "firstRunBody": "Aún no configuraste tu presupuesto mensual. Pon un tope y te avisamos con color cuando te acerques.",
+    "configureCta": "Configurar presupuesto"
+  },
+  "upcomingPayments": {
+    "eyebrow": "Próximos pagos",
+    "title": "Lo que toca pagar",
+    "dueSoon": "vence pronto",
+    "dueOn": "vence {date}",
+    "seeOrders": "Ver pedidos",
+    "rowLabel": "{store}, pedido {code}, saldo {amount}",
+    "empty": {
+      "title": "No tienes pagos próximos",
+      "body": "Cuando tengas pedidos con saldo y fecha estimada de llegada, aquí verás qué pagar y cuándo."
+    }
   }
 }

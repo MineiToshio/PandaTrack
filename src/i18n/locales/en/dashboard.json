@@ -5,10 +5,63 @@
   },
   "title": "Dashboard",
   "welcome": "Your collection, at a glance.",
-  "placeholder": {
-    "title": "Your dashboard is in the works",
-    "description": "Soon you'll see how much you've paid, what's on the way, and which payments are coming up. In the meantime, log your orders so everything is ready.",
-    "ctaOrders": "View my orders",
-    "ctaStores": "Explore stores"
+  "page": {
+    "greeting": "Hi, {name}",
+    "greetingGuest": "Hi",
+    "baseCurrencyReminder": "all in {currency}"
+  },
+  "cash": {
+    "eyebrow": "Cash & obligations",
+    "title": "What you need to have ready",
+    "seeOrders": "View orders",
+    "currentMonthLabel": "Due this month",
+    "overdueNote": "Includes {amount} already overdue from orders whose estimated arrival has passed.",
+    "upcomingMonthsLabel": "Coming months",
+    "upcomingMonthsHelper": "Upcoming obligations by estimated payment date.",
+    "upcomingMonthsChartLabel": "Obligations for the coming months: {summary}",
+    "upcomingMonthsEmpty": "No upcoming obligations with an estimated date.",
+    "paidVsPendingLabel": "Paid vs pending",
+    "committedLine": "Committed {amount} across your whole collection.",
+    "paidVsPendingChartLabel": "Of the committed total {committed}, paid {paid} and pending {pending}",
+    "paidLegend": "Paid {amount}",
+    "pendingLegend": "Pending · live debt {amount}",
+    "noDateNote": "Plus {amount} in orders with no estimated arrival date, informational and outside the monthly totals.",
+    "partialWarning": "{count, plural, one {# order saved its exchange rate against a different base currency} other {# orders saved their exchange rate against a different base currency}}. Their balances stay out of these totals until you reconcile them, so the figures are partial.",
+    "reconcileLink": "Reconcile exchange rate",
+    "empty": {
+      "title": "You owe nothing right now",
+      "body": "Once you log orders with pending payments, you'll see here what you need to have ready each month: totals, overdue amounts, and upcoming due dates."
+    }
+  },
+  "budget": {
+    "eyebrow": "Budget",
+    "title": "This cycle",
+    "titleUnset": "Not set yet",
+    "cycleHelper": "Spent in the current cycle (resets on day {day}).",
+    "cycleHelperLastDay": "Spent in the current cycle (resets on the last day of the month).",
+    "meterAriaOk": "{percent}% of budget used",
+    "meterAriaOver": "{percent}% of budget used, over budget",
+    "chipUnder": "{percent}% · on track",
+    "chipWarning": "{percent}% · close to your cap",
+    "chipOver": "{percent}% · over",
+    "remaining": "{amount} left",
+    "overAmount": "{amount} over",
+    "overHatchCaption": "The diagonal hatch marks the overage even if you can't tell the colors apart.",
+    "partialNote": "Only orders with a reconciled exchange rate count, so this figure is partial.",
+    "notConfiguredBody": "Set a monthly cap and we'll warn you with color as you get close. Without a budget there's no percentage to show.",
+    "firstRunBody": "You haven't set a monthly budget yet. Set a cap and we'll warn you with color as you get close.",
+    "configureCta": "Set up budget"
+  },
+  "upcomingPayments": {
+    "eyebrow": "Upcoming payments",
+    "title": "What's next to pay",
+    "dueSoon": "due soon",
+    "dueOn": "due {date}",
+    "seeOrders": "View orders",
+    "rowLabel": "{store}, order {code}, balance {amount}",
+    "empty": {
+      "title": "No upcoming payments",
+      "body": "When you have orders with a balance and an estimated arrival date, you'll see what to pay and when."
+    }
   }
 }

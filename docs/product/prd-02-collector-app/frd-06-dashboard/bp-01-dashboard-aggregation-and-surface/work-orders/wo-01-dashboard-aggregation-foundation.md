@@ -3,13 +3,13 @@ id: WO-01
 type: WORK_ORDER
 slug: dashboard-aggregation-foundation
 title: Dashboard Aggregation Foundation
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0016
 source_issue: 106
-implementation_status: PLANNED
-last_updated: 2026-06-20
+implementation_status: IN_PROGRESS
+last_updated: 2026-07-09
 ---
 
 # WO-01 Dashboard Aggregation Foundation
@@ -47,7 +47,7 @@ Establish the read-only dashboard data layer that every dashboard zone depends o
 
 ## Computation Contract
 
-- "a pagar este mes" = Σ outstanding of orders with `expectedDeliveryFrom` in the current calendar month + Σ outstanding of all overdue orders (`expectedDeliveryFrom < today`, balance > 0), folded into the current month (`FR-06-02`, `BR-06-01`)
+- "a pagar este mes" = Σ outstanding of orders with `expectedDeliveryFrom` in the current calendar month + Σ outstanding of all overdue orders (`expectedDeliveryFrom < today`, balance > 0), folded into the current month (`FR-06-02`, `BR-06-01`); the overdue portion is also exposed on its own so the cash zone can name how much is already owed
 - forward months = per-month Σ outstanding bucketed by `expectedDeliveryFrom` month (`FR-06-03`)
 - deuda viva total = Σ outstanding across all non-cancelled orders (`FR-06-04`)
 - deuda sin fecha = Σ outstanding of orders with no `expectedDeliveryFrom`, returned separately and excluded from the dated totals (`FR-06-05`, `BR-06-02`)
@@ -73,3 +73,13 @@ This foundation slice is exempt from the "must include an E2E acceptance path" r
 - Reuse existing order/payment derivations from [`FRD-05`](../../../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md) and persisted `OrderItem.deliveryState` from [`FRD-08`](../../../frd-08-delivery-management/frd-08-delivery-management.md); do not re-implement balance or delivery-state logic.
 - The FX-pending signal is the persisted `Order.needsExchangeRateUpdate` flag, consistent with [`FRD-05 · BP-02 · WO-07`](../../../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-07-currency-reconciliation-filter-and-bulk-fx-reconciliation.md).
 - All money stays in minor units through aggregation.
+- No base-currency conversion helper existed before this slice; the direction is fixed by the order form copy (`exchangeRate` = "how many base-currency units equal 1 order-currency unit"), so base = `round(orderMinor × exchangeRate)`.
+
+## Implementation Decisions
+
+Resolutions for the parent FRD's open questions, applied by this foundation slice:
+
+- **Payments on later-`CANCELLED` orders**: excluded from the disbursed-spend series and every rollup. `BR-06-07` (cancelled orders excluded from all rollups) governs; refund-vs-sunk accounting is out of MVP scope.
+- **"Gasto por tipo" and "top tiendas"**: use **committed value** (`Σ unitPrice × quantity` for by-type; `Σ totalCost` for by-store), all-time, base-currency, FX-excluded. Payments are order-level and cannot be attributed to a single product type, so committed is the only cleanly attributable measure; labeled as committed per `BR-06-05`. These surfaces are not driven by the trend range.
+- **"Arrived" bucketing date (hechos vs llegados)**: no explicit arrival timestamp is persisted yet, so an arrived order is bucketed by `expectedDeliveryFrom` (falling back to `orderDate`). To be refined when delivery arrival timestamps exist.
+- **Arrival punctuality (`FR-06-17`)**: same data gap; an arrived order counts as on time while the current date is at or before its expected window close and late once it has passed, with orders lacking a window excluded. Approximation pending real arrival timestamps.

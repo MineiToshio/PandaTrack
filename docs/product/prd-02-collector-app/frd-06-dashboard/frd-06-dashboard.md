@@ -192,11 +192,16 @@ The precise computation for each surface. All amounts are in minor units and bas
 - The dashboard is fully responsive: the same zones and values restack into a single-column mobile view, and it has a coherent empty / first-run state per zone with first-action CTAs.
 - Design record (layout, states, responsive, visual treatment) lives in [`fdd-06-dashboard.md`](fdd-06-dashboard.md) and the self-contained [`prototype/dashboard.html`](prototype/dashboard.html).
 
+## Resolved during work-order enrichment
+
+Decisions applied by [`BP-01 · WO-01`](bp-01-dashboard-aggregation-and-surface/work-orders/wo-01-dashboard-aggregation-foundation.md) (aggregation foundation):
+
+- Payments on an order later moved to `CANCELLED` are **excluded** from the disbursed-spend series and every rollup, consistent with `BR-06-07`. Refund-vs-sunk accounting is out of MVP scope.
+- "Gasto por tipo" and "top tiendas" use **committed value** (`Σ unitPrice × quantity` by type, `Σ totalCost` by store), **all-time** (not driven by the chart range), in base currency with FX-excluded orders dropped. Committed is used because payments are order-level and cannot be attributed to a single product type; it is labeled distinctly per `BR-06-05`.
+- "Arrived" in the hechos-vs-llegados chart is bucketed by `expectedDeliveryFrom` (falling back to `orderDate`) as an approximation, and arrival punctuality (`FR-06-17`) compares the current date against the expected window, because no explicit arrival timestamp is persisted yet. Both are to be refined once delivery arrival timestamps exist.
+
 ## Open Questions
 
-- How to treat payments that were made on an order later moved to `CANCELLED` (refunded vs sunk) in the disbursed-spend series — to resolve during work-order enrichment.
-- Whether "gasto por tipo" and "top tiendas" should use disbursed or committed value by default, and whether they should respect the chart date range or stay all-time.
-- The exact bucketing date for "arrived" in the hechos-vs-llegados chart when an item is `ARRIVED_AT_STORE` without a linked delivery (no explicit arrival timestamp exists today) — to resolve during work-order enrichment.
 - Whether delivery cost ([`FRD-08`](../frd-08-delivery-management/frd-08-delivery-management.md)) should appear as its own spend series or stay out of the MVP dashboard.
 
 ## Out of Scope

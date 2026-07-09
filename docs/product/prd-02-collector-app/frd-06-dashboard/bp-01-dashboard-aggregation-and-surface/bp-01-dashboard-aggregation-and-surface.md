@@ -13,7 +13,7 @@ children:
   - WO-05
   - WO-06
 last_updated: 2026-07-09
-implementation_status: PLANNED
+implementation_status: IN_PROGRESS
 ---
 
 # BP-01 Dashboard Aggregation and Surface
