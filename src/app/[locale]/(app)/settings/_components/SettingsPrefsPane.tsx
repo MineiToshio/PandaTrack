@@ -11,6 +11,7 @@ import Label from "@/components/core/Label";
 import SearchableSelect from "@/components/core/SearchableSelect";
 import SectionCard from "@/components/core/SectionCard";
 import { COUNTRY_CODES, COUNTRY_FLAG_EMOJI_BY_CODE } from "@/lib/catalog/collectorCountries";
+import { parseBudgetInputValue, toBudgetInputValue } from "@/lib/user-settings/budgetAmount";
 import { STORE_PRODUCT_TYPE_KEYS } from "@/lib/catalog/storeProductTypes";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -69,9 +70,7 @@ export default function SettingsPrefsPane({
     budgetAmount: initialBudgetAmount,
     budgetResetDayOfMonth: initialBudgetResetDayOfMonth,
   });
-  const [budgetInput, setBudgetInput] = useState<string>(
-    initialBudgetAmount != null ? String(initialBudgetAmount) : "",
-  );
+  const [budgetInput, setBudgetInput] = useState<string>(toBudgetInputValue(initialBudgetAmount));
   const [autosave, setAutosave] = useState<AutosaveStatus>("idle");
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [openCurrencyModal, setOpenCurrencyModal] = useState(false);
@@ -86,9 +85,7 @@ export default function SettingsPrefsPane({
         const result = await savePreferencesAction(next);
         if (!result.ok) {
           setValues(lastCommittedRef.current);
-          setBudgetInput(
-            lastCommittedRef.current.budgetAmount != null ? String(lastCommittedRef.current.budgetAmount) : "",
-          );
+          setBudgetInput(toBudgetInputValue(lastCommittedRef.current.budgetAmount));
           setAutosave("error");
           return;
         }
@@ -148,17 +145,12 @@ export default function SettingsPrefsPane({
   };
 
   const handleBudgetCommit = () => {
-    const trimmed = budgetInput.trim();
-    if (trimmed === "") {
-      updateValues({ budgetAmount: null });
+    const parsed = parseBudgetInputValue(budgetInput);
+    if (!parsed.ok) {
+      setBudgetInput(toBudgetInputValue(values.budgetAmount));
       return;
     }
-    const parsed = Number.parseInt(trimmed, 10);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      updateValues({ budgetAmount: parsed });
-    } else {
-      setBudgetInput(values.budgetAmount != null ? String(values.budgetAmount) : "");
-    }
+    updateValues({ budgetAmount: parsed.minorUnits });
   };
 
   const countryOptions = COUNTRY_CODES.map((code) => ({

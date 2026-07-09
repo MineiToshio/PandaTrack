@@ -111,7 +111,7 @@ This slice is the implementation foundation for `WO-02` through `WO-06`. It must
 - Prove that reserved names, blocked tokens, malformed usernames, and case-only collisions are rejected.
 - Prove that successful account creation persists a valid username.
 - Prove that optional settings fields can remain empty initially without breaking the settings domain contract.
-- Prove that country, base currency, preferred product types, budget amount as a **positive integer in whole currency units only**, and budget reset rule persist and re-read correctly.
+- Prove that country, base currency, preferred product types, budget amount as a **positive integer in minor units, always a whole number of major units**, and budget reset rule persist and re-read correctly.
 - Prove that a reset day beyond the number of days in a month resolves to the last day of that month.
 - Prove that provider-aware account capabilities can be derived correctly from runtime auth/account state for later settings slices.
 

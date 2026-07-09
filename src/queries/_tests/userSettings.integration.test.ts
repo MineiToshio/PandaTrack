@@ -28,7 +28,7 @@ describe("userSettings queries", () => {
       const patch = parseCollectorPreferencesPatch({
         preferredCountryCode: "ES",
         baseCurrencyCode: "EUR",
-        budgetAmount: 250,
+        budgetAmount: 25_000,
         budgetResetDayOfMonth: 31,
         timezone: "Europe/Madrid",
         preferredProductTypeKeys: ["manga", "figures"],
@@ -44,7 +44,7 @@ describe("userSettings queries", () => {
       expect(snapshot).not.toBeNull();
       expect(snapshot?.preferredCountryCode).toBe("ES");
       expect(snapshot?.baseCurrencyCode).toBe("EUR");
-      expect(snapshot?.budgetAmount).toBe(250);
+      expect(snapshot?.budgetAmount).toBe(25_000);
       expect(snapshot?.budgetResetDayOfMonth).toBe(31);
       expect(snapshot?.timezone).toBe("Europe/Madrid");
       expect(snapshot?.preferredProductTypeKeys).toEqual(["figures", "manga"]);

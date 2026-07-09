@@ -15,7 +15,7 @@ implementation_status: IMPLEMENTED
 
 ## Summary
 
-Implement the `Preferences` section of `/settings` so each collector can save optional baseline preferences: **base currency** (from a curated list aligned to seeded countries), **preferred country**, **preferred product types** (many-to-many against `StoreProductType`), and a **single active budget** (positive integer in whole currency units, with a nullable **day-of-month** reset rule). Changing **base currency** requires **explicit confirmation**, offers bulk currency reconciliation for affected orders, and warns that skipping reconciliation now requires manual per-order updates later.
+Implement the `Preferences` section of `/settings` so each collector can save optional baseline preferences: **base currency** (from a curated list aligned to seeded countries), **preferred country**, **preferred product types** (many-to-many against `StoreProductType`), and a **single active budget** (entered in whole currency units, persisted in minor units, with a nullable **day-of-month** reset rule). Changing **base currency** requires **explicit confirmation**, offers bulk currency reconciliation for affected orders, and warns that skipping reconciliation now requires manual per-order updates later.
 
 ## In Scope
 
@@ -23,7 +23,7 @@ Implement the `Preferences` section of `/settings` so each collector can save op
 - Base currency control as a **searchable single-select** (combobox pattern) over the **curated currency list** (one primary ISO 4217 code per country in `prisma/seed.ts` `COUNTRY_CODES`; document or generate the mapping in code so adding a country revisits currencies).
 - Preferred country using **reused** country-selection patterns from the stores domain where feasible (evaluate `Select` vs combobox vs shared catalog picker; prefer reuse, extract to core/modules only when a second consumer needs the same control).
 - Preferred product types using the **same multi-tag autocomplete interaction** as store listing filters (`StoreMultiTagAutocomplete` or extracted shared primitive), backed by the seeded `StoreProductType` catalog (`FR-07-22`, `FR-07-23`, `BR-07-16`).
-- Budget amount: **positive integer** only, **whole currency units**, validated **maximum** `999999999` (adjust only if product revises the cap).
+- Budget amount: entered as a **positive integer** in **whole currency units**, persisted in **minor units** (`×100` on save, `÷100` on prefill, via `src/lib/user-settings/budgetAmount.ts`). Validated range `100 … 999999900` minor units (`1 … 9999999` whole units) and must be a multiple of `100`. The cap is bounded by the `INTEGER` column, not by product preference.
 - Budget reset: **nullable day of month** `1`–`31`; `null` means reset on the **last calendar day** of each month; short months use the **last valid day** (`FR-07-25`, `FR-07-26`). **Implementation limitation:** the data layer supports `null`, but `SettingsPrefsPane` always persists a clamped `1`–`31` value, so the month-end (`null`) reset rule is currently unreachable from the settings UI.
 - **Confirmation modal** (or equivalent blocking confirmation) when the user changes **base currency** from the last persisted value:
   - explain the change affects every order whose currency differs from the new base currency,
