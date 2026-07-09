@@ -2,11 +2,12 @@ import { z } from "zod";
 import { isAllowedCollectorBaseCurrency, isCollectorCountryCode } from "@/lib/catalog/collectorCountries";
 import { isStoreProductTypeKey } from "@/lib/catalog/storeProductTypes";
 import {
+  BUDGET_MINOR_UNITS_PER_MAJOR,
   BUDGET_RESET_DAY_MAX,
   BUDGET_RESET_DAY_MIN,
-  MAX_BUDGET_AMOUNT,
-  MIN_BUDGET_AMOUNT,
-} from "@/lib/user-settings/usernameConstants";
+  MAX_BUDGET_AMOUNT_MINOR,
+  MIN_BUDGET_AMOUNT_MINOR,
+} from "@/lib/user-settings/budgetConstants";
 
 export function isValidIanaTimezone(value: string): boolean {
   const trimmed = value.trim();
@@ -50,9 +51,20 @@ const currencyValueSchema = z.preprocess(
   ]),
 );
 
-const budgetAmountValueSchema = z
-  .preprocess(emptyToNull, z.union([z.null(), z.number().int()]))
-  .pipe(z.union([z.null(), z.number().int().min(MIN_BUDGET_AMOUNT).max(MAX_BUDGET_AMOUNT)]));
+const budgetAmountValueSchema = z.preprocess(emptyToNull, z.union([z.null(), z.number().int()])).pipe(
+  z.union([
+    z.null(),
+    z
+      .number()
+      .int()
+      .min(MIN_BUDGET_AMOUNT_MINOR)
+      .max(MAX_BUDGET_AMOUNT_MINOR)
+      // The collector budgets in whole currency units; minor units are only the storage shape.
+      .refine((value) => value % BUDGET_MINOR_UNITS_PER_MAJOR === 0, {
+        message: "BUDGET_FRACTIONAL_SUBUNITS",
+      }),
+  ]),
+);
 
 const budgetResetDayValueSchema = z
   .preprocess(emptyToNull, z.union([z.null(), z.number().int()]))

@@ -39,6 +39,25 @@ describe("parseCollectorPreferencesPatch", () => {
     expect(parsed.ok).toBe(false);
   });
 
+  it("rejects budget amounts carrying fractional subunits", () => {
+    expect(parseCollectorPreferencesPatch({ budgetAmount: 20_050 }).ok).toBe(false);
+    expect(parseCollectorPreferencesPatch({ budgetAmount: 20_001 }).ok).toBe(false);
+  });
+
+  it("rejects budget amounts below one whole currency unit", () => {
+    expect(parseCollectorPreferencesPatch({ budgetAmount: 1 }).ok).toBe(false);
+    expect(parseCollectorPreferencesPatch({ budgetAmount: 99 }).ok).toBe(false);
+  });
+
+  it("accepts the minimum and maximum budget amounts in minor units", () => {
+    expect(parseCollectorPreferencesPatch({ budgetAmount: 100 }).ok).toBe(true);
+    expect(parseCollectorPreferencesPatch({ budgetAmount: 999_999_900 }).ok).toBe(true);
+  });
+
+  it("rejects a budget amount that would overflow the int4 column", () => {
+    expect(parseCollectorPreferencesPatch({ budgetAmount: 1_000_000_000 }).ok).toBe(false);
+  });
+
   it("rejects unknown preferred product type keys", () => {
     const parsed = parseCollectorPreferencesPatch({
       preferredProductTypeKeys: ["manga", "unknown-type"],

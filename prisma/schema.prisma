@@ -114,6 +114,9 @@ model User {
   preferredCountryCode        String?
   preferredCountry            Country?               @relation(fields: [preferredCountryCode], references: [code], onDelete: SetNull, onUpdate: Cascade)
   baseCurrencyCode            String?
+  /// Minor units of `baseCurrencyCode`, like `Order.totalCost` and `OrderPayment.amount`.
+  /// Always a whole number of major units (a DB check enforces `% 100 = 0`); the settings
+  /// boundary converts what the collector types.
   budgetAmount                Int?
   budgetResetDayOfMonth       Int?
   timezone                    String?

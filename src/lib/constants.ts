@@ -195,6 +195,13 @@ export const POSTHOG_EVENTS = {
   NAVIGATION: {
     VIEW_TRANSITION_NAVIGATED: "view_transition_navigated",
   },
+  DASHBOARD: {
+    CASH_ZONE_VIEWED: "dashboard_cash_zone_viewed",
+    RECONCILE_CTA_CLICKED: "dashboard_reconcile_cta_clicked",
+    OBLIGATION_ORDERS_CTA_CLICKED: "dashboard_obligation_orders_cta_clicked",
+    BUDGET_ZONE_VIEWED: "dashboard_budget_zone_viewed",
+    CONFIGURE_BUDGET_CTA_CLICKED: "dashboard_configure_budget_cta_clicked",
+  },
 } as const;
 
 /**
