@@ -41,6 +41,7 @@ Use this index to find documentation by domain.
 - `docs/development/seo.md`: SEO implementation notes
 - `docs/development/testing.md`: automated testing strategy for unit, integration, and E2E coverage
 - `docs/development/lib-utilities.md`: `src/lib` utilities inventory and responsibilities
+- `docs/development/audit-2026-07-improvement-plan.md`: batched remediation plan for the 2026-07 multi-agent repository audit (waves, dependencies, deferred items)
 
 ## Templates
 
