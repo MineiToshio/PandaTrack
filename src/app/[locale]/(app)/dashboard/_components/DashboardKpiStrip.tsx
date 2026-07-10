@@ -68,7 +68,7 @@ export default async function DashboardKpiStrip({ data, locale }: DashboardKpiSt
 
   return (
     <div>
-      <ul role="list" className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+      <ul role="list" className="grid grid-cols-1 gap-2.5 min-[360px]:grid-cols-2 sm:grid-cols-4">
         {tiles.map((tile) => {
           const TileIcon = tile.icon;
           return (

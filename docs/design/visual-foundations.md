@@ -305,7 +305,7 @@ Elevation uses the same identifiers in both modes (`--elevation-1` … `--elevat
 | --------------- | ---------------------------------------------------------------------- | ----------------------------------------------- |
 | `--elevation-1` | `0 1px 2px rgba(20, 22, 30, 0.04)`                                     | List cards.                                     |
 | `--elevation-2` | `0 4px 12px rgba(20, 22, 30, 0.06), 0 1px 2px rgba(20, 22, 30, 0.04)`  | Section cards, popover, dropdown, right drawer. |
-| `--elevation-3` | `0 12px 24px rgba(20, 22, 30, 0.08), 0 2px 6px rgba(20, 22, 30, 0.06)` | Modal, sheet, mascot bubble.                    |
+| `--elevation-3` | `0 12px 24px rgba(20, 22, 30, 0.08), 0 2px 6px rgba(20, 22, 30, 0.06)` | Mascot bubble.                                  |
 | `--elevation-4` | `0 24px 48px rgba(20, 22, 30, 0.12)`                                   | Command palette, expanded assistant.            |
 
 ### Dark (compositions, no real shadow)
@@ -326,11 +326,14 @@ Each dark elevation is an inset highlight plus a border ring, with `--elevation-
 | List card                                                                      | `1`                                     |
 | Row hover                                                                      | `0` (uses a state layer, does not lift) |
 | Section card (form), popover / dropdown, right drawer, neutral-undo toast, FAB | `2`                                     |
-| Mobile sheet, centered modal, mascot bubble                                    | `3`                                     |
+| Mascot bubble                                                                  | `3`                                     |
+| Centered modal (desktop)                                                       | `--modal-shadow` (bespoke, see below)   |
 | Achievement toast                                                              | `3` + achievement halo (composition)    |
 | Command palette                                                                | `4`                                     |
 
 The achievement halo is an ad-hoc composition over `--elevation-3` (a warm ring + warm wide glow built from `--accent-warm`), not a reusable token.
+
+**`--modal-shadow`** (ADR 0008 Semantic Depth) is a dedicated, bespoke token for the centered `<Modal>` desktop panel — warm-tinted `oklch(20% 0.02 50 / …)` real shadow in light, an inset highlight + border ring + `--accent` 5% micro-glow in dark. It intentionally differs from `--elevation-3` (which is neutral cool-slate in light) because the modal panel carries the Semantic Depth accent-glow language on its own. Exact declarations live in [`tokens-css.md`](tokens-css.md).
 
 **Depth discipline.** Borders separate before shadows do. One main surface per region is expected; a second visual level is fine for grouped content; a third should be rare and justified. Do not nest cards inside cards inside cards — resolve dense content with whitespace, typography, dividers, and section headings rather than stacking bordered containers.
 

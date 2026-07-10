@@ -329,6 +329,9 @@ elevation model stay shared.
   --elevation-3: 0 12px 24px rgba(20, 22, 30, 0.08), 0 2px 6px rgba(20, 22, 30, 0.06);
   --elevation-4: 0 24px 48px rgba(20, 22, 30, 0.12);
 
+  /* Modal panel shadow (ADR 0008 Semantic Depth) — bespoke, warm-tinted */
+  --modal-shadow: 0 14px 28px oklch(20% 0.02 50 / 0.1), 0 2px 6px oklch(20% 0.02 50 / 0.06);
+
   /* Canvas + brand colors — Velvet */
   --background: oklch(93% 0.02 285);
   --surface: oklch(96.5% 0.014 285);
@@ -387,6 +390,11 @@ elevation model stay shared.
     inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 0 1px var(--border-strong),
     0 -1px 8px color-mix(in oklch, var(--accent) 6%, transparent),
     0 16px 64px -16px color-mix(in oklch, var(--accent-cool) 12%, transparent);
+
+  /* Modal panel shadow (ADR 0008 Semantic Depth) — bespoke, inset highlight + accent glow */
+  --modal-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 0 1px var(--border-strong),
+    0 0 24px color-mix(in oklch, var(--accent) 5%, transparent);
 
   /* Canvas + brand colors — Velvet */
   --background: oklch(10% 0.028 265);

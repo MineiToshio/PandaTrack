@@ -151,7 +151,7 @@ export default function ModalDialog({
           className={cn(
             "relative flex max-h-[calc(100vh-80px)] w-full flex-col overflow-hidden [outline:none]",
             "[border-radius:20px] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]",
-            "[box-shadow:var(--shadow-elevation-3)]",
+            "[box-shadow:var(--modal-shadow)]",
             "motion-safe:animate-[modal-spring_280ms_linear(0,0.5,0.85,0.97,1)_both]",
             "motion-reduce:animate-[modal-fade_200ms_ease-out_both]",
             className,

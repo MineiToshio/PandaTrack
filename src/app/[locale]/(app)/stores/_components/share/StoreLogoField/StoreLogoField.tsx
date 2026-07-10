@@ -314,7 +314,7 @@ export default function StoreLogoField({
           onDragOver={(event) => event.preventDefault()}
           className={cn(
             "focus-visible:[outline:2px_solid_var(--focus-ring)] focus-visible:[outline-offset:2px]",
-            "flex w-full items-center gap-3 rounded-[var(--radius-lg)] p-3 text-left transition",
+            "flex w-full flex-wrap items-center gap-3 rounded-[var(--radius-lg)] p-3 text-left transition",
             "[background:var(--surface-elevated)] [border:1.5px_dashed_var(--border-strong)]",
             supportsInteraction && "hover:[border-color:var(--accent)]",
             error && "[border-color:var(--destructive)]",
@@ -336,7 +336,7 @@ export default function StoreLogoField({
               {copy.acceptedFormats} · {copy.maxSize.replace("{size}", String(sizeHint))}
             </Typography>
           </div>
-          <span className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1.5 text-xs [font-weight:var(--font-weight-medium)] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_12%,transparent)]">
+          <span className="inline-flex w-full flex-shrink-0 items-center justify-center gap-1.5 rounded-[var(--radius-pill)] px-3 py-1.5 text-xs [font-weight:var(--font-weight-medium)] [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_12%,transparent)] sm:w-auto sm:justify-start">
             <Upload size={14} aria-hidden />
             {copy.uploadCta}
           </span>
