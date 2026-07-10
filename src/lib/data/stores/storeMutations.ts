@@ -1,6 +1,7 @@
 import type { StorePresenceType, StoreStatus, StoreContactChannelType } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { generateStoreSlug } from "@/lib/store/slug";
+import { normalizeStoreName } from "@/lib/store/duplicateMatch";
 import type { StoreViewerNote } from "./storeQueries";
 
 export interface ContactChannelInput {
@@ -82,6 +83,7 @@ export async function createStore(input: CreateStoreInput): Promise<{ id: string
     data: {
       slug,
       name: input.name.trim(),
+      searchName: normalizeStoreName(input.name),
       description: input.description?.trim() || null,
       logoUrl: input.logoUrl ?? null,
       storeType: input.storeType,

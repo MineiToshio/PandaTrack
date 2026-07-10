@@ -51,6 +51,7 @@ describe("store queries", () => {
       });
       expect(store).not.toBeNull();
       expect(store?.name).toBe("Integration Test Store");
+      expect(store?.searchName).toBe("integration test store");
       expect(store?.status).toBe("PENDING");
       expect(store?.presences).toHaveLength(2);
       expect(store?.presences.map((p) => p.presenceType).sort()).toEqual(["ONLINE", "PHYSICAL"]);

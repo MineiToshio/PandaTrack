@@ -18,6 +18,7 @@
     "db-migrate-deploy": "npx prisma migrate deploy",
     "db-seed": "npx prisma db seed",
     "db-seed-dev": "npx tsx scripts/seed-dev-data.ts",
+    "db-backfill-store-search-name": "npx tsx scripts/backfill-store-search-name.ts",
     "prettier": "prettier --config .prettierrc.json --write \"**/*.*\"",
     "type-check": "tsc --pretty --noEmit",
     "lint": "eslint",

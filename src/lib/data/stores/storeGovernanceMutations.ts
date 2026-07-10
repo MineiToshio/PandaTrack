@@ -1,5 +1,6 @@
 import type { Prisma, StoreReportReason, StoreType } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { normalizeStoreName } from "@/lib/store/duplicateMatch";
 import type { EditableStore, EditableStoreDiff, EditableStoreInput } from "./storeGovernanceQueries";
 
 function uniqueSorted(values: string[]) {
@@ -172,6 +173,7 @@ export async function updateStoreEditableFields(
       where: { id: store.id },
       data: {
         name: normalizedInput.name,
+        searchName: normalizeStoreName(normalizedInput.name),
         description: normalizedInput.description,
         logoUrl: normalizedInput.logoUrl,
         hasStock: normalizedInput.hasStock,

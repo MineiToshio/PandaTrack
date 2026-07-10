@@ -25,6 +25,7 @@ import type {
   StoreType,
 } from "../generated/prisma/client";
 import { deriveOrderStatus, type ItemDeliveryState } from "../src/lib/orders/orderState";
+import { normalizeStoreName } from "../src/lib/store/duplicateMatch";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, allowExitOnIdle: true });
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
@@ -862,6 +863,7 @@ async function createStores(userId: string): Promise<Map<string, string>> {
       data: {
         slug: `${DEV_SLUG_PREFIX}${store.key}`,
         name: store.name,
+        searchName: normalizeStoreName(store.name),
         description: store.description,
         storeType: store.storeType,
         status: "APPROVED",

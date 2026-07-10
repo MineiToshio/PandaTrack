@@ -75,6 +75,7 @@ Reference for what each table and attribute is for, where it is used, and why it
 - **id** – Unique identifier (cuid).
 - **slug** – URL-safe, stable identifier for public routes (`/store/[slug]`; legacy `/stores/[slug]` redirects). Not changed when the name changes.
 - **name / description** – Public-facing identity; description can be empty.
+- **searchName** – Diacritic-stripped, lowercased, punctuation-collapsed copy of `name` (`normalizeStoreName`), indexed. Lets duplicate detection pre-filter in SQL with `contains` on normalized terms instead of scanning every store; written on create and on any name edit. See `docs/development/store-duplicate-detection.md`.
 - **logoUrl** – Logo for business stores; person stores do not show it on the public profile.
 - **storeType** – BUSINESS vs PERSON; drives visibility rules (contact/address/logo visibility).
 - **status** – PENDING, APPROVED, REJECTED, FLAGGED; controls indexing and who can edit (see `docs/product/prd-02-collector-app/frd-04-store-domain/frd-04-store-domain.md`).

@@ -17,13 +17,23 @@ export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = 12;
 const DEFAULT_PUBLIC_STORE_REVIEW_LIMIT = 10;
 
 /**
- * Hard cap on rows scanned for in-memory duplicate scoring. Bounds the query so a large
- * store table can never be loaded in full. No SQL name pre-filter is applied: ILIKE is
- * accent-sensitive, so filtering on diacritic-stripped terms would silently skip stores
- * like "Pokémon" for the query "pokemon" — the scorer normalizes both sides in memory
- * instead. Revisit with a persisted normalized-name column if the catalog outgrows this cap.
+ * Safety cap on rows fed into in-memory duplicate scoring. The query already pre-filters in SQL
+ * on the persisted, normalized `searchName` column (`contains` on diacritic-stripped, lowercased
+ * terms — both sides normalized, so "Pokémon" matches the query "pokemon" without accent issues),
+ * so this bounds only the pathological case where a single common term still matches a very large
+ * number of stores. The final ranking is computed in memory over this bounded candidate set.
  */
 const MAX_DUPLICATE_SCAN = 500;
+
+/**
+ * Splits a raw name query into the distinct normalized terms used to pre-filter `searchName` in SQL.
+ * Returns `[]` when the query normalizes to nothing (callers already early-return in that case).
+ */
+function buildSearchNameTerms(nameQuery: string): string[] {
+  const normalized = normalizeStoreName(nameQuery);
+  if (!normalized) return [];
+  return Array.from(new Set(normalized.split(" ").filter(Boolean)));
+}
 
 export interface DuplicateCandidate {
   id: string;
@@ -142,9 +152,11 @@ export async function findDuplicateCandidates(
 ): Promise<DuplicateCandidate[]> {
   const trimmed = nameQuery.trim();
   if (!trimmed) return [];
-  if (!normalizeStoreName(trimmed)) return [];
+  const searchTerms = buildSearchNameTerms(trimmed);
+  if (searchTerms.length === 0) return [];
 
   const stores = await prisma.store.findMany({
+    where: { OR: searchTerms.map((term) => ({ searchName: { contains: term } })) },
     select: { id: true, name: true, slug: true, countryCode: true, logoUrl: true },
     orderBy: { name: "asc" },
     take: MAX_DUPLICATE_SCAN,
@@ -176,10 +188,14 @@ export async function findDuplicateCandidatesInCountry(
 ): Promise<DuplicateCandidate[]> {
   const trimmed = nameQuery.trim();
   if (!trimmed || !countryCode) return [];
-  if (!normalizeStoreName(trimmed)) return [];
+  const searchTerms = buildSearchNameTerms(trimmed);
+  if (searchTerms.length === 0) return [];
 
   const stores = await prisma.store.findMany({
-    where: { countryCode },
+    where: {
+      countryCode,
+      OR: searchTerms.map((term) => ({ searchName: { contains: term } })),
+    },
     select: { id: true, name: true, slug: true, countryCode: true, logoUrl: true },
     orderBy: { name: "asc" },
     take: MAX_DUPLICATE_SCAN,

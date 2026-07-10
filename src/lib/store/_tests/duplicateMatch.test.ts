@@ -19,6 +19,13 @@ describe("normalizeStoreName", () => {
     expect(normalizeStoreName("Café España")).toBe("cafe espana");
   });
 
+  it("normalizes an accented name to the value persisted in Store.searchName", () => {
+    // This is exactly what the create/edit write paths and the backfill store in `searchName`,
+    // so a SQL `contains` pre-filter on the diacritic-stripped query term matches accented names.
+    expect(normalizeStoreName("Pokémon")).toBe("pokemon");
+    expect(normalizeStoreName("Pokémon Center")).toBe("pokemon center");
+  });
+
   it("returns empty string for empty input", () => {
     expect(normalizeStoreName("")).toBe("");
     expect(normalizeStoreName("   ")).toBe("");

@@ -23,7 +23,7 @@ This document describes how similar-store detection works during store creation:
 
 1. `CreateStoreForm` → `handleNameBlur()` calls `fetchCandidates(nameValue)`.
 2. If the trimmed name has fewer than 2 characters (`MIN_QUERY_LENGTH`), candidates are cleared and no request is made.
-3. Server action `getDuplicateCandidates(nameQuery)` is called → `findDuplicateCandidates(prisma, nameQuery, limit)`.
+3. Server action `getDuplicateCandidates(nameQuery)` is called → `findDuplicateCandidates(nameQuery, limit)`.
 4. **Query:** All stores are considered (no country filter). For each store, `getDuplicateMatchScore(query, store.name)` is computed. Stores with score &gt; 0 are kept, sorted by score (desc), then by normalized name; top 5 are returned.
 5. Results are stored in `duplicateCandidates` state. If there are candidates, PostHog event `store_duplicate_suggestions_shown` is sent.
 6. **UI:** If `duplicateCandidates.length > 0` and the confirm modal is not open (`!showConfirmDuplicate`), an inline box is rendered under the name input with title "Stores with similar names", short description, and `DuplicateCandidatesList` (each item links to the store profile in a new tab). Changing the name input clears `duplicateCandidates`.
@@ -44,7 +44,7 @@ This document describes how similar-store detection works during store creation:
 **Steps:**
 
 1. `handleFormSubmit` → `handleSubmit(formData)`. Name and `countryCode` are read from form data.
-2. Server action `getDuplicateCandidatesForSubmit(nameQuery, countryCode)` is called → `findDuplicateCandidatesInCountry(prisma, nameQuery, countryCode, limit, SIMILARITY_THRESHOLD_PERCENT)`.
+2. Server action `getDuplicateCandidatesForSubmit(nameQuery, countryCode)` is called → `findDuplicateCandidatesInCountry(nameQuery, countryCode, limit, SIMILARITY_THRESHOLD_PERCENT)`.
 3. **Query:** Only stores with `countryCode` equal to the form’s country are fetched. For each, `getSimilarityPercent(query, store.name)` is computed (0–100). Stores with similarity ≥ `SIMILARITY_THRESHOLD_PERCENT` (70) are kept, sorted by similarity (desc), then by normalized name; top 5 are returned.
 4. If the result list is not empty:
    - That list is set as `duplicateCandidates`, `showConfirmDuplicate` is set to `true`, and `formData` is stored in `pendingFormDataRef`.
@@ -62,10 +62,19 @@ This document describes how similar-store detection works during store creation:
 
 - Component: `CreateStoreForm.tsx` (`handleSubmit`, `handleConfirmCreateAnyway`, `handleCancelDuplicateConfirm`, modal block).
 - Server action: `getDuplicateCandidates.ts` → `getDuplicateCandidatesForSubmit`.
-- Query: `store.ts` → `findDuplicateCandidatesInCountry`.
+- Query: `src/lib/data/stores/storeQueries.ts` → `findDuplicateCandidatesInCountry`.
 - Scoring / threshold: `duplicateMatch.ts` → `getSimilarityPercent`, `SIMILARITY_THRESHOLD_PERCENT` (70).
 
 **Constants:** `SIMILARITY_THRESHOLD_PERCENT = 70` in `src/lib/store/duplicateMatch.ts`. Same-country filter and this threshold ensure we only warn when there are similar stores in the **selected country**; same name in different countries does not trigger the modal.
+
+## Query pre-filter: `Store.searchName`
+
+Both `findDuplicateCandidates` (blur) and `findDuplicateCandidatesInCountry` (submit) pre-filter in SQL before scoring, so they no longer scan the whole table.
+
+- `Store.searchName` (`@@index([searchName])`) stores the diacritic-stripped, lowercased, punctuation-collapsed form of `name` — exactly `normalizeStoreName(name)` from `src/lib/store/duplicateMatch.ts`. It is written on every create (`storeMutations.createStore`) and name edit (`storeGovernanceMutations.updateStoreEditableFields`), and in the dev seed.
+- The query normalizes the incoming name, splits it into distinct terms, and filters `where: { OR: [{ searchName: { contains: term } }, …] }` (the country variant also filters `countryCode`). Because **both sides are normalized**, accents are a non-issue: querying `pokemon` matches a stored `Pokémon` (whose `searchName` is `pokemon`) — the reason a raw `name` ILIKE was previously avoided.
+- A `take` cap (`MAX_DUPLICATE_SCAN = 500`) still bounds the candidate set as a safety net, and the final ranking (`getDuplicateMatchScore` / `getSimilarityPercent`) is computed in memory over the pre-filtered rows.
+- **Backfill:** existing rows default `searchName` to `""`; run `npm run db-backfill-store-search-name` (`scripts/backfill-store-search-name.ts`) once after deploying the `add-store-search-name` migration. The backfill writes `normalizeStoreName(name)` in TypeScript rather than SQL because the JS normalization (Unicode diacritic strip + punctuation-to-space + whitespace collapse) is not exactly reproducible with `lower`/`unaccent`.
 
 ## Similarity scoring
 

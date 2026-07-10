@@ -200,6 +200,10 @@ model Store {
   id                  String                    @id @default(cuid())
   slug                String                    @unique
   name                String
+  // Diacritic-stripped, lowercased, punctuation-collapsed copy of `name` (JS `normalizeStoreName`).
+  // Lets duplicate detection pre-filter in SQL with `contains` on normalized terms instead of
+  // scanning rows and scoring every name in memory. Written on every create/name edit.
+  searchName          String                    @default("")
   description         String?
   logoUrl             String?
   storeType           StoreType
@@ -240,6 +244,7 @@ model Store {
   @@index([isActive])
   @@index([isPrivate])
   @@index([status, visibility, isActive])
+  @@index([searchName])
   @@map("store")
 }
 
