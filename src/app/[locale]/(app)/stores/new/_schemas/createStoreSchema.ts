@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { storeLogoActionSchema } from "@/lib/store/logoShared";
 
+// Upper bounds on array inputs so a crafted payload cannot flood the create-store mutation.
+const MAX_PRESENCE_TYPES = 2;
+const MAX_PRODUCT_TYPE_KEYS = 50;
+const MAX_CONTACT_CHANNELS = 50;
+const MAX_ADDRESSES = 50;
+const MAX_IMPORT_COUNTRIES = 300;
+
 const storeTypeEnum = z.enum(["BUSINESS", "PERSON"]);
 const presenceTypeEnum = z.enum(["ONLINE", "PHYSICAL"]);
 const contactChannelTypeEnum = z.enum([
@@ -139,14 +146,14 @@ export const createStoreShape = {
   description: z.string().max(2000).trim().optional().nullable(),
   storeType: storeTypeEnum,
   countryCode: z.string().length(2, "countryInvalid").toUpperCase(),
-  presenceTypes: z.array(presenceTypeEnum).min(1, "presenceRequired"),
-  productTypeKeys: z.array(z.string().min(1)).min(1, "productTypeRequired"),
+  presenceTypes: z.array(presenceTypeEnum).min(1, "presenceRequired").max(MAX_PRESENCE_TYPES),
+  productTypeKeys: z.array(z.string().min(1)).min(1, "productTypeRequired").max(MAX_PRODUCT_TYPE_KEYS),
   hasStock: z.boolean().optional().nullable(),
   receivesOrders: z.boolean().optional().nullable(),
   isPrivate: z.boolean().optional().default(false),
-  contactChannels: z.array(contactChannelSchema).optional().default([]),
-  addresses: z.array(addressSchema).optional().default([]),
-  importCountries: z.array(z.string().length(2).toUpperCase()).optional().default([]),
+  contactChannels: z.array(contactChannelSchema).max(MAX_CONTACT_CHANNELS).optional().default([]),
+  addresses: z.array(addressSchema).max(MAX_ADDRESSES).optional().default([]),
+  importCountries: z.array(z.string().length(2).toUpperCase()).max(MAX_IMPORT_COUNTRIES).optional().default([]),
   logoAction: storeLogoActionSchema.default("keep"),
 } as const;
 

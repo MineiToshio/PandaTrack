@@ -6,17 +6,11 @@ import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { createOrder, editOrder } from "@/lib/data/orders/orderMutations";
 import { orderCreateSchema, orderEditSchema } from "@/lib/orders/orderValidation";
+import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
 
 export type OrderActionResult =
   | { success: true; orderId: string }
   | { success: false; error: string; fieldErrors?: Record<string, string[]> };
-
-function parseDecimalToMinorUnits(value: string | null): number | null {
-  if (!value) return null;
-  const parsed = parseFloat(value);
-  if (isNaN(parsed)) return null;
-  return Math.round(parsed * 100);
-}
 
 function parseItemsJson(raw: FormDataEntryValue | null): unknown[] {
   if (typeof raw !== "string" || !raw) return [];

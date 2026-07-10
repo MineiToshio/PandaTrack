@@ -17,6 +17,7 @@ import {
   deliveryMarkDeliveredSchema,
   deliveryReopenSchema,
 } from "@/lib/deliveries/deliveryValidation";
+import { isLocale } from "@/types/locale";
 
 export type DeliveryLifecycleActionResult = { ok: true } | { ok: false; error: string };
 
@@ -111,6 +112,9 @@ export async function deleteDeliveryAction(deliveryId: string, locale: string): 
 
   const parsed = deliveryDeleteSchema.safeParse({ deliveryId });
   if (!parsed.success) return { ok: false, error: "validation" };
+
+  // Never let an unsupported locale reach redirect(); it is interpolated into the URL.
+  if (!isLocale(locale)) return { ok: false, error: "validation" };
 
   try {
     const result = await deleteDelivery(parsed.data.deliveryId, userId);

@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { setOrderItemArrivedAtStore } from "@/lib/data/orders/orderMutations";
+import { orderItemDeleteSchema } from "@/lib/orders/orderValidation";
 
 export type SetOrderItemArrivedResult = { ok: true; arrived: boolean } | { ok: false; error: string };
 
@@ -16,6 +17,10 @@ export async function setOrderItemArrivedAction(
   const session = await getSession();
   if (!session?.user?.id) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
+
+  // Reuse the item-id schema purely to validate the {orderId, itemId} cuid pair before mutating.
+  const parsed = orderItemDeleteSchema.safeParse({ orderId, itemId });
+  if (!parsed.success) return { ok: false, error: "validation" };
 
   try {
     const result = await setOrderItemArrivedAtStore(itemId, userId, arrived);

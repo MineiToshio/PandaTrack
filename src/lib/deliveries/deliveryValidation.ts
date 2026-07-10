@@ -5,6 +5,8 @@ const MAX_DELIVERY_COST = 999_999_999;
 const MIN_EXCHANGE_RATE = 0.01;
 const MAX_EXCHANGE_RATE = 99_999.99;
 const MAX_NOTE_LENGTH = 2000;
+// Upper bound on products grouped into a single delivery; keeps the payload from being used to flood the mutation.
+const MAX_DELIVERY_PRODUCTS = 200;
 
 const currencyCodeSchema = z
   .string()
@@ -47,7 +49,10 @@ export const deliveryCreateSchema = z
     cost: deliveryCostSchema,
     currencyCode: currencyCodeSchema,
     exchangeRate: exchangeRateSchema.nullable().optional(),
-    productIds: z.array(z.string().cuid({ message: "INVALID_PRODUCT_ID" })).min(1, { message: "NO_PRODUCTS_SELECTED" }),
+    productIds: z
+      .array(z.string().cuid({ message: "INVALID_PRODUCT_ID" }))
+      .min(1, { message: "NO_PRODUCTS_SELECTED" })
+      .max(MAX_DELIVERY_PRODUCTS, { message: "TOO_MANY_PRODUCTS" }),
   })
   .superRefine(expectedArrivalRefinement);
 
@@ -66,6 +71,7 @@ export const deliveryEditSchema = z
     productIds: z
       .array(z.string().cuid({ message: "INVALID_PRODUCT_ID" }))
       .min(1, { message: "NO_PRODUCTS_SELECTED" })
+      .max(MAX_DELIVERY_PRODUCTS, { message: "TOO_MANY_PRODUCTS" })
       .optional(),
   })
   .superRefine(expectedArrivalRefinement);

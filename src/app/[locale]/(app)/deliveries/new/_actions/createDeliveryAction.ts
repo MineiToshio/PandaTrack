@@ -6,18 +6,12 @@ import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { createDelivery } from "@/lib/data/deliveries/deliveryMutations";
 import { deliveryCreateSchema } from "@/lib/deliveries/deliveryValidation";
+import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
 import { prisma } from "@/lib/prisma";
 
 export type DeliveryCreateActionResult =
   | { success: true; deliveryId: string }
   | { success: false; error: string; fieldErrors?: Record<string, string[]>; ineligibleProductIds?: string[] };
-
-function parseDecimalToMinorUnits(value: string | null): number | null {
-  if (value === null || value.trim() === "") return null;
-  const parsed = parseFloat(value);
-  if (Number.isNaN(parsed)) return null;
-  return Math.round(parsed * 100);
-}
 
 function parseProductIds(raw: FormDataEntryValue | null): string[] {
   if (typeof raw !== "string" || raw.trim() === "") return [];

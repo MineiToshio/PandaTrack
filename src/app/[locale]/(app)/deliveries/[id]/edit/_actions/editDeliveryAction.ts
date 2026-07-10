@@ -6,15 +6,9 @@ import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { editDelivery } from "@/lib/data/deliveries/deliveryMutations";
 import { deliveryEditSchema } from "@/lib/deliveries/deliveryValidation";
+import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
 import { prisma } from "@/lib/prisma";
 import type { DeliveryCreateActionResult } from "../../../new/_actions/createDeliveryAction";
-
-function parseDecimalToMinorUnits(value: string | null): number | null {
-  if (value === null || value.trim() === "") return null;
-  const parsed = parseFloat(value);
-  if (Number.isNaN(parsed)) return null;
-  return Math.round(parsed * 100);
-}
 
 function parseProductIds(raw: FormDataEntryValue | null): string[] {
   if (typeof raw !== "string" || raw.trim() === "") return [];
