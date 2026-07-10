@@ -33,9 +33,7 @@ export default function CurrencyModal({ isOpen, onClose, locale, initialCurrency
     // Intentional state reset on modal re-open.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelected(initialCurrencyCode ?? "USD");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setErrorMessage(null);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPendingPath(null);
   }, [initialCurrencyCode, isOpen]);
 

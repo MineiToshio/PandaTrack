@@ -55,11 +55,8 @@ export default function PasswordModal({ isOpen, onClose, locale, isChange, onSav
     // Intentional state reset on modal re-open.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPassword("");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNewPassword("");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setConfirmPassword("");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setErrorMessage(null);
   }, [isOpen]);
 

@@ -33,9 +33,7 @@ export default function AvatarModal({ isOpen, onClose, onUploaded }: AvatarModal
     // Intentional state reset when the modal closes.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setEditorImageUrl(null);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEditorFile(null);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setEditorError(null);
     cropper.reset();
     // Cropper is a stable ref-like object; the cleanup should not refire when its identity drifts.

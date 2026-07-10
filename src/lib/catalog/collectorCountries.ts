@@ -1,6 +1,6 @@
 /**
  * Collector-market country codes seeded in the database (`country` table).
- * Keep in sync with `prisma/seed.ts` usage; primary currency mapping supports user base-currency validation (FRD-07).
+ * Keep in sync with `prisma/seed.ts` usage; primary currency mapping supports user base-currency validation.
  */
 
 export const COUNTRY_CODES = [

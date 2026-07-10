@@ -28,7 +28,7 @@ function toPercent(part: number, whole: number): number {
   return Math.min(100, Math.max(0, Math.round((part / whole) * 100)));
 }
 
-/** Highest-value collector surface: what to have ready this month, ahead, and paid-vs-pending (WO-02). */
+/** Highest-value collector surface: what to have ready this month, ahead, and paid-vs-pending. */
 export default async function DashboardCashZone({ data, locale }: DashboardCashZoneProps) {
   const t = await getTranslations({ locale, namespace: "dashboard" });
   const { cashObligations, paidVsOutstanding, collection, baseCurrencyCode } = data;

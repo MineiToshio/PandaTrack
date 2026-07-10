@@ -112,6 +112,11 @@ export default function ModalDialog({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = previousOverflow;
+      // Intentionally read `.current` live at cleanup time rather than capturing it at
+      // effect setup: callers can update what `returnFocusRef` points to while the modal
+      // is open (e.g. after an async action changes the trigger element), and closing
+      // must restore focus to that latest target, not the one from mount.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       const node = (returnFocusRef?.current ?? previousActiveElementRef.current) as HTMLElement | null;
       if (node && typeof node.focus === "function") {
         node.focus(FOCUS_OPTIONS_NO_SCROLL);

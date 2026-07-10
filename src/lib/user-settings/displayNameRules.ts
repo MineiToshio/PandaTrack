@@ -14,7 +14,7 @@ export type DisplayNameValidationResult =
 
 /**
  * Splits a normalized display name into word tokens for blocked-segment checking.
- * Splits on any non-alphanumeric character to avoid substring false positives (FR-07-11, BR-07-12).
+ * Splits on any non-alphanumeric character to avoid substring false positives.
  */
 function getDisplayNameTokens(normalized: string): string[] {
   return normalized.split(/[^a-z0-9]+/).filter(Boolean);
@@ -23,7 +23,7 @@ function getDisplayNameTokens(normalized: string): string[] {
 /**
  * Validates a display name candidate.
  * Rules: trim, max 50 chars, same reserved-name/brand/blocked-token protections as username,
- * but more permissive about spaces and punctuation (BR-07-12).
+ * but more permissive about spaces and punctuation.
  *
  * Returns the trimmed display name when valid.
  */

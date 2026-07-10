@@ -23,7 +23,7 @@ type PreferencesPayload = {
 };
 
 /**
- * Persists collector preferences (FR-07-20–FR-07-26, FR-07-32).
+ * Persists collector preferences.
  * Delegates parsing, validation, and atomic persistence to the data layer.
  * Currency-change confirmation is enforced on the client before calling this action.
  */
@@ -104,7 +104,7 @@ export async function getPreferencesSnapshotAction(): Promise<PreferencesSnapsho
 
 export type UpdateCurrencyInput = {
   baseCurrencyCode: string;
-  /** Two-path flag (P-S8-01 / FR-07-32). When true, the client should be routed to the FX reconciliation flow afterwards. */
+  /** Two-path flag. When true, the client should be routed to the FX reconciliation flow afterwards. */
   saveFxRates: boolean;
 };
 
@@ -113,7 +113,7 @@ export type UpdateCurrencyResult =
   | { ok: false; error: PreferencesErrorCode };
 
 /**
- * Persists the base currency change (FR-07-32 two-path). Path B (`saveFxRates: true`) does
+ * Persists the base currency change (two-path). Path B (`saveFxRates: true`) does
  * not run a bulk FX reconciliation here — it signals the client to redirect into the existing
  * `FxReconciliationModal` flow on `/orders`, where the user can preview and confirm per-row.
  *
@@ -172,7 +172,7 @@ const LOCALE_COOKIE_NAME = "NEXT_LOCALE";
 const LOCALE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 /**
- * Persists the preferred UI language (FR-07-23 / P-S8-02). Stored in the `NEXT_LOCALE`
+ * Persists the preferred UI language. Stored in the `NEXT_LOCALE`
  * cookie consumed by next-intl. The client navigates to the localized URL after success.
  */
 export async function updateLanguageAction(locale: string): Promise<UpdateLanguageResult> {

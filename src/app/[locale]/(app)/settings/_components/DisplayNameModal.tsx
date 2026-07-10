@@ -29,7 +29,6 @@ export default function DisplayNameModal({ isOpen, onClose, initialName, onSaved
     // Intentional state reset on modal re-open.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setValue(initialName);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setErrorMessage(null);
   }, [initialName, isOpen]);
 

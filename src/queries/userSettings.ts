@@ -36,7 +36,7 @@ export type SettingsPageSnapshot = {
   budgetAmount: number | null;
   budgetResetDayOfMonth: number | null;
   preferredProductTypeKeys: string[];
-  /** Timestamp of the last username change. Drives the 7-day cooldown chip (FR-07-33). */
+  /** Timestamp of the last username change. Drives the 7-day cooldown chip. */
   usernameChangedAt: Date | null;
   /** Timestamp of the credential account's last update. Approximates password last-changed. Null when the user has no credential provider. */
   passwordChangedAt: Date | null;

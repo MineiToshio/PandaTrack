@@ -6,10 +6,10 @@ export type DateRange = {
   end: Date;
 };
 
-/** Trend-chart window driving the range-controlled series (FR-06-12). */
+/** Trend-chart window driving the range-controlled series. */
 export type DashboardRange = DateRange;
 
-/** Presets offered by the shared trend-chart range control (FR-06-12). */
+/** Presets offered by the shared trend-chart range control. */
 export const DASHBOARD_RANGE_PRESETS = ["3m", "6m", "12m", "ytd", "all"] as const;
 
 export type DashboardRangePreset = (typeof DASHBOARD_RANGE_PRESETS)[number];
@@ -28,7 +28,7 @@ export type MonthKey = {
 
 /**
  * Result of a base-currency rollup. `totalMinor` sums only reconciled orders;
- * `isPartial` / `excludedOrderCount` surface the FX-exclusion context (FR-06-13).
+ * `isPartial` / `excludedOrderCount` surface the FX-exclusion context.
  */
 export type BaseCurrencyTotal = {
   totalMinor: number;
@@ -70,13 +70,13 @@ export type BuildDashboardDataInput = {
   range?: DashboardRange;
 };
 
-/** Per-month outstanding obligation, base-currency minor units (FR-06-03). */
+/** Per-month outstanding obligation, base-currency minor units. */
 export type MonthlyObligation = MonthKey & {
   totalMinor: number;
 };
 
 /**
- * One row of the "próximos pagos" list (FR-06-18). `baseOutstandingMinor` is null when
+ * One row of the upcoming payments list. `baseOutstandingMinor` is null when
  * the order is FX-pending, in which case the order-currency amount is shown instead.
  */
 export type UpcomingPayment = {
@@ -91,18 +91,18 @@ export type UpcomingPayment = {
 };
 
 export type CashObligationsBlock = {
-  /** "A pagar este mes": current-month obligations with overdue balances folded in (FR-06-02). */
+  /** Due this month: current-month obligations with overdue balances folded in. */
   currentMonth: BaseCurrencyTotal;
   /** Overdue portion folded into the current month (expectedDeliveryFrom before today, balance > 0). */
   overdue: BaseCurrencyTotal;
-  /** Forward per-month breakdown bucketed by expected-arrival month (FR-06-03). */
+  /** Forward per-month breakdown bucketed by expected-arrival month. */
   upcomingMonths: MonthlyObligation[];
   upcomingMonthsIsPartial: boolean;
-  /** "Deuda viva total": outstanding across all non-cancelled orders (FR-06-04). */
+  /** Total outstanding debt: outstanding across all non-cancelled orders. */
   totalOutstanding: BaseCurrencyTotal;
-  /** "Deuda sin fecha": outstanding of orders with no expected-arrival date (FR-06-05). */
+  /** Undated outstanding debt: outstanding of orders with no expected-arrival date. */
   noDateOutstanding: BaseCurrencyTotal;
-  /** Per-order detail behind the aggregate obligation figures (FR-06-18). */
+  /** Per-order detail behind the aggregate obligation figures. */
   upcomingPayments: UpcomingPayment[];
 };
 
@@ -129,10 +129,10 @@ export type MonthlySpend = MonthKey & {
 };
 
 export type SpendBlock = {
-  /** "Desembolsado este mes": payments dated in the current calendar month (FR-06-07). */
+  /** Disbursed this month: payments dated in the current calendar month. */
   currentMonthMinor: number;
   currentMonthIsPartial: boolean;
-  /** "Gasto por mes": disbursed payments grouped by month across the range (FR-06-08). */
+  /** Spend by month: disbursed payments grouped by month across the range. */
   monthlySeries: MonthlySpend[];
   monthlySeriesIsPartial: boolean;
 };
@@ -142,7 +142,7 @@ export type MonthlyOutstanding = MonthKey & {
   totalMinor: number;
 };
 
-/** "Deuda viva (tendencia)": outstanding balance at each month-end across the range (FR-06-21). */
+/** Outstanding debt trend: outstanding balance at each month-end across the range. */
 export type OutstandingTrendBlock = {
   series: MonthlyOutstanding[];
   isPartial: boolean;
@@ -159,21 +159,21 @@ export type OrderSummary = {
   status: OrderStatus;
   currencyCode: string;
   totalCostMinor: number;
-  /** Committed value in base currency, or null when the order cannot be converted (FR-06-13). */
+  /** Committed value in base currency, or null when the order cannot be converted. */
   baseTotalCostMinor: number | null;
   outstandingMinor: number;
   /** True when the order is excluded from base-currency totals, so its amount reads in its own currency. */
   isFxPending: boolean;
 };
 
-/** Orders placed vs arrived, per month (FR-06-09). */
+/** Orders placed vs arrived, per month. */
 export type MonthlyPlacedVsArrived = MonthKey & {
   placedCount: number;
   arrivedCount: number;
 };
 
 /**
- * Arrival punctuality among arrived orders (FR-06-17). Only orders that carry both an expected
+ * Arrival punctuality among arrived orders. Only orders that carry both an expected
  * window and dated arrival evidence can be judged; the rest are counted as `unknownCount` rather
  * than being guessed into one of the two buckets.
  */
@@ -196,13 +196,13 @@ export type StatusCount = {
   count: number;
 };
 
-/** Committed value grouped by product type (FR-06-11). */
+/** Committed value grouped by product type. */
 export type TypeSpend = {
   productTypeKey: string | null;
   committedMinor: number;
 };
 
-/** Product quantity grouped by product type (FR-06-20). */
+/** Product quantity grouped by product type. */
 export type TypeCount = {
   productTypeKey: string | null;
   quantity: number;
@@ -229,7 +229,7 @@ export type CollectionBlock = {
   topStoresIsPartial: boolean;
 };
 
-/** "Pagado vs pendiente": committed value split into paid and outstanding (FR-06-19). */
+/** Paid vs outstanding: committed value split into paid and outstanding. */
 export type PaidVsOutstandingBlock = {
   committedMinor: number;
   paidMinor: number;
@@ -240,7 +240,7 @@ export type PaidVsOutstandingBlock = {
 
 /**
  * The single payload every dashboard zone consumes. All monetary fields are base-currency
- * minor units (FR-06-14) and exclude FX-unreconciled orders (FR-06-13). When the collector
+ * minor units and exclude FX-unreconciled orders. When the collector
  * has no base currency configured, `baseCurrencyConfigured` is false and money rollups are zeroed.
  */
 export type DashboardData = {

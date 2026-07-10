@@ -83,7 +83,7 @@ describe("editDelivery", () => {
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
 
-  it("rejects non IN_TRANSIT deliveries (BR-08-04 — reopen first)", async () => {
+  it("rejects non IN_TRANSIT deliveries (reopen first)", async () => {
     const tx = makeTx({ delivery: { ...deliveryFixture(["item-1"]), status: DeliveryStatus.DELIVERED } });
     useTx(tx);
     const result = await editDelivery("dlv-1", USER_ID, { ...BASE_INPUT, productIds: ["item-1"] });

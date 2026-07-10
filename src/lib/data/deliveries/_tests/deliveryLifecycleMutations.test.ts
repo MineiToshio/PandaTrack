@@ -171,7 +171,7 @@ describe("cancelDelivery", () => {
 });
 
 describe("deleteDelivery", () => {
-  it("rejects DELIVERED deliveries (BR-08-07 — reopen first)", async () => {
+  it("rejects DELIVERED deliveries (reopen first)", async () => {
     useTx(makeTx({ delivery: deliveryFixture(DeliveryStatus.DELIVERED) }));
     const result = await deleteDelivery("dlv-1", "user-1");
     expect(result).toEqual({ ok: false, error: "INVALID_STATUS" });

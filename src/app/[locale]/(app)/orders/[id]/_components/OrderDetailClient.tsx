@@ -163,7 +163,6 @@ export default function OrderDetailClient({
             totalCost: order.totalCost,
             status: order.status,
           }}
-          paidAmount={summary.paidAmount}
           remainingAmount={summary.remainingAmount}
           paymentPercentage={summary.paymentPercentage}
           hasUnpaidBalance={hasUnpaidBalance}

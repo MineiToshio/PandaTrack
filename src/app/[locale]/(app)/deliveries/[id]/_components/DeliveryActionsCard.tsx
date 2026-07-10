@@ -7,7 +7,7 @@ import Eyebrow from "@/components/core/Eyebrow";
 import type { DeliveryStatus } from "../../../../../../../generated/prisma/client";
 
 type DeliveryActionsCardProps = {
-  /** Live (optimistic) lifecycle state — the action matrix follows it (FR-08-26/27). */
+  /** Live (optimistic) lifecycle state — the action matrix follows it. */
   status: DeliveryStatus;
   editHref: string;
   isReopening: boolean;
@@ -20,7 +20,7 @@ type DeliveryActionsCardProps = {
 /**
  * Aside actions card — action matrix per delivery status:
  *   IN_TRANSIT → Marcar como llegada (primary) · Editar · Cancelar · Eliminar
- *   DELIVERED  → Reabrir (primary) · Editar/Eliminar disabled + helper (BR-08-04/07)
+ *   DELIVERED  → Reabrir (primary) · Editar/Eliminar disabled + helper
  *   CANCELLED  → Reabrir (primary) · Eliminar + helper
  * Reabrir runs without a modal (S9-D3) — the coordinator shows the neutral-undo toast.
  */

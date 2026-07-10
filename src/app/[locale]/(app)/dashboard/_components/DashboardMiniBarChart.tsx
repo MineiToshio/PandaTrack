@@ -20,7 +20,7 @@ export type DashboardMiniBarChartProps = {
 /** Minimum bar height (%) so a non-zero month stays visible next to the tallest one. */
 const MIN_VISIBLE_BAR_PERCENT = 4;
 
-/** Framed mini bar chart for the forward obligations breakdown (FR-06-03). */
+/** Framed mini bar chart for the forward obligations breakdown. */
 export default function DashboardMiniBarChart({ months, ariaLabel, emptyLabel }: DashboardMiniBarChartProps) {
   const maxValue = months.reduce((max, month) => Math.max(max, month.value), 0);
 

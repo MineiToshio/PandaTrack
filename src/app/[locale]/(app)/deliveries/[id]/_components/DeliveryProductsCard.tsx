@@ -55,7 +55,7 @@ export default function DeliveryProductsCard({
         {sourceOrders.map((group, groupIdx) => (
           <div key={group.orderId} className={groupIdx > 0 ? "mt-3.5" : undefined}>
             {/* "DESDE ORD-… · {fecha}" — mono uppercase label, ORD code links to the order
-                detail (FR-08-18 traceability lives here, not in the list). */}
+                detail (traceability lives here, not in the list). */}
             <div className="text-text-muted mb-1.5 flex items-center gap-1.5 text-[11px] tracking-[0.06em] uppercase">
               <Package className="size-3 shrink-0" aria-hidden />
               <span>

@@ -10,7 +10,7 @@ export type DashboardPaidBarProps = {
   ariaLabel: string;
 };
 
-/** Segmented bar splitting committed value into paid and pending / live debt (FR-06-19). */
+/** Segmented bar splitting committed value into paid and pending / live debt. */
 export default function DashboardPaidBar({
   paidPercent,
   pendingPercent,

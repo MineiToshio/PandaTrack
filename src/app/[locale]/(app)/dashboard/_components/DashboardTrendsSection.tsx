@@ -26,7 +26,7 @@ function formatMonthLabel(month: MonthKey, locale: string): string {
 }
 
 /**
- * Scoped "Gráficos / Tendencias" section (FR-06-12). Its header owns the single shared range
+ * Scoped "Gráficos / Tendencias" section. Its header owns the single shared range
  * control, so the range's scope (these charts only) is visually unambiguous.
  */
 export default async function DashboardTrendsSection({ data, locale, selection }: DashboardTrendsSectionProps) {

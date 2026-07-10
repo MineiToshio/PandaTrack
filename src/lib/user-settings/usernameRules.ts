@@ -5,7 +5,7 @@ export const RESERVED_USERNAMES = new Set(["admin", "help", "pandatrack", "root"
 
 /**
  * Tokens that must not appear as whole hyphen-separated segments of a username.
- * Avoids broad substring matching (FR-07-11, BR-07-11).
+ * Avoids broad substring matching.
  */
 export const USERNAME_BLOCKED_SEGMENTS = new Set([
   "fuck",
@@ -27,7 +27,9 @@ export type UsernameValidationFailure =
   | "USERNAME_RESERVED"
   | "USERNAME_BLOCKED_SEGMENT";
 
-export type UsernameValidationResult = { ok: true; username: string } | { ok: false; reason: UsernameValidationFailure };
+export type UsernameValidationResult =
+  | { ok: true; username: string }
+  | { ok: false; reason: UsernameValidationFailure };
 
 export function normalizeUsernameForUniqueness(username: string): string {
   return username.trim().toLowerCase();

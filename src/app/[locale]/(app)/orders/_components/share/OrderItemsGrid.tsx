@@ -132,7 +132,6 @@ function ItemTypePicker({
     const compute = () => {
       const rect = triggerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCoords({ top: rect.bottom + 4, left: rect.left, minWidth: rect.width });
     };
     compute();
@@ -538,7 +537,7 @@ export default function OrderItemsGrid({
   //
   // Reordering uses `Alt + Shift + ↑/↓` (VSCode "move line" convention).
   //
-  // Shortcut map (keep in sync with WO-04 "Item spreadsheet — keyboard"):
+  // Shortcut map (keep in sync with the item spreadsheet's keyboard shortcuts):
   //   Tab                               last cell (type) of last row → append new row
   //   Ctrl + Shift + ↑/↓                move focus to same column of previous / next row
   //   Ctrl + Shift + ←/→                move focus to the previous / next column in the current row

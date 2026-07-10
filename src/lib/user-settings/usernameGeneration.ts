@@ -66,7 +66,7 @@ function buildFallbackUsername(): string {
 }
 
 /**
- * Generates a unique username for a newly created account (FR-07-07).
+ * Generates a unique username for a newly created account.
  * Collision-safe because usernames are persisted in canonical lowercase form.
  */
 export async function generateUniqueUsernameForNewUser(db: PrismaClient, email: string): Promise<{ username: string }> {

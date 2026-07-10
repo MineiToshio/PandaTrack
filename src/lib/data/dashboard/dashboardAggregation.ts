@@ -120,15 +120,15 @@ function buildCashObligations(
   const outstandingOrders = orders.filter((order) => order.outstandingMinor > 0);
   const datedOutstanding = outstandingOrders.filter((order) => order.input.expectedDeliveryFrom !== null);
 
-  // "A pagar este mes" = orders whose expected arrival falls in the current month, plus every
-  // overdue balance folded in (BR-06-01). Both collapse to "expected arrival before next month".
+  // "Due this month" = orders whose expected arrival falls in the current month, plus every
+  // overdue balance folded in. Both collapse to "expected arrival before next month".
   const currentMonthItems = datedOutstanding
     .filter((order) => order.input.expectedDeliveryFrom!.getTime() < monthRange.end.getTime())
     .map((order) => toRollupItem(order.input, order.outstandingMinor));
   const currentMonth = rollUpToBaseCurrency(currentMonthItems, baseCurrencyCode);
 
-  // The overdue slice of that figure: expected arrival already past (BR-06-01), surfaced so the
-  // zone can name how much of "a pagar este mes" is already owed.
+  // The overdue slice of that figure: expected arrival already past, surfaced so the
+  // zone can name how much of "due this month" is already owed.
   const overdue = rollUpToBaseCurrency(
     datedOutstanding
       .filter((order) => order.input.expectedDeliveryFrom!.getTime() < todayStart.getTime())
@@ -235,7 +235,7 @@ function buildBudget(
 }
 
 /**
- * Budget status thresholds (FR-06-06): green below 80%, amber from 80% to 100% inclusive, red above
+ * Budget status thresholds: green below 80%, amber from 80% to 100% inclusive, red above
  * 100%. Compared in exact minor units rather than against the floored display percentage, so a cycle
  * at 100.4% of budget resolves to `over` instead of rounding down into `warning`.
  */
@@ -280,7 +280,7 @@ function buildSpend(
 }
 
 /**
- * "Deuda viva (tendencia)" (FR-06-21): the outstanding balance as it stood at the close of each
+ * Outstanding debt trend: the outstanding balance as it stood at the close of each
  * month in the range. An order contributes only once it has been placed, and only the payments
  * settled by that month-end reduce it, so the series reconstructs the debt at each point in time.
  */
@@ -397,7 +397,7 @@ function resolveArrivalBucketDate(order: DashboardOrderInput): Date {
 }
 
 /**
- * Punctuality among arrived orders (FR-06-17). An order is judged only when it carries both an
+ * Punctuality among arrived orders. An order is judged only when it carries both an
  * expected window and dated arrival evidence: it is on time when that evidence lands on or before
  * the window close, late otherwise. Everything else is counted as unknown rather than guessed —
  * comparing the window against *today* would silently reclassify every past arrival as late.
@@ -475,12 +475,12 @@ function buildProductCountByType(orders: DerivedOrder[]): CollectionBlock["produ
 }
 
 /**
- * Committed spend grouped by product type (FR-06-11). The collector's committed money lives on the
+ * Committed spend grouped by product type. The collector's committed money lives on the
  * order (`Order.totalCost`), not on its items, so each order's committed value is distributed across
  * its items: by `unitPrice × quantity` when the items carry prices, and by quantity alone when they
  * do not. Summing `unitPrice × quantity` directly would report zero for the many orders whose items
  * have no unit price, hiding the breakdown entirely. FX-excluded orders are dropped and reported via
- * the partial flag (`FR-06-13`); the value stays committed, never disbursed (`BR-06-05`).
+ * the partial flag; the value stays committed, never disbursed.
  */
 function buildSpendByType(
   orders: DerivedOrder[],

@@ -46,3 +46,14 @@ export function formatDomainShortDate(date: Date, locale: string): string {
 export function utcDomainDateToLocal(date: Date): Date {
   return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 }
+
+/**
+ * Serialize a UTC-midnight domain date back to its `yyyy-mm-dd` string, or `undefined`
+ * when there is no date. Used at server-side query boundaries (list filter chips, URL
+ * params) that already hold a domain `Date` and need its calendar day as text. Relies on
+ * `toISOString()` rather than local getters because the value is a UTC-anchored domain
+ * date, not a local-time boundary — see the module docs above.
+ */
+export function domainDateToIsoString(date: Date | undefined): string | undefined {
+  return date ? date.toISOString().slice(0, 10) : undefined;
+}

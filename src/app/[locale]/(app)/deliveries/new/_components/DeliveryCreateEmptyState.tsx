@@ -10,7 +10,7 @@ type DeliveryCreateEmptyStateProps = {
 };
 
 /**
- * Eligibility empty state (`#s9-delivery-create-empty`, FR-08-17): no store has a
+ * Eligibility empty state (`#s9-delivery-create-empty`): no store has a
  * single eligible product, so the wizard cannot start.
  */
 export default async function DeliveryCreateEmptyState({ locale }: DeliveryCreateEmptyStateProps) {

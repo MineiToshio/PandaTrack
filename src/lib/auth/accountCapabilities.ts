@@ -11,7 +11,7 @@ export type AccountCapabilities = {
 
 /**
  * Derives settings account capabilities from linked auth provider ids.
- * Used by settings and server actions; keep in sync with FRD-07 email and password rules.
+ * Used by settings and server actions; keep in sync with the settings email and password rules.
  */
 export function deriveAccountCapabilities(providerIds: readonly string[]): AccountCapabilities {
   const ids = new Set(providerIds);

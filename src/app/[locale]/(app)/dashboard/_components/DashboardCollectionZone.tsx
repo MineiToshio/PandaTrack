@@ -18,7 +18,7 @@ import DashboardZoneView from "./DashboardZoneView";
 export type DashboardCollectionZoneProps = {
   data: DashboardData;
   locale: string;
-  /** Preference-driven public store listing URL (FR-06-16). */
+  /** Preference-driven public store listing URL. */
   storesHref: string;
 };
 
@@ -29,7 +29,7 @@ const CATEGORY_COLORS = ["var(--accent)", "var(--accent-cool)", "var(--accent-wa
 const OTHER_COLOR = "color-mix(in oklab, var(--text-primary) 26%, transparent)";
 const MAX_CATEGORIES = CATEGORY_COLORS.length;
 
-/** Segment colour per order status. Cancelled orders never reach the bar (BR-06-07). */
+/** Segment colour per order status. Cancelled orders never reach the bar. */
 const STATUS_COLORS: Record<OrderStatus, string> = {
   OPEN: "var(--accent)",
   PARTIALLY_IN_TRANSIT: "var(--info)",
@@ -64,7 +64,7 @@ function rankCategories(
   return [...head, { key: null, label: otherLabel, value: otherValue, color: OTHER_COLOR, isOther: true }];
 }
 
-/** "Tu colección": status split, spend and product count by category, and top stores (FR-06-11). */
+/** "Tu colección": status split, spend and product count by category, and top stores. */
 export default async function DashboardCollectionZone({ data, locale, storesHref }: DashboardCollectionZoneProps) {
   const [t, tTypes, tStatus] = await Promise.all([
     getTranslations({ locale, namespace: "dashboard" }),
@@ -245,7 +245,7 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
               )}
             </section>
 
-            {/* Product count by category (FR-06-20). */}
+            {/* Product count by category. */}
             <section aria-label={t("collection.countLabel")}>
               <p className="mb-3 [font-size:12px] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
                 {t("collection.countLabel")}

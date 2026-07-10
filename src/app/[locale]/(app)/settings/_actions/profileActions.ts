@@ -70,7 +70,7 @@ export async function checkUsernameAvailabilityAction(candidate: string): Promis
 }
 
 /**
- * Saves a new username for the authenticated user (FR-07-08, FR-07-33, BR-07-09).
+ * Saves a new username for the authenticated user.
  * Enforces format validation, rate limiting, and case-insensitive uniqueness on the server.
  */
 export async function saveUsernameAction(candidate: string): Promise<UsernameActionResult> {
@@ -110,7 +110,7 @@ export async function saveUsernameAction(candidate: string): Promise<UsernameAct
 }
 
 /**
- * Saves a new display name for the authenticated user (FR-07-09, BR-07-12).
+ * Saves a new display name for the authenticated user.
  * Applies trim, max-length, reserved-name, brand, and blocked-token validation.
  */
 export async function saveDisplayNameAction(displayName: string): Promise<DisplayNameActionResult> {
@@ -132,7 +132,7 @@ export async function saveDisplayNameAction(displayName: string): Promise<Displa
 }
 
 /**
- * Processes and uploads a profile image to R2, then updates User.image (FR-07-10, FR-07-11).
+ * Processes and uploads a profile image to R2, then updates User.image.
  * Accepts the file and crop area from FormData.
  */
 export async function saveAvatarAction(formData: FormData): Promise<AvatarUploadResult> {
@@ -183,9 +183,9 @@ export async function saveAvatarAction(formData: FormData): Promise<AvatarUpload
 }
 
 /**
- * Removes the authenticated user's profile image (FR-07-12).
+ * Removes the authenticated user's profile image.
  * Clears User.image regardless of provider; attempts R2 cleanup and reports failures to Sentry
- * without reverting the user-facing removal (per observability contract in WO-03).
+ * without reverting the user-facing removal.
  */
 export async function removeAvatarAction(): Promise<AvatarRemoveResult> {
   const session = await getSession();

@@ -41,9 +41,8 @@ type DeliveryDataFieldsProps = {
 
 /**
  * Shared "Datos de la entrega" fieldset (create paso 3 + edit card): shipping date
- * (past/today only — FR-08-05/06), optional arrival window (FR-08-11), cost ≥ 0
- * (FR-08-07), currency defaulting to the user base (FR-08-09), and the FX rate
- * rendered ONLY when the currency differs from the base (FR-08-10).
+ * (past/today only), optional arrival window, cost ≥ 0, currency defaulting to the
+ * user base, and the FX rate rendered ONLY when the currency differs from the base.
  */
 export default function DeliveryDataFields({
   values,
@@ -160,7 +159,7 @@ export default function DeliveryDataFields({
             </p>
           ) : null}
         </div>
-        {/* FR-08-10: FX only renders when the currency differs from the user base. */}
+        {/* FX only renders when the currency differs from the user base. */}
         {showExchangeRate && (
           <div className="space-y-1.5">
             <label htmlFor={`${idPrefix}-fx`} className="text-[13px] font-medium [color:var(--text-secondary)]">

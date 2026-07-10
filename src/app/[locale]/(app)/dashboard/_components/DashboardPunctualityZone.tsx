@@ -11,7 +11,7 @@ export type DashboardPunctualityZoneProps = {
 
 const PUNCTUALITY_TITLE_ID = "dashboard-punctuality-title";
 
-/** "Puntualidad de llegadas": share of judged arrivals that landed inside their window (FR-06-17). */
+/** "Puntualidad de llegadas": share of judged arrivals that landed inside their window. */
 export default async function DashboardPunctualityZone({ data, locale }: DashboardPunctualityZoneProps) {
   const t = await getTranslations({ locale, namespace: "dashboard" });
   const { onTimeCount, lateCount, unknownCount } = data.activity.punctuality;

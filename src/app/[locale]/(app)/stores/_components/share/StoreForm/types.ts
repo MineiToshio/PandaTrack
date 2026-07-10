@@ -18,13 +18,17 @@ export type StoreFormSubmitResult =
   | { success: false; error: string; fieldErrors?: Record<string, string[]> };
 
 /**
- * Submit signature accepted by the form. We use `any` for the prev parameter so the
- * form can pass either `CreateStoreResult | null` or `SaveStoreEditResult | null`
- * without TypeScript narrowing issues — the form never reads back the prev value
- * inside the submit callback (it is the server action's own previous state).
+ * Submit signature accepted by the form. Declared as a method-shorthand type (the
+ * standard TypeScript "bivariance hack") so both `createStore` (`prev: CreateStoreResult
+ * | null`) and `saveStoreEdit` (`prev: SaveStoreEditResult | null`) remain assignable,
+ * even though their `prev` parameter is narrower than the `StoreFormSubmitResult | null`
+ * union the form threads through `useActionState`. The form never reads back the prev
+ * value inside the submit callback (it is the server action's own previous state), so
+ * the looser parameter check is safe here.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type StoreFormSubmit = (prev: any, formData: FormData) => Promise<StoreFormSubmitResult>;
+export type StoreFormSubmit = {
+  submit(prev: StoreFormSubmitResult | null, formData: FormData): Promise<StoreFormSubmitResult>;
+}["submit"];
 
 export type EditableStoreFormValues = EditableStoreInput;
 

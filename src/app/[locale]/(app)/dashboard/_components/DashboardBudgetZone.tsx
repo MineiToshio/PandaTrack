@@ -23,7 +23,7 @@ const STATUS_CHIP: Record<BudgetStatus, { variant: ChipVariant; icon: typeof Cir
   over: { variant: "destructive", icon: TriangleAlert },
 };
 
-/** Budget consumption for the current cycle, versus the configured monthly budget (WO-03). */
+/** Budget consumption for the current cycle, versus the configured monthly budget. */
 export default async function DashboardBudgetZone({ data, locale }: DashboardBudgetZoneProps) {
   const t = await getTranslations({ locale, namespace: "dashboard" });
   const { budget, baseCurrencyCode, collection } = data;
@@ -36,7 +36,7 @@ export default async function DashboardBudgetZone({ data, locale }: DashboardBud
     tone: "cool" as const,
   };
 
-  // No budget configured: show a configure affordance instead of a meaningless percentage (FR-06-06).
+  // No budget configured: show a configure affordance instead of a meaningless percentage.
   if (!budget.isConfigured || budget.budgetAmountMinor === null) {
     const body = collection.totalOrders === 0 ? t("budget.firstRunBody") : t("budget.notConfiguredBody");
     return (

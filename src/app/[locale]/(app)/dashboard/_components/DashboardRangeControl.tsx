@@ -26,7 +26,7 @@ export type DashboardRangeControlProps = {
 const RANGE_CONTROL_ID = "dashboard-range-control";
 
 /**
- * The single shared control for the trend charts (FR-06-12). It writes the selection to the URL so
+ * The single shared control for the trend charts. It writes the selection to the URL so
  * the page re-renders on the server with a new range; the fixed current-period metrics are computed
  * from `now` and are therefore unaffected by it.
  */

@@ -17,7 +17,7 @@ type DeliveryDeleteModalProps = {
 };
 
 /**
- * Type-to-confirm destructive delete (BR-08-07 parity with order delete). Awaited
+ * Type-to-confirm destructive delete (parity with order delete). Awaited
  * submit — permitted exception to optimistic confirmation: irreversible destructive
  * flow; the server action redirects to the list on success.
  */

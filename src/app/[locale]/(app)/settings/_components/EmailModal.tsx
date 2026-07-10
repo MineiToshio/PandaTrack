@@ -30,9 +30,7 @@ export default function EmailModal({ isOpen, onClose, locale, onChanged }: Email
     // Intentional state reset on modal re-open.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setNewEmail("");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPassword("");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setErrorMessage(null);
   }, [isOpen]);
 

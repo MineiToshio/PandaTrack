@@ -9,7 +9,7 @@ import type { DashboardRangeSelection, DateRange, MonthKey } from "./dashboardTy
  * and represent a civil calendar day (see `src/lib/domainDate.ts`). Period boundaries are
  * therefore expressed as UTC-midnight instants so they compare cleanly against those columns.
  * Which month/day is "current", however, depends on the collector's timezone, so the civil
- * date of `now` is resolved in `User.timezone` before the UTC boundaries are built (FR-06 notes).
+ * date of `now` is resolved in `User.timezone` before the UTC boundaries are built.
  */
 
 const DEFAULT_TIME_ZONE = "UTC";
@@ -55,7 +55,7 @@ function utcMidnight(year: number, monthIndex: number, day: number): Date {
   return new Date(Date.UTC(year, monthIndex, day));
 }
 
-/** Current calendar-month range `[start, end)` in the collector's timezone (FR-06-02). */
+/** Current calendar-month range `[start, end)` in the collector's timezone. */
 export function getCalendarMonthRange(now: Date, timeZone: string | null | undefined): DateRange {
   const zone = resolveTimeZone(timeZone);
   const { year, monthIndex } = getCivilDate(now, zone);
@@ -66,7 +66,7 @@ export function getCalendarMonthRange(now: Date, timeZone: string | null | undef
 }
 
 /**
- * Current budget-cycle range `[start, end)` anchored on `resetDay` (FR-06-06, BR-06-03).
+ * Current budget-cycle range `[start, end)` anchored on `resetDay`.
  * The cycle containing `now` starts on this month's reset day when the current day has reached it,
  * otherwise on the previous month's reset day. A null reset day means "last day of the month".
  */
@@ -94,14 +94,14 @@ export function getBudgetCycleRange(
   };
 }
 
-/** UTC-midnight instant of the current civil day, used for overdue comparisons (BR-06-01). */
+/** UTC-midnight instant of the current civil day, used for overdue comparisons. */
 export function getTodayStart(now: Date, timeZone: string | null | undefined): Date {
   const zone = resolveTimeZone(timeZone);
   const { year, monthIndex, day } = getCivilDate(now, zone);
   return utcMidnight(year, monthIndex, day);
 }
 
-/** Default trend range: the current month plus the previous five (FR-06-12). */
+/** Default trend range: the current month plus the previous five. */
 export function getDefaultDashboardRange(now: Date, timeZone: string | null | undefined): DateRange {
   const zone = resolveTimeZone(timeZone);
   const { year, monthIndex } = getCivilDate(now, zone);
@@ -121,7 +121,7 @@ function getTrailingMonthsRange(now: Date, timeZone: string, months: number): Da
 }
 
 /**
- * Turns the collector's range selection into a concrete half-open month window (FR-06-12).
+ * Turns the collector's range selection into a concrete half-open month window.
  * Presets are anchored on the current month in the collector's timezone; `all` starts at the month
  * of their earliest recorded activity and falls back to the default window when they have none.
  * A custom range is snapped outward to whole months, since every trend series is bucketed by month.

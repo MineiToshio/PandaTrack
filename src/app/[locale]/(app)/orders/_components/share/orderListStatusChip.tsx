@@ -28,7 +28,7 @@ export function getOrderListChipToneClassName(tone: OrderListChipTone): string {
 }
 
 /**
- * Maps the derived order state to a chip descriptor following the Orders list design (`docs/design/components.md` status chips + FRD-05 prototype).
+ * Maps the derived order state to a chip descriptor following the Orders list design (`docs/design/components.md` status chips).
  * Overdue is computed externally to keep this helper pure and SSR-safe.
  */
 export function describeOrderListChip(input: {

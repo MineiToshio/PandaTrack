@@ -1,4 +1,4 @@
-import { ExternalLink, Globe, Mail, MessageCircle, Phone } from "lucide-react";
+import { ExternalLink, Globe, Mail, Phone } from "lucide-react";
 import type { ReactNode } from "react";
 import { siFacebook, siInstagram, siTiktok, siWhatsapp } from "simple-icons";
 

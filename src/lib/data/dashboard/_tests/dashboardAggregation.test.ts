@@ -61,7 +61,7 @@ describe("buildDashboardData - cash obligations", () => {
     expect(data.cashObligations.upcomingMonths.every((month) => month.totalMinor === 0)).toBe(true);
   });
 
-  it("buckets forward obligations by expected-arrival month (FR-06-03)", () => {
+  it("buckets forward obligations by expected-arrival month", () => {
     const data = build([
       makeOrder({ id: "aug", expectedDeliveryFrom: utc(2026, 7, 5), totalCost: 4000 }),
       makeOrder({ id: "sep", expectedDeliveryFrom: utc(2026, 8, 1), totalCost: 6000 }),
@@ -73,7 +73,7 @@ describe("buildDashboardData - cash obligations", () => {
     ]);
   });
 
-  it("lists per-order upcoming payments sorted by due date (FR-06-18)", () => {
+  it("lists per-order upcoming payments sorted by due date", () => {
     const data = build([
       makeOrder({ id: "later", expectedDeliveryFrom: utc(2026, 7, 20), totalCost: 4000 }),
       makeOrder({
@@ -98,7 +98,7 @@ describe("buildDashboardData - spend and budget", () => {
     expect(data.spend.currentMonthMinor).toBe(2500);
   });
 
-  it("keeps current-period metrics independent of the trend range (FR-06-12/AC-06-06)", () => {
+  it("keeps current-period metrics independent of the trend range", () => {
     const rangeExcludingJuly = { start: utc(2026, 0, 1), end: utc(2026, 3, 1) };
     const data = build(
       [makeOrder({ id: "current", totalCost: 10000, payments: [{ amount: 2500, paymentDate: utc(2026, 6, 5) }] })],
@@ -131,7 +131,7 @@ describe("buildDashboardData - spend and budget", () => {
     expect(underData.budget.status).toBe("under");
   });
 
-  it("resolves budget thresholds at their exact boundaries (FR-06-06)", () => {
+  it("resolves budget thresholds at their exact boundaries", () => {
     const budgetWith = (paidMinor: number) =>
       build(
         [makeOrder({ id: "o", totalCost: 100000, payments: [{ amount: paidMinor, paymentDate: utc(2026, 6, 10) }] })],
@@ -176,7 +176,7 @@ describe("buildDashboardData - spend and budget", () => {
   });
 });
 
-describe("buildDashboardData - deuda viva trend (FR-06-21)", () => {
+describe("buildDashboardData - deuda viva trend", () => {
   const range = { start: utc(2026, 0, 1), end: utc(2026, 3, 1) }; // Jan, Feb, Mar 2026
 
   it("reconstructs the outstanding balance at each month-end", () => {
@@ -226,7 +226,7 @@ describe("buildDashboardData - deuda viva trend (FR-06-21)", () => {
 });
 
 describe("buildDashboardData - exclusions and FX", () => {
-  it("excludes CANCELLED orders from every rollup (BR-06-07)", () => {
+  it("excludes CANCELLED orders from every rollup", () => {
     const data = build([
       makeOrder({ id: "open", totalCost: 10000, expectedDeliveryFrom: utc(2026, 6, 10) }),
       makeOrder({ id: "cancelled", status: "CANCELLED", totalCost: 9999, expectedDeliveryFrom: utc(2026, 6, 10) }),
@@ -261,7 +261,7 @@ describe("buildDashboardData - exclusions and FX", () => {
   });
 });
 
-describe("buildDashboardData - arrival punctuality (FR-06-17)", () => {
+describe("buildDashboardData - arrival punctuality", () => {
   const arrivedItem = (deliveryDates: Date[]) => [
     { quantity: 1, productTypeKey: null, unitPrice: null, deliveryState: "DELIVERED" as const, deliveryDates },
   ];
@@ -493,7 +493,7 @@ describe("buildDashboardData - activity and collection", () => {
     expect(data.collection.spendByType).toEqual([]);
   });
 
-  it("counts distinct stores and excludes cancelled orders from the collection totals (BR-06-07)", () => {
+  it("counts distinct stores and excludes cancelled orders from the collection totals", () => {
     const item = {
       quantity: 2,
       productTypeKey: "figure",
@@ -543,7 +543,7 @@ describe("buildDashboardData - activity and collection", () => {
     expect(data.collection.topStores.map((store) => store.storeId)).toEqual(["store-b", "store-a"]);
   });
 
-  it("splits committed value into paid and outstanding (FR-06-19)", () => {
+  it("splits committed value into paid and outstanding", () => {
     const data = build([
       makeOrder({ id: "o", totalCost: 10000, payments: [{ amount: 4000, paymentDate: utc(2026, 6, 5) }] }),
     ]);
@@ -556,12 +556,11 @@ describe("buildDashboardData - activity and collection", () => {
   });
 });
 
-describe("buildDashboardData - order summaries carry a base-currency amount (FR-06-13, FR-06-14)", () => {
+describe("buildDashboardData - order summaries carry a base-currency amount", () => {
   it("converts a foreign order whose exchange rate is reconciled", () => {
-    const data = build(
-      [makeOrder({ id: "a", currencyCode: "PEN", exchangeRate: 0.27, totalCost: 10_000 })],
-      { baseCurrencyCode: "USD" },
-    );
+    const data = build([makeOrder({ id: "a", currencyCode: "PEN", exchangeRate: 0.27, totalCost: 10_000 })], {
+      baseCurrencyCode: "USD",
+    });
 
     const [summary] = data.activity.recentOrders;
     expect(summary.baseTotalCostMinor).toBe(2_700);

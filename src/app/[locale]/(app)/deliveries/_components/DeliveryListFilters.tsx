@@ -43,7 +43,7 @@ type DrawerState = {
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-/** Forward-looking ETA presets per the Deliveries list design (FRD-08 prototype) (mutually exclusive with manual range). */
+/** Forward-looking ETA presets per the Deliveries list design (mutually exclusive with manual range). */
 function resolveArrivalPreset(value: string): { from?: string; to?: string } {
   const today = new Date();
   switch (value) {

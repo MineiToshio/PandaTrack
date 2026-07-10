@@ -5,7 +5,7 @@ export const DASHBOARD_RANGE_PARAM = "range";
 export const DASHBOARD_RANGE_FROM_PARAM = "from";
 export const DASHBOARD_RANGE_TO_PARAM = "to";
 
-/** The window the dashboard opens with when the URL carries no range (FR-06-12). */
+/** The window the dashboard opens with when the URL carries no range. */
 export const DASHBOARD_DEFAULT_RANGE_PRESET: DashboardRangePreset = "6m";
 
 /** Accepted values of the `range` search param. Kept in sync with `DASHBOARD_RANGE_PRESETS`. */

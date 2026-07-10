@@ -58,7 +58,7 @@ export const CONTACT_INFO = {
   whatsapp: "https://whatsapp.com/channel/0029VbAil5KBVJl1UttAWe2j",
 } as const;
 
-/** Support address referenced in security and account notification emails (FRD-07). */
+/** Support address referenced in security and account notification emails. */
 export const SUPPORT_CONTACT_EMAIL = "hello@pandatrack.app";
 
 export const CLOUDFLARE_ASSET_ROUTES = {

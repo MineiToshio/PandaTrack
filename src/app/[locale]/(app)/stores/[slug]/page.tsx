@@ -52,7 +52,7 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
   const session = await getSession();
   const isAdmin = getIsAdmin(session);
 
-  // BR-04-21 (ADR 0009): private person stores are accessible only to their creator (or admins).
+  // Per ADR 0009: private person stores are accessible only to their creator (or admins).
   // Return 404 (not 403) so the existence is not exposed to other users.
   if (store.isPrivate && !isAdmin && store.createdByUserId !== session?.user?.id) {
     notFound();

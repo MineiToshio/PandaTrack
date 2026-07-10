@@ -32,7 +32,7 @@ function countOverdueDays(order: OrderSummary, todayStart: Date): number {
   return Math.max(0, Math.floor((todayStart.getTime() - dueDate.getTime()) / MILLISECONDS_PER_DAY));
 }
 
-/** "Movimiento de pedidos": recent, upcoming arrivals, and overdue arrivals (FR-06-10). */
+/** "Movimiento de pedidos": recent, upcoming arrivals, and overdue arrivals. */
 export default async function DashboardActivityZone({ data, locale }: DashboardActivityZoneProps) {
   const t = await getTranslations({ locale, namespace: "dashboard" });
   const { activity, collection } = data;

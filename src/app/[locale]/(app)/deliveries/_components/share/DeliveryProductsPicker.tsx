@@ -22,7 +22,7 @@ type DeliveryProductsPickerProps = {
   primaryOrderId?: string;
   /**
    * Edit mode: ids currently linked to the delivery. Selected-current items show the
-   * "En esta entrega" chip; deselected-current rows tint warning with the FR-08-24 notice.
+   * "En esta entrega" chip; deselected-current rows tint warning with the linked-product notice.
    */
   currentIds?: string[];
   /** Restores the initial selection (create-mode footer "Deshacer"). */
@@ -33,8 +33,8 @@ type DeliveryProductsPickerProps = {
 
 /**
  * Shared eligible-product selector (create paso 2 + edit Productos card). Groups by
- * source order with per-order select-all, binary checks per OrderItem (FR-08-04a),
- * client-side accent-folded search (FR-08-34), and per-item state chips.
+ * source order with per-order select-all, binary checks per OrderItem,
+ * client-side accent-folded search, and per-item state chips.
  */
 export default function DeliveryProductsPicker({
   groups,

@@ -77,8 +77,8 @@ function preselectionForStore(
 /**
  * 4-step delivery create wizard (Tienda · Productos · Datos · Confirmar).
  * From-order entry starts at paso 2 with paso 1 done as a field-as-attribute
- * (ADR 0001 D2); standalone starts at paso 1 with the eligible-store combobox
- * (FR-08-16/17). Source-order products come preselected; sibling eligible orders
+ * (ADR 0001 D2); standalone starts at paso 1 with the eligible-store combobox.
+ * Source-order products come preselected; sibling eligible orders
  * render expanded and unchecked (S9-D6).
  */
 export default function DeliveryCreateWizard({

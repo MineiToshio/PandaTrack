@@ -27,7 +27,7 @@ export async function assertUsernameChangeCooldownAllows(
 }
 
 /**
- * Records a successful username change for rate limiting (FR-07-33, BR-07-18).
+ * Records a successful username change for rate limiting.
  */
 export async function recordSuccessfulUsernameChange(userId: string, now: Date): Promise<void> {
   await updateUserUsernameChangedAt(prisma, userId, now);

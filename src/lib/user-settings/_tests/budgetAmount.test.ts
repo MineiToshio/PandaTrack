@@ -115,7 +115,7 @@ describe("settings budget reaches the dashboard at the right magnitude", () => {
     expect(budgetFor("200", 20_000).percentage).toBe(100);
   });
 
-  it("resolves the status bands off the converted budget (FR-06-06)", () => {
+  it("resolves the status bands off the converted budget", () => {
     expect(budgetFor("200", 5_000).status).toBe("under");
     expect(budgetFor("200", 16_000).status).toBe("warning");
     expect(budgetFor("200", 20_000).status).toBe("warning");

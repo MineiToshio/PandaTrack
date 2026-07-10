@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import type { BudgetStatus } from "@/lib/data/dashboard/dashboardTypes";
 
-/** Solid fill token per consumption band (FR-06-06). */
+/** Solid fill token per consumption band. */
 const FILL_TOKEN: Record<BudgetStatus, string> = {
   under: "var(--success)",
   warning: "var(--warning)",
@@ -25,7 +25,7 @@ export type DashboardBudgetMeterProps = {
   ariaLabel: string;
 };
 
-/** Budget consumption meter: a rounded track whose fill color encodes the band (FR-06-06). */
+/** Budget consumption meter: a rounded track whose fill color encodes the band. */
 export default function DashboardBudgetMeter({ status, percent, ariaLabel }: DashboardBudgetMeterProps) {
   const fillWidth = Math.min(100, Math.max(0, percent));
   const fillStyle: CSSProperties = {

@@ -132,6 +132,13 @@ export default function StoreCombobox({
   if (isMobile) {
     return (
       <>
+        {/*
+          This button is the only accessible surface for the field on mobile (it opens the
+          picker sheet; there is no separate native input carrying the field's validity
+          state), so `aria-invalid` is kept despite the button role not formally supporting
+          it in the ARIA spec — it is the sole way to expose the invalid state to assistive
+          tech here.
+        */}
         <button
           type="button"
           id={id}

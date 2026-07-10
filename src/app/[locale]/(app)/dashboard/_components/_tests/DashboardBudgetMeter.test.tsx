@@ -10,7 +10,7 @@ function renderMeter(status: "under" | "warning" | "over", percent: number) {
 }
 
 describe("DashboardBudgetMeter", () => {
-  it("paints the green band below 80% (FR-06-06)", () => {
+  it("paints the green band below 80%", () => {
     const { fill } = renderMeter("under", 65);
     expect(fill.style.backgroundColor).toBe("var(--success)");
     expect(fill.style.width).toBe("65%");

@@ -15,7 +15,7 @@ type DeliveryPrivateNoteCardProps = {
 const NOTE_MAX_LENGTH = 2000;
 
 /**
- * Delivery-detail wrapper around the canonical `<PrivateNoteCard>` (FR-08-25 / BR-08-06).
+ * Delivery-detail wrapper around the canonical `<PrivateNoteCard>`.
  * Same autosave behavior as orders/stores; copy suggests tracking / courier context.
  */
 export default function DeliveryPrivateNoteCard({

@@ -8,7 +8,7 @@ export type DashboardFxPartialNoticeProps = {
   reconcileHref: string;
 };
 
-/** Warning banner shown when FX-unreconciled orders make the money totals partial (FR-06-13). */
+/** Warning banner shown when FX-unreconciled orders make the money totals partial. */
 export default function DashboardFxPartialNotice({
   message,
   reconcileLabel,

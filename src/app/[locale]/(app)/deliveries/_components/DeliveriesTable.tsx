@@ -72,7 +72,7 @@ export default function DeliveriesTable({ deliveries, locale, today, returnTo }:
           const detailHref = `/${locale}${ROUTES.deliveries}/${delivery.id}?returnTo=${encodeURIComponent(returnTo)}`;
           const arrivalWindow = formatArrivalWindow(delivery.expectedArrivalFrom, delivery.expectedArrivalTo, locale);
 
-          // FR-08-31: delivered rows show the received date; cancelled rows show nothing.
+          // Delivered rows show the received date; cancelled rows show nothing.
           let arrivalLabel = "—";
           if (delivery.status === "DELIVERED") {
             arrivalLabel = delivery.receivedDate
@@ -166,7 +166,7 @@ export default function DeliveriesTable({ deliveries, locale, today, returnTo }:
                 />
               </button>
 
-              {/* Expanded items — flat list per FR-08-32: no source-order grouping, no
+              {/* Expanded items — flat list with no source-order grouping, no
                   secondary metadata. Traceability by order lives in the detail screen. */}
               {isExpanded && (
                 <div

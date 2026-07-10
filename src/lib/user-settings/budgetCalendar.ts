@@ -1,5 +1,5 @@
 /**
- * Budget reset calendar helpers (FR-07-26, FR-07-34).
+ * Budget reset calendar helpers.
  * `monthIndex` is 0-based (JavaScript `Date` convention).
  */
 export function daysInMonth(year: number, monthIndex: number): number {

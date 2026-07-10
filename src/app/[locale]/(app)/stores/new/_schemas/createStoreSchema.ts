@@ -159,7 +159,7 @@ export const createStoreShape = {
 
 const createStoreBaseSchema = z.object(createStoreShape);
 
-/** Refinement enforcing FR-04-33 / FR-04-34 (ADR 0009) — `isPrivate` is only valid for PERSON. */
+/** Refinement enforcing, per ADR 0009, that `isPrivate` is only valid for PERSON. */
 export const refinePrivateOnlyPerson = (
   input: { isPrivate?: boolean | null; storeType: "BUSINESS" | "PERSON" },
   ctx: z.RefinementCtx,

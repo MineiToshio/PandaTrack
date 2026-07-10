@@ -55,7 +55,7 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
     listActiveStoreProductTypeKeysCached(),
   ]);
 
-  // Links into the public store listing must be preference-driven, like the shell nav (FR-06-16).
+  // Links into the public store listing must be preference-driven, like the shell nav.
   const storesHref = buildStoresNavHref(
     locale,
     {

@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { buildPageMetadata } from "@/lib/seo";
+import { domainDateToIsoString } from "@/lib/domainDate";
 import { getSession } from "@/lib/auth/auth-server";
 import { prisma } from "@/lib/prisma";
 import { getOrdersList } from "@/lib/data/orders/orderQueries";
@@ -51,7 +52,6 @@ function startOfMonth(now: Date): Date {
 }
 
 function buildActiveFilters(parsed: ReturnType<typeof parseOrderListingParams>): OrderListActiveFilters {
-  const toIso = (date: Date | undefined) => (date ? date.toISOString().slice(0, 10) : undefined);
   return {
     nameQuery: parsed.nameQuery,
     productTypeKeys: parsed.productTypeKeys,
@@ -61,10 +61,10 @@ function buildActiveFilters(parsed: ReturnType<typeof parseOrderListingParams>):
     fxPendingOnly: parsed.fxPendingOnly,
     sort: parsed.sort,
     appliedDefaultStatuses: parsed.appliedDefaultStatuses,
-    dateFromIso: toIso(parsed.dateFrom),
-    dateToIso: toIso(parsed.dateTo),
-    deliveryFromIso: toIso(parsed.deliveryFrom),
-    deliveryToIso: toIso(parsed.deliveryTo),
+    dateFromIso: domainDateToIsoString(parsed.dateFrom),
+    dateToIso: domainDateToIsoString(parsed.dateTo),
+    deliveryFromIso: domainDateToIsoString(parsed.deliveryFrom),
+    deliveryToIso: domainDateToIsoString(parsed.deliveryTo),
     deliveryOverdueOnly: parsed.deliveryOverdueOnly,
   };
 }

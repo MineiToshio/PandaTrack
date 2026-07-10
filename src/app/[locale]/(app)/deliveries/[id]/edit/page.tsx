@@ -36,7 +36,7 @@ export default async function DeliveryEditPage({ params }: DeliveryEditPageProps
 
   if (!delivery) notFound();
 
-  // BR-08-04: only IN_TRANSIT deliveries are editable — DELIVERED/CANCELLED must be
+  // Only IN_TRANSIT deliveries are editable — DELIVERED/CANCELLED must be
   // reopened first. The detail screen explains this with its helper copy.
   if (delivery.status !== "IN_TRANSIT") {
     redirect(`/${locale}${ROUTES.deliveries}/${id}`);

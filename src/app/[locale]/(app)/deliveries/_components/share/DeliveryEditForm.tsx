@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Check, Info, Lock, TriangleAlert } from "lucide-react";
+import { Check, Info, Lock, TriangleAlert } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
@@ -71,7 +71,7 @@ function sameIdSet(a: string[], b: string[]): boolean {
 }
 
 /**
- * Edit form (`#s9-delivery-edit`, FR-08-24 / BR-08-04): NOT a wizard — always-visible
+ * Edit form (`#s9-delivery-edit`): NOT a wizard — always-visible
  * stacked section cards. The store is locked (S9-D4); removing a linked product tints
  * the row warning and returns it to "Listo en tienda" on save; the aside highlights
  * only what changed (order-edit parity).
@@ -152,7 +152,7 @@ export default function DeliveryEditForm({
     };
   }, [selectedProductIds, data, initialDelivery, initialLocalDates]);
 
-  // Browser unload guard while dirty (WO-05 discard confirmation).
+  // Browser unload guard while dirty (discard confirmation).
   useEffect(() => {
     if (!dirty.any) return;
     const handler = (event: BeforeUnloadEvent) => {
@@ -319,7 +319,7 @@ export default function DeliveryEditForm({
               <p className="mt-2 text-[11.5px] [color:var(--text-muted)]">{t("edit.storeLockedHelper")}</p>
             </section>
 
-            {/* Productos (FR-08-24) */}
+            {/* Productos */}
             <section className="rounded-2xl p-5 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
               <Eyebrow as="h2">{t("edit.productsSection")}</Eyebrow>
               {productsError && <FieldErrorMsg className="mt-2">{productsError}</FieldErrorMsg>}

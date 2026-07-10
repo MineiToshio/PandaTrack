@@ -82,7 +82,6 @@ export default function MobilePicker<TValue extends string = string>({
     if (!open) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setQuery("");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setActiveIndex(-1);
   }, [open]);
 

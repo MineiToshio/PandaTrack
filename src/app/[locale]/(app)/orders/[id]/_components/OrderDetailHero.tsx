@@ -28,7 +28,6 @@ type OrderDetailHeroProps = {
     status: OrderStatus;
   };
   /** Live payment summary — refreshed on each add/delete payment so amount + progress animate. */
-  paidAmount: number;
   remainingAmount: number;
   paymentPercentage: number;
   hasUnpaidBalance: boolean;
@@ -70,7 +69,6 @@ function StatusChipIcon({ status, className }: { status: OrderStatus; className?
 
 export default function OrderDetailHero({
   order,
-  paidAmount,
   remainingAmount,
   paymentPercentage,
   hasUnpaidBalance,

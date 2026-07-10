@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { formatDomainDate, formatDomainShortDate, utcDomainDateToLocal } from "./domainDate";
+import { domainDateToIsoString, formatDomainDate, formatDomainShortDate, utcDomainDateToLocal } from "./domainDate";
 
 /**
  * Domain dates are stored at midnight UTC. These tests run under a negative-offset
@@ -58,5 +58,13 @@ describe("domainDate (negative-offset timezone)", () => {
     const m = String(local.getMonth() + 1).padStart(2, "0");
     const d = String(local.getDate()).padStart(2, "0");
     expect(`${y}-${m}-${d}`).toBe("2026-06-12");
+  });
+
+  it("domainDateToIsoString serializes the UTC calendar day regardless of ambient timezone", () => {
+    expect(domainDateToIsoString(utcMidnight)).toBe("2026-06-12");
+  });
+
+  it("domainDateToIsoString passes through undefined", () => {
+    expect(domainDateToIsoString(undefined)).toBeUndefined();
   });
 });

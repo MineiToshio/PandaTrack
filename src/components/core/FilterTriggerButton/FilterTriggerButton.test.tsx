@@ -16,7 +16,7 @@ describe("FilterTriggerButton — label variant", () => {
   });
 
   it("shows badge with count and active inline style when count > 0", () => {
-    const { container } = render(<FilterTriggerButton appliedCount={3} onClick={vi.fn()} label="Filtrar" />);
+    render(<FilterTriggerButton appliedCount={3} onClick={vi.fn()} label="Filtrar" />);
     expect(screen.getByText("3")).toBeTruthy();
     const button = screen.getByRole("button", { name: /Filtrar/ });
     // Inline style background should be set for active state

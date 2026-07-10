@@ -10,7 +10,7 @@ export type DashboardChartCardProps = {
   isEmpty: boolean;
   emptyIcon: ReactNode;
   emptyTitle: string;
-  /** Quiet note shown when the series excludes FX-unreconciled orders (FR-06-13). */
+  /** Quiet note shown when the series excludes FX-unreconciled orders. */
   partialNote?: string;
   children: ReactNode;
 };

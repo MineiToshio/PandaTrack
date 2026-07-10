@@ -110,7 +110,7 @@ export async function getDeliveryStubById(deliveryId: string, userId: string): P
  * Returns eligible order-item products for a given store, grouped by source
  * order. Eligible items have deliveryState NONE or ARRIVED_AT_STORE.
  * Items with IN_TRANSIT or DELIVERED state are excluded entirely — they are
- * not shown as disabled options (BR-08-03).
+ * not shown as disabled options.
  *
  * When excludeDeliveryId is provided (edit mode), items currently belonging to
  * that delivery are re-included so the collector can adjust the selection.
@@ -410,7 +410,7 @@ export type DeliveryDetail = {
   store: { id: string; name: string; slug: string };
   /** Sum of quantities across linked items ("N productos"). */
   productCount: number;
-  /** Items grouped by source order, ordered by order date (FR-08-18). */
+  /** Items grouped by source order, ordered by order date. */
   sourceOrders: DeliveryDetailSourceOrderGroup[];
 };
 

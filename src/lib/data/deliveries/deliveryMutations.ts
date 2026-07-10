@@ -221,7 +221,7 @@ function collectItemAndOrderIds(delivery: DeliveryWithItems): { itemIds: string[
 /**
  * Marks an IN_TRANSIT delivery as DELIVERED: persists the required received date
  * and moves every linked product to DELIVERED, re-deriving the source order
- * statuses in the same transaction (FR-08-22).
+ * statuses in the same transaction.
  */
 export async function markDeliveryDelivered(
   deliveryId: string,
@@ -254,10 +254,10 @@ export async function markDeliveryDelivered(
 }
 
 /**
- * Reopens a DELIVERED or CANCELLED delivery back to IN_TRANSIT (FR-08-23).
+ * Reopens a DELIVERED or CANCELLED delivery back to IN_TRANSIT.
  * Clears the received date and moves linked products back to IN_TRANSIT.
  * Reopening a cancelled delivery is rejected when any of its products joined
- * another live delivery in the meantime (FR-08-21: one delivery per product).
+ * another live delivery in the meantime (one delivery per product).
  */
 export async function reopenDelivery(deliveryId: string, userId: string): Promise<DeliveryLifecycleResult> {
   return prisma.$transaction(async (tx) => {
@@ -298,7 +298,7 @@ export async function reopenDelivery(deliveryId: string, userId: string): Promis
 
 /**
  * Cancels an IN_TRANSIT delivery: the record is kept, products return to
- * ARRIVED_AT_STORE and become eligible again (FR-08-25).
+ * ARRIVED_AT_STORE and become eligible again.
  */
 export async function cancelDelivery(deliveryId: string, userId: string): Promise<DeliveryLifecycleResult> {
   return prisma.$transaction(async (tx) => {
@@ -328,9 +328,9 @@ export async function cancelDelivery(deliveryId: string, userId: string): Promis
 
 /**
  * Physically deletes a delivery. Only allowed while IN_TRANSIT or CANCELLED
- * (BR-08-07 — a DELIVERED delivery must be reopened first). Products still in
+ * (a DELIVERED delivery must be reopened first). Products still in
  * transit return to ARRIVED_AT_STORE; source orders are re-derived but never
- * deleted (FR-08-25).
+ * deleted.
  */
 export async function deleteDelivery(deliveryId: string, userId: string): Promise<DeliveryLifecycleResult> {
   return prisma.$transaction(async (tx) => {
@@ -360,7 +360,7 @@ export type UpdateDeliveryNoteResult =
   | { ok: true; note: string | null; updatedAt: Date; changed: boolean }
   | { ok: false; error: "DELIVERY_NOT_FOUND" };
 
-/** Saves the private note; an empty/whitespace note clears the field (BR-08-06). */
+/** Saves the private note; an empty/whitespace note clears the field. */
 export async function updateDeliveryNote(
   deliveryId: string,
   userId: string,
@@ -412,8 +412,8 @@ export type EditDeliveryResult =
 /**
  * Edits an IN_TRANSIT delivery: metadata (dates, cost, currency, FX) and product
  * membership. Added products move to IN_TRANSIT; removed products return to
- * ARRIVED_AT_STORE (FR-08-24). Status and eligibility are revalidated inside the
- * transaction so stale edits fail atomically (WO-05). The store never changes.
+ * ARRIVED_AT_STORE. Status and eligibility are revalidated inside the
+ * transaction so stale edits fail atomically. The store never changes.
  */
 export async function editDelivery(
   deliveryId: string,

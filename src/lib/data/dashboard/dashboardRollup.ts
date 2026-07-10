@@ -29,7 +29,7 @@ export function convertToBaseCurrencyMinor(
   return Math.round(amountMinor * exchangeRate);
 }
 
-/** True when an order must be excluded from single-currency base totals (FR-06-13). */
+/** True when an order must be excluded from single-currency base totals. */
 export function isFxPending(
   order: Pick<DashboardOrderInput, "currencyCode" | "needsExchangeRateUpdate">,
   baseCurrencyCode: string,
@@ -47,7 +47,7 @@ export type RollupItem = {
 
 /**
  * Sums order-currency amounts into a base-currency total, excluding FX-unreconciled orders and
- * any order whose currency cannot be converted, and reporting how many were excluded (FR-06-13).
+ * any order whose currency cannot be converted, and reporting how many were excluded.
  * A null base currency yields a zeroed, non-partial total (the collector must configure one first).
  */
 export function rollUpToBaseCurrency(items: RollupItem[], baseCurrencyCode: string | null): BaseCurrencyTotal {
@@ -83,28 +83,28 @@ export function rollUpToBaseCurrency(items: RollupItem[], baseCurrencyCode: stri
 }
 
 /**
- * Outstanding balance of an order in its own currency: `totalCost − Σ payments`, clamped at 0
- * (BR-06-08). Reuses the order-domain payment summary so balance math stays in one place; the
+ * Outstanding balance of an order in its own currency: `totalCost − Σ payments`, clamped at 0.
+ * Reuses the order-domain payment summary so balance math stays in one place; the
  * summary already clamps the remaining amount at 0, so no extra clamp is needed here.
  */
 export function computeOutstandingMinor(totalCost: number, payments: Array<{ amount: number }>): number {
   return calculatePaymentSummary(totalCost, payments).remainingAmount;
 }
 
-/** Total paid on an order in its own currency: `Σ payments` (BR-06-08). */
+/** Total paid on an order in its own currency: `Σ payments`. */
 export function computePaidMinor(payments: Array<{ amount: number }>): number {
   return calculatePaymentSummary(0, payments).paidAmount;
 }
 
 /**
- * An order counts as "arrived" once any of its items has left the `NONE` delivery state
- * (BR-06-06): the store has received it, independent of physical delivery to the collector.
+ * An order counts as "arrived" once any of its items has left the `NONE` delivery state:
+ * the store has received it, independent of physical delivery to the collector.
  */
 export function hasOrderArrived(items: Array<{ deliveryState: OrderItemDeliveryState }>): boolean {
   return items.some((item) => item.deliveryState !== OrderItemDeliveryState.NONE);
 }
 
-/** Orders in `CANCELLED` status are excluded from every dashboard rollup (BR-06-07). */
+/** Orders in `CANCELLED` status are excluded from every dashboard rollup. */
 export function isCancelled(status: OrderStatus): boolean {
   return status === "CANCELLED";
 }

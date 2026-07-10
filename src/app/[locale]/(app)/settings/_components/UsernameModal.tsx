@@ -68,9 +68,7 @@ export default function UsernameModal({
     // Intentional state reset on modal re-open.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setValue(initialUsername);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAvailability({ kind: "idle" });
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setErrorMessage(null);
   }, [initialUsername, isOpen]);
 

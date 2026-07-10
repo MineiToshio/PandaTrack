@@ -6,6 +6,7 @@ import { buildPageMetadata } from "@/lib/seo";
 import { getSession } from "@/lib/auth/auth-server";
 import { prisma } from "@/lib/prisma";
 import { getDeliveriesList, getDeliveryStoreOptions } from "@/lib/data/deliveries/deliveryQueries";
+import { domainDateToIsoString } from "@/lib/domainDate";
 import { ROUTES } from "@/lib/constants";
 import {
   DEFAULT_DELIVERY_STATUS,
@@ -44,17 +45,16 @@ function buildListUrl(
 }
 
 function buildActiveFilters(parsed: ReturnType<typeof parseDeliveryListingParams>): DeliveryListActiveFilters {
-  const toIso = (date: Date | undefined) => (date ? date.toISOString().slice(0, 10) : undefined);
   return {
     nameQuery: parsed.nameQuery,
     statuses: parsed.statuses,
     overdueOnly: parsed.overdueOnly,
-    arrivalFromIso: toIso(parsed.arrivalFrom),
-    arrivalToIso: toIso(parsed.arrivalTo),
+    arrivalFromIso: domainDateToIsoString(parsed.arrivalFrom),
+    arrivalToIso: domainDateToIsoString(parsed.arrivalTo),
     storeId: parsed.storeId,
     productQuery: parsed.productQuery,
-    shippedFromIso: toIso(parsed.shippedFrom),
-    shippedToIso: toIso(parsed.shippedTo),
+    shippedFromIso: domainDateToIsoString(parsed.shippedFrom),
+    shippedToIso: domainDateToIsoString(parsed.shippedTo),
     sort: parsed.sort,
   };
 }

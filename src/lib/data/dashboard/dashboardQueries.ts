@@ -31,7 +31,7 @@ async function fetchDashboardOrders(userId: string): Promise<DashboardOrderInput
           unitPrice: true,
           deliveryState: true,
           // A dispatched delivery is the only dated evidence that an item had reached the store,
-          // so it anchors arrival punctuality and the arrived series (FR-06-17, FR-06-09).
+          // so it anchors arrival punctuality and the arrived series.
           deliveryItems: {
             select: { delivery: { select: { deliveryDate: true } } },
             where: { delivery: { status: { not: DeliveryStatus.CANCELLED } } },
@@ -81,9 +81,9 @@ function findEarliestActivity(orders: DashboardOrderInput[]): Date | null {
 }
 
 /**
- * Read-only dashboard entry point (FR-06-14). Resolves the collector's currency/budget/timezone
+ * Read-only dashboard entry point. Resolves the collector's currency/budget/timezone
  * context and their orders, then computes the single base-currency, period-aware `DashboardData`
- * payload. `selection` scopes only the trend series (FR-06-12); when omitted it defaults to the last
+ * payload. `selection` scopes only the trend series; when omitted it defaults to the last
  * six months. Current-period metrics are always fixed to the active period, independent of it.
  *
  * The selection is resolved here rather than by the caller because presets depend on the collector's

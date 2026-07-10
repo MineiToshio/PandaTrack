@@ -20,7 +20,7 @@ type DeliveryStoreFieldProps = {
 };
 
 /**
- * Store field for the standalone delivery-create entry (FR-08-16/17). Wraps the
+ * Store field for the standalone delivery-create entry. Wraps the
  * canonical {@link StoreCombobox} with delivery-specific meta (pending-product
  * count). No "create store" escape hatch — an ineligible store is not fixable
  * here, and only stores with eligible products are listed.

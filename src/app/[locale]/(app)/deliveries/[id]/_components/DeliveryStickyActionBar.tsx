@@ -21,7 +21,7 @@ type DeliveryStickyActionBarProps = {
 /**
  * Mobile sticky action bar — single-primary per state (§9.16 + ADR 0011):
  *   IN_TRANSIT → [⋯ overflow] [Editar tonal] [Marcar llegada primary]
- *   DELIVERED  → [Reabrir primary full-width] (edit/delete locked — BR-08-04/07)
+ *   DELIVERED  → [Reabrir primary full-width] (edit/delete locked)
  *   CANCELLED  → [⋯ overflow (Eliminar)] [Reabrir primary]
  */
 export default function DeliveryStickyActionBar({

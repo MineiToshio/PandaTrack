@@ -22,7 +22,7 @@ const UPCOMING_PAYMENTS_TITLE_ID = "dashboard-upcoming-payments-title";
 /** How many rows the zone shows before deferring to the orders list. */
 const DASHBOARD_UPCOMING_PAYMENTS_LIMIT = 5;
 
-/** "Próximos pagos": per-order outstanding + due date, sorted by due date (FR-06-18). */
+/** "Próximos pagos": per-order outstanding + due date, sorted by due date. */
 export default async function DashboardUpcomingPaymentsZone({ data, locale }: DashboardUpcomingPaymentsZoneProps) {
   const t = await getTranslations({ locale, namespace: "dashboard" });
   const payments = data.cashObligations.upcomingPayments.slice(0, DASHBOARD_UPCOMING_PAYMENTS_LIMIT);

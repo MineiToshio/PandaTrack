@@ -122,6 +122,13 @@ export default function DateInput({
 
   return (
     <div ref={containerRef} className={cn("relative w-full", className)}>
+      {/*
+        This button is the only accessible surface for the field (it opens the day-picker
+        dialog; the sibling `<input type="hidden">` below is excluded from the accessibility
+        tree), so `aria-required`/`aria-invalid` are kept despite the button role not
+        formally supporting them in the ARIA spec — they are the sole way to expose the
+        field's required/invalid state to assistive tech here.
+      */}
       <button
         ref={triggerRef}
         id={id}
