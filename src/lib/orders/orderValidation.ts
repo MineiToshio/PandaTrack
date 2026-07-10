@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isAllowedCollectorBaseCurrency } from "@/lib/catalog/collectorCountries";
+import { isStoreProductTypeKey } from "@/lib/catalog/storeProductTypes";
 
 const MIN_TOTAL_COST = 1;
 const MAX_TOTAL_COST = 999_999_999;
@@ -44,7 +45,12 @@ export const orderItemRowSchema = z.object({
     .min(0, { message: "UNIT_PRICE_TOO_LOW" })
     .nullable()
     .optional(),
-  productTypeKey: z.string().nullable().optional(),
+  productTypeKey: z
+    .string()
+    .max(64, { message: "PRODUCT_TYPE_KEY_TOO_LONG" })
+    .refine(isStoreProductTypeKey, { message: "PRODUCT_TYPE_KEY_UNKNOWN" })
+    .nullable()
+    .optional(),
   position: z.number().int().min(1, { message: "POSITION_TOO_LOW" }),
 });
 
