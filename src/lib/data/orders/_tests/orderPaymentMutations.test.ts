@@ -26,12 +26,11 @@ function makeTx({ totalCost = 10000, currencyCode = "USD", existingPayments = []
   return {
     order: {
       findFirst: vi.fn().mockResolvedValue({ id: "order-1", totalCost, orderDate: ORDER_DATE, currencyCode }),
+      // Success path refreshes the denormalized payment cache on the order.
+      update: vi.fn().mockResolvedValue({ id: "order-1" }),
     },
     orderPayment: {
-      findMany: vi
-        .fn()
-        .mockResolvedValueOnce(existingPayments)
-        .mockResolvedValueOnce(updatedPayments),
+      findMany: vi.fn().mockResolvedValueOnce(existingPayments).mockResolvedValueOnce(updatedPayments),
       create: vi.fn().mockResolvedValue(createdPayment),
     },
   };
@@ -54,6 +53,19 @@ describe("addOrderPayment", () => {
       expect.any(Function),
       expect.objectContaining({ isolationLevel: Prisma.TransactionIsolationLevel.Serializable }),
     );
+  });
+
+  it("refreshes the denormalized payment cache with the new paid amount and percentage", async () => {
+    const tx = makeTx({ totalCost: 10000, existingPayments: [{ id: "p1", amount: 3000, paymentDate: ORDER_DATE }] });
+    prismaMock.$transaction.mockImplementation(async (cb: (client: unknown) => unknown) => cb(tx));
+
+    await addOrderPayment(params);
+
+    // updatedPayments sums to 3000 (the mocked new payment carries amount 0), 30% of 10000.
+    expect(tx.order.update).toHaveBeenCalledWith({
+      where: { id: "order-1" },
+      data: { paidAmountMinor: 3000, paymentPercent: 30 },
+    });
   });
 
   it("rejects a payment that exceeds the remaining balance without creating it", async () => {

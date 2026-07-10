@@ -102,6 +102,13 @@ export async function addOrderPayment({
 
           const summary = calculatePaymentSummary(order.totalCost, updatedPayments);
 
+          // Keep the denormalized payment cache the orders list filters/sorts on in sync within
+          // the same transaction, so it can never drift from the payment rows.
+          await tx.order.update({
+            where: { id: orderId },
+            data: { paidAmountMinor: summary.paidAmount, paymentPercent: summary.paymentPercentage },
+          });
+
           return { ok: true, paymentId: payment.id, ...summary, payments: updatedPayments };
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -143,6 +150,13 @@ export async function deleteOrderPayment({
     });
 
     const summary = calculatePaymentSummary(payment.order.totalCost, updatedPayments);
+
+    // Keep the denormalized payment cache the orders list filters/sorts on in sync within the
+    // same transaction, so it can never drift from the payment rows.
+    await tx.order.update({
+      where: { id: orderId },
+      data: { paidAmountMinor: summary.paidAmount, paymentPercent: summary.paymentPercentage },
+    });
 
     return { ok: true as const, ...summary, payments: updatedPayments };
   });

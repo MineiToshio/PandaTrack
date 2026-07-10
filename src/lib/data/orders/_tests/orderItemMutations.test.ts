@@ -1,5 +1,73 @@
-import { describe, expect, it } from "vitest";
-import { deriveItemizedTotal, shouldShowDiscrepancyModal } from "../orderItemMutations";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+
+const { prismaMock } = vi.hoisted(() => ({
+  prismaMock: { $transaction: vi.fn() },
+}));
+
+vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
+
+import { deriveItemizedTotal, reorderOrderItems, shouldShowDiscrepancyModal } from "../orderItemMutations";
+
+// Mirrors POSITION_SHIFT_OFFSET in orderItemMutations: phase 1 moves every reordered item above
+// the final 1..N range so the two-phase renumber never trips @@unique([orderId, position]).
+const POSITION_SHIFT_OFFSET = 1_000_000;
+
+type ReorderTx = {
+  orderItem: {
+    findMany: ReturnType<typeof vi.fn>;
+    updateMany: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+  };
+};
+
+function makeReorderTx(existingIds: string[]): ReorderTx {
+  return {
+    orderItem: {
+      findMany: vi.fn().mockResolvedValue(existingIds.map((id) => ({ id }))),
+      updateMany: vi.fn().mockResolvedValue({ count: existingIds.length }),
+      update: vi.fn().mockResolvedValue({}),
+    },
+  };
+}
+
+describe("reorderOrderItems", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("renumbers items in two collision-safe phases (shift out, then write finals)", async () => {
+    const tx = makeReorderTx(["a", "b", "c"]);
+    prismaMock.$transaction.mockImplementation(async (cb: (client: unknown) => unknown) => cb(tx));
+
+    const result = await reorderOrderItems("order-1", "user-1", ["c", "a", "b"]);
+
+    expect(result).toEqual({ ok: true });
+    // Phase 1: a single scoped updateMany vacates the final range before any per-row write.
+    expect(tx.orderItem.updateMany).toHaveBeenCalledWith({
+      where: { orderId: "order-1", userId: "user-1", id: { in: ["c", "a", "b"] } },
+      data: { position: { increment: POSITION_SHIFT_OFFSET } },
+    });
+    // Phase 2: final consecutive positions in the requested order.
+    expect(tx.orderItem.update).toHaveBeenCalledWith({ where: { id: "c" }, data: { position: 1 } });
+    expect(tx.orderItem.update).toHaveBeenCalledWith({ where: { id: "a" }, data: { position: 2 } });
+    expect(tx.orderItem.update).toHaveBeenCalledWith({ where: { id: "b" }, data: { position: 3 } });
+    // Ordering guarantee: the shift runs before every final write.
+    const shiftOrder = tx.orderItem.updateMany.mock.invocationCallOrder[0];
+    const firstFinalWrite = Math.min(...tx.orderItem.update.mock.invocationCallOrder);
+    expect(shiftOrder).toBeLessThan(firstFinalWrite);
+  });
+
+  it("rejects and writes nothing when an id does not belong to the order", async () => {
+    const tx = makeReorderTx(["a", "b"]);
+    prismaMock.$transaction.mockImplementation(async (cb: (client: unknown) => unknown) => cb(tx));
+
+    const result = await reorderOrderItems("order-1", "user-1", ["a", "x"]);
+
+    expect(result).toEqual({ ok: false, error: "ITEM_NOT_FOUND" });
+    expect(tx.orderItem.updateMany).not.toHaveBeenCalled();
+    expect(tx.orderItem.update).not.toHaveBeenCalled();
+  });
+});
 
 describe("deriveItemizedTotal", () => {
   it("returns null when no items have a unit price", () => {

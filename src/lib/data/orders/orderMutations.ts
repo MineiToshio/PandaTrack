@@ -6,6 +6,7 @@ import {
   type Prisma,
 } from "../../../../generated/prisma/client";
 import { generateOrderHumanReadableId } from "@/lib/orders/orderIdentifier";
+import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
 import { appendOrderHistoryEntry, OrderHistoryEventType } from "./orderHistoryMutations";
 import { createOrderItems, replaceOrderItems } from "./orderItemMutations";
 import type { OrderCreateInput, OrderEditInput } from "@/lib/orders/orderValidation";
@@ -129,12 +130,17 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
     // refuse to update the total to a value below the sum of payments already recorded;
     // doing so would produce a negative `remainingAmount` everywhere downstream (hero,
     // sticky bar, list cards).
+    let paymentCacheUpdate: { paidAmountMinor: number; paymentPercent: number } | undefined;
     if (input.totalCost !== undefined) {
       const paid = await tx.orderPayment.aggregate({ where: { orderId }, _sum: { amount: true } });
       const paidAmount = paid._sum.amount ?? 0;
       if (input.totalCost < paidAmount) {
         return { ok: false, error: "TOTAL_BELOW_PAID" };
       }
+      // The paid ratio is relative to the total, so changing the total shifts paymentPercent even
+      // though the paid amount is unchanged. Refresh the denormalized cache the orders list reads.
+      const summary = calculatePaymentSummary(input.totalCost, [{ amount: paidAmount }]);
+      paymentCacheUpdate = { paidAmountMinor: summary.paidAmount, paymentPercent: summary.paymentPercentage };
     }
 
     await tx.order.update({
@@ -150,6 +156,7 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
         // collector has just affirmed the rate for this order's currency.
         ...(input.exchangeRate !== undefined ? { needsExchangeRateUpdate: false } : {}),
         ...(input.totalCost !== undefined ? { totalCost: input.totalCost } : {}),
+        ...(paymentCacheUpdate ?? {}),
         ...(input.note !== undefined ? { note: input.note } : {}),
       },
     });

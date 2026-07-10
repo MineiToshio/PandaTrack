@@ -3,6 +3,12 @@ import { DeliveryStatus } from "../../../../generated/prisma/client";
 import type { Prisma } from "../../../../generated/prisma/client";
 import type { OrderItemRowInput } from "@/lib/orders/orderValidation";
 
+// `@@unique([orderId, position])` rejects any transient duplicate, so a straight per-row renumber
+// would fail whenever two items swap positions. We first shift every item being renumbered above
+// the final 1..N range by this offset (well beyond any realistic item count), then write the final
+// positions into the now-empty range. Both phases stay collision-free.
+const POSITION_SHIFT_OFFSET = 1_000_000;
+
 export type CreateOrderItemsResult =
   | { ok: true }
   | { ok: false; error: "INVALID_PRODUCT_TYPE"; productTypeKey: string };
@@ -127,6 +133,18 @@ export async function replaceOrderItems(
 
   const normalized = normalizePositions(items);
 
+  // Phase 1: shift the surviving existing items out of the final 1..N range before renumbering, so
+  // reordered or swapped positions can't transiently violate the unique constraint. Newly created
+  // items don't exist yet, so they never collide.
+  const keptExistingIds = existingItems.map((e) => e.id).filter((id) => submittedIds.has(id));
+  if (keptExistingIds.length > 0) {
+    await tx.orderItem.updateMany({
+      where: { orderId, userId, id: { in: keptExistingIds } },
+      data: { position: { increment: POSITION_SHIFT_OFFSET } },
+    });
+  }
+
+  // Phase 2: write the final positions (updates land in the vacated range; creates fill the rest).
   for (const item of normalized) {
     if (item.id && submittedIds.has(item.id)) {
       await tx.orderItem.update({
@@ -214,6 +232,14 @@ export async function reorderOrderItems(
       return { ok: false, error: "ITEM_NOT_FOUND" };
     }
 
+    // Phase 1: vacate the final 1..N range so the per-row writes below can't transiently violate
+    // the unique constraint (e.g. two items swapping positions).
+    await tx.orderItem.updateMany({
+      where: { orderId, userId, id: { in: orderedItemIds } },
+      data: { position: { increment: POSITION_SHIFT_OFFSET } },
+    });
+
+    // Phase 2: write the final consecutive positions into the now-empty range.
     await Promise.all(
       orderedItemIds.map((id, index) =>
         tx.orderItem.update({

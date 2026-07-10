@@ -454,15 +454,20 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
     matchAny.push({ humanReadableId: { contains: trimmedQuery, mode: "insensitive" } });
   }
 
-  const where = matchAny.length > 0 ? { ...baseFilters, OR: matchAny } : baseFilters;
+  // Payment-state filters map onto the persisted `paymentPercent` cache (kept in sync by the
+  // payment/total mutations), except `overdue`, which is a pure date/status predicate. Each
+  // selected state adds one OR branch so an order matching any of them qualifies. Merged into the
+  // existing AND so it composes with the delivery-overlap conditions already in `baseFilters`.
+  const paymentStateWhere = buildPaymentStateWhere(paymentStates, now);
 
-  // `paymentStates` and the `payment-asc` sort both depend on the derived paymentPercentage, which
-  // Prisma cannot express in `where`/`orderBy`. Either one forces the full-fetch path so filtering,
-  // sorting, and pagination all run over the complete filtered set — a post-fetch filter applied to a
-  // single native DB page would otherwise corrupt totalCount and make pages overlap or go missing.
-  const usePostQuerySort = sort === "payment-asc";
-  const hasPaymentStateFilter = Boolean(paymentStates && paymentStates.length > 0);
-  const useInMemoryPagination = usePostQuerySort || hasPaymentStateFilter;
+  const existingAnd = baseFilters.AND;
+  const andGroups: Array<Record<string, unknown>> = Array.isArray(existingAnd) ? [...existingAnd] : [];
+  if (matchAny.length > 0) andGroups.push({ OR: matchAny });
+  if (paymentStateWhere) andGroups.push(paymentStateWhere);
+
+  const { AND: _ignoredBaseAnd, ...baseWithoutAnd } = baseFilters;
+  const where = andGroups.length > 0 ? { ...baseWithoutAnd, AND: andGroups } : baseFilters;
+
   const orderBy = resolveOrderBy(sort);
 
   const select = {
@@ -492,77 +497,55 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
       },
       orderBy: { position: "asc" } as const,
     },
-    payments: { select: { amount: true } },
+    paidAmountMinor: true,
+    paymentPercent: true,
   } as const;
 
   const fxWhere = buildFxPendingWhere(userId, baseCurrencyCode ?? null);
 
-  // In-memory pagination fetches the full filtered set (bounded by collector usage) already ordered
-  // by the requested native sort, then filters/sorts/paginates in memory. Other queries paginate
-  // natively via skip/take.
+  // The persisted payment cache lets filtering, sorting, and pagination all run natively in SQL,
+  // so the list no longer over-fetches to derive percentages in memory. `totalCount` therefore
+  // comes straight from the DB count of the same filtered `where`.
   const [rows, totalCount, pendingFxCount] = await Promise.all([
-    useInMemoryPagination
-      ? prisma.order.findMany({ where, select, orderBy, take: 1000 })
-      : prisma.order.findMany({
-          where,
-          select,
-          orderBy,
-          skip: (page - 1) * pageSize,
-          take: pageSize,
-        }),
+    prisma.order.findMany({
+      where,
+      select,
+      orderBy,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
     prisma.order.count({ where }),
     fxWhere ? prisma.order.count({ where: fxWhere }) : Promise.resolve(0),
   ]);
 
-  const allMapped: OrdersListPageItem[] = rows.map((row) => {
-    const { paidAmount, paymentPercentage } = calculatePaymentSummary(row.totalCost, row.payments);
-    return {
-      id: row.id,
-      humanReadableId: row.humanReadableId,
-      orderDate: row.orderDate,
-      expectedDeliveryFrom: row.expectedDeliveryFrom,
-      expectedDeliveryTo: row.expectedDeliveryTo,
-      currencyCode: row.currencyCode,
-      exchangeRate: row.exchangeRate ? Number(row.exchangeRate) : null,
-      totalCost: row.totalCost,
-      status: row.status,
-      store: row.store,
-      itemCount: row.items.length,
-      items: row.items.map((item) => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        productTypeKey: item.productTypeKey,
-        unitPrice: item.unitPrice,
-        deliveryState: deriveItemDeliveryState(item.deliveryItems, item.deliveryState),
-      })),
-      paidAmount,
-      paymentPercentage,
-      hasUnpaidBalance: deriveHasUnpaidBalance(row.totalCost, paidAmount),
-    };
-  });
+  const orders: OrdersListPageItem[] = rows.map((row) => ({
+    id: row.id,
+    humanReadableId: row.humanReadableId,
+    orderDate: row.orderDate,
+    expectedDeliveryFrom: row.expectedDeliveryFrom,
+    expectedDeliveryTo: row.expectedDeliveryTo,
+    currencyCode: row.currencyCode,
+    exchangeRate: row.exchangeRate ? Number(row.exchangeRate) : null,
+    totalCost: row.totalCost,
+    status: row.status,
+    store: row.store,
+    itemCount: row.items.length,
+    items: row.items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity,
+      productTypeKey: item.productTypeKey,
+      unitPrice: item.unitPrice,
+      deliveryState: deriveItemDeliveryState(item.deliveryItems, item.deliveryState),
+    })),
+    paidAmount: row.paidAmountMinor,
+    paymentPercentage: row.paymentPercent,
+    hasUnpaidBalance: deriveHasUnpaidBalance(row.totalCost, row.paidAmountMinor),
+  }));
 
-  const filteredByPayment =
-    hasPaymentStateFilter && paymentStates
-      ? allMapped.filter((order) => paymentStates.some((state) => matchesPaymentState(order, state)))
-      : allMapped;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-  let orders = filteredByPayment;
-  if (useInMemoryPagination) {
-    // `payment-asc` cannot be expressed as a native orderBy; re-sort the filtered set by the derived
-    // ratio. Other in-memory sorts already arrive in native order, so filtering preserves it.
-    if (usePostQuerySort) {
-      orders = [...filteredByPayment].sort((a, b) => a.paymentPercentage - b.paymentPercentage);
-    }
-    const offset = (page - 1) * pageSize;
-    orders = orders.slice(offset, offset + pageSize);
-  }
-
-  // Whenever pagination runs in memory, totals must come from the full filtered set, not the DB count.
-  const effectiveTotal = useInMemoryPagination ? filteredByPayment.length : totalCount;
-  const totalPages = Math.max(1, Math.ceil(effectiveTotal / pageSize));
-
-  return { orders, totalCount: effectiveTotal, totalPages, page, pageSize, pendingFxCount };
+  return { orders, totalCount, totalPages, page, pageSize, pendingFxCount };
 }
 
 function resolveOrderBy(sort: OrderListSort) {
@@ -574,27 +557,43 @@ function resolveOrderBy(sort: OrderListSort) {
     case "total-desc":
       return { totalCost: "desc" as const };
     case "payment-asc":
+      // Sort by the persisted paid ratio; `orderDate` desc is a stable tiebreaker so pages never
+      // overlap or drop rows when many orders share the same percentage.
+      return [{ paymentPercent: "asc" as const }, { orderDate: "desc" as const }];
     case "recent":
     default:
       return { orderDate: "desc" as const };
   }
 }
 
-function matchesPaymentState(order: OrdersListPageItem, state: OrderListPaymentState): boolean {
-  const isOverdue = order.expectedDeliveryTo
-    ? order.expectedDeliveryTo.getTime() < Date.now() && order.status !== "COMPLETED" && order.status !== "CANCELLED"
-    : false;
+/**
+ * Builds the payment-state `where` fragment from the selected states. Returns `null` when no
+ * states are selected. `paid`/`partial`/`unpaid` read the persisted `paymentPercent` cache;
+ * `overdue` is a date/status predicate independent of payment progress. States are OR'd.
+ */
+function buildPaymentStateWhere(
+  paymentStates: OrderListPaymentState[] | undefined,
+  now: Date,
+): Record<string, unknown> | null {
+  if (!paymentStates || paymentStates.length === 0) return null;
+  return { OR: paymentStates.map((state) => paymentStateBranch(state, now)) };
+}
+
+function paymentStateBranch(state: OrderListPaymentState, now: Date): Record<string, unknown> {
   switch (state) {
     case "paid":
-      return order.paymentPercentage >= 100;
+      // paymentPercent is clamped to 100, so a fully covered order is exactly 100.
+      return { paymentPercent: { gte: 100 } };
     case "partial":
-      return order.paymentPercentage > 0 && order.paymentPercentage < 100;
+      return { paymentPercent: { gt: 0, lt: 100 } };
     case "unpaid":
-      return order.paymentPercentage === 0;
+      return { paymentPercent: 0 };
     case "overdue":
-      return isOverdue;
+      // A non-null delivery window that has closed while the order is still live. Mirrors the
+      // previous in-memory predicate (a null `expectedDeliveryTo` never matches `lt`).
+      return { expectedDeliveryTo: { lt: now }, status: { notIn: ["COMPLETED", "CANCELLED"] as OrderStatus[] } };
     default:
-      return false;
+      return {};
   }
 }
 

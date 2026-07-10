@@ -12,8 +12,6 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 import { getOrdersList } from "../orderQueries";
 import type { OrdersListPageFilters } from "../orderQueries";
 
-type FindManyArgs = { skip?: number; take?: number };
-
 type OrderRow = {
   id: string;
   humanReadableId: string;
@@ -26,118 +24,149 @@ type OrderRow = {
   status: OrderStatus;
   store: { id: string; name: string; slug: string };
   items: never[];
-  payments: Array<{ amount: number }>;
+  paidAmountMinor: number;
+  paymentPercent: number;
 };
 
 /**
- * Builds a row already shaped like the Prisma select in getOrdersList. `paid` fully covers the
- * total (100%); otherwise the order is left unpaid (0%). Items are omitted — payment-state
- * filtering only depends on payments and totals.
+ * Builds a row already shaped like the Prisma select in getOrdersList. Filtering, sorting, and
+ * pagination now run in SQL, so these tests assert the query the function hands to Prisma (the
+ * `where`/`orderBy`/`skip`/`take`) and how it maps the persisted payment cache — the DB itself
+ * owns applying them, which is exactly what removes the old in-memory `take: 1000` path.
  */
-function makeOrder(id: string, dayOfMonth: number, paid: boolean): OrderRow {
-  const totalCost = 10_000;
+function makeRow(id: string, overrides: Partial<OrderRow> = {}): OrderRow {
   return {
     id,
     humanReadableId: `ORD-${id}`,
-    orderDate: new Date(2026, 0, dayOfMonth),
+    orderDate: new Date(2026, 0, 1),
     expectedDeliveryFrom: null,
     expectedDeliveryTo: null,
     currencyCode: "USD",
     exchangeRate: null,
-    totalCost,
+    totalCost: 10_000,
     status: "OPEN" as OrderStatus,
     store: { id: "store-1", name: "Store One", slug: "store-one" },
     items: [],
-    payments: paid ? [{ amount: totalCost }] : [],
+    paidAmountMinor: 0,
+    paymentPercent: 0,
+    ...overrides,
   };
 }
-
-// Ten orders sorted by orderDate DESC (the native `recent` order). Odd days are paid, even unpaid,
-// so the paid subset in descending-date order is [o9, o7, o5, o3, o1].
-const ORDERS_DESC: OrderRow[] = [
-  makeOrder("o9", 9, true),
-  makeOrder("o8", 8, false),
-  makeOrder("o7", 7, true),
-  makeOrder("o6", 6, false),
-  makeOrder("o5", 5, true),
-  makeOrder("o4", 4, false),
-  makeOrder("o3", 3, true),
-  makeOrder("o2", 2, false),
-  makeOrder("o1", 1, true),
-  makeOrder("o0", 0, false),
-];
-
-const PAID_IDS_DESC = ["o9", "o7", "o5", "o3", "o1"];
 
 function baseFilters(overrides: Partial<OrdersListPageFilters> = {}): OrdersListPageFilters {
   return { sort: "recent", page: 1, pageSize: 2, ...overrides };
 }
 
+function findManyArgs(callIndex = 0) {
+  return prismaMock.order.findMany.mock.calls[callIndex][0] as {
+    where: { AND?: Array<Record<string, unknown>> };
+    orderBy: unknown;
+    skip?: number;
+    take?: number;
+  };
+}
+
+function paymentBranch(callIndex = 0) {
+  const groups = findManyArgs(callIndex).where.AND ?? [];
+  return groups.find((group) => "OR" in group) as { OR: Array<Record<string, unknown>> } | undefined;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
-  // findMany simulates the DB: native pagination slices by skip/take; the full-fetch path
-  // (take without skip) returns the whole ordered set.
-  prismaMock.order.findMany.mockImplementation((args: FindManyArgs) => {
-    if (typeof args.skip === "number") {
-      return Promise.resolve(ORDERS_DESC.slice(args.skip, args.skip + (args.take ?? ORDERS_DESC.length)));
-    }
-    return Promise.resolve(ORDERS_DESC);
-  });
-  // count returns the UNFILTERED total — the payment filter must not trust this value.
-  prismaMock.order.count.mockResolvedValue(ORDERS_DESC.length);
+  prismaMock.order.findMany.mockResolvedValue([]);
+  prismaMock.order.count.mockResolvedValue(0);
 });
 
-describe("getOrdersList payment-state pagination (DATA-2)", () => {
-  it("returns page-1 totals from the filtered set, not the DB count", async () => {
-    const result = await getOrdersList("user-1", baseFilters({ paymentStates: ["paid"], page: 1 }));
+describe("getOrdersList SQL payment-state pagination", () => {
+  it("pushes the payment-state filter into SQL and paginates natively (no in-memory full fetch)", async () => {
+    prismaMock.order.count.mockResolvedValue(5);
 
-    expect(result.orders.map((o) => o.id)).toEqual(["o9", "o7"]);
-    expect(result.totalCount).toBe(PAID_IDS_DESC.length);
-    expect(result.totalPages).toBe(Math.ceil(PAID_IDS_DESC.length / 2));
+    await getOrdersList("user-1", baseFilters({ paymentStates: ["paid"], page: 2, pageSize: 2 }));
+
+    const args = findManyArgs();
+    // Native skip/take pagination — the removed path used `take: 1000` with no skip.
+    expect(args.skip).toBe(2);
+    expect(args.take).toBe(2);
+    // The paid state maps onto the persisted paymentPercent cache.
+    expect(paymentBranch()).toEqual({ OR: [{ paymentPercent: { gte: 100 } }] });
   });
 
-  it("paginates the filtered set with a date sort — page 2 does not overlap page 1 (the bug)", async () => {
-    const page1 = await getOrdersList("user-1", baseFilters({ paymentStates: ["paid"], page: 1 }));
-    const page2 = await getOrdersList("user-1", baseFilters({ paymentStates: ["paid"], page: 2 }));
+  it("derives totalCount and totalPages from the filtered DB count, not an in-memory length", async () => {
+    // The original bug surfaced when totals came from an unfiltered count; they must track the
+    // same filtered `where` the DB paginates over.
+    prismaMock.order.count.mockResolvedValue(5);
 
-    expect(page1.orders.map((o) => o.id)).toEqual(["o9", "o7"]);
-    // Before the fix, page 2 was sliced from a native DB page then filtered, corrupting boundaries.
-    expect(page2.orders.map((o) => o.id)).toEqual(["o5", "o3"]);
-    expect(page2.totalCount).toBe(PAID_IDS_DESC.length);
-    expect(page2.page).toBe(2);
+    const result = await getOrdersList("user-1", baseFilters({ paymentStates: ["paid"], pageSize: 2 }));
 
-    const overlap = page1.orders.filter((a) => page2.orders.some((b) => b.id === a.id));
-    expect(overlap).toEqual([]);
+    expect(prismaMock.order.count).toHaveBeenCalledWith({
+      where: expect.objectContaining({ AND: expect.any(Array) }),
+    });
+    expect(result.totalCount).toBe(5);
+    expect(result.totalPages).toBe(3);
   });
 
-  it("covers every filtered order across pages with no gaps under a date sort", async () => {
-    const collected: string[] = [];
-    for (let page = 1; page <= 3; page++) {
-      const result = await getOrdersList("user-1", baseFilters({ paymentStates: ["paid"], page }));
-      collected.push(...result.orders.map((o) => o.id));
-    }
-    expect(collected).toEqual(PAID_IDS_DESC);
+  it("sorts payment-asc by the persisted paymentPercent with a stable orderDate tiebreaker", async () => {
+    await getOrdersList("user-1", baseFilters({ sort: "payment-asc" }));
+
+    const args = findManyArgs();
+    expect(args.orderBy).toEqual([{ paymentPercent: "asc" }, { orderDate: "desc" }]);
+    expect(args.skip).toBe(0);
+    expect(args.take).toBe(2);
   });
 
-  it("still honors the payment-asc sort with a payment filter", async () => {
-    const result = await getOrdersList(
-      "user-1",
-      baseFilters({ paymentStates: ["paid", "unpaid"], sort: "payment-asc", page: 1, pageSize: 3 }),
-    );
+  it("maps paidAmount, paymentPercentage and hasUnpaidBalance straight from the persisted cache", async () => {
+    prismaMock.order.findMany.mockResolvedValue([
+      makeRow("o1", { totalCost: 10_000, paidAmountMinor: 3_000, paymentPercent: 30 }),
+      makeRow("o2", { totalCost: 10_000, paidAmountMinor: 10_000, paymentPercent: 100 }),
+    ]);
+    prismaMock.order.count.mockResolvedValue(2);
 
-    // Ascending paymentPercentage puts the unpaid (0%) orders before the paid (100%) ones.
-    expect(result.orders.map((o) => o.paymentPercentage)).toEqual([0, 0, 0]);
-    expect(result.totalCount).toBe(ORDERS_DESC.length);
+    const result = await getOrdersList("user-1", baseFilters());
+
+    expect(result.orders[0]).toMatchObject({ id: "o1", paidAmount: 3000, paymentPercentage: 30, hasUnpaidBalance: true });
+    expect(result.orders[1]).toMatchObject({
+      id: "o2",
+      paidAmount: 10000,
+      paymentPercentage: 100,
+      hasUnpaidBalance: false,
+    });
+  });
+
+  it("expresses the overdue state as a date/status predicate independent of payment progress", async () => {
+    await getOrdersList("user-1", baseFilters({ paymentStates: ["overdue"] }));
+
+    const branch = paymentBranch();
+    expect(branch?.OR[0]).toMatchObject({
+      expectedDeliveryTo: { lt: expect.any(Date) },
+      status: { notIn: ["COMPLETED", "CANCELLED"] },
+    });
+  });
+
+  it("combines multiple payment states as OR branches", async () => {
+    await getOrdersList("user-1", baseFilters({ paymentStates: ["paid", "unpaid"] }));
+
+    expect(paymentBranch()).toEqual({
+      OR: [{ paymentPercent: { gte: 100 } }, { paymentPercent: 0 }],
+    });
+  });
+
+  it("keeps the payment filter and a name query as separate AND'd OR groups", async () => {
+    await getOrdersList("user-1", baseFilters({ paymentStates: ["partial"], nameQuery: "abc" }));
+
+    const groups = findManyArgs().where.AND ?? [];
+    const orGroups = groups.filter((group) => "OR" in group);
+    // One OR group for the name/id match, one for the payment state.
+    expect(orGroups).toHaveLength(2);
+    expect(orGroups).toContainEqual({ OR: [{ paymentPercent: { gt: 0, lt: 100 } }] });
   });
 
   it("uses native skip/take pagination and the DB count when no payment filter is present", async () => {
+    prismaMock.order.count.mockResolvedValue(10);
+
     const result = await getOrdersList("user-1", baseFilters({ page: 2, pageSize: 2 }));
 
-    expect(prismaMock.order.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ skip: 2, take: 2 }),
-    );
-    expect(result.orders.map((o) => o.id)).toEqual(["o7", "o6"]);
-    expect(result.totalCount).toBe(ORDERS_DESC.length);
-    expect(result.totalPages).toBe(Math.ceil(ORDERS_DESC.length / 2));
+    expect(prismaMock.order.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 2, take: 2 }));
+    expect(result.totalCount).toBe(10);
+    expect(result.totalPages).toBe(5);
   });
 });

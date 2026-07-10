@@ -436,12 +436,19 @@ model Order {
   expectedDeliveryFrom DateTime?
   expectedDeliveryTo   DateTime?
   currencyCode         String
-  exchangeRate         Decimal?
+  exchangeRate         Decimal?              @db.Decimal(18, 8)
   // Set true when the user changes their base currency, for every order whose currencyCode
   // differs from the new base — its stored exchangeRate is now stale and must be reconciled.
   // Cleared when the rate is (re)entered: on create, on edit, and on bulk FX reconciliation.
   needsExchangeRateUpdate Boolean            @default(false)
   totalCost            Int
+  // Denormalized payment cache kept transactionally in sync by the payment/total mutations.
+  // Payments stay the source of truth (single-order views recompute from them); these fields
+  // exist so the orders list can filter by payment state and sort by paid ratio entirely in
+  // SQL, instead of fetching every order to derive the percentage in memory. `paymentPercent`
+  // is the same floor(paid/total*100) value the UI shows, so filter/sort/display never diverge.
+  paidAmountMinor      Int                   @default(0)
+  paymentPercent       Int                   @default(0)
   note                 String?
   status               OrderStatus           @default(OPEN)
   cancellationReason   String?
@@ -458,6 +465,7 @@ model Order {
   @@index([status])
   @@index([userId, orderDate])
   @@index([userId, status])
+  @@index([userId, paymentPercent])
   @@map("order")
 }
 
@@ -478,6 +486,7 @@ model OrderItem {
   productType       StoreProductType?      @relation(fields: [productTypeKey], references: [key], onDelete: Restrict)
   deliveryItems     DeliveryOrderItem[]
 
+  @@unique([orderId, position])
   @@index([orderId])
   @@index([userId])
   @@index([userId, deliveryState])
@@ -526,7 +535,7 @@ model Delivery {
   receivedDate        DateTime?
   cost                Int
   currencyCode        String
-  exchangeRate        Decimal?
+  exchangeRate        Decimal?            @db.Decimal(18, 8)
   // Set true when the user changes their base currency, for every delivery whose currencyCode
   // differs from the new base — its stored exchangeRate is now stale and must be reconciled.
   // Cleared when the delivery is edited (the collector reaffirms cost/currency/rate on save).
