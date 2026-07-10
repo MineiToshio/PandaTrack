@@ -311,3 +311,50 @@ Not scheduled in this plan. Each needs an owner decision, carries disproportiona
 ```
 
 ```
+
+---
+
+## Outcome report (2026-07-10)
+
+Execution completed the same day on branch `staging`, commits `9140d56..264c6f1` (15 commits, local only, not pushed). Every batch passed an adversarial review by a reviewer distinct from its implementer; the money batch (B2) used a two-lens panel and its findings were fixed and re-reviewed until clean.
+
+### Finding → status
+
+| Findings | Status | Landed in |
+| --- | --- | --- |
+| SEC-A-1 better-auth account-takeover advisory, SEC-A-2 Next.js middleware-bypass CVEs, DX-5 transitive audit fixes | Implemented — 0 critical/high remain in `npm audit --omit=dev` | `00b6e4b` |
+| SEC-A-3 Sentry `sendDefaultPii`, SEC-A-5 proxy private prefixes | Implemented | `1b40070` |
+| SEC-B-1/SEC-A-4 unauthenticated duplicate-candidates action + unbounded scan, SEC-B-2 array bounds, SEC-B-3 Zod on lifecycle IDs, SEC-B-4 locale redirect, SEC-B-5/MONEY-5 strict decimal parsing | Implemented | `a2f735a` |
+| SEC-B-6 `productTypeKey` bound | Implemented (length bound; catalog membership was already DB-enforced at write time) | `603957c`, `d6fda5c` |
+| DATA-1 atomic base-currency change, MONEY-1 canonical FX schema, MONEY-3 payment race (Serializable + retry), MONEY-6 payment-summary clamps, SEC-A-6 Prisma out of the action | Implemented | `c9f6e56` |
+| DATA-2 payment-filter pagination, DATA-4 delivery status N+1, DATA-5/6/11 compound indexes (additive migration, applied) | Implemented | `66e8803` |
+| MONEY-2 delivery FX-pending flag (migration + same-transaction flagging + surfaces + FRD-08/FDD/WO docs) | Implemented | `0722556` |
+| PERF-1/2 per-request query dedupe, PERF-3 unused font family removed, PERF-5 Avatar → `next/image` | Implemented | `c904d4f` |
+| UI-1 `dark:` → theme tokens, UI-2 `--shadow-3` → `--shadow-elevation-3`, BP-3 skeleton i18n, UI-5/6 landing analytics events | Implemented | `41ae98e` |
+| DOC-1 README, DOC-2 glossary, BP-4 next-intl rule realigned, DX-3 `.env.example`, ARCH-6 ADR 0015 + structure docs, ARCH-5 non-optimistic justifications | Implemented | `4a54f8f` |
+| BP-1 planning refs (59 files), BP-2 Spanish JSDoc, BP-5 `toIso` dedupe, BP-7 `any` typed, BP-9/DX-7 lint debt (31 → 4 justified warnings) | Implemented | `264c6f1` |
+| DX-2 test gap on money paths | Partially implemented — new unit suites for payment race/overpay, FX schema, base-currency atomicity, FX-rate application, pagination, delivery flag; lifecycle/settings actions still untested | `c9f6e56`, `66e8803`, `0722556` |
+
+### Review-driven fixes (found by the adversarial phase, not the audit)
+
+| Fix | Landed in |
+| --- | --- |
+| FX schema precision: 2-decimal/0.01-floor made weak-currency pairs (CLP/KRW/JPY) and 6-decimal provider rates unreconcilable — now 6 decimals, floor 0.000001, shared by orders **and** deliveries | `d6fda5c`, `b913662` |
+| `savePreferencesAction` side door could change base currency without flagging orders — now routes through the atomic orchestrator | `d6fda5c` |
+| Duplicate-store detection: accent-sensitive SQL pre-filter silently skipped stores like "Pokémon" for "pokemon" — replaced with a bounded scan normalized on both sides | `d6fda5c` |
+| Archive-guard test raced with transient agent worktrees; ESLint scanned them | `ea472dc`, `d6fda5c` |
+
+### Final validation (verified exit codes, merged tree)
+
+- `npm run test`: 724 passed, 12 skipped (integration specs that require a live DB), 0 failed
+- `npm run type-check`: clean
+- `npm run lint`: 0 errors, 4 warnings (intentional `aria-*` on sole-surface trigger buttons, commented in place)
+- `npm run validate-build`: production build succeeds
+- `npm run test:e2e`: `auth.spec.ts` 6/6. `orders`/`deliveries` route-protection tests pass; their authenticated cases auto-skip off port 3000, which is occupied by an unrelated local dev server (see below)
+
+### Deferred / owner decisions (in addition to the table above)
+
+- **Duplicate detection at scale**: the bounded-scan fix is exact up to 500 stores; beyond that a persisted normalized-name column (+ index) is the proper fix.
+- **ModalDialog dark accent-glow**: the theme fix replaced a bespoke dark shadow with `--shadow-elevation-3`; needs a design sign-off.
+- **Local e2e environment**: authenticated Playwright specs require port 3000 (Better Auth trusted origin), which another project's dev server frequently occupies; freeing the port re-enables the full suite.
+- **DX-1 build-script `migrate resolve`**: still in place; requires checking the production DB migration state before removal.
