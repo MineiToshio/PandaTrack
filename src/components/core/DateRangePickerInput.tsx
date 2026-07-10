@@ -274,7 +274,7 @@ export default function DateRangePickerInput({
               // "popover-over-drawer" yet.
               "z-[60] overflow-hidden rounded-[var(--radius-lg)]",
               // Distinct elevation tier so it visibly floats over the sidebar.
-              "[box-shadow:var(--shadow-3,0_18px_48px_-12px_rgba(0,0,0,0.35))] [background:var(--background)] [border:1px_solid_var(--border-strong)]",
+              "[box-shadow:var(--shadow-elevation-3)] [background:var(--background)] [border:1px_solid_var(--border-strong)]",
               // Desktop: side-by-side preset column + calendar. Mobile: stacked.
               popupPos?.isMobile ? "flex flex-col" : "flex",
             )}

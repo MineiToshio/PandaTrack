@@ -165,7 +165,7 @@ export default function DatePickerInput({
             // Match DateRangePickerInput popup chrome — surface tier + border-strong + elevated
             // shadow so single-date and range-date popovers feel like the same component family.
             "[background:var(--background)] [border:1px_solid_var(--border-strong)]",
-            "[box-shadow:var(--shadow-3,0_18px_48px_-12px_rgba(0,0,0,0.35))]",
+            "[box-shadow:var(--shadow-elevation-3)]",
           )}
         >
           {presets && presets.length > 0 && (

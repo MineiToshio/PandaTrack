@@ -126,8 +126,7 @@ export default function Sheet({
       <div
         className={cn(
           "fixed inset-0 z-[var(--z-modal,80)] flex items-end justify-center",
-          "[backdrop-filter:blur(8px)] [background:oklch(12%_0.010_50/0.35)]",
-          "dark:[background:oklch(4%_0.015_265/0.62)]",
+          "[backdrop-filter:blur(8px)] [background:var(--surface-overlay)]",
           "motion-safe:animate-[sheet-fade_200ms_ease-out_both]",
         )}
         onClick={handleBackdropClick}

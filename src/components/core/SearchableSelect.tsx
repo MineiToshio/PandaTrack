@@ -234,7 +234,7 @@ export default function SearchableSelect({
         <ul
           id={`${id}-options`}
           role="listbox"
-          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-52 overflow-auto rounded-[var(--radius-md)] [border-width:1px] [border-style:solid] [border-color:var(--border-strong)] p-1 [box-shadow:var(--shadow-3)] [background:var(--surface-elevated)]"
+          className="absolute top-full right-0 left-0 z-50 mt-1 max-h-52 overflow-auto rounded-[var(--radius-md)] [border-width:1px] [border-style:solid] [border-color:var(--border-strong)] p-1 [box-shadow:var(--shadow-elevation-3)] [background:var(--surface-elevated)]"
         >
           {filtered.length === 0 && <li className="px-2 py-2 text-sm [color:var(--text-muted)]">{noResultsLabel}</li>}
           {filtered.map((opt, idx) => (

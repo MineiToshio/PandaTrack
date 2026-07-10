@@ -130,8 +130,7 @@ export default function ModalDialog({
       <div
         className={cn(
           "fixed inset-0 z-[var(--z-modal,80)] flex items-center justify-center p-4",
-          "[backdrop-filter:blur(8px)] [-webkit-backdrop-filter:blur(8px)] [background:oklch(12%_0.010_50/0.35)]",
-          "dark:[background:oklch(4%_0.015_265/0.62)]",
+          "[backdrop-filter:blur(8px)] [-webkit-backdrop-filter:blur(8px)] [background:var(--surface-overlay)]",
           "motion-safe:animate-[modal-fade_200ms_cubic-bezier(0.2,0,0,1)_both]",
         )}
         onClick={handleBackdropClick}
@@ -147,8 +146,7 @@ export default function ModalDialog({
           className={cn(
             "relative flex max-h-[calc(100vh-80px)] w-full flex-col overflow-hidden [outline:none]",
             "[border-radius:20px] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]",
-            "[box-shadow:0_14px_28px_oklch(20%_0.020_50/0.10),0_2px_6px_oklch(20%_0.020_50/0.06)]",
-            "dark:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.04),0_0_0_1px_var(--border-strong),0_0_24px_color-mix(in_oklch,var(--accent)_5%,transparent)]",
+            "[box-shadow:var(--shadow-elevation-3)]",
             "motion-safe:animate-[modal-spring_280ms_linear(0,0.5,0.85,0.97,1)_both]",
             "motion-reduce:animate-[modal-fade_200ms_ease-out_both]",
             className,

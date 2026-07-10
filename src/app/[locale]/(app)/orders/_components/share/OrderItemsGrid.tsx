@@ -209,7 +209,7 @@ function ItemTypePicker({
             className={cn(
               "z-50 flex max-h-80 flex-col overflow-hidden rounded-[10px]",
               "[background:var(--background)] [border:1px_solid_var(--border-strong)]",
-              "[box-shadow:var(--shadow-3,0_18px_48px_-12px_rgba(0,0,0,0.35))]",
+              "[box-shadow:var(--shadow-elevation-3)]",
             )}
           >
             <div className="relative flex items-center px-2 py-2 [border-bottom:1px_solid_var(--border)]">

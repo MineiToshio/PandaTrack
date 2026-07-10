@@ -554,8 +554,7 @@ export default function FilterDrawer({
       <div
         className={cn(
           "fixed inset-0 z-[var(--z-drawer,70)] flex md:justify-end",
-          "[backdrop-filter:blur(8px)] [background:oklch(12%_0.010_50/0.35)]",
-          "dark:[background:oklch(4%_0.015_265/0.62)]",
+          "[backdrop-filter:blur(8px)] [background:var(--surface-overlay)]",
           "items-end md:items-stretch",
         )}
         role="presentation"
@@ -568,7 +567,7 @@ export default function FilterDrawer({
           tabIndex={-1}
           className={cn(
             "relative flex w-full flex-col [outline:none] [background:var(--surface-elevated)]",
-            "[box-shadow:var(--shadow-3)]",
+            "[box-shadow:var(--shadow-elevation-3)]",
             // Mobile: bottom sheet — top border only, top corners rounded
             "max-h-[92svh] [border-top:1px_solid_var(--border-strong)]",
             "[border-top-left-radius:20px] [border-top-right-radius:20px]",

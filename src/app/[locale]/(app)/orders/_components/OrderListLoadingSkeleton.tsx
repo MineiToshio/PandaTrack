@@ -8,6 +8,12 @@
 type OrderListLoadingSkeletonProps = {
   /** Localized accessible name for the busy region (e.g. "Cargando…"). Announced to AT. */
   loadingLabel?: string;
+  /** Localized column headers — reuse the same `orderListing.table.*` keys as `OrdersTable`. */
+  headerOrder: string;
+  headerProducts: string;
+  headerStatus: string;
+  headerTotal: string;
+  headerProgress: string;
   /** Number of skeleton rows / cards. Defaults: 6 desktop, 4 mobile (matches the demo). */
   desktopRows?: number;
   mobileRows?: number;
@@ -25,6 +31,11 @@ const HEADER_CELL =
 
 export default function OrderListLoadingSkeleton({
   loadingLabel,
+  headerOrder,
+  headerProducts,
+  headerStatus,
+  headerTotal,
+  headerProgress,
   desktopRows = 6,
   mobileRows = 4,
 }: OrderListLoadingSkeletonProps) {
@@ -45,11 +56,11 @@ export default function OrderListLoadingSkeleton({
             className={`${TABLE_GRID} px-4 py-2.5 [opacity:0.6] [background:color-mix(in_oklch,var(--text-primary)_3%,var(--surface-elevated))] [border-bottom:1px_solid_var(--border)]`}
           >
             <span aria-hidden />
-            <span className={HEADER_CELL}>Pedido / Tienda</span>
-            <span className={`text-center ${HEADER_CELL}`}>Productos</span>
-            <span className={`text-center ${HEADER_CELL}`}>Estado</span>
-            <span className={`text-right ${HEADER_CELL}`}>Total</span>
-            <span className={`text-center ${HEADER_CELL}`}>% Pago</span>
+            <span className={HEADER_CELL}>{headerOrder}</span>
+            <span className={`text-center ${HEADER_CELL}`}>{headerProducts}</span>
+            <span className={`text-center ${HEADER_CELL}`}>{headerStatus}</span>
+            <span className={`text-right ${HEADER_CELL}`}>{headerTotal}</span>
+            <span className={`text-center ${HEADER_CELL}`}>{headerProgress}</span>
             <span aria-hidden />
           </div>
           <ul role="rowgroup" className="m-0 list-none p-0">

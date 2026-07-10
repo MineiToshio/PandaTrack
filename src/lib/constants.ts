@@ -72,6 +72,7 @@ export const POSTHOG_EVENTS = {
     HERO_CTA_CLICKED: "hero_cta_clicked",
     BANNER_CTA_CLICKED: "banner_cta_clicked",
     HEADER_CTA_CLICKED: "header_cta_clicked",
+    HEADER_NAV_CLICKED: "header_nav_clicked",
     MOBILE_MENU_OPENED: "mobile_menu_opened",
     MOBILE_MENU_NAV_CLICKED: "mobile_menu_nav_clicked",
     FAQ_ITEM_TOGGLED: "faq_item_toggled",

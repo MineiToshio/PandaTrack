@@ -42,7 +42,15 @@ export default function Header() {
               <PublicLanguageToggle />
               <PublicThemeToggle />
             </div>
-            <Button as="a" href={signInHref} variant="secondary" size="sm" className="whitespace-nowrap">
+            <Button
+              as="a"
+              href={signInHref}
+              variant="secondary"
+              size="sm"
+              className="whitespace-nowrap"
+              posthogEvent={POSTHOG_EVENTS.LANDING.HEADER_CTA_CLICKED}
+              posthogProps={{ location: "header", destination: "sign-in" }}
+            >
               {t("signIn")}
             </Button>
             <Button

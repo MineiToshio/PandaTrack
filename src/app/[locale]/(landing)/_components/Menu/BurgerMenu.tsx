@@ -69,7 +69,16 @@ export default function BurgerMenu({ isOpen, onClose, items, returnFocusRef }: B
           <PublicLanguageToggle />
           <PublicThemeToggle />
         </div>
-        <Button as="a" href={signInHref} variant="secondary" fullWidth className="mt-2" onClick={onClose}>
+        <Button
+          as="a"
+          href={signInHref}
+          variant="secondary"
+          fullWidth
+          className="mt-2"
+          onClick={onClose}
+          posthogEvent={POSTHOG_EVENTS.LANDING.MOBILE_MENU_NAV_CLICKED}
+          posthogProps={{ destination: "sign-in", cta_type: "secondary" }}
+        >
           {t("signIn")}
         </Button>
         <Button

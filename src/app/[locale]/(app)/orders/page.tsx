@@ -152,7 +152,19 @@ export default async function OrdersPage({ params, searchParams }: OrdersPagePro
         <OrderListFilterChips locale={locale} basePath={basePath} filters={activeFilters} storesById={storesById} />
 
         {/* Data region — only this suspends, with a layout-matching (table desktop / cards mobile) skeleton. */}
-        <Suspense key={fingerprint} fallback={<OrderListLoadingSkeleton loadingLabel={tc("skeleton.loading")} />}>
+        <Suspense
+          key={fingerprint}
+          fallback={
+            <OrderListLoadingSkeleton
+              loadingLabel={tc("skeleton.loading")}
+              headerOrder={t("table.headerOrder")}
+              headerProducts={t("table.headerProducts")}
+              headerStatus={t("table.headerStatus")}
+              headerTotal={t("table.headerTotal")}
+              headerProgress={t("table.headerProgress")}
+            />
+          }
+        >
           <OrdersDataSection
             locale={locale}
             userId={userId}
