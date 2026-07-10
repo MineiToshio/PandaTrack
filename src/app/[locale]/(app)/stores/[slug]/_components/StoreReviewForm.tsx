@@ -10,7 +10,7 @@ import RatingStars from "@/components/core/RatingStars";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import SectionTitleWithAccent from "@/components/modules/SectionTitleWithAccent";
-import type { StoreViewerReview } from "@/queries/store";
+import type { StoreViewerReview } from "@/lib/data/stores/storeQueries";
 import { saveStoreReview, type SaveStoreReviewResult, type SavedStoreReview } from "../_actions/saveStoreReview";
 
 type StoreReviewFormProps = {

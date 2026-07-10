@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import Typography from "@/components/core/Typography";
 import { ROUTES } from "@/lib/constants";
-import type { DuplicateCandidate } from "@/queries/store";
+import type { DuplicateCandidate } from "@/lib/data/stores/storeQueries";
 
 type DuplicateCandidatesListProps = {
   candidates: DuplicateCandidate[];

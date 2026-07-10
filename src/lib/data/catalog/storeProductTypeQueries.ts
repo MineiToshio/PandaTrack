@@ -1,4 +1,3 @@
-import type { PrismaClient } from "../../generated/prisma/client";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 
@@ -8,8 +7,8 @@ export type StoreProductTypeKeyRow = { key: string };
  * Lists active store product type keys in ascending order.
  * Used by forms that let users pick one or more product types from the catalog.
  */
-export async function listActiveStoreProductTypeKeys(db: PrismaClient): Promise<StoreProductTypeKeyRow[]> {
-  return db.storeProductType.findMany({
+export async function listActiveStoreProductTypeKeys(): Promise<StoreProductTypeKeyRow[]> {
+  return prisma.storeProductType.findMany({
     where: { isActive: true },
     select: { key: true },
     orderBy: { key: "asc" },
@@ -22,7 +21,7 @@ export async function listActiveStoreProductTypeKeys(db: PrismaClient): Promise<
  * catalog; `cache()` collapses those reads into a single query per request.
  */
 export const listActiveStoreProductTypeKeysCached = cache((): Promise<StoreProductTypeKeyRow[]> =>
-  listActiveStoreProductTypeKeys(prisma),
+  listActiveStoreProductTypeKeys(),
 );
 
 /**
@@ -30,13 +29,12 @@ export const listActiveStoreProductTypeKeysCached = cache((): Promise<StoreProdu
  * (regardless of `isActive`). Used to validate user-submitted product type keys on server actions.
  */
 export async function listExistingStoreProductTypeKeys(
-  db: PrismaClient,
   keys: readonly string[],
 ): Promise<StoreProductTypeKeyRow[]> {
   if (keys.length === 0) {
     return [];
   }
-  return db.storeProductType.findMany({
+  return prisma.storeProductType.findMany({
     where: { key: { in: [...keys] } },
     select: { key: true },
   });

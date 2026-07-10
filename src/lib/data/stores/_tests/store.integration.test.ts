@@ -5,16 +5,14 @@
 
 import { prisma } from "@/lib/prisma";
 import {
-  createStore,
   findDuplicateCandidates,
   getPublicStoreReviews,
   getPublicStoresListing,
   getStoreBySlug,
   getStoreViewerContext,
-  upsertStoreNote,
-  upsertStoreReview,
-} from "../store";
-import { runSeed } from "../../../prisma/seed";
+} from "../storeQueries";
+import { createStore, upsertStoreNote, upsertStoreReview } from "../storeMutations";
+import { runSeed } from "../../../../../prisma/seed";
 import { createTestUserData } from "@/test/createTestUserData";
 import { describe, expect, it } from "vitest";
 
@@ -33,7 +31,7 @@ describe("store queries", () => {
     });
 
     try {
-      const result = await createStore(prisma, {
+      const result = await createStore({
         name: "Integration Test Store",
         description: "For tests",
         storeType: "BUSINESS",
@@ -80,7 +78,7 @@ describe("store queries", () => {
       });
 
       try {
-        const { id, slug } = await createStore(prisma, {
+        const { id, slug } = await createStore({
           name: "Logo Ready Store",
           storeType: "BUSINESS",
           countryCode: "PE",
@@ -94,7 +92,7 @@ describe("store queries", () => {
 
         const [persistedStore, detailStore] = await Promise.all([
           prisma.store.findUnique({ where: { id } }),
-          getStoreBySlug(prisma, slug),
+          getStoreBySlug(slug),
         ]);
 
         expect(persistedStore?.logoUrl).toBe("https://cdn.example.com/store-logos/store-123.webp?v=abc123def456");
@@ -118,7 +116,7 @@ describe("store queries", () => {
     });
 
     try {
-      const result = await createStore(prisma, {
+      const result = await createStore({
         name: "Admin Created Store",
         storeType: "PERSON",
         countryCode: "US",
@@ -151,7 +149,7 @@ describe("store queries", () => {
     });
 
     try {
-      const created = await createStore(prisma, {
+      const created = await createStore({
         name: "Unique Manga Shop",
         storeType: "BUSINESS",
         countryCode: "ES",
@@ -161,10 +159,10 @@ describe("store queries", () => {
         status: "PENDING",
       });
 
-      const candidates = await findDuplicateCandidates(prisma, "manga", 5);
+      const candidates = await findDuplicateCandidates("manga", 5);
       expect(candidates.some((c) => c.id === created.id && c.name === "Unique Manga Shop")).toBe(true);
 
-      const empty = await findDuplicateCandidates(prisma, "xyznonexistent", 5);
+      const empty = await findDuplicateCandidates("xyznonexistent", 5);
       expect(empty.length).toBe(0);
     } finally {
       await prisma.store.deleteMany({ where: { createdByUserId: user.id } });
@@ -186,7 +184,7 @@ describe("store queries", () => {
       });
 
       try {
-        const a = await createStore(prisma, {
+        const a = await createStore({
           name: "Alpha Manga Shop",
           storeType: "BUSINESS",
           countryCode: "ES",
@@ -196,7 +194,7 @@ describe("store queries", () => {
           status: "APPROVED",
           approvedByUserId: user.id,
         });
-        const b = await createStore(prisma, {
+        const b = await createStore({
           name: "Beta Comics Store",
           storeType: "BUSINESS",
           countryCode: "US",
@@ -206,22 +204,22 @@ describe("store queries", () => {
           status: "PENDING",
         });
 
-        const all = await getPublicStoresListing(prisma, {});
+        const all = await getPublicStoresListing({});
         expect(all.length).toBeGreaterThanOrEqual(2);
         expect(all.map((s) => s.slug).sort()).toContain(a.slug);
         expect(all.map((s) => s.slug).sort()).toContain(b.slug);
 
-        const byName = await getPublicStoresListing(prisma, { nameQuery: "Alpha" });
+        const byName = await getPublicStoresListing({ nameQuery: "Alpha" });
         expect(byName.some((s) => s.slug === a.slug)).toBe(true);
         expect(byName.some((s) => s.slug === b.slug)).toBe(false);
 
-        const byProductType = await getPublicStoresListing(prisma, { productTypeKeys: ["manga"] });
+        const byProductType = await getPublicStoresListing({ productTypeKeys: ["manga"] });
         expect(byProductType.some((s) => s.slug === a.slug)).toBe(true);
 
-        const byCountry = await getPublicStoresListing(prisma, { countryCodes: ["US"] });
+        const byCountry = await getPublicStoresListing({ countryCodes: ["US"] });
         expect(byCountry.some((s) => s.slug === b.slug)).toBe(true);
 
-        const byPresence = await getPublicStoresListing(prisma, { presenceTypes: ["PHYSICAL"] });
+        const byPresence = await getPublicStoresListing({ presenceTypes: ["PHYSICAL"] });
         expect(byPresence.some((s) => s.slug === b.slug)).toBe(true);
       } finally {
         await prisma.store.deleteMany({ where: { createdByUserId: user.id } });
@@ -242,7 +240,7 @@ describe("store queries", () => {
     });
 
     try {
-      const { slug } = await createStore(prisma, {
+      const { slug } = await createStore({
         name: "Business With Contact",
         storeType: "BUSINESS",
         countryCode: "ES",
@@ -254,7 +252,7 @@ describe("store queries", () => {
         contactChannels: [{ type: "EMAIL", value: "test@example.com" }],
       });
 
-      const store = await getStoreBySlug(prisma, slug);
+      const store = await getStoreBySlug(slug);
       expect(store).not.toBeNull();
       expect(store?.isActive).toBe(true);
       expect(store?.storeType).toBe("BUSINESS");
@@ -279,7 +277,7 @@ describe("store queries", () => {
     });
 
     try {
-      const { slug } = await createStore(prisma, {
+      const { slug } = await createStore({
         name: "Person Seller",
         storeType: "PERSON",
         countryCode: "MX",
@@ -290,7 +288,7 @@ describe("store queries", () => {
         approvedByUserId: user.id,
       });
 
-      const store = await getStoreBySlug(prisma, slug);
+      const store = await getStoreBySlug(slug);
       expect(store).not.toBeNull();
       expect(store?.storeType).toBe("PERSON");
       expect(store?.contactChannels).toBeUndefined();
@@ -321,7 +319,7 @@ describe("store queries", () => {
     });
 
     try {
-      const { id: storeId } = await createStore(prisma, {
+      const { id: storeId } = await createStore({
         name: "Review Aggregate Store",
         storeType: "BUSINESS",
         countryCode: "ES",
@@ -332,21 +330,21 @@ describe("store queries", () => {
         approvedByUserId: user.id,
       });
 
-      await upsertStoreReview(prisma, {
+      await upsertStoreReview({
         storeId,
         userId: secondUser.id,
         overallRating: 4,
         comment: "Reliable shipping",
       });
 
-      await upsertStoreReview(prisma, {
+      await upsertStoreReview({
         storeId,
         userId: user.id,
         overallRating: 4,
         comment: "Helpful service",
       });
 
-      await upsertStoreReview(prisma, {
+      await upsertStoreReview({
         storeId,
         userId: user.id,
         overallRating: 3.5,
@@ -355,7 +353,7 @@ describe("store queries", () => {
 
       const [store, reviews] = await Promise.all([
         prisma.store.findUnique({ where: { id: storeId } }),
-        getPublicStoreReviews(prisma, storeId, user.id),
+        getPublicStoreReviews(storeId, user.id),
       ]);
 
       expect(store?.reviewCount).toBe(2);
@@ -399,7 +397,7 @@ describe("store queries", () => {
       );
 
       try {
-        const { id: storeId } = await createStore(prisma, {
+        const { id: storeId } = await createStore({
           name: "Pinned Review Store",
           storeType: "BUSINESS",
           countryCode: "ES",
@@ -410,7 +408,7 @@ describe("store queries", () => {
           approvedByUserId: viewer.id,
         });
 
-        await upsertStoreReview(prisma, {
+        await upsertStoreReview({
           storeId,
           userId: viewer.id,
           overallRating: 3,
@@ -432,7 +430,7 @@ describe("store queries", () => {
         });
 
         for (const [index, otherUser] of otherUsers.entries()) {
-          await upsertStoreReview(prisma, {
+          await upsertStoreReview({
             storeId,
             userId: otherUser.id,
             overallRating: 4,
@@ -454,7 +452,7 @@ describe("store queries", () => {
           });
         }
 
-        const reviews = await getPublicStoreReviews(prisma, storeId, viewer.id, 5);
+        const reviews = await getPublicStoreReviews(storeId, viewer.id, 5);
 
         expect(reviews).toHaveLength(5);
         expect(reviews[0]?.isViewerReview).toBe(true);
@@ -488,7 +486,7 @@ describe("store queries", () => {
     });
 
     try {
-      const { id: storeId, slug } = await createStore(prisma, {
+      const { id: storeId, slug } = await createStore({
         name: "Private Note Store",
         storeType: "BUSINESS",
         countryCode: "MX",
@@ -501,15 +499,15 @@ describe("store queries", () => {
 
       const privateNoteContent = "Only I should see this reminder.";
 
-      await upsertStoreNote(prisma, {
+      await upsertStoreNote({
         storeId,
         userId: user.id,
         content: privateNoteContent,
       });
 
       const [viewerContext, publicStore] = await Promise.all([
-        getStoreViewerContext(prisma, storeId, user.id),
-        getStoreBySlug(prisma, slug),
+        getStoreViewerContext(storeId, user.id),
+        getStoreBySlug(slug),
       ]);
 
       expect(viewerContext.note?.content).toBe(privateNoteContent);

@@ -21,7 +21,7 @@ vi.mock("@/lib/user-settings/collectorPreferencesValidation", () => ({
   validateCollectorPreferencesState: validationMock.validateCollectorPreferencesState,
 }));
 
-import { applyBaseCurrencyChange } from "../userSettings";
+import { applyBaseCurrencyChange } from "../userSettingsMutations";
 
 function makeFakeTx() {
   return {

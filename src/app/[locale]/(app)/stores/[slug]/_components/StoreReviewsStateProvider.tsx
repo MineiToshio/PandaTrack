@@ -8,7 +8,7 @@ import {
   useState,
   type PropsWithChildren,
 } from "react";
-import type { PublicStoreReview, StoreViewerReview } from "@/queries/store";
+import type { PublicStoreReview, StoreViewerReview } from "@/lib/data/stores/storeQueries";
 import type { SavedStoreReview } from "../_actions/saveStoreReview";
 
 type StoreReviewsState = {

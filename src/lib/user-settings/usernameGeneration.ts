@@ -1,12 +1,11 @@
 import * as Sentry from "@sentry/nextjs";
-import type { PrismaClient } from "../../../generated/prisma/client";
 import {
   USERNAME_GENERATION_MAX_ATTEMPTS,
   USERNAME_MAX_LENGTH,
   USERNAME_MIN_LENGTH,
 } from "@/lib/user-settings/usernameConstants";
 import { validateUsernameCandidate, normalizeUsernameForUniqueness } from "@/lib/user-settings/usernameRules";
-import { findUserIdByUsername } from "@/queries/user";
+import { findUserIdByUsername } from "@/lib/data/auth/userQueries";
 
 function randomAlphanumericSuffix(length: number): string {
   const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -54,8 +53,8 @@ function attachSuffix(base: string, suffix: string): string {
   return `${trimmedBase}${connector}${suffix}`;
 }
 
-async function isUsernameAvailable(db: PrismaClient, username: string): Promise<boolean> {
-  const existing = await findUserIdByUsername(db, username);
+async function isUsernameAvailable(username: string): Promise<boolean> {
+  const existing = await findUserIdByUsername(username);
   return existing === null;
 }
 
@@ -69,7 +68,7 @@ function buildFallbackUsername(): string {
  * Generates a unique username for a newly created account.
  * Collision-safe because usernames are persisted in canonical lowercase form.
  */
-export async function generateUniqueUsernameForNewUser(db: PrismaClient, email: string): Promise<{ username: string }> {
+export async function generateUniqueUsernameForNewUser(email: string): Promise<{ username: string }> {
   const localPart = email.includes("@") ? (email.split("@")[0] ?? "") : email;
   const base = buildCandidateBaseFromEmailLocalPart(localPart);
 
@@ -80,7 +79,7 @@ export async function generateUniqueUsernameForNewUser(db: PrismaClient, email: 
     if (!validated.ok) {
       continue;
     }
-    const available = await isUsernameAvailable(db, validated.username);
+    const available = await isUsernameAvailable(validated.username);
     if (available) {
       return {
         username: validated.username,
@@ -94,7 +93,7 @@ export async function generateUniqueUsernameForNewUser(db: PrismaClient, email: 
     if (!validated.ok) {
       continue;
     }
-    const available = await isUsernameAvailable(db, validated.username);
+    const available = await isUsernameAvailable(validated.username);
     if (available) {
       return {
         username: validated.username,
@@ -110,11 +109,11 @@ export async function generateUniqueUsernameForNewUser(db: PrismaClient, email: 
 /**
  * Validates that a username is available for assignment (format + uniqueness).
  */
-export async function isUsernameNormalizedTaken(db: PrismaClient, normalized: string): Promise<boolean> {
-  const row = await findUserIdByUsername(db, normalizeUsernameForUniqueness(normalized));
+export async function isUsernameNormalizedTaken(normalized: string): Promise<boolean> {
+  const row = await findUserIdByUsername(normalizeUsernameForUniqueness(normalized));
   return row !== null;
 }
 
-export async function isUsernameTaken(db: PrismaClient, username: string): Promise<boolean> {
-  return isUsernameNormalizedTaken(db, username);
+export async function isUsernameTaken(username: string): Promise<boolean> {
+  return isUsernameNormalizedTaken(username);
 }

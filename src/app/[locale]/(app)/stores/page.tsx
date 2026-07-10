@@ -6,16 +6,15 @@ import type { Metadata } from "next";
 import EmptyState from "@/components/modules/EmptyState";
 import Button from "@/components/core/Button/Button";
 import { getSession } from "@/lib/auth/auth-server";
-import { prisma } from "@/lib/prisma";
 import {
   DEFAULT_PUBLIC_STORE_PAGE_SIZE,
   countPublicStores,
   getPublicStoresListingPage,
   getViewerOrderCountsByStoreSlugs,
   type PublicStoreListingFilters,
-} from "@/queries/store";
-import { listCountryCodesCached } from "@/queries/country";
-import { listActiveStoreProductTypeKeysCached } from "@/queries/storeProductType";
+} from "@/lib/data/stores/storeQueries";
+import { listCountryCodesCached } from "@/lib/data/catalog/countryQueries";
+import { listActiveStoreProductTypeKeysCached } from "@/lib/data/catalog/storeProductTypeQueries";
 import { buildPageMetadata } from "@/lib/seo";
 import { ROUTES } from "@/lib/constants";
 import { parseListingSearchParams } from "./_utils/listingParams";
@@ -157,7 +156,7 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
 async function StoresCount({ locale, filters }: { locale: string; filters: PublicStoreListingFilters }) {
   const [tListing, totalStores] = await Promise.all([
     getTranslations({ locale, namespace: "storeListing" }),
-    countPublicStores(prisma, filters),
+    countPublicStores(filters),
   ]);
   return (
     <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
@@ -180,7 +179,7 @@ async function StoresGridSection({
   hasFilters: boolean;
   buildPaginationHref: (page: number) => string;
 }) {
-  const listingPage = await getPublicStoresListingPage(prisma, filters);
+  const listingPage = await getPublicStoresListingPage(filters);
 
   if (listingPage.totalCount === 0) {
     return <StoresEmptyState locale={locale} hasFilters={hasFilters} />;
@@ -189,7 +188,6 @@ async function StoresGridSection({
   const viewerOrderCountsBySlug =
     userId && listingPage.items.length > 0
       ? await getViewerOrderCountsByStoreSlugs(
-          prisma,
           userId,
           listingPage.items.map((s) => s.slug),
         )

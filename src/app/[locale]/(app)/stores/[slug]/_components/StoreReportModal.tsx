@@ -14,7 +14,7 @@ import Typography from "@/components/core/Typography";
 import Modal from "@/components/modules/Modal/Modal";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { cn } from "@/lib/styles";
-import type { StoreGovernanceViewerContext } from "@/queries/storeGovernance";
+import type { StoreGovernanceViewerContext } from "@/lib/data/stores/storeGovernanceQueries";
 import ReportReasonPicker from "../../_components/share/ReportReasonPicker";
 import { saveStoreReport, type SaveStoreReportResult } from "../_actions/saveStoreReport";
 

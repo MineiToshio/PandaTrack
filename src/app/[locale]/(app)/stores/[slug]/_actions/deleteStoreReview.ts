@@ -3,11 +3,10 @@
 import { revalidatePath } from "next/cache";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { deleteStoreReview as deleteStoreReviewQuery } from "@/queries/store";
+import { deleteStoreReview as deleteStoreReviewQuery } from "@/lib/data/stores/storeMutations";
 
 const deleteStoreReviewSchema = z.object({
   reviewId: z.string().trim().min(1),
@@ -35,7 +34,7 @@ export async function deleteStoreReview(
   }
 
   try {
-    const result = await deleteStoreReviewQuery(prisma, {
+    const result = await deleteStoreReviewQuery({
       reviewId: parsed.data.reviewId,
       userId: session.user.id,
     });

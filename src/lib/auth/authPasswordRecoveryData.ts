@@ -1,11 +1,9 @@
-import { prisma } from "@/lib/prisma";
 import { PasswordRecoveryThrottleState } from "@/lib/auth/passwordRecoveryThrottle";
+import { findVerificationMarkerById, type VerificationMarker } from "@/lib/data/auth/verificationQueries";
 import {
   deleteVerificationsByIdentifier,
-  findVerificationMarkerById,
   upsertVerificationMarker,
-  type VerificationMarker,
-} from "@/queries/verification";
+} from "@/lib/data/auth/verificationMutations";
 
 const PASSWORD_RESET_TOKEN_PREFIX = "reset-password:";
 
@@ -14,13 +12,13 @@ function buildPasswordResetVerificationIdentifier(token: string) {
 }
 
 export async function getPasswordRecoveryThrottleMarker(scopeId: string): Promise<VerificationMarker | null> {
-  return findVerificationMarkerById(prisma, scopeId);
+  return findVerificationMarkerById(scopeId);
 }
 
 export async function upsertPasswordRecoveryThrottleMarker(scopeId: string, state: PasswordRecoveryThrottleState) {
   const now = new Date();
 
-  await upsertVerificationMarker(prisma, {
+  await upsertVerificationMarker({
     id: scopeId,
     identifier: scopeId,
     value: JSON.stringify(state),
@@ -30,5 +28,5 @@ export async function upsertPasswordRecoveryThrottleMarker(scopeId: string, stat
 }
 
 export async function deletePasswordResetVerificationToken(token: string) {
-  return deleteVerificationsByIdentifier(prisma, buildPasswordResetVerificationIdentifier(token));
+  return deleteVerificationsByIdentifier(buildPasswordResetVerificationIdentifier(token));
 }

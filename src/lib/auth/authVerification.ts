@@ -1,10 +1,10 @@
 import { auth } from "@/lib/auth/auth";
-import { prisma } from "@/lib/prisma";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import * as Sentry from "@sentry/nextjs";
-import { findUserVerificationSnapshot } from "@/queries/user";
-import { createVerificationRecord, findFirstVerificationIdByIdentifier } from "@/queries/verification";
+import { findUserVerificationSnapshot } from "@/lib/data/auth/userQueries";
+import { findFirstVerificationIdByIdentifier } from "@/lib/data/auth/verificationQueries";
+import { createVerificationRecord } from "@/lib/data/auth/verificationMutations";
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const VERIFICATION_GRACE_DAYS = 7;
@@ -38,7 +38,7 @@ function asDate(value: Date | string) {
 }
 
 export async function getVerificationSnapshot(userId: string): Promise<VerificationSnapshot | null> {
-  const user = await findUserVerificationSnapshot(prisma, userId);
+  const user = await findUserVerificationSnapshot(userId);
 
   if (!user) {
     return null;
@@ -122,7 +122,7 @@ export async function maybeSendDaySixVerificationReminder(
   }
 
   const reminderIdentifier = `${DAY_SIX_REMINDER_MARKER_PREFIX}${snapshot.userId}`;
-  const existingReminder = await findFirstVerificationIdByIdentifier(prisma, reminderIdentifier);
+  const existingReminder = await findFirstVerificationIdByIdentifier(reminderIdentifier);
 
   if (existingReminder) {
     return { sent: false };
@@ -140,7 +140,7 @@ export async function maybeSendDaySixVerificationReminder(
     return { sent: false, error: sendResult.error };
   }
 
-  await createVerificationRecord(prisma, {
+  await createVerificationRecord({
     id: crypto.randomUUID(),
     identifier: reminderIdentifier,
     value: "sent",

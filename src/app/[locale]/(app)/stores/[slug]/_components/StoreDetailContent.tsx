@@ -39,8 +39,8 @@ import type {
   StoreViewerNote,
   StoreViewerReview,
   ViewerStoreActivity,
-} from "@/queries/store";
-import type { EditableStore, StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
+} from "@/lib/data/stores/storeQueries";
+import type { EditableStore, StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/lib/data/stores/storeGovernanceQueries";
 import StoreHero from "../../_components/share/StoreHero";
 import CollapsibleSection from "@/components/modules/CollapsibleSection";
 import StorePublicReviewsSection from "./StorePublicReviewsSection";

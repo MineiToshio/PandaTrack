@@ -10,7 +10,7 @@ import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
 import { WizardStep } from "@/components/modules/WizardAccordion";
 import { STORE_LOGO_MAX_SOURCE_SIZE_MB } from "@/lib/store/logoShared";
-import type { DuplicateCandidate } from "@/queries/store";
+import type { DuplicateCandidate } from "@/lib/data/stores/storeQueries";
 import {
   IDENTITY_STEP_FIELDS,
   mergeStepClientErrors,

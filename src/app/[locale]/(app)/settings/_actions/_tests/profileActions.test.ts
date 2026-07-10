@@ -49,9 +49,12 @@ vi.mock("@/lib/auth/auth-server", () => ({ getSession: getSessionMock }));
 vi.mock("@/lib/prisma", () => ({ prisma: {} }));
 vi.mock("@sentry/nextjs", () => ({ captureException: captureExceptionMock }));
 
-vi.mock("@/queries/user", () => ({
+vi.mock("@/lib/data/auth/userQueries", () => ({
   findUserIdByUsername: findUserIdByUsernameMock,
   getUserProfileSnapshot: getUserProfileSnapshotMock,
+}));
+
+vi.mock("@/lib/data/auth/userMutations", () => ({
   updateUserDisplayName: updateUserDisplayNameMock,
   updateUserImage: updateUserImageMock,
   updateUserUsername: updateUserUsernameMock,
@@ -130,7 +133,7 @@ describe("checkUsernameAvailabilityAction", () => {
     const result = await checkUsernameAvailabilityAction("Collector-1");
 
     expect(result).toEqual({ available: true });
-    expect(findUserIdByUsernameMock).toHaveBeenCalledWith(expect.anything(), "collector-1");
+    expect(findUserIdByUsernameMock).toHaveBeenCalledWith("collector-1");
   });
 
   it("reports available when the candidate is already owned by the caller", async () => {
@@ -214,7 +217,7 @@ describe("saveUsernameAction", () => {
     const result = await saveUsernameAction("Collector-1");
 
     expect(result).toEqual({ ok: true, username: "collector-1" });
-    expect(updateUserUsernameMock).toHaveBeenCalledWith(expect.anything(), "user-1", "collector-1");
+    expect(updateUserUsernameMock).toHaveBeenCalledWith("user-1", "collector-1");
     expect(recordSuccessfulUsernameChangeMock).toHaveBeenCalledWith("user-1", expect.any(Date));
   });
 });
@@ -248,7 +251,7 @@ describe("saveDisplayNameAction", () => {
     const result = await saveDisplayNameAction("  Ash Ketchum  ");
 
     expect(result).toEqual({ ok: true, name: "Ash Ketchum" });
-    expect(updateUserDisplayNameMock).toHaveBeenCalledWith(expect.anything(), "user-1", "Ash Ketchum");
+    expect(updateUserDisplayNameMock).toHaveBeenCalledWith("user-1", "Ash Ketchum");
   });
 });
 
@@ -312,7 +315,7 @@ describe("saveAvatarAction", () => {
     const result = await saveAvatarAction(buildAvatarFormData());
 
     expect(result).toEqual({ ok: true, imageUrl: "https://cdn.example.com/avatar.webp" });
-    expect(updateUserImageMock).toHaveBeenCalledWith(expect.anything(), "user-1", "https://cdn.example.com/avatar.webp");
+    expect(updateUserImageMock).toHaveBeenCalledWith("user-1", "https://cdn.example.com/avatar.webp");
   });
 
   it("returns generic when the storage upload fails", async () => {
@@ -349,7 +352,7 @@ describe("removeAvatarAction", () => {
     const result = await removeAvatarAction();
 
     expect(result).toEqual({ ok: true });
-    expect(updateUserImageMock).toHaveBeenCalledWith(expect.anything(), "user-1", null);
+    expect(updateUserImageMock).toHaveBeenCalledWith("user-1", null);
     expect(captureExceptionMock).toHaveBeenCalled();
   });
 });

@@ -2,11 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import * as Sentry from "@sentry/nextjs";
-import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { getStoreBySlug, upsertStoreNote } from "@/queries/store";
+import { getStoreBySlug } from "@/lib/data/stores/storeQueries";
+import { upsertStoreNote } from "@/lib/data/stores/storeMutations";
 import { storeNoteSchema } from "../_schemas/storeNoteSchema";
 
 export type SaveStoreNoteResult =
@@ -39,13 +39,13 @@ export async function saveStoreNote(
     return { success: false, fieldErrors };
   }
 
-  const store = await getStoreBySlug(prisma, parsed.data.slug);
+  const store = await getStoreBySlug(parsed.data.slug);
   if (!store) {
     return { success: false, error: "storeUnavailable" };
   }
 
   try {
-    await upsertStoreNote(prisma, {
+    await upsertStoreNote({
       storeId: store.id,
       userId: session.user.id,
       content: parsed.data.content,

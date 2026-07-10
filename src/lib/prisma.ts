@@ -51,7 +51,7 @@ const prisma = basePrisma.$extends({
         const email = "email" in args.data && typeof args.data.email === "string" ? args.data.email.trim() : "";
 
         if (!currentUsername && email) {
-          const generated = await generateUniqueUsernameForNewUser(basePrisma, email);
+          const generated = await generateUniqueUsernameForNewUser(email);
           args.data = {
             ...args.data,
             username: generated.username,

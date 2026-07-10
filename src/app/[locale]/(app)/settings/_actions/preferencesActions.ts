@@ -3,11 +3,11 @@
 import { cookies } from "next/headers";
 import * as Sentry from "@sentry/nextjs";
 import { getSession } from "@/lib/auth/auth-server";
+import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import {
   applyBaseCurrencyChange,
-  getCollectorPreferencesSnapshot,
   parseAndApplyCollectorPreferencesPatch,
-} from "@/queries/userSettings";
+} from "@/lib/data/user-settings/userSettingsMutations";
 import { routing } from "@/i18n/routing";
 
 export type PreferencesErrorCode = "unauthorized" | "validation" | "generic";

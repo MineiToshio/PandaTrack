@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import PrivateNoteCard, { type PrivateNoteSaveResult } from "@/components/modules/PrivateNoteCard";
-import type { StoreViewerNote } from "@/queries/store";
+import type { StoreViewerNote } from "@/lib/data/stores/storeQueries";
 import { saveStoreNote } from "../_actions/saveStoreNote";
 
 type StoreNoteFormProps = {

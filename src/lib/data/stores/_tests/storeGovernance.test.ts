@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeEditableStoreWithChangeRequest, type EditableStore } from "../storeGovernance";
+import { mergeEditableStoreWithChangeRequest, type EditableStore } from "../storeGovernanceQueries";
 
 const BASE_STORE: EditableStore = {
   id: "store-1",

@@ -3,7 +3,6 @@
 import * as Sentry from "@sentry/nextjs";
 import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
@@ -17,11 +16,10 @@ import { deleteStoreLogoObject, uploadStoreLogoBuffer } from "@/lib/store/logoSt
 import {
   getEditableStoreBySlug,
   getStoreGovernanceViewerContext,
-  updateStoreEditableFields,
-  upsertStoreChangeRequest,
   type EditableAddressInput,
   type EditableContactChannelInput,
-} from "@/queries/storeGovernance";
+} from "@/lib/data/stores/storeGovernanceQueries";
+import { updateStoreEditableFields, upsertStoreChangeRequest } from "@/lib/data/stores/storeGovernanceMutations";
 import { editStoreSchema } from "../_schemas/editStoreSchema";
 
 export type SaveStoreEditResult = { success: false; error: string; fieldErrors?: Record<string, string[]> };
@@ -110,13 +108,13 @@ export async function saveStoreEdit(
     return { success: false, error: "validation_failed", fieldErrors };
   }
 
-  const store = await getEditableStoreBySlug(prisma, parsed.data.slug);
+  const store = await getEditableStoreBySlug(parsed.data.slug);
   if (!store) {
     return { success: false, error: "storeUnavailable" };
   }
 
   const isAdmin = getIsAdmin(session);
-  const viewerContext = await getStoreGovernanceViewerContext(prisma, store.id, session.user.id);
+  const viewerContext = await getStoreGovernanceViewerContext(store.id, session.user.id);
   const storeDetailPath = `/${parsed.data.locale}${ROUTES.stores}/${store.slug}`;
   const storeEditPath = `${storeDetailPath}/edit`;
   const canDirectEdit = canDirectlyEditStore(store, session.user.id, isAdmin);
@@ -212,7 +210,7 @@ export async function saveStoreEdit(
 
   try {
     if (canDirectEdit) {
-      await updateStoreEditableFields(prisma, store, {
+      await updateStoreEditableFields(store, {
         name: parsed.data.name,
         description: parsed.data.description,
         logoUrl: nextLogoUrl,
@@ -249,7 +247,6 @@ export async function saveStoreEdit(
     }
 
     const result = await upsertStoreChangeRequest(
-      prisma,
       store,
       session.user.id,
       {

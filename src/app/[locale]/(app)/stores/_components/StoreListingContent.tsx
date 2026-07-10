@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import type { PublicStoreListingItem } from "@/queries/store";
+import type { PublicStoreListingItem } from "@/lib/data/stores/storeQueries";
 import StoreCard from "./share/StoreCard";
 
 export type StoreListingContentProps = {

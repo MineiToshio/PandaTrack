@@ -1,10 +1,9 @@
 "use server";
 
 import { getSession } from "@/lib/auth/auth-server";
-import { prisma } from "@/lib/prisma";
-import { findDuplicateCandidates, findDuplicateCandidatesInCountry } from "@/queries/store";
+import { findDuplicateCandidates, findDuplicateCandidatesInCountry } from "@/lib/data/stores/storeQueries";
 import { SIMILARITY_THRESHOLD_PERCENT } from "@/lib/store/duplicateMatch";
-import type { DuplicateCandidate } from "@/queries/store";
+import type { DuplicateCandidate } from "@/lib/data/stores/storeQueries";
 import {
   duplicateCandidatesQuerySchema,
   duplicateCandidatesSubmitSchema,
@@ -27,7 +26,7 @@ export async function getDuplicateCandidates(
   const parsed = duplicateCandidatesQuerySchema.safeParse({ nameQuery, limit });
   if (!parsed.success) return [];
 
-  return findDuplicateCandidates(prisma, parsed.data.nameQuery, parsed.data.limit);
+  return findDuplicateCandidates(parsed.data.nameQuery, parsed.data.limit);
 }
 
 /**
@@ -46,7 +45,6 @@ export async function getDuplicateCandidatesForSubmit(
   if (!parsed.success) return [];
 
   return findDuplicateCandidatesInCountry(
-    prisma,
     parsed.data.nameQuery,
     parsed.data.countryCode,
     DEFAULT_LIMIT,

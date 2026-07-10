@@ -3,7 +3,7 @@ import { MapPin, Minus, Store as StoreIcon, User as UserIcon } from "lucide-reac
 import Chip from "@/components/core/Chip";
 import StarRating from "@/components/core/StarRating";
 import StoreAvatar from "@/components/core/StoreAvatar";
-import type { PublicStoreListingItem } from "@/queries/store";
+import type { PublicStoreListingItem } from "@/lib/data/stores/storeQueries";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { cn } from "@/lib/styles";
 import { ROUTES } from "@/lib/constants";

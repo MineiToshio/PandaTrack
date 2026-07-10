@@ -1,6 +1,6 @@
 ---
 description: Prisma data layer: centralizing queries, encapsulation, and not using Prisma directly in pages, layouts, server actions, components or hooks
-globs: "src/app/**/*.{ts,tsx},src/components/**/*.{ts,tsx},src/hooks/**/*.{ts,tsx},src/context/**/*.{ts,tsx},src/queries/**/*.ts,src/lib/**/*.ts,src/proxy.ts,proxy.ts"
+globs: "src/app/**/*.{ts,tsx},src/components/**/*.{ts,tsx},src/hooks/**/*.{ts,tsx},src/context/**/*.{ts,tsx},src/lib/**/*.ts,src/proxy.ts,proxy.ts"
 alwaysApply: false
 ---
 
@@ -12,42 +12,52 @@ The Prisma client is instantiated and exported from `src/lib/prisma.ts`. The pro
 
 ## Centralize queries
 
-All Prisma queries must live in dedicated data-layer modules, not scattered in pages, layouts, server actions, components, hooks, or route handlers.
+All Prisma queries must live in dedicated data-layer modules under `src/lib/data/<domain>/`, not scattered in pages, layouts, server actions, components, hooks, or route handlers. See **ADR 0015** for the shape decision.
 
-- Primary home: **`src/queries/`**, one file per Prisma model (e.g. `src/queries/store.ts` for the `Store` model, `src/queries/user.ts` for the `User` model).
-- Cross-model domain snapshots (e.g. settings, governance) live in the same folder under a domain-named file (e.g. `src/queries/userSettings.ts`, `src/queries/storeGovernance.ts`).
+- Home: **`src/lib/data/<domain>/`**, one folder per business domain (e.g. `stores/`, `user-settings/`, `catalog/`, `auth/`, `orders/`, `deliveries/`, `dashboard/`).
+- Split reads and writes into **`<name>Queries.ts`** and **`<name>Mutations.ts`** within the domain folder (e.g. `storeQueries.ts` / `storeMutations.ts`, `storeGovernanceQueries.ts` / `storeGovernanceMutations.ts`).
 - Organize functions by responsibility (`getXByY`, `listX`, `createX`, `updateX`, `deleteX`, etc.).
+- Co-locate a domain's tests in `src/lib/data/<domain>/_tests/`.
 
 ### Query function signature
 
-Prefer **dependency injection**: accept the Prisma client (or a transaction client) as the first argument.
+Import the Prisma singleton from `@/lib/prisma` at module scope and use it directly. Do **not** add an injected `db: PrismaClient` parameter.
 
 ```ts
-// ✅ Preferred: DI-friendly, easy to test and to run inside a transaction
-import type { PrismaClient } from "../../generated/prisma/client";
+// ✅ Canonical: import the singleton at module scope
+import { prisma } from "@/lib/prisma";
 
-export async function getStoreBySlug(db: PrismaClient, slug: string) { /* ... */ }
+export async function getStoreBySlug(slug: string) {
+  return prisma.store.findFirst({ where: { slug } });
+}
 ```
 
-Functions that import `prisma` directly are also acceptable when the module is already co-located with other direct-import helpers in that file (keep one convention per file, do not mix).
+When a function must participate in a caller-owned transaction, accept an optional `tx?: Prisma.TransactionClient` parameter and fall back to the singleton when it is omitted:
+
+```ts
+export async function applyCollectorPreferencesPatch(
+  userId: string,
+  patch: CollectorPreferencesPatchInput,
+  tx?: Prisma.TransactionClient,
+) { /* use tx ?? prisma.$transaction(...) */ }
+```
 
 ## Encapsulation
 
-Pages, layouts, server actions, route handlers, React components, hooks, business services, and domain helpers **must not** call Prisma directly. Every `prisma.<model>.<method>(...)`, `db.<model>.<method>(...)`, or `prisma.$transaction(...)` expression must live inside a file under `src/queries/`.
+Pages, layouts, server actions, route handlers, React components, hooks, business services, and domain helpers **must not** call Prisma directly. Every `prisma.<model>.<method>(...)` or `prisma.$transaction(...)` expression must live inside a file under `src/lib/data/**`.
 
 The only places allowed to perform Prisma queries are:
 
-1. **`src/queries/**/*.ts`** — the data layer itself. All CRUD ops, raw SQL, and transactions live here.
+1. **`src/lib/data/**/*.ts`** — the data layer itself. All CRUD ops, raw SQL, and transactions live here.
 2. **Tests** (`**/*.test.ts`, `**/*.integration.test.ts`, `src/test/**`, `**/_tests/**`) — integration tests may use `prisma` directly for setup and assertions.
 
 The only files allowed to import the `prisma` client at all are:
 
 1. **`src/lib/prisma.ts`** — defines and exports the client.
-2. **`src/queries/**/*.ts`** — uses the client to run the actual queries.
+2. **`src/lib/data/**/*.ts`** — uses the client to run the actual queries.
 3. **`src/lib/auth/auth.ts`** — BetterAuth adapter wiring (`prismaAdapter(prisma, ...)`). Library integration only, not ad-hoc queries.
-4. Any other file — **only** to pass `prisma` through to a function exported from `src/queries/` (dependency injection). These files must not call `prisma.<model>.<method>(...)` themselves.
 
-This includes `src/lib/<domain>/*.ts` helpers: they may orchestrate domain logic (rate limits, cooldowns, formatting scope ids, building verification payloads, etc.) and then delegate the actual DB work to `src/queries/`. Queries do **not** belong in `src/lib/**`.
+Other `src/lib/<domain>/*.ts` helpers may orchestrate domain logic (rate limits, cooldowns, formatting scope ids, building verification payloads, etc.) and then delegate the actual DB work to a function exported from `src/lib/data/<domain>/`. They call that exported function (which uses the singleton internally) and do **not** import `prisma` or run queries themselves.
 
 ### ❌ Bad: inline query in a page
 
@@ -79,13 +89,15 @@ export async function saveDisplayNameAction(name: string) {
 ### ✅ Good: page delegates to a query module
 
 ```ts
-// src/queries/userSettings.ts
-export async function getSettingsPageSnapshot(userId: string) { /* query */ }
+// src/lib/data/user-settings/userSettingsQueries.ts
+import { prisma } from "@/lib/prisma";
+
+export async function getSettingsPageSnapshot(userId: string) { /* prisma.user.findUnique(...) */ }
 ```
 
 ```tsx
 // src/app/[locale]/(app)/settings/page.tsx
-import { getSettingsPageSnapshot } from "@/queries/userSettings";
+import { getSettingsPageSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 
 export default async function SettingsPage() {
   const snapshot = await getSettingsPageSnapshot(session.user.id);
@@ -93,25 +105,24 @@ export default async function SettingsPage() {
 }
 ```
 
-### ✅ Good: server action delegates to a query module
+### ✅ Good: server action delegates to a mutation module
 
 ```ts
-// src/queries/user.ts
-import type { PrismaClient } from "../../generated/prisma/client";
+// src/lib/data/auth/userMutations.ts
+import { prisma } from "@/lib/prisma";
 
-export async function updateUserDisplayName(db: PrismaClient, userId: string, name: string) {
-  await db.user.update({ where: { id: userId }, data: { name } });
+export async function updateUserDisplayName(userId: string, name: string) {
+  await prisma.user.update({ where: { id: userId }, data: { name } });
 }
 ```
 
 ```ts
 // src/app/[locale]/(app)/settings/_actions/profileActions.ts
 "use server";
-import { prisma } from "@/lib/prisma";
-import { updateUserDisplayName } from "@/queries/user";
+import { updateUserDisplayName } from "@/lib/data/auth/userMutations";
 
 export async function saveDisplayNameAction(name: string) {
-  await updateUserDisplayName(prisma, userId, name);
+  await updateUserDisplayName(userId, name);
 }
 ```
 
@@ -130,14 +141,14 @@ export async function assertUsernameChangeCooldownAllows(userId: string, now: Da
 }
 ```
 
-### ✅ Good: `src/lib/<domain>/*.ts` helper delegates to a query module
+### ✅ Good: `src/lib/<domain>/*.ts` helper delegates to a data-layer module
 
 ```ts
-// src/queries/user.ts
-import type { PrismaClient } from "../../generated/prisma/client";
+// src/lib/data/auth/userQueries.ts
+import { prisma } from "@/lib/prisma";
 
-export async function findUsernameChangedAt(db: PrismaClient, userId: string) {
-  return db.user.findUnique({
+export async function findUsernameChangedAt(userId: string) {
+  return prisma.user.findUnique({
     where: { id: userId },
     select: { usernameChangedAt: true },
   });
@@ -146,24 +157,25 @@ export async function findUsernameChangedAt(db: PrismaClient, userId: string) {
 
 ```ts
 // src/lib/auth/usernameChangeCooldown.ts
-import { prisma } from "@/lib/prisma";
-import { findUsernameChangedAt } from "@/queries/user";
+import { findUsernameChangedAt } from "@/lib/data/auth/userQueries";
 
 export async function assertUsernameChangeCooldownAllows(userId: string, now: Date) {
-  const row = await findUsernameChangedAt(prisma, userId);
+  const row = await findUsernameChangedAt(userId);
   // ... pure cooldown logic on `row.usernameChangedAt` ...
 }
 ```
 
 ## Transactions
 
-For operations that must be atomic, expose a single query function that wraps the work in `db.$transaction`, and call it from the action. Do not open a `prisma.$transaction` block inside a page or action.
+For operations that must be atomic, expose a single data-layer function that wraps the work in `prisma.$transaction`, and call it from the action. Do not open a `prisma.$transaction` block inside a page or action.
 
 ```ts
 // ✅ Good: transaction lives in the data layer
-// src/queries/user.ts
-export async function applyEmailChange(db: PrismaClient, userId: string, newEmail: string, now: Date) {
-  return db.$transaction(async (tx) => {
+// src/lib/data/auth/userMutations.ts
+import { prisma } from "@/lib/prisma";
+
+export async function applyEmailChangeTransaction(userId: string, newEmail: string, now: Date) {
+  await prisma.$transaction(async (tx) => {
     await tx.user.update({ where: { id: userId }, data: { email: newEmail, emailVerified: false, unverifiedGraceStartsAt: now } });
     await tx.account.updateMany({ where: { userId, providerId: "credential" }, data: { accountId: newEmail } });
   });
@@ -176,8 +188,8 @@ Use Prisma-generated types (`Prisma`, `PrismaClient`, model types) for parameter
 
 ## When you add a new query
 
-1. Decide the target file in `src/queries/` (one file per model, or a domain file when the query spans models).
+1. Decide the target file in `src/lib/data/<domain>/` (a `*Queries.ts` for reads or `*Mutations.ts` for writes; create the domain folder if it does not exist).
 2. Name the function after its responsibility (`getUserById`, `listActiveProductTypeKeys`, `updateUserDisplayName`).
 3. Export Prisma-derived input/return types next to the function.
-4. Call it from the page/action, passing the `prisma` client when the function uses DI.
-5. Never introduce `prisma.<model>.<method>(...)` outside of `src/queries/**` and tests — not in `src/app/**`, `src/components/**`, `src/hooks/**`, `src/context/**`, or `src/lib/**`.
+4. Call it from the page/action by importing the exported function — the function uses the `prisma` singleton internally, so callers pass only domain arguments.
+5. Never introduce `prisma.<model>.<method>(...)` outside of `src/lib/data/**` and tests — not in `src/app/**`, `src/components/**`, `src/hooks/**`, `src/context/**`, or the non-data parts of `src/lib/**`.

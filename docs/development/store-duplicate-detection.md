@@ -32,7 +32,7 @@ This document describes how similar-store detection works during store creation:
 
 - Component: `src/app/[locale]/(app)/stores/new/_components/CreateStoreForm.tsx` (`handleNameBlur`, `fetchCandidates`, inline `duplicate-suggestions` block).
 - Server action: `src/app/[locale]/(app)/stores/new/_actions/getDuplicateCandidates.ts` → `getDuplicateCandidates`.
-- Query: `src/queries/store.ts` → `findDuplicateCandidates`.
+- Query: `src/lib/data/stores/storeQueries.ts` → `findDuplicateCandidates`.
 - Scoring: `src/lib/store/duplicateMatch.ts` → `getDuplicateMatchScore`, `normalizeStoreName`.
 
 **Constants:** `MIN_QUERY_LENGTH = 2` (CreateStoreForm). `DEFAULT_LIMIT = 5` (getDuplicateCandidates).

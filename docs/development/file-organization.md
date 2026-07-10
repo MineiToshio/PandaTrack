@@ -59,7 +59,7 @@ Use the smallest valid scope: component-level first, then page-level, then app-l
 - Shared utilities: `src/lib/` (group related files in a domain subfolder when there are two or more)
 - Global hooks: `src/hooks/`
 - Global types: `src/types/`
-- Prisma queries: two coexisting shapes, see `.agents/rules/project-structure.mdc` (Prisma queries) and ADR 0015 (`docs/design/decisions/0015-data-access-layer-shape.md`) — `src/lib/data/<domain>/` (`*Queries.ts`/`*Mutations.ts`, canonical for new domains) and `src/queries/` (legacy, one file per model, maintained but not migrated wholesale)
+- Prisma queries: one canonical shape — `src/lib/data/<domain>/` with `*Queries.ts`/`*Mutations.ts` files importing the Prisma singleton from `@/lib/prisma` (no injected `db` parameter). See `.agents/rules/project-structure.mdc` (Prisma queries) and ADR 0015 (`docs/design/decisions/0015-data-access-layer-shape.md`). The former `src/queries/` model-per-file style has been fully migrated and no longer exists.
 - i18n locale files: `src/i18n/locales/{locale}/`
 
 ### Promotion rule

@@ -1,5 +1,5 @@
-import { prisma } from "@/lib/prisma";
-import { findUsernameChangedAt, updateUserUsernameChangedAt } from "@/queries/user";
+import { findUsernameChangedAt } from "@/lib/data/auth/userQueries";
+import { updateUserUsernameChangedAt } from "@/lib/data/auth/userMutations";
 
 export const USERNAME_CHANGE_COOLDOWN_DAYS = 7;
 
@@ -12,7 +12,7 @@ export async function assertUsernameChangeCooldownAllows(
   userId: string,
   now: Date,
 ): Promise<{ ok: true } | { ok: false; retryAfterIso: string }> {
-  const row = await findUsernameChangedAt(prisma, userId);
+  const row = await findUsernameChangedAt(userId);
 
   if (!row?.usernameChangedAt) {
     return { ok: true };
@@ -30,5 +30,5 @@ export async function assertUsernameChangeCooldownAllows(
  * Records a successful username change for rate limiting.
  */
 export async function recordSuccessfulUsernameChange(userId: string, now: Date): Promise<void> {
-  await updateUserUsernameChangedAt(prisma, userId, now);
+  await updateUserUsernameChangedAt(userId, now);
 }

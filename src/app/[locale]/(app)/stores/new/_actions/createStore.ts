@@ -1,13 +1,12 @@
 "use server";
 
 import * as Sentry from "@sentry/nextjs";
-import { prisma } from "@/lib/prisma";
 import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
-import { createStore as createStoreQuery, deleteStoreById, updateStoreLogoUrl } from "@/queries/store";
-import { listExistingCountryCodes } from "@/queries/country";
-import { listExistingStoreProductTypeKeys } from "@/queries/storeProductType";
+import { createStore as createStoreQuery, deleteStoreById, updateStoreLogoUrl } from "@/lib/data/stores/storeMutations";
+import { listExistingCountryCodes } from "@/lib/data/catalog/countryQueries";
+import { listExistingStoreProductTypeKeys } from "@/lib/data/catalog/storeProductTypeQueries";
 import { getStoreLogoObjectKey, processStoreLogoFile, StoreLogoError } from "@/lib/store/logo";
 import { uploadStoreLogoBuffer } from "@/lib/store/logoStorage";
 import { createStoreSchema, type CreateStoreInput } from "../_schemas/createStoreSchema";
@@ -109,8 +108,8 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
   const uniqueCountryCodes = [...new Set(allCountryCodes)];
 
   const [countriesExist, productTypesExist] = await Promise.all([
-    listExistingCountryCodes(prisma, uniqueCountryCodes),
-    listExistingStoreProductTypeKeys(prisma, input.productTypeKeys),
+    listExistingCountryCodes(uniqueCountryCodes),
+    listExistingStoreProductTypeKeys(input.productTypeKeys),
   ]);
 
   const foundCountryCodes = new Set(countriesExist.map((c) => c.code));
@@ -180,7 +179,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
   for (let attempt = 0; attempt < SLUG_COLLISION_MAX_ATTEMPTS; attempt++) {
     let createdStore: { id: string; slug: string } | null = null;
     try {
-      createdStore = await createStoreQuery(prisma, {
+      createdStore = await createStoreQuery({
         name: input.name,
         description: input.description ?? null,
         storeType: input.storeType,
@@ -212,7 +211,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
 
         const logoUrl = await uploadStoreLogoBuffer(getStoreLogoObjectKey(createdStore.id), processedLogoBuffer);
 
-        await updateStoreLogoUrl(prisma, createdStore.id, logoUrl);
+        await updateStoreLogoUrl(createdStore.id, logoUrl);
 
         posthogClient.capture({
           distinctId: session.user.id,
@@ -248,7 +247,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
         typeof (e as { code?: string })?.code === "string" && (e as { code: string }).code === "P2002";
 
       if (createdStore && processedLogoBuffer && !isSlugConflict) {
-        await deleteStoreById(prisma, createdStore.id).catch(() => null);
+        await deleteStoreById(createdStore.id).catch(() => null);
       }
 
       if (processedLogoBuffer && !isSlugConflict) {

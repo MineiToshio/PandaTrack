@@ -5,7 +5,7 @@ import { AlertCircle } from "lucide-react";
 import Eyebrow from "@/components/core/Eyebrow";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { cn } from "@/lib/styles";
-import type { DuplicateCandidate } from "@/queries/store";
+import type { DuplicateCandidate } from "@/lib/data/stores/storeQueries";
 
 export type DuplicateAlertInlineLabels = {
   eyebrow: string;

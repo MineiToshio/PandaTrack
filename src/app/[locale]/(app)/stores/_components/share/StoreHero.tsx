@@ -2,7 +2,7 @@ import { CalendarClock, Clock, Globe, Info, MapPin, PackageCheck, Store as Store
 import Chip from "@/components/core/Chip";
 import StarRating from "@/components/core/StarRating";
 import StoreAvatar from "@/components/core/StoreAvatar";
-import type { StoreDetail } from "@/queries/store";
+import type { StoreDetail } from "@/lib/data/stores/storeQueries";
 import { cn } from "@/lib/styles";
 
 export type StoreHeroLabels = {

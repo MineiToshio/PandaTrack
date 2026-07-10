@@ -1,6 +1,6 @@
 "use client";
 
-import type { EditableStore, EditableStoreInput, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
+import type { EditableStore, EditableStoreInput, StoreGovernanceViewerContext } from "@/lib/data/stores/storeGovernanceQueries";
 import StoreForm, { type StoreFormMode } from "../../../_components/share/StoreForm/StoreForm";
 import { saveStoreEdit } from "../_actions/saveStoreEdit";
 

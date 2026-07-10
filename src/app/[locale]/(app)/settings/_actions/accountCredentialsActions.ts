@@ -12,8 +12,8 @@ import { getAccountCapabilitiesForUser } from "@/lib/auth/accountCapabilities";
 import { assertEmailChangeCooldownAllows, recordSuccessfulEmailChange } from "@/lib/auth/emailChangeRateLimit";
 import { ROUTES } from "@/lib/constants";
 import { sendEmailWithResend } from "@/lib/integrations/resend";
-import { prisma } from "@/lib/prisma";
-import { applyEmailChangeTransaction, findUserIdByEmailExcluding } from "@/queries/user";
+import { findUserIdByEmailExcluding } from "@/lib/data/auth/userQueries";
+import { applyEmailChangeTransaction } from "@/lib/data/auth/userMutations";
 import type { Locale } from "@/types/locale";
 import {
   type ChangePasswordFormInput,
@@ -87,7 +87,7 @@ export async function submitEmailChangeAction(input: EmailChangeFormInput): Prom
     return { ok: false, error: "rateLimited", retryAfterIso: cooldown.retryAfterIso };
   }
 
-  const existingUser = await findUserIdByEmailExcluding(prisma, normalizedEmail, session.user.id);
+  const existingUser = await findUserIdByEmailExcluding(normalizedEmail, session.user.id);
 
   if (existingUser) {
     return { ok: false, error: "emailTaken" };
@@ -113,7 +113,7 @@ export async function submitEmailChangeAction(input: EmailChangeFormInput): Prom
   const oldEmail = session.user.email;
 
   try {
-    await applyEmailChangeTransaction(prisma, session.user.id, normalizedEmail, now);
+    await applyEmailChangeTransaction(session.user.id, normalizedEmail, now);
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return { ok: false, error: "emailTaken" };

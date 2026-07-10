@@ -4,10 +4,11 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { applyCollectorPreferencesPatch, getCollectorPreferencesSnapshot } from "@/queries/userSettings";
+import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
+import { applyCollectorPreferencesPatch } from "@/lib/data/user-settings/userSettingsMutations";
 import { parseCollectorPreferencesPatch } from "@/lib/user-settings/collectorPreferencesValidation";
 import { createTestUserData } from "@/test/createTestUserData";
-import { runSeed } from "../../../prisma/seed";
+import { runSeed } from "../../../../../prisma/seed";
 import { describe, expect, it } from "vitest";
 
 const hasDatabase = Boolean(process.env.DATABASE_URL);

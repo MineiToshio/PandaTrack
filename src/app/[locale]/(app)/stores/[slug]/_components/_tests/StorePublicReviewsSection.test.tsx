@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
-import type { PublicStoreReview } from "@/queries/store";
+import type { PublicStoreReview } from "@/lib/data/stores/storeQueries";
 import StorePublicReviewsSection from "../StorePublicReviewsSection";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 

@@ -9,7 +9,7 @@ import SettingsShell from "@/app/[locale]/(app)/settings/_components/SettingsShe
 import { getSession } from "@/lib/auth/auth-server";
 import { getAccountCapabilitiesForUser } from "@/lib/auth/accountCapabilities";
 import { buildPageMetadata } from "@/lib/seo";
-import { getSettingsPageSnapshot } from "@/queries/userSettings";
+import { getSettingsPageSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import { RETURN_TO_ORDER_CREATE, ROUTES } from "@/lib/constants";
 import { isLocale } from "@/types/locale";
 

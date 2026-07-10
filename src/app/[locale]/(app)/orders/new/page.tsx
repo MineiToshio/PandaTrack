@@ -4,7 +4,7 @@ import { buildPageMetadata } from "@/lib/seo";
 import { getSession } from "@/lib/auth/auth-server";
 import { redirect } from "next/navigation";
 import { getOrderableStores } from "@/lib/data/stores/storeQueries";
-import { listActiveStoreProductTypeKeysCached } from "@/queries/storeProductType";
+import { listActiveStoreProductTypeKeysCached } from "@/lib/data/catalog/storeProductTypeQueries";
 import { prisma } from "@/lib/prisma";
 import { createOrderAction } from "../_actions/orderActions";
 import OrderCreateEmptyStores from "../_components/share/OrderCreateEmptyStores";

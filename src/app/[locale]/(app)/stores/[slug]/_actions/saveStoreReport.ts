@@ -2,12 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import * as Sentry from "@sentry/nextjs";
-import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { getEditableStoreBySlug } from "@/queries/storeGovernance";
-import { upsertStoreReport } from "@/queries/storeGovernance";
+import { getEditableStoreBySlug } from "@/lib/data/stores/storeGovernanceQueries";
+import { upsertStoreReport } from "@/lib/data/stores/storeGovernanceMutations";
 import { storeReportSchema } from "../_schemas/storeReportSchema";
 
 export type SaveStoreReportResult =
@@ -40,13 +39,13 @@ export async function saveStoreReport(
     return { success: false, error: "validation_failed", fieldErrors };
   }
 
-  const store = await getEditableStoreBySlug(prisma, parsed.data.slug);
+  const store = await getEditableStoreBySlug(parsed.data.slug);
   if (!store) {
     return { success: false, error: "storeUnavailable" };
   }
 
   try {
-    await upsertStoreReport(prisma, {
+    await upsertStoreReport({
       storeId: store.id,
       userId: session.user.id,
       reason: parsed.data.reason,

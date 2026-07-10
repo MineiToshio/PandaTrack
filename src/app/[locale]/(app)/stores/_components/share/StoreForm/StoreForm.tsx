@@ -25,7 +25,7 @@ import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS, RETURN_TO_ORDER_CREATE, ROUTES } from "@/lib/constants";
 import posthog from "posthog-js";
 import { SIMILARITY_THRESHOLD_PERCENT } from "@/lib/store/duplicateMatch";
-import type { DuplicateCandidate } from "@/queries/store";
+import type { DuplicateCandidate } from "@/lib/data/stores/storeQueries";
 import {
   checkDuplicateCandidatesOnSubmit,
   fetchDuplicateCandidatesForQuery,

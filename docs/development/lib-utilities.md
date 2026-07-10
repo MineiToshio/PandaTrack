@@ -76,11 +76,12 @@ This file is the source of truth for shared app-level utilities in `src/lib/`.
 
 ## Related query modules
 
-These live under `src/queries/` but pair directly with `src/lib/user-settings` contracts:
+These live under `src/lib/data/user-settings/` but pair directly with `src/lib/user-settings` contracts:
 
-| File                          | Purpose                                                                                                                             |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `src/queries/userSettings.ts` | Loads collector preference snapshots and applies validated patches (scalar `User` fields plus `user_preferred_product_type` links). |
+| File                                                     | Purpose                                                                                                     |
+| -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `src/lib/data/user-settings/userSettingsQueries.ts`      | Loads collector preference snapshots and the settings/app-shell identity read models.                      |
+| `src/lib/data/user-settings/userSettingsMutations.ts`    | Applies validated preference patches (scalar `User` fields plus `user_preferred_product_type` links) and the base-currency change transaction. |
 
 ## Test fixtures
 

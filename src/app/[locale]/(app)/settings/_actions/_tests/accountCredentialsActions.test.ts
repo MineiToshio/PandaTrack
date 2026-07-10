@@ -71,9 +71,12 @@ vi.mock("@/lib/integrations/resend", () => ({
 
 vi.mock("@/lib/prisma", () => ({ prisma: {} }));
 
-vi.mock("@/queries/user", () => ({
-  applyEmailChangeTransaction: applyEmailChangeTransactionMock,
+vi.mock("@/lib/data/auth/userQueries", () => ({
   findUserIdByEmailExcluding: findUserIdByEmailExcludingMock,
+}));
+
+vi.mock("@/lib/data/auth/userMutations", () => ({
+  applyEmailChangeTransaction: applyEmailChangeTransactionMock,
 }));
 
 import {
@@ -220,12 +223,7 @@ describe("submitEmailChangeAction", () => {
     });
 
     expect(result).toEqual({ ok: true });
-    expect(applyEmailChangeTransactionMock).toHaveBeenCalledWith(
-      expect.anything(),
-      "user-1",
-      "new@example.com",
-      expect.any(Date),
-    );
+    expect(applyEmailChangeTransactionMock).toHaveBeenCalledWith("user-1", "new@example.com", expect.any(Date));
     expect(recordSuccessfulEmailChangeMock).toHaveBeenCalledWith("user-1", expect.any(Date));
     expect(sendEmailWithResendMock).toHaveBeenCalledWith(
       expect.objectContaining({ to: "current@example.com" }),

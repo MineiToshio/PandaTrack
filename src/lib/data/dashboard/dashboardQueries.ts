@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getCollectorPreferencesSnapshot } from "@/queries/userSettings";
+import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import { DeliveryStatus } from "../../../../generated/prisma/client";
 import { buildDashboardData } from "./dashboardAggregation";
 import { resolveDashboardRange } from "./dashboardPeriods";

@@ -21,8 +21,11 @@ const {
 
 vi.mock("@/lib/auth/auth-server", () => ({ getSession: getSessionMock }));
 
-vi.mock("@/queries/userSettings", () => ({
+vi.mock("@/lib/data/user-settings/userSettingsQueries", () => ({
   getCollectorPreferencesSnapshot: getCollectorPreferencesSnapshotMock,
+}));
+
+vi.mock("@/lib/data/user-settings/userSettingsMutations", () => ({
   parseAndApplyCollectorPreferencesPatch: parseAndApplyCollectorPreferencesPatchMock,
   applyBaseCurrencyChange: applyBaseCurrencyChangeMock,
 }));

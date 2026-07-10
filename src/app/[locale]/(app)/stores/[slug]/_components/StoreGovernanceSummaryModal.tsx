@@ -12,7 +12,7 @@ import Modal from "@/components/modules/Modal/Modal";
 import { getPosthogDataAttributes } from "@/lib/analytics/posthogDataAttributes";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
-import type { StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
+import type { StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/lib/data/stores/storeGovernanceQueries";
 import StoreReportModal from "./StoreReportModal";
 
 type StoreGovernanceSummaryModalProps = {

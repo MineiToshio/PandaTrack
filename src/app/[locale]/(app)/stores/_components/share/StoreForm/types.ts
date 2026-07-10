@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { EditableStore, EditableStoreInput, StoreGovernanceViewerContext } from "@/queries/storeGovernance";
+import type { EditableStore, EditableStoreInput, StoreGovernanceViewerContext } from "@/lib/data/stores/storeGovernanceQueries";
 import type { StoreContactChannelType } from "../StoreContactChannelList";
 
 /**

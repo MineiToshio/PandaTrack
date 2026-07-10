@@ -2,11 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import * as Sentry from "@sentry/nextjs";
-import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { getStoreBySlug, upsertStoreReview, type PersistedStoreReview } from "@/queries/store";
+import { getStoreBySlug } from "@/lib/data/stores/storeQueries";
+import { upsertStoreReview, type PersistedStoreReview } from "@/lib/data/stores/storeMutations";
 import { storeReviewSchema } from "../_schemas/storeReviewSchema";
 
 export interface SavedStoreReview extends PersistedStoreReview {
@@ -42,13 +42,13 @@ export async function saveStoreReview(
     return { success: false, error: "validation_failed", fieldErrors };
   }
 
-  const store = await getStoreBySlug(prisma, parsed.data.slug);
+  const store = await getStoreBySlug(parsed.data.slug);
   if (!store) {
     return { success: false, error: "storeUnavailable" };
   }
 
   try {
-    const review = await upsertStoreReview(prisma, {
+    const review = await upsertStoreReview({
       storeId: store.id,
       userId: session.user.id,
       overallRating: parsed.data.overallRating,

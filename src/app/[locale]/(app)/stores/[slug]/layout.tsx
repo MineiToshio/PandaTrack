@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import { getStoreBySlug } from "@/queries/store";
+import { getStoreBySlug } from "@/lib/data/stores/storeQueries";
 import StoreSegmentContentHeader from "./_components/StoreSegmentContentHeader";
 
 type StoreDetailLayoutProps = {
@@ -10,7 +9,7 @@ type StoreDetailLayoutProps = {
 
 export default async function StoreDetailLayout({ children, params }: StoreDetailLayoutProps) {
   const { slug, locale } = await params;
-  const store = await getStoreBySlug(prisma, slug);
+  const store = await getStoreBySlug(slug);
 
   if (!store) {
     notFound();

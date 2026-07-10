@@ -14,7 +14,7 @@ import Typography from "@/components/core/Typography";
 import { Modal } from "@/components/modules/Modal";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { cn } from "@/lib/styles";
-import type { PublicStoreReview, StoreViewerReview } from "@/queries/store";
+import type { PublicStoreReview, StoreViewerReview } from "@/lib/data/stores/storeQueries";
 import { deleteStoreReview } from "../_actions/deleteStoreReview";
 import { saveStoreReview, type SavedStoreReview } from "../_actions/saveStoreReview";
 import StoreReviewForm from "./StoreReviewForm";

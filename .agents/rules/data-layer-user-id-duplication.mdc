@@ -1,6 +1,6 @@
 ---
 description: When to duplicate userId on child records for authorization and query efficiency
-globs: "prisma/schema.prisma,src/queries/**/*.ts,src/lib/data/**/*.ts"
+globs: "prisma/schema.prisma,src/lib/data/**/*.ts"
 alwaysApply: false
 ---
 

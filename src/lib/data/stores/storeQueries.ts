@@ -1,10 +1,683 @@
+import type {
+  Prisma,
+  StoreContactChannelType,
+  StorePresenceType,
+  StoreStatus,
+} from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import {
+  getDuplicateMatchScore,
+  getSimilarityPercent,
+  normalizeStoreName,
+  SIMILARITY_THRESHOLD_PERCENT,
+} from "@/lib/store/duplicateMatch";
+
+const DEFAULT_DUPLICATE_CANDIDATES_LIMIT = 5;
+export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = 12;
+const DEFAULT_PUBLIC_STORE_REVIEW_LIMIT = 10;
+
+/**
+ * Hard cap on rows scanned for in-memory duplicate scoring. Bounds the query so a large
+ * store table can never be loaded in full. No SQL name pre-filter is applied: ILIKE is
+ * accent-sensitive, so filtering on diacritic-stripped terms would silently skip stores
+ * like "Pokémon" for the query "pokemon" — the scorer normalizes both sides in memory
+ * instead. Revisit with a persisted normalized-name column if the catalog outgrows this cap.
+ */
+const MAX_DUPLICATE_SCAN = 500;
+
+export interface DuplicateCandidate {
+  id: string;
+  name: string;
+  slug: string;
+  countryCode: string;
+  logoUrl: string | null;
+}
+
+export interface StoreDetail {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  status: StoreStatus;
+  storeType: "BUSINESS" | "PERSON";
+  countryCode: string;
+  isActive: boolean;
+  isPrivate: boolean;
+  createdByUserId: string;
+  createdAt: Date;
+  receivesOrders: boolean | null;
+  hasStock: boolean | null;
+  averageRating: number | null;
+  reviewCount: number;
+  presenceTypes: StorePresenceType[];
+  productTypeKeys: string[];
+  importCountryCodes: string[];
+  /** Only for BUSINESS stores; PERSON stores do not expose these. */
+  logoUrl?: string | null;
+  /** Only for BUSINESS stores; public channels only. */
+  contactChannels?: Array<{ type: StoreContactChannelType; value: string; label?: string | null }>;
+  /** Only for BUSINESS stores; public addresses only. */
+  addresses?: Array<{
+    city?: string | null;
+    addressLine: string;
+    reference?: string | null;
+  }>;
+}
+
+export interface PublicStoreListingItem {
+  slug: string;
+  name: string;
+  countryCode: string;
+  status: StoreStatus;
+  storeType: "BUSINESS" | "PERSON";
+  presenceTypes: StorePresenceType[];
+  productTypeKeys: string[];
+  importCountryCodes: string[];
+  contactChannels: Array<{ type: StoreContactChannelType; value: string }>;
+  receivesOrders: boolean | null;
+  hasStock: boolean | null;
+  averageRating: number | null;
+  reviewCount: number;
+}
+
+export interface PublicStoreListingFilters {
+  nameQuery?: string;
+  productTypeKeys?: string[];
+  countryCodes?: string[];
+  importCountryCodes?: string[];
+  presenceTypes?: StorePresenceType[];
+  receivesOrders?: boolean;
+  hasStock?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface PublicStoreListingPage {
+  items: PublicStoreListingItem[];
+  totalCount: number;
+  currentPage: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface PublicStoreReview {
+  id: string;
+  overallRating: number;
+  comment: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  authorName: string | null;
+  isViewerReview: boolean;
+}
+
+export interface StoreViewerReview {
+  overallRating: number;
+  comment: string | null;
+  updatedAt: Date;
+}
+
+export interface StoreViewerNote {
+  content: string;
+  updatedAt: Date;
+}
+
+export interface StoreViewerContext {
+  review: StoreViewerReview | null;
+  note: StoreViewerNote | null;
+}
 
 export type UserStoreOption = {
   id: string;
   name: string;
   countryCode: string;
 };
+
+/**
+ * Finds likely duplicate stores for the provided query using normalized and token-based matching.
+ * Results are sorted by best match score first and then by name.
+ */
+export async function findDuplicateCandidates(
+  nameQuery: string,
+  limit: number = DEFAULT_DUPLICATE_CANDIDATES_LIMIT,
+): Promise<DuplicateCandidate[]> {
+  const trimmed = nameQuery.trim();
+  if (!trimmed) return [];
+  if (!normalizeStoreName(trimmed)) return [];
+
+  const stores = await prisma.store.findMany({
+    select: { id: true, name: true, slug: true, countryCode: true, logoUrl: true },
+    orderBy: { name: "asc" },
+    take: MAX_DUPLICATE_SCAN,
+  });
+
+  return stores
+    .map((store) => ({
+      store,
+      score: getDuplicateMatchScore(trimmed, store.name),
+    }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return normalizeStoreName(a.store.name).localeCompare(normalizeStoreName(b.store.name));
+    })
+    .slice(0, limit)
+    .map((item) => item.store);
+}
+
+/**
+ * Finds stores in the given country whose name similarity to the query meets the minimum threshold.
+ * Used on create-store submit to warn only when there are similar stores in the same country.
+ */
+export async function findDuplicateCandidatesInCountry(
+  nameQuery: string,
+  countryCode: string,
+  limit: number = DEFAULT_DUPLICATE_CANDIDATES_LIMIT,
+  minSimilarityPercent: number = SIMILARITY_THRESHOLD_PERCENT,
+): Promise<DuplicateCandidate[]> {
+  const trimmed = nameQuery.trim();
+  if (!trimmed || !countryCode) return [];
+  if (!normalizeStoreName(trimmed)) return [];
+
+  const stores = await prisma.store.findMany({
+    where: { countryCode },
+    select: { id: true, name: true, slug: true, countryCode: true, logoUrl: true },
+    orderBy: { name: "asc" },
+    take: MAX_DUPLICATE_SCAN,
+  });
+
+  return stores
+    .map((store) => ({
+      store,
+      similarityPercent: getSimilarityPercent(trimmed, store.name),
+    }))
+    .filter((item) => item.similarityPercent >= minSimilarityPercent)
+    .sort((a, b) => {
+      if (b.similarityPercent !== a.similarityPercent) return b.similarityPercent - a.similarityPercent;
+      return normalizeStoreName(a.store.name).localeCompare(normalizeStoreName(b.store.name));
+    })
+    .slice(0, limit)
+    .map((item) => item.store);
+}
+
+function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prisma.StoreWhereInput {
+  const {
+    nameQuery,
+    productTypeKeys = [],
+    countryCodes = [],
+    importCountryCodes = [],
+    presenceTypes = [],
+    receivesOrders = false,
+    hasStock = false,
+  } = filters;
+
+  const trimmedName = nameQuery?.trim();
+  const hasProductTypeFilter = productTypeKeys.length > 0;
+  const hasCountryFilter = countryCodes.length > 0;
+  const hasImportCountryFilter = importCountryCodes.length > 0;
+  const hasPresenceFilter = presenceTypes.length > 0;
+
+  return {
+    visibility: "PUBLIC",
+    status: { in: ["PENDING", "APPROVED"] },
+    isPrivate: false,
+    ...(trimmedName && {
+      name: { contains: trimmedName, mode: "insensitive" },
+    }),
+    ...(hasProductTypeFilter && {
+      productTypeAssignments: {
+        some: { productTypeKey: { in: productTypeKeys } },
+      },
+    }),
+    ...(hasCountryFilter && {
+      countryCode: { in: countryCodes },
+    }),
+    ...(hasPresenceFilter && {
+      presences: {
+        some: { presenceType: { in: presenceTypes } },
+      },
+    }),
+    ...(hasImportCountryFilter && {
+      importCountries: {
+        some: { countryCode: { in: importCountryCodes } },
+      },
+    }),
+    ...(receivesOrders && {
+      receivesOrders: true,
+    }),
+    ...(hasStock && {
+      hasStock: true,
+    }),
+  };
+}
+
+function mapPublicStoreListingItem(store: {
+  slug: string;
+  name: string;
+  countryCode: string;
+  status: StoreStatus;
+  storeType: "BUSINESS" | "PERSON";
+  receivesOrders: boolean | null;
+  hasStock: boolean | null;
+  averageRating: number | null;
+  reviewCount: number;
+  presences: Array<{ presenceType: StorePresenceType }>;
+  productTypeAssignments: Array<{ productTypeKey: string }>;
+  importCountries: Array<{ countryCode: string }>;
+  contactChannels: Array<{ type: StoreContactChannelType; value: string }>;
+}): PublicStoreListingItem {
+  return {
+    slug: store.slug,
+    name: store.name,
+    countryCode: store.countryCode,
+    status: store.status,
+    storeType: store.storeType,
+    presenceTypes: store.presences.map((p) => p.presenceType),
+    productTypeKeys: store.productTypeAssignments.map((assignment) => assignment.productTypeKey),
+    importCountryCodes: store.importCountries.map((country) => country.countryCode),
+    contactChannels: store.contactChannels.map((channel) => ({
+      type: channel.type,
+      value: channel.value,
+    })),
+    receivesOrders: store.receivesOrders,
+    hasStock: store.hasStock,
+    averageRating: store.averageRating,
+    reviewCount: store.reviewCount,
+  };
+}
+
+export async function getPublicStoresListingPage(
+  filters: PublicStoreListingFilters,
+): Promise<PublicStoreListingPage> {
+  const requestedPage = filters.page && Number.isInteger(filters.page) && filters.page > 0 ? filters.page : 1;
+  const requestedPageSize =
+    filters.pageSize && Number.isInteger(filters.pageSize) && filters.pageSize > 0
+      ? filters.pageSize
+      : DEFAULT_PUBLIC_STORE_PAGE_SIZE;
+  const where = buildPublicStoreListingWhere(filters);
+
+  const totalCount = await prisma.store.count({ where });
+  const totalPages = Math.max(1, Math.ceil(totalCount / requestedPageSize));
+  const currentPage = Math.min(requestedPage, totalPages);
+  const skip = (currentPage - 1) * requestedPageSize;
+
+  const stores = await prisma.store.findMany({
+    where,
+    select: {
+      slug: true,
+      name: true,
+      countryCode: true,
+      status: true,
+      storeType: true,
+      receivesOrders: true,
+      hasStock: true,
+      averageRating: true,
+      reviewCount: true,
+      presences: { select: { presenceType: true } },
+      productTypeAssignments: { select: { productTypeKey: true } },
+      importCountries: { select: { countryCode: true } },
+      contactChannels: {
+        where: { isPublic: true },
+        select: {
+          type: true,
+          value: true,
+        },
+      },
+    },
+    orderBy: [{ averageRating: "desc" }, { reviewCount: "desc" }, { name: "asc" }],
+    skip,
+    take: requestedPageSize,
+  });
+
+  return {
+    items: stores.map(mapPublicStoreListingItem),
+    totalCount,
+    currentPage,
+    pageSize: requestedPageSize,
+    totalPages,
+  };
+}
+
+/**
+ * Light count for the listing header — reuses the same filter where-clause as
+ * `getPublicStoresListingPage` (no item fetch, no duplicated filter logic) so the stores
+ * page can render its count as a separate suspended unit.
+ */
+export async function countPublicStores(filters: PublicStoreListingFilters): Promise<number> {
+  return prisma.store.count({ where: buildPublicStoreListingWhere(filters) });
+}
+
+/**
+ * Returns a public store by slug for the store detail page.
+ * Pending stores are included so they can be discovered in-app; inactive stores are included and should show a warning.
+ * Business vs person visibility: BUSINESS exposes logo, contact channels, and addresses; PERSON does not.
+ */
+export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> {
+  const store = await prisma.store.findFirst({
+    where: {
+      slug,
+      visibility: "PUBLIC",
+      status: { in: ["PENDING", "APPROVED"] },
+    },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      description: true,
+      status: true,
+      storeType: true,
+      countryCode: true,
+      isActive: true,
+      isPrivate: true,
+      createdByUserId: true,
+      createdAt: true,
+      receivesOrders: true,
+      hasStock: true,
+      averageRating: true,
+      reviewCount: true,
+      logoUrl: true,
+      presences: {
+        select: {
+          presenceType: true,
+        },
+      },
+      productTypeAssignments: {
+        select: {
+          productTypeKey: true,
+        },
+      },
+      importCountries: {
+        select: {
+          countryCode: true,
+        },
+      },
+      contactChannels: {
+        where: { isPublic: true },
+        select: {
+          type: true,
+          value: true,
+          label: true,
+        },
+      },
+      addresses: {
+        where: { isPublic: true },
+        select: {
+          city: true,
+          addressLine: true,
+          reference: true,
+        },
+      },
+    },
+  });
+
+  if (!store) {
+    return null;
+  }
+
+  const presenceTypes = store.presences.map((p) => p.presenceType);
+  const productTypeKeys = store.productTypeAssignments.map((assignment) => assignment.productTypeKey);
+  const importCountryCodes = store.importCountries.map((country) => country.countryCode);
+
+  const base: StoreDetail = {
+    id: store.id,
+    slug: store.slug,
+    name: store.name,
+    description: store.description,
+    status: store.status,
+    storeType: store.storeType,
+    countryCode: store.countryCode,
+    isActive: store.isActive,
+    isPrivate: store.isPrivate,
+    createdByUserId: store.createdByUserId,
+    createdAt: store.createdAt,
+    receivesOrders: store.receivesOrders,
+    hasStock: store.hasStock,
+    averageRating: store.averageRating,
+    reviewCount: store.reviewCount,
+    presenceTypes,
+    productTypeKeys,
+    importCountryCodes,
+  };
+
+  if (store.storeType === "BUSINESS") {
+    return {
+      ...base,
+      logoUrl: store.logoUrl,
+      contactChannels: store.contactChannels.map((ch) => ({
+        type: ch.type,
+        value: ch.value,
+        label: ch.label,
+      })),
+      addresses: store.addresses.map((a) => ({
+        city: a.city,
+        addressLine: a.addressLine,
+        reference: a.reference,
+      })),
+    };
+  }
+
+  return base;
+}
+
+/**
+ * Public store listing with optional filters.
+ * OR within same filter family (e.g. any of selected product types), AND across families.
+ * Only PUBLIC, PENDING or APPROVED stores; isActive is not filtered so inactive stores can appear (detail page shows warning).
+ */
+export async function getPublicStoresListing(
+  filters: PublicStoreListingFilters,
+): Promise<PublicStoreListingItem[]> {
+  const listingPage = await getPublicStoresListingPage(filters);
+  return listingPage.items;
+}
+
+const publicStoreReviewSelect = {
+  id: true,
+  userId: true,
+  overallRating: true,
+  comment: true,
+  createdAt: true,
+  updatedAt: true,
+  user: {
+    select: {
+      name: true,
+    },
+  },
+} as const;
+
+const publicStoreReviewOrderBy = [{ updatedAt: "desc" as const }, { createdAt: "desc" as const }];
+
+function mapRowsToPublicStoreReviews(
+  rows: Array<{
+    id: string;
+    userId: string;
+    overallRating: number;
+    comment: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    user: { name: string | null };
+  }>,
+  viewerUserId: string | undefined,
+): PublicStoreReview[] {
+  return rows.map((review) => ({
+    id: review.id,
+    overallRating: review.overallRating,
+    comment: review.comment,
+    createdAt: review.createdAt,
+    updatedAt: review.updatedAt,
+    authorName: review.user.name,
+    isViewerReview: viewerUserId != null && review.userId === viewerUserId,
+  }));
+}
+
+/**
+ * Public reviews for a store, newest first among "other" reviewers.
+ * When `viewerUserId` is set and that user has a review, it is always included first and counts toward `limit`;
+ * remaining slots are filled with the most recently updated reviews from everyone else.
+ */
+export async function getPublicStoreReviews(
+  storeId: string,
+  viewerUserId?: string,
+  limit: number = DEFAULT_PUBLIC_STORE_REVIEW_LIMIT,
+): Promise<PublicStoreReview[]> {
+  if (limit <= 0) {
+    return [];
+  }
+
+  if (viewerUserId == null || viewerUserId === "") {
+    const reviews = await prisma.storeReview.findMany({
+      where: { storeId },
+      select: publicStoreReviewSelect,
+      orderBy: publicStoreReviewOrderBy,
+      take: limit,
+    });
+    return mapRowsToPublicStoreReviews(reviews, undefined);
+  }
+
+  const viewerReviewRow = await prisma.storeReview.findUnique({
+    where: {
+      storeId_userId: {
+        storeId,
+        userId: viewerUserId,
+      },
+    },
+    select: publicStoreReviewSelect,
+  });
+
+  const remainingSlots = Math.max(0, limit - (viewerReviewRow ? 1 : 0));
+
+  const otherReviewRows =
+    remainingSlots > 0
+      ? await prisma.storeReview.findMany({
+          where: {
+            storeId,
+            ...(viewerReviewRow ? { userId: { not: viewerUserId } } : {}),
+          },
+          select: publicStoreReviewSelect,
+          orderBy: publicStoreReviewOrderBy,
+          take: remainingSlots,
+        })
+      : [];
+
+  const combinedRows = viewerReviewRow ? [viewerReviewRow, ...otherReviewRows] : otherReviewRows;
+
+  return mapRowsToPublicStoreReviews(combinedRows, viewerUserId);
+}
+
+export async function getStoreViewerContext(
+  storeId: string,
+  userId: string,
+): Promise<StoreViewerContext> {
+  const [review, note] = await Promise.all([
+    prisma.storeReview.findUnique({
+      where: {
+        storeId_userId: {
+          storeId,
+          userId,
+        },
+      },
+      select: {
+        overallRating: true,
+        comment: true,
+        updatedAt: true,
+      },
+    }),
+    prisma.storeNote.findFirst({
+      where: { storeId, userId },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+      select: {
+        content: true,
+        updatedAt: true,
+      },
+    }),
+  ]);
+
+  return {
+    review: review
+      ? {
+          overallRating: review.overallRating,
+          comment: review.comment,
+          updatedAt: review.updatedAt,
+        }
+      : null,
+    note: note
+      ? {
+          content: note.content,
+          updatedAt: note.updatedAt,
+        }
+      : null,
+  };
+}
+
+export type ViewerStoreActivity = {
+  /** Total number of orders the viewer has placed at this store. */
+  ordersTotal: number;
+  /** Orders that are not in a terminal state (excludes COMPLETED and CANCELLED). */
+  ordersActive: number;
+  /** Total spend grouped by currency. Empty array when the viewer has no orders. */
+  totalSpentByCurrency: Array<{ currencyCode: string; totalMinorUnits: number }>;
+};
+
+/**
+ * Aggregates the viewer's order activity at a single store for the detail-page sidebar:
+ * total orders, active orders, and total spend grouped by currency.
+ *
+ * Only orders owned by `userId` at `storeId` are counted. Returns zeroed totals
+ * when the viewer has not placed any order at this store.
+ */
+export async function getViewerStoreActivity(
+  userId: string,
+  storeId: string,
+): Promise<ViewerStoreActivity> {
+  const orders = await prisma.order.findMany({
+    where: { userId, storeId },
+    select: { status: true, currencyCode: true, totalCost: true },
+  });
+
+  if (orders.length === 0) {
+    return { ordersTotal: 0, ordersActive: 0, totalSpentByCurrency: [] };
+  }
+
+  let ordersActive = 0;
+  const spendByCurrency = new Map<string, number>();
+  for (const order of orders) {
+    if (order.status !== "COMPLETED" && order.status !== "CANCELLED") {
+      ordersActive += 1;
+    }
+    const prev = spendByCurrency.get(order.currencyCode) ?? 0;
+    spendByCurrency.set(order.currencyCode, prev + order.totalCost);
+  }
+
+  // Sort currencies by spend descending so the dominant currency renders first.
+  const totalSpentByCurrency = Array.from(spendByCurrency.entries())
+    .map(([currencyCode, totalMinorUnits]) => ({ currencyCode, totalMinorUnits }))
+    .sort((a, b) => b.totalMinorUnits - a.totalMinorUnits);
+
+  return { ordersTotal: orders.length, ordersActive, totalSpentByCurrency };
+}
+
+/**
+ * Returns a map of store slug → total order count for the given viewer.
+ * Only stores present in `slugs` are included; stores with zero orders are omitted.
+ * Counts all orders regardless of status (OPEN, COMPLETED, CANCELLED…).
+ */
+export async function getViewerOrderCountsByStoreSlugs(
+  userId: string,
+  slugs: string[],
+): Promise<Record<string, number>> {
+  if (slugs.length === 0) return {};
+
+  const orders = await prisma.order.findMany({
+    where: { userId, store: { slug: { in: slugs } } },
+    select: { store: { select: { slug: true } } },
+  });
+
+  const result: Record<string, number> = {};
+  for (const o of orders) {
+    const slug = o.store.slug;
+    result[slug] = (result[slug] ?? 0) + 1;
+  }
+  return result;
+}
 
 /**
  * Returns the catalog of stores a collector can place a pedido at: publicly visible

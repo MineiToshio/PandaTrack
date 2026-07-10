@@ -8,9 +8,9 @@ import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
 import { getSession } from "@/lib/auth/auth-server";
 import { getVerificationSnapshot, maybeSendDaySixVerificationReminder } from "@/lib/auth/authVerification";
 import { ROUTES, VERIFICATION_BANNER_HEIGHT_PX } from "@/lib/constants";
-import { listCountryCodesCached } from "@/queries/country";
-import { listActiveStoreProductTypeKeysCached } from "@/queries/storeProductType";
-import { getAppShellUserIdentity, getCollectorPreferencesSnapshot } from "@/queries/userSettings";
+import { listCountryCodesCached } from "@/lib/data/catalog/countryQueries";
+import { listActiveStoreProductTypeKeysCached } from "@/lib/data/catalog/storeProductTypeQueries";
+import { getAppShellUserIdentity, getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 
 type PrivateAppLayoutProps = {
   children: React.ReactNode;

@@ -1,6 +1,6 @@
 import posthog from "posthog-js";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import type { DuplicateCandidate } from "@/queries/store";
+import type { DuplicateCandidate } from "@/lib/data/stores/storeQueries";
 import { getDuplicateCandidates, getDuplicateCandidatesForSubmit } from "../new/_actions/getDuplicateCandidates";
 
 export const MIN_DUPLICATE_QUERY_LENGTH = 2;

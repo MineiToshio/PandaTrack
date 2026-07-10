@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
 import {
   getPublicStoreReviews,
@@ -7,12 +6,12 @@ import {
   getStoreViewerContext,
   getViewerStoreActivity,
   type ViewerStoreActivity,
-} from "@/queries/store";
+} from "@/lib/data/stores/storeQueries";
 import {
   getEditableStoreBySlug,
   getStoreGovernanceSummary,
   getStoreGovernanceViewerContext,
-} from "@/queries/storeGovernance";
+} from "@/lib/data/stores/storeGovernanceQueries";
 import { buildStoreDetailMetadata } from "@/lib/seo";
 import { safeRelativeReturnTo } from "@/lib/navigation/safeRelativeReturnTo";
 import StoreDetailContent from "./_components/StoreDetailContent";
@@ -26,7 +25,7 @@ const STORE_RETURN_LABEL_PARAM = "returnLabel";
 
 export async function generateMetadata({ params }: StoreDetailPageProps) {
   const { locale, slug } = await params;
-  const store = await getStoreBySlug(prisma, slug);
+  const store = await getStoreBySlug(slug);
   if (!store) return {};
   return buildStoreDetailMetadata({
     locale,
@@ -42,8 +41,8 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
   const backHref = safeRelativeReturnTo(resolvedSearchParams.returnTo);
   const returnLabelRaw = resolvedSearchParams[STORE_RETURN_LABEL_PARAM];
   const backOrderLabel = typeof returnLabelRaw === "string" && returnLabelRaw.trim() ? returnLabelRaw.trim() : null;
-  const store = await getStoreBySlug(prisma, slug);
-  const editableStore = await getEditableStoreBySlug(prisma, slug);
+  const store = await getStoreBySlug(slug);
+  const editableStore = await getEditableStoreBySlug(slug);
 
   if (!store || !editableStore) {
     notFound();
@@ -58,14 +57,14 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
     notFound();
   }
   const [reviews, viewerContext, governanceSummary, governanceViewerContext, viewerActivity] = await Promise.all([
-    session?.user?.id ? getPublicStoreReviews(prisma, store.id, session.user.id, store.reviewCount) : [],
-    session?.user?.id ? getStoreViewerContext(prisma, store.id, session.user.id) : { review: null, note: null },
-    getStoreGovernanceSummary(prisma, store.id),
+    session?.user?.id ? getPublicStoreReviews(store.id, session.user.id, store.reviewCount) : [],
+    session?.user?.id ? getStoreViewerContext(store.id, session.user.id) : { review: null, note: null },
+    getStoreGovernanceSummary(store.id),
     session?.user?.id
-      ? getStoreGovernanceViewerContext(prisma, store.id, session.user.id)
+      ? getStoreGovernanceViewerContext(store.id, session.user.id)
       : { openReport: null, openChangeRequest: null },
     session?.user?.id
-      ? getViewerStoreActivity(prisma, session.user.id, store.id)
+      ? getViewerStoreActivity(session.user.id, store.id)
       : ({ ordersTotal: 0, ordersActive: 0, totalSpentByCurrency: [] } satisfies ViewerStoreActivity),
   ]);
 

@@ -1,14 +1,36 @@
 ---
 title: ADR 0015 — Data access layer shape (src/queries vs src/lib/data)
 date: 2026-07-10
-status: accepted
-session: audit-2026-07 batch B9 (docs & rules alignment)
+status: accepted (migration completed 2026-07-10)
+session: audit-2026-07 batch B9 (docs & rules alignment); migration completed in round-2 wave B2 (R4)
 owner: Sergio Minei
 trigger: repository audit finding ARCH-6 — two coexisting data-access styles with no recorded direction
-updates: .agents/rules/project-structure.mdc, docs/development/file-organization.md
+updates: .agents/rules/project-structure.mdc, .agents/rules/prisma-data-layer.mdc, docs/development/file-organization.md, docs/development/lib-utilities.md
 ---
 
 # ADR 0015 — Data access layer shape (`src/queries/` vs `src/lib/data/<domain>/`)
+
+## Update — migration completed (2026-07-10)
+
+The coexistence documented below was resolved by fully migrating `src/queries/` into
+`src/lib/data/<domain>/`. **`src/queries/` no longer exists**; there is now a single canonical
+data-access shape:
+
+- `src/lib/data/<domain>/` folders holding `*Queries.ts` / `*Mutations.ts` (split by read vs write),
+  importing the shared Prisma singleton from `@/lib/prisma` directly at module scope.
+- No data-access function takes an injected `db: PrismaClient` parameter anymore. Functions that
+  must participate in a caller-owned transaction accept an optional `tx?: Prisma.TransactionClient`
+  (see `userSettingsMutations.applyCollectorPreferencesPatch`).
+
+Domains created by the migration: `stores/` (`storeQueries`, `storeMutations`,
+`storeGovernanceQueries`, `storeGovernanceMutations`), `user-settings/` (`userSettingsQueries`,
+`userSettingsMutations`), `catalog/` (`countryQueries`, `storeProductTypeQueries`), and `auth/`
+(`userQueries`, `userMutations`, `accountQueries`, `verificationQueries`, `verificationMutations`),
+alongside the pre-existing `orders/`, `deliveries/`, and `dashboard/`.
+
+The historical analysis below is retained for context. Wherever it describes "two coexisting shapes"
+or "opportunistic migration", read that as **completed**: Option C bought time; the follow-up
+migration (deferred item ARCH-1 / ARCH-3) has since been executed, landing on Option B's end state.
 
 ## Context
 

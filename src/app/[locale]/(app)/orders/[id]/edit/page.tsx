@@ -5,7 +5,7 @@ import { buildPageMetadata } from "@/lib/seo";
 import { getSession } from "@/lib/auth/auth-server";
 import { getOrderById } from "@/lib/data/orders/orderQueries";
 import { getOrderableStores } from "@/lib/data/stores/storeQueries";
-import { listActiveStoreProductTypeKeysCached } from "@/queries/storeProductType";
+import { listActiveStoreProductTypeKeysCached } from "@/lib/data/catalog/storeProductTypeQueries";
 import { ROUTES } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { editOrderAction } from "../../_actions/orderActions";

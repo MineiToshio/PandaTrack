@@ -3,8 +3,7 @@
 import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { prisma } from "@/lib/prisma";
-import { createStoreProductTypeRequest } from "@/queries/storeGovernance";
+import { createStoreProductTypeRequest } from "@/lib/data/stores/storeGovernanceMutations";
 import { storeProductTypeRequestSchema } from "../_schemas/storeProductTypeRequestSchema";
 
 export type SaveStoreProductTypeRequestResult =
@@ -38,7 +37,7 @@ export async function saveStoreProductTypeRequest(
   }
 
   try {
-    await createStoreProductTypeRequest(prisma, {
+    await createStoreProductTypeRequest({
       userId: session.user.id,
       suggestedName: parsed.data.suggestedName,
       reason: parsed.data.reason,

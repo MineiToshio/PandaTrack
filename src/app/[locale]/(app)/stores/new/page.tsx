@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
-import { listCountryCodesCached } from "@/queries/country";
-import { listActiveStoreProductTypeKeysCached } from "@/queries/storeProductType";
+import { listCountryCodesCached } from "@/lib/data/catalog/countryQueries";
+import { listActiveStoreProductTypeKeysCached } from "@/lib/data/catalog/storeProductTypeQueries";
 import { buildPageMetadata } from "@/lib/seo";
 import CreateStoreForm from "./_components/CreateStoreForm";
 
