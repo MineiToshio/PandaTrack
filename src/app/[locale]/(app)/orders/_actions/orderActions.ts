@@ -1,6 +1,7 @@
 "use server";
 
 import * as Sentry from "@sentry/nextjs";
+import { flattenError } from "zod";
 import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS } from "@/lib/constants";
@@ -9,8 +10,7 @@ import { orderCreateSchema, orderEditSchema } from "@/lib/orders/orderValidation
 import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
 
 export type OrderActionResult =
-  | { success: true; orderId: string }
-  | { success: false; error: string; fieldErrors?: Record<string, string[]> };
+  { success: true; orderId: string } | { success: false; error: string; fieldErrors?: Record<string, string[]> };
 
 function parseItemsJson(raw: FormDataEntryValue | null): unknown[] {
   if (typeof raw !== "string" || !raw) return [];
@@ -72,7 +72,7 @@ export async function createOrderAction(
 
   const parsed = orderCreateSchema.safeParse(raw);
   if (!parsed.success) {
-    const fieldErrors = parsed.error.flatten().fieldErrors as Record<string, string[]>;
+    const fieldErrors = flattenError(parsed.error).fieldErrors as Record<string, string[]>;
     return { success: false, error: "validation", fieldErrors };
   }
 
@@ -146,7 +146,7 @@ export async function editOrderAction(
 
   const parsed = orderEditSchema.safeParse(raw);
   if (!parsed.success) {
-    const fieldErrors = parsed.error.flatten().fieldErrors as Record<string, string[]>;
+    const fieldErrors = flattenError(parsed.error).fieldErrors as Record<string, string[]>;
     return { success: false, error: "validation", fieldErrors };
   }
 

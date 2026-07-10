@@ -19,7 +19,7 @@ describe("deliveryCreateSchema zero-decimal currency validation", () => {
     const result = deliveryCreateSchema.safeParse({ ...baseInput, currencyCode: "JPY", cost: 500050 });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.errors.map((e) => e.message)).toContain("COST_FRACTIONAL_SUBUNITS");
+      expect(result.error.issues.map((e) => e.message)).toContain("COST_FRACTIONAL_SUBUNITS");
     }
   });
 

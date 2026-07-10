@@ -31,7 +31,7 @@ describe("orderItemRowSchema", () => {
     const result = orderItemRowSchema.safeParse({ ...validItem, quantity: 0 });
     expect(result.success).toBe(false);
     if (!result.success) {
-      const messages = result.error.errors.map((e) => e.message);
+      const messages = result.error.issues.map((e) => e.message);
       expect(messages).toContain("QUANTITY_TOO_LOW");
     }
   });
@@ -40,7 +40,7 @@ describe("orderItemRowSchema", () => {
     const result = orderItemRowSchema.safeParse({ ...validItem, quantity: 1.5 });
     expect(result.success).toBe(false);
     if (!result.success) {
-      const messages = result.error.errors.map((e) => e.message);
+      const messages = result.error.issues.map((e) => e.message);
       expect(messages).toContain("QUANTITY_MUST_BE_INTEGER");
     }
   });
@@ -49,7 +49,7 @@ describe("orderItemRowSchema", () => {
     const result = orderItemRowSchema.safeParse({ ...validItem, unitPrice: -1 });
     expect(result.success).toBe(false);
     if (!result.success) {
-      const messages = result.error.errors.map((e) => e.message);
+      const messages = result.error.issues.map((e) => e.message);
       expect(messages).toContain("UNIT_PRICE_TOO_LOW");
     }
   });
@@ -58,7 +58,7 @@ describe("orderItemRowSchema", () => {
     const result = orderItemRowSchema.safeParse({ ...validItem, unitPrice: 10.5 });
     expect(result.success).toBe(false);
     if (!result.success) {
-      const messages = result.error.errors.map((e) => e.message);
+      const messages = result.error.issues.map((e) => e.message);
       expect(messages).toContain("UNIT_PRICE_MUST_BE_INTEGER");
     }
   });
@@ -67,7 +67,7 @@ describe("orderItemRowSchema", () => {
     const result = orderItemRowSchema.safeParse({ ...validItem, name: "" });
     expect(result.success).toBe(false);
     if (!result.success) {
-      const messages = result.error.errors.map((e) => e.message);
+      const messages = result.error.issues.map((e) => e.message);
       expect(messages).toContain("ITEM_NAME_REQUIRED");
     }
   });
@@ -128,7 +128,7 @@ describe("orderCreateSchema zero-decimal currency validation", () => {
     const result = orderCreateSchema.safeParse({ ...clpInput, totalCost: 4300050 });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.errors.map((e) => e.message)).toContain("TOTAL_COST_FRACTIONAL_SUBUNITS");
+      expect(result.error.issues.map((e) => e.message)).toContain("TOTAL_COST_FRACTIONAL_SUBUNITS");
     }
   });
 
@@ -140,7 +140,7 @@ describe("orderCreateSchema zero-decimal currency validation", () => {
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.errors.map((e) => e.message)).toContain("UNIT_PRICE_FRACTIONAL_SUBUNITS");
+      expect(result.error.issues.map((e) => e.message)).toContain("UNIT_PRICE_FRACTIONAL_SUBUNITS");
     }
   });
 
@@ -173,7 +173,7 @@ describe("orderPaymentCreateSchema", () => {
     const result = orderPaymentCreateSchema.safeParse({ ...validBase, amount: 0 });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.errors.map((e) => e.message)).toContain("AMOUNT_TOO_LOW");
+      expect(result.error.issues.map((e) => e.message)).toContain("AMOUNT_TOO_LOW");
     }
   });
 
@@ -190,7 +190,7 @@ describe("orderPaymentCreateSchema", () => {
     const result = orderPaymentCreateSchema.safeParse({ ...validBase, paymentDate: tomorrow });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.errors.map((e) => e.message)).toContain("PAYMENT_DATE_IN_FUTURE");
+      expect(result.error.issues.map((e) => e.message)).toContain("PAYMENT_DATE_IN_FUTURE");
     }
   });
 
@@ -202,7 +202,7 @@ describe("orderPaymentCreateSchema", () => {
     const result = orderPaymentCreateSchema.safeParse({ ...validBase, orderId: "not-a-cuid" });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.errors.map((e) => e.message)).toContain("INVALID_ORDER_ID");
+      expect(result.error.issues.map((e) => e.message)).toContain("INVALID_ORDER_ID");
     }
   });
 });
@@ -221,7 +221,7 @@ describe("orderPaymentDeleteSchema", () => {
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.errors.map((e) => e.message)).toContain("INVALID_PAYMENT_ID");
+      expect(result.error.issues.map((e) => e.message)).toContain("INVALID_PAYMENT_ID");
     }
   });
 });
@@ -284,7 +284,7 @@ describe("orderCreateSchema items bound", () => {
     const result = orderCreateSchema.safeParse({ ...baseInput, items });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.errors.map((e) => e.message)).toContain("TOO_MANY_ITEMS");
+      expect(result.error.issues.map((e) => e.message)).toContain("TOO_MANY_ITEMS");
     }
   });
 });

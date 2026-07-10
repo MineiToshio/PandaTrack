@@ -1,6 +1,7 @@
 "use server";
 
 import * as Sentry from "@sentry/nextjs";
+import { flattenError } from "zod";
 import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS } from "@/lib/constants";
@@ -66,7 +67,7 @@ export async function createDeliveryAction(
     return {
       success: false,
       error: "validation",
-      fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]>,
+      fieldErrors: flattenError(parsed.error).fieldErrors as Record<string, string[]>,
     };
   }
 

@@ -7,7 +7,7 @@ const passwordField = z.string().min(8).max(128);
 
 export const emailChangeFormSchema = z.object({
   locale: localeField,
-  newEmail: z.string().trim().email(),
+  newEmail: z.string().trim().pipe(z.email()),
   currentPassword: z.string().min(1),
 });
 
@@ -40,7 +40,6 @@ export type SettingsAccountErrorCode =
   | "generic";
 
 export type EmailChangeActionResult =
-  | { ok: true }
-  | { ok: false; error: SettingsAccountErrorCode; retryAfterIso?: string };
+  { ok: true } | { ok: false; error: SettingsAccountErrorCode; retryAfterIso?: string };
 
 export type PasswordActionResult = { ok: true } | { ok: false; error: SettingsAccountErrorCode };

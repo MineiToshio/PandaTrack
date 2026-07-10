@@ -53,7 +53,7 @@ const contactChannelSchema = z
     }
 
     if (channel.type === "EMAIL") {
-      const parsedEmail = z.string().email().safeParse(normalizedValue);
+      const parsedEmail = z.email().safeParse(normalizedValue);
       if (!parsedEmail.success) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
