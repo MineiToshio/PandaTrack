@@ -293,20 +293,20 @@ The orchestrator flagged a coordination risk: both B6 and B2 could touch `orderF
 
 Not scheduled in this plan. Each needs an owner decision, carries disproportionate risk, or is out of the audit's remediation scope.
 
-| ID              | Item                                         | Reason deferred                                                                                                                            |
+| ID | Item | Reason deferred |
 | --------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| DX-1            | `migrate resolve                             |                                                                                                                                            | true` in the build script | Owner decision — requires verifying production DB migration state first. Mitigation: documented here; do not silently swallow migrate failures without confirming the DB baseline. |
-| MONEY-4         | Zero-decimal currencies treated as 2-decimal | Product decision — owner must define the intended handling for zero-decimal currencies.                                                    |
-| DATA-3          | `take: 1000` cap on a query                  | Out of scope — proper fix is a pagination redesign, larger than a remediation batch.                                                       |
-| DATA-8          | `@@unique` on position                       | Risk — a unique position constraint can cause transient collisions during reorder; needs a deferred-constraint or reorder-strategy design. |
-| DATA-10         | Explicit `Decimal` precision                 | Not urgent — requires column alteration (non-additive migration); no correctness impact today.                                             |
-| ARCH-1 / ARCH-3 | Full migration to a single data layer        | Large — the ADR in B9 fixes the direction; the mechanical migration is a dedicated effort.                                                 |
-| ARCH-4          | `StarRating` vs `RatingStars` consolidation  | Non-urgent refactor.                                                                                                                       |
-| ARCH-7          | Ad-hoc popover in `OrderItemsGrid`           | Medium refactor, no correctness impact.                                                                                                    |
-| DX-4            | e2e / build in CI                            | Owner decision — CI-minute cost tradeoff.                                                                                                  |
-| DX-6            | Major bumps (typescript / eslint / lucide)   | Needs a dedicated upgrade cycle; out of B1's non-breaking scope.                                                                           |
-| DX-8            | Vitest coverage                              | Adds a dependency; owner decision.                                                                                                         |
-| MONEY-7         | Per-line rounding                            | Behavior is already correct — informational note only, no change needed.                                                                   |
+| DX-1 | `migrate resolve                             |                                                                                                                                            | true` in the build script | Owner decision — requires verifying production DB migration state first. Mitigation: documented here; do not silently swallow migrate failures without confirming the DB baseline. |
+| MONEY-4 | Zero-decimal currencies treated as 2-decimal | Product decision — owner must define the intended handling for zero-decimal currencies. |
+| DATA-3 | `take: 1000` cap on a query | Out of scope — proper fix is a pagination redesign, larger than a remediation batch. |
+| DATA-8 | `@@unique` on position | Risk — a unique position constraint can cause transient collisions during reorder; needs a deferred-constraint or reorder-strategy design. |
+| DATA-10 | Explicit `Decimal` precision | Not urgent — requires column alteration (non-additive migration); no correctness impact today. |
+| ARCH-1 / ARCH-3 | Full migration to a single data layer | Large — the ADR in B9 fixes the direction; the mechanical migration is a dedicated effort. |
+| ARCH-4 | `StarRating` vs `RatingStars` consolidation | Non-urgent refactor. |
+| ARCH-7 | Ad-hoc popover in `OrderItemsGrid` | Medium refactor, no correctness impact. |
+| DX-4 | e2e / build in CI | Owner decision — CI-minute cost tradeoff. |
+| DX-6 | Major bumps (typescript / eslint / lucide) | Needs a dedicated upgrade cycle; out of B1's non-breaking scope. |
+| DX-8 | Vitest coverage | Adds a dependency; owner decision. |
+| MONEY-7 | Per-line rounding | Behavior is already correct — informational note only, no change needed. |
 
 ```
 
@@ -383,3 +383,30 @@ The owner reviewed the outcome report above and resolved the deferred items. Not
 ### Phase 3 (deferred by owner)
 
 Major dependency upgrades (DX-6) as a dedicated later iteration, after round 2 stabilizes.
+
+## Round 2 & Phase 3 outcome (2026-07-10)
+
+### Round 2 results
+
+- R1 `b193f66`: build-script migrate-resolve workaround removed (DB verified clean).
+- R2 `a9c599c` + fix `1c7ada1`: zero-decimal currencies (CLP/JPY/KRW) — storage unchanged (×100), input/validation/format currency-aware; adversarial panel found and fixed: form prefills with ".00" blocked CLP editing, payment whole-major server guard, delivery FX rate inputs widened to 6 decimals, shared `formatCentsForInput` helper.
+- R3 `9b3c79f`: `ModalDialog` dark shadow restored via dedicated `--modal-shadow` token pair; two real 320px overflow fixes (`StoreLogoField`, `DashboardKpiStrip`).
+- R5 (staging commit `f6f262d`-adjacent — see `git log` for the exact "refactor(components): Merge duplicate primitives..." hash): `StarRating` canonical + `RatingStars` composes it; `ItemTypePicker` ARIA corrected; component-inventory guard test keeps `docs/design/components.md` in lockstep.
+- R8: 165 new unit tests over lifecycle/settings actions; vitest coverage baseline (v8, no gates).
+- R6 `ffca5fa`: persisted `paidAmountMinor`/`paymentPercent` (SQL pagination, take-1000 path removed), `@@unique([orderId, position])` with two-phase renumber, `Decimal(18,8)`.
+- R4+R7 `6e0a23f`/`c369723`: `src/queries` fully migrated to `src/lib/data` per ADR 0015 (~40 importers, behavior-identical, verified); `Store.searchName` normalized column + TS backfill script + SQL accent-insensitive duplicate pre-filter.
+- R9 `b1685d7`: CI build job (no secrets) + e2e-critical workflow (PR→main); required GitHub secrets documented in `docs/development/testing.md` (`E2E_DATABASE_URL`, `E2E_BETTER_AUTH_SECRET`, `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`) — owner must create them and seed the e2e DB.
+- R10 `ff04cfb` + fix `5145404`: authenticated e2e enabled off port 3000 via `BETTER_AUTH_EXTRA_ORIGINS` (default 7100); 2 stale specs fixed; the shell-title h1 change was reverted after review (double-h1 regression) — pages own the single h1.
+- Close-out `b2ecb8f`: dead `src/queries` paths in product docs, reorder `INVALID_ITEM_SET` guard, oklab/oklch token policy reconciled.
+- All batches adversarially reviewed; R2 and R10 required fix rounds (both re-verified green).
+
+### Phase 3 results (dependency upgrades)
+
+- Landed: minors/patch sweep `49d03bc`; jsdom 29 + dotenv 17 `c92acd6`; react-day-picker 10 + lucide-react 1 `c039f77`; react-easy-crop 6 `b262ab4`; zod 4 `d8fa3a9` (`errorMap`→`error`, `.flatten()`→`flattenError`, `.email()`→`z.email()` with `trim().pipe()`, `error.errors`→`error.issues`).
+- Reverted with documented conditions: ESLint 10 (`eslint-config-next` `16.2.10` peers `^9` + runtime `TypeError` in `eslint-plugin-react`); TypeScript 7 (native `tsgo` drops the JS Compiler API `typescript-estree` requires; `typescript-eslint` peer `<6.1.0`). Retry when `eslint-config-next` ships `typescript-eslint` 9.x / ESLint 10 support.
+- Not upgraded by design: `better-auth` 1.7 (pre-release), `@types/node` stays `^20` until Node version policy set.
+
+### Owner action items
+
+- Create the 4 GitHub secrets + seed the e2e database (`docs/development/testing.md`).
+- First CI run of the new workflows will be the real validation signal.
