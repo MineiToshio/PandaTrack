@@ -43,6 +43,13 @@ export default async function DashboardActivityZone({ data, locale }: DashboardA
   const rowLabel = (order: OrderSummary): string =>
     t("activity.rowLabel", { store: order.storeName, code: order.humanReadableId });
 
+  // The heading promises every figure in the base currency, so an order reads in its own currency
+  // only when it cannot be converted — the same fallback the upcoming-payments list applies.
+  const rowAmount = (order: OrderSummary): string =>
+    order.baseTotalCostMinor !== null && data.baseCurrencyCode
+      ? formatAmountSymbolOnly(order.baseTotalCostMinor, data.baseCurrencyCode, locale)
+      : formatAmountSymbolOnly(order.totalCostMinor, order.currencyCode, locale);
+
   const cardProps = {
     titleId: ACTIVITY_TITLE_ID,
     eyebrow: t("activity.eyebrow"),
@@ -105,7 +112,7 @@ export default async function DashboardActivityZone({ data, locale }: DashboardA
             meta={
               <>
                 <span className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)] tabular-nums">
-                  {formatAmountSymbolOnly(order.totalCostMinor, order.currencyCode, locale)}
+                  {rowAmount(order)}
                 </span>
                 <span className="[color:var(--text-muted)]">
                   {formatDomainShortDate(order.orderDate, locale)}

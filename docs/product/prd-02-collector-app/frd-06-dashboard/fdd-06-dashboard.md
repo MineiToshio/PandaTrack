@@ -556,3 +556,7 @@ The dashboard shipped across [`BP-01 · WO-01…WO-06`](bp-01-dashboard-aggregat
 - **Puntualidad measures the delivery's dispatch date** (`WO-05`), the only arrival date on record. The zone says so in a caption, and its legend reads "En plazo / Fuera de plazo" rather than the prototype's "A tiempo / Tarde": an order that reached the store on time but shipped late is counted outside the window, and only "in window" is provable. Arrivals with no dispatch date are reported separately, never guessed into a bucket.
 
 - **A `loading.tsx` skeleton mirrors the grid** (`ADR 0013`). The page loads every order in one aggregation pass; the prototype has no loading state.
+
+- **The page-heading date reads as the locale formats it.** The prototype writes `jueves 18 jun`; `Intl.DateTimeFormat` renders `viernes, 10 jul` in `es` and `Friday, Jul 10` in `en`. The comma belongs to the locale, and removing it would mean hand-rolling a weekday table per language. The date comes from `generatedAt` in the collector's timezone, since it is a real instant rather than a domain date.
+
+- **Per-order amounts read in the base currency wherever they can be converted** (`FR-06-13`, `FR-06-14`). The order's own currency is the fallback, used only when the order is FX-pending, and the row is then marked `· FX pendiente` — matching the prototype's `¥ 9.800` row. This governs both Movimiento and Lo que toca pagar, which had disagreed with each other.

@@ -101,6 +101,9 @@ function buildOrderSummary(order: DerivedOrder, baseCurrencyCode: string | null)
     status: order.input.status,
     currencyCode: order.input.currencyCode,
     totalCostMinor: order.input.totalCost,
+    baseTotalCostMinor: baseCurrencyCode
+      ? convertOrderAmount(order.input, order.input.totalCost, baseCurrencyCode)
+      : null,
     outstandingMinor: order.outstandingMinor,
     isFxPending: baseCurrencyCode ? isFxPending(order.input, baseCurrencyCode) : false,
   };

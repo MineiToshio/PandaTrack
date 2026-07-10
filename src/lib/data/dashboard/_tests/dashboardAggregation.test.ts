@@ -555,3 +555,36 @@ describe("buildDashboardData - activity and collection", () => {
     });
   });
 });
+
+describe("buildDashboardData - order summaries carry a base-currency amount (FR-06-13, FR-06-14)", () => {
+  it("converts a foreign order whose exchange rate is reconciled", () => {
+    const data = build(
+      [makeOrder({ id: "a", currencyCode: "PEN", exchangeRate: 0.27, totalCost: 10_000 })],
+      { baseCurrencyCode: "USD" },
+    );
+
+    const [summary] = data.activity.recentOrders;
+    expect(summary.baseTotalCostMinor).toBe(2_700);
+    expect(summary.isFxPending).toBe(false);
+  });
+
+  it("leaves the base amount null for an FX-pending order, so it reads in its own currency", () => {
+    const data = build(
+      [
+        makeOrder({
+          id: "a",
+          currencyCode: "JPY",
+          exchangeRate: 0.0067,
+          needsExchangeRateUpdate: true,
+          totalCost: 980_000,
+        }),
+      ],
+      { baseCurrencyCode: "USD" },
+    );
+
+    const [summary] = data.activity.recentOrders;
+    expect(summary.baseTotalCostMinor).toBeNull();
+    expect(summary.isFxPending).toBe(true);
+    expect(summary.currencyCode).toBe("JPY");
+  });
+});

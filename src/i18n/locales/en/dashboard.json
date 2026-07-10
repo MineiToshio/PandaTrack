@@ -8,7 +8,7 @@
   "page": {
     "greeting": "Hi, {name}",
     "greetingGuest": "Hi",
-    "baseCurrencyReminder": "all in {currency}"
+    "headingMeta": "{date} · all in {currency}"
   },
   "cash": {
     "eyebrow": "Cash & obligations",

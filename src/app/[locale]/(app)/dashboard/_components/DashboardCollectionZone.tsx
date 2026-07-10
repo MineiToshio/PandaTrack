@@ -66,9 +66,10 @@ function rankCategories(
 
 /** "Tu colección": status split, spend and product count by category, and top stores (FR-06-11). */
 export default async function DashboardCollectionZone({ data, locale, storesHref }: DashboardCollectionZoneProps) {
-  const [t, tTypes] = await Promise.all([
+  const [t, tTypes, tStatus] = await Promise.all([
     getTranslations({ locale, namespace: "dashboard" }),
     getTranslations({ locale, namespace: "storeProductTypes" }),
+    getTranslations({ locale, namespace: "components.statusChip.orderStatus" }),
   ]);
   const { collection, paidVsOutstanding, baseCurrencyCode } = data;
   const money = (minor: number): string => formatDashboardMoney(minor, baseCurrencyCode, locale);
@@ -114,7 +115,10 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
     );
   }
 
-  const statusSummary = collection.statusDistribution.map((entry) => `${entry.status}: ${entry.count}`).join(", ");
+  // Screen readers get the same status names the visible chips show, not the raw enum keys.
+  const statusSummary = collection.statusDistribution
+    .map((entry) => `${tStatus(entry.status)}: ${entry.count}`)
+    .join(", ");
 
   const spendCategories = rankCategories(
     collection.spendByType.map((entry) => ({ productTypeKey: entry.productTypeKey, value: entry.committedMinor })),

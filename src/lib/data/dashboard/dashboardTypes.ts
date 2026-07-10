@@ -159,6 +159,8 @@ export type OrderSummary = {
   status: OrderStatus;
   currencyCode: string;
   totalCostMinor: number;
+  /** Committed value in base currency, or null when the order cannot be converted (FR-06-13). */
+  baseTotalCostMinor: number | null;
   outstandingMinor: number;
   /** True when the order is excluded from base-currency totals, so its amount reads in its own currency. */
   isFxPending: boolean;

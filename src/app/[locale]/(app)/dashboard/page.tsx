@@ -72,6 +72,17 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
   const displayName = session.user.name?.trim();
   const greeting = displayName ? t("page.greeting", { name: displayName }) : t("page.greetingGuest");
 
+  // `generatedAt` is a real instant rather than a domain date, so it renders in the collector's zone.
+  const todayLabel = data.generatedAt.toLocaleDateString(locale, {
+    timeZone: data.timezone,
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+  });
+  const headingMeta = data.baseCurrencyCode
+    ? t("page.headingMeta", { date: todayLabel, currency: data.baseCurrencyCode })
+    : todayLabel;
+
   return (
     <div className="flex flex-col gap-6">
       <DashboardZoneView event={POSTHOG_EVENTS.DASHBOARD.CASH_ZONE_VIEWED} />
@@ -80,11 +91,7 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
         <Heading as="h1" size="sm">
           {greeting}
         </Heading>
-        {data.baseCurrencyCode && (
-          <span className="[font-size:13px] whitespace-nowrap [color:var(--text-muted)]">
-            {t("page.baseCurrencyReminder", { currency: data.baseCurrencyCode })}
-          </span>
-        )}
+        <span className="[font-size:13px] whitespace-nowrap [color:var(--text-muted)]">{headingMeta}</span>
       </header>
 
       <div className="grid grid-cols-1 gap-[18px] lg:grid-cols-12 lg:items-start lg:gap-5">
