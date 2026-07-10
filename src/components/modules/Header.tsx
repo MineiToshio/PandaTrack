@@ -98,9 +98,9 @@ export default function Header({ locale, pathname, drawerOpen, onOpenDrawer, bur
               </>
             )}
             <div className="min-w-0 flex-1">
-              <h1 className="text-text-title truncate text-lg leading-tight font-semibold tracking-tighter">
+              <p className="text-text-title truncate text-lg leading-tight font-semibold tracking-tighter">
                 {pageTitle}
-              </h1>
+              </p>
             </div>
           </div>
         </div>

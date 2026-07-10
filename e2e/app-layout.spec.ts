@@ -129,8 +129,10 @@ test.describe("App layout header and breadcrumbs", () => {
 
     await signInAndLandOnDashboard(page);
 
-    // Header (banner) shows page title; main content also has an h1, so target the banner heading to avoid strict mode.
-    await expect(page.getByRole("banner").getByRole("heading", { name: "Dashboard", level: 1 })).toBeVisible();
+    // The shell header shows the page title as plain text, not a heading: the page itself owns
+    // the single real h1 (see src/app/[locale]/(app)/dashboard/page.tsx), so each route has exactly one h1.
+    await expect(page.getByRole("banner").getByText("Dashboard", { exact: true })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Breadcrumb" })).not.toBeVisible();
   });
 
@@ -146,8 +148,9 @@ test.describe("App layout header and breadcrumbs", () => {
     await expect(breadcrumbNav).toBeVisible();
     await expect(breadcrumbNav.getByRole("link", { name: "Orders" })).toBeVisible();
 
-    // The orders list also renders its own "Pre-orders" h1 in main content for this filtered
-    // view, so scope to the banner (like the first-level test above) to avoid strict mode.
-    await expect(page.getByRole("banner").getByRole("heading", { name: "Pre-orders", level: 1 })).toBeVisible();
+    // The shell header shows the page title as plain text, not a heading: the orders list page
+    // owns the single real h1 in main content, so scope the heading assertion to main instead.
+    await expect(page.getByRole("banner").getByText("Pre-orders", { exact: true })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
   });
 });

@@ -14,8 +14,9 @@ test.describe("dashboard cash & obligations zone", () => {
   test("renders the cash and upcoming-payments zones for an authenticated collector", async ({ page }) => {
     await signInAndLandOnDashboard(page);
 
-    // Page-level greeting header, scoped to main content: the app shell header also renders
-    // an `<h1>` with the page title ("Dashboard"), so an unscoped query would match both.
+    // Page-level greeting header. The app shell header shows the page title as plain text (not
+    // a heading), so the page's own h1 is the only heading in the document; scoped to main anyway
+    // for clarity about which h1 is under test.
     await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
 
     // Cash & obligations zone renders from the aggregation payload.

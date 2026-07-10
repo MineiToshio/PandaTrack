@@ -58,8 +58,8 @@ test.describe("Delivery create flow", () => {
     await page.goto("/en/deliveries/new");
 
     await expect(page).toHaveURL(/\/en\/deliveries\/new/);
-    // Scope to main content: the app shell header also renders an `<h1>` with the page
-    // title ("New delivery"), so an unscoped query would match both.
+    // The app shell header shows the page title as plain text (not a heading), so the page's own
+    // h1 is the only heading in the document; scoped to main anyway for clarity.
     await expect(
       page.getByRole("main").getByRole("heading", { name: /new delivery|no eligible products/i }),
     ).toBeVisible();
