@@ -163,6 +163,8 @@ export default function DeliveryCreateWizard({
         : t("create.ineligible.removedGeneric"),
     );
     wizardRef.current?.invalidateFrom(2);
+    // Non-optimistic by design: product eligibility is server-derived (another delivery
+    // may have just claimed the item), so we refresh instead of guessing the new state.
     router.refresh();
   }, [state, groups, router, t]);
   /* eslint-enable react-hooks/set-state-in-effect */

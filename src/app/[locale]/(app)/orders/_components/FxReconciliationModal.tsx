@@ -135,6 +135,8 @@ export default function FxReconciliationModal({
       if (result.success) {
         addToast(t("fx.modal.successToast"), { variant: "success" });
         onClose();
+        // Non-optimistic by design: order money fields are server-derived from the applied
+        // exchange rate, so we wait for the action and refresh instead of recomputing locally.
         router.refresh();
       } else {
         addToast(t("fx.modal.errorToast"), { variant: "error" });

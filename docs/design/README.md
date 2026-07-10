@@ -15,7 +15,7 @@ Read this file first, then open the matching topic document.
 | [states.md](states.md)                         | Cross-cutting empty / loading / error states — skeleton vs spinner, error tiers, Sentry ownership, mascot policy.                                                                                                     |
 | [ux-copy.md](ux-copy.md)                       | Voice (constant) + tone (by context), the do/don't library, neutral Spanish, copy patterns for empty states, banners, errors, confirmations, toasts, CTAs, helper text.                                               |
 | [components.md](components.md)                 | The component map: what exists, when to use which, and where the canonical code lives. Read **before building any UI**.                                                                                               |
-| [decisions/](decisions/)                       | The accepted ADRs (0001–0014) that govern the system.                                                                                                                                                                 |
+| [decisions/](decisions/)                       | The accepted ADRs (0001–0015) that govern the system.                                                                                                                                                                 |
 | [PLAYBOOK.md](PLAYBOOK.md)                     | The operational playbook — the mandatory workflow, anti-patterns, and self-audit checklist for building UI in this repo.                                                                                              |
 
 ## How the design system is enforced

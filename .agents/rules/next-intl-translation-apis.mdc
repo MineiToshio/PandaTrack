@@ -5,22 +5,22 @@ alwaysApply: true
 
 # next-intl translation APIs - PandaTrack
 
-## Rule: use hooks in React components
+## Rule: use hooks in synchronous components
 
-In React components (pages, layouts, and shared components), prefer next-intl hooks:
+In synchronous React components (Client Components, and any Server Component that does not need `async`), prefer next-intl hooks:
 
 - `useTranslations()`
 - `useLocale()`
 - `useMessages()`
 
-This keeps components synchronous and consistent with typical React patterns.
+This keeps components idiomatic and consistent with typical React patterns.
 
-## Rule: use server helpers outside React
+## Rule: use server helpers outside React, and in async Server Components
 
-Use next-intl server helpers only in non-React code or Next.js framework functions:
+Use next-intl server helpers in:
 
-- `getTranslations()` for server-only utilities, helpers, and other modules outside React components
-- `getTranslations()` in Next.js functions like `generateMetadata()` (and similar non-component entry points)
+- non-React code and Next.js framework functions — `getTranslations()` for server-only utilities, helpers, and entry points like `generateMetadata()`.
+- **async Server Components** — `getTranslations()` is the correct and expected choice here, not an exception to work around. `useTranslations()` is a hook and cannot run inside an `async function` component; any Server Component that must `await` data (a query, a data-layer call, etc.) before rendering translated copy needs `getTranslations()`.
 
-Avoid calling `getTranslations()` inside React components. If you are in a React component, use `useTranslations()` instead.
+`useTranslations()` remains the choice for synchronous components (Client Components and non-async Server Components). Pick the API based on whether the component is `async`, not by "React component vs non-React code" alone.
 

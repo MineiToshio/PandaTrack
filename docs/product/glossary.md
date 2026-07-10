@@ -45,6 +45,10 @@ Consequences for product surfaces:
 - `shipment` / `shipments` (en) — always use `delivery` / `deliveries`. Marketing copy that references the broader concept of physical shipping is the only allowed exception, but keep the in-app feature name as `delivery`.
 - Mixing `purchase` and `order` in the same surface. New work should standardize on `order`.
 
+### Exception: "envío" / "shipping" as an attribute, not an entity
+
+The ban above applies to `envío` / `shipping` when it names the **feature** (the entity is `entrega` / `delivery`). It does not apply when the word describes an **attribute** of a `delivery`, such as a shipping date or a shipping cost — English commonly qualifies these as "shipping date" / "shipping cost" the same way Spanish uses "fecha de envío" / "costo de envío". Existing attribute-level labels in `deliveries.json` and `orders.json` (for example a shipping-date or shipping-cost field label) are correct as written and do not need to be renamed to "delivery date" / "delivery cost". Only the entity name is reserved for `entrega` / `delivery`; do not introduce a new top-level "envío" / "shipment" feature, route, or model.
+
 ## Cross-references
 
 - UX voice and writing rules: `docs/design/ux-copy.md`.

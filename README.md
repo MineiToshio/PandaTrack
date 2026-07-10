@@ -21,34 +21,29 @@ PandaTrack is a web app for collectors who buy across multiple stores and channe
 
 ## Features
 
-### Current (Landing & waitlist)
+PandaTrack is one product with two durable surfaces: a public landing and an authenticated collector app. Both are shipped and in active use; neither is a placeholder for the other.
 
-- **Public landing**: Marketing site with hero, features, FAQ, and waitlist signup.
-- **Waitlist**: Email signup with share (native share, copy link) and referral support.
+### Public landing
+
+- **Marketing site**: Hero, features, and FAQ, with SEO and localized OG images.
 - **i18n**: Spanish (default) and English with locale-based routing (`/es`, `/en`).
 - **Theme**: Light and dark mode with persistent preference.
-- **Analytics**: PostHog for key interactions (CTA, nav, waitlist, share).
+- **Analytics**: PostHog for key interactions.
 - **Monitoring**: Sentry for error tracking.
 - **Legal**: Terms and Privacy pages.
 
-### MVP roadmap
+### Collector app
 
-The first version focuses on the "discover → buy → wait → receive" workflow:
+Authenticated workspace for collectors who buy across many stores and channels:
 
-1. **Stores**: Database and discovery by category (manga, figures, TCG, etc.), with trust signals and reviews.
-2. **Orders**: Track items, status, dates, and details per order.
-3. **Pre-orders & payments**: Deposits vs remaining balance; upcoming payments by month.
-4. **Shipments**: Track single and split shipments (carrier, tracking, status).
-5. **Dashboard**: Status, upcoming payments, and totals at a glance.
-6. **Reminders**: Follow-ups for long pre-orders, upcoming payments, and silent shipments.
+- **Account access**: Sign up, sign in (email/password and Google), password recovery, and email verification.
+- **Stores**: Store directory with trust signals, categories, and both merchant and person sellers.
+- **Orders & pre-orders**: Track items, status, and dates per order, including deposit vs remaining-balance payment tracking for pre-orders.
+- **Deliveries**: Track shipments, including split shipments across multiple deliveries per order.
+- **Dashboard**: Status, upcoming payments, and totals at a glance.
+- **Settings**: User preferences, including base currency for cross-store totals.
 
-### Later
-
-- Collection management and wishlist.
-- Budget setup and alerts.
-- Deeper analytics and smarter reminders.
-
-See [docs/product/README.md](docs/product/README.md) for the active product-documentation tree, including [docs/product/prd-01-public-landing/prd-01-public-landing.md](docs/product/prd-01-public-landing/prd-01-public-landing.md) and [docs/product/prd-02-collector-app/prd-02-collector-app.md](docs/product/prd-02-collector-app/prd-02-collector-app.md).
+See [docs/product/README.md](docs/product/README.md) for the product-documentation tree and the source of truth for scope — [docs/product/prd-01-public-landing/prd-01-public-landing.md](docs/product/prd-01-public-landing/prd-01-public-landing.md) and [docs/product/prd-02-collector-app/prd-02-collector-app.md](docs/product/prd-02-collector-app/prd-02-collector-app.md).
 
 ---
 
@@ -144,28 +139,32 @@ pandatrack/
 ├── src/
 │   ├── app/                    # Next.js App Router
 │   │   └── [locale]/            # Locale segment (es, en)
-│   │       ├── (landing)/       # Landing route group
+│   │       ├── (landing)/       # Public landing route group
 │   │       │   ├── page.tsx
 │   │       │   └── _components/ # Page-specific components
+│   │       ├── (auth)/          # Sign-in, sign-up, password recovery, email verification
+│   │       ├── (app)/           # Authenticated collector app (stores, orders, deliveries,
+│   │       │                    # dashboard, settings), each with its own _components/_actions
 │   │       ├── terms/
 │   │       ├── privacy/
 │   │   └── globals.css
 │   ├── components/
 │   │   ├── core/                # Reusable UI (Button, Typography, etc.)
-│   │   └── modules/             # Complex reusable (FaqAccordion, etc.)
+│   │   └── modules/             # Complex reusable (Modal, FaqAccordion, etc.)
 │   ├── contexts/                # React context (e.g. Theme)
 │   ├── i18n/                    # next-intl config and locales
 │   │   ├── locales/{es,en}/
 │   │   ├── request.ts
 │   │   └── routing.ts
 │   ├── lib/                     # Shared utilities, Prisma, constants
+│   │   └── data/                # Per-domain query + mutation modules (see ADR 0015)
 │   ├── hooks/                   # Shared hooks
 │   ├── types/                   # Shared TypeScript types
-│   └── queries/                 # Prisma data access (per model)
+│   └── queries/                 # Prisma data access, one file per model (see ADR 0015)
 ├── prisma/
 │   └── schema.prisma
-├── docs/                        # Product and architecture docs
-├── proxy.ts                     # Next.js 16 proxy (e.g. locale redirect)
+├── docs/                        # Product, design, and process docs
+├── proxy.ts                     # Next.js 16 proxy (e.g. locale redirect, private-route auth gate)
 └── next.config.ts
 ```
 
@@ -189,6 +188,7 @@ Details: [docs/development/i18n.md](docs/development/i18n.md).
 | Document                                                       | Description                                             |
 | -------------------------------------------------------------- | ------------------------------------------------------- |
 | [docs/product/README.md](docs/product/README.md)               | Product docs index (PRD, FRDs, blueprints, work orders) |
+| [docs/design/README.md](docs/design/README.md)                 | Design system index (visual language, patterns, ADRs)   |
 | [docs/development/i18n.md](docs/development/i18n.md)           | i18n setup, locales, and how to add translations        |
 | [docs/development/og-images.md](docs/development/og-images.md) | OG image generation conventions                         |
 | [docs/process/workflow-ai.md](docs/process/workflow-ai.md)     | AI delivery workflow (GitHub Epic/Slice first)          |

@@ -217,8 +217,10 @@ Utils can be client or server functions; place them in the file that matches the
 
 ## Prisma queries
 
-- Create queries in **`src/queries/`**.
-- **One file per Prisma model**. Name the file after the model (e.g. **`src/queries/store.ts`** for the `Store` model).
+PandaTrack has two coexisting data-access shapes; see **ADR 0015** (`docs/design/decisions/0015-data-access-layer-shape.md`) for the full rationale.
+
+- **New domains** (a new business-workflow area with its own queries and mutations, e.g. orders/deliveries/dashboard-style work): create **`src/lib/data/<domain>/`** with `*Queries.ts` / `*Mutations.ts` files, importing the Prisma singleton directly from `@/lib/prisma`. This is the canonical shape going forward.
+- **`src/queries/`** (legacy, still maintained): one file per Prisma model, named after the model (e.g. **`src/queries/store.ts`** for the `Store` model), with an injected `db: PrismaClient` parameter. Existing files here (store, account, user, userSettings, country, storeProductType, storeGovernance, verification) are not migrated wholesale — migrate a file to `src/lib/data/<domain>/` opportunistically when a change materially touches that domain, not as a standalone refactor.
 
 ---
 

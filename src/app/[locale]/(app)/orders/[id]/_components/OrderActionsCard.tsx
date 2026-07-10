@@ -48,6 +48,8 @@ export default function OrderActionsCard({
   async function handleReactivate() {
     setIsReactivating(true);
     const result = await reactivateOrderAction(orderId);
+    // Non-optimistic by design: order status is server-derived (lifecycle transitions),
+    // so we wait for the action and refresh rather than flip the status locally.
     if (result.ok) router.refresh();
     setIsReactivating(false);
   }
