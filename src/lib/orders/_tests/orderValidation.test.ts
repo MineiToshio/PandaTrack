@@ -91,8 +91,13 @@ describe("orderCreateSchema exchangeRate validation", () => {
     expect(result.success).toBe(true);
   });
 
-  it("rejects exchangeRate below 0.01", () => {
+  it("accepts a sub-cent exchangeRate (weak-currency pair)", () => {
     const result = orderCreateSchema.safeParse({ ...baseInput, exchangeRate: 0.005 });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects exchangeRate below the 6-decimal floor", () => {
+    const result = orderCreateSchema.safeParse({ ...baseInput, exchangeRate: 0.0000001 });
     expect(result.success).toBe(false);
   });
 

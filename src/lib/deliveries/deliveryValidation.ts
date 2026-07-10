@@ -1,9 +1,8 @@
 import { z } from "zod";
 import { isAllowedCollectorBaseCurrency } from "@/lib/catalog/collectorCountries";
+import { exchangeRateSchema } from "@/lib/orders/orderValidation";
 
 const MAX_DELIVERY_COST = 999_999_999;
-const MIN_EXCHANGE_RATE = 0.01;
-const MAX_EXCHANGE_RATE = 99_999.99;
 const MAX_NOTE_LENGTH = 2000;
 // Upper bound on products grouped into a single delivery; keeps the payload from being used to flood the mutation.
 const MAX_DELIVERY_PRODUCTS = 200;
@@ -18,12 +17,6 @@ const deliveryCostSchema = z
   .int({ message: "COST_MUST_BE_INTEGER" })
   .min(0, { message: "COST_TOO_LOW" })
   .max(MAX_DELIVERY_COST, { message: "COST_TOO_HIGH" });
-
-const exchangeRateSchema = z
-  .number()
-  .min(MIN_EXCHANGE_RATE, { message: "EXCHANGE_RATE_TOO_LOW" })
-  .max(MAX_EXCHANGE_RATE, { message: "EXCHANGE_RATE_TOO_HIGH" })
-  .multipleOf(0.01, { message: "EXCHANGE_RATE_INVALID_PRECISION" });
 
 const expectedArrivalRefinement = (
   data: { expectedArrivalFrom?: Date | null; expectedArrivalTo?: Date | null },
