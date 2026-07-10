@@ -18,32 +18,6 @@ const jetbrainsMono = JetBrains_Mono({
 
 /* ── Legacy fonts — kept for backward compatibility ── */
 
-const openSans = localFont({
-  src: [
-    {
-      path: "../../node_modules/@fontsource/open-sans/files/open-sans-latin-ext-400-normal.woff2",
-      weight: "400",
-      style: "normal",
-    },
-    {
-      path: "../../node_modules/@fontsource/open-sans/files/open-sans-latin-ext-500-normal.woff2",
-      weight: "500",
-      style: "normal",
-    },
-    {
-      path: "../../node_modules/@fontsource/open-sans/files/open-sans-latin-ext-600-normal.woff2",
-      weight: "600",
-      style: "normal",
-    },
-    {
-      path: "../../node_modules/@fontsource/open-sans/files/open-sans-latin-ext-700-normal.woff2",
-      weight: "700",
-      style: "normal",
-    },
-  ],
-  variable: "--font-regular",
-});
-
 const robotoCondensed = localFont({
   src: [
     {
@@ -65,10 +39,4 @@ const zilla = localFont({
   variable: "--font-logo",
 });
 
-export {
-  inter as interFont,
-  jetbrainsMono as monoFont,
-  openSans as regularFont,
-  robotoCondensed as secondaryFont,
-  zilla as logoFont,
-};
+export { inter as interFont, jetbrainsMono as monoFont, robotoCondensed as secondaryFont, zilla as logoFont };

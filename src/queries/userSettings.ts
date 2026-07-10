@@ -1,4 +1,5 @@
 import type { Prisma } from "../../generated/prisma/client";
+import { cache } from "react";
 import { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import {
@@ -113,33 +114,37 @@ export async function getSettingsPageSnapshot(userId: string): Promise<SettingsP
 
 /**
  * Loads persisted collector preferences and preferred product type keys for settings consumers.
+ * Wrapped in `cache()` because the (app) layout, the dashboard page, and the dashboard data
+ * layer each need this snapshot within the same request; React dedupes the read across all of them.
  */
-export async function getCollectorPreferencesSnapshot(userId: string): Promise<CollectorPreferencesSnapshot | null> {
-  const row = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      preferredCountryCode: true,
-      baseCurrencyCode: true,
-      budgetAmount: true,
-      budgetResetDayOfMonth: true,
-      timezone: true,
-      preferredProductTypes: { select: { productTypeKey: true }, orderBy: { productTypeKey: "asc" } },
-    },
-  });
+export const getCollectorPreferencesSnapshot = cache(
+  async (userId: string): Promise<CollectorPreferencesSnapshot | null> => {
+    const row = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        preferredCountryCode: true,
+        baseCurrencyCode: true,
+        budgetAmount: true,
+        budgetResetDayOfMonth: true,
+        timezone: true,
+        preferredProductTypes: { select: { productTypeKey: true }, orderBy: { productTypeKey: "asc" } },
+      },
+    });
 
-  if (!row) {
-    return null;
-  }
+    if (!row) {
+      return null;
+    }
 
-  return {
-    preferredCountryCode: row.preferredCountryCode,
-    baseCurrencyCode: row.baseCurrencyCode,
-    budgetAmount: row.budgetAmount,
-    budgetResetDayOfMonth: row.budgetResetDayOfMonth,
-    timezone: row.timezone,
-    preferredProductTypeKeys: row.preferredProductTypes.map((rowItem) => rowItem.productTypeKey),
-  };
-}
+    return {
+      preferredCountryCode: row.preferredCountryCode,
+      baseCurrencyCode: row.baseCurrencyCode,
+      budgetAmount: row.budgetAmount,
+      budgetResetDayOfMonth: row.budgetResetDayOfMonth,
+      timezone: row.timezone,
+      preferredProductTypeKeys: row.preferredProductTypes.map((rowItem) => rowItem.productTypeKey),
+    };
+  },
+);
 
 function buildUserScalarUpdate(patch: CollectorPreferencesPatchInput): Prisma.UserUncheckedUpdateInput {
   const data: Prisma.UserUncheckedUpdateInput = {};

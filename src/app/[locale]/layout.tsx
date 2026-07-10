@@ -5,7 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import "../globals.css";
-import { interFont, logoFont, monoFont, regularFont, secondaryFont } from "@/lib/fonts";
+import { interFont, logoFont, monoFont, secondaryFont } from "@/lib/fonts";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { getSiteUrl } from "@/lib/seo";
 import { APP_NAME } from "@/lib/constants";
@@ -68,7 +68,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body
-        className={`${interFont.variable} ${monoFont.variable} ${regularFont.variable} ${secondaryFont.variable} ${logoFont.variable} antialiased`}
+        className={`${interFont.variable} ${monoFont.variable} ${secondaryFont.variable} ${logoFont.variable} antialiased`}
       >
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ThemeProvider>{children}</ThemeProvider>

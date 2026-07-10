@@ -2,6 +2,7 @@
 
 import { cn } from "@/lib/styles";
 import { User } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 
@@ -50,10 +51,9 @@ export default function Avatar({ user, size, ariaLabel, className }: AvatarProps
     className,
   );
 
-  if (showImage) {
+  if (showImage && user.image) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <Image
         ref={imgRef}
         src={user.image}
         alt={resolvedLabel}

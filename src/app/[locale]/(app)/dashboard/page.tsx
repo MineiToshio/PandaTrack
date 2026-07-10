@@ -4,11 +4,10 @@ import Heading from "@/components/core/Heading";
 import { buildStoresNavHref } from "@/app/[locale]/(app)/_utils/storesNavHref";
 import { getSession } from "@/lib/auth/auth-server";
 import { getDashboardData } from "@/lib/data/dashboard/dashboardQueries";
-import { prisma } from "@/lib/prisma";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { buildPageMetadata } from "@/lib/seo";
-import { listCountryCodes } from "@/queries/country";
-import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
+import { listCountryCodesCached } from "@/queries/country";
+import { listActiveStoreProductTypeKeysCached } from "@/queries/storeProductType";
 import { getCollectorPreferencesSnapshot } from "@/queries/userSettings";
 import DashboardActivityZone from "./_components/DashboardActivityZone";
 import DashboardBudgetZone from "./_components/DashboardBudgetZone";
@@ -52,8 +51,8 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
     getTranslations({ locale, namespace: "dashboard" }),
     getDashboardData(session.user.id, rangeSelection),
     getCollectorPreferencesSnapshot(session.user.id),
-    listCountryCodes(prisma),
-    listActiveStoreProductTypeKeys(prisma),
+    listCountryCodesCached(),
+    listActiveStoreProductTypeKeysCached(),
   ]);
 
   // Links into the public store listing must be preference-driven, like the shell nav (FR-06-16).

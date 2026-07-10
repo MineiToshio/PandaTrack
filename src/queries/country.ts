@@ -1,4 +1,6 @@
 import type { PrismaClient } from "../../generated/prisma/client";
+import { cache } from "react";
+import { prisma } from "@/lib/prisma";
 
 export type CountryCodeRow = { code: string };
 
@@ -12,6 +14,13 @@ export async function listCountryCodes(db: PrismaClient): Promise<CountryCodeRow
     orderBy: { code: "asc" },
   });
 }
+
+/**
+ * Request-deduped variant of `listCountryCodes` for the app shell catalog.
+ * Several server components in the same route tree (layout + page) need the full
+ * catalog; `cache()` collapses those reads into a single query per request.
+ */
+export const listCountryCodesCached = cache((): Promise<CountryCodeRow[]> => listCountryCodes(prisma));
 
 /**
  * Returns the subset of the provided country codes that exist in the catalog.

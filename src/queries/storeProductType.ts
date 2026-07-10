@@ -1,4 +1,6 @@
 import type { PrismaClient } from "../../generated/prisma/client";
+import { cache } from "react";
+import { prisma } from "@/lib/prisma";
 
 export type StoreProductTypeKeyRow = { key: string };
 
@@ -13,6 +15,15 @@ export async function listActiveStoreProductTypeKeys(db: PrismaClient): Promise<
     orderBy: { key: "asc" },
   });
 }
+
+/**
+ * Request-deduped variant of `listActiveStoreProductTypeKeys` for the app shell catalog.
+ * Several server components in the same route tree (layout + page) need the full
+ * catalog; `cache()` collapses those reads into a single query per request.
+ */
+export const listActiveStoreProductTypeKeysCached = cache((): Promise<StoreProductTypeKeyRow[]> =>
+  listActiveStoreProductTypeKeys(prisma),
+);
 
 /**
  * Returns the subset of the provided store product type keys that exist in the catalog

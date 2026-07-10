@@ -189,7 +189,6 @@ aliases maps legacy tokens (`--primary`, `--card`, etc.) onto the new system.
   --font-mono: var(--font-jetbrains-mono);
 
   /* Legacy fonts (kept for backward compatibility) */
-  --font-regular: var(--font-regular);
   --font-secondary: var(--font-secondary);
   --font-logo: var(--font-logo);
 

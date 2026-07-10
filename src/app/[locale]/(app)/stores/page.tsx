@@ -14,8 +14,8 @@ import {
   getViewerOrderCountsByStoreSlugs,
   type PublicStoreListingFilters,
 } from "@/queries/store";
-import { listCountryCodes } from "@/queries/country";
-import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
+import { listCountryCodesCached } from "@/queries/country";
+import { listActiveStoreProductTypeKeysCached } from "@/queries/storeProductType";
 import { buildPageMetadata } from "@/lib/seo";
 import { ROUTES } from "@/lib/constants";
 import { parseListingSearchParams } from "./_utils/listingParams";
@@ -94,8 +94,8 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
     getTranslations({ locale, namespace: "storeListing" }),
     getTranslations({ locale, namespace: "components" }),
     getSession(),
-    listActiveStoreProductTypeKeys(prisma),
-    listCountryCodes(prisma),
+    listActiveStoreProductTypeKeysCached(),
+    listCountryCodesCached(),
   ]);
 
   return (

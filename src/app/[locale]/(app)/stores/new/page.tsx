@@ -1,8 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
-import { prisma } from "@/lib/prisma";
-import { listCountryCodes } from "@/queries/country";
-import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
+import { listCountryCodesCached } from "@/queries/country";
+import { listActiveStoreProductTypeKeysCached } from "@/queries/storeProductType";
 import { buildPageMetadata } from "@/lib/seo";
 import CreateStoreForm from "./_components/CreateStoreForm";
 
@@ -27,8 +26,8 @@ export default async function StoresNewPage({ params, searchParams }: StoresNewP
   await getTranslations({ locale, namespace: "stores" });
 
   const [countries, productTypes] = await Promise.all([
-    listCountryCodes(prisma),
-    listActiveStoreProductTypeKeys(prisma),
+    listCountryCodesCached(),
+    listActiveStoreProductTypeKeysCached(),
   ]);
 
   return (

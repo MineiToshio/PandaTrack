@@ -5,7 +5,7 @@ import { buildPageMetadata } from "@/lib/seo";
 import { getSession } from "@/lib/auth/auth-server";
 import { getOrderById } from "@/lib/data/orders/orderQueries";
 import { getOrderableStores } from "@/lib/data/stores/storeQueries";
-import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
+import { listActiveStoreProductTypeKeysCached } from "@/queries/storeProductType";
 import { ROUTES } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
 import { editOrderAction } from "../../_actions/orderActions";
@@ -36,7 +36,7 @@ export default async function OrdersEditPage({ params }: Props) {
   const [order, stores, productTypeRows, user] = await Promise.all([
     getOrderById(id, userId),
     getOrderableStores(),
-    listActiveStoreProductTypeKeys(prisma),
+    listActiveStoreProductTypeKeysCached(),
     prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } }),
   ]);
 

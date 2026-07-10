@@ -7,8 +7,8 @@ import {
   getStoreGovernanceViewerContext,
   mergeEditableStoreWithChangeRequest,
 } from "@/queries/storeGovernance";
-import { listCountryCodes } from "@/queries/country";
-import { listActiveStoreProductTypeKeys } from "@/queries/storeProductType";
+import { listCountryCodesCached } from "@/queries/country";
+import { listActiveStoreProductTypeKeysCached } from "@/queries/storeProductType";
 import EditStoreForm from "./_components/EditStoreForm";
 
 type EditStorePageProps = {
@@ -20,8 +20,8 @@ export default async function EditStorePage({ params }: EditStorePageProps) {
   const [session, store, countries, productTypes] = await Promise.all([
     getSession(),
     getEditableStoreBySlug(prisma, slug),
-    listCountryCodes(prisma),
-    listActiveStoreProductTypeKeys(prisma),
+    listCountryCodesCached(),
+    listActiveStoreProductTypeKeysCached(),
   ]);
 
   if (!session?.user?.id || !store) {
