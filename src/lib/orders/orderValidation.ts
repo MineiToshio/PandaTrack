@@ -8,6 +8,9 @@ const MAX_PAYMENT_AMOUNT = 999_999_999;
 const MIN_EXCHANGE_RATE = 0.01;
 const MAX_EXCHANGE_RATE = 99_999.99;
 export const MAX_CANCELLATION_REASON_LENGTH = 500;
+// Upper bound on line items per order write. Guards the DB and downstream loops against an
+// unbounded array from a tampered client payload; far above any realistic single-order size.
+const MAX_ORDER_ITEMS = 200;
 
 const currencyCodeSchema = z
   .string()
@@ -26,7 +29,7 @@ const paymentAmountSchema = z
   .min(MIN_PAYMENT_AMOUNT, { message: "AMOUNT_TOO_LOW" })
   .max(MAX_PAYMENT_AMOUNT, { message: "AMOUNT_TOO_HIGH" });
 
-const exchangeRateSchema = z
+export const exchangeRateSchema = z
   .number()
   .min(MIN_EXCHANGE_RATE, { message: "EXCHANGE_RATE_TOO_LOW" })
   .max(MAX_EXCHANGE_RATE, { message: "EXCHANGE_RATE_TOO_HIGH" })
@@ -55,7 +58,7 @@ export const orderCreateSchema = z
     exchangeRate: exchangeRateSchema.nullable().optional(),
     totalCost: totalCostSchema,
     note: z.string().max(2000).nullable().optional(),
-    items: z.array(orderItemRowSchema).optional(),
+    items: z.array(orderItemRowSchema).max(MAX_ORDER_ITEMS, { message: "TOO_MANY_ITEMS" }).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.expectedDeliveryFrom && data.expectedDeliveryTo) {
@@ -83,7 +86,7 @@ export const orderEditSchema = z
     exchangeRate: exchangeRateSchema.nullable().optional(),
     totalCost: totalCostSchema.optional(),
     note: z.string().max(2000).nullable().optional(),
-    items: z.array(orderItemEditRowSchema).optional(),
+    items: z.array(orderItemEditRowSchema).max(MAX_ORDER_ITEMS, { message: "TOO_MANY_ITEMS" }).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.expectedDeliveryFrom && data.expectedDeliveryTo) {

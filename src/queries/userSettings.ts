@@ -2,6 +2,7 @@ import type { Prisma } from "../../generated/prisma/client";
 import { cache } from "react";
 import { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
+import { flagOrdersForFxReconciliation } from "@/lib/data/orders/orderMutations";
 import {
   parseCollectorPreferencesPatch,
   type CollectorPreferencesPatchInput,
@@ -168,13 +169,80 @@ function buildUserScalarUpdate(patch: CollectorPreferencesPatchInput): Prisma.Us
   return data;
 }
 
+async function applyCollectorPreferencesPatchWithin(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  patch: CollectorPreferencesPatchInput,
+  scalar: Prisma.UserUncheckedUpdateInput,
+  hasScalar: boolean,
+  hasProductTypes: boolean,
+): Promise<void> {
+  const current = await tx.user.findUnique({
+    where: { id: userId },
+    select: {
+      preferredCountryCode: true,
+      baseCurrencyCode: true,
+      budgetAmount: true,
+      budgetResetDayOfMonth: true,
+      timezone: true,
+      preferredProductTypes: { select: { productTypeKey: true }, orderBy: { productTypeKey: "asc" } },
+    },
+  });
+
+  if (!current) {
+    return;
+  }
+
+  const resolvePatchedValue = <T>(value: T | undefined, fallback: T): T => {
+    return value === undefined ? fallback : value;
+  };
+
+  const nextState = validateCollectorPreferencesState({
+    preferredCountryCode: resolvePatchedValue(patch.preferredCountryCode, current.preferredCountryCode),
+    baseCurrencyCode: resolvePatchedValue(patch.baseCurrencyCode, current.baseCurrencyCode),
+    budgetAmount: resolvePatchedValue(patch.budgetAmount, current.budgetAmount),
+    budgetResetDayOfMonth: resolvePatchedValue(patch.budgetResetDayOfMonth, current.budgetResetDayOfMonth),
+    timezone: resolvePatchedValue(patch.timezone, current.timezone),
+    preferredProductTypeKeys: resolvePatchedValue(
+      patch.preferredProductTypeKeys,
+      current.preferredProductTypes.map((row) => row.productTypeKey),
+    ),
+  });
+
+  if (!nextState.ok) {
+    throw nextState.error;
+  }
+
+  if (hasScalar) {
+    await tx.user.update({
+      where: { id: userId },
+      data: scalar,
+    });
+  }
+
+  if (hasProductTypes) {
+    const keys = patch.preferredProductTypeKeys ?? [];
+    await tx.userPreferredProductType.deleteMany({ where: { userId } });
+    if (keys.length > 0) {
+      await tx.userPreferredProductType.createMany({
+        data: keys.map((productTypeKey) => ({ userId, productTypeKey })),
+      });
+    }
+  }
+}
+
 /**
  * Applies validated preference patches inside a transaction (scalar fields + product type links).
  * Callers must pass an already-parsed patch from `parseCollectorPreferencesPatch`.
+ *
+ * An optional transaction client lets the caller include this patch in a wider transaction (for
+ * example a base-currency change that must also flag orders for FX reconciliation) so every write
+ * commits or rolls back together.
  */
 export async function applyCollectorPreferencesPatch(
   userId: string,
   patch: CollectorPreferencesPatchInput,
+  tx?: Prisma.TransactionClient,
 ): Promise<void> {
   const scalar = buildUserScalarUpdate(patch);
   const hasScalar = Object.keys(scalar).length > 0;
@@ -184,75 +252,33 @@ export async function applyCollectorPreferencesPatch(
     return;
   }
 
-  await prisma.$transaction(async (tx) => {
-    const current = await tx.user.findUnique({
-      where: { id: userId },
-      select: {
-        preferredCountryCode: true,
-        baseCurrencyCode: true,
-        budgetAmount: true,
-        budgetResetDayOfMonth: true,
-        timezone: true,
-        preferredProductTypes: { select: { productTypeKey: true }, orderBy: { productTypeKey: "asc" } },
-      },
-    });
+  if (tx) {
+    await applyCollectorPreferencesPatchWithin(tx, userId, patch, scalar, hasScalar, hasProductTypes);
+    return;
+  }
 
-    if (!current) {
-      return;
-    }
-
-    const resolvePatchedValue = <T>(value: T | undefined, fallback: T): T => {
-      return value === undefined ? fallback : value;
-    };
-
-    const nextState = validateCollectorPreferencesState({
-      preferredCountryCode: resolvePatchedValue(patch.preferredCountryCode, current.preferredCountryCode),
-      baseCurrencyCode: resolvePatchedValue(patch.baseCurrencyCode, current.baseCurrencyCode),
-      budgetAmount: resolvePatchedValue(patch.budgetAmount, current.budgetAmount),
-      budgetResetDayOfMonth: resolvePatchedValue(patch.budgetResetDayOfMonth, current.budgetResetDayOfMonth),
-      timezone: resolvePatchedValue(patch.timezone, current.timezone),
-      preferredProductTypeKeys: resolvePatchedValue(
-        patch.preferredProductTypeKeys,
-        current.preferredProductTypes.map((row) => row.productTypeKey),
-      ),
-    });
-
-    if (!nextState.ok) {
-      throw nextState.error;
-    }
-
-    if (hasScalar) {
-      await tx.user.update({
-        where: { id: userId },
-        data: scalar,
-      });
-    }
-
-    if (hasProductTypes) {
-      const keys = patch.preferredProductTypeKeys ?? [];
-      await tx.userPreferredProductType.deleteMany({ where: { userId } });
-      if (keys.length > 0) {
-        await tx.userPreferredProductType.createMany({
-          data: keys.map((productTypeKey) => ({ userId, productTypeKey })),
-        });
-      }
-    }
-  });
+  await prisma.$transaction((tx) =>
+    applyCollectorPreferencesPatchWithin(tx, userId, patch, scalar, hasScalar, hasProductTypes),
+  );
 }
 
 /**
  * Parses and applies a collector preferences patch, or returns a Zod error.
+ *
+ * An optional transaction client is forwarded to `applyCollectorPreferencesPatch` so the patch can
+ * participate in a wider transaction owned by the caller.
  */
 export async function parseAndApplyCollectorPreferencesPatch(
   userId: string,
   raw: unknown,
+  tx?: Prisma.TransactionClient,
 ): Promise<{ ok: true } | { ok: false; error: ZodError }> {
   const parsed = parseCollectorPreferencesPatch(raw);
   if (!parsed.ok) {
     return parsed;
   }
   try {
-    await applyCollectorPreferencesPatch(userId, parsed.value);
+    await applyCollectorPreferencesPatch(userId, parsed.value, tx);
   } catch (error) {
     if (error instanceof ZodError) {
       return { ok: false, error };
@@ -260,4 +286,30 @@ export async function parseAndApplyCollectorPreferencesPatch(
     throw error;
   }
   return { ok: true };
+}
+
+/**
+ * Persists a base-currency change and, when the base currency actually changes, flags every order
+ * in a different currency for FX reconciliation — all in a single transaction. This prevents the
+ * inconsistent state where the new base currency is saved but the affected orders keep their now
+ * stale rates unflagged (or vice versa). Flagging never mutates rates; the collector reconciles
+ * them in the orders FX modal.
+ */
+export async function applyBaseCurrencyChange(
+  userId: string,
+  rawPatch: unknown,
+  options: { previousBaseCurrencyCode: string | null; nextBaseCurrencyCode: string },
+): Promise<{ ok: true } | { ok: false; error: ZodError }> {
+  return prisma.$transaction(async (tx) => {
+    const applied = await parseAndApplyCollectorPreferencesPatch(userId, rawPatch, tx);
+    if (!applied.ok) {
+      return applied;
+    }
+
+    if (options.previousBaseCurrencyCode !== options.nextBaseCurrencyCode) {
+      await flagOrdersForFxReconciliation(userId, options.nextBaseCurrencyCode, tx);
+    }
+
+    return applied;
+  });
 }

@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { DeliveryStatus, OrderItemDeliveryState, OrderStatus } from "../../../../generated/prisma/client";
+import {
+  DeliveryStatus,
+  OrderItemDeliveryState,
+  OrderStatus,
+  type Prisma,
+} from "../../../../generated/prisma/client";
 import { generateOrderHumanReadableId } from "@/lib/orders/orderIdentifier";
 import { appendOrderHistoryEntry, OrderHistoryEventType } from "./orderHistoryMutations";
 import { createOrderItems, replaceOrderItems } from "./orderItemMutations";
@@ -250,8 +255,27 @@ export async function reactivateOrder(orderId: string, userId: string): Promise<
  * This only sets the flag — it never mutates `exchangeRate`. The collector reconciles the real
  * rates per-row in the orders FX modal (the deliberate "no silent bulk rate mutation" rule).
  * Cancelled orders are flagged too so a later reactivation surfaces them.
+ *
+ * An optional transaction client lets the caller run the flagging inside a wider transaction (for
+ * example alongside the base-currency change) so both commit or roll back together.
  */
-export async function flagOrdersForFxReconciliation(userId: string, newBaseCurrencyCode: string): Promise<void> {
+export async function flagOrdersForFxReconciliation(
+  userId: string,
+  newBaseCurrencyCode: string,
+  tx?: Prisma.TransactionClient,
+): Promise<void> {
+  if (tx) {
+    await tx.order.updateMany({
+      where: { userId, currencyCode: { not: newBaseCurrencyCode } },
+      data: { needsExchangeRateUpdate: true },
+    });
+    await tx.order.updateMany({
+      where: { userId, currencyCode: newBaseCurrencyCode },
+      data: { needsExchangeRateUpdate: false },
+    });
+    return;
+  }
+
   await prisma.$transaction([
     prisma.order.updateMany({
       where: { userId, currencyCode: { not: newBaseCurrencyCode } },
@@ -262,6 +286,28 @@ export async function flagOrdersForFxReconciliation(userId: string, newBaseCurre
       data: { needsExchangeRateUpdate: false },
     }),
   ]);
+}
+
+/**
+ * Applies collector-confirmed exchange rates to the given orders. Each order is scoped by
+ * `userId` so a tampered payload can only ever touch the caller's own orders, and reconciling a
+ * rate clears its pending flag so the order leaves the FX-pending set. All updates commit in a
+ * single transaction. Returns the number of orders actually updated.
+ */
+export async function applyOrderExchangeRates(
+  userId: string,
+  updates: Array<{ orderId: string; exchangeRate: number }>,
+): Promise<number> {
+  const results = await prisma.$transaction(
+    updates.map((update) =>
+      prisma.order.updateMany({
+        where: { id: update.orderId, userId },
+        data: { exchangeRate: update.exchangeRate, needsExchangeRateUpdate: false },
+      }),
+    ),
+  );
+
+  return results.reduce((sum, result) => sum + result.count, 0);
 }
 
 type SetItemDeliveryStateResult =

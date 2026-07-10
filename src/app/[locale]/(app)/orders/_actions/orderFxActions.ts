@@ -4,14 +4,15 @@ import { revalidatePath } from "next/cache";
 import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { getSession } from "@/lib/auth/auth-server";
-import { prisma } from "@/lib/prisma";
+import { applyOrderExchangeRates } from "@/lib/data/orders/orderMutations";
+import { exchangeRateSchema } from "@/lib/orders/orderValidation";
 
 const updateSchema = z.object({
   updates: z
     .array(
       z.object({
         orderId: z.string().min(1),
-        exchangeRate: z.number().positive().finite(),
+        exchangeRate: exchangeRateSchema,
       }),
     )
     .min(1)
@@ -33,16 +34,7 @@ export async function updateExchangeRatesAction(input: {
   if (!parsed.success) return { success: false, error: "invalid" };
 
   try {
-    const result = await prisma.$transaction(
-      parsed.data.updates.map((u) =>
-        prisma.order.updateMany({
-          where: { id: u.orderId, userId },
-          // Reconciling clears the pending flag so the order leaves the FX-pending set.
-          data: { exchangeRate: u.exchangeRate, needsExchangeRateUpdate: false },
-        }),
-      ),
-    );
-    const updatedCount = result.reduce((sum, r) => sum + r.count, 0);
+    const updatedCount = await applyOrderExchangeRates(userId, parsed.data.updates);
     revalidatePath("/[locale]/orders", "page");
     return { success: true, updatedCount };
   } catch (error) {

@@ -84,11 +84,11 @@ export function rollUpToBaseCurrency(items: RollupItem[], baseCurrencyCode: stri
 
 /**
  * Outstanding balance of an order in its own currency: `totalCost − Σ payments`, clamped at 0
- * (BR-06-08). Reuses the order-domain payment summary so balance math stays in one place.
+ * (BR-06-08). Reuses the order-domain payment summary so balance math stays in one place; the
+ * summary already clamps the remaining amount at 0, so no extra clamp is needed here.
  */
 export function computeOutstandingMinor(totalCost: number, payments: Array<{ amount: number }>): number {
-  const { remainingAmount } = calculatePaymentSummary(totalCost, payments);
-  return Math.max(0, remainingAmount);
+  return calculatePaymentSummary(totalCost, payments).remainingAmount;
 }
 
 /** Total paid on an order in its own currency: `Σ payments` (BR-06-08). */

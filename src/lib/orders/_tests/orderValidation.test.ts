@@ -4,6 +4,7 @@ import {
   orderCreateSchema,
   orderPaymentCreateSchema,
   orderPaymentDeleteSchema,
+  exchangeRateSchema,
 } from "../orderValidation";
 
 const VALID_CUID = "clxxxxxxxxxxxxxxxxxxxxxx0";
@@ -173,6 +174,61 @@ describe("orderPaymentDeleteSchema", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.errors.map((e) => e.message)).toContain("INVALID_PAYMENT_ID");
+    }
+  });
+});
+
+// The exported canonical schema is reused by the FX-reconciliation action; these cases lock the
+// bounds so a lax inline schema can never silently accept a wildly out-of-range or sub-cent rate.
+describe("exchangeRateSchema (shared canonical rate schema)", () => {
+  it("accepts a typical rate", () => {
+    expect(exchangeRateSchema.safeParse(1.5).success).toBe(true);
+  });
+
+  it("rejects an absurdly large rate (1e12)", () => {
+    expect(exchangeRateSchema.safeParse(1e12).success).toBe(false);
+  });
+
+  it("rejects a sub-cent precision rate (0.000001)", () => {
+    expect(exchangeRateSchema.safeParse(0.000001).success).toBe(false);
+  });
+
+  it("rejects zero", () => {
+    expect(exchangeRateSchema.safeParse(0).success).toBe(false);
+  });
+
+  it("rejects a negative rate", () => {
+    expect(exchangeRateSchema.safeParse(-1).success).toBe(false);
+  });
+});
+
+describe("orderCreateSchema items bound", () => {
+  const baseInput = {
+    storeId: VALID_CUID,
+    orderDate: new Date(),
+    currencyCode: "USD",
+    totalCost: 10000,
+  };
+
+  const makeItem = (position: number) => ({
+    name: `Item ${position}`,
+    quantity: 1,
+    unitPrice: null,
+    productTypeKey: null,
+    position,
+  });
+
+  it("accepts an order at the item ceiling (200)", () => {
+    const items = Array.from({ length: 200 }, (_, index) => makeItem(index + 1));
+    expect(orderCreateSchema.safeParse({ ...baseInput, items }).success).toBe(true);
+  });
+
+  it("rejects an order above the item ceiling (201)", () => {
+    const items = Array.from({ length: 201 }, (_, index) => makeItem(index + 1));
+    const result = orderCreateSchema.safeParse({ ...baseInput, items });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors.map((e) => e.message)).toContain("TOO_MANY_ITEMS");
     }
   });
 });
