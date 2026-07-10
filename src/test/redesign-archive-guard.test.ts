@@ -73,6 +73,9 @@ function collect(dir: string): string[] {
   for (const entry of readdirSync(dir)) {
     if (entry === "node_modules" || entry === ".git" || entry === ".next") continue;
     const full = join(dir, entry);
+    // Agent worktrees are transient full-repo copies; scanning them races with
+    // their creation/removal and re-scans content already covered at the root.
+    if (full === join(ROOT, ".claude", "worktrees")) continue;
     if (statSync(full).isDirectory()) {
       out.push(...collect(full));
     } else if (SCAN_EXTENSIONS.some((ext) => full.endsWith(ext))) {
