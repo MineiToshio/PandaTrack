@@ -20,6 +20,8 @@ export type DashboardZoneCardProps = {
   eyebrow: string;
   eyebrowIcon: ComponentType<SVGProps<SVGSVGElement>>;
   title: string;
+  /** Optional supporting line under the title (e.g. naming a control's scope). */
+  description?: string;
   /** Drives both the eyebrow chip and the top-accent edge. */
   tone: EyebrowTone;
   /** Optional trailing element in the header (e.g. a "see orders" link). */
@@ -37,6 +39,7 @@ export default function DashboardZoneCard({
   eyebrow,
   eyebrowIcon,
   title,
+  description,
   tone,
   trailing,
   children,
@@ -60,6 +63,7 @@ export default function DashboardZoneCard({
           <Heading as="h2" size="xs" id={titleId} className="[font-size:16px] [letter-spacing:-0.01em]">
             {title}
           </Heading>
+          {description && <p className="[font-size:12.5px] [color:var(--text-secondary)]">{description}</p>}
         </div>
         {trailing}
       </div>

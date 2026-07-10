@@ -3,14 +3,14 @@ id: FRD-06
 type: FRD
 slug: dashboard
 title: Dashboard
-status: DRAFT
+status: ACTIVE
 parent: PRD-02
 children:
   - BP-01
-last_updated: 2026-07-09
+last_updated: 2026-07-10
 source_features:
   - FEAT-0016
-implementation_status: PLANNED
+implementation_status: IMPLEMENTED
 ---
 
 # FRD-06 Dashboard
@@ -33,14 +33,18 @@ Help a collector answer, at a glance and in their own base currency:
 
 ### Implemented
 
-- The route `/{locale}/dashboard` exists, is the first authenticated destination, and renders a placeholder (`AppPlaceholderPage` + `AppComingSoonCard`) with two CTAs (**View my orders**, **Explore stores**). No data is queried.
-- SEO metadata is generated via `buildPageMetadata` with `namespace: "dashboard"`.
-- Placeholder CTA analytics fire `POSTHOG_EVENTS.APP_SHELL.PLACEHOLDER_CTA_CLICKED`.
-- The upstream domains the dashboard reads from are implemented: orders, payments, and exchange-rate context in [`FRD-05`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md); deliveries and product delivery state in [`FRD-08`](../frd-08-delivery-management/frd-08-delivery-management.md); base currency, budget, and budget reset day in [`FRD-07`](../frd-07-user-settings/frd-07-user-settings.md).
+Everything in this FRD is built, across [`BP-01 · WO-01…WO-06`](bp-01-dashboard-aggregation-and-surface/bp-01-dashboard-aggregation-and-surface.md):
+
+- The read-only aggregation layer (`src/lib/data/dashboard/`) exposes one `getDashboardData(userId, rangeSelection)` entry point: timezone-aware period helpers, the centralized base-currency rollup that excludes FX-unreconciled orders, and every derived block the zones consume.
+- The route `/{locale}/dashboard` renders the KPI strip, cash & obligations, budget, arrival punctuality, the scoped "Tendencias" section (gasto por mes, hechos vs llegados, deuda viva) with its single shared range control, order activity, próximos pagos, and the collection overview. It has a structure-matching `loading.tsx`; the `(app)` group's `error.tsx` covers it.
+- Analytics live under `POSTHOG_EVENTS.DASHBOARD.*`; copy lives in `src/i18n/locales/{es,en}/dashboard.json`.
+- The upstream domains the dashboard reads from: orders, payments, and exchange-rate context in [`FRD-05`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md); deliveries and product delivery state in [`FRD-08`](../frd-08-delivery-management/frd-08-delivery-management.md); base currency, budget, and budget reset day in [`FRD-07`](../frd-07-user-settings/frd-07-user-settings.md).
+
+Where the built screen departs from the design record, see [`fdd-06-dashboard.md` §10](fdd-06-dashboard.md).
 
 ### Planned
 
-- Everything described in this FRD: the cash-obligation surfaces, budget consumption, disbursed-spend metric and chart, the orders-placed-vs-arrived chart, recent/upcoming/overdue activity, collection-state totals, and the configurable date range for trend charts. None of it is built yet.
+- Nothing. The one open product decision left is whether delivery cost becomes its own spend series (see Open Questions).
 
 ## User Stories
 
@@ -78,7 +82,7 @@ As a collector, I want charts of monthly spend and orders placed vs arrived, plu
 - `FR-06-14`: All monetary summaries on the dashboard must be expressed in the user's base currency (`User.baseCurrencyCode`), subject to `FR-06-13`.
 - `FR-06-15`: The dashboard must be read-only. It performs no domain mutations; every actionable element is a navigation link or CTA into the owning surface (orders, deliveries, stores, settings).
 - `FR-06-16`: Any dashboard CTA that links to the public store listing (`/{locale}/stores`) must build the URL with the same preference-driven helper used by the private shell `Stores` navigation, not a hardcoded path (see Cross-domain notes).
-- `FR-06-17`: The dashboard must surface arrival punctuality: among orders that have arrived, the share that arrived within their estimated arrival window versus late, so the collector can gauge store reliability over time.
+- `FR-06-17`: The dashboard must surface arrival punctuality: among arrived orders that can be judged, the share whose arrival is **provably within** their estimated arrival window versus outside it, so the collector can gauge store reliability over time. Because no arrival timestamp is persisted, arrival is measured by the dispatch date of the order's first non-cancelled delivery. Only "within the window" is provable from that date, so the surface must name what it measures and must report arrivals it cannot judge separately, never folding them into either bucket.
 - `FR-06-18`: The dashboard must surface an itemized list of upcoming payment obligations ("próximos pagos"): one row per order with its outstanding amount and due date, sorted by due date, each linking into the order. This is the per-order detail behind the aggregate obligation figures (`FR-06-02`, `FR-06-03`).
 - `FR-06-19`: The dashboard must surface, across the collection, how committed value splits into paid versus still-owed ("pagado vs pendiente"): committed total = paid to date + outstanding (deuda viva), so the collector sees how much of what they bought is already covered.
 - `FR-06-20`: The dashboard must surface the count of products by product type (`OrderItem.productTypeKey`), alongside the spend-by-product-type breakdown (`FR-06-11`).
@@ -115,11 +119,11 @@ The precise computation for each surface. All amounts are in minor units and bas
 | Atrasados en llegada        | Orders past their `expectedDeliveryTo` (or `expectedDeliveryFrom` when no `to`) not yet arrived                                                                          | `Order`, `OrderItem.deliveryState`                                | overdue                                  |
 | Total pedidos               | Count of non-cancelled orders                                                                                                                                            | `Order`                                                           | all-time                                 |
 | Total productos             | Σ `OrderItem.quantity` on non-cancelled orders                                                                                                                           | `OrderItem`                                                       | all-time                                 |
-| Distribución por estado     | Count of orders grouped by `OrderStatus`                                                                                                                                 | `Order`                                                           | all-time                                 |
+| Distribución por estado     | Count of non-cancelled orders grouped by `OrderStatus`, so the split sums to "total pedidos" (`BR-06-07`)                                                                | `Order`                                                           | all-time                                 |
 | Gasto por tipo              | Σ disbursed (or committed, labeled) grouped by `OrderItem.productTypeKey`                                                                                                | `Order`, `OrderItem`, `OrderPayment`                              | selected/all                             |
 | Top tiendas                 | Stores ranked by spend / order count                                                                                                                                     | `Order`, `Store`                                                  | selected/all                             |
 | Productos por tipo (conteo) | Σ `OrderItem.quantity` grouped by `OrderItem.productTypeKey` on non-cancelled orders                                                                                     | `OrderItem`                                                       | all-time                                 |
-| Puntualidad de llegadas     | Share of arrived orders whose arrival fell within `expectedDeliveryFrom`–`expectedDeliveryTo` vs after `expectedDeliveryTo`                                              | `Order`, `OrderItem.deliveryState` / delivery received dates      | all-time (or selected)                   |
+| Puntualidad de llegadas     | Share of judged arrivals whose delivery dispatch date fell on or before `expectedDeliveryTo` (else `expectedDeliveryFrom`) vs after it; arrivals with no dispatch date or no window are reported as unknown | `Order`, `Delivery.deliveryDate`                                  | all-time                                 |
 | Próximos pagos (lista)      | Per-order outstanding amount + due date (`expectedDeliveryFrom`), sorted ascending by due date                                                                           | `Order`, `OrderPayment`                                           | upcoming                                 |
 | Pagado vs pendiente         | Committed (Σ `totalCost`) split into paid (Σ payments) and outstanding (deuda viva) across non-cancelled orders                                                          | `Order`, `OrderPayment`                                           | all-time                                 |
 | Deuda viva (tendencia)      | Outstanding balance at each month-end over the selected range                                                                                                            | `Order`, `OrderPayment`                                           | selected range                           |
@@ -197,8 +201,8 @@ The precise computation for each surface. All amounts are in minor units and bas
 Decisions applied by [`BP-01 · WO-01`](bp-01-dashboard-aggregation-and-surface/work-orders/wo-01-dashboard-aggregation-foundation.md) (aggregation foundation):
 
 - Payments on an order later moved to `CANCELLED` are **excluded** from the disbursed-spend series and every rollup, consistent with `BR-06-07`. Refund-vs-sunk accounting is out of MVP scope.
-- "Gasto por tipo" and "top tiendas" use **committed value** (`Σ unitPrice × quantity` by type, `Σ totalCost` by store), **all-time** (not driven by the chart range), in base currency with FX-excluded orders dropped. Committed is used because payments are order-level and cannot be attributed to a single product type; it is labeled distinctly per `BR-06-05`.
-- "Arrived" in the hechos-vs-llegados chart is bucketed by `expectedDeliveryFrom` (falling back to `orderDate`) as an approximation, and arrival punctuality (`FR-06-17`) compares the current date against the expected window, because no explicit arrival timestamp is persisted yet. Both are to be refined once delivery arrival timestamps exist.
+- "Gasto por tipo" and "top tiendas" use **committed value**, **all-time** (not driven by the chart range), in base currency with FX-excluded orders dropped. Committed money lives on the order (`Order.totalCost`), so each order's committed value is **distributed across its items** — weighted by `unitPrice × quantity` when the items carry prices, by quantity alone when they do not. Summing `unitPrice × quantity` directly would report nothing for the many orders priced only at order level. Top stores use `Σ totalCost` per store. Committed is used because payments are order-level and cannot be attributed to a single product type; it is labeled distinctly per `BR-06-05`.
+- "Arrived" in the hechos-vs-llegados chart and arrival punctuality (`FR-06-17`) are anchored on **dated delivery evidence**: the dispatch date of an order's first non-cancelled delivery, since the store can only dispatch what it already holds. Punctuality judges an order only when it carries both an expected window and that evidence; arrivals with neither are reported separately as unknown rather than guessed. Orders flagged arrived by hand carry no delivery and therefore no timestamp, so the chart falls back to their expected-arrival start (then their order date) for bucketing only. Resolved by [`BP-01 · WO-05`](bp-01-dashboard-aggregation-and-surface/work-orders/wo-05-order-activity-zone.md).
 
 ## Open Questions
 

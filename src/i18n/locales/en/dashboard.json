@@ -33,6 +33,106 @@
       "body": "Once you log orders with pending payments, you'll see here what you need to have ready each month: totals, overdue amounts, and upcoming due dates."
     }
   },
+  "trends": {
+    "eyebrow": "Charts",
+    "title": "Trends",
+    "scopeNote": "The range on the right applies only to these charts.",
+    "clearRange": "Clear range",
+    "customLabel": "Custom range",
+    "emptyTitle": "Not enough data yet.",
+    "partialNote": "Only orders with a reconciled exchange rate count, so this series is partial.",
+    "presets": {
+      "3m": "Last 3 months",
+      "6m": "Last 6 months",
+      "12m": "Last 12 months",
+      "ytd": "Year to date",
+      "all": "All time"
+    },
+    "spend": {
+      "title": "Spend by month",
+      "subtitle": "What you disbursed each month, by payment date.",
+      "currentMonthLabel": "Disbursed this month",
+      "seriesName": "Spend",
+      "chartAria": "Spend by month, {count} months"
+    },
+    "debt": {
+      "title": "Live debt",
+      "subtitle": "Your outstanding balance at the close of each month.",
+      "seriesName": "Live debt",
+      "chartAria": "Live debt at the close of each month, {count} months"
+    },
+    "activity": {
+      "title": "Orders placed vs arrived",
+      "subtitle": "Your buying pace against arrivals.",
+      "placedName": "Placed",
+      "arrivedName": "Arrived",
+      "chartAria": "Orders placed vs arrived, {count} months"
+    }
+  },
+  "activity": {
+    "eyebrow": "Order activity",
+    "title": "Order activity",
+    "tablistLabel": "Order view",
+    "tabs": {
+      "recent": "Latest",
+      "upcoming": "Upcoming arrivals",
+      "overdue": "Overdue"
+    },
+    "fxPending": "FX pending",
+    "arrivesOn": "arrives {date}",
+    "overdueDays": "{days} d overdue",
+    "rowLabel": "{store}, order {code}",
+    "seeAllOrders": "View all orders",
+    "goToDeliveries": "Go to deliveries",
+    "reviewOverdue": "Review overdue",
+    "emptyRecent": "No recent orders yet.",
+    "emptyUpcoming": "No arrivals in the next 30 days.",
+    "emptyOverdue": "No overdue orders.",
+    "empty": {
+      "title": "You haven't logged any orders yet",
+      "body": "Log your first order and you'll see your latest activity, upcoming arrivals, and anything running late here.",
+      "cta": "Create your first order"
+    }
+  },
+  "kpi": {
+    "orders": "Orders",
+    "products": "Products",
+    "committed": "Committed",
+    "stores": "Stores",
+    "committedPartial": "{count, plural, one {Excludes # order with a pending exchange rate} other {Excludes # orders with a pending exchange rate}}."
+  },
+  "collection": {
+    "eyebrow": "Your collection",
+    "title": "The full picture",
+    "seeStores": "View stores",
+    "statusLabel": "By order status",
+    "statusAria": "Orders by status: {summary}",
+    "spendLabel": "Spend by category · money",
+    "spendAria": "Spend by category: {summary}",
+    "spendEmpty": "No spend by category yet.",
+    "donutTotalLabel": "Total",
+    "countLabel": "Products by category · count",
+    "topStoresLabel": "Top stores",
+    "otherCategory": "Other",
+    "uncategorized": "Uncategorized",
+    "storeRowLabel": "{store}, {amount} across {count, plural, one {# order} other {# orders}}",
+    "empty": {
+      "title": "Your collection will show up here",
+      "body": "As you log orders, you'll see the split by status, category, and store.",
+      "cta": "Explore stores"
+    }
+  },
+  "punctuality": {
+    "eyebrow": "Punctuality",
+    "title": "Arrivals within window",
+    "centerLabel": "In window",
+    "onTime": "In window",
+    "late": "Outside window",
+    "aria": "Arrival punctuality: {onTime}% within the window, {late}% outside it",
+    "methodNote": "We measure arrival by the date the store dispatched the delivery, the only date on record. An order that reached the store on time but shipped late counts as outside the window.",
+    "unknownNote": "{count, plural, one {# arrival with no dispatch date is left out of this split} other {# arrivals with no dispatch date are left out of this split}}.",
+    "empty": "No deliveries yet to measure punctuality."
+  },
   "budget": {
     "eyebrow": "Budget",
     "title": "This cycle",

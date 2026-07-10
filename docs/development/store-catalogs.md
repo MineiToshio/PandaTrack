@@ -44,6 +44,12 @@ npx prisma db seed
 
 The seed is idempotent: safe to run multiple times. Countries and store product types both use `createMany` with `skipDuplicates`.
 
+## Development-only sample data
+
+`npm run db-seed-dev` (script: `scripts/seed-dev-data.ts`) fills a **development** database with a realistic collector dataset — stores, orders, items, payments and deliveries — so every dashboard zone renders with meaningful values (budget consumption, overdue and upcoming obligations, spend and outstanding-debt trends, arrival punctuality, split shipments, an FX-pending order).
+
+It requires the catalog seed above to have run, and a user account to already exist for the email configured at the top of the script. Every store it creates carries the `dev-` slug prefix, and each run deletes those stores first, cascading to their orders and deliveries; rows created outside the script are left untouched. Never point it at a production database.
+
 ## Adding new catalog values
 
 1. **Countries:** Add the ISO 3166-1 alpha-2 code to `COUNTRY_CODES` in `src/lib/catalog/collectorCountries.ts` (and the matching `PRIMARY_CURRENCY_BY_COUNTRY` entry), then run the seed. Add i18n keys for the new code in each locale.

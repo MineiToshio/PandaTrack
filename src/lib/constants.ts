@@ -201,6 +201,15 @@ export const POSTHOG_EVENTS = {
     OBLIGATION_ORDERS_CTA_CLICKED: "dashboard_obligation_orders_cta_clicked",
     BUDGET_ZONE_VIEWED: "dashboard_budget_zone_viewed",
     CONFIGURE_BUDGET_CTA_CLICKED: "dashboard_configure_budget_cta_clicked",
+    SPEND_ZONE_VIEWED: "dashboard_spend_zone_viewed",
+    RANGE_PRESET_SELECTED: "dashboard_range_preset_selected",
+    RANGE_CUSTOM_APPLIED: "dashboard_range_custom_applied",
+    ACTIVITY_ZONE_VIEWED: "dashboard_activity_zone_viewed",
+    ACTIVITY_TAB_CHANGED: "dashboard_activity_tab_changed",
+    ACTIVITY_ITEM_CTA_CLICKED: "dashboard_activity_item_cta_clicked",
+    COLLECTION_ZONE_VIEWED: "dashboard_collection_zone_viewed",
+    TOP_STORE_CTA_CLICKED: "dashboard_top_store_cta_clicked",
+    PRODUCT_TYPE_SEGMENT_CLICKED: "dashboard_product_type_segment_clicked",
   },
 } as const;
 

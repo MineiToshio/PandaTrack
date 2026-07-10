@@ -3,13 +3,13 @@ id: WO-05
 type: WORK_ORDER
 slug: order-activity-zone
 title: Order Activity Zone
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0016
 source_issue: 110
-implementation_status: PLANNED
-last_updated: 2026-07-09
+implementation_status: IMPLEMENTED
+last_updated: 2026-07-10
 ---
 
 # WO-05 Order Activity Zone
@@ -30,7 +30,7 @@ Implement the dashboard's activity zone end-to-end: the orders-placed-vs-orders-
 - recent-orders list: latest ~10 orders by `orderDate`, each linking into order detail
 - upcoming-arrivals list: orders with `expectedDeliveryFrom` within the next 30 days
 - overdue-on-arrival list: orders past their expected arrival not yet arrived
-- **puntualidad de llegadas**: share of arrived orders that arrived within their estimated window vs late, as a compact donut/gauge (`FR-06-17`)
+- **puntualidad de llegadas**: share of judged arrivals provably within their estimated window vs outside it, as a compact donut/gauge (`FR-06-17`)
 - empty states for each list
 - `dashboard` locale keys for this zone
 - PostHog events (zone viewed, recent/upcoming/overdue item CTA clicked)
@@ -62,3 +62,13 @@ Implement the dashboard's activity zone end-to-end: the orders-placed-vs-orders-
 
 - PostHog event when the activity zone is viewed
 - PostHog event when a recent / upcoming / overdue item CTA is clicked
+
+## Implementation Decisions
+
+- **Punctuality is measured from dated delivery evidence, not from the clock.** The foundation slice approximated `FR-06-17` by comparing the expected window against _today_, which silently reclassified every past arrival as late as time went on. Arrival is now anchored on the dispatch date of an order's first non-cancelled delivery (the store can only dispatch what it already holds). An order is judged only when it has both an expected window and that evidence; everything else is reported as `unknownCount` and named in the zone rather than guessed into a bucket. The same evidence date buckets the arrived series in the placed-vs-arrived chart, falling back to the expected-arrival start for orders flagged arrived by hand.
+- **`FR-06-09` "arrived" remains `BR-06-06`**: an order counts as arrived once any item leaves the `NONE` delivery state. Only the _bucketing date_ uses delivery evidence.
+- **Zone tone is `cool`, not `info`.** The FDD calls for a `top-info` edge, but the design system's `Eyebrow`/top-accent vocabulary has no `info` tone, and the playbook forbids inventing one without an ADR. `cool` (`--accent-cool`) is the frozen tone for "system / data" surfaces, which is what the activity lists are.
+- **Every row links to its order detail**, including the upcoming-arrivals rows (the prototype points those at the deliveries list). A row that shows an order code should open that order; the deliveries surface stays reachable from the pane's footer link.
+- **Per-tab empty states** were added on top of the prototype's single first-run empty, which only covers the all-lists-empty case.
+- **The zone names what it measures.** Only "within the window" is provable from a dispatch date: an order that reached the store on time but shipped late reads as outside the window. The legend therefore says "En plazo / Fuera de plazo" (not "A tiempo / Tarde"), a caption states that arrival is measured by the delivery's dispatch date, and arrivals with no dispatch date are counted separately.
+- **`FR-06-16` has no surface in this slice**: the zone's only CTAs point at orders and deliveries, never at the public store listing, so no preference-driven stores href is constructed here.

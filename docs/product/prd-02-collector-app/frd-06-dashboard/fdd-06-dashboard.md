@@ -536,3 +536,23 @@ specifically here:
 - **Workshop raw material (historical)**: the Velvet system and shell chrome were originally
   produced by the redesign subproject; this FDD + the prototype are the durable record and stand
   on their own.
+
+## 10. Implementation deviations from this record
+
+The dashboard shipped across [`BP-01 · WO-01…WO-06`](bp-01-dashboard-aggregation-and-surface/bp-01-dashboard-aggregation-and-surface.md). Where the built screen departs from the prototype above, it is recorded here so this document stays the truth of what exists. Each deviation is argued in its owning Work Order.
+
+- **Zone tone `cool`, not `info`** (`WO-05`, Movimiento). The prototype uses a `top-info` edge, but the design system's `Eyebrow` / top-accent vocabulary has no `info` tone, and `PLAYBOOK §9.17` forbids inventing one without an ADR. The zone uses the frozen `cool` tone, whose meaning ("system / data") fits an activity list. **Update the prototype, not the code**, unless an ADR adds `info` to the tone vocabulary.
+
+- **"Desembolsado este mes" lives in the head of the "Gasto por mes" chart card** (`WO-04`), not folded into the Presupuesto figure. The prototype folds it in on the assumption that the budget cycle equals the calendar month, which only holds when `budgetResetDayOfMonth` is 1. `FR-06-07` requires the **calendar-month** total while `BR-06-03` keeps the budget on its own cycle, so the two figures legitimately differ. The prototype's `kpi-sub` line "Es la misma plata desembolsada este mes" is therefore **not** implemented.
+
+- **ZONA 5 renders the `FR-06-13` partial-totals notice** (`WO-06`), which the prototype omits. `WO-06` requires it on the money-based breakdowns, and the `.fx-warning` CSS is documented as "reused on cash + collection zones". The design record's intent overrides the prototype's omission.
+
+- **The KPI overview strip ships with `WO-06`.** The zone table models it as its own zone, but no Work Order named it in scope. Its four figures are exactly `WO-06`'s totals (orders, products, committed per `BR-06-05`, stores), and this record places those totals **only** in the strip, never repeated inside ZONA 5 — so the strip is their required home.
+
+- **The status bar excludes cancelled orders** (`WO-06`), so its segments sum exactly to the "Pedidos" tile (`BR-06-07`). The prototype's illustrative `Cancelado 2` segment would make the bar disagree with the total it sits beneath. Legend chips reuse the canonical `StatusChip` (ADR 0002) instead of the prototype's bespoke `circle-dot` / `truck` / `circle-check` / `ban` mapping.
+
+- **Categories are ranked, capped at four, and folded into "Otros"** (`WO-06`). The prototype shows exactly four; the catalog has sixteen. Spend-by-category and count-by-category rank independently, because an item without a `unitPrice` contributes quantity but no committed value.
+
+- **Puntualidad measures the delivery's dispatch date** (`WO-05`), the only arrival date on record. The zone says so in a caption, and its legend reads "En plazo / Fuera de plazo" rather than the prototype's "A tiempo / Tarde": an order that reached the store on time but shipped late is counted outside the window, and only "in window" is provable. Arrivals with no dispatch date are reported separately, never guessed into a bucket.
+
+- **A `loading.tsx` skeleton mirrors the grid** (`ADR 0013`). The page loads every order in one aggregation pass; the prototype has no loading state.

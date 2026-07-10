@@ -10,6 +10,7 @@ import {
   getBudgetCycleRange,
   getCalendarMonthRange,
   getDefaultDashboardRange,
+  getMonthEndExclusive,
   getMonthKeyAhead,
   getTodayStart,
   isWithinRange,
@@ -28,6 +29,7 @@ import {
 } from "./dashboardRollup";
 import type {
   ActivityBlock,
+  ArrivalPunctuality,
   BudgetBlock,
   BudgetStatus,
   BuildDashboardDataInput,
@@ -39,6 +41,7 @@ import type {
   MonthKey,
   MonthlyObligation,
   OrderSummary,
+  OutstandingTrendBlock,
   PaidVsOutstandingBlock,
   SpendBlock,
   StatusCount,
@@ -87,7 +90,7 @@ function convertOrderAmount(order: DashboardOrderInput, amountMinor: number, bas
   return convertToBaseCurrencyMinor(amountMinor, order.currencyCode, order.exchangeRate, baseCurrencyCode);
 }
 
-function buildOrderSummary(order: DerivedOrder): OrderSummary {
+function buildOrderSummary(order: DerivedOrder, baseCurrencyCode: string | null): OrderSummary {
   return {
     orderId: order.input.id,
     humanReadableId: order.input.humanReadableId,
@@ -99,6 +102,7 @@ function buildOrderSummary(order: DerivedOrder): OrderSummary {
     currencyCode: order.input.currencyCode,
     totalCostMinor: order.input.totalCost,
     outstandingMinor: order.outstandingMinor,
+    isFxPending: baseCurrencyCode ? isFxPending(order.input, baseCurrencyCode) : false,
   };
 }
 
@@ -272,6 +276,37 @@ function buildSpend(
   };
 }
 
+/**
+ * "Deuda viva (tendencia)" (FR-06-21): the outstanding balance as it stood at the close of each
+ * month in the range. An order contributes only once it has been placed, and only the payments
+ * settled by that month-end reduce it, so the series reconstructs the debt at each point in time.
+ */
+function buildOutstandingTrend(
+  orders: DerivedOrder[],
+  baseCurrencyCode: string | null,
+  range: DateRange,
+): OutstandingTrendBlock {
+  let isPartial = false;
+
+  const series = enumerateMonthKeys(range).map((monthKey) => {
+    const monthEnd = getMonthEndExclusive(monthKey).getTime();
+    const items = orders
+      .filter((order) => order.input.orderDate.getTime() < monthEnd)
+      .map((order) => {
+        const paidByThen = order.input.payments.reduce(
+          (sum, payment) => (payment.paymentDate.getTime() < monthEnd ? sum + payment.amount : sum),
+          0,
+        );
+        return toRollupItem(order.input, Math.max(0, order.input.totalCost - paidByThen));
+      });
+    const monthTotal = rollUpToBaseCurrency(items, baseCurrencyCode);
+    isPartial = isPartial || monthTotal.isPartial;
+    return { ...monthKey, totalMinor: monthTotal.totalMinor };
+  });
+
+  return { series, isPartial };
+}
+
 /** Sums an order's payments bucketed into a specific month, in order currency. */
 function sumPaymentsInMonth(order: DashboardOrderInput, monthKey: MonthKey): number {
   return order.payments.reduce(
@@ -280,12 +315,19 @@ function sumPaymentsInMonth(order: DashboardOrderInput, monthKey: MonthKey): num
   );
 }
 
-function buildActivity(orders: DerivedOrder[], range: DateRange, now: Date, timeZone: string): ActivityBlock {
+function buildActivity(
+  orders: DerivedOrder[],
+  baseCurrencyCode: string | null,
+  range: DateRange,
+  now: Date,
+  timeZone: string,
+): ActivityBlock {
+  const toSummary = (order: DerivedOrder): OrderSummary => buildOrderSummary(order, baseCurrencyCode);
   const recentOrders = orders
     .slice()
     .sort((a, b) => b.input.orderDate.getTime() - a.input.orderDate.getTime())
     .slice(0, DASHBOARD_RECENT_ORDERS_LIMIT)
-    .map(buildOrderSummary);
+    .map(toSummary);
 
   const todayStart = getTodayStart(now, timeZone);
   const arrivalWindowEnd = new Date(todayStart.getTime() + DASHBOARD_UPCOMING_ARRIVAL_DAYS * MILLISECONDS_PER_DAY);
@@ -297,13 +339,13 @@ function buildActivity(orders: DerivedOrder[], range: DateRange, now: Date, time
       return from !== null && from.getTime() >= todayStart.getTime() && from.getTime() < arrivalWindowEnd.getTime();
     })
     .sort((a, b) => a.input.expectedDeliveryFrom!.getTime() - b.input.expectedDeliveryFrom!.getTime())
-    .map(buildOrderSummary);
+    .map(toSummary);
 
   const overdueArrivals = notArrived
     .map((order) => ({ order, dueDate: resolveArrivalDueDate(order.input) }))
     .filter((entry) => entry.dueDate !== null && entry.dueDate.getTime() < todayStart.getTime())
     .sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime())
-    .map((entry) => buildOrderSummary(entry.order));
+    .map((entry) => toSummary(entry.order));
 
   const placedVsArrived = enumerateMonthKeys(range).map((monthKey) => {
     const placedCount = orders.filter((order) => isSameMonth(toMonthKey(order.input.orderDate), monthKey)).length;
@@ -313,7 +355,7 @@ function buildActivity(orders: DerivedOrder[], range: DateRange, now: Date, time
     return { ...monthKey, placedCount, arrivedCount };
   });
 
-  const punctuality = buildPunctuality(orders, todayStart);
+  const punctuality = buildPunctuality(orders);
 
   return { recentOrders, upcomingArrivals, overdueArrivals, placedVsArrived, punctuality };
 }
@@ -324,41 +366,63 @@ function resolveArrivalDueDate(order: DashboardOrderInput): Date | null {
 }
 
 /**
- * Bucket date for an arrived order in the placed-vs-arrived series. No explicit arrival timestamp
- * is persisted yet, so the expected-arrival start is used as the best available proxy, falling back
- * to the order date. Refine once delivery arrival timestamps exist (FRD-06 open question).
+ * Earliest dated evidence that an order reached the store: the dispatch date of its first
+ * non-cancelled delivery. The store can only dispatch what it already holds, so the order had
+ * arrived by then. Orders whose items were only flagged `ARRIVED_AT_STORE` by hand carry no
+ * delivery and therefore no date, which is why this returns null instead of guessing.
  */
-function resolveArrivalBucketDate(order: DashboardOrderInput): Date {
-  return order.expectedDeliveryFrom ?? order.orderDate;
+function resolveArrivalEvidenceDate(order: DashboardOrderInput): Date | null {
+  let earliest: number | null = null;
+  for (const item of order.items) {
+    for (const dispatchedAt of item.deliveryDates) {
+      const time = dispatchedAt.getTime();
+      if (earliest === null || time < earliest) {
+        earliest = time;
+      }
+    }
+  }
+  return earliest === null ? null : new Date(earliest);
 }
 
 /**
- * Punctuality split among arrived orders that carry an expected window (FR-06-17). Because no
- * arrival timestamp is stored yet, an arrived order counts as on time while the current date is
- * still at or before its window close, and late once that date has passed. This is an approximation
- * to be replaced when delivery arrival timestamps are available (FRD-06 open question).
+ * Bucket date for an arrived order in the placed-vs-arrived series. Uses the dated arrival evidence
+ * when the order was delivered, and falls back to its expected-arrival start (then its order date)
+ * for orders marked arrived by hand, which carry no timestamp.
  */
-function buildPunctuality(orders: DerivedOrder[], todayStart: Date): ArrivalPunctualityAccumulator {
+function resolveArrivalBucketDate(order: DashboardOrderInput): Date {
+  return resolveArrivalEvidenceDate(order) ?? order.expectedDeliveryFrom ?? order.orderDate;
+}
+
+/**
+ * Punctuality among arrived orders (FR-06-17). An order is judged only when it carries both an
+ * expected window and dated arrival evidence: it is on time when that evidence lands on or before
+ * the window close, late otherwise. Everything else is counted as unknown rather than guessed —
+ * comparing the window against *today* would silently reclassify every past arrival as late.
+ */
+function buildPunctuality(orders: DerivedOrder[]): ArrivalPunctuality {
   let onTimeCount = 0;
   let lateCount = 0;
+  let unknownCount = 0;
+
   for (const order of orders) {
     if (!order.hasArrived) {
       continue;
     }
     const dueDate = resolveArrivalDueDate(order.input);
-    if (dueDate === null) {
+    const arrivedAt = resolveArrivalEvidenceDate(order.input);
+    if (dueDate === null || arrivedAt === null) {
+      unknownCount += 1;
       continue;
     }
-    if (todayStart.getTime() <= dueDate.getTime()) {
+    if (arrivedAt.getTime() <= dueDate.getTime()) {
       onTimeCount += 1;
     } else {
       lateCount += 1;
     }
   }
-  return { onTimeCount, lateCount };
-}
 
-type ArrivalPunctualityAccumulator = { onTimeCount: number; lateCount: number };
+  return { onTimeCount, lateCount, unknownCount };
+}
 
 function buildCollection(orders: DerivedOrder[], baseCurrencyCode: string | null): CollectionBlock {
   const totalOrders = orders.length;
@@ -366,6 +430,8 @@ function buildCollection(orders: DerivedOrder[], baseCurrencyCode: string | null
     (sum, order) => sum + order.input.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
     0,
   );
+
+  const totalStores = new Set(orders.map((order) => order.input.store.id)).size;
 
   const statusDistribution = buildStatusDistribution(orders);
   const productCountByType = buildProductCountByType(orders);
@@ -375,6 +441,7 @@ function buildCollection(orders: DerivedOrder[], baseCurrencyCode: string | null
   return {
     totalOrders,
     totalProducts,
+    totalStores,
     statusDistribution,
     spendByType: spendByType.entries,
     spendByTypeIsPartial: spendByType.isPartial,
@@ -405,9 +472,12 @@ function buildProductCountByType(orders: DerivedOrder[]): CollectionBlock["produ
 }
 
 /**
- * Committed spend grouped by product type (FR-06-11). Committed value (`Σ unitPrice × quantity`)
- * is used because payments are order-level and cannot be attributed to a single product type;
- * FX-excluded orders are dropped and reported via the partial flag.
+ * Committed spend grouped by product type (FR-06-11). The collector's committed money lives on the
+ * order (`Order.totalCost`), not on its items, so each order's committed value is distributed across
+ * its items: by `unitPrice × quantity` when the items carry prices, and by quantity alone when they
+ * do not. Summing `unitPrice × quantity` directly would report zero for the many orders whose items
+ * have no unit price, hiding the breakdown entirely. FX-excluded orders are dropped and reported via
+ * the partial flag (`FR-06-13`); the value stays committed, never disbursed (`BR-06-05`).
  */
 function buildSpendByType(
   orders: DerivedOrder[],
@@ -421,33 +491,55 @@ function buildSpendByType(
       isPartial = true;
       continue;
     }
-    for (const item of order.input.items) {
-      const committedInOrderCurrency = (item.unitPrice ?? 0) * item.quantity;
-      const converted = convertOrderAmount(order.input, committedInOrderCurrency, baseCurrencyCode);
-      if (converted === null) {
-        isPartial = true;
-        continue;
-      }
-      totals.set(item.productTypeKey, (totals.get(item.productTypeKey) ?? 0) + converted);
+    const committedBase = convertOrderAmount(order.input, order.input.totalCost, baseCurrencyCode);
+    if (committedBase === null) {
+      isPartial = true;
+      continue;
     }
+
+    const weights = resolveItemWeights(order.input.items);
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+    if (totalWeight === 0) {
+      continue;
+    }
+
+    order.input.items.forEach((item, index) => {
+      const share = (committedBase * weights[index]) / totalWeight;
+      totals.set(item.productTypeKey, (totals.get(item.productTypeKey) ?? 0) + share);
+    });
   }
 
   const entries = Array.from(totals.entries())
-    .map(([productTypeKey, committedMinor]) => ({ productTypeKey, committedMinor }))
+    .map(([productTypeKey, committedMinor]) => ({ productTypeKey, committedMinor: Math.round(committedMinor) }))
+    .filter((entry) => entry.committedMinor > 0)
     .sort((a, b) => b.committedMinor - a.committedMinor);
   return { entries, isPartial };
+}
+
+/**
+ * How much of an order's committed value each item represents. Priced items are weighted by their
+ * line value; when no item carries a price, quantity is the only signal available.
+ */
+function resolveItemWeights(items: DashboardOrderInput["items"]): number[] {
+  const priced = items.map((item) => (item.unitPrice ?? 0) * item.quantity);
+  const pricedTotal = priced.reduce((sum, weight) => sum + weight, 0);
+  return pricedTotal > 0 ? priced : items.map((item) => item.quantity);
 }
 
 function buildTopStores(
   orders: DerivedOrder[],
   baseCurrencyCode: string | null,
 ): { entries: CollectionBlock["topStores"]; isPartial: boolean } {
-  const byStore = new Map<string, { storeName: string; committedMinor: number; orderCount: number }>();
+  const byStore = new Map<
+    string,
+    { storeName: string; storeSlug: string; committedMinor: number; orderCount: number }
+  >();
   let isPartial = false;
 
   for (const order of orders) {
     const entry = byStore.get(order.input.store.id) ?? {
       storeName: order.input.store.name,
+      storeSlug: order.input.store.slug,
       committedMinor: 0,
       orderCount: 0,
     };
@@ -514,7 +606,8 @@ export function buildDashboardData(input: BuildDashboardDataInput): DashboardDat
     cashObligations: buildCashObligations(nonCancelled, baseCurrencyCode, now, timeZone),
     budget: buildBudget(nonCancelled, baseCurrencyCode, budgetAmountMinor, now, timeZone, budgetResetDayOfMonth),
     spend: buildSpend(nonCancelled, baseCurrencyCode, range, now, timeZone),
-    activity: buildActivity(nonCancelled, range, now, timeZone),
+    outstandingTrend: buildOutstandingTrend(nonCancelled, baseCurrencyCode, range),
+    activity: buildActivity(nonCancelled, baseCurrencyCode, range, now, timeZone),
     collection: buildCollection(nonCancelled, baseCurrencyCode),
     paidVsOutstanding: buildPaidVsOutstanding(nonCancelled, baseCurrencyCode),
   };

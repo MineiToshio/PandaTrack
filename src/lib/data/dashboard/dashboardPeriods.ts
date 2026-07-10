@@ -1,6 +1,6 @@
 import { resolveBudgetResetCalendarDay } from "@/lib/user-settings/budgetCalendar";
 import { DASHBOARD_DEFAULT_RANGE_MONTHS } from "./dashboardConstants";
-import type { DateRange, MonthKey } from "./dashboardTypes";
+import type { DashboardRangeSelection, DateRange, MonthKey } from "./dashboardTypes";
 
 /**
  * Period helpers for the dashboard.
@@ -111,9 +111,74 @@ export function getDefaultDashboardRange(now: Date, timeZone: string | null | un
   };
 }
 
+/** Trailing window of `months` calendar months, ending with (and including) the current month. */
+function getTrailingMonthsRange(now: Date, timeZone: string, months: number): DateRange {
+  const { year, monthIndex } = getCivilDate(now, timeZone);
+  return {
+    start: utcMidnight(year, monthIndex - (months - 1), 1),
+    end: utcMidnight(year, monthIndex + 1, 1),
+  };
+}
+
+/**
+ * Turns the collector's range selection into a concrete half-open month window (FR-06-12).
+ * Presets are anchored on the current month in the collector's timezone; `all` starts at the month
+ * of their earliest recorded activity and falls back to the default window when they have none.
+ * A custom range is snapped outward to whole months, since every trend series is bucketed by month.
+ */
+export function resolveDashboardRange(
+  selection: DashboardRangeSelection,
+  now: Date,
+  timeZone: string | null | undefined,
+  earliestActivity: Date | null,
+): DateRange {
+  const zone = resolveTimeZone(timeZone);
+
+  if (selection.preset === "custom") {
+    const [from, to] =
+      selection.from.getTime() <= selection.to.getTime()
+        ? [selection.from, selection.to]
+        : [selection.to, selection.from];
+    return {
+      start: utcMidnight(from.getUTCFullYear(), from.getUTCMonth(), 1),
+      end: utcMidnight(to.getUTCFullYear(), to.getUTCMonth() + 1, 1),
+    };
+  }
+
+  const { year, monthIndex } = getCivilDate(now, zone);
+  const end = utcMidnight(year, monthIndex + 1, 1);
+
+  switch (selection.preset) {
+    case "3m":
+      return getTrailingMonthsRange(now, zone, 3);
+    case "12m":
+      return getTrailingMonthsRange(now, zone, 12);
+    case "ytd":
+      return { start: utcMidnight(year, 0, 1), end };
+    case "all": {
+      if (!earliestActivity) {
+        return getDefaultDashboardRange(now, zone);
+      }
+      const start = utcMidnight(earliestActivity.getUTCFullYear(), earliestActivity.getUTCMonth(), 1);
+      return start.getTime() < end.getTime() ? { start, end } : getDefaultDashboardRange(now, zone);
+    }
+    case "6m":
+    default:
+      return getDefaultDashboardRange(now, zone);
+  }
+}
+
 /** Month bucket of a domain date, keyed by its UTC calendar components. */
 export function toMonthKey(instant: Date): MonthKey {
   return { year: instant.getUTCFullYear(), month: instant.getUTCMonth() + 1 };
+}
+
+/**
+ * Exclusive end instant of a month bucket: UTC midnight of the first day of the following month.
+ * `month` is 1-based, so passing it straight to `Date.UTC` already lands on the next month.
+ */
+export function getMonthEndExclusive(monthKey: MonthKey): Date {
+  return new Date(Date.UTC(monthKey.year, monthKey.month, 1));
 }
 
 /** True when `instant` falls in the half-open range `[start, end)`. */

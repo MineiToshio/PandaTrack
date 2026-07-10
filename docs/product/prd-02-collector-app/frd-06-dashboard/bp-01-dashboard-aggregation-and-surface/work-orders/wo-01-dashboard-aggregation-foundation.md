@@ -8,8 +8,8 @@ parent: BP-01
 source_features:
   - FEAT-0016
 source_issue: 106
-implementation_status: IN_PROGRESS
-last_updated: 2026-07-09
+implementation_status: IMPLEMENTED
+last_updated: 2026-07-10
 ---
 
 # WO-01 Dashboard Aggregation Foundation
@@ -24,7 +24,7 @@ Establish the read-only dashboard data layer that every dashboard zone depends o
 - shared period helpers: `getCalendarMonthRange(now, timezone)` and `getBudgetCycleRange(now, timezone, resetDay)` returning half-open `{ start, end }` intervals in the user's timezone
 - centralized base-currency rollup helper: given orders/payments with `currencyCode` + `exchangeRate` + `needsExchangeRateUpdate`, returns `{ totalMinor, isPartial, excludedOrderCount }`, excluding flagged orders (`FR-06-13`)
 - outstanding-balance aggregation reusing the order domain's payment-summary logic (`totalCost − Σ payments`, never negative)
-- the `getDashboardData(userId, range)` entry point returning the single `DashboardData` shape consumed by all zones (cash/obligations, budget, spend, activity, collection)
+- the `getDashboardData(userId, range)` entry point returning the single `DashboardData` shape consumed by all zones (cash/obligations, budget, spend, activity, collection); [`WO-04`](wo-04-disbursed-spend-zone.md) later widened `range` into a range **selection** (preset or custom), resolved server-side because presets depend on the collector's timezone and `all` depends on their data
 - shared TypeScript types for `DashboardData` and its blocks
 - unit tests for the period helpers (including month/cycle edges and timezone correctness), the FX-exclusion rollup, the outstanding-balance and overdue-fold-in logic, and the bucketing helpers
 
@@ -80,6 +80,5 @@ This foundation slice is exempt from the "must include an E2E acceptance path" r
 Resolutions for the parent FRD's open questions, applied by this foundation slice:
 
 - **Payments on later-`CANCELLED` orders**: excluded from the disbursed-spend series and every rollup. `BR-06-07` (cancelled orders excluded from all rollups) governs; refund-vs-sunk accounting is out of MVP scope.
-- **"Gasto por tipo" and "top tiendas"**: use **committed value** (`Σ unitPrice × quantity` for by-type; `Σ totalCost` for by-store), all-time, base-currency, FX-excluded. Payments are order-level and cannot be attributed to a single product type, so committed is the only cleanly attributable measure; labeled as committed per `BR-06-05`. These surfaces are not driven by the trend range.
-- **"Arrived" bucketing date (hechos vs llegados)**: no explicit arrival timestamp is persisted yet, so an arrived order is bucketed by `expectedDeliveryFrom` (falling back to `orderDate`). To be refined when delivery arrival timestamps exist.
-- **Arrival punctuality (`FR-06-17`)**: same data gap; an arrived order counts as on time while the current date is at or before its expected window close and late once it has passed, with orders lacking a window excluded. Approximation pending real arrival timestamps.
+- **"Gasto por tipo" and "top tiendas"**: use **committed value**, all-time, base-currency, FX-excluded. [`WO-06`](wo-06-collection-overview-zone.md) later refined by-type to distribute each order's `totalCost` across its items (weighted by line value, falling back to quantity), because summing `unitPrice × quantity` reported zero for orders priced only at order level. Top stores rank by `Σ totalCost`. Labeled as committed per `BR-06-05`; neither surface is driven by the trend range.
+- **"Arrived" bucketing date and arrival punctuality (`FR-06-17`)**: originally approximated here against `expectedDeliveryFrom` and against the current date. [`WO-05`](wo-05-order-activity-zone.md) replaced both with dated delivery evidence (the dispatch date of the order's first non-cancelled delivery) before surfacing them, because judging the window against _today_ reclassified every past arrival as late over time.

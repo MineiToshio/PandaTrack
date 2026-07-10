@@ -17,7 +17,7 @@ function makeOrder(overrides: Partial<DashboardOrderInput> & { id: string }): Da
     needsExchangeRateUpdate: false,
     totalCost: 0,
     status: "OPEN",
-    store: { id: "store-1", name: "Store One" },
+    store: { id: "store-1", name: "Store One", slug: "store-one" },
     items: [],
     payments: [],
   };
@@ -176,6 +176,55 @@ describe("buildDashboardData - spend and budget", () => {
   });
 });
 
+describe("buildDashboardData - deuda viva trend (FR-06-21)", () => {
+  const range = { start: utc(2026, 0, 1), end: utc(2026, 3, 1) }; // Jan, Feb, Mar 2026
+
+  it("reconstructs the outstanding balance at each month-end", () => {
+    const data = build(
+      [
+        makeOrder({
+          id: "jan",
+          orderDate: utc(2026, 0, 10),
+          totalCost: 10000,
+          payments: [{ amount: 4000, paymentDate: utc(2026, 1, 5) }],
+        }),
+      ],
+      { range },
+    );
+    // Placed in January and unpaid at its close; the February payment only reduces it from Feb on.
+    expect(data.outstandingTrend.series).toEqual([
+      { year: 2026, month: 1, totalMinor: 10000 },
+      { year: 2026, month: 2, totalMinor: 6000 },
+      { year: 2026, month: 3, totalMinor: 6000 },
+    ]);
+  });
+
+  it("excludes orders that had not been placed yet at a given month-end", () => {
+    const data = build([makeOrder({ id: "mar", orderDate: utc(2026, 2, 3), totalCost: 5000 })], { range });
+    expect(data.outstandingTrend.series.map((month) => month.totalMinor)).toEqual([0, 0, 5000]);
+  });
+
+  it("excludes cancelled orders and flags FX-pending exclusions as partial", () => {
+    const data = build(
+      [
+        makeOrder({ id: "cancelled", orderDate: utc(2026, 0, 2), status: "CANCELLED", totalCost: 9999 }),
+        makeOrder({
+          id: "fx",
+          orderDate: utc(2026, 0, 2),
+          currencyCode: "EUR",
+          exchangeRate: 1.1,
+          needsExchangeRateUpdate: true,
+          totalCost: 5000,
+        }),
+        makeOrder({ id: "usd", orderDate: utc(2026, 0, 2), totalCost: 3000 }),
+      ],
+      { range },
+    );
+    expect(data.outstandingTrend.series[0]).toEqual({ year: 2026, month: 1, totalMinor: 3000 });
+    expect(data.outstandingTrend.isPartial).toBe(true);
+  });
+});
+
 describe("buildDashboardData - exclusions and FX", () => {
   it("excludes CANCELLED orders from every rollup (BR-06-07)", () => {
     const data = build([
@@ -212,6 +261,80 @@ describe("buildDashboardData - exclusions and FX", () => {
   });
 });
 
+describe("buildDashboardData - arrival punctuality (FR-06-17)", () => {
+  const arrivedItem = (deliveryDates: Date[]) => [
+    { quantity: 1, productTypeKey: null, unitPrice: null, deliveryState: "DELIVERED" as const, deliveryDates },
+  ];
+
+  it("counts an order that shipped within its window as on time", () => {
+    const data = build([
+      makeOrder({
+        id: "onTime",
+        expectedDeliveryFrom: utc(2026, 0, 1),
+        expectedDeliveryTo: utc(2026, 0, 10),
+        items: arrivedItem([utc(2026, 0, 8)]),
+      }),
+    ]);
+    expect(data.activity.punctuality).toEqual({ onTimeCount: 1, lateCount: 0, unknownCount: 0 });
+  });
+
+  it("counts an order that shipped after its window as late", () => {
+    const data = build([
+      makeOrder({
+        id: "late",
+        expectedDeliveryFrom: utc(2026, 0, 1),
+        expectedDeliveryTo: utc(2026, 0, 10),
+        items: arrivedItem([utc(2026, 0, 20)]),
+      }),
+    ]);
+    expect(data.activity.punctuality).toEqual({ onTimeCount: 0, lateCount: 1, unknownCount: 0 });
+  });
+
+  it("keeps a long-past on-time arrival on time no matter how much later the dashboard is read", () => {
+    // Regression: judging the window against `now` would reclassify every historical arrival as late.
+    const data = build([
+      makeOrder({
+        id: "lastJanuary",
+        expectedDeliveryFrom: utc(2026, 0, 1),
+        expectedDeliveryTo: utc(2026, 0, 10),
+        items: arrivedItem([utc(2026, 0, 5)]),
+      }),
+    ]);
+    expect(data.generatedAt.getTime()).toBeGreaterThan(utc(2026, 0, 10).getTime());
+    expect(data.activity.punctuality.lateCount).toBe(0);
+    expect(data.activity.punctuality.onTimeCount).toBe(1);
+  });
+
+  it("cannot judge an arrival with no dated evidence, or one with no expected window", () => {
+    const data = build([
+      // Flagged arrived by hand: no delivery, so no arrival date exists.
+      makeOrder({
+        id: "noEvidence",
+        expectedDeliveryFrom: utc(2026, 0, 1),
+        expectedDeliveryTo: utc(2026, 0, 10),
+        items: [
+          { quantity: 1, productTypeKey: null, unitPrice: null, deliveryState: "ARRIVED_AT_STORE", deliveryDates: [] },
+        ],
+      }),
+      // Delivered, but the collector never estimated a window to judge it against.
+      makeOrder({ id: "noWindow", items: arrivedItem([utc(2026, 0, 5)]) }),
+    ]);
+    expect(data.activity.punctuality).toEqual({ onTimeCount: 0, lateCount: 0, unknownCount: 2 });
+  });
+
+  it("ignores orders that have not arrived at all", () => {
+    const data = build([
+      makeOrder({
+        id: "pending",
+        expectedDeliveryFrom: utc(2026, 0, 1),
+        expectedDeliveryTo: utc(2026, 0, 10),
+        items: [{ quantity: 1, productTypeKey: null, unitPrice: null, deliveryState: "NONE", deliveryDates: [] }],
+      }),
+    ]);
+    expect(data.activity.punctuality).toEqual({ onTimeCount: 0, lateCount: 0, unknownCount: 0 });
+  });
+});
+
 describe("buildDashboardData - activity and collection", () => {
   it("counts an order as arrived once any item leaves NONE (AC-06-07)", () => {
     const data = build([
@@ -219,17 +342,53 @@ describe("buildDashboardData - activity and collection", () => {
         id: "arrived",
         orderDate: utc(2026, 6, 1),
         expectedDeliveryFrom: utc(2026, 6, 1),
-        items: [{ quantity: 1, productTypeKey: "figure", unitPrice: 1000, deliveryState: "ARRIVED_AT_STORE" }],
+        items: [
+          {
+            quantity: 1,
+            productTypeKey: "figure",
+            unitPrice: 1000,
+            deliveryState: "ARRIVED_AT_STORE",
+            deliveryDates: [],
+          },
+        ],
       }),
       makeOrder({
         id: "notArrived",
         orderDate: utc(2026, 6, 1),
         expectedDeliveryFrom: utc(2026, 6, 1),
-        items: [{ quantity: 1, productTypeKey: "figure", unitPrice: 1000, deliveryState: "NONE" }],
+        items: [{ quantity: 1, productTypeKey: "figure", unitPrice: 1000, deliveryState: "NONE", deliveryDates: [] }],
       }),
     ]);
     const july = data.activity.placedVsArrived.find((month) => month.month === 7 && month.year === 2026);
     expect(july).toMatchObject({ placedCount: 2, arrivedCount: 1 });
+  });
+
+  it("buckets an arrived order by its dated delivery evidence, not its expected window", () => {
+    const data = build(
+      [
+        makeOrder({
+          id: "arrived",
+          orderDate: utc(2026, 0, 5),
+          expectedDeliveryFrom: utc(2026, 0, 20),
+          // Dispatched in March, so the arrival belongs to March, not to the January window.
+          items: [
+            {
+              quantity: 1,
+              productTypeKey: null,
+              unitPrice: null,
+              deliveryState: "DELIVERED",
+              deliveryDates: [utc(2026, 2, 4)],
+            },
+          ],
+        }),
+      ],
+      { range: { start: utc(2026, 0, 1), end: utc(2026, 3, 1) } },
+    );
+    expect(data.activity.placedVsArrived).toEqual([
+      { year: 2026, month: 1, placedCount: 1, arrivedCount: 0 },
+      { year: 2026, month: 2, placedCount: 0, arrivedCount: 0 },
+      { year: 2026, month: 3, placedCount: 0, arrivedCount: 1 },
+    ]);
   });
 
   it("splits upcoming and overdue arrivals by their expected window", () => {
@@ -237,13 +396,13 @@ describe("buildDashboardData - activity and collection", () => {
       makeOrder({
         id: "soon",
         expectedDeliveryFrom: utc(2026, 6, 20),
-        items: [{ quantity: 1, productTypeKey: null, unitPrice: null, deliveryState: "NONE" }],
+        items: [{ quantity: 1, productTypeKey: null, unitPrice: null, deliveryState: "NONE", deliveryDates: [] }],
       }),
       makeOrder({
         id: "late",
         expectedDeliveryFrom: utc(2026, 4, 1),
         expectedDeliveryTo: utc(2026, 4, 10),
-        items: [{ quantity: 1, productTypeKey: null, unitPrice: null, deliveryState: "NONE" }],
+        items: [{ quantity: 1, productTypeKey: null, unitPrice: null, deliveryState: "NONE", deliveryDates: [] }],
       }),
     ]);
     expect(data.activity.upcomingArrivals.map((order) => order.orderId)).toEqual(["soon"]);
@@ -255,10 +414,10 @@ describe("buildDashboardData - activity and collection", () => {
       makeOrder({
         id: "o1",
         totalCost: 3000,
-        store: { id: "store-a", name: "Store A" },
+        store: { id: "store-a", name: "Store A", slug: "store-a" },
         items: [
-          { quantity: 2, productTypeKey: "figure", unitPrice: 1000, deliveryState: "NONE" },
-          { quantity: 1, productTypeKey: "manga", unitPrice: 1000, deliveryState: "NONE" },
+          { quantity: 2, productTypeKey: "figure", unitPrice: 1000, deliveryState: "NONE", deliveryDates: [] },
+          { quantity: 1, productTypeKey: "manga", unitPrice: 1000, deliveryState: "NONE", deliveryDates: [] },
         ],
       }),
     ]);
@@ -266,7 +425,122 @@ describe("buildDashboardData - activity and collection", () => {
     expect(data.collection.totalProducts).toBe(3);
     expect(data.collection.productCountByType).toContainEqual({ productTypeKey: "figure", quantity: 2 });
     expect(data.collection.spendByType).toContainEqual({ productTypeKey: "figure", committedMinor: 2000 });
-    expect(data.collection.topStores[0]).toMatchObject({ storeId: "store-a", committedMinor: 3000, orderCount: 1 });
+    expect(data.collection.topStores[0]).toMatchObject({
+      storeId: "store-a",
+      storeSlug: "store-a",
+      committedMinor: 3000,
+      orderCount: 1,
+    });
+  });
+
+  it("distributes an order's committed value across its items by line value", () => {
+    const data = build([
+      makeOrder({
+        id: "priced",
+        totalCost: 3000,
+        items: [
+          { quantity: 2, productTypeKey: "figures", unitPrice: 1000, deliveryState: "NONE", deliveryDates: [] },
+          { quantity: 1, productTypeKey: "manga", unitPrice: 1000, deliveryState: "NONE", deliveryDates: [] },
+        ],
+      }),
+    ]);
+    expect(data.collection.spendByType).toEqual([
+      { productTypeKey: "figures", committedMinor: 2000 },
+      { productTypeKey: "manga", committedMinor: 1000 },
+    ]);
+  });
+
+  it("falls back to quantity when no item carries a unit price, instead of reporting zero", () => {
+    // Regression: summing `unitPrice × quantity` reported nothing for orders priced only at order level.
+    const data = build([
+      makeOrder({
+        id: "unpriced",
+        totalCost: 4000,
+        items: [
+          { quantity: 3, productTypeKey: "figures", unitPrice: null, deliveryState: "NONE", deliveryDates: [] },
+          { quantity: 1, productTypeKey: "manga", unitPrice: null, deliveryState: "NONE", deliveryDates: [] },
+        ],
+      }),
+    ]);
+    expect(data.collection.spendByType).toEqual([
+      { productTypeKey: "figures", committedMinor: 3000 },
+      { productTypeKey: "manga", committedMinor: 1000 },
+    ]);
+  });
+
+  it("keeps the by-type split summing to the committed total it is drawn from", () => {
+    const data = build([
+      makeOrder({
+        id: "a",
+        totalCost: 1000,
+        items: [{ quantity: 3, productTypeKey: "figures", unitPrice: null, deliveryState: "NONE", deliveryDates: [] }],
+      }),
+      makeOrder({
+        id: "b",
+        totalCost: 2500,
+        items: [
+          { quantity: 1, productTypeKey: "manga", unitPrice: 500, deliveryState: "NONE", deliveryDates: [] },
+          { quantity: 1, productTypeKey: "books", unitPrice: 500, deliveryState: "NONE", deliveryDates: [] },
+        ],
+      }),
+    ]);
+    const byTypeTotal = data.collection.spendByType.reduce((sum, entry) => sum + entry.committedMinor, 0);
+    expect(byTypeTotal).toBe(data.paidVsOutstanding.committedMinor);
+  });
+
+  it("skips an order with no items rather than dropping its committed value into an unknown bucket", () => {
+    const data = build([makeOrder({ id: "noItems", totalCost: 5000, items: [] })]);
+    expect(data.collection.spendByType).toEqual([]);
+  });
+
+  it("counts distinct stores and excludes cancelled orders from the collection totals (BR-06-07)", () => {
+    const item = {
+      quantity: 2,
+      productTypeKey: "figure",
+      unitPrice: 1000,
+      deliveryState: "NONE" as const,
+      deliveryDates: [],
+    };
+    const data = build([
+      makeOrder({
+        id: "a1",
+        store: { id: "store-a", name: "Store A", slug: "store-a" },
+        totalCost: 2000,
+        items: [item],
+      }),
+      makeOrder({
+        id: "a2",
+        store: { id: "store-a", name: "Store A", slug: "store-a" },
+        totalCost: 2000,
+        items: [item],
+      }),
+      makeOrder({
+        id: "b1",
+        store: { id: "store-b", name: "Store B", slug: "store-b" },
+        totalCost: 2000,
+        items: [item],
+      }),
+      makeOrder({
+        id: "cancelled",
+        status: "CANCELLED",
+        store: { id: "store-c", name: "Store C", slug: "store-c" },
+        totalCost: 9999,
+        items: [item],
+      }),
+    ]);
+    // The cancelled order contributes neither its store, nor its products, nor its count.
+    expect(data.collection.totalOrders).toBe(3);
+    expect(data.collection.totalProducts).toBe(6);
+    expect(data.collection.totalStores).toBe(2);
+    expect(data.collection.topStores.map((store) => store.storeId)).toEqual(["store-a", "store-b"]);
+  });
+
+  it("ranks top stores by committed value, then by order count", () => {
+    const data = build([
+      makeOrder({ id: "small", store: { id: "store-a", name: "Store A", slug: "store-a" }, totalCost: 1000 }),
+      makeOrder({ id: "big", store: { id: "store-b", name: "Store B", slug: "store-b" }, totalCost: 9000 }),
+    ]);
+    expect(data.collection.topStores.map((store) => store.storeId)).toEqual(["store-b", "store-a"]);
   });
 
   it("splits committed value into paid and outstanding (FR-06-19)", () => {

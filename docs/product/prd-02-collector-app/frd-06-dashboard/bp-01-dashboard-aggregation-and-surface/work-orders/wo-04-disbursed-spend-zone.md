@@ -3,13 +3,13 @@ id: WO-04
 type: WORK_ORDER
 slug: disbursed-spend-zone
 title: Disbursed Spend Zone
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_features:
   - FEAT-0016
 source_issue: 109
-implementation_status: PLANNED
-last_updated: 2026-07-09
+implementation_status: IMPLEMENTED
+last_updated: 2026-07-10
 ---
 
 # WO-04 Disbursed Spend Zone
@@ -66,3 +66,12 @@ Implement the dashboard's spend zone end-to-end: the disbursed-this-month figure
 - PostHog event when the spend zone is viewed
 - PostHog event when a range preset is selected
 - PostHog event when a custom range is applied
+
+## Implementation Decisions
+
+- **"Desembolsado este mes" lives in the head of the "Gasto por mes" chart card**, not as a standalone tile and not folded into the budget figure. The FDD folds it into the budget card on the assumption that the budget cycle equals the calendar month, which only holds when `budgetResetDayOfMonth` is 1. `FR-06-07` requires the **calendar-month** disbursed total, and `BR-06-03` keeps the budget on its own cycle, so the two figures can legitimately differ. Placing the calendar-month figure above its own month-by-month chart satisfies `FR-06-07` without duplicating the budget zone.
+- **The range control is URL-driven.** The selection is written to the `range` (plus `from`/`to`) search params and resolved server-side, so the page stays a Server Component and the selection is shareable and back-button friendly. Because the fixed current-period metrics are computed from `now`, they are structurally immune to the range (`FR-06-12`).
+- **Presets are resolved server-side.** `3m` / `6m` / `12m` / `ytd` anchor on the current month in the collector's timezone; `all` starts at the month of their earliest order or payment and falls back to the default window when they have no activity; a custom range is snapped outward to whole months because every trend series is bucketed by month.
+- **Charting is hand-rolled** (`DashboardLineChart`, an SVG line/area chart with gridlines, markers, axis labels, a hover crosshair + tooltip, and a `role="img"` label). No charting dependency was added, per `ui-libs-policy.mdc`. Formatted values are passed in from the server so no formatter function crosses the RSC boundary.
+- **The custom-range calendar reuses `DateRangePickerInput`** (core), whose trigger + popover + preset rail already match the design record. No parallel calendar was built.
+- **The deuda-viva trend (`FR-06-21`)** reconstructs the balance at each month-end: an order contributes once placed, and only payments settled by that month-end reduce it. Cancelled and FX-unreconciled orders are excluded, and the series carries the partial flag.

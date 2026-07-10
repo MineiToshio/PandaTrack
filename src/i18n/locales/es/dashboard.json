@@ -33,6 +33,106 @@
       "body": "Cuando registres pedidos con pagos pendientes, verás aquí lo que te toca tener listo cada mes: totales, atrasos y próximos vencimientos."
     }
   },
+  "trends": {
+    "eyebrow": "Gráficos",
+    "title": "Tendencias",
+    "scopeNote": "El rango de la derecha aplica solo a estos gráficos.",
+    "clearRange": "Limpiar rango",
+    "customLabel": "Rango personalizado",
+    "emptyTitle": "Aún no hay datos suficientes.",
+    "partialNote": "Solo cuenta pedidos con tipo de cambio reconciliado, así que la serie es parcial.",
+    "presets": {
+      "3m": "Últimos 3 meses",
+      "6m": "Últimos 6 meses",
+      "12m": "Últimos 12 meses",
+      "ytd": "Año en curso",
+      "all": "Todo"
+    },
+    "spend": {
+      "title": "Gasto por mes",
+      "subtitle": "Lo desembolsado cada mes, por fecha de pago.",
+      "currentMonthLabel": "Desembolsado este mes",
+      "seriesName": "Gasto",
+      "chartAria": "Gasto por mes, {count} meses"
+    },
+    "debt": {
+      "title": "Deuda viva",
+      "subtitle": "Tu saldo pendiente al cierre de cada mes.",
+      "seriesName": "Deuda viva",
+      "chartAria": "Deuda viva al cierre de cada mes, {count} meses"
+    },
+    "activity": {
+      "title": "Pedidos hechos vs llegados",
+      "subtitle": "Ritmo de compra frente a llegadas.",
+      "placedName": "Hechos",
+      "arrivedName": "Llegados",
+      "chartAria": "Pedidos hechos vs llegados, {count} meses"
+    }
+  },
+  "activity": {
+    "eyebrow": "Movimiento de pedidos",
+    "title": "Movimiento de pedidos",
+    "tablistLabel": "Vista de pedidos",
+    "tabs": {
+      "recent": "Últimos",
+      "upcoming": "Próximas llegadas",
+      "overdue": "Atrasados"
+    },
+    "fxPending": "FX pendiente",
+    "arrivesOn": "llega {date}",
+    "overdueDays": "atrasado {days} d",
+    "rowLabel": "{store}, pedido {code}",
+    "seeAllOrders": "Ver todos los pedidos",
+    "goToDeliveries": "Ir a entregas",
+    "reviewOverdue": "Revisar atrasados",
+    "emptyRecent": "Todavía no hay pedidos recientes.",
+    "emptyUpcoming": "No hay llegadas en los próximos 30 días.",
+    "emptyOverdue": "No tienes pedidos atrasados.",
+    "empty": {
+      "title": "Todavía no registraste pedidos",
+      "body": "Registra tu primer pedido y aquí verás los últimos movimientos, las próximas llegadas y los atrasos.",
+      "cta": "Crear tu primer pedido"
+    }
+  },
+  "kpi": {
+    "orders": "Pedidos",
+    "products": "Productos",
+    "committed": "Comprometido",
+    "stores": "Tiendas",
+    "committedPartial": "{count, plural, one {Excluye # pedido con tipo de cambio pendiente} other {Excluye # pedidos con tipo de cambio pendiente}}."
+  },
+  "collection": {
+    "eyebrow": "Tu colección",
+    "title": "El panorama completo",
+    "seeStores": "Ver tiendas",
+    "statusLabel": "Por estado del pedido",
+    "statusAria": "Pedidos por estado: {summary}",
+    "spendLabel": "Gasto por categoría · dinero",
+    "spendAria": "Gasto por categoría: {summary}",
+    "spendEmpty": "Todavía no hay gasto por categoría.",
+    "donutTotalLabel": "Total",
+    "countLabel": "Productos por categoría · conteo",
+    "topStoresLabel": "Tiendas top",
+    "otherCategory": "Otros",
+    "uncategorized": "Sin categoría",
+    "storeRowLabel": "{store}, {amount} en {count, plural, one {# pedido} other {# pedidos}}",
+    "empty": {
+      "title": "Tu colección aparecerá aquí",
+      "body": "A medida que registres pedidos, verás el reparto por estado, categoría y tienda.",
+      "cta": "Explorar tiendas"
+    }
+  },
+  "punctuality": {
+    "eyebrow": "Puntualidad",
+    "title": "Llegadas dentro de plazo",
+    "centerLabel": "En plazo",
+    "onTime": "En plazo",
+    "late": "Fuera de plazo",
+    "aria": "Puntualidad de llegadas: {onTime}% en plazo, {late}% fuera de plazo",
+    "methodNote": "Medimos la llegada por la fecha en que la tienda despachó la entrega, que es la única fecha registrada. Un pedido que llegó a tiempo pero se despachó tarde cuenta como fuera de plazo.",
+    "unknownNote": "{count, plural, one {# llegada sin fecha de despacho queda fuera del cálculo} other {# llegadas sin fecha de despacho quedan fuera del cálculo}}.",
+    "empty": "Aún no hay entregas para medir la puntualidad."
+  },
   "budget": {
     "eyebrow": "Presupuesto",
     "title": "Este ciclo",

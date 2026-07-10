@@ -9,6 +9,17 @@ export type DateRange = {
 /** Trend-chart window driving the range-controlled series (FR-06-12). */
 export type DashboardRange = DateRange;
 
+/** Presets offered by the shared trend-chart range control (FR-06-12). */
+export const DASHBOARD_RANGE_PRESETS = ["3m", "6m", "12m", "ytd", "all"] as const;
+
+export type DashboardRangePreset = (typeof DASHBOARD_RANGE_PRESETS)[number];
+
+/**
+ * What the collector picked in the range control. Resolved into a concrete `DashboardRange`
+ * server-side, because presets depend on the user's timezone and `all` depends on their data.
+ */
+export type DashboardRangeSelection = { preset: DashboardRangePreset } | { preset: "custom"; from: Date; to: Date };
+
 /** Calendar month identifier. `month` is 1-12 (not the zero-based `Date` convention). */
 export type MonthKey = {
   year: number;
@@ -37,12 +48,14 @@ export type DashboardOrderInput = {
   needsExchangeRateUpdate: boolean;
   totalCost: number;
   status: OrderStatus;
-  store: { id: string; name: string };
+  store: { id: string; name: string; slug: string };
   items: Array<{
     quantity: number;
     productTypeKey: string | null;
     unitPrice: number | null;
     deliveryState: OrderItemDeliveryState;
+    /** Dispatch dates of the item's non-cancelled deliveries. Dated evidence that it left the store. */
+    deliveryDates: Date[];
   }>;
   payments: Array<{ amount: number; paymentDate: Date }>;
 };
@@ -124,6 +137,17 @@ export type SpendBlock = {
   monthlySeriesIsPartial: boolean;
 };
 
+/** Outstanding balance as it stood at the close of a month. */
+export type MonthlyOutstanding = MonthKey & {
+  totalMinor: number;
+};
+
+/** "Deuda viva (tendencia)": outstanding balance at each month-end across the range (FR-06-21). */
+export type OutstandingTrendBlock = {
+  series: MonthlyOutstanding[];
+  isPartial: boolean;
+};
+
 /** Order summary used by the activity lists (recent / upcoming / overdue). */
 export type OrderSummary = {
   orderId: string;
@@ -136,6 +160,8 @@ export type OrderSummary = {
   currencyCode: string;
   totalCostMinor: number;
   outstandingMinor: number;
+  /** True when the order is excluded from base-currency totals, so its amount reads in its own currency. */
+  isFxPending: boolean;
 };
 
 /** Orders placed vs arrived, per month (FR-06-09). */
@@ -144,10 +170,15 @@ export type MonthlyPlacedVsArrived = MonthKey & {
   arrivedCount: number;
 };
 
-/** Arrival punctuality split among arrived orders with a known window (FR-06-17). */
+/**
+ * Arrival punctuality among arrived orders (FR-06-17). Only orders that carry both an expected
+ * window and dated arrival evidence can be judged; the rest are counted as `unknownCount` rather
+ * than being guessed into one of the two buckets.
+ */
 export type ArrivalPunctuality = {
   onTimeCount: number;
   lateCount: number;
+  unknownCount: number;
 };
 
 export type ActivityBlock = {
@@ -178,6 +209,7 @@ export type TypeCount = {
 export type TopStore = {
   storeId: string;
   storeName: string;
+  storeSlug: string;
   committedMinor: number;
   orderCount: number;
 };
@@ -185,6 +217,8 @@ export type TopStore = {
 export type CollectionBlock = {
   totalOrders: number;
   totalProducts: number;
+  /** Distinct stores the collector has bought from, across non-cancelled orders. */
+  totalStores: number;
   statusDistribution: StatusCount[];
   spendByType: TypeSpend[];
   spendByTypeIsPartial: boolean;
@@ -216,6 +250,7 @@ export type DashboardData = {
   cashObligations: CashObligationsBlock;
   budget: BudgetBlock;
   spend: SpendBlock;
+  outstandingTrend: OutstandingTrendBlock;
   activity: ActivityBlock;
   collection: CollectionBlock;
   paidVsOutstanding: PaidVsOutstandingBlock;

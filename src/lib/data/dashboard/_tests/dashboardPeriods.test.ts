@@ -7,6 +7,7 @@ import {
   getMonthKeyAhead,
   getTodayStart,
   isWithinRange,
+  resolveDashboardRange,
   resolveTimeZone,
   toMonthKey,
 } from "../dashboardPeriods";
@@ -101,6 +102,65 @@ describe("getDefaultDashboardRange", () => {
     const range = getDefaultDashboardRange(now, "UTC");
     expect(iso(range.start)).toBe("2026-02-01T00:00:00.000Z");
     expect(iso(range.end)).toBe("2026-08-01T00:00:00.000Z");
+  });
+});
+
+describe("resolveDashboardRange", () => {
+  const now = new Date("2026-07-15T12:00:00Z");
+
+  it("anchors the trailing presets on the current month", () => {
+    const threeMonths = resolveDashboardRange({ preset: "3m" }, now, "UTC", null);
+    expect(iso(threeMonths.start)).toBe("2026-05-01T00:00:00.000Z");
+    expect(iso(threeMonths.end)).toBe("2026-08-01T00:00:00.000Z");
+
+    const twelveMonths = resolveDashboardRange({ preset: "12m" }, now, "UTC", null);
+    expect(iso(twelveMonths.start)).toBe("2025-08-01T00:00:00.000Z");
+    expect(iso(twelveMonths.end)).toBe("2026-08-01T00:00:00.000Z");
+  });
+
+  it("defaults to the last six months", () => {
+    const range = resolveDashboardRange({ preset: "6m" }, now, "UTC", null);
+    expect(iso(range.start)).toBe("2026-02-01T00:00:00.000Z");
+    expect(iso(range.end)).toBe("2026-08-01T00:00:00.000Z");
+  });
+
+  it("starts year-to-date on January 1st", () => {
+    const range = resolveDashboardRange({ preset: "ytd" }, now, "UTC", null);
+    expect(iso(range.start)).toBe("2026-01-01T00:00:00.000Z");
+    expect(iso(range.end)).toBe("2026-08-01T00:00:00.000Z");
+  });
+
+  it("starts `all` at the month of the earliest activity", () => {
+    const range = resolveDashboardRange({ preset: "all" }, now, "UTC", new Date("2024-03-17T00:00:00Z"));
+    expect(iso(range.start)).toBe("2024-03-01T00:00:00.000Z");
+    expect(iso(range.end)).toBe("2026-08-01T00:00:00.000Z");
+  });
+
+  it("falls back to the default window when `all` has no activity to anchor on", () => {
+    const range = resolveDashboardRange({ preset: "all" }, now, "UTC", null);
+    expect(iso(range.start)).toBe("2026-02-01T00:00:00.000Z");
+  });
+
+  it("snaps a custom range outward to whole months", () => {
+    const range = resolveDashboardRange(
+      { preset: "custom", from: new Date("2026-03-17T00:00:00Z"), to: new Date("2026-05-02T00:00:00Z") },
+      now,
+      "UTC",
+      null,
+    );
+    expect(iso(range.start)).toBe("2026-03-01T00:00:00.000Z");
+    expect(iso(range.end)).toBe("2026-06-01T00:00:00.000Z");
+  });
+
+  it("tolerates a custom range whose endpoints are reversed", () => {
+    const range = resolveDashboardRange(
+      { preset: "custom", from: new Date("2026-05-02T00:00:00Z"), to: new Date("2026-03-17T00:00:00Z") },
+      now,
+      "UTC",
+      null,
+    );
+    expect(iso(range.start)).toBe("2026-03-01T00:00:00.000Z");
+    expect(iso(range.end)).toBe("2026-06-01T00:00:00.000Z");
   });
 });
 
