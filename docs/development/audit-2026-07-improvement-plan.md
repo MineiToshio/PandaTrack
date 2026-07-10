@@ -320,29 +320,29 @@ Execution completed the same day on branch `staging`, commits `9140d56..264c6f1`
 
 ### Finding → status
 
-| Findings | Status | Landed in |
-| --- | --- | --- |
-| SEC-A-1 better-auth account-takeover advisory, SEC-A-2 Next.js middleware-bypass CVEs, DX-5 transitive audit fixes | Implemented — 0 critical/high remain in `npm audit --omit=dev` | `00b6e4b` |
-| SEC-A-3 Sentry `sendDefaultPii`, SEC-A-5 proxy private prefixes | Implemented | `1b40070` |
-| SEC-B-1/SEC-A-4 unauthenticated duplicate-candidates action + unbounded scan, SEC-B-2 array bounds, SEC-B-3 Zod on lifecycle IDs, SEC-B-4 locale redirect, SEC-B-5/MONEY-5 strict decimal parsing | Implemented | `a2f735a` |
-| SEC-B-6 `productTypeKey` bound | Implemented (length bound; catalog membership was already DB-enforced at write time) | `603957c`, `d6fda5c` |
-| DATA-1 atomic base-currency change, MONEY-1 canonical FX schema, MONEY-3 payment race (Serializable + retry), MONEY-6 payment-summary clamps, SEC-A-6 Prisma out of the action | Implemented | `c9f6e56` |
-| DATA-2 payment-filter pagination, DATA-4 delivery status N+1, DATA-5/6/11 compound indexes (additive migration, applied) | Implemented | `66e8803` |
-| MONEY-2 delivery FX-pending flag (migration + same-transaction flagging + surfaces + FRD-08/FDD/WO docs) | Implemented | `0722556` |
-| PERF-1/2 per-request query dedupe, PERF-3 unused font family removed, PERF-5 Avatar → `next/image` | Implemented | `c904d4f` |
-| UI-1 `dark:` → theme tokens, UI-2 `--shadow-3` → `--shadow-elevation-3`, BP-3 skeleton i18n, UI-5/6 landing analytics events | Implemented | `41ae98e` |
-| DOC-1 README, DOC-2 glossary, BP-4 next-intl rule realigned, DX-3 `.env.example`, ARCH-6 ADR 0015 + structure docs, ARCH-5 non-optimistic justifications | Implemented | `4a54f8f` |
-| BP-1 planning refs (59 files), BP-2 Spanish JSDoc, BP-5 `toIso` dedupe, BP-7 `any` typed, BP-9/DX-7 lint debt (31 → 4 justified warnings) | Implemented | `264c6f1` |
-| DX-2 test gap on money paths | Partially implemented — new unit suites for payment race/overpay, FX schema, base-currency atomicity, FX-rate application, pagination, delivery flag; lifecycle/settings actions still untested | `c9f6e56`, `66e8803`, `0722556` |
+| Findings                                                                                                                                                                                          | Status                                                                                                                                                                                          | Landed in                       |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| SEC-A-1 better-auth account-takeover advisory, SEC-A-2 Next.js middleware-bypass CVEs, DX-5 transitive audit fixes                                                                                | Implemented — 0 critical/high remain in `npm audit --omit=dev`                                                                                                                                  | `00b6e4b`                       |
+| SEC-A-3 Sentry `sendDefaultPii`, SEC-A-5 proxy private prefixes                                                                                                                                   | Implemented                                                                                                                                                                                     | `1b40070`                       |
+| SEC-B-1/SEC-A-4 unauthenticated duplicate-candidates action + unbounded scan, SEC-B-2 array bounds, SEC-B-3 Zod on lifecycle IDs, SEC-B-4 locale redirect, SEC-B-5/MONEY-5 strict decimal parsing | Implemented                                                                                                                                                                                     | `a2f735a`                       |
+| SEC-B-6 `productTypeKey` bound                                                                                                                                                                    | Implemented (length bound; catalog membership was already DB-enforced at write time)                                                                                                            | `603957c`, `d6fda5c`            |
+| DATA-1 atomic base-currency change, MONEY-1 canonical FX schema, MONEY-3 payment race (Serializable + retry), MONEY-6 payment-summary clamps, SEC-A-6 Prisma out of the action                    | Implemented                                                                                                                                                                                     | `c9f6e56`                       |
+| DATA-2 payment-filter pagination, DATA-4 delivery status N+1, DATA-5/6/11 compound indexes (additive migration, applied)                                                                          | Implemented                                                                                                                                                                                     | `66e8803`                       |
+| MONEY-2 delivery FX-pending flag (migration + same-transaction flagging + surfaces + FRD-08/FDD/WO docs)                                                                                          | Implemented                                                                                                                                                                                     | `0722556`                       |
+| PERF-1/2 per-request query dedupe, PERF-3 unused font family removed, PERF-5 Avatar → `next/image`                                                                                                | Implemented                                                                                                                                                                                     | `c904d4f`                       |
+| UI-1 `dark:` → theme tokens, UI-2 `--shadow-3` → `--shadow-elevation-3`, BP-3 skeleton i18n, UI-5/6 landing analytics events                                                                      | Implemented                                                                                                                                                                                     | `41ae98e`                       |
+| DOC-1 README, DOC-2 glossary, BP-4 next-intl rule realigned, DX-3 `.env.example`, ARCH-6 ADR 0015 + structure docs, ARCH-5 non-optimistic justifications                                          | Implemented                                                                                                                                                                                     | `4a54f8f`                       |
+| BP-1 planning refs (59 files), BP-2 Spanish JSDoc, BP-5 `toIso` dedupe, BP-7 `any` typed, BP-9/DX-7 lint debt (31 → 4 justified warnings)                                                         | Implemented                                                                                                                                                                                     | `264c6f1`                       |
+| DX-2 test gap on money paths                                                                                                                                                                      | Partially implemented — new unit suites for payment race/overpay, FX schema, base-currency atomicity, FX-rate application, pagination, delivery flag; lifecycle/settings actions still untested | `c9f6e56`, `66e8803`, `0722556` |
 
 ### Review-driven fixes (found by the adversarial phase, not the audit)
 
-| Fix | Landed in |
-| --- | --- |
+| Fix                                                                                                                                                                                                | Landed in            |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
 | FX schema precision: 2-decimal/0.01-floor made weak-currency pairs (CLP/KRW/JPY) and 6-decimal provider rates unreconcilable — now 6 decimals, floor 0.000001, shared by orders **and** deliveries | `d6fda5c`, `b913662` |
-| `savePreferencesAction` side door could change base currency without flagging orders — now routes through the atomic orchestrator | `d6fda5c` |
-| Duplicate-store detection: accent-sensitive SQL pre-filter silently skipped stores like "Pokémon" for "pokemon" — replaced with a bounded scan normalized on both sides | `d6fda5c` |
-| Archive-guard test raced with transient agent worktrees; ESLint scanned them | `ea472dc`, `d6fda5c` |
+| `savePreferencesAction` side door could change base currency without flagging orders — now routes through the atomic orchestrator                                                                  | `d6fda5c`            |
+| Duplicate-store detection: accent-sensitive SQL pre-filter silently skipped stores like "Pokémon" for "pokemon" — replaced with a bounded scan normalized on both sides                            | `d6fda5c`            |
+| Archive-guard test raced with transient agent worktrees; ESLint scanned them                                                                                                                       | `ea472dc`, `d6fda5c` |
 
 ### Final validation (verified exit codes, merged tree)
 
@@ -358,3 +358,28 @@ Execution completed the same day on branch `staging`, commits `9140d56..264c6f1`
 - **ModalDialog dark accent-glow**: the theme fix replaced a bespoke dark shadow with `--shadow-elevation-3`; needs a design sign-off.
 - **Local e2e environment**: authenticated Playwright specs require port 3000 (Better Auth trusted origin), which another project's dev server frequently occupies; freeing the port re-enables the full suite.
 - **DX-1 build-script `migrate resolve`**: still in place; requires checking the production DB migration state before removal.
+
+## Round 2 (2026-07-10) — owner decisions
+
+### Context
+
+The owner reviewed the outcome report above and resolved the deferred items. Nothing is deployed to production yet — the staging DB is the only environment — which unblocks DX-1.
+
+### Round 2 batches
+
+| Batch | Wave             | Model                | Scope                                                                                                                                                                                                                                                                                                                  |
+| ----- | ---------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1    | A                | sonnet               | Remove the build-script `migrate resolve \|\| true` workaround (DX-1) — unblocked by no-production confirmation.                                                                                                                                                                                                       |
+| R2    | A                | opus + 2-lens review | Zero-decimal currency support (MONEY-4) — Chile is an MVP target; storage stays uniform ×100 minor units (no data migration), input/validation/formatting become currency-exponent aware.                                                                                                                              |
+| R3    | A                | sonnet               | Restore `ModalDialog` bespoke dark shadow theme-aware; 320px fixed-width checks; authenticated visual smoke of the main app surfaces in both themes, fixing small breakages.                                                                                                                                           |
+| R5    | A                | opus                 | Merge `StarRating`/`RatingStars` (ARCH-4), replace the ad-hoc `OrderItemsGrid` popover with an existing primitive (ARCH-7), sweep for other duplicated components, and add a component-inventory guard test + reuse-first workflow reinforcement (owner mandate: prevent component/function duplication structurally). |
+| R8    | A                | sonnet               | Unit tests for lifecycle/settings Server Actions (DX-2 remainder) + vitest coverage baseline, no gates (DX-8) — owner wants meaningful coverage, not 100%.                                                                                                                                                             |
+| R4    | B                | opus                 | Migrate `src/queries/*` to the canonical `src/lib/data/<domain>/` layer per ADR 0015 (owner approved the full unification).                                                                                                                                                                                            |
+| R6    | B                | opus                 | Data-layer debt — DATA-3 (remove the take-1000 in-memory cap via persisted paid-amount enabling SQL sort/filter), DATA-8 (`@@unique` order-item position with safe reorder strategy), DATA-10 (explicit `Decimal` precision) — all unblocked by no-production.                                                         |
+| R9    | B                | sonnet               | CI — add production build to the validate workflow and a critical-flow e2e job (auth + orders) with documented repo secrets; owner accepted CI cost for important flows only.                                                                                                                                          |
+| R10   | B                | sonnet               | Local authenticated e2e via port 7100 using `BETTER_AUTH_EXTRA_ORIGINS` (gitignored env, credentials never committed) + fix the two known-failing specs (app-layout, stores heading locale).                                                                                                                           |
+| R7    | pending owner OK | —                    | Persisted normalized store-name column for duplicate detection — explained to the owner, awaiting confirmation.                                                                                                                                                                                                        |
+
+### Phase 3 (deferred by owner)
+
+Major dependency upgrades (DX-6) as a dedicated later iteration, after round 2 stabilizes.
