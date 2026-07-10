@@ -142,10 +142,20 @@ In light mode the base status color does not reach 4.5:1 on a 14% chip, so each 
 | Token / state  | Recipe                                                                                                                                                                                       |
 | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--focus-ring` | Accent-derived ring (`oklch(46% 0.20 290 / 0.55)` light, `oklch(74% 0.19 290 / 0.65)` dark). Outline of any `:focus-visible`. Never a fill, never on `:hover`.                               |
-| `hover`        | `color-mix(in oklch, var(--text-primary) 6%, transparent)` (light) / `8%` (dark), applied as an overlay above the control surface.                                                           |
-| `pressed`      | `color-mix(in oklch, var(--text-primary) 12%, transparent)` (light) / `14%` (dark), replacing the hover layer during `:active`.                                                              |
+| `hover`        | `color-mix(in oklab, var(--text-primary) 6%, transparent)` (light) / `8%` (dark), applied as an overlay above the control surface.                                                           |
+| `pressed`      | `color-mix(in oklab, var(--text-primary) 12%, transparent)` (light) / `14%` (dark), replacing the hover layer during `:active`.                                                              |
 | `selected`     | bg `color-mix(in oklch, var(--accent) 14%, var(--surface))`, border `color-mix(in oklch, var(--accent) 28%, var(--surface))`. Active filter chip, active sidebar item, selected list option. |
 | `disabled`     | text → `var(--text-muted)`, border → `var(--border)`. **Never `opacity`.** Low contrast is achieved with semantic tokens, not a global `opacity:.5`.                                         |
+
+> **Color-space policy for this table.** `hover` and `pressed` mix the **neutral** `--text-primary`,
+> so they use `in oklab` — same rule as any other neutral mix (an `oklch` mix on a low-chroma
+> neutral drifts the hue toward pink; see the guard note under [tokens-css.md](tokens-css.md#L32)).
+> `selected` mixes the **brand** `--accent` and stays in `oklch`. This applies regardless of
+> whether the mix is opaque or translucent (mixed toward `transparent`, as `hover`/`pressed` are):
+> the automated regression guard (`src/test/design-token-guard.test.ts`) only flags **opaque**
+> neutral `oklch` mixes, because that is the narrower, zero-false-positive check it can run
+> mechanically — not because translucent neutral mixes are exempt from the rule. The literal
+> recipes live in [tokens-css.md § 6](tokens-css.md#6-state-layers-reusable-color-mix-recipes).
 
 ### Categorical palette
 

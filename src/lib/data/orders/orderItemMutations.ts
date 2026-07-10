@@ -212,13 +212,14 @@ export async function deleteOrderItem(itemId: string, orderId: string, userId: s
 /**
  * Reorders items within an order atomically.
  * Accepts the full ordered list of item IDs; normalizes positions to consecutive integers starting at 1.
- * Verifies all items belong to the given order and user before updating.
+ * Verifies all items belong to the given order and user, and that the list covers every item in the
+ * order exactly once, before updating.
  */
 export async function reorderOrderItems(
   orderId: string,
   userId: string,
   orderedItemIds: string[],
-): Promise<{ ok: true } | { ok: false; error: "ITEM_NOT_FOUND" }> {
+): Promise<{ ok: true } | { ok: false; error: "ITEM_NOT_FOUND" | "INVALID_ITEM_SET" }> {
   return prisma.$transaction(async (tx) => {
     const existingItems = await tx.orderItem.findMany({
       where: { orderId, userId },
@@ -230,6 +231,18 @@ export async function reorderOrderItems(
 
     if (!allValid) {
       return { ok: false, error: "ITEM_NOT_FOUND" };
+    }
+
+    // Guard against a partial (or duplicated) id list: every existing item for the order must appear
+    // exactly once in `orderedItemIds`. Without this check, a shorter list would leave the omitted
+    // items at their stale positions, and Phase 2 below would then collide with them when writing the
+    // final 1..N range — surfacing as an unmapped @@unique([orderId, position]) violation (P2002)
+    // instead of a clear, typed error.
+    const orderedIdSet = new Set(orderedItemIds);
+    const coversAllItems = orderedIdSet.size === existingIdSet.size && orderedItemIds.length === orderedIdSet.size;
+
+    if (!coversAllItems) {
+      return { ok: false, error: "INVALID_ITEM_SET" };
     }
 
     // Phase 1: vacate the final 1..N range so the per-row writes below can't transiently violate

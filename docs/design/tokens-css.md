@@ -32,7 +32,13 @@ owner: Sergio Minei
 > - **Neutral-color mixes use `oklab`, not `oklch`.** Mixing a low-chroma neutral (e.g.
 >   `--text-primary`) in `oklch` drifts the hue toward pink. This is a documented guard in the
 >   repo: any `color-mix` whose first color is a neutral token must use `in oklab`. Brand-color
->   mixes (accent, status) stay in `oklch`.
+>   mixes (accent, status) stay in `oklch`. This rule applies to **both opaque and translucent**
+>   neutral mixes (e.g. the `hover`/`pressed` state layers in § 6, which mix toward `transparent`)
+>   — see [visual-foundations.md § Focus and state layers](visual-foundations.md#focus-and-state-layers)
+>   for the equivalent policy note. The automated guard
+>   (`src/test/design-token-guard.test.ts`, rule L074) only flags **opaque** neutral `oklch` mixes;
+>   that is a scoping limit of the mechanical check, not a signal that translucent neutral mixes
+>   may use `oklch`.
 
 ---
 

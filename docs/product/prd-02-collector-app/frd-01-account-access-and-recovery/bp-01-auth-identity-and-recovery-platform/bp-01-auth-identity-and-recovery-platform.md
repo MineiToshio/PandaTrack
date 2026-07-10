@@ -29,7 +29,7 @@ Describe the system that authenticates users, protects private routes, enforces 
 - auth routes in `src/app/[locale]/(auth)/*` (including `verify-email/confirm` and `verify-email-required`) with shared `_components` and `_utils/authEntryContext`
 - in-shell verification chrome `src/components/modules/auth/VerifyEmailBanner.tsx` + `VerificationResend.tsx`; resend action `(app)/_actions/resendVerificationEmail.ts`
 - private route enforcement in `src/app/[locale]/(app)/layout.tsx`
-- Kit sync in `src/lib/integrations/kit.ts`; grace-anchor queries in `src/queries/user.ts`; verification markers in `src/queries/verification.ts`
+- Kit sync in `src/lib/integrations/kit.ts`; grace-anchor queries in `src/lib/data/auth/userQueries.ts` / `userMutations.ts`; verification markers in `src/lib/data/auth/verificationQueries.ts` / `verificationMutations.ts`
 
 ## Architecture Decisions
 

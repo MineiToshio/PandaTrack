@@ -359,7 +359,7 @@ Three viewer-scoped governance records each enforce a one-open-per-store-per-use
 - Contact channels and addresses use a staged-add pattern in the create/edit forms: the user opens a sub-form, confirms, and the entry is appended — no empty rows are inserted automatically.
 - The listing **sort selector is currently a visual no-op**: `StoreListingFilters` writes a `sortBy` value (`topRated` / `alphabetical` / `newest`) into the URL, but `parseListingSearchParams` never reads it and `getPublicStoresListingPage` always orders by a hardcoded `[averageRating desc, reviewCount desc, name asc]`. The control changes the URL without changing result order.
 - Person-store field exclusion (logo, contact channels, addresses) is enforced at the **application layer**, not the query: `getStoreBySlug` selects those columns for every store, but only attaches them to the returned payload when `storeType === "BUSINESS"`.
-- Order creation uses a separate, narrower query, `getOrderableStores` (`src/lib/data/stores/storeQueries.ts`, filtered to `visibility: "PUBLIC"`, `status: { in: ["PENDING", "APPROVED"] }`, and `isActive: true`, ordered by name), to populate the store picker — distinct from the public discovery listing queries in `src/queries/store.ts`.
+- Order creation uses a separate, narrower query, `getOrderableStores` (`src/lib/data/stores/storeQueries.ts`, filtered to `visibility: "PUBLIC"`, `status: { in: ["PENDING", "APPROVED"] }`, and `isActive: true`, ordered by name), to populate the store picker — distinct from the public discovery listing queries, also in `src/lib/data/stores/storeQueries.ts`.
 
 ## Screens and Data Contract
 
@@ -449,12 +449,12 @@ Mutation events carry context counts and identifiers (e.g. `store_slug`, `flow`,
 
 ## Source Signals Used For Reverse Engineering
 
-- `src/queries/store.ts`
-- `src/queries/storeGovernance.ts`
 - `src/lib/data/stores/storeQueries.ts`
+- `src/lib/data/stores/storeGovernanceQueries.ts`
+- `src/lib/data/stores/storeGovernanceMutations.ts`
 - `src/app/[locale]/(app)/stores/**/*`
 - `src/lib/store/*`
-- `src/queries/_tests/store.integration.test.ts`
+- `src/lib/data/stores/_tests/store.integration.test.ts`
 - `e2e/stores.spec.ts`
 - `e2e/store-listing.spec.ts`
 - GitHub issues `#68`, `#74`, `#75`, `#76`

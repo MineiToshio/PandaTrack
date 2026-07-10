@@ -67,6 +67,30 @@ describe("reorderOrderItems", () => {
     expect(tx.orderItem.updateMany).not.toHaveBeenCalled();
     expect(tx.orderItem.update).not.toHaveBeenCalled();
   });
+
+  it("rejects and writes nothing when the list is a partial subset of the order's items", async () => {
+    const tx = makeReorderTx(["a", "b", "c"]);
+    prismaMock.$transaction.mockImplementation(async (cb: (client: unknown) => unknown) => cb(tx));
+
+    // Omits "c": every id is valid, but the list doesn't cover every item in the order, which would
+    // leave "c" at its stale position and collide with the freshly written 1..N range.
+    const result = await reorderOrderItems("order-1", "user-1", ["a", "b"]);
+
+    expect(result).toEqual({ ok: false, error: "INVALID_ITEM_SET" });
+    expect(tx.orderItem.updateMany).not.toHaveBeenCalled();
+    expect(tx.orderItem.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects and writes nothing when the list contains a duplicated id", async () => {
+    const tx = makeReorderTx(["a", "b", "c"]);
+    prismaMock.$transaction.mockImplementation(async (cb: (client: unknown) => unknown) => cb(tx));
+
+    const result = await reorderOrderItems("order-1", "user-1", ["a", "a", "b"]);
+
+    expect(result).toEqual({ ok: false, error: "INVALID_ITEM_SET" });
+    expect(tx.orderItem.updateMany).not.toHaveBeenCalled();
+    expect(tx.orderItem.update).not.toHaveBeenCalled();
+  });
 });
 
 describe("deriveItemizedTotal", () => {

@@ -75,7 +75,7 @@ Role:
 
 Primary source:
 
-- `src/queries/store.ts`
+- `src/lib/data/stores/storeQueries.ts`
 
 Current responsibilities:
 
@@ -168,7 +168,7 @@ Role:
 
 Primary sources:
 
-- `src/queries/_tests/store.integration.test.ts`
+- `src/lib/data/stores/_tests/store.integration.test.ts`
 - `src/lib/store/_tests/slug.test.ts`
 - `src/lib/store/_tests/duplicateMatch.test.ts`
 - `e2e/stores.spec.ts`
