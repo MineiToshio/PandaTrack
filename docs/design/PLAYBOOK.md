@@ -397,7 +397,7 @@ Spec completo: `docs/design/components.md`. Demo visual: `#s7-orders-list-filter
 ## 5. Workflow obligatorio antes de implementar UI
 
 1. **Leer este playbook completo** (sí, todo).
-2. **`ls src/components/core/` y `src/components/modules/`** — **inventario obligatorio antes de crear nada**. Cualquier patrón visual replicado en el módulo nuevo casi seguro existe ya en el módulo cerrado anterior (Stores → Orders → Deliveries). **Ver §5.1 — Regla de reuse obligatorio.**
+2. **Consultar el inventario de componentes en `docs/design/components.md` (y `ls src/components/core/` + `src/components/modules/`)** — **inventario obligatorio antes de crear nada**. `components.md` es el catálogo autoritativo: qué existe, cuándo usar cada uno y su ruta canónica. Cualquier patrón visual replicado en el módulo nuevo casi seguro existe ya en el módulo cerrado anterior (Stores → Orders → Deliveries). El catálogo se mantiene sincronizado con el árbol real por la guardia `src/test/component-inventory-guard.test.ts` (falla la suite si un componente de `core/`/`modules/` no está catalogado, o si el catálogo referencia uno inexistente) — por eso crear un componente obliga a pasar por el inventario. **Ver §5.1 — Regla de reuse obligatorio.**
 3. **Leer el prototipo del FRD afectado** en `docs/product/<prd>/<frd>/prototype/<slug>.html` (la verdad visual permanente de cada pantalla).
 4. **Leer la spec del componente** en `docs/design/components.md<Name>.md`.
 5. **Leer ADRs aplicables** en `docs/design/decisions/`.

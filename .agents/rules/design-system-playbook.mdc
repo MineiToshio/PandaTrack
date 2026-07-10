@@ -17,7 +17,7 @@ The playbook is the operational layer of the design system — the mandatory wor
 2. **Token conventions** — `--border` vs `--border-strong`, `--text-on-accent` light vs dark, status enum tokens, layout magic numbers.
 3. **Canonical patterns by scenario** — confirm modal destructive, autocomplete with tags, filter chips display, section card disabled-gated, field-as-attribute, toast neutral-undo.
 4. **Anti-patterns explicit** — no `<select>` HTML native, no Portal+div modals, no hardcoded `text-white`, no hardcoded literals, no inventing variants without ADR.
-5. **Mandatory workflow before implementing UI** — read playbook, demo HTML, component spec, ADRs, tokens.
+5. **Mandatory workflow before implementing UI** — read playbook, consult the component inventory in `docs/design/components.md` before creating any component (reuse before create; the `src/test/component-inventory-guard.test.ts` guardia keeps that catalog in lockstep with `src/components/`), then demo HTML, component spec, ADRs, tokens.
 6. **Self-audit checklist before closing** — TodoWrite, visual verification vs demo, comparative audit, validation, snippet-in-report.
 7. **Cross-cutting handling during a session** — flag instead of silent fix.
 8. **What to update when a module closes** — playbook, the relevant `docs/design/` topic doc, ADR.

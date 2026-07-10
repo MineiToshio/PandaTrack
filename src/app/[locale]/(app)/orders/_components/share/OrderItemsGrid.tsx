@@ -82,12 +82,21 @@ type ItemTypePickerProps = {
 /**
  * Compact, filterable single-select for the spreadsheet's "Tipo" column.
  *
- * Why not `<SearchableSelect>`: that primitive renders a 46px input trigger
- * which is too tall for an inline table cell (the demo HTML uses a 12px font,
- * ~26px tall button — borderless). The dropdown CONTENT here follows the
- * `<SearchableSelect>` mental model (search input + filtered listbox + keyboard
- * nav), so the user experience is consistent with the canonical picker even
- * though the trigger is compact.
+ * Why not the canonical `<SearchableSelect>` / `<Combobox>` primitive:
+ *  - Trigger height: those primitives render a ~46px input trigger, far too tall
+ *    for an inline table cell (this grid uses a 12px font, ~26px borderless cell).
+ *  - Overflow escape: the cell lives inside the table's `overflow-x-auto`, so the
+ *    options list must render through a `Portal` with fixed positioning to avoid
+ *    being clipped. `<SearchableSelect>` positions its listbox with `absolute`
+ *    inside a `relative` wrapper, which would be clipped here.
+ *  - Keyboard ownership: the trigger delegates key events to the grid's shared
+ *    Ctrl+Shift cell-navigation and @dnd-kit reorder handler; embedding a primitive
+ *    that owns its own key handling would break that integration.
+ *
+ * The ARIA contract still follows the canonical combobox/listbox pattern (as in
+ * `<SearchableSelect>`), NOT a dialog: the trigger owns `aria-haspopup="listbox"`,
+ * `aria-expanded`, and `aria-controls` pointing at the `role="listbox"` options
+ * list. The popover container is a presentational positioning wrapper only.
  *
  * Portal + fixed positioning so the listbox escapes the table's `overflow-x`.
  * Outer-document scroll repositions; inner listbox scroll is preserved.
@@ -167,6 +176,7 @@ function ItemTypePicker({
     return productTypeKeys.filter((k) => foldSearchText(tProductTypes(k)).includes(folded));
   }, [productTypeKeys, query, tProductTypes]);
 
+  const listboxId = `item-type-listbox-${rowId}`;
   const selectedLabel = value ? tProductTypes(value) : null;
   const iconNode = value
     ? createElement(getStoreProductTypeIcon(value), { size: 12, "aria-hidden": true, className: "shrink-0" })
@@ -180,6 +190,7 @@ function ItemTypePicker({
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-controls={open ? listboxId : undefined}
         aria-label={ariaLabelFor(selectedLabel ?? placeholder)}
         onClick={() => onOpenChange(!open)}
         onKeyDown={onKeyDown}
@@ -197,8 +208,6 @@ function ItemTypePicker({
         <Portal>
           <div
             ref={popoverRef}
-            role="dialog"
-            aria-label={tPicker("productTypeTitle")}
             style={{
               position: "fixed",
               top: coords.top,
@@ -235,7 +244,12 @@ function ItemTypePicker({
                 )}
               />
             </div>
-            <ul role="listbox" aria-label={tPicker("productTypeTitle")} className="flex-1 overflow-y-auto p-1">
+            <ul
+              id={listboxId}
+              role="listbox"
+              aria-label={tPicker("productTypeTitle")}
+              className="flex-1 overflow-y-auto p-1"
+            >
               {filteredKeys.length === 0 ? (
                 <li className="px-2 py-2 text-[12px] [color:var(--text-muted)]">{tPicker("productTypeEmpty")}</li>
               ) : (
