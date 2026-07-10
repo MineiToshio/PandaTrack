@@ -189,8 +189,16 @@ describe("exchangeRateSchema (shared canonical rate schema)", () => {
     expect(exchangeRateSchema.safeParse(1e12).success).toBe(false);
   });
 
-  it("rejects a sub-cent precision rate (0.000001)", () => {
-    expect(exchangeRateSchema.safeParse(0.000001).success).toBe(false);
+  it("accepts weak-currency rates quoted at up to 6 decimals", () => {
+    expect(exchangeRateSchema.safeParse(0.0065).success).toBe(true);
+    expect(exchangeRateSchema.safeParse(0.000731).success).toBe(true);
+    expect(exchangeRateSchema.safeParse(1.0847).success).toBe(true);
+    expect(exchangeRateSchema.safeParse(0.000001).success).toBe(true);
+  });
+
+  it("rejects precision beyond 6 decimals", () => {
+    expect(exchangeRateSchema.safeParse(0.1234567).success).toBe(false);
+    expect(exchangeRateSchema.safeParse(0.0000001).success).toBe(false);
   });
 
   it("rejects zero", () => {

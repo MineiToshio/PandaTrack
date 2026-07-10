@@ -1,13 +1,16 @@
 import { z } from "zod";
 import { isAllowedCollectorBaseCurrency } from "@/lib/catalog/collectorCountries";
-import { isStoreProductTypeKey } from "@/lib/catalog/storeProductTypes";
 
 const MIN_TOTAL_COST = 1;
 const MAX_TOTAL_COST = 999_999_999;
 const MIN_PAYMENT_AMOUNT = 1;
 const MAX_PAYMENT_AMOUNT = 999_999_999;
-const MIN_EXCHANGE_RATE = 0.01;
+// Weak-currency pairs in the supported catalog produce sub-cent rates (e.g. CLP→USD ≈ 0.001,
+// KRW→USD ≈ 0.0007), and the FX providers quote 6 decimals — a 2-decimal floor would make
+// those orders impossible to reconcile.
+const MIN_EXCHANGE_RATE = 0.000001;
 const MAX_EXCHANGE_RATE = 99_999.99;
+const EXCHANGE_RATE_MAX_DECIMALS = 6;
 export const MAX_CANCELLATION_REASON_LENGTH = 500;
 // Upper bound on line items per order write. Guards the DB and downstream loops against an
 // unbounded array from a tampered client payload; far above any realistic single-order size.
@@ -34,7 +37,11 @@ export const exchangeRateSchema = z
   .number()
   .min(MIN_EXCHANGE_RATE, { message: "EXCHANGE_RATE_TOO_LOW" })
   .max(MAX_EXCHANGE_RATE, { message: "EXCHANGE_RATE_TOO_HIGH" })
-  .multipleOf(0.01, { message: "EXCHANGE_RATE_INVALID_PRECISION" });
+  // String round-trip instead of multipleOf: float modulo on 1e-6 steps produces
+  // false negatives for values that are exactly representable at 6 decimals.
+  .refine((value) => Number(value.toFixed(EXCHANGE_RATE_MAX_DECIMALS)) === value, {
+    message: "EXCHANGE_RATE_INVALID_PRECISION",
+  });
 
 export const orderItemRowSchema = z.object({
   name: z.string().min(1, { message: "ITEM_NAME_REQUIRED" }).max(500, { message: "ITEM_NAME_TOO_LONG" }),
@@ -45,12 +52,9 @@ export const orderItemRowSchema = z.object({
     .min(0, { message: "UNIT_PRICE_TOO_LOW" })
     .nullable()
     .optional(),
-  productTypeKey: z
-    .string()
-    .max(64, { message: "PRODUCT_TYPE_KEY_TOO_LONG" })
-    .refine(isStoreProductTypeKey, { message: "PRODUCT_TYPE_KEY_UNKNOWN" })
-    .nullable()
-    .optional(),
+  // Catalog membership is enforced at write time against the DB
+  // (findInvalidProductTypeKey); this bound only rejects oversized payloads early.
+  productTypeKey: z.string().max(64, { message: "PRODUCT_TYPE_KEY_TOO_LONG" }).nullable().optional(),
   position: z.number().int().min(1, { message: "POSITION_TOO_LOW" }),
 });
 

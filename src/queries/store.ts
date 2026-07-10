@@ -19,34 +19,12 @@ const DEFAULT_PUBLIC_STORE_REVIEW_LIMIT = 10;
 
 /**
  * Hard cap on rows scanned for in-memory duplicate scoring. Bounds the query so a large
- * store table can never be loaded in full, while staying well above the handful of
- * candidates the scorer ultimately returns.
+ * store table can never be loaded in full. No SQL name pre-filter is applied: ILIKE is
+ * accent-sensitive, so filtering on diacritic-stripped terms would silently skip stores
+ * like "Pokémon" for the query "pokemon" — the scorer normalizes both sides in memory
+ * instead. Revisit with a persisted normalized-name column if the catalog outgrows this cap.
  */
-const MAX_DUPLICATE_SCAN = 200;
-const MIN_DUPLICATE_TERM_LENGTH = 2;
-
-/**
- * Builds a name pre-filter so only rows that share a query token (or the whole query)
- * are fetched, instead of loading every store and scoring it in memory. Returns `null`
- * when the query yields no usable term, so the caller can skip the DB hit entirely.
- */
-function buildDuplicateNameFilter(trimmedQuery: string): Prisma.StoreWhereInput | null {
-  const normalized = normalizeStoreName(trimmedQuery);
-  if (!normalized) return null;
-
-  const terms = new Set<string>();
-  for (const token of normalized.split(" ")) {
-    if (token.length >= MIN_DUPLICATE_TERM_LENGTH) terms.add(token);
-  }
-  if (normalized.length >= MIN_DUPLICATE_TERM_LENGTH) terms.add(normalized);
-  if (terms.size === 0) return null;
-
-  return {
-    OR: Array.from(terms).map((term) => ({
-      name: { contains: term, mode: "insensitive" as const },
-    })),
-  };
-}
+const MAX_DUPLICATE_SCAN = 500;
 
 export interface DuplicateCandidate {
   id: string;
@@ -80,12 +58,9 @@ export async function findDuplicateCandidates(
 ): Promise<DuplicateCandidate[]> {
   const trimmed = nameQuery.trim();
   if (!trimmed) return [];
-
-  const nameFilter = buildDuplicateNameFilter(trimmed);
-  if (!nameFilter) return [];
+  if (!normalizeStoreName(trimmed)) return [];
 
   const stores = await db.store.findMany({
-    where: nameFilter,
     select: { id: true, name: true, slug: true, countryCode: true, logoUrl: true },
     orderBy: { name: "asc" },
     take: MAX_DUPLICATE_SCAN,
@@ -118,12 +93,10 @@ export async function findDuplicateCandidatesInCountry(
 ): Promise<DuplicateCandidate[]> {
   const trimmed = nameQuery.trim();
   if (!trimmed || !countryCode) return [];
-
-  const nameFilter = buildDuplicateNameFilter(trimmed);
-  if (!nameFilter) return [];
+  if (!normalizeStoreName(trimmed)) return [];
 
   const stores = await db.store.findMany({
-    where: { countryCode, ...nameFilter },
+    where: { countryCode },
     select: { id: true, name: true, slug: true, countryCode: true, logoUrl: true },
     orderBy: { name: "asc" },
     take: MAX_DUPLICATE_SCAN,

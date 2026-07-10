@@ -34,13 +34,29 @@ export async function savePreferencesAction(payload: PreferencesPayload): Promis
   }
 
   try {
-    const result = await parseAndApplyCollectorPreferencesPatch(session.user.id, {
+    const patch = {
       preferredCountryCode: payload.preferredCountryCode,
       baseCurrencyCode: payload.baseCurrencyCode,
       budgetAmount: payload.budgetAmount,
       budgetResetDayOfMonth: payload.budgetResetDayOfMonth,
       preferredProductTypeKeys: payload.preferredProductTypeKeys,
-    });
+    };
+
+    // A base-currency change must always flag stale-rate orders in the same transaction,
+    // even when it arrives through this generic action instead of updateCurrencyAction —
+    // otherwise a crafted payload could switch currency and leave conversions silently stale.
+    const current = await getCollectorPreferencesSnapshot(session.user.id);
+    if (!current) {
+      return { ok: false, error: "unauthorized" };
+    }
+
+    const result =
+      payload.baseCurrencyCode && payload.baseCurrencyCode !== current.baseCurrencyCode
+        ? await applyBaseCurrencyChange(session.user.id, patch, {
+            previousBaseCurrencyCode: current.baseCurrencyCode,
+            nextBaseCurrencyCode: payload.baseCurrencyCode,
+          })
+        : await parseAndApplyCollectorPreferencesPatch(session.user.id, patch);
 
     if (!result.ok) {
       return { ok: false, error: "validation" };

@@ -13,6 +13,9 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     ".agents/**",
+    // Transient full-repo copies created by agent worktrees; linting them
+    // multiplies every warning by the number of active worktrees.
+    ".claude/worktrees/**",
   ]),
 ]);
 
