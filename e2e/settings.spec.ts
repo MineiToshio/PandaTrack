@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { shouldSkipAuthenticatedE2E, signInAndLandOnDashboard } from "./_helpers/auth";
+import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers/auth";
 
 test.describe("Settings", () => {
   test.describe.configure({ mode: "serial" });
 
   test("renders the three section tabs with the profile pane active", async ({ page }) => {
-    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
+    skipUnlessAuthenticatedEnv();
     await signInAndLandOnDashboard(page);
 
     await page.goto("/en/settings");
@@ -21,7 +21,7 @@ test.describe("Settings", () => {
   });
 
   test("switches panes between account and preferences", async ({ page }) => {
-    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
+    skipUnlessAuthenticatedEnv();
     await signInAndLandOnDashboard(page);
 
     await page.goto("/en/settings");
@@ -38,7 +38,7 @@ test.describe("Settings", () => {
   });
 
   test("currency change modal offers the two-path footer and saves without updating rates", async ({ page }) => {
-    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
+    skipUnlessAuthenticatedEnv();
     await signInAndLandOnDashboard(page);
 
     await page.goto("/en/settings");

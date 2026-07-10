@@ -107,6 +107,36 @@ Current representative coverage:
 - landing waitlist coverage for server-action contracts, client validation/submission behavior, and share interactions
 - Playwright coverage for critical landing CTA, auth entry, password recovery, and unauthenticated dashboard access flows
 
+## Running the authenticated E2E suite off port 3000
+
+Authenticated specs (`app-layout`, `dashboard`, `deliveries`, `orders`, `settings`, `stores`) sign in
+through Better Auth, which only accepts requests from an origin listed in `trustedOrigins` (see
+`src/lib/auth/auth.ts`). Locally, port `3000` is often occupied by an unrelated project's dev
+server, so Playwright needs to run on a different port that Better Auth is told to trust.
+
+Mechanism:
+
+- `playwright.config.ts` loads `.env` then `.env.local` (gitignored) directly, so both the
+  Playwright process and the spec files see the same env vars the Next.js dev server sees.
+- `PLAYWRIGHT_PORT` (gitignored, in `.env`) selects the port for `baseURL` and the spawned dev
+  server. It defaults to `7100` — PandaTrack's fixed project dev port (see `.claude/launch.json`,
+  `.claude/dev-server.sh`) — instead of `3000`.
+- `BETTER_AUTH_EXTRA_ORIGINS` (gitignored, in `.env.local`) must list `http://localhost:<port>` for
+  any non-3000 port used. `e2e/_helpers/auth.ts` exports `isAuthenticatedPortTrusted()`, which
+  every authenticated spec calls (via `skipUnlessAuthenticatedEnv()`) to skip itself instead of
+  failing when the configured port isn't 3000 and isn't in that allow-list.
+- `webServer.reuseExistingServer` (true outside CI) means if a dev server is already running on
+  the configured port — e.g. one started through `.claude/launch.json` for interactive preview —
+  Playwright reuses it instead of spawning a conflicting second instance on the same port.
+
+Credentials: `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` (gitignored, in `.env`) must be a real account's
+credentials; `signInAndLandOnDashboard()` drives the actual sign-in form. `.env.example` documents
+the variable names (`PLAYWRIGHT_PORT`, `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`,
+`BETTER_AUTH_EXTRA_ORIGINS`) with placeholders only — never commit real values.
+
+To run the full authenticated suite locally: ensure `.env`/`.env.local` have the vars above, then
+run `npm run test:e2e` as usual (`PLAYWRIGHT_PORT` already defaults to `7100` via `.env`).
+
 ## Test file organization
 
 PandaTrack keeps tests close to the code they protect, but not mixed indiscriminately with implementation files.
@@ -242,12 +272,12 @@ The `e2e-critical.yml` workflow needs the following repository secrets (Settings
 variables → Actions). This is the one part of R9 (CI: build + critical e2e) that requires manual
 setup — the workflows themselves need no other secrets:
 
-| Secret                  | Used for                                                                                                                                          |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Secret                   | Used for                                                                                                                                        |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `E2E_DATABASE_URL`       | Postgres connection string for a **dedicated E2E database** (never production). Migrations are applied automatically (`prisma migrate deploy`). |
-| `E2E_BETTER_AUTH_SECRET` | Better Auth session-signing secret for the E2E app instance. Any random string; only needs to be stable across runs.                              |
-| `E2E_USER_EMAIL`         | Email of a seeded test account in the E2E database, used to sign in (mirrors the local-only `E2E_USER_EMAIL` in `.env.example`).                  |
-| `E2E_USER_PASSWORD`      | Password for that same seeded test account.                                                                                                       |
+| `E2E_BETTER_AUTH_SECRET` | Better Auth session-signing secret for the E2E app instance. Any random string; only needs to be stable across runs.                            |
+| `E2E_USER_EMAIL`         | Email of a seeded test account in the E2E database, used to sign in (mirrors the local-only `E2E_USER_EMAIL` in `.env.example`).                |
+| `E2E_USER_PASSWORD`      | Password for that same seeded test account.                                                                                                     |
 
 **Manual data setup the owner still owns:** these secrets authenticate against the E2E database,
 but they do not create its data. Before the workflow can pass, the database behind

@@ -1,15 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
-import { shouldSkipAuthenticatedE2E, signInAndLandOnDashboard } from "./_helpers/auth";
+import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers/auth";
 
 const E2E_ITEM_NAME = `E2E Order Item ${Date.now()}`;
-
-function skipUnlessAuthenticatedEnv() {
-  test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
-  test.skip(
-    process.env.PLAYWRIGHT_PORT !== undefined && process.env.PLAYWRIGHT_PORT !== "3000",
-    "Authenticated E2E uses Better Auth's local trusted origin on localhost:3000",
-  );
-}
 
 /** Creates a minimal order through the create wizard (in the account's base currency) and
  *  returns its detail URL. Mirrors the helper in `deliveries.spec.ts`. */

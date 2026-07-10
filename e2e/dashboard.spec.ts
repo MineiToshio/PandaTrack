@@ -1,13 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { shouldSkipAuthenticatedE2E, signInAndLandOnDashboard } from "./_helpers/auth";
-
-function skipUnlessAuthenticatedEnv() {
-  test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
-  test.skip(
-    process.env.PLAYWRIGHT_PORT !== undefined && process.env.PLAYWRIGHT_PORT !== "3000",
-    "Authenticated E2E uses Better Auth's local trusted origin on localhost:3000",
-  );
-}
+import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers/auth";
 
 // The precise obligation math (overdue fold-in, no-date exclusion, FX-partial exclusion) is asserted
 // directly against the aggregation layer in `src/lib/data/dashboard/_tests/*`. This E2E proves the
@@ -22,8 +14,9 @@ test.describe("dashboard cash & obligations zone", () => {
   test("renders the cash and upcoming-payments zones for an authenticated collector", async ({ page }) => {
     await signInAndLandOnDashboard(page);
 
-    // Page-level greeting header.
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    // Page-level greeting header, scoped to main content: the app shell header also renders
+    // an `<h1>` with the page title ("Dashboard"), so an unscoped query would match both.
+    await expect(page.getByRole("main").getByRole("heading", { level: 1 })).toBeVisible();
 
     // Cash & obligations zone renders from the aggregation payload.
     const cashZone = page.locator('section[aria-labelledby="dashboard-cash-title"]:visible');

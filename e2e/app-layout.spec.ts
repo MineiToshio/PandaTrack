@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { shouldSkipAuthenticatedE2E, signInAndLandOnDashboard } from "./_helpers/auth";
+import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers/auth";
 
 const MOBILE_VIEWPORT = { width: 375, height: 667 };
 const MAIN_NAVIGATION_LABEL_REGEX = /main navigation|navegaci\u00f3n principal/i;
@@ -60,23 +60,25 @@ test.describe("App layout at mobile and tablet viewport", () => {
   });
 
   test("authenticated user at mobile viewport sees burger and drawer with primary nav", async ({ page }) => {
-    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
+    skipUnlessAuthenticatedEnv();
 
     await page.setViewportSize(MOBILE_VIEWPORT);
     await signInAndLandOnDashboard(page);
     await openMobileDrawer(page);
     const primaryNavigation = page.getByRole("navigation", { name: MAIN_NAVIGATION_LABEL_REGEX });
-    await expect(page.getByRole("link", { name: "Dashboard" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Stores" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Orders" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Shipments" })).toBeVisible();
+    // Scoped to the drawer nav: dashboard content behind it also has a "View stores" link,
+    // whose accessible name matches an unscoped, non-exact "Stores" query.
+    await expect(primaryNavigation.getByRole("link", { name: "Dashboard" })).toBeVisible();
+    await expect(primaryNavigation.getByRole("link", { name: "Stores", exact: true })).toBeVisible();
+    await expect(primaryNavigation.getByRole("link", { name: "Orders" })).toBeVisible();
+    await expect(primaryNavigation.getByRole("link", { name: "Deliveries" })).toBeVisible();
     await expect(primaryNavigation.getByRole("link", { name: "Settings" })).toHaveCount(0);
     await page.getByRole("button", { name: ACCOUNT_ACTIONS_LABEL_REGEX }).click();
     await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Privacy Policy" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Terms and Conditions" })).toBeVisible();
 
-    await page.getByRole("link", { name: "Stores" }).click();
+    await primaryNavigation.getByRole("link", { name: "Stores", exact: true }).click();
     await expect(page).toHaveURL(/\/en\/stores/);
     await expect(primaryNavigation).not.toBeVisible();
   });
@@ -88,7 +90,7 @@ test.describe("App layout desktop sidebar persistence", () => {
   const DESKTOP_VIEWPORT = { width: 1280, height: 720 };
 
   test("sidebar collapsed preference is restored after page reload", async ({ page }) => {
-    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
+    skipUnlessAuthenticatedEnv();
 
     await page.setViewportSize(DESKTOP_VIEWPORT);
     await signInAndLandOnDashboard(page);
@@ -101,14 +103,19 @@ test.describe("App layout desktop sidebar persistence", () => {
   });
 
   test("desktop sidebar exposes settings and legal links through the lower account menu", async ({ page }) => {
-    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
+    skipUnlessAuthenticatedEnv();
 
     await page.setViewportSize(DESKTOP_VIEWPORT);
     await signInAndLandOnDashboard(page);
 
-    await expect(page.getByRole("navigation", { name: MAIN_NAVIGATION_LABEL_REGEX }).getByRole("link", { name: "Settings" })).toHaveCount(0);
+    // Unlike the mobile drawer, the desktop sidebar's primary nav includes a direct Settings
+    // link (see `getAllNavItems()` in src/components/modules/Sidebar.tsx) in addition to the
+    // account menu below, which also surfaces Settings alongside the legal links.
+    await expect(
+      page.getByRole("navigation", { name: MAIN_NAVIGATION_LABEL_REGEX }).getByRole("link", { name: "Settings" }),
+    ).toBeVisible();
     await page.getByRole("button", { name: ACCOUNT_ACTIONS_LABEL_REGEX }).click();
-    await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Settings" }).last()).toBeVisible();
     await expect(page.getByRole("link", { name: "Privacy Policy" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Terms and Conditions" })).toBeVisible();
   });
@@ -118,7 +125,7 @@ test.describe("App layout header and breadcrumbs", () => {
   test.describe.configure({ mode: "serial" });
 
   test("first-level route shows page title only in header", async ({ page }) => {
-    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
+    skipUnlessAuthenticatedEnv();
 
     await signInAndLandOnDashboard(page);
 
@@ -128,7 +135,7 @@ test.describe("App layout header and breadcrumbs", () => {
   });
 
   test("nested route shows breadcrumbs and page title", async ({ page }) => {
-    test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
+    skipUnlessAuthenticatedEnv();
 
     await signInAndLandOnDashboard(page);
 
@@ -138,6 +145,9 @@ test.describe("App layout header and breadcrumbs", () => {
     const breadcrumbNav = page.getByRole("navigation", { name: "Breadcrumb" });
     await expect(breadcrumbNav).toBeVisible();
     await expect(breadcrumbNav.getByRole("link", { name: "Orders" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Pre-orders", level: 1 })).toBeVisible();
+
+    // The orders list also renders its own "Pre-orders" h1 in main content for this filtered
+    // view, so scope to the banner (like the first-level test above) to avoid strict mode.
+    await expect(page.getByRole("banner").getByRole("heading", { name: "Pre-orders", level: 1 })).toBeVisible();
   });
 });

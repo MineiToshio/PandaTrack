@@ -1,15 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
-import { shouldSkipAuthenticatedE2E, signInAndLandOnDashboard } from "./_helpers/auth";
+import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers/auth";
 
 const E2E_ITEM_NAME = `E2E Delivery Item ${Date.now()}`;
-
-function skipUnlessAuthenticatedEnv() {
-  test.skip(shouldSkipAuthenticatedE2E(), "E2E_USER_EMAIL and E2E_USER_PASSWORD must be set");
-  test.skip(
-    process.env.PLAYWRIGHT_PORT !== undefined && process.env.PLAYWRIGHT_PORT !== "3000",
-    "Authenticated E2E uses Better Auth's local trusted origin on localhost:3000",
-  );
-}
 
 /** Creates a minimal order through the create wizard and returns its detail URL. */
 async function createOrderWithOneItem(page: Page): Promise<string> {
@@ -66,7 +58,11 @@ test.describe("Delivery create flow", () => {
     await page.goto("/en/deliveries/new");
 
     await expect(page).toHaveURL(/\/en\/deliveries\/new/);
-    await expect(page.getByRole("heading", { name: /new delivery|no eligible products/i })).toBeVisible();
+    // Scope to main content: the app shell header also renders an `<h1>` with the page
+    // title ("New delivery"), so an unscoped query would match both.
+    await expect(
+      page.getByRole("main").getByRole("heading", { name: /new delivery|no eligible products/i }),
+    ).toBeVisible();
   });
 });
 

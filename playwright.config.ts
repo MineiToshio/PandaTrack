@@ -1,5 +1,11 @@
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
 import { defineConfig, devices } from "@playwright/test";
+
+// Load the same local env files Next.js loads (.env, then .env.local overriding it) so gitignored
+// overrides like `PLAYWRIGHT_PORT` and `BETTER_AUTH_EXTRA_ORIGINS` reach both this config and the
+// spec files (Better Auth's trusted-origin check lives in `e2e/_helpers/auth.ts`).
+loadEnv({ path: ".env" });
+loadEnv({ path: ".env.local", override: true });
 
 const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 3000);
 // Use localhost so auth (getAppBaseUrl()) and tests share the same origin; 127.0.0.1 would break cookies/redirects.
