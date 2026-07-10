@@ -217,3 +217,46 @@ Adopt testing incrementally:
 3. Add a small number of E2E tests for the MVP workflows that cannot break.
 
 This keeps delivery velocity high while steadily improving confidence.
+
+## CI workflows
+
+Two GitHub Actions workflows run automated checks beyond local development:
+
+- `.github/workflows/validate.yml` — runs on every push/PR to any branch. The `validate` job
+  runs type-check, lint, and unit tests. A separate `build` job runs `npm run validate-build`
+  (Prisma client generation + `next build --webpack`, no real database access) to catch
+  production-build regressions that `type-check`/`lint` alone would miss. The `build` job needs
+  no GitHub secrets: `DATABASE_URL` and `BETTER_AUTH_SECRET` are set to non-secret placeholder
+  values in the workflow, only to keep module-scope reads (the Prisma connection pool in
+  `src/lib/prisma.ts`, Better Auth's `secret` in `src/lib/auth/auth.ts`) from seeing `undefined`.
+- `.github/workflows/e2e-critical.yml` — runs Playwright's critical-flow specs (`e2e/auth.spec.ts`
+  and `e2e/orders.spec.ts`) only on pull requests targeting `main`, plus manual
+  `workflow_dispatch` runs. It intentionally does not run on every push: a real Postgres +
+  browser round-trip is too costly for that. `playwright.config.ts`'s `webServer` starts
+  `npm run dev` itself against the configured database (`reuseExistingServer` is disabled
+  whenever `CI` is set).
+
+### Required GitHub secrets
+
+The `e2e-critical.yml` workflow needs the following repository secrets (Settings → Secrets and
+variables → Actions). This is the one part of R9 (CI: build + critical e2e) that requires manual
+setup — the workflows themselves need no other secrets:
+
+| Secret                  | Used for                                                                                                                                          |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `E2E_DATABASE_URL`       | Postgres connection string for a **dedicated E2E database** (never production). Migrations are applied automatically (`prisma migrate deploy`). |
+| `E2E_BETTER_AUTH_SECRET` | Better Auth session-signing secret for the E2E app instance. Any random string; only needs to be stable across runs.                              |
+| `E2E_USER_EMAIL`         | Email of a seeded test account in the E2E database, used to sign in (mirrors the local-only `E2E_USER_EMAIL` in `.env.example`).                  |
+| `E2E_USER_PASSWORD`      | Password for that same seeded test account.                                                                                                       |
+
+**Manual data setup the owner still owns:** these secrets authenticate against the E2E database,
+but they do not create its data. Before the workflow can pass, the database behind
+`E2E_DATABASE_URL` must already contain:
+
+1. A user account matching `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` (sign up normally against that
+   database once, the same way `scripts/seed-dev-data.ts` requires for its `TARGET_USER_EMAIL`).
+2. At least one store, so `orders.spec.ts`'s order-creation flow has an option to pick in the
+   store combobox.
+
+Keep this database isolated from production and from local development data — it is reset-safe
+and exists only for CI.

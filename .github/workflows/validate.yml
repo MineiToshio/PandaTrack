@@ -39,3 +39,31 @@ jobs:
 
       - name: Unit tests
         run: npm run test
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+
+    # `validate-build` (prisma generate + `next build --webpack`) makes no real database
+    # connection (see docs/development/testing.md). These are non-secret, syntactically valid
+    # placeholders so module-scope reads (Prisma's connection pool in src/lib/prisma.ts, Better
+    # Auth's `secret` in src/lib/auth/auth.ts) never see `undefined`. No GitHub secrets required.
+    env:
+      DATABASE_URL: "postgresql://ci:ci@localhost:5432/pandatrack_ci"
+      BETTER_AUTH_SECRET: "ci-build-placeholder-secret"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production build
+        run: npm run validate-build
