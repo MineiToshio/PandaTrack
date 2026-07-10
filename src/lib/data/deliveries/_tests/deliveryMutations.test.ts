@@ -18,23 +18,24 @@ vi.mock("@/lib/deliveries/deliveryIdentifier", () => ({
   generateDeliveryHumanReadableId: generateDeliveryHumanReadableIdMock,
 }));
 
-type MockOrderFindFirst = {
+type MockOrderRow = {
+  id: string;
   status: OrderStatus;
   items: Array<{ id: string; deliveryState: OrderItemDeliveryState }>;
-} | null;
+};
 
 type MockTx = {
   order: {
-    findFirst: ReturnType<typeof vi.fn>;
-    update: ReturnType<typeof vi.fn>;
+    findMany: ReturnType<typeof vi.fn>;
+    updateMany: ReturnType<typeof vi.fn>;
   };
 };
 
-function makeTx(findFirstResult: MockOrderFindFirst): Prisma.TransactionClient {
+function makeTx(findManyResult: MockOrderRow[]): Prisma.TransactionClient {
   const tx: MockTx = {
     order: {
-      findFirst: vi.fn().mockResolvedValue(findFirstResult),
-      update: vi.fn().mockResolvedValue(undefined),
+      findMany: vi.fn().mockResolvedValue(findManyResult),
+      updateMany: vi.fn().mockResolvedValue({ count: findManyResult.length }),
     },
   };
   return tx as unknown as Prisma.TransactionClient;
@@ -46,99 +47,155 @@ describe("persistDerivedOrderStatuses", () => {
   });
 
   it("does nothing when orderIds is empty", async () => {
-    const tx = makeTx(null);
+    const tx = makeTx([]);
     await persistDerivedOrderStatuses(tx, []);
-    expect((tx as unknown as MockTx).order.findFirst).not.toHaveBeenCalled();
+    expect((tx as unknown as MockTx).order.findMany).not.toHaveBeenCalled();
   });
 
-  it("does nothing when order is not found", async () => {
-    const tx = makeTx(null);
+  it("does nothing when no matching order is found", async () => {
+    const tx = makeTx([]);
     await persistDerivedOrderStatuses(tx, ["order-1"]);
-    expect((tx as unknown as MockTx).order.update).not.toHaveBeenCalled();
+    expect((tx as unknown as MockTx).order.updateMany).not.toHaveBeenCalled();
   });
 
   it("does not update a CANCELLED order", async () => {
-    const tx = makeTx({
-      status: OrderStatus.CANCELLED,
-      items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
-    });
+    const tx = makeTx([
+      {
+        id: "order-1",
+        status: OrderStatus.CANCELLED,
+        items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
+      },
+    ]);
     await persistDerivedOrderStatuses(tx, ["order-1"]);
-    expect((tx as unknown as MockTx).order.update).not.toHaveBeenCalled();
+    expect((tx as unknown as MockTx).order.updateMany).not.toHaveBeenCalled();
   });
 
   it("updates status when derived status differs from current", async () => {
-    const tx = makeTx({
-      status: OrderStatus.OPEN,
-      items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
-    });
+    const tx = makeTx([
+      {
+        id: "order-1",
+        status: OrderStatus.OPEN,
+        items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
+      },
+    ]);
     await persistDerivedOrderStatuses(tx, ["order-1"]);
-    expect((tx as unknown as MockTx).order.update).toHaveBeenCalledWith({
-      where: { id: "order-1" },
+    expect((tx as unknown as MockTx).order.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["order-1"] } },
       data: { status: OrderStatus.IN_TRANSIT },
     });
   });
 
   it("does not update when derived status matches current", async () => {
-    const tx = makeTx({
-      status: OrderStatus.IN_TRANSIT,
-      items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
-    });
+    const tx = makeTx([
+      {
+        id: "order-1",
+        status: OrderStatus.IN_TRANSIT,
+        items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
+      },
+    ]);
     await persistDerivedOrderStatuses(tx, ["order-1"]);
-    expect((tx as unknown as MockTx).order.update).not.toHaveBeenCalled();
+    expect((tx as unknown as MockTx).order.updateMany).not.toHaveBeenCalled();
   });
 
   it("derives COMPLETED when all items are DELIVERED", async () => {
-    const tx = makeTx({
-      status: OrderStatus.OPEN,
-      items: [
-        { id: "item-1", deliveryState: OrderItemDeliveryState.DELIVERED },
-        { id: "item-2", deliveryState: OrderItemDeliveryState.DELIVERED },
-      ],
-    });
+    const tx = makeTx([
+      {
+        id: "order-1",
+        status: OrderStatus.OPEN,
+        items: [
+          { id: "item-1", deliveryState: OrderItemDeliveryState.DELIVERED },
+          { id: "item-2", deliveryState: OrderItemDeliveryState.DELIVERED },
+        ],
+      },
+    ]);
     await persistDerivedOrderStatuses(tx, ["order-1"]);
-    expect((tx as unknown as MockTx).order.update).toHaveBeenCalledWith({
-      where: { id: "order-1" },
+    expect((tx as unknown as MockTx).order.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["order-1"] } },
       data: { status: OrderStatus.COMPLETED },
     });
   });
 
   it("treats ARRIVED_AT_STORE as 'open' for order-status derivation", async () => {
-    const tx = makeTx({
-      status: OrderStatus.IN_TRANSIT,
-      items: [
-        { id: "item-1", deliveryState: OrderItemDeliveryState.ARRIVED_AT_STORE },
-        { id: "item-2", deliveryState: OrderItemDeliveryState.ARRIVED_AT_STORE },
-      ],
-    });
+    const tx = makeTx([
+      {
+        id: "order-1",
+        status: OrderStatus.IN_TRANSIT,
+        items: [
+          { id: "item-1", deliveryState: OrderItemDeliveryState.ARRIVED_AT_STORE },
+          { id: "item-2", deliveryState: OrderItemDeliveryState.ARRIVED_AT_STORE },
+        ],
+      },
+    ]);
     await persistDerivedOrderStatuses(tx, ["order-1"]);
-    expect((tx as unknown as MockTx).order.update).toHaveBeenCalledWith({
-      where: { id: "order-1" },
+    expect((tx as unknown as MockTx).order.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["order-1"] } },
       data: { status: OrderStatus.OPEN },
     });
   });
 
   it("derives PARTIALLY_IN_TRANSIT from mixed IN_TRANSIT and ARRIVED_AT_STORE items", async () => {
-    const tx = makeTx({
-      status: OrderStatus.OPEN,
-      items: [
-        { id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT },
-        { id: "item-2", deliveryState: OrderItemDeliveryState.ARRIVED_AT_STORE },
-      ],
-    });
+    const tx = makeTx([
+      {
+        id: "order-1",
+        status: OrderStatus.OPEN,
+        items: [
+          { id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT },
+          { id: "item-2", deliveryState: OrderItemDeliveryState.ARRIVED_AT_STORE },
+        ],
+      },
+    ]);
     await persistDerivedOrderStatuses(tx, ["order-1"]);
-    expect((tx as unknown as MockTx).order.update).toHaveBeenCalledWith({
-      where: { id: "order-1" },
+    expect((tx as unknown as MockTx).order.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["order-1"] } },
       data: { status: OrderStatus.PARTIALLY_IN_TRANSIT },
     });
   });
 
-  it("deduplicates orderIds before processing", async () => {
-    const tx = makeTx({
-      status: OrderStatus.IN_TRANSIT,
-      items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
-    });
+  it("reads all orders in a single batched query, deduplicating orderIds", async () => {
+    const tx = makeTx([
+      {
+        id: "order-1",
+        status: OrderStatus.IN_TRANSIT,
+        items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
+      },
+    ]);
     await persistDerivedOrderStatuses(tx, ["order-1", "order-1", "order-1"]);
-    expect((tx as unknown as MockTx).order.findFirst).toHaveBeenCalledTimes(1);
+    expect((tx as unknown as MockTx).order.findMany).toHaveBeenCalledTimes(1);
+    expect((tx as unknown as MockTx).order.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: { in: ["order-1"] } } }),
+    );
+  });
+
+  it("groups orders with the same target status into a single updateMany (constant write count)", async () => {
+    const tx = makeTx([
+      {
+        id: "order-1",
+        status: OrderStatus.OPEN,
+        items: [{ id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
+      },
+      {
+        id: "order-2",
+        status: OrderStatus.OPEN,
+        items: [{ id: "item-2", deliveryState: OrderItemDeliveryState.IN_TRANSIT }],
+      },
+      {
+        id: "order-3",
+        status: OrderStatus.OPEN,
+        items: [{ id: "item-3", deliveryState: OrderItemDeliveryState.DELIVERED }],
+      },
+    ]);
+    await persistDerivedOrderStatuses(tx, ["order-1", "order-2", "order-3"]);
+    const updateMany = (tx as unknown as MockTx).order.updateMany;
+    // Two IN_TRANSIT orders collapse into one write; the COMPLETED order is a second write.
+    expect(updateMany).toHaveBeenCalledTimes(2);
+    expect(updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["order-1", "order-2"] } },
+      data: { status: OrderStatus.IN_TRANSIT },
+    });
+    expect(updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["order-3"] } },
+      data: { status: OrderStatus.COMPLETED },
+    });
   });
 });
 
@@ -178,14 +235,17 @@ describe("createDelivery", () => {
         createMany: vi.fn().mockResolvedValue({ count: 2 }),
       },
       order: {
-        findFirst: vi.fn().mockResolvedValue({
-          status: OrderStatus.OPEN,
-          items: [
-            { id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT },
-            { id: "item-2", deliveryState: OrderItemDeliveryState.IN_TRANSIT },
-          ],
-        }),
-        update: vi.fn().mockResolvedValue(undefined),
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "order-1",
+            status: OrderStatus.OPEN,
+            items: [
+              { id: "item-1", deliveryState: OrderItemDeliveryState.IN_TRANSIT },
+              { id: "item-2", deliveryState: OrderItemDeliveryState.IN_TRANSIT },
+            ],
+          },
+        ]),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       ...overrides,
     };
@@ -237,8 +297,8 @@ describe("createDelivery", () => {
         { deliveryId: "delivery-1", orderItemId: "item-2" },
       ],
     });
-    expect(tx.order.update).toHaveBeenCalledWith({
-      where: { id: "order-1" },
+    expect(tx.order.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ["order-1"] } },
       data: { status: OrderStatus.IN_TRANSIT },
     });
   });

@@ -26,7 +26,7 @@ type TxMock = {
   };
   orderItem: { updateMany: ReturnType<typeof vi.fn> };
   deliveryOrderItem: { count: ReturnType<typeof vi.fn> };
-  order: { findFirst: ReturnType<typeof vi.fn>; update: ReturnType<typeof vi.fn> };
+  order: { findMany: ReturnType<typeof vi.fn>; updateMany: ReturnType<typeof vi.fn> };
 };
 
 function makeTx(overrides: Partial<{ delivery: unknown; conflictCount: number }> = {}): TxMock {
@@ -38,9 +38,9 @@ function makeTx(overrides: Partial<{ delivery: unknown; conflictCount: number }>
     },
     orderItem: { updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
     deliveryOrderItem: { count: vi.fn().mockResolvedValue(overrides.conflictCount ?? 0) },
-    // Order not found → persistDerivedOrderStatuses skips; derivation itself is covered
+    // No matching orders → persistDerivedOrderStatuses skips; derivation itself is covered
     // by the existing persistDerivedOrderStatuses suite.
-    order: { findFirst: vi.fn().mockResolvedValue(null), update: vi.fn().mockResolvedValue(undefined) },
+    order: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
   };
 }
 
@@ -214,7 +214,7 @@ describe("updateDeliveryNote", () => {
       },
       orderItem: { updateMany: vi.fn() },
       deliveryOrderItem: { count: vi.fn() },
-      order: { findFirst: vi.fn(), update: vi.fn() },
+      order: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() },
     };
   }
 

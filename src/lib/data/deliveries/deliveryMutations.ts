@@ -29,30 +29,36 @@ export async function persistDerivedOrderStatuses(tx: Prisma.TransactionClient, 
 
   const unique = [...new Set(orderIds)];
 
-  for (const orderId of unique) {
-    const order = await tx.order.findFirst({
-      where: { id: orderId },
-      select: {
-        status: true,
-        items: { select: { id: true, deliveryState: true } },
-      },
-    });
+  // Single batched read instead of one findFirst per order — avoids an N+1 inside the transaction.
+  const orders = await tx.order.findMany({
+    where: { id: { in: unique } },
+    select: {
+      id: true,
+      status: true,
+      items: { select: { id: true, deliveryState: true } },
+    },
+  });
 
-    if (!order || order.status === OrderStatus.CANCELLED) continue;
+  // Group the orders whose derived status actually changed by their target status, then write each
+  // distinct status with a single updateMany. This keeps the write count bounded by the number of
+  // OrderStatus values rather than the number of affected orders.
+  const idsByTargetStatus = new Map<OrderStatus, string[]>();
+  for (const order of orders) {
+    if (order.status === OrderStatus.CANCELLED) continue;
 
-    const itemStates = order.items.map((item) => ({
-      itemId: item.id,
-      deliveryState: mapToItemDeliveryState(item.deliveryState),
-    }));
+    const derived = deriveOrderStatus(
+      order.items.map((item) => ({ itemId: item.id, deliveryState: mapToItemDeliveryState(item.deliveryState) })),
+    );
 
-    const derived = deriveOrderStatus(itemStates);
+    if (derived === order.status) continue;
 
-    if (derived !== order.status) {
-      await tx.order.update({
-        where: { id: orderId },
-        data: { status: derived },
-      });
-    }
+    const bucket = idsByTargetStatus.get(derived);
+    if (bucket) bucket.push(order.id);
+    else idsByTargetStatus.set(derived, [order.id]);
+  }
+
+  for (const [status, ids] of idsByTargetStatus) {
+    await tx.order.updateMany({ where: { id: { in: ids } }, data: { status } });
   }
 }
 

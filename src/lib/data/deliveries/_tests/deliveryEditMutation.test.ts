@@ -39,7 +39,7 @@ function makeTx(overrides: TxOverrides = {}) {
       createMany: vi.fn().mockResolvedValue(undefined),
       deleteMany: vi.fn().mockResolvedValue(undefined),
     },
-    order: { findFirst: vi.fn().mockResolvedValue(null), update: vi.fn() },
+    order: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() },
   };
 }
 

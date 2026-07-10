@@ -456,6 +456,8 @@ model Order {
   @@index([storeId])
   @@index([userId])
   @@index([status])
+  @@index([userId, orderDate])
+  @@index([userId, status])
   @@map("order")
 }
 
@@ -478,6 +480,7 @@ model OrderItem {
 
   @@index([orderId])
   @@index([userId])
+  @@index([userId, deliveryState])
   @@map("order_item")
 }
 
@@ -534,6 +537,7 @@ model Delivery {
   @@index([storeId])
   @@index([userId])
   @@index([status])
+  @@index([userId, deliveryDate])
   @@map("delivery")
 }
 

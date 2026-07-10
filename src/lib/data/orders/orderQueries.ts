@@ -456,7 +456,13 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
 
   const where = matchAny.length > 0 ? { ...baseFilters, OR: matchAny } : baseFilters;
 
+  // `paymentStates` and the `payment-asc` sort both depend on the derived paymentPercentage, which
+  // Prisma cannot express in `where`/`orderBy`. Either one forces the full-fetch path so filtering,
+  // sorting, and pagination all run over the complete filtered set — a post-fetch filter applied to a
+  // single native DB page would otherwise corrupt totalCount and make pages overlap or go missing.
   const usePostQuerySort = sort === "payment-asc";
+  const hasPaymentStateFilter = Boolean(paymentStates && paymentStates.length > 0);
+  const useInMemoryPagination = usePostQuerySort || hasPaymentStateFilter;
   const orderBy = resolveOrderBy(sort);
 
   const select = {
@@ -491,12 +497,12 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
 
   const fxWhere = buildFxPendingWhere(userId, baseCurrencyCode ?? null);
 
-  // The `payment-asc` sort requires the computed paymentPercentage. Prisma cannot orderBy a
-  // derived ratio, so for that case we fetch the full filtered set (bounded by collector usage)
-  // and sort + paginate in memory. Other sorts use native orderBy + skip/take.
+  // In-memory pagination fetches the full filtered set (bounded by collector usage) already ordered
+  // by the requested native sort, then filters/sorts/paginates in memory. Other queries paginate
+  // natively via skip/take.
   const [rows, totalCount, pendingFxCount] = await Promise.all([
-    usePostQuerySort
-      ? prisma.order.findMany({ where, select, orderBy: { orderDate: "desc" }, take: 1000 })
+    useInMemoryPagination
+      ? prisma.order.findMany({ where, select, orderBy, take: 1000 })
       : prisma.order.findMany({
           where,
           select,
@@ -537,18 +543,23 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
   });
 
   const filteredByPayment =
-    paymentStates && paymentStates.length > 0
+    hasPaymentStateFilter && paymentStates
       ? allMapped.filter((order) => paymentStates.some((state) => matchesPaymentState(order, state)))
       : allMapped;
 
   let orders = filteredByPayment;
-  if (usePostQuerySort) {
-    orders = [...filteredByPayment].sort((a, b) => a.paymentPercentage - b.paymentPercentage);
+  if (useInMemoryPagination) {
+    // `payment-asc` cannot be expressed as a native orderBy; re-sort the filtered set by the derived
+    // ratio. Other in-memory sorts already arrive in native order, so filtering preserves it.
+    if (usePostQuerySort) {
+      orders = [...filteredByPayment].sort((a, b) => a.paymentPercentage - b.paymentPercentage);
+    }
     const offset = (page - 1) * pageSize;
     orders = orders.slice(offset, offset + pageSize);
   }
 
-  const effectiveTotal = paymentStates && paymentStates.length > 0 ? filteredByPayment.length : totalCount;
+  // Whenever pagination runs in memory, totals must come from the full filtered set, not the DB count.
+  const effectiveTotal = useInMemoryPagination ? filteredByPayment.length : totalCount;
   const totalPages = Math.max(1, Math.ceil(effectiveTotal / pageSize));
 
   return { orders, totalCount: effectiveTotal, totalPages, page, pageSize, pendingFxCount };
