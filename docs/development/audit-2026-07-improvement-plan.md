@@ -357,7 +357,7 @@ Execution completed the same day on branch `staging`, commits `9140d56..264c6f1`
 - **Duplicate detection at scale**: the bounded-scan fix is exact up to 500 stores; beyond that a persisted normalized-name column (+ index) is the proper fix.
 - **ModalDialog dark accent-glow**: the theme fix replaced a bespoke dark shadow with `--shadow-elevation-3`; needs a design sign-off.
 - **Local e2e environment**: authenticated Playwright specs require port 3000 (Better Auth trusted origin), which another project's dev server frequently occupies; freeing the port re-enables the full suite.
-- **DX-1 build-script `migrate resolve`**: still in place; requires checking the production DB migration state before removal.
+- **DX-1 build-script `migrate resolve`**: removed in round 2 after the owner confirmed there is no deployed production DB — staging/dev is the only environment, and `prisma migrate status` reported it clean and up to date.
 
 ## Round 2 (2026-07-10) — owner decisions
 

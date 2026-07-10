@@ -231,6 +231,7 @@ This function must be called inside the same transaction as any delivery mutatio
 - A delivery is always created in `IN_TRANSIT` status. There is no separate "preparing" state before items ship. The `arrived_at_store` milestone belongs to the product level (`OrderItemDeliveryState`), not the delivery level.
 - Standalone "mark as arrived at store" (without creating a delivery) is a user-facing action that belongs to a later UI slice. WO-01 defines the state and the transition helpers but does not implement the action.
 - The migration file is at `prisma/migrations/20260427000000_expand_delivery_model/migration.sql`. The existing dev database had a pre-existing checksum mismatch on an earlier migration; the schema was applied via `prisma db push --accept-data-loss` and the migration file was created manually to preserve history.
+- The `build` script temporarily carried a one-off `prisma migrate resolve --rolled-back` step to work around that checksum mismatch. It was removed once `prisma migrate status` confirmed the database was clean and up to date (2026-07-10); the workaround is no longer needed and no equivalent step remains in `build`.
 
 ## E2E Acceptance Tests
 
