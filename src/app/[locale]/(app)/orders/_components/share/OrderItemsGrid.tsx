@@ -412,7 +412,7 @@ function OrderItemRow({
           aria-label={t("itemUnitPriceLabel")}
           aria-invalid={!!unitPriceError}
           aria-describedby={unitPriceError ? `item-price-error-${row.rowId}` : undefined}
-          onChange={(e) => onUnitPriceChange(row.rowId, sanitizeDecimalInput(e.target.value))}
+          onChange={(e) => onUnitPriceChange(row.rowId, e.target.value)}
           onKeyDown={(e) => onCellKeyDown(e, { column: "price", rowId: row.rowId })}
           className={cn(
             CELL_INPUT_BASE,
@@ -687,7 +687,9 @@ export default function OrderItemsGrid({
                   onTypePickerOpenChange={(open) => setOpenTypePickerRowId(open ? row.rowId : null)}
                   onNameChange={(rowId, value) => updateRow(rowId, { name: value })}
                   onQuantityChange={(rowId, value) => updateRow(rowId, { quantity: value })}
-                  onUnitPriceChange={(rowId, value) => updateRow(rowId, { unitPrice: value })}
+                  onUnitPriceChange={(rowId, value) =>
+                    updateRow(rowId, { unitPrice: sanitizeDecimalInput(value, currencyCode) })
+                  }
                   onProductTypeChange={(rowId, value) => updateRow(rowId, { productTypeKey: value })}
                   onDelete={handleDelete}
                   onCellKeyDown={handleCellKeyDown}

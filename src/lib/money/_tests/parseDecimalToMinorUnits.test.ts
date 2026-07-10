@@ -50,4 +50,20 @@ describe("parseDecimalToMinorUnits", () => {
     expect(parseDecimalToMinorUnits("NaN")).toBeNull();
     expect(parseDecimalToMinorUnits("Infinity")).toBeNull();
   });
+
+  it("keeps 2-decimal behavior for standard currencies", () => {
+    expect(parseDecimalToMinorUnits("10.50", "USD")).toBe(1050);
+    expect(parseDecimalToMinorUnits("10", "USD")).toBe(1000);
+  });
+
+  it("rejects a decimal separator for zero-decimal currencies", () => {
+    expect(parseDecimalToMinorUnits("43000.50", "CLP")).toBeNull();
+    expect(parseDecimalToMinorUnits("100.0", "JPY")).toBeNull();
+    expect(parseDecimalToMinorUnits("5.5", "KRW")).toBeNull();
+  });
+
+  it("scales whole zero-decimal amounts uniformly to ×100 minor units", () => {
+    expect(parseDecimalToMinorUnits("43000", "CLP")).toBe(4300000);
+    expect(parseDecimalToMinorUnits("100", "JPY")).toBe(10000);
+  });
 });

@@ -11,20 +11,26 @@ This document is the source of truth for the PandaTrack **Velvet** visual founda
 
 - All monetary display goes through the helpers in `src/lib/currency.ts`:
   - `formatAmount(minorUnits, currencyCode)` → `{value} {code}` (e.g. `888.50 USD`, `43000 CLP`)
-  - `formatAmountSymbolOnly(minorUnits, currencyCode, locale, { alwaysShowDecimals })` → `{symbol}{value}` (e.g. `$496.00`, `S/ 6765.00`)
+  - `formatAmountSymbolOnly(minorUnits, currencyCode, locale)` → `{symbol}{value}` (e.g. `$496.00`, `S/ 6765.00`)
   - `formatAmountWithSymbol(...)` → `{symbol}{value} {code}` when the symbol is ambiguous (e.g. `$496.00 USD`)
 - All three helpers force `"en"` locale + `useGrouping: false` in `Intl.NumberFormat` so the decimal separator is always a period and there is never a thousand separator, regardless of the user's UI language.
 - The `locale` argument to the symbol variants is used only to resolve the currency's narrow symbol (e.g. `S/` for PEN in `es`); it does **not** affect the number layout.
+
+#### Storage vs presentation (decimals per currency)
+
+- **Storage is uniform:** every money value is persisted as an integer minor unit scaled `×100` for **every** currency, so FX arithmetic stays internally consistent and no data migration is needed.
+- **Presentation follows the ISO 4217 exponent.** `getCurrencyDecimals(currencyCode)` returns the fraction-digit count each currency shows and accepts: `0` for zero-decimal currencies (CLP, JPY, KRW in the catalog) and `2` for the rest. The formatters above read this, so `43000 CLP` renders with no decimals while `888.50 USD` keeps two.
+- A whole-major amount for a zero-decimal currency always lands on a multiple of `100` in minor units; `isWholeMajorAmount(minorUnits)` checks this and backs the input, parser, and server-validation rules below.
 
 ### Decimal inputs (prices, payment amounts)
 
 - Use `type="text" inputMode="decimal"` for price and payment inputs — **not** `type="number"`.
   - `type="number"` renders the value using the OS locale (comma in Spanish/European) which conflicts with the period standard.
   - `type="text" inputMode="decimal"` keeps display under our control while still showing the numeric keyboard on mobile.
-- Store and read values as dot-separated strings (`"888.50"`); parse with `parseFloat` or `Math.round(parseFloat(v) * 100)`.
-- Apply `sanitizeDecimalInput` from `src/lib/decimalInput.ts` on every `onChange` — it strips non-numeric characters, keeps one period, and limits to two decimal digits.
-- Validate with `isValidPositiveDecimal` from the same module before submitting — rejects empty, zero, trailing-dot (`"25."`), and non-numeric values.
-- **Validation order**: client-side first (immediate field error, no server round-trip), server-side second (Zod schema as safety net against bypassed JS). Never rely on server validation alone for user-facing feedback.
+- Store and read values as dot-separated strings (`"888.50"`); on the server convert to minor units with `parseDecimalToMinorUnits(value, currencyCode)` from `src/lib/money/parseDecimalToMinorUnits.ts`, which rejects malformed input (and a decimal separator for zero-decimal currencies).
+- Apply `sanitizeDecimalInput(value, currencyCode)` from `src/lib/decimalInput.ts` on every `onChange` — it strips non-numeric characters, keeps one period, and limits the fraction to the currency exponent. For a zero-decimal currency it truncates at the separator (so `"43000.50"` becomes `"43000"`, never a concatenated `"4300050"`). Pass the selected currency code wherever the field is a currency amount; omit it for non-currency decimals such as the FX rate.
+- Validate with `isValidPositiveDecimal(value, currencyCode)` from the same module before submitting — rejects empty, zero, trailing-dot (`"25."`), non-numeric values, and any decimal for zero-decimal currencies.
+- **Validation order**: client-side first (immediate field error, no server round-trip), server-side second (Zod schema as safety net against bypassed JS). Zero-decimal currencies additionally get a `superRefine` "whole major amount" rule in `orderValidation`/`deliveryValidation` (the `*_FRACTIONAL_SUBUNITS` codes). Never rely on server validation alone for user-facing feedback.
 - **Never** format a number with `toLocaleString()` or `Intl.NumberFormat` without explicitly passing `"en"` as the locale.
 
 ### Ratings and other decimals

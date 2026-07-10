@@ -292,7 +292,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
         rowErrors.quantity = t("validation.itemQuantityTooLow");
         valid = false;
       }
-      if (row.unitPrice !== "" && !isValidPositiveDecimal(row.unitPrice)) {
+      if (row.unitPrice !== "" && !isValidPositiveDecimal(row.unitPrice, currencyCode)) {
         rowErrors.unitPrice = t("validation.unitPriceInvalid");
         valid = false;
       }
@@ -301,7 +301,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
     if (!hasAnyNamed) valid = false;
     setItemErrors(errors);
     return valid;
-  }, [items, t]);
+  }, [items, currencyCode, t]);
 
   const validateForm = useCallback((): boolean => {
     let valid = true;
@@ -315,7 +315,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
     if (!totalCost.trim()) {
       setClientTotalCostError(t("validation.totalCostRequired"));
       valid = false;
-    } else if (!isValidPositiveDecimal(totalCost)) {
+    } else if (!isValidPositiveDecimal(totalCost, currencyCode)) {
       setClientTotalCostError(t("validation.totalCostInvalid"));
       valid = false;
     } else {
@@ -325,7 +325,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
     // here we just block submit so neither path slips past the gate.
     if (totalBelowPaid) valid = false;
     return valid;
-  }, [orderDate, validateItems, totalCost, totalBelowPaid, t]);
+  }, [orderDate, validateItems, totalCost, totalBelowPaid, currencyCode, t]);
 
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -677,7 +677,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
                       placeholder={tForm("totalCostPlaceholder")}
                       error={Boolean(clientTotalCostError) || totalBelowPaid}
                       onChange={(e) => {
-                        setTotalCost(sanitizeDecimalInput(e.target.value));
+                        setTotalCost(sanitizeDecimalInput(e.target.value, currencyCode));
                         setClientTotalCostError(null);
                       }}
                     />

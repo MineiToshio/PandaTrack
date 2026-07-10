@@ -1,26 +1,63 @@
 /**
+ * Money is stored uniformly as integer minor units scaled ×100 for EVERY currency, so the
+ * internal FX arithmetic stays consistent and no stored data ever needs migrating. Presentation,
+ * input, and validation, however, honour each currency's real ISO 4217 exponent: zero-decimal
+ * currencies (CLP, JPY, KRW in this catalog) have no subunit, so they render without decimals,
+ * reject a decimal separator on input, and must resolve to a whole major amount (a multiple of
+ * `MINOR_UNITS_PER_MAJOR`) once scaled.
+ */
+export const MINOR_UNITS_PER_MAJOR = 100;
+
+const DEFAULT_CURRENCY_DECIMALS = 2;
+
+// ISO 4217 exponent-0 codes present in the app catalog (src/lib/catalog/collectorCountries.ts).
+// Any code not listed here is treated as the 2-decimal default.
+const ZERO_DECIMAL_CURRENCY_CODES = new Set(["CLP", "JPY", "KRW"]);
+
+/**
+ * Number of fraction digits a currency shows and accepts, per its ISO 4217 exponent.
+ * Returns 0 for zero-decimal currencies (CLP, JPY, KRW) and 2 for everything else.
+ */
+export function getCurrencyDecimals(currencyCode: string): number {
+  return ZERO_DECIMAL_CURRENCY_CODES.has(currencyCode) ? 0 : DEFAULT_CURRENCY_DECIMALS;
+}
+
+export function isZeroDecimalCurrency(currencyCode: string): boolean {
+  return ZERO_DECIMAL_CURRENCY_CODES.has(currencyCode);
+}
+
+/**
+ * True when a ×100 minor-units amount represents a whole major amount. Zero-decimal currencies
+ * must satisfy this because they have no subunit to occupy the fractional ×100 space.
+ */
+export function isWholeMajorAmount(minorUnits: number): boolean {
+  return minorUnits % MINOR_UNITS_PER_MAJOR === 0;
+}
+
+/**
  * Formats a minor-unit integer as a decimal followed by the ISO currency code.
- * Example: formatAmount(4300000, "CLP") → "43000.00 CLP"
+ * Example: formatAmount(4300000, "CLP") → "43000 CLP"
  *          formatAmount(88850, "USD") → "888.50 USD"
  *
  * Pattern: {amount} {code} — value first, identifier after.
- * Always uses period (.) as the decimal separator, NO thousand separator, and
- * ALWAYS 2 decimals — regardless of UI locale. Sergio prefers a single canonical
- * number layout so collectors don't get tripped up reading `$1.240,00` vs
- * `$1,240.00` vs `$1240`.
+ * Always uses period (.) as the decimal separator and NO thousand separator, regardless of UI
+ * locale. Fraction digits follow the currency exponent (2 for most, 0 for CLP/JPY/KRW). Sergio
+ * prefers a single canonical number layout so collectors don't get tripped up reading `$1.240,00`
+ * vs `$1,240.00` vs `$1240`.
  * See docs/design/visual-foundations.md — "Number and currency formatting".
  */
 export function formatAmount(minorUnits: number, currencyCode: string): string {
+  const decimals = getCurrencyDecimals(currencyCode);
   try {
     const formatted = new Intl.NumberFormat("en", {
       style: "decimal",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
       useGrouping: false,
-    }).format(minorUnits / 100);
+    }).format(minorUnits / MINOR_UNITS_PER_MAJOR);
     return `${formatted} ${currencyCode}`;
   } catch {
-    return `${(minorUnits / 100).toFixed(2)} ${currencyCode}`;
+    return `${(minorUnits / MINOR_UNITS_PER_MAJOR).toFixed(decimals)} ${currencyCode}`;
   }
 }
 
@@ -92,12 +129,13 @@ function getCurrencyNarrowSymbol(currencyCode: string, locale: string): string {
  * use `formatAmountWithSymbol` — that variant always appends the ISO code.
  */
 export function formatAmountSymbolOnly(minorUnits: number, currencyCode: string, locale = "en"): string {
-  const value = minorUnits / 100;
+  const decimals = getCurrencyDecimals(currencyCode);
+  const value = minorUnits / MINOR_UNITS_PER_MAJOR;
   try {
     const formattedNumber = new Intl.NumberFormat("en", {
       style: "decimal",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
       useGrouping: false,
     }).format(value);
     const symbol = getCurrencyNarrowSymbol(currencyCode, locale);
@@ -107,7 +145,7 @@ export function formatAmountSymbolOnly(minorUnits: number, currencyCode: string,
     const needsSpace = symbol.length > 1;
     return `${symbol}${needsSpace ? " " : ""}${formattedNumber}`;
   } catch {
-    return value.toFixed(2);
+    return value.toFixed(decimals);
   }
 }
 

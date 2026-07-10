@@ -208,7 +208,7 @@ export default function OrderAddProductSheet({
               inputMode="decimal"
               value={value.unitPrice}
               placeholder={t("unitPricePlaceholder")}
-              onChange={(e) => setValue({ ...value, unitPrice: sanitizeDecimalInput(e.target.value) })}
+              onChange={(e) => setValue({ ...value, unitPrice: sanitizeDecimalInput(e.target.value, currencyCode) })}
               className={cn(
                 "w-full rounded-[10px] px-3 py-2 text-[14px]",
                 "[color:var(--text-primary)] [background:var(--surface)] [border:1px_solid_var(--border)]",

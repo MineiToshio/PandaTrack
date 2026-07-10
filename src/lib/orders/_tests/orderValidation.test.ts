@@ -112,6 +112,49 @@ describe("orderCreateSchema exchangeRate validation", () => {
   });
 });
 
+describe("orderCreateSchema zero-decimal currency validation", () => {
+  const clpInput = {
+    storeId: VALID_CUID,
+    orderDate: new Date(),
+    currencyCode: "CLP",
+  };
+
+  it("accepts a whole-major totalCost for a zero-decimal currency", () => {
+    const result = orderCreateSchema.safeParse({ ...clpInput, totalCost: 4300000 });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a fractional-subunit totalCost for a zero-decimal currency", () => {
+    const result = orderCreateSchema.safeParse({ ...clpInput, totalCost: 4300050 });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors.map((e) => e.message)).toContain("TOTAL_COST_FRACTIONAL_SUBUNITS");
+    }
+  });
+
+  it("rejects a fractional-subunit item unitPrice for a zero-decimal currency", () => {
+    const result = orderCreateSchema.safeParse({
+      ...clpInput,
+      totalCost: 4300000,
+      items: [{ name: "Figura", quantity: 1, unitPrice: 150050, productTypeKey: null, position: 1 }],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.errors.map((e) => e.message)).toContain("UNIT_PRICE_FRACTIONAL_SUBUNITS");
+    }
+  });
+
+  it("does not apply the whole-major rule to standard currencies", () => {
+    const result = orderCreateSchema.safeParse({
+      storeId: VALID_CUID,
+      orderDate: new Date(),
+      currencyCode: "USD",
+      totalCost: 4300050,
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
 describe("orderPaymentCreateSchema", () => {
   const VALID_CUID = "clxxxxxxxxxxxxxxxxxxxxxx0";
   const today = new Date();

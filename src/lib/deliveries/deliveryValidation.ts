@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isAllowedCollectorBaseCurrency } from "@/lib/catalog/collectorCountries";
 import { exchangeRateSchema } from "@/lib/orders/orderValidation";
+import { isWholeMajorAmount, isZeroDecimalCurrency } from "@/lib/currency";
 
 const MAX_DELIVERY_COST = 999_999_999;
 const MAX_NOTE_LENGTH = 2000;
@@ -33,6 +34,26 @@ const expectedArrivalRefinement = (
   }
 };
 
+/**
+ * Zero-decimal currencies have no subunit, so the ×100 minor-units cost must land on a whole
+ * major amount. Skips when currency or cost is absent (partial edit payloads).
+ */
+const zeroDecimalCostRefinement = (
+  data: { currencyCode?: string; cost?: number },
+  ctx: z.RefinementCtx,
+) => {
+  if (!data.currencyCode || !isZeroDecimalCurrency(data.currencyCode)) {
+    return;
+  }
+  if (typeof data.cost === "number" && !isWholeMajorAmount(data.cost)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["cost"],
+      message: "COST_FRACTIONAL_SUBUNITS",
+    });
+  }
+};
+
 export const deliveryCreateSchema = z
   .object({
     storeId: z.string().cuid({ message: "INVALID_STORE_ID" }),
@@ -47,7 +68,8 @@ export const deliveryCreateSchema = z
       .min(1, { message: "NO_PRODUCTS_SELECTED" })
       .max(MAX_DELIVERY_PRODUCTS, { message: "TOO_MANY_PRODUCTS" }),
   })
-  .superRefine(expectedArrivalRefinement);
+  .superRefine(expectedArrivalRefinement)
+  .superRefine(zeroDecimalCostRefinement);
 
 export const deliveryEditSchema = z
   .object({
@@ -67,7 +89,8 @@ export const deliveryEditSchema = z
       .max(MAX_DELIVERY_PRODUCTS, { message: "TOO_MANY_PRODUCTS" })
       .optional(),
   })
-  .superRefine(expectedArrivalRefinement);
+  .superRefine(expectedArrivalRefinement)
+  .superRefine(zeroDecimalCostRefinement);
 
 export const deliveryMarkDeliveredSchema = z.object({
   deliveryId: z.string().cuid({ message: "INVALID_DELIVERY_ID" }),

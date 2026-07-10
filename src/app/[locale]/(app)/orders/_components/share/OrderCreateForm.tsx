@@ -244,7 +244,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
         rowErrors.quantity = t("validation.itemQuantityTooLow");
         valid = false;
       }
-      if (row.unitPrice !== "" && !isValidPositiveDecimal(row.unitPrice)) {
+      if (row.unitPrice !== "" && !isValidPositiveDecimal(row.unitPrice, currencyCode)) {
         rowErrors.unitPrice = t("validation.unitPriceInvalid");
         valid = false;
       }
@@ -253,21 +253,21 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
     if (!hasAnyNamed) valid = false;
     setItemErrors(errors);
     return valid;
-  }, [items, t]);
+  }, [items, currencyCode, t]);
 
   const validateStep2 = useCallback((): boolean => {
     let valid = validateStep2Items();
     if (!totalCost.trim()) {
       setClientTotalCostError(t("validation.totalCostRequired"));
       valid = false;
-    } else if (!isValidPositiveDecimal(totalCost)) {
+    } else if (!isValidPositiveDecimal(totalCost, currencyCode)) {
       setClientTotalCostError(t("validation.totalCostInvalid"));
       valid = false;
     } else {
       setClientTotalCostError(null);
     }
     return valid;
-  }, [validateStep2Items, totalCost, t]);
+  }, [validateStep2Items, totalCost, currencyCode, t]);
 
   // Submit
   const formRef = useRef<HTMLFormElement>(null);
@@ -630,7 +630,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                       placeholder={tForm("totalCostPlaceholder")}
                       error={Boolean(clientTotalCostError)}
                       onChange={(e) => {
-                        setTotalCost(sanitizeDecimalInput(e.target.value));
+                        setTotalCost(sanitizeDecimalInput(e.target.value, currencyCode));
                         setClientTotalCostError(null);
                       }}
                     />

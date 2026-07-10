@@ -41,7 +41,8 @@ export async function createDeliveryAction(
   const userId = session.user.id;
 
   const exchangeRateRaw = formData.get("exchangeRate");
-  const currencyCode = formData.get("currencyCode");
+  const currencyCodeRaw = formData.get("currencyCode");
+  const currencyCode = typeof currencyCodeRaw === "string" ? currencyCodeRaw : undefined;
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } });
   const exchangeRate =
     typeof exchangeRateRaw === "string" && exchangeRateRaw.trim() !== "" ? parseFloat(exchangeRateRaw) : null;
@@ -51,7 +52,10 @@ export async function createDeliveryAction(
     deliveryDate: formData.get("deliveryDate") ?? undefined,
     expectedArrivalFrom: formData.get("expectedArrivalFrom") || null,
     expectedArrivalTo: formData.get("expectedArrivalTo") || null,
-    cost: parseDecimalToMinorUnits(typeof formData.get("cost") === "string" ? String(formData.get("cost")) : null),
+    cost: parseDecimalToMinorUnits(
+      typeof formData.get("cost") === "string" ? String(formData.get("cost")) : null,
+      currencyCode,
+    ),
     currencyCode,
     exchangeRate,
     productIds: parseProductIds(formData.get("productIds")),

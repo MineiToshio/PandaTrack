@@ -117,7 +117,7 @@ export default function DeliveryDataFields({
             placeholder={t("create.fields.costPlaceholder")}
             error={Boolean(errors.cost)}
             onChange={(e) => {
-              onChange({ cost: sanitizeDecimalInput(e.target.value) });
+              onChange({ cost: sanitizeDecimalInput(e.target.value, values.currencyCode) });
               onClearError("cost");
             }}
           />

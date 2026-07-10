@@ -32,13 +32,19 @@ export async function createOrderAction(
   }
   const userId = session.user.id;
 
+  const currencyCodeRaw = formData.get("currencyCode");
+  const currencyCode = typeof currencyCodeRaw === "string" ? currencyCodeRaw : undefined;
+
   const rawItems = parseItemsJson(formData.get("items"));
   const items = rawItems.map((item: unknown) => {
     const row = item as Record<string, unknown>;
     return {
       name: row.name,
       quantity: typeof row.quantity === "string" ? parseInt(row.quantity, 10) : row.quantity,
-      unitPrice: row.unitPrice != null && row.unitPrice !== "" ? parseDecimalToMinorUnits(String(row.unitPrice)) : null,
+      unitPrice:
+        row.unitPrice != null && row.unitPrice !== ""
+          ? parseDecimalToMinorUnits(String(row.unitPrice), currencyCode)
+          : null,
       productTypeKey: row.productTypeKey || null,
       position: typeof row.position === "number" ? row.position : 1,
     };
@@ -52,12 +58,15 @@ export async function createOrderAction(
     orderDate: formData.get("orderDate") ?? undefined,
     expectedDeliveryFrom: formData.get("expectedDeliveryFrom") || null,
     expectedDeliveryTo: formData.get("expectedDeliveryTo") || null,
-    currencyCode: formData.get("currencyCode") ?? undefined,
+    currencyCode: currencyCode ?? undefined,
     exchangeRate:
       exchangeRateRaw && typeof exchangeRateRaw === "string" && exchangeRateRaw !== ""
         ? parseFloat(exchangeRateRaw)
         : null,
-    totalCost: totalCostRaw && typeof totalCostRaw === "string" ? parseDecimalToMinorUnits(totalCostRaw) : undefined,
+    totalCost:
+      totalCostRaw && typeof totalCostRaw === "string"
+        ? parseDecimalToMinorUnits(totalCostRaw, currencyCode)
+        : undefined,
     items,
   };
 
@@ -95,6 +104,9 @@ export async function editOrderAction(
   }
   const userId = session.user.id;
 
+  const currencyCodeRaw = formData.get("currencyCode");
+  const currencyCode = typeof currencyCodeRaw === "string" ? currencyCodeRaw : undefined;
+
   const rawItems = parseItemsJson(formData.get("items"));
   const items = rawItems.map((item: unknown) => {
     const row = item as Record<string, unknown>;
@@ -102,7 +114,10 @@ export async function editOrderAction(
       id: typeof row.id === "string" ? row.id : undefined,
       name: row.name,
       quantity: typeof row.quantity === "string" ? parseInt(row.quantity, 10) : row.quantity,
-      unitPrice: row.unitPrice != null && row.unitPrice !== "" ? parseDecimalToMinorUnits(String(row.unitPrice)) : null,
+      unitPrice:
+        row.unitPrice != null && row.unitPrice !== ""
+          ? parseDecimalToMinorUnits(String(row.unitPrice), currencyCode)
+          : null,
       productTypeKey: row.productTypeKey || null,
       position: typeof row.position === "number" ? row.position : 1,
     };
@@ -117,12 +132,15 @@ export async function editOrderAction(
     orderDate: formData.get("orderDate") ?? undefined,
     expectedDeliveryFrom: formData.get("expectedDeliveryFrom") || null,
     expectedDeliveryTo: formData.get("expectedDeliveryTo") || null,
-    currencyCode: formData.get("currencyCode") ?? undefined,
+    currencyCode: currencyCode ?? undefined,
     exchangeRate:
       exchangeRateRaw && typeof exchangeRateRaw === "string" && exchangeRateRaw !== ""
         ? parseFloat(exchangeRateRaw)
         : null,
-    totalCost: totalCostRaw && typeof totalCostRaw === "string" ? parseDecimalToMinorUnits(totalCostRaw) : undefined,
+    totalCost:
+      totalCostRaw && typeof totalCostRaw === "string"
+        ? parseDecimalToMinorUnits(totalCostRaw, currencyCode)
+        : undefined,
     items,
   };
 

@@ -1,5 +1,41 @@
 import { z } from "zod";
 import { isAllowedCollectorBaseCurrency } from "@/lib/catalog/collectorCountries";
+import { isWholeMajorAmount, isZeroDecimalCurrency } from "@/lib/currency";
+
+/**
+ * Zero-decimal currencies have no subunit, so a ×100 minor-units amount must land on a whole
+ * major amount. Flags `totalCost` and any item `unitPrice` that carry fractional subunits when
+ * the order currency is exponent-0 (CLP, JPY, KRW). Skips when currency or amount is absent
+ * (partial edit payloads), leaving the field-level rules to handle those.
+ */
+function zeroDecimalAmountRefinement(
+  data: {
+    currencyCode?: string;
+    totalCost?: number;
+    items?: { unitPrice?: number | null }[];
+  },
+  ctx: z.RefinementCtx,
+) {
+  if (!data.currencyCode || !isZeroDecimalCurrency(data.currencyCode)) {
+    return;
+  }
+  if (typeof data.totalCost === "number" && !isWholeMajorAmount(data.totalCost)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["totalCost"],
+      message: "TOTAL_COST_FRACTIONAL_SUBUNITS",
+    });
+  }
+  data.items?.forEach((item, index) => {
+    if (typeof item.unitPrice === "number" && !isWholeMajorAmount(item.unitPrice)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["items", index, "unitPrice"],
+        message: "UNIT_PRICE_FRACTIONAL_SUBUNITS",
+      });
+    }
+  });
+}
 
 const MIN_TOTAL_COST = 1;
 const MAX_TOTAL_COST = 999_999_999;
@@ -80,6 +116,7 @@ export const orderCreateSchema = z
         });
       }
     }
+    zeroDecimalAmountRefinement(data, ctx);
   });
 
 export const orderItemEditRowSchema = orderItemRowSchema.extend({
@@ -108,6 +145,7 @@ export const orderEditSchema = z
         });
       }
     }
+    zeroDecimalAmountRefinement(data, ctx);
   });
 
 export const orderCancelSchema = z.object({

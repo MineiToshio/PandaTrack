@@ -4,8 +4,9 @@ import { useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { CircleDollarSign, X } from "lucide-react";
 import { cn } from "@/lib/styles";
-import { formatAmountSymbolOnly } from "@/lib/currency";
+import { formatAmountSymbolOnly, getCurrencyDecimals, MINOR_UNITS_PER_MAJOR } from "@/lib/currency";
 import { sanitizeDecimalInput } from "@/lib/decimalInput";
+import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
 import { utcDomainDateToLocal } from "@/lib/domainDate";
 
 type OrderInlinePaymentFormProps = {
@@ -17,14 +18,8 @@ type OrderInlinePaymentFormProps = {
   onSubmit: (amount: number, paymentDate: Date) => Promise<{ ok: boolean; error?: string }>;
 };
 
-function parseDecimalToMinorUnits(value: string): number | null {
-  const parsed = parseFloat(value);
-  if (isNaN(parsed) || parsed <= 0) return null;
-  return Math.round(parsed * 100);
-}
-
-function minorUnitsToInputString(minor: number): string {
-  return (minor / 100).toFixed(2);
+function minorUnitsToInputString(minor: number, currencyCode: string): string {
+  return (minor / MINOR_UNITS_PER_MAJOR).toFixed(getCurrencyDecimals(currencyCode));
 }
 
 function toIsoDate(date: Date): string {
@@ -76,7 +71,7 @@ export default function OrderInlinePaymentForm({
   }, []);
 
   const paymentDate = parseIsoDate(paymentDateStr);
-  const parsedAmount = parseDecimalToMinorUnits(amountStr);
+  const parsedAmount = parseDecimalToMinorUnits(amountStr, currencyCode);
   const amountExceedsBalance = parsedAmount !== null && parsedAmount > remainingAmount;
   // `orderDate` is a UTC-midnight domain date; convert to local-midnight on the same
   // calendar day so the boundary lines up with `paymentDate` (already local-midnight from
@@ -171,7 +166,7 @@ export default function OrderInlinePaymentForm({
           aria-label={t("detail.payments.amountLabel")}
           aria-invalid={amountExceedsBalance}
           value={amountStr}
-          onChange={(e) => setAmountStr(sanitizeDecimalInput(e.target.value))}
+          onChange={(e) => setAmountStr(sanitizeDecimalInput(e.target.value, currencyCode))}
           disabled={isPending}
           placeholder={t("detail.payments.amountPlaceholder")}
           className={cn(
@@ -192,7 +187,7 @@ export default function OrderInlinePaymentForm({
         <div className="mb-3 flex flex-wrap items-center gap-1.5">
           <button
             type="button"
-            onClick={() => setAmountStr(minorUnitsToInputString(remainingAmount))}
+            onClick={() => setAmountStr(minorUnitsToInputString(remainingAmount, currencyCode))}
             disabled={isPending}
             className={cn(
               "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium",
@@ -204,7 +199,7 @@ export default function OrderInlinePaymentForm({
           </button>
           <button
             type="button"
-            onClick={() => setAmountStr(minorUnitsToInputString(halfMinor))}
+            onClick={() => setAmountStr(minorUnitsToInputString(halfMinor, currencyCode))}
             disabled={isPending}
             className={cn(
               "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium",
