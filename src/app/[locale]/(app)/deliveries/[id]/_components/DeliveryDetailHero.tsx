@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, CheckCircle, PackageCheck, Truck } from "lucide-react";
+import { AlertTriangle, Ban, CheckCircle, PackageCheck, Truck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import CodeCopyButton from "@/components/core/CodeCopyButton";
 import Eyebrow from "@/components/core/Eyebrow";
@@ -23,6 +23,7 @@ type DeliveryDetailHeroProps = {
     cost: number;
     currencyCode: string;
     exchangeRate: number | null;
+    needsExchangeRateUpdate: boolean;
     productCount: number;
   };
   /** Live (optimistic) lifecycle state owned by the coordinator. */
@@ -71,16 +72,25 @@ export default function DeliveryDetailHero({
   const isCancelled = status === "CANCELLED";
   const overdueDays = status === "IN_TRANSIT" ? getDeliveryOverdueDays(delivery.expectedArrivalTo, today) : 0;
 
+  // A stale FX flag (set when the base currency changed) suppresses the converted amount so we
+  // never surface a conversion computed from an outdated rate — the collector reconciles it by
+  // editing the delivery. The chip in the header explains the missing conversion.
+  const fxPending = delivery.needsExchangeRateUpdate && delivery.currencyCode !== baseCurrencyCode;
   const costLabel = formatAmountWithSymbol(delivery.cost, delivery.currencyCode, locale);
   const showConversion =
-    delivery.exchangeRate != null && baseCurrencyCode != null && delivery.currencyCode !== baseCurrencyCode;
+    !fxPending &&
+    delivery.exchangeRate != null &&
+    baseCurrencyCode != null &&
+    delivery.currencyCode !== baseCurrencyCode;
   // Same minor-unit scale on both sides: minor × rate = converted minor.
   const convertedLabel = showConversion
     ? formatAmountSymbolOnly(Math.round(delivery.cost * delivery.exchangeRate!), baseCurrencyCode!, locale)
     : null;
   const costCaption = convertedLabel
     ? t("detail.hero.costWithConversion", { cost: costLabel, converted: convertedLabel, base: baseCurrencyCode! })
-    : t("detail.hero.cost", { cost: costLabel });
+    : fxPending
+      ? t("detail.hero.costFxPending", { cost: costLabel })
+      : t("detail.hero.cost", { cost: costLabel });
 
   // Temporal progress of the shipping window: shipped date → window end (S9-D1).
   const windowLabel = formatHeroWindow(delivery.expectedArrivalFrom, delivery.expectedArrivalTo, locale);
@@ -132,6 +142,12 @@ export default function DeliveryDetailHero({
               copiedAnnouncement={t("detail.hero.codeCopied")}
             />
             <StatusChip kind="deliveryStatus" value={status} overdueDays={overdueDays} />
+            {fxPending && !isCancelled && (
+              <span className="border-warning/35 bg-warning/15 text-warning inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium">
+                <AlertTriangle className="size-3.5" aria-hidden />
+                {t("detail.hero.chipFxPending")}
+              </span>
+            )}
           </div>
         </div>
       </div>

@@ -72,7 +72,8 @@
       "currencySameAsBaseHelper": "Misma moneda que tu base: no necesitas tipo de cambio.",
       "fxLabel": "Tipo de cambio",
       "fxPlaceholder": "0.00",
-      "fxHelper": "1 {from} = ? {to}. Solo te lo pedimos porque la moneda difiere de tu base."
+      "fxHelper": "1 {from} = ? {to}. Solo te lo pedimos porque la moneda difiere de tu base.",
+      "fxOutdatedWarning": "El tipo de cambio puede estar desactualizado tras cambiar tu moneda base. Verifícalo."
     },
     "step4": {
       "eyebrow": "Paso 4 · Confirmar",
@@ -175,6 +176,8 @@
       "windowEndedAgo": "la ventana terminó hace {days, plural, one {# día} other {# días}}",
       "cost": "costo de envío {cost}",
       "costWithConversion": "costo de envío {cost} (≈ {converted} {base})",
+      "costFxPending": "costo de envío {cost} · conversión pendiente",
+      "chipFxPending": "Tipo de cambio pendiente",
       "progressAria": "En tránsito, {pct}% de la ventana"
     },
     "products": {
@@ -190,6 +193,7 @@
       "cost": "Costo de envío",
       "exchangeRate": "Tipo de cambio",
       "exchangeRateValue": "1 {from} = {rate} {to}",
+      "exchangeRatePending": "Pendiente de actualizar",
       "sourceOrders": "Pedidos origen"
     },
     "actions": {

@@ -211,6 +211,7 @@ export default function DeliveryDetailClient({
         cost: delivery.cost,
         currencyCode: delivery.currencyCode,
         exchangeRate: delivery.exchangeRate,
+        needsExchangeRateUpdate: delivery.needsExchangeRateUpdate,
         store: { name: delivery.store.name, slug: delivery.store.slug },
         sourceOrderCodes,
       }}
@@ -236,6 +237,7 @@ export default function DeliveryDetailClient({
             cost: delivery.cost,
             currencyCode: delivery.currencyCode,
             exchangeRate: delivery.exchangeRate,
+            needsExchangeRateUpdate: delivery.needsExchangeRateUpdate,
             productCount: delivery.productCount,
           }}
           status={status}

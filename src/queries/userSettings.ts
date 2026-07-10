@@ -3,6 +3,7 @@ import { cache } from "react";
 import { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import { flagOrdersForFxReconciliation } from "@/lib/data/orders/orderMutations";
+import { flagDeliveriesForFxReconciliation } from "@/lib/data/deliveries/deliveryMutations";
 import {
   parseCollectorPreferencesPatch,
   type CollectorPreferencesPatchInput,
@@ -290,10 +291,10 @@ export async function parseAndApplyCollectorPreferencesPatch(
 
 /**
  * Persists a base-currency change and, when the base currency actually changes, flags every order
- * in a different currency for FX reconciliation — all in a single transaction. This prevents the
- * inconsistent state where the new base currency is saved but the affected orders keep their now
- * stale rates unflagged (or vice versa). Flagging never mutates rates; the collector reconciles
- * them in the orders FX modal.
+ * AND delivery in a different currency for FX reconciliation — all in a single transaction. This
+ * prevents the inconsistent state where the new base currency is saved but the affected orders or
+ * deliveries keep their now stale rates unflagged (or vice versa). Flagging never mutates rates;
+ * the collector reconciles orders in the orders FX modal and deliveries by editing each delivery.
  */
 export async function applyBaseCurrencyChange(
   userId: string,
@@ -308,6 +309,7 @@ export async function applyBaseCurrencyChange(
 
     if (options.previousBaseCurrencyCode !== options.nextBaseCurrencyCode) {
       await flagOrdersForFxReconciliation(userId, options.nextBaseCurrencyCode, tx);
+      await flagDeliveriesForFxReconciliation(userId, options.nextBaseCurrencyCode, tx);
     }
 
     return applied;

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ClipboardList } from "lucide-react";
+import { AlertTriangle, ClipboardList } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Eyebrow from "@/components/core/Eyebrow";
 import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
@@ -18,6 +18,7 @@ type DeliverySummaryCardProps = {
     cost: number;
     currencyCode: string;
     exchangeRate: number | null;
+    needsExchangeRateUpdate: boolean;
     store: { name: string; slug: string };
     sourceOrderCodes: string[];
   };
@@ -48,8 +49,11 @@ export default function DeliverySummaryCard({
 }: DeliverySummaryCardProps) {
   const t = useTranslations("deliveries");
 
-  const showFxRow =
-    delivery.exchangeRate != null && baseCurrencyCode != null && delivery.currencyCode !== baseCurrencyCode;
+  const differsFromBase = baseCurrencyCode != null && delivery.currencyCode !== baseCurrencyCode;
+  // A stale FX flag suppresses the converted value; we surface a "pending" row instead so the
+  // conversion is never shown from an outdated rate. Reconciled by editing the delivery.
+  const fxPending = delivery.needsExchangeRateUpdate && differsFromBase;
+  const showFxRow = !fxPending && delivery.exchangeRate != null && differsFromBase;
 
   const rows: Array<{ key: string; label: string; value: React.ReactNode; mono?: boolean }> = [
     {
@@ -91,6 +95,20 @@ export default function DeliverySummaryCard({
               ),
             }),
             mono: true,
+          },
+        ]
+      : []),
+    ...(fxPending
+      ? [
+          {
+            key: "fxPending",
+            label: t("detail.summary.exchangeRate"),
+            value: (
+              <span className="text-warning inline-flex items-center gap-1.5">
+                <AlertTriangle className="size-3.5 shrink-0" aria-hidden />
+                {t("detail.summary.exchangeRatePending")}
+              </span>
+            ),
           },
         ]
       : []),

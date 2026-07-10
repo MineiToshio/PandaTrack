@@ -66,6 +66,7 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - `FR-08-08`: A delivery must support a delivery currency selected by the user.
 - `FR-08-09`: Delivery currency must default to the user's base currency when present.
 - `FR-08-10`: When delivery currency differs from the user's base currency, the delivery flow must require one exchange-rate value for reporting.
+- `FR-08-10a`: When the collector changes their base currency, every delivery whose currency differs from the new base must be flagged as pending FX reconciliation in the same transaction that persists the base-currency change (mirroring the order-level flag). While a delivery is flagged, surfaces that convert its cost to the base currency (detail hero, summary card) must suppress the stale conversion and show a pending indicator instead of a value computed from the now-outdated rate. The flag never mutates the stored rate. Editing the delivery and saving reaffirms its currency and rate and clears the flag — per-delivery edit is the reconciliation path (there is no bulk delivery FX-reconciliation modal for MVP). A delivery whose currency equals the base currency is never flagged.
 - `FR-08-11`: A delivery must support an expected arrival date range.
 - `FR-08-13`: Delivery state must be derived from lifecycle actions rather than edited directly through a free status field.
 - `FR-08-14`: Delivery states for MVP must include `IN_TRANSIT`, `DELIVERED`, and `CANCELLED`.
@@ -211,9 +212,9 @@ Each delivery route under `/{locale}/(app)/deliveries`. All routes are authentic
 ### Detail — `/{locale}/deliveries/[id]`
 
 - **Purpose:** inspect one delivery and run its lifecycle actions.
-- **Data loaded:** `getDeliveryDetail(deliveryId, userId)` → summary, products grouped by source order (sorted by order date then item position), aggregated product count, current lifecycle state, action-availability flags, `receivedDate` when delivered, and the private note; plus the user's base currency for FX display.
+- **Data loaded:** `getDeliveryDetail(deliveryId, userId)` → summary, products grouped by source order (sorted by order date then item position), aggregated product count, current lifecycle state, action-availability flags, `receivedDate` when delivered, the FX-pending flag (`needsExchangeRateUpdate`), and the private note; plus the user's base currency for FX display.
 - **Actions:** `saveDeliveryNoteAction`, `markDeliveredAction`, `reopenDeliveryAction`, `cancelDeliveryAction`, `deleteDeliveryAction` (behavior per Lifecycle Interaction Model); `Edit` → `/[id]/edit`.
-- **States:** per-status hero (IN_TRANSIT = expected-arrival window + overdue signal; DELIVERED = received + shipped + cost; CANCELLED = shipped + products-returned note); 404 when not owned.
+- **States:** per-status hero (IN_TRANSIT = expected-arrival window + overdue signal; DELIVERED = received + shipped + cost; CANCELLED = shipped + products-returned note); FX-pending badge on the hero + suppressed conversion in hero and summary card when `needsExchangeRateUpdate` (`FR-08-10a`); 404 when not owned.
 
 ### Create — `/{locale}/deliveries/new` (optional `?sourceOrderId=`)
 
@@ -228,7 +229,7 @@ Each delivery route under `/{locale}/(app)/deliveries`. All routes are authentic
 - **Guard:** editable only while `IN_TRANSIT`; a `DELIVERED`/`CANCELLED` delivery redirects to detail with a reopen-first message (`FR-08-24`).
 - **Data loaded:** `getDeliveryDetail` for current values; `getEligibleProductsForStore(storeId, userId, excludeDeliveryId)` so the delivery's own products stay selectable alongside other eligible products of the same store. The store itself is immutable (read-only display, never re-selected).
 - **Actions:** `editDeliveryAction`.
-- **States:** unsaved-changes navigation guard; field validation; atomic stale-edit failure (membership/metadata revalidated inside the transaction — no partial save).
+- **States:** unsaved-changes navigation guard; field validation; atomic stale-edit failure (membership/metadata revalidated inside the transaction — no partial save); FX-outdated warning on the exchange-rate field when the delivery is flagged pending FX reconciliation (`FR-08-10a`), cleared on save.
 
 ## State Model
 

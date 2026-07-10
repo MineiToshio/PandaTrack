@@ -512,6 +512,10 @@ export async function editDelivery(
           ...(input.cost !== undefined ? { cost: input.cost } : {}),
           ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),
           exchangeRate: input.exchangeRate ?? null,
+          // Saving an edit reaffirms this delivery's currency + rate, so it leaves the
+          // FX-pending set. Individual edit is the reconciliation path for deliveries
+          // (no bulk delivery FX modal); a delivery in base currency stays unflagged too.
+          needsExchangeRateUpdate: false,
         },
       });
 
@@ -534,4 +538,50 @@ export async function editDelivery(
       }
       throw error;
     });
+}
+
+// ---------------------------------------------------------------------------
+// FX reconciliation
+// ---------------------------------------------------------------------------
+
+/**
+ * Re-flag the user's deliveries for FX reconciliation after a base-currency change. Every
+ * delivery whose currency now differs from the new base has a stale stored `exchangeRate`, so
+ * it is marked `needsExchangeRateUpdate`; deliveries already in the new base currency are
+ * unmarked. This mirrors the order-level flagging (`flagOrdersForFxReconciliation`).
+ *
+ * This only sets the flag — it never mutates `exchangeRate`. The collector reconciles the real
+ * rate by editing the delivery (the deliberate "no silent bulk rate mutation" rule). There is no
+ * bulk delivery FX modal; per-delivery edit is the reconciliation path.
+ *
+ * An optional transaction client lets the caller run the flagging inside a wider transaction (for
+ * example alongside the base-currency change) so both commit or roll back together.
+ */
+export async function flagDeliveriesForFxReconciliation(
+  userId: string,
+  newBaseCurrencyCode: string,
+  tx?: Prisma.TransactionClient,
+): Promise<void> {
+  if (tx) {
+    await tx.delivery.updateMany({
+      where: { userId, currencyCode: { not: newBaseCurrencyCode } },
+      data: { needsExchangeRateUpdate: true },
+    });
+    await tx.delivery.updateMany({
+      where: { userId, currencyCode: newBaseCurrencyCode },
+      data: { needsExchangeRateUpdate: false },
+    });
+    return;
+  }
+
+  await prisma.$transaction([
+    prisma.delivery.updateMany({
+      where: { userId, currencyCode: { not: newBaseCurrencyCode } },
+      data: { needsExchangeRateUpdate: true },
+    }),
+    prisma.delivery.updateMany({
+      where: { userId, currencyCode: newBaseCurrencyCode },
+      data: { needsExchangeRateUpdate: false },
+    }),
+  ]);
 }

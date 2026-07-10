@@ -155,7 +155,11 @@ detail. Do not add it for symmetry.
 3. **Protagonist block** (the divergence from Orders): label `"Llegada estimada"` →
    large range in `detail-hero-amount` → sub `"enviada el {fecha}"` → a temporal
    `progress` bar of the window → a muted caption carrying cost (`¥3.800 (≈ $24,70 USD)`
-   when FX applies).
+   when FX applies). When the delivery is flagged pending FX reconciliation
+   (`needsExchangeRateUpdate`, `FR-08-10a`) the converted amount is **suppressed** — the
+   caption reads `"… · conversión pendiente"` and a `tone-warning` `"Tipo de cambio pendiente"`
+   chip sits beside the status chip in the head — so a stale rate is never shown as a value.
+   Cleared by editing the delivery (the reconciliation path; mirrors the order FX chip).
 
 **Per-state hero** (prototype anchors in parentheses):
 

@@ -190,4 +190,25 @@ describe("editDelivery", () => {
       }),
     });
   });
+
+  it("clears the FX-reconciliation flag on save (per-delivery edit is the reconciliation path)", async () => {
+    const tx = makeTx({
+      delivery: deliveryFixture(["kept"]),
+      selectedItems: [selectedItem("kept", OrderItemDeliveryState.IN_TRANSIT)],
+    });
+    useTx(tx);
+
+    const result = await editDelivery("dlv-1", USER_ID, {
+      ...BASE_INPUT,
+      currencyCode: "EUR",
+      exchangeRate: 1.1,
+      productIds: ["kept"],
+    });
+
+    expect(result.ok).toBe(true);
+    expect(tx.delivery.update).toHaveBeenCalledWith({
+      where: { id: "dlv-1" },
+      data: expect.objectContaining({ exchangeRate: 1.1, needsExchangeRateUpdate: false }),
+    });
+  });
 });

@@ -72,7 +72,8 @@
       "currencySameAsBaseHelper": "Same currency as your base: no exchange rate needed.",
       "fxLabel": "Exchange rate",
       "fxPlaceholder": "0.00",
-      "fxHelper": "1 {from} = ? {to}. We only ask because the currency differs from your base."
+      "fxHelper": "1 {from} = ? {to}. We only ask because the currency differs from your base.",
+      "fxOutdatedWarning": "Rate may be outdated after your base-currency change — review it."
     },
     "step4": {
       "eyebrow": "Step 4 · Confirm",
@@ -175,6 +176,8 @@
       "windowEndedAgo": "the window ended {days, plural, one {# day} other {# days}} ago",
       "cost": "shipping cost {cost}",
       "costWithConversion": "shipping cost {cost} (≈ {converted} {base})",
+      "costFxPending": "shipping cost {cost} · conversion pending",
+      "chipFxPending": "FX update pending",
       "progressAria": "In transit, {pct}% of the window"
     },
     "products": {
@@ -190,6 +193,7 @@
       "cost": "Shipping cost",
       "exchangeRate": "Exchange rate",
       "exchangeRateValue": "1 {from} = {rate} {to}",
+      "exchangeRatePending": "Pending update",
       "sourceOrders": "Source orders"
     },
     "actions": {

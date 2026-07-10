@@ -62,6 +62,7 @@ export default async function DeliveryEditPage({ params }: DeliveryEditPageProps
           cost: delivery.cost,
           currencyCode: delivery.currencyCode,
           exchangeRate: delivery.exchangeRate,
+          needsExchangeRateUpdate: delivery.needsExchangeRateUpdate,
           currentProductIds,
         }}
         products={products}

@@ -40,6 +40,8 @@ export type DeliveryEditInitialData = {
   cost: number;
   currencyCode: string;
   exchangeRate: number | null;
+  /** Stale-rate flag from a base-currency change; drives the FX-outdated warning in the form. */
+  needsExchangeRateUpdate: boolean;
   currentProductIds: string[];
 };
 
@@ -346,6 +348,7 @@ export default function DeliveryEditForm({
                 idPrefix="delivery-edit"
                 onChange={handleDataChange}
                 onClearError={handleClearDataError}
+                showFxOutdatedWarning={initialDelivery.needsExchangeRateUpdate}
               />
 
               <div className="mt-5 flex flex-wrap items-center gap-3 pt-4 [border-top:1px_solid_var(--border)]">

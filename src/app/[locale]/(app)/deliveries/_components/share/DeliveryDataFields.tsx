@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertTriangle } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import DatePickerInput from "@/components/core/DatePickerInput";
 import DateRangePickerInput from "@/components/core/DateRangePickerInput";
@@ -34,6 +35,8 @@ type DeliveryDataFieldsProps = {
   onChange: (patch: Partial<DeliveryDataValues>) => void;
   /** Clears the inline error of an edited field. */
   onClearError: (field: keyof DeliveryDataErrors) => void;
+  /** Edit-only: warns that the stored rate may be stale after a base-currency change. */
+  showFxOutdatedWarning?: boolean;
 };
 
 /**
@@ -49,6 +52,7 @@ export default function DeliveryDataFields({
   idPrefix,
   onChange,
   onClearError,
+  showFxOutdatedWarning = false,
 }: DeliveryDataFieldsProps) {
   const t = useTranslations("deliveries");
   const tCurrencies = useTranslations("orders.currencies");
@@ -174,6 +178,12 @@ export default function DeliveryDataFields({
                 onClearError("exchangeRate");
               }}
             />
+            {showFxOutdatedWarning && (
+              <p className="text-warning flex items-center gap-1.5 text-[12px]" role="status">
+                <AlertTriangle size={13} aria-hidden />
+                {t("create.fields.fxOutdatedWarning")}
+              </p>
+            )}
             {errors.exchangeRate ? (
               <FieldError message={errors.exchangeRate} />
             ) : (

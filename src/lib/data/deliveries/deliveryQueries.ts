@@ -403,6 +403,8 @@ export type DeliveryDetail = {
   cost: number;
   currencyCode: string;
   exchangeRate: number | null;
+  /** True when a base-currency change left this delivery's stored rate stale (FX reconciliation). */
+  needsExchangeRateUpdate: boolean;
   note: string | null;
   updatedAt: Date;
   store: { id: string; name: string; slug: string };
@@ -426,6 +428,7 @@ export async function getDeliveryDetail(deliveryId: string, userId: string): Pro
       cost: true,
       currencyCode: true,
       exchangeRate: true,
+      needsExchangeRateUpdate: true,
       note: true,
       updatedAt: true,
       store: { select: { id: true, name: true, slug: true } },
@@ -490,6 +493,7 @@ export async function getDeliveryDetail(deliveryId: string, userId: string): Pro
     cost: delivery.cost,
     currencyCode: delivery.currencyCode,
     exchangeRate: delivery.exchangeRate ? Number(delivery.exchangeRate) : null,
+    needsExchangeRateUpdate: delivery.needsExchangeRateUpdate,
     note: delivery.note,
     updatedAt: delivery.updatedAt,
     store: delivery.store,
