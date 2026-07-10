@@ -27,6 +27,18 @@ export function isZeroDecimalCurrency(currencyCode: string): boolean {
 }
 
 /**
+ * Formats a ×100 minor-units integer as the bare decimal string a form input expects,
+ * honouring the currency exponent (0 fraction digits for CLP/JPY/KRW, 2 otherwise) — no code,
+ * no symbol, no thousands separator. Used to prefill/round the order total, item unit price and
+ * delivery cost fields. A currency-blind `.toFixed(2)` here would emit a "43000.00" that the
+ * currency-aware validator and parser reject for a zero-decimal currency, so the field must be
+ * seeded with the exponent-correct string that round-trips cleanly on submit.
+ */
+export function formatCentsForInput(minorUnits: number, currencyCode: string): string {
+  return (minorUnits / MINOR_UNITS_PER_MAJOR).toFixed(getCurrencyDecimals(currencyCode));
+}
+
+/**
  * True when a ×100 minor-units amount represents a whole major amount. Zero-decimal currencies
  * must satisfy this because they have no subunit to occupy the fractional ×100 space.
  */

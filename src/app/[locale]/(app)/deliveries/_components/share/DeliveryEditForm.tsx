@@ -21,9 +21,9 @@ import Modal from "@/components/modules/Modal/Modal";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { AsideSummary, AsideSummaryRow } from "@/components/modules/AsideSummary";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { formatAmountWithSymbol } from "@/lib/currency";
+import { formatAmountWithSymbol, formatCentsForInput } from "@/lib/currency";
 import { utcDomainDateToLocal } from "@/lib/domainDate";
-import { isValidPositiveDecimal } from "@/lib/decimalInput";
+import { isValidNonNegativeDecimal, isValidRate } from "@/lib/decimalInput";
 import type { EligibleProductsResult } from "@/lib/data/deliveries/deliveryQueries";
 import type { DeliveryCreateActionResult } from "../../new/_actions/createDeliveryAction";
 import DeliveryDataFields, { type DeliveryDataErrors, type DeliveryDataValues } from "./DeliveryDataFields";
@@ -58,10 +58,6 @@ function toIsoDate(date: Date): string {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
-}
-
-function isValidNonNegativeDecimal(value: string): boolean {
-  return /^\d+(\.\d{1,2})?$/.test(value);
 }
 
 function sameIdSet(a: string[], b: string[]): boolean {
@@ -107,7 +103,7 @@ export default function DeliveryEditForm({
     deliveryDate: initialLocalDates.deliveryDate,
     arrivalFrom: initialLocalDates.arrivalFrom,
     arrivalTo: initialLocalDates.arrivalTo,
-    cost: (initialDelivery.cost / 100).toFixed(2),
+    cost: formatCentsForInput(initialDelivery.cost, initialDelivery.currencyCode),
     currencyCode: initialDelivery.currencyCode,
     exchangeRate: initialDelivery.exchangeRate != null ? String(initialDelivery.exchangeRate) : "",
   });
@@ -139,7 +135,7 @@ export default function DeliveryEditForm({
     const arrivalDirty =
       (data.arrivalFrom?.getTime() ?? null) !== (initialLocalDates.arrivalFrom?.getTime() ?? null) ||
       (data.arrivalTo?.getTime() ?? null) !== (initialLocalDates.arrivalTo?.getTime() ?? null);
-    const costDirty = data.cost !== (initialDelivery.cost / 100).toFixed(2);
+    const costDirty = data.cost !== formatCentsForInput(initialDelivery.cost, initialDelivery.currencyCode);
     const currencyDirty = data.currencyCode !== initialDelivery.currencyCode;
     const fxDirty =
       data.exchangeRate !== (initialDelivery.exchangeRate != null ? String(initialDelivery.exchangeRate) : "");
@@ -199,11 +195,11 @@ export default function DeliveryEditForm({
     }
     const errors: DeliveryDataErrors = {};
     if (!data.deliveryDate) errors.deliveryDate = t("create.validation.shippedDateRequired");
-    if (!data.cost.trim() || !isValidNonNegativeDecimal(data.cost)) {
+    if (!data.cost.trim() || !isValidNonNegativeDecimal(data.cost, data.currencyCode)) {
       errors.cost = t("create.validation.costInvalid");
     }
     if (!data.currencyCode) errors.currencyCode = t("create.validation.currencyRequired");
-    if (showExchangeRate && !isValidPositiveDecimal(data.exchangeRate)) {
+    if (showExchangeRate && !isValidRate(data.exchangeRate)) {
       errors.exchangeRate = t("create.validation.fxRequired");
     }
     setDataErrors(errors);
@@ -264,7 +260,9 @@ export default function DeliveryEditForm({
     [fmtShort],
   );
 
-  const costMinor = isValidNonNegativeDecimal(data.cost) ? Math.round(parseFloat(data.cost) * 100) : null;
+  const costMinor = isValidNonNegativeDecimal(data.cost, data.currencyCode)
+    ? Math.round(parseFloat(data.cost) * 100)
+    : null;
   const costLabel =
     costMinor != null && data.currencyCode ? formatAmountWithSymbol(costMinor, data.currencyCode, locale) : "—";
 

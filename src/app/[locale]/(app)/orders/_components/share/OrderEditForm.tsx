@@ -24,7 +24,7 @@ import { Modal } from "@/components/modules/Modal";
 import { AsideSummary, AsideSummaryRow } from "@/components/modules/AsideSummary";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { formatAmount } from "@/lib/currency";
+import { formatAmount, formatCentsForInput } from "@/lib/currency";
 import { utcDomainDateToLocal } from "@/lib/domainDate";
 import { isValidPositiveDecimal, sanitizeDecimalInput } from "@/lib/decimalInput";
 import { fetchTodayRate } from "@/lib/fx/frankfurter";
@@ -72,23 +72,19 @@ type Props = {
   initialOrder: InitialOrderData;
 };
 
-function formatCents(cents: number): string {
-  return (cents / 100).toFixed(2);
-}
-
 function parseCentsFromDecimal(value: string): number | null {
   const n = parseFloat(value);
   if (isNaN(n)) return null;
   return Math.round(n * 100);
 }
 
-function toItemRow(item: InitialOrderItem): ItemRow {
+function toItemRow(item: InitialOrderItem, currencyCode: string): ItemRow {
   return {
     rowId: `row-${item.id}`,
     id: item.id,
     name: item.name,
     quantity: String(item.quantity),
-    unitPrice: item.unitPrice != null ? formatCents(item.unitPrice) : "",
+    unitPrice: item.unitPrice != null ? formatCentsForInput(item.unitPrice, currencyCode) : "",
     productTypeKey: item.productTypeKey ?? "",
   };
 }
@@ -134,8 +130,11 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
   const storeInitial = storeName.charAt(0).toUpperCase() || "·";
 
   const initialItemsRows = useMemo<ItemRow[]>(
-    () => [...initialOrder.items].sort((a, b) => a.position - b.position).map(toItemRow),
-    [initialOrder.items],
+    () =>
+      [...initialOrder.items]
+        .sort((a, b) => a.position - b.position)
+        .map((item) => toItemRow(item, initialOrder.currencyCode)),
+    [initialOrder.items, initialOrder.currencyCode],
   );
 
   // Server domain dates are stored at midnight UTC; the picker works in local time and
@@ -158,7 +157,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
       orderDate: dateToIso(initialLocalDates.orderDate),
       deliveryFrom: dateToIso(initialLocalDates.deliveryFrom),
       deliveryTo: dateToIso(initialLocalDates.deliveryTo),
-      totalCost: formatCents(initialOrder.totalCost),
+      totalCost: formatCentsForInput(initialOrder.totalCost, initialOrder.currencyCode),
       exchangeRate: initialOrder.exchangeRate != null ? String(initialOrder.exchangeRate) : "",
       items: initialItemsRows.map(itemRowSignature).join("§"),
     }),
@@ -171,7 +170,9 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
   const [exchangeRate, setExchangeRate] = useState<string>(
     initialOrder.exchangeRate != null ? String(initialOrder.exchangeRate) : "",
   );
-  const [totalCost, setTotalCost] = useState<string>(formatCents(initialOrder.totalCost));
+  const [totalCost, setTotalCost] = useState<string>(
+    formatCentsForInput(initialOrder.totalCost, initialOrder.currencyCode),
+  );
   const [items, setItems] = useState<ItemRow[]>(initialItemsRows);
 
   const [orderDateError, setOrderDateError] = useState<string | null>(null);
@@ -261,9 +262,9 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
 
   const handleCalculateTotal = useCallback(() => {
     if (calculatedCents === null) return;
-    setTotalCost(formatCents(calculatedCents));
+    setTotalCost(formatCentsForInput(calculatedCents, currencyCode));
     setClientTotalCostError(null);
-  }, [calculatedCents]);
+  }, [calculatedCents, currencyCode]);
 
   const handleFxToday = useCallback(async () => {
     if (!baseCurrencyCode || !currencyCode || currencyCode === baseCurrencyCode) return;

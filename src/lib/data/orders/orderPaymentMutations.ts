@@ -1,5 +1,6 @@
 import { Prisma } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { isWholeMajorAmount, isZeroDecimalCurrency } from "@/lib/currency";
 import { calculatePaymentSummary, type PaymentSummary } from "@/lib/orders/paymentSummary";
 
 // Adding a payment reads the current balance and then writes; under concurrent submissions a
@@ -38,7 +39,10 @@ type DeletePaymentParams = {
 
 type AddPaymentResult =
   | ({ ok: true; paymentId: string } & PaymentMutationSuccess)
-  | { ok: false; error: "ORDER_NOT_FOUND" | "EXCEEDS_BALANCE" | "DATE_BEFORE_ORDER" };
+  | {
+      ok: false;
+      error: "ORDER_NOT_FOUND" | "EXCEEDS_BALANCE" | "DATE_BEFORE_ORDER" | "AMOUNT_FRACTIONAL_SUBUNITS";
+    };
 
 type DeletePaymentResult = ({ ok: true } & PaymentMutationSuccess) | { ok: false; error: "NOT_FOUND" };
 
@@ -54,11 +58,19 @@ export async function addOrderPayment({
         async (tx) => {
           const order = await tx.order.findFirst({
             where: { id: orderId, userId },
-            select: { id: true, totalCost: true, orderDate: true },
+            select: { id: true, totalCost: true, orderDate: true, currencyCode: true },
           });
 
           if (!order) {
             return { ok: false, error: "ORDER_NOT_FOUND" };
+          }
+
+          // Server-side defense: a zero-decimal currency (CLP/JPY/KRW) has no subunit, so a
+          // payment must resolve to a whole major amount. The client parser already rejects
+          // fractional input, but guard here too so a crafted request can't persist a
+          // fractional ×100 amount that would never render back correctly.
+          if (isZeroDecimalCurrency(order.currencyCode) && !isWholeMajorAmount(amount)) {
+            return { ok: false, error: "AMOUNT_FRACTIONAL_SUBUNITS" };
           }
 
           if (paymentDate < order.orderDate) {

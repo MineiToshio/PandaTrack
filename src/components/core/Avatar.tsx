@@ -73,7 +73,7 @@ export default function Avatar({ user, size, ariaLabel, className }: AvatarProps
         aria-label={resolvedLabel}
         className={cn(
           baseClass,
-          "[background:color-mix(in_oklch,var(--text-primary)_14%,var(--surface-elevated))]",
+          "[background:color-mix(in_oklab,var(--text-primary)_14%,var(--surface-elevated))]",
           "[font-family:var(--font-display)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]",
         )}
         style={{ width: px, height: px, ...style }}

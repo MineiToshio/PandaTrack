@@ -49,7 +49,7 @@ export default function DeliveryListLoadingSkeleton({
       >
         <div
           role="row"
-          className={`${TABLE_GRID} px-4 py-2.5 [opacity:0.6] [background:color-mix(in_oklch,var(--text-primary)_3%,var(--surface-elevated))] [border-bottom:1px_solid_var(--border)]`}
+          className={`${TABLE_GRID} px-4 py-2.5 [opacity:0.6] [background:color-mix(in_oklab,var(--text-primary)_3%,var(--surface-elevated))] [border-bottom:1px_solid_var(--border)]`}
         >
           <span aria-hidden />
           <span className={HEADER_CELL_CLASS}>{headers.delivery}</span>

@@ -192,7 +192,7 @@ export default function OrderInlinePaymentForm({
             className={cn(
               "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium",
               "[color:var(--text-secondary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]",
-              "transition-colors hover:[background:color-mix(in_oklch,var(--text-primary)_6%,var(--surface-elevated))]",
+              "transition-colors hover:[background:color-mix(in_oklab,var(--text-primary)_6%,var(--surface-elevated))]",
             )}
           >
             {t("detail.payments.quickPickRemaining", { amount: remainingLabel })}
@@ -204,7 +204,7 @@ export default function OrderInlinePaymentForm({
             className={cn(
               "inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium",
               "[color:var(--text-secondary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)]",
-              "transition-colors hover:[background:color-mix(in_oklch,var(--text-primary)_6%,var(--surface-elevated))]",
+              "transition-colors hover:[background:color-mix(in_oklab,var(--text-primary)_6%,var(--surface-elevated))]",
             )}
           >
             {t("detail.payments.quickPickHalf", { amount: halfLabel })}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { formatAmount } from "@/lib/currency";
 import {
   Ban,
   CircleDollarSign,
@@ -53,7 +54,11 @@ function formatEventLabel(t: ReturnType<typeof useTranslations>, entry: HistoryE
 
   if ((entry.eventType === "PAYMENT_ADDED" || entry.eventType === "PAYMENT_DELETED") && meta.amount != null) {
     const currency = typeof meta.currencyCode === "string" ? meta.currencyCode : "";
-    const amount = `${currency} ${((meta.amount as number) / 100).toFixed(2)}`.trim();
+    // Currency-aware: a zero-decimal currency (CLP/JPY/KRW) must render with no fraction digits,
+    // so the hardcoded `.toFixed(2)` would misrender "43000 CLP" as "CLP 43000.00".
+    const amount = currency
+      ? formatAmount(meta.amount as number, currency)
+      : ((meta.amount as number) / 100).toString();
     return t(key as Parameters<typeof t>[0], { amount });
   }
   if (t.has(key as Parameters<typeof t>[0])) {

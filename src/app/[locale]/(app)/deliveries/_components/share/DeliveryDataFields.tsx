@@ -7,7 +7,7 @@ import DateRangePickerInput from "@/components/core/DateRangePickerInput";
 import Input from "@/components/core/Input";
 import Select from "@/components/core/Select";
 import { ALLOWED_COLLECTOR_BASE_CURRENCY_CODES } from "@/lib/catalog/collectorCountries";
-import { sanitizeDecimalInput } from "@/lib/decimalInput";
+import { sanitizeDecimalInput, sanitizeRateInput } from "@/lib/decimalInput";
 import FieldErrorMsg from "@/components/core/FieldErrorMsg";
 
 export type DeliveryDataValues = {
@@ -173,7 +173,7 @@ export default function DeliveryDataFields({
               placeholder={t("create.fields.fxPlaceholder")}
               error={Boolean(errors.exchangeRate)}
               onChange={(e) => {
-                onChange({ exchangeRate: sanitizeDecimalInput(e.target.value) });
+                onChange({ exchangeRate: sanitizeRateInput(e.target.value) });
                 onClearError("exchangeRate");
               }}
             />

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { isValidPositiveDecimal, sanitizeDecimalInput } from "../decimalInput";
+import {
+  isValidNonNegativeDecimal,
+  isValidPositiveDecimal,
+  isValidRate,
+  sanitizeDecimalInput,
+  sanitizeRateInput,
+} from "../decimalInput";
 
 describe("sanitizeDecimalInput", () => {
   it("keeps up to two fraction digits by default", () => {
@@ -32,5 +38,38 @@ describe("isValidPositiveDecimal", () => {
     expect(isValidPositiveDecimal("43000", "CLP")).toBe(true);
     expect(isValidPositiveDecimal("43000.5", "CLP")).toBe(false);
     expect(isValidPositiveDecimal("100.00", "JPY")).toBe(false);
+  });
+});
+
+describe("isValidNonNegativeDecimal", () => {
+  it("accepts zero and positive within the exponent", () => {
+    expect(isValidNonNegativeDecimal("0")).toBe(true);
+    expect(isValidNonNegativeDecimal("0.00")).toBe(true);
+    expect(isValidNonNegativeDecimal("12.50")).toBe(true);
+    expect(isValidNonNegativeDecimal("12.505")).toBe(false);
+  });
+
+  it("stays currency-aware for zero-decimal currencies", () => {
+    expect(isValidNonNegativeDecimal("0", "CLP")).toBe(true);
+    expect(isValidNonNegativeDecimal("43000", "CLP")).toBe(true);
+    expect(isValidNonNegativeDecimal("43000.5", "CLP")).toBe(false);
+  });
+});
+
+describe("sanitizeRateInput", () => {
+  it("keeps up to six fraction digits so small rates stay typeable", () => {
+    // The 2-decimal sanitizer would truncate this to "0.00" and make the rate unenterable.
+    expect(sanitizeRateInput("0.001080")).toBe("0.001080");
+    expect(sanitizeRateInput("0.0006500")).toBe("0.000650");
+    expect(sanitizeRateInput("1a.08b47")).toBe("1.0847");
+  });
+});
+
+describe("isValidRate", () => {
+  it("accepts a positive rate with up to six decimals", () => {
+    expect(isValidRate("0.00108")).toBe(true);
+    expect(isValidRate("1.084700")).toBe(true);
+    expect(isValidRate("0.0000001")).toBe(false);
+    expect(isValidRate("0")).toBe(false);
   });
 });

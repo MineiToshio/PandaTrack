@@ -372,7 +372,7 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
             appliedCount={drawerAppliedCount}
             onClick={() => setDrawerOpen(true)}
             label={t("filters.openButton")}
-            className="[color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklch,var(--text-primary)_4%,var(--surface-elevated))]"
+            className="[color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
           />
           <Select
             id="orders-sort"
@@ -409,7 +409,7 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
           aria-label={t("filters.iconLabel")}
           // Match the bordered look of the Search input + Nuevo button so all three controls
           // share the same visual height + container affordance in the mobile action row.
-          className="shrink-0 [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklch,var(--text-primary)_4%,var(--surface-elevated))]"
+          className="shrink-0 [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
         />
         <Button
           as="a"

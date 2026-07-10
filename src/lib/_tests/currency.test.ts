@@ -3,10 +3,13 @@ import {
   formatAmount,
   formatAmountSymbolOnly,
   formatAmountWithSymbol,
+  formatCentsForInput,
   getCurrencyDecimals,
   isWholeMajorAmount,
   isZeroDecimalCurrency,
 } from "../currency";
+import { isValidPositiveDecimal } from "../decimalInput";
+import { parseDecimalToMinorUnits } from "../money/parseDecimalToMinorUnits";
 
 describe("currency exponent helpers", () => {
   it("reports 0 decimals for zero-decimal currencies and 2 otherwise", () => {
@@ -40,6 +43,27 @@ describe("formatAmount", () => {
   it("keeps two decimals for standard currencies", () => {
     expect(formatAmount(88850, "USD")).toBe("888.50 USD");
     expect(formatAmount(32000, "EUR")).toBe("320.00 EUR");
+  });
+});
+
+describe("formatCentsForInput prefill round-trip", () => {
+  // A prefilled form field must survive the exact path a submit takes: the seeded string has to
+  // pass the currency-aware validator and re-parse back to the same stored minor units. A
+  // currency-blind ".00" suffix on a zero-decimal currency broke this (rejected on submit).
+  it("round-trips a zero-decimal currency without a decimal suffix", () => {
+    const cents = 4300000; // 43000 CLP stored as ×100 minor units
+    const prefill = formatCentsForInput(cents, "CLP");
+    expect(prefill).toBe("43000");
+    expect(isValidPositiveDecimal(prefill, "CLP")).toBe(true);
+    expect(parseDecimalToMinorUnits(prefill, "CLP")).toBe(cents);
+  });
+
+  it("round-trips a standard currency with its two-decimal suffix", () => {
+    const cents = 88850; // 888.50 USD
+    const prefill = formatCentsForInput(cents, "USD");
+    expect(prefill).toBe("888.50");
+    expect(isValidPositiveDecimal(prefill, "USD")).toBe(true);
+    expect(parseDecimalToMinorUnits(prefill, "USD")).toBe(cents);
   });
 });
 

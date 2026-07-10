@@ -16,15 +16,16 @@ const PAYMENT_DATE = new Date("2020-06-01T00:00:00Z");
 
 type TxOverrides = {
   totalCost?: number;
+  currencyCode?: string;
   existingPayments?: Array<{ id: string; amount: number; paymentDate: Date }>;
 };
 
-function makeTx({ totalCost = 10000, existingPayments = [] }: TxOverrides = {}) {
+function makeTx({ totalCost = 10000, currencyCode = "USD", existingPayments = [] }: TxOverrides = {}) {
   const createdPayment = { id: "payment-new" };
   const updatedPayments = [...existingPayments, { id: createdPayment.id, amount: 0, paymentDate: PAYMENT_DATE }];
   return {
     order: {
-      findFirst: vi.fn().mockResolvedValue({ id: "order-1", totalCost, orderDate: ORDER_DATE }),
+      findFirst: vi.fn().mockResolvedValue({ id: "order-1", totalCost, orderDate: ORDER_DATE, currencyCode }),
     },
     orderPayment: {
       findMany: vi
@@ -63,6 +64,28 @@ describe("addOrderPayment", () => {
 
     expect(result).toEqual({ ok: false, error: "EXCEEDS_BALANCE" });
     expect(tx.orderPayment.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects a fractional amount on a zero-decimal currency without creating it", async () => {
+    // 43000.50 CLP would scale to 4300050 minor units — not a whole major amount for a currency
+    // with no subunit, so the server guard must refuse it even though it fits the balance.
+    const tx = makeTx({ totalCost: 5000000, currencyCode: "CLP" });
+    prismaMock.$transaction.mockImplementation(async (cb: (client: unknown) => unknown) => cb(tx));
+
+    const result = await addOrderPayment({ ...params, amount: 4300050 });
+
+    expect(result).toEqual({ ok: false, error: "AMOUNT_FRACTIONAL_SUBUNITS" });
+    expect(tx.orderPayment.create).not.toHaveBeenCalled();
+  });
+
+  it("accepts a whole major amount on a zero-decimal currency", async () => {
+    const tx = makeTx({ totalCost: 5000000, currencyCode: "CLP" });
+    prismaMock.$transaction.mockImplementation(async (cb: (client: unknown) => unknown) => cb(tx));
+
+    const result = await addOrderPayment({ ...params, amount: 4300000 });
+
+    expect(result).toMatchObject({ ok: true });
+    expect(tx.orderPayment.create).toHaveBeenCalled();
   });
 
   it("retries once and succeeds when the first attempt hits a serialization failure (P2034)", async () => {

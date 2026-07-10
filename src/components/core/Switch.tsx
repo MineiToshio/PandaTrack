@@ -76,7 +76,7 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
                 checked && !isDisabled
                   ? "[background:var(--accent)]"
                   : isDisabled
-                    ? "[background:color-mix(in_oklch,var(--text-primary)_10%,var(--surface))]"
+                    ? "[background:color-mix(in_oklab,var(--text-primary)_10%,var(--surface))]"
                     : "[background:color-mix(in_oklch,var(--text-primary)_16%,transparent)]",
                 // Focus ring on the track via sibling selector
                 "peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2",

@@ -306,7 +306,7 @@ export default function DeliveryListFilters({ locale, storeOptions, initial }: D
             appliedCount={drawerAppliedCount}
             onClick={() => setDrawerOpen(true)}
             label={t("list.filters.openButton")}
-            className="[color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklch,var(--text-primary)_4%,var(--surface-elevated))]"
+            className="[color:var(--text-primary)] [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
           />
           <Select
             id="deliveries-sort"
@@ -348,7 +348,7 @@ export default function DeliveryListFilters({ locale, storeOptions, initial }: D
           onClick={() => setDrawerOpen(true)}
           variant="icon-only"
           aria-label={t("list.filters.iconLabel")}
-          className="shrink-0 [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklch,var(--text-primary)_4%,var(--surface-elevated))]"
+          className="shrink-0 [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
         />
         <Button
           as="a"

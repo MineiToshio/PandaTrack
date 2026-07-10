@@ -286,7 +286,7 @@ export default function DateRangePickerInput({
                   popupPos?.isMobile
                     ? "flex flex-wrap gap-1.5 p-2 [border-bottom:1px_solid_var(--border)]"
                     : "flex w-[150px] shrink-0 flex-col gap-1 p-3 [border-right:1px_solid_var(--border)]",
-                  "[background:color-mix(in_oklch,var(--text-primary)_4%,var(--background))]",
+                  "[background:color-mix(in_oklab,var(--text-primary)_4%,var(--background))]",
                 )}
               >
                 {presets.map((preset) => (

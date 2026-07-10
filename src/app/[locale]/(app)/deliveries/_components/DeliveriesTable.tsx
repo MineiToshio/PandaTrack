@@ -51,7 +51,7 @@ export default function DeliveriesTable({ deliveries, locale, today, returnTo }:
       <div
         role="row"
         className={cn(
-          "grid items-center gap-3 px-4 py-2.5 [background:color-mix(in_oklch,var(--text-primary)_3%,var(--surface-elevated))] [border-bottom:1px_solid_var(--border)]",
+          "grid items-center gap-3 px-4 py-2.5 [background:color-mix(in_oklab,var(--text-primary)_3%,var(--surface-elevated))] [border-bottom:1px_solid_var(--border)]",
           GRID_COLS,
         )}
       >

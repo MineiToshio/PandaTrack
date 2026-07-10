@@ -11,9 +11,14 @@ import { describe, expect, it } from "vitest";
  *  A. Theme-blind Tailwind utility classes (`text-white`, `bg-black`, `bg-blue-500`, …)
  *     in component markup. App UI must use semantic theme tokens, not literal colors.
  *
- *  B. L074 — `color-mix(in oklch, var(--<neutral>) …)`. Mixing a low-chroma NEUTRAL
- *     token in the oklch color space collapses the hue to `none` (→ salmon drift). Those
- *     mixes must use `oklab`. High-chroma accent/status tokens may stay in oklch.
+ *  B. L074 — `color-mix(in oklch, var(--<neutral>) …)` that resolves to an OPAQUE color.
+ *     Mixing a low-chroma NEUTRAL token in the oklch color space collapses the hue to `none`
+ *     (→ salmon drift). Those mixes must use `oklab`. High-chroma accent/status tokens may stay
+ *     in oklch. The check covers BOTH the CSS spacing (`in oklch, var(--…)`) and the Tailwind
+ *     arbitrary-value spelling (`in_oklch,var(--…)`) — the underscore form was previously a blind
+ *     spot. Neutral tints over `transparent` (the documented hover/pressed/selected overlays,
+ *     visual-foundations.md) are intentionally excluded: an overlay near full transparency carries
+ *     no perceptible hue to drift, so only opaque neutral mixes are flagged.
  *
  * Legitimate hardcoded colors (OG images, transactional emails, the catastrophic
  * `global-error` fallback, brand SVG marks) live outside Tailwind `className`s / token
@@ -26,7 +31,7 @@ const THEME_BLIND_CLASS =
   /\b(?:text|bg|border|ring|divide|fill|stroke|from|via|to)-(?:white|black)\b|\b(?:text|bg|border|ring|divide|fill|stroke|from|via|to)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/;
 
 const OKLCH_OVER_NEUTRAL =
-  /color-mix\(\s*in oklch\s*,\s*var\(--(?:surface|surface-elevated|background|foreground|text-primary|text-secondary|text-muted|text-body|text-title|border|border-strong)\b/;
+  /color-mix\(\s*in[\s_]oklch\s*,\s*var\(--(?:surface|surface-elevated|background|foreground|text-primary|text-secondary|text-muted|text-body|text-title|border|border-strong)\)[^,]*,[\s_]*(?!transparent\b)/;
 
 function isTestPath(path: string): boolean {
   return /\.test\.[tj]sx?$/.test(path) || /(?:^|\/)(?:_tests|__tests__)(?:\/|$)/.test(path);

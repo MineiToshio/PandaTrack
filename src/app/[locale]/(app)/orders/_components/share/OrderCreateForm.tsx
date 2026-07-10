@@ -30,7 +30,7 @@ import {
   isCollectorCountryCode,
 } from "@/lib/catalog/collectorCountries";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { formatAmount } from "@/lib/currency";
+import { formatAmount, formatCentsForInput } from "@/lib/currency";
 import { isValidPositiveDecimal, sanitizeDecimalInput } from "@/lib/decimalInput";
 import { fetchTodayRate } from "@/lib/fx/frankfurter";
 import { deriveItemizedTotal, shouldShowDiscrepancyModal } from "@/lib/orders/orderItemUtils";
@@ -50,10 +50,6 @@ type Props = {
   baseCurrencyCode: string | null;
   action: (prev: OrderActionResult | null, formData: FormData) => Promise<OrderActionResult>;
 };
-
-function formatCents(cents: number): string {
-  return (cents / 100).toFixed(2);
-}
 
 function parseCentsFromDecimal(value: string): number | null {
   const n = parseFloat(value);
@@ -197,9 +193,9 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
 
   const handleCalculateTotal = useCallback(() => {
     if (calculatedCents === null) return;
-    setTotalCost(formatCents(calculatedCents));
+    setTotalCost(formatCentsForInput(calculatedCents, currencyCode));
     setClientTotalCostError(null);
-  }, [calculatedCents]);
+  }, [calculatedCents, currencyCode]);
 
   const handleFxToday = useCallback(async () => {
     if (!baseCurrencyCode || !currencyCode || currencyCode === baseCurrencyCode) return;
