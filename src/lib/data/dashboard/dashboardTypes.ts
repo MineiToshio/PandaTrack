@@ -1,4 +1,4 @@
-import type { OrderItemDeliveryState, OrderStatus } from "../../../../generated/prisma/client";
+import type { DeliveryStatus, OrderItemDeliveryState, OrderStatus } from "../../../../generated/prisma/client";
 
 /** Half-open time interval `[start, end)`. All boundaries are UTC-midnight instants. */
 export type DateRange = {
@@ -60,8 +60,25 @@ export type DashboardOrderInput = {
   payments: Array<{ amount: number; paymentDate: Date }>;
 };
 
+/**
+ * Raw delivery shape the aggregation layer consumes for spend (`FR-06-07`, `FR-06-08`, `BR-06-04`,
+ * `BR-06-09`). Money is in minor units; the currency/exchange-rate fields mirror the order-level FX
+ * context so a delivery's cost rolls up through the same base-currency/FX-pending logic as a payment.
+ */
+export type DashboardDeliveryInput = {
+  id: string;
+  cost: number;
+  currencyCode: string;
+  exchangeRate: number | null;
+  needsExchangeRateUpdate: boolean;
+  /** Shipping date: the only date a delivery cost can be bucketed by, since cost has no ledger. */
+  deliveryDate: Date;
+  status: DeliveryStatus;
+};
+
 export type BuildDashboardDataInput = {
   orders: DashboardOrderInput[];
+  deliveries: DashboardDeliveryInput[];
   now: Date;
   timezone: string | null;
   baseCurrencyCode: string | null;

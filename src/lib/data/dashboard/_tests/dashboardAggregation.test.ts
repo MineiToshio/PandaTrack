@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildDashboardData } from "../dashboardAggregation";
-import type { BuildDashboardDataInput, DashboardOrderInput } from "../dashboardTypes";
+import type { BuildDashboardDataInput, DashboardDeliveryInput, DashboardOrderInput } from "../dashboardTypes";
 
 const NOW = new Date("2026-07-15T12:00:00Z");
 const utc = (year: number, monthIndex: number, day: number): Date => new Date(Date.UTC(year, monthIndex, day));
@@ -24,9 +24,23 @@ function makeOrder(overrides: Partial<DashboardOrderInput> & { id: string }): Da
   return { ...base, ...overrides };
 }
 
+function makeDelivery(overrides: Partial<DashboardDeliveryInput> & { id: string }): DashboardDeliveryInput {
+  const base: DashboardDeliveryInput = {
+    id: overrides.id,
+    cost: 0,
+    currencyCode: "USD",
+    exchangeRate: null,
+    needsExchangeRateUpdate: false,
+    deliveryDate: utc(2026, 6, 1),
+    status: "IN_TRANSIT",
+  };
+  return { ...base, ...overrides };
+}
+
 function build(orders: DashboardOrderInput[], overrides: Partial<BuildDashboardDataInput> = {}) {
   return buildDashboardData({
     orders,
+    deliveries: [],
     now: NOW,
     timezone: "UTC",
     baseCurrencyCode: "USD",
@@ -108,6 +122,67 @@ describe("buildDashboardData - spend and budget", () => {
     expect(data.spend.currentMonthMinor).toBe(2500);
     expect(data.spend.monthlySeries).toHaveLength(3);
     expect(data.spend.monthlySeries.every((month) => month.totalMinor === 0)).toBe(true);
+  });
+
+  it("merges non-cancelled delivery shipping cost into the current-month disbursed total (FR-06-07, BR-06-04)", () => {
+    const data = build(
+      [makeOrder({ id: "current", totalCost: 10000, payments: [{ amount: 2500, paymentDate: utc(2026, 6, 5) }] })],
+      {
+        deliveries: [
+          makeDelivery({ id: "shipped", cost: 800, deliveryDate: utc(2026, 6, 10) }),
+          makeDelivery({ id: "otherMonth", cost: 500, deliveryDate: utc(2026, 5, 10) }),
+          makeDelivery({ id: "cancelled", cost: 999, deliveryDate: utc(2026, 6, 12), status: "CANCELLED" }),
+        ],
+      },
+    );
+    expect(data.spend.currentMonthMinor).toBe(3300);
+  });
+
+  it("buckets delivery shipping cost by deliveryDate month in the spend chart (FR-06-08, BR-06-04)", () => {
+    const range = { start: utc(2026, 4, 1), end: utc(2026, 7, 1) }; // May, Jun, Jul 2026
+    const data = build([], {
+      deliveries: [
+        makeDelivery({ id: "may", cost: 600, deliveryDate: utc(2026, 4, 15) }),
+        makeDelivery({ id: "jul", cost: 900, deliveryDate: utc(2026, 6, 1) }),
+      ],
+      range,
+    });
+    expect(data.spend.monthlySeries).toEqual([
+      { year: 2026, month: 5, totalMinor: 600 },
+      { year: 2026, month: 6, totalMinor: 0 },
+      { year: 2026, month: 7, totalMinor: 900 },
+    ]);
+  });
+
+  it("never plots delivery cost as its own series — it is only ever summed into the combined spend total (BR-06-09)", () => {
+    const withOnlyOrder = build([
+      makeOrder({ id: "o", totalCost: 10000, payments: [{ amount: 1000, paymentDate: utc(2026, 6, 5) }] }),
+    ]);
+    const withOrderAndDelivery = build(
+      [makeOrder({ id: "o", totalCost: 10000, payments: [{ amount: 1000, paymentDate: utc(2026, 6, 5) }] })],
+      { deliveries: [makeDelivery({ id: "d", cost: 500, deliveryDate: utc(2026, 6, 5) })] },
+    );
+    // Adding a delivery only raises the one combined total — no parallel field appears.
+    expect(Object.keys(withOrderAndDelivery.spend)).toEqual(Object.keys(withOnlyOrder.spend));
+    expect(withOrderAndDelivery.spend.currentMonthMinor).toBe(withOnlyOrder.spend.currentMonthMinor + 500);
+  });
+
+  it("excludes an FX-pending delivery from the spend total and marks it partial, like an FX-pending order", () => {
+    const data = build([], {
+      deliveries: [
+        makeDelivery({
+          id: "fx",
+          cost: 5000,
+          currencyCode: "EUR",
+          exchangeRate: 1.1,
+          needsExchangeRateUpdate: true,
+          deliveryDate: utc(2026, 6, 10),
+        }),
+        makeDelivery({ id: "usd", cost: 300, deliveryDate: utc(2026, 6, 10) }),
+      ],
+    });
+    expect(data.spend.currentMonthMinor).toBe(300);
+    expect(data.spend.currentMonthIsPartial).toBe(true);
   });
 
   it("resolves budget status thresholds over the current cycle (AC-06-03)", () => {

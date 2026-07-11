@@ -23,6 +23,7 @@ import {
   convertToBaseCurrencyMinor,
   hasOrderArrived,
   isCancelled,
+  isCancelledDelivery,
   isFxPending,
   rollUpToBaseCurrency,
   type RollupItem,
@@ -36,6 +37,7 @@ import type {
   CashObligationsBlock,
   CollectionBlock,
   DashboardData,
+  DashboardDeliveryInput,
   DashboardOrderInput,
   DateRange,
   MonthKey,
@@ -79,6 +81,16 @@ function toRollupItem(order: DashboardOrderInput, amountMinor: number): RollupIt
     currencyCode: order.currencyCode,
     exchangeRate: order.exchangeRate,
     needsExchangeRateUpdate: order.needsExchangeRateUpdate,
+  };
+}
+
+/** Builds a rollup item from a delivery's shipping cost, carrying the delivery's own FX context. */
+function toDeliveryRollupItem(delivery: DashboardDeliveryInput): RollupItem {
+  return {
+    amountMinor: delivery.cost,
+    currencyCode: delivery.currencyCode,
+    exchangeRate: delivery.exchangeRate,
+    needsExchangeRateUpdate: delivery.needsExchangeRateUpdate,
   };
 }
 
@@ -249,23 +261,37 @@ function resolveBudgetStatus(consumedMinor: number, budgetAmountMinor: number): 
   return "under";
 }
 
+/**
+ * Disbursed spend: order payments plus delivery shipping cost, merged into one total rather than
+ * charted as separate series — a shipping cost sits on a completely different scale than an order
+ * total, so a shared series would be disproportionate (`BR-06-04`, `BR-06-09`).
+ */
 function buildSpend(
   orders: DerivedOrder[],
+  deliveries: DashboardDeliveryInput[],
   baseCurrencyCode: string | null,
   range: DateRange,
   now: Date,
   timeZone: string,
 ): SpendBlock {
   const monthRange = getCalendarMonthRange(now, timeZone);
-  const currentMonthItems = orders
-    .map((order) => toRollupItem(order.input, sumPaymentsInRange(order.input, monthRange)))
-    .filter((item) => item.amountMinor > 0);
+  const currentMonthItems = [
+    ...orders
+      .map((order) => toRollupItem(order.input, sumPaymentsInRange(order.input, monthRange)))
+      .filter((item) => item.amountMinor > 0),
+    ...deliveries.filter((delivery) => isWithinRange(delivery.deliveryDate, monthRange)).map(toDeliveryRollupItem),
+  ];
   const currentMonth = rollUpToBaseCurrency(currentMonthItems, baseCurrencyCode);
 
   const monthlySeries = enumerateMonthKeys(range).map((monthKey) => {
-    const monthItems = orders
-      .map((order) => toRollupItem(order.input, sumPaymentsInMonth(order.input, monthKey)))
-      .filter((item) => item.amountMinor > 0);
+    const monthItems = [
+      ...orders
+        .map((order) => toRollupItem(order.input, sumPaymentsInMonth(order.input, monthKey)))
+        .filter((item) => item.amountMinor > 0),
+      ...deliveries
+        .filter((delivery) => isSameMonth(toMonthKey(delivery.deliveryDate), monthKey))
+        .map(toDeliveryRollupItem),
+    ];
     const monthTotal = rollUpToBaseCurrency(monthItems, baseCurrencyCode);
     return { key: monthKey, total: monthTotal };
   });
@@ -597,11 +623,12 @@ function buildPaidVsOutstanding(orders: DerivedOrder[], baseCurrencyCode: string
  * inputs (including `now`), so it is unit-tested directly without a database.
  */
 export function buildDashboardData(input: BuildDashboardDataInput): DashboardData {
-  const { orders, now, baseCurrencyCode, budgetAmountMinor, budgetResetDayOfMonth } = input;
+  const { orders, deliveries, now, baseCurrencyCode, budgetAmountMinor, budgetResetDayOfMonth } = input;
   const timeZone = resolveTimeZone(input.timezone);
   const range = input.range ?? getDefaultDashboardRange(now, timeZone);
 
   const nonCancelled = orders.filter((order) => !isCancelled(order.status)).map(deriveOrder);
+  const nonCancelledDeliveries = deliveries.filter((delivery) => !isCancelledDelivery(delivery.status));
 
   return {
     baseCurrencyCode,
@@ -611,7 +638,7 @@ export function buildDashboardData(input: BuildDashboardDataInput): DashboardDat
     range,
     cashObligations: buildCashObligations(nonCancelled, baseCurrencyCode, now, timeZone),
     budget: buildBudget(nonCancelled, baseCurrencyCode, budgetAmountMinor, now, timeZone, budgetResetDayOfMonth),
-    spend: buildSpend(nonCancelled, baseCurrencyCode, range, now, timeZone),
+    spend: buildSpend(nonCancelled, nonCancelledDeliveries, baseCurrencyCode, range, now, timeZone),
     outstandingTrend: buildOutstandingTrend(nonCancelled, baseCurrencyCode, range),
     activity: buildActivity(nonCancelled, baseCurrencyCode, range, now, timeZone),
     collection: buildCollection(nonCancelled, baseCurrencyCode),

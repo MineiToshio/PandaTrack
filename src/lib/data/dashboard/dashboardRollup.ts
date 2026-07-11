@@ -1,5 +1,5 @@
 import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
-import { OrderItemDeliveryState, type OrderStatus } from "../../../../generated/prisma/client";
+import { OrderItemDeliveryState, type DeliveryStatus, type OrderStatus } from "../../../../generated/prisma/client";
 import type { BaseCurrencyTotal, DashboardOrderInput } from "./dashboardTypes";
 
 /**
@@ -106,5 +106,10 @@ export function hasOrderArrived(items: Array<{ deliveryState: OrderItemDeliveryS
 
 /** Orders in `CANCELLED` status are excluded from every dashboard rollup. */
 export function isCancelled(status: OrderStatus): boolean {
+  return status === "CANCELLED";
+}
+
+/** Deliveries in `CANCELLED` status are excluded from the spend rollup (`BR-06-04`). */
+export function isCancelledDelivery(status: DeliveryStatus): boolean {
   return status === "CANCELLED";
 }

@@ -96,6 +96,7 @@ describe("settings budget reaches the dashboard at the right magnitude", () => {
     if (!parsed.ok) throw new Error(`expected "${typed}" to parse`);
     return buildDashboardData({
       orders: [orderPaying(consumedMinor)],
+      deliveries: [],
       now: NOW,
       timezone: "UTC",
       baseCurrencyCode: "USD",

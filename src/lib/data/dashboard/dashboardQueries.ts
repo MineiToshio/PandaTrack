@@ -3,7 +3,12 @@ import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSe
 import { DeliveryStatus } from "../../../../generated/prisma/client";
 import { buildDashboardData } from "./dashboardAggregation";
 import { resolveDashboardRange } from "./dashboardPeriods";
-import type { DashboardData, DashboardOrderInput, DashboardRangeSelection } from "./dashboardTypes";
+import type {
+  DashboardData,
+  DashboardDeliveryInput,
+  DashboardOrderInput,
+  DashboardRangeSelection,
+} from "./dashboardTypes";
 
 /**
  * Loads every order the collector owns, with the items and payments the dashboard aggregates.
@@ -65,8 +70,38 @@ async function fetchDashboardOrders(userId: string): Promise<DashboardOrderInput
   }));
 }
 
+/**
+ * Loads every delivery the collector owns, with the fields the spend rollup needs (`FR-06-07`,
+ * `FR-06-08`, `BR-06-04`). Cancelled deliveries are still fetched (dashboard-wide convention: filter
+ * cancelled state in the aggregation layer, not the query) rather than excluded here.
+ */
+async function fetchDashboardDeliveries(userId: string): Promise<DashboardDeliveryInput[]> {
+  const rows = await prisma.delivery.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      cost: true,
+      currencyCode: true,
+      exchangeRate: true,
+      needsExchangeRateUpdate: true,
+      deliveryDate: true,
+      status: true,
+    },
+  });
+
+  return rows.map((row) => ({
+    id: row.id,
+    cost: row.cost,
+    currencyCode: row.currencyCode,
+    exchangeRate: row.exchangeRate ? Number(row.exchangeRate) : null,
+    needsExchangeRateUpdate: row.needsExchangeRateUpdate,
+    deliveryDate: row.deliveryDate,
+    status: row.status,
+  }));
+}
+
 /** Earliest instant the collector has any recorded activity, used to bound the `all` range preset. */
-function findEarliestActivity(orders: DashboardOrderInput[]): Date | null {
+function findEarliestActivity(orders: DashboardOrderInput[], deliveries: DashboardDeliveryInput[]): Date | null {
   let earliest: number | null = null;
   for (const order of orders) {
     const candidates = [order.orderDate, ...order.payments.map((payment) => payment.paymentDate)];
@@ -75,6 +110,12 @@ function findEarliestActivity(orders: DashboardOrderInput[]): Date | null {
       if (earliest === null || time < earliest) {
         earliest = time;
       }
+    }
+  }
+  for (const delivery of deliveries) {
+    const time = delivery.deliveryDate.getTime();
+    if (earliest === null || time < earliest) {
+      earliest = time;
     }
   }
   return earliest === null ? null : new Date(earliest);
@@ -90,17 +131,21 @@ function findEarliestActivity(orders: DashboardOrderInput[]): Date | null {
  * timezone and the `all` preset depends on how far back their data goes.
  */
 export async function getDashboardData(userId: string, selection?: DashboardRangeSelection): Promise<DashboardData> {
-  const [preferences, orders] = await Promise.all([
+  const [preferences, orders, deliveries] = await Promise.all([
     getCollectorPreferencesSnapshot(userId),
     fetchDashboardOrders(userId),
+    fetchDashboardDeliveries(userId),
   ]);
 
   const now = new Date();
   const timezone = preferences?.timezone ?? null;
-  const range = selection ? resolveDashboardRange(selection, now, timezone, findEarliestActivity(orders)) : undefined;
+  const range = selection
+    ? resolveDashboardRange(selection, now, timezone, findEarliestActivity(orders, deliveries))
+    : undefined;
 
   return buildDashboardData({
     orders,
+    deliveries,
     now,
     timezone,
     baseCurrencyCode: preferences?.baseCurrencyCode ?? null,

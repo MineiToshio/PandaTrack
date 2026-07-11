@@ -5,6 +5,7 @@ import {
   convertToBaseCurrencyMinor,
   hasOrderArrived,
   isCancelled,
+  isCancelledDelivery,
   isFxPending,
   rollUpToBaseCurrency,
   type RollupItem,
@@ -115,5 +116,13 @@ describe("isCancelled", () => {
   it("detects the CANCELLED status", () => {
     expect(isCancelled("CANCELLED")).toBe(true);
     expect(isCancelled("OPEN")).toBe(false);
+  });
+});
+
+describe("isCancelledDelivery", () => {
+  it("detects the CANCELLED delivery status", () => {
+    expect(isCancelledDelivery("CANCELLED")).toBe(true);
+    expect(isCancelledDelivery("IN_TRANSIT")).toBe(false);
+    expect(isCancelledDelivery("DELIVERED")).toBe(false);
   });
 });

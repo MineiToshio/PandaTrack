@@ -50,7 +50,7 @@
     },
     "spend": {
       "title": "Spend by month",
-      "subtitle": "What you disbursed each month, by payment date.",
+      "subtitle": "What you disbursed each month: order payments plus delivery shipping cost.",
       "currentMonthLabel": "Disbursed this month",
       "seriesName": "Spend",
       "chartAria": "Spend by month, {count} months"

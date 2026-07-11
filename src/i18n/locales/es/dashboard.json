@@ -50,7 +50,7 @@
     },
     "spend": {
       "title": "Gasto por mes",
-      "subtitle": "Lo desembolsado cada mes, por fecha de pago.",
+      "subtitle": "Lo desembolsado cada mes: pagos de pedidos más costos de envío.",
       "currentMonthLabel": "Desembolsado este mes",
       "seriesName": "Gasto",
       "chartAria": "Gasto por mes, {count} meses"
