@@ -268,6 +268,16 @@ Two GitHub Actions workflows run automated checks beyond local development:
 
 ### Required GitHub secrets
 
+**Owner decision (2026-07-10): deferred — not needed while the workflow stays local-only.**
+`e2e-critical.yml` only triggers on a `pull_request` targeting `main` or a manual
+`workflow_dispatch` run from the Actions tab. The project's actual workflow does not open PRs or
+merge through GitHub, so this workflow never fires on its own today, and the secrets below have
+no effect until that changes. `validate.yml` (type-check, lint, unit tests, build) still runs on
+every push and needs none of this.
+
+Set these secrets only when the workflow starts actually running (e.g. if PRs or manual dispatch
+runs are adopted later):
+
 The `e2e-critical.yml` workflow needs the following repository secrets (Settings → Secrets and
 variables → Actions). This is the one part of R9 (CI: build + critical e2e) that requires manual
 setup — the workflows themselves need no other secrets:

@@ -408,12 +408,13 @@ Major dependency upgrades (DX-6) as a dedicated later iteration, after round 2 s
 
 ### Owner action items
 
-- **Owner decision (2026-07-10):** the 4 E2E secrets point at the development environment (same
-  Neon dev `DATABASE_URL`, same `BETTER_AUTH_SECRET`, existing dev test account) instead of a
-  dedicated E2E database — see `docs/development/testing.md`. Seeding a separate e2e database no
-  longer applies; the only remaining step is running the 4 `gh secret set` commands documented
-  there.
-- First CI run of the new workflows will be the real validation signal.
+- **Owner decision (2026-07-10):** the project's workflow is local-only — no PRs, no GitHub
+  merges. `e2e-critical.yml` only triggers on a `pull_request` to `main` or manual
+  `workflow_dispatch`, so it never fires today. The 4 E2E secrets (which would point at the
+  development environment per the earlier decision — see `docs/development/testing.md`) are
+  **deferred, not required**, until that workflow habit changes. `validate.yml` (type-check,
+  lint, unit tests, build) needs no secrets and already runs on every push.
+- No action needed unless PRs or manual `workflow_dispatch` runs are adopted later.
 
 ### Final verification (2026-07-10, tip `92b993d`)
 
