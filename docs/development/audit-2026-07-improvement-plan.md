@@ -408,7 +408,11 @@ Major dependency upgrades (DX-6) as a dedicated later iteration, after round 2 s
 
 ### Owner action items
 
-- Create the 4 GitHub secrets + seed the e2e database (`docs/development/testing.md`).
+- **Owner decision (2026-07-10):** the 4 E2E secrets point at the development environment (same
+  Neon dev `DATABASE_URL`, same `BETTER_AUTH_SECRET`, existing dev test account) instead of a
+  dedicated E2E database — see `docs/development/testing.md`. Seeding a separate e2e database no
+  longer applies; the only remaining step is running the 4 `gh secret set` commands documented
+  there.
 - First CI run of the new workflows will be the real validation signal.
 
 ### Final verification (2026-07-10, tip `92b993d`)

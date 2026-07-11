@@ -272,21 +272,38 @@ The `e2e-critical.yml` workflow needs the following repository secrets (Settings
 variables → Actions). This is the one part of R9 (CI: build + critical e2e) that requires manual
 setup — the workflows themselves need no other secrets:
 
-| Secret                   | Used for                                                                                                                                        |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `E2E_DATABASE_URL`       | Postgres connection string for a **dedicated E2E database** (never production). Migrations are applied automatically (`prisma migrate deploy`). |
-| `E2E_BETTER_AUTH_SECRET` | Better Auth session-signing secret for the E2E app instance. Any random string; only needs to be stable across runs.                            |
-| `E2E_USER_EMAIL`         | Email of a seeded test account in the E2E database, used to sign in (mirrors the local-only `E2E_USER_EMAIL` in `.env.example`).                |
-| `E2E_USER_PASSWORD`      | Password for that same seeded test account.                                                                                                     |
+| Secret                   | Used for                                                                                                                 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `E2E_DATABASE_URL`       | Postgres connection string CI uses to run the e2e suite. Migrations are applied automatically (`prisma migrate deploy`). |
+| `E2E_BETTER_AUTH_SECRET` | Better Auth session-signing secret for the E2E app instance.                                                             |
+| `E2E_USER_EMAIL`         | Email of the test account used to sign in during e2e runs.                                                               |
+| `E2E_USER_PASSWORD`      | Password for that same test account.                                                                                     |
 
-**Manual data setup the owner still owns:** these secrets authenticate against the E2E database,
-but they do not create its data. Before the workflow can pass, the database behind
-`E2E_DATABASE_URL` must already contain:
+**Owner decision (2026-07-10): these four secrets point at the development environment**, not a
+dedicated E2E database. Concretely:
 
-1. A user account matching `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` (sign up normally against that
-   database once, the same way `scripts/seed-dev-data.ts` requires for its `TARGET_USER_EMAIL`).
-2. At least one store, so `orders.spec.ts`'s order-creation flow has an option to pick in the
-   store combobox.
+- `E2E_DATABASE_URL` = the same Neon **dev** `DATABASE_URL` already used for local development.
+- `E2E_BETTER_AUTH_SECRET` = the same `BETTER_AUTH_SECRET` used in dev.
+- `E2E_USER_EMAIL` / `E2E_USER_PASSWORD` = the existing dev test account (the one
+  `scripts/seed-dev-data.ts` already seeds via `TARGET_USER_EMAIL`), which already has at least one
+  store for `orders.spec.ts`'s order-creation flow.
 
-Keep this database isolated from production and from local development data — it is reset-safe
-and exists only for CI.
+Consequences of this choice:
+
+1. **No separate E2E database to seed.** The dev database already has the test user and stores
+   the specs need, so there is no additional data-setup step beyond creating the secrets below.
+2. **CI e2e runs create/clean up test data in the dev database**, the same way local e2e runs
+   already do — this is a shared side effect of running Playwright against dev, not something new.
+   If that ever becomes a problem (data noise, contention with local dev work), the fix is to
+   provision a dedicated E2E database and point these same 4 secrets at it — no workflow changes
+   required.
+
+Set the 4 secrets from the values already in the local `.env` (this reads local values and does
+not print or store them anywhere except GitHub's encrypted secret store):
+
+```bash
+gh secret set E2E_DATABASE_URL --body "$(grep '^DATABASE_URL=' .env | cut -d= -f2- | tr -d '"')"
+gh secret set E2E_BETTER_AUTH_SECRET --body "$(grep '^BETTER_AUTH_SECRET=' .env | cut -d= -f2- | tr -d '"')"
+gh secret set E2E_USER_EMAIL --body "$(grep '^E2E_USER_EMAIL=' .env | cut -d= -f2- | tr -d '"')"
+gh secret set E2E_USER_PASSWORD --body "$(grep '^E2E_USER_PASSWORD=' .env | cut -d= -f2- | tr -d '"')"
+```
