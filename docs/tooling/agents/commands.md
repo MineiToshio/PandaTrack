@@ -54,11 +54,12 @@ Marks one GitHub slice ticket as done and cascades completion upward through the
 
 1. Resolves the target slice issue from GitHub by issue number.
 2. Closes the slice and sets GitHub Project `4` **Status** to `Done` via the **GitHub GraphQL API** (Projects v2; MCP does not cover this).
-3. Marks the linked `Work Order` doc as `DONE`.
-4. If all sibling `Work Orders` are `DONE`, also marks the parent `Blueprint` as `DONE`.
-5. If all sibling `Blueprints` are complete, also marks the parent `FRD` as `DONE`.
-6. If all sibling `FRDs` are complete, also marks the parent `PRD` as `DONE`.
-7. Syncs the parent Epic checklist and, if all slices are complete, also marks the Epic as `Done`.
+3. Sets the linked `Work Order` doc's `implementation_status` to `IMPLEMENTED` (doc `status` is never set to `DONE`).
+4. If all sibling `Work Orders` are `IMPLEMENTED`, also sets the parent `Blueprint`'s `implementation_status` to `IMPLEMENTED`.
+5. If all sibling `Blueprints` are complete, also sets the parent `FRD`'s `implementation_status` to `IMPLEMENTED`.
+6. Syncs the parent Epic checklist and, if all slices are complete, also marks the Epic as `Done`.
+
+The cascade runs `Work Order` -> `Blueprint` -> `FRD` -> Epic only; there is no PRD-level cascade.
 
 See `.claude/commands/mark-ticket-done.md` for the full command behavior.
 

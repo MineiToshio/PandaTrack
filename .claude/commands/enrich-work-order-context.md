@@ -11,18 +11,46 @@ The command must treat the referenced `Work Order` as the entry point, but it mu
 
 ## Inputs
 
-- `work_order_reference`: Work Order path, Work Order id, GitHub slice issue number, or GitHub slice URL
+- `work_order_reference`: Work Order path, Work Order id, Work Order slug, GitHub slice issue number, or GitHub slice issue URL
 - optional `extra_context`: constraints, screenshots, rough ideas, implementation intent, deadlines, or known concerns
+
+Positional mapping of inline text:
+
+- The first inline token that resolves to a Work Order reference (path, `WO-XX` id, slug, issue number, or issue URL) is `work_order_reference`. Raw values and URLs are both accepted.
+- All remaining inline text is `extra_context`; no special wrapper is required.
+- Exactly one target is allowed per run. If two or more inline tokens are candidate Work Order references, stop and ask the user which one is the target. Never enrich more than one `Work Order` in a single run.
+
+## Steps
+
+Follow this spine in order. Each step is detailed in the referenced section.
+
+1. Resolve repository conventions (see `## Resolution requirements`, step 0).
+2. Resolve the target `Work Order` with the disambiguation and guard rules, then its parent chain, nearby context, execution context, role-specific context, and external pattern context (see `## Resolution requirements`, steps 1 to 6).
+3. Present the Spanish pre-brief of what the target `Work Order` does today (see `## Resolution requirements`).
+4. Produce the internal role-by-role gap analysis (see `## Resolution requirements`).
+5. Ask role-grouped clarification questions in Spanish (see `## Discovery roles`, `## Question quality rules`, `## Required areas to pressure-test`).
+6. Return the proposal in Spanish (see `## Proposal phase`).
+7. Run the approval gate and wait for explicit user approval (see `## Proposal phase`, `Approval gate`).
+8. Apply the approved edits to the target `Work Order` (see `## Update phase`).
+9. Propagate approved changes upward to the parent `Blueprint`, `FRD`, and `PRD` when their source-of-truth layer changed (see `## Update phase`, `Upward sync requirements`).
+10. Sync GitHub tracking: issue-body alignment and the state-convergent Project `Status` promotion (see `## Update phase`, `GitHub sync requirements`).
+11. Return the final report (see `## Output format`).
+
+Steps 8 to 11 must not start before the approval in step 7.
 
 ## Core behavior
 
 - Conversation with the user must be in Spanish.
-- Generated documentation updates must be in English.
+- Generated documentation updates and GitHub issue content must be in English.
+- Do not use em dashes in any generated output (docs, GitHub issue content, or the final report).
 - Do not update any doc until the user explicitly approves the proposed decisions.
 - Treat this command as a structured discovery workflow, not as immediate drafting.
 - Repository docs remain the source of truth for product definition.
 - When approved edits mention another FRD's blueprints, work orders, or functional requirements, apply **Cross-FRD references** from `docs/templates/product-docs-guide.md` (qualified **FRD-XX**, links to target `.md` files, optional slug and heading anchors).
-- If the referenced Work Order is also linked to GitHub tracking, keep GitHub issue content aligned after doc approval when practical.
+- If the referenced Work Order is also linked to GitHub tracking, keep GitHub issue content aligned after doc approval. This alignment is required-or-reported: either apply it or list it under `Blocked requirements` in the final report; never silently skip it.
+- GitHub tooling: use the GitHub MCP server when available; otherwise fall back to the `gh` CLI, REST, or GraphQL. Repository: `MineiToshio/PandaTrack`. Any required external update that cannot be completed with available tools must be reported under `Blocked requirements`.
+- Lifecycle chain across commands: `create-frd-package` creates docs at `DRAFT` / Project `Backlog`, `enrich-work-order-context` promotes to `ACTIVE` / Project `Todo`, `implement-feature-slice` moves to `IN_PROGRESS` / Project `In Progress`, and `mark-ticket-done` closes at `IMPLEMENTED` / Project `Done`.
+- This command edits markdown docs only, so no app validation commands are required (docs-only tier in `.agents/rules/validation-checklist.mdc`).
 - Before asking any clarification questions, provide a concise Spanish summary of what the target `Work Order` does today so the user has shared context for the discovery conversation.
 - Treat implementation-critical undefined decisions as blockers, not as minor omissions. If a missing technical or operational decision would likely cause rework during implementation, the command must surface it explicitly before docs are approved.
 - Treat established repository conventions as already-made decisions. Any question that is already answered by `AGENTS.md`, `CLAUDE.md`, `.agents/rules/*.mdc`, `docs/tooling/agents/rules.md`, `docs/design/`, `docs/development/`, applicable ADRs under `docs/` or skills under `.agents/skills/` must not be asked. Instead, surface the applicable convention inline as an inferred assumption and cite the owning file.
@@ -53,12 +81,14 @@ Before asking questions or drafting changes, resolve the target context in this 
 - record the resulting list of binding conventions so they can be reused in the `Convention-driven assumptions` section of the proposal, and so no question is asked about a decision that is already defined
 
 1. resolve the target `Work Order`
-- If the input is a path, read that file directly.
-- If the input is a `WO-XX` id, locate the matching file under `docs/product/`.
+- If the input is a path, read that file directly. If the path does not exist, stop and report it.
+- If the input is a `WO-XX` id or slug, locate the matching file under `docs/product/`. `WO` numbering resets per `Blueprint`, so a bare id can match many files across FRDs (for example several `wo-03-*.md` files exist). If more than one file matches, list every candidate path and stop to ask the user which one is the target. Never pick the first match.
 - If the input is a GitHub slice issue number or issue URL:
-  - read the issue from `MineiToshio/PandaTrack`
+  - read the issue from `MineiToshio/PandaTrack` (GitHub MCP when available; otherwise `gh` CLI, REST, or GraphQL)
+  - validate that the issue carries the label `type:slice`; if it does not, stop and report that the issue is not a slice
   - extract the linked `Work Order Path`
   - stop and report the missing reference if the issue does not include it
+- After resolving the file, read its frontmatter. If `implementation_status` is `IMPLEMENTED` or `IN_PROGRESS`, surface that state to the user in Spanish and confirm whether they want a doc reconciliation of already-built behavior or a new slice for the new work. Do not start discovery until the user confirms.
 
 2. resolve the parent chain
 - read the parent `Blueprint`
@@ -84,6 +114,7 @@ Before asking questions or drafting changes, resolve the target context in this 
   - recommended decisions
   - risks if left undefined
 - the main agent remains responsible for synthesis and must not simply forward raw subagent output
+- if subagents are not available in the current environment, do not skip this step: perform the role-specific inspections sequentially yourself, producing the same per-role findings structure
 
 6. resolve external pattern context when it would materially improve discovery quality
 - when the slice involves non-trivial UX patterns, file/media handling, storage/infrastructure choices, security-sensitive flows, or other areas where established practice matters, research current patterns from high-quality sources
@@ -239,6 +270,7 @@ Questions must:
 - include concrete options whenever you can propose them
 - include a recommended option first when one seems clearly preferable
 - avoid vague filler questions
+- be limited to roughly 10 questions per batch: prioritize implementation-critical decisions first and offer follow-up rounds for the rest instead of one oversized batch
 
 ### Context requirements for every question
 
@@ -246,7 +278,7 @@ Each question must be **self-contained**: a reader who has never opened the refe
 
 - state the concrete product or system behavior the decision affects, in plain language, not just the abstract category
 - when the question touches existing code, name the specific file, route, component, action, table, or field involved and summarize in one line what it currently does
-- when the question depends on another doc (another `Work Order`, `Blueprint`, `FRD`, `PRD`, ADR, design doc, or GitHub issue), do not reference it by id alone; include a short inline paraphrase of the relevant part (1–3 sentences) so the user does not have to open it to understand the question
+- when the question depends on another doc (another `Work Order`, `Blueprint`, `FRD`, `PRD`, ADR, design doc, or GitHub issue), do not reference it by id alone; include a short inline paraphrase of the relevant part (1 to 3 sentences) so the user does not have to open it to understand the question
 - when the question references a sibling slice or prior decision, summarize what that slice or decision actually did and how it affects this one
 - when the question uses a domain term that is not yet defined in the current `Work Order`, define it briefly inline the first time it appears in the question batch
 - when proposing options, describe each option in product/user-visible terms, not only in technical shorthand; include the concrete consequence of choosing it
@@ -382,9 +414,12 @@ After discovery and before any file edits, return a proposal in Spanish with:
 
 6. `Approval gate`
 - ask the user to confirm whether to apply the proposed decisions and the convention-driven assumptions
+- the confirmation prompt must state explicitly that approving also flips the `Work Order` doc `status` from `DRAFT` to `ACTIVE` and, when a `source_issue` exists, moves the linked GitHub Project `4` item from `Backlog` to `Todo`, so the approval is informed
 - do not ask for approval until all implementation-critical undefined decisions are either resolved or explicitly deferred by the user
 
 Do not edit docs before this approval.
+
+Approval is invalidated by scope change: if the user materially changes scope after approving, in the same or a later message, restate the full updated proposal and ask for approval again before continuing edits.
 
 ## Update phase
 
@@ -396,7 +431,14 @@ Update the target `Work Order` so it becomes materially more implementation-read
 
 When this command updates the target `Work Order` after user approval, set its document `status` to `ACTIVE` as part of the same edit unless the user explicitly instructs a different lifecycle state.
 
-When the `status` flips from `DRAFT` to `ACTIVE` and the `Work Order` has a `source_issue`, the command must **also** promote that GitHub issue's Project `4` `Status` field from `Backlog` to `Todo` in the same run. This promotion is automatic and is part of the same approval, not a follow-up step. See `docs/process/github-project-tracking.md` → **Readiness rule** for the lifecycle mapping and → **GitHub GraphQL API** for the token, stable IDs, and `curl` patterns needed to execute this transition. The same user-approved override that skips the `DRAFT → ACTIVE` flip also skips the Project `Status` promotion.
+The GitHub Project `Status` promotion is required, state-convergent, and idempotent:
+
+- whenever the `Work Order` doc is `ACTIVE` and has a `source_issue`, ensure that issue's GitHub Project `4` `Status` field is at least `Todo`, regardless of whether the `DRAFT → ACTIVE` flip happened in this run or in a previous, partially failed run
+- read the current Project `Status` first; write `Backlog → Todo` only when the current value is actually `Backlog`
+- never demote an item that is already `Todo`, `In Progress`, or `Done`; if the current value is unexpected for the doc lifecycle, report it instead of overwriting it
+- this promotion is part of the same approval, not a follow-up step; if it cannot be completed with available tools, report it under `Blocked requirements` in the final report
+- see `docs/process/github-project-tracking.md` → **Readiness rule** for the lifecycle mapping and → **GitHub GraphQL API** for the token, stable IDs, and `curl` patterns needed to execute this transition
+- the same user-approved override that skips the `DRAFT → ACTIVE` flip also skips the Project `Status` promotion
 
 Expand it as needed with concrete, testable content. When helpful, add sections beyond the template, such as:
 
@@ -412,7 +454,7 @@ The updated `Work Order` should reduce ambiguity for implementation, not just be
 
 ### Cross-FRD reference hygiene
 
-Any new or updated sentence that points at **another FRD** must not rely on bare `WO-NN` or `BP-NN` alone. Use **FRD-XX · WO-NN** / **FRD-XX · BP-NN**, add the slug when it helps, and link to the concrete markdown path (see `docs/templates/product-docs-guide.md`, **Cross-FRD references**).
+Any new or updated sentence that points at **another FRD** must not rely on bare `WO-NN` or `BP-NN` alone. Use **FRD-XX · WO-NN** / **FRD-XX · BP-NN**, add the slug when it helps, and link to the concrete markdown path (see `.agents/rules/product-doc-cross-frd-references.mdc` and `docs/templates/product-docs-guide.md`, **Cross-FRD references**).
 
 ### Upward sync requirements
 
@@ -426,11 +468,11 @@ Do not push details upward unnecessarily.
 
 ### GitHub sync requirements
 
-If the `Work Order` is linked to a slice issue and the approved doc changes materially affect the issue body, add a concise sync update to GitHub or update the issue body when practical with available tools.
+If the `Work Order` is linked to a slice issue and the approved doc changes materially affect the issue body, align the issue body or add a concise sync update in English. This alignment is required-or-reported: either apply it or list it under `Blocked requirements`; never silently skip it.
 
-Whenever the `Work Order` doc `status` was flipped from `DRAFT` to `ACTIVE` in this run and a `source_issue` exists, promote that issue's GitHub Project `4` `Status` from `Backlog` to `Todo` as part of the same sync pass. Do not skip or defer this promotion; it is the visible signal that the slice is now implementation-ready.
+Apply the state-convergent Project `Status` promotion defined in `### Work Order update requirements` as part of the same sync pass: whenever the doc is `ACTIVE` and a `source_issue` exists, ensure the Project `4` `Status` is at least `Todo` (write only `Backlog → Todo` after reading the current value; never demote a later status). This promotion is the visible signal that the slice is now implementation-ready.
 
-If the required GitHub Project or issue-body sync cannot be completed with available tools, report that explicitly, including whether the `Backlog → Todo` promotion was applied.
+If the required GitHub Project or issue-body sync cannot be completed with available tools, report it under `Blocked requirements`, including whether the `Backlog → Todo` promotion was applied.
 
 ## Guardrails
 
@@ -440,11 +482,11 @@ If the required GitHub Project or issue-body sync cannot be completed with avail
 - Do not add product requirements to the `Blueprint` when they belong in the `FRD`.
 - Do not leave critical ambiguity unresolved while pretending the `Work Order` is implementation-ready.
 - Do not overwrite existing intent in docs without reconciling it explicitly.
-- Do not treat infrastructure, storage, naming, error-recovery, or observability choices as “implementation details” when they are necessary to prevent downstream execution chaos; surface them during discovery at the correct doc layer.
+- Do not treat infrastructure, storage, naming, error-recovery, or observability choices as "implementation details" when they are necessary to prevent downstream execution chaos; surface them during discovery at the correct doc layer.
 - Do not ask the user about any decision already defined by `AGENTS.md`, `CLAUDE.md`, `.agents/rules/*.mdc`, `docs/tooling/agents/rules.md`, `docs/design/`, `docs/development/`, or an applicable ADR. Apply the rule, state it as an inferred assumption with the owning file path, and move on.
 - Do not use bare document or code references in questions. Every `WO-NN`, `BP-NN`, `FRD-XX`, ADR id, issue number, or file path must be accompanied by an inline paraphrase of the relevant content so the question is self-contained.
 
-## Final response format
+## Output format
 
 If still in discovery and waiting on user answers, return in Spanish:
 
@@ -454,6 +496,7 @@ If still in discovery and waiting on user answers, return in Spanish:
 4. `Questions by role`
 5. `Why these matter`
 6. `Next step`
+7. `Blocked requirements`: any reference resolution, doc read, or external lookup that could not be completed with available tools; state `ninguno` when there are none
 
 If approval was given and docs were updated, return in Spanish:
 
@@ -461,6 +504,7 @@ If approval was given and docs were updated, return in Spanish:
 2. `Decision summary`
 3. `What changed upward`
 4. `Remaining open items`
-5. `GitHub sync` — must explicitly state the `Work Order` doc `status` transition that was applied (e.g. `DRAFT → ACTIVE`) and, when a `source_issue` exists, the matching Project `Status` transition that was applied (e.g. `Backlog → Todo`). If either transition was skipped, say why.
+5. `GitHub sync`: must explicitly state the `Work Order` doc `status` transition that was applied (e.g. `DRAFT → ACTIVE`) and, when a `source_issue` exists, the matching Project `Status` transition that was applied (e.g. `Backlog → Todo`). If either transition was skipped, say why.
+6. `Blocked requirements`: every doc write, issue-body alignment, or Project `Status` update that could not be completed with available tools; state `ninguno` when there are none
 
-If the command stops early, say exactly what reference or decision is missing.
+If the command stops early (ambiguous or missing reference, non-slice issue, multiple candidate files, or an unresolved implementation-critical decision), say exactly what is missing or ambiguous and what the user must provide to continue.

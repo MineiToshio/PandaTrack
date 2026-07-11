@@ -13,7 +13,9 @@ This command must:
 The command must follow PandaTrack's hybrid workflow:
 
 - product definition lives in `docs/product`
-- execution status lives in GitHub Project `4`
+- execution status lives in GitHub Project `4` on repository `MineiToshio/PandaTrack`
+
+Lifecycle cross-reference: `create-frd-package` (Work Order doc `DRAFT` / Project `Backlog`) -> `enrich-work-order-context` (`ACTIVE` / `Todo`) -> `implement-feature-slice` (`IN_PROGRESS` / `In Progress`) -> `mark-ticket-done` (`IMPLEMENTED` / `Done`).
 
 ## Inputs
 
@@ -21,11 +23,39 @@ The command must follow PandaTrack's hybrid workflow:
 - `feature_brief`: raw description of the FRD/domain to create
 - optional `extra_context`: links, screenshots, constraints, deadlines, related issues, technical preferences, or implementation hints
 
+### Positional mapping of inline text
+
+Map the inline text that follows the command invocation to the inputs by position and format:
+
+- `prd_reference` binds only to an explicit PRD identifier: a `prd-XX` token (for example `prd-02`), a PRD folder name (for example `prd-02-collector-app`), or a repository-relative path to a PRD file or folder.
+- The first explicit PRD identifier found in the inline text binds `prd_reference`; the rest of the descriptive text is `feature_brief`.
+- Any remaining trailing links, attachments, constraints, or notes are `extra_context`. No special wrapper is required.
+- If the inline text is a single mixed blob with no explicit PRD identifier, do not guess the PRD from the brief. Ask the user in Spanish which PRD is the target and wait for the answer before starting discovery.
+
+## Steps
+
+Execute the workflow in this order. Each step references the detail section that governs it; those sections are mandatory constraints, not optional context.
+
+1. **Bind inputs.** Map the inline text per `## Inputs`. If `prd_reference` cannot be bound to an explicit PRD identifier, ask the user in Spanish which PRD is the target and wait.
+2. **Resolve the target PRD.** Resolve `prd_reference` to an existing file under `docs/product/`. If it does not resolve, stop and report the unresolved reference. Never create a new PRD from this command.
+3. **Build context.** Read the PRD, nearby FRDs, relevant code, and current GitHub epics/tickets per `## Context-building requirements`.
+4. **Run discovery.** Act in the three roles of `## Discovery standard` and ask clarification questions in Spanish per `## Mandatory clarification rules`. Run the internal gap analysis.
+5. **Shape the package.** Decide new FRD vs extend existing FRD vs split into multiple FRDs (see `## Context-building requirements`). When the natural proposal contains two or more `Blueprints`, run the blueprint-count confirmation (see `## Proposal and approval phase`).
+6. **Present the proposal and stop.** Present the full proposal in Spanish per `## Proposal and approval phase`. This is a blocking approval gate: do not write or edit any file and do not perform any GitHub write until the user gives explicit approval. If scope changes, restate and ask again.
+7. **Write the docs.** After approval, create or update the FRD, Blueprints, Work Orders, and parent PRD per `## Drafting rules`, `## Work Order splitting rules`, `## Work Order ordering and dependency rules`, and `## Numbering and naming rules`.
+8. **Commit the docs.** Commit the created/updated docs on the current working branch before creating GitHub issues that reference their paths. If the current branch is the default branch (`main`), create a new branch first per repository etiquette before committing. If the branch is not yet pushed or merged, note that in the final response.
+9. **Run the GitHub pass.** Follow `## GitHub creation rules`: allocate the FEAT code, create or reuse the Epic, create one ticket per Work Order (skipping idempotently), write `source_issue` back into each Work Order `.md` immediately after its ticket is created, attach sub-issues in Work Order order, add everything to Project `4`, and set the initial `Status` values.
+10. **Verify.** Run the single `## Verification checklist`.
+11. **Report.** Return the `## Output format` response, listing anything that could not be completed under `Blocked requirements`. If the command stopped early at any step, return only what blocked it and what is still needed.
+
 ## Core behavior
 
 - Conversation with the user must be in Spanish.
 - Generated documentation and GitHub issue content must be in English.
+- Generated documentation and GitHub issue content must not contain em dashes; use plain punctuation (commas, colons, parentheses, semicolons) instead.
 - Do not create or update local docs or GitHub issues until the user gives explicit approval after the proposal phase.
+- All external writes must be state-convergent: before mutating a doc, issue, sub-issue link, Project membership, or `Status` field, check whether it is already at the target state and skip the mutation if it is. Re-running the command after a partial failure must converge on the same end state without creating duplicates.
+- Use the GitHub MCP server when available; otherwise fall back to the `gh` CLI or the GitHub REST/GraphQL API. Any external state update that cannot be completed with any available tool must be listed under `Blocked requirements` in the final response.
 - Treat this command as a combined PM + software architect + senior full-stack planning workflow.
 - Prefer smaller, implementation-ready `Work Orders` over broad mixed-scope slices whenever a feature can be split into independently reviewable outcomes.
 - Default to **vertical slices**: every `Work Order` delivers an end-to-end outcome (schema when relevant + server actions + UI + tests + analytics) that is demo-able and testable on its own. Splitting a single user-visible outcome into a paired "backend Work Order" plus a "frontend Work Order" is **forbidden**.
@@ -41,7 +71,7 @@ The command must follow PandaTrack's hybrid workflow:
   - `docs/process/hybrid-product-github-workflow.md`
   - `docs/process/github-project-tracking.md`
   - `docs/process/workflow-ai.md`
-  - `docs/templates/product-docs-guide.md` (**Cross-FRD references**): whenever the new `FRD`, a `Blueprint`, or a `Work Order` mentions another FRD's `BP`/`WO` or `FR-XX-NN`, qualify with **FRD-XX**, include the work-order slug when useful, and add repository-relative Markdown links to the target `.md` files (and heading anchors when they help).
+  - `.agents/rules/product-doc-cross-frd-references.mdc` and `docs/templates/product-docs-guide.md` (**Cross-FRD references**): whenever the new `FRD`, a `Blueprint`, or a `Work Order` mentions another FRD's `BP`/`WO` or `FR-XX-NN`, qualify with **FRD-XX**, include the work-order slug when useful, and add repository-relative Markdown links to the target `.md` files (and heading anchors when they help).
 
 ## Planning objective
 
@@ -162,7 +192,7 @@ Do not ask vague filler questions.
 
 Before drafting:
 
-1. Read the target `PRD`.
+1. Resolve and read the target `PRD`. If `prd_reference` does not resolve to an existing file under `docs/product/`, stop and report the unresolved reference. Never create a new `PRD` from this command.
 2. Review nearby `FRDs` under the same `PRD` so the new one fits the existing product map.
 3. Inspect the current codebase for implemented behavior that should influence the new documents.
 4. Review current GitHub epics and tickets to avoid duplicating existing work.
@@ -203,9 +233,17 @@ When this happens, propose the candidate FRD titles and wait for the user to cho
 
 ## Drafting rules
 
+### Generated-content conventions
+
+All generated docs and GitHub issue content must:
+
+- be written in English
+- use repository-relative paths, never machine-specific absolute paths
+- contain no em dashes; use plain punctuation (commas, colons, parentheses, semicolons) instead
+
 ### Cross-FRD references
 
-If any drafted text depends on or constrains work owned by **another FRD** (for example dashboard behavior that must match shell navigation built under User Settings), document it using the **Cross-FRD references** rules in `docs/templates/product-docs-guide.md`: qualified **FRD-XX · BP/WO** labels, optional slug, and **clickable repo-relative links** to the owning files. Prefer a **Cross-domain notes** (or similar) section in the consuming FRD when the rule is shared across domains.
+If any drafted text depends on or constrains work owned by **another FRD** (for example dashboard behavior that must match shell navigation built under User Settings), document it using the **Cross-FRD references** rules in `.agents/rules/product-doc-cross-frd-references.mdc` and `docs/templates/product-docs-guide.md`: qualified **FRD-XX · BP/WO** labels, optional slug, and **clickable repo-relative links** to the owning files. Prefer a **Cross-domain notes** (or similar) section in the consuming FRD when the rule is shared across domains.
 
 ### FRD
 
@@ -261,7 +299,7 @@ Each `Work Order` must:
 
 Each `Work Order` created here should be treated as an initial slice definition, not as a fully enriched implementation brief.
 
-Every `Work Order` created by this command must start with document `status: DRAFT`. Promotion to `ACTIVE` happens later through the `enrich work order context` workflow unless the user explicitly approves a different lifecycle state during this command.
+Every `Work Order` created by this command must start with document `status: DRAFT` and must also explicitly set `implementation_status: PLANNED` on creation. Promotion to `ACTIVE` / `IN_PROGRESS` happens later through the `enrich-work-order-context` and `implement-feature-slice` workflows unless the user explicitly approves a different lifecycle state during this command (see `### Coupled lifecycle overrides`).
 
 Each proposed `Work Order` must also have an explicit internal rationale covering:
 
@@ -285,7 +323,7 @@ Every `Work Order` that is not the foundation slice must be a vertical slice tha
 - includes the schema changes (if any specific to this flow), server actions, UI, automated tests, and PostHog events for that outcome
 - can be demoed and tested end-to-end when it closes, without waiting for any sibling slice
 
-It is **forbidden** to split a single outcome into a paired "backend Work Order" and "frontend Work Order". If two slices can only be validated together, they are not two slices — they are one.
+It is **forbidden** to split a single outcome into a paired "backend Work Order" and "frontend Work Order". If two slices can only be validated together, they are not two slices; they are one.
 
 ### Foundation Work Order (WO-01 when used)
 
@@ -314,16 +352,16 @@ Do not create a foundation `Work Order` when there is nothing genuinely shared. 
 
 ### Canonical split pattern (reference)
 
-The recommended pattern for most domain features with CRUD and list surfaces is the following ordered sequence. Not every feature needs all steps — drop the ones that do not apply — but the order should hold:
+The recommended pattern for most domain features with CRUD and list surfaces is the following ordered sequence. Not every feature needs all steps (drop the ones that do not apply), but the order should hold:
 
-1. **Foundation** — schema, enums, shared Zod schemas, shared helpers, unit tests. Only when something is truly shared.
-2. **Create** — the primary creation flow, end-to-end. Placed first among vertical slices because nothing else has data to operate on without it.
-3. **Detail (read-only)** — single-record view, read-only.
-4. **Detail actions** — actions that operate on an existing record from the detail view (for example: add payments, add notes, change status). Separate from the read-only detail slice.
-5. **Edit** — editing the existing record's core data. Separate from create, even when the form is partially shared, because the invariants and discard-changes flow are different.
-6. **List** — listing of records with baseline data.
-7. **Filters** — list filtering, when the filter surface is non-trivial. May be folded into the list slice when filters are just one or two basic chips.
-8. **Hardening / extras (optional)** — overdue signals, metrics, edge cases, polish, and small items that surfaced during implementation. Only when there is a coherent cluster of leftovers worth one slice; do not create a final slice only to host analytics cleanup.
+1. **Foundation**: schema, enums, shared Zod schemas, shared helpers, unit tests. Only when something is truly shared.
+2. **Create**: the primary creation flow, end-to-end. Placed first among vertical slices because nothing else has data to operate on without it.
+3. **Detail (read-only)**: single-record view, read-only.
+4. **Detail actions**: actions that operate on an existing record from the detail view (for example: add payments, add notes, change status). Separate from the read-only detail slice.
+5. **Edit**: editing the existing record's core data. Separate from create, even when the form is partially shared, because the invariants and discard-changes flow are different.
+6. **List**: listing of records with baseline data.
+7. **Filters**: list filtering, when the filter surface is non-trivial. May be folded into the list slice when filters are just one or two basic chips.
+8. **Hardening / extras (optional)**: overdue signals, metrics, edge cases, polish, and small items that surfaced during implementation. Only when there is a coherent cluster of leftovers worth one slice; do not create a final slice only to host analytics cleanup.
 
 Every slice in this pattern (except the foundation) must include automated tests of the type that applies to the slice and PostHog events for its user-visible actions. This is non-negotiable.
 
@@ -378,6 +416,15 @@ When a `Work Order` depends on a still-undefined technical contract, either:
 
 Do not hide architecture uncertainty inside downstream `Work Orders` if it would distort the split or ordering.
 
+### Extension mode (extending an existing FRD)
+
+When the user chooses to extend an existing `FRD` instead of creating a new one:
+
+- continue `WO` numbering after the highest existing number in the target `Blueprint` (for example, if `WO-07` exists, the first new slice is `WO-08`)
+- never renumber existing `Work Orders`; their numbers, filenames, and `source_issue` links are stable
+- update the blueprint implementation plan so the recommended execution order includes the new slices, even when that order interleaves new slices between existing ones
+- when attaching the new tickets as Epic sub-issues, insert each one at the position that matches the updated blueprint implementation plan, not at the end by default
+
 ## Proposal and approval phase
 
 Before writing docs or GitHub issues, present the plan in Spanish and wait for explicit approval.
@@ -422,29 +469,50 @@ Approval must be explicit, for example:
 
 If the user changes scope after seeing the proposal, restate the updated full proposal and ask for approval again.
 
+### Coupled lifecycle overrides
+
+The `Work Order` doc `status` and the Project `Status` field move together. If the user approves an alternative initial Project `Status` of `Todo` for a slice, that slice's doc `status` must be set to `ACTIVE` in the same pass; if the user approves an alternative doc `status` of `ACTIVE`, the matching Project `Status` must be `Todo`. Never leave a slice with `status: DRAFT` on `Todo` or `status: ACTIVE` on `Backlog` (see `docs/process/github-project-tracking.md` → **Readiness rule**).
+
 ## GitHub creation rules
 
-After approval:
+After approval, and after the docs have been written and committed on the working branch:
+
+### Tooling and fallback
+
+- Use the GitHub MCP server when available; otherwise fall back to the `gh` CLI or the GitHub REST/GraphQL API for every operation in this section (issue creation, sub-issue attachment and reordering, Project membership, `Status` fields).
+- For sub-issue operations without MCP, use the GitHub REST sub-issues endpoints on `MineiToshio/PandaTrack` (list, add, and reprioritize) with the sibling issue's numeric REST `id` values.
+- If neither path can complete an operation, list that operation under `Blocked requirements` in the final response and treat the command as partially complete.
+
+### FEAT code allocation
+
+- Before creating a new Epic, list the existing `type:epic` issues in `MineiToshio/PandaTrack` (open and closed), parse their `FEAT-XXXX` codes, and allocate max existing FEAT number + 1.
+- Verify the allocated code is not already used by any Epic before creating the issue.
+- When reusing an existing Epic, keep its existing FEAT code.
+
+### Idempotency and resume
+
+- Before creating any Work Order ticket, check the matching `Work Order` `.md` frontmatter: if `source_issue` is already populated, skip creation for that slice and reuse the referenced issue for the remaining steps (sub-issue attachment, Project membership, `Status`).
+- Before creating an Epic, check whether an Epic already exists whose title matches the target `FEAT-XXXX: <FRD title>` or that the FRD already references; if so, reuse and update it instead of creating a duplicate.
+- All remaining writes are state-convergent: skip any mutation whose target state already holds (issue already open, already a sub-issue in the right position, already in Project `4`, `Status` already correct).
+- If the run fails partway, the final response must report exactly which Epic/tickets were created, which `Work Orders` still lack `source_issue`, and which sync steps remain, so a re-run can resume without duplicates.
+
+### Creation pass
 
 - create or update one GitHub Epic for the `FRD`
 - create one GitHub ticket per `Work Order`
-- immediately after each Work Order ticket is created, **write its GitHub issue number into the frontmatter of the matching `Work Order` `.md` file as `source_issue: <issue-number>`** (number only, no `#`, no URL). Do this as part of the same execution pass — do not defer it to a later command
+- immediately after each Work Order ticket is created, **write its GitHub issue number into the frontmatter of the matching `Work Order` `.md` file as `source_issue: <issue-number>`** (number only, no `#`, no URL). Do this as part of the same execution pass; do not defer it to a later command
 - keep the Epic and every Work Order ticket **open** (GitHub issue `state: open`). New issues are created open by default; do not close any of them in this command. If you update or reuse an Epic or slice that is currently closed, **reopen** it so execution tracking starts from an open item
 - attach every created Work Order ticket as a **sub-issue** of that Epic (GitHub parent/child relationship), not only via a `Parent Epic: #NN` line in the ticket body
-- add sub-issues in **Work Order execution order** (`WO-01`, then `WO-02`, then `WO-03`, and so on across the FRD). When an FRD has multiple `Blueprints`, follow the same order as the blueprint implementation plan and linked work-order lists (typically all `WO`s from `BP-01` in order, then `BP-02`, etc.). **Do not** sort or infer order from public GitHub issue numbers (`#78`, `#81`, …); those reflect creation time, not `WO` sequence, and a wrong sub-issue order breaks Epic views, Project child lists, and planning.
+- add sub-issues in **Work Order execution order** (`WO-01`, then `WO-02`, then `WO-03`, and so on across the FRD). When an FRD has multiple `Blueprints`, follow the same order as the blueprint implementation plan and linked work-order lists (typically all `WO`s from `BP-01` in order, then `BP-02`, etc.). In extension mode, insert new sub-issues at the position matching the updated blueprint implementation plan. **Do not** sort or infer order from public GitHub issue numbers (`#78`, `#81`, ...); those reflect creation time, not `WO` sequence, and a wrong sub-issue order breaks Epic views, Project child lists, and planning
 - first child can be added without a position hint; for each additional child, if GitHub returns a priority or placement error, add it immediately after the previous slice using that sibling issue's numeric REST `id` as `after_id`, since `id` is not the same as the public issue number
-- after all sub-issues are attached, **verify** with GitHub MCP `issue_read` (`get_sub_issues`) that the returned list order matches `WO-01` through `WO-NN`. If not, use `sub_issue_write` (`reprioritize`) with sibling REST `id` values (`after_id` / `before_id`) until the order matches the Work Order docs
+- after all sub-issues are attached, **verify** the resulting order (GitHub MCP `issue_read` with `get_sub_issues`, or the REST sub-issues list endpoint) so the returned list matches `WO-01` through `WO-NN`. If not, reprioritize (MCP `sub_issue_write` with `reprioritize`, or the REST reprioritize endpoint) with sibling REST `id` values (`after_id` / `before_id`) until the order matches the Work Order docs
 - do not create GitHub issues for `Blueprints`
 - add the Epic and every created ticket to GitHub Project `4` in the same execution pass
 - set the GitHub Project `4` **Status** field as follows (this is independent of issue open/closed):
   - Epic → **`Todo`**
   - every created Work Order ticket → **`Backlog`** (matches the `status: DRAFT` default of a newly created `Work Order` doc; promotion to `Todo` happens later through `enrich work order context`). See `docs/process/github-project-tracking.md` → **Readiness rule**.
-  - The only exception is when the user explicitly approved a different initial `Status` value during the proposal approval step.
+  - The only exception is when the user explicitly approved a different initial `Status` value during the proposal approval step; in that case apply the coupled doc `status` transition described in `### Coupled lifecycle overrides`.
   - For token retrieval, stable IDs, and `curl` patterns to set these Status fields, see `docs/process/github-project-tracking.md` → **GitHub GraphQL API**.
-- explicitly verify that the Epic and every created ticket are present in GitHub Project `4` before finishing
-- explicitly verify that the Epic and every created ticket are **open** and have the correct Project `Status` (Epic = `Todo`, every slice = `Backlog`, or the user-approved alternative) before finishing
-- explicitly verify that the Epic lists every created Work Order ticket as a sub-issue (for example via GitHub MCP `issue_read` with `get_sub_issues`) **and that sub-issues appear in `WO-01`…`WO-NN` order** before finishing
-- explicitly verify that every created `Work Order` `.md` file has its `source_issue` frontmatter field populated with the numeric id of the matching GitHub ticket before finishing
 
 ### Epic body
 
@@ -454,25 +522,12 @@ The GitHub Epic must contain only lightweight tracking information:
 - `PRD Path`
 - `FRD Path`
 - `Blueprint Path` or `Blueprint Paths`
-- checklist of linked `Work Orders`
+- checklist of linked `Work Orders`, with each entry including the slice's GitHub issue number (`#NN`) alongside the `WO-XX` id, since `WO-XX` ids repeat across `Blueprints` and `mark-ticket-done` matches checklist entries by issue number
 - short status/blocker notes when useful
 
 Do not duplicate the full FRD body in GitHub.
 Do not use branch-specific GitHub blob URLs as the canonical reference format.
 Use repository-relative paths as the durable reference.
-
-## Guardrails
-
-- Do not try to fully enrich every `Work Order` during this command; preserve the separation of responsibilities with `enrich work order context`.
-- Do not defer `Blueprint`-level technical contracts that are necessary to produce a sane `Work Order` split.
-- Do not force unresolved architecture decisions down into `Work Orders` when they properly belong in the `Blueprint`.
-- Do not create `Work Orders` whose only purpose is "leftover technical cleanup" unless that cleanup is itself a coherent hardening or foundation slice.
-- Do not split a single user outcome into a paired "backend Work Order" + "frontend Work Order". Vertical slicing is mandatory.
-- Do not cut `Blueprints` by technical layer (backend vs frontend). `Blueprints` are cut by sub-domain or work area.
-- Do not propose two or more `Blueprints` under a single `FRD` without running the blueprint-count confirmation with the user and documenting the answer.
-- Do not create a foundation `Work Order` unless at least two later slices share the artifacts it hosts. If nothing is truly shared, the foundation is artificial and must be removed from the plan.
-- Do not ship a vertical `Work Order` without its tests and PostHog events as part of the same slice. Tests and analytics are not a later pass.
-- Do not finish the GitHub creation pass without writing `source_issue` back into each created `Work Order` `.md` file.
 
 ### Ticket body
 
@@ -504,15 +559,30 @@ Optional GitHub links may be added as convenience only when useful, but the path
 
 ### GitHub labels and project rules
 
-- Epic title must always include the feature code using the format `FEAT-XXXX: <FRD title>`.
+- Epic title must always include the feature code using the format `FEAT-XXXX: <FRD title>` (allocated per `### FEAT code allocation`).
 - Epic label: `type:epic`
 - Work Order ticket label: `type:slice`
 - add area label when inferable
 - add both Epic and tickets to GitHub Project `4`
-- set Project `Status` by default: **`Todo`** on the Epic and **`Backlog`** on every created slice (see `docs/process/github-project-tracking.md` → **Readiness rule**). Do not leave new items as `Done` or `In Progress`, and do not set slices to `Todo` at creation time unless the user explicitly requested that initial value when they approved the proposal.
+- set Project `Status` by default: **`Todo`** on the Epic and **`Backlog`** on every created slice (see `docs/process/github-project-tracking.md` → **Readiness rule**). Do not leave new items as `Done` or `In Progress`, and do not set slices to `Todo` at creation time unless the user explicitly requested that initial value when they approved the proposal (in which case apply `### Coupled lifecycle overrides`).
 - keep every Epic and slice **open** (issue state); closing issues is out of scope for this command
 - do not treat issue creation as complete until project membership has been confirmed for the Epic and every created ticket
-- if any issue cannot be added to Project `4`, cannot be kept or set **open**, or its `Status` cannot be set to the required initial value (`Todo` for the Epic, `Backlog` for each slice), report the specific blocked issue numbers in the final response and treat the command as partially complete
+- if any issue cannot be added to Project `4`, cannot be kept or set **open**, or its `Status` cannot be set to the required initial value (`Todo` for the Epic, `Backlog` for each slice), list the specific blocked issue numbers under `Blocked requirements` in the final response and treat the command as partially complete
+
+## Guardrails
+
+- Do not try to fully enrich every `Work Order` during this command; preserve the separation of responsibilities with `enrich work order context`.
+- Do not defer `Blueprint`-level technical contracts that are necessary to produce a sane `Work Order` split.
+- Do not force unresolved architecture decisions down into `Work Orders` when they properly belong in the `Blueprint`.
+- Do not create `Work Orders` whose only purpose is "leftover technical cleanup" unless that cleanup is itself a coherent hardening or foundation slice.
+- Do not split a single user outcome into a paired "backend Work Order" + "frontend Work Order". Vertical slicing is mandatory.
+- Do not cut `Blueprints` by technical layer (backend vs frontend). `Blueprints` are cut by sub-domain or work area.
+- Do not propose two or more `Blueprints` under a single `FRD` without running the blueprint-count confirmation with the user and documenting the answer.
+- Do not create a foundation `Work Order` unless at least two later slices share the artifacts it hosts. If nothing is truly shared, the foundation is artificial and must be removed from the plan.
+- Do not ship a vertical `Work Order` without its tests and PostHog events as part of the same slice. Tests and analytics are not a later pass.
+- Do not finish the GitHub creation pass without writing `source_issue` back into each created `Work Order` `.md` file.
+- Do not create a GitHub issue for a `Work Order` whose `.md` already has `source_issue` populated; reuse that issue instead.
+- Do not create a new `PRD` from this command under any circumstance.
 
 ## Numbering and naming rules
 
@@ -521,10 +591,35 @@ When creating the new FRD package:
 - choose the next correct `FRD` number under the target `PRD`
 - choose local `Blueprint` numbering inside that `FRD`, resetting from `BP-01` for each `FRD`
 - choose local `Work Order` numbering inside that `Blueprint`
+- in extension mode, follow `### Extension mode (extending an existing FRD)`: continue after the highest existing `WO` number and never renumber existing files
 - use descriptive slugs
 - preserve the existing naming style in `docs/product`
 
-## Final response format
+## Verification checklist
+
+Run this single checklist before finishing. Every item must hold, or the failure must be reported (GitHub items under `Blocked requirements`):
+
+### Docs
+
+- the target PRD was read and updated to reflect the new or expanded FRD
+- the new FRD does not duplicate an existing one unnecessarily; the command explicitly evaluated extending an existing FRD and splitting into multiple FRDs
+- when the proposal contained two or more `Blueprints` under one `FRD`, the blueprint-count confirmation was run with the user and the chosen shape is documented in the final package
+- the FRD is dense enough to guide implementation
+- the Blueprints are concrete and architecture-aware, cut by sub-domain and never by technical layer
+- the Work Orders are executable and not too thin, and each one (except the foundation slice, if any) is a vertical end-to-end outcome that includes its tests and PostHog events
+- when a foundation `Work Order` exists, it is genuinely shared by two or more later slices, ships no UI, and is clearly referenced from its `Blueprint`'s implementation plan
+- all created items fit the current `docs/product` structure, contain no em dashes, and use repository-relative paths
+- the created/updated docs are committed on the working branch; if the branch is not yet pushed or merged, this is noted in the final response
+
+### GitHub
+
+- the Epic and every created ticket follow the hybrid workflow instead of duplicating docs
+- the Epic and every created ticket are present in GitHub Project `4`
+- the Epic and every created ticket are **open** and have the correct Project `Status` (Epic = **`Todo`**, every slice = **`Backlog`**, or the user-approved coupled alternative)
+- the Epic lists every created Work Order ticket as a sub-issue, and the sub-issue order matches `WO-01` through `WO-NN` (verified via MCP `issue_read` `get_sub_issues` or the REST sub-issues endpoint)
+- every created `Work Order` `.md` file has `source_issue: <issue-number>` populated in its frontmatter matching the GitHub ticket that was created or reused for it
+
+## Output format
 
 Return in Spanish:
 
@@ -538,25 +633,8 @@ Return in Spanish:
 8. `Docs updated`
 9. `Open assumptions`
 10. `Follow-up notes`
+11. `Blocked requirements`: every external state update that could not be completed (Project membership, `Status` field, sub-issue attachment or order, issue reopen), with the specific issue numbers and the exact remaining step; write `ninguno` when nothing was blocked
 
-If creation was blocked before approval or by missing information, say so clearly and summarize what is still needed.
+If the run failed partway through the GitHub pass, `Blocked requirements` must also state which Epic/tickets were created, which `Work Orders` still lack `source_issue`, and which sync steps remain, so a re-run can resume without duplicates.
 
-## Quality bar
-
-Before finishing, verify:
-
-- the target PRD was read
-- the target PRD was updated to reflect the new or expanded FRD
-- the new FRD does not duplicate an existing one unnecessarily
-- the command explicitly evaluated whether the request belongs in an existing FRD instead of a new one
-- the command explicitly evaluated whether the request should be split into multiple FRDs
-- when the proposal contained two or more `Blueprints` under one `FRD`, the blueprint-count confirmation was run with the user and the chosen shape is documented in the final package
-- the FRD is dense enough to guide implementation
-- the Blueprints are concrete and architecture-aware, cut by sub-domain and never by technical layer
-- the Work Orders are executable and not too thin, and each one (except the foundation slice, if any) is a vertical end-to-end outcome that includes its tests and PostHog events
-- when a foundation `Work Order` exists, it is genuinely shared by two or more later slices, ships no UI, and is clearly referenced from its `Blueprint`'s implementation plan
-- GitHub Epic/Tickets follow the hybrid workflow instead of duplicating docs
-- the GitHub Epic and every created ticket were added to GitHub Project `4`
-- the GitHub Epic and every created ticket are **open** and were verified in GitHub Project `4` with the correct initial `Status` (Epic = **`Todo`**, every slice = **`Backlog`**, or the user-approved alternative from the proposal)
-- every created `Work Order` `.md` file has `source_issue: <issue-number>` populated in its frontmatter matching the GitHub ticket that was created for it
-- all created items fit the current `docs/product` structure
+If the command stops early (unresolved `prd_reference`, missing approval, or missing information), return only what blocked it and what is still needed.
