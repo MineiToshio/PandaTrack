@@ -17,7 +17,8 @@ const TOOLTIP_VIEWPORT_GAP_PX = 16;
 const TOOLTIP_TRIGGER_GAP_PX = 8;
 /** Wide enough for paragraph-style help; fixed positioning escapes the narrow pill wrapper. */
 const TOOLTIP_PANEL_CLASSNAME = cn(
-  "border-border/60 bg-popover text-text-body pointer-events-none rounded-lg border px-3 py-2.5 text-xs leading-relaxed shadow-lg",
+  "border-border bg-popover text-text-body pointer-events-none rounded-lg border px-3 py-2.5 text-xs leading-relaxed",
+  "[box-shadow:var(--elevation-2)]",
   "fixed z-[80] w-max min-w-[14rem] max-w-[min(26rem,calc(100vw-2rem))]",
   "motion-safe:transition-opacity motion-safe:duration-150",
 );

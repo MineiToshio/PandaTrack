@@ -99,7 +99,8 @@
     "products": "Products",
     "committed": "Committed",
     "stores": "Stores",
-    "committedPartial": "{count, plural, one {Excludes # order with a pending exchange rate} other {Excludes # orders with a pending exchange rate}}."
+    "committedPartial": "{count, plural, one {Excludes # order with a pending exchange rate} other {Excludes # orders with a pending exchange rate}}.",
+    "committedPartialHint": "Partial figure"
   },
   "collection": {
     "eyebrow": "Your collection",
@@ -130,6 +131,7 @@
     "late": "Outside window",
     "aria": "Arrival punctuality: {onTime}% within the window, {late}% outside it",
     "methodNote": "We measure arrival by the date the store dispatched the delivery, the only date on record. An order that reached the store on time but shipped late counts as outside the window.",
+    "methodNoteLabel": "How we measure this",
     "unknownNote": "{count, plural, one {# arrival with no dispatch date is left out of this split} other {# arrivals with no dispatch date are left out of this split}}.",
     "empty": "No deliveries yet to measure punctuality."
   },

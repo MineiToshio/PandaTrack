@@ -99,7 +99,8 @@
     "products": "Productos",
     "committed": "Comprometido",
     "stores": "Tiendas",
-    "committedPartial": "{count, plural, one {Excluye # pedido con tipo de cambio pendiente} other {Excluye # pedidos con tipo de cambio pendiente}}."
+    "committedPartial": "{count, plural, one {Excluye # pedido con tipo de cambio pendiente} other {Excluye # pedidos con tipo de cambio pendiente}}.",
+    "committedPartialHint": "Cifra parcial"
   },
   "collection": {
     "eyebrow": "Tu colección",
@@ -130,6 +131,7 @@
     "late": "Fuera de plazo",
     "aria": "Puntualidad de llegadas: {onTime}% en plazo, {late}% fuera de plazo",
     "methodNote": "Medimos la llegada por la fecha en que la tienda despachó la entrega, que es la única fecha registrada. Un pedido que llegó a tiempo pero se despachó tarde cuenta como fuera de plazo.",
+    "methodNoteLabel": "Cómo medimos esto",
     "unknownNote": "{count, plural, one {# llegada sin fecha de despacho queda fuera del cálculo} other {# llegadas sin fecha de despacho quedan fuera del cálculo}}.",
     "empty": "Aún no hay entregas para medir la puntualidad."
   },

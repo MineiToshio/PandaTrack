@@ -1,7 +1,8 @@
 import { getTranslations } from "next-intl/server";
-import { AlertTriangle, Boxes, Package, Store, Wallet, type LucideIcon } from "lucide-react";
+import { Boxes, Package, Store, Wallet, type LucideIcon } from "lucide-react";
 import type { DashboardData } from "@/lib/data/dashboard/dashboardTypes";
 import { formatDashboardMoney } from "../_utils/dashboardMoney";
+import DashboardKpiPartialTooltip from "./DashboardKpiPartialTooltip";
 
 export type DashboardKpiStripProps = {
   data: DashboardData;
@@ -94,7 +95,7 @@ export default async function DashboardKpiStrip({ data, locale }: DashboardKpiSt
                 <span className="flex items-center gap-1 [font-size:11px] [letter-spacing:0.05em] [color:var(--text-muted)] uppercase">
                   {tile.label}
                   {tile.partialNote && (
-                    <AlertTriangle size={11} aria-hidden="true" className="shrink-0 [color:var(--warning)]" />
+                    <DashboardKpiPartialTooltip label={t("kpi.committedPartialHint")} note={tile.partialNote} />
                   )}
                 </span>
               </span>

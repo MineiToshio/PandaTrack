@@ -3,6 +3,7 @@ import { Clock } from "lucide-react";
 import type { DashboardData } from "@/lib/data/dashboard/dashboardTypes";
 import DashboardDonut from "./DashboardDonut";
 import DashboardZoneCard from "./DashboardZoneCard";
+import DashboardZoneInfoTooltip from "./DashboardZoneInfoTooltip";
 
 export type DashboardPunctualityZoneProps = {
   data: DashboardData;
@@ -39,7 +40,12 @@ export default async function DashboardPunctualityZone({ data, locale }: Dashboa
   const latePercent = 100 - onTimePercent;
 
   return (
-    <DashboardZoneCard {...cardProps}>
+    <DashboardZoneCard
+      {...cardProps}
+      trailing={
+        <DashboardZoneInfoTooltip label={t("punctuality.methodNoteLabel")} content={t("punctuality.methodNote")} />
+      }
+    >
       <div className="flex flex-1 flex-col items-center gap-3.5">
         <DashboardDonut
           className="w-full max-w-[170px]"
@@ -64,10 +70,6 @@ export default async function DashboardPunctualityZone({ data, locale }: Dashboa
             <span className="[color:var(--text-primary)] tabular-nums">{latePercent}%</span>
           </span>
         </div>
-
-        <p className="text-center [font-size:12px] [line-height:1.5] [color:var(--text-muted)]">
-          {t("punctuality.methodNote")}
-        </p>
 
         {unknownCount > 0 && (
           <p className="text-center [font-size:12px] [line-height:1.5] [color:var(--text-muted)]">
