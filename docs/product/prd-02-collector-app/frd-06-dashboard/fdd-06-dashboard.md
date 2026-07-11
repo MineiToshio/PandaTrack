@@ -5,7 +5,7 @@ slug: dashboard
 title: Dashboard — Feature Design Document
 status: ACTIVE
 parent: FRD-06
-last_updated: 2026-07-09
+last_updated: 2026-07-11
 prototype: ./prototype/dashboard.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -189,7 +189,9 @@ one-line note that the range applies **only** to these charts, and — pinned to
 **date-range picker** (§5.4). Below, a `.charts-grid` of **three hand-rolled SVG line charts**:
 
 - **Gasto por mes** — single series, filled **area** in `--accent`, a **direct last-point
-  label** (`S/ 1,290`), and hover crosshair + tooltip (`FR-06-07`, `FR-06-08`, `BR-06-04`).
+  label** (`S/ 1,290`), and hover crosshair + tooltip (`FR-06-07`, `FR-06-08`, `BR-06-04`). The
+  series is order payments **plus** delivery shipping cost, merged into one total per month —
+  delivery cost is never plotted as its own series (`BR-06-09`).
 - **Pedidos hechos vs llegados** — two series with a text legend (`Hechos` `--accent` /
   `Llegados` `--accent-cool`) and hover (`FR-06-09`, `BR-06-06`). "Arrived" means an order has at
   least one item that has **left the `NONE` delivery state** (`AC-06-07`).
@@ -560,3 +562,5 @@ The dashboard shipped across [`BP-01 · WO-01…WO-06`](bp-01-dashboard-aggregat
 - **The page-heading date reads as the locale formats it.** The prototype writes `jueves 18 jun`; `Intl.DateTimeFormat` renders `viernes, 10 jul` in `es` and `Friday, Jul 10` in `en`. The comma belongs to the locale, and removing it would mean hand-rolling a weekday table per language. The date comes from `generatedAt` in the collector's timezone, since it is a real instant rather than a domain date.
 
 - **Per-order amounts read in the base currency wherever they can be converted** (`FR-06-13`, `FR-06-14`). The order's own currency is the fallback, used only when the order is FX-pending, and the row is then marked `· FX pendiente` — matching the prototype's `¥ 9.800` row. This governs both Movimiento and Lo que toca pagar, which had disagreed with each other.
+
+- **"Desembolsado este mes" and "Gasto por mes" now include delivery shipping cost**, not just order payments (`FR-06-07`, `FR-06-08`, `BR-06-04`, `BR-06-09`). The prototype's `S/ 1,290` figure predates this and reflects order payments only. Delivery cost is folded into the same total rather than drawn as a second series — plotting a typical shipping cost against a typical order total on one axis would be disproportionate.

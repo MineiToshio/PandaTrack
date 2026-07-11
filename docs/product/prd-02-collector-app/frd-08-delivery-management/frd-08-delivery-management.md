@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-02
 children:
   - BP-01
-last_updated: 2026-06-12
+last_updated: 2026-07-11
 source_features:
   - FEAT-0015
 implementation_status: IMPLEMENTED
@@ -269,10 +269,10 @@ Every delivery mutation that changes product-to-delivery associations re-derives
   - `IN_TRANSIT`: primary `Mark delivered`, visible secondary `Edit`, overflow `Cancel` and `Delete`
   - `DELIVERED`: primary `Reopen`, with additional actions in secondary / overflow chrome
   - `CANCELLED`: primary `Reopen`, overflow `Delete`
+- `Delivery.cost` feeds the dashboard's disbursed-spend figures, merged with order payments rather than charted as its own series — see [`FRD-06 · BR-06-04`, `BR-06-09`](../frd-06-dashboard/frd-06-dashboard.md#business-rules)
 
 ## Open Questions
 
-- whether delivery costs should later appear as a separate dashboard series or merge into one broader spending summary
 - whether post-MVP delivery workflows should reintroduce carrier and tracking-number capture if integrated with deep-link tracking, courier-reliability analytics, or arrival alerts
 - whether post-MVP delivery workflows should support attachments such as screenshots or labels
 

@@ -8,7 +8,7 @@ parent: PRD-02
 children:
   - BP-01
   - BP-02
-last_updated: 2026-06-16
+last_updated: 2026-07-11
 source_features:
   - FEAT-0014
 implementation_status: IMPLEMENTED
@@ -323,10 +323,10 @@ Payment progress is tracked separately from `OrderStatus` (`FR-05-33`) and is **
 - reconciliation eligibility is bounded to the current month: when the collector changes base currency, only orders where `orderDate >= first day of the current month` AND `currencyCode !== newBaseCurrencyCode` AND `status != CANCELLED` are marked for reconciliation; orders from prior months are preserved in the database but are not included in reconciliation scope or dashboard rollups denominated in the new base currency
 - reconciliation state is **persisted per order** via the boolean `Order.needsExchangeRateUpdate` (default `false`; migration `20260616230000_add_order_needs_exchange_rate_update`). An order is "needs currency update" when `needsExchangeRateUpdate = true` AND `currencyCode != user.baseCurrencyCode` AND `status != CANCELLED` (`buildFxPendingWhere` in `src/lib/data/orders/orderQueries.ts`). The flag is **set** when the collector changes their base currency — `flagOrdersForFxReconciliation(userId, newBase)` marks every order whose currency differs from the new base (and unmarks those that now match it); this only sets the flag, it never mutates `exchangeRate`. The flag is **cleared** when the rate is (re)entered: on order create (fresh rate), on edit when an `exchangeRate` is submitted, and on bulk reconciliation (`updateExchangeRatesAction` writes the rate **and** sets `needsExchangeRateUpdate = false`). So reconciling an order removes it from the pending set, and the banner/count converges to zero as the collector works through it. Cancelled orders are excluded from the pending view but keep their flag, so reactivating one re-surfaces it. (This is the design earlier drafts assumed; it was implemented in S16 after Sergio chose per-order tracking over a non-converging monthly heuristic.) The flag also surfaces as a **per-order indicator**: a `warning` chip (`detail.hero.chipFxPending`) on the order-detail hero next to the status chips (hidden on cancelled orders), and an inline `warning` (`form.exchangeRateOutdatedWarning`) under the edit-form exchange-rate field.
 - exchange rate validation for manual input: `min(0.01)`, `max(99999.99)` — consistent with WO-04 and WO-07
+- dashboard spend reporting merges delivery shipping cost into the same disbursed-spend figures as order payments, rather than charting it as its own series (comparing the two scales side by side would be disproportionate) — see [`FRD-06 · BR-06-04`, `BR-06-09`](../frd-06-dashboard/frd-06-dashboard.md#business-rules)
 
 ## Open Questions
 
-- whether future dashboard reporting will break delivery costs out separately from product spending or combine them into one spending signal
 - whether future post-MVP finance reporting should move exchange-rate context from order level to payment level
 
 ## Out of Scope

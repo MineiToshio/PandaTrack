@@ -9,14 +9,14 @@ source_features:
   - FEAT-0016
 source_issue: 109
 implementation_status: IMPLEMENTED
-last_updated: 2026-07-10
+last_updated: 2026-07-11
 ---
 
 # WO-04 Disbursed Spend Zone
 
 ## Summary
 
-Implement the dashboard's spend zone end-to-end: the disbursed-this-month figure (sum of payments in the current calendar month, including partial/advance payments) and a monthly disbursed-spend chart over a configurable date range. This slice introduces the shared client date-range control (default last 6 months; presets 3/6/12 months, year-to-date, all; custom range) that the order-activity charts reuse.
+Implement the dashboard's spend zone end-to-end: the disbursed-this-month figure (sum of order payments plus delivery shipping cost in the current calendar month, including partial/advance payments) and a monthly disbursed-spend chart over a configurable date range. This slice introduces the shared client date-range control (default last 6 months; presets 3/6/12 months, year-to-date, all; custom range) that the order-activity charts reuse.
 
 ## Prerequisites
 
@@ -25,7 +25,7 @@ Implement the dashboard's spend zone end-to-end: the disbursed-this-month figure
 ## In Scope
 
 - the spend zone on the dashboard page
-- "desembolsado este mes" figure in base currency (current calendar month, partial payments included)
+- "desembolsado este mes" figure in base currency (current calendar month, order payments plus non-cancelled delivery shipping cost, partial payments included)
 - monthly disbursed-spend chart over the selected range
 - the shared client date-range control: default last 6 months, presets (3/6/12 months, year-to-date, all), and a custom range; it drives only the trend charts and never the fixed current-period metrics
 - the range control lives in the header of one scoped "Gráficos / Tendencias" section so its scope (the trend charts only) is visually unambiguous (`FR-06-12`)
@@ -75,3 +75,4 @@ Implement the dashboard's spend zone end-to-end: the disbursed-this-month figure
 - **Charting is hand-rolled** (`DashboardLineChart`, an SVG line/area chart with gridlines, markers, axis labels, a hover crosshair + tooltip, and a `role="img"` label). No charting dependency was added, per `ui-libs-policy.mdc`. Formatted values are passed in from the server so no formatter function crosses the RSC boundary.
 - **The custom-range calendar reuses `DateRangePickerInput`** (core), whose trigger + popover + preset rail already match the design record. No parallel calendar was built.
 - **The deuda-viva trend (`FR-06-21`)** reconstructs the balance at each month-end: an order contributes once placed, and only payments settled by that month-end reduce it. Cancelled and FX-unreconciled orders are excluded, and the series carries the partial flag.
+- **Delivery shipping cost is merged into the spend figures, not charted separately** (`BR-06-04`, `BR-06-09`, resolving the FRD-06/FRD-08 open question). Each non-cancelled [`FRD-08`](../../../frd-08-delivery-management/frd-08-delivery-management.md) `Delivery.cost` is bucketed by its `deliveryDate` (shipping date) exactly like an order payment is bucketed by `paymentDate`, and rolled into the same base-currency total via the existing FX-pending rollup — a delivery's own `currencyCode` / `exchangeRate` / `needsExchangeRateUpdate` are honored the same way an order's are, so an FX-pending delivery is excluded from the total and flips `SpendBlock.currentMonthIsPartial` / `monthlySeriesIsPartial` like an FX-pending order does.
