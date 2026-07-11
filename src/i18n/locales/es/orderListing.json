@@ -47,8 +47,8 @@
     "deliveryRangePlaceholder": "Elegir rango de fechas",
     "deliveryRangeClearLabel": "Limpiar rango de entrega",
     "deliveryOverdueLabel": "Por recibir",
-    "deliveryOverdueHelper": "Pedidos que ya están dentro del rango de entrega o que deberían haber llegado.",
-    "deliveryRangeDisabledHelper": "Desactivado mientras el filtro \"Por recibir\" esté activo.",
+    "deliveryLateLabel": "Entrega atrasada",
+    "deliveryQuickHelper": "Por recibir: dentro de la ventana o vencidos. Entrega atrasada: solo vencidos y sin llegar.",
     "fxLabel": "Tipo de cambio",
     "fxPendingLabel": "Solo con actualización pendiente",
     "fxPendingHelper": "Pedidos que necesitan refrescar el tipo de cambio.",
@@ -63,8 +63,7 @@
     "deliveryNext14": "Próximos 14 días",
     "deliveryNext30": "Próximos 30 días",
     "deliveryThisMonth": "Este mes",
-    "deliveryNextMonth": "Próximo mes",
-    "deliveryOverdue": "Atrasados"
+    "deliveryNextMonth": "Próximo mes"
   },
   "sort": {
     "label": "Ordenar por",
@@ -97,6 +96,7 @@
     "deliveryTo": "Entrega hasta {date}",
     "deliveryRange": "Entrega: {from} – {to}",
     "deliveryOverdue": "Por recibir",
+    "deliveryLate": "Entrega atrasada",
     "remove": "Quitar filtro {label}"
   },
   "status": {

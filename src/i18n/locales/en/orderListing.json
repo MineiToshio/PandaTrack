@@ -47,8 +47,8 @@
     "deliveryRangePlaceholder": "Pick a date range",
     "deliveryRangeClearLabel": "Clear delivery range",
     "deliveryOverdueLabel": "Due to arrive",
-    "deliveryOverdueHelper": "Orders inside or past their expected delivery window.",
-    "deliveryRangeDisabledHelper": "Disabled while the \"Due to arrive\" filter is active.",
+    "deliveryLateLabel": "Overdue delivery",
+    "deliveryQuickHelper": "Due to arrive: in-window or overdue. Overdue delivery: only past-due and not arrived.",
     "fxLabel": "Exchange rate",
     "fxPendingLabel": "Only with pending update",
     "fxPendingHelper": "Orders that need their exchange rate refreshed.",
@@ -63,8 +63,7 @@
     "deliveryNext14": "Next 14 days",
     "deliveryNext30": "Next 30 days",
     "deliveryThisMonth": "This month",
-    "deliveryNextMonth": "Next month",
-    "deliveryOverdue": "Overdue"
+    "deliveryNextMonth": "Next month"
   },
   "sort": {
     "label": "Sort by",
@@ -97,6 +96,7 @@
     "deliveryTo": "Delivery to {date}",
     "deliveryRange": "Delivery: {from} – {to}",
     "deliveryOverdue": "Due to arrive",
+    "deliveryLate": "Overdue delivery",
     "remove": "Remove filter {label}"
   },
   "status": {

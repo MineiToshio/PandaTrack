@@ -66,6 +66,7 @@ function buildActiveFilters(parsed: ReturnType<typeof parseOrderListingParams>):
     deliveryFromIso: domainDateToIsoString(parsed.deliveryFrom),
     deliveryToIso: domainDateToIsoString(parsed.deliveryTo),
     deliveryOverdueOnly: parsed.deliveryOverdueOnly,
+    deliveryLateOnly: parsed.deliveryLateOnly,
   };
 }
 
@@ -82,6 +83,7 @@ function hasActiveFilter(parsed: ReturnType<typeof parseOrderListingParams>): bo
     Boolean(parsed.deliveryFrom) ||
     Boolean(parsed.deliveryTo) ||
     parsed.deliveryOverdueOnly ||
+    parsed.deliveryLateOnly ||
     parsed.sort !== DEFAULT_ORDER_LIST_SORT
   );
 }
@@ -227,6 +229,7 @@ async function OrdersDataSection({
     deliveryFrom: parsed.deliveryFrom,
     deliveryTo: parsed.deliveryTo,
     deliveryOverdueOnly: parsed.deliveryOverdueOnly,
+    deliveryLateOnly: parsed.deliveryLateOnly,
     fxPendingOnly: parsed.fxPendingOnly,
     baseCurrencyCode,
     sort: parsed.sort,

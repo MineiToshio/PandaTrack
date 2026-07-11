@@ -38,6 +38,8 @@ export type ParsedOrderListingParams = {
   deliveryFrom: Date | undefined;
   deliveryTo: Date | undefined;
   deliveryOverdueOnly: boolean;
+  /** "Atrasados": strict overdue — see `deliveryLateOnly` in `orderQueries.ts`. */
+  deliveryLateOnly: boolean;
   page: number;
 };
 
@@ -55,6 +57,7 @@ export type OrderListActiveFilters = {
   deliveryFromIso: string | undefined;
   deliveryToIso: string | undefined;
   deliveryOverdueOnly: boolean;
+  deliveryLateOnly: boolean;
 };
 
 export function parseOrderListingParams(raw: Record<string, string | string[] | undefined>): ParsedOrderListingParams {
@@ -85,6 +88,7 @@ export function parseOrderListingParams(raw: Record<string, string | string[] | 
   const deliveryFrom = parseDateParam(raw.deliveryFrom);
   const deliveryTo = parseDateParam(raw.deliveryTo);
   const deliveryOverdueOnly = parseBoolean(raw.delOverdue);
+  const deliveryLateOnly = parseBoolean(raw.delLate);
 
   const page = parsePositiveInteger(raw.page);
 
@@ -104,6 +108,7 @@ export function parseOrderListingParams(raw: Record<string, string | string[] | 
     deliveryFrom,
     deliveryTo,
     deliveryOverdueOnly,
+    deliveryLateOnly,
     page,
   };
 }
@@ -138,6 +143,7 @@ export function buildOrderListFilterUrl(
     deliveryToIso: "deliveryToIso" in overrides ? overrides.deliveryToIso : filters.deliveryToIso,
     deliveryOverdueOnly:
       "deliveryOverdueOnly" in overrides ? Boolean(overrides.deliveryOverdueOnly) : filters.deliveryOverdueOnly,
+    deliveryLateOnly: "deliveryLateOnly" in overrides ? Boolean(overrides.deliveryLateOnly) : filters.deliveryLateOnly,
   };
 
   const params = new URLSearchParams();
@@ -156,6 +162,7 @@ export function buildOrderListFilterUrl(
   if (next.deliveryFromIso) params.set("deliveryFrom", next.deliveryFromIso);
   if (next.deliveryToIso) params.set("deliveryTo", next.deliveryToIso);
   if (next.deliveryOverdueOnly) params.set("delOverdue", "true");
+  if (next.deliveryLateOnly) params.set("delLate", "true");
 
   const targetPage = overrides.page ?? 1;
   if (targetPage > 1) params.set("page", String(targetPage));
@@ -174,6 +181,7 @@ export function hasOnlyDefaultActiveFilters(filters: OrderListActiveFilters): bo
     !filters.deliveryFromIso &&
     !filters.deliveryToIso &&
     !filters.deliveryOverdueOnly &&
+    !filters.deliveryLateOnly &&
     filters.paymentStates.length === 0 &&
     !filters.fxPendingOnly &&
     filters.sort === DEFAULT_ORDER_LIST_SORT &&

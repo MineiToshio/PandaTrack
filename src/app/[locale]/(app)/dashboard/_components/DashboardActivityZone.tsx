@@ -6,6 +6,7 @@ import Chip from "@/components/core/Chip";
 import EmptyState from "@/components/modules/EmptyState";
 import { formatAmountSymbolOnly } from "@/lib/currency";
 import { formatDomainShortDate } from "@/lib/domainDate";
+import { DASHBOARD_ACTIVITY_LIST_LIMIT } from "@/lib/data/dashboard/dashboardConstants";
 import { getTodayStart } from "@/lib/data/dashboard/dashboardPeriods";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import type { DashboardData, OrderSummary } from "@/lib/data/dashboard/dashboardTypes";
@@ -156,7 +157,7 @@ export default async function DashboardActivityZone({ data, locale }: DashboardA
       emptyPane(t("activity.emptyOverdue"))
     ) : (
       <ul role="list" className="flex flex-col">
-        {activity.overdueArrivals.map((order) => (
+        {activity.overdueArrivals.slice(0, DASHBOARD_ACTIVITY_LIST_LIMIT).map((order) => (
           <DashboardActivityRow
             key={order.orderId}
             orderId={order.orderId}
@@ -199,7 +200,7 @@ export default async function DashboardActivityZone({ data, locale }: DashboardA
       key: "overdue",
       label: t("activity.tabs.overdue"),
       count: activity.overdueArrivals.length,
-      panel: withFooter(overduePane, `${ordersHref}?delOverdue=true`, t("activity.reviewOverdue")),
+      panel: withFooter(overduePane, `${ordersHref}?delLate=true`, t("activity.reviewOverdue")),
     },
   ];
 

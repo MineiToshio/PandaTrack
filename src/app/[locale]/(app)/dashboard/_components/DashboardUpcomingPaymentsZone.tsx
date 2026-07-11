@@ -6,6 +6,7 @@ import ViewTransitionLink from "@/components/core/ViewTransitionLink";
 import EmptyState from "@/components/modules/EmptyState";
 import { formatAmountSymbolOnly } from "@/lib/currency";
 import { formatDomainShortDate } from "@/lib/domainDate";
+import { DASHBOARD_ACTIVITY_LIST_LIMIT } from "@/lib/data/dashboard/dashboardConstants";
 import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import type { DashboardData } from "@/lib/data/dashboard/dashboardTypes";
@@ -19,13 +20,10 @@ export type DashboardUpcomingPaymentsZoneProps = {
 
 const UPCOMING_PAYMENTS_TITLE_ID = "dashboard-upcoming-payments-title";
 
-/** How many rows the zone shows before deferring to the orders list. */
-const DASHBOARD_UPCOMING_PAYMENTS_LIMIT = 5;
-
 /** "Próximos pagos": per-order outstanding + due date, sorted by due date. */
 export default async function DashboardUpcomingPaymentsZone({ data, locale }: DashboardUpcomingPaymentsZoneProps) {
   const t = await getTranslations({ locale, namespace: "dashboard" });
-  const payments = data.cashObligations.upcomingPayments.slice(0, DASHBOARD_UPCOMING_PAYMENTS_LIMIT);
+  const payments = data.cashObligations.upcomingPayments.slice(0, DASHBOARD_ACTIVITY_LIST_LIMIT);
   const ordersHref = `/${locale}${ROUTES.orders}`;
 
   const cardProps = {

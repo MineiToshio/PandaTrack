@@ -123,7 +123,12 @@ describe("getOrdersList SQL payment-state pagination", () => {
 
     const result = await getOrdersList("user-1", baseFilters());
 
-    expect(result.orders[0]).toMatchObject({ id: "o1", paidAmount: 3000, paymentPercentage: 30, hasUnpaidBalance: true });
+    expect(result.orders[0]).toMatchObject({
+      id: "o1",
+      paidAmount: 3000,
+      paymentPercentage: 30,
+      hasUnpaidBalance: true,
+    });
     expect(result.orders[1]).toMatchObject({
       id: "o2",
       paidAmount: 10000,
@@ -168,5 +173,41 @@ describe("getOrdersList SQL payment-state pagination", () => {
     expect(prismaMock.order.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 2, take: 2 }));
     expect(result.totalCount).toBe(10);
     expect(result.totalPages).toBe(5);
+  });
+});
+
+describe("getOrdersList delivery-lateness filters", () => {
+  it("expresses deliveryLateOnly as the window fully closed, not just started", async () => {
+    await getOrdersList("user-1", baseFilters({ deliveryLateOnly: true }));
+
+    const where = findManyArgs().where as Record<string, unknown>;
+    expect(where.OR).toEqual([
+      { expectedDeliveryTo: { lt: expect.any(Date) } },
+      { expectedDeliveryTo: null, expectedDeliveryFrom: { lt: expect.any(Date) } },
+    ]);
+    expect(where.status).toEqual({ notIn: ["COMPLETED", "CANCELLED"] });
+  });
+
+  it("lets deliveryLateOnly win over deliveryOverdueOnly when both are set", async () => {
+    await getOrdersList("user-1", baseFilters({ deliveryLateOnly: true, deliveryOverdueOnly: true }));
+
+    const where = findManyArgs().where as Record<string, unknown>;
+    expect(where.OR).toBeDefined();
+    expect(where.expectedDeliveryFrom).toBeUndefined();
+  });
+
+  it("intersects deliveryLateOnly with explicit statuses instead of forcing notIn", async () => {
+    await getOrdersList("user-1", baseFilters({ deliveryLateOnly: true, statuses: ["IN_TRANSIT"] }));
+
+    const where = findManyArgs().where as Record<string, unknown>;
+    expect(where.status).toEqual({ in: ["IN_TRANSIT"] });
+  });
+
+  it("still applies the looser deliveryOverdueOnly ('Por recibir') window-started predicate on its own", async () => {
+    await getOrdersList("user-1", baseFilters({ deliveryOverdueOnly: true }));
+
+    const where = findManyArgs().where as Record<string, unknown>;
+    expect(where.expectedDeliveryFrom).toEqual({ lte: expect.any(Date) });
+    expect(where.OR).toBeUndefined();
   });
 });

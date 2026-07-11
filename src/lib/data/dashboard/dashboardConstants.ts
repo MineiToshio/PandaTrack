@@ -10,8 +10,8 @@ export const DASHBOARD_DEFAULT_RANGE_MONTHS = 6;
 /** Forward calendar months (beyond the current one) surfaced in the obligations breakdown. */
 export const DASHBOARD_UPCOMING_MONTHS = 3;
 
-/** How many recent orders the activity zone lists. */
-export const DASHBOARD_RECENT_ORDERS_LIMIT = 10;
+/** How many rows each activity-zone tab (recent, upcoming, overdue) lists before deferring to "see all". */
+export const DASHBOARD_ACTIVITY_LIST_LIMIT = 5;
 
 /** Arrival lookahead window, in days, for "próximas llegadas". */
 export const DASHBOARD_UPCOMING_ARRIVAL_DAYS = 30;

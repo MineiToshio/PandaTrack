@@ -1,6 +1,6 @@
 import {
   BUDGET_WARNING_THRESHOLD_PERCENT,
-  DASHBOARD_RECENT_ORDERS_LIMIT,
+  DASHBOARD_ACTIVITY_LIST_LIMIT,
   DASHBOARD_TOP_STORES_LIMIT,
   DASHBOARD_UPCOMING_ARRIVAL_DAYS,
   DASHBOARD_UPCOMING_MONTHS,
@@ -329,7 +329,7 @@ function buildActivity(
   const recentOrders = orders
     .slice()
     .sort((a, b) => b.input.orderDate.getTime() - a.input.orderDate.getTime())
-    .slice(0, DASHBOARD_RECENT_ORDERS_LIMIT)
+    .slice(0, DASHBOARD_ACTIVITY_LIST_LIMIT)
     .map(toSummary);
 
   const todayStart = getTodayStart(now, timeZone);
@@ -342,8 +342,11 @@ function buildActivity(
       return from !== null && from.getTime() >= todayStart.getTime() && from.getTime() < arrivalWindowEnd.getTime();
     })
     .sort((a, b) => a.input.expectedDeliveryFrom!.getTime() - b.input.expectedDeliveryFrom!.getTime())
+    .slice(0, DASHBOARD_ACTIVITY_LIST_LIMIT)
     .map(toSummary);
 
+  // Not sliced: `overdueArrivals.length` also drives the "Atrasados" tab count badge, which must
+  // reflect the true total. The component caps the rendered rows at `DASHBOARD_ACTIVITY_LIST_LIMIT`.
   const overdueArrivals = notArrived
     .map((order) => ({ order, dueDate: resolveArrivalDueDate(order.input) }))
     .filter((entry) => entry.dueDate !== null && entry.dueDate.getTime() < todayStart.getTime())

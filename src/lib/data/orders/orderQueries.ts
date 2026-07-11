@@ -338,6 +338,14 @@ export type OrdersListPageFilters = {
    * exclusive with `deliveryFrom`/`deliveryTo` (caller is expected to enforce that).
    */
   deliveryOverdueOnly?: boolean;
+  /**
+   * "Atrasados": stricter than `deliveryOverdueOnly` — the delivery window has fully
+   * closed (`expectedDeliveryTo ?? expectedDeliveryFrom < today`), not just started, and
+   * the order is still pending. Mirrors the dashboard's overdue-arrivals definition
+   * (`resolveArrivalDueDate` in dashboardAggregation.ts). Takes priority over
+   * `deliveryOverdueOnly`/`deliveryFrom`/`deliveryTo` when set.
+   */
+  deliveryLateOnly?: boolean;
   /** When true, restrict to orders eligible for FX reconciliation (foreign currency, current-month). */
   fxPendingOnly?: boolean;
   /** User's base currency, required for `fxPendingOnly` and `pendingFxCount`. */
@@ -381,6 +389,7 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
     deliveryFrom,
     deliveryTo,
     deliveryOverdueOnly,
+    deliveryLateOnly,
     fxPendingOnly,
     baseCurrencyCode,
     sort = "recent",
@@ -407,14 +416,25 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
   const fxFilterBase = fxPendingOnly && baseCurrencyCode ? { currencyCode: { not: baseCurrencyCode } } : {};
   const fxFilterFlag = fxPendingOnly && baseCurrencyCode ? { needsExchangeRateUpdate: true } : {};
 
-  // Delivery filter — "Por recibir" wins over an explicit range when both are present.
+  // Delivery filter — `deliveryLateOnly` ("Atrasados") wins over `deliveryOverdueOnly`
+  // ("Por recibir"), which wins over an explicit range, when more than one is present.
+  // `deliveryLateOnly`: the window has fully closed (`expectedDeliveryTo ?? expectedDeliveryFrom
+  // < today`) and order still pending — mirrors the dashboard's overdue-arrivals definition.
   // `deliveryOverdueOnly`: window already started (`expectedDeliveryFrom <= today`) and
   // order still pending. Range mode: overlap with [from, to].
   const deliveryWhere: Record<string, unknown> = {};
   // When the user already filters by status, intersect with the explicit set (no implicit
   // notIn). Otherwise apply the "still pending" constraint inherent to the toggle.
   const hasExplicitStatuses = statuses && statuses.length > 0;
-  if (deliveryOverdueOnly) {
+  if (deliveryLateOnly) {
+    deliveryWhere.OR = [
+      { expectedDeliveryTo: { lt: now } },
+      { expectedDeliveryTo: null, expectedDeliveryFrom: { lt: now } },
+    ];
+    if (!hasExplicitStatuses) {
+      deliveryWhere.status = { notIn: ["COMPLETED", "CANCELLED"] as OrderStatus[] };
+    }
+  } else if (deliveryOverdueOnly) {
     deliveryWhere.expectedDeliveryFrom = { lte: now };
     if (!hasExplicitStatuses) {
       deliveryWhere.status = { notIn: ["COMPLETED", "CANCELLED"] as OrderStatus[] };

@@ -62,9 +62,11 @@ export type FilterTagAutocompleteSection = {
 
 /**
  * Date range with two custom DatePickerInput fields. Value shape:
- *   `{ from?: string; to?: string; flag?: boolean }`
- * The optional `flag` boolean backs the `trailingSwitch` (e.g. "Por recibir"); the consumer
- * is responsible for honoring it (typically by clearing `from`/`to` when the flag is on).
+ *   `{ from?: string; to?: string; flag?: boolean; choice?: string }`
+ * The optional `flag` boolean backs the `trailingSwitch` (e.g. "Por recibir"); the optional
+ * `choice` string backs the `trailingChoice` deselectable single-select (e.g. "Por recibir" vs
+ * "Entrega atrasada"). Both are mutually exclusive with the range: selecting either blanks
+ * `from`/`to`, and the consumer is responsible for honoring that when reading the value.
  */
 export type FilterDateRangeSection = {
   id: string;
@@ -84,6 +86,16 @@ export type FilterDateRangeSection = {
    * When ON, the date-range fields auto-disable visually and the consumer should clear them.
    */
   trailingSwitch?: { label: string; helper?: string };
+  /**
+   * Optional trailing deselectable single-select chip group rendered inside the same fieldset
+   * (below the inputs). Use instead of `trailingSwitch` when two mutually exclusive quick states
+   * exist (e.g. "Por recibir" vs "Entrega atrasada") and "none selected" is a valid state.
+   * Selecting an option blanks the range inputs; clicking the active option clears the choice.
+   */
+  trailingChoice?: {
+    helper?: string;
+    options: Array<{ value: string; label: string; icon?: ReactNode }>;
+  };
   /** Helper text rendered under the legend, typically explaining the disabled state. */
   helperText?: string;
   /** Disables the date inputs (the trailing switch stays interactive). */
@@ -401,7 +413,7 @@ export default function FilterDrawer({
   };
 
   const renderDateRangeSection = (section: FilterDateRangeSection) => {
-    const current = (values[section.id] ?? {}) as { from?: string; to?: string; flag?: boolean };
+    const current = (values[section.id] ?? {}) as { from?: string; to?: string; flag?: boolean; choice?: string };
     const handleChange = (key: "from" | "to", value: string | undefined) => {
       const next = { ...current, [key]: value || undefined };
       onChange({ ...values, [section.id]: next });
@@ -409,12 +421,17 @@ export default function FilterDrawer({
     const handlePreset = (presetValue: string) => {
       if (!section.resolvePreset) return;
       const resolved = section.resolvePreset(presetValue);
-      // Preserve the trailing switch flag while replacing the range from the preset.
+      // Preserve the trailing switch flag while replacing the range from the preset. A trailing
+      // choice disables the inputs, so it is never set on this path and is intentionally dropped.
       onChange({ ...values, [section.id]: { ...resolved, flag: current.flag } });
     };
     const handleSwitchToggle = (on: boolean) => {
       // When toggle is ON, blank the range so the consumer doesn't need to defensively clear.
       onChange({ ...values, [section.id]: on ? { flag: true } : { ...current, flag: false } });
+    };
+    const handleChoiceToggle = (choiceValue: string) => {
+      // Selecting an option blanks the range (mirrors the switch); re-clicking it clears the choice.
+      onChange({ ...values, [section.id]: current.choice === choiceValue ? {} : { choice: choiceValue } });
     };
     const parseISO = (iso: string | undefined): Date | null => {
       if (!iso) return null;
@@ -429,7 +446,7 @@ export default function FilterDrawer({
       const d = String(date.getDate()).padStart(2, "0");
       return `${y}-${m}-${d}`;
     };
-    const inputsDisabled = section.disabled || current.flag === true;
+    const inputsDisabled = section.disabled || current.flag === true || Boolean(current.choice);
     const mode = section.mode ?? "split";
     const handleRangeChange = (nextFrom: Date | null, nextTo: Date | null) => {
       onChange({
@@ -514,6 +531,32 @@ export default function FilterDrawer({
             </span>
             <Switch checked={current.flag === true} onChange={handleSwitchToggle} />
           </label>
+        )}
+        {section.trailingChoice && (
+          <div className="mt-3 flex flex-col gap-1.5">
+            <div className="flex flex-wrap gap-2">
+              {section.trailingChoice.options.map((option) => {
+                const isSelected = current.choice === option.value;
+                return (
+                  <Pill
+                    key={option.value}
+                    role="checkbox"
+                    aria-checked={isSelected}
+                    selected={isSelected}
+                    icon={option.icon}
+                    onClick={() => handleChoiceToggle(option.value)}
+                  >
+                    {option.label}
+                  </Pill>
+                );
+              })}
+            </div>
+            {section.trailingChoice.helper && (
+              <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
+                {section.trailingChoice.helper}
+              </span>
+            )}
+          </div>
         )}
       </fieldset>
     );

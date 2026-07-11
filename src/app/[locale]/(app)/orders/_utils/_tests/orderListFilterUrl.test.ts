@@ -17,6 +17,7 @@ const DEFAULT_FILTERS: OrderListActiveFilters = {
   deliveryFromIso: undefined,
   deliveryToIso: undefined,
   deliveryOverdueOnly: false,
+  deliveryLateOnly: false,
 };
 
 describe("buildOrderListFilterUrl", () => {

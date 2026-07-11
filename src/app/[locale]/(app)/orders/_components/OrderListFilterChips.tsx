@@ -99,6 +99,15 @@ export default function OrderListFilterChips({ basePath, locale, filters, stores
       onRemove: () => pushOverride({ fxPendingOnly: false }, "fxPending"),
     });
   }
+  // Stricter than "Por recibir" — the delivery window has fully closed, not just started.
+  // No drawer toggle surfaces this yet; it's reachable only via the dashboard's "Atrasados" link.
+  if (filters.deliveryLateOnly) {
+    chips.push({
+      key: "deliveryLate",
+      label: t("chips.deliveryLate"),
+      onRemove: () => pushOverride({ deliveryLateOnly: false }, "deliveryLate"),
+    });
+  }
   // Delivery filter — "Por recibir" toggle and date range are mutually exclusive at the
   // drawer apply step, so only one of them is ever active at a time.
   if (filters.deliveryOverdueOnly) {

@@ -3,7 +3,18 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { AlertTriangle, Ban, CheckCircle, CircleDot, Clock, PackageCheck, Plus, Truck, XCircle } from "lucide-react";
+import {
+  AlertTriangle,
+  Ban,
+  CheckCircle,
+  CircleDot,
+  Clock,
+  PackageCheck,
+  PackageX,
+  Plus,
+  Truck,
+  XCircle,
+} from "lucide-react";
 import posthog from "posthog-js";
 import Button from "@/components/core/Button/Button";
 import FilterTriggerButton from "@/components/core/FilterTriggerButton/FilterTriggerButton";
@@ -32,7 +43,11 @@ type OrderListFiltersProps = {
 
 const FX_PENDING_FLAG = "fxPending";
 
-type DateRangeWithFlag = { from?: string; to?: string; flag?: boolean };
+/** Trailing-choice values for the delivery-date quick states (mutually exclusive with the range). */
+const DELIVERY_CHOICE_OVERDUE = "overdue";
+const DELIVERY_CHOICE_LATE = "late";
+
+type DateRangeWithFlag = { from?: string; to?: string; flag?: boolean; choice?: string };
 
 type DrawerState = {
   statuses: string[];
@@ -102,7 +117,11 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
       deliveryRange: {
         from: initial.deliveryFromIso,
         to: initial.deliveryToIso,
-        flag: initial.deliveryOverdueOnly,
+        choice: initial.deliveryLateOnly
+          ? DELIVERY_CHOICE_LATE
+          : initial.deliveryOverdueOnly
+            ? DELIVERY_CHOICE_OVERDUE
+            : undefined,
       },
       sort: initial.sort,
       fxFlags: initial.fxPendingOnly ? [FX_PENDING_FLAG] : [],
@@ -139,7 +158,7 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
     const range = (draft.dateRange ?? {}) as { from?: string; to?: string };
     if (range.from || range.to) count += 1;
     const deliveryRange = (draft.deliveryRange ?? {}) as DateRangeWithFlag;
-    if (deliveryRange.flag) {
+    if (deliveryRange.choice) {
       count += 1;
     } else if (deliveryRange.from || deliveryRange.to) {
       count += 1;
@@ -208,9 +227,12 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
         toLabel: t("filters.dateToLabel"),
       },
       {
-        // Delivery-date section: single range picker (two-month calendar with presets) +
-        // the "Por recibir" overdue switch as a trailing toggle in the same fieldset
-        // (mutually exclusive with the explicit range, enforced at apply time).
+        // Delivery-date section: single range picker (two-month calendar with presets) + two
+        // mutually exclusive quick-state chips ("Por recibir" vs "Entrega atrasada") as a trailing
+        // deselectable single-select in the same fieldset. Both are mutually exclusive with the
+        // explicit range (enforced by the drawer blanking it) and with each other, and "none" is
+        // a valid state — hence chips, not a switch. "Entrega atrasada" is worded to distinguish
+        // it from the payment "Atrasado" state above.
         id: "deliveryRange",
         type: "date-range",
         mode: "single",
@@ -227,9 +249,20 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
           { value: "nextMonth", label: t("datePresets.deliveryNextMonth") },
         ],
         resolvePreset: resolveDeliveryPreset,
-        trailingSwitch: {
-          label: t("filters.deliveryOverdueLabel"),
-          helper: t("filters.deliveryOverdueHelper"),
+        trailingChoice: {
+          helper: t("filters.deliveryQuickHelper"),
+          options: [
+            {
+              value: DELIVERY_CHOICE_OVERDUE,
+              label: t("filters.deliveryOverdueLabel"),
+              icon: <Truck size={12} aria-hidden />,
+            },
+            {
+              value: DELIVERY_CHOICE_LATE,
+              label: t("filters.deliveryLateLabel"),
+              icon: <PackageX size={12} aria-hidden />,
+            },
+          ],
         },
       },
     ];
@@ -301,7 +334,9 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
     );
     const range = (draft.dateRange ?? {}) as { from?: string; to?: string };
     const deliveryRange = (draft.deliveryRange ?? {}) as DateRangeWithFlag;
-    const deliveryOverdueOnly = deliveryRange.flag === true;
+    const deliveryOverdueOnly = deliveryRange.choice === DELIVERY_CHOICE_OVERDUE;
+    const deliveryLateOnly = deliveryRange.choice === DELIVERY_CHOICE_LATE;
+    const hasDeliveryQuickState = deliveryOverdueOnly || deliveryLateOnly;
     const sortValue = (draft.sort as OrderListSort | undefined) ?? DEFAULT_ORDER_LIST_SORT;
     const fxFlags = (draft.fxFlags as string[] | undefined) ?? [];
 
@@ -315,6 +350,7 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
       delivery_from: Boolean(deliveryRange.from),
       delivery_to: Boolean(deliveryRange.to),
       delivery_overdue: deliveryOverdueOnly,
+      delivery_late: deliveryLateOnly,
       fx_pending: fxFlags.includes(FX_PENDING_FLAG),
       sort: sortValue,
     });
@@ -326,10 +362,11 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
       storeId: stores[0],
       dateFromIso: range.from,
       dateToIso: range.to,
-      // "Por recibir" wins — clear the explicit range when the toggle is on.
-      deliveryFromIso: deliveryOverdueOnly ? undefined : deliveryRange.from,
-      deliveryToIso: deliveryOverdueOnly ? undefined : deliveryRange.to,
+      // A delivery quick state wins — clear the explicit range when either chip is selected.
+      deliveryFromIso: hasDeliveryQuickState ? undefined : deliveryRange.from,
+      deliveryToIso: hasDeliveryQuickState ? undefined : deliveryRange.to,
       deliveryOverdueOnly,
+      deliveryLateOnly,
       sort: sortValue,
       fxPendingOnly: fxFlags.includes(FX_PENDING_FLAG),
       page: 1,

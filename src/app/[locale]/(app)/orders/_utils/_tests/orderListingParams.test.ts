@@ -98,6 +98,7 @@ describe("hasOnlyDefaultActiveFilters", () => {
         deliveryFromIso: undefined,
         deliveryToIso: undefined,
         deliveryOverdueOnly: false,
+        deliveryLateOnly: false,
       }),
     ).toBe(true);
   });
@@ -118,6 +119,7 @@ describe("hasOnlyDefaultActiveFilters", () => {
         deliveryFromIso: undefined,
         deliveryToIso: undefined,
         deliveryOverdueOnly: false,
+        deliveryLateOnly: false,
       }),
     ).toBe(false);
   });
