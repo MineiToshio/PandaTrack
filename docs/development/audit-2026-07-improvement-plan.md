@@ -410,3 +410,7 @@ Major dependency upgrades (DX-6) as a dedicated later iteration, after round 2 s
 
 - Create the 4 GitHub secrets + seed the e2e database (`docs/development/testing.md`).
 - First CI run of the new workflows will be the real validation signal.
+
+### Final verification (2026-07-10, tip `92b993d`)
+
+An end-to-end verifier exercised the merged tree after all upgrades: unit 884 passed / 12 skipped, type-check clean, lint 0 errors (4 documented aria warnings), production build OK, and the full Playwright suite **38/38 passed** on port 7100. A browser smoke pass (both themes, mobile, date pickers, avatar cropper, dashboard) confirmed the upgraded UI libraries work. One regression it caught — store create/edit pages lost their only `h1` when the shell title reverted to `<p>` — was fixed in `92b993d` (page-owned sr-only `h1`, existing i18n keys).
