@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: StoresNewPageProps): Promise<
 export default async function StoresNewPage({ params, searchParams }: StoresNewPageProps) {
   const { locale } = await params;
   const { returnTo } = await searchParams;
-  await getTranslations({ locale, namespace: "stores" });
+  const t = await getTranslations({ locale, namespace: "stores" });
 
   const [countries, productTypes] = await Promise.all([
     listCountryCodesCached(),
@@ -32,6 +32,8 @@ export default async function StoresNewPage({ params, searchParams }: StoresNewP
 
   return (
     <div className="text-foreground">
+      {/* The shell header shows the title as plain text; this page owns the single real h1. */}
+      <h1 className="sr-only">{t("create.title")}</h1>
       <CreateStoreForm countries={countries} productTypes={productTypes} returnTo={returnTo} />
     </div>
   );

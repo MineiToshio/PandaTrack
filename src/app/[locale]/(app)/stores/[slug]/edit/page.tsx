@@ -27,15 +27,20 @@ export default async function EditStorePage({ params }: EditStorePageProps) {
     notFound();
   }
 
-  await getTranslations({ locale, namespace: "stores" });
+  const t = await getTranslations({ locale, namespace: "stores" });
 
   const viewerContext = await getStoreGovernanceViewerContext(store.id, session.user.id);
   const isAdmin = getIsAdmin(session);
   const canDirectlyEdit = isAdmin || (store.status === "PENDING" && store.createdByUserId === session.user.id);
   const initialValues = mergeEditableStoreWithChangeRequest(store, viewerContext.openChangeRequest?.changes);
+  const pageTitle = canDirectlyEdit
+    ? t("edit.direct.title", { storeName: store.name })
+    : t("edit.changeRequest.title", { storeName: store.name });
 
   return (
     <div className="text-foreground">
+      {/* The shell header shows the title as plain text; this page owns the single real h1. */}
+      <h1 className="sr-only">{pageTitle}</h1>
       <EditStoreForm
         locale={locale}
         store={store}

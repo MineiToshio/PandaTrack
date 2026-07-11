@@ -41,7 +41,7 @@ test.describe("Store creation flow", () => {
     await page.getByRole("link", { name: /new store|nueva tienda/i }).click();
     await expect(page).toHaveURL(/\/en\/stores\/new/);
 
-    await expect(page.getByRole("heading", { name: /new store/i, level: 1 })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("heading", { name: /new store/i, level: 1 })).toBeVisible();
     await expect(page.getByRole("button", { name: /business|comercio/i })).toBeVisible();
 
     await advanceToIdentityStep(page);
