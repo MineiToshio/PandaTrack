@@ -98,6 +98,10 @@ export default function DateRangePickerInput({
 }: DateRangePickerInputProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<"from" | "to">("from");
+  // The first-click anchor, tracked locally so the in-progress selection survives even when the
+  // consumer defers updating `from`/`to` until both endpoints are chosen (e.g. the dashboard range
+  // control, which returns early on a partial range and only writes to the URL once it is complete).
+  const [pendingFrom, setPendingFrom] = useState<Date | null>(null);
   const [popupPos, setPopupPos] = useState<{ top: number; left: number; width: number; isMobile: boolean } | null>(
     null,
   );
@@ -169,6 +173,7 @@ export default function DateRangePickerInput({
 
   const openPicker = () => {
     setStep("from");
+    setPendingFrom(null);
     setIsOpen(true);
   };
 
@@ -180,27 +185,38 @@ export default function DateRangePickerInput({
   const handleSelect = (_range: DateRange | undefined, triggerDate: Date | undefined) => {
     if (!triggerDate) return;
     if (step === "from") {
+      setPendingFrom(triggerDate);
       onChange(triggerDate, null);
       setStep("to");
       return;
     }
-    const anchor = from ?? triggerDate;
+    // Anchor on the locally-tracked first click, falling back to the committed `from` prop so the
+    // range is correct even when the consumer did not echo the first click back into props.
+    const anchor = pendingFrom ?? from ?? triggerDate;
     const [rangeFrom, rangeTo] =
       triggerDate.getTime() < anchor.getTime() ? [triggerDate, anchor] : [anchor, triggerDate];
+    setPendingFrom(null);
     onChange(rangeFrom, rangeTo);
     setStep("from");
     setIsOpen(false);
   };
 
   const handleClear = () => {
+    setPendingFrom(null);
     onChange(null, null);
     setIsOpen(false);
   };
 
-  // While selecting the second endpoint, render the partial range so middle days don't paint
-  // until the user closes the selection.
+  // While selecting the second endpoint, render the partial range from the locally-tracked anchor
+  // (or the committed `from`) so the first click stays highlighted; middle days don't paint until
+  // the closing day is picked.
+  const inProgressFrom = pendingFrom ?? from;
   const selectedRange: DateRange | undefined =
-    step === "to" && from ? { from } : from || to ? { from: from ?? undefined, to: to ?? undefined } : undefined;
+    step === "to" && inProgressFrom
+      ? { from: inProgressFrom }
+      : from || to
+        ? { from: from ?? undefined, to: to ?? undefined }
+        : undefined;
 
   const displayValue = formatRange(from, to, locale);
   const hasValue = !!displayValue;
@@ -317,7 +333,7 @@ export default function DateRangePickerInput({
                 numberOfMonths={popupPos?.isMobile ? 1 : numberOfMonths}
                 selected={selectedRange}
                 onSelect={handleSelect}
-                defaultMonth={from ?? to ?? new Date()}
+                defaultMonth={pendingFrom ?? from ?? to ?? new Date()}
                 components={{ Chevron: CalendarChevron }}
                 classNames={{
                   root: "text-sm",
