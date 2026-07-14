@@ -127,7 +127,9 @@ test.describe("dashboard cash & obligations zone", () => {
 
   test("KPI strip surfaces the collection totals", async ({ page }) => {
     await signInAndLandOnDashboard(page);
-    for (const label of [/^orders$/i, /^products$/i, /^committed$/i, /^stores$/i]) {
+    // KPI items render the amount and label in one text node (for example "$1,014.00 Committed"),
+    // so the labels are matched as substrings rather than exact standalone nodes.
+    for (const label of [/orders/i, /products/i, /committed/i, /stores/i]) {
       await expect(page.getByText(label).first()).toBeVisible();
     }
   });
