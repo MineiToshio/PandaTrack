@@ -2,5 +2,17 @@
   "test": {
     "title": "PandaTrack",
     "body": "Tus recordatorios están activados. Así se verán tus avisos."
+  },
+  "paymentDue": {
+    "title": "Pago próximo",
+    "body": "Tienes un pago próximo para tu pedido de {subject}."
+  },
+  "arrivalDue": {
+    "title": "Llega pronto",
+    "body": "Tu paquete de {subject} está por llegar."
+  },
+  "arrivalOverdue": {
+    "title": "Llegada atrasada",
+    "body": "Tu paquete de {subject} pasó su fecha estimada de llegada. Conviene hacer seguimiento."
   }
 }

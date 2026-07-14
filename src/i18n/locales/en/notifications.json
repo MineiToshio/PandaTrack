@@ -2,5 +2,17 @@
   "test": {
     "title": "PandaTrack",
     "body": "Your reminders are on. This is how your alerts will look."
+  },
+  "paymentDue": {
+    "title": "Upcoming payment",
+    "body": "You have an upcoming payment for your order from {subject}."
+  },
+  "arrivalDue": {
+    "title": "Arriving soon",
+    "body": "Your package from {subject} is expected to arrive soon."
+  },
+  "arrivalOverdue": {
+    "title": "Overdue arrival",
+    "body": "Your package from {subject} is past its expected arrival. Time to follow up."
   }
 }

@@ -203,6 +203,7 @@ export const POSTHOG_EVENTS = {
     NOTIFICATIONS_DISABLED: "notifications_disabled",
     NOTIFICATION_TYPE_TOGGLED: "notification_type_toggled",
     NOTIFICATION_TEST_SENT: "notification_test_sent",
+    NOTIFICATION_DISPATCH_RUN: "notification_dispatch_run",
   },
   DASHBOARD: {
     CASH_ZONE_VIEWED: "dashboard_cash_zone_viewed",
