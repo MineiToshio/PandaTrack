@@ -9,7 +9,7 @@ children:
   - BP-01
 last_updated: 2026-07-14
 source_features: []
-implementation_status: PARTIALLY_IMPLEMENTED
+implementation_status: IMPLEMENTED
 ---
 
 # FRD-09 Reminders and Notifications
