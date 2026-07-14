@@ -64,13 +64,23 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
     },
   );
 
+  // The shell already knows the stored timezone, so the client capture stays silent unless the
+  // browser reports a zone that differs from it.
+  const storedTimezone = collectorPrefs?.timezone ?? null;
+
   if (snapshot?.state !== "grace") {
     return (
       <div
         className="from-background via-primary/3 to-accent/3 min-h-screen bg-linear-to-b"
         style={{ ["--app-banner-offset" as string]: "0px" } as React.CSSProperties}
       >
-        <AppLayout locale={locale} signOutLabel={tAuth("signOut")} currentUser={currentUser} storesHref={storesHref}>
+        <AppLayout
+          locale={locale}
+          signOutLabel={tAuth("signOut")}
+          currentUser={currentUser}
+          storesHref={storesHref}
+          storedTimezone={storedTimezone}
+        >
           {children}
         </AppLayout>
       </div>
@@ -96,7 +106,13 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
           resendError={tVerification("resendError")}
         />
       </div>
-      <AppLayout locale={locale} signOutLabel={tAuth("signOut")} currentUser={currentUser} storesHref={storesHref}>
+      <AppLayout
+        locale={locale}
+        signOutLabel={tAuth("signOut")}
+        currentUser={currentUser}
+        storesHref={storesHref}
+        storedTimezone={storedTimezone}
+      >
         {children}
       </AppLayout>
     </div>

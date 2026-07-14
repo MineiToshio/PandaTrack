@@ -9,7 +9,7 @@ children:
   - BP-01
 last_updated: 2026-07-14
 source_features: []
-implementation_status: IMPLEMENTED
+implementation_status: PARTIALLY_IMPLEMENTED
 ---
 
 # FRD-09 Reminders and Notifications
@@ -32,7 +32,7 @@ Give collectors dependable, low-noise reminders so they stop relying on chats, s
 
 - Nothing in this FRD's scope ships yet. There is no service worker, no web app manifest, no PWA icon set, no push subscription model, and no scheduled dispatch. The app is a standard Next.js web app with a single top HTML layout at `src/app/[locale]/layout.tsx` (there is no separate root layout).
 - The foundations this FRD reuses already exist:
-  - `User.timezone` is present in `prisma/schema.prisma`. It is read, validated, and patched server-side, but has no settings UI and is excluded from the settings snapshot, so in practice the `UTC` fallback applies today (see [`FRD-07 · FR-07-34`](../frd-07-user-settings/frd-07-user-settings.md#functional-requirements)). This FRD's dispatch windowing depends on the same timezone value and inherits the same `UTC` fallback.
+  - `User.timezone` is present in `prisma/schema.prisma`. It is read, validated, and patched server-side, but had no settings UI and no writer on any user-facing path, so in practice the `UTC` fallback applied to every collector (see [`FRD-07 · FR-07-34`](../frd-07-user-settings/frd-07-user-settings.md#functional-requirements)). This FRD's dispatch windowing depends on the same timezone value, inherits the same `UTC` fallback, and now also supplies the value: the silent app-shell capture in `FR-09-23` is what feeds the column. The schema needs no change.
   - The dashboard aggregation in `src/lib/data/dashboard/dashboardAggregation.ts` already derives the exact concepts this FRD reminds on: `buildUpcomingPayments` (dated outstanding orders), `upcomingArrivals` (not-yet-arrived orders inside a forward window), and `overdueArrivals` (not-yet-arrived orders past their expected-arrival reference date). This FRD reuses the _definitions_ but must not reuse the heavy `getDashboardData` path (see Implementation Notes).
   - The deliveries data layer already exposes an overdue notion: `getDeliveriesList` supports an `overdueOnly` filter over `IN_TRANSIT` deliveries whose `expectedArrivalTo` is past ([`FRD-08 delivery management`](../frd-08-delivery-management/frd-08-delivery-management.md)).
   - Session access for server actions and route handlers is provided by `getSession` in `src/lib/auth/auth-server.ts`.
@@ -95,6 +95,7 @@ As a collector, I want to turn reminders on or off and choose which kinds I get,
 - `FR-09-20`: The dispatch route handler must be guarded by a `CRON_SECRET` bearer check. A request without the correct secret must be rejected with `401` before any query or send runs.
 - `FR-09-21`: The dispatcher must load candidates through thin, dedicated due-soon / overdue queries (who has a payment or arrival inside the window), not by running the full `getDashboardData` aggregation per collector.
 - `FR-09-22`: The collector's locale must be persisted on `User.locale` so `FR-09-17` can be honored without a browser. It must be captured at sign-in from the locale the collector is actively browsing the app with (never from the raw `Accept-Language` header), must be updated whenever the collector switches language, and must never overwrite a locale the collector has explicitly chosen. It is nullable: a collector with no stored locale falls back to `routing.defaultLocale`, exactly as the `User.timezone` / `UTC` fallback works.
+- `FR-09-23`: The collector's timezone must be persisted on `User.timezone` so `FR-09-15` can be honored with a real value instead of the `UTC` fallback. It must be captured silently from the authenticated app shell, using the IANA zone the browser reports (the only place it is knowable), validated server-side against the runtime's zone database before it is stored, and it must never prompt the collector or require any permission. It must be written when no value is stored yet and rewritten whenever the browser reports a different zone, so the stored value tracks a collector who travels or relocates. It stays nullable, and an absent value keeps the `UTC` fallback. The capture must never block, delay, or break the app shell.
 
 ## Business Rules
 
@@ -178,6 +179,15 @@ As a collector, I want to turn reminders on or off and choose which kinds I get,
 - And a reminder dispatched for them afterwards is composed in `en`
 - And a collector with no stored locale still receives their reminder in the default locale
 
+### `AC-09-11`
+
+- Given a collector in `America/Lima` whose `User.timezone` is empty
+- When they open any authenticated page of the collector app
+- Then `America/Lima` is stored on their `User.timezone`, with no prompt and nothing visible on screen
+- And their reminder windows and dashboard periods are computed in `America/Lima` instead of `UTC`
+- And a later authenticated load issues no further call, because the stored value already matches their browser
+- And a collector who relocates has the stored value follow their browser's new zone
+
 ## Implementation Notes
 
 - The service worker is hand-rolled plain JavaScript at `public/sw.js`. Do not adopt `workbox`, `serwist`, or `next-pwa`. This is consistent with the repository's hand-roll-by-default posture and the UI-primitive libraries policy spirit ([ADR 0010](../../../design/decisions/0010-ui-primitive-libraries-policy.md)). A dedicated ADR for the web-push platform decision (choosing `web-push` plus a hand-rolled worker over a PWA framework) should be created during implementation as the next available ADR number; this FRD does not author it.
@@ -188,6 +198,7 @@ As a collector, I want to turn reminders on or off and choose which kinds I get,
 - Scheduled dispatch is a `vercel.json` cron entry hitting a route handler at `src/app/api/notifications/dispatch/route.ts`, guarded by a `CRON_SECRET` bearer check. Cadence is daily and windowing is timezone-aware from `User.timezone`.
 - The dispatcher must reuse the _definitions_ of upcoming payment, upcoming arrival, and overdue arrival from the dashboard aggregation ([`FRD-06 dashboard`](../frd-06-dashboard/frd-06-dashboard.md)) and the delivery overdue notion from [`FRD-08`](../frd-08-delivery-management/frd-08-delivery-management.md), but implement them as thin dedicated queries. Loading `getDashboardData` per collector would be disproportionate for a batch job.
 - Notification copy is localized via a new next-intl `notifications` namespace registered in `src/i18n/request.ts`, resolved with `getTranslations` (framework function, not a React hook) at dispatch time.
+- The timezone capture (`FR-09-23`) is a client effect mounted in the authenticated app shell next to the service-worker registration, calling a narrow shell-owned server action. The server component that renders the shell already loads the collector preferences snapshot (which already selects `timezone`) and hands the stored value down, so the action is only called when the browser's zone is absent from or different than the stored one: the steady state performs no call. The write is a narrow single-column data-layer writer next to the locale writer, not a pass through the collector-preferences patch pipeline, which would revalidate an entire preferences state the shell has no business supplying.
 - `Reminder` appears in the PRD's core entity list; in this design the persisted artifact of a reminder is the `NotificationDelivery` dedup record, not a user-managed reminder object. There is no user-authored reminder in MVP.
 
 ## Error Contract
@@ -257,14 +268,19 @@ A reminder subject moves from "due inside window" to "sent" once a `Notification
 - The dispatcher uses thin dedicated queries, never the full dashboard aggregation.
 - Notification copy is localized per collector locale via a new `notifications` next-intl namespace.
 - The collector locale that copy is resolved against is stored on `User.locale`. It is captured at sign-in from the locale the collector is actively browsing the app with, not from the browser's `Accept-Language` header, and it follows the collector whenever they switch language. It stays nullable, and an absent value falls back to the default locale.
+- The collector timezone that windows are computed in is captured **silently from the authenticated app shell**, not through a prompt and not through a settings control. The browser is the only place the IANA zone is knowable, so the capture is a client effect; the shell is the host because it also backfills every collector who signed up before it existed. The value is validated server-side before it is stored and is kept in sync with the browser (written when absent, rewritten when it differs), because the product exposes no manual timezone choice to protect and a collector who travels should be reminded in their actual local time. It stays nullable and an absent value keeps the `UTC` fallback. A future manual timezone control would need an explicit-choice flag to stop the shell from overwriting the collector's own selection.
 - Notification deep links open the owning order or delivery detail.
+
+## Cross-domain Notes
+
+- `User.timezone` is not owned by this FRD alone. The dashboard ([`FRD-06`](../frd-06-dashboard/frd-06-dashboard.md)) already computes its periods in the collector's timezone through `resolveTimeZone` / `getTodayStart`, and the settings domain ([`FRD-07 · FR-07-34`](../frd-07-user-settings/frd-07-user-settings.md#functional-requirements)) already computes budget cycles the same way. Both fell back to `UTC` for the same reason this FRD did: nothing ever wrote the column. Both start receiving a real value from the capture in `FR-09-23` without any change of their own, and both keep their `UTC` fallback for a collector who has no stored value yet.
+- The capture is hosted by the private app shell ([`FRD-03`](../frd-03-collector-app-shell/frd-03-collector-app-shell.md)), which already hosts the service-worker registration. It adds no visible surface to the shell.
 
 ## Open Questions
 
 - The exact lead-time windows (how many days before a payment's expected date and before an expected arrival a reminder fires) are implementation constants to tune; a sensible starting point is a few days, but the values are not yet fixed and may become collector-configurable later.
 - Whether the overdue reminder repeats (a single nudge versus a periodic reminder while the arrival stays overdue) or fires once per due date; MVP leans to once per due date via the dedup key.
 - Whether per-type preferences should live on `User`, on `PushSubscription`, or on a dedicated `NotificationPreference` model; the Blueprint decides and justifies this.
-- Whether a lightweight timezone-capture prompt should ship alongside this FRD, given that `User.timezone` currently has no settings UI and the `UTC` fallback otherwise applies to every reminder window.
 
 ## Out of Scope
 

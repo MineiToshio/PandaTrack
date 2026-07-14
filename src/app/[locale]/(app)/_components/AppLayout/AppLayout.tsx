@@ -11,6 +11,7 @@ import { APP_SHELL_MAIN_CLASSNAME } from "@/lib/constants";
 import AppNavDrawer from "./AppNavDrawer";
 import { HeaderTitleProvider } from "./HeaderTitleContext";
 import ServiceWorkerRegistration from "./ServiceWorkerRegistration";
+import TimezoneCapture from "./TimezoneCapture";
 import type { AppShellUserIdentity } from "./types";
 
 type AppLayoutProps = {
@@ -18,6 +19,8 @@ type AppLayoutProps = {
   signOutLabel: string;
   currentUser: AppShellUserIdentity;
   storesHref?: string;
+  /** Timezone already stored for the collector; `null` when it has never been captured. */
+  storedTimezone: string | null;
   children: React.ReactNode;
 };
 
@@ -26,6 +29,7 @@ export default function AppLayout({
   signOutLabel,
   currentUser: initialUser,
   storesHref,
+  storedTimezone,
   children,
 }: AppLayoutProps) {
   const pathname = usePathname();
@@ -49,6 +53,7 @@ export default function AppLayout({
     <ShellIdentityContext.Provider value={{ user: currentUser, updateUser }}>
       <ToastProvider>
         <ServiceWorkerRegistration />
+        <TimezoneCapture storedTimezone={storedTimezone} />
         {/* Shell root: carries --sidebar-current-w so all children can reference it */}
         <div
           className="flex min-h-screen flex-col"

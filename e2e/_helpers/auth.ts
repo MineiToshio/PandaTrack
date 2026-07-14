@@ -41,6 +41,15 @@ export function skipUnlessAuthenticatedEnv() {
   );
 }
 
+/**
+ * The dashboard URL appears as soon as the redirect commits, while the navigation is still in
+ * flight. Returning at that point lets a caller's own `page.goto` interrupt it, so the sign-in
+ * is only complete once the dashboard has finished loading.
+ */
+async function settleOnDashboard(page: Page) {
+  await page.waitForLoadState("load");
+}
+
 export async function signInAndLandOnDashboard(page: Page) {
   await page.context().clearCookies();
   await page.goto(SIGN_IN_RETURN_TO_DASHBOARD);
@@ -60,12 +69,16 @@ export async function signInAndLandOnDashboard(page: Page) {
       await submitButton.click();
     } catch {
       // If the form unmounts because navigation succeeded, click can throw while still being a success.
-      if (page.url().match(DASHBOARD_URL_REGEX)) return;
+      if (page.url().match(DASHBOARD_URL_REGEX)) {
+        await settleOnDashboard(page);
+        return;
+      }
       throw new Error("E2E sign-in submit click failed before reaching dashboard");
     }
 
     const dashboardReached = await dashboardReachedPromise;
     if (dashboardReached || page.url().match(DASHBOARD_URL_REGEX)) {
+      await settleOnDashboard(page);
       return;
     }
 

@@ -11,8 +11,9 @@ children:
   - WO-03
   - WO-04
   - WO-05
+  - WO-06
 last_updated: 2026-07-14
-implementation_status: IMPLEMENTED
+implementation_status: PARTIALLY_IMPLEMENTED
 ---
 
 # BP-01 PWA and Push Reminders Platform
@@ -103,7 +104,7 @@ Define the single technical platform behind [`FRD-09`](../frd-09-reminders-and-n
 - Leaking money, note text, or subscriber keys into a payload or a log would be a privacy regression; payload shaping and logging must be reviewed.
 - Reusing the dashboard aggregation "just to reuse code" would make the batch job expensive and is explicitly rejected; the thin-query boundary must be kept.
 - Stale service-worker versions can serve old behavior; the worker must be versioned and update cleanly, and must never cache domain data in MVP (installability only).
-- Timezone gaps: because `User.timezone` has no settings UI today, most collectors fall back to `UTC`, which can shift a reminder by up to a day at the edges; acceptable for MVP but noted.
+- ~~Timezone gaps: because `User.timezone` has no settings UI today, most collectors fall back to `UTC`, which can shift a reminder by up to a day at the edges; acceptable for MVP but noted.~~ **Closed by `WO-06`**: the timezone is captured silently from the authenticated app shell and kept in sync with the collector's browser, so the `UTC` fallback is now the exception (a collector who has not loaded the app since the capture shipped) rather than the default. No settings UI was needed to close it.
 
 ## Extension Points
 
@@ -112,7 +113,7 @@ Define the single technical platform behind [`FRD-09`](../frd-09-reminders-and-n
 - an in-app notification center backed by the same dispatch records.
 - email or SMS channels layered on the same candidate queries.
 - richer offline support (cached reads, background sync) built on the same service worker.
-- a timezone-capture prompt feeding `User.timezone` so windows stop defaulting to `UTC` (the locale half of this gap is closed by `WO-05`).
+- a collector-facing timezone control in Settings (display and manual override). The automatic capture is closed by `WO-06`; a manual override would additionally require an explicit-choice flag so the shell stops overwriting the collector's own selection.
 
 ## Implementation Plan
 
@@ -123,6 +124,7 @@ flowchart LR
   WO03["WO-03 Notification Opt-in<br/>(settings section, subscribe/unsubscribe, SW push handlers, test send)"]
   WO04["WO-04 Scheduled Reminders<br/>(thin queries, dispatch route, cron, dedup, localized payloads)"]
   WO05["WO-05 User Locale Persistence<br/>(User.locale, sign-in capture, language-switch sync, candidate wiring)"]
+  WO06["WO-06 User Timezone Capture<br/>(shell capture, server validation, User.timezone writer)"]
 
   WO01 --> WO02
   WO01 --> WO03
@@ -130,6 +132,7 @@ flowchart LR
   WO02 --> WO03
   WO03 --> WO04
   WO04 --> WO05
+  WO05 --> WO06
 ```
 
 - `WO-01` is the foundation slice: Prisma models, migration, shared Zod schemas, the `web-push` wrapper, and VAPID env plumbing. It ships no UI and no routes and is validated with unit tests. It is the only slice exempt from the "must include an E2E acceptance path" rule.
@@ -137,7 +140,8 @@ flowchart LR
 - `WO-03` notification opt-in depends on `WO-02` because the service worker must already exist and be registered before it can carry `push` / `notificationclick` handlers and before the browser can subscribe.
 - `WO-04` scheduled reminders depends on `WO-03` because it needs real subscriptions and preferences to target.
 - `WO-05` user locale persistence is a follow-on slice after `WO-04`. It closes the `User.locale` extension point this blueprint names in its own Dependencies and Extension Points: `WO-04` shipped the dispatcher with a nullable `locale` on every candidate, so every reminder is composed in the default locale until a locale is stored. `WO-05` adds `User.locale`, captures the locale the collector browses with at sign-in, keeps it in sync when they switch language, and selects it in the candidate queries. The dispatcher itself does not change.
-- Sequencing is essentially linear (`WO-01` → `WO-02` → `WO-03` → `WO-04` → `WO-05`). The one safe parallelization: once `WO-01` is merged, the `WO-02` installability assets (manifest, icons, metadata) can be built alongside early `WO-03` settings-UI scaffolding, but `WO-03`'s subscribe path cannot be finished until `WO-02`'s registered worker lands.
+- `WO-06` user timezone capture is the second follow-on slice, and closes the other half of the context gap `WO-05` opened the door to. `User.timezone` is read by the dispatcher's windowing (and by the dashboard), but no user-facing path ever wrote it, so every collector fell back to `UTC`. `WO-06` captures the browser's IANA zone silently from the authenticated app shell, validates it server-side, and keeps it in sync. Unlike the locale, the timezone cannot be derived server-side at sign-in (only the browser knows it), and mounting the capture in the shell also backfills existing collectors. It ships no migration: the column already exists. The dispatcher, the windowing helpers, and the dashboard are untouched.
+- Sequencing is essentially linear (`WO-01` → `WO-02` → `WO-03` → `WO-04` → `WO-05` → `WO-06`). The one safe parallelization: once `WO-01` is merged, the `WO-02` installability assets (manifest, icons, metadata) can be built alongside early `WO-03` settings-UI scaffolding, but `WO-03`'s subscribe path cannot be finished until `WO-02`'s registered worker lands. `WO-05` and `WO-06` are independent of each other and could run in parallel after `WO-04`; they are listed in the order they were executed.
 
 ## Linked Work Orders
 
@@ -148,3 +152,4 @@ Implementation order (largely linear; see the one parallelization note above):
 - `work-orders/wo-03-notification-opt-in.md`
 - `work-orders/wo-04-scheduled-reminders.md`
 - `work-orders/wo-05-user-locale-persistence.md`
+- `work-orders/wo-06-user-timezone-capture.md`

@@ -53,6 +53,17 @@ export async function captureUserLocaleIfUnset(userId: string, locale: string): 
 }
 
 /**
+ * Persists the collector's IANA timezone (`User.timezone`). The caller is responsible for
+ * validating the value against the runtime's zone database before it reaches this writer.
+ */
+export async function updateUserTimezone(userId: string, timezone: string): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { timezone },
+  });
+}
+
+/**
  * Stamps the `usernameChangedAt` timestamp after a successful username change.
  */
 export async function updateUserUsernameChangedAt(userId: string, changedAt: Date): Promise<void> {
