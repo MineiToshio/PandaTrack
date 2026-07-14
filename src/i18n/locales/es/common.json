@@ -18,6 +18,13 @@
   },
   "dismiss": "Cerrar",
   "close": "Cerrar",
+  "error": {
+    "eyebrow": "Algo falló",
+    "title": "Algo se rompió de nuestro lado",
+    "description": "No pudimos cargar esta página. Vuelve a intentarlo; si sigue sin funcionar, prueba de nuevo en un momento.",
+    "retry": "Reintentar",
+    "goHome": "Ir al inicio"
+  },
   "notFound": {
     "eyebrow": "Error 404",
     "title": "Esta página no existe",

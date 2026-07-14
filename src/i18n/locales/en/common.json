@@ -18,6 +18,13 @@
   },
   "dismiss": "Dismiss",
   "close": "Close",
+  "error": {
+    "eyebrow": "Something went wrong",
+    "title": "Something broke on our end",
+    "description": "We couldn't load this page. Try again; if it keeps failing, try again in a moment.",
+    "retry": "Try again",
+    "goHome": "Go home"
+  },
   "notFound": {
     "eyebrow": "Error 404",
     "title": "This page doesn't exist",

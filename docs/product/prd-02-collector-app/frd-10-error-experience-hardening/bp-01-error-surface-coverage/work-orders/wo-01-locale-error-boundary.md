@@ -3,12 +3,12 @@ id: WO-01
 type: WORK_ORDER
 slug: locale-error-boundary
 title: Locale Error Boundary
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_issue: 118
 source_features: []
-implementation_status: PLANNED
-last_updated: 2026-07-13
+implementation_status: IN_PROGRESS
+last_updated: 2026-07-14
 ---
 
 # WO-01 Locale Error Boundary
@@ -60,3 +60,15 @@ This closes the primary coverage gap identified in [`FRD-10`](../../frd-10-error
 
 - Given a forced render error in a `(landing)` or `(auth)` route, when the boundary resolves, then the localized destructive error surface renders inside the locale layout, the retry action re-runs the segment via `reset()`, and the go-home action navigates to `/{locale}`.
 - Given the same error, then exactly one Sentry capture is emitted tagged `area: "public_shell"` with the digest (asserted via a spy/mock in the unit test; the E2E asserts the user-visible surface and recovery).
+
+## Assumptions
+
+- The go-home action targets the bare locale root `/{locale}`, mirroring the existing pattern in [`not-found.tsx`](../../../../../../src/app/[locale]/not-found.tsx) rather than `ROUTES.dashboard` (which the `(app)` shell uses instead), since the public shell's "home" is the marketing landing page, not the dashboard.
+- `common.error` copy reuses the same voice and wording already validated for `appLayout.error` (destructive tone, neutral voice, assume-the-fault phrasing), per [`ux-copy.md`](../../../../../design/ux-copy.md) section 3.2 and the frozen tone vocabulary in [`states.md`](../../../../../design/states.md) section 3.1. The failure message itself does not need to differ between the app shell and the public shell.
+- The component is a Client Component receiving `{ error, reset }` and mirrors the exact shape of [`(app)/error.tsx`](<../../../../../../src/app/[locale]/(app)/error.tsx>) per the Design and Copy note above; only `useTranslations` namespace, `tags.area`, and the go-home `href` differ.
+- Test file placement follows the existing `_tests/` sibling-folder convention (`.agents/rules/project-structure.mdc`) applied at the route-segment level, matching how `_actions/_tests/` is used elsewhere in the app router tree.
+
+## Technical Notes
+
+- The E2E acceptance test needs a deterministic way to force a render error in a public route. A new dev-only route, `src/app/[locale]/dev-error-boundary/page.tsx`, throws unconditionally outside `NODE_ENV === "production"` and resolves to the standard `notFound()` in production, so it is never a reachable endpoint once deployed. This mirrors the existing `[...rest]/page.tsx` precedent of using a dedicated route to deterministically exercise a boundary (in that case `not-found.tsx`, in this one `error.tsx`).
+- Sentry capture uses the exact same `tags`/`extra` shape as `(app)/error.tsx` (`tags: { area: "public_shell" }`, `extra: { digest: error.digest }`) so both tiers stay consistent per [`states.md`](../../../../../design/states.md) section 3.6 (one capture per error).
