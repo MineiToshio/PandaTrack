@@ -31,6 +31,28 @@ export async function updateUserImage(userId: string, imageUrl: string | null): 
 }
 
 /**
+ * Persists the collector's explicit UI language choice (`User.locale`).
+ */
+export async function updateUserLocale(userId: string, locale: string): Promise<void> {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { locale },
+  });
+}
+
+/**
+ * Stores the locale a collector is browsing with, but only while `User.locale` is still
+ * empty. The conditional `updateMany` makes this a single atomic write: an existing value
+ * always belongs to the collector's own language choice and is never overwritten.
+ */
+export async function captureUserLocaleIfUnset(userId: string, locale: string): Promise<void> {
+  await prisma.user.updateMany({
+    where: { id: userId, locale: null },
+    data: { locale },
+  });
+}
+
+/**
  * Stamps the `usernameChangedAt` timestamp after a successful username change.
  */
 export async function updateUserUsernameChangedAt(userId: string, changedAt: Date): Promise<void> {

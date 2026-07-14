@@ -10,8 +10,9 @@ children:
   - WO-02
   - WO-03
   - WO-04
+  - WO-05
 last_updated: 2026-07-14
-implementation_status: IMPLEMENTED
+implementation_status: PARTIALLY_IMPLEMENTED
 ---
 
 # BP-01 PWA and Push Reminders Platform
@@ -111,7 +112,7 @@ Define the single technical platform behind [`FRD-09`](../frd-09-reminders-and-n
 - an in-app notification center backed by the same dispatch records.
 - email or SMS channels layered on the same candidate queries.
 - richer offline support (cached reads, background sync) built on the same service worker.
-- a timezone-capture prompt feeding `User.timezone` so windows stop defaulting to `UTC`.
+- a timezone-capture prompt feeding `User.timezone` so windows stop defaulting to `UTC` (the locale half of this gap is closed by `WO-05`).
 
 ## Implementation Plan
 
@@ -121,19 +122,22 @@ flowchart LR
   WO02["WO-02 PWA Installability<br/>(manifest, icons, metadata, SW registration)"]
   WO03["WO-03 Notification Opt-in<br/>(settings section, subscribe/unsubscribe, SW push handlers, test send)"]
   WO04["WO-04 Scheduled Reminders<br/>(thin queries, dispatch route, cron, dedup, localized payloads)"]
+  WO05["WO-05 User Locale Persistence<br/>(User.locale, sign-in capture, language-switch sync, candidate wiring)"]
 
   WO01 --> WO02
   WO01 --> WO03
   WO01 --> WO04
   WO02 --> WO03
   WO03 --> WO04
+  WO04 --> WO05
 ```
 
 - `WO-01` is the foundation slice: Prisma models, migration, shared Zod schemas, the `web-push` wrapper, and VAPID env plumbing. It ships no UI and no routes and is validated with unit tests. It is the only slice exempt from the "must include an E2E acceptance path" rule.
 - `WO-02` PWA installability depends only on `WO-01` for shared plumbing and can otherwise stand alone: manifest, icons, metadata, and service-worker registration (registration only, no push logic yet).
 - `WO-03` notification opt-in depends on `WO-02` because the service worker must already exist and be registered before it can carry `push` / `notificationclick` handlers and before the browser can subscribe.
 - `WO-04` scheduled reminders depends on `WO-03` because it needs real subscriptions and preferences to target.
-- Sequencing is essentially linear (`WO-01` → `WO-02` → `WO-03` → `WO-04`). The one safe parallelization: once `WO-01` is merged, the `WO-02` installability assets (manifest, icons, metadata) can be built alongside early `WO-03` settings-UI scaffolding, but `WO-03`'s subscribe path cannot be finished until `WO-02`'s registered worker lands.
+- `WO-05` user locale persistence is a follow-on slice after `WO-04`. It closes the `User.locale` extension point this blueprint names in its own Dependencies and Extension Points: `WO-04` shipped the dispatcher with a nullable `locale` on every candidate, so every reminder is composed in the default locale until a locale is stored. `WO-05` adds `User.locale`, captures the locale the collector browses with at sign-in, keeps it in sync when they switch language, and selects it in the candidate queries. The dispatcher itself does not change.
+- Sequencing is essentially linear (`WO-01` → `WO-02` → `WO-03` → `WO-04` → `WO-05`). The one safe parallelization: once `WO-01` is merged, the `WO-02` installability assets (manifest, icons, metadata) can be built alongside early `WO-03` settings-UI scaffolding, but `WO-03`'s subscribe path cannot be finished until `WO-02`'s registered worker lands.
 
 ## Linked Work Orders
 
@@ -143,3 +147,4 @@ Implementation order (largely linear; see the one parallelization note above):
 - `work-orders/wo-02-pwa-installability.md`
 - `work-orders/wo-03-notification-opt-in.md`
 - `work-orders/wo-04-scheduled-reminders.md`
+- `work-orders/wo-05-user-locale-persistence.md`

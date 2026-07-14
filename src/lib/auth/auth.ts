@@ -5,6 +5,7 @@ import { nextCookies } from "better-auth/next-js";
 import * as Sentry from "@sentry/nextjs";
 import { prisma } from "@/lib/prisma";
 import { getAppBaseUrl, getPublicSiteUrl } from "@/lib/app-url";
+import { captureBrowsingLocaleOnSignIn } from "@/lib/auth/authLocaleCapture";
 import { handlePasswordRecoveryRequest } from "@/lib/auth/authPasswordRecovery";
 import { buildVerificationConfirmHref, getLocaleSegment } from "@/lib/auth/authRedirect";
 import { buildAuthVerificationEmail } from "@/lib/auth/authVerificationEmail";
@@ -160,13 +161,35 @@ export const auth = betterAuth({
     },
   },
   hooks: {
+    /**
+     * Runs after every successful authentication, including Google and including a sign-in
+     * that links an existing account (where the user-create database hook never fires), so
+     * it is the one place that sees every collector who arrives with a fresh session.
+     */
     after: createAuthMiddleware(async (ctx) => {
       const newSession = ctx.context.newSession;
-      if (newSession?.user?.email) {
-        const email = newSession.user.email;
-        const name = newSession.user.name ?? null;
-        void syncAuthenticatedUserToKit(email, name).catch(() => {});
+      if (!newSession?.user) {
+        return;
       }
+
+      const { id, email, name } = newSession.user;
+
+      if (email) {
+        void syncAuthenticatedUserToKit(email, name ?? null).catch(() => {});
+      }
+
+      // Email sign-in / sign-up carry the locale-prefixed callback in the request body; the
+      // OAuth callback endpoint carries no body and instead redirects to it, so its redirect
+      // location is the equivalent signal.
+      const body = ctx.body as { callbackURL?: unknown } | undefined;
+      const query = ctx.query as { callbackURL?: unknown } | undefined;
+
+      await captureBrowsingLocaleOnSignIn(id, {
+        bodyCallbackURL: body?.callbackURL,
+        queryCallbackURL: query?.callbackURL,
+        redirectLocation: ctx.context.responseHeaders?.get("location") ?? null,
+        cookieHeader: ctx.headers?.get("cookie") ?? null,
+      });
     }),
   },
 });

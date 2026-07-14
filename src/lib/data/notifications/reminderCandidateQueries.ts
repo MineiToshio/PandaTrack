@@ -18,7 +18,7 @@ import {
  * These intentionally never call `getDashboardData` (`BR-09-04`): a batch job must
  * not pay for a full per-collector dashboard build. Each query loads only the minimal
  * fields needed to compose and dedup a reminder (subject id, the relevant expected
- * dates, the store name, and the collector's timezone) and joins to
+ * dates, the store name, and the collector's timezone and locale) and joins to
  * `user.pushSubscriptions.some({})` so only reachable collectors enter the batch. No
  * money rollups, no FX, no note text, and no full order graph are selected. The SQL
  * date bounds are coarse (padded for timezone edges); the authoritative window gate
@@ -28,9 +28,9 @@ import {
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
- * The minimal reminder candidate the dispatcher consumes. `locale` is a nullable
- * extension point: `User` has no locale column today, so it is always `null` and the
- * dispatcher falls back to the default locale until a stored locale ships.
+ * The minimal reminder candidate the dispatcher consumes. `locale` is the collector's
+ * stored browsing locale; it stays nullable for collectors captured before the locale was
+ * persisted, and the dispatcher falls back to the default locale in that case.
  */
 export interface ReminderCandidate {
   userId: string;
@@ -87,7 +87,7 @@ export async function getPaymentDueCandidates(now: Date): Promise<ReminderCandid
       totalCost: true,
       paidAmountMinor: true,
       store: { select: { name: true } },
-      user: { select: { timezone: true } },
+      user: { select: { timezone: true, locale: true } },
     },
   });
 
@@ -100,7 +100,7 @@ export async function getPaymentDueCandidates(now: Date): Promise<ReminderCandid
       subjectId: row.id,
       dueDate: row.expectedDeliveryFrom!,
       descriptor: row.store.name,
-      locale: null,
+      locale: row.user.locale,
       timezone: row.user.timezone,
     }));
 }
@@ -127,7 +127,7 @@ export async function getArrivalDueCandidates(now: Date): Promise<ReminderCandid
         userId: true,
         expectedDeliveryFrom: true,
         store: { select: { name: true } },
-        user: { select: { timezone: true } },
+        user: { select: { timezone: true, locale: true } },
       },
     }),
     prisma.delivery.findMany({
@@ -141,7 +141,7 @@ export async function getArrivalDueCandidates(now: Date): Promise<ReminderCandid
         userId: true,
         expectedArrivalFrom: true,
         store: { select: { name: true } },
-        user: { select: { timezone: true } },
+        user: { select: { timezone: true, locale: true } },
       },
     }),
   ]);
@@ -155,7 +155,7 @@ export async function getArrivalDueCandidates(now: Date): Promise<ReminderCandid
       subjectId: row.id,
       dueDate: row.expectedDeliveryFrom!,
       descriptor: row.store.name,
-      locale: null,
+      locale: row.user.locale,
       timezone: row.user.timezone,
     }));
 
@@ -168,7 +168,7 @@ export async function getArrivalDueCandidates(now: Date): Promise<ReminderCandid
       subjectId: row.id,
       dueDate: row.expectedArrivalFrom!,
       descriptor: row.store.name,
-      locale: null,
+      locale: row.user.locale,
       timezone: row.user.timezone,
     }));
 
@@ -202,7 +202,7 @@ export async function getArrivalOverdueCandidates(now: Date): Promise<ReminderCa
         expectedDeliveryFrom: true,
         expectedDeliveryTo: true,
         store: { select: { name: true } },
-        user: { select: { timezone: true } },
+        user: { select: { timezone: true, locale: true } },
       },
     }),
     prisma.delivery.findMany({
@@ -220,7 +220,7 @@ export async function getArrivalOverdueCandidates(now: Date): Promise<ReminderCa
         expectedArrivalFrom: true,
         expectedArrivalTo: true,
         store: { select: { name: true } },
-        user: { select: { timezone: true } },
+        user: { select: { timezone: true, locale: true } },
       },
     }),
   ]);
@@ -235,7 +235,7 @@ export async function getArrivalOverdueCandidates(now: Date): Promise<ReminderCa
       subjectId: entry.row.id,
       dueDate: entry.reference!,
       descriptor: entry.row.store.name,
-      locale: null,
+      locale: entry.row.user.locale,
       timezone: entry.row.user.timezone,
     }));
 
@@ -249,7 +249,7 @@ export async function getArrivalOverdueCandidates(now: Date): Promise<ReminderCa
       subjectId: entry.row.id,
       dueDate: entry.reference!,
       descriptor: entry.row.store.name,
-      locale: null,
+      locale: entry.row.user.locale,
       timezone: entry.row.user.timezone,
     }));
 

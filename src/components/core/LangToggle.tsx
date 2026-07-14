@@ -4,6 +4,7 @@ import { Languages } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { updateLanguageAction } from "@/app/[locale]/(app)/settings/_actions/preferencesActions";
 import { cn } from "@/lib/styles";
 import { routing } from "@/i18n/routing";
 import { getPosthogDataAttributes } from "@/lib/analytics/posthogDataAttributes";
@@ -43,10 +44,17 @@ export default function LangToggle({
     getPosthogProps ? getPosthogProps(alternateLocale) : undefined,
   );
 
+  // Best-effort: the stored language must follow what the user actually reads, but the
+  // navigation owns the switch and must never wait on (or be broken by) the write.
+  const handleClick = () => {
+    void updateLanguageAction(alternateLocale).catch(() => {});
+    onNavigate?.();
+  };
+
   return (
     <Link
       href={alternateHref}
-      onClick={onNavigate}
+      onClick={handleClick}
       aria-label={ariaLabel ?? alternateLabel}
       className={cn(
         "inline-flex items-center gap-1 rounded-[8px] px-2 py-1 transition-colors",

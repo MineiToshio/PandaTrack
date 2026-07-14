@@ -9,7 +9,7 @@ children:
   - BP-01
 last_updated: 2026-07-14
 source_features: []
-implementation_status: IMPLEMENTED
+implementation_status: PARTIALLY_IMPLEMENTED
 ---
 
 # FRD-09 Reminders and Notifications
@@ -94,6 +94,7 @@ As a collector, I want to turn reminders on or off and choose which kinds I get,
 - `FR-09-19`: A push endpoint that reports itself gone (HTTP `410 Gone`, and `404 Not Found`) during a send must be pruned server-side. An expired subscription is an expected outcome, not a monitored failure.
 - `FR-09-20`: The dispatch route handler must be guarded by a `CRON_SECRET` bearer check. A request without the correct secret must be rejected with `401` before any query or send runs.
 - `FR-09-21`: The dispatcher must load candidates through thin, dedicated due-soon / overdue queries (who has a payment or arrival inside the window), not by running the full `getDashboardData` aggregation per collector.
+- `FR-09-22`: The collector's locale must be persisted on `User.locale` so `FR-09-17` can be honored without a browser. It must be captured at sign-in from the locale the collector is actively browsing the app with (never from the raw `Accept-Language` header), must be updated whenever the collector switches language, and must never overwrite a locale the collector has explicitly chosen. It is nullable: a collector with no stored locale falls back to `routing.defaultLocale`, exactly as the `User.timezone` / `UTC` fallback works.
 
 ## Business Rules
 
@@ -168,6 +169,14 @@ As a collector, I want to turn reminders on or off and choose which kinds I get,
 - Given a collector whose per-type toggle for a reminder type is off
 - When the dispatcher would otherwise produce that reminder for them
 - Then no notification of that type is sent to them
+
+### `AC-09-10`
+
+- Given a collector who is browsing PandaTrack in `en` and signs in (with email and password, or with Google)
+- When the sign-in completes
+- Then `en` is stored on their `User.locale`
+- And a reminder dispatched for them afterwards is composed in `en`
+- And a collector with no stored locale still receives their reminder in the default locale
 
 ## Implementation Notes
 
@@ -247,6 +256,7 @@ A reminder subject moves from "due inside window" to "sent" once a `Notification
 - Each reminder is sent once, enforced by a `NotificationDelivery` dedup log.
 - The dispatcher uses thin dedicated queries, never the full dashboard aggregation.
 - Notification copy is localized per collector locale via a new `notifications` next-intl namespace.
+- The collector locale that copy is resolved against is stored on `User.locale`. It is captured at sign-in from the locale the collector is actively browsing the app with, not from the browser's `Accept-Language` header, and it follows the collector whenever they switch language. It stays nullable, and an absent value falls back to the default locale.
 - Notification deep links open the owning order or delivery detail.
 
 ## Open Questions

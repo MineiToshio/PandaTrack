@@ -131,6 +131,10 @@ model User {
   budgetAmount                Int?
   budgetResetDayOfMonth       Int?
   timezone                    String?
+  /// The supported app locale the collector browses with (`es` / `en`). Captured on
+  /// first sign-in and kept in sync when the collector switches language. Null until
+  /// captured, in which case the default locale applies.
+  locale                      String?
   createdAt                   DateTime
   updatedAt                   DateTime
   sessions                    Session[]

@@ -3,12 +3,13 @@
 import { cookies } from "next/headers";
 import * as Sentry from "@sentry/nextjs";
 import { getSession } from "@/lib/auth/auth-server";
+import { updateUserLocale } from "@/lib/data/auth/userMutations";
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import {
   applyBaseCurrencyChange,
   parseAndApplyCollectorPreferencesPatch,
 } from "@/lib/data/user-settings/userSettingsMutations";
-import { routing } from "@/i18n/routing";
+import { isLocale, type Locale } from "@/types/locale";
 
 export type PreferencesErrorCode = "unauthorized" | "validation" | "generic";
 
@@ -109,8 +110,7 @@ export type UpdateCurrencyInput = {
 };
 
 export type UpdateCurrencyResult =
-  | { ok: true; redirectToFxReconcile: boolean }
-  | { ok: false; error: PreferencesErrorCode };
+  { ok: true; redirectToFxReconcile: boolean } | { ok: false; error: PreferencesErrorCode };
 
 /**
  * Persists the base currency change (two-path). Path B (`saveFxRates: true`) does
@@ -166,22 +166,36 @@ export async function updateCurrencyAction(input: UpdateCurrencyInput): Promise<
   }
 }
 
-export type UpdateLanguageResult = { ok: true; locale: "es" | "en" } | { ok: false; error: PreferencesErrorCode };
+export type UpdateLanguageResult = { ok: true; locale: Locale } | { ok: false; error: PreferencesErrorCode };
 
 const LOCALE_COOKIE_NAME = "NEXT_LOCALE";
 const LOCALE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
 /**
- * Persists the preferred UI language. Stored in the `NEXT_LOCALE`
- * cookie consumed by next-intl. The client navigates to the localized URL after success.
+ * Persists the preferred UI language. It is stored twice, for two different consumers:
+ * in the `NEXT_LOCALE` cookie that next-intl reads to render the app, and, when the caller
+ * is authenticated, on the collector so server-side surfaces that run without a browser
+ * (the scheduled reminder dispatcher) can address the collector in the language they read.
+ *
+ * Public surfaces call this without a session; there the cookie alone is the store and the
+ * action still succeeds. The client navigates to the localized URL after success.
  */
 export async function updateLanguageAction(locale: string): Promise<UpdateLanguageResult> {
-  if (locale !== "es" && locale !== "en") {
+  if (!isLocale(locale)) {
     return { ok: false, error: "validation" };
   }
 
-  if (!routing.locales.includes(locale)) {
-    return { ok: false, error: "validation" };
+  const session = await getSession();
+
+  if (session?.user?.id) {
+    try {
+      await updateUserLocale(session.user.id, locale);
+    } catch (error) {
+      Sentry.captureException(error, {
+        extra: { action: "updateLanguageAction", userId: session.user.id },
+      });
+      return { ok: false, error: "generic" };
+    }
   }
 
   const cookieStore = await cookies();

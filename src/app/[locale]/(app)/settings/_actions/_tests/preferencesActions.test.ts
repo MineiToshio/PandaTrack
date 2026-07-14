@@ -6,6 +6,7 @@ const {
   getCollectorPreferencesSnapshotMock,
   parseAndApplyCollectorPreferencesPatchMock,
   applyBaseCurrencyChangeMock,
+  updateUserLocaleMock,
   cookiesMock,
   cookieStoreSetMock,
   captureExceptionMock,
@@ -14,12 +15,15 @@ const {
   getCollectorPreferencesSnapshotMock: vi.fn(),
   parseAndApplyCollectorPreferencesPatchMock: vi.fn(),
   applyBaseCurrencyChangeMock: vi.fn(),
+  updateUserLocaleMock: vi.fn(),
   cookiesMock: vi.fn(),
   cookieStoreSetMock: vi.fn(),
   captureExceptionMock: vi.fn(),
 }));
 
 vi.mock("@/lib/auth/auth-server", () => ({ getSession: getSessionMock }));
+
+vi.mock("@/lib/data/auth/userMutations", () => ({ updateUserLocale: updateUserLocaleMock }));
 
 vi.mock("@/lib/data/user-settings/userSettingsQueries", () => ({
   getCollectorPreferencesSnapshot: getCollectorPreferencesSnapshotMock,
@@ -138,6 +142,8 @@ describe("updateLanguageAction", () => {
     vi.clearAllMocks();
     cookieStoreSetMock.mockClear();
     cookiesMock.mockResolvedValue({ set: cookieStoreSetMock });
+    getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
+    updateUserLocaleMock.mockResolvedValue(undefined);
   });
 
   it("rejects a locale outside the es/en union", async () => {
@@ -145,6 +151,7 @@ describe("updateLanguageAction", () => {
 
     expect(result).toEqual({ ok: false, error: "validation" });
     expect(cookieStoreSetMock).not.toHaveBeenCalled();
+    expect(updateUserLocaleMock).not.toHaveBeenCalled();
   });
 
   it("rejects an empty locale", async () => {
@@ -153,12 +160,31 @@ describe("updateLanguageAction", () => {
     expect(result).toEqual({ ok: false, error: "validation" });
   });
 
-  it("persists a valid locale to the NEXT_LOCALE cookie", async () => {
+  it("persists a valid locale to the NEXT_LOCALE cookie and to the collector when authenticated", async () => {
     const result = await updateLanguageAction("en");
 
     expect(result).toEqual({ ok: true, locale: "en" });
-    expect(cookieStoreSetMock).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "NEXT_LOCALE", value: "en" }),
-    );
+    expect(updateUserLocaleMock).toHaveBeenCalledWith("user-1", "en");
+    expect(cookieStoreSetMock).toHaveBeenCalledWith(expect.objectContaining({ name: "NEXT_LOCALE", value: "en" }));
+  });
+
+  it("stays cookie-only and still succeeds when there is no session", async () => {
+    getSessionMock.mockResolvedValue(null);
+
+    const result = await updateLanguageAction("en");
+
+    expect(result).toEqual({ ok: true, locale: "en" });
+    expect(updateUserLocaleMock).not.toHaveBeenCalled();
+    expect(cookieStoreSetMock).toHaveBeenCalledWith(expect.objectContaining({ name: "NEXT_LOCALE", value: "en" }));
+  });
+
+  it("reports an unexpected persistence failure to Sentry and returns generic", async () => {
+    updateUserLocaleMock.mockRejectedValueOnce(new Error("db down"));
+
+    const result = await updateLanguageAction("en");
+
+    expect(result).toEqual({ ok: false, error: "generic" });
+    expect(captureExceptionMock).toHaveBeenCalledTimes(1);
+    expect(cookieStoreSetMock).not.toHaveBeenCalled();
   });
 });

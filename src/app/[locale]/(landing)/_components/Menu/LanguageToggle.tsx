@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { updateLanguageAction } from "@/app/[locale]/(app)/settings/_actions/preferencesActions";
 import { cn } from "@/lib/styles";
 import { routing } from "@/i18n/routing";
 import { getPosthogDataAttributes } from "@/lib/analytics/posthogDataAttributes";
@@ -35,6 +36,13 @@ export default function LanguageToggle({
   const alternateLocale = (routing.locales.find((l) => l !== locale) ?? locale) as Locale;
   const alternateHref =
     pathname.replace(new RegExp(`^/${locale}(?=/|$)`), `/${alternateLocale}`) || `/${alternateLocale}`;
+
+  // Best-effort: the stored language must follow what the user actually reads, but the
+  // navigation owns the switch and must never wait on (or be broken by) the write.
+  const handleSelect = (targetLocale: Locale) => {
+    void updateLanguageAction(targetLocale).catch(() => {});
+    onNavigate?.();
+  };
 
   return (
     <nav
@@ -72,7 +80,7 @@ export default function LanguageToggle({
               <Link
                 href={alternateHref}
                 aria-label={ariaLabel}
-                onClick={onNavigate}
+                onClick={() => handleSelect(loc as Locale)}
                 className={cn(
                   "hover:text-text-title focus-visible:ring-ring focus-visible:ring-offset-background flex rounded-md py-2 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
                   compact ? "items-start" : "items-center justify-center",
