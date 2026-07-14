@@ -3,12 +3,12 @@ id: WO-02
 type: WORK_ORDER
 slug: global-error-hardening
 title: Global-Error Hardening
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_issue: 119
 source_features: []
-implementation_status: PLANNED
-last_updated: 2026-07-13
+implementation_status: IN_PROGRESS
+last_updated: 2026-07-14
 ---
 
 # WO-02 Global-Error Hardening
@@ -58,3 +58,19 @@ Because `global-error.tsx` replaces the root layout, it cannot import next-intl,
 
 - Given a root-layout render failure, when `global-error.tsx` takes over, then a self-contained bilingual fallback renders with a working retry, no next-intl/theme/provider is required, and exactly one `Sentry.captureException` is emitted.
 - Given a mistyped non-locale or unmatched URL, when it resolves, then the on-brand localized neutral 404 renders (never the framework default) and no Sentry capture is emitted.
+
+## Assumptions
+
+- Bilingual presentation leads with a language guessed from the URL path (`/es` vs `/en` first segment, default `es`) and keeps the other language fully legible below it, rather than stacking both languages with equal weight, in [`global-error.tsx`](../../../../../../src/app/global-error.tsx).
+- Theme-safety is achieved with a small inline `<style>` block defining CSS custom properties, overridden by an `@media (prefers-color-scheme: dark)` query, since the theme-init script never runs before `global-error.tsx` and `data-theme` cannot be assumed, in [`global-error.tsx`](../../../../../../src/app/global-error.tsx).
+- The retry action label is bilingual (`Reintentar · Retry`) rather than a single language, so the one recovery action stays legible to both audiences without adding next-intl, in [`global-error.tsx`](../../../../../../src/app/global-error.tsx).
+- The root-scope 404 gap found during verification (a non-locale URL rendering Next's framework-default 404) is closed with a redirect in the invalid-locale branch of [`[locale]/layout.tsx`](../../../../../../src/app/%5Blocale%5D/layout.tsx) rather than a root-layout restructure.
+- A dev-only harness route renders `GlobalError` directly outside the `/{locale}` tree so the E2E spec can exercise the fallback, since `global-error.tsx` only replaces the root layout on a genuine failure in a production build, not under the `next dev` server Playwright's `webServer` runs, in [`dev-global-error/page.tsx`](../../../../../../src/app/dev-global-error/page.tsx).
+
+## Technical Notes
+
+- **Bilingual-presentation decision**: chose a dependency-free path-based lead (guess the language from `window.location.pathname`'s first segment, default to the app default locale `es` when no window is available) over stacking both languages with identical visual weight. The lead block reads first and largest; the other language follows immediately below at a slightly smaller, still fully legible size, separated by a divider. This satisfies `FR-10-09` ("bilingual inline") while giving the more likely-relevant audience the primary read, and degrades safely to `es` during any render pass where `window` is unavailable.
+- **Root-404 verification finding**: ran the app locally and confirmed a non-locale URL (for example `/foo`) matches the `[locale]` dynamic segment with an invalid locale value; `[locale]/layout.tsx` calls `notFound()`; because a layout cannot render its own segment's `not-found.tsx`, that call had no root boundary to land on and fell through to Next's framework-default 404 page (confirmed via a real request: HTTP 404 status, "This page could not be found." body, not the on-brand `[locale]/not-found.tsx` copy). This is a real, concrete gap under `FR-10-13`, not a documented no-gap outcome.
+- **Root-404 fix chosen**: replaced the `notFound()` call in the invalid-locale branch of `src/app/[locale]/layout.tsx` with `redirect("/" + routing.defaultLocale)`. A first attempt used a root `src/app/not-found.tsx` that issued the redirect, but under the E2E gate the framework still returned its default 404 for `/foo`-style URLs (a `redirect()` thrown while rendering a root not-found boundary without a root layout is not honored reliably), so the redirect was moved into the layout itself, where `redirect()` is a documented, reliable primitive. Verified by the `e2e/global-error.spec.ts` root-404 test: `/foo`-style URLs now land on `/es`, and `/en/nonexistent-thing` (inside the `/{locale}` tree) still renders the on-brand localized 404 via the existing `[...rest]` catch-all, confirming no regression to `AC-10-02`.
+- **Alternatives considered and rejected for the 404 fix**: (a) broadening the proxy matcher so every path is internationalized, letting next-intl's own locale-prefix redirect catch `/foo`, rejected because it touches the private-route auth-redirect logic in `src/proxy.ts`, which is outside this slice's scope and risk budget for a hardening pass; (b) redirecting to `/${defaultLocale}${pathname}` to preserve the attempted path and land on the literal not-found copy, rejected because Next.js does not expose the unmatched pathname to a root `not-found.tsx` without relying on undocumented internals.
+- **E2E simulation for `global-error.tsx`**: `global-error.tsx` only takes over a genuine root-layout failure in a production build; Playwright's `webServer` in `playwright.config.ts` runs `npm run dev`, where Next.js shows its dev error overlay instead. The dev-only harness route renders the real `GlobalError` component directly with a manufactured error, placed outside `/{locale}` (like `global-error.tsx` itself) so it needs no parent layout and produces its own `<html>`/`<body>` without nesting conflicts. Outside development the harness redirects to the default locale (same policy as the invalid-locale branch), so it is never reachable once deployed.

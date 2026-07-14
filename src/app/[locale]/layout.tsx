@@ -1,6 +1,6 @@
 import { routing } from "@/i18n/routing";
 import { isLocale } from "@/types/locale";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
@@ -57,7 +57,11 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   const { locale } = await params;
 
   if (!isLocale(locale)) {
-    notFound();
+    // A layout cannot render its own segment's not-found boundary and there is no root
+    // layout to host a root not-found, so an invalid locale prefix (for example /foo)
+    // would fall through to the framework-default 404. Redirecting keeps the visitor on
+    // an on-brand localized surface instead.
+    redirect(`/${routing.defaultLocale}`);
   }
 
   const messages = await getMessages();
