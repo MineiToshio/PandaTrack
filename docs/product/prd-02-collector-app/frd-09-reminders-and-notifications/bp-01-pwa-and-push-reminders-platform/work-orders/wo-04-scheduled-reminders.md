@@ -5,6 +5,7 @@ slug: scheduled-reminders
 title: Scheduled Reminders
 status: DRAFT
 parent: BP-01
+source_issue: 117
 source_features: []
 implementation_status: PLANNED
 last_updated: 2026-07-13

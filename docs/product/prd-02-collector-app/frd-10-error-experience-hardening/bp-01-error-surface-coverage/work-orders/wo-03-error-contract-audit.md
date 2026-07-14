@@ -5,6 +5,7 @@ slug: error-contract-audit
 title: Error-Contract Audit and Sentry Doc Alignment
 status: DRAFT
 parent: BP-01
+source_issue: 120
 source_features: []
 implementation_status: PLANNED
 last_updated: 2026-07-13

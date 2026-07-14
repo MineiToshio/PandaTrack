@@ -5,6 +5,7 @@ slug: global-error-hardening
 title: Global-Error Hardening
 status: DRAFT
 parent: BP-01
+source_issue: 119
 source_features: []
 implementation_status: PLANNED
 last_updated: 2026-07-13

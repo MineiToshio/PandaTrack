@@ -5,6 +5,7 @@ slug: push-platform-foundation
 title: Push Platform Foundation
 status: DRAFT
 parent: BP-01
+source_issue: 114
 source_features: []
 implementation_status: PLANNED
 last_updated: 2026-07-13
