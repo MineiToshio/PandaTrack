@@ -3,7 +3,7 @@ import { isLocale } from "@/types/locale";
 import { redirect } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "../globals.css";
 import { interFont, logoFont, monoFont, secondaryFont } from "@/lib/fonts";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -13,6 +13,22 @@ import { APP_NAME } from "@/lib/constants";
 type LocaleLayoutProps = {
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
+};
+
+/**
+ * `theme-color` mirrors the light and dark Velvet `--accent` tokens (`src/app/globals.css`,
+ * documented in `docs/design/visual-foundations.md`), split by `prefers-color-scheme` so the
+ * browser chrome tracks the OS appearance. This is the closest static approximation available:
+ * unlike the in-app theme toggle, `theme-color` cannot react to the collector's stored preference.
+ */
+const THEME_COLOR_LIGHT = "#5d33bd";
+const THEME_COLOR_DARK = "#ac91ff";
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: THEME_COLOR_LIGHT },
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLOR_DARK },
+  ],
 };
 
 /** Explicit default og:image for this locale so Facebook gets a non-inferred og:image. Pages override with their segment image. */
@@ -26,6 +42,12 @@ export async function generateMetadata({ params }: LocaleLayoutProps): Promise<M
     metadataBase: new URL(baseUrl),
     title: { default: APP_NAME, template: `%s | ${APP_NAME}` },
     description: t("meta.description"),
+    manifest: "/manifest.webmanifest",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: APP_NAME,
+    },
     openGraph: {
       images: [imageUrl],
     },

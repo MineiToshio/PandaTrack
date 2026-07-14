@@ -10,6 +10,7 @@ import { useSidebarState } from "@/hooks/useSidebarState";
 import { APP_SHELL_MAIN_CLASSNAME } from "@/lib/constants";
 import AppNavDrawer from "./AppNavDrawer";
 import { HeaderTitleProvider } from "./HeaderTitleContext";
+import ServiceWorkerRegistration from "./ServiceWorkerRegistration";
 import type { AppShellUserIdentity } from "./types";
 
 type AppLayoutProps = {
@@ -47,6 +48,7 @@ export default function AppLayout({
   return (
     <ShellIdentityContext.Provider value={{ user: currentUser, updateUser }}>
       <ToastProvider>
+        <ServiceWorkerRegistration />
         {/* Shell root: carries --sidebar-current-w so all children can reference it */}
         <div
           className="flex min-h-screen flex-col"

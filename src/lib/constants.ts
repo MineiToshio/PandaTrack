@@ -196,6 +196,10 @@ export const POSTHOG_EVENTS = {
   NAVIGATION: {
     VIEW_TRANSITION_NAVIGATED: "view_transition_navigated",
   },
+  NOTIFICATIONS: {
+    PWA_INSTALL_PROMPT_SHOWN: "pwa_install_prompt_shown",
+    PWA_INSTALLED: "pwa_installed",
+  },
   DASHBOARD: {
     CASH_ZONE_VIEWED: "dashboard_cash_zone_viewed",
     RECONCILE_CTA_CLICKED: "dashboard_reconcile_cta_clicked",
