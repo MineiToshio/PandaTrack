@@ -14,7 +14,9 @@ children:
   - FRD-06
   - FRD-07
   - FRD-08
-last_updated: 2026-06-20
+  - FRD-09
+  - FRD-10
+last_updated: 2026-07-13
 ---
 
 # PRD-02 PandaTrack Collector App
@@ -63,7 +65,7 @@ Deliver a collector-first system that makes it easy to:
 - understand payment obligations
 - track deliveries and partial deliveries
 - evaluate stores before buying again
-- receive timely reminders in-app and by email
+- receive timely reminders as web push notifications from an installable app ([`FRD-09`](frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md))
 - use one dashboard as the main decision surface
 
 ## Target Users
@@ -102,7 +104,7 @@ A collector with lower order volume who still wants:
 5. Payment tracking
 6. Delivery tracking
 7. Dashboard clarity ([`FRD-06`](frd-06-dashboard/frd-06-dashboard.md) is dashboard-only)
-8. Reminders and alerts (planned as a separate upcoming FRD delivered as a PWA with Web Push; this is why reminders are no longer bundled into the dashboard FRD)
+8. Reminders and alerts (delivered by [`FRD-09`](frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md) as an installable PWA with Web Push; this is why reminders are no longer bundled into the dashboard FRD)
 9. User settings required to support the above
 
 ## Scope
@@ -118,7 +120,8 @@ A collector with lower order volume who still wants:
 - Partial and complete payment tracking per order
 - Delivery tracking as a store-scoped workflow that may group products from multiple orders
 - Monthly budget and dashboard reporting
-- In-app reminders and email reminders
+- Installable PWA experience and web push reminders for upcoming payments and arrivals ([`FRD-09`](frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md))
+- Controlled failure experience: full 404 and error-surface coverage across all app surfaces ([`FRD-10`](frd-10-error-experience-hardening/frd-10-error-experience-hardening.md))
 - User settings for budget, preferred currency, and notification preferences
 - User settings for account identity, profile management, preferred country and product types, budget defaults, and store-entry defaults
 
@@ -126,7 +129,7 @@ A collector with lower order volume who still wants:
 
 - Full collection management
 - Wishlist management
-- Push notifications in MVP
+- Email and SMS notifications (reminder delivery is Web Push only, per [`FRD-09`](frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md))
 - WhatsApp notifications in MVP
 - Attachment management in MVP
 - Dynamic metadata systems for stores
@@ -192,9 +195,9 @@ A collector with lower order volume who still wants:
 
 ### Receive reminders
 
-1. The system detects important events or risk conditions.
-2. The user sees reminders in-app.
-3. The user also receives email reminders for qualifying cases.
+1. The user installs the app as a PWA or enables notifications from settings.
+2. The system detects upcoming payments and upcoming or overdue arrivals.
+3. The user receives web push notifications that deep link back into the relevant order or delivery ([`FRD-09`](frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md)).
 
 ## Release-Level Success Criteria
 
@@ -236,3 +239,5 @@ A collector with lower order volume who still wants:
 - `docs/product/prd-02-collector-app/frd-06-dashboard/frd-06-dashboard.md`
 - `docs/product/prd-02-collector-app/frd-07-user-settings/frd-07-user-settings.md`
 - `docs/product/prd-02-collector-app/frd-08-delivery-management/frd-08-delivery-management.md`
+- `docs/product/prd-02-collector-app/frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md`
+- `docs/product/prd-02-collector-app/frd-10-error-experience-hardening/frd-10-error-experience-hardening.md`

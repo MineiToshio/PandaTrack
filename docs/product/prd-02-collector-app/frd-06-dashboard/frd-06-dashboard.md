@@ -208,7 +208,7 @@ Decisions applied by [`BP-01 · WO-01`](bp-01-dashboard-aggregation-and-surface/
 
 ## Out of Scope
 
-- Reminders and notifications of any kind (in-app, email, push). These move to a dedicated future FRD ("Reminders & Notifications"), expected to be delivered as a PWA with Web Push. Not created yet.
+- Reminders and notifications of any kind (in-app, email, push). These are owned by **FRD-09 Reminders and Notifications** ([frd-09-reminders-and-notifications](../frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md)), delivered as an installable PWA with Web Push.
 - An explicit pre-order vs direct-purchase order type. The product treats everything as an order; a direct purchase is modeled as an order whose expected arrival equals its order date. A future order-domain enhancement (an order-level "mark received immediately" affordance, owned by [`FRD-05`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md)) may make this explicit; it is not part of this FRD.
 - Any mutation of orders, payments, deliveries, or settings from the dashboard.
 - Wishlist, full collection management, and advanced finance/accounting features (per PRD-02 scope).

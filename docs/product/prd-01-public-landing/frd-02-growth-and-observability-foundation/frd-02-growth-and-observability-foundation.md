@@ -86,6 +86,8 @@ Two error boundaries add product context:
 - `src/app/global-error.tsx`: catastrophic root-layout failure. Captures via `Sentry.captureException(error)` in a `useEffect`. Renders a minimal self-contained fallback (no theme, no fonts, no next-intl — hardcoded Spanish copy, per ADR 0013).
 - `src/app/[locale]/(app)/error.tsx`: app-shell subtree failure. Captures via `Sentry.captureException(error, { tags: { area: "app_shell" }, extra: { digest: error.digest } })`. Renders a full localized `EmptyState` with retry and go-home actions.
 
+Route-level error-surface coverage beyond these two boundaries (the locale-level `public_shell` boundary and the error-capture discipline audit) is owned by **FRD-10 Error Experience Hardening** ([frd-10-error-experience-hardening](../../prd-02-collector-app/frd-10-error-experience-hardening/frd-10-error-experience-hardening.md)). Sentry initialization, hooks, and configuration remain owned by this FRD.
+
 Session Replay is enabled on the client with `replaysSessionSampleRate: 0.1` (10% of sessions) and `replaysOnErrorSampleRate: 1.0` (100% of sessions with an error).
 
 The Sentry webpack plugin (`withSentryConfig` in `next.config.ts`) uploads source maps with `widenClientFileUpload: true` for readable production stack traces. Debug logging is stripped from the bundle via `treeshake.removeDebugLogging: true`, and `automaticVercelMonitors: true` enables automatic instrumentation of Vercel Cron Monitors.

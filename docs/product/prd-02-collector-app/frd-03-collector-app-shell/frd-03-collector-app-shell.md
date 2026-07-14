@@ -142,6 +142,8 @@ The shell is **persistent chrome, not a screen**: it wraps every authenticated r
 - **Purpose:** unknown authenticated path.
 - **Behavior:** neutral `EmptyState` (no Sentry capture per ADR 0013), keeps the shell chrome, offers `Home` (→ dashboard) and `Orders` CTAs.
 
+> Cross-domain note: the public/locale-level backstop boundary (`src/app/[locale]/error.tsx`) and the app-wide error-coverage contract are owned by **FRD-10 Error Experience Hardening** ([frd-10-error-experience-hardening](../frd-10-error-experience-hardening/frd-10-error-experience-hardening.md)). The shell boundaries described here remain owned by this FRD.
+
 ## State Model
 
 The shell has no persisted domain entity. Its stateful surfaces are UI/session states.
