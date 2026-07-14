@@ -3,12 +3,12 @@ id: WO-03
 type: WORK_ORDER
 slug: notification-opt-in
 title: Notification Opt-in
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_issue: 116
 source_features: []
-implementation_status: PLANNED
-last_updated: 2026-07-13
+implementation_status: IN_PROGRESS
+last_updated: 2026-07-14
 ---
 
 # WO-03 Notification Opt-in
@@ -64,6 +64,42 @@ Let a collector opt in to reminders from Settings and prove the channel works. T
 - Re-enabling from the same browser must upsert the existing subscription row, not create a duplicate (`FR-09-10`).
 - The `push` / `notificationclick` handlers replace the placeholder body scaffolded in WO-02; the worker version must bump so the update takes effect cleanly.
 - On iOS, the collector must have installed the app to the home screen (WO-02) before subscribe can succeed; the denied/unsupported states must communicate this clearly.
+
+## Assumptions
+
+- Conventions applied: the Notifications section is a `SectionCard` (M07 Chip Eyebrow + Top-Accent pattern) rendered inside the existing Preferences pane, matching how the Interface and Collector cards compose there. No new settings tab or route is added, honoring "extend the settings surface rather than adding a route".
+- Owning paths:
+  - UI: `src/app/[locale]/(app)/settings/_components/SettingsNotificationsSection.tsx`, wired through `SettingsPrefsPane` (new `initialNotificationPreferences` prop) and `page.tsx` (server-side preference fetch).
+  - Server actions: `src/app/[locale]/(app)/settings/_actions/notificationActions.ts` (`subscribeToPushAction`, `unsubscribeFromPushAction`, `setNotificationPreferenceAction`, `sendTestNotificationAction`).
+  - Browser subscription helper (extracted + unit-tested): `src/lib/pwa/pushSubscription.ts`.
+  - Service worker handlers: extend `public/sw.js`.
+  - i18n: settings copy under `settings.notifications.*`; the test-notification payload copy in a new `notifications` namespace (`src/i18n/locales/{es,en}/notifications.json`) registered in `src/i18n/request.ts`.
+- Reuse: `Switch`, `SectionCard`, `Eyebrow`, `Button`, `SettingsRow`, `useToast` — no new visual primitives. Icons from `lucide-react` (`Bell`) per the icons rule.
+- The master state is derived per browser, not stored: a stored master flag is deliberately not introduced (BP-01 decision).
+
+## UX Notes
+
+State matrix (support x permission x master, per-type gating):
+
+| API support | `Notification.permission` | Master toggle                                                                    | Per-type toggles    |
+| ----------- | ------------------------- | -------------------------------------------------------------------------------- | ------------------- |
+| unsupported | n/a                       | disabled, `UNSUPPORTED` explanation shown                                        | hidden/disabled     |
+| supported   | `default`                 | off (state `NONE`); enabling runs the prompt                                     | disabled while off  |
+| supported   | `granted` + subscribed    | on (state `ACTIVE`)                                                              | enabled, optimistic |
+| supported   | `granted`, not subscribed | off (`NONE`); enabling re-subscribes + upserts                                   | disabled while off  |
+| supported   | `denied`                  | off + `PERMISSION_DENIED` explanatory state, re-enable guidance, no silent retry | disabled            |
+
+- Enabling the master toggle shows an honest pending state while the browser permission prompt and `pushManager.subscribe` resolve; it is not faked as optimistic.
+- Per-type toggles (payment due / arrival due / arrival overdue) are optimistic: flip locally, revert + error toast on server failure.
+- "Send test notification" is only visible when master is on (`ACTIVE`).
+
+## Technical Notes
+
+- Derived master state: master ON is computed client-side as `Notification.permission === "granted"` AND a live `pushManager.getSubscription()` exists for this browser. There is no `masterEnabled` column; the browser subscription set is the single source of truth (BP-01).
+- Endpoint identity for this browser: the browser's own `PushSubscription.endpoint` is the identity key. `subscribeToPushAction` upserts by `endpoint` (`FR-09-10`); `unsubscribeFromPushAction` removes by `endpoint` scoped to the session user and returns `SUBSCRIPTION_NOT_FOUND` when the endpoint is not on file.
+- Optimistic exceptions (per `optimistic-client-updates.mdc`): the master enable flow is inherently async because it awaits a browser permission decision and a push-service round-trip, so it reflects a real pending state rather than an optimistic flip. The disable flow and the three per-type toggles remain optimistic. This documented exception satisfies the rule's "justify non-optimistic flows" requirement.
+- Analytics: `notifications_enabled` / `notifications_disabled` / `notification_type_toggled` fire client-side (user interactions); `notification_test_sent` fires server-side in `sendTestNotificationAction` where the send truth lives. No event carries subscriber keys.
+- Test payload localization uses `getTranslations` against a client-supplied, `routing.locales`-validated locale in `sendTestNotificationAction`; expired endpoints are pruned inline on `410`/`404`.
 
 ## E2E Acceptance Tests
 

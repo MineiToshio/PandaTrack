@@ -289,5 +289,41 @@
       "validation": "Check the fields and try again.",
       "generic": "Something went wrong. Please try again."
     }
+  },
+  "notifications": {
+    "eyebrow": "Reminders",
+    "title": "Notifications",
+    "subtitle": "Get alerts for upcoming payments and arrivals right on this device.",
+    "unsupported": "This browser does not support push notifications. Open PandaTrack from the app installed on your home screen, or try a different browser.",
+    "denied": "You blocked notifications for PandaTrack. To turn them back on, allow notifications for this site in your browser settings, then try again.",
+    "master": {
+      "label": "Enable reminders",
+      "helper": "Requests permission and registers this browser to receive alerts."
+    },
+    "types": {
+      "PAYMENT_DUE": {
+        "label": "Upcoming payment",
+        "helper": "Alert me when a pre-order payment is about to be due."
+      },
+      "ARRIVAL_DUE": {
+        "label": "Upcoming arrival",
+        "helper": "Alert me when an order or delivery is expected to arrive soon."
+      },
+      "ARRIVAL_OVERDUE": {
+        "label": "Overdue arrival",
+        "helper": "Alert me when an expected arrival is already past due."
+      }
+    },
+    "test": {
+      "label": "Test notification",
+      "helper": "Send a test alert to this device.",
+      "button": "Send test",
+      "success": "We sent a test notification.",
+      "error": "We could not send the test notification. Please try again."
+    },
+    "errors": {
+      "enableFailed": "We could not enable reminders. Please try again.",
+      "toggleFailed": "We could not save your preference. Please try again."
+    }
   }
 }

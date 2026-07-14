@@ -10,6 +10,8 @@ import { getSession } from "@/lib/auth/auth-server";
 import { getAccountCapabilitiesForUser } from "@/lib/auth/accountCapabilities";
 import { buildPageMetadata } from "@/lib/seo";
 import { getSettingsPageSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
+import { getNotificationPreferences } from "@/lib/data/notifications/notificationQueries";
+import { NotificationType } from "../../../../../generated/prisma/client";
 import { RETURN_TO_ORDER_CREATE, ROUTES } from "@/lib/constants";
 import { isLocale } from "@/types/locale";
 
@@ -47,10 +49,11 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
     return null;
   }
 
-  const [t, userSnapshot, capabilities] = await Promise.all([
+  const [t, userSnapshot, capabilities, notificationPreferences] = await Promise.all([
     getTranslations({ locale, namespace: "settings" }),
     getSettingsPageSnapshot(session.user.id),
     getAccountCapabilitiesForUser(session.user.id),
+    getNotificationPreferences(session.user.id),
   ]);
 
   if (!userSnapshot) {
@@ -93,6 +96,11 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
             initialProductTypeKeys={userSnapshot.preferredProductTypeKeys}
             initialBudgetAmount={userSnapshot.budgetAmount}
             initialBudgetResetDayOfMonth={userSnapshot.budgetResetDayOfMonth}
+            initialNotificationPreferences={{
+              PAYMENT_DUE: notificationPreferences[NotificationType.PAYMENT_DUE],
+              ARRIVAL_DUE: notificationPreferences[NotificationType.ARRIVAL_DUE],
+              ARRIVAL_OVERDUE: notificationPreferences[NotificationType.ARRIVAL_OVERDUE],
+            }}
           />
         }
       />

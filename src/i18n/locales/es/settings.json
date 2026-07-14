@@ -289,5 +289,41 @@
       "validation": "Revisa los campos e inténtalo de nuevo.",
       "generic": "Algo salió mal. Inténtalo de nuevo."
     }
+  },
+  "notifications": {
+    "eyebrow": "Recordatorios",
+    "title": "Notificaciones",
+    "subtitle": "Recibe avisos de pagos y llegadas próximas directamente en este dispositivo.",
+    "unsupported": "Este navegador no admite notificaciones push. Ábrelo desde la app instalada en tu pantalla de inicio o prueba con otro navegador.",
+    "denied": "Bloqueaste las notificaciones para PandaTrack. Para reactivarlas, permite las notificaciones de este sitio desde los ajustes de tu navegador y vuelve a intentarlo.",
+    "master": {
+      "label": "Activar recordatorios",
+      "helper": "Pide permiso y registra este navegador para recibir avisos."
+    },
+    "types": {
+      "PAYMENT_DUE": {
+        "label": "Pago próximo",
+        "helper": "Avísame cuando un pago de una pre-reserva esté por vencer."
+      },
+      "ARRIVAL_DUE": {
+        "label": "Llegada próxima",
+        "helper": "Avísame cuando la llegada esperada de un pedido o entrega esté cerca."
+      },
+      "ARRIVAL_OVERDUE": {
+        "label": "Llegada atrasada",
+        "helper": "Avísame cuando una llegada esperada ya haya pasado."
+      }
+    },
+    "test": {
+      "label": "Probar notificación",
+      "helper": "Envía un aviso de prueba a este dispositivo.",
+      "button": "Enviar prueba",
+      "success": "Enviamos una notificación de prueba.",
+      "error": "No pudimos enviar la notificación de prueba. Inténtalo de nuevo."
+    },
+    "errors": {
+      "enableFailed": "No pudimos activar los recordatorios. Inténtalo de nuevo.",
+      "toggleFailed": "No pudimos guardar tu preferencia. Inténtalo de nuevo."
+    }
   }
 }

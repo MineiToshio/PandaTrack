@@ -199,6 +199,10 @@ export const POSTHOG_EVENTS = {
   NOTIFICATIONS: {
     PWA_INSTALL_PROMPT_SHOWN: "pwa_install_prompt_shown",
     PWA_INSTALLED: "pwa_installed",
+    NOTIFICATIONS_ENABLED: "notifications_enabled",
+    NOTIFICATIONS_DISABLED: "notifications_disabled",
+    NOTIFICATION_TYPE_TOGGLED: "notification_type_toggled",
+    NOTIFICATION_TEST_SENT: "notification_test_sent",
   },
   DASHBOARD: {
     CASH_ZONE_VIEWED: "dashboard_cash_zone_viewed",

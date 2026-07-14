@@ -14,6 +14,8 @@ export type SwitchProps = {
   disabled?: boolean;
   loading?: boolean;
   label?: string;
+  /** Accessible name for the control when no visible `label` is rendered (e.g. an icon-only row toggle). */
+  ariaLabel?: string;
   helperText?: string;
   error?: string;
   size?: SwitchSize;
@@ -36,7 +38,10 @@ const SIZE_MAP: Record<SwitchSize, { track: string; thumb: string; translateOn: 
 };
 
 const Switch = forwardRef<HTMLInputElement, SwitchProps>(
-  ({ id, name, checked, onChange, disabled, loading, label, helperText, error, size = "md", className }, ref) => {
+  (
+    { id, name, checked, onChange, disabled, loading, label, ariaLabel, helperText, error, size = "md", className },
+    ref,
+  ) => {
     const { track, thumb, translateOn, iconSize } = SIZE_MAP[size];
     const isDisabled = disabled || loading;
     const errorId = id ? `${id}-error` : undefined;
@@ -61,6 +66,7 @@ const Switch = forwardRef<HTMLInputElement, SwitchProps>(
               onChange={(e) => onChange?.(e.target.checked)}
               disabled={isDisabled}
               aria-checked={checked}
+              aria-label={!label ? ariaLabel : undefined}
               aria-busy={loading ? "true" : undefined}
               aria-invalid={error ? "true" : undefined}
               aria-describedby={error ? errorId : helperText ? helperId : undefined}

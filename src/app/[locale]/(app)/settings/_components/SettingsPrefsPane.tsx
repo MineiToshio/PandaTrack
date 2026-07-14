@@ -23,6 +23,7 @@ import { savePreferencesAction, updateLanguageAction } from "@/app/[locale]/(app
 import CurrencyModal from "./CurrencyModal";
 import PreferencesAutosaveIndicator, { type AutosaveStatus } from "./PreferencesAutosaveIndicator";
 import SegmentedToggle from "./SegmentedToggle";
+import SettingsNotificationsSection, { type NotificationPreferencesState } from "./SettingsNotificationsSection";
 import SettingsRow from "./SettingsRow";
 
 const AUTOSAVE_DEBOUNCE_MS = 300;
@@ -35,6 +36,7 @@ export type SettingsPrefsPaneProps = {
   initialProductTypeKeys: string[];
   initialBudgetAmount: number | null;
   initialBudgetResetDayOfMonth: number | null;
+  initialNotificationPreferences: NotificationPreferencesState;
 };
 
 type PreferencesValues = {
@@ -52,6 +54,7 @@ export default function SettingsPrefsPane({
   initialProductTypeKeys,
   initialBudgetAmount,
   initialBudgetResetDayOfMonth,
+  initialNotificationPreferences,
 }: SettingsPrefsPaneProps) {
   const t = useTranslations("settings");
   const tCurrencies = useTranslations("settings.preferences.currencies");
@@ -327,6 +330,8 @@ export default function SettingsPrefsPane({
           fullWidthValue
         />
       </SectionCard>
+
+      <SettingsNotificationsSection locale={locale} initialPreferences={initialNotificationPreferences} />
 
       <div className="flex justify-center pt-2 lg:hidden">
         <button
