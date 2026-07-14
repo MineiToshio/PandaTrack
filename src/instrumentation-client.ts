@@ -5,7 +5,12 @@
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "https://7807ffe2c7570780a1ccdf48bfb2db23@o4510888167866368.ingest.us.sentry.io/4510888169177088",
+  // The DSN is a public identifier (it ships in the client bundle), not a secret. Only
+  // NEXT_PUBLIC_* variables are readable in the browser, so this reads NEXT_PUBLIC_SENTRY_DSN with
+  // the current project DSN kept as a fallback so initialization never breaks when it is unset.
+  dsn:
+    process.env.NEXT_PUBLIC_SENTRY_DSN ??
+    "https://7807ffe2c7570780a1ccdf48bfb2db23@o4510888167866368.ingest.us.sentry.io/4510888169177088",
 
   // Add optional integrations for additional features
   integrations: [Sentry.replayIntegration()],

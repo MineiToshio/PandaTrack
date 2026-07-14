@@ -3,12 +3,12 @@ id: WO-03
 type: WORK_ORDER
 slug: error-contract-audit
 title: Error-Contract Audit and Sentry Doc Alignment
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_issue: 120
 source_features: []
-implementation_status: PLANNED
-last_updated: 2026-07-13
+implementation_status: IN_PROGRESS
+last_updated: 2026-07-14
 ---
 
 # WO-03 Error-Contract Audit and Sentry Doc Alignment
@@ -18,6 +18,23 @@ last_updated: 2026-07-13
 Run a hardening sweep across every route segment and Server Action to confirm they follow the confirmed error contract: discriminated results (`{ ok: false; error: <code> }`, never throw for expected failures), exactly one Sentry capture per unexpected error, no duplicate reporting, and client-side toasts/inline messages for expected errors. Fix the deviations found. Fold in the applicable open hardening items from [`docs/development/sentry.md`](../../../../../development/sentry.md), and update that document so it reflects the final architecture, including the new `public_shell` boundary from WO-01.
 
 This slice runs last because it verifies the full surface set, including the two boundaries created/hardened in WO-01 and WO-02.
+
+## Assumptions
+
+- The route-level boundaries, 404 surfaces, catch-all, and invalid-locale redirect from WO-01/WO-02 are already merged and are audit targets, not build targets.
+- The Server Action discriminated-result contract is confirmed and not redesigned; the sweep enforces conformance and fixes deviations only.
+- The Sentry runtime init files are owned by PRD-01 FRD-02. Configuration policy is reviewed here and any change is applied in coordination with that owner and mirrored in its doc.
+- `sendDefaultPii: false` was already applied in commit `1b40070` (2026-07-10); this slice confirms and records the decision rather than re-applying it.
+- Files owned by the parallel FRD-09 work (`src/app/manifest.ts`, `public/` service worker/icons, `vercel.json`, `src/lib/push/**`, `src/lib/data/notifications/**`, settings UI, `POSTHOG_EVENTS`) are out of bounds for edits; any deviation found there is reported as a handoff.
+
+## Audit Plan
+
+Modules swept for the confirmed error contract:
+
+- Route boundaries and 404/redirect tiers: `src/app/[locale]/error.tsx`, `src/app/[locale]/(app)/error.tsx`, `src/app/global-error.tsx`, `src/app/[locale]/not-found.tsx`, `src/app/[locale]/(app)/not-found.tsx`, `src/app/[locale]/[...rest]/page.tsx`, `src/app/[locale]/layout.tsx` (invalid-locale redirect).
+- Mutating Server Actions under `src/app/**/_actions/*.ts`: settings (`profileActions`, `accountCredentialsActions`, `preferencesActions`), auth (`resendVerificationEmail`), stores (`createStore`, `saveStoreEdit`, `saveStoreReview`, `deleteStoreReview`, `saveStoreNote`, `saveStoreReport`, `saveStoreProductTypeRequest`, `getDuplicateCandidates`), orders (`orderActions`, `orderFxActions`, `orderLifecycleActions`, `orderNoteActions`, `orderPaymentActions`, `orderItemActions`), deliveries (`createDeliveryAction`, `editDeliveryAction`, `deliveryLifecycleActions`, `deliveryNoteActions`).
+- Data-layer modules under `src/lib/data/**` mutations (stores, orders, deliveries, user-settings, auth) for in-transaction throw-to-result conversion and single-capture discipline.
+- Framework hooks and config: `src/instrumentation.ts` (`onRequestError`), `src/instrumentation-client.ts` (`onRouterTransitionStart`), the three init files, `next.config.ts`.
 
 ## In Scope
 

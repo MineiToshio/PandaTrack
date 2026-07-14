@@ -1,5 +1,6 @@
 "use server";
 
+import * as Sentry from "@sentry/nextjs";
 import { getSession } from "@/lib/auth/auth-server";
 import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS } from "@/lib/constants";
@@ -7,8 +8,7 @@ import { createStoreProductTypeRequest } from "@/lib/data/stores/storeGovernance
 import { storeProductTypeRequestSchema } from "../_schemas/storeProductTypeRequestSchema";
 
 export type SaveStoreProductTypeRequestResult =
-  | { success: true }
-  | { success: false; error: string; fieldErrors?: Record<string, string[]> };
+  { success: true } | { success: false; error: string; fieldErrors?: Record<string, string[]> };
 
 export async function saveStoreProductTypeRequest(
   _prev: SaveStoreProductTypeRequestResult | null,
@@ -54,7 +54,8 @@ export async function saveStoreProductTypeRequest(
     });
 
     return { success: true };
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error);
     return { success: false, error: "saveProductTypeRequestFailed" };
   }
 }

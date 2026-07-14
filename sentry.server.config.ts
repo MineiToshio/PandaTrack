@@ -5,7 +5,13 @@
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "https://7807ffe2c7570780a1ccdf48bfb2db23@o4510888167866368.ingest.us.sentry.io/4510888169177088",
+  // The DSN is a public identifier (it ships in the client bundle), not a secret. It is read
+  // from the environment so it can differ per deployment, with the current project DSN kept as a
+  // fallback so initialization never breaks when the variable is unset.
+  dsn:
+    process.env.SENTRY_DSN ??
+    process.env.NEXT_PUBLIC_SENTRY_DSN ??
+    "https://7807ffe2c7570780a1ccdf48bfb2db23@o4510888167866368.ingest.us.sentry.io/4510888169177088",
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 1,

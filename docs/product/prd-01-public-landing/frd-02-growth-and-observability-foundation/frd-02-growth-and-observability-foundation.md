@@ -74,12 +74,12 @@ The server client exposes `shutdownPostHog()` (in `src/lib/analytics/posthog-ser
 
 Four hooks cover all execution contexts:
 
-| Hook file                       | Scope                 | How wired                                                                                                                                                  |
-| ------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/instrumentation-client.ts` | Browser client        | Runs on page load; also exports `onRouterTransitionStart = Sentry.captureRouterTransitionStart`                                                            |
-| `src/instrumentation.ts`        | Node.js server + edge | Next.js `register()` hook; conditionally loads `sentry.server.config.ts` or `sentry.edge.config.ts`; exports `onRequestError = Sentry.captureRequestError` |
-| `sentry.server.config.ts`       | Node.js server        | Sentry init with `tracesSampleRate: 1`, `enableLogs: true`, `sendDefaultPii: true`                                                                         |
-| `sentry.edge.config.ts`         | Edge runtime          | Same config as server                                                                                                                                      |
+| Hook file                       | Scope                 | How wired                                                                                                                                                           |
+| ------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/instrumentation-client.ts` | Browser client        | Runs on page load; also exports `onRouterTransitionStart = Sentry.captureRouterTransitionStart`                                                                     |
+| `src/instrumentation.ts`        | Node.js server + edge | Next.js `register()` hook; conditionally loads `sentry.server.config.ts` or `sentry.edge.config.ts`; exports `onRequestError = Sentry.captureRequestError`          |
+| `sentry.server.config.ts`       | Node.js server        | Sentry init with `tracesSampleRate: 1`, `enableLogs: true`, `sendDefaultPii: false`; DSN read from `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` with a built-in fallback |
+| `sentry.edge.config.ts`         | Edge runtime          | Same config as server                                                                                                                                               |
 
 Two error boundaries add product context:
 
@@ -91,6 +91,16 @@ Route-level error-surface coverage beyond these two boundaries (the locale-level
 Session Replay is enabled on the client with `replaysSessionSampleRate: 0.1` (10% of sessions) and `replaysOnErrorSampleRate: 1.0` (100% of sessions with an error).
 
 The Sentry webpack plugin (`withSentryConfig` in `next.config.ts`) uploads source maps with `widenClientFileUpload: true` for readable production stack traces. Debug logging is stripped from the bundle via `treeshake.removeDebugLogging: true`, and `automaticVercelMonitors: true` enables automatic instrumentation of Vercel Cron Monitors.
+
+#### Configuration policy note (2026-07-14, coordinated with FRD-10 · BP-01 · WO-03)
+
+The Sentry configuration hardening items were reviewed and resolved during the FRD-10 error-contract audit, which touches these FRD-02-owned init files:
+
+- **DSN externalization (applied here):** the three init files now read the DSN from `NEXT_PUBLIC_SENTRY_DSN` (client) and `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` (server and edge), keeping the current project DSN as an inline fallback so init never breaks when the variable is unset. Both keys are documented in `.env.example`. The DSN is a public identifier that ships in the client bundle, not a secret. `next.config.ts` holds only `org`/`project` for source-map upload, never the DSN.
+- **`sendDefaultPii: false` (confirmed):** already flipped to `false` in commit `1b40070` (2026-07-10) to satisfy `BR-02-04`; this doc's references are corrected to match. Enabling it would attach request headers, including session cookies, to captured events.
+- **`tracesSampleRate: 1` (kept):** acceptable at current pre-launch traffic; revisit and lower before a wider launch (see Open Questions in FRD-10).
+
+The capture-point inventory of record lives in `docs/development/sentry.md`.
 
 ## PostHog Event Taxonomy (snapshot 2026-06-16)
 
@@ -114,7 +124,7 @@ The Sentry webpack plugin (`withSentryConfig` in `next.config.ts`) uploads sourc
 - `BR-02-01`: `POSTHOG_EVENTS` in `src/lib/constants.ts` is the single source of truth for event names. No string literals for PostHog events are allowed outside this object.
 - `BR-02-02`: Server-side PostHog capture is reserved for conversion outcomes where the server action is the authoritative source of truth. Simple clicks and UI interactions use the declarative `data-ph-event` pattern.
 - `BR-02-03`: Sentry capture of unexpected errors must not duplicate reporting. Each catch boundary must capture once; errors caught by the framework hooks (`onRequestError`, `onRouterTransitionStart`) must not be recaptured manually unless enriching with product context.
-- `BR-02-04`: Neither PostHog events nor Sentry captures may include free-text note content, raw user-generated strings, or other PII beyond what `sendDefaultPii: true` already enables at the platform level.
+- `BR-02-04`: Neither PostHog events nor Sentry captures may include free-text note content, raw user-generated strings, or other PII. Sentry runs with `sendDefaultPii: false` so request headers and session cookies are not attached to captured events.
 - `BR-02-05`: The PostHog ingest proxy (`/ingest`) must remain configured in `next.config.ts` so the client-side SDK does not send events directly to `us.posthog.com` from the browser.
 
 ## Acceptance Criteria

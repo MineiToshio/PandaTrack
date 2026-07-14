@@ -296,6 +296,7 @@ export async function saveStoreEdit(
     redirect(storeDetailPath);
   } catch (error) {
     unstable_rethrow(error);
+    Sentry.captureException(error);
     return { success: false, error: "saveEditFailed" };
   }
 }
