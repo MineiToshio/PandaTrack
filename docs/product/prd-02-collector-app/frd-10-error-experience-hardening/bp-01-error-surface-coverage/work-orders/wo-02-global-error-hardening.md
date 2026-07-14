@@ -7,7 +7,7 @@ status: ACTIVE
 parent: BP-01
 source_issue: 119
 source_features: []
-implementation_status: IN_PROGRESS
+implementation_status: IMPLEMENTED
 last_updated: 2026-07-14
 ---
 
@@ -65,7 +65,7 @@ Because `global-error.tsx` replaces the root layout, it cannot import next-intl,
 - Theme-safety is achieved with a small inline `<style>` block defining CSS custom properties, overridden by an `@media (prefers-color-scheme: dark)` query, since the theme-init script never runs before `global-error.tsx` and `data-theme` cannot be assumed, in [`global-error.tsx`](../../../../../../src/app/global-error.tsx).
 - The retry action label is bilingual (`Reintentar · Retry`) rather than a single language, so the one recovery action stays legible to both audiences without adding next-intl, in [`global-error.tsx`](../../../../../../src/app/global-error.tsx).
 - The root-scope 404 gap found during verification (a non-locale URL rendering Next's framework-default 404) is closed with a redirect in the invalid-locale branch of [`[locale]/layout.tsx`](../../../../../../src/app/%5Blocale%5D/layout.tsx) rather than a root-layout restructure.
-- A dev-only harness route renders `GlobalError` directly outside the `/{locale}` tree so the E2E spec can exercise the fallback, since `global-error.tsx` only replaces the root layout on a genuine failure in a production build, not under the `next dev` server Playwright's `webServer` runs, in [`dev-global-error/page.tsx`](../../../../../../src/app/dev-global-error/page.tsx).
+- A dev-only harness route renders `GlobalErrorContent` (the self-contained body shared with `global-error.tsx`, extracted to [`src/app/_components/GlobalErrorContent.tsx`](../../../../../../src/app/_components/GlobalErrorContent.tsx)) under its own minimal root layout, so the E2E spec can exercise the fallback: `global-error.tsx` only replaces the root layout on a genuine failure in a production build, not under the `next dev` server Playwright's `webServer` runs, and the production build requires every routed page to sit under a root layout, in [`dev-global-error/page.tsx`](../../../../../../src/app/dev-global-error/page.tsx) plus [`dev-global-error/layout.tsx`](../../../../../../src/app/dev-global-error/layout.tsx).
 
 ## Technical Notes
 

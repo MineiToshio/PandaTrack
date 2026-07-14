@@ -9,8 +9,8 @@ children:
   - WO-01
   - WO-02
   - WO-03
-last_updated: 2026-07-13
-implementation_status: PLANNED
+last_updated: 2026-07-14
+implementation_status: IMPLEMENTED
 ---
 
 # BP-01 Error Surface Coverage

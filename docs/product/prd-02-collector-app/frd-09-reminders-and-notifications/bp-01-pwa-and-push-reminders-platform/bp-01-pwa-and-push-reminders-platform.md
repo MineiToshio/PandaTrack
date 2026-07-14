@@ -10,8 +10,8 @@ children:
   - WO-02
   - WO-03
   - WO-04
-last_updated: 2026-07-13
-implementation_status: PLANNED
+last_updated: 2026-07-14
+implementation_status: IMPLEMENTED
 ---
 
 # BP-01 PWA and Push Reminders Platform
