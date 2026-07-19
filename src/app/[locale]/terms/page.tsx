@@ -10,6 +10,7 @@ const TERMS_SECTION_KEYS = [
   "ip",
   "privacyRef",
   "disclaimers",
+  "governingLaw",
   "changes",
   "contact",
 ] as const;

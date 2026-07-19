@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-06-16
+last_updated: 2026-07-19
 source_features:
   - FEAT-0006
   - FEAT-0007
@@ -35,7 +35,7 @@ These are **static, SSR-delivered, content-only** pages. They fetch nothing, mut
 
 - Both legal pages ship under `/{locale}/privacy` and `/{locale}/terms` as public top-level routes (no auth, no `(app)` group, outside the App Shell). Locales: `es` (default, unprefixed canonical) and `en`.
 - Both pages render through the shared `src/app/[locale]/_components/LegalPageLayout.tsx` (public minibar, top + bottom back-links, eyebrow + title + updated-date head, intro, table of contents, sections). The layout is a Server Component using next-intl hooks; there is no client boundary.
-- Section structure is driven by an explicit ordered key list in each page (`PRIVACY_SECTION_KEYS` — 12 keys; `TERMS_SECTION_KEYS` — 9 keys). Each key resolves to a `{key}Title` and `{key}Body` pair in the namespace; the body string is split on blank lines into paragraphs.
+- Section structure is driven by an explicit ordered key list in each page (`PRIVACY_SECTION_KEYS` — 12 keys; `TERMS_SECTION_KEYS` — 10 keys). Each key resolves to a `{key}Title` and `{key}Body` pair in the namespace; the body string is split on blank lines into paragraphs.
 - Localized metadata and per-segment OG images: `generateMetadata` calls `buildPageMetadata` (`src/lib/seo.ts`); each route has `opengraph-image.tsx` driven by `og*` i18n keys.
 - Both routes are registered in `src/app/sitemap.ts` (`monthly`, priority `0.5`).
 - Chrome strings live in the `common.legal` namespace (`eyebrow`, `backToHome`, `tableOfContents`); document content lives in the per-document namespaces.
@@ -91,7 +91,7 @@ As a reader, I want a clear, always-reachable way back to the localized home pag
 
 - Given a user opens `/es/terms` or `/en/terms`
 - When the page renders
-- Then the complete localized terms content is visible (title, last-updated line, intro, table of contents, and all 9 sections)
+- Then the complete localized terms content is visible (title, last-updated line, intro, table of contents, and all 10 sections)
 
 ### `AC-04-03`
 
@@ -132,7 +132,7 @@ Both routes live directly under `/{locale}` (public, outside the App Shell). The
 ### Terms — `/{locale}/terms`
 
 - **Purpose:** the public terms of service; same public-web guarantees as privacy.
-- **Component:** `LegalPageLayout` with `namespace="terms"` and `sectionKeys=TERMS_SECTION_KEYS` (`acceptance`, `service`, `eligibility`, `conduct`, `ip`, `privacyRef`, `disclaimers`, `changes`, `contact` — 9 sections).
+- **Component:** `LegalPageLayout` with `namespace="terms"` and `sectionKeys=TERMS_SECTION_KEYS` (`acceptance`, `service`, `eligibility`, `conduct`, `ip`, `privacyRef`, `disclaimers`, `governingLaw`, `changes`, `contact` — 10 sections).
 - **Content source:** `terms` namespace + `common.legal` chrome strings. No queries, no server actions.
 - **Metadata / OG:** `generateMetadata` → `buildPageMetadata({ locale, namespace: "terms", pathSegment: "terms", titleKey: "title", descriptionKey: "intro" })` (the shipped call also passes the resolved `locale`); `opengraph-image.tsx` → `getOgImageData(locale, "terms")`.
 - **States:** none beyond the rendered document (same as privacy).
@@ -171,7 +171,7 @@ This feature emits **no PostHog events**. The legal pages are static reading doc
 
 ## Out of Scope
 
-- jurisdiction-specific or regional legal branching
+- per-region content branching (the terms name a single governing law — Peru — via the `governingLaw` section; they do not serve different clauses per visitor region)
 - explicit legal-acceptance capture or contract-signing workflows
 - CMS-driven or database-driven legal content
 - cookie-consent banner / preference management (separate concern if introduced)

@@ -5,7 +5,7 @@ slug: terms-of-service-page
 title: Terms of Service Page
 status: ACTIVE
 parent: BP-01
-last_updated: 2026-06-16
+last_updated: 2026-07-19
 source_features:
   - FEAT-0007
 implementation_status: IMPLEMENTED
@@ -20,7 +20,7 @@ Publish PandaTrack's localized terms of service page with the same public-web gu
 ## In Scope
 
 - terms route (`/{locale}/terms`) outside the App Shell
-- localized section rendering via `TERMS_SECTION_KEYS` (9 sections) + `LegalPageLayout`
+- localized section rendering via `TERMS_SECTION_KEYS` (10 sections, including a Peru governing-law clause) + `LegalPageLayout`
 - localized metadata (`buildPageMetadata`) and per-segment OG image (`opengraph-image.tsx`)
 - top + bottom back-to-home link, table of contents, sitemap entry
 

@@ -3,7 +3,7 @@
   "ogHeadline": "Reglas claras. Juego limpio.",
   "ogSubline": "Cómo trabajamos y qué puedes esperar.",
   "title": "Términos de servicio",
-  "lastUpdated": "Última actualización: febrero de 2026",
+  "lastUpdated": "Última actualización: julio de 2026",
   "intro": "Bienvenido a PandaTrack. Ayudamos a los coleccionistas a tener todos sus pedidos y envíos en un solo lugar para que el seguimiento sea sencillo y sin estrés. Al usar PandaTrack aceptas estos términos. Por favor, léelos con atención.",
   "acceptanceTitle": "Aceptación de los términos",
   "acceptanceBody": "Al acceder o usar PandaTrack (el \"Servicio\"), aceptas quedar vinculado por estos Términos de servicio. Si no estás de acuerdo, no uses el Servicio. Podemos actualizar estos términos de vez en cuando; el uso continuado tras los cambios implica que aceptas los términos actualizados.",
@@ -19,8 +19,10 @@
   "privacyRefBody": "Tu privacidad nos importa. Cómo recogemos, usamos y protegemos tus datos se describe en nuestra Política de privacidad. Al usar el Servicio también aceptas esa política.",
   "disclaimersTitle": "Exención de responsabilidad y limitación",
   "disclaimersBody": "El Servicio se ofrece \"tal cual\" y \"según disponibilidad\". No garantizamos un funcionamiento ininterrumpido o libre de errores. PandaTrack te ayuda a organizar tu propia información de pedidos; no procesamos pagos ni enviamos productos. No somos responsables de las acciones de tiendas, vendedores o transportistas. En la máxima medida permitida por la ley, no seremos responsables por daños indirectos, incidentales o consecuentes derivados del uso del Servicio.",
+  "governingLawTitle": "Ley aplicable",
+  "governingLawBody": "Estos Términos se rigen por las leyes de la República del Perú, sin perjuicio de los derechos que la normativa de protección al consumidor de tu país de residencia te reconozca. Cualquier disputa relacionada con el Servicio se someterá a los tribunales competentes del Perú, salvo que la ley aplicable disponga otra cosa.",
   "changesTitle": "Cambios en los términos",
   "changesBody": "Podemos modificar estos términos para reflejar actualizaciones del producto o requisitos legales. Publicaremos los términos actualizados en esta página y cambiaremos la fecha de \"Última actualización\". Si los cambios son importantes, podemos notificártelo por correo o en la app. El uso continuado del Servicio después de que entren en vigor los cambios implica que aceptas los nuevos términos.",
   "contactTitle": "Contacto",
-  "contactBody": "Si tienes dudas sobre estos Términos de servicio, puedes contactarnos mediante los datos que aparecen en nuestra web o en la app. Estaremos encantados de aclarar cómo funciona PandaTrack y cómo tratamos tus datos."
+  "contactBody": "PandaTrack es un proyecto independiente, operado actualmente por su creador a título personal (todavía no constituido como empresa). Si tienes dudas sobre estos Términos de servicio, escríbenos a hello@pandatrack.app. También puedes seguirnos en TikTok como @pandadcollector. Estaremos encantados de aclarar cómo funciona PandaTrack y cómo tratamos tus datos."
 }
