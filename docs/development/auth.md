@@ -17,12 +17,27 @@ Set these for local and production:
 | `RESEND_API_KEY`                   | For auth emails    | Resend API key used to send verification and password reset emails.                                            |
 | `RESEND_FROM_EMAIL`                | For auth emails    | Verified sender address in Resend (for example `hello@your-domain.com`). Sender name is fixed to `PandaTrack`. |
 
-For Google OAuth, configure the authorized redirect URI in Google Cloud Console:
+## Google OAuth: redirect URIs per environment
 
-- Local: `http://localhost:3000/api/auth/callback/google`
-- Production: `https://<your-domain>/api/auth/callback/google`
+The Google `redirect_uri` is always `<base>/api/auth/callback/google`, where `<base>` is Better Auth's `baseURL` = `getPublicSiteUrl()` (`src/lib/app-url.ts`). Resolution order: `NEXT_PUBLIC_SITE_URL` if set, otherwise `getAppBaseUrl()` (`NEXT_PUBLIC_APP_URL` → `https://${VERCEL_URL}` → `http://localhost:3000`). So the emitted redirect URI is driven by `NEXT_PUBLIC_SITE_URL` in each environment.
 
-The auth base URL is not configured via env: it is inferred by `getAppBaseUrl()` in `src/lib/app-url.ts` (local: `http://localhost:3000`, Vercel: `https://${VERCEL_URL}`).
+| Environment              | `NEXT_PUBLIC_SITE_URL`                 | Redirect URI to register in Google Cloud                  |
+| ------------------------ | -------------------------------------- | --------------------------------------------------------- |
+| Production               | `https://pandatrack.app`               | `https://pandatrack.app/api/auth/callback/google`         |
+| Staging (Vercel Preview) | `https://staging.pandatrack.app`       | `https://staging.pandatrack.app/api/auth/callback/google` |
+| Local dev (port 7100)    | `http://localhost:7100` (`.env.local`) | `http://localhost:7100/api/auth/callback/google`          |
+
+All of these are registered on the `PandaTrack Web` OAuth client (Google Cloud project `pandatrack-489522`). Add the matching **Authorized JavaScript origin** (the base, without the callback path) for each one as well.
+
+> Do not switch Better Auth's `baseURL` to `getAppBaseUrl()`. On Vercel that resolves to `${VERCEL_URL}` (a `*.vercel.app` host), so production would emit a `*.vercel.app` redirect URI instead of `pandatrack.app`. `getPublicSiteUrl()` keeps prod/staging on their custom domains.
+
+### Local dev gotcha
+
+`.env` sets `NEXT_PUBLIC_SITE_URL=https://pandatrack.app`. Because `getPublicSiteUrl()` checks `NEXT_PUBLIC_SITE_URL` **before** `NEXT_PUBLIC_APP_URL`, running the dev server on `http://localhost:7100` still emits a `redirect_uri` pointing at the production domain — so "Sign in with Google" locally redirects back to production instead of your local session. Fix: set `NEXT_PUBLIC_SITE_URL=http://localhost:7100` in `.env.local` (gitignored). Next.js hot-reloads `.env.local` in dev, so no restart is needed.
+
+### Consent screen and verification
+
+The OAuth consent screen is **published (In production)**, User type **External**, and requests only the non-sensitive scopes `openid email profile`. With no custom logo, ≤10 authorized domains, and no sensitive/restricted scopes, Google does **not** require app verification: any Google user can sign in, there is no "unverified app" screen, and the 100-user cap does not apply. Uploading a logo or adding sensitive/restricted scopes later would trigger Google's verification review.
 
 ## Server-side session
 
