@@ -7,6 +7,7 @@ import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
 import { routing } from "./i18n/routing";
 
 const LEGACY_PURCHASES_ROUTE_PREFIX = "/purchases";
+const LOCALIZED_HOME_PATH = "/";
 
 const handleI18nRouting = createMiddleware({
   ...routing,
@@ -56,6 +57,15 @@ export default function proxy(request: NextRequest) {
       ROUTES.orders,
     )}`;
     return NextResponse.redirect(redirectUrl, 308);
+  }
+
+  if (localizedPathData && localizedPathData.localizedPath === LOCALIZED_HOME_PATH) {
+    const sessionToken = getSessionCookie(request.headers);
+
+    if (sessionToken) {
+      const dashboardUrl = new URL(`/${localizedPathData.locale}${ROUTES.dashboard}`, request.url);
+      return NextResponse.redirect(dashboardUrl);
+    }
   }
 
   if (localizedPathData && isPrivateLocalizedPath(localizedPathData.localizedPath)) {

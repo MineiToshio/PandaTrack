@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-06-16
+last_updated: 2026-07-19
 source_features:
   - FEAT-0004
   - FEAT-0005
@@ -25,7 +25,7 @@ This FRD captures the platform capabilities that make PandaTrack's public web ex
 - OG image rendering via per-segment `opengraph-image.tsx` routes backed by `OgImageTemplate` and `getOgImageData`
 - structured data (JSON-LD) injection on the landing page
 - sitemap and robots routes
-- middleware-level auth guard that redirects unauthenticated visitors from private localized paths to sign-in
+- middleware-level auth guard that redirects unauthenticated visitors from private localized paths to sign-in, and redirects authenticated visitors from the localized home to the dashboard
 
 This FRD is infra-only — it has no user-facing screens of its own. Visual treatment of the landing and legal pages is owned by their respective FRDs. No FDD or prototype exists for this FRD.
 
@@ -45,6 +45,7 @@ This FRD is infra-only — it has no user-facing screens of its own. Visual trea
 - `FR-03-06`: Canonical paths must avoid duplicate locale ambiguity for the default locale. `buildCanonicalPath` in `src/lib/seo.ts` omits the locale prefix for `es` and adds `/{locale}` only for alternates. The root locale layout sets `metadataBase` via `getSiteUrl()` and the per-page `generateMetadata` calls set explicit `alternates.canonical` URLs.
 - `FR-03-07`: The middleware must protect private routes for unauthenticated visitors. `src/proxy.ts` inspects the session cookie for requests to any of `/dashboard`, `/orders`, `/deliveries`, `/payments`, `/budget` (under any locale); if no session token is present the visitor is redirected to the locale-scoped sign-in page with a `returnTo` query parameter encoding the original URL.
 - `FR-03-08`: A legacy `/purchases` route must redirect permanently to `/orders`. The middleware redirects `/{locale}/purchases/*` to `/{locale}/orders/*` with HTTP 308.
+- `FR-03-12`: The middleware must redirect authenticated visitors away from the localized home to the dashboard. `src/proxy.ts` inspects the session cookie for requests to the localized home (`/{locale}`, i.e. `/es` or `/en`); if a session token is present the visitor is redirected to `/{locale}/dashboard`. The check is cookie-only (no database round-trip); a stale cookie that no longer maps to a valid session is caught downstream by the `(app)` layout's server-side session check, which redirects to sign-in. Unauthenticated visitors continue to the marketing landing unchanged.
 - `FR-03-09`: The landing page must inject structured data (JSON-LD) for `WebSite` and `SoftwareApplication` schema types. `LandingJsonLd` in `src/app/[locale]/(landing)/_components/LandingJsonLd.tsx` renders both objects with the canonical home URL; only the `WebSite` object carries a locale-aware `inLanguage` value (the `SoftwareApplication` object has no `inLanguage`).
 - `FR-03-10`: OG image rendering must degrade gracefully when network fonts are unavailable. `getOgFonts` in `src/lib/og.ts` attempts fonts from `@fontsource` packages in `node_modules`, then falls back to `public/fonts/`, then falls back to Google Fonts. The cascade is all-or-nothing per tier — it advances to the next tier only when the current tier returns zero fonts, not per individual font. Each `OgImageTemplate` invocation receives a `fontsLoaded` flag and substitutes system-safe fallbacks when any font family is absent.
 - `FR-03-11`: The base URL used for canonical URLs, OG tags, the sitemap, and the JSON-LD `url` field must derive from `NEXT_PUBLIC_SITE_URL` (preferred in production), then from `VERCEL_URL`, then fall back to `http://localhost:3000`. The production value is `https://pandatrack.app`.
@@ -58,6 +59,7 @@ This FRD is infra-only — it has no user-facing screens of its own. Visual trea
 - `BR-03-05`: `PENDING` stores must carry a `robots: { index: false, follow: false }` directive. This is implemented in `buildStoreDetailMetadata` via the `noindex` flag.
 - `BR-03-06`: The sitemap includes only public locale variants of `/`, `/terms`, and `/privacy`. App shell and authenticated routes are excluded.
 - `BR-03-07`: The auth redirect preserves the full original URL (pathname + query string) in the `returnTo` parameter; it never exposes session tokens or private data in that parameter.
+- `BR-03-08`: The marketing landing stays publicly reachable for anonymous visitors (see `BR-01-04`), but an authenticated session at the localized home is treated as an app-entry intent and redirected to the dashboard. The home redirect applies only to the home path itself (`/{locale}`), not to other public routes (`/terms`, `/privacy`), which remain reachable while authenticated.
 
 ## Acceptance Criteria
 
@@ -109,6 +111,12 @@ This FRD is infra-only — it has no user-facing screens of its own. Visual trea
 - When the middleware runs
 - Then the visitor is redirected 308 to `/{locale}/orders` or `/{locale}/orders/*`.
 
+### `AC-03-09`
+
+- Given an authenticated visitor (session cookie present) opens the localized home `/{locale}`
+- When the middleware runs
+- Then the visitor is redirected to `/{locale}/dashboard`, while an unauthenticated visitor at the same path continues to the marketing landing.
+
 ---
 
 ## Platform Components
@@ -129,9 +137,9 @@ Exports the `Locale` type (derived from `routing.locales`) and the `isLocale(val
 
 ### Middleware — `src/proxy.ts`
 
-Handles three concerns in order: (1) legacy `/purchases` 308 redirect; (2) session-cookie auth guard for private routes (guards `ROUTES.dashboard`, `ROUTES.orders`, `ROUTES.deliveries`, `ROUTES.payments`, `ROUTES.budget` under any locale prefix; note `ROUTES.settings` is intentionally excluded from `PRIVATE_ROUTE_PREFIXES` and relies on an app-level session check rather than the middleware guard); (3) hands off to `next-intl` middleware (`createMiddleware`) for all other requests. Matcher: `["/", "/(es|en)/:path*"]`.
+Handles four concerns in order: (1) legacy `/purchases` 308 redirect; (2) authenticated home redirect — a session-cookie check on the localized home (`/{locale}`) that redirects authenticated visitors to `/{locale}/dashboard`; (3) session-cookie auth guard for private routes (guards `ROUTES.dashboard`, `ROUTES.orders`, `ROUTES.deliveries`, `ROUTES.payments`, `ROUTES.budget` under any locale prefix; note `ROUTES.settings` is intentionally excluded from `PRIVATE_ROUTE_PREFIXES` and relies on an app-level session check rather than the middleware guard); (4) hands off to `next-intl` middleware (`createMiddleware`) for all other requests. Matcher: `["/", "/(es|en)/:path*"]`.
 
-Unit-tested in `src/proxy.test.ts` (redirects unauthenticated private requests; lets authenticated ones through; skips auth check for public routes).
+Unit-tested in `src/proxy.test.ts` (redirects unauthenticated private requests; lets authenticated ones through; redirects authenticated home requests to the dashboard; lets unauthenticated home requests reach the landing; skips auth check for other public routes).
 
 ### Root locale layout — `src/app/[locale]/layout.tsx`
 
@@ -204,11 +212,13 @@ These events are listed here for cross-FRD completeness. They are not owned by t
 
 ### Unit — `src/proxy.test.ts` (Vitest)
 
-Three cases:
+Five cases:
 
 1. Unauthenticated request to a private localized route → 307 redirect to `/{locale}/sign-in?returnTo=...`
 2. Authenticated request to a private localized route → forwarded to i18n middleware
-3. Public route → forwarded to i18n middleware, no auth check
+3. Authenticated request to the localized home → 307 redirect to `/{locale}/dashboard`
+4. Unauthenticated request to the localized home → forwarded to i18n middleware (landing)
+5. Public route → forwarded to i18n middleware, no auth check
 
 ### E2E — `e2e/landing.spec.ts` (Playwright)
 

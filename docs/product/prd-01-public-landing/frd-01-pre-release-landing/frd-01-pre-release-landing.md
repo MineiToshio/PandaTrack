@@ -94,7 +94,7 @@ As a visitor who joined the waitlist, I want an immediate success/share state so
 - `BR-01-01`: `email` is mandatory and must pass email-format validation.
 - `BR-01-02`: `name` and `comment` are optional and may be omitted.
 - `BR-01-03`: Secondary downstream failures must not crash the success path if the primary subscriber write succeeds.
-- `BR-01-04`: The public landing must remain accessible without authentication.
+- `BR-01-04`: The public landing must remain accessible without authentication. Authenticated sessions arriving at the localized home are instead treated as app-entry intent and redirected to the dashboard by the middleware (see `FR-03-12` / `BR-03-08`); this does not weaken anonymous access.
 
 ## Acceptance Criteria
 

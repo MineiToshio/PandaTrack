@@ -44,6 +44,29 @@ describe("proxy", () => {
     expect(response.status).toBe(200);
   });
 
+  it("redirects authenticated requests for the localized home to the dashboard", async () => {
+    getSessionCookieMock.mockReturnValueOnce("session-token");
+    const request = new NextRequest("https://pandatrack.app/es");
+
+    const response = proxy(request);
+
+    expect(getSessionCookieMock).toHaveBeenCalledWith(request.headers);
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("https://pandatrack.app/es/dashboard");
+    expect(handleI18nRoutingMock).not.toHaveBeenCalled();
+  });
+
+  it("lets unauthenticated requests for the localized home continue to the landing", async () => {
+    getSessionCookieMock.mockReturnValueOnce(null);
+    const request = new NextRequest("https://pandatrack.app/en");
+
+    const response = proxy(request);
+
+    expect(getSessionCookieMock).toHaveBeenCalledWith(request.headers);
+    expect(handleI18nRoutingMock).toHaveBeenCalledWith(request);
+    expect(response.status).toBe(200);
+  });
+
   it("lets public routes continue through i18n routing without checking auth", async () => {
     const request = new NextRequest("https://pandatrack.app/en/sign-in");
 
