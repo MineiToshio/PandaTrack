@@ -19,7 +19,7 @@ export default function FxBanner({ count, onOpenModal }: FxBannerProps) {
       aria-live="polite"
       className="flex flex-col gap-3 rounded-[var(--radius-2xl)] p-4 [background:color-mix(in_oklch,var(--accent)_8%,var(--surface-elevated))] [border:1px_solid_color-mix(in_oklch,var(--accent)_24%,transparent)] lg:flex-row lg:items-center lg:justify-between lg:p-4"
     >
-      <div className="flex items-start gap-3">
+      <div className="flex min-w-0 items-start gap-3">
         <span
           aria-hidden
           className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full [color:var(--accent)] [background:color-mix(in_oklch,var(--accent)_14%,transparent)]"
@@ -28,9 +28,16 @@ export default function FxBanner({ count, onOpenModal }: FxBannerProps) {
         </span>
         <p className="[font-size:var(--text-body)] [color:var(--text-primary)]">{t("fx.banner", { count })}</p>
       </div>
-      <div className="flex justify-end">
-        {/* Status-banner CTAs use `tonal`, never `primary` (playbook §1). */}
-        <Button variant="tonal" size="md" leadingIcon={<RefreshCw size={14} aria-hidden />} onClick={onOpenModal}>
+      <div className="flex shrink-0 justify-end">
+        {/* Status-banner CTAs use `tonal`, never `primary` (playbook §1). The CTA label stays on a
+            single line; the message on the left is what wraps when space is tight. */}
+        <Button
+          variant="tonal"
+          size="md"
+          leadingIcon={<RefreshCw size={14} aria-hidden />}
+          onClick={onOpenModal}
+          className="whitespace-nowrap"
+        >
           {t("fx.cta")}
         </Button>
       </div>
