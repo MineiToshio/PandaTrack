@@ -226,11 +226,14 @@
         "noResults": "No se encontró ningún país."
       },
       "currency": {
-        "empty": "Sin moneda base",
-        "summary": "Aplicada a totales y resúmenes.",
         "changeButton": "Cambiar",
         "placeholder": "Buscar moneda…",
-        "noResults": "No se encontró ninguna moneda."
+        "noResults": "No se encontró ninguna moneda.",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "pending": "Guardando…",
+        "dirtyHint": "No convierte tus datos anteriores.",
+        "reconcileLink": "Actualizar tasas · {count, plural, one {# pedido} other {# pedidos}}"
       },
       "categories": {
         "helper": "Se muestran como filtros predeterminados al explorar tiendas.",
@@ -252,19 +255,6 @@
       "savedAgo": "Guardado hace {seconds}s",
       "savedRecently": "Guardado hace un momento",
       "error": "No se pudo guardar."
-    },
-    "currencyModal": {
-      "title": "Cambiar moneda base",
-      "subtitle": "Este cambio afecta tus reportes y totales.",
-      "intro": "Tus pedidos pasados se mantienen en su moneda original. Esto cambia cómo se totaliza tu resumen.",
-      "listAriaLabel": "Seleccionar moneda base",
-      "warning": "Cambiar la moneda base no convierte tus pedidos anteriores. Los totales históricos seguirán en su moneda original hasta que los actualices manualmente.",
-      "cancel": "Cancelar",
-      "saveWithout": "Guardar sin actualizar",
-      "saveAndUpdate": "Guardar y actualizar",
-      "pending": "Guardando…",
-      "successSaved": "Moneda base actualizada.",
-      "successRedirect": "Moneda base actualizada. Revisando tipos de cambio…"
     },
     "signOut": {
       "mobile": "Cerrar sesión"

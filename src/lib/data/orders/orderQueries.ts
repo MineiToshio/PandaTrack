@@ -377,6 +377,21 @@ function buildFxPendingWhere(userId: string, baseCurrencyCode: string | null | u
   };
 }
 
+/**
+ * Counts the collector's non-cancelled foreign-currency orders flagged for FX reconciliation
+ * against the given base currency. Used by Settings to decide whether to surface a
+ * "reconcile rates" shortcut after a base-currency change. Returns 0 when there is no base
+ * currency (nothing can be flagged as stale without one).
+ */
+export async function countOrdersPendingFxReconciliation(
+  userId: string,
+  baseCurrencyCode: string | null,
+): Promise<number> {
+  const where = buildFxPendingWhere(userId, baseCurrencyCode);
+  if (!where) return 0;
+  return prisma.order.count({ where });
+}
+
 export async function getOrdersList(userId: string, filters: OrdersListPageFilters): Promise<OrdersListPageResult> {
   const {
     nameQuery,

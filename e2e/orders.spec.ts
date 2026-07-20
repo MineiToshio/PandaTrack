@@ -68,15 +68,12 @@ async function changeBaseCurrency(page: Page, targetCode: string) {
   await page.goto("/en/settings");
   const tablist = page.getByRole("tablist", { name: /settings sections|secciones de ajustes/i }).first();
   await tablist.getByRole("tab", { name: /preferences|preferencias/i }).click();
-  await page
-    .getByRole("button", { name: /^change$|^cambiar$/i })
-    .first()
-    .click();
-  const dialog = page.getByRole("dialog", { name: /change base currency|cambiar moneda base/i });
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole("option", { name: new RegExp(targetCode) }).click();
-  await dialog.getByRole("button", { name: /save without updating|guardar sin actualizar/i }).click();
-  await expect(dialog).toBeHidden();
+  await page.getByRole("button", { name: /base currency|moneda base/i }).click();
+  await page.getByRole("option", { name: new RegExp(`^${targetCode}`) }).click();
+  await page.getByRole("button", { name: /^save$|^guardar$/i }).click();
+  // Wait on "Cancel" disappearing — its label is stable, so it only clears once the server action
+  // resolves (the "Save" label flips to "Saving…" mid-flight, which would signal completion early).
+  await expect(page.getByRole("button", { name: /^cancel$|^cancelar$/i })).toHaveCount(0, { timeout: 15_000 });
 }
 
 test.describe("Orders route protection", () => {
@@ -147,22 +144,23 @@ test.describe("Order FX reconciliation flag", () => {
     const orderUrl = await createOrderWithOneItem(page);
     const orderId = orderUrl.split("/").pop()!;
 
-    // 2. Read the current base (USD/EUR) from the currency modal, then switch to the other.
+    // 2. Read the current base from the inline currency select, then switch to a different one and
+    //    confirm with "Save" (explicit-confirm, no modal).
     await page.goto("/en/settings");
     const tablist = page.getByRole("tablist", { name: /settings sections|secciones de ajustes/i }).first();
     await tablist.getByRole("tab", { name: /preferences|preferencias/i }).click();
-    await page
-      .getByRole("button", { name: /^change$|^cambiar$/i })
-      .first()
-      .click();
-    const curDialog = page.getByRole("dialog", { name: /change base currency|cambiar moneda base/i });
-    await expect(curDialog).toBeVisible();
-    const usdSelected = (await curDialog.getByRole("option", { name: /USD/ }).getAttribute("aria-selected")) === "true";
-    const originalCode = usdSelected ? "USD" : "EUR";
-    const newBaseCode = usdSelected ? "EUR" : "USD";
-    await curDialog.getByRole("option", { name: new RegExp(newBaseCode) }).click();
-    await curDialog.getByRole("button", { name: /save without updating|guardar sin actualizar/i }).click();
-    await expect(curDialog).toBeHidden();
+    const currencySelect = page.getByRole("button", { name: /base currency|moneda base/i });
+    await expect(currencySelect).toBeVisible();
+    // The trigger label reads "USD — US dollar"; the leading 3 chars are the current base code.
+    const originalCode = ((await currencySelect.textContent()) ?? "").trim().slice(0, 3).toUpperCase();
+    const newBaseCode = originalCode === "USD" ? "EUR" : "USD";
+    await currencySelect.click();
+    await page.getByRole("option", { name: new RegExp(`^${newBaseCode}`) }).click();
+    await page.getByRole("button", { name: /^save$|^guardar$/i }).click();
+    // "Cancel" clears only once the server action resolves (stable label, unlike "Save" → "Saving…").
+    await expect(page.getByRole("button", { name: /^cancel$|^cancelar$/i })).toHaveCount(0, { timeout: 15_000 });
+    // The conditional "reconcile rates" shortcut appears because the seeded order is now foreign.
+    await expect(page.getByRole("link", { name: /update rates|actualizar tasas/i })).toBeVisible({ timeout: 15_000 });
 
     // 3. The seeded order (now in a foreign currency) is flagged: the FX banner appears and
     //    the order shows under the `fxPending` filter.

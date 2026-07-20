@@ -37,7 +37,7 @@ test.describe("Settings", () => {
     await expect(page.getByRole("radio", { name: /english/i })).toBeVisible();
   });
 
-  test("currency change modal offers the two-path footer and saves without updating rates", async ({ page }) => {
+  test("currency change uses an inline select with an explicit save/cancel confirm", async ({ page }) => {
     skipUnlessAuthenticatedEnv();
     await signInAndLandOnDashboard(page);
 
@@ -45,29 +45,34 @@ test.describe("Settings", () => {
     const tablist = page.getByRole("tablist", { name: /settings sections|secciones de ajustes/i }).first();
     await tablist.getByRole("tab", { name: /preferences|preferencias/i }).click();
 
-    await page
-      .getByRole("button", { name: /^change$|^cambiar$/i })
-      .first()
-      .click();
+    const currencySelect = page.getByRole("button", { name: /base currency|moneda base/i });
+    await expect(currencySelect).toBeVisible();
+    // The trigger label reads "USD — US dollar"; the leading 3 chars are the current base code.
+    const originalCode = ((await currencySelect.textContent()) ?? "").trim().slice(0, 3).toUpperCase();
+    const targetCode = originalCode === "USD" ? "EUR" : "USD";
 
-    const dialog = page.getByRole("dialog", { name: /change base currency|cambiar moneda base/i });
-    await expect(dialog).toBeVisible();
+    const save = page.getByRole("button", { name: /^save$|^guardar$/i });
+    // No confirm controls until the selection actually changes (base currency is not autosaved).
+    await expect(save).toHaveCount(0);
 
-    const saveWithout = dialog.getByRole("button", { name: /save without updating|guardar sin actualizar/i });
-    const saveAndUpdate = dialog.getByRole("button", { name: /save and update|guardar y actualizar/i });
-    await expect(saveWithout).toBeVisible();
-    await expect(saveAndUpdate).toBeVisible();
+    await currencySelect.click();
+    await page.getByRole("option", { name: new RegExp(`^${targetCode}`) }).click();
 
-    // Pick whichever of USD/EUR is not currently selected so the form is dirty,
-    // keeping the e2e account in a known currency either way.
-    const usdOption = dialog.getByRole("option", { name: /USD/ });
-    const usdSelected = (await usdOption.getAttribute("aria-selected")) === "true";
-    const targetCode = usdSelected ? "EUR" : "USD";
-    await dialog.getByRole("option", { name: new RegExp(targetCode) }).click();
+    // Changing the selection reveals an explicit save + cancel confirm — no modal, no auto-apply.
+    const cancel = page.getByRole("button", { name: /^cancel$|^cancelar$/i });
+    await expect(save).toBeVisible();
+    await expect(cancel).toBeVisible();
 
-    await saveWithout.click();
+    await save.click();
+    // "Cancel" clears only once the server action resolves (its label is stable, unlike
+    // "Save" → "Saving…"), so it is the reliable commit signal.
+    await expect(cancel).toHaveCount(0, { timeout: 15_000 });
+    await expect(page.getByRole("button", { name: /base currency|moneda base/i })).toContainText(targetCode);
 
-    await expect(dialog).toBeHidden();
-    await expect(page.getByText(targetCode, { exact: true }).first()).toBeVisible();
+    // Restore the original base currency so the run leaves the account as it found it.
+    await page.getByRole("button", { name: /base currency|moneda base/i }).click();
+    await page.getByRole("option", { name: new RegExp(`^${originalCode}`) }).click();
+    await save.click();
+    await expect(cancel).toHaveCount(0, { timeout: 15_000 });
   });
 });
