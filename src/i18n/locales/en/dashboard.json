@@ -102,6 +102,12 @@
     "committedPartial": "{count, plural, one {Excludes # order with a pending exchange rate} other {Excludes # orders with a pending exchange rate}}.",
     "committedPartialHint": "Partial figure"
   },
+  "lostOnCancelled": {
+    "eyebrow": "Cancelled",
+    "title": "Lost on cancelled",
+    "help": "Payments you made on cancelled orders and didn't get back.",
+    "partial": "{count, plural, one {Excludes # order with a pending exchange rate} other {Excludes # orders with a pending exchange rate}}."
+  },
   "collection": {
     "eyebrow": "Your collection",
     "title": "The full picture",

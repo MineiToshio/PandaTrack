@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   orderItemRowSchema,
   orderCreateSchema,
+  orderCancelSchema,
   orderPaymentCreateSchema,
   orderPaymentDeleteSchema,
   exchangeRateSchema,
@@ -200,6 +201,37 @@ describe("orderPaymentCreateSchema", () => {
 
   it("rejects orderId that is not a cuid", () => {
     const result = orderPaymentCreateSchema.safeParse({ ...validBase, orderId: "not-a-cuid" });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.map((e) => e.message)).toContain("INVALID_ORDER_ID");
+    }
+  });
+});
+
+describe("orderCancelSchema", () => {
+  it("defaults paymentsChoice to keep when omitted", () => {
+    const result = orderCancelSchema.safeParse({ orderId: VALID_CUID });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.paymentsChoice).toBe("keep");
+    }
+  });
+
+  it("accepts an explicit remove choice", () => {
+    const result = orderCancelSchema.safeParse({ orderId: VALID_CUID, paymentsChoice: "remove" });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.paymentsChoice).toBe("remove");
+    }
+  });
+
+  it("rejects an unknown paymentsChoice value", () => {
+    const result = orderCancelSchema.safeParse({ orderId: VALID_CUID, paymentsChoice: "delete" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a non-cuid orderId", () => {
+    const result = orderCancelSchema.safeParse({ orderId: "not-a-cuid" });
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues.map((e) => e.message)).toContain("INVALID_ORDER_ID");

@@ -273,4 +273,11 @@ export type DashboardData = {
   activity: ActivityBlock;
   collection: CollectionBlock;
   paidVsOutstanding: PaidVsOutstandingBlock;
+  /**
+   * "Lost on cancelled": Σ `OrderPayment.amount` over `CANCELLED` orders that still carry
+   * payments — money deliberately retained on a cancelled order and treated as sunk/lost. Base
+   * currency, FX-excluded like every other total (`FR-06-13`). `totalMinor` is 0 when no cancelled
+   * order retains payments; the surface renders only when it is greater than 0.
+   */
+  lostOnCancelled: BaseCurrencyTotal;
 };

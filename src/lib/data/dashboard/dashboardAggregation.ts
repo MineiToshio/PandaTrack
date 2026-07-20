@@ -31,6 +31,7 @@ import {
 import type {
   ActivityBlock,
   ArrivalPunctuality,
+  BaseCurrencyTotal,
   BudgetBlock,
   BudgetStatus,
   BuildDashboardDataInput,
@@ -618,6 +619,21 @@ function buildPaidVsOutstanding(orders: DerivedOrder[], baseCurrencyCode: string
 }
 
 /**
+ * "Lost on cancelled": sunk money retained on cancelled orders. A cancelled order that still
+ * carries payments kept them deliberately (the cancel modal forces the keep/remove choice), so the
+ * presence of payments is the signal that the money was lost rather than refunded or moved. Summed
+ * in base currency through the shared rollup, so FX-unreconciled cancelled orders are excluded
+ * exactly like every other total (`FR-06-13`). Cancelled orders with no payments contribute nothing.
+ */
+function buildLostOnCancelled(orders: DashboardOrderInput[], baseCurrencyCode: string | null): BaseCurrencyTotal {
+  const items = orders
+    .filter((order) => isCancelled(order.status))
+    .map((order) => toRollupItem(order, computePaidMinor(order.payments)))
+    .filter((item) => item.amountMinor > 0);
+  return rollUpToBaseCurrency(items, baseCurrencyCode);
+}
+
+/**
  * Pure aggregation entry point: turns raw orders plus the collector's currency/budget/timezone
  * context into the single `DashboardData` payload consumed by every zone. Deterministic given its
  * inputs (including `now`), so it is unit-tested directly without a database.
@@ -643,5 +659,7 @@ export function buildDashboardData(input: BuildDashboardDataInput): DashboardDat
     activity: buildActivity(nonCancelled, baseCurrencyCode, range, now, timeZone),
     collection: buildCollection(nonCancelled, baseCurrencyCode),
     paidVsOutstanding: buildPaidVsOutstanding(nonCancelled, baseCurrencyCode),
+    // Computed from the FULL orders list — the only figure that reads cancelled orders (`BR-06-10`).
+    lostOnCancelled: buildLostOnCancelled(orders, baseCurrencyCode),
   };
 }

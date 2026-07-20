@@ -19,25 +19,26 @@ export type OrderLifecycleResult = { ok: true } | { ok: false; error: string };
 export async function cancelOrderAction(
   orderId: string,
   cancellationReason: string | null = null,
+  paymentsChoice: "keep" | "remove" = "keep",
 ): Promise<OrderLifecycleResult> {
   const session = await getSession();
   if (!session?.user?.id) return { ok: false, error: "unauthorized" };
   const userId = session.user.id;
 
-  const parsed = orderCancelSchema.safeParse({ orderId });
+  const parsed = orderCancelSchema.safeParse({ orderId, paymentsChoice });
   if (!parsed.success) return { ok: false, error: "validation" };
 
   const reason = cancellationReason?.trim() ? cancellationReason.trim().slice(0, MAX_CANCELLATION_REASON_LENGTH) : null;
 
   try {
-    const result = await cancelOrder(orderId, userId, reason);
+    const result = await cancelOrder(orderId, userId, reason, parsed.data.paymentsChoice);
     if (!result.ok) return { ok: false, error: result.error };
 
     const posthog = getPostHogClient();
     posthog.capture({
       distinctId: userId,
       event: POSTHOG_EVENTS.ORDER.CANCELLED,
-      properties: { orderId, hasReason: reason !== null },
+      properties: { orderId, hasReason: reason !== null, paymentsChoice: parsed.data.paymentsChoice },
     });
     await posthog.shutdown();
 

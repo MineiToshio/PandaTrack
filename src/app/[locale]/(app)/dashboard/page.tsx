@@ -14,6 +14,7 @@ import DashboardBudgetZone from "./_components/DashboardBudgetZone";
 import DashboardCashZone from "./_components/DashboardCashZone";
 import DashboardCollectionZone from "./_components/DashboardCollectionZone";
 import DashboardKpiStrip from "./_components/DashboardKpiStrip";
+import DashboardLostOnCancelledZone from "./_components/DashboardLostOnCancelledZone";
 import DashboardPunctualityZone from "./_components/DashboardPunctualityZone";
 import DashboardTrendsSection from "./_components/DashboardTrendsSection";
 import DashboardUpcomingPaymentsZone from "./_components/DashboardUpcomingPaymentsZone";
@@ -97,6 +98,9 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
         <div className="lg:col-span-12">
           <DashboardKpiStrip data={data} locale={locale} />
         </div>
+        {/* Rendered as a direct grid child so it reserves no space (and no gap) when there is no
+            lost money — the component returns null unless the figure is greater than 0. */}
+        <DashboardLostOnCancelledZone data={data} locale={locale} className="lg:col-span-12" />
         <div className="lg:col-span-8">
           <DashboardCashZone data={data} locale={locale} />
         </div>

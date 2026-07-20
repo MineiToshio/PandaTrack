@@ -102,6 +102,12 @@
     "committedPartial": "{count, plural, one {Excluye # pedido con tipo de cambio pendiente} other {Excluye # pedidos con tipo de cambio pendiente}}.",
     "committedPartialHint": "Cifra parcial"
   },
+  "lostOnCancelled": {
+    "eyebrow": "Cancelados",
+    "title": "Perdido en cancelados",
+    "help": "Pagos que hiciste en pedidos cancelados y no recuperaste.",
+    "partial": "{count, plural, one {Excluye # pedido con tipo de cambio pendiente} other {Excluye # pedidos con tipo de cambio pendiente}}."
+  },
   "collection": {
     "eyebrow": "Tu colección",
     "title": "El panorama completo",

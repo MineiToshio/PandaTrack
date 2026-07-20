@@ -20,6 +20,11 @@ type OrderActionsCardProps = {
   storeName: string;
   status: OrderStatus;
   eligibility: OrderEligibility;
+  /** Sum of the order's recorded payments, in minor units of `currencyCode`. Threaded into
+      `OrderCancelModal`'s payments-choice control. */
+  paidAmountMinor: number;
+  currencyCode: string;
+  hasPayments: boolean;
   locale: string;
 };
 
@@ -35,6 +40,9 @@ export default function OrderActionsCard({
   storeName,
   status,
   eligibility,
+  paidAmountMinor,
+  currencyCode,
+  hasPayments,
   locale,
 }: OrderActionsCardProps) {
   const t = useTranslations("orders");
@@ -162,6 +170,9 @@ export default function OrderActionsCard({
         orderId={orderId}
         humanReadableId={humanReadableId}
         storeName={storeName}
+        paidAmountMinor={paidAmountMinor}
+        currencyCode={currencyCode}
+        hasPayments={hasPayments}
         onSuccess={() => {
           setModal(null);
           router.refresh();
