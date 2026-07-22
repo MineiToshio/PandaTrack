@@ -13,6 +13,8 @@ const editStoreBaseSchema = z.object({
   hasStock: z.boolean().optional().nullable(),
   receivesOrders: z.boolean().optional().nullable(),
   isPrivate: createStoreShape.isPrivate,
+  // Operational state. `false` marks the store as closed / no longer operating.
+  isActive: z.boolean().optional(),
   contactChannels: createStoreShape.contactChannels,
   addresses: createStoreShape.addresses,
   importCountries: createStoreShape.importCountries,

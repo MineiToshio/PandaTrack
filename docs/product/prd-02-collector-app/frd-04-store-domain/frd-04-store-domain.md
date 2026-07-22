@@ -120,6 +120,7 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - `FR-04-14`: Multi-select values within one filter family must use OR logic.
 - `FR-04-15`: Different filter families must combine with AND logic.
 - `FR-04-16`: Public listing must include both `PENDING` and `APPROVED` stores that are `PUBLIC`.
+- `FR-04-36`: Public store listing must hide closed (inactive) stores by default and expose an opt-in "show closed" filter that includes them. Closed stores remain reachable by their direct detail URL regardless of the filter (see `FR-04-19`).
 - `FR-04-17`: Public detail must resolve through the canonical route `/{locale}/stores/[slug]`.
 - `FR-04-18`: Public detail must show a pending disclaimer for `PENDING` stores.
 - `FR-04-19`: Public detail must show an inactivity warning for inactive stores.
@@ -145,6 +146,7 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - `FR-04-30`: Pending stores must be directly editable only by their creator and admins; other authenticated users must use the change-request flow instead.
 - `FR-04-31`: Business stores must support logo upload backed by external object storage. **Redesign note:** the upload includes an intermediate crop-and-confirm step in a modal (shared `ImageCropper`, rectangular preview) before the logo is persisted.
 - `FR-04-35`: When the listing and detail are viewed by an authenticated user, the system must surface that viewer's own order relationship with each store: a per-card viewer order count on the listing grid, and a viewer activity summary on the detail aside (order totals and amount spent grouped by currency). This viewer-scoped data must never be exposed to anonymous visitors or other users.
+- `FR-04-37`: Marking a store as closed (setting it inactive) must be part of the store edit flow and follow the exact same permission rule as any other editable field: it applies directly for admins and for a creator editing their own `PENDING` store, and otherwise flows through the change-request path for moderation (`FR-04-29`, `FR-04-30`). A closed store is excluded from the order-creation store picker.
 
 ## Business Rules
 
@@ -153,7 +155,7 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 - `BR-04-03`: Store slugs must not change automatically when a store name changes.
 - `BR-04-04`: Pending stores are public in-app but must remain non-indexable for SEO.
 - `BR-04-05`: Approved stores are public and SEO-indexable.
-- `BR-04-06`: Inactive stores remain publicly viewable but must surface a warning.
+- `BR-04-06`: Closed (inactive) stores are hidden from the public listing and search by default and are excluded from the order-creation store picker, but they remain reachable by their direct detail URL, where they must surface an inactivity warning. The listing exposes an opt-in "show closed" filter to include them (`FR-04-36`).
 - `BR-04-07`: Review publication does not require a linked order in MVP. The community-reviews section is **authenticated-only**: it is loaded server-side only when a session is present, so anonymous visitors do not load or see any reviews. For a signed-in viewer the list is fully loaded server-side, but the public review section progressively discloses long lists: it renders a 4-review community preview and expands to all remaining reviews in a single "Ver todas" reveal rather than showing the full list by default.
 - `BR-04-20`: Pending stores support the same user interactions as approved stores — any authenticated user may write reviews, annotate orders, annotate deliveries, save notes, report, or suggest changes on a pending store. The only behavioral difference for pending stores is the moderation disclaimer shown on the detail page and the absence of SEO indexing.
 - `BR-04-21`: Private person stores are excluded from all public listing and search surfaces. They remain accessible via their direct URL only to their creator.
@@ -182,7 +184,7 @@ As PandaTrack grows, I want stores to support reports, requests, and change sugg
 ### Activity state
 
 - `ACTIVE`
-- `INACTIVE`
+- `INACTIVE` (a closed store; set through the store edit flow via the same permission derivation as any other editable field, so a closure can be applied directly or suggested as a change request — see `FR-04-37`)
 
 ### Store type
 
@@ -349,10 +351,27 @@ Three viewer-scoped governance records each enforce a one-open-per-store-per-use
 - But when another authenticated user opens that route
 - Then they must follow the change-request path instead
 
+### `AC-04-16` Closed stores hidden by default with opt-in filter
+
+- Given a store marked as closed (inactive)
+- When the public store listing is queried without the "show closed" filter
+- Then the closed store is excluded from the results
+- And when the viewer enables the "show closed" filter
+- Then the closed store appears in the listing
+- And the closed store is always reachable by its direct detail URL with the inactivity warning, regardless of the filter
+
+### `AC-04-17` Mark store as closed through the edit flow
+
+- Given the store edit form
+- When an admin, or the creator of a still-`PENDING` store, toggles "mark store as closed" and saves
+- Then the store is set inactive directly
+- But when any other authenticated user toggles the same control on an approved store and saves
+- Then the closure is recorded as a change request for moderation instead of applying immediately
+
 ## Current Implementation Notes
 
 - Canonical route in code today is `/stores/[slug]`, not `/store/[slug]`.
-- Listing currently supports `q`, `productType`, `category`, `country`, `importCountry`, `presence`, `receivesOrders`, `hasStock`, and `page`.
+- Listing currently supports `q`, `productType`, `category`, `country`, `importCountry`, `presence`, `receivesOrders`, `hasStock`, `includeClosed`, and `page`. `includeClosed=true` opts into showing closed (inactive) stores; by default `buildPublicStoreListingWhere` adds `isActive: true` so closed stores are hidden. The "show closed" control lives in the filter drawer's "Other" switch group alongside `receivesOrders` and `hasStock`.
 - Duplicate scoring ignores generic-only terms such as `store`, `shop`, `tienda`, and similar terms unless the normalized name is effectively exact.
 - The full set of implemented analytics events for store flows is enumerated in the [Analytics](#analytics) section (the `POSTHOG_EVENTS.STORE` namespace).
 - Moderation status chips are **not** rendered on store cards in the public listing (redesign decision S6.1); status chips appear only on the store detail page for the owner/admin.

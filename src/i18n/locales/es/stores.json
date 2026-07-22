@@ -71,6 +71,11 @@
     "commentLabel": "Contexto de la solicitud (opcional)",
     "commentHelper": "Agrega contexto breve que ayude al moderador a entender por qué se necesita esta actualización.",
     "immutableFieldsHelper": "El tipo de tienda ({storeType}) y el país ({country}) no se pueden cambiar desde este flujo.",
+    "closure": {
+      "sectionLabel": "Estado de la tienda",
+      "label": "Marcar tienda como cerrada",
+      "help": "Actívalo si esta tienda cerró o dejó de operar. Las tiendas cerradas se ocultan del listado por defecto y ya no se pueden elegir al crear un pedido, pero siguen accesibles por su enlace directo con un aviso."
+    },
     "direct": {
       "title": "Editar {storeName}",
       "description": "Puedes actualizar esta tienda pendiente directamente porque tienes permiso para administrarla.",
@@ -394,6 +399,7 @@
       "other": "Otros",
       "receivesOrders": "Recibe pre-reservas",
       "hasStock": "Tiene stock",
+      "showClosed": "Mostrar tiendas cerradas",
       "presencePhysical": "Tienda física",
       "presenceOnline": "Tienda online",
       "countrySearchPlaceholder": "Cualquier país…",

@@ -54,6 +54,7 @@ function normalizeEditableStoreInput(input: EditableStoreInput, storeType: Store
     hasStock: input.hasStock ?? null,
     receivesOrders: input.receivesOrders ?? null,
     isPrivate: storeType === "PERSON" ? Boolean(input.isPrivate) : false,
+    isActive: input.isActive ?? true,
     contactChannels: normalizedContactChannels,
     addresses: normalizedAddresses,
     importCountries: uniqueSorted((input.importCountries ?? []).filter((countryCode) => countryCode.length === 2)),
@@ -74,6 +75,7 @@ function buildEditableStoreDiff(existing: EditableStore, input: Required<Editabl
   if ((existing.hasStock ?? null) !== input.hasStock) diff.hasStock = input.hasStock;
   if ((existing.receivesOrders ?? null) !== input.receivesOrders) diff.receivesOrders = input.receivesOrders;
   if (existing.isPrivate !== input.isPrivate) diff.isPrivate = input.isPrivate;
+  if (existing.isActive !== input.isActive) diff.isActive = input.isActive;
   if (JSON.stringify(existing.contactChannels) !== JSON.stringify(input.contactChannels))
     diff.contactChannels = input.contactChannels;
   if (JSON.stringify(existing.addresses) !== JSON.stringify(input.addresses)) diff.addresses = input.addresses;
@@ -179,6 +181,7 @@ export async function updateStoreEditableFields(
         hasStock: normalizedInput.hasStock,
         receivesOrders: normalizedInput.receivesOrders,
         isPrivate: normalizedInput.isPrivate,
+        isActive: normalizedInput.isActive,
       },
       select: { id: true, slug: true },
     });

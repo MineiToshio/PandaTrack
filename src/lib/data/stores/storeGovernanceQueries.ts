@@ -29,6 +29,8 @@ export type EditableStoreInput = {
   hasStock?: boolean | null;
   receivesOrders?: boolean | null;
   isPrivate?: boolean;
+  /** Operational state. `false` marks the store as closed / no longer operating. Defaults to active. */
+  isActive?: boolean;
   contactChannels?: EditableContactChannelInput[];
   addresses?: EditableAddressInput[];
   importCountries?: string[];
@@ -47,6 +49,7 @@ export type EditableStore = {
   hasStock: boolean | null;
   receivesOrders: boolean | null;
   isPrivate: boolean;
+  isActive: boolean;
   presenceTypes: StorePresenceType[];
   productTypeKeys: string[];
   importCountryCodes: string[];
@@ -93,6 +96,7 @@ export type EditableStoreDiff = Partial<{
   hasStock: boolean | null;
   receivesOrders: boolean | null;
   isPrivate: boolean;
+  isActive: boolean;
   contactChannels: EditableContactChannelInput[];
   addresses: EditableAddressInput[];
   importCountries: string[];
@@ -114,6 +118,7 @@ function mapStoreToEditableStore(store: {
   hasStock: boolean | null;
   receivesOrders: boolean | null;
   isPrivate: boolean;
+  isActive: boolean;
   presences: Array<{ presenceType: StorePresenceType }>;
   productTypeAssignments: Array<{ productTypeKey: string }>;
   importCountries: Array<{ countryCode: string }>;
@@ -133,6 +138,7 @@ function mapStoreToEditableStore(store: {
     hasStock: store.hasStock,
     receivesOrders: store.receivesOrders,
     isPrivate: store.isPrivate,
+    isActive: store.isActive,
     presenceTypes: store.presences
       .map((presence) => presence.presenceType)
       .sort((left, right) => left.localeCompare(right)),
@@ -180,6 +186,7 @@ export function mergeEditableStoreWithChangeRequest(
     hasStock: changeRequest?.hasStock ?? store.hasStock,
     receivesOrders: changeRequest?.receivesOrders ?? store.receivesOrders,
     isPrivate: changeRequest?.isPrivate ?? store.isPrivate,
+    isActive: changeRequest?.isActive ?? store.isActive,
     contactChannels: changeRequest?.contactChannels ?? store.contactChannels,
     addresses: changeRequest?.addresses ?? store.addresses,
     importCountries: changeRequest?.importCountries ?? store.importCountryCodes,
@@ -206,6 +213,7 @@ export async function getEditableStoreBySlug(slug: string): Promise<EditableStor
       hasStock: true,
       receivesOrders: true,
       isPrivate: true,
+      isActive: true,
       presences: { select: { presenceType: true } },
       productTypeAssignments: { select: { productTypeKey: true } },
       importCountries: { select: { countryCode: true } },

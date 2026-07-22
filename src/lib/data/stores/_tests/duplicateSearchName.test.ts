@@ -134,6 +134,7 @@ describe("updateStoreEditableFields refreshes searchName on a name edit", () => 
       hasStock: null,
       receivesOrders: null,
       isPrivate: false,
+      isActive: true,
       presenceTypes: [],
       productTypeKeys: [],
       importCountryCodes: [],

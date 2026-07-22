@@ -89,6 +89,8 @@ export async function saveStoreEdit(
     hasStock: formData.get("hasStock") === "on" ? true : undefined,
     receivesOrders: formData.get("receivesOrders") === "on" ? true : undefined,
     isPrivate: formData.get("isPrivate") === "on" ? true : undefined,
+    // Stores are active by default; the edit form posts `closed=on` to mark a store as closed.
+    isActive: formData.get("closed") === "on" ? false : true,
     contactChannels,
     addresses,
     importCountries: formData
@@ -219,6 +221,7 @@ export async function saveStoreEdit(
         hasStock: parsed.data.hasStock,
         receivesOrders: parsed.data.receivesOrders,
         isPrivate: parsed.data.isPrivate,
+        isActive: parsed.data.isActive,
         contactChannels: parsed.data.contactChannels,
         addresses: parsed.data.addresses,
         importCountries: parsed.data.importCountries,
@@ -258,6 +261,7 @@ export async function saveStoreEdit(
         hasStock: parsed.data.hasStock,
         receivesOrders: parsed.data.receivesOrders,
         isPrivate: parsed.data.isPrivate,
+        isActive: parsed.data.isActive,
         contactChannels: parsed.data.contactChannels,
         addresses: parsed.data.addresses,
         importCountries: parsed.data.importCountries,

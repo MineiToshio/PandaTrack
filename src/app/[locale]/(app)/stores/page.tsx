@@ -72,6 +72,7 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
     presenceTypes: parsed.presenceTypes.length > 0 ? parsed.presenceTypes : undefined,
     receivesOrders: parsed.receivesOrders,
     hasStock: parsed.hasStock,
+    includeClosed: parsed.includeClosed,
     page: parsed.page,
     pageSize: DEFAULT_PUBLIC_STORE_PAGE_SIZE,
   };
@@ -82,7 +83,8 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
     parsed.importCountryCodes.length > 0 ||
     parsed.presenceTypes.length > 0 ||
     parsed.receivesOrders ||
-    parsed.hasStock,
+    parsed.hasStock ||
+    parsed.includeClosed,
   );
 
   const storesBasePath = `/${locale}/stores`;
@@ -131,6 +133,7 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
             initialPresenceTypes={parsed.presenceTypes}
             initialReceivesOrders={parsed.receivesOrders}
             initialHasStock={parsed.hasStock}
+            initialIncludeClosed={parsed.includeClosed}
           />
 
           {/* Grid: useTransition swaps to the card skeleton on filter/sort/page changes;

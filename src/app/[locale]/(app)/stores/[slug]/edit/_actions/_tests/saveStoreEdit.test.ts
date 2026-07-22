@@ -90,6 +90,7 @@ const PARSED_DATA = {
   hasStock: undefined,
   receivesOrders: undefined,
   isPrivate: undefined,
+  isActive: true,
   contactChannels: [],
   addresses: [],
   importCountries: [],
@@ -148,5 +149,42 @@ describe("saveStoreEdit", () => {
 
     expect(redirectMock).toHaveBeenCalledWith("/en/stores/acme");
     expect(captureExceptionMock).not.toHaveBeenCalled();
+  });
+
+  it("threads a closure through the direct-edit payload when the store is marked closed", async () => {
+    primeDirectEditPath();
+    safeParseMock.mockReturnValue({ success: true, data: { ...PARSED_DATA, isActive: false } });
+    updateStoreEditableFieldsMock.mockResolvedValue(undefined);
+
+    await expect(saveStoreEdit(null, new FormData())).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(updateStoreEditableFieldsMock).toHaveBeenCalledWith(
+      EDITABLE_PERSON_STORE,
+      expect.objectContaining({ isActive: false }),
+    );
+    expect(upsertStoreChangeRequestMock).not.toHaveBeenCalled();
+  });
+
+  it("threads a closure through the change-request payload for non-privileged editors", async () => {
+    getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
+    getIsAdminMock.mockReturnValue(false);
+    safeParseMock.mockReturnValue({ success: true, data: { ...PARSED_DATA, isActive: false } });
+    getEditableStoreBySlugMock.mockResolvedValue({ ...EDITABLE_PERSON_STORE, status: "APPROVED" });
+    getStoreGovernanceViewerContextMock.mockResolvedValue({ openChangeRequest: null });
+    upsertStoreChangeRequestMock.mockResolvedValue({
+      status: "saved",
+      changeRequestId: "cr-1",
+      changedFieldCount: 1,
+    });
+
+    await expect(saveStoreEdit(null, new FormData())).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(updateStoreEditableFieldsMock).not.toHaveBeenCalled();
+    expect(upsertStoreChangeRequestMock).toHaveBeenCalledWith(
+      { ...EDITABLE_PERSON_STORE, status: "APPROVED" },
+      "user-1",
+      expect.objectContaining({ isActive: false }),
+      undefined,
+    );
   });
 });

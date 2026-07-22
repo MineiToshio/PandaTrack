@@ -98,6 +98,8 @@ export interface PublicStoreListingFilters {
   presenceTypes?: StorePresenceType[];
   receivesOrders?: boolean;
   hasStock?: boolean;
+  /** When true, closed (inactive) stores are included in the listing. Defaults to false (closed stores hidden). */
+  includeClosed?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -215,7 +217,12 @@ export async function findDuplicateCandidatesInCountry(
     .map((item) => item.store);
 }
 
-function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prisma.StoreWhereInput {
+/**
+ * Builds the Prisma `where` for the public store listing.
+ * By default it hides closed (inactive) stores; pass `includeClosed: true` to surface them.
+ * Exported for unit testing of the default-hidden behavior.
+ */
+export function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prisma.StoreWhereInput {
   const {
     nameQuery,
     productTypeKeys = [],
@@ -224,6 +231,7 @@ function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prism
     presenceTypes = [],
     receivesOrders = false,
     hasStock = false,
+    includeClosed = false,
   } = filters;
 
   const trimmedName = nameQuery?.trim();
@@ -236,6 +244,8 @@ function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prism
     visibility: "PUBLIC",
     status: { in: ["PENDING", "APPROVED"] },
     isPrivate: false,
+    // Closed stores are hidden by default; the listing exposes an opt-in "show closed" filter.
+    ...(!includeClosed && { isActive: true }),
     ...(trimmedName && {
       name: { contains: trimmedName, mode: "insensitive" },
     }),
@@ -477,7 +487,8 @@ export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> 
 /**
  * Public store listing with optional filters.
  * OR within same filter family (e.g. any of selected product types), AND across families.
- * Only PUBLIC, PENDING or APPROVED stores; isActive is not filtered so inactive stores can appear (detail page shows warning).
+ * Only PUBLIC, PENDING or APPROVED stores. Closed (inactive) stores are hidden by default and
+ * only included when `includeClosed` is set; they remain reachable by direct URL (detail page shows warning).
  */
 export async function getPublicStoresListing(
   filters: PublicStoreListingFilters,

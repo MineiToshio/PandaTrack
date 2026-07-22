@@ -8,6 +8,7 @@ import Label from "@/components/core/Label";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import { WizardStep } from "@/components/modules/WizardAccordion";
+import InlineSwitch from "../InlineSwitch";
 import type { StoreFormValuesSnapshot } from "./types";
 
 type StoreFormStepReviewProps = {
@@ -21,6 +22,8 @@ type StoreFormStepReviewProps = {
   onSubmit: () => void;
   comment: string;
   onCommentChange: (event: ChangeEvent<HTMLTextAreaElement>) => void;
+  isClosed: boolean;
+  onIsClosedChange: (next: boolean) => void;
 };
 
 export default function StoreFormStepReview({
@@ -34,6 +37,8 @@ export default function StoreFormStepReview({
   onSubmit,
   comment,
   onCommentChange,
+  isClosed,
+  onIsClosedChange,
 }: StoreFormStepReviewProps) {
   const tCreate = useTranslations("stores.create");
   const tCreateRedesign = useTranslations("stores.redesign.create");
@@ -149,6 +154,17 @@ export default function StoreFormStepReview({
       <div className="space-y-4">
         <Eyebrow as="p">{tCreateRedesign("summaryEyebrow")}</Eyebrow>
         {renderReviewSummary()}
+        {isEditMode && (
+          <div className="space-y-2 rounded-[var(--radius-lg)] p-4 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
+            <Label>{tEdit("closure.sectionLabel")}</Label>
+            <Typography size="xs" className="text-text-muted">
+              {tEdit("closure.help")}
+            </Typography>
+            <div className="pt-1">
+              <InlineSwitch label={tEdit("closure.label")} checked={isClosed} onChange={onIsClosedChange} />
+            </div>
+          </div>
+        )}
         {isChangeRequestMode && (
           <div>
             <Label htmlFor="store-change-request-comment">{tEdit("commentLabel")}</Label>

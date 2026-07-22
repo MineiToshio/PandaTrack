@@ -12,6 +12,7 @@ export function parseListingSearchParams(raw: Record<string, string | string[] |
   presenceTypes: StorePresenceType[];
   receivesOrders: boolean;
   hasStock: boolean;
+  includeClosed: boolean;
   page: number;
 } {
   const nameQuery = typeof raw.q === "string" ? raw.q.trim() || undefined : undefined;
@@ -23,6 +24,7 @@ export function parseListingSearchParams(raw: Record<string, string | string[] |
   );
   const receivesOrders = raw.receivesOrders === "true";
   const hasStock = raw.hasStock === "true";
+  const includeClosed = raw.includeClosed === "true";
   const page = parsePositiveInteger(raw.page);
   return {
     nameQuery,
@@ -32,6 +34,7 @@ export function parseListingSearchParams(raw: Record<string, string | string[] |
     presenceTypes,
     receivesOrders,
     hasStock,
+    includeClosed,
     page,
   };
 }

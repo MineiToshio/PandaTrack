@@ -14,6 +14,7 @@ const BASE_STORE: EditableStore = {
   hasStock: true,
   receivesOrders: true,
   isPrivate: false,
+  isActive: true,
   presenceTypes: ["ONLINE"],
   productTypeKeys: ["figures"],
   importCountryCodes: ["JP"],
@@ -40,5 +41,21 @@ describe("store governance helpers", () => {
 
     expect(merged.logoUrl).toBe(BASE_STORE.logoUrl);
     expect(merged.description).toBe("Updated description only");
+  });
+
+  it("mergeEditableStoreWithChangeRequest surfaces a pending closure so the form reopens as closed", () => {
+    const merged = mergeEditableStoreWithChangeRequest(BASE_STORE, {
+      isActive: false,
+    });
+
+    expect(merged.isActive).toBe(false);
+  });
+
+  it("mergeEditableStoreWithChangeRequest keeps the persisted activity state without a pending closure", () => {
+    const merged = mergeEditableStoreWithChangeRequest(BASE_STORE, {
+      description: "No activity change",
+    });
+
+    expect(merged.isActive).toBe(BASE_STORE.isActive);
   });
 });

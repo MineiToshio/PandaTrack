@@ -257,7 +257,12 @@ Categorías, Estado).
 Store **type and country are immutable** (BR-04-17). For a normal user editing an `APPROVED`
 store the submit produces a `StoreChangeRequest` rather than a direct mutation
 (FR-04-29, AC-04-13); `PENDING` stores are directly editable only by creator/admins
-(FR-04-30, AC-04-15).
+(FR-04-30, AC-04-15). In edit mode the review step ("Listo") adds an **"Estado de la tienda"**
+card carrying a single `InlineSwitch` — **"Marcar tienda como cerrada"** — on the shared
+elevated-surface treatment, with helper copy explaining that closed stores are hidden from
+the listing by default and drop out of the order-creation picker. The switch rides the same
+direct-edit-vs-change-request derivation as every other field (FR-04-37); it is absent from
+the create flow (a new store is always active).
 
 ---
 
@@ -368,7 +373,9 @@ The `FilterDrawer` (right panel on desktop, right-edge `Sheet` on mobile) overla
 which dims to 35% opacity with `pointer-events:none`. **It dismisses only via its close (X)
 control and Esc — never via outside-click** (FR-04-13). Sections in order: Categorías
 (pills), Presencia (pills), País (search + pills), Importa desde (search + pills), Otros
-(switches: Recibe pre-órdenes / Tiene stock / Envía a tu país). Footer: ghost `"Limpiar"` +
+(switches: Recibe pre-órdenes / Tiene stock / Mostrar tiendas cerradas). Enabling **"Mostrar
+tiendas cerradas"** opts closed (inactive) stores back into the results, which are hidden by
+default (FR-04-36); it surfaces as an applied-filter chip like the other switches. Footer: ghost `"Limpiar"` +
 primary `"Aplicar"`. Logic: **OR within a family, AND between families** (FR-04-14/15,
 AC-04-07). The `FilterTriggerButton` shows a tinted active state with an applied-filter badge
 count; free text does not increment that count.

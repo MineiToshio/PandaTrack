@@ -80,6 +80,8 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
   const initialIsPrivate = editInitial?.isPrivate ?? false;
   const initialHasStock = Boolean(editInitial?.hasStock);
   const initialReceivesOrders = Boolean(editInitial?.receivesOrders);
+  // A store is closed when its persisted (or pending) activity state is explicitly inactive.
+  const initialIsClosed = isEditMode ? editInitial?.isActive === false : false;
   const initialPresence = (editInitial?.presenceTypes as StorePresenceType[] | undefined) ?? [];
   const initialProductTypeKeys = editInitial?.productTypeKeys ?? [];
   const initialImportCountries = editInitial?.importCountries ?? [];
@@ -110,6 +112,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
   const [isPrivate, setIsPrivate] = useState<boolean>(initialIsPrivate);
   const [hasStock, setHasStock] = useState<boolean>(initialHasStock);
   const [receivesOrders, setReceivesOrders] = useState<boolean>(initialReceivesOrders);
+  const [isClosed, setIsClosed] = useState<boolean>(initialIsClosed);
   const [presenceTypes, setPresenceTypes] = useState<StorePresenceType[]>(initialPresence);
   const [selectedProductTypeKeys, setSelectedProductTypeKeys] = useState<string[]>(initialProductTypeKeys);
   const [selectedImportCountries, setSelectedImportCountries] = useState<string[]>(initialImportCountries);
@@ -492,6 +495,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
         {storeType === "PERSON" && isPrivate && <input type="hidden" name="isPrivate" value="on" />}
         {hasStock && <input type="hidden" name="hasStock" value="on" />}
         {receivesOrders && <input type="hidden" name="receivesOrders" value="on" />}
+        {isEditMode && isClosed && <input type="hidden" name="closed" value="on" />}
         {isEditMode && (
           <>
             <input type="hidden" name="slug" value={editStore?.slug ?? ""} />
@@ -615,6 +619,8 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
               onSubmit={triggerSubmit}
               comment={comment}
               onCommentChange={handleCommentChange}
+              isClosed={isClosed}
+              onIsClosedChange={setIsClosed}
             />
           </WizardAccordion>
 

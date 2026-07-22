@@ -71,6 +71,11 @@
     "commentLabel": "Change request context (optional)",
     "commentHelper": "Add concise context that helps moderators understand why this update is needed.",
     "immutableFieldsHelper": "Store type ({storeType}) and country ({country}) cannot be changed from this flow.",
+    "closure": {
+      "sectionLabel": "Store status",
+      "label": "Mark store as closed",
+      "help": "Turn this on if the store has closed or is no longer operating. Closed stores are hidden from the listing by default and can no longer be picked when creating an order, but stay reachable by their direct link with a warning."
+    },
     "direct": {
       "title": "Edit {storeName}",
       "description": "You can update this pending store directly because you are allowed to manage it.",
@@ -394,6 +399,7 @@
       "other": "Other",
       "receivesOrders": "Accepts pre-orders",
       "hasStock": "Has stock",
+      "showClosed": "Show closed stores",
       "presencePhysical": "Physical store",
       "presenceOnline": "Online store",
       "countrySearchPlaceholder": "Any country…",
