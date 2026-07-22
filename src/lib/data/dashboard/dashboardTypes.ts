@@ -225,6 +225,12 @@ export type TypeCount = {
   quantity: number;
 };
 
+/** Product quantity grouped by item delivery state (its progress from store to collector). */
+export type DeliveryStateCount = {
+  state: OrderItemDeliveryState;
+  quantity: number;
+};
+
 export type TopStore = {
   storeId: string;
   storeName: string;
@@ -242,6 +248,8 @@ export type CollectionBlock = {
   spendByType: TypeSpend[];
   spendByTypeIsPartial: boolean;
   productCountByType: TypeCount[];
+  /** Product quantity split by delivery state (how much of the collection has arrived). */
+  itemDeliveryStates: DeliveryStateCount[];
   topStores: TopStore[];
   topStoresIsPartial: boolean;
 };

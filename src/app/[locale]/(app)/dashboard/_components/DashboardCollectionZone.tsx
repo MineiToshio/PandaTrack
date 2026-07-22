@@ -7,8 +7,8 @@ import StoreAvatar from "@/components/core/StoreAvatar";
 import EmptyState from "@/components/modules/EmptyState";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import type { DashboardData } from "@/lib/data/dashboard/dashboardTypes";
-import type { OrderStatus } from "../../../../../../generated/prisma/client";
-import { formatDashboardMoney } from "../_utils/dashboardMoney";
+import type { OrderItemDeliveryState, OrderStatus } from "../../../../../../generated/prisma/client";
+import { formatDashboardMoney, formatDashboardMoneyCompact } from "../_utils/dashboardMoney";
 import DashboardDonut, { type DashboardDonutSlice } from "./DashboardDonut";
 import DashboardFxPartialNotice from "./DashboardFxPartialNotice";
 import DashboardZoneCard from "./DashboardZoneCard";
@@ -28,6 +28,17 @@ const COLLECTION_TITLE_ID = "dashboard-collection-title";
 const CATEGORY_COLORS = ["var(--accent)", "var(--accent-cool)", "var(--accent-warm)", "var(--success)"];
 const OTHER_COLOR = "color-mix(in oklab, var(--text-primary) 26%, transparent)";
 const MAX_CATEGORIES = CATEGORY_COLORS.length;
+
+/**
+ * Item delivery states in fulfillment order (arrived → still at the store), each with its donut
+ * colour. Drives the "products by delivery state" chart so the collector sees how much has landed.
+ */
+const DELIVERY_STATE_ORDER: Array<{ state: OrderItemDeliveryState; color: string }> = [
+  { state: "DELIVERED", color: "var(--success)" },
+  { state: "IN_TRANSIT", color: "var(--info)" },
+  { state: "ARRIVED_AT_STORE", color: "var(--accent-warm)" },
+  { state: "NONE", color: OTHER_COLOR },
+];
 
 /** Segment colour per order status. Cancelled orders never reach the bar. */
 const STATUS_COLORS: Record<OrderStatus, string> = {
@@ -66,13 +77,15 @@ function rankCategories(
 
 /** "Tu colección": status split, spend and product count by category, and top stores. */
 export default async function DashboardCollectionZone({ data, locale, storesHref }: DashboardCollectionZoneProps) {
-  const [t, tTypes, tStatus] = await Promise.all([
+  const [t, tTypes, tStatus, tStates] = await Promise.all([
     getTranslations({ locale, namespace: "dashboard" }),
     getTranslations({ locale, namespace: "storeProductTypes" }),
     getTranslations({ locale, namespace: "components.statusChip.orderStatus" }),
+    getTranslations({ locale, namespace: "components.statusChip.itemDeliveryState" }),
   ]);
   const { collection, paidVsOutstanding, baseCurrencyCode } = data;
   const money = (minor: number): string => formatDashboardMoney(minor, baseCurrencyCode, locale);
+  const moneyCompact = (minor: number): string => formatDashboardMoneyCompact(minor, baseCurrencyCode, locale);
 
   // Product type keys are a closed catalog; unknown or missing keys fall back to "uncategorized".
   const labelOf = (key: string | null): string => (key ? tTypes(key as "figures") : t("collection.uncategorized"));
@@ -140,6 +153,21 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
   );
   const maxCount = countCategories.reduce((max, category) => Math.max(max, category.value), 0);
 
+  // Delivery-state donut: fixed fulfillment order, empty states dropped, labels shared with StatusChip.
+  const stateEntries = DELIVERY_STATE_ORDER.map(({ state, color }) => ({
+    state,
+    color,
+    label: tStates(state),
+    value: collection.itemDeliveryStates.find((entry) => entry.state === state)?.quantity ?? 0,
+  })).filter((entry) => entry.value > 0);
+  const stateTotal = stateEntries.reduce((sum, entry) => sum + entry.value, 0);
+  const stateSlices: DashboardDonutSlice[] = stateEntries.map((entry, index) => ({
+    key: `${entry.state}-${index}`,
+    color: entry.color,
+    percent: stateTotal > 0 ? (entry.value / stateTotal) * 100 : 0,
+  }));
+  const stateSummary = stateEntries.map((entry) => `${entry.label} ${entry.value.toLocaleString("en")}`).join(", ");
+
   const topStoreMax = collection.topStores.reduce((max, store) => Math.max(max, store.committedMinor), 0);
   const isPartial = collection.spendByTypeIsPartial || collection.topStoresIsPartial;
 
@@ -188,7 +216,8 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
             ))}
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-6 min-[700px]:grid-cols-2 xl:grid-cols-[1.15fr_0.95fr_0.9fr] xl:gap-8">
+          {/* Row 1 — the two donuts: committed spend by category and products by delivery state. */}
+          <div className="mt-6 grid grid-cols-1 gap-6 min-[700px]:grid-cols-2 xl:gap-8">
             {/* Spend by category — money. */}
             <section aria-label={t("collection.spendLabel")}>
               <p className="mb-3 [font-size:12px] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
@@ -201,7 +230,8 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
                   <DashboardDonut
                     className="w-[140px] shrink-0"
                     slices={spendSlices}
-                    centerValue={money(spendTotal)}
+                    centerValue={moneyCompact(spendTotal)}
+                    centerTitle={money(spendTotal)}
                     centerLabel={t("collection.donutTotalLabel")}
                     ariaLabel={t("collection.spendAria", { summary: spendSummary })}
                   />
@@ -214,7 +244,9 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
                             className="size-2.5 shrink-0 rounded-[3px]"
                             style={{ background: category.color }}
                           />
-                          <span className="min-w-0 flex-1 truncate">{category.label}</span>
+                          <span className="min-w-0 flex-1 truncate" title={category.label}>
+                            {category.label}
+                          </span>
                           <span className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)] tabular-nums">
                             {money(category.value)}
                           </span>
@@ -245,6 +277,49 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
               )}
             </section>
 
+            {/* Products by delivery state — how much of the collection has arrived. */}
+            <section aria-label={t("collection.stateLabel")}>
+              <p className="mb-3 [font-size:12px] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
+                {t("collection.stateLabel")}
+              </p>
+              {stateTotal === 0 ? (
+                <p className="[font-size:var(--text-body)] [color:var(--text-muted)]">{t("collection.stateEmpty")}</p>
+              ) : (
+                <div className="flex flex-wrap items-center gap-5">
+                  <DashboardDonut
+                    className="w-[140px] shrink-0"
+                    slices={stateSlices}
+                    centerValue={stateTotal.toLocaleString("en")}
+                    centerLabel={t("collection.stateCenterLabel")}
+                    ariaLabel={t("collection.stateAria", { summary: stateSummary })}
+                  />
+                  <ul role="list" className="flex min-w-[9rem] flex-1 flex-col gap-1.5">
+                    {stateEntries.map((entry, index) => (
+                      <li
+                        key={`${entry.state}-${index}`}
+                        className="flex items-center gap-2 [font-size:12.5px] [color:var(--text-secondary)]"
+                      >
+                        <span
+                          aria-hidden
+                          className="size-2.5 shrink-0 rounded-[3px]"
+                          style={{ background: entry.color }}
+                        />
+                        <span className="min-w-0 flex-1 truncate" title={entry.label}>
+                          {entry.label}
+                        </span>
+                        <span className="[font-weight:var(--font-weight-semibold)] [color:var(--text-primary)] tabular-nums">
+                          {entry.value.toLocaleString("en")}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          </div>
+
+          {/* Row 2 — the two ranked bar lists: product count by category and top stores. */}
+          <div className="mt-6 grid grid-cols-1 gap-6 min-[700px]:grid-cols-2 xl:gap-8">
             {/* Product count by category. */}
             <section aria-label={t("collection.countLabel")}>
               <p className="mb-3 [font-size:12px] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase">
@@ -254,9 +329,11 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
                 {countCategories.map((category, index) => (
                   <li
                     key={`${category.key ?? "other"}-${index}`}
-                    className="grid grid-cols-[minmax(0,6rem)_1fr_auto] items-center gap-2.5 py-[7px]"
+                    className="grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)_auto] items-center gap-2.5 py-[7px]"
                   >
-                    <span className="truncate [font-size:12.5px] [color:var(--text-secondary)]">{category.label}</span>
+                    <span className="truncate [font-size:12.5px] [color:var(--text-secondary)]" title={category.label}>
+                      {category.label}
+                    </span>
                     <span className="h-2 overflow-hidden rounded-full [background:color-mix(in_oklab,var(--text-primary)_8%,transparent)]">
                       <span
                         className="block h-full rounded-full [background:var(--accent)]"
@@ -264,7 +341,7 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
                       />
                     </span>
                     <span className="[font-size:12.5px] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)] tabular-nums">
-                      {category.value.toLocaleString(locale)}
+                      {category.value.toLocaleString("en")}
                     </span>
                   </li>
                 ))}
@@ -288,11 +365,14 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
                       })}
                       data-ph-event={POSTHOG_EVENTS.DASHBOARD.TOP_STORE_CTA_CLICKED}
                       data-ph-props={JSON.stringify({ source: "top_stores", store_id: store.storeId })}
-                      className="-mx-1 grid grid-cols-[minmax(0,6rem)_1fr_auto] items-center gap-2.5 rounded-[var(--radius-md)] px-1 py-[7px] transition-colors hover:[background:color-mix(in_oklab,var(--text-primary)_4%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
+                      className="-mx-1 grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)_auto] items-center gap-2.5 rounded-[var(--radius-md)] px-1 py-[7px] transition-colors hover:[background:color-mix(in_oklab,var(--text-primary)_4%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
                     >
                       <span className="flex min-w-0 items-center gap-1.5">
                         <StoreAvatar store={{ name: store.storeName }} size={24} />
-                        <span className="truncate [font-size:12.5px] [color:var(--text-secondary)]">
+                        <span
+                          className="truncate [font-size:12.5px] [color:var(--text-secondary)]"
+                          title={store.storeName}
+                        >
                           {store.storeName}
                         </span>
                       </span>

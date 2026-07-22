@@ -596,6 +596,24 @@ describe("buildDashboardData - activity and collection", () => {
     });
   });
 
+  it("splits product quantity by item delivery state, ranked by quantity", () => {
+    const data = build([
+      makeOrder({
+        id: "states",
+        totalCost: 3000,
+        items: [
+          { quantity: 3, productTypeKey: "figure", unitPrice: 1000, deliveryState: "DELIVERED", deliveryDates: [] },
+          { quantity: 2, productTypeKey: "manga", unitPrice: 1000, deliveryState: "IN_TRANSIT", deliveryDates: [] },
+          { quantity: 1, productTypeKey: "book", unitPrice: 1000, deliveryState: "DELIVERED", deliveryDates: [] },
+        ],
+      }),
+    ]);
+    expect(data.collection.itemDeliveryStates).toEqual([
+      { state: "DELIVERED", quantity: 4 },
+      { state: "IN_TRANSIT", quantity: 2 },
+    ]);
+  });
+
   it("distributes an order's committed value across its items by line value", () => {
     const data = build([
       makeOrder({

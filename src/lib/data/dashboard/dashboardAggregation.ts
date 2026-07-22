@@ -38,6 +38,7 @@ import type {
   CashObligationsBlock,
   CollectionBlock,
   DashboardData,
+  DeliveryStateCount,
   DashboardDeliveryInput,
   DashboardOrderInput,
   DateRange,
@@ -468,6 +469,7 @@ function buildCollection(orders: DerivedOrder[], baseCurrencyCode: string | null
 
   const statusDistribution = buildStatusDistribution(orders);
   const productCountByType = buildProductCountByType(orders);
+  const itemDeliveryStates = buildItemDeliveryStates(orders);
   const spendByType = buildSpendByType(orders, baseCurrencyCode);
   const topStores = buildTopStores(orders, baseCurrencyCode);
 
@@ -479,6 +481,7 @@ function buildCollection(orders: DerivedOrder[], baseCurrencyCode: string | null
     spendByType: spendByType.entries,
     spendByTypeIsPartial: spendByType.isPartial,
     productCountByType,
+    itemDeliveryStates,
     topStores: topStores.entries,
     topStoresIsPartial: topStores.isPartial,
   };
@@ -501,6 +504,19 @@ function buildProductCountByType(orders: DerivedOrder[]): CollectionBlock["produ
   }
   return Array.from(counts.entries())
     .map(([productTypeKey, quantity]) => ({ productTypeKey, quantity }))
+    .sort((a, b) => b.quantity - a.quantity);
+}
+
+/** Product quantity split by item delivery state, so the dashboard can show how much has arrived. */
+function buildItemDeliveryStates(orders: DerivedOrder[]): DeliveryStateCount[] {
+  const counts = new Map<DeliveryStateCount["state"], number>();
+  for (const order of orders) {
+    for (const item of order.input.items) {
+      counts.set(item.deliveryState, (counts.get(item.deliveryState) ?? 0) + item.quantity);
+    }
+  }
+  return Array.from(counts.entries())
+    .map(([state, quantity]) => ({ state, quantity }))
     .sort((a, b) => b.quantity - a.quantity);
 }
 
