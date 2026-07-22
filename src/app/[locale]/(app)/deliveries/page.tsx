@@ -7,7 +7,7 @@ import { getSession } from "@/lib/auth/auth-server";
 import { prisma } from "@/lib/prisma";
 import { getDeliveriesList, getDeliveryStoreOptions } from "@/lib/data/deliveries/deliveryQueries";
 import { domainDateToIsoString } from "@/lib/domainDate";
-import { ROUTES } from "@/lib/constants";
+import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import {
   DEFAULT_DELIVERY_STATUS,
   DELIVERY_LIST_PAGE_SIZE,
@@ -19,6 +19,16 @@ import DeliveryListFilters from "./_components/DeliveryListFilters";
 import DeliveryListFilterChips from "./_components/DeliveryListFilterChips";
 import DeliveryListPagination from "./_components/DeliveryListPagination";
 import DeliveryListLoadingSkeleton from "./_components/DeliveryListLoadingSkeleton";
+import { ListExpandAllToggle, ListExpansionProvider } from "@/hooks/useListExpansion";
+
+/** Wires the shared expand/collapse-all state to the deliveries list's analytics events. */
+const DELIVERY_EXPANSION_EVENTS = {
+  cardExpanded: POSTHOG_EVENTS.DELIVERY.LIST_CARD_EXPANDED,
+  cardCollapsed: POSTHOG_EVENTS.DELIVERY.LIST_CARD_COLLAPSED,
+  expandedAll: POSTHOG_EVENTS.DELIVERY.LIST_EXPANDED_ALL,
+  collapsedAll: POSTHOG_EVENTS.DELIVERY.LIST_COLLAPSED_ALL,
+  idProp: "delivery_id",
+};
 
 type DeliveriesPageProps = {
   params: Promise<{ locale: string }>;
@@ -150,33 +160,47 @@ export default async function DeliveriesPage({ params, searchParams }: Deliverie
           initial={activeFilters}
         />
 
-        <DeliveryListFilterChips locale={locale} basePath={basePath} filters={activeFilters} storesById={storesById} />
-
-        {/* Data region — only this suspends, with a layout-matching (table desktop / cards mobile) skeleton. */}
-        <Suspense
-          key={fingerprint}
-          fallback={
-            <DeliveryListLoadingSkeleton
-              loadingLabel={tc("skeleton.loading")}
-              headers={{
-                delivery: t("list.table.headerDelivery"),
-                products: t("list.table.headerProducts"),
-                status: t("list.table.headerStatus"),
-                cost: t("list.table.headerCost"),
-                arrival: t("list.table.headerArrival"),
-              }}
+        {/* Filter chips + expand/collapse-all share one row (chips left, toggle pinned right). The
+            provider wraps this row and the data Suspense so the toggle — outside the boundary —
+            stays flicker-free while the list re-suspends. `empty:hidden` drops the row when there
+            are neither chips nor a toggle. */}
+        <ListExpansionProvider events={DELIVERY_EXPANSION_EVENTS}>
+          <div className="flex items-center gap-3 empty:hidden">
+            <DeliveryListFilterChips
+              locale={locale}
+              basePath={basePath}
+              filters={activeFilters}
+              storesById={storesById}
             />
-          }
-        >
-          <DeliveriesTableSection
-            locale={locale}
-            userId={userId}
-            parsed={parsed}
-            rawParams={rawParams}
-            basePath={basePath}
-            resetHref={resetHref}
-          />
-        </Suspense>
+            <ListExpandAllToggle className="ml-auto shrink-0" />
+          </div>
+
+          {/* Data region — only this suspends, with a layout-matching (table desktop / cards mobile) skeleton. */}
+          <Suspense
+            key={fingerprint}
+            fallback={
+              <DeliveryListLoadingSkeleton
+                loadingLabel={tc("skeleton.loading")}
+                headers={{
+                  delivery: t("list.table.headerDelivery"),
+                  products: t("list.table.headerProducts"),
+                  status: t("list.table.headerStatus"),
+                  cost: t("list.table.headerCost"),
+                  arrival: t("list.table.headerArrival"),
+                }}
+              />
+            }
+          >
+            <DeliveriesTableSection
+              locale={locale}
+              userId={userId}
+              parsed={parsed}
+              rawParams={rawParams}
+              basePath={basePath}
+              resetHref={resetHref}
+            />
+          </Suspense>
+        </ListExpansionProvider>
       </div>
     </div>
   );

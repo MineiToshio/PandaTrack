@@ -34,6 +34,7 @@ Implement the deliveries workspace list with expandable cards, summary metadata 
 - default sort: oldest to newest
 - empty, loading, and error states
 - link from each card into the delivery detail view (`WO-03`)
+- `Expand all` / `Collapse all` toggle above the list, driving a shared multi-open expansion set (desktop table included) for the current page + filter
 - PostHog analytics events for list view and card expansion
 - automated tests covering the list path (at minimum one E2E that lists existing deliveries, expands a card to show its products, and opens the delivery detail view)
 
@@ -58,6 +59,8 @@ Implement the deliveries workspace list with expandable cards, summary metadata 
 
 - The page hero exposes a visible primary `New delivery` action using the same collector-workspace listing pattern already established by orders and stores.
 - Card expansion prioritizes scannability over traceability in this slice: products render as a flat list, without grouping or secondary source-order metadata.
+- Multiple cards may be expanded simultaneously; the desktop table shares the same multi-open expansion set as the mobile cards, consistent with the orders list.
+- An `Expand all` / `Collapse all` toggle (`src/components/core/ExpandAllToggle.tsx`) sits in a thin right-aligned row above the list, below the filter chips, shown only when the current page + filter has at least two rows. Its label shows the next action — `Expandir todo` / `Expand all` until every row on the current page + filter is expanded, then `Colapsar todo` / `Collapse all`; a partially-expanded list still reads `Expandir todo`. `aria-pressed` carries the tri-state (`true`/`false`/`mixed`) for assistive tech. Toggling fires `deliveries_list_expanded_all` / `deliveries_list_collapsed_all` (see Analytics).
 
 ## Technical Notes
 
@@ -78,3 +81,4 @@ Implement the deliveries workspace list with expandable cards, summary metadata 
 
 - PostHog event when the deliveries list view is opened
 - PostHog event when a list card is expanded or collapsed
+- PostHog event when the `Expand all` toggle expands every row (`deliveries_list_expanded_all`) or collapses every row (`deliveries_list_collapsed_all`)

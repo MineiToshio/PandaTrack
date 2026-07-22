@@ -8,7 +8,7 @@ import { getSession } from "@/lib/auth/auth-server";
 import { prisma } from "@/lib/prisma";
 import { getOrdersList } from "@/lib/data/orders/orderQueries";
 import { getOrderableStores } from "@/lib/data/stores/storeQueries";
-import { ROUTES } from "@/lib/constants";
+import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import {
   DEFAULT_ORDER_LIST_SORT,
   ORDER_LIST_PAGE_SIZE,
@@ -22,6 +22,16 @@ import OrderListPagination from "./_components/OrderListPagination";
 import FxAnnouncer from "./_components/FxAnnouncer";
 import OrderListLoadingSkeleton from "./_components/OrderListLoadingSkeleton";
 import type { FxPendingOrder } from "./_components/FxReconciliationModal";
+import { ListExpandAllToggle, ListExpansionProvider } from "@/hooks/useListExpansion";
+
+/** Wires the shared expand/collapse-all state to the orders list's analytics events. */
+const ORDER_EXPANSION_EVENTS = {
+  cardExpanded: POSTHOG_EVENTS.ORDER.LIST_CARD_EXPANDED,
+  cardCollapsed: POSTHOG_EVENTS.ORDER.LIST_CARD_COLLAPSED,
+  expandedAll: POSTHOG_EVENTS.ORDER.LIST_EXPANDED_ALL,
+  collapsedAll: POSTHOG_EVENTS.ORDER.LIST_COLLAPSED_ALL,
+  idProp: "order_id",
+};
 
 type OrdersPageProps = {
   params: Promise<{ locale: string }>;
@@ -151,31 +161,40 @@ export default async function OrdersPage({ params, searchParams }: OrdersPagePro
           initial={activeFilters}
         />
 
-        <OrderListFilterChips locale={locale} basePath={basePath} filters={activeFilters} storesById={storesById} />
+        {/* Filter chips + expand/collapse-all share one row (chips left, toggle pinned right). The
+            provider wraps this row and the data Suspense so the toggle — outside the boundary —
+            stays flicker-free while the list re-suspends. `empty:hidden` drops the row when there
+            are neither chips nor a toggle. */}
+        <ListExpansionProvider events={ORDER_EXPANSION_EVENTS}>
+          <div className="flex items-center gap-3 empty:hidden">
+            <OrderListFilterChips locale={locale} basePath={basePath} filters={activeFilters} storesById={storesById} />
+            <ListExpandAllToggle className="ml-auto shrink-0" />
+          </div>
 
-        {/* Data region — only this suspends, with a layout-matching (table desktop / cards mobile) skeleton. */}
-        <Suspense
-          key={fingerprint}
-          fallback={
-            <OrderListLoadingSkeleton
-              loadingLabel={tc("skeleton.loading")}
-              headerOrder={t("table.headerOrder")}
-              headerProducts={t("table.headerProducts")}
-              headerStatus={t("table.headerStatus")}
-              headerTotal={t("table.headerTotal")}
-              headerProgress={t("table.headerProgress")}
+          {/* Data region — only this suspends, with a layout-matching (table desktop / cards mobile) skeleton. */}
+          <Suspense
+            key={fingerprint}
+            fallback={
+              <OrderListLoadingSkeleton
+                loadingLabel={tc("skeleton.loading")}
+                headerOrder={t("table.headerOrder")}
+                headerProducts={t("table.headerProducts")}
+                headerStatus={t("table.headerStatus")}
+                headerTotal={t("table.headerTotal")}
+                headerProgress={t("table.headerProgress")}
+              />
+            }
+          >
+            <OrdersDataSection
+              locale={locale}
+              userId={userId}
+              parsed={parsed}
+              rawParams={rawParams}
+              basePath={basePath}
+              resetHref={resetHref}
             />
-          }
-        >
-          <OrdersDataSection
-            locale={locale}
-            userId={userId}
-            parsed={parsed}
-            rawParams={rawParams}
-            basePath={basePath}
-            resetHref={resetHref}
-          />
-        </Suspense>
+          </Suspense>
+        </ListExpansionProvider>
       </div>
     </div>
   );

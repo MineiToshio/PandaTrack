@@ -42,6 +42,7 @@ WO-06 does not introduce any Prisma migration. It adds `getOrdersList` to the ex
 - `Atrasada` overdue warning chip and highlighted delivery range
 - `Impago` pill for `COMPLETED` orders with pending payment
 - Expandable cards revealing associated items (name, quantity, delivery state badge)
+- `Expand all` / `Collapse all` toggle above the list, driving a shared multi-open expansion set (desktop table included) for the current page + filter
 - Empty states for no orders and for no results matching active filters
 - Pagination with `?page=` and `pageSize = 30` (`ORDER_LIST_PAGE_SIZE`)
 - Back navigation from detail to list preserving filter state via `?returnTo=`
@@ -189,7 +190,16 @@ Items render in `position ASC` order. Delivery state chips (`orderItemDeliveryCh
 
 Individual payment records are not shown in the expanded card. The payment percentage and progress bar on the collapsed card are the list-level financial summary; full payment detail is available in the order detail view (WO-05).
 
-Multiple cards may be expanded simultaneously.
+Multiple cards may be expanded simultaneously. The desktop table shares the same multi-open expansion set as the mobile cards — it is no longer a single-open accordion — so several rows can stay open together on any viewport.
+
+### Expand all / Collapse all
+
+A single `ExpandAllToggle` (`src/components/core/ExpandAllToggle.tsx`) sits in a thin right-aligned row directly above the list, below the filter chips. It only renders when the current page + filter has at least two rows.
+
+- **Label shows the next action:** the button reads `Expandir todo` / `Expand all` until every row on the current page + filter is expanded, then switches to `Colapsar todo` / `Collapse all`. A partially-expanded list still reads `Expandir todo`.
+- **`aria-pressed` carries the honest tri-state** for assistive tech: `"true"` when all rows are expanded, `"false"` when none are, `"mixed"` when some are.
+- **Scope:** the toggle drives the same shared multi-open expansion set used by the individual row/card expand triggers, scoped to the current page + active filter; it does not affect other pages or filter states.
+- Expanding or collapsing all fires `orders_list_expanded_all` / `orders_list_collapsed_all` (see Analytics).
 
 ### Overdue signal
 
@@ -354,6 +364,8 @@ All event names are added to `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 | `orders_list_filters_reset`       | User clicks `Restablecer`              |
 | `orders_list_card_expanded`       | User expands an order card             |
 | `orders_list_card_collapsed`      | User collapses an order card           |
+| `orders_list_expanded_all`        | User clicks `Expandir todo`            |
+| `orders_list_collapsed_all`       | User clicks `Colapsar todo`            |
 | `orders_list_page_changed`        | User navigates to a different page     |
 
 ## Assumptions

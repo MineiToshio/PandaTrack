@@ -1,16 +1,14 @@
 "use client";
 
 import ViewTransitionLink from "@/components/core/ViewTransitionLink";
-import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
-import posthog from "posthog-js";
 import StatusChip from "@/components/core/StatusChip";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { formatAmountWithSymbol } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
-import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import { formatArrivalWindow, formatShortDate, getDeliveryOverdueDays } from "../_utils/deliveryDates";
 import type { DeliveriesListPageItem } from "@/lib/data/deliveries/deliveryQueries";
@@ -20,11 +18,13 @@ type DeliveryCardProps = {
   locale: string;
   today: Date;
   returnTo: string;
+  /** Expansion is owned by the list coordinator so "expand/collapse all" can drive every card. */
+  isExpanded: boolean;
+  onToggle: () => void;
 };
 
-export default function DeliveryCard({ delivery, locale, today, returnTo }: DeliveryCardProps) {
+export default function DeliveryCard({ delivery, locale, today, returnTo, isExpanded, onToggle }: DeliveryCardProps) {
   const t = useTranslations("deliveries");
-  const [isExpanded, setIsExpanded] = useState(false);
 
   const overdueDays = delivery.status === "IN_TRANSIT" ? getDeliveryOverdueDays(delivery.expectedArrivalTo, today) : 0;
   const detailHref = `/${locale}${ROUTES.deliveries}/${delivery.id}?returnTo=${encodeURIComponent(returnTo)}`;
@@ -43,13 +43,10 @@ export default function DeliveryCard({ delivery, locale, today, returnTo }: Deli
   }
 
   const handleToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+    // The card is overlaid by a full-bleed detail link; stop the toggle from navigating.
     event.preventDefault();
     event.stopPropagation();
-    const next = !isExpanded;
-    setIsExpanded(next);
-    posthog.capture(next ? POSTHOG_EVENTS.DELIVERY.LIST_CARD_EXPANDED : POSTHOG_EVENTS.DELIVERY.LIST_CARD_COLLAPSED, {
-      delivery_id: delivery.id,
-    });
+    onToggle();
   };
 
   return (
@@ -110,7 +107,13 @@ export default function DeliveryCard({ delivery, locale, today, returnTo }: Deli
         <ul
           id={`delivery-card-items-${delivery.id}`}
           role="list"
-          className="pointer-events-none relative flex flex-col"
+          className={cn(
+            // Recessed detail band (matches the desktop table drawer) so the items read as this
+            // delivery's interior, distinct from the summary above.
+            "pointer-events-none relative -mx-4 flex flex-col py-1 pr-4 pl-[calc(1rem-2px)]",
+            "[border-left:2px_solid_color-mix(in_oklch,var(--accent-cool)_55%,transparent)]",
+            "[background:color-mix(in_oklch,var(--text-primary)_3.5%,transparent)]",
+          )}
         >
           {delivery.items.map((item, idx) => {
             const ItemIcon = getStoreProductTypeIcon(item.productTypeKey ?? "");

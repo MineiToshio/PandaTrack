@@ -1,6 +1,5 @@
-import OrderCard from "./OrderCard";
 import OrderListEmptyState from "./OrderListEmptyState";
-import OrdersTable from "./OrdersTable";
+import OrderListInteractive from "./OrderListInteractive";
 import type { OrdersListPageItem } from "@/lib/data/orders/orderQueries";
 
 type OrderListContentProps = {
@@ -27,16 +26,5 @@ export default function OrderListContent({
     return <OrderListEmptyState locale={locale} variant={variant} resetHref={resetHref} />;
   }
 
-  return (
-    <div id="orders-list" className="flex flex-col gap-3">
-      <ul className="flex flex-col gap-3 lg:hidden" role="list">
-        {orders.map((order) => (
-          <li key={order.id}>
-            <OrderCard order={order} locale={locale} today={today} returnTo={returnTo} />
-          </li>
-        ))}
-      </ul>
-      <OrdersTable orders={orders} locale={locale} today={today} returnTo={returnTo} />
-    </div>
-  );
+  return <OrderListInteractive orders={orders} locale={locale} today={today} returnTo={returnTo} />;
 }

@@ -193,7 +193,7 @@ Delivery events are namespaced under `POSTHOG_EVENTS.DELIVERY` in `src/lib/const
 
 - create/edit flow: `delivery_create_flow_opened`, `delivery_created`, `delivery_edit_flow_opened`, `delivery_edited`
 - lifecycle: `delivery_marked_delivered`, `delivery_reopened`, `delivery_cancelled`, `delivery_deleted`, `delivery_note_saved`, `delivery_note_deleted`
-- list: `deliveries_list_filtered`, `deliveries_list_filter_chip_removed`, `deliveries_list_filters_reset`, `deliveries_list_card_expanded`, `deliveries_list_card_collapsed`
+- list: `deliveries_list_filtered`, `deliveries_list_filter_chip_removed`, `deliveries_list_filters_reset`, `deliveries_list_card_expanded`, `deliveries_list_card_collapsed`, `deliveries_list_expanded_all`, `deliveries_list_collapsed_all`
 - mobile detail chrome: `delivery_detail_sticky_primary_clicked`, `delivery_detail_actions_sheet_opened`
 
 Mutation events carry counts (product / affected-order / added / removed) but never the free-text note value.

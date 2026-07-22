@@ -130,6 +130,13 @@ Each row is `data-expandable`; the chevron expands an inline **flat** product li
 source-order grouping at list level — FR-08-32) ending in an `"Abrir detalle →"` link. The
 default sort is **oldest → newest** (`deliveryDate ASC`, FR-08-30).
 
+A thin right-aligned row above the list (below `orders-filter-chips`, shown only from 2 rows
+up) carries a single `Expand all` / `Collapse all` toggle (`ExpandAllToggle`), the same
+component and shared multi-open expansion mechanism used by the orders list — the desktop
+table is no longer a single-open accordion. Its label always shows the _next_ action
+(`"Expandir todo"` until every row is open, then `"Colapsar todo"`), while `aria-pressed`
+carries the true `true`/`false`/`mixed` state for assistive tech.
+
 ### 2.2 Delivery detail (`#s9-delivery-detail` and state variants)
 
 Two-column `detail-grid`: a main column + a **sticky aside** (ADR 0003 Decision 7).

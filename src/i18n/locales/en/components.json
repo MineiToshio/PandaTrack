@@ -118,5 +118,9 @@
   },
   "skeleton": {
     "loading": "Loading…"
+  },
+  "expandAllToggle": {
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all"
   }
 }

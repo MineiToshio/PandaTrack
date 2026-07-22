@@ -217,6 +217,13 @@ with item-icon + name + subtype + item-state + qty + price, then `"+ N más…"`
 divergence from `FR-05-28`'s original oldest-first, because collectors manage recent orders
 first).
 
+A thin right-aligned row above the list (below `orders-filter-chips`, shown only from 2 rows
+up) carries a single `Expand all` / `Collapse all` toggle (`ExpandAllToggle`) driving one
+shared multi-open expansion set for every row on the current page + filter — the desktop
+table is no longer a single-open accordion. Its label always shows the _next_ action
+(`"Expandir todo"` until every row is open, then `"Colapsar todo"`), while `aria-pressed`
+carries the true `true`/`false`/`mixed` state for assistive tech.
+
 The **FX banner** (`#s7-orders-list-fx-banner`, `role="status"`, `aria-live="polite"`,
 leading `refresh-cw` in `--accent`) sits between the chips and the list when
 `pendingFxCount > 0`; its tonal CTA opens the FX reconciliation modal (§5.6).
