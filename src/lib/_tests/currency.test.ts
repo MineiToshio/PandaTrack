@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   formatAmount,
   formatAmountSymbolOnly,
+  formatAmountSymbolOnlyCompact,
   formatAmountWithSymbol,
   formatCentsForInput,
+  formatCompactMajor,
   getCurrencyDecimals,
   isWholeMajorAmount,
   isZeroDecimalCurrency,
@@ -35,14 +37,49 @@ describe("currency exponent helpers", () => {
 });
 
 describe("formatAmount", () => {
-  it("omits decimals for zero-decimal currencies", () => {
-    expect(formatAmount(4300000, "CLP")).toBe("43000 CLP");
-    expect(formatAmount(1000000, "JPY")).toBe("10000 JPY");
+  it("omits decimals for zero-decimal currencies (with thousand grouping)", () => {
+    expect(formatAmount(4300000, "CLP")).toBe("43,000 CLP");
+    expect(formatAmount(1000000, "JPY")).toBe("10,000 JPY");
   });
 
   it("keeps two decimals for standard currencies", () => {
     expect(formatAmount(88850, "USD")).toBe("888.50 USD");
     expect(formatAmount(32000, "EUR")).toBe("320.00 EUR");
+  });
+
+  it("groups thousands with a comma and a period decimal", () => {
+    expect(formatAmount(123456789, "USD")).toBe("1,234,567.89 USD");
+    expect(formatAmount(2342725900, "PEN")).toBe("23,427,259.00 PEN");
+  });
+});
+
+describe("formatAmountSymbolOnlyCompact / formatCompactMajor", () => {
+  // Below the 1000-major threshold the exact value is kept; at/above it the value abbreviates so a
+  // constrained headline (e.g. a donut center) always fits, with the full value on hover.
+  it("keeps the exact value below 1000 major", () => {
+    expect(formatAmountSymbolOnlyCompact(88850, "USD")).toBe("$888.50");
+    expect(formatAmountSymbolOnlyCompact(99999, "USD")).toBe("$999.99");
+  });
+
+  it("abbreviates thousands and millions with a K/M suffix", () => {
+    // 234,272.59 major → 234.3K
+    expect(formatAmountSymbolOnlyCompact(23427259, "PEN")).toBe("S/ 234.3K");
+    // 1,234,567.89 major → 1.2M
+    expect(formatAmountSymbolOnlyCompact(123456789, "USD")).toBe("$1.2M");
+    // exactly 1000 major → 1K, no stray decimals
+    expect(formatAmountSymbolOnlyCompact(100000, "USD")).toBe("$1K");
+  });
+
+  it("abbreviates zero-decimal currencies the same way (compact ignores the exponent)", () => {
+    // 4,300,000 CLP major → 4.3M
+    expect(formatAmountSymbolOnlyCompact(430000000, "CLP")).toBe("$4.3M");
+  });
+
+  it("formatCompactMajor switches from full grouping to compact notation at the threshold", () => {
+    expect(formatCompactMajor(999, 2)).toBe("999.00");
+    expect(formatCompactMajor(1000, 2)).toBe("1K");
+    expect(formatCompactMajor(234272.59, 2)).toBe("234.3K");
+    expect(formatCompactMajor(1200000, 2)).toBe("1.2M");
   });
 });
 
@@ -70,10 +107,10 @@ describe("formatCentsForInput prefill round-trip", () => {
 describe("formatAmountSymbolOnly / formatAmountWithSymbol", () => {
   // The narrow symbol depends on the runtime ICU, so assert on the number layout (the actual
   // requirement) rather than the exact symbol glyph.
-  it("omits decimals for zero-decimal currencies", () => {
-    expect(formatAmountSymbolOnly(4300000, "CLP")).toMatch(/43000$/);
+  it("omits decimals for zero-decimal currencies (with thousand grouping)", () => {
+    expect(formatAmountSymbolOnly(4300000, "CLP")).toMatch(/43,000$/);
     expect(formatAmountSymbolOnly(4300000, "CLP")).not.toContain(".");
-    expect(formatAmountWithSymbol(4300000, "CLP")).toMatch(/43000 CLP$/);
+    expect(formatAmountWithSymbol(4300000, "CLP")).toMatch(/43,000 CLP$/);
   });
 
   it("keeps two decimals for standard currencies", () => {

@@ -4,22 +4,30 @@ This document is the source of truth for the PandaTrack **Velvet** visual founda
 
 ## Number and currency formatting
 
-**Always use a period (`.`) as the decimal separator.** Never use a comma.
-**Never use a thousand separator.** Display amounts as a single continuous number — `1240.00`, not `1,240.00` and not `1.240,00`.
+**Canonical number layout is locale-INDEPENDENT: period (`.`) decimal + comma (`,`) thousand
+separators** — `1,240.00`, never `1.240,00`. This is the US/Peru convention and applies regardless
+of the user's UI language. The one exception is **form inputs**, which stay ungrouped so the raw
+value round-trips through the parser (see "Decimal inputs" below).
 
 ### Monetary amounts
 
-- All monetary display goes through the helpers in `src/lib/currency.ts`:
-  - `formatAmount(minorUnits, currencyCode)` → `{value} {code}` (e.g. `888.50 USD`, `43000 CLP`)
-  - `formatAmountSymbolOnly(minorUnits, currencyCode, locale)` → `{symbol}{value}` (e.g. `$496.00`, `S/ 6765.00`)
+- All monetary **display** goes through the helpers in `src/lib/currency.ts`:
+  - `formatAmount(minorUnits, currencyCode)` → `{value} {code}` (e.g. `888.50 USD`, `43,000 CLP`)
+  - `formatAmountSymbolOnly(minorUnits, currencyCode, locale)` → `{symbol}{value}` (e.g. `$496.00`, `S/ 51,248.00`)
   - `formatAmountWithSymbol(...)` → `{symbol}{value} {code}` when the symbol is ambiguous (e.g. `$496.00 USD`)
-- All three helpers force `"en"` locale + `useGrouping: false` in `Intl.NumberFormat` so the decimal separator is always a period and there is never a thousand separator, regardless of the user's UI language.
+  - `formatAmountSymbolOnlyCompact(minorUnits, currencyCode, locale)` → an **abbreviated** headline for space-constrained containers (e.g. a donut center): `S/ 234.3K`, `$1.2M`. Below `1000` major it keeps the exact value (`$888.50`); at/above it, it uses K/M/B/T compact notation with at most one decimal, so the string width stays bounded and always fits. Always pair it with the full `formatAmountSymbolOnly` value as a hover `title` so the exact amount stays reachable. Use it **only** where full grouping would overflow — never for list rows, table cells, or KPI tiles, which show the full grouped value.
+- All three full-layout display helpers force `"en"` locale + `useGrouping: true` in `Intl.NumberFormat`, so the
+  decimal is always a period and thousands are grouped with commas, regardless of UI language. Large
+  aggregates (dashboard totals, store totals) therefore stay readable.
+- **Inputs are the exception:** `formatCentsForInput(minorUnits, currencyCode)` prefills form fields
+  **without** grouping (a comma would break the currency-aware parser). Counts shown next to money
+  (dashboard KPI tiles) use `Number#toLocaleString("en")` so they group the same way.
 - The `locale` argument to the symbol variants is used only to resolve the currency's narrow symbol (e.g. `S/` for PEN in `es`); it does **not** affect the number layout.
 
 #### Storage vs presentation (decimals per currency)
 
 - **Storage is uniform:** every money value is persisted as an integer minor unit scaled `×100` for **every** currency, so FX arithmetic stays internally consistent and no data migration is needed.
-- **Presentation follows the ISO 4217 exponent.** `getCurrencyDecimals(currencyCode)` returns the fraction-digit count each currency shows and accepts: `0` for zero-decimal currencies (CLP, JPY, KRW in the catalog) and `2` for the rest. The formatters above read this, so `43000 CLP` renders with no decimals while `888.50 USD` keeps two.
+- **Presentation follows the ISO 4217 exponent.** `getCurrencyDecimals(currencyCode)` returns the fraction-digit count each currency shows and accepts: `0` for zero-decimal currencies (CLP, JPY, KRW in the catalog) and `2` for the rest. The formatters above read this, so `43,000 CLP` renders with no decimals while `888.50 USD` keeps two.
 - A whole-major amount for a zero-decimal currency always lands on a multiple of `100` in minor units; `isWholeMajorAmount(minorUnits)` checks this and backs the input, parser, and server-validation rules below.
 
 ### Decimal inputs (prices, payment amounts)
