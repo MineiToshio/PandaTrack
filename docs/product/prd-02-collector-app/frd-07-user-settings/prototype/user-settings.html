@@ -1840,31 +1840,28 @@
       color: var(--accent);
       box-shadow: 0 1px 3px color-mix(in oklch, var(--text-primary) 10%, transparent);
     }
-    /* Currency picker list used in the currency modal + mobile sheet */
-    .s8-currency-list { display: flex; flex-direction: column; gap: 2px; margin-top: 14px; }
-    .s8-currency-row {
-      display: flex; align-items: center; gap: 10px;
+    /* Base-currency inline confirm select (Preferences pane) — replaces the old currency modal.
+       Changing the value stages a pending choice → Guardar/Cancelar; after saving, a conditional
+       reconcile link appears when foreign-currency orders remain (FR-07-20 · FR-07-32). */
+    .s8-currency-field { display: flex; flex-direction: column; gap: 8px; max-width: 320px; }
+    .s8-currency-select {
+      display: flex; align-items: center; gap: 8px;
       padding: 10px 12px; border-radius: 8px;
-      border: 1px solid var(--border); background: var(--surface);
-      cursor: pointer; transition: border-color 120ms, background 120ms;
+      border: 1px solid var(--border-strong); background: var(--surface-elevated);
+      font-size: 14px; color: var(--text-primary); cursor: pointer;
+      transition: border-color 150ms, box-shadow 150ms;
     }
-    .s8-currency-row:hover { border-color: var(--border-strong); background: color-mix(in oklch, var(--text-primary) 4%, transparent); }
-    .s8-currency-row.is-selected {
-      border-color: var(--accent);
-      background: color-mix(in oklch, var(--accent) 8%, transparent);
+    .s8-currency-select:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 18%, transparent); outline: none; }
+    .s8-currency-select > span { flex: 1; }
+    .s8-currency-select > i, .s8-currency-select > svg { width: 16px; height: 16px; color: var(--text-muted); flex-shrink: 0; }
+    .s8-currency-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .s8-currency-hint { font-size: 12px; color: var(--text-muted); }
+    .s8-currency-reconcile {
+      display: inline-flex; align-items: center; gap: 4px; width: fit-content;
+      font-size: 13px; font-weight: 500; color: var(--accent); text-decoration: none;
     }
-    .s8-currency-row .s8-cur-code { font-size: 14px; font-weight: 600; color: var(--text-primary); min-width: 36px; }
-    .s8-currency-row .s8-cur-name { flex: 1; font-size: 13px; color: var(--text-secondary); }
-    .s8-currency-row .s8-cur-check { color: var(--accent); width: 15px; height: 15px; flex-shrink: 0; }
-    /* Warning callout used inside modals */
-    .s8-modal-warning {
-      display: flex; gap: 8px; align-items: flex-start;
-      padding: 10px 12px; border-radius: 8px; margin-top: 14px;
-      background: color-mix(in oklch, var(--warning) 10%, var(--surface));
-      border: 1px solid color-mix(in oklch, var(--warning) 35%, transparent);
-      font-size: 12.5px; line-height: 1.5; color: var(--text-secondary);
-    }
-    .s8-modal-warning > i, .s8-modal-warning > svg { width: 14px; height: 14px; color: var(--warning); flex-shrink: 0; margin-top: 1px; }
+    .s8-currency-reconcile:hover { text-decoration: underline; }
+    .s8-currency-reconcile i, .s8-currency-reconcile svg { width: 14px; height: 14px; }
     /* Avatar upload drop zone */
     .s8-avatar-dropzone {
       border: 2px dashed var(--border-strong); border-radius: 12px;
@@ -3879,14 +3876,12 @@
         <a href="#s8-settings-modal-avatar-remove" data-screen="s8-settings-modal-avatar-remove">Settings modal avatar remove</a>
         <a href="#s8-settings-modal-email" data-screen="s8-settings-modal-email">Settings modal email</a>
         <a href="#s8-settings-modal-password" data-screen="s8-settings-modal-password">Settings modal password</a>
-        <a href="#s8-settings-modal-currency" data-screen="s8-settings-modal-currency">Settings modal currency</a>
         <a href="#s8-settings-profile-mobile" data-screen="s8-settings-profile-mobile">Settings profile mobile</a>
         <a href="#s8-settings-account-mobile" data-screen="s8-settings-account-mobile">Settings account mobile</a>
         <a href="#s8-settings-preferences-mobile" data-screen="s8-settings-preferences-mobile">Settings preferences mobile</a>
         <a href="#s8-settings-username-sheet-mobile" data-screen="s8-settings-username-sheet-mobile">Settings username sheet mobile</a>
         <a href="#s8-settings-displayname-sheet-mobile" data-screen="s8-settings-displayname-sheet-mobile">Settings displayname sheet mobile</a>
         <a href="#s8-settings-avatar-sheet-mobile" data-screen="s8-settings-avatar-sheet-mobile">Settings avatar sheet mobile</a>
-        <a href="#s8-settings-currency-sheet-mobile" data-screen="s8-settings-currency-sheet-mobile">Settings currency sheet mobile</a>
       </div>
     </div>
     <span class="demo-nav-current" id="demo-nav-current" aria-live="polite"></span>
@@ -4099,8 +4094,22 @@
               </div>
               <div class="settings-row">
                 <div class="lbl">Moneda base</div>
-                <div class="val num">USD<small>Aplicada a totales y resúmenes.</small></div>
-                <div class="actions"><button class="btn ghost sm">Cambiar</button></div>
+                <div class="val" style="grid-column: 2 / -1;">
+                  <div class="s8-currency-field">
+                    <div class="s8-currency-select" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-label="Moneda base" tabindex="0">
+                      <span class="num">USD — Dólar estadounidense</span>
+                      <i data-lucide="chevrons-up-down" aria-hidden="true"></i>
+                    </div>
+                    <!-- Estado con cambio pendiente: aparece al elegir otra moneda; sólo "Guardar" confirma (FR-07-20 · FR-07-32). -->
+                    <div class="s8-currency-confirm">
+                      <button class="btn primary sm">Guardar</button>
+                      <button class="btn ghost sm">Cancelar</button>
+                      <span class="s8-currency-hint">No convierte tus datos anteriores.</span>
+                    </div>
+                    <!-- Alternativa tras guardar (mutuamente excluyente con la fila de arriba): sólo si quedan pedidos en moneda extranjera con tasas desactualizadas. -->
+                    <a class="s8-currency-reconcile" href="#orders">Actualizar tasas · 3 pedidos <i data-lucide="arrow-right" aria-hidden="true"></i></a>
+                  </div>
+                </div>
               </div>
               <div class="settings-row">
                 <div class="lbl">Categorías favoritas</div>
@@ -4264,8 +4273,22 @@
               </div>
               <div class="settings-row">
                 <div class="lbl">Moneda base</div>
-                <div class="val num">USD<small>Aplicada a totales y resúmenes.</small></div>
-                <div class="actions"><button class="btn ghost sm">Cambiar</button></div>
+                <div class="val" style="grid-column:2/-1;">
+                  <div class="s8-currency-field">
+                    <div class="s8-currency-select" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-label="Moneda base" tabindex="0">
+                      <span class="num">USD — Dólar estadounidense</span>
+                      <i data-lucide="chevrons-up-down" aria-hidden="true"></i>
+                    </div>
+                    <!-- Estado con cambio pendiente: aparece al elegir otra moneda; sólo "Guardar" confirma (FR-07-20 · FR-07-32). -->
+                    <div class="s8-currency-confirm">
+                      <button class="btn primary sm">Guardar</button>
+                      <button class="btn ghost sm">Cancelar</button>
+                      <span class="s8-currency-hint">No convierte tus datos anteriores.</span>
+                    </div>
+                    <!-- Alternativa tras guardar (mutuamente excluyente con la fila de arriba): sólo si quedan pedidos en moneda extranjera con tasas desactualizadas. -->
+                    <a class="s8-currency-reconcile" href="#orders">Actualizar tasas · 3 pedidos <i data-lucide="arrow-right" aria-hidden="true"></i></a>
+                  </div>
+                </div>
               </div>
               <div class="settings-row">
                 <div class="lbl">Categorías favoritas</div>
@@ -4562,74 +4585,6 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════════
-     S8 · MODAL — CAMBIAR MONEDA BASE (FR-07-32 · WO-05)
-     ADR 0008-B · tone-warning · dos rutas explícitas
-     ═══════════════════════════════════════════════════════════════ -->
-<section id="s8-settings-modal-currency" class="screen" aria-labelledby="s8-modal-currency-title">
-  <div class="app-shell" style="pointer-events:none;user-select:none;opacity:0.3;">
-    <aside class="app-sidebar" aria-label="Navegación principal">
-      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
-      <a href="#settings" class="app-nav-link is-active"><i data-lucide="settings"></i>Ajustes</a>
-    </aside>
-    <div class="app-content"><div class="app-topbar"><p class="app-topbar-title">Ajustes</p></div></div>
-  </div>
-  <div class="m01-overlay" role="dialog" aria-modal="true" aria-labelledby="s8-modal-currency-title">
-    <div class="m01-modal-base m01b-modal" style="max-width:480px;">
-      <div class="m01b-header">
-        <div class="m01b-icon-circle tone-warning s8-modal-icon-gradient tone-warning" aria-hidden="true"><i data-lucide="coins"></i></div>
-        <div class="m01b-header-text">
-          <div class="m01b-header-row">
-            <h2 class="m01b-title" id="s8-modal-currency-title">Cambiar moneda base</h2>
-            <button class="m01b-close" aria-label="Cerrar"><i data-lucide="x"></i></button>
-          </div>
-          <p class="m01b-subtitle">Este cambio afecta tus reportes y totales</p>
-        </div>
-      </div>
-      <div class="m01b-body">
-        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 4px;line-height:1.65;">
-          Elegí la moneda en la que querés ver tus totales y resúmenes.
-        </p>
-        <!-- Currency picker -->
-        <div class="s8-currency-list" role="listbox" aria-label="Seleccionar moneda base">
-          <div class="s8-currency-row is-selected" role="option" aria-selected="true" tabindex="0">
-            <span class="s8-cur-code">USD</span>
-            <span class="s8-cur-name">Dólar estadounidense</span>
-            <i data-lucide="check" class="s8-cur-check"></i>
-          </div>
-          <div class="s8-currency-row" role="option" aria-selected="false" tabindex="0">
-            <span class="s8-cur-code">ARS</span>
-            <span class="s8-cur-name">Peso argentino</span>
-          </div>
-          <div class="s8-currency-row" role="option" aria-selected="false" tabindex="0">
-            <span class="s8-cur-code">EUR</span>
-            <span class="s8-cur-name">Euro</span>
-          </div>
-          <div class="s8-currency-row" role="option" aria-selected="false" tabindex="0">
-            <span class="s8-cur-code">JPY</span>
-            <span class="s8-cur-name">Yen japonés</span>
-          </div>
-          <div class="s8-currency-row" role="option" aria-selected="false" tabindex="0">
-            <span class="s8-cur-code">GBP</span>
-            <span class="s8-cur-name">Libra esterlina</span>
-          </div>
-        </div>
-        <!-- FR-07-32 warning -->
-        <div class="s8-modal-warning">
-          <i data-lucide="triangle-alert"></i>
-          <span>Cambiar la moneda base <strong>no convierte</strong> tus pedidos anteriores. Los totales históricos seguirán en su moneda original hasta que los actualicés manualmente.</span>
-        </div>
-      </div>
-      <!-- FR-07-32: dos CTAs explícitos — guardar con o sin actualizar tipos de cambio -->
-      <div class="m01b-footer" style="gap:8px;">
-        <button class="btn ghost" style="flex:0 0 auto;">Cancelar</button>
-        <button class="btn tonal" style="flex:1;justify-content:center;font-size:13px;">Guardar sin actualizar</button>
-        <button class="btn primary" style="flex:1.4;justify-content:center;font-size:13px;"><i data-lucide="refresh-cw"></i> Guardar y actualizar</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════════
      S8 · MÓVIL — AJUSTES · PERFIL (segmented control)
      ═══════════════════════════════════════════════════════════════ -->
 <section id="s8-settings-profile-mobile" class="screen" aria-labelledby="s8-mob-prof-title">
@@ -4773,8 +4728,22 @@
           </div>
           <div class="settings-row">
             <div class="lbl">Moneda base</div>
-            <div class="val num">USD<small>Totales y resúmenes.</small></div>
-            <div class="actions" style="margin-top:6px;"><button class="btn ghost sm">Cambiar</button></div>
+            <div class="val">
+              <div class="s8-currency-field" style="max-width:none;">
+                <div class="s8-currency-select" role="combobox" aria-expanded="false" aria-haspopup="listbox" aria-label="Moneda base" tabindex="0">
+                  <span class="num">USD — Dólar estadounidense</span>
+                  <i data-lucide="chevrons-up-down" aria-hidden="true"></i>
+                </div>
+                <!-- Estado con cambio pendiente: aparece al elegir otra moneda; sólo "Guardar" confirma (FR-07-20 · FR-07-32). -->
+                <div class="s8-currency-confirm">
+                  <button class="btn primary sm">Guardar</button>
+                  <button class="btn ghost sm">Cancelar</button>
+                  <span class="s8-currency-hint">No convierte tus datos anteriores.</span>
+                </div>
+                <!-- Alternativa tras guardar (mutuamente excluyente con la fila de arriba): sólo si quedan pedidos en moneda extranjera con tasas desactualizadas. -->
+                <a class="s8-currency-reconcile" href="#orders">Actualizar tasas · 3 pedidos <i data-lucide="arrow-right" aria-hidden="true"></i></a>
+              </div>
+            </div>
           </div>
           <div class="settings-row">
             <div class="lbl">Categorías favoritas</div>
@@ -4932,90 +4901,6 @@
     </div>
   </div>
 </section>
-
-<!-- ═══════════════════════════════════════════════════════════════
-     S8 · MÓVIL — SHEET · MONEDA BASE (FR-07-32 · WO-05)
-     Picker de moneda + two-path footer
-     ═══════════════════════════════════════════════════════════════ -->
-<section id="s8-settings-currency-sheet-mobile" class="screen" aria-labelledby="s8-mob-currency-sheet-title">
-  <div class="app-shell" style="--sidebar-width:0px;">
-    <div class="app-content" style="padding:0;">
-      <div class="app-topbar" style="padding:0 12px;position:sticky;top:0;z-index:20;background:var(--surface);opacity:0.4;pointer-events:none;">
-        <div class="app-topbar-left" style="gap:8px;">
-          <button class="topbar-iconbtn" style="pointer-events:none;"><i data-lucide="menu"></i></button>
-          <p class="app-topbar-title" style="font-size:14px;font-weight:600;">Ajustes</p>
-        </div>
-      </div>
-      <div style="padding:14px 16px;opacity:0.35;">
-        <div style="height:200px;background:var(--surface-elevated);border-radius:16px;"></div>
-      </div>
-    </div>
-    <div class="s7-mob-backdrop" aria-hidden="true"></div>
-    <div class="s7-mob-sheet" role="dialog" aria-modal="true" aria-labelledby="s8-mob-currency-sheet-title" style="max-height:88%;">
-      <div class="s7-mob-sheet-handle" aria-hidden="true"></div>
-      <div class="s7-mob-sheet-head">
-        <h3 class="s7-mob-sheet-title" id="s8-mob-currency-sheet-title">Cambiar moneda base</h3>
-        <button class="topbar-iconbtn" type="button" aria-label="Cerrar"><i data-lucide="x"></i></button>
-      </div>
-      <div class="s7-mob-sheet-body">
-        <p style="font-size:13px;color:var(--text-secondary);margin:0 0 12px;line-height:1.5;">
-          Elegí la moneda en la que querés ver tus totales y resúmenes.
-        </p>
-        <!-- Currency picker using s7-mob-picker-row pattern -->
-        <div class="s7-mob-picker-list" role="listbox" aria-label="Seleccionar moneda">
-          <button type="button" class="s7-mob-picker-row is-selected" role="option" aria-selected="true">
-            <div class="s7-mob-picker-icon"><i data-lucide="dollar-sign"></i></div>
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);">USD</div>
-              <div style="font-size:11px;color:var(--text-muted);">Dólar estadounidense</div>
-            </div>
-            <i data-lucide="check" class="s7-mob-picker-check"></i>
-          </button>
-          <button type="button" class="s7-mob-picker-row" role="option" aria-selected="false">
-            <div class="s7-mob-picker-icon"><i data-lucide="banknote"></i></div>
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);">ARS</div>
-              <div style="font-size:11px;color:var(--text-muted);">Peso argentino</div>
-            </div>
-          </button>
-          <button type="button" class="s7-mob-picker-row" role="option" aria-selected="false">
-            <div class="s7-mob-picker-icon"><i data-lucide="euro"></i></div>
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);">EUR</div>
-              <div style="font-size:11px;color:var(--text-muted);">Euro</div>
-            </div>
-          </button>
-          <button type="button" class="s7-mob-picker-row" role="option" aria-selected="false">
-            <div class="s7-mob-picker-icon"><i data-lucide="japanese-yen"></i></div>
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);">JPY</div>
-              <div style="font-size:11px;color:var(--text-muted);">Yen japonés</div>
-            </div>
-          </button>
-          <button type="button" class="s7-mob-picker-row" role="option" aria-selected="false">
-            <div class="s7-mob-picker-icon"><i data-lucide="pound-sterling"></i></div>
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:13.5px;font-weight:500;color:var(--text-primary);">GBP</div>
-              <div style="font-size:11px;color:var(--text-muted);">Libra esterlina</div>
-            </div>
-          </button>
-        </div>
-        <!-- FR-07-32 warning -->
-        <div class="s8-modal-warning" style="margin-top:14px;">
-          <i data-lucide="triangle-alert"></i>
-          <span>Cambiar la moneda base <strong>no convierte</strong> los datos anteriores. Los totales históricos quedan en su moneda original.</span>
-        </div>
-      </div>
-      <!-- FR-07-32: two-path footer — explicado en WO-05 -->
-      <div class="s7-mob-sheet-footer" style="flex-direction:column;gap:8px;">
-        <button type="button" class="btn primary" style="width:100%;justify-content:center;min-height:44px;"><i data-lucide="refresh-cw"></i> Guardar y actualizar tipos de cambio</button>
-        <button type="button" class="btn ghost" style="width:100%;justify-content:center;min-height:44px;font-size:13px;">Guardar sin actualizar</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-
 
 <!-- ═══════════════════════════════════════════════════════════════
      S9 · DETALLE DE ENTREGA — EN CAMINO (IN_TRANSIT)
@@ -5414,14 +5299,12 @@
     's8-settings-modal-avatar-remove':   'S8 · Modal · Eliminar foto',
     's8-settings-modal-email':           'S8 · Modal · Cambiar email',
     's8-settings-modal-password':        'S8 · Modal · Cambiar contraseña',
-    's8-settings-modal-currency':        'S8 · Modal · Moneda base (FR-07-32)',
     's8-settings-profile-mobile':        'S8 · Móvil · Perfil',
     's8-settings-account-mobile':        'S8 · Móvil · Cuenta',
     's8-settings-preferences-mobile':    'S8 · Móvil · Preferencias',
     's8-settings-username-sheet-mobile': 'S8 · Sheet · Usuario',
     's8-settings-displayname-sheet-mobile': 'S8 · Sheet · Nombre visible',
     's8-settings-avatar-sheet-mobile':   'S8 · Sheet · Foto de perfil',
-    's8-settings-currency-sheet-mobile': 'S8 · Sheet · Moneda base (FR-07-32)',
     's11-landing':               'S11 · Landing (go-live)',
     's11-sign-up':               'S11 · Crear cuenta',
     's11-sign-in':               'S11 · Iniciar sesión',
