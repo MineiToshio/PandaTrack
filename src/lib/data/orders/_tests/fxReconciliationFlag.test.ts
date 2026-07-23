@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
-    order: { updateMany: vi.fn(), count: vi.fn() },
+    order: { updateMany: vi.fn(), count: vi.fn(), findMany: vi.fn() },
     $transaction: vi.fn(),
   },
 }));
@@ -10,7 +10,7 @@ const { prismaMock } = vi.hoisted(() => ({
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
 import { flagOrdersForFxReconciliation } from "../orderMutations";
-import { countOrdersPendingFxReconciliation } from "../orderQueries";
+import { countOrdersPendingFxReconciliation, listOrdersPendingFxReconciliation } from "../orderQueries";
 
 describe("flagOrdersForFxReconciliation", () => {
   beforeEach(() => {
@@ -73,5 +73,53 @@ describe("countOrdersPendingFxReconciliation", () => {
         currencyCode: { not: "USD" },
       },
     });
+  });
+});
+
+describe("listOrdersPendingFxReconciliation", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns an empty list without querying when there is no base currency", async () => {
+    const result = await listOrdersPendingFxReconciliation("user-1", null);
+
+    expect(result).toEqual([]);
+    expect(prismaMock.order.findMany).not.toHaveBeenCalled();
+  });
+
+  it("lists flagged foreign-currency orders using the same predicate as the count", async () => {
+    const rows = [
+      { id: "order-1", humanReadableId: "PT-0001", totalCost: 5000, currencyCode: "JPY" },
+      { id: "order-2", humanReadableId: "PT-0002", totalCost: 3200, currencyCode: "JPY" },
+    ];
+    prismaMock.order.findMany.mockResolvedValue(rows);
+
+    const result = await listOrdersPendingFxReconciliation("user-1", "USD");
+
+    expect(result).toEqual(rows);
+    expect(prismaMock.order.findMany).toHaveBeenCalledWith({
+      where: {
+        userId: "user-1",
+        needsExchangeRateUpdate: true,
+        status: { not: "CANCELLED" },
+        currencyCode: { not: "USD" },
+      },
+      select: { id: true, humanReadableId: true, totalCost: true, currencyCode: true },
+      orderBy: { orderDate: "desc" },
+      take: 500,
+    });
+  });
+
+  it("queries with the identical `where` shape the count uses, so the banner and modal can never diverge", async () => {
+    prismaMock.order.count.mockResolvedValue(0);
+    prismaMock.order.findMany.mockResolvedValue([]);
+
+    await countOrdersPendingFxReconciliation("user-1", "USD");
+    await listOrdersPendingFxReconciliation("user-1", "USD");
+
+    const countWhere = prismaMock.order.count.mock.calls[0][0].where;
+    const listWhere = prismaMock.order.findMany.mock.calls[0][0].where;
+    expect(listWhere).toEqual(countWhere);
   });
 });

@@ -6,7 +6,7 @@ import { buildPageMetadata } from "@/lib/seo";
 import { domainDateToIsoString } from "@/lib/domainDate";
 import { getSession } from "@/lib/auth/auth-server";
 import { prisma } from "@/lib/prisma";
-import { getOrdersList } from "@/lib/data/orders/orderQueries";
+import { getOrdersList, listOrdersPendingFxReconciliation } from "@/lib/data/orders/orderQueries";
 import { getOrderableStores } from "@/lib/data/stores/storeQueries";
 import { DEFAULT_PAGE_SIZE, POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import {
@@ -74,10 +74,6 @@ function buildPerPageUrl(
   if (perPageSize !== DEFAULT_PAGE_SIZE) params.set("perPage", String(perPageSize));
   const qs = params.toString();
   return qs ? `${basePath}?${qs}` : basePath;
-}
-
-function startOfMonth(now: Date): Date {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
 
 function buildActiveFilters(parsed: ReturnType<typeof parseOrderListingParams>): OrderListActiveFilters {
@@ -283,26 +279,7 @@ async function OrdersDataSection({
 
   const fxPendingOrders: FxPendingOrder[] =
     listing.pendingFxCount > 0 && baseCurrencyCode
-      ? await prisma.order
-          .findMany({
-            where: {
-              userId,
-              status: { not: "CANCELLED" },
-              orderDate: { gte: startOfMonth(today) },
-              currencyCode: { not: baseCurrencyCode },
-            },
-            select: { id: true, humanReadableId: true, totalCost: true, currencyCode: true },
-            orderBy: { orderDate: "desc" },
-            take: 500,
-          })
-          .then((rows) =>
-            rows.map((row) => ({
-              id: row.id,
-              humanReadableId: row.humanReadableId,
-              totalCost: row.totalCost,
-              currencyCode: row.currencyCode,
-            })),
-          )
+      ? await listOrdersPendingFxReconciliation(userId, baseCurrencyCode)
       : [];
 
   return (

@@ -393,6 +393,32 @@ export async function countOrdersPendingFxReconciliation(
   return prisma.order.count({ where });
 }
 
+export type FxReconciliationOrder = {
+  id: string;
+  humanReadableId: string;
+  totalCost: number;
+  currencyCode: string;
+};
+
+/**
+ * Lists the same set of orders `countOrdersPendingFxReconciliation` counts, using the identical
+ * `buildFxPendingWhere` predicate. Feeds the "Actualizar tipos de cambio" modal so its rows can
+ * never diverge from the banner count. Returns `[]` when there is no base currency.
+ */
+export async function listOrdersPendingFxReconciliation(
+  userId: string,
+  baseCurrencyCode: string | null,
+): Promise<FxReconciliationOrder[]> {
+  const where = buildFxPendingWhere(userId, baseCurrencyCode);
+  if (!where) return [];
+  return prisma.order.findMany({
+    where,
+    select: { id: true, humanReadableId: true, totalCost: true, currencyCode: true },
+    orderBy: { orderDate: "desc" },
+    take: 500,
+  });
+}
+
 export async function getOrdersList(userId: string, filters: OrdersListPageFilters): Promise<OrdersListPageResult> {
   const {
     nameQuery,
