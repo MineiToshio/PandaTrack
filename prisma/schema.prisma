@@ -136,6 +136,14 @@ model User {
   /// first sign-in and kept in sync when the collector switches language. Null until
   /// captured, in which case the default locale applies.
   locale                      String?
+  /// Moderation role backing the better-auth admin plugin. Non-null with a `user` default so
+  /// every account resolves to a concrete role; only the plugin's server-gated endpoint elevates it.
+  role                        String                 @default("user")
+  /// better-auth admin plugin ban fields. No ban surface ships in this release; the columns exist
+  /// so the plugin's forward-compatible shape is present.
+  banned                      Boolean?
+  banReason                   String?
+  banExpires                  DateTime?
   createdAt                   DateTime
   updatedAt                   DateTime
   sessions                    Session[]
@@ -157,6 +165,7 @@ model User {
   pushSubscriptions           PushSubscription[]
   notificationDeliveries      NotificationDelivery[]
   notificationPreference      NotificationPreference?
+  adminAuditLogs              AdminAuditLog[]        @relation("AdminAuditLogActor")
 
   @@index([preferredCountryCode])
   @@map("user")
@@ -171,6 +180,8 @@ model Session {
   ipAddress String?
   userAgent String?
   userId    String
+  /// better-auth admin plugin: set to the acting admin's id during impersonation. No impersonation surface ships in this release.
+  impersonatedBy String?
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("session")
@@ -204,6 +215,26 @@ model Verification {
   updatedAt  DateTime?
 
   @@map("verification")
+}
+
+/// Append-only accountability trail for privileged moderation actions. Rows are written through
+/// `writeAuditEntry()` and never updated or deleted. Entries reference records by type and id and
+/// store no reporter identity or report free text; `action` and `targetType` are validated in code
+/// against stable constant vocabularies rather than database enums.
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String
+  reason     String?
+  createdAt  DateTime @default(now())
+  actor      User     @relation("AdminAuditLogActor", fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("admin_audit_log")
 }
 
 model Country {
