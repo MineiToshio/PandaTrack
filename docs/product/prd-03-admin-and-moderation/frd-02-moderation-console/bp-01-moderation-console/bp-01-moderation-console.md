@@ -39,9 +39,9 @@ This blueprint describes how to build the admin surface defined in [FRD-02](../f
 
 ### 1. Routing and gating layer
 
-- Primary source(s): new route group `src/app/[locale]/(admin)/`, its `layout.tsx`, and `src/proxy.ts`.
+- Primary source(s): new admin segment nested inside the collector app group at `src/app/[locale]/(app)/admin/`, its `layout.tsx`, and `src/proxy.ts`.
 - Current responsibilities: `proxy.ts` gates private routes by session presence only; no admin route exists.
-- Role: add the admin route group under `[locale]`; gate its layout with `requireAdmin()`; add the admin prefix to the proxy for an optimistic redirect only.
+- Role: add the admin segment nested inside the collector app group `(app)` so it inherits the App Shell chrome and session gate; gate its layout with `requireAdmin()`; add the admin prefix to the proxy for an optimistic redirect only. The URL stays `/[locale]/admin` because the group name is invisible in the path.
 
 ### 2. Localization layer
 
@@ -90,6 +90,7 @@ This blueprint describes how to build the admin surface defined in [FRD-02](../f
 ## Architectural Decisions Already Visible
 
 - The console lives under `[locale]` so it is localized and stays inside the i18n routing and the proxy matcher; a bare `/admin` is avoided.
+- The admin segment nests inside the collector app group (`src/app/[locale]/(app)/admin/`) rather than a sibling `(admin)` group, so it inherits `(app)/layout.tsx` (the collector session gate and the `AppLayout` chrome) and renders the Administracion navigation as a section of the same shell. A sibling group was rejected because it would not inherit `(app)/layout.tsx` and would force re-rendering the shell and duplicating the session and verification gates; the URL is identical either way because the group name is invisible in the path.
 - The inbox is a review-and-invoke surface: it renders per-type reviews and calls the FRD-04 server actions directly, but moderation mutations remain owned by the store domain, keeping one lifecycle per action rather than a duplicate control set. The distinction preserved is caller versus owner, not router versus actor.
 - The desktop presentation is a master-detail split (queue plus review pane) rather than full-width rows with an outbound link, so the wide-viewport space is used by the review itself; mobile keeps a list-then-detail navigation instead of forcing a side-by-side layout onto a narrow viewport.
 - The route group and i18n structure are chosen so a subdomain move and content-language routing are additive later.
@@ -115,7 +116,7 @@ No new ADR is required beyond the platform ADR recorded for FRD-01; this bluepri
 
 Execution order:
 
-1. `WO-01` (vertical): admin route group, `requireAdmin()` gating, proxy prefix, localized shell, and the `admin` i18n namespace. Establishes the space and its access boundary.
+1. `WO-01` (vertical): admin segment nested in the collector app group, `requireAdmin()` gating, proxy prefix, inherited localized shell with the role-gated Administracion section, and the `admin` i18n namespace. Establishes the space and its access boundary.
 2. `WO-02` (vertical): the moderation inbox, its server-only aggregate read model (feeding both the queue and the per-type review payloads), the master-detail presentation (desktop queue plus review pane with auto-preview, mobile stacked queue plus full-width detail), the five per-type review panels including the change-request drift variant, the shared removal-reason modal invocation, invoking the FRD-04 server actions from each review, and analytics.
 3. `WO-03` (vertical): the audit log viewer over `AdminAuditLog`, with baseline pagination and analytics.
 

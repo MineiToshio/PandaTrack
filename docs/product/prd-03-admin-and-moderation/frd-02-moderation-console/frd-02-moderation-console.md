@@ -230,6 +230,7 @@ These reviews invoke the moderation actions owned by PRD-02, [FRD-04](../../prd-
 ## Implementation Notes
 
 - The admin space is embedded in the same app and deployment, under `[locale]` so the console is localized; a bare non-localized `/admin` is avoided because it would escape both the i18n routing and the proxy matcher (`src/proxy.ts` matches `/` and `/(es|en)/:path*`).
+- The admin space nests inside the collector app route group (`src/app/[locale]/(app)/admin/`) so it inherits the App Shell chrome and session context instead of re-rendering them; the group name is invisible in the URL, which stays `/[locale]/admin`.
 - The inbox aggregate should be a dedicated server-only read model (for example `src/lib/data/admin/moderationQueueQueries.ts`) composed from the existing per-store governance reads, not a widening of the public `getStoreGovernanceSummary`; the same aggregate also feeds the per-type review payloads (`FR-02-14` through `FR-02-18`), so the queue row and its review read from one source.
 - The console gates in the admin layout with `requireAdmin()`; layout-level checks are acceptable here because the layout is the admin boundary, but every action reached from the inbox still authorizes on its own (those actions live in FRD-04).
 
