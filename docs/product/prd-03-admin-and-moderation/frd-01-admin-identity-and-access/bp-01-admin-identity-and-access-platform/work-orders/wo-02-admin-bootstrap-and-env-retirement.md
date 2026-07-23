@@ -6,7 +6,7 @@ title: Admin Bootstrap and Environment Allowlist Retirement
 status: ACTIVE
 parent: BP-01
 source_issue: 127
-implementation_status: PLANNED
+implementation_status: IN_PROGRESS
 last_updated: 2026-07-23
 ---
 
@@ -56,7 +56,7 @@ Relevant business rules:
   - `src/app/[locale]/(app)/stores/[slug]/page.tsx` uses `isAdmin` as a non-throwing boolean for private-store access (returns `notFound()`, not 403, per ADR 0009) and the `canDirectlyEdit` hint.
   - `src/app/[locale]/(app)/stores/[slug]/edit/page.tsx` uses `isAdmin` for the `canDirectlyEdit` hint and the page title.
 - Rewrite `getIsAdmin(session)` to read `session.user.role` via the existing `roleGrantsAdmin()` helper, keeping the boolean, non-throwing signature. Replacing the call sites with `requireAdmin()` is rejected: `requireAdmin()` throws, which suits privileged mutations but would break the page consumers that use `isAdmin` to compute UI hints and 404 visibility. This slice adds no new privileged action, so the store consumers keep their boolean pattern, now backed by the role.
-- `getIsAdmin()` and `roleGrantsAdmin()` must share a single role-membership check so the `admin` token is resolved identically in both paths.
+- `getIsAdmin()` and `roleGrantsAdmin()` must share a single role-membership check so the `admin` token is resolved identically in both paths. As built, the shared `roleGrantsAdmin()` check lives in a dependency-free `src/lib/auth/adminRole.ts` module (no server-only imports) so `getIsAdmin()`, `requireAdmin()`, and the bootstrap script all consume the same membership logic; the script cannot import `auth-server.ts` because it pulls in `next/headers`.
 - `requireAdmin()` (already reading `session.user.role`) remains the throwing server gate for genuinely privileged mutations (`FR-01-05`).
 - The bootstrap script imports `PrismaClient` from the generated client with the `PrismaPg` adapter and `dotenv/config`, exactly like the existing data scripts; it runs with `npx tsx` against the target environment's `DATABASE_URL`.
 
