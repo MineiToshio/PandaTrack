@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/styles";
 import { ChevronDown, Loader2, X } from "lucide-react";
-import { forwardRef, useId, useRef, useState, type ReactNode } from "react";
+import { forwardRef, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -74,6 +74,30 @@ const SIZE_CLASSES: Record<SelectSize, string> = {
   md: "h-11 px-[var(--space-4)] md:h-10 [font-size:var(--text-body)] [line-height:var(--text-body--line-height)]",
   lg: "h-12 px-[var(--space-5)] [font-size:var(--text-body-lg)] [line-height:var(--text-body-lg--line-height)]",
 };
+
+// ─── Listbox auto-placement (open up when there isn't room below) ───────────
+
+type ListboxPlacement = "down" | "up";
+
+/** Keep in sync with the listbox's `max-h-[14rem]` class below. */
+const LISTBOX_MAX_HEIGHT_PX = 224;
+/** Approximate rendered height of a single option row (py-2 + body line-height). */
+const OPTION_ITEM_HEIGHT_PX = 36;
+/** Approximate rendered height of a group heading row. */
+const GROUP_HEADING_HEIGHT_PX = 28;
+/** Listbox container padding (p-1, top + bottom). */
+const LISTBOX_PADDING_PX = 8;
+/** Matches the `mt-1`/`mb-1` gap between trigger and listbox. */
+const PLACEMENT_GAP_PX = 4;
+
+/** Rough listbox height used before the listbox itself has been measured (e.g. its first open frame). */
+function estimateListboxHeight(options: SelectOption[] | SelectGroup[]): number {
+  const grouped = isGrouped(options);
+  const itemCount = flatOptions(options).length;
+  const headingCount = grouped ? options.length : 0;
+  const estimated = itemCount * OPTION_ITEM_HEIGHT_PX + headingCount * GROUP_HEADING_HEIGHT_PX + LISTBOX_PADDING_PX;
+  return Math.min(estimated, LISTBOX_MAX_HEIGHT_PX);
+}
 
 // ─── Native select (legacy mode) ──────────────────────────────────────────────
 
@@ -157,8 +181,10 @@ function ControlledSelect({
 }: SelectControlledProps) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [placement, setPlacement] = useState<ListboxPlacement>("down");
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const listboxRef = useRef<HTMLUListElement>(null);
   const uid = useId();
   const triggerId = id ?? uid;
   const listboxId = `${triggerId}-listbox`;
@@ -245,6 +271,52 @@ function ControlledSelect({
       closeDropdown();
     }
   }
+
+  // Flip the listbox upward when there isn't enough room below the trigger and the space
+  // above is larger. Prefers the actual rendered listbox height (already mounted by the time
+  // this runs); falls back to an estimate from option count on the very first measurement.
+  const updatePlacement = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+
+    const triggerRect = trigger.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - triggerRect.bottom;
+    const spaceAbove = triggerRect.top;
+    const measuredHeight = listboxRef.current?.getBoundingClientRect().height;
+    const listboxHeight = measuredHeight && measuredHeight > 0 ? measuredHeight : estimateListboxHeight(options);
+    const requiredSpace = listboxHeight + PLACEMENT_GAP_PX;
+
+    setPlacement(spaceBelow < requiredSpace && spaceAbove > spaceBelow ? "up" : "down");
+  }, [options]);
+
+  // Measure synchronously before paint so the flip never flickers in the wrong direction.
+  useLayoutEffect(() => {
+    if (!open) return;
+    updatePlacement();
+  }, [open, updatePlacement]);
+
+  // Keep placement correct while open if the page scrolls or the viewport resizes.
+  useEffect(() => {
+    if (!open || typeof window === "undefined") return;
+
+    let frame = 0;
+    function scheduleUpdate() {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        frame = 0;
+        updatePlacement();
+      });
+    }
+
+    window.addEventListener("scroll", scheduleUpdate, true);
+    window.addEventListener("resize", scheduleUpdate);
+    return () => {
+      window.removeEventListener("scroll", scheduleUpdate, true);
+      window.removeEventListener("resize", scheduleUpdate);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [open, updatePlacement]);
 
   const triggerLabel = selectedOption
     ? renderValue
@@ -345,13 +417,15 @@ function ControlledSelect({
 
       {open && (
         <ul
+          ref={listboxRef}
           id={listboxId}
           role="listbox"
           aria-required={required ? "true" : undefined}
           tabIndex={-1}
           onKeyDown={handleListKeyDown}
           className={cn(
-            "absolute top-full left-0 z-[var(--z-popover)] mt-1 w-full",
+            "absolute left-0 z-[var(--z-popover)] w-full",
+            placement === "up" ? "bottom-full mb-1" : "top-full mt-1",
             "rounded-[var(--radius-lg)]",
             "bg-[var(--surface-elevated)] [border:1px_solid_var(--border)]",
             "[box-shadow:var(--elevation-2)]",
