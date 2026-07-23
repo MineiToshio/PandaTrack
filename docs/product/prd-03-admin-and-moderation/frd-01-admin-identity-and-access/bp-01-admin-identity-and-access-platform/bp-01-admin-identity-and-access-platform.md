@@ -8,7 +8,7 @@ parent: FRD-01
 children:
   - WO-01
   - WO-02
-last_updated: 2026-07-22
+last_updated: 2026-07-23
 implementation_status: PLANNED
 ---
 
@@ -49,15 +49,15 @@ This blueprint describes how to build the platform defined in [FRD-01](../frd-01
 
 ### 3. Authorization helper layer
 
-- Primary source(s): new helper in `src/lib/auth/` (for example `requireAdmin.ts`) built on `getSession()`.
+- Primary source(s): `requireAdmin()` co-located in `src/lib/auth/auth-server.ts`, built on `getSession()`.
 - Current responsibilities: none; authorization today is a boolean read inside individual store actions.
-- Role: expose `requireAdmin()` that resolves the session, verifies the role, and throws or redirects for non-administrators; become the mandatory gate cited by every privileged action across FRD-02 and FRD-04.
+- Role: expose `requireAdmin()` that resolves the session, verifies the role, throws a typed error for non-administrators before any work runs, and returns the resolved session/user when the check passes; become the mandatory gate cited by every privileged action across FRD-02 and FRD-04. Redirects belong to the route/page layer, not to this helper.
 
 ### 4. Audit layer
 
 - Primary source(s): new module `src/lib/data/admin/adminAuditMutations.ts` and `adminAuditQueries.ts`.
 - Current responsibilities: none.
-- Role: expose `writeAuditEntry({ actorId, action, targetType, targetId, reason? })` writing an append-only row; expose read queries consumed by the audit viewer (FRD-02, WO-03). No update or delete path.
+- Role: expose `writeAuditEntry({ actorId, action, targetType, targetId, reason? }, tx?)` writing an append-only row, where the optional Prisma transaction client lets a caller make the audit write atomic with its mutation; expose read queries consumed by the audit viewer (FRD-02, WO-03). No update or delete path.
 
 ### 5. Verification layer
 
@@ -80,7 +80,8 @@ This blueprint describes how to build the platform defined in [FRD-01](../frd-01
 
 ### Audit-write contract
 
-- Every privileged mutation calls `writeAuditEntry()` with a stable action key from the shared vocabulary (`store.approve`, `store.remove`, `report.resolve`, `report.dismiss`, `changeRequest.apply`, `changeRequest.reject`, `productType.approve`, `productType.reject`).
+- Every privileged mutation calls `writeAuditEntry()` with a stable action key from the shared vocabulary (`store.approve`, `store.remove`, `store.flag`, `store.unflag`, `report.resolve`, `report.dismiss`, `changeRequest.apply`, `changeRequest.reject`, `productType.approve`, `productType.reject`).
+- `action` and `targetType` are stored as strings validated against constant vocabularies in code, not database enums, so the vocabulary can stay stable without a migration per new key.
 - The entry stores identifiers plus an optional non-sensitive reason; it never stores report free text or reporter identity.
 
 ## Architectural Decisions Already Visible

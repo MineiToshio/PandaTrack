@@ -119,8 +119,9 @@ Adopt a single admin identity and access platform, owned by PRD-03 (FRD-01) and 
 ### Negative / tradeoffs
 
 - The plugin migration touches auth-core tables (`user`, `session`), which is higher-risk than a typical
-  domain migration and must follow the hand-written-migration workflow (`prisma-migration-workflow.mdc`)
-  with careful verification before the environment allowlist is removed; a bootstrap done wrong could
+  domain migration. Its changes are additive (columns with defaults plus one new table), so it follows
+  the standard `migrate dev` flow (`prisma-migration-workflow.mdc`), not the hand-written-SQL fallback,
+  but with careful verification before the environment allowlist is removed; a bootstrap done wrong could
   lock the product owner out of administration.
 - The plugin's privileged endpoints (role change, and the deferred ban and impersonation endpoints) are
   account-takeover grade threat surface by construction; `adminRoles` and the default role must stay
