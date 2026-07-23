@@ -254,7 +254,9 @@ State). The aside is a single **Resumen** card mirroring the live form (Tipo, No
 Categorías, Estado).
 
 - **Step 1 — Tipo** (`#s6-store-create-step-1-type`): a **three-way** `.big-choice` seller-type
-  picker (`ToggleChoiceGroup` tiles), each with a one-line helper — **Comercio** (`store`
+  picker (`ToggleChoiceGroup` tiles) — since the set is a fixed three, the tiles stack in one
+  column on mobile and expand to a single balanced row of three on desktop (`md+`), skipping the
+  default two-column tile grid that would orphan the third tile — each with a one-line helper — **Comercio** (`store`
   icon; "Un negocio que te vende sus productos"), **Persona** (`user` icon; "Un vendedor
   individual — amigo, scout, revendedor"), and **Proxy** (`truck` icon; "Un intermediario que
   compra por ti (p. ej. ZenMarket)"). Values map to `sellerType` `RETAILER` / `PERSON` /

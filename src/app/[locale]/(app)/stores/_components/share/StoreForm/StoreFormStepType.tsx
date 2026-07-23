@@ -76,6 +76,9 @@ export default function StoreFormStepType({
           <ToggleChoiceGroup
             mode="single"
             appearance="tile"
+            // Three fixed seller types: stack on mobile, then one balanced row on desktop.
+            // Skip the default two-column tile grid, which would orphan the third tile.
+            className="sm:grid-cols-1 md:grid-cols-3"
             options={sellerTypeOptions}
             value={sellerType}
             disabled={isEditMode}

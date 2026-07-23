@@ -1644,7 +1644,8 @@
     .section-card.gated .gated-body svg { width: 24px; height: 24px; color: var(--text-muted); }
 
     .big-choices { display: grid; grid-template-columns: 1fr; gap: 12px; }
-    @media (min-width: 768px) { .big-choices { grid-template-columns: 1fr 1fr; } }
+    /* Three fixed seller types: stack on mobile, one balanced row on desktop (no orphaned tile). */
+    @media (min-width: 768px) { .big-choices { grid-template-columns: repeat(3, 1fr); } }
     .big-choice {
       display: flex;
       gap: 14px;
