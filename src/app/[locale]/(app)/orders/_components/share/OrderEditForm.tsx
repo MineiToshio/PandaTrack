@@ -199,7 +199,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
   const [state, formAction, isPending] = useActionState(action, null);
 
   const currencyCode = initialOrder.currencyCode;
-  const currencyLabel = `${currencyCode} — ${tCurrencies(currencyCode as never)}`;
+  const currencyLabel = `${currencyCode} · ${tCurrencies(currencyCode as never)}`;
   const showExchangeRate = baseCurrencyCode !== null && currencyCode !== "" && currencyCode !== baseCurrencyCode;
 
   // Per-field dirty flags — drive both the `isDirty` aggregate (to enable Save) and the

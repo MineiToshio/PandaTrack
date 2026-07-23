@@ -101,7 +101,7 @@
     "stores": "Stores",
     "committedPartial": "{count, plural, one {Excludes # order with a pending exchange rate} other {Excludes # orders with a pending exchange rate}}.",
     "committedPartialHint": "Partial figure",
-    "committedMeaning": "The total value of all your active orders — what you've already paid plus what you still owe.",
+    "committedMeaning": "The total value of all your active orders: what you've already paid plus what you still owe.",
     "committedInfoHint": "What it means"
   },
   "lostOnCancelled": {

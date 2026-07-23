@@ -423,7 +423,7 @@
       "reportButton": "Reportar tienda",
       "pendingDisclaimer": "En revisión. Visible en la app; no indexable en buscadores.",
       "flaggedDisclaimer": "Tienda con reportes pendientes. Procede con precaución.",
-      "privateBadge": "Privada — solo tú la ves",
+      "privateBadge": "Privada, solo tú la ves",
       "presence": {
         "physical": "Tienda física",
         "online": "Tienda online"
@@ -489,7 +489,7 @@
         "retailerLabel": "Comercio",
         "retailerDesc": "Un negocio que te vende sus productos.",
         "personLabel": "Persona",
-        "personDesc": "Un vendedor individual — amigo, scout, revendedor.",
+        "personDesc": "Un vendedor individual: amigo, scout, revendedor.",
         "proxyLabel": "Proxy",
         "proxyDesc": "Un intermediario que compra por ti (p. ej. ZenMarket).",
         "privateLabel": "Perfil privado",
@@ -519,7 +519,7 @@
         "eyebrow": "PASO 4 · CANALES",
         "shortLabel": "Canales",
         "title": "¿Cómo se contacta?",
-        "helper": "Opcional — puedes agregar o editar esto después."
+        "helper": "Opcional. Puedes agregar o editar esto después."
       },
       "step5": {
         "eyebrow": "PASO 5 · LISTO",
@@ -598,7 +598,7 @@
       }
     },
     "toast": {
-      "created": "Tienda creada — pendiente de revisión",
+      "created": "Tienda creada, pendiente de revisión",
       "createdApproved": "Tienda creada"
     },
     "edit": {

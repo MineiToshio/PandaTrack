@@ -215,7 +215,7 @@ export default function SettingsPrefsPane({
     () =>
       ALLOWED_COLLECTOR_BASE_CURRENCY_CODES.map((code) => ({
         value: code,
-        label: `${code} — ${tCurrencies(code as never)}`,
+        label: `${code} · ${tCurrencies(code as never)}`,
       })).sort((a, b) => a.label.localeCompare(b.label, locale)),
     [locale, tCurrencies],
   );

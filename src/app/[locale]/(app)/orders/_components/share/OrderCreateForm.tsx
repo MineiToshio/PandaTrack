@@ -164,7 +164,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
     () =>
       (ALLOWED_COLLECTOR_BASE_CURRENCY_CODES as readonly string[]).map((code) => ({
         code,
-        label: `${code} — ${tCurrencies(code as never)}`,
+        label: `${code} · ${tCurrencies(code as never)}`,
       })),
     [tCurrencies],
   );
@@ -709,7 +709,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                     <dd className="font-medium">{selectedStore?.name ?? "—"}</dd>
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{tCreate("summaryCurrency")}</dt>
                     <dd className="font-medium">
-                      {currencyCode ? `${currencyCode} — ${tCurrencies(currencyCode as never)}` : "—"}
+                      {currencyCode ? `${currencyCode} · ${tCurrencies(currencyCode as never)}` : "—"}
                     </dd>
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{tCreate("summaryDate")}</dt>
                     <dd className="font-medium">{orderDateForReview}</dd>

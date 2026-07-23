@@ -423,7 +423,7 @@
       "reportButton": "Report store",
       "pendingDisclaimer": "Under review. Visible in the app; not indexed in search engines.",
       "flaggedDisclaimer": "Store with pending reports. Proceed with caution.",
-      "privateBadge": "Private — only you can see this",
+      "privateBadge": "Private, only you can see this",
       "presence": {
         "physical": "Physical store",
         "online": "Online store"
@@ -489,7 +489,7 @@
         "retailerLabel": "Retailer",
         "retailerDesc": "A business that sells you its own products.",
         "personLabel": "Individual",
-        "personDesc": "An individual seller — friend, scout, reseller.",
+        "personDesc": "An individual seller: friend, scout, reseller.",
         "proxyLabel": "Proxy",
         "proxyDesc": "An intermediary that buys on your behalf (e.g. ZenMarket).",
         "privateLabel": "Private profile",
@@ -519,7 +519,7 @@
         "eyebrow": "STEP 4 · CHANNELS",
         "shortLabel": "Channels",
         "title": "How to contact?",
-        "helper": "Optional — you can add or edit this later."
+        "helper": "Optional. You can add or edit this later."
       },
       "step5": {
         "eyebrow": "STEP 5 · DONE",
@@ -598,7 +598,7 @@
       }
     },
     "toast": {
-      "created": "Store created — pending review",
+      "created": "Store created, pending review",
       "createdApproved": "Store created"
     },
     "edit": {

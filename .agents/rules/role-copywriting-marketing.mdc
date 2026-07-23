@@ -46,11 +46,27 @@ This is the canonical tone and structure for non-blocking info banners aimed at 
 
 Why it works: benefit stated as a concrete outcome (no assumed knowledge of dashboard/budget/reports), warm voice ("we'll", "por ti", "solo"), task framed as light, CTA is verb + specific object.
 
+## Punctuation: the em dash is banned in copy
+
+**Never use the em dash (`—`, U+2014) in any user-facing string** — not in `es`, not in `en`, not in marketing copy, not in in-app microcopy, not in a hardcoded label built in a component (e.g. a `` `${code} — ${name}` `` separator). This is a hard rule, not a preference.
+
+Replace it with whatever the sentence actually needs:
+
+- an aside or appositive → parentheses or a pair of commas ("el ciclo (tienda, pedido, pago y entrega)");
+- two independent clauses → a period or a semicolon ("Opcional. Puedes editarlo después.");
+- a label + explanation → a colon ("Un vendedor individual: amigo, scout, revendedor.") or a comma ("Privada, solo tú la ves");
+- a code/name or inline separator → the middot `·` ("PEN · Sol peruano"), the app's canonical separator glyph;
+- a numeric range → the en dash `–` ("15 – 22 may"), which is correct and stays.
+
+**The one allowed use** is as a standalone null / empty placeholder: a value that is _exactly_ `—`, rendering an absent number, name, or date in a summary cell. There the em dash is the "nothing here" glyph, not punctuation.
+
+This is enforced automatically by `src/test/em-dash-copy-guard.test.ts`, which scans every string under `src/i18n/locales/**` and fails on any em dash that is not a standalone placeholder. Do not weaken or bypass the guard to land copy.
+
 ## Constraints
 
 - User-facing text and other locale-dependent content must live in locale files under `src/i18n/locales/`. Do not hardcode copy or locale-specific values in components.
 - Write both `es` and `en` for every in-app string. `es` is the primary locale.
-- Never use the em dash (—). Use a hyphen, colon, or rephrase.
+- Never use the em dash (—) in copy — see the dedicated section above; the only exception is a standalone `—` null placeholder.
 - Headlines and subheads should work in isolation; avoid depending on surrounding layout to convey meaning.
 - Target audience for the collector workspace: users roughly 18–25 years old who are comfortable with digital apps but should never feel like they are reading documentation or a system log.
 
