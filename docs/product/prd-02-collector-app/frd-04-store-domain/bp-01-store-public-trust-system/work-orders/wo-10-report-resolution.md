@@ -6,7 +6,7 @@ title: Report Resolution
 status: DRAFT
 parent: BP-01
 source_features: []
-source_issue: TBD
+source_issue: 132
 implementation_status: PLANNED
 last_updated: 2026-07-22
 ---

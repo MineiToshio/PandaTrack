@@ -5,6 +5,7 @@ slug: moderation-inbox
 title: Moderation Inbox
 status: DRAFT
 parent: BP-01
+source_issue: 129
 implementation_status: PLANNED
 last_updated: 2026-07-22
 ---

@@ -6,7 +6,7 @@ title: Product Type Request Approval
 status: DRAFT
 parent: BP-01
 source_features: []
-source_issue: TBD
+source_issue: 134
 implementation_status: PLANNED
 last_updated: 2026-07-22
 ---

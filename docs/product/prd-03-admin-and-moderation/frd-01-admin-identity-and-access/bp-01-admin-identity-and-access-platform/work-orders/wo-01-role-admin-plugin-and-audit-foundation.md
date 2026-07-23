@@ -5,6 +5,7 @@ slug: role-admin-plugin-and-audit-foundation
 title: Role, Admin Plugin, and Audit Foundation
 status: DRAFT
 parent: BP-01
+source_issue: 126
 implementation_status: PLANNED
 last_updated: 2026-07-22
 ---

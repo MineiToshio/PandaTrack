@@ -5,6 +5,7 @@ slug: admin-space-shell-and-gating
 title: Admin Space Shell and Gating
 status: DRAFT
 parent: BP-01
+source_issue: 128
 implementation_status: PLANNED
 last_updated: 2026-07-22
 ---

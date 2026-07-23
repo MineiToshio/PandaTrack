@@ -5,6 +5,7 @@ slug: admin-bootstrap-and-env-retirement
 title: Admin Bootstrap and Environment Allowlist Retirement
 status: DRAFT
 parent: BP-01
+source_issue: 127
 implementation_status: PLANNED
 last_updated: 2026-07-22
 ---

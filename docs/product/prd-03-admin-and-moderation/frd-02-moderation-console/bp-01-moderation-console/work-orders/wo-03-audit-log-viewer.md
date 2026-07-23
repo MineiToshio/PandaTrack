@@ -5,6 +5,7 @@ slug: audit-log-viewer
 title: Audit Log Viewer
 status: DRAFT
 parent: BP-01
+source_issue: 130
 implementation_status: PLANNED
 last_updated: 2026-07-22
 ---

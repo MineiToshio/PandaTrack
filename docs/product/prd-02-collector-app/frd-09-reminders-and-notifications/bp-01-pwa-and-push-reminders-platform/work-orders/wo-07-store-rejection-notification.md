@@ -6,6 +6,7 @@ title: Store Rejection Notification
 status: DRAFT
 parent: BP-01
 source_features: []
+source_issue: 135
 implementation_status: PLANNED
 last_updated: 2026-07-22
 ---
