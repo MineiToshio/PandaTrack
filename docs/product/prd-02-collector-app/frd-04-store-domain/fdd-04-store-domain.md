@@ -308,9 +308,12 @@ and the report-modal / governance-panel patterns already in the prototype: no ne
 families are introduced.
 
 **Admin moderation cluster on the aside** (`#s6-store-detail-admin-pending`,
-`#s6-store-detail-admin-flagged`). A `card elevated` **"Moderación"** panel takes the top slot
-of the sticky aside rail (above Resumen), carrying the same one-primary / ghost / destructive
-action grammar as every other Acciones card:
+`#s6-store-detail-admin-flagged`). A `card elevated` **"Moderación"** panel sits in the sticky
+aside rail, carrying the same one-primary / ghost / destructive action grammar as every other
+Acciones card. As shipped by [BP-01 · WO-09](bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md),
+the panel renders in the `DetailSidebar` **Gestión** slot (its dedicated governance/admin slot)
+rather than a new slot above Resumen, because the aside slot order is inviolable per
+[ADR 0003 · Decision 7](../../../design/decisions/0003-demo-decisions.md):
 
 - On a `PENDING` store: **"Aprobar tienda"** (primary, `check-circle`) → `APPROVED`;
   **"Marcar con reportes"** (ghost, `flag`) → `FLAGGED`; **"Retirar tienda"**

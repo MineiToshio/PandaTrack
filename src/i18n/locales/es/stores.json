@@ -127,7 +127,9 @@
   },
   "detail": {
     "pendingDisclaimerTitle": "Tienda en revisión",
-    "pendingDisclaimerMessage": "Esta tienda fue creada por la comunidad y aún no ha sido verificada por el equipo. Te recomendamos revisar la información con precaución.",
+    "pendingDisclaimerMessage": "Una persona de la comunidad creó esta tienda y el equipo la está revisando. Ya puedes usarla con normalidad; solo no aparece en buscadores hasta que se apruebe.",
+    "flaggedDisclaimerTitle": "Tienda con reportes",
+    "flaggedDisclaimerMessage": "Esta tienda acumula reportes con credibilidad. Sigue visible, pero revisa la información con atención antes de operar.",
     "governanceAlertTitle": "Reportes y sugerencias",
     "governanceAlertMessage": "Esta tienda tiene reportes o solicitudes de cambio registradas. Abre el resumen para revisar los aportes de la comunidad.",
     "inactiveWarningTitle": "Tienda sin actividad",
@@ -226,6 +228,46 @@
           "saveNoteFailed": "No se pudo guardar la nota. Inténtalo de nuevo."
         }
       }
+    }
+  },
+  "moderation": {
+    "panelTitle": "Moderación",
+    "approveCta": "Aprobar tienda",
+    "flagCta": "Marcar con reportes",
+    "unflagCta": "Quitar marca de reportes",
+    "removeCta": "Retirar tienda",
+    "toasts": {
+      "approved": "Tienda aprobada.",
+      "flagged": "Tienda marcada con reportes.",
+      "unflagged": "Se quitó la marca de reportes.",
+      "removed": "Tienda retirada."
+    },
+    "removeModal": {
+      "title": "Retirar tienda",
+      "description": "Elige el motivo. La tienda deja de ser pública, pero los pedidos que la referencian se conservan.",
+      "neutralGroupLabel": "Motivos neutrales",
+      "sanctionGroupLabel": "Motivo de sanción",
+      "noteLabel": "Nota interna (opcional)",
+      "noteHelper": "Solo visible para administradores en el registro de auditoría.",
+      "confirmCta": "Retirar tienda",
+      "cancelCta": "Cancelar",
+      "reasons": {
+        "DUPLICATE": "Tienda duplicada",
+        "CLOSED_OR_INACTIVE": "Tienda cerrada o inactiva",
+        "FALSE_INFO": "Información falsa o engañosa",
+        "ABUSE": "Abuso, estafa o fraude"
+      }
+    },
+    "errors": {
+      "unauthorized": "No tienes permisos para moderar esta tienda.",
+      "storeNotFound": "Esta tienda ya no está disponible.",
+      "invalidTransition": "Esta acción no es válida para el estado actual de la tienda.",
+      "removalReasonRequired": "Elige un motivo para retirar la tienda.",
+      "noteTooLong": "La nota interna es demasiado larga.",
+      "slugRequired": "No se pudo identificar la tienda.",
+      "localeRequired": "No se pudo identificar el idioma.",
+      "validation_failed": "Revisa el formulario e inténtalo otra vez.",
+      "moderationFailed": "No se pudo completar la acción. Inténtalo otra vez."
     }
   },
   "governance": {
@@ -422,7 +464,7 @@
       "noteSaved": "Guardada hace {time}",
       "reportButton": "Reportar tienda",
       "pendingDisclaimer": "En revisión. Visible en la app; no indexable en buscadores.",
-      "flaggedDisclaimer": "Tienda con reportes pendientes. Procede con precaución.",
+      "flaggedDisclaimer": "Esta tienda acumula reportes con credibilidad. Sigue visible, pero revisa la información con atención antes de operar.",
       "privateBadge": "Privada, solo tú la ves",
       "presence": {
         "physical": "Tienda física",

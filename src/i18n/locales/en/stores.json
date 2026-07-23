@@ -127,7 +127,9 @@
   },
   "detail": {
     "pendingDisclaimerTitle": "Store under review",
-    "pendingDisclaimerMessage": "This store was created by the community and has not been verified by our team yet. Please review the information with caution.",
+    "pendingDisclaimerMessage": "Someone from the community created this store and the team is reviewing it. You can already use it as normal; it just won't appear in search engines until it's approved.",
+    "flaggedDisclaimerTitle": "Store with reports",
+    "flaggedDisclaimerMessage": "This store has accumulated credible reports. It stays visible, but review its information carefully before dealing with it.",
     "governanceAlertTitle": "Reports and suggestions",
     "governanceAlertMessage": "This store has public reports or change requests. Open the summary to review the community input.",
     "inactiveWarningTitle": "Store no longer active",
@@ -226,6 +228,46 @@
           "saveNoteFailed": "Could not save the note. Please try again."
         }
       }
+    }
+  },
+  "moderation": {
+    "panelTitle": "Moderation",
+    "approveCta": "Approve store",
+    "flagCta": "Flag with reports",
+    "unflagCta": "Remove reports flag",
+    "removeCta": "Remove store",
+    "toasts": {
+      "approved": "Store approved.",
+      "flagged": "Store flagged with reports.",
+      "unflagged": "Reports flag removed.",
+      "removed": "Store removed."
+    },
+    "removeModal": {
+      "title": "Remove store",
+      "description": "Choose the reason. The store stops being public, but the orders that reference it are kept.",
+      "neutralGroupLabel": "Neutral reasons",
+      "sanctionGroupLabel": "Sanction reason",
+      "noteLabel": "Internal note (optional)",
+      "noteHelper": "Only visible to administrators in the audit log.",
+      "confirmCta": "Remove store",
+      "cancelCta": "Cancel",
+      "reasons": {
+        "DUPLICATE": "Duplicate store",
+        "CLOSED_OR_INACTIVE": "Closed or inactive store",
+        "FALSE_INFO": "False or misleading information",
+        "ABUSE": "Abuse, scam, or fraud"
+      }
+    },
+    "errors": {
+      "unauthorized": "You don't have permission to moderate this store.",
+      "storeNotFound": "This store is no longer available.",
+      "invalidTransition": "This action is not valid for the store's current state.",
+      "removalReasonRequired": "Choose a reason to remove the store.",
+      "noteTooLong": "The internal note is too long.",
+      "slugRequired": "The store could not be identified.",
+      "localeRequired": "The language could not be identified.",
+      "validation_failed": "Check the form and try again.",
+      "moderationFailed": "The action could not be completed. Try again."
     }
   },
   "governance": {
@@ -422,7 +464,7 @@
       "noteSaved": "Saved {time} ago",
       "reportButton": "Report store",
       "pendingDisclaimer": "Under review. Visible in the app; not indexed in search engines.",
-      "flaggedDisclaimer": "Store with pending reports. Proceed with caution.",
+      "flaggedDisclaimer": "This store has accumulated credible reports. It stays visible, but review its information carefully before dealing with it.",
       "privateBadge": "Private, only you can see this",
       "presence": {
         "physical": "Physical store",

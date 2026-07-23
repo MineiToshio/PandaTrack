@@ -18,6 +18,18 @@ export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = DEFAULT_PAGE_SIZE;
 const DEFAULT_PUBLIC_STORE_REVIEW_LIMIT = 10;
 
 /**
+ * Single source of truth for which store statuses are visible on every public surface (listing,
+ * search, detail, and the order-creation picker). `REJECTED` is excluded everywhere (tombstone),
+ * while `FLAGGED` is included: a flagged store stays publicly visible with a stronger warning; only
+ * removal hides. Encoding the rule once keeps the surfaces from diverging.
+ */
+export const PUBLIC_VISIBLE_STORE_STATUSES = [
+  "PENDING",
+  "APPROVED",
+  "FLAGGED",
+] as const satisfies readonly StoreStatus[];
+
+/**
  * Safety cap on rows fed into in-memory duplicate scoring. The query already pre-filters in SQL
  * on the persisted, normalized `searchName` column (`contains` on diacritic-stripped, lowercased
  * terms — both sides normalized, so "Pokémon" matches the query "pokemon" without accent issues),
@@ -244,7 +256,7 @@ export function buildPublicStoreListingWhere(filters: PublicStoreListingFilters)
 
   return {
     visibility: "PUBLIC",
-    status: { in: ["PENDING", "APPROVED"] },
+    status: { in: [...PUBLIC_VISIBLE_STORE_STATUSES] },
     isPrivate: false,
     // Closed stores are hidden by default; the listing exposes an opt-in "show closed" filter.
     ...(!includeClosed && { isActive: true }),
@@ -386,7 +398,7 @@ export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> 
     where: {
       slug,
       visibility: "PUBLIC",
-      status: { in: ["PENDING", "APPROVED"] },
+      status: { in: [...PUBLIC_VISIBLE_STORE_STATUSES] },
     },
     select: {
       id: true,
@@ -492,7 +504,8 @@ export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> 
 /**
  * Public store listing with optional filters.
  * OR within same filter family (e.g. any of selected product types), AND across families.
- * Only PUBLIC, PENDING or APPROVED stores. Closed (inactive) stores are hidden by default and
+ * Only PUBLIC stores in a publicly visible status (`PUBLIC_VISIBLE_STORE_STATUSES`); `REJECTED` is
+ * excluded and `FLAGGED` is included. Closed (inactive) stores are hidden by default and
  * only included when `includeClosed` is set; they remain reachable by direct URL (detail page shows warning).
  */
 export async function getPublicStoresListing(filters: PublicStoreListingFilters): Promise<PublicStoreListingItem[]> {
@@ -705,19 +718,20 @@ export async function getViewerOrderCountsByStoreSlugs(
 
 /**
  * Returns the catalog of stores a collector can place a pedido at: publicly visible
- * and active, in `PENDING` or `APPROVED` moderation status.
+ * and active, in any publicly visible moderation status (`PUBLIC_VISIBLE_STORE_STATUSES`).
  *
  * Stores are shared across users — a collector can buy from any catalog store, not
  * only the ones they created themselves. `PENDING` is included so that a user who
  * just registered a new store (which starts as `PENDING`) can immediately use it
- * without waiting for moderation. This matches the public store listing query
+ * without waiting for moderation. `FLAGGED` stays orderable too: the warning is
+ * informational, not a lock. This matches the public store listing query
  * in `getPublicStoresListingPage`.
  */
 export async function getOrderableStores(): Promise<UserStoreOption[]> {
   return prisma.store.findMany({
     where: {
       visibility: "PUBLIC",
-      status: { in: ["PENDING", "APPROVED"] },
+      status: { in: [...PUBLIC_VISIBLE_STORE_STATUSES] },
       isActive: true,
     },
     select: { id: true, name: true, countryCode: true },

@@ -31,7 +31,8 @@ export async function generateMetadata({ params }: StoreDetailPageProps) {
     locale,
     storeName: store.name,
     slug,
-    noindex: store.status === "PENDING",
+    // FLAGGED stores stay publicly visible but must not be indexed, like PENDING ones.
+    noindex: store.status === "PENDING" || store.status === "FLAGGED",
   });
 }
 
@@ -87,6 +88,7 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
       viewerActivity={viewerActivity}
       canAccessEditRoute={canAccessEditRoute}
       canDirectlyEdit={canDirectlyEdit}
+      canModerate={isAdmin}
       backHref={backHref}
       backOrderLabel={backOrderLabel}
     />

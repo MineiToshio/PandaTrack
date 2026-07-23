@@ -7,6 +7,7 @@ import type {
   SellerType,
 } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { PUBLIC_VISIBLE_STORE_STATUSES } from "./storeQueries";
 
 export type EditableContactChannelInput = {
   type: StoreContactChannelType;
@@ -198,7 +199,9 @@ export async function getEditableStoreBySlug(slug: string): Promise<EditableStor
     where: {
       slug,
       visibility: "PUBLIC",
-      status: { in: ["PENDING", "APPROVED"] },
+      // Publicly visible statuses only (`REJECTED` excluded, `FLAGGED` included) so a flagged store's
+      // detail still renders and can be reported / change-requested; the tombstone stays hidden.
+      status: { in: [...PUBLIC_VISIBLE_STORE_STATUSES] },
     },
     select: {
       id: true,

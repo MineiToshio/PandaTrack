@@ -55,6 +55,13 @@ enum StoreStatus {
   FLAGGED
 }
 
+enum StoreRemovalReason {
+  DUPLICATE
+  CLOSED_OR_INACTIVE
+  FALSE_INFO
+  ABUSE
+}
+
 enum StoreVisibility {
   PUBLIC
   PRIVATE
@@ -269,6 +276,7 @@ model Store {
   createdByUserId     String
   approvedByUserId    String?
   approvedAt          DateTime?
+  removalReason       StoreRemovalReason?
   createdAt           DateTime                  @default(now())
   updatedAt           DateTime                  @updatedAt
   country             Country                   @relation(fields: [countryCode], references: [code], onDelete: Restrict)

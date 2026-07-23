@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import {
+  AlertCircle,
   AtSign,
   CircleAlert,
   Clock,
@@ -17,6 +18,7 @@ import {
   Pencil,
   Phone,
   PlusCircle,
+  ShieldAlert,
   Star,
   Tags,
   Zap,
@@ -52,6 +54,7 @@ import StoreReviewsStateProvider from "./StoreReviewsStateProvider";
 import StoreNoteForm from "./StoreNoteForm";
 import StoreGovernanceSummaryModal from "./StoreGovernanceSummaryModal";
 import StoreReportModal from "./StoreReportModal";
+import StoreAdminModerationPanel from "./StoreAdminModerationPanel";
 
 type StoreDetailContentProps = {
   locale: string;
@@ -65,6 +68,8 @@ type StoreDetailContentProps = {
   viewerActivity: ViewerStoreActivity;
   canAccessEditRoute: boolean;
   canDirectlyEdit: boolean;
+  /** When true, the viewer is an administrator and the admin moderation panel is rendered. */
+  canModerate: boolean;
   backHref?: string | null;
   backOrderLabel?: string | null;
 };
@@ -110,6 +115,7 @@ export default function StoreDetailContent({
   viewerActivity,
   canAccessEditRoute,
   canDirectlyEdit,
+  canModerate,
   backHref,
   backOrderLabel,
 }: StoreDetailContentProps) {
@@ -120,6 +126,7 @@ export default function StoreDetailContent({
   const tChannelTypes = useTranslations("stores.contactChannelTypes");
 
   const isPendingReview = store.status === "PENDING";
+  const isFlagged = store.status === "FLAGGED";
   const isInactive = !store.isActive;
   const hasGovernanceSummaryContent =
     governanceSummary.totalReports > 0 ||
@@ -153,14 +160,25 @@ export default function StoreDetailContent({
           </AlertBanner>
         )}
 
-        {/* Status alerts (PENDING / inactive / governance) — tonal banner per demo `s6-store-detail-pending` */}
+        {/* Status alerts (PENDING / FLAGGED / inactive / governance) — tonal banner per demo
+            `s6-store-detail-pending`. The pending banner is a calm `info` tone: it frames the
+            store as under review, not as untrustworthy data (FR-04-50). */}
         {isPendingReview && (
           <AlertBanner
-            tone="warning"
+            tone="info"
             icon={<Clock size={16} aria-hidden="true" />}
             title={tStores("detail.pendingDisclaimerTitle")}
           >
             {tStores("detail.pendingDisclaimerMessage")}
+          </AlertBanner>
+        )}
+        {isFlagged && (
+          <AlertBanner
+            tone="warning"
+            icon={<AlertCircle size={16} aria-hidden="true" />}
+            title={tStores("detail.flaggedDisclaimerTitle")}
+          >
+            {tStores("detail.flaggedDisclaimerMessage")}
           </AlertBanner>
         )}
         {isInactive && (
@@ -362,11 +380,24 @@ export default function StoreDetailContent({
               acciones: tStores("redesign.detail.aside.acciones"),
               notaPrivada: tStores("redesign.detail.aside.notaPrivada"),
               notaPrivadaEyebrow: tStores("redesign.detail.aside.notaPrivada"),
+              governance: tStores("moderation.panelTitle"),
             }}
             accents={{
               resumen: { tone: "accent", icon: Package, topAccent: "accent" },
               acciones: { tone: "accent", icon: Zap, topAccent: "accent" },
+              governance: { tone: "warning", icon: ShieldAlert, topAccent: "warning" },
             }}
+            governance={
+              canModerate ? (
+                <StoreAdminModerationPanel
+                  key={store.status}
+                  locale={locale}
+                  storeSlug={store.slug}
+                  storeName={store.name}
+                  initialStatus={store.status as "PENDING" | "APPROVED" | "FLAGGED"}
+                />
+              ) : undefined
+            }
             resumen={
               viewerActivity.ordersTotal > 0 ? (
                 <>

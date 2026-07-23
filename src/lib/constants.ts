@@ -202,6 +202,10 @@ export const POSTHOG_EVENTS = {
     REVIEW_EDIT_CLICKED: "store_review_edit_clicked",
     REVIEW_DELETED: "store_review_deleted",
     NOTE_SAVED: "store_note_saved",
+    APPROVED: "store_approved",
+    REMOVED: "store_removed",
+    FLAGGED: "store_flagged",
+    UNFLAGGED: "store_unflagged",
   },
   NAVIGATION: {
     VIEW_TRANSITION_NAVIGATED: "view_transition_navigated",

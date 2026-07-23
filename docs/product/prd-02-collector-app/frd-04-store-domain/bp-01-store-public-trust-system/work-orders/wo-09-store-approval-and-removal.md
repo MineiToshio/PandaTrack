@@ -7,7 +7,7 @@ status: ACTIVE
 parent: BP-01
 source_features: []
 source_issue: 131
-implementation_status: PLANNED
+implementation_status: IN_PROGRESS
 last_updated: 2026-07-23
 ---
 
@@ -92,7 +92,8 @@ These decisions were resolved during the enrichment pass and are binding for imp
 - **LR1 · `flaggedDisclaimer` copy.** The existing `stores.json` `flaggedDisclaimer` value is a placeholder ("Tienda con reportes pendientes. Procede con precaucion."). Replace it with the FDD-04 §6.1 copy ("Tienda con reportes" title plus "Esta tienda acumula reportes con credibilidad. Sigue visible, pero revisa la informacion con atencion antes de operar.") in both locales, and wire it into the flagged banner.
 - **LR2 · `noindex` for `FLAGGED`.** Extend the `generateMetadata` noindex condition from `status === "PENDING"` to also cover `FLAGGED`.
 - **LR3 · Code placement.** Transitions live in a new `src/lib/data/stores/storeModerationMutations.ts` (importable by the future console); thin Server Actions under `src/app/[locale]/(app)/stores/[slug]/_actions/`; a new client component `StoreAdminModerationPanel` rendered in the detail aside when the viewer is an admin, with `page.tsx` passing a `canModerate` flag into `StoreDetailContent`.
-- **LR4 · UI composition.** A "Moderacion" card in the top aside slot for admins; approve / flag / unflag as inline optimistic buttons; "Retirar tienda" opens a canonical modal (ADR 0008 / M01-B) reusing the `ReportReasonPicker` pattern with two labeled `radiogroup`s (neutral reasons vs the single sanction reason) and an optional internal note that feeds the audit entry. Optimistic Confirmation: the modal closes synchronously on submit and the parent coordinates rollback plus toast.
+- **LR4 · UI composition.** A "Moderacion" card for admins; approve / flag / unflag as inline optimistic buttons; "Retirar tienda" opens a canonical modal (ADR 0008 / M01-B) reusing the `ReportReasonPicker` pattern with two labeled `radiogroup`s (neutral reasons vs the single sanction reason) and an optional internal note that feeds the audit entry. Optimistic Confirmation: the modal closes synchronously on submit and the parent coordinates rollback plus toast.
+  - **Implementation reconciliation (aside slot).** The card is rendered in the `DetailSidebar` **Gestion** slot (the component's dedicated governance/admin slot), not in a bespoke slot above Resumen. `DetailSidebar`'s slot order is inviolable per [ADR 0003 · Decision 7](../../../../../design/decisions/0003-demo-decisions.md) (Resumen · Acciones · Nota privada · Gestion), so the admin cluster uses the sanctioned Gestion slot rather than a new top slot. This supersedes the FDD-04 §2.4 "top slot of the sticky aside rail (above Resumen)" wording.
 
 ## Assumptions
 
