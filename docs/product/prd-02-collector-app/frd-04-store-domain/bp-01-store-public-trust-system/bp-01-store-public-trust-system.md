@@ -13,8 +13,13 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-04-27
-implementation_status: IMPLEMENTED
+  - WO-08
+  - WO-09
+  - WO-10
+  - WO-11
+  - WO-12
+last_updated: 2026-07-22
+implementation_status: PARTIALLY_IMPLEMENTED
 ---
 
 # BP-01 Store Public Trust System
@@ -292,7 +297,7 @@ Current logo-storage decision is already implemented:
 
 ## Risks and Constraints
 
-- Review, report, and change-request flows now exist in the store domain, but future work must not assume admin moderation actions or dashboards already exist.
+- Review, report, and change-request flows exist in the store domain. Admin moderation actions are now defined (see [Admin Moderation Extension](#admin-moderation-extension-planned)) but are planned, not shipped; work in that area must build on the [PRD-03 (FRD-01)](../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md) platform rather than assuming a standalone dashboard already exists.
 - Public governance summary reads must avoid exposing requester identity or raw free-text report details to non-admin viewers.
 - Change-request persistence must stay diff-based; snapshot-style writes would make moderation review noisier and increase accidental drift.
 - Pending-store direct edits and approved-store change requests now share the same route shape, so permission checks must stay explicit at the action and query boundaries.
@@ -315,3 +320,46 @@ Potential ADR candidates when the next store slice starts:
 - `work-orders/wo-05-store-reviews-and-private-notes.md`
 - `work-orders/wo-06-store-governance-flows.md`
 - `work-orders/wo-07-store-permissions-logo-and-hardening.md`
+- `work-orders/wo-08-seller-type-and-proxy.md`
+- `work-orders/wo-09-store-approval-and-removal.md`
+- `work-orders/wo-10-report-resolution.md`
+- `work-orders/wo-11-change-request-review.md`
+- `work-orders/wo-12-product-type-request-approval.md`
+
+## Admin Moderation Extension (planned)
+
+Work orders `WO-09` through `WO-12` add the admin inline moderation actions defined by [FRD-04 `FR-04-40` through `FR-04-51`](../frd-04-store-domain.md#admin-moderation-actions). They consume the administrator platform (durable `role`, `requireAdmin()`, `AdminAuditLog`, `writeAuditEntry()`) from [PRD-03 (FRD-01)](../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md), whose foundation is [FRD-01 · WO-01](../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/bp-01-admin-identity-and-access-platform/work-orders/wo-01-role-admin-plugin-and-audit-foundation.md). The moderation console at `/[locale]/admin` ([PRD-03 (FRD-02)](../../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md)) routes administrators to these inline controls; the controls themselves live here.
+
+Sequencing:
+
+- All four (`WO-09`, `WO-10`, `WO-11`, `WO-12`) depend on [FRD-01 · WO-01](../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/bp-01-admin-identity-and-access-platform/work-orders/wo-01-role-admin-plugin-and-audit-foundation.md) and cannot start before it.
+- `WO-09` (store approval and removal), `WO-10` (report resolution), and `WO-12` (product-type request approval) are parallelizable once that foundation exists.
+- `WO-11` (change-request review) follows `WO-09`, because its supersede-after-write sweep (`FR-04-48`, `BR-04-27`) must fire on the store-state moderation writes that `WO-09` introduces, not only on direct edits.
+
+### Store removal tombstone contract (planned)
+
+- store removal sets moderation state `REJECTED` and persists a new `Store.removalReason`; it is a tombstone, never a hard delete
+- a `REJECTED` store is excluded from every public read model: listing where-builder, search, `getStoreBySlug` (direct URL 404), and `getOrderableStores` (order picker)
+- the store row is retained so collector orders that reference it keep resolving; the order-side store surface reads the tombstone and shows a neutral message by default, with sanction wording only when `removalReason` is an abuse category
+- the rejection transition is where FRD-04 hands off to [FRD-09](../../frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md) for the creator notification; this blueprint owns the state and reason, not the notification delivery
+
+### Change-request rebase-apply contract (planned)
+
+- approving a `StoreChangeRequest` re-derives the diff against the store's current state at approval time (rebase), never blind-applying the stored diff
+- the apply runs in one transaction and includes relation fields: `contactChannels`, `addresses`, `productTypeKeys`, `importCountries`
+- `reviewedByUserId` and `reviewedAt` are persisted; `sellerType` and country stay immutable (`BR-04-17`)
+- drift (the current store state diverged from what the request was authored against) is detected and surfaced to the administrator, not silently applied
+- after any store write (direct edit, applied change request, or moderation transition), other open change requests on the same store whose diff is now empty are superseded (extends the author-side no-op discard, `BR-04-16`, to cross-request invalidation)
+
+### Admin data-access-layer contract (planned)
+
+- raw report free-text and reporter identity are exposed to administrators only, through a new server-only admin data-access module (for example under `src/lib/data/admin/`)
+- the public governance read model (`getStoreGovernanceSummary`) must not be widened to carry that data; the non-admin guarantee (`BR-04-13`) stays intact
+- this mirrors the moderation console's own secure-read requirement (`BR-02-03` of [PRD-03 (FRD-02)](../../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md))
+
+### Admin moderation gating contract (planned)
+
+- every moderation mutation (approve, remove, flag, unflag, resolve report, dismiss report, apply change request, reject change request, approve product-type request, reject product-type request) authorizes with `requireAdmin()` before any write
+- each writes an append-only `AdminAuditLog` entry via `writeAuditEntry()` using a stable action key (`store.approve`, `store.remove`, `store.flag`, `store.unflag`, `report.resolve`, `report.dismiss`, `changeRequest.apply`, `changeRequest.reject`, `productType.approve`, `productType.reject`)
+- audit entries store identifiers and an optional non-sensitive reason only, never raw report text or reporter identity
+- each user-visible action also emits its PostHog event alongside the audit entry (`store_approved`, `store_removed`, `store_flagged`, `store_unflagged`, `store_report_resolved`, `store_report_dismissed`, `store_change_request_applied`, `store_change_request_rejected`, `store_product_type_request_approved`, `store_product_type_request_rejected`)

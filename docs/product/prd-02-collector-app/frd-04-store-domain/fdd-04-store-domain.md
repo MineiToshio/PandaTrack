@@ -5,7 +5,7 @@ slug: store-domain
 title: Store Domain — Feature Design Document
 status: ACTIVE
 parent: FRD-04
-last_updated: 2026-06-16
+last_updated: 2026-07-22
 prototype: ./prototype/store-domain.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -34,6 +34,12 @@ demo_anchors:
   - "#s6-store-create-duplicate-detected"
   - "#s6-store-create-logo-upload"
   - "#s6-store-create-edit-mode"
+  - "#s6-store-detail-admin-pending"
+  - "#s6-store-detail-remove-modal"
+  - "#s6-store-detail-admin-flagged"
+  - "#s6-store-detail-admin-governance"
+  - "#s6-store-change-request-review"
+  - "#s6-store-change-request-review-drift"
 ---
 
 # FDD-04 · Store Domain — Feature Design Document
@@ -80,35 +86,47 @@ creator (FR-04-33/34, [ADR 0009](../../../design/decisions/0009-private-person-s
 
 ### Screens in this FDD
 
-| #   | Screen                             | Route                          | Prototype anchor                      |
-| --- | ---------------------------------- | ------------------------------ | ------------------------------------- |
-| 1   | Stores list (default)              | `/{locale}/stores`             | `#s6-stores-list-default` / `#stores` |
-| 2   | List · loading                     | `/{locale}/stores`             | `#s6-stores-list-loading`             |
-| 3   | List · empty (filtered)            | `/{locale}/stores?…`           | `#s6-stores-list-empty`               |
-| 4   | List · FilterDrawer open           | `/{locale}/stores?…`           | `#s6-stores-list-filters-open`        |
-| 5   | Store detail · base                | `/{locale}/stores/[slug]`      | `#store-detail`                       |
-| 6   | Detail · `APPROVED` owner view     | `/{locale}/stores/[slug]`      | `#s6-store-detail-published-viewer`   |
-| 7   | Detail · `APPROVED` other user     | `/{locale}/stores/[slug]`      | `#s6-store-detail-other-user`         |
-| 8   | Detail · `PENDING` + disclaimer    | `/{locale}/stores/[slug]`      | `#s6-store-detail-pending`            |
-| 9   | Detail · `PERSON` (reduced fields) | `/{locale}/stores/[slug]`      | `#s6-store-detail-person`             |
-| 10  | Detail · report modal              | (detail overlay)               | `#s6-store-detail-report-modal`       |
-| 11  | Detail · reports & suggestions     | (detail section)               | `#s6-store-detail-reports-summary`    |
-| 12  | Create wizard · base               | `/{locale}/stores/new`         | `#store-create`                       |
-| 13  | Create · step 1 (type)             | `/{locale}/stores/new`         | `#s6-store-create-step-1-type`        |
-| 14  | Create · step 2 (identity)         | `/{locale}/stores/new`         | `#s6-store-create-step-2-identity`    |
-| 15  | Create · step 2 (logo set)         | `/{locale}/stores/new`         | `#s6-store-create-step-2-logo-set`    |
-| 16  | Create · step 2 (name error)       | `/{locale}/stores/new`         | `#s6-store-create-step-2-error`       |
-| 17  | Create · step 3 (categories)       | `/{locale}/stores/new`         | `#s6-store-create-step-3-categories`  |
-| 18  | Create · category request modal    | (wizard overlay)               | `#s6-store-create-category-request`   |
-| 19  | Create · step 4 (channels)         | `/{locale}/stores/new`         | `#s6-store-create-step-4-channels`    |
-| 20  | Create · step 5 (review)           | `/{locale}/stores/new`         | `#s6-store-create-step-5-review`      |
-| 21  | Create · existing-store preview    | (wizard overlay)               | `#s6-store-create-step-5-preview`     |
-| 22  | Create · duplicate detected        | (wizard overlay/inline)        | `#s6-store-create-duplicate-detected` |
-| 23  | Create · logo crop & confirm       | (wizard overlay)               | `#s6-store-create-logo-upload`        |
-| 24  | Edit store                         | `/{locale}/stores/[slug]/edit` | `#s6-store-create-edit-mode`          |
+| #   | Screen                             | Route                          | Prototype anchor                        |
+| --- | ---------------------------------- | ------------------------------ | --------------------------------------- |
+| 1   | Stores list (default)              | `/{locale}/stores`             | `#s6-stores-list-default` / `#stores`   |
+| 2   | List · loading                     | `/{locale}/stores`             | `#s6-stores-list-loading`               |
+| 3   | List · empty (filtered)            | `/{locale}/stores?…`           | `#s6-stores-list-empty`                 |
+| 4   | List · FilterDrawer open           | `/{locale}/stores?…`           | `#s6-stores-list-filters-open`          |
+| 5   | Store detail · base                | `/{locale}/stores/[slug]`      | `#store-detail`                         |
+| 6   | Detail · `APPROVED` owner view     | `/{locale}/stores/[slug]`      | `#s6-store-detail-published-viewer`     |
+| 7   | Detail · `APPROVED` other user     | `/{locale}/stores/[slug]`      | `#s6-store-detail-other-user`           |
+| 8   | Detail · `PENDING` + disclaimer    | `/{locale}/stores/[slug]`      | `#s6-store-detail-pending`              |
+| 9   | Detail · `PERSON` (reduced fields) | `/{locale}/stores/[slug]`      | `#s6-store-detail-person`               |
+| 10  | Detail · report modal              | (detail overlay)               | `#s6-store-detail-report-modal`         |
+| 11  | Detail · reports & suggestions     | (detail section)               | `#s6-store-detail-reports-summary`      |
+| 12  | Create wizard · base               | `/{locale}/stores/new`         | `#store-create`                         |
+| 13  | Create · step 1 (type)             | `/{locale}/stores/new`         | `#s6-store-create-step-1-type`          |
+| 14  | Create · step 2 (identity)         | `/{locale}/stores/new`         | `#s6-store-create-step-2-identity`      |
+| 15  | Create · step 2 (logo set)         | `/{locale}/stores/new`         | `#s6-store-create-step-2-logo-set`      |
+| 16  | Create · step 2 (name error)       | `/{locale}/stores/new`         | `#s6-store-create-step-2-error`         |
+| 17  | Create · step 3 (categories)       | `/{locale}/stores/new`         | `#s6-store-create-step-3-categories`    |
+| 18  | Create · category request modal    | (wizard overlay)               | `#s6-store-create-category-request`     |
+| 19  | Create · step 4 (channels)         | `/{locale}/stores/new`         | `#s6-store-create-step-4-channels`      |
+| 20  | Create · step 5 (review)           | `/{locale}/stores/new`         | `#s6-store-create-step-5-review`        |
+| 21  | Create · existing-store preview    | (wizard overlay)               | `#s6-store-create-step-5-preview`       |
+| 22  | Create · duplicate detected        | (wizard overlay/inline)        | `#s6-store-create-duplicate-detected`   |
+| 23  | Create · logo crop & confirm       | (wizard overlay)               | `#s6-store-create-logo-upload`          |
+| 24  | Edit store                         | `/{locale}/stores/[slug]/edit` | `#s6-store-create-edit-mode`            |
+| 25  | Detail · admin on `PENDING`        | `/{locale}/stores/[slug]`      | `#s6-store-detail-admin-pending`        |
+| 26  | Detail · removal modal (admin)     | (detail overlay)               | `#s6-store-detail-remove-modal`         |
+| 27  | Detail · admin on `FLAGGED`        | `/{locale}/stores/[slug]`      | `#s6-store-detail-admin-flagged`        |
+| 28  | Governance panel · admin           | (detail overlay)               | `#s6-store-detail-admin-governance`     |
+| 29  | Change-request review (admin)      | (admin surface)                | `#s6-store-change-request-review`       |
+| 30  | Change-request review · drift      | (admin surface)                | `#s6-store-change-request-review-drift` |
 
-Requirements traced throughout: `FR-04-01 … FR-04-34`, `BR-04-01 … BR-04-21`,
-`AC-04-01 … AC-04-15` (see [`frd-04-store-domain.md`](./frd-04-store-domain.md)).
+Screens 25 through 30 (plus the softened `PENDING` disclaimer) document the **admin inline
+moderation scope** (`FR-04-40 … FR-04-51`, `BR-04-22 … BR-04-29`, `AC-04-20 … AC-04-31`),
+**planned, not yet shipped**. They render only for an administrator viewer, gated server-side
+by `requireAdmin()` (see [PRD-03 · FRD-01](../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md)),
+and every mutation is audited (§5.8). A non-admin viewer sees the unchanged public surfaces.
+
+Requirements traced throughout: `FR-04-01 … FR-04-51`, `BR-04-01 … BR-04-29`,
+`AC-04-01 … AC-04-31` (see [`frd-04-store-domain.md`](./frd-04-store-domain.md)).
 Status-chip mapping is governed by [ADR 0002](../../../design/decisions/0002-status-chip-mapping.md);
 the detail/aside grammar by [ADR 0003](../../../design/decisions/0003-demo-decisions.md);
 private Person stores by [ADR 0009](../../../design/decisions/0009-private-person-stores.md);
@@ -277,6 +295,76 @@ the listing by default and drop out of the order-creation picker. The switch rid
 direct-edit-vs-change-request derivation as every other field (FR-04-37); it is absent from
 the create flow (a new store is always active).
 
+### 2.4 Admin inline moderation & governance (planned, `FR-04-40 … FR-04-51`)
+
+This scope is **planned, not yet shipped**. It layers admin-only affordances onto the same
+detail surface described in §2.2 without changing the public reading column. Everything below
+renders only when the viewer is an administrator (gated server-side by `requireAdmin()`); a
+non-admin sees the unchanged public store. The admin surfaces reuse the existing detail
+grammar, the canonical `Modal` ([ADR 0008](../../../design/decisions/0008-modal-enhancement.md)),
+and the report-modal / governance-panel patterns already in the prototype: no new component
+families are introduced.
+
+**Admin moderation cluster on the aside** (`#s6-store-detail-admin-pending`,
+`#s6-store-detail-admin-flagged`). A `card elevated` **"Moderación"** panel takes the top slot
+of the sticky aside rail (above Resumen), carrying the same one-primary / ghost / destructive
+action grammar as every other Acciones card:
+
+- On a `PENDING` store: **"Aprobar tienda"** (primary, `check-circle`) → `APPROVED`;
+  **"Marcar con reportes"** (ghost, `flag`) → `FLAGGED`; **"Retirar tienda"**
+  (destructive-ghost, `ban`) → opens the removal modal.
+- On a `FLAGGED` store: **"Quitar marca de reportes"** (primary, `shield-check`) → prior public
+  state; **"Ver reportes"** (ghost) → governance panel; **"Retirar tienda"** (destructive-ghost).
+  A stronger `store-banner warning` sits before the hero and the hero status chip reads
+  `chip warning` **"Con reportes"** (`alert-circle`). Flagging never hides the store (BR-04-24).
+
+**Softened `PENDING` disclaimer** (`FR-04-50`, `AC-04-31`). The pending banner is demoted from
+the alarmist warning treatment to the calm base `store-banner` (info tone): it frames the store
+as under review, not as unverified or untrustworthy data. Same copy for public viewer, creator,
+and admin; the admin simply gains the moderation panel beside it.
+
+**Removal modal** (`#s6-store-detail-remove-modal`). The canonical `Modal` (dimmed detail
+behind, `role="dialog"` + `aria-modal`), reusing the report-modal shell and the
+`report-reasons` / `report-reason.is-selected` reason picker. Reasons are split into two labeled
+groups: **Motivos neutrales** (`Tienda duplicada`, `Tienda cerrada o inactiva`,
+`Información falsa o engañosa`) and a single **Motivo de sanción** (`Abuso, estafa o fraude`),
+each group a `radiogroup`. An optional internal note feeds the audit entry. The confirm CTA is
+**"Retirar tienda"** (destructive). Removal is a **tombstone, not a hard delete** (BR-04-22/23):
+the store leaves every public surface and 404s on its own URL, but the row is retained so
+referencing records keep resolving. Helper copy states the wording contract: neutral reasons
+drive the neutral order message, only the abuse reason uses sanction wording.
+
+**Removed-store tombstone (order-side).** A `REJECTED` store 404s on the public detail route
+(no store-detail tombstone screen exists), so the tombstone is a **collector-order** surface,
+not a store surface. Where a referencing order shows its store, it renders a neutral line by
+default, `"Esta tienda ya no está disponible"`, and sanction wording only when the
+`removalReason` is an abuse category (`FR-04-42`, `AC-04-22`, BR-04-23). The exact order-row
+pixel belongs to the order surfaces and is documented with
+[FRD-05](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md); it is intentionally
+**not** mocked in this prototype, which has no order-detail surface.
+
+**Admin governance panel** (`#s6-store-detail-admin-governance`). The public
+reports-and-suggestions summary (§5.6) has an admin superset: the same modal shell lists each
+**open report** as an `adm-report-row` exposing the raw free-text detail **and** reporter
+identity (`"Reportado por @handle"`, `lock`-noted as admin-only), with per-report **"Resolver"**
+(primary) and **"Descartar"** (ghost) actions moving `StoreReport` from `OPEN` to `REVIEWED` /
+`DISMISSED` (`FR-04-44`, `AC-04-24`). Raw detail and identity come from a server-only admin
+data-access layer and never widen the public governance read model (`FR-04-45`, BR-04-25,
+`AC-04-25`). The change-requests block links each pending request to its review surface.
+
+**Change-request review** (`#s6-store-change-request-review`). A focused `card elevated` review
+surface: requester + submitted date, then an **`adm-diff` field list**, one `adm-diff-row` per
+changed field showing the `adm-diff-before` (struck-through) → `adm-diff-after` value. Footer is
+**"Aprobar y aplicar"** (primary) and **"Rechazar"** (ghost). Approval **rebases** the diff onto
+the store's current state and applies it, relation fields included, in one transaction
+(`FR-04-46`, BR-04-26, `AC-04-26`); the stored diff is never blind-applied.
+
+**Drift variant** (`#s6-store-change-request-review-drift`). When the store changed under an
+affected field after the request was filed, a `store-banner warning` (`role="alert"`) surfaces
+the drift, the conflicting `adm-diff-row` gets the `.is-drift` treatment plus a `chip warning`
+**"En conflicto"**, and the primary CTA becomes **"Revisar conflictos"** rather than a silent
+apply (`FR-04-47`, `AC-04-27`). Stale values are never applied silently.
+
 ---
 
 ## 3. Visual treatment
@@ -408,10 +496,14 @@ count; free text does not increment that count.
 The commercial chips (physical / online / stock / pre-orders) render on the **detail hero**
 (non-`PERSON` only; a `PROXY` only ever shows presence chips since it has null stock / pre-order,
 plus its "Proxy" badge); moderation chips render on **detail only**, not on list cards (S6.1). The
-`FLAGGED` "Con reportes" mapping is **prototype-only and not reachable on the shipped public
-detail page**: `getStoreBySlug` resolves only `PENDING`/`APPROVED` stores, so `FLAGGED` (and
-`REJECTED`) stores 404 rather than rendering a warning chip or banner. There is **no** "Envía a
-N países" chip anywhere. Person stores omit the contact/presence chips entirely.
+`FLAGGED` "Con reportes" mapping is **not reachable on the shipped public detail page today**:
+`getStoreBySlug` resolves only `PENDING`/`APPROVED` stores, so `FLAGGED` (and `REJECTED`) stores
+404 rather than rendering a warning chip or banner. The **planned admin moderation scope**
+(§2.4, `FR-04-43`, BR-04-24) makes `FLAGGED` reachable: it becomes publicly visible with a
+stronger warning than the pending disclaimer and the "Con reportes" chip renders, while
+`REJECTED` stays a public 404 **by design** and surfaces only as an order-side tombstone (§2.4,
+`FR-04-42`). There is **no** "Envía a N países" chip anywhere. Person stores omit the
+contact/presence chips entirely.
 
 ### 5.4 Detail actions by viewer role (§2.2 aside)
 
@@ -483,6 +575,37 @@ Mutations are **optimistic** — see the `optimistic-client-updates` policy and
 - Hover/press, reduced-motion, and the transform/opacity rule are system-level and inherited
   unchanged.
 
+### 5.8 Admin inline moderation & governance (planned, `FR-04-40 … FR-04-51`)
+
+Admin-only, gated by `requireAdmin()`, and layered onto the detail surface (§2.4). Every
+mutation is **optimistic** like the rest of the app and each one writes an append-only
+`AdminAuditLog` entry through the shared audit helper (`FR-04-51`, BR-04-29); the audit is a
+backend concern with **no visual footprint beyond a confirmation `Toast`** in the existing toast
+pattern (§5.7). The planned analytics events (`store_approved`, `store_removed`, `store_flagged`,
+`store_unflagged`, `store_report_resolved`, `store_report_dismissed`,
+`store_change_request_applied`, `store_change_request_rejected`, plus the product-type pair) fire
+alongside the audit write.
+
+- **Approve / flag / unflag** (`#s6-store-detail-admin-pending`, `#s6-store-detail-admin-flagged`):
+  optimistic state transition on the detail; the status chip and any disclaimer banner update in
+  place, then a confirmation toast. Unflag returns the store to its prior public state
+  (`PENDING`/`APPROVED`), never a new one.
+- **Remove** (`#s6-store-detail-remove-modal`): the modal closes synchronously on confirm
+  (Optimistic Confirmation); the store drops from the current view and the referencing-order
+  tombstone message is derived from the chosen `removalReason` category. Removal is a tombstone,
+  reversal is out of scope for the inline controls.
+- **Resolve / dismiss report** (`#s6-store-detail-admin-governance`): the report row updates or
+  leaves the open list optimistically; resolving frees the reporter to file a new report
+  (`AC-04-12`, `AC-04-24`).
+- **Change-request review** (`#s6-store-change-request-review`): approve rebases and applies in
+  one transaction; after any store write, other open change requests whose diff is now empty are
+  **superseded** so stale requests do not linger (`FR-04-48`, BR-04-27); surfaced to their
+  authors through the existing personalized governance summary, not a new surface.
+- **Drift** (`#s6-store-change-request-review-drift`): when the stored diff no longer applies
+  cleanly, the drift is surfaced (banner + `.is-drift` row + "En conflicto" chip) and the apply
+  path is blocked in favor of a conflict-review CTA; stale values are never applied silently
+  (`FR-04-47`, `AC-04-27`).
+
 ---
 
 ## 6. Copy & voice
@@ -513,6 +636,30 @@ Key strings (es), by surface and tone:
 Tone rule for this FRD: **confirmations, reports, and errors carry no mascot** (decálogo #6);
 the panda appears only in the empty/celebratory register (e.g. the `sleeping` mascot in the
 filtered-empty state).
+
+### 6.1 Admin moderation copy (planned, `FR-04-40 … FR-04-51`)
+
+Admin-only strings for the scope in §2.4 / §5.8. Voice is **operational and neutral**: it names
+the action and its consequence plainly, without alarm or mascot. These belong to the same
+`stores.json` namespace as the rest of the domain.
+
+| Surface                                  | Tone               | String                                                                                                                                                                                        |
+| ---------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Softened pending disclaimer (`FR-04-50`) | calm, non-alarmist | `"Tienda en revisión"` · `"Una persona de la comunidad creó esta tienda y el equipo la está revisando. Ya puedes usarla con normalidad; solo no aparece en buscadores hasta que se apruebe."` |
+| Flagged warning (`FR-04-43`)             | firm, not alarmist | `"Tienda con reportes"` · `"Esta tienda acumula reportes con credibilidad. Sigue visible, pero revisa la información con atención antes de operar."`                                          |
+| Moderation actions                       | operational        | `"Aprobar tienda"` · `"Marcar con reportes"` · `"Quitar marca de reportes"` · `"Retirar tienda"`                                                                                              |
+| Removal modal                            | plain, factual     | `"Retirar tienda"` · `"Elige el motivo. La tienda deja de ser pública, pero los pedidos que la referencian se conservan."`                                                                    |
+| Removal reasons                          | neutral vs sanción | neutral: `"Tienda duplicada"` · `"Tienda cerrada o inactiva"` · `"Información falsa o engañosa"`; sanción: `"Abuso, estafa o fraude"`                                                         |
+| Order tombstone (`FR-04-42`)             | neutral by default | `"Esta tienda ya no está disponible"` (sanction wording only for the abuse category)                                                                                                          |
+| Report resolution                        | operational        | `"Resolver"` · `"Descartar"` · `"Detalles y autor visibles solo para administradores."`                                                                                                       |
+| Change-request review                    | operational        | `"Aprobar y aplicar"` · `"Rechazar"` · `"Al aprobar, los cambios se recalculan sobre el estado actual de la tienda."`                                                                         |
+| Change-request drift (`FR-04-47`)        | cautionary         | `"La tienda cambió desde esta solicitud"` · `"En conflicto"` · `"Revisar conflictos"`                                                                                                         |
+
+The softened pending disclaimer **supersedes** the earlier alarmist copy
+(`detail.pendingDisclaimerMessage`, "aún no ha sido verificada… revisar con precaución"): per
+`AC-04-31` the pending state must read as under review, not as untrustworthy data. The `en`
+equivalents live in `src/i18n/locales/en/stores.json`; the reused `flaggedDisclaimer` key
+already exists but was previously unwired.
 
 ---
 
@@ -559,16 +706,40 @@ specifically here:
   interactive review stars carry descriptive labels; the `ProgressBar` exposes
   `aria-valuenow/min/max`.
 
+Admin moderation scope (§2.4, planned) specifics:
+
+- **Admin controls have accessible names**: every moderation control is a real `<button>` or
+  link with a visible text label ("Aprobar tienda", "Retirar tienda", "Resolver", "Descartar",
+  "Aprobar y aplicar"); no icon-only affordance is unlabeled.
+- **Severity is never color-only**: the flagged warning, the "Con reportes" and "En conflicto"
+  chips, and the drifted diff row each pair color with an icon and text label
+  ([ADR 0006](../../../design/decisions/0006-color-blindness-icon-label-contract.md)); the
+  `.is-drift` row does not rely on its tint alone.
+- **Removal modal focus**: follows the canonical modal pattern
+  ([ADR 0008](../../../design/decisions/0008-modal-enhancement.md)): `role="dialog"` +
+  `aria-modal="true"` + `aria-labelledby`, focus trapped and returned to the invoking control on
+  close. The two reason groups are `radiogroup`s with `aria-checked` roving state.
+- **Drift is announced**: the drift banner is `role="alert"` so the conflict is announced when it
+  appears, before any apply is attempted.
+- **Governance rows**: raw report detail and reporter identity are admin-only content; the
+  admin-only caveat is exposed as text (`lock` icon plus label), not conveyed by styling alone.
+
 ---
 
 ## 9. Sources & provenance
 
 - **Pixel truth**: [`./prototype/store-domain.html`](./prototype/store-domain.html)
-  (self-contained; opens standalone in light + dark; default palette Velvet). Verified S15.
+  (self-contained; opens standalone in light + dark; default palette Velvet). Verified S15;
+  extended 2026-07-22 with the admin inline moderation screens (`#s6-store-detail-admin-pending`,
+  `#s6-store-detail-remove-modal`, `#s6-store-detail-admin-flagged`,
+  `#s6-store-detail-admin-governance`, `#s6-store-change-request-review`,
+  `#s6-store-change-request-review-drift`).
 - **System rules**: [`docs/design/`](../../../design/README.md) — visual-foundations,
   tokens-css, interface-patterns, components, motion, states, ux-copy, and ADRs
   0002/0003/0006/0007/0008/0009/0013/0014.
 - **Functional contract**: [`frd-04-store-domain.md`](./frd-04-store-domain.md) and its
-  blueprint/work-orders.
+  blueprint/work-orders, including the admin inline moderation scope `FR-04-40 … FR-04-51`,
+  `BR-04-22 … BR-04-29`, `AC-04-20 … AC-04-31` (planned, gated by
+  [PRD-03 · FRD-01](../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md)).
 - **Workshop raw material (historical)**: distilled from the redesign subproject; see git history. This FDD + the prototype are the
   durable record.

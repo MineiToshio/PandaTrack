@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<!--
+  PandaTrack · FRD-02 Moderation Console · Prototype (Velvet)
+  Self-contained visual reference: open by double-click, no build step.
+  Non-authoritative design aid (may drift from shipped pixels).
+  Only external references: Google Fonts (Inter + JetBrains Mono) and Lucide UMD.
+  Screens: #inbox, #inbox-empty, #audit, #access-denied.
+-->
+<html lang="es" data-theme="light" data-palette="velvet" data-sidebar="expanded">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PandaTrack · FRD-02 Consola de Moderacion · Prototipo (Velvet)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Tokens OKLCH (consumed from the design system, not redefined here) ── */
+    :root[data-theme="light"] {
+      --background: oklch(98% 0.012 75);
+      --surface: oklch(99.5% 0.006 75);
+      --surface-elevated: oklch(98.5% 0.010 75);
+      --surface-warm: oklch(96% 0.020 35);
+      --border: oklch(90% 0.012 75);
+      --border-strong: oklch(80% 0.018 75);
+      --text-primary: oklch(20% 0.020 50);
+      --text-secondary: oklch(44% 0.020 50);
+      --text-muted: oklch(52% 0.018 50);
+      --success: oklch(58% 0.15 152);
+      --warning: oklch(70% 0.16 75);
+      --destructive: oklch(54% 0.21 25);
+      --info: oklch(62% 0.12 230);
+      --shadow-1: 0 1px 2px rgba(60, 35, 10, 0.05);
+      --shadow-2: 0 4px 14px rgba(60, 35, 10, 0.07), 0 1px 2px rgba(60, 35, 10, 0.04);
+      --shadow-3: 0 14px 28px rgba(60, 35, 10, 0.10), 0 2px 6px rgba(60, 35, 10, 0.06);
+      --color-scheme: light;
+    }
+    :root[data-theme="dark"] {
+      --background: oklch(14% 0.014 35);
+      --surface: oklch(17% 0.014 35);
+      --surface-elevated: oklch(20% 0.016 35);
+      --surface-warm: oklch(19% 0.024 30);
+      --border: rgba(255, 235, 210, 0.07);
+      --border-strong: rgba(255, 235, 210, 0.14);
+      --text-primary: oklch(96% 0.008 75);
+      --text-secondary: oklch(76% 0.016 75);
+      --text-muted: oklch(64% 0.016 75);
+      --success: oklch(74% 0.16 152);
+      --warning: oklch(82% 0.15 75);
+      --destructive: oklch(70% 0.18 25);
+      --info: oklch(76% 0.12 230);
+      --shadow-1: 0 0 0 1px rgba(255, 235, 210, 0.04);
+      --shadow-2: inset 0 1px 0 rgba(255, 235, 210, 0.04), 0 0 0 1px rgba(255, 235, 210, 0.06);
+      --shadow-3: inset 0 1px 0 rgba(255, 235, 210, 0.06), 0 0 0 1px rgba(255, 235, 210, 0.08), 0 0 24px rgba(255, 180, 140, 0.05);
+      --color-scheme: dark;
+    }
+    :root[data-palette="plum"][data-theme="light"]  { --accent: oklch(50% 0.18 350); --accent-warm: oklch(70% 0.16 30); --accent-cool: oklch(64% 0.08 220); --focus-ring: oklch(50% 0.18 350 / 0.55); }
+    :root[data-palette="plum"][data-theme="dark"]   { --accent: oklch(76% 0.16 350); --accent-warm: oklch(80% 0.14 30); --accent-cool: oklch(76% 0.08 220); --focus-ring: oklch(76% 0.16 350 / 0.65); }
+    :root[data-palette="lagoon"][data-theme="light"]{ --accent: oklch(58% 0.14 195); --accent-warm: oklch(70% 0.16 28); --accent-cool: oklch(64% 0.10 250); --focus-ring: oklch(58% 0.14 195 / 0.55); }
+    :root[data-palette="lagoon"][data-theme="dark"] { --accent: oklch(76% 0.13 195); --accent-warm: oklch(80% 0.14 28); --accent-cool: oklch(76% 0.10 250); --focus-ring: oklch(76% 0.13 195 / 0.65); }
+    :root[data-palette="forest"][data-theme="light"]{ --accent: oklch(50% 0.13 145); --accent-warm: oklch(66% 0.18 35); --accent-cool: oklch(60% 0.06 250); --focus-ring: oklch(50% 0.13 145 / 0.55); }
+    :root[data-palette="forest"][data-theme="dark"] { --accent: oklch(74% 0.13 145); --accent-warm: oklch(80% 0.16 35); --accent-cool: oklch(76% 0.06 250); --focus-ring: oklch(74% 0.13 145 / 0.65); }
+    :root[data-palette="velvet"][data-theme="light"] {
+      --background: oklch(93% 0.020 285); --surface: oklch(96.5% 0.014 285); --surface-elevated: oklch(95% 0.016 285);
+      --border: oklch(85% 0.024 285); --border-strong: oklch(74% 0.030 285);
+      --text-primary: oklch(22% 0.030 285); --text-secondary: oklch(44% 0.024 285); --text-muted: oklch(54% 0.022 285);
+      --accent: oklch(46% 0.20 290); --accent-warm: oklch(64% 0.20 22); --accent-cool: oklch(58% 0.10 215); --focus-ring: oklch(46% 0.20 290 / 0.55);
+    }
+    :root[data-palette="velvet"][data-theme="dark"] {
+      --background: oklch(10% 0.028 265); --surface: oklch(13% 0.028 265); --surface-elevated: oklch(16% 0.030 265);
+      --border: rgba(200, 200, 255, 0.07); --border-strong: rgba(200, 200, 255, 0.14);
+      --text-primary: oklch(96% 0.012 280); --text-secondary: oklch(76% 0.020 280); --text-muted: oklch(64% 0.020 280);
+      --accent: oklch(74% 0.19 290); --accent-warm: oklch(80% 0.15 25); --accent-cool: oklch(74% 0.11 215); --focus-ring: oklch(74% 0.19 290 / 0.65);
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: var(--color-scheme); }
+    body {
+      margin: 0; background: var(--background); color: var(--text-primary);
+      font-family: "Inter", system-ui, sans-serif; font-size: 15px; line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+
+    /* ── Demo chrome (NOT app UI) ── */
+    .demo-header {
+      position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 16px;
+      padding: 10px 18px; background: var(--surface-elevated); border-bottom: 1px solid var(--border);
+    }
+    .demo-brand { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 13px; }
+    .demo-brand .badge { width: 9px; height: 9px; border-radius: 3px; background: var(--accent); }
+    .demo-nav, .palette-switch { position: relative; }
+    .demo-trigger {
+      display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; font-size: 12.5px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 999px; color: var(--text-secondary); cursor: pointer;
+    }
+    .demo-trigger:hover { color: var(--text-primary); }
+    .demo-menu {
+      position: absolute; top: calc(100% + 6px); left: 0; min-width: 220px; max-height: 60vh; overflow: auto;
+      background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-3);
+      padding: 6px; display: none; flex-direction: column; gap: 2px;
+    }
+    .demo-menu.open { display: flex; }
+    .demo-menu a, .demo-menu button {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 8px;
+      font-size: 13px; color: var(--text-secondary); text-decoration: none; background: none; border: none; cursor: pointer; text-align: left;
+    }
+    .demo-menu a:hover, .demo-menu button:hover { background: var(--surface-warm); color: var(--text-primary); }
+    .demo-spacer { margin-left: auto; }
+    .theme-toggle { display: inline-flex; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
+    .theme-toggle button { display: grid; place-items: center; width: 28px; height: 28px; border: none; background: none; border-radius: 999px; color: var(--text-muted); cursor: pointer; }
+    .theme-toggle button.active { background: var(--surface-elevated); color: var(--accent); box-shadow: var(--shadow-1); }
+    .swatch { width: 12px; height: 12px; border-radius: 4px; }
+
+    /* ── App shell (faithful frame; content column is the FRD-specific part) ── */
+    .app-shell { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 49px); }
+    .app-sidebar { border-right: 1px solid var(--border); background: var(--surface); padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; }
+    .app-sidebar .brand { display: flex; align-items: center; gap: 9px; padding: 6px 10px 16px; font-weight: 700; font-size: 15px; }
+    .app-sidebar .brand .logo { width: 26px; height: 26px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; color: var(--surface); }
+    .nav-item { display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 9px; color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; }
+    .nav-item:hover { background: var(--surface-warm); color: var(--text-primary); }
+    .nav-item.active { background: color-mix(in oklch, var(--accent) 12%, transparent); color: var(--accent); }
+    .nav-item .count { margin-left: auto; font-size: 11.5px; font-weight: 700; background: var(--destructive); color: white; border-radius: 999px; padding: 1px 7px; }
+    .app-content { display: flex; flex-direction: column; min-width: 0; }
+    .app-topbar { display: flex; align-items: center; gap: 10px; padding: 14px 26px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-muted); }
+    .app-topbar .crumb { color: var(--text-primary); font-weight: 600; }
+    .app-main { padding: 26px; max-width: 920px; width: 100%; }
+
+    .page-title { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 4px; }
+    .page-sub { color: var(--text-muted); font-size: 14px; margin: 0 0 22px; }
+
+    /* ── Screens router ── */
+    .screen { display: none; }
+    .screen.is-active { display: block; }
+
+    /* ── Queue counts ── */
+    .queue-counts { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+    .count-chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+    .count-chip b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    .count-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    /* ── Inbox list ── */
+    .inbox-list { display: flex; flex-direction: column; gap: 10px; }
+    .inbox-item {
+      display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 14px;
+      padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      box-shadow: var(--shadow-1); text-decoration: none; color: inherit; position: relative; overflow: hidden;
+    }
+    .inbox-item::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--sev, var(--border-strong)); }
+    .inbox-item:hover { border-color: var(--border-strong); box-shadow: var(--shadow-2); }
+    .inbox-item .glyph { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: color-mix(in oklch, var(--sev) 15%, transparent); color: var(--sev); }
+    .inbox-item .body { min-width: 0; }
+    .inbox-item .cat { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sev); }
+    .inbox-item .label { font-weight: 600; font-size: 15px; margin: 1px 0; }
+    .inbox-item .detail { font-size: 13px; color: var(--text-muted); }
+    .inbox-item .action { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+    .sev-crit { --sev: var(--destructive); }
+    .sev-warn { --sev: var(--warning); }
+    .sev-info { --sev: var(--info); }
+
+    /* ── Empty + access denied ── */
+    .empty { text-align: center; padding: 70px 20px; }
+    .empty .icon { width: 60px; height: 60px; border-radius: 18px; background: color-mix(in oklch, var(--success) 15%, transparent); color: var(--success); display: grid; place-items: center; margin: 0 auto 16px; }
+    .empty h3 { font-size: 18px; margin: 0 0 6px; }
+    .empty p { color: var(--text-muted); margin: 0; }
+    .access-denied .icon { background: color-mix(in oklch, var(--warning) 15%, transparent); color: var(--warning); }
+
+    /* ── Audit table ── */
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-1); }
+    table.audit { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 13.5px; }
+    .audit thead th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); font-weight: 700; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface-warm); }
+    .audit tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: middle; }
+    .audit tbody tr:last-child td { border-bottom: none; }
+    .audit .when { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .audit .action-key { color: var(--text-primary); }
+    .audit .target { color: var(--text-primary); font-weight: 500; }
+    .pager { display: flex; justify-content: center; padding: 18px; }
+    .btn-ghost { display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; }
+    .btn-ghost:hover { border-color: var(--border-strong); color: var(--text-primary); }
+
+    @media (max-width: 760px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .app-sidebar { display: none; }
+      .inbox-item { grid-template-columns: 40px 1fr; }
+      .inbox-item .action { grid-column: 2; justify-self: start; margin-top: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="demo-header" role="banner">
+    <div class="demo-brand"><span class="badge"></span> PandaTrack · FRD-02 Consola de Moderacion</div>
+
+    <div class="demo-nav">
+      <button class="demo-trigger" id="screensTrigger" aria-haspopup="true" aria-expanded="false">Pantallas <i data-lucide="chevron-down"></i></button>
+      <div class="demo-menu" id="screensMenu" role="menu">
+        <a href="#inbox" data-screen="inbox">Bandeja de moderacion</a>
+        <a href="#inbox-empty" data-screen="inbox-empty">Bandeja vacia</a>
+        <a href="#audit" data-screen="audit">Registro de actividad</a>
+        <a href="#access-denied" data-screen="access-denied">Acceso restringido</a>
+      </div>
+    </div>
+
+    <div class="demo-spacer"></div>
+
+    <div class="palette-switch">
+      <button class="demo-trigger" id="paletteTrigger" aria-haspopup="true" aria-expanded="false"><span class="swatch" style="background:var(--accent)"></span> Velvet <i data-lucide="chevron-down"></i></button>
+      <div class="demo-menu" id="paletteMenu" role="menu">
+        <button data-palette-set="velvet"><span>Velvet</span><span class="swatch" style="background:oklch(46% 0.20 290)"></span></button>
+        <button data-palette-set="plum"><span>Plum</span><span class="swatch" style="background:oklch(50% 0.18 350)"></span></button>
+        <button data-palette-set="lagoon"><span>Lagoon</span><span class="swatch" style="background:oklch(58% 0.14 195)"></span></button>
+        <button data-palette-set="forest"><span>Forest</span><span class="swatch" style="background:oklch(50% 0.13 145)"></span></button>
+      </div>
+    </div>
+
+    <div class="theme-toggle">
+      <button data-theme-set="light" aria-label="Claro"><i data-lucide="sun"></i></button>
+      <button data-theme-set="dark" aria-label="Oscuro"><i data-lucide="moon"></i></button>
+    </div>
+  </header>
+
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegacion de administracion">
+      <div class="brand"><span class="logo"><i data-lucide="shield" style="width:16px"></i></span> Admin</div>
+      <a class="nav-item active" href="#inbox"><i data-lucide="inbox" style="width:18px"></i> Bandeja <span class="count">10</span></a>
+      <a class="nav-item" href="#audit"><i data-lucide="scroll-text" style="width:18px"></i> Registro</a>
+    </aside>
+
+    <div class="app-content">
+      <div class="app-topbar">
+        <span>Admin</span> <i data-lucide="chevron-right" style="width:14px"></i> <span class="crumb" id="crumb">Bandeja de moderacion</span>
+      </div>
+
+      <main class="app-main">
+        <!-- ── Screen 1: Moderation inbox ── -->
+        <section class="screen is-active" id="inbox">
+          <h1 class="page-title">Bandeja de moderacion</h1>
+          <p class="page-sub">Todo lo pendiente por revisar, ordenado por impacto.</p>
+
+          <div class="queue-counts">
+            <span class="count-chip"><span class="dot" style="background:var(--destructive)"></span> Reportes <b>2</b></span>
+            <span class="count-chip"><span class="dot" style="background:var(--warning)"></span> Tiendas <b>3</b></span>
+            <span class="count-chip"><span class="dot" style="background:var(--warning)"></span> Cambios <b>1</b></span>
+            <span class="count-chip"><span class="dot" style="background:var(--info)"></span> Tipos <b>4</b></span>
+          </div>
+
+          <div class="inbox-list">
+            <a class="inbox-item sev-crit" href="#" onclick="return false">
+              <span class="glyph"><i data-lucide="flag"></i></span>
+              <span class="body"><span class="cat">Reporte</span><div class="label">Panda Store</div><span class="detail">SPAM · reportada hace 2 h</span></span>
+              <span class="action">Revisar <i data-lucide="arrow-right" style="width:15px"></i></span>
+            </a>
+            <a class="inbox-item sev-crit" href="#" onclick="return false">
+              <span class="glyph"><i data-lucide="shield-alert"></i></span>
+              <span class="body"><span class="cat">Baja sugerida</span><div class="label">Figuras XYZ</div><span class="detail">3 reportes acumulados</span></span>
+              <span class="action">Revisar <i data-lucide="arrow-right" style="width:15px"></i></span>
+            </a>
+            <a class="inbox-item sev-warn" href="#" onclick="return false">
+              <span class="glyph"><i data-lucide="clock"></i></span>
+              <span class="body"><span class="cat">Tienda pendiente</span><div class="label">Nueva Tienda Anime</div><span class="detail">sin aprobar · creada hace 1 d</span></span>
+              <span class="action">Revisar <i data-lucide="arrow-right" style="width:15px"></i></span>
+            </a>
+            <a class="inbox-item sev-warn" href="#" onclick="return false">
+              <span class="glyph"><i data-lucide="pencil"></i></span>
+              <span class="body"><span class="cat">Cambio propuesto</span><div class="label">Anime Shop</div><span class="detail">4 campos modificados por la comunidad</span></span>
+              <span class="action">Revisar <i data-lucide="arrow-right" style="width:15px"></i></span>
+            </a>
+            <a class="inbox-item sev-info" href="#" onclick="return false">
+              <span class="glyph"><i data-lucide="tag"></i></span>
+              <span class="body"><span class="cat">Tipo de producto</span><div class="label">"Sobres coleccionables"</div><span class="detail">sugerido por un usuario</span></span>
+              <span class="action">Revisar <i data-lucide="arrow-right" style="width:15px"></i></span>
+            </a>
+          </div>
+        </section>
+
+        <!-- ── Screen 2: Empty inbox ── -->
+        <section class="screen" id="inbox-empty">
+          <h1 class="page-title">Bandeja de moderacion</h1>
+          <p class="page-sub">Todo lo pendiente por revisar, ordenado por impacto.</p>
+          <div class="empty">
+            <span class="icon"><i data-lucide="check-check" style="width:28px"></i></span>
+            <h3>Todo al dia</h3>
+            <p>No hay nada pendiente por moderar.</p>
+          </div>
+        </section>
+
+        <!-- ── Screen 3: Audit log ── -->
+        <section class="screen" id="audit">
+          <h1 class="page-title">Registro de actividad</h1>
+          <p class="page-sub">Cada accion privilegiada queda registrada.</p>
+          <div class="table-wrap">
+            <table class="audit">
+              <thead>
+                <tr><th>Cuando</th><th>Admin</th><th>Accion</th><th>Objetivo</th><th>Motivo</th></tr>
+              </thead>
+              <tbody>
+                <tr><td class="when">22 jul, 14:03</td><td>owner</td><td class="action-key mono">store.remove</td><td class="target">Panda Store</td><td>spam</td></tr>
+                <tr><td class="when">22 jul, 13:58</td><td>owner</td><td class="action-key mono">report.resolve</td><td class="target">Figuras XYZ</td><td>—</td></tr>
+                <tr><td class="when">22 jul, 13:41</td><td>owner</td><td class="action-key mono">changeRequest.apply</td><td class="target">Anime Shop</td><td>—</td></tr>
+                <tr><td class="when">22 jul, 11:20</td><td>owner</td><td class="action-key mono">store.approve</td><td class="target">Coleccion Retro</td><td>—</td></tr>
+                <tr><td class="when">21 jul, 19:07</td><td>owner</td><td class="action-key mono">productType.approve</td><td class="target">Sobres coleccionables</td><td>—</td></tr>
+              </tbody>
+            </table>
+            <div class="pager"><button class="btn-ghost"><i data-lucide="history" style="width:15px"></i> Mas antiguos</button></div>
+          </div>
+        </section>
+
+        <!-- ── Screen 4: Access denied ── -->
+        <section class="screen" id="access-denied">
+          <div class="empty access-denied">
+            <span class="icon"><i data-lucide="lock" style="width:28px"></i></span>
+            <h3>Acceso restringido</h3>
+            <p>Esta area es solo para administradores.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    // Theme + palette persistence (storage keys distinct from other prototypes)
+    var KEY_THEME = "pt-admin-proto-theme", KEY_PALETTE = "pt-admin-proto-palette";
+    var root = document.documentElement;
+    try {
+      var t = localStorage.getItem(KEY_THEME); if (t) root.setAttribute("data-theme", t);
+      var p = localStorage.getItem(KEY_PALETTE); if (p) root.setAttribute("data-palette", p);
+    } catch (e) {}
+
+    function syncControls() {
+      document.querySelectorAll("[data-theme-set]").forEach(function (b) {
+        b.classList.toggle("active", b.getAttribute("data-theme-set") === root.getAttribute("data-theme"));
+      });
+      var pal = root.getAttribute("data-palette");
+      var trig = document.getElementById("paletteTrigger");
+      if (trig) trig.childNodes[2].textContent = " " + pal.charAt(0).toUpperCase() + pal.slice(1) + " ";
+    }
+    document.querySelectorAll("[data-theme-set]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        root.setAttribute("data-theme", b.getAttribute("data-theme-set"));
+        try { localStorage.setItem(KEY_THEME, b.getAttribute("data-theme-set")); } catch (e) {}
+        syncControls();
+      });
+    });
+    document.querySelectorAll("[data-palette-set]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        root.setAttribute("data-palette", b.getAttribute("data-palette-set"));
+        try { localStorage.setItem(KEY_PALETTE, b.getAttribute("data-palette-set")); } catch (e) {}
+        document.getElementById("paletteMenu").classList.remove("open");
+        syncControls();
+      });
+    });
+
+    // Dropdown menus
+    function wireMenu(triggerId, menuId) {
+      var trigger = document.getElementById(triggerId), menu = document.getElementById(menuId);
+      trigger.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var open = menu.classList.toggle("open");
+        trigger.setAttribute("aria-expanded", String(open));
+      });
+    }
+    wireMenu("screensTrigger", "screensMenu");
+    wireMenu("paletteTrigger", "paletteMenu");
+    document.addEventListener("click", function () {
+      document.querySelectorAll(".demo-menu.open").forEach(function (m) { m.classList.remove("open"); });
+    });
+
+    // Hash router: fall back to the home screen (inbox) when the hash is empty/unknown
+    var CRUMBS = { inbox: "Bandeja de moderacion", "inbox-empty": "Bandeja de moderacion", audit: "Registro de actividad", "access-denied": "Acceso restringido" };
+    function route() {
+      var id = (location.hash || "#inbox").slice(1);
+      var target = document.getElementById(id);
+      if (!target) { id = "inbox"; target = document.getElementById("inbox"); }
+      document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("is-active"); });
+      target.classList.add("is-active");
+      document.getElementById("crumb").textContent = CRUMBS[id] || "Bandeja de moderacion";
+      document.querySelectorAll(".app-sidebar .nav-item").forEach(function (n) {
+        var href = n.getAttribute("href").slice(1);
+        n.classList.toggle("active", href === id || (id === "inbox-empty" && href === "inbox"));
+      });
+      document.getElementById("screensMenu").classList.remove("open");
+      window.scrollTo(0, 0);
+    }
+    window.addEventListener("hashchange", route);
+
+    // Init
+    route();
+    syncControls();
+    if (window.lucide) window.lucide.createIcons();
+  </script>
+</body>
+</html>

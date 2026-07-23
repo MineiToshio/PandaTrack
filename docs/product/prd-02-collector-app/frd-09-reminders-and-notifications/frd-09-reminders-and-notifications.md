@@ -7,16 +7,16 @@ status: ACTIVE
 parent: PRD-02
 children:
   - BP-01
-last_updated: 2026-07-14
+last_updated: 2026-07-22
 source_features: []
-implementation_status: IMPLEMENTED
+implementation_status: PARTIALLY_IMPLEMENTED
 ---
 
 # FRD-09 Reminders and Notifications
 
 ## Overview
 
-Define how PandaTrack becomes an installable Progressive Web App (PWA) and delivers timely reminder notifications to collectors through the Web Push standard. The reminders cover the three follow-up moments a collector most often misses: an upcoming pre-order payment, an upcoming order or delivery arrival, and an arrival that is already overdue.
+Define how PandaTrack becomes an installable Progressive Web App (PWA) and delivers timely reminder notifications to collectors through the Web Push standard. The reminders cover the three follow-up moments a collector most often misses: an upcoming pre-order payment, an upcoming order or delivery arrival, and an arrival that is already overdue. A fourth, event-driven notification (`WO-07`) tells a store creator when an administrator rejects or removes their store; it reuses this FRD's opt-in, subscription, and dedup model but is not produced by the daily dispatcher.
 
 This FRD is the surface the parent PRD reserved. [`PRD-02`](../prd-02-collector-app.md) lists "Reminders and alerts" as MVP workflow priority 8 and states they are "planned as a separate upcoming FRD delivered as a PWA with Web Push". [`FRD-06`](../frd-06-dashboard/frd-06-dashboard.md#out-of-scope) also defers all reminder and notification behavior to this FRD. This document turns that deferral into a concrete, testable scope.
 
@@ -44,6 +44,7 @@ Give collectors dependable, low-noise reminders so they stop relying on chats, s
 - A push subscription platform: Prisma models, a `web-push` wrapper, VAPID key plumbing, and subscribe / unsubscribe server actions.
 - A Notifications section in Settings with a master enable toggle plus per-type toggles and a "send test notification" action.
 - A scheduled, timezone-aware daily dispatcher that sends the three reminder types once each, guarded by a shared secret, with a send-dedup log and localized, deep-linked payloads.
+- A fourth, event-driven notification type, `STORE_REJECTED` (`WO-07`), sent once when an administrator rejects or removes a store, extending `NotificationType`, `NotificationSubjectType`, and `NotificationPreference` and reusing the same subscription/opt-in/dedup model as the three dispatcher-driven types.
 
 ## User Stories
 
@@ -97,6 +98,15 @@ As a collector, I want to turn reminders on or off and choose which kinds I get,
 - `FR-09-22`: The collector's locale must be persisted on `User.locale` so `FR-09-17` can be honored without a browser. It must be captured at sign-in from the locale the collector is actively browsing the app with (never from the raw `Accept-Language` header), must be updated whenever the collector switches language, and must never overwrite a locale the collector has explicitly chosen. It is nullable: a collector with no stored locale falls back to `routing.defaultLocale`, exactly as the `User.timezone` / `UTC` fallback works.
 - `FR-09-23`: The collector's timezone must be persisted on `User.timezone` so `FR-09-15` can be honored with a real value instead of the `UTC` fallback. It must be captured silently from the authenticated app shell, using the IANA zone the browser reports (the only place it is knowable), validated server-side against the runtime's zone database before it is stored, and it must never prompt the collector or require any permission. It must be written when no value is stored yet and rewritten whenever the browser reports a different zone, so the stored value tracks a collector who travels or relocates. It stays nullable, and an absent value keeps the `UTC` fallback. The capture must never block, delay, or break the app shell.
 
+### Store rejection notification
+
+- `FR-09-24`: `NotificationType` must gain a fourth value, `STORE_REJECTED`, and `NotificationSubjectType` must gain a `STORE` value, added by a Prisma migration that leaves the existing three types and the `ORDER` / `DELIVERY` subject values untouched.
+- `FR-09-25`: `NotificationPreference` must gain a `storeRejectedEnabled` boolean column, defaulting to `true`, following the same one-column-per-type shape as `paymentDueEnabled`, `arrivalDueEnabled`, and `arrivalOverdueEnabled`.
+- `FR-09-26`: When an administrator rejects or removes a store (the trigger owned by [`PRD-02 FRD-04` · `WO-09 store-approval-and-removal`](../frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md), specifically its `FR-04-41` tombstone-removal transition, and gated by the admin platform in [`PRD-03 FRD-01`](../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md)), the store's creator must receive one `STORE_REJECTED` push, sent at the moment of the decision rather than by the daily dispatcher, subject to the same opt-in gating `BR-09-01` already requires (active subscription, master toggle, and the `storeRejectedEnabled` per-type toggle).
+- `FR-09-27`: The `STORE_REJECTED` send must be deduplicated using the existing `NotificationDelivery` tuple (`userId`, `type`, subject id, due date), keyed by the store id and the rejection decision date, so a retried or re-processed moderation action never sends a second notification for the same rejection.
+- `FR-09-28`: `STORE_REJECTED` copy must be localized through the `notifications` namespace with two variants: a neutral, non-accusatory default (for example a general "not approved" framing) and a sanction-toned variant used only when `Store.removalReason` (set by `FR-04-41`) is abuse-related. The variant selection mirrors the same neutral-by-default, sanction-for-abuse pattern `FR-04-42` already applies to the order-side tombstone message, and is driven by the `removalReason` value `WO-09` supplies; this FRD does not define that classification.
+- `FR-09-29`: Clicking a `STORE_REJECTED` notification must deep-link to the store listing (`/{locale}/stores`), not the store's own detail page, because a rejected store's detail route resolves to `404` (`getStoreBySlug` only serves `PENDING` / `APPROVED` stores).
+
 ## Business Rules
 
 - `BR-09-01`: Reminders are strictly opt-in. A notification is sent only when all three conditions hold: an active push subscription exists, the collector's master toggle is on, and the specific reminder type's toggle is on.
@@ -107,6 +117,10 @@ As a collector, I want to turn reminders on or off and choose which kinds I get,
 - `BR-09-06`: Cancelled orders and cancelled deliveries are never reminded on, matching how they are excluded from dashboard obligations and spend.
 - `BR-09-07`: Pruning an expired subscription is a normal lifecycle event. It must not raise a monitored error and must not abort the rest of the dispatch batch.
 - `BR-09-08`: A payment reminder is produced only when the order still has an outstanding balance (`outstanding > 0`). A fully paid order never triggers a payment reminder even if its expected date is inside the window.
+- `BR-09-09`: Only a store's rejection or removal (a transition to `StoreStatus.REJECTED`) notifies its creator. Approving a store, or flagging it for review without removing it, never sends a notification.
+- `BR-09-10`: `STORE_REJECTED` delivery is event-triggered at the moment of the admin decision. It never runs through the daily dispatcher's due-soon/overdue batch or its thin candidate queries (`BR-09-04`, `BR-09-05`).
+- `BR-09-11`: The choice between the neutral and the sanction-toned `STORE_REJECTED` copy is driven entirely by the `Store.removalReason` value `WO-09`'s moderation action supplies. This FRD consumes that value; it does not classify rejection reasons itself.
+- `BR-09-12`: `STORE_REJECTED` is subject to the same opt-in gating as every other reminder type (`BR-09-01`). A moderation-relevant notice never bypasses the collector's subscription, master toggle, or per-type preference in MVP.
 
 ## Acceptance Criteria
 
@@ -188,6 +202,45 @@ As a collector, I want to turn reminders on or off and choose which kinds I get,
 - And a later authenticated load issues no further call, because the stored value already matches their browser
 - And a collector who relocates has the stored value follow their browser's new zone
 
+### `AC-09-12`
+
+- Given the `STORE_REJECTED` and `STORE` values do not yet exist on their respective enums
+- When the migration for this notification type ships
+- Then `NotificationType` includes `STORE_REJECTED` and `NotificationSubjectType` includes `STORE`
+- And every existing type, subject value, and stored row is unaffected
+
+### `AC-09-13`
+
+- Given a store creator has an active subscription, the master toggle on, and `storeRejectedEnabled` on
+- When an administrator rejects or removes their store
+- Then the creator receives exactly one `STORE_REJECTED` push
+- And clicking it opens the store listing for their locale, not the store's own (now `404`) detail page
+
+### `AC-09-14`
+
+- Given a store rejection has already produced a `STORE_REJECTED` notification for that store and decision date
+- When the same rejection is processed again (for example a retried mutation)
+- Then no second notification is sent, because the existing `NotificationDelivery` dedup row already covers that tuple
+
+### `AC-09-15`
+
+- Given an administrator approves a pending store
+- When the approval decision is recorded
+- Then no notification of any kind is sent to the creator
+
+### `AC-09-16`
+
+- Given a store rejection whose reason category is classified as abuse-related
+- When the `STORE_REJECTED` notification is composed
+- Then the sanction-toned copy variant is used
+- And a rejection with any other reason category uses the neutral, non-accusatory copy variant instead
+
+### `AC-09-17`
+
+- Given a store creator with no active subscription, or the master toggle off, or `storeRejectedEnabled` off
+- When their store is rejected or removed
+- Then no `STORE_REJECTED` notification is sent to them, exactly as the existing per-type gating already applies to the other three types
+
 ## Implementation Notes
 
 - The service worker is hand-rolled plain JavaScript at `public/sw.js`. Do not adopt `workbox`, `serwist`, or `next-pwa`. This is consistent with the repository's hand-roll-by-default posture and the UI-primitive libraries policy spirit ([ADR 0010](../../../design/decisions/0010-ui-primitive-libraries-policy.md)). A dedicated ADR for the web-push platform decision (choosing `web-push` plus a hand-rolled worker over a PWA framework) should be created during implementation as the next available ADR number; this FRD does not author it.
@@ -195,6 +248,7 @@ As a collector, I want to turn reminders on or off and choose which kinds I get,
 - Push sending uses the `web-push` npm package. New environment variables `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, and `CRON_SECRET` must be added to `.env.example` in the implementing slice per [`env-example.mdc`](../../../../.agents/rules/env-example.mdc).
 - New Prisma models: `PushSubscription` (`id`, `userId` FK, `endpoint` unique, `p256dh`, `auth`, `userAgent?`, `createdAt`, `lastSeenAt?`) and a send-dedup log `NotificationDelivery` keyed by (`userId`, `type`, subject id, due date). Both carry `userId` for direct authorization per [`data-layer-user-id-duplication.mdc`](../../../../.agents/rules/data-layer-user-id-duplication.mdc). Data access lives under `src/lib/data/notifications/` as `notificationQueries.ts` and `notificationMutations.ts`, following the singleton data-layer shape ([ADR 0015](../../../design/decisions/0015-data-access-layer-shape.md)).
 - Per-type preferences are stored server-side. The Blueprint decides and justifies whether they live on `PushSubscription`, on `User`, or on a dedicated `NotificationPreference` model.
+- `WO-07` extends this platform for `STORE_REJECTED`: it adds the enum values to `NotificationType` / `NotificationSubjectType`, adds `storeRejectedEnabled` to `NotificationPreference`, and reuses the same `PushSubscription` / `NotificationDelivery` rows and the same `web-push` send path. Unlike `WO-04`'s three types, it is not produced by the cron dispatcher: it is called directly from the store-moderation mutation in [`PRD-02 FRD-04`](../frd-04-store-domain/frd-04-store-domain.md) at the moment of the decision, and it must never throw into or block that mutation.
 - Scheduled dispatch is a `vercel.json` cron entry hitting a route handler at `src/app/api/notifications/dispatch/route.ts`, guarded by a `CRON_SECRET` bearer check. Cadence is daily and windowing is timezone-aware from `User.timezone`.
 - The dispatcher must reuse the _definitions_ of upcoming payment, upcoming arrival, and overdue arrival from the dashboard aggregation ([`FRD-06 dashboard`](../frd-06-dashboard/frd-06-dashboard.md)) and the delivery overdue notion from [`FRD-08`](../frd-08-delivery-management/frd-08-delivery-management.md), but implement them as thin dedicated queries. Loading `getDashboardData` per collector would be disproportionate for a batch job.
 - Notification copy is localized via a new next-intl `notifications` namespace registered in `src/i18n/request.ts`, resolved with `getTranslations` (framework function, not a React hook) at dispatch time.
@@ -209,6 +263,7 @@ Subscription and dispatch operations use typed, expected outcomes rather than no
 - Subscribe / unsubscribe server actions: `SUBSCRIPTION_INVALID` (malformed subscription payload, rejected by Zod at the boundary), `SUBSCRIPTION_NOT_FOUND` (unsubscribe of an endpoint not on file). Both return typed results; the client reconciles UI state.
 - Send time: an endpoint returning `410 Gone` or `404 Not Found` yields `SUBSCRIPTION_EXPIRED`, which prunes the subscription and is not a monitored error (`FR-09-19`, `BR-09-07`). A transient send failure is logged with delivery-safe context and does not abort the batch.
 - Dispatch route: a missing or wrong secret returns `401 UNAUTHORIZED` before any work (`FR-09-20`). An unexpected dispatch failure (for example a database error) is captured once with Sentry, without leaking subscriber payloads, and the run reports how many reminders were attempted, sent, deduped, and pruned.
+- Store rejection send: reuses the same `SUBSCRIPTION_EXPIRED` / transient-failure classification as the dispatch path, plus a dedup skip when a `NotificationDelivery` row already covers the rejection. Any unexpected failure is captured once with Sentry and must not throw into, block, or roll back the calling moderation mutation.
 
 ## Analytics
 
@@ -217,6 +272,7 @@ Notification events are namespaced under `POSTHOG_EVENTS.NOTIFICATIONS` in `src/
 - installability: `pwa_install_prompt_shown`, `pwa_installed` (from the `appinstalled` event where the browser exposes it).
 - opt-in: `notifications_enabled`, `notifications_disabled`, `notification_type_toggled` (carries the type and new on/off state), `notification_test_sent`.
 - dispatch observability (server-side): a run summary event carrying attempted / sent / deduped / pruned counts by type. Events never carry order or delivery money values, the note text, or subscriber keys.
+- store rejection notice (server-side): `notification_store_rejected_sent`, fired on a successful `STORE_REJECTED` send. Carries the reason category (abuse or other) but never the store name, the admin's identity, or subscriber keys.
 
 ## Screens and Data Contract
 
@@ -257,6 +313,8 @@ Permission denial at the browser level holds the collector at `NONE` and surface
 
 A reminder subject moves from "due inside window" to "sent" once a `NotificationDelivery` row exists for its (`userId`, `type`, subject id, due date) tuple. The row is the guard that makes daily re-runs idempotent (`FR-09-16`, `BR-09-02`). A changed due date is a new tuple and may reminder again.
 
+`STORE_REJECTED` (`WO-07`) reuses this same dedup row shape, but its "due date" is the rejection decision date rather than a computed window boundary, and the row is written at the moment of the event instead of during a daily batch pass (`BR-09-10`).
+
 ## Confirmed
 
 - PandaTrack ships as an installable PWA with a hand-rolled service worker at `public/sw.js`; no PWA framework is adopted.
@@ -269,18 +327,21 @@ A reminder subject moves from "due inside window" to "sent" once a `Notification
 - Notification copy is localized per collector locale via a new `notifications` next-intl namespace.
 - The collector locale that copy is resolved against is stored on `User.locale`. It is captured at sign-in from the locale the collector is actively browsing the app with, not from the browser's `Accept-Language` header, and it follows the collector whenever they switch language. It stays nullable, and an absent value falls back to the default locale.
 - The collector timezone that windows are computed in is captured **silently from the authenticated app shell**, not through a prompt and not through a settings control. The browser is the only place the IANA zone is knowable, so the capture is a client effect; the shell is the host because it also backfills every collector who signed up before it existed. The value is validated server-side before it is stored and is kept in sync with the browser (written when absent, rewritten when it differs), because the product exposes no manual timezone choice to protect and a collector who travels should be reminded in their actual local time. It stays nullable and an absent value keeps the `UTC` fallback. A future manual timezone control would need an explicit-choice flag to stop the shell from overwriting the collector's own selection.
-- Notification deep links open the owning order or delivery detail.
+- Notification deep links open the owning order or delivery detail; `STORE_REJECTED` is the one exception and opens the store listing instead, since the store's own detail page is no longer reachable after rejection.
+- A fourth reminder type, `STORE_REJECTED`, notifies a store's creator once, event-driven, when an administrator rejects or removes their store (`WO-07`); it is rejection-only (approval never notifies) and reuses the opt-in, subscription, and dedup model rather than the daily dispatcher.
 
 ## Cross-domain Notes
 
 - `User.timezone` is not owned by this FRD alone. The dashboard ([`FRD-06`](../frd-06-dashboard/frd-06-dashboard.md)) already computes its periods in the collector's timezone through `resolveTimeZone` / `getTodayStart`, and the settings domain ([`FRD-07 · FR-07-34`](../frd-07-user-settings/frd-07-user-settings.md#functional-requirements)) already computes budget cycles the same way. Both fell back to `UTC` for the same reason this FRD did: nothing ever wrote the column. Both start receiving a real value from the capture in `FR-09-23` without any change of their own, and both keep their `UTC` fallback for a collector who has no stored value yet.
 - The capture is hosted by the private app shell ([`FRD-03`](../frd-03-collector-app-shell/frd-03-collector-app-shell.md)), which already hosts the service-worker registration. It adds no visible surface to the shell.
+- The `STORE_REJECTED` trigger is not owned by this FRD. The rejection/removal decision, `Store.removalReason`, and the mutation that calls into this FRD's send helper all belong to [`PRD-02 FRD-04` · `WO-09 store-approval-and-removal`](../frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md), whose own Out of Scope explicitly names this FRD as the owner of "whether and how the creator is notified". That mutation is reachable only through the admin identity and role platform in [`PRD-03 FRD-01` admin identity and access](../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md), and is routed to from the moderation inbox in [`PRD-03 FRD-02` moderation console](../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md#overview), which already states that "approve a store, remove a store" actions live inline in the collector app and are owned by `PRD-02 (FRD-04)`. This FRD only defines and owns the notification that fires once that decision is made.
 
 ## Open Questions
 
 - The exact lead-time windows (how many days before a payment's expected date and before an expected arrival a reminder fires) are implementation constants to tune; a sensible starting point is a few days, but the values are not yet fixed and may become collector-configurable later.
 - Whether the overdue reminder repeats (a single nudge versus a periodic reminder while the arrival stays overdue) or fires once per due date; MVP leans to once per due date via the dedup key.
 - Whether per-type preferences should live on `User`, on `PushSubscription`, or on a dedicated `NotificationPreference` model; the Blueprint decides and justifies this.
+- The exact abuse-vs-other classification of `Store.removalReason` that drives `STORE_REJECTED` copy selection (`FR-09-28`) is owned by `WO-09`'s moderation action, not fixed here; this FRD only defines the two copy variants and consumes whatever value that action supplies.
 
 ## Out of Scope
 
@@ -288,6 +349,8 @@ A reminder subject moves from "due inside window" to "sent" once a `Notification
 - An in-app notification center or notification history surface.
 - Offline data support beyond basic installability (no offline reads, writes, caching, or background sync of domain data).
 - Per-order custom reminders authored by the collector (custom dates, custom messages, snooze).
+- A notification for store approval, or for a `FLAGGED` status transition; only rejection/removal (`StoreStatus.REJECTED`) notifies (`BR-09-09`).
+- Defining or building the admin moderation action, the admin role/identity platform, or the moderation console inbox; those belong to `PRD-02 FRD-04` and `PRD-03 FRD-01` / `FRD-02` respectively.
 
 ## Linked Blueprints
 

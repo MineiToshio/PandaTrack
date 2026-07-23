@@ -3849,6 +3849,25 @@
     section[id$="-mobile"].is-active .mk-burger { display: inline-grid !important; }
     section[id$="-mobile"].is-active .auth-card { box-shadow: none; border-radius: 16px; }
     section[id$="-mobile"].is-active .mk-footer-cols { gap: 32px; }
+
+    /* ─── FRD-04 · admin inline moderation (planned scope, prototype-only) ─── */
+    .adm-note { font-size: 11.5px; color: var(--text-muted); line-height: 1.5; margin: 8px 0 0; }
+    .adm-diff { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    .adm-diff-row { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: var(--surface); }
+    .adm-diff-row.is-drift { border-color: color-mix(in oklch, var(--warning) 40%, transparent); background: color-mix(in oklch, var(--warning) 7%, transparent); }
+    .adm-diff-field { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .adm-diff-values { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; font-size: 13px; }
+    .adm-diff-before { color: var(--text-muted); text-decoration: line-through; }
+    .adm-diff-after { color: var(--text-primary); font-weight: 500; }
+    .adm-diff-arrow { color: var(--text-muted); display: inline-flex; }
+    .adm-report-row { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: var(--surface); }
+    .adm-report-row + .adm-report-row { margin-top: 10px; }
+    .adm-report-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .adm-reason-group-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin: 4px 0 6px; }
+    @media (max-width: 560px) {
+      .adm-diff-values { grid-template-columns: 1fr; gap: 4px; }
+      .adm-diff-arrow { transform: rotate(90deg); }
+    }
   </style>
 </head>
 <body>
@@ -3895,6 +3914,12 @@
         <a href="#s6-store-create-logo-upload" data-screen="s6-store-create-logo-upload">Store create logo upload</a>
         <a href="#s6-store-create-step-5-preview" data-screen="s6-store-create-step-5-preview">Store create step 5 preview</a>
         <a href="#s6-store-create-edit-mode" data-screen="s6-store-create-edit-mode">Store create edit mode</a>
+        <a href="#s6-store-detail-admin-pending" data-screen="s6-store-detail-admin-pending">Store detail admin (pending)</a>
+        <a href="#s6-store-detail-remove-modal" data-screen="s6-store-detail-remove-modal">Store detail remove modal</a>
+        <a href="#s6-store-detail-admin-flagged" data-screen="s6-store-detail-admin-flagged">Store detail admin (flagged)</a>
+        <a href="#s6-store-detail-admin-governance" data-screen="s6-store-detail-admin-governance">Store detail admin governance</a>
+        <a href="#s6-store-change-request-review" data-screen="s6-store-change-request-review">Store change-request review</a>
+        <a href="#s6-store-change-request-review-drift" data-screen="s6-store-change-request-review-drift">Store change-request review (drift)</a>
       </div>
     </div>
     <span class="demo-nav-current" id="demo-nav-current" aria-live="polite"></span>
@@ -5120,12 +5145,12 @@
         <div class="app-topbar-spacer"></div>
       </div>
 
-      <!-- banner PENDING — shown to PUBLIC VIEWER (any authenticated user) -->
-      <div class="store-banner warning" style="margin-bottom:8px;">
+      <!-- banner PENDING — shown to PUBLIC VIEWER (any authenticated user); copy suavizada (FR-04-50 / AC-04-31) -->
+      <div class="store-banner" style="margin-bottom:8px;" role="status">
         <i data-lucide="clock" class="banner-icon" style="width:16px;height:16px;"></i>
         <div class="banner-copy">
           <strong>Tienda en revisión</strong>
-          <span>Esta tienda fue creada por la comunidad y aún no ha sido verificada por el equipo. Te recomendamos revisar la información con precaución.</span>
+          <span>Una persona de la comunidad creó esta tienda y el equipo la está revisando. Ya puedes usarla con normalidad; solo no aparece en buscadores hasta que se apruebe.</span>
         </div>
       </div>
       <!-- ⚠ SPEC NOTE — solo para diseño, no va en producción -->
@@ -5134,7 +5159,7 @@
         <div style="margin-top:8px;line-height:1.6;">
           <strong>Viewer público:</strong> Banner amarillo "Tienda en revisión" como se muestra aquí.<br>
           <strong>Creador:</strong> Banner azul info "Creaste esta tienda. El equipo la revisará antes de que sea visible. Te avisamos cuando esté aprobada." + botón Editar en Acciones.<br>
-          <strong>Admin:</strong> Banner warning "Tienda pendiente de revisión. Revisa los datos." + botones Aprobar / Rechazar en sidebar.
+          <strong>Admin:</strong> mismo aviso calmado + panel de moderación (Aprobar / Marcar con reportes / Retirar) en el rail — ver la variante <a href="#s6-store-detail-admin-pending" data-screen-link="s6-store-detail-admin-pending">Detalle · Admin (pendiente)</a>.
         </div>
       </details>
 
@@ -7218,6 +7243,487 @@
   </div>
 </section>
 
+<!-- ═══════════════════════════════════════════════════════════════
+     FRD-04 · ADMIN INLINE MODERATION (planned scope, FR-04-40…FR-04-51)
+     Variantes solo visibles para administradores. Cada acción se audita
+     (PRD-03); visualmente no cambia nada más que un toast de confirmación.
+     ═══════════════════════════════════════════════════════════════ -->
+
+<!-- (a) DETALLE TIENDA · VARIANTE ADMIN sobre tienda PENDING -->
+<section id="s6-store-detail-admin-pending" class="screen" aria-labelledby="s6-store-detail-admin-pending-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link is-active"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
+          <span class="avatar">S</span>
+          <span class="info"><strong>Sergio Minei</strong><small>admin@pandatrack.dev</small></span>
+          <span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+        </button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar / expandir sidebar">
+          <i data-lucide="panel-left-close"></i><span class="label">Colapsar</span>
+        </button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <a href="#stores" class="btn ghost sm" data-screen-link="stores"><i data-lucide="arrow-left"></i> Tiendas</a>
+        <h2 id="s6-store-detail-admin-pending-title" style="margin-left: 6px;">HMV Japan</h2>
+        <div class="app-topbar-spacer"></div>
+      </div>
+
+      <!-- disclaimer PENDING · copy suavizada (FR-04-50 / AC-04-31): base .store-banner = info calmado -->
+      <div class="store-banner" style="margin-bottom:8px;" role="status">
+        <i data-lucide="clock" class="banner-icon" style="width:16px;height:16px;"></i>
+        <div class="banner-copy">
+          <strong>Tienda en revisión</strong>
+          <span>Una persona de la comunidad creó esta tienda y el equipo la está revisando. Ya puedes usarla con normalidad; solo no aparece en buscadores hasta que se apruebe.</span>
+        </div>
+      </div>
+      <!-- ⚠ SPEC NOTE — solo diseño -->
+      <details style="background:color-mix(in oklch,var(--accent) 8%,transparent);border:1px dashed color-mix(in oklch,var(--accent) 35%,transparent);border-radius:8px;padding:10px 14px;margin-bottom:20px;font-size:11.5px;color:var(--text-muted);">
+        <summary style="cursor:pointer;font-weight:600;color:var(--accent);list-style:none;display:flex;align-items:center;gap:6px;"><i data-lucide="shield" style="width:13px;height:13px;"></i> Spec · controles de moderación (solo admin)</summary>
+        <div style="margin-top:8px;line-height:1.6;">
+          Los controles <strong>Aprobar</strong>, <strong>Retirar</strong> y <strong>Marcar con reportes</strong> solo aparecen para administradores (<code>requireAdmin()</code>). Cada acción se audita en el registro append-only de PRD-03 y confirma con un toast. Un viewer normal ve únicamente el aviso azul de arriba.
+        </div>
+      </details>
+
+      <div class="detail-grid">
+        <div>
+          <div class="detail-hero">
+            <div class="detail-hero-head">
+              <div class="store-avatar s56" style="background: color-mix(in oklch, var(--info) 18%, var(--surface-elevated)); color: var(--info);">H</div>
+              <div>
+                <div class="name">HMV Japan</div>
+                <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px; flex-wrap: wrap;">
+                  <span class="text-muted" style="font-size: 12px;"><i data-lucide="map-pin" style="width: 12px; height: 12px; vertical-align: -1px;"></i> Tokyo, JP</span>
+                  <span class="chip info"><i data-lucide="clock"></i> En revisión</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-secondary" style="font-size: 14px; line-height: 1.5; margin: 0 0 16px;">Tienda online de música y merchandise de anime. Envíos internacionales con seguimiento.</p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <span class="chip info"><i data-lucide="globe"></i> Web</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 16px;">
+            <div class="subcard is-open s8-card-cool" data-collapsible>
+              <button class="subcard-toggle">
+                <span class="s8-eyebrow-chip tone-cool"><i data-lucide="tags"></i>Categorías</span>
+                <span class="text-muted" style="font-size: 12px;">2</span>
+                <span class="chev"><i data-lucide="chevron-down"></i></span>
+              </button>
+              <div class="subcard-body"><div class="subcard-body-inner">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <span class="chip accent"><i data-lucide="disc"></i> Vinyl</span>
+                  <span class="chip accent"><i data-lucide="sparkles"></i> Anime</span>
+                </div>
+              </div></div>
+            </div>
+          </div>
+        </div>
+
+        <aside>
+          <!-- panel de moderación admin (primero en el rail) -->
+          <div class="card elevated s8-card-warm" style="position: sticky; top: 80px;">
+            <span class="s8-eyebrow-chip tone-warm"><i data-lucide="shield"></i>Moderación</span>
+            <div class="actions-list" style="margin-top: 10px;">
+              <button class="btn primary" type="button"><i data-lucide="check-circle"></i> Aprobar tienda</button>
+              <button class="btn ghost" type="button"><i data-lucide="flag"></i> Marcar con reportes</button>
+              <a href="#s6-store-detail-remove-modal" class="btn destructive-ghost" data-screen-link="s6-store-detail-remove-modal"><i data-lucide="ban"></i> Retirar tienda</a>
+            </div>
+            <p class="adm-note">Aprobar publica la tienda al instante. Retirar la convierte en un registro histórico (tombstone) sin borrarla. Cada acción queda auditada.</p>
+          </div>
+
+          <div class="card elevated s8-card-accent" style="margin-top: 14px;">
+            <span class="s8-eyebrow-chip"><i data-lucide="store"></i>Resumen</span>
+            <div style="margin-top: 10px;">
+              <div class="summary-row"><span class="label">Reportes abiertos</span><span class="value num">0</span></div>
+              <div class="summary-row"><span class="label">Solicitudes de cambio</span><span class="value num">0</span></div>
+              <div class="summary-row"><span class="label">Reseñas</span><span class="value num">0</span></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- (b) DETALLE TIENDA · MODAL RETIRAR (motivo de retiro) -->
+<section id="s6-store-detail-remove-modal" class="screen" aria-labelledby="s6-store-detail-remove-modal-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link is-active"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
+          <span class="avatar">S</span>
+          <span class="info"><strong>Sergio Minei</strong><small>admin@pandatrack.dev</small></span>
+          <span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+        </button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar / expandir sidebar">
+          <i data-lucide="panel-left-close"></i><span class="label">Colapsar</span>
+        </button>
+      </div>
+    </aside>
+    <div class="app-content" style="position: relative;">
+      <div class="app-topbar">
+        <a href="#s6-store-detail-admin-pending" class="btn ghost sm" data-screen-link="s6-store-detail-admin-pending"><i data-lucide="arrow-left"></i> Tiendas</a>
+        <h2 id="s6-store-detail-remove-modal-title" style="margin-left: 6px;">HMV Japan</h2>
+        <div class="app-topbar-spacer"></div>
+      </div>
+
+      <!-- fondo (detalle) desenfocado -->
+      <div style="opacity: 0.35; pointer-events: none; user-select: none;">
+        <div class="detail-grid">
+          <div>
+            <div class="detail-hero">
+              <div class="detail-hero-head">
+                <div class="store-avatar s56" style="background: color-mix(in oklch, var(--info) 18%, var(--surface-elevated)); color: var(--info);">H</div>
+                <div>
+                  <div class="name">HMV Japan</div>
+                  <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
+                    <span class="text-muted" style="font-size: 12px;"><i data-lucide="map-pin" style="width: 12px; height: 12px; vertical-align: -1px;"></i> Tokyo, JP</span>
+                    <span class="chip info"><i data-lucide="clock"></i> En revisión</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <aside><div class="card elevated" style="height: 120px;"></div></aside>
+        </div>
+      </div>
+
+      <!-- modal retirar -->
+      <div class="report-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="remove-modal-title">
+        <div class="report-modal">
+          <p class="modal-title" id="remove-modal-title">Retirar tienda</p>
+          <p class="modal-sub">Elige el motivo. La tienda deja de ser pública, pero los pedidos que la referencian se conservan.</p>
+
+          <p class="adm-reason-group-label">Motivos neutrales</p>
+          <div class="report-reasons" role="radiogroup" aria-label="Motivo neutral de retiro">
+            <div class="report-reason is-selected" role="radio" aria-checked="true" tabindex="0"><i data-lucide="copy" style="width:16px;height:16px;"></i> Tienda duplicada</div>
+            <div class="report-reason" role="radio" aria-checked="false" tabindex="-1"><i data-lucide="store" style="width:16px;height:16px;color:var(--text-muted);"></i> Tienda cerrada o inactiva</div>
+            <div class="report-reason" role="radio" aria-checked="false" tabindex="-1"><i data-lucide="alert-circle" style="width:16px;height:16px;color:var(--text-muted);"></i> Información falsa o engañosa</div>
+          </div>
+
+          <p class="adm-reason-group-label" style="margin-top:14px;">Motivo de sanción</p>
+          <div class="report-reasons" role="radiogroup" aria-label="Motivo de sanción">
+            <div class="report-reason" role="radio" aria-checked="false" tabindex="-1"><i data-lucide="shield-alert" style="width:16px;height:16px;color:var(--destructive);"></i> Abuso, estafa o fraude</div>
+          </div>
+
+          <p class="adm-note" style="margin-bottom:16px;">Los motivos neutrales muestran el aviso neutral en los pedidos ("Esta tienda ya no está disponible"). Solo el motivo de abuso usa lenguaje de sanción.</p>
+
+          <div class="field" style="margin-bottom: 20px;">
+            <label class="field-label" for="remove-note">Nota interna <span style="color: var(--text-muted); font-weight: 400;">(opcional)</span></label>
+            <textarea class="input" id="remove-note" rows="2" placeholder="Contexto para el registro de auditoría…"></textarea>
+          </div>
+          <div class="report-modal-footer">
+            <a href="#s6-store-detail-admin-pending" class="btn ghost" data-screen-link="s6-store-detail-admin-pending">Cancelar</a>
+            <button class="btn destructive" type="button"><i data-lucide="ban"></i> Retirar tienda</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- (c) DETALLE TIENDA · VARIANTE ADMIN sobre tienda FLAGGED -->
+<section id="s6-store-detail-admin-flagged" class="screen" aria-labelledby="s6-store-detail-admin-flagged-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link is-active"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario">
+          <span class="avatar">S</span>
+          <span class="info"><strong>Sergio Minei</strong><small>admin@pandatrack.dev</small></span>
+          <span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+        </button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar / expandir sidebar">
+          <i data-lucide="panel-left-close"></i><span class="label">Colapsar</span>
+        </button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <a href="#stores" class="btn ghost sm" data-screen-link="stores"><i data-lucide="arrow-left"></i> Tiendas</a>
+        <h2 id="s6-store-detail-admin-flagged-title" style="margin-left: 6px;">Akiba Records</h2>
+        <div class="app-topbar-spacer"></div>
+      </div>
+
+      <!-- disclaimer FLAGGED · más fuerte que el de pending (.store-banner.warning), nunca oculta la tienda -->
+      <div class="store-banner warning" style="margin-bottom:20px;" role="alert">
+        <i data-lucide="alert-triangle" class="banner-icon" style="width:16px;height:16px;"></i>
+        <div class="banner-copy">
+          <strong>Tienda con reportes</strong>
+          <span>Esta tienda acumula reportes con credibilidad. Sigue visible, pero revisa la información con atención antes de operar.</span>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <div>
+          <div class="detail-hero">
+            <div class="detail-hero-head">
+              <div class="store-avatar s56">A</div>
+              <div>
+                <div class="name">Akiba Records</div>
+                <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px; flex-wrap: wrap;">
+                  <span class="text-muted" style="font-size: 12px;"><i data-lucide="map-pin" style="width: 12px; height: 12px; vertical-align: -1px;"></i> Akihabara, Tokyo · JP</span>
+                  <span class="chip warning"><i data-lucide="alert-circle"></i> Con reportes</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-secondary" style="font-size: 14px; line-height: 1.5; margin: 12px 0 0;">Tienda especializada en vinilo japonés y press limitados de anime OST.</p>
+          </div>
+        </div>
+
+        <aside>
+          <div class="card elevated s8-card-warm" style="position: sticky; top: 80px;">
+            <span class="s8-eyebrow-chip tone-warm"><i data-lucide="shield"></i>Moderación</span>
+            <div class="actions-list" style="margin-top: 10px;">
+              <button class="btn primary" type="button"><i data-lucide="shield-check"></i> Quitar marca de reportes</button>
+              <a href="#s6-store-detail-admin-governance" class="btn ghost" data-screen-link="s6-store-detail-admin-governance"><i data-lucide="message-square-warning"></i> Ver reportes</a>
+              <a href="#s6-store-detail-remove-modal" class="btn destructive-ghost" data-screen-link="s6-store-detail-remove-modal"><i data-lucide="ban"></i> Retirar tienda</a>
+            </div>
+            <p class="adm-note">Marcar con reportes nunca oculta la tienda: vuelve al estado anterior (pendiente o aprobada) al quitar la marca.</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- (d) DETALLE TIENDA · PANEL DE GOBERNANZA ADMIN (reportes crudos + resolver/descartar) -->
+<section id="s6-store-detail-admin-governance" class="screen" aria-labelledby="s6-store-detail-admin-governance-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link is-active"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>admin@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar / expandir sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content" style="position:relative;overflow:hidden;">
+      <div style="opacity:0.28;pointer-events:none;">
+        <div class="app-topbar">
+          <a href="#s6-store-detail-admin-flagged" class="btn ghost sm"><i data-lucide="arrow-left"></i> Tiendas</a>
+          <h2 id="s6-store-detail-admin-governance-title" style="margin-left:6px;">Akiba Records</h2>
+          <div class="app-topbar-spacer"></div>
+        </div>
+        <div class="detail-grid">
+          <div>
+            <div class="detail-hero">
+              <div class="detail-hero-head">
+                <div class="store-avatar s56">A</div>
+                <div><div class="name">Akiba Records</div><div style="margin-top:4px;"><span class="text-muted" style="font-size:12px;"><i data-lucide="map-pin" style="width:12px;height:12px;vertical-align:-1px;"></i> Akihabara, Tokyo · JP</span></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- modal gobernanza (admin) -->
+      <div style="position:absolute;inset:0;background:oklch(0% 0 0 / 0.44);z-index:30;display:flex;align-items:flex-start;justify-content:center;padding:40px 16px 24px;" role="dialog" aria-modal="true" aria-labelledby="adm-gov-title">
+        <div style="width:min(600px,100%);background:var(--surface-elevated);border:1px solid var(--border-strong);border-radius:14px;box-shadow:var(--shadow-3);overflow:hidden;max-height:82vh;display:flex;flex-direction:column;">
+          <div style="display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border);">
+            <i data-lucide="shield" style="width:18px;height:18px;color:var(--warning);"></i>
+            <h3 id="adm-gov-title" style="margin:0;font-size:16px;font-weight:700;flex:1;">Reportes y sugerencias · Admin</h3>
+            <a href="#s6-store-detail-admin-flagged" class="topbar-iconbtn" data-screen-link="s6-store-detail-admin-flagged" aria-label="Cerrar"><i data-lucide="x"></i></a>
+          </div>
+          <div style="overflow-y:auto;padding:20px;">
+            <div style="margin-bottom:20px;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;"><i data-lucide="flag" style="width:14px;height:14px;color:var(--text-muted);"></i><span class="eyebrow">Reportes abiertos</span></div>
+
+              <div class="adm-report-row">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
+                  <span class="chip warning"><i data-lucide="alert-circle"></i> Información inexacta</span>
+                  <span class="text-muted" style="font-size:11px;flex-shrink:0;">hace 3 días</span>
+                </div>
+                <p style="font-size:13px;color:var(--text-secondary);margin:0 0 4px;">"La web indicada ya no funciona, redirige a un dominio vencido."</p>
+                <p class="text-muted" style="font-size:11.5px;margin:0;"><i data-lucide="user" style="width:11px;height:11px;vertical-align:-1px;"></i> Reportado por <strong>@collector_92</strong></p>
+                <div class="adm-report-actions">
+                  <button class="btn primary sm" type="button"><i data-lucide="check"></i> Resolver</button>
+                  <button class="btn ghost sm" type="button"><i data-lucide="x"></i> Descartar</button>
+                </div>
+              </div>
+
+              <div class="adm-report-row">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
+                  <span class="chip warning"><i data-lucide="shield-alert"></i> Posible estafa o fraude</span>
+                  <span class="text-muted" style="font-size:11px;flex-shrink:0;">hace 1 día</span>
+                </div>
+                <p style="font-size:13px;color:var(--text-secondary);margin:0 0 4px;">"Pagué una preventa hace dos meses y no responden mensajes."</p>
+                <p class="text-muted" style="font-size:11.5px;margin:0;"><i data-lucide="user" style="width:11px;height:11px;vertical-align:-1px;"></i> Reportado por <strong>@mika.figs</strong></p>
+                <div class="adm-report-actions">
+                  <button class="btn primary sm" type="button"><i data-lucide="check"></i> Resolver</button>
+                  <button class="btn ghost sm" type="button"><i data-lucide="x"></i> Descartar</button>
+                </div>
+              </div>
+
+              <p class="adm-note"><i data-lucide="lock" style="width:11px;height:11px;vertical-align:-1px;"></i> Detalles crudos y autor visibles solo para administradores. Resolver o descartar libera al usuario para reportar de nuevo.</p>
+            </div>
+
+            <div>
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;"><i data-lucide="git-pull-request-arrow" style="width:14px;height:14px;color:var(--text-muted);"></i><span class="eyebrow">Solicitudes de cambio</span></div>
+              <div class="adm-report-row">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
+                  <span class="chip info"><i data-lucide="git-pull-request-arrow"></i> 1 pendiente</span>
+                  <span class="text-muted" style="font-size:11px;">hace 1 semana</span>
+                </div>
+                <p style="font-size:13px;color:var(--text-secondary);margin:0 0 10px;">Campos modificados: <strong>descripción</strong>, <strong>categorías</strong> (+Manga)</p>
+                <a href="#s6-store-change-request-review" class="btn ghost sm" data-screen-link="s6-store-change-request-review"><i data-lucide="arrow-right"></i> Revisar solicitud</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- (e) REVISIÓN DE SOLICITUD DE CAMBIO (diff + aprobar/rechazar) -->
+<section id="s6-store-change-request-review" class="screen" aria-labelledby="s6-store-change-request-review-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link is-active"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>admin@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar / expandir sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <a href="#s6-store-detail-admin-governance" class="btn ghost sm" data-screen-link="s6-store-detail-admin-governance"><i data-lucide="arrow-left"></i> Reportes</a>
+        <h2 id="s6-store-change-request-review-title" style="margin-left: 6px;">Solicitud de cambio · Akiba Records</h2>
+        <div class="app-topbar-spacer"></div>
+      </div>
+
+      <div style="max-width:640px;">
+        <div class="card elevated">
+          <span class="s8-eyebrow-chip"><i data-lucide="git-pull-request-arrow"></i>Solicitud de cambio</span>
+          <p class="text-muted" style="font-size:12px;margin:8px 0 0;"><i data-lucide="user" style="width:11px;height:11px;vertical-align:-1px;"></i> Enviada por <strong>@collector_92</strong> · hace 1 semana</p>
+
+          <div class="adm-diff">
+            <div class="adm-diff-row">
+              <div class="adm-diff-field"><i data-lucide="align-left" style="width:12px;height:12px;"></i> Descripción</div>
+              <div class="adm-diff-values">
+                <span class="adm-diff-before">Tienda de vinilo japonés.</span>
+                <span class="adm-diff-arrow"><i data-lucide="arrow-right" style="width:14px;height:14px;"></i></span>
+                <span class="adm-diff-after">Tienda de vinilo japonés y press limitados de anime OST. Atención en japonés e inglés.</span>
+              </div>
+            </div>
+            <div class="adm-diff-row">
+              <div class="adm-diff-field"><i data-lucide="tags" style="width:12px;height:12px;"></i> Categorías</div>
+              <div class="adm-diff-values">
+                <span class="adm-diff-before">Vinyl, Anime</span>
+                <span class="adm-diff-arrow"><i data-lucide="arrow-right" style="width:14px;height:14px;"></i></span>
+                <span class="adm-diff-after">Vinyl, Anime, Manga</span>
+              </div>
+            </div>
+          </div>
+
+          <p class="adm-note">Al aprobar, los cambios se recalculan sobre el estado actual de la tienda (rebase) y se aplican en una sola operación, incluidas las relaciones. El diff guardado nunca se aplica a ciegas.</p>
+
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+            <button class="btn ghost" type="button"><i data-lucide="x"></i> Rechazar</button>
+            <button class="btn primary" type="button"><i data-lucide="check"></i> Aprobar y aplicar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- (f) REVISIÓN DE SOLICITUD DE CAMBIO · VARIANTE CONFLICTO (drift) -->
+<section id="s6-store-change-request-review-drift" class="screen" aria-labelledby="s6-store-change-request-review-drift-title">
+  <div class="app-shell">
+    <aside class="app-sidebar" aria-label="Navegación principal">
+      <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+      <a href="#dashboard" class="app-nav-link"><i data-lucide="layout-dashboard"></i>Hoy</a>
+      <a href="#orders" class="app-nav-link"><i data-lucide="package"></i>Pedidos</a>
+      <a href="#deliveries" class="app-nav-link"><i data-lucide="truck"></i>Entregas</a>
+      <a href="#stores" class="app-nav-link is-active"><i data-lucide="store"></i>Tiendas</a>
+      <a href="#settings" class="app-nav-link"><i data-lucide="settings"></i>Ajustes</a>
+      <div class="app-sidebar-footer">
+        <button class="app-sidebar-user" type="button" aria-label="Menú de usuario"><span class="avatar">S</span><span class="info"><strong>Sergio Minei</strong><small>admin@pandatrack.dev</small></span><span class="chev"><i data-lucide="chevrons-up-down"></i></span></button>
+        <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar / expandir sidebar"><i data-lucide="panel-left-close"></i><span class="label">Colapsar</span></button>
+      </div>
+    </aside>
+    <div class="app-content">
+      <div class="app-topbar">
+        <a href="#s6-store-detail-admin-governance" class="btn ghost sm" data-screen-link="s6-store-detail-admin-governance"><i data-lucide="arrow-left"></i> Reportes</a>
+        <h2 id="s6-store-change-request-review-drift-title" style="margin-left: 6px;">Solicitud de cambio · Akiba Records</h2>
+        <div class="app-topbar-spacer"></div>
+      </div>
+
+      <div style="max-width:640px;">
+        <div class="store-banner warning" style="margin-bottom:16px;" role="alert">
+          <i data-lucide="alert-triangle" class="banner-icon" style="width:16px;height:16px;"></i>
+          <div class="banner-copy">
+            <strong>La tienda cambió desde esta solicitud</strong>
+            <span>Algunos campos se modificaron después de enviarse. Revisa los conflictos antes de aplicar; no se aplicarán valores desactualizados en silencio.</span>
+          </div>
+        </div>
+
+        <div class="card elevated">
+          <span class="s8-eyebrow-chip"><i data-lucide="git-pull-request-arrow"></i>Solicitud de cambio</span>
+          <p class="text-muted" style="font-size:12px;margin:8px 0 0;"><i data-lucide="user" style="width:11px;height:11px;vertical-align:-1px;"></i> Enviada por <strong>@collector_92</strong> · hace 2 semanas</p>
+
+          <div class="adm-diff">
+            <div class="adm-diff-row is-drift">
+              <div class="adm-diff-field"><i data-lucide="align-left" style="width:12px;height:12px;"></i> Descripción <span class="chip warning" style="font-size:10px;padding:1px 6px;"><i data-lucide="alert-circle"></i> En conflicto</span></div>
+              <div class="adm-diff-values">
+                <span class="adm-diff-before">Tienda de vinilo japonés (editada después por otra persona).</span>
+                <span class="adm-diff-arrow"><i data-lucide="arrow-right" style="width:14px;height:14px;"></i></span>
+                <span class="adm-diff-after">Tienda de vinilo japonés y press limitados de anime OST.</span>
+              </div>
+            </div>
+            <div class="adm-diff-row">
+              <div class="adm-diff-field"><i data-lucide="tags" style="width:12px;height:12px;"></i> Categorías</div>
+              <div class="adm-diff-values">
+                <span class="adm-diff-before">Vinyl, Anime</span>
+                <span class="adm-diff-arrow"><i data-lucide="arrow-right" style="width:14px;height:14px;"></i></span>
+                <span class="adm-diff-after">Vinyl, Anime, Manga</span>
+              </div>
+            </div>
+          </div>
+
+          <p class="adm-note">La descripción cambió en la tienda después de enviarse la solicitud. El sistema detecta el desfase (drift) y lo muestra en vez de aplicar el valor viejo. Resuelve el conflicto antes de aplicar.</p>
+
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+            <button class="btn ghost" type="button"><i data-lucide="x"></i> Rechazar</button>
+            <button class="btn primary" type="button"><i data-lucide="git-compare"></i> Revisar conflictos</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ══════════════════════════════════════════════════════════════
      M01 — VERSIÓN A: EDITORIAL QUIET (6 casos)
      Typography-driven · sin íconos en header · vibe Linear/Plain
@@ -7413,6 +7919,12 @@
     's6-store-create-edit-mode':         [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Editar tienda', null]],
     's6-store-detail-person':            [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Collectibles CO', null]],
     's6-store-detail-reports-summary':   [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Akiba Records', null]],
+    's6-store-detail-admin-pending':       [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['HMV Japan', null]],
+    's6-store-detail-remove-modal':        [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['HMV Japan', null]],
+    's6-store-detail-admin-flagged':       [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Akiba Records', null]],
+    's6-store-detail-admin-governance':    [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Akiba Records', null]],
+    's6-store-change-request-review':      [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Akiba Records', null]],
+    's6-store-change-request-review-drift':[['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Akiba Records', null]],
     'settings':                          [['Inicio', '#dashboard'], ['Ajustes', '#settings']],
     // M01 — Modal Enhancement (3 versiones × 6 casos)
     'm01-va-destructive': [['Modal · A', null]],
@@ -7567,6 +8079,12 @@
     's6-store-create-edit-mode':          'S6 · Editar tienda',
     's6-store-detail-person':             'S6 · Detalle · Persona',
     's6-store-detail-reports-summary':    'S6 · Detalle · Reportes',
+    's6-store-detail-admin-pending':      'S6 · Detalle · Admin (pendiente)',
+    's6-store-detail-remove-modal':       'S6 · Detalle · Retirar (modal)',
+    's6-store-detail-admin-flagged':      'S6 · Detalle · Admin (con reportes)',
+    's6-store-detail-admin-governance':   'S6 · Detalle · Admin gobernanza',
+    's6-store-change-request-review':     'S6 · Solicitud de cambio · Revisión',
+    's6-store-change-request-review-drift': 'S6 · Solicitud de cambio · Conflicto',
     's6-store-create-step-5-preview':     'S6 · Tienda existente · Vista previa',
     'm01-va-destructive': 'M01-A · Eliminar tienda',
     'm01-va-warning':     'M01-A · Reportar tienda',

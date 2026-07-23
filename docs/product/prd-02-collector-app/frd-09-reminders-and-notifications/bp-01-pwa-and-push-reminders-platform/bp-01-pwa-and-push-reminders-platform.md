@@ -12,15 +12,16 @@ children:
   - WO-04
   - WO-05
   - WO-06
-last_updated: 2026-07-14
-implementation_status: IMPLEMENTED
+  - WO-07
+last_updated: 2026-07-22
+implementation_status: PARTIALLY_IMPLEMENTED
 ---
 
 # BP-01 PWA and Push Reminders Platform
 
 ## Purpose
 
-Define the single technical platform behind [`FRD-09`](../frd-09-reminders-and-notifications.md): making the collector app an installable PWA, holding push subscriptions and per-type preferences, and running a scheduled, timezone-aware, deduplicated dispatcher that sends localized, deep-linked Web Push reminders for upcoming payments, upcoming arrivals, and overdue arrivals. One blueprint covers the full vertical from persistence to service worker to cron.
+Define the single technical platform behind [`FRD-09`](../frd-09-reminders-and-notifications.md): making the collector app an installable PWA, holding push subscriptions and per-type preferences, and running a scheduled, timezone-aware, deduplicated dispatcher that sends localized, deep-linked Web Push reminders for upcoming payments, upcoming arrivals, and overdue arrivals. One blueprint covers the full vertical from persistence to service worker to cron. `WO-07` extends the same platform with a fourth, event-driven notification, `STORE_REJECTED`, sent once when an administrator rejects or removes a store; it reuses the subscription, preference, and dedup model without running through the cron dispatcher.
 
 ## Runtime Components
 
@@ -36,6 +37,7 @@ Define the single technical platform behind [`FRD-09`](../frd-09-reminders-and-n
 - dispatch route handler `src/app/api/notifications/dispatch/route.ts` guarded by `CRON_SECRET`.
 - `vercel.json` cron entry driving the dispatcher daily.
 - a new next-intl `notifications` message namespace resolved server-side at dispatch time.
+- a fourth `NotificationType` value (`STORE_REJECTED`), a `STORE` `NotificationSubjectType` value, and a `storeRejectedEnabled` column on `NotificationPreference`, plus a narrow event-driven send helper invoked directly from the store-moderation mutation instead of from the cron dispatcher (`WO-07`).
 
 ## Architecture Decisions
 
@@ -44,6 +46,7 @@ Define the single technical platform behind [`FRD-09`](../frd-09-reminders-and-n
 - The manifest is delivered by the Next.js metadata route rather than a static file, so theme and background colors read from the design tokens and stay theme-consistent.
 - Push transport is the `web-push` package with VAPID keys from environment variables (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`). The public key is client-exposed by design; the private key never leaves the server.
 - **Per-type preference storage decision:** per-type preferences live on a dedicated `NotificationPreference` model keyed by `userId` (one row per collector, one boolean column per reminder type), not on `PushSubscription` and not on `User`. Rationale: preferences are a property of the _collector_, not of a single browser/endpoint (a collector can have several subscriptions across devices, and all must honor one consistent preference set), so storing them on `PushSubscription` would duplicate and risk divergence. Keeping them off the wide `User` row avoids growing an already-large auth model with feature columns and keeps the notifications domain self-contained under `src/lib/data/notifications/`. The master on/off is _derived_ (the collector has at least one `ACTIVE` subscription), not a stored flag, so the browser subscription state stays the single source of truth for "can we reach this collector at all".
+- **`STORE_REJECTED` is event-driven, not batch-driven.** `WO-07` adds a fourth reminder type that is not produced by the daily dispatcher's due-soon/overdue windowing at all: it is called synchronously from the store-moderation mutation the instant an administrator rejects or removes a store. It follows the same one-column-per-type shape on `NotificationPreference` and the same `PushSubscription` / `NotificationDelivery` rows as the other three types, so the opt-in and dedup guarantees stay uniform across all four types even though the trigger shape differs.
 - The dispatcher uses thin dedicated queries. It reuses the _definitions_ of upcoming payment / upcoming arrival / overdue arrival from the dashboard aggregation ([`FRD-06`](../../frd-06-dashboard/frd-06-dashboard.md)) and the delivery overdue notion from [`FRD-08`](../../frd-08-delivery-management/frd-08-delivery-management.md), but never calls `getDashboardData`. A batch job must not pay for a full per-collector dashboard build.
 - Windowing is timezone-aware from `User.timezone` with a `UTC` fallback, reusing the same principle the settings domain already applies to budget cycles ([`FRD-07 · FR-07-34`](../../frd-07-user-settings/frd-07-user-settings.md#functional-requirements)).
 - Deduplication is enforced by a persisted `NotificationDelivery` row per (`userId`, `type`, subject id, due date). The dispatcher is therefore idempotent across same-day re-runs and safe to retry.
@@ -58,7 +61,7 @@ Define the single technical platform behind [`FRD-09`](../frd-09-reminders-and-n
   - validation: Zod at the server-action boundary; malformed input returns `SUBSCRIPTION_INVALID`.
   - output: a persisted `PushSubscription` row upserted by `endpoint` (`FR-09-10`), owned by the session user.
 - preference contract
-  - input: reminder `type` (`PAYMENT_DUE`, `ARRIVAL_DUE`, `ARRIVAL_OVERDUE`) and a boolean.
+  - input: reminder `type` (`PAYMENT_DUE`, `ARRIVAL_DUE`, `ARRIVAL_OVERDUE`, `STORE_REJECTED`) and a boolean.
   - output: the collector's `NotificationPreference` row updated for that type; unspecified types keep their stored value.
 - dispatch candidate contract
   - input: `now`, resolved per collector into their timezone window.
@@ -74,6 +77,10 @@ Define the single technical platform behind [`FRD-09`](../frd-09-reminders-and-n
 - installability contract
   - manifest: `name`, `short_name`, `start_url`, `scope`, `display: standalone`, token-sourced `theme_color` / `background_color`, and the icon set (`192`, `512`, `512` maskable).
   - service worker: registered on authenticated load, idempotent, handling `push` and `notificationclick`.
+- store rejection notice contract (`WO-07`)
+  - input: `userId` (the store's creator), `storeId`, and a `reasonCategory` supplied by the caller (`PRD-02 FRD-04`'s moderation mutation), distinguishing at least an abuse-related category from every other category.
+  - behavior: skip when `storeRejectedEnabled` is off or no active subscription exists (mirrors `BR-09-01`); skip when a `NotificationDelivery` row already exists for (`userId`, `STORE_REJECTED`, `storeId`, decision date); otherwise send to every active subscription, write the dedup row, and prune expired endpoints, reusing the same `SENT` / `EXPIRED` / `TRANSIENT_FAILURE` result union as the dispatch route.
+  - output: never throws into the calling mutation; a failed send is captured once with Sentry and does not block or roll back the store-rejection decision.
 
 ## Operational Priorities
 
@@ -95,6 +102,7 @@ Define the single technical platform behind [`FRD-09`](../frd-09-reminders-and-n
 - the test platform from [`FRD-02 testing and quality baseline`](../../frd-02-testing-and-quality-baseline/frd-02-testing-and-quality-baseline.md) for unit and E2E coverage of the non-foundation slices.
 - new environment variables (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `CRON_SECRET`) added to `.env.example` per [`env-example.mdc`](../../../../../.agents/rules/env-example.mdc).
 - Vercel Cron for the daily schedule.
+- the store-removal mutation and `Store.removalReason` from [`PRD-02 FRD-04` · `WO-09 store-approval-and-removal`](../../frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md) as the `STORE_REJECTED` trigger call site (`WO-07`), gated by the admin identity and role platform in [`PRD-03 FRD-01` admin identity and access](../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md) and routed to from [`PRD-03 FRD-02` moderation console](../../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md).
 
 ## Risks
 
@@ -105,9 +113,12 @@ Define the single technical platform behind [`FRD-09`](../frd-09-reminders-and-n
 - Reusing the dashboard aggregation "just to reuse code" would make the batch job expensive and is explicitly rejected; the thin-query boundary must be kept.
 - Stale service-worker versions can serve old behavior; the worker must be versioned and update cleanly, and must never cache domain data in MVP (installability only).
 - ~~Timezone gaps: because `User.timezone` has no settings UI today, most collectors fall back to `UTC`, which can shift a reminder by up to a day at the edges; acceptable for MVP but noted.~~ **Closed by `WO-06`**: the timezone is captured silently from the authenticated app shell and kept in sync with the collector's browser, so the `UTC` fallback is now the exception (a collector who has not loaded the app since the capture shipped) rather than the default. No settings UI was needed to close it.
+- `WO-07`'s event-driven send is a new code path outside the daily cron: a bug in it could either silently drop a rejection notice or, worse, throw into the calling store-moderation mutation. The send helper must be fire-and-forget from the mutation's perspective, exactly like the timezone capture is from the app shell's perspective.
+- `WO-07` depends on a rejection-reason category it does not itself produce; if `PRD-02 FRD-04`'s moderation action ships without one, `STORE_REJECTED` must default to the neutral copy rather than block on the dependency.
 
 ## Extension Points
 
+- ~~a fourth notification type reacting to a moderation decision.~~ **Delivered by `WO-07`**: `STORE_REJECTED` notifies a store's creator once, event-driven, when their store is rejected or removed; approval intentionally still sends nothing.
 - additional reminder types (for example fully-overdue-payment escalation, budget-threshold nudges).
 - collector-configurable lead-time windows and quiet hours.
 - an in-app notification center backed by the same dispatch records.
@@ -125,6 +136,7 @@ flowchart LR
   WO04["WO-04 Scheduled Reminders<br/>(thin queries, dispatch route, cron, dedup, localized payloads)"]
   WO05["WO-05 User Locale Persistence<br/>(User.locale, sign-in capture, language-switch sync, candidate wiring)"]
   WO06["WO-06 User Timezone Capture<br/>(shell capture, server validation, User.timezone writer)"]
+  WO07["WO-07 Store Rejection Notification<br/>(STORE_REJECTED type, event-driven send, PRD-02 FRD-04 trigger)"]
 
   WO01 --> WO02
   WO01 --> WO03
@@ -133,6 +145,7 @@ flowchart LR
   WO03 --> WO04
   WO04 --> WO05
   WO05 --> WO06
+  WO01 --> WO07
 ```
 
 - `WO-01` is the foundation slice: Prisma models, migration, shared Zod schemas, the `web-push` wrapper, and VAPID env plumbing. It ships no UI and no routes and is validated with unit tests. It is the only slice exempt from the "must include an E2E acceptance path" rule.
@@ -141,11 +154,12 @@ flowchart LR
 - `WO-04` scheduled reminders depends on `WO-03` because it needs real subscriptions and preferences to target.
 - `WO-05` user locale persistence is a follow-on slice after `WO-04`. It closes the `User.locale` extension point this blueprint names in its own Dependencies and Extension Points: `WO-04` shipped the dispatcher with a nullable `locale` on every candidate, so every reminder is composed in the default locale until a locale is stored. `WO-05` adds `User.locale`, captures the locale the collector browses with at sign-in, keeps it in sync when they switch language, and selects it in the candidate queries. The dispatcher itself does not change.
 - `WO-06` user timezone capture is the second follow-on slice, and closes the other half of the context gap `WO-05` opened the door to. `User.timezone` is read by the dispatcher's windowing (and by the dashboard), but no user-facing path ever wrote it, so every collector fell back to `UTC`. `WO-06` captures the browser's IANA zone silently from the authenticated app shell, validates it server-side, and keeps it in sync. Unlike the locale, the timezone cannot be derived server-side at sign-in (only the browser knows it), and mounting the capture in the shell also backfills existing collectors. It ships no migration: the column already exists. The dispatcher, the windowing helpers, and the dashboard are untouched.
-- Sequencing is essentially linear (`WO-01` → `WO-02` → `WO-03` → `WO-04` → `WO-05` → `WO-06`). The one safe parallelization: once `WO-01` is merged, the `WO-02` installability assets (manifest, icons, metadata) can be built alongside early `WO-03` settings-UI scaffolding, but `WO-03`'s subscribe path cannot be finished until `WO-02`'s registered worker lands. `WO-05` and `WO-06` are independent of each other and could run in parallel after `WO-04`; they are listed in the order they were executed.
+- `WO-07` store rejection notification only needs the foundation slice (`WO-01`'s `PushSubscription` / `NotificationDelivery` models and `web-push` wrapper) plumbing-wise; it does not depend on `WO-02`/`WO-03`/`WO-04` because it is not a PWA-installability, opt-in-UI, or dispatch-cron concern, and it does not depend on `WO-05`/`WO-06` because it needs neither locale nor timezone context (it fires once at decision time, not on a windowed schedule). Its real dependency is external to this blueprint: it cannot ship until [`PRD-02 FRD-04` · `WO-09 store-approval-and-removal`](../../frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md) ships its store-removal mutation to call it from, and that mutation is reachable only once the admin platform in [`PRD-03 FRD-01` · `WO-01`](../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/bp-01-admin-identity-and-access-platform/work-orders/wo-01-role-admin-plugin-and-audit-foundation.md) exists. Within this blueprint, `WO-07` can proceed in parallel with `WO-05` and `WO-06` once `WO-01` is merged.
+- Sequencing is essentially linear (`WO-01` → `WO-02` → `WO-03` → `WO-04` → `WO-05` → `WO-06`). The one safe parallelization: once `WO-01` is merged, the `WO-02` installability assets (manifest, icons, metadata) can be built alongside early `WO-03` settings-UI scaffolding, but `WO-03`'s subscribe path cannot be finished until `WO-02`'s registered worker lands. `WO-05` and `WO-06` are independent of each other and could run in parallel after `WO-04`; they are listed in the order they were executed. `WO-07` is a further independent branch off `WO-01`, gated externally by `PRD-02 FRD-04`'s `WO-09` rather than by anything later in this blueprint.
 
 ## Linked Work Orders
 
-Implementation order (largely linear; see the one parallelization note above):
+Implementation order (largely linear; see the parallelization notes above):
 
 - `work-orders/wo-01-push-platform-foundation.md`
 - `work-orders/wo-02-pwa-installability.md`
@@ -153,3 +167,4 @@ Implementation order (largely linear; see the one parallelization note above):
 - `work-orders/wo-04-scheduled-reminders.md`
 - `work-orders/wo-05-user-locale-persistence.md`
 - `work-orders/wo-06-user-timezone-capture.md`
+- `work-orders/wo-07-store-rejection-notification.md` (blocked on [`PRD-02 FRD-04` · `WO-09 store-approval-and-removal`](../../frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md); otherwise parallel with `WO-05` / `WO-06`)
