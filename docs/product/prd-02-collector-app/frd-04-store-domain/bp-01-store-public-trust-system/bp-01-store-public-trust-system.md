@@ -18,7 +18,7 @@ children:
   - WO-10
   - WO-11
   - WO-12
-last_updated: 2026-07-22
+last_updated: 2026-07-23
 implementation_status: PARTIALLY_IMPLEMENTED
 ---
 
@@ -338,10 +338,13 @@ Sequencing:
 
 ### Store removal tombstone contract (planned)
 
+Concretized by [WO-09](work-orders/wo-09-store-approval-and-removal.md) during its enrichment pass.
+
 - store removal sets moderation state `REJECTED` and persists a new `Store.removalReason`; it is a tombstone, never a hard delete
-- a `REJECTED` store is excluded from every public read model: listing where-builder, search, `getStoreBySlug` (direct URL 404), and `getOrderableStores` (order picker)
-- the store row is retained so collector orders that reference it keep resolving; the order-side store surface reads the tombstone and shows a neutral message by default, with sanction wording only when `removalReason` is an abuse category
-- the rejection transition is where FRD-04 hands off to [FRD-09](../../frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md) for the creator notification; this blueprint owns the state and reason, not the notification delivery
+- `removalReason` is a Prisma enum `StoreRemovalReason` with four values matching the FDD reasons: `DUPLICATE`, `CLOSED_OR_INACTIVE`, `FALSE_INFO` (neutral) and `ABUSE` (sanction). A shared helper `isSanctionRemovalReason(reason) => reason === "ABUSE"` gates the sanction-vs-neutral order message. No `removedAt` / `removedByUserId` columns are added: the actor and timestamp already live in the `store.remove` `AdminAuditLog` entry, and neither is read on a public or SEO path (unlike `approvedByUserId` / `approvedAt`, which stay denormalized on `Store`)
+- public read exclusion is centralized in a single constant `PUBLIC_VISIBLE_STORE_STATUSES = ["PENDING", "APPROVED", "FLAGGED"]` applied by the listing where-builder (`buildPublicStoreListingWhere`), `getStoreBySlug` (direct URL 404), and `getOrderableStores` (order picker). This is the single point that excludes `REJECTED` and, in the same change, opens `FLAGGED` to public reads: the shipped queries filter `status: { in: ["PENDING", "APPROVED"] }`, which currently hides `FLAGGED`, so `FR-04-43` requires this correction, not only the `REJECTED` exclusion. `FLAGGED` stores are `noindex` alongside `PENDING`
+- the store row is retained so collector orders that reference it keep resolving; the order-side store surface reads the tombstone and shows a neutral message by default, with sanction wording only when `removalReason` is an abuse category. That order-side rendering is delivered by [FRD-05 · BP-02 · WO-08](../../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-08-order-side-removed-store-tombstone.md); this blueprint and WO-09 own the state and the `removalReason`, the FRD-05 slice owns the rendering
+- the rejection transition is where FRD-04 hands off to [FRD-09](../../frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md) for the creator notification; this blueprint owns the state and reason, not the notification delivery. The removal transition is factored (in `src/lib/data/stores/storeModerationMutations.ts`) so a post-commit notification enqueue can slot in when FRD-09 lands, without speculative code or ticket-id comments in this slice
 
 ### Change-request rebase-apply contract (planned)
 
@@ -363,3 +366,9 @@ Sequencing:
 - each writes an append-only `AdminAuditLog` entry via `writeAuditEntry()` using a stable action key (`store.approve`, `store.remove`, `store.flag`, `store.unflag`, `report.resolve`, `report.dismiss`, `changeRequest.apply`, `changeRequest.reject`, `productType.approve`, `productType.reject`)
 - audit entries store identifiers and an optional non-sensitive reason only, never raw report text or reporter identity
 - each user-visible action also emits its PostHog event alongside the audit entry (`store_approved`, `store_removed`, `store_flagged`, `store_unflagged`, `store_report_resolved`, `store_report_dismissed`, `store_change_request_applied`, `store_change_request_rejected`, `store_product_type_request_approved`, `store_product_type_request_rejected`)
+
+Concretized for the store-state transitions by [WO-09](work-orders/wo-09-store-approval-and-removal.md):
+
+- each transition runs as one `prisma.$transaction`: the `store.update` plus its `writeAuditEntry(input, tx)` call, so the audit row cannot be orphaned from or missing relative to the state change. The actor id comes from the session returned by `requireAdmin()`, never from the client
+- unflag restores the prior public state derived from `approvedAt` (`APPROVED` when set, otherwise `PENDING`); no `preFlagStatus` column is stored
+- the store-state transition logic lives in a reusable data-layer module `src/lib/data/stores/storeModerationMutations.ts` so the moderation console ([PRD-03 (FRD-02)](../../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md)) can invoke the same functions later; thin Server Actions under `stores/[slug]/_actions/` are the collector-app entry points, and a `StoreAdminModerationPanel` client component renders the inline controls in the store-detail aside for admin viewers (optimistic actions; the removal modal follows the canonical modal pattern, ADR 0008, with grouped neutral / sanction reason radiogroups)

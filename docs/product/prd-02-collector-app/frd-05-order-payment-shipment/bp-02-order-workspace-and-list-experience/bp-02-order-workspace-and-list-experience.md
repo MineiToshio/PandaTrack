@@ -10,8 +10,9 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-06-16
-implementation_status: IMPLEMENTED
+  - WO-08
+last_updated: 2026-07-23
+implementation_status: PARTIALLY_IMPLEMENTED
 ---
 
 # BP-02 Order Workspace and List Experience
@@ -116,3 +117,4 @@ flowchart LR
 - `work-orders/wo-05-order-detail-view-private-note-payments-panel-and-action-menu.md`
 - `work-orders/wo-06-orders-list-filters-expansion-rows-and-overdue-payment-signals.md`
 - `work-orders/wo-07-currency-reconciliation-filter-and-bulk-fx-reconciliation.md`
+- `work-orders/wo-08-order-side-removed-store-tombstone.md` (planned cross-FRD follow-up: renders the order-side tombstone for a removed store; consumes `Store.removalReason` and the `REJECTED` status from [FRD-04 · BP-01 · WO-09](../../frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md))

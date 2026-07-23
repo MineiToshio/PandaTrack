@@ -3,88 +3,146 @@ id: WO-09
 type: WORK_ORDER
 slug: store-approval-and-removal
 title: Store Approval and Removal
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_features: []
 source_issue: 131
 implementation_status: PLANNED
-last_updated: 2026-07-22
+last_updated: 2026-07-23
 ---
 
 # WO-09 Store Approval and Removal
 
 ## Summary
 
-Add the admin inline moderation controls for a store's own state on the store detail page: approve a pending store, remove (reject) a store as a tombstone, and flag or unflag a store. These are the first store-state moderation actions, gated by the durable administrator role and audit trail from [PRD-03 (FRD-01)](../../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md). The moderation console defined by [PRD-03 (FRD-02)](../../../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md) routes administrators to these controls; it does not implement them.
+Add the admin inline moderation controls for a store's own moderation state on the store detail page: approve a pending store, remove (reject) a store as a tombstone, and flag or unflag a store. These are the first store-state moderation actions, gated by the durable administrator role and audit trail from [PRD-03 (FRD-01)](../../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md). The moderation console defined by [PRD-03 (FRD-02)](../../../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md) routes administrators to these controls; it does not implement them.
+
+This slice owns the store-side transitions and the persistence of `removalReason`. The order-side rendering of a removed store (the neutral tombstone line and the sanction wording for abuse reasons, `FR-04-42` / `AC-04-22`) lives in the collector order domain and is delivered as a separate follow-up slice: [FRD-05 · BP-02 · WO-08](../../../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-08-order-side-removed-store-tombstone.md). Keeping that rendering out of this slice keeps WO-09 focused on the store moderation lifecycle; the follow-up depends only on `removalReason` and the `REJECTED` status this slice introduces.
 
 ## In Scope
 
 - Admin inline **approve** control on store detail: `PENDING` to `APPROVED`, persisting `approvedByUserId` and `approvedAt` (the same fields set on admin-created approval, `AC-04-02`), making the store SEO-indexable.
-- Admin inline **remove (reject)** control: `PENDING` or `APPROVED` to `REJECTED`, persisting a new `removalReason` field on `Store`. Tombstone semantics, not a hard delete: the row is retained.
+- Admin inline **remove (reject)** control: `PENDING`, `APPROVED`, or `FLAGGED` to `REJECTED`, persisting a new `removalReason` field on `Store`. Tombstone semantics, not a hard delete: the row is retained.
+- **New `Store.removalReason` enum column** (`StoreRemovalReason`) with the four FDD reasons and a shared `isSanctionRemovalReason` helper (see Decision D1).
+- **Shared public-visibility helper** (`PUBLIC_VISIBLE_STORE_STATUSES`) applied to every public read model so `REJECTED` is excluded consistently and `FLAGGED` is included (see Decision D3). This both hides removed stores and makes flagged stores visible, correcting the current query behavior that filters `status: { in: ["PENDING", "APPROVED"] }` and therefore hides `FLAGGED` today.
 - `REJECTED` exclusion from all public surfaces: listing, search, direct detail URL (404), and the order-creation store picker (`getOrderableStores`).
-- **Orders tombstone rendering:** collector orders that reference a `REJECTED` store keep rendering; where an order surfaces its store, it shows a neutral tombstone message by default ("Esta tienda ya no esta disponible") and sanction wording only when the `removalReason` is an abuse category.
-- Admin inline **flag / unflag** control: `PENDING` or `APPROVED` to `FLAGGED` and back to the prior public state. A `FLAGGED` store stays publicly visible on listing, search, and detail, and its detail renders a stronger warning than the pending disclaimer (wire in the existing, currently-unused `flaggedDisclaimer` i18n key in `stores.json`).
+- Admin inline **flag / unflag** control: `PENDING` or `APPROVED` to `FLAGGED` and back to the prior public state. A `FLAGGED` store stays publicly visible on listing, search, and detail, and its detail renders a stronger warning than the pending disclaimer (wire in the existing, currently-unused `flaggedDisclaimer` i18n key in `stores.json`, updated to the FDD copy per Decision LR1). Unflag derives the prior state from `approvedAt` (see Decision D5).
+- **`FLAGGED` SEO handling:** `generateMetadata` marks `FLAGGED` stores `noindex` alongside `PENDING` (see Decision LR2).
 - **Softened pending disclaimer copy:** reword the `PENDING` disclaimer to non-alarmist "en revision" review language so a newly created community store is not framed as suspect (`FR-04-50`).
-- `requireAdmin()` gating on every mutation and an `AdminAuditLog` entry via `writeAuditEntry()` for `store.approve`, `store.remove`, `store.flag`, and `store.unflag`.
-- PostHog analytics for the user-visible actions: `store_approved`, `store_removed`, `store_flagged`, `store_unflagged`, namespaced under `POSTHOG_EVENTS.STORE`.
+- `requireAdmin()` gating on every mutation and an `AdminAuditLog` entry via `writeAuditEntry()` (inside the same transaction) for `store.approve`, `store.remove`, `store.flag`, and `store.unflag`.
+- PostHog analytics for the user-visible actions: `store_approved`, `store_removed`, `store_flagged`, `store_unflagged`, namespaced under `POSTHOG_EVENTS.STORE`. `store_removed` carries the `removalReason` category, never raw report text.
 
 ## Out of Scope
 
+- **Order-side removed-store tombstone rendering (`FR-04-42`, `AC-04-22`, order-side portion of `BR-04-23`):** the neutral tombstone message on collector orders that reference a `REJECTED` store, and the sanction wording for abuse reasons, are delivered by [FRD-05 · BP-02 · WO-08](../../../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-08-order-side-removed-store-tombstone.md). This slice only persists the `removalReason` that follow-up consumes.
 - Report resolution, change-request review, and product-type approval (owned by `WO-10`, `WO-11`, `WO-12`).
 - The administrator role, `requireAdmin()`, `AdminAuditLog`, and `writeAuditEntry()` themselves; consumed from [PRD-03 (FRD-01) · WO-01](../../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/bp-01-admin-identity-and-access-platform/work-orders/wo-01-role-admin-plugin-and-audit-foundation.md).
 - The moderation inbox and audit-log viewer surfaces (owned by PRD-03, FRD-02).
-- The creator notification on rejection: this work order fires the `REJECTED` transition and stores the `removalReason`; whether and how the creator is notified is owned by [FRD-09](../../../frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md).
+- The creator notification on rejection: this work order fires the `REJECTED` transition and stores the `removalReason`; whether and how the creator is notified is owned by [FRD-09](../../../frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md). See the notification seam in Technical Notes.
 - Reinstating a `REJECTED` store (removal is terminal in this scope; see the FRD Open Questions).
 
 ## Requirements
 
 - `FR-04-40`: Admin inline approve of a `PENDING` store; sets `approvedByUserId` / `approvedAt`; admin-only.
 - `FR-04-41`: Admin inline remove (reject); sets `removalReason`; tombstone excluded from all public surfaces and the order picker; row retained.
-- `FR-04-42`: Orders referencing a `REJECTED` store keep rendering with a neutral tombstone message by default and sanction wording only for abuse reasons.
 - `FR-04-43`: Admin flag / unflag; `FLAGGED` stays visible with a stronger warning; unflag restores the prior state.
 - `FR-04-50`: Softened, non-alarmist pending disclaimer copy.
 - `FR-04-51`: `requireAdmin()` gating plus `AdminAuditLog` entries with stable action keys (`store.approve`, `store.remove`, `store.flag`, `store.unflag`).
 
+`FR-04-42` (order-side tombstone rendering) is a requirement of FRD-04 but is delivered by [FRD-05 · BP-02 · WO-08](../../../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-08-order-side-removed-store-tombstone.md); this slice provides the `removalReason` it depends on.
+
 Relevant business rules:
 
 - `BR-04-22`: `REJECTED` excluded from every public surface and the order picker; row retained (tombstone).
-- `BR-04-23`: Removal is a tombstone, never a hard delete; `removalReason` drives the order-side message.
+- `BR-04-23`: Removal is a tombstone, never a hard delete; `removalReason` is persisted here and drives the order-side message rendered by the FRD-05 follow-up.
 - `BR-04-24`: `FLAGGED` stays publicly visible with a stronger warning; only removal hides.
 - `BR-04-29`: Every moderation mutation is gated by `requireAdmin()` and writes an audit entry with a stable action key and no PII.
 
 Relevant acceptance criteria:
 
 - `AC-04-20` Approve a pending store inline.
-- `AC-04-21` Remove a store as a tombstone.
-- `AC-04-22` Order referencing a removed store still renders.
+- `AC-04-21` Remove a store as a tombstone (store-side: disappears from listing, search, order picker; direct URL 404s; row retained).
 - `AC-04-23` Flag and unflag a store.
 - `AC-04-30` Every moderation action is gated and audited.
 - `AC-04-31` Pending disclaimer reads as non-alarmist review copy.
 
+`AC-04-22` (order referencing a removed store still renders) is verified by the FRD-05 follow-up slice.
+
 ## Blueprints
 
 - [BP-01](../bp-01-store-public-trust-system.md) extension points:
-  - data model layer: `Store.removalReason`, the `REJECTED` / `FLAGGED` transitions.
-  - query layer: extend the public read models (`getStoreBySlug`, listing where-builder, `getOrderableStores`) so `REJECTED` is excluded and `FLAGGED` remains visible; add the order-side tombstone read for referenced stores.
-  - server action layer: new admin moderation actions gated by `requireAdmin()`, each writing an audit entry.
-  - UI flow layer: admin inline controls on `StoreDetailContent`; the `flaggedDisclaimer` warning banner; the order-detail store tombstone.
+  - data model layer: `Store.removalReason` (`StoreRemovalReason` enum), the `REJECTED` / `FLAGGED` transitions.
+  - query layer: the shared `PUBLIC_VISIBLE_STORE_STATUSES` constant applied to `getStoreBySlug`, the listing where-builder, and `getOrderableStores` so `REJECTED` is excluded and `FLAGGED` is included.
+  - server action layer: new admin moderation actions gated by `requireAdmin()`, each writing an audit entry inside the transaction; core transition logic in a reusable `storeModerationMutations.ts` data-layer module so the PRD-03 FRD-02 console can invoke it later.
+  - UI flow layer: `StoreAdminModerationPanel` inline controls on `StoreDetailContent`; the `flaggedDisclaimer` warning banner; the removal modal with grouped reason radiogroups.
 - See the [tombstone contract](../bp-01-store-public-trust-system.md#store-removal-tombstone-contract-planned) and [admin moderation gating contract](../bp-01-store-public-trust-system.md#admin-moderation-gating-contract-planned) in BP-01.
+
+## Confirmed Decisions
+
+These decisions were resolved during the enrichment pass and are binding for implementation.
+
+- **D1 · `removalReason` data shape.** Add a Prisma enum `StoreRemovalReason` with four values mapped to the FDD reasons: `DUPLICATE` (Tienda duplicada), `CLOSED_OR_INACTIVE` (Tienda cerrada o inactiva), `FALSE_INFO` (Informacion falsa o enganosa), and `ABUSE` (Abuso, estafa o fraude). A shared helper `isSanctionRemovalReason(reason) => reason === "ABUSE"` drives the neutral-vs-sanction branch consumed by the order-side follow-up. Rationale: a closed, low-churn taxonomy that gates sanction wording is safer as a typed enum than as a validated string, matching the `StoreStatus` / `SellerType` precedent.
+- **D2 · No `removedAt` / `removedByUserId` columns.** Only `Store.removalReason` is added. The actor and timestamp of a removal are already captured by the `store.remove` `AdminAuditLog` entry (`actorId`, `createdAt`, `reason`); denormalizing them onto `Store` is unnecessary because, unlike `approvedByUserId` / `approvedAt`, they are not read on any public or SEO path.
+- **D3 · Centralized public-visibility set.** Introduce `PUBLIC_VISIBLE_STORE_STATUSES = ["PENDING", "APPROVED", "FLAGGED"]` and use it in `buildPublicStoreListingWhere`, `getStoreBySlug`, and `getOrderableStores`. This is the single point that (a) excludes `REJECTED` consistently and (b) opens `FLAGGED` to public reads. Behavior change: `FLAGGED` stores currently 404 / are hidden; after this slice they are visible, which is intended per `FR-04-43`.
+- **D4 · `FLAGGED` stays orderable.** `FLAGGED` is included in `getOrderableStores` (via the shared set), so a collector can still record orders against a flagged-but-operational store; the warning is informational, not a lock.
+- **D5 · Unflag prior-state derivation.** Unflag restores `APPROVED` when `approvedAt` (or `approvedByUserId`) is set, otherwise `PENDING`. No new column is needed because `approvedAt` already distinguishes the two prior public states.
+- **D6 · Split of the order-side tombstone.** `FR-04-42` / `AC-04-22` are delivered by a separate FRD-05 follow-up slice ([WO-08](../../../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-08-order-side-removed-store-tombstone.md)), keeping WO-09 cohesive around store-side moderation.
+- **D7 · E2E admin account.** The moderation E2E flows sign in as a dedicated administrator using new `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` environment variables (registered in `.env.example`) plus a `signInAsAdmin` helper. The existing E2E account stays a plain user, used for the negative `requireAdmin()` test.
+- **D8 · FRD-09 notification seam.** The `REJECTED` transition is the future trigger for the creator notification owned by [FRD-09](../../../frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md). This slice adds no speculative notification code and no ticket-id comments; the removal transition logic is factored into `storeModerationMutations.ts` so a post-commit notification enqueue can slot in cleanly when FRD-09 lands.
+- **LR1 · `flaggedDisclaimer` copy.** The existing `stores.json` `flaggedDisclaimer` value is a placeholder ("Tienda con reportes pendientes. Procede con precaucion."). Replace it with the FDD-04 §6.1 copy ("Tienda con reportes" title plus "Esta tienda acumula reportes con credibilidad. Sigue visible, pero revisa la informacion con atencion antes de operar.") in both locales, and wire it into the flagged banner.
+- **LR2 · `noindex` for `FLAGGED`.** Extend the `generateMetadata` noindex condition from `status === "PENDING"` to also cover `FLAGGED`.
+- **LR3 · Code placement.** Transitions live in a new `src/lib/data/stores/storeModerationMutations.ts` (importable by the future console); thin Server Actions under `src/app/[locale]/(app)/stores/[slug]/_actions/`; a new client component `StoreAdminModerationPanel` rendered in the detail aside when the viewer is an admin, with `page.tsx` passing a `canModerate` flag into `StoreDetailContent`.
+- **LR4 · UI composition.** A "Moderacion" card in the top aside slot for admins; approve / flag / unflag as inline optimistic buttons; "Retirar tienda" opens a canonical modal (ADR 0008 / M01-B) reusing the `ReportReasonPicker` pattern with two labeled `radiogroup`s (neutral reasons vs the single sanction reason) and an optional internal note that feeds the audit entry. Optimistic Confirmation: the modal closes synchronously on submit and the parent coordinates rollback plus toast.
+
+## Assumptions
+
+- The admin platform (`requireAdmin()` returning the resolved session, `AdminAccessError`, `writeAuditEntry(input, tx?)`, the `AUDIT_ACTIONS` vocabulary including `store.approve` / `store.remove` / `store.flag` / `store.unflag`, and the durable `User.role`) is already available and is consumed, not modified.
+- `StoreDetailContent` is a Server Component; the interactive moderation cluster and removal modal are new Client Components composed into it, mirroring the existing `StoreReportModal` / `StoreGovernanceSummaryModal` client boundaries.
+- Adding an enum and a nullable column is auto-detectable by Prisma, so the standard `migrate dev` flow applies (not the hand-written-SQL fallback used by the `SellerType` rename), followed by `prisma generate` and a green `type-check`.
+
+## UX Notes
+
+- The moderation cluster is admin-only and sits beside the existing viewer governance surface (report / change-request entry points), which stay unchanged for admins.
+- Every moderation control is a real `<button>` with an accessible name; severity is never color-only (icon plus label). The removal modal is a focus-trapped dialog; the two reason groups are `radiogroup`s with roving `aria-checked` state.
+- The softened pending disclaimer keeps the "Tienda en revision" title and replaces the alarmist message with review-oriented copy (`FR-04-50`, `AC-04-31`).
+
+## Technical Notes
+
+- Each transition runs as one `prisma.$transaction`: the `store.update` plus the matching `writeAuditEntry(input, tx)` so no orphaned or missing audit rows are possible. The actor id comes from the session returned by `requireAdmin()`, never from the client.
+- Approve sets `status = APPROVED`, `approvedByUserId`, `approvedAt`. Remove sets `status = REJECTED` and `removalReason`. Flag sets `status = FLAGGED`. Unflag sets `status` back to the derived prior state (D5).
+- The public-visibility set (D3) is the only place the `REJECTED` / `FLAGGED` rules are encoded; per-query duplication is avoided so the surfaces cannot diverge.
+- FRD-09 seam (D8): the removal transition is factored so a future notification enqueue can run after the transaction commits without restructuring the mutation.
+
+## Security Notes
+
+- Every mutation authorizes with `requireAdmin()` before any read or write; `AdminAccessError` is an expected authorization outcome and must not be reported to Sentry.
+- Audit entries store identifiers plus an optional non-sensitive reason only, never raw report text or reporter identity (`BR-04-29`).
+- `removalReason` and the optional internal note are validated at the boundary with Zod before the transition runs.
+
+## Observability Notes
+
+- The four PostHog events fire on successful transitions and carry `store_slug` plus an action-scoped context (`store_removed` carries the `removalReason` category), never raw report free-text or reporter identity.
+- Unexpected mutation failures are captured with Sentry via the existing server wrappers; expected authorization and validation rejections are not.
 
 ## Dependencies
 
 - [PRD-03 (FRD-01) · WO-01](../../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/bp-01-admin-identity-and-access-platform/work-orders/wo-01-role-admin-plugin-and-audit-foundation.md) for the durable `role`, `requireAdmin()`, `AdminAuditLog`, and `writeAuditEntry()`. This work order cannot ship before that foundation.
 - `WO-06 Store Governance Flows` for the store-detail governance surface these controls sit alongside.
+- Downstream: [FRD-05 · BP-02 · WO-08](../../../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-08-order-side-removed-store-tombstone.md) depends on this slice for the `removalReason` field and the `REJECTED` status it introduces.
 
 ## E2E Acceptance Tests
 
+These flows sign in as a dedicated administrator (D7).
+
 - An administrator approves a `PENDING` store from its detail page; it becomes `APPROVED` with `approvedByUserId` / `approvedAt` set, and an `AdminAuditLog` entry with `store.approve` is written.
-- A non-administrator invoking the approve action directly is refused by `requireAdmin()` before any change runs, and no audit entry is written.
-- An administrator removes a store with a `removalReason`; it becomes `REJECTED`, disappears from the listing, from search, and from the order-creation store picker, and its direct URL returns 404, while the row remains in the database.
-- A collector order that references the removed store still renders, showing the neutral tombstone message by default and the sanction wording when the `removalReason` is an abuse category.
-- An administrator flags a store; it stays visible in listing, search, and detail with the stronger `flaggedDisclaimer` warning; unflagging restores the prior public state. Both transitions are audited (`store.flag`, `store.unflag`).
+- A non-administrator (the plain E2E account) invoking the approve action directly is refused by `requireAdmin()` before any change runs, and no audit entry is written.
+- An administrator removes a store with a `removalReason`; it becomes `REJECTED`, disappears from the listing, from search, and from the order-creation store picker, and its direct URL returns 404, while the row remains in the database. An `AdminAuditLog` entry with `store.remove` is written.
+- An administrator flags a store; it stays visible in listing, search, and detail with the stronger `flaggedDisclaimer` warning and is `noindex`; unflagging restores the prior public state. Both transitions are audited (`store.flag`, `store.unflag`).
 - The `PENDING` detail disclaimer renders the softened "en revision" copy in both locales.
+
+The E2E that a collector order referencing a removed store still renders (`AC-04-22`) belongs to [FRD-05 · BP-02 · WO-08](../../../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-08-order-side-removed-store-tombstone.md).
 
 ## Notes
 
-- GitHub tracking: this work order needs a corresponding sub-issue under BP-01 (`source_issue: TBD`); create it and keep the sub-issue order aligned with the Work Order sequence per `github-tracking-sync.mdc`.
+- GitHub tracking: linked to slice issue `#131` under Epic `#68` (FEAT-0012). The order-side follow-up is tracked by slice issue `#136` under Epic `#84` (FEAT-0014).
 - The `removalReason` schema addition follows the Prisma migration workflow (`prisma-migration-workflow.mdc`) and requires `prisma generate`.

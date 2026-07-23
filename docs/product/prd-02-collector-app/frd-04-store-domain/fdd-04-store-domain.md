@@ -5,7 +5,7 @@ slug: store-domain
 title: Store Domain — Feature Design Document
 status: ACTIVE
 parent: FRD-04
-last_updated: 2026-07-22
+last_updated: 2026-07-23
 prototype: ./prototype/store-domain.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -661,7 +661,11 @@ The softened pending disclaimer **supersedes** the earlier alarmist copy
 (`detail.pendingDisclaimerMessage`, "aún no ha sido verificada… revisar con precaución"): per
 `AC-04-31` the pending state must read as under review, not as untrustworthy data. The `en`
 equivalents live in `src/i18n/locales/en/stores.json`; the reused `flaggedDisclaimer` key
-already exists but was previously unwired.
+already exists but was previously unwired. Its current value is a placeholder ("Tienda con
+reportes pendientes. Procede con precaución."); [BP-01 · WO-09](bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md)
+replaces it with the §6.1 flagged-warning copy above ("Tienda con reportes" title plus the
+credibility-warning body) in both locales and wires it into the flagged banner, so the shipped
+string matches this design record rather than the earlier placeholder.
 
 ---
 
