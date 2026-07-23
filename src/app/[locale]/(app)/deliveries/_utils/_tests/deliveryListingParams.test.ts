@@ -5,6 +5,7 @@ import {
   parseDeliveryListingParams,
   type DeliveryListActiveFilters,
 } from "../deliveryListingParams";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 
 const BASE_FILTERS: DeliveryListActiveFilters = {
   nameQuery: undefined,
@@ -17,6 +18,7 @@ const BASE_FILTERS: DeliveryListActiveFilters = {
   shippedFromIso: undefined,
   shippedToIso: undefined,
   sort: "oldest",
+  perPage: DEFAULT_PAGE_SIZE,
 };
 
 describe("parseDeliveryListingParams", () => {
@@ -78,6 +80,20 @@ describe("parseDeliveryListingParams", () => {
     expect(parseDeliveryListingParams({ page: "-2" }).page).toBe(1);
     expect(parseDeliveryListingParams({ page: "abc" }).page).toBe(1);
   });
+
+  it("defaults perPage when the param is missing", () => {
+    expect(parseDeliveryListingParams({}).perPage).toBe(DEFAULT_PAGE_SIZE);
+  });
+
+  it("accepts an allow-listed perPage value", () => {
+    expect(parseDeliveryListingParams({ perPage: "10" }).perPage).toBe(10);
+    expect(parseDeliveryListingParams({ perPage: "100" }).perPage).toBe(100);
+  });
+
+  it("clamps an out-of-range or invalid perPage back to the default", () => {
+    expect(parseDeliveryListingParams({ perPage: "37" }).perPage).toBe(DEFAULT_PAGE_SIZE);
+    expect(parseDeliveryListingParams({ perPage: "abc" }).perPage).toBe(DEFAULT_PAGE_SIZE);
+  });
 });
 
 describe("buildDeliveryListFilterUrl", () => {
@@ -114,6 +130,11 @@ describe("buildDeliveryListFilterUrl", () => {
   it("only adds page when greater than 1", () => {
     expect(buildDeliveryListFilterUrl("/es/deliveries", BASE_FILTERS, { page: 1 })).not.toContain("page=");
     expect(buildDeliveryListFilterUrl("/es/deliveries", BASE_FILTERS, { page: 3 })).toContain("page=3");
+  });
+
+  it("omits perPage at the default size and carries a non-default size forward", () => {
+    expect(buildDeliveryListFilterUrl("/es/deliveries", BASE_FILTERS)).not.toContain("perPage=");
+    expect(buildDeliveryListFilterUrl("/es/deliveries", { ...BASE_FILTERS, perPage: 10 })).toContain("perPage=10");
   });
 
   it("serializes overdue, ranges, store, and product", () => {

@@ -3,6 +3,7 @@ import { deriveHasUnpaidBalance } from "@/lib/orders/orderState";
 import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
 import type { ItemDeliveryState } from "@/lib/orders/orderState";
 import type { OrderListPaymentState, OrderListSort } from "@/lib/orders/orderListSort";
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
 import {
   DeliveryStatus,
   type OrderItemDeliveryState as OrderItemDeliveryStatePrisma,
@@ -409,8 +410,12 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
     baseCurrencyCode,
     sort = "recent",
     page,
-    pageSize,
+    pageSize: requestedPageSize,
   } = filters;
+  // Hardened against arbitrary URL values: only the allow-listed options are honored.
+  const pageSize = (PAGE_SIZE_OPTIONS as readonly number[]).includes(requestedPageSize)
+    ? requestedPageSize
+    : DEFAULT_PAGE_SIZE;
   const now = new Date();
 
   const itemConditions: Array<Record<string, unknown>> = [];

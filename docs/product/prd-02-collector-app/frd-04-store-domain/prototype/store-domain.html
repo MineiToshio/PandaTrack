@@ -1438,9 +1438,14 @@
     @media (min-width: 1024px) {
       .load-more-wrap { display: none; }
     }
-    .desktop-pagination { display: none; align-items: center; justify-content: center; gap: 4px; padding: 16px; color: var(--text-muted); font-size: 13px; }
+    .mobile-pagination-summary { display: block; text-align: center; font-size: 12px; color: var(--text-muted); margin: 8px 0 4px; }
+    @media (min-width: 1024px) { .mobile-pagination-summary { display: none; } }
+    .desktop-pagination { display: none; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; color: var(--text-muted); font-size: 13px; flex-wrap: wrap; }
     @media (min-width: 1024px) { .desktop-pagination { display: flex; } }
-    .desktop-pagination .page-active { background: color-mix(in oklch,var(--accent) 12%,transparent); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+    .desktop-pagination-controls { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .desktop-pagination-perpage { display: flex; align-items: center; gap: 8px; }
+    .desktop-pagination-nav { display: flex; align-items: center; gap: 4px; }
+    .desktop-pagination .page-active { background: var(--accent); border-color: var(--accent); color: var(--text-on-accent); font-weight: 600; }
 
     /* ─────────────────────────────────────────────────────────────
        Order detail
@@ -4306,22 +4311,33 @@
         </a>
       </div>
 
-      <div style="font-size: 12px; color: var(--text-muted); text-align: center; margin: 8px 0 4px;">Mostrando 1–11 de 47 tiendas</div>
+      <p class="mobile-pagination-summary">Mostrando 1–11 de 47 tiendas</p>
 
       <div class="load-more-wrap">
         <button class="btn ghost"><i data-lucide="chevron-down"></i> Cargar más</button>
       </div>
       <div class="desktop-pagination">
-        <span style="cursor:pointer;">«</span>
-        <span style="cursor:pointer;">‹</span>
-        <button class="btn ghost sm" style="min-width:32px; padding:4px 8px; background: color-mix(in oklch, var(--accent) 12%, transparent); border-color: var(--accent); color: var(--accent);">1</button>
-        <button class="btn ghost sm" style="min-width:32px; padding:4px 8px;">2</button>
-        <button class="btn ghost sm" style="min-width:32px; padding:4px 8px;">3</button>
-        <span class="text-muted">…</span>
-        <button class="btn ghost sm" style="min-width:32px; padding:4px 8px;">5</button>
-        <span style="cursor:pointer;">›</span>
-        <span style="cursor:pointer;">»</span>
-        <span class="text-muted" style="margin-left: 8px;">47 tiendas · 10 por página</span>
+        <span>Mostrando 1–11 de 47 tiendas</span>
+        <div class="desktop-pagination-controls">
+          <div class="desktop-pagination-perpage">
+            <span>Por página</span>
+            <select class="select" style="width:auto; min-width:64px; padding:5px 8px; font-size:12px;" aria-label="Resultados por página">
+              <option>10</option>
+              <option selected>25</option>
+              <option>50</option>
+              <option>100</option>
+            </select>
+          </div>
+          <nav aria-label="Paginación" class="desktop-pagination-nav">
+            <span aria-disabled="true" style="display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; opacity:0.4;"><i data-lucide="chevron-left" style="width:14px;height:14px;"></i></span>
+            <button class="btn ghost sm page-active" style="min-width:32px; padding:4px 8px;" aria-current="page">1</button>
+            <button class="btn ghost sm" style="min-width:32px; padding:4px 8px;">2</button>
+            <button class="btn ghost sm" style="min-width:32px; padding:4px 8px;">3</button>
+            <span class="text-muted">…</span>
+            <button class="btn ghost sm" style="min-width:32px; padding:4px 8px;">5</button>
+            <button class="btn ghost sm" aria-label="Página siguiente" style="min-width:32px; padding:4px 8px;"><i data-lucide="chevron-right" style="width:14px;height:14px;"></i></button>
+          </nav>
+        </div>
       </div>
     </div>
 
@@ -5817,19 +5833,30 @@
           <div class="store-card-stats"><div><strong>—</strong>sin reseñas</div><div><strong>0</strong>tus pedidos</div><div style="margin-left:auto;"><span class="stars" style="color:var(--text-muted);">★★★★★</span></div></div>
         </a>
       </div>
-      <div style="font-size:12px;color:var(--text-muted);text-align:center;margin:16px 0 4px;">Mostrando 1–6 de 47 tiendas</div>
-      <div class="load-more-wrap"><button class="btn ghost">Cargar más</button></div>
+      <p class="mobile-pagination-summary">Mostrando 1–6 de 47 tiendas</p>
+      <div class="load-more-wrap"><button class="btn ghost"><i data-lucide="chevron-down"></i> Cargar más</button></div>
       <div class="desktop-pagination">
-        <button class="btn ghost sm" aria-label="Primera página">«</button>
-        <button class="btn ghost sm" aria-label="Página anterior">‹</button>
-        <button class="btn ghost sm" style="background:color-mix(in oklch,var(--accent) 12%,transparent);border-color:var(--accent);color:var(--accent);font-weight:600;" aria-current="page">1</button>
-        <button class="btn ghost sm">2</button>
-        <button class="btn ghost sm">3</button>
-        <span style="padding:0 4px;color:var(--text-muted);">…</span>
-        <button class="btn ghost sm">5</button>
-        <button class="btn ghost sm" aria-label="Página siguiente">›</button>
-        <button class="btn ghost sm" aria-label="Última página">»</button>
-        <span style="font-size:12px;color:var(--text-muted);margin-left:8px;">47 tiendas · 12 por página</span>
+        <span>Mostrando 1–6 de 47 tiendas</span>
+        <div class="desktop-pagination-controls">
+          <div class="desktop-pagination-perpage">
+            <span>Por página</span>
+            <select class="select" style="width:auto;min-width:64px;padding:5px 8px;font-size:12px;" aria-label="Resultados por página">
+              <option>10</option>
+              <option selected>25</option>
+              <option>50</option>
+              <option>100</option>
+            </select>
+          </div>
+          <nav aria-label="Paginación" class="desktop-pagination-nav">
+            <span aria-disabled="true" style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;opacity:0.4;"><i data-lucide="chevron-left" style="width:14px;height:14px;"></i></span>
+            <button class="btn ghost sm page-active" aria-current="page">1</button>
+            <button class="btn ghost sm">2</button>
+            <button class="btn ghost sm">3</button>
+            <span style="padding:0 4px;color:var(--text-muted);">…</span>
+            <button class="btn ghost sm">5</button>
+            <button class="btn ghost sm" aria-label="Página siguiente"><i data-lucide="chevron-right" style="width:14px;height:14px;"></i></button>
+          </nav>
+        </div>
       </div>
     </div>
   </div>

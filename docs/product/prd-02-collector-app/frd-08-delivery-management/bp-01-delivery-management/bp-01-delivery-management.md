@@ -90,7 +90,7 @@ Define the end-to-end delivery experience: persistence, eligibility, product-sta
 - deliveries list contract
   - route: `/{locale}/deliveries`
   - visible primary action: `New delivery`, following the same collector-listing hero pattern used by orders and stores
-  - output: paginated delivery cards sorted from oldest date to newest by default (`DELIVERY_LIST_PAGE_SIZE` = 30 per page)
+  - output: paginated delivery cards sorted from oldest date to newest by default (`DELIVERY_LIST_PAGE_SIZE` = `DEFAULT_PAGE_SIZE` = 25 per page by default, user-selectable among 10/25/50/100 — `PAGE_SIZE_OPTIONS` — via `?perPage=`. **Updated 2026-07-23, owner-approved:** replaces the earlier fixed 30/page; see [ADR 0018](../../../../design/decisions/0018-list-pagination-page-size-and-desktop-summary.md))
   - each card shows store, shipping date, expected arrival range, and status; delivered cards also show received date
   - card expansion renders a flat product list only; it does not group by source order and does not show source-order secondary metadata in this slice
   - sort: a `sort` param selects one of `oldest` (default), `recent`, `eta-asc`, `store-asc`; it is omitted from the URL when it equals the default (`FR-08-35`)

@@ -8,10 +8,9 @@ import { getSession } from "@/lib/auth/auth-server";
 import { prisma } from "@/lib/prisma";
 import { getOrdersList } from "@/lib/data/orders/orderQueries";
 import { getOrderableStores } from "@/lib/data/stores/storeQueries";
-import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { DEFAULT_PAGE_SIZE, POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import {
   DEFAULT_ORDER_LIST_SORT,
-  ORDER_LIST_PAGE_SIZE,
   parseOrderListingParams,
   type OrderListActiveFilters,
 } from "./_utils/orderListingParams";
@@ -57,6 +56,26 @@ function buildListUrl(
   return qs ? `${basePath}?${qs}` : basePath;
 }
 
+/** Changing the page size always resets to page 1; only a non-default size is kept in the URL. */
+function buildPerPageUrl(
+  basePath: string,
+  rawParams: Record<string, string | string[] | undefined>,
+  perPageSize: number,
+): string {
+  const params = new URLSearchParams();
+  Object.entries(rawParams).forEach(([key, value]) => {
+    if (key === "page" || key === "perPage" || value == null) return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => params.append(key, item));
+      return;
+    }
+    params.set(key, value);
+  });
+  if (perPageSize !== DEFAULT_PAGE_SIZE) params.set("perPage", String(perPageSize));
+  const qs = params.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
+}
+
 function startOfMonth(now: Date): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
@@ -77,6 +96,7 @@ function buildActiveFilters(parsed: ReturnType<typeof parseOrderListingParams>):
     deliveryToIso: domainDateToIsoString(parsed.deliveryTo),
     deliveryOverdueOnly: parsed.deliveryOverdueOnly,
     deliveryLateOnly: parsed.deliveryLateOnly,
+    perPage: parsed.perPage,
   };
 }
 
@@ -253,12 +273,13 @@ async function OrdersDataSection({
     baseCurrencyCode,
     sort: parsed.sort,
     page: parsed.page,
-    pageSize: ORDER_LIST_PAGE_SIZE,
+    pageSize: parsed.perPage,
   });
 
   const today = new Date();
   const currentListUrl = buildListUrl(basePath, rawParams, listing.page);
   const buildPaginationHref = (targetPage: number) => buildListUrl(basePath, rawParams, targetPage);
+  const buildPerPageHref = (size: number) => buildPerPageUrl(basePath, rawParams, size);
 
   const fxPendingOrders: FxPendingOrder[] =
     listing.pendingFxCount > 0 && baseCurrencyCode
@@ -305,6 +326,7 @@ async function OrdersDataSection({
         totalCount={listing.totalCount}
         pageSize={listing.pageSize}
         createPageHref={buildPaginationHref}
+        buildPerPageHref={buildPerPageHref}
       />
     </>
   );

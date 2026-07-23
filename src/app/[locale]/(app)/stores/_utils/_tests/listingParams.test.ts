@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseListingSearchParams } from "../listingParams";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 
 const EMPTY_FILTERS = {
   nameQuery: undefined,
@@ -11,6 +12,7 @@ const EMPTY_FILTERS = {
   hasStock: false,
   includeClosed: false,
   page: 1,
+  perPage: DEFAULT_PAGE_SIZE,
 };
 
 describe("parseListingSearchParams", () => {
@@ -109,5 +111,19 @@ describe("parseListingSearchParams", () => {
 
   it("defaults page to one when value is invalid", () => {
     expect(parseListingSearchParams({ page: "0" })).toEqual(EMPTY_FILTERS);
+  });
+
+  it("defaults perPage when the param is missing", () => {
+    expect(parseListingSearchParams({}).perPage).toBe(DEFAULT_PAGE_SIZE);
+  });
+
+  it("accepts an allow-listed perPage value", () => {
+    expect(parseListingSearchParams({ perPage: "10" }).perPage).toBe(10);
+    expect(parseListingSearchParams({ perPage: "100" }).perPage).toBe(100);
+  });
+
+  it("clamps an out-of-range or invalid perPage back to the default", () => {
+    expect(parseListingSearchParams({ perPage: "37" }).perPage).toBe(DEFAULT_PAGE_SIZE);
+    expect(parseListingSearchParams({ perPage: "abc" }).perPage).toBe(DEFAULT_PAGE_SIZE);
   });
 });

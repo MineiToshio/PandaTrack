@@ -64,7 +64,7 @@ Implement the deliveries workspace list with expandable cards, summary metadata 
 
 ## Technical Notes
 
-- The list should follow the same pagination pattern already used by the collector workspace order and store listings rather than rendering one unbounded feed.
+- The list should follow the same pagination pattern already used by the collector workspace order and store listings rather than rendering one unbounded feed. **Updated (2026-07-23, owner-approved):** that shared pattern is now the `ListPagination` component with a user-selectable page size (10/25/50/100, default 25) — see [ADR 0018](../../../../../design/decisions/0018-list-pagination-page-size-and-desktop-summary.md).
 - The list query should return the minimal card payload needed for the collapsed view plus the flat product rows used by expansion.
 - The detail link from each card is part of this slice's acceptance path, not an optional later enhancement.
 

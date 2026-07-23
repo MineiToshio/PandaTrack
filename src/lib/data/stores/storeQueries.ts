@@ -11,9 +11,10 @@ import {
   normalizeStoreName,
   SIMILARITY_THRESHOLD_PERCENT,
 } from "@/lib/store/duplicateMatch";
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
 
 const DEFAULT_DUPLICATE_CANDIDATES_LIMIT = 5;
-export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = 12;
+export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = DEFAULT_PAGE_SIZE;
 const DEFAULT_PUBLIC_STORE_REVIEW_LIMIT = 10;
 
 /**
@@ -316,8 +317,9 @@ function mapPublicStoreListingItem(store: {
 
 export async function getPublicStoresListingPage(filters: PublicStoreListingFilters): Promise<PublicStoreListingPage> {
   const requestedPage = filters.page && Number.isInteger(filters.page) && filters.page > 0 ? filters.page : 1;
+  // Hardened against arbitrary URL values: only the allow-listed options are honored.
   const requestedPageSize =
-    filters.pageSize && Number.isInteger(filters.pageSize) && filters.pageSize > 0
+    filters.pageSize && (PAGE_SIZE_OPTIONS as readonly number[]).includes(filters.pageSize)
       ? filters.pageSize
       : DEFAULT_PUBLIC_STORE_PAGE_SIZE;
   const where = buildPublicStoreListingWhere(filters);

@@ -8,6 +8,7 @@ type DeliveryListPaginationProps = {
   totalCount: number;
   pageSize: number;
   createPageHref: (page: number) => string;
+  buildPerPageHref: (size: number) => string;
 };
 
 export default async function DeliveryListPagination({
@@ -17,6 +18,7 @@ export default async function DeliveryListPagination({
   totalCount,
   pageSize,
   createPageHref,
+  buildPerPageHref,
 }: DeliveryListPaginationProps) {
   if (totalCount === 0) return null;
 
@@ -38,6 +40,9 @@ export default async function DeliveryListPagination({
         next: t("list.pagination.next"),
         goToPage: (page) => t("list.pagination.goToPageAriaLabel", { page }),
       }}
+      perPage={pageSize}
+      buildPerPageHref={buildPerPageHref}
+      perPageLabel={t("list.pagination.perPage")}
     />
   );
 }

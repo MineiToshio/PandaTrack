@@ -179,6 +179,7 @@
     "previous": "Previous",
     "next": "Next",
     "loadMore": "Load more",
-    "showing": "Showing {start}–{end} of {total} {total, plural, one {order} other {orders}}"
+    "showing": "Showing {start}–{end} of {total} {total, plural, one {order} other {orders}}",
+    "perPage": "Per page"
   }
 }

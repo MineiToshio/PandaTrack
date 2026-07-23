@@ -4,13 +4,12 @@ import {
   DELIVERY_LIST_SORT_VALUES,
   type DeliveryListSort,
 } from "@/lib/deliveries/deliveryListSort";
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
 
 const ALL_DELIVERY_STATUSES: DeliveryStatus[] = ["IN_TRANSIT", "DELIVERED", "CANCELLED"];
 
 /** Canonical default applied when the URL carries no `status` key at all (BP-01). */
 export const DEFAULT_DELIVERY_STATUS: DeliveryStatus = "IN_TRANSIT";
-
-export const DELIVERY_LIST_PAGE_SIZE = 30;
 
 export type ParsedDeliveryListingParams = {
   nameQuery: string | undefined;
@@ -30,6 +29,8 @@ export type ParsedDeliveryListingParams = {
   shippedTo: Date | undefined;
   sort: DeliveryListSort;
   page: number;
+  /** Desktop page-size selector value — one of `PAGE_SIZE_OPTIONS`. */
+  perPage: number;
 };
 
 export type DeliveryListActiveFilters = {
@@ -43,6 +44,7 @@ export type DeliveryListActiveFilters = {
   shippedFromIso: string | undefined;
   shippedToIso: string | undefined;
   sort: DeliveryListSort;
+  perPage: number;
 };
 
 export function parseDeliveryListingParams(
@@ -71,6 +73,7 @@ export function parseDeliveryListingParams(
     : DEFAULT_DELIVERY_LIST_SORT;
 
   const page = parsePositiveInteger(raw.page);
+  const perPage = parsePageSize(raw.perPage);
 
   return {
     nameQuery,
@@ -85,6 +88,7 @@ export function parseDeliveryListingParams(
     shippedTo,
     sort,
     page,
+    perPage,
   };
 }
 
@@ -105,6 +109,7 @@ export function buildDeliveryListFilterUrl(
     shippedFromIso: "shippedFromIso" in overrides ? overrides.shippedFromIso : filters.shippedFromIso,
     shippedToIso: "shippedToIso" in overrides ? overrides.shippedToIso : filters.shippedToIso,
     sort: "sort" in overrides ? overrides.sort! : filters.sort,
+    perPage: "perPage" in overrides ? overrides.perPage! : filters.perPage,
   };
 
   const params = new URLSearchParams();
@@ -121,6 +126,7 @@ export function buildDeliveryListFilterUrl(
   if (next.shippedFromIso) params.set("shippedFrom", next.shippedFromIso);
   if (next.shippedToIso) params.set("shippedTo", next.shippedToIso);
   if (next.sort !== DEFAULT_DELIVERY_LIST_SORT) params.set("sort", next.sort);
+  if (next.perPage !== DEFAULT_PAGE_SIZE) params.set("perPage", String(next.perPage));
 
   const targetPage = overrides.page ?? 1;
   if (targetPage > 1) params.set("page", String(targetPage));
@@ -157,6 +163,14 @@ function parsePositiveInteger(value: string | string[] | undefined): number {
   const parsed = Number.parseInt(first, 10);
   if (!Number.isFinite(parsed) || parsed < 1) return 1;
   return parsed;
+}
+
+/** Clamps `?perPage=` to the allow-listed `PAGE_SIZE_OPTIONS`; anything else falls back to the default. */
+function parsePageSize(value: string | string[] | undefined): number {
+  const first = Array.isArray(value) ? value[0] : value;
+  if (!first) return DEFAULT_PAGE_SIZE;
+  const parsed = Number.parseInt(first, 10);
+  return (PAGE_SIZE_OPTIONS as readonly number[]).includes(parsed) ? parsed : DEFAULT_PAGE_SIZE;
 }
 
 function parseDateParam(value: string | string[] | undefined): Date | undefined {

@@ -235,7 +235,7 @@ Role:
   - presence
   - receives orders
   - has stock
-- pagination defaults to page size `10`
+- pagination defaults to page size `25` (`DEFAULT_PAGE_SIZE`), user-selectable among `10`/`25`/`50`/`100` (`PAGE_SIZE_OPTIONS`) via `?perPage=`. **Updated 2026-07-23 (ADR 0018):** unifies the earlier store-only default of `10`–`12` with the shared orders/deliveries default; see [ADR 0018](../../../../design/decisions/0018-list-pagination-page-size-and-desktop-summary.md).
 
 ### Detail contract
 

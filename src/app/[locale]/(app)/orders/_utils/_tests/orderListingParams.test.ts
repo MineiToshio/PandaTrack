@@ -5,6 +5,7 @@ import {
   isDefaultActiveStatusSet,
   parseOrderListingParams,
 } from "../orderListingParams";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 
 describe("parseOrderListingParams", () => {
   it("leaves statuses empty when no status param is present (defaults live in the nav href)", () => {
@@ -61,6 +62,22 @@ describe("parseOrderListingParams", () => {
     expect(parseOrderListingParams({ page: "-2" }).page).toBe(1);
     expect(parseOrderListingParams({ page: "abc" }).page).toBe(1);
   });
+
+  it("defaults perPage when the param is missing", () => {
+    expect(parseOrderListingParams({}).perPage).toBe(DEFAULT_PAGE_SIZE);
+  });
+
+  it("accepts an allow-listed perPage value", () => {
+    expect(parseOrderListingParams({ perPage: "50" }).perPage).toBe(50);
+    expect(parseOrderListingParams({ perPage: "10" }).perPage).toBe(10);
+    expect(parseOrderListingParams({ perPage: "100" }).perPage).toBe(100);
+  });
+
+  it("clamps an out-of-range or invalid perPage back to the default", () => {
+    expect(parseOrderListingParams({ perPage: "37" }).perPage).toBe(DEFAULT_PAGE_SIZE);
+    expect(parseOrderListingParams({ perPage: "0" }).perPage).toBe(DEFAULT_PAGE_SIZE);
+    expect(parseOrderListingParams({ perPage: "abc" }).perPage).toBe(DEFAULT_PAGE_SIZE);
+  });
 });
 
 describe("isDefaultActiveStatusSet", () => {
@@ -99,6 +116,7 @@ describe("hasOnlyDefaultActiveFilters", () => {
         deliveryToIso: undefined,
         deliveryOverdueOnly: false,
         deliveryLateOnly: false,
+        perPage: DEFAULT_PAGE_SIZE,
       }),
     ).toBe(true);
   });
@@ -120,6 +138,7 @@ describe("hasOnlyDefaultActiveFilters", () => {
         deliveryToIso: undefined,
         deliveryOverdueOnly: false,
         deliveryLateOnly: false,
+        perPage: DEFAULT_PAGE_SIZE,
       }),
     ).toBe(false);
   });

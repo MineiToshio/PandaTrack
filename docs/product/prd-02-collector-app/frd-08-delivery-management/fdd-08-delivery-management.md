@@ -270,30 +270,30 @@ Everything below already exists in the catalog — see
 [components.md](../../../design/components.md). Delivery Management is an **assembly of
 existing components**; it must not fork or reinvent any of them.
 
-| Component                              | Tier        | Role in FRD-08                                                                                              |
-| -------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------- |
-| `Sidebar`, `Header`                    | module      | App shell chrome (PUSH sidebar, breadcrumbs/lang/theme topbar)                                              |
-| `StoreAvatar`                          | core        | s32 in list rows, s56 in detail hero                                                                        |
-| `MonoCode`                             | core        | `DLV-…` and `ORD-…` identifiers                                                                             |
-| `StatusChip`                           | core        | Delivery + item status, per [ADR 0002](../../../design/decisions/0002-status-chip-mapping.md)               |
-| `Button`                               | core        | primary / ghost / destructive-ghost hierarchy                                                               |
-| `CodeCopyButton`                       | core        | copy the `DLV-…` in the hero                                                                                |
-| `ViewTransitionLink`                   | core        | list row → detail (`view-transition-name: dlv-{humanId}`)                                                   |
-| `FilterTriggerButton` + `FilterDrawer` | module      | list filtering (FR-08-28/29)                                                                                |
-| `AppliedFilterChip`                    | core        | removable active-filter chips                                                                               |
-| `Pagination` / `ListPagination`        | core/module | desktop numeric / mobile "Cargar más" (ADR 0001)                                                            |
-| `WizardAccordion`                      | module      | 4-step create flow                                                                                          |
-| `StoreCombobox`                        | module      | standalone store selection (eligible stores only)                                                           |
-| `Checkbox`                             | core        | binary per-product selection (atomic unit, no qty selector — FR-08-04a)                                     |
-| `DateInput` / `DateRangePickerInput`   | core        | shipping date / estimated arrival range                                                                     |
-| `Select`                               | core        | sort, currency                                                                                              |
-| `CollapsibleSubcard`                   | module      | Productos subcard, eligible-product groups                                                                  |
-| `AsideSummary` / `DetailSidebar`       | module      | Resumen / Acciones / Nota rail                                                                              |
-| `PrivateNoteCard`                      | module      | inline-editable private note                                                                                |
-| `Modal` (`ModalDialog` / `ModalSheet`) | module      | mark-delivered / cancel / delete overlays — [ADR 0008](../../../design/decisions/0008-modal-enhancement.md) |
-| `MobilePicker`                         | module      | mobile date/currency pickers                                                                                |
-| `EmptyState`                           | module      | initial empty, filtered empty, no-eligible-products                                                         |
-| `Skeleton`                             | core        | list loading                                                                                                |
+| Component                              | Tier   | Role in FRD-08                                                                                                                                                                  |
+| -------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Sidebar`, `Header`                    | module | App shell chrome (PUSH sidebar, breadcrumbs/lang/theme topbar)                                                                                                                  |
+| `StoreAvatar`                          | core   | s32 in list rows, s56 in detail hero                                                                                                                                            |
+| `MonoCode`                             | core   | `DLV-…` and `ORD-…` identifiers                                                                                                                                                 |
+| `StatusChip`                           | core   | Delivery + item status, per [ADR 0002](../../../design/decisions/0002-status-chip-mapping.md)                                                                                   |
+| `Button`                               | core   | primary / ghost / destructive-ghost hierarchy                                                                                                                                   |
+| `CodeCopyButton`                       | core   | copy the `DLV-…` in the hero                                                                                                                                                    |
+| `ViewTransitionLink`                   | core   | list row → detail (`view-transition-name: dlv-{humanId}`)                                                                                                                       |
+| `FilterTriggerButton` + `FilterDrawer` | module | list filtering (FR-08-28/29)                                                                                                                                                    |
+| `AppliedFilterChip`                    | core   | removable active-filter chips                                                                                                                                                   |
+| `ListPagination` / `PerPageSelect`     | module | desktop summary + page-size select + numbered nav / mobile summary + "Cargar más" ([ADR 0018](../../../design/decisions/0018-list-pagination-page-size-and-desktop-summary.md)) |
+| `WizardAccordion`                      | module | 4-step create flow                                                                                                                                                              |
+| `StoreCombobox`                        | module | standalone store selection (eligible stores only)                                                                                                                               |
+| `Checkbox`                             | core   | binary per-product selection (atomic unit, no qty selector — FR-08-04a)                                                                                                         |
+| `DateInput` / `DateRangePickerInput`   | core   | shipping date / estimated arrival range                                                                                                                                         |
+| `Select`                               | core   | sort, currency                                                                                                                                                                  |
+| `CollapsibleSubcard`                   | module | Productos subcard, eligible-product groups                                                                                                                                      |
+| `AsideSummary` / `DetailSidebar`       | module | Resumen / Acciones / Nota rail                                                                                                                                                  |
+| `PrivateNoteCard`                      | module | inline-editable private note                                                                                                                                                    |
+| `Modal` (`ModalDialog` / `ModalSheet`) | module | mark-delivered / cancel / delete overlays — [ADR 0008](../../../design/decisions/0008-modal-enhancement.md)                                                                     |
+| `MobilePicker`                         | module | mobile date/currency pickers                                                                                                                                                    |
+| `EmptyState`                           | module | initial empty, filtered empty, no-eligible-products                                                                                                                             |
+| `Skeleton`                             | core   | list loading                                                                                                                                                                    |
 
 New data needs (Phase B, not design): a `getDeliveriesForList` query and `markDelivered` /
 `reopen` / `cancel` / `delete` / `updateNote` mutations. These are implementation contracts,
@@ -419,8 +419,9 @@ specifics:
 - **List → cards** (`#s9-deliveries-list-mobile`): the tabular rows collapse into vertical
   `s7-mob-card`s (StoreAvatar s40, store title, `DLV-… · enviada {fecha}`, status chip, meta
   `"N productos · llega X–Y"` + cost). The action row is search + icon-only
-  `FilterTriggerButton` (with count badge) + `[+ Nueva]`; chips stay removable; footer is
-  `"Cargar más"`.
+  `FilterTriggerButton` (with count badge) + `[+ Nueva]`; chips stay removable; footer is a
+  results summary + `"Cargar más"` — the shared `ListPagination` mobile layout, no numbered
+  pages or per-page selector on mobile ([ADR 0018](../../../design/decisions/0018-list-pagination-page-size-and-desktop-summary.md)).
 - **Detail → stacked** (`#s9-delivery-detail-mobile`): hero → grouped products → Resumen →
   Nota, with a **sticky single-primary action bar** (`[⋯] [Editar accent] [Marcar llegada
 primary]`); `⋯` opens the more-actions sheet (`#s9-delivery-actions-sheet-mobile`). The

@@ -81,4 +81,11 @@ Relevant acceptance criteria copied from the FRD:
 
 Implemented in current code, with some E2E coverage still lighter than the full requirement set.
 
+**Updated (2026-07-23, owner-approved):** the listing pagination in scope here now follows the
+shared `ListPagination` contract — page size is user-selectable (10/25/50/100, default 25, via
+`?perPage=`) instead of the original fixed page size, and the desktop layout adds a results
+summary + per-page control alongside the numbered nav. See
+[BP-01](../bp-01-store-public-trust-system.md#listing-contract) and
+[ADR 0018](../../../../../design/decisions/0018-list-pagination-page-size-and-desktop-summary.md).
+
 Cross-domain note: later [FRD-07 · WO-06 (store-entry-defaults-from-user-preferences)](../../../frd-07-user-settings/bp-01-user-settings-identity-and-preferences/work-orders/wo-06-store-entry-defaults-from-user-preferences.md) work may generate default listing query strings from saved preferences, but this listing slice still treats the resolved URL as the canonical filter state.

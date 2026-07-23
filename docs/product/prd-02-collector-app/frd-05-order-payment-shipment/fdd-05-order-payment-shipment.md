@@ -360,35 +360,35 @@ Everything below already exists in the catalog — see
 [components.md](../../../design/components.md). Orders, Payments & Shipment is an
 **assembly of existing components**; it must not fork or reinvent any of them.
 
-| Component                              | Tier        | Role in FRD-05                                                                                                                |
-| -------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `Sidebar`, `Header`                    | module      | App shell chrome (PUSH sidebar, breadcrumbs/lang/theme topbar)                                                                |
-| `StoreAvatar`                          | core        | s32 in list rows, s56 in detail hero                                                                                          |
-| `MonoCode`                             | core        | `ORD-…` identifiers in rows, hero, breadcrumb                                                                                 |
-| `StatusChip`                           | core        | Order + item status, per [ADR 0002](../../../design/decisions/0002-status-chip-mapping.md)                                    |
-| `CodeCopyButton`                       | core        | copy the `ORD-…` in the mobile hero                                                                                           |
-| `Button`                               | core        | primary / accent (tonal) / ghost / destructive-ghost hierarchy                                                                |
-| `ViewTransitionLink`                   | core        | list row → detail (`view-transition-name: order-{id}`)                                                                        |
-| `FilterTriggerButton` + `FilterDrawer` | core/module | list filtering (`FR-05-26`); side drawer (desktop) / bottom sheet (mobile, ADR 0003 D8)                                       |
-| `AppliedFilterChip`                    | core        | removable active-filter chips, incl. the default "Solo activas"                                                               |
-| `Pagination` / `ListPagination`        | core/module | desktop numeric / mobile "Cargar más"                                                                                         |
-| `Select`                               | core        | sort, currency                                                                                                                |
-| `WizardAccordion`                      | module      | 3-step create flow                                                                                                            |
-| `StoreCombobox`                        | module      | create store selection (+ inline "Crear nueva tienda" with `returnTo` context)                                                |
-| `OrderItemsGrid`                       | module      | spreadsheet item entry (keyboard nav, drag reorder) — `FR-05-06`…`FR-05-10`, `BR-05-04`                                       |
-| `DateRangePickerInput`                 | core        | estimated delivery range (with quick-range presets)                                                                           |
-| `DateInput`                            | core        | order date, payment date                                                                                                      |
-| `Textarea`                             | core        | inline-editable private note, cancellation reason                                                                             |
-| `CollapsibleSubcard`                   | module      | Productos / Historial subcards                                                                                                |
-| `AsideSummary` / `DetailSidebar`       | module      | Pagos / Acciones / Nota rail; reactive create/edit Resumen                                                                    |
-| `PrivateNoteCard`                      | module      | inline-editable private note (autosave on blur, ~800ms debounce — `FR-05-21`)                                                 |
-| `Modal` (`ModalDialog` / `ModalSheet`) | module      | pay / cancel / delete / discard / discrepancy / FX overlays — [ADR 0008](../../../design/decisions/0008-modal-enhancement.md) |
-| `FxReconciliationModal`                | module      | bulk FX reconciliation grouped by currency pair (`FR-05-36`…`FR-05-38`)                                                       |
-| `MobilePicker`                         | module      | mobile store / currency / product-type / date-range pickers                                                                   |
-| `EmptyState`                           | module      | initial empty, filtered empty, no-eligible-stores                                                                             |
-| `Skeleton`                             | core        | list loading                                                                                                                  |
-| `Toast`                                | core        | payment-complete achievement, save confirmations, add-payment failure reverts                                                 |
-| `MascotBubble`                         | core        | celebratory register only — empty states and the payment-complete toast                                                       |
+| Component                              | Tier        | Role in FRD-05                                                                                                                                                                  |
+| -------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Sidebar`, `Header`                    | module      | App shell chrome (PUSH sidebar, breadcrumbs/lang/theme topbar)                                                                                                                  |
+| `StoreAvatar`                          | core        | s32 in list rows, s56 in detail hero                                                                                                                                            |
+| `MonoCode`                             | core        | `ORD-…` identifiers in rows, hero, breadcrumb                                                                                                                                   |
+| `StatusChip`                           | core        | Order + item status, per [ADR 0002](../../../design/decisions/0002-status-chip-mapping.md)                                                                                      |
+| `CodeCopyButton`                       | core        | copy the `ORD-…` in the mobile hero                                                                                                                                             |
+| `Button`                               | core        | primary / accent (tonal) / ghost / destructive-ghost hierarchy                                                                                                                  |
+| `ViewTransitionLink`                   | core        | list row → detail (`view-transition-name: order-{id}`)                                                                                                                          |
+| `FilterTriggerButton` + `FilterDrawer` | core/module | list filtering (`FR-05-26`); side drawer (desktop) / bottom sheet (mobile, ADR 0003 D8)                                                                                         |
+| `AppliedFilterChip`                    | core        | removable active-filter chips, incl. the default "Solo activas"                                                                                                                 |
+| `ListPagination` / `PerPageSelect`     | module      | desktop summary + page-size select + numbered nav / mobile summary + "Cargar más" ([ADR 0018](../../../design/decisions/0018-list-pagination-page-size-and-desktop-summary.md)) |
+| `Select`                               | core        | sort, currency                                                                                                                                                                  |
+| `WizardAccordion`                      | module      | 3-step create flow                                                                                                                                                              |
+| `StoreCombobox`                        | module      | create store selection (+ inline "Crear nueva tienda" with `returnTo` context)                                                                                                  |
+| `OrderItemsGrid`                       | module      | spreadsheet item entry (keyboard nav, drag reorder) — `FR-05-06`…`FR-05-10`, `BR-05-04`                                                                                         |
+| `DateRangePickerInput`                 | core        | estimated delivery range (with quick-range presets)                                                                                                                             |
+| `DateInput`                            | core        | order date, payment date                                                                                                                                                        |
+| `Textarea`                             | core        | inline-editable private note, cancellation reason                                                                                                                               |
+| `CollapsibleSubcard`                   | module      | Productos / Historial subcards                                                                                                                                                  |
+| `AsideSummary` / `DetailSidebar`       | module      | Pagos / Acciones / Nota rail; reactive create/edit Resumen                                                                                                                      |
+| `PrivateNoteCard`                      | module      | inline-editable private note (autosave on blur, ~800ms debounce — `FR-05-21`)                                                                                                   |
+| `Modal` (`ModalDialog` / `ModalSheet`) | module      | pay / cancel / delete / discard / discrepancy / FX overlays — [ADR 0008](../../../design/decisions/0008-modal-enhancement.md)                                                   |
+| `FxReconciliationModal`                | module      | bulk FX reconciliation grouped by currency pair (`FR-05-36`…`FR-05-38`)                                                                                                         |
+| `MobilePicker`                         | module      | mobile store / currency / product-type / date-range pickers                                                                                                                     |
+| `EmptyState`                           | module      | initial empty, filtered empty, no-eligible-stores                                                                                                                               |
+| `Skeleton`                             | core        | list loading                                                                                                                                                                    |
+| `Toast`                                | core        | payment-complete achievement, save confirmations, add-payment failure reverts                                                                                                   |
+| `MascotBubble`                         | core        | celebratory register only — empty states and the payment-complete toast                                                                                                         |
 
 Implementation contracts (not design surfaces): the `getOrdersList` / `getOrderDetail`
 queries, the `pendingFxCount` derivation, `deriveOrderStatus` (`BR-05-02`), and the

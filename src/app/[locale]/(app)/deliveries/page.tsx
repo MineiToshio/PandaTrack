@@ -7,10 +7,9 @@ import { getSession } from "@/lib/auth/auth-server";
 import { prisma } from "@/lib/prisma";
 import { getDeliveriesList, getDeliveryStoreOptions } from "@/lib/data/deliveries/deliveryQueries";
 import { domainDateToIsoString } from "@/lib/domainDate";
-import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { DEFAULT_PAGE_SIZE, POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import {
   DEFAULT_DELIVERY_STATUS,
-  DELIVERY_LIST_PAGE_SIZE,
   parseDeliveryListingParams,
   type DeliveryListActiveFilters,
 } from "./_utils/deliveryListingParams";
@@ -54,6 +53,26 @@ function buildListUrl(
   return qs ? `${basePath}?${qs}` : basePath;
 }
 
+/** Changing the page size always resets to page 1; only a non-default size is kept in the URL. */
+function buildPerPageUrl(
+  basePath: string,
+  rawParams: Record<string, string | string[] | undefined>,
+  perPageSize: number,
+): string {
+  const params = new URLSearchParams();
+  Object.entries(rawParams).forEach(([key, value]) => {
+    if (key === "page" || key === "perPage" || value == null) return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => params.append(key, item));
+      return;
+    }
+    params.set(key, value);
+  });
+  if (perPageSize !== DEFAULT_PAGE_SIZE) params.set("perPage", String(perPageSize));
+  const qs = params.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
+}
+
 function buildActiveFilters(parsed: ReturnType<typeof parseDeliveryListingParams>): DeliveryListActiveFilters {
   return {
     nameQuery: parsed.nameQuery,
@@ -66,6 +85,7 @@ function buildActiveFilters(parsed: ReturnType<typeof parseDeliveryListingParams
     shippedFromIso: domainDateToIsoString(parsed.shippedFrom),
     shippedToIso: domainDateToIsoString(parsed.shippedTo),
     sort: parsed.sort,
+    perPage: parsed.perPage,
   };
 }
 
@@ -248,12 +268,13 @@ async function DeliveriesTableSection({
     shippedTo: parsed.shippedTo,
     sort: parsed.sort,
     page: parsed.page,
-    pageSize: DELIVERY_LIST_PAGE_SIZE,
+    pageSize: parsed.perPage,
   });
 
   const today = new Date();
   const currentListUrl = buildListUrl(basePath, rawParams, listing.page);
   const buildPaginationHref = (targetPage: number) => buildListUrl(basePath, rawParams, targetPage);
+  const buildPerPageHref = (size: number) => buildPerPageUrl(basePath, rawParams, size);
 
   return (
     <>
@@ -275,6 +296,7 @@ async function DeliveriesTableSection({
         totalCount={listing.totalCount}
         pageSize={listing.pageSize}
         createPageHref={buildPaginationHref}
+        buildPerPageHref={buildPerPageHref}
       />
     </>
   );

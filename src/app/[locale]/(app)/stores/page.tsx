@@ -7,7 +7,6 @@ import EmptyState from "@/components/modules/EmptyState";
 import Button from "@/components/core/Button/Button";
 import { getSession } from "@/lib/auth/auth-server";
 import {
-  DEFAULT_PUBLIC_STORE_PAGE_SIZE,
   countPublicStores,
   getPublicStoresListingPage,
   getViewerOrderCountsByStoreSlugs,
@@ -16,7 +15,7 @@ import {
 import { listCountryCodesCached } from "@/lib/data/catalog/countryQueries";
 import { listActiveStoreProductTypeKeysCached } from "@/lib/data/catalog/storeProductTypeQueries";
 import { buildPageMetadata } from "@/lib/seo";
-import { ROUTES } from "@/lib/constants";
+import { DEFAULT_PAGE_SIZE, ROUTES } from "@/lib/constants";
 import { parseListingSearchParams } from "./_utils/listingParams";
 import StoreListingContent from "./_components/StoreListingContent";
 import StoreListingFilters from "./_components/StoreListingFilters";
@@ -49,6 +48,26 @@ function createStoresPageHref(
   return queryString ? `${basePath}?${queryString}` : basePath;
 }
 
+/** Changing the page size always resets to page 1; only a non-default size is kept in the URL. */
+function createStoresPerPageHref(
+  basePath: string,
+  rawParams: Record<string, string | string[] | undefined>,
+  perPageSize: number,
+): string {
+  const params = new URLSearchParams();
+  Object.entries(rawParams).forEach(([key, value]) => {
+    if (key === "page" || key === "perPage" || value == null) return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => params.append(key, item));
+      return;
+    }
+    params.set(key, value);
+  });
+  if (perPageSize !== DEFAULT_PAGE_SIZE) params.set("perPage", String(perPageSize));
+  const queryString = params.toString();
+  return queryString ? `${basePath}?${queryString}` : basePath;
+}
+
 export async function generateMetadata({ params }: StoresPageProps): Promise<Metadata> {
   const { locale } = await params;
   return buildPageMetadata({
@@ -74,7 +93,7 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
     hasStock: parsed.hasStock,
     includeClosed: parsed.includeClosed,
     page: parsed.page,
-    pageSize: DEFAULT_PUBLIC_STORE_PAGE_SIZE,
+    pageSize: parsed.perPage,
   };
   const hasFilters = Boolean(
     parsed.nameQuery ||
@@ -146,6 +165,7 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
                 userId={session?.user?.id}
                 hasFilters={hasFilters}
                 buildPaginationHref={(targetPage) => createStoresPageHref(storesBasePath, rawParams, targetPage)}
+                buildPerPageHref={(size) => createStoresPerPageHref(storesBasePath, rawParams, size)}
               />
             </Suspense>
           </StoreListingGridWrapper>
@@ -175,12 +195,14 @@ async function StoresGridSection({
   userId,
   hasFilters,
   buildPaginationHref,
+  buildPerPageHref,
 }: {
   locale: string;
   filters: PublicStoreListingFilters;
   userId: string | undefined;
   hasFilters: boolean;
   buildPaginationHref: (page: number) => string;
+  buildPerPageHref: (size: number) => string;
 }) {
   const listingPage = await getPublicStoresListingPage(filters);
 
@@ -207,7 +229,10 @@ async function StoresGridSection({
         locale={locale}
         totalPages={listingPage.totalPages}
         currentPage={listingPage.currentPage}
+        totalCount={listingPage.totalCount}
+        pageSize={listingPage.pageSize}
         createPageHref={buildPaginationHref}
+        buildPerPageHref={buildPerPageHref}
       />
     </>
   );

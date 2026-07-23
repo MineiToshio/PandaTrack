@@ -67,6 +67,12 @@ export const CLOUDFLARE_ASSET_ROUTES = {
   USER_IMAGES: "user-images",
 } as const;
 
+/** Selectable page-size options for the desktop list pagination control (orders/deliveries/stores). */
+export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
+
+/** Default page size applied when no `perPage` param is present or it falls outside `PAGE_SIZE_OPTIONS`. */
+export const DEFAULT_PAGE_SIZE = 25;
+
 export const POSTHOG_EVENTS = {
   LANDING: {
     HERO_CTA_CLICKED: "hero_cta_clicked",

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildOrderListFilterUrl, type OrderListActiveFilters } from "../orderListingParams";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 
 const BASE_PATH = "/es/orders";
 
@@ -18,6 +19,7 @@ const DEFAULT_FILTERS: OrderListActiveFilters = {
   deliveryToIso: undefined,
   deliveryOverdueOnly: false,
   deliveryLateOnly: false,
+  perPage: DEFAULT_PAGE_SIZE,
 };
 
 describe("buildOrderListFilterUrl", () => {
@@ -52,5 +54,10 @@ describe("buildOrderListFilterUrl", () => {
   it("adds a page only when requesting a later page", () => {
     expect(buildOrderListFilterUrl(BASE_PATH, DEFAULT_FILTERS, { page: 3 })).toContain("&page=3");
     expect(buildOrderListFilterUrl(BASE_PATH, DEFAULT_FILTERS, { page: 1 })).not.toContain("page=");
+  });
+
+  it("omits perPage at the default size and carries a non-default size forward", () => {
+    expect(buildOrderListFilterUrl(BASE_PATH, DEFAULT_FILTERS)).not.toContain("perPage=");
+    expect(buildOrderListFilterUrl(BASE_PATH, { ...DEFAULT_FILTERS, perPage: 50 })).toContain("perPage=50");
   });
 });

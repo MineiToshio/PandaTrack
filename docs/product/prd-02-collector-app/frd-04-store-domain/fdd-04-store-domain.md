@@ -152,7 +152,7 @@ page hero             eyebrow mono "Directorio" + display "Dónde comprar" + sub
 toolbar               search · [Filtrar] (ghost) · sort Select · [+ Nueva tienda] (primary)
 filter-chips          removable .filter-chip pills for each active filter
 store-grid            responsive CARD GRID of StoreCard
-pagination            desktop numeric Pagination / mobile "Cargar más"
+pagination            desktop: summary + per-page Select + numbered nav / mobile: summary + "Cargar más"
 ```
 
 The defining choice: the body is a **responsive CSS card grid** (1 col `<640px` → 2 cols
@@ -422,28 +422,28 @@ components plus a small set of module-local pieces** (`StoreCard`, `StoreHero`,
 `StoreSubcard`, `ReviewRow`, `ReportReasonPicker`, `DuplicateAlertInline`); it must not fork
 or reinvent system primitives.
 
-| Component                              | Tier        | Role in FRD-04                                                                                                                    |
-| -------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `Sidebar`, `Header`                    | module      | App shell chrome (PUSH sidebar, topbar)                                                                                           |
-| `StoreAvatar`                          | core        | s56 in cards & hero, s32 in reviews / duplicate candidates                                                                        |
-| `StatusChip`                           | core        | Trust & status chips, per [ADR 0002](../../../design/decisions/0002-status-chip-mapping.md)                                       |
-| `Button` / `IconButton`                | core        | primary / ghost / destructive-ghost hierarchy; channel actions                                                                    |
-| `Input` / `Textarea` / `Combobox`      | core        | name, description, country/import country, private note                                                                           |
-| `Select`                               | core        | list sort, channel-type select                                                                                                    |
-| `Switch`                               | core        | "Perfil privado", "Tiene stock", "Recibe preórdenes"                                                                              |
-| `Checkbox`                             | core        | terms acceptance (step 5)                                                                                                         |
-| `FilterTriggerButton` + `FilterDrawer` | module      | list filtering — closes via X/Esc only, not outside-click (FR-04-13)                                                              |
-| `AppliedFilterChip`                    | core        | removable active-filter chips                                                                                                     |
-| `Pagination` / `ListPagination`        | core/module | desktop numeric / mobile "Cargar más"                                                                                             |
-| `WizardAccordion` / `Stepper`          | module      | 5-step create flow                                                                                                                |
-| `ImageCropper`                         | module      | logo crop-and-confirm step (FR-04-31)                                                                                             |
-| `ProgressBar`                          | core        | logo upload progress                                                                                                              |
-| `DetailSidebar` / `SectionCard`        | module      | aside rail; subcard container                                                                                                     |
-| `PrivateNoteCard`                      | module      | inline-editable private note                                                                                                      |
-| `Modal` (`ModalDialog` / `ModalSheet`) | module      | report / category-request / duplicate / logo / preview overlays — [ADR 0008](../../../design/decisions/0008-modal-enhancement.md) |
-| `EmptyState` / `MascotBubble`          | module      | filtered-empty state                                                                                                              |
-| `Skeleton`                             | core        | list loading                                                                                                                      |
-| `Toast`                                | module      | create/edit/report confirmations                                                                                                  |
+| Component                              | Tier   | Role in FRD-04                                                                                                                                                                  |
+| -------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Sidebar`, `Header`                    | module | App shell chrome (PUSH sidebar, topbar)                                                                                                                                         |
+| `StoreAvatar`                          | core   | s56 in cards & hero, s32 in reviews / duplicate candidates                                                                                                                      |
+| `StatusChip`                           | core   | Trust & status chips, per [ADR 0002](../../../design/decisions/0002-status-chip-mapping.md)                                                                                     |
+| `Button` / `IconButton`                | core   | primary / ghost / destructive-ghost hierarchy; channel actions                                                                                                                  |
+| `Input` / `Textarea` / `Combobox`      | core   | name, description, country/import country, private note                                                                                                                         |
+| `Select`                               | core   | list sort, channel-type select                                                                                                                                                  |
+| `Switch`                               | core   | "Perfil privado", "Tiene stock", "Recibe preórdenes"                                                                                                                            |
+| `Checkbox`                             | core   | terms acceptance (step 5)                                                                                                                                                       |
+| `FilterTriggerButton` + `FilterDrawer` | module | list filtering — closes via X/Esc only, not outside-click (FR-04-13)                                                                                                            |
+| `AppliedFilterChip`                    | core   | removable active-filter chips                                                                                                                                                   |
+| `ListPagination` / `PerPageSelect`     | module | desktop summary + page-size select + numbered nav / mobile summary + "Cargar más" ([ADR 0018](../../../design/decisions/0018-list-pagination-page-size-and-desktop-summary.md)) |
+| `WizardAccordion` / `Stepper`          | module | 5-step create flow                                                                                                                                                              |
+| `ImageCropper`                         | module | logo crop-and-confirm step (FR-04-31)                                                                                                                                           |
+| `ProgressBar`                          | core   | logo upload progress                                                                                                                                                            |
+| `DetailSidebar` / `SectionCard`        | module | aside rail; subcard container                                                                                                                                                   |
+| `PrivateNoteCard`                      | module | inline-editable private note                                                                                                                                                    |
+| `Modal` (`ModalDialog` / `ModalSheet`) | module | report / category-request / duplicate / logo / preview overlays — [ADR 0008](../../../design/decisions/0008-modal-enhancement.md)                                               |
+| `EmptyState` / `MascotBubble`          | module | filtered-empty state                                                                                                                                                            |
+| `Skeleton`                             | core   | list loading                                                                                                                                                                    |
+| `Toast`                                | module | create/edit/report confirmations                                                                                                                                                |
 
 New data needs (Phase B, not design): the listing/detail queries and the
 create/edit/review/note/report/change-request mutations. The named query and action
@@ -673,7 +673,9 @@ specifics:
 
 - **List grid**: 1 column `<640px` → 2 columns `640–1024px` → 3 columns `>1024px`. The toolbar
   collapses to search + icon-only `FilterTriggerButton` (with count badge) + `[+ Nueva]`;
-  pagination becomes a `"Cargar más"` ghost button.
+  pagination becomes a centered results summary + a `"Cargar más"` ghost button — no numbered
+  pages and no per-page selector on mobile, the same `ListPagination` mobile layout used by
+  orders and deliveries ([ADR 0018](../../../design/decisions/0018-list-pagination-page-size-and-desktop-summary.md)).
 - **FilterDrawer → Sheet**: on mobile the drawer renders as a right-edge `Sheet` (vaul); same
   sections, same X/Esc dismissal contract.
 - **Detail → stacked**: the two-column `detail-grid` collapses to one column (hero → subcards

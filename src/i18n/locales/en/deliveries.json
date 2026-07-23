@@ -375,7 +375,8 @@
       "navigationAriaLabel": "Deliveries pagination",
       "previous": "Previous page",
       "next": "Next page",
-      "goToPageAriaLabel": "Go to page {page}"
+      "goToPageAriaLabel": "Go to page {page}",
+      "perPage": "Per page"
     }
   }
 }

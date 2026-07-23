@@ -1,5 +1,6 @@
 import type { OrderStatus } from "../../../../../../generated/prisma/client";
 import { ORDER_LIST_SORT_VALUES, type OrderListPaymentState, type OrderListSort } from "@/lib/orders/orderListSort";
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
 
 const ALL_ORDER_STATUSES: OrderStatus[] = [
   "OPEN",
@@ -16,8 +17,6 @@ export const DEFAULT_ACTIVE_STATUSES: OrderStatus[] = [
   "IN_TRANSIT",
   "PARTIALLY_DELIVERED",
 ];
-
-export const ORDER_LIST_PAGE_SIZE = 30;
 
 export const DEFAULT_ORDER_LIST_SORT: OrderListSort = "recent";
 
@@ -41,6 +40,8 @@ export type ParsedOrderListingParams = {
   /** "Atrasados": strict overdue — see `deliveryLateOnly` in `orderQueries.ts`. */
   deliveryLateOnly: boolean;
   page: number;
+  /** Desktop page-size selector value — one of `PAGE_SIZE_OPTIONS`. */
+  perPage: number;
 };
 
 export type OrderListActiveFilters = {
@@ -58,6 +59,7 @@ export type OrderListActiveFilters = {
   deliveryToIso: string | undefined;
   deliveryOverdueOnly: boolean;
   deliveryLateOnly: boolean;
+  perPage: number;
 };
 
 export function parseOrderListingParams(raw: Record<string, string | string[] | undefined>): ParsedOrderListingParams {
@@ -91,6 +93,7 @@ export function parseOrderListingParams(raw: Record<string, string | string[] | 
   const deliveryLateOnly = parseBoolean(raw.delLate);
 
   const page = parsePositiveInteger(raw.page);
+  const perPage = parsePageSize(raw.perPage);
 
   return {
     nameQuery,
@@ -110,6 +113,7 @@ export function parseOrderListingParams(raw: Record<string, string | string[] | 
     deliveryOverdueOnly,
     deliveryLateOnly,
     page,
+    perPage,
   };
 }
 
@@ -144,6 +148,7 @@ export function buildOrderListFilterUrl(
     deliveryOverdueOnly:
       "deliveryOverdueOnly" in overrides ? Boolean(overrides.deliveryOverdueOnly) : filters.deliveryOverdueOnly,
     deliveryLateOnly: "deliveryLateOnly" in overrides ? Boolean(overrides.deliveryLateOnly) : filters.deliveryLateOnly,
+    perPage: "perPage" in overrides ? overrides.perPage! : filters.perPage,
   };
 
   const params = new URLSearchParams();
@@ -163,6 +168,7 @@ export function buildOrderListFilterUrl(
   if (next.deliveryToIso) params.set("deliveryTo", next.deliveryToIso);
   if (next.deliveryOverdueOnly) params.set("delOverdue", "true");
   if (next.deliveryLateOnly) params.set("delLate", "true");
+  if (next.perPage !== DEFAULT_PAGE_SIZE) params.set("perPage", String(next.perPage));
 
   const targetPage = overrides.page ?? 1;
   if (targetPage > 1) params.set("page", String(targetPage));
@@ -200,6 +206,14 @@ function parsePositiveInteger(value: string | string[] | undefined): number {
   const parsed = Number.parseInt(first, 10);
   if (!Number.isFinite(parsed) || parsed < 1) return 1;
   return parsed;
+}
+
+/** Clamps `?perPage=` to the allow-listed `PAGE_SIZE_OPTIONS`; anything else falls back to the default. */
+function parsePageSize(value: string | string[] | undefined): number {
+  const first = Array.isArray(value) ? value[0] : value;
+  if (!first) return DEFAULT_PAGE_SIZE;
+  const parsed = Number.parseInt(first, 10);
+  return (PAGE_SIZE_OPTIONS as readonly number[]).includes(parsed) ? parsed : DEFAULT_PAGE_SIZE;
 }
 
 function parseDateParam(value: string | string[] | undefined): Date | undefined {
