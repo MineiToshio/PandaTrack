@@ -8,13 +8,13 @@ import {
   Film,
   GalleryThumbnails,
   Gamepad2,
-  Music,
   Package,
   Palette,
   ScrollText,
   ShoppingBag,
   Shapes,
   Signature,
+  Sticker,
   Tag,
 } from "lucide-react";
 
@@ -27,7 +27,7 @@ import {
  * Unknown keys fall back to `Tag` via `getStoreProductTypeIcon`.
  */
 export const STORE_PRODUCT_TYPE_ICON_MAP: Record<string, LucideIcon> = {
-  albums: Music,
+  albums: Sticker,
   art_books: Palette,
   books: BookOpenText,
   book_accessories: BookMarked,
