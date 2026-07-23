@@ -7,7 +7,7 @@ status: DRAFT
 parent: BP-01
 source_issue: 128
 implementation_status: PLANNED
-last_updated: 2026-07-22
+last_updated: 2026-07-23
 ---
 
 # WO-01 Admin Space Shell and Gating
@@ -22,8 +22,10 @@ Vertical slice that stands up the admin space: a localized route group at `/[loc
 - Add the admin path prefix to `src/proxy.ts` for an optimistic redirect of non-administrators.
 - Admin shell chrome (header, navigation between inbox and audit, locale handling) and an access-denied state.
 - New `admin` i18n namespace under `src/i18n/locales/{es,en}/admin.json`, Spanish default, English available.
+- Role-conditional admin navigation entry point in the collector app shell (PRD-02, FRD-03): the links to the admin space render only for users whose role is `admin`, per `FR-02-22`.
 - Analytics for entering the admin space.
 - E2E covering gated access in both languages.
+- E2E covering nav visibility by role: a non-admin sees no admin navigation entry; an admin sees it and it leads to `/[locale]/admin`.
 
 ## Out of Scope
 
@@ -37,16 +39,20 @@ Vertical slice that stands up the admin space: a localized route group at `/[loc
 - `FR-02-02`: Add the admin path to the proxy prefixes for an optimistic redirect, keeping `requireAdmin()` as the real boundary.
 - `FR-02-03`: Localize the space through an `admin` namespace, Spanish default, English available, no hardcoded copy.
 - `FR-02-04`: Refuse non-administrators without showing moderation data.
+- `FR-02-22`: The admin navigation entry point renders only for users whose `role` is `admin`; for a non-administrator it must not appear in the menu.
 
 Relevant business rules:
 
 - `BR-02-01`: All admin copy lives in the `admin` namespace.
 - `BR-02-04`: Route group and i18n structure chosen so subdomain and content-language routing are additive later.
+- `BR-02-05`: Hiding the admin nav entry is presentation only; `requireAdmin()` remains the actual security boundary.
 
 Relevant acceptance criteria:
 
 - `AC-02-01` Non-administrator cannot reach the admin space.
 - `AC-02-06` Localized console.
+- `AC-02-15` Admin nav entry shown only to administrators.
+- `AC-02-16` Direct admin navigation still requires `requireAdmin()`.
 
 ## Blueprints
 
@@ -57,3 +63,5 @@ Relevant acceptance criteria:
 - A `user`-role account navigating to `/{locale}/admin` is redirected or shown access-denied and sees no moderation data (`AC-02-01`).
 - An `admin`-role account reaches the admin shell.
 - The shell renders from the `admin` namespace under both `/es/admin` and `/en/admin` (`AC-02-06`).
+- A `user`-role account sees no admin navigation entry in the app shell menu; an `admin`-role account sees it and it leads to `/{locale}/admin` (`AC-02-15`).
+- A `user`-role account who navigates directly to `/{locale}/admin` is still refused regardless of nav visibility (`AC-02-16`).

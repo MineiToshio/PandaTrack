@@ -1,10 +1,20 @@
 <!DOCTYPE html>
 <!--
-  PandaTrack · FRD-02 Moderation Console · Prototype (Velvet)
+  PandaTrack · FRD-02 Consola de Moderacion · Prototipo (Velvet)
   Self-contained visual reference: open by double-click, no build step.
   Non-authoritative design aid (may drift from shipped pixels).
   Only external references: Google Fonts (Inter + JetBrains Mono) and Lucide UMD.
-  Screens: #inbox, #inbox-empty, #audit, #access-denied.
+
+  Visual DNA is ported verbatim from the canonical exemplar
+  (FRD-04 Tiendas prototype): same tokens, App Shell, buttons, chips,
+  cards, banners, modal, and demo chrome. The console renders inside the
+  same collector App Shell; the admin area is a section of the app, not a
+  separate mini-app.
+
+  Desktop pattern: master-detail (queue list left, review pane right).
+  Screens: #inbox, #review-store, #review-report, #review-flag,
+           #review-change, #review-change-drift, #review-type,
+           #inbox-empty, #audit, #access-denied.
 -->
 <html lang="es" data-theme="light" data-palette="velvet" data-sidebar="expanded">
 <head>
@@ -15,7 +25,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
   <style>
-    /* ── Tokens OKLCH (consumed from the design system, not redefined here) ── */
+    /* ─────────────────────────────────────────────────────────────
+       Tokens OKLCH — ported verbatim from the design system exemplar.
+       The console redefines nothing; it consumes these as-is.
+       ───────────────────────────────────────────────────────────── */
     :root[data-theme="light"] {
       --background: oklch(98% 0.012 75);
       --surface: oklch(99.5% 0.006 75);
@@ -26,13 +39,18 @@
       --text-primary: oklch(20% 0.020 50);
       --text-secondary: oklch(44% 0.020 50);
       --text-muted: oklch(52% 0.018 50);
+
       --success: oklch(58% 0.15 152);
       --warning: oklch(70% 0.16 75);
       --destructive: oklch(54% 0.21 25);
       --info: oklch(62% 0.12 230);
+
       --shadow-1: 0 1px 2px rgba(60, 35, 10, 0.05);
       --shadow-2: 0 4px 14px rgba(60, 35, 10, 0.07), 0 1px 2px rgba(60, 35, 10, 0.04);
       --shadow-3: 0 14px 28px rgba(60, 35, 10, 0.10), 0 2px 6px rgba(60, 35, 10, 0.06);
+
+      --state-hover: 6%;
+      --state-pressed: 12%;
       --color-scheme: light;
     }
     :root[data-theme="dark"] {
@@ -45,21 +63,48 @@
       --text-primary: oklch(96% 0.008 75);
       --text-secondary: oklch(76% 0.016 75);
       --text-muted: oklch(64% 0.016 75);
+
       --success: oklch(74% 0.16 152);
       --warning: oklch(82% 0.15 75);
       --destructive: oklch(70% 0.18 25);
       --info: oklch(76% 0.12 230);
+
       --shadow-1: 0 0 0 1px rgba(255, 235, 210, 0.04);
       --shadow-2: inset 0 1px 0 rgba(255, 235, 210, 0.04), 0 0 0 1px rgba(255, 235, 210, 0.06);
       --shadow-3: inset 0 1px 0 rgba(255, 235, 210, 0.06), 0 0 0 1px rgba(255, 235, 210, 0.08), 0 0 24px rgba(255, 180, 140, 0.05);
+
+      --state-hover: 8%;
+      --state-pressed: 14%;
       --color-scheme: dark;
     }
-    :root[data-palette="plum"][data-theme="light"]  { --accent: oklch(50% 0.18 350); --accent-warm: oklch(70% 0.16 30); --accent-cool: oklch(64% 0.08 220); --focus-ring: oklch(50% 0.18 350 / 0.55); }
-    :root[data-palette="plum"][data-theme="dark"]   { --accent: oklch(76% 0.16 350); --accent-warm: oklch(80% 0.14 30); --accent-cool: oklch(76% 0.08 220); --focus-ring: oklch(76% 0.16 350 / 0.65); }
-    :root[data-palette="lagoon"][data-theme="light"]{ --accent: oklch(58% 0.14 195); --accent-warm: oklch(70% 0.16 28); --accent-cool: oklch(64% 0.10 250); --focus-ring: oklch(58% 0.14 195 / 0.55); }
-    :root[data-palette="lagoon"][data-theme="dark"] { --accent: oklch(76% 0.13 195); --accent-warm: oklch(80% 0.14 28); --accent-cool: oklch(76% 0.10 250); --focus-ring: oklch(76% 0.13 195 / 0.65); }
-    :root[data-palette="forest"][data-theme="light"]{ --accent: oklch(50% 0.13 145); --accent-warm: oklch(66% 0.18 35); --accent-cool: oklch(60% 0.06 250); --focus-ring: oklch(50% 0.13 145 / 0.55); }
-    :root[data-palette="forest"][data-theme="dark"] { --accent: oklch(74% 0.13 145); --accent-warm: oklch(80% 0.16 35); --accent-cool: oklch(76% 0.06 250); --focus-ring: oklch(74% 0.13 145 / 0.65); }
+
+    /* Palettes — same five coordinated trios as the exemplar. */
+    :root[data-palette="plum"][data-theme="light"] {
+      --background: oklch(97.5% 0.012 340); --surface: oklch(99% 0.008 340); --surface-elevated: oklch(98% 0.010 340);
+      --accent: oklch(50% 0.18 350); --accent-warm: oklch(70% 0.16 30); --accent-cool: oklch(64% 0.08 220); --focus-ring: oklch(50% 0.18 350 / 0.55);
+    }
+    :root[data-palette="plum"][data-theme="dark"] {
+      --background: oklch(14% 0.020 340); --surface: oklch(17% 0.020 340); --surface-elevated: oklch(20% 0.022 340);
+      --accent: oklch(76% 0.16 350); --accent-warm: oklch(80% 0.14 30); --accent-cool: oklch(76% 0.08 220); --focus-ring: oklch(76% 0.16 350 / 0.65);
+    }
+    :root[data-palette="lagoon"][data-theme="light"] {
+      --background: oklch(97.5% 0.012 195); --surface: oklch(99% 0.008 195); --surface-elevated: oklch(98% 0.010 195);
+      --accent: oklch(58% 0.14 195); --accent-warm: oklch(70% 0.16 28); --accent-cool: oklch(64% 0.10 250); --focus-ring: oklch(58% 0.14 195 / 0.55);
+    }
+    :root[data-palette="lagoon"][data-theme="dark"] {
+      --background: oklch(14% 0.018 200); --surface: oklch(17% 0.018 200); --surface-elevated: oklch(20% 0.020 200);
+      --accent: oklch(76% 0.13 195); --accent-warm: oklch(80% 0.14 28); --accent-cool: oklch(76% 0.10 250); --focus-ring: oklch(76% 0.13 195 / 0.65);
+    }
+    :root[data-palette="lilac"][data-theme="light"] {
+      --background: oklch(97.5% 0.012 320); --surface: oklch(99% 0.008 320); --surface-elevated: oklch(98% 0.010 320);
+      --accent: oklch(60% 0.18 310); --accent-warm: oklch(72% 0.16 25); --accent-cool: oklch(64% 0.08 165); --focus-ring: oklch(60% 0.18 310 / 0.55);
+    }
+    :root[data-palette="lilac"][data-theme="dark"] {
+      --background: oklch(11% 0.024 280); --surface: oklch(14% 0.024 280); --surface-elevated: oklch(17% 0.026 280);
+      --border: rgba(220, 215, 255, 0.07); --border-strong: rgba(220, 215, 255, 0.14);
+      --text-primary: oklch(96% 0.010 290); --text-secondary: oklch(76% 0.018 290); --text-muted: oklch(64% 0.018 290);
+      --accent: oklch(76% 0.17 305); --accent-warm: oklch(80% 0.14 25); --accent-cool: oklch(74% 0.10 200); --focus-ring: oklch(76% 0.17 305 / 0.65);
+    }
     :root[data-palette="velvet"][data-theme="light"] {
       --background: oklch(93% 0.020 285); --surface: oklch(96.5% 0.014 285); --surface-elevated: oklch(95% 0.016 285);
       --border: oklch(85% 0.024 285); --border-strong: oklch(74% 0.030 285);
@@ -72,221 +117,958 @@
       --text-primary: oklch(96% 0.012 280); --text-secondary: oklch(76% 0.020 280); --text-muted: oklch(64% 0.020 280);
       --accent: oklch(74% 0.19 290); --accent-warm: oklch(80% 0.15 25); --accent-cool: oklch(74% 0.11 215); --focus-ring: oklch(74% 0.19 290 / 0.65);
     }
+    :root[data-palette="forest"][data-theme="light"] {
+      --background: oklch(97.5% 0.014 100); --surface: oklch(99% 0.010 100); --surface-elevated: oklch(98% 0.012 100);
+      --accent: oklch(50% 0.13 145); --accent-warm: oklch(66% 0.18 35); --accent-cool: oklch(60% 0.06 250); --focus-ring: oklch(50% 0.13 145 / 0.55);
+    }
+    :root[data-palette="forest"][data-theme="dark"] {
+      --background: oklch(14% 0.014 145); --surface: oklch(17% 0.014 145); --surface-elevated: oklch(20% 0.016 145);
+      --accent: oklch(74% 0.13 145); --accent-warm: oklch(80% 0.16 35); --accent-cool: oklch(76% 0.06 250); --focus-ring: oklch(74% 0.13 145 / 0.65);
+    }
 
-    * { box-sizing: border-box; }
+    /* ── Palette switch — UI (ported) ── */
+    .palette-switch { position: relative; }
+    .palette-trigger {
+      display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 6px;
+      background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 999px;
+      font-size: 12px; color: var(--text-secondary); transition: color 150ms cubic-bezier(0.2, 0, 0, 1);
+    }
+    .palette-trigger:hover { color: var(--text-primary); }
+    .palette-trigger svg { width: 14px; height: 14px; }
+    .palette-trigger .swatch {
+      width: 22px; height: 22px; border-radius: 999px;
+      background: linear-gradient(135deg, var(--accent) 0% 50%, var(--accent-warm) 50% 75%, var(--accent-cool) 75% 100%);
+      border: 1px solid var(--border-strong);
+    }
+    .palette-menu {
+      position: absolute; top: calc(100% + 6px); right: 0; min-width: 240px; padding: 6px;
+      background: var(--surface-elevated); border: 1px solid var(--border-strong); border-radius: 12px;
+      box-shadow: var(--shadow-3); z-index: 200; display: none;
+    }
+    .palette-menu.is-open { display: block; }
+    .palette-option {
+      display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px;
+      background: transparent; border: 0; border-radius: 8px; text-align: left; color: var(--text-primary);
+      transition: background 150ms cubic-bezier(0.2, 0, 0, 1);
+    }
+    .palette-option:hover { background: color-mix(in oklch, var(--text-primary) var(--state-hover), transparent); }
+    .palette-option[aria-pressed="true"] { background: color-mix(in oklch, var(--accent) 10%, transparent); }
+    .palette-option .swatches { display: inline-flex; gap: 3px; flex: 0 0 auto; }
+    .palette-option .sw { width: 16px; height: 16px; border-radius: 999px; border: 1px solid var(--border-strong); }
+    .palette-option .info { flex: 1; min-width: 0; }
+    .palette-option .info strong { display: block; font-size: 13px; font-weight: 600; }
+    .palette-option .info small { display: block; color: var(--text-muted); font-size: 11px; }
+    .palette-option .check { color: var(--accent); opacity: 0; }
+    .palette-option .check svg { width: 14px; height: 14px; }
+    .palette-option[aria-pressed="true"] .check { opacity: 1; }
+
+    /* ── Reset y base (ported) ── */
+    *, *::before, *::after { box-sizing: border-box; }
     html { color-scheme: var(--color-scheme); }
     body {
-      margin: 0; background: var(--background); color: var(--text-primary);
-      font-family: "Inter", system-ui, sans-serif; font-size: 15px; line-height: 1.55;
+      margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 15px; line-height: 1.45; background: var(--background); color: var(--text-primary);
       -webkit-font-smoothing: antialiased;
+      transition: background-color 200ms cubic-bezier(0.2, 0, 0, 1), color 200ms cubic-bezier(0.2, 0, 0, 1);
     }
-    .mono { font-family: "JetBrains Mono", ui-monospace, monospace; }
+    button { font-family: inherit; cursor: pointer; }
+    input, textarea, select { font-family: inherit; font-size: inherit; color: inherit; }
+    a { color: inherit; text-decoration: none; }
+    .num { font-variant-numeric: tabular-nums; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 500; letter-spacing: 0.04em; }
+    .eyebrow { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 500; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+    .display { font-weight: 600; letter-spacing: -0.015em; line-height: 1.08; }
+    .text-muted { color: var(--text-muted); }
+    .text-secondary { color: var(--text-secondary); }
+    *:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: 4px; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 150ms !important; animation-iteration-count: 1 !important; transition-duration: 150ms !important; }
+    }
 
-    /* ── Demo chrome (NOT app UI) ── */
+    /* ── Demo header — sticky (ported) ── */
     .demo-header {
-      position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 16px;
-      padding: 10px 18px; background: var(--surface-elevated); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 200;
+      background: color-mix(in oklch, var(--surface) 92%, transparent);
+      backdrop-filter: saturate(180%) blur(12px); -webkit-backdrop-filter: saturate(180%) blur(12px);
+      border-bottom: 1px solid var(--border); padding: 0 16px;
+      display: flex; align-items: center; gap: 12px; height: 44px; flex-wrap: nowrap;
     }
-    .demo-brand { display: flex; align-items: center; gap: 8px; font-weight: 650; font-size: 13px; }
-    .demo-brand .badge { width: 9px; height: 9px; border-radius: 3px; background: var(--accent); }
-    .demo-nav, .palette-switch { position: relative; }
-    .demo-trigger {
-      display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; font-size: 12.5px;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 999px; color: var(--text-secondary); cursor: pointer;
+    .demo-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 13px; color: var(--text-primary); white-space: nowrap; }
+    .demo-brand-mark {
+      width: 24px; height: 24px; border-radius: 8px;
+      background: color-mix(in oklch, var(--accent) 14%, var(--surface-elevated));
+      border: 1px solid color-mix(in oklch, var(--accent) 28%, var(--border));
+      color: var(--accent); display: grid; place-items: center; font-weight: 700; font-size: 12px;
     }
-    .demo-trigger:hover { color: var(--text-primary); }
-    .demo-menu {
-      position: absolute; top: calc(100% + 6px); left: 0; min-width: 220px; max-height: 60vh; overflow: auto;
-      background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-3);
-      padding: 6px; display: none; flex-direction: column; gap: 2px;
+    .demo-nav { display: flex; align-items: center; gap: 2px; flex: 1; min-width: 0; }
+    .demo-nav-group { position: relative; }
+    .demo-nav-trigger {
+      display: flex; align-items: center; gap: 4px; padding: 4px 10px; height: 30px;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.01em; color: var(--text-secondary);
+      background: transparent; border: 1px solid transparent; border-radius: 7px; cursor: pointer; white-space: nowrap;
+      transition: color 120ms, background 120ms, border-color 120ms;
     }
-    .demo-menu.open { display: flex; }
-    .demo-menu a, .demo-menu button {
-      display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 8px;
-      font-size: 13px; color: var(--text-secondary); text-decoration: none; background: none; border: none; cursor: pointer; text-align: left;
+    .demo-nav-group:hover .demo-nav-trigger, .demo-nav-group.is-open .demo-nav-trigger {
+      color: var(--text-primary); background: var(--surface-elevated); border-color: var(--border);
     }
-    .demo-menu a:hover, .demo-menu button:hover { background: var(--surface-warm); color: var(--text-primary); }
-    .demo-spacer { margin-left: auto; }
-    .theme-toggle { display: inline-flex; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 3px; }
-    .theme-toggle button { display: grid; place-items: center; width: 28px; height: 28px; border: none; background: none; border-radius: 999px; color: var(--text-muted); cursor: pointer; }
-    .theme-toggle button.active { background: var(--surface-elevated); color: var(--accent); box-shadow: var(--shadow-1); }
-    .swatch { width: 12px; height: 12px; border-radius: 4px; }
+    .demo-nav-trigger svg { width: 12px; height: 12px; opacity: 0.6; }
+    .demo-nav-dropdown {
+      position: absolute; top: calc(100% + 6px); left: 0; min-width: 230px; max-height: calc(100vh - 80px);
+      overflow-y: auto; overscroll-behavior: contain; background: var(--surface-elevated);
+      border: 1px solid var(--border-strong); border-radius: 10px; box-shadow: var(--shadow-3);
+      padding: 4px; display: none; z-index: 300;
+    }
+    .demo-nav-group:hover .demo-nav-dropdown, .demo-nav-group.is-open .demo-nav-dropdown { display: block; }
+    .demo-nav-dropdown a {
+      display: block; padding: 6px 10px; font-size: 12.5px; color: var(--text-secondary);
+      border-radius: 6px; white-space: nowrap; text-decoration: none; transition: color 80ms, background 80ms;
+    }
+    .demo-nav-dropdown a:hover { color: var(--text-primary); background: var(--surface); }
+    .demo-nav-dropdown a[aria-current="true"] { color: var(--accent); font-weight: 600; background: color-mix(in oklch, var(--accent) 9%, transparent); }
+    .demo-nav-sep { height: 1px; background: var(--border); margin: 3px 0; }
+    .demo-nav-label { display: block; padding: 6px 12px 2px; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); pointer-events: none; }
+    .demo-nav-current { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-left: 4px; }
+    .theme-toggle { display: inline-flex; gap: 2px; padding: 3px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 999px; }
+    .theme-toggle button { width: 30px; height: 30px; border: 0; border-radius: 999px; background: transparent; color: var(--text-secondary); display: grid; place-items: center; transition: background 150ms cubic-bezier(0.2, 0, 0, 1), color 150ms cubic-bezier(0.2, 0, 0, 1); }
+    .theme-toggle button[aria-pressed="true"] { background: color-mix(in oklch, var(--accent) 14%, transparent); color: var(--accent); }
+    .theme-toggle button:hover { color: var(--text-primary); }
+    .theme-toggle svg { width: 16px; height: 16px; }
 
-    /* ── App shell (faithful frame; content column is the FRD-specific part) ── */
-    .app-shell { display: grid; grid-template-columns: 240px 1fr; min-height: calc(100vh - 49px); }
-    .app-sidebar { border-right: 1px solid var(--border); background: var(--surface); padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; }
-    .app-sidebar .brand { display: flex; align-items: center; gap: 9px; padding: 6px 10px 16px; font-weight: 700; font-size: 15px; }
-    .app-sidebar .brand .logo { width: 26px; height: 26px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; color: var(--surface); }
-    .nav-item { display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 9px; color: var(--text-secondary); text-decoration: none; font-size: 14px; font-weight: 500; }
-    .nav-item:hover { background: var(--surface-warm); color: var(--text-primary); }
-    .nav-item.active { background: color-mix(in oklch, var(--accent) 12%, transparent); color: var(--accent); }
-    .nav-item .count { margin-left: auto; font-size: 11.5px; font-weight: 700; background: var(--destructive); color: white; border-radius: 999px; padding: 1px 7px; }
-    .app-content { display: flex; flex-direction: column; min-width: 0; }
-    .app-topbar { display: flex; align-items: center; gap: 10px; padding: 14px 26px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-muted); }
-    .app-topbar .crumb { color: var(--text-primary); font-weight: 600; }
-    .app-main { padding: 26px; max-width: 920px; width: 100%; }
+    /* ── Page frame ── */
+    main { width: 100%; max-width: 1280px; margin: 0 auto; padding: 24px 16px 120px; }
+    @media (min-width: 1024px) { main { padding: 32px 32px 160px; } }
 
-    .page-title { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 4px; }
-    .page-sub { color: var(--text-muted); font-size: 14px; margin: 0 0 22px; }
+    /* ── App shell (ported: rounded card, sidebar + topbar) ── */
+    .app-shell {
+      display: grid; grid-template-columns: 1fr; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 24px; box-shadow: var(--shadow-2);
+      overflow: hidden; min-height: 720px; transition: grid-template-columns 220ms cubic-bezier(0.2, 0, 0, 1);
+    }
+    @media (min-width: 1024px) { .app-shell { grid-template-columns: 240px 1fr; } }
+    .app-sidebar {
+      display: none; padding: 20px 14px; background: var(--surface-elevated); border-right: 1px solid var(--border);
+      flex-direction: column; gap: 6px; overflow: hidden;
+      transition: width 200ms cubic-bezier(0.2, 0, 0, 1), padding 200ms cubic-bezier(0.2, 0, 0, 1);
+    }
+    @media (min-width: 1024px) { .app-sidebar { display: flex; } }
+    [data-sidebar="collapsed"] .app-shell { grid-template-columns: 64px 1fr; }
+    [data-sidebar="collapsed"] .app-shell:has(.app-sidebar:hover) { grid-template-columns: 240px 1fr; }
+    [data-sidebar="collapsed"] .app-sidebar:not(:hover) { padding: 20px 8px; }
+    [data-sidebar="collapsed"] .app-sidebar:not(:hover) .app-nav-link,
+    [data-sidebar="collapsed"] .app-sidebar:not(:hover) .app-sidebar-brand { justify-content: center; gap: 0; font-size: 0; padding-left: 0; padding-right: 0; }
+    [data-sidebar="collapsed"] .app-sidebar:not(:hover) .app-nav-link svg,
+    [data-sidebar="collapsed"] .app-sidebar:not(:hover) .app-sidebar-brand svg { width: 18px; height: 18px; }
+    [data-sidebar="collapsed"] .app-sidebar:not(:hover) .app-nav-link .nav-count,
+    [data-sidebar="collapsed"] .app-sidebar:not(:hover) .demo-nav-label { display: none; }
+    [data-sidebar="collapsed"] .app-sidebar:not(:hover) .demo-brand-mark { font-size: 12px; }
+    [data-sidebar="collapsed"] .app-sidebar:not(:hover) .app-sidebar-user .avatar { font-size: 13px; }
+    [data-sidebar="collapsed"] .app-sidebar:not(:hover) .app-sidebar-user { padding: 8px 0; justify-content: center; }
+    [data-sidebar="collapsed"] .app-sidebar:not(:hover) .app-sidebar-user .info,
+    [data-sidebar="collapsed"] .app-sidebar:not(:hover) .app-sidebar-user .chev,
+    [data-sidebar="collapsed"] .app-sidebar:not(:hover) .app-sidebar-collapse-btn .label { display: none; }
+    [data-sidebar="collapsed"] .app-sidebar:not(:hover) .app-sidebar-footer { padding-top: 12px; }
+    .app-sidebar .app-nav-link, .app-sidebar .app-sidebar-brand,
+    .app-sidebar .app-sidebar-user .info, .app-sidebar .app-sidebar-collapse-btn .label { transition: opacity 180ms cubic-bezier(0.2, 0, 0, 1) 60ms; }
+    [data-sidebar="collapsed"] .app-shell:not(:has(.app-sidebar:hover)) .app-sidebar-user .info,
+    [data-sidebar="collapsed"] .app-shell:not(:has(.app-sidebar:hover)) .app-sidebar-collapse-btn .label { opacity: 0; }
+    .app-sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 6px 10px 18px; font-weight: 700; font-size: 14px; }
+    .app-nav-link {
+      display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 8px;
+      color: var(--text-secondary); font-size: 13.5px;
+      transition: background 150ms cubic-bezier(0.2, 0, 0, 1), color 150ms cubic-bezier(0.2, 0, 0, 1);
+    }
+    .app-nav-link svg { width: 18px; height: 18px; flex: 0 0 18px; }
+    .app-nav-link:hover { background: color-mix(in oklch, var(--text-primary) var(--state-hover), transparent); color: var(--text-primary); }
+    .app-nav-link.is-active { background: color-mix(in oklch, var(--accent) 12%, transparent); color: var(--accent); font-weight: 500; }
+    .app-nav-link .nav-count { margin-left: auto; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--destructive); background: color-mix(in oklch, var(--destructive) 14%, transparent); border: 1px solid color-mix(in oklch, var(--destructive) 26%, transparent); border-radius: 999px; padding: 0 7px; line-height: 18px; }
+    .app-nav-section { padding: 10px 12px 4px; }
+    .app-sidebar-footer { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+    .app-sidebar-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: transparent; border: 0; border-radius: 8px; width: 100%; text-align: left; color: inherit; transition: background 150ms cubic-bezier(0.2, 0, 0, 1); cursor: pointer; }
+    .app-sidebar-user:hover { background: color-mix(in oklch, var(--text-primary) var(--state-hover), transparent); }
+    .app-sidebar-user .avatar { width: 32px; height: 32px; border-radius: 999px; background: color-mix(in oklch, var(--accent) 14%, var(--surface)); border: 1px solid color-mix(in oklch, var(--accent) 28%, var(--border)); color: var(--accent); display: grid; place-items: center; font-weight: 600; font-size: 13px; flex: 0 0 32px; }
+    .app-sidebar-user .info { flex: 1; min-width: 0; line-height: 1.2; }
+    .app-sidebar-user .info strong { display: block; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .app-sidebar-user .info small { display: block; color: var(--text-muted); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .app-sidebar-user .chev { color: var(--text-muted); flex: 0 0 16px; }
+    .app-sidebar-user .chev svg { width: 16px; height: 16px; }
+    .app-sidebar-collapse-btn { display: flex; align-items: center; gap: 10px; padding: 7px 10px; background: transparent; border: 0; border-radius: 8px; color: var(--text-muted); font-size: 12px; width: 100%; transition: background 150ms cubic-bezier(0.2, 0, 0, 1), color 150ms cubic-bezier(0.2, 0, 0, 1); }
+    .app-sidebar-collapse-btn:hover { background: color-mix(in oklch, var(--text-primary) var(--state-hover), transparent); color: var(--text-primary); }
+    .app-sidebar-collapse-btn svg { width: 16px; height: 16px; flex: 0 0 16px; transition: transform 200ms cubic-bezier(0.2, 0, 0, 1); }
+    [data-sidebar="collapsed"] .app-sidebar-collapse-btn svg { transform: rotate(180deg); }
 
-    /* ── Screens router ── */
+    /* ── Topbar (ported: breadcrumb + lang + compact theme) ── */
+    .app-content { padding: 16px; min-width: 0; }
+    @media (min-width: 768px) { .app-content { padding: 24px; } }
+    @media (min-width: 1024px) { .app-content { padding: 28px 32px; } }
+    .app-topbar { display: flex; align-items: center; justify-content: space-between; height: 48px; padding: 0 24px; margin: -8px -8px 20px; border-bottom: 1px solid var(--border); gap: 12px; flex-shrink: 0; }
+    .breadcrumbs { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); flex-wrap: wrap; min-width: 0; }
+    .breadcrumbs a { color: var(--text-muted); transition: color 150ms cubic-bezier(0.2, 0, 0, 1); }
+    .breadcrumbs a:hover { color: var(--text-primary); }
+    .breadcrumbs .current { color: var(--text-primary); font-weight: 500; }
+    .breadcrumbs .sep { opacity: 0.5; display: inline-flex; }
+    .breadcrumbs .sep svg { width: 12px; height: 12px; }
+    .app-topbar-spacer { flex: 1; }
+    .lang-toggle { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: transparent; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; color: var(--text-secondary); font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: 0.04em; cursor: pointer; transition: background 150ms cubic-bezier(0.2, 0, 0, 1); }
+    .lang-toggle:hover { background: color-mix(in oklch, var(--text-primary) var(--state-hover), transparent); color: var(--text-primary); }
+    .lang-toggle svg { width: 12px; height: 12px; }
+    .theme-toggle-compact { display: inline-flex; gap: 2px; padding: 2px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 999px; }
+    .theme-toggle-compact button { width: 26px; height: 26px; border: 0; border-radius: 999px; background: transparent; color: var(--text-muted); display: grid; place-items: center; transition: background 150ms cubic-bezier(0.2, 0, 0, 1), color 150ms cubic-bezier(0.2, 0, 0, 1); }
+    .theme-toggle-compact button[aria-pressed="true"] { background: color-mix(in oklch, var(--accent) 14%, transparent); color: var(--accent); }
+    .theme-toggle-compact button:hover { color: var(--text-primary); }
+    .theme-toggle-compact svg { width: 13px; height: 13px; }
+
+    /* ── Page heading ── */
+    .page-heading { margin-bottom: 20px; }
+    .page-heading h1 { font-size: 28px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.1; margin: 6px 0 4px; }
+    .page-heading p { color: var(--text-secondary); font-size: 14px; margin: 0; max-width: 62ch; }
+
+    /* ── Chips (ported) ── */
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 500; line-height: 1.4; white-space: nowrap; }
+    .chip svg { width: 12px; height: 12px; flex: 0 0 12px; }
+    .chip.success { background: color-mix(in oklch, var(--success) 14%, transparent); color: var(--success); border: 1px solid color-mix(in oklch, var(--success) 28%, transparent); }
+    .chip.warning { background: color-mix(in oklch, var(--warning) 14%, transparent); color: var(--warning); border: 1px solid color-mix(in oklch, var(--warning) 28%, transparent); }
+    .chip.info    { background: color-mix(in oklch, var(--info) 14%, transparent);    color: var(--info);    border: 1px solid color-mix(in oklch, var(--info) 28%, transparent); }
+    .chip.accent  { background: color-mix(in oklch, var(--accent) 12%, transparent);  color: var(--accent);  border: 1px solid color-mix(in oklch, var(--accent) 28%, transparent); }
+    .chip.neutral { background: var(--surface-elevated); color: var(--text-secondary); border: 1px solid var(--border-strong); }
+    .chip.destructive { background: color-mix(in oklch, var(--destructive) 14%, transparent); color: var(--destructive); border: 1px solid color-mix(in oklch, var(--destructive) 28%, transparent); }
+
+    /* ── Eyebrow chip (ported s8-eyebrow-chip) ── */
+    .eyebrow-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10.5px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; background: color-mix(in oklch, var(--accent) 9%, transparent); color: var(--accent); border: 1px solid color-mix(in oklch, var(--accent) 18%, transparent); }
+    .eyebrow-chip svg { width: 11px; height: 11px; }
+    .eyebrow-chip.tone-cool { background: color-mix(in oklch, var(--accent-cool) 10%, transparent); color: var(--accent-cool); border-color: color-mix(in oklch, var(--accent-cool) 22%, transparent); }
+    .eyebrow-chip.tone-warm { background: color-mix(in oklch, var(--accent-warm) 12%, transparent); color: var(--accent-warm); border-color: color-mix(in oklch, var(--accent-warm) 22%, transparent); }
+    .eyebrow-chip.tone-success { background: color-mix(in oklch, var(--success) 12%, transparent); color: var(--success); border-color: color-mix(in oklch, var(--success) 26%, transparent); }
+    .eyebrow-chip.tone-warning { background: color-mix(in oklch, var(--warning) 14%, transparent); color: var(--warning); border-color: color-mix(in oklch, var(--warning) 28%, transparent); }
+    .eyebrow-chip.tone-destructive { background: color-mix(in oklch, var(--destructive) 12%, transparent); color: var(--destructive); border-color: color-mix(in oklch, var(--destructive) 26%, transparent); }
+
+    /* ── Buttons (ported) ── */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; border-radius: 8px; border: 1px solid transparent; font-size: 14px; font-weight: 500; line-height: 1; min-height: 40px; transition: background 150ms cubic-bezier(0.2, 0, 0, 1), color 150ms cubic-bezier(0.2, 0, 0, 1), border-color 150ms cubic-bezier(0.2, 0, 0, 1), transform 150ms cubic-bezier(0.2, 0, 0, 1); }
+    .btn svg { width: 16px; height: 16px; }
+    .btn.primary { background: var(--accent); color: oklch(99% 0 0); border-color: var(--accent); }
+    .btn.primary:hover { background: color-mix(in oklch, var(--accent) 88%, var(--text-primary)); }
+    .btn.ghost { background: transparent; color: var(--text-primary); border-color: var(--border-strong); }
+    .btn.ghost:hover { background: color-mix(in oklch, var(--text-primary) var(--state-hover), transparent); }
+    .btn.link { background: transparent; color: var(--accent); border-color: transparent; padding: 6px 8px; min-height: auto; }
+    .btn.link:hover { background: color-mix(in oklch, var(--accent) 10%, transparent); }
+    .btn.destructive-ghost { background: transparent; color: var(--destructive); border-color: color-mix(in oklch, var(--destructive) 28%, transparent); }
+    .btn.destructive-ghost:hover { background: color-mix(in oklch, var(--destructive) 10%, transparent); }
+    .btn.destructive { background: var(--destructive); color: oklch(99% 0 0); border-color: var(--destructive); }
+    .btn.destructive:hover { background: color-mix(in oklch, var(--destructive) 85%, black); }
+    .btn.warning { background: var(--warning); color: oklch(20% 0.04 80); border-color: var(--warning); }
+    .btn.warning:hover { background: color-mix(in oklch, var(--warning) 85%, black); }
+    .btn.accent { background: color-mix(in oklch, var(--accent) 10%, transparent); color: var(--accent); border-color: color-mix(in oklch, var(--accent) 28%, transparent); }
+    .btn.accent:hover { background: color-mix(in oklch, var(--accent) 16%, transparent); }
+    .btn.sm { padding: 7px 12px; min-height: 32px; font-size: 13px; }
+
+    /* ── Card + inputs (ported) ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 18px; }
+    @media (min-width: 768px) { .card { padding: 22px; } }
+    .card.elevated { background: var(--surface-elevated); box-shadow: var(--shadow-2); }
+    .input { width: 100%; padding: 10px 12px; background: var(--surface-elevated); border: 1px solid var(--border-strong); border-radius: 8px; font-size: 14px; color: var(--text-primary); transition: border-color 150ms cubic-bezier(0.2, 0, 0, 1), box-shadow 150ms cubic-bezier(0.2, 0, 0, 1); }
+    .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 18%, transparent); outline: none; }
+
+    /* ── Store banner (ported) ── */
+    .store-banner { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 10px; background: color-mix(in oklch, var(--info) 9%, var(--surface)); border: 1px solid color-mix(in oklch, var(--info) 22%, transparent); font-size: 13px; color: var(--text-primary); }
+    .store-banner.warning { background: color-mix(in oklch, var(--warning) 9%, var(--surface)); border-color: color-mix(in oklch, var(--warning) 22%, transparent); }
+    .store-banner.destructive { background: color-mix(in oklch, var(--destructive) 9%, var(--surface)); border-color: color-mix(in oklch, var(--destructive) 22%, transparent); }
+    .store-banner .banner-icon { color: var(--info); margin-top: 1px; flex: 0 0 16px; width: 16px; height: 16px; }
+    .store-banner.warning .banner-icon { color: var(--warning); }
+    .store-banner.destructive .banner-icon { color: var(--destructive); }
+    .store-banner strong { display: block; margin-bottom: 2px; }
+    .store-banner .banner-copy { flex: 1; line-height: 1.45; }
+    .store-banner small { color: var(--text-secondary); font-size: 12px; }
+
+    /* ═══════════════════════════════════════════════════════════════
+       Console module-local components — built on the ported tokens,
+       surfaces, radii, and spacing. Names are FRD-02 specific.
+       ═══════════════════════════════════════════════════════════════ */
+
+    /* Screen router */
     .screen { display: none; }
-    .screen.is-active { display: block; }
+    .screen.is-active { display: block; animation: screen-in 260ms cubic-bezier(0.2, 0, 0, 1); }
+    .screen-workspace { display: none; }
+    .screen-workspace.is-active { display: block; }
+    @keyframes screen-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-    /* ── Queue counts ── */
-    .queue-counts { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-    .count-chip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 13px; background: var(--surface); border: 1px solid var(--border); border-radius: 999px; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
-    .count-chip b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
-    .count-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+    /* Queue counts */
+    .queue-counts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .qcount { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 999px; font-size: 13px; color: var(--text-secondary); }
+    .qcount .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .qcount b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
 
-    /* ── Inbox list ── */
-    .inbox-list { display: flex; flex-direction: column; gap: 10px; }
-    .inbox-item {
-      display: grid; grid-template-columns: 40px 1fr auto; align-items: center; gap: 14px;
-      padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-      box-shadow: var(--shadow-1); text-decoration: none; color: inherit; position: relative; overflow: hidden;
+    /* Master-detail split */
+    .mod-split { display: grid; grid-template-columns: minmax(280px, 340px) 1fr; gap: 20px; align-items: start; }
+    .mod-back { display: none; align-items: center; gap: 6px; font-size: 13px; color: var(--text-muted); text-decoration: none; padding: 16px 22px 14px; }
+    .mod-back:hover { color: var(--text-primary); }
+    .mod-back svg { width: 14px; height: 14px; }
+
+    /* Queue (master) */
+    .mod-queue { display: flex; flex-direction: column; gap: 8px; }
+    .mod-row {
+      display: grid; grid-template-columns: 34px 1fr 16px; align-items: center; gap: 12px;
+      padding: 11px 13px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      text-decoration: none; color: inherit; position: relative; overflow: hidden; cursor: pointer;
+      transition: border-color 150ms cubic-bezier(0.2, 0, 0, 1), background 150ms cubic-bezier(0.2, 0, 0, 1);
     }
-    .inbox-item::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--sev, var(--border-strong)); }
-    .inbox-item:hover { border-color: var(--border-strong); box-shadow: var(--shadow-2); }
-    .inbox-item .glyph { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: color-mix(in oklch, var(--sev) 15%, transparent); color: var(--sev); }
-    .inbox-item .body { min-width: 0; }
-    .inbox-item .cat { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sev); }
-    .inbox-item .label { font-weight: 600; font-size: 15px; margin: 1px 0; }
-    .inbox-item .detail { font-size: 13px; color: var(--text-muted); }
-    .inbox-item .action { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+    .mod-row::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--sev, var(--border-strong)); }
+    .mod-row:hover { border-color: var(--border-strong); }
+    .mod-row.is-selected { border-color: color-mix(in oklch, var(--accent) 55%, transparent); background: color-mix(in oklch, var(--accent) 8%, var(--surface)); box-shadow: var(--shadow-1); }
+    .mod-row .glyph { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; background: color-mix(in oklch, var(--sev) 15%, transparent); color: var(--sev); }
+    .mod-row .glyph svg { width: 17px; height: 17px; }
+    .mod-row .body { min-width: 0; }
+    .mod-row .cat { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sev); }
+    .mod-row .label { font-weight: 600; font-size: 14px; margin: 1px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mod-row .meta { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mod-row .chev { color: var(--text-muted); }
+    .mod-row .chev svg { width: 16px; height: 16px; }
     .sev-crit { --sev: var(--destructive); }
     .sev-warn { --sev: var(--warning); }
     .sev-info { --sev: var(--info); }
 
-    /* ── Empty + access denied ── */
+    /* Detail pane (detail) */
+    .mod-detail-pane { min-width: 0; }
+    .mod-empty-pane { display: none; min-height: 420px; }
+    .mod-empty-pane.is-shown { display: grid; place-items: center; text-align: center; border: 1px dashed var(--border-strong); border-radius: 16px; color: var(--text-muted); padding: 48px 32px; }
+    .mod-empty-pane .icon { width: 52px; height: 52px; border-radius: 15px; background: color-mix(in oklch, var(--accent) 12%, transparent); color: var(--accent); display: grid; place-items: center; margin: 0 auto 14px; }
+    .mod-empty-pane .icon svg { width: 24px; height: 24px; }
+
+    .mod-detail { display: none; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-2); overflow: hidden; }
+    .mod-detail.is-shown { display: block; }
+    .mod-detail-head { padding: 20px 22px 18px; border-bottom: 1px solid var(--border); background: var(--surface-warm); }
+    .mod-detail-head h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; margin: 10px 0 0; }
+    .mod-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+    .mod-sec { padding: 18px 22px; border-top: 1px solid var(--border); }
+    .mod-sec:first-of-type { border-top: none; }
+    .mod-sec-title { display: flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 12px; }
+    .mod-sec-title svg { width: 13px; height: 13px; }
+
+    /* Key-value summary */
+    .mod-kv { display: grid; grid-template-columns: 160px 1fr; gap: 10px 16px; margin: 0; }
+    .mod-kv dt { font-size: 13px; color: var(--text-muted); }
+    .mod-kv dd { margin: 0; font-size: 14px; color: var(--text-primary); }
+    .taglist { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pill { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: 12px; background: var(--surface-elevated); border: 1px solid var(--border-strong); color: var(--text-secondary); }
+    @media (max-width: 620px) { .mod-kv { grid-template-columns: 1fr; gap: 3px 0; } .mod-kv dd { margin-bottom: 8px; } }
+
+    /* Report cards */
+    .mod-report { border: 1px solid var(--border); border-radius: 12px; padding: 14px; background: var(--surface); }
+    .mod-report + .mod-report { margin-top: 10px; }
+    .mod-report .r-head { display: flex; align-items: center; gap: 8px; justify-content: space-between; flex-wrap: wrap; }
+    .mod-report .r-when { font-size: 12px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px; }
+    .mod-quote { margin: 10px 0 0; padding: 10px 12px; background: var(--surface-warm); border-left: 3px solid var(--border-strong); border-radius: 8px; font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; }
+    .mod-reporter { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; font-size: 12.5px; color: var(--text-secondary); }
+    .mod-reporter svg { width: 14px; height: 14px; }
+    .mod-admin-only { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--warning); font-weight: 600; background: color-mix(in oklch, var(--warning) 12%, transparent); border: 1px solid color-mix(in oklch, var(--warning) 28%, transparent); padding: 2px 8px; border-radius: 999px; }
+    .mod-admin-only svg { width: 12px; height: 12px; }
+
+    /* Catalog preview (product-type) */
+    .mod-catalog { border: 1px solid color-mix(in oklch, var(--success) 26%, var(--border)); border-radius: 12px; background: color-mix(in oklch, var(--success) 7%, var(--surface)); padding: 14px; }
+    .mod-catalog .cap { font-size: 12px; color: var(--text-secondary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+    .mod-catalog .cap svg { width: 14px; height: 14px; color: var(--success); }
+
+    /* ── Change-request diff: replacement semantics + itemized deltas ── */
+    .diff-note { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: var(--text-secondary); background: color-mix(in oklch, var(--accent) 6%, var(--surface)); border: 1px solid color-mix(in oklch, var(--accent) 18%, transparent); border-radius: 10px; padding: 9px 12px; margin-bottom: 12px; line-height: 1.45; }
+    .diff-note svg { width: 14px; height: 14px; color: var(--accent); flex: 0 0 14px; margin-top: 1px; }
+    .diff-field { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 12px 14px; }
+    .diff-field + .diff-field { margin-top: 10px; }
+    .diff-field.is-drift { border-color: color-mix(in oklch, var(--warning) 40%, transparent); background: color-mix(in oklch, var(--warning) 7%, var(--surface)); }
+    .diff-field-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+    .diff-field-head svg { width: 12px; height: 12px; }
+    .diff-field-kind { margin-left: auto; font-family: 'Inter', sans-serif; font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--text-muted); }
+
+    /* Scalar before -> after */
+    .diff-scalar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; font-size: 13px; }
+    .diff-before { color: var(--text-muted); text-decoration: line-through; }
+    .diff-after { color: var(--text-primary); font-weight: 500; }
+    .diff-arrow { color: var(--text-muted); display: inline-flex; }
+    .diff-arrow svg { width: 14px; height: 14px; }
+
+    /* Itemized list deltas (add / remove / keep) */
+    .diff-items { display: flex; flex-direction: column; gap: 6px; }
+    .diff-item { display: flex; align-items: center; gap: 9px; padding: 6px 10px; border-radius: 8px; font-size: 13px; border: 1px solid var(--border); background: var(--surface-elevated); }
+    .diff-item .di-glyph { width: 18px; height: 18px; border-radius: 6px; display: grid; place-items: center; flex: 0 0 18px; }
+    .diff-item .di-glyph svg { width: 12px; height: 12px; }
+    .diff-item .di-value { flex: 1; min-width: 0; color: var(--text-primary); }
+    .diff-item .di-tag { font-size: 10.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+    .diff-item.is-add { border-color: color-mix(in oklch, var(--success) 28%, transparent); background: color-mix(in oklch, var(--success) 8%, var(--surface)); }
+    .diff-item.is-add .di-glyph { background: color-mix(in oklch, var(--success) 16%, transparent); color: var(--success); }
+    .diff-item.is-add .di-tag { color: var(--success); background: color-mix(in oklch, var(--success) 12%, transparent); }
+    .diff-item.is-remove { border-color: color-mix(in oklch, var(--destructive) 26%, transparent); background: color-mix(in oklch, var(--destructive) 7%, var(--surface)); }
+    .diff-item.is-remove .di-glyph { background: color-mix(in oklch, var(--destructive) 15%, transparent); color: var(--destructive); }
+    .diff-item.is-remove .di-value { text-decoration: line-through; color: var(--text-muted); }
+    .diff-item.is-remove .di-tag { color: var(--destructive); background: color-mix(in oklch, var(--destructive) 11%, transparent); }
+    .diff-item.is-keep .di-glyph { background: var(--surface-warm); color: var(--text-muted); }
+    .diff-item.is-keep .di-value { color: var(--text-secondary); }
+    .diff-item.is-keep .di-tag { color: var(--text-muted); background: var(--surface-warm); }
+
+    /* Three-value drift presentation */
+    .diff-triple { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .dv-cell { border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; background: var(--surface-elevated); }
+    .dv-cell .dv-label { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; display: block; }
+    .dv-cell .dv-value { font-size: 13px; color: var(--text-primary); line-height: 1.4; }
+    .dv-cell.is-current { border-color: color-mix(in oklch, var(--warning) 35%, transparent); background: color-mix(in oklch, var(--warning) 8%, var(--surface)); }
+    .dv-cell.is-proposed { border-color: color-mix(in oklch, var(--accent) 30%, transparent); }
+    @media (max-width: 620px) { .diff-triple { grid-template-columns: 1fr; } .diff-scalar { grid-template-columns: 1fr; gap: 4px; } .diff-scalar .diff-arrow { transform: rotate(90deg); } }
+
+    /* Drift derived tags */
+    .drift-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 1px 8px; border-radius: 999px; font-family: 'Inter', sans-serif; }
+    .drift-tag svg { width: 11px; height: 11px; }
+    .drift-tag.conflict { color: var(--warning); background: color-mix(in oklch, var(--warning) 14%, transparent); border: 1px solid color-mix(in oklch, var(--warning) 30%, transparent); }
+    .drift-tag.applied { color: var(--success); background: color-mix(in oklch, var(--success) 12%, transparent); border: 1px solid color-mix(in oklch, var(--success) 26%, transparent); }
+
+    /* Helper note + actions footer */
+    .mod-hint { font-size: 12px; color: var(--text-muted); padding: 0 22px 4px; line-height: 1.45; }
+    .mod-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 16px 22px; border-top: 1px solid var(--border); background: var(--surface-warm); }
+    .mod-actions .spacer { flex: 1 1 12px; }
+    .mod-actions .divider { width: 1px; align-self: stretch; background: var(--border); margin: 2px 2px; }
+
+    /* Empty + access denied */
     .empty { text-align: center; padding: 70px 20px; }
     .empty .icon { width: 60px; height: 60px; border-radius: 18px; background: color-mix(in oklch, var(--success) 15%, transparent); color: var(--success); display: grid; place-items: center; margin: 0 auto 16px; }
-    .empty h3 { font-size: 18px; margin: 0 0 6px; }
+    .empty .icon svg { width: 28px; height: 28px; }
+    .empty h3 { font-size: 18px; font-weight: 600; margin: 0 0 6px; }
     .empty p { color: var(--text-muted); margin: 0; }
     .access-denied .icon { background: color-mix(in oklch, var(--warning) 15%, transparent); color: var(--warning); }
 
-    /* ── Audit table ── */
-    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-1); }
+    /* Audit table */
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); box-shadow: var(--shadow-1); }
     table.audit { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 13.5px; }
-    .audit thead th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); font-weight: 700; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface-warm); }
+    .audit thead th { text-align: left; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--surface-warm); }
     .audit tbody td { padding: 12px 16px; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: middle; }
     .audit tbody tr:last-child td { border-bottom: none; }
     .audit .when { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .audit .action-key { color: var(--text-primary); }
     .audit .target { color: var(--text-primary); font-weight: 500; }
     .pager { display: flex; justify-content: center; padding: 18px; }
-    .btn-ghost { display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; }
-    .btn-ghost:hover { border-color: var(--border-strong); color: var(--text-primary); }
 
-    @media (max-width: 760px) {
-      .app-shell { grid-template-columns: 1fr; }
-      .app-sidebar { display: none; }
-      .inbox-item { grid-template-columns: 40px 1fr; }
-      .inbox-item .action { grid-column: 2; justify-self: start; margin-top: 4px; }
+    /* Removal modal — canonical Semantic Depth (M01-B, ADR 0008) */
+    .m01-overlay { position: fixed; inset: 0; z-index: 90; display: none; align-items: center; justify-content: center; padding: 16px; animation: m01-backdrop-fade 200ms cubic-bezier(0.2, 0, 0, 1) both; }
+    .m01-overlay.open { display: flex; }
+    :root[data-theme="light"] .m01-overlay { background: oklch(12% 0.010 50 / 0.35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    :root[data-theme="dark"] .m01-overlay { background: oklch(4% 0.015 265 / 0.62); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .m01-modal-base { width: 100%; background: var(--surface-elevated); border: 1px solid var(--border-strong); border-radius: 20px; display: flex; flex-direction: column; max-height: calc(100vh - 80px); overflow: hidden; }
+    :root[data-theme="light"] .m01-modal-base { box-shadow: 0 14px 28px rgba(60,35,10,0.10), 0 2px 6px rgba(60,35,10,0.06); }
+    :root[data-theme="dark"] .m01-modal-base { box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 1px var(--border-strong), 0 0 24px color-mix(in oklch, var(--accent) 5%, transparent); }
+    .m01b-modal { max-width: 460px; animation: m01-spring 280ms linear(0, 0.5, 0.85, 0.97, 1) both; }
+    .m01b-header { display: flex; align-items: flex-start; gap: 16px; padding: 24px 24px 0; }
+    .m01b-icon-circle { width: 48px; height: 48px; border-radius: 24px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .m01b-icon-circle svg { width: 20px; height: 20px; stroke-width: 1.75; }
+    .m01b-icon-circle.tone-destructive { background: color-mix(in oklch, var(--destructive) 14%, var(--surface-elevated)); color: var(--destructive); }
+    .m01b-header-text { flex: 1; min-width: 0; }
+    .m01b-header-row { display: flex; align-items: flex-start; justify-content: space-between; }
+    .m01b-title { font-size: 17px; font-weight: 700; line-height: 1.3; color: var(--text-primary); margin: 0; }
+    .m01b-subtitle { font-size: 13px; color: var(--text-secondary); margin: 3px 0 0; line-height: 1.4; }
+    .m01b-close { flex-shrink: 0; width: 32px; height: 32px; min-height: 32px; margin-top: -2px; display: flex; align-items: center; justify-content: center; border-radius: 999px; border: 0; background: color-mix(in oklch, var(--text-primary) 7%, transparent); color: var(--text-muted); cursor: pointer; transition: background 150ms cubic-bezier(0.2, 0, 0, 1); }
+    .m01b-close:hover { background: color-mix(in oklch, var(--text-primary) 14%, transparent); }
+    .m01b-close svg { width: 16px; height: 16px; }
+    .m01b-body { padding: 16px 24px 4px; flex: 1; overflow-y: auto; }
+    .m01b-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 24px 20px; border-top: 1px solid var(--border); }
+    .modal-reasons { display: flex; flex-direction: column; gap: 8px; }
+    .reason { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 13.5px; color: var(--text-primary); background: var(--surface); transition: border-color 150ms, background 150ms; }
+    .reason:hover { border-color: var(--border-strong); }
+    .reason:focus-within { border-color: var(--accent); }
+    .reason input { accent-color: var(--accent); width: 16px; height: 16px; }
+    @keyframes m01-backdrop-fade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes m01-spring { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+    @media (prefers-reduced-motion: reduce) { .m01b-modal, .m01-overlay { animation: none; } }
+
+    /* Responsive: collapse the split into list-then-detail on mobile */
+    @media (max-width: 860px) {
+      .mod-split { grid-template-columns: 1fr; gap: 0; }
+      .mod-split[data-view="list"] .mod-detail-pane { display: none; }
+      .mod-split[data-view="detail"] .mod-queue { display: none; }
+      .mod-split[data-view="detail"] .mod-back { display: inline-flex; }
+      .mod-actions { position: sticky; bottom: 0; }
     }
   </style>
 </head>
 <body>
   <header class="demo-header" role="banner">
-    <div class="demo-brand"><span class="badge"></span> PandaTrack · FRD-02 Consola de Moderacion</div>
-
-    <div class="demo-nav">
-      <button class="demo-trigger" id="screensTrigger" aria-haspopup="true" aria-expanded="false">Pantallas <i data-lucide="chevron-down"></i></button>
-      <div class="demo-menu" id="screensMenu" role="menu">
-        <a href="#inbox" data-screen="inbox">Bandeja de moderacion</a>
-        <a href="#inbox-empty" data-screen="inbox-empty">Bandeja vacia</a>
-        <a href="#audit" data-screen="audit">Registro de actividad</a>
-        <a href="#access-denied" data-screen="access-denied">Acceso restringido</a>
-      </div>
+    <div class="demo-brand">
+      <div class="demo-brand-mark">P</div>
+      PandaTrack · FRD-02 Consola de Moderacion
     </div>
 
-    <div class="demo-spacer"></div>
+    <nav class="demo-nav" aria-label="Pantallas del prototipo">
+      <div class="demo-nav-group" id="demo-nav-group">
+        <button class="demo-nav-trigger" id="screensTrigger" aria-haspopup="true" aria-expanded="false" aria-controls="screensMenu">
+          Pantallas <i data-lucide="chevron-down"></i>
+        </button>
+        <div class="demo-nav-dropdown" id="screensMenu" role="menu">
+          <a href="#inbox" data-screen="inbox">Bandeja de moderacion</a>
+          <span class="demo-nav-label">Revision por tipo</span>
+          <a href="#review-store" data-screen="review-store">Tienda pendiente</a>
+          <a href="#review-report" data-screen="review-report">Reporte</a>
+          <a href="#review-flag" data-screen="review-flag">Baja sugerida</a>
+          <a href="#review-change" data-screen="review-change">Cambio propuesto</a>
+          <a href="#review-change-drift" data-screen="review-change-drift">Cambio propuesto (con desfase)</a>
+          <a href="#review-type" data-screen="review-type">Tipo de producto</a>
+          <div class="demo-nav-sep"></div>
+          <span class="demo-nav-label">Otros estados</span>
+          <a href="#inbox-empty" data-screen="inbox-empty">Bandeja vacia</a>
+          <a href="#audit" data-screen="audit">Registro de actividad</a>
+          <a href="#access-denied" data-screen="access-denied">Acceso restringido</a>
+        </div>
+      </div>
+      <span class="demo-nav-current" id="demo-nav-current" aria-live="polite"></span>
+    </nav>
 
     <div class="palette-switch">
-      <button class="demo-trigger" id="paletteTrigger" aria-haspopup="true" aria-expanded="false"><span class="swatch" style="background:var(--accent)"></span> Velvet <i data-lucide="chevron-down"></i></button>
-      <div class="demo-menu" id="paletteMenu" role="menu">
-        <button data-palette-set="velvet"><span>Velvet</span><span class="swatch" style="background:oklch(46% 0.20 290)"></span></button>
-        <button data-palette-set="plum"><span>Plum</span><span class="swatch" style="background:oklch(50% 0.18 350)"></span></button>
-        <button data-palette-set="lagoon"><span>Lagoon</span><span class="swatch" style="background:oklch(58% 0.14 195)"></span></button>
-        <button data-palette-set="forest"><span>Forest</span><span class="swatch" style="background:oklch(50% 0.13 145)"></span></button>
+      <button class="palette-trigger" id="paletteTrigger" aria-haspopup="true" aria-expanded="false" aria-label="Cambiar paleta">
+        <span class="swatch" aria-hidden="true"></span>
+        <span id="palette-current-name">Velvet</span>
+        <i data-lucide="chevron-down"></i>
+      </button>
+      <div class="palette-menu" id="paletteMenu" role="menu">
+        <button class="palette-option" data-palette-set="velvet" role="menuitemradio" aria-pressed="true">
+          <span class="swatches"><span class="sw" style="background:oklch(46% 0.20 290)"></span><span class="sw" style="background:oklch(64% 0.20 22)"></span><span class="sw" style="background:oklch(58% 0.10 215)"></span></span>
+          <span class="info"><strong>Velvet</strong><small>Morado profundo · nocturno azul-violeta</small></span>
+          <span class="check"><i data-lucide="check"></i></span>
+        </button>
+        <button class="palette-option" data-palette-set="lilac" role="menuitemradio">
+          <span class="swatches"><span class="sw" style="background:oklch(60% 0.18 310)"></span><span class="sw" style="background:oklch(72% 0.16 25)"></span><span class="sw" style="background:oklch(64% 0.08 165)"></span></span>
+          <span class="info"><strong>Lilac</strong><small>Diary / journaling · dark azul-violeta</small></span>
+          <span class="check"><i data-lucide="check"></i></span>
+        </button>
+        <button class="palette-option" data-palette-set="plum" role="menuitemradio">
+          <span class="swatches"><span class="sw" style="background:oklch(50% 0.18 350)"></span><span class="sw" style="background:oklch(70% 0.16 30)"></span><span class="sw" style="background:oklch(64% 0.08 220)"></span></span>
+          <span class="info"><strong>Plum</strong><small>Letterboxd · vinilo de jazz</small></span>
+          <span class="check"><i data-lucide="check"></i></span>
+        </button>
+        <button class="palette-option" data-palette-set="lagoon" role="menuitemradio">
+          <span class="swatches"><span class="sw" style="background:oklch(58% 0.14 195)"></span><span class="sw" style="background:oklch(70% 0.16 28)"></span><span class="sw" style="background:oklch(64% 0.10 250)"></span></span>
+          <span class="info"><strong>Lagoon</strong><small>Turquesa retro · pop sin fintech</small></span>
+          <span class="check"><i data-lucide="check"></i></span>
+        </button>
+        <button class="palette-option" data-palette-set="forest" role="menuitemradio">
+          <span class="swatches"><span class="sw" style="background:oklch(50% 0.13 145)"></span><span class="sw" style="background:oklch(66% 0.18 35)"></span><span class="sw" style="background:oklch(60% 0.06 250)"></span></span>
+          <span class="info"><strong>Forest</strong><small>Naturalista · ranger / botanica</small></span>
+          <span class="check"><i data-lucide="check"></i></span>
+        </button>
       </div>
     </div>
 
-    <div class="theme-toggle">
-      <button data-theme-set="light" aria-label="Claro"><i data-lucide="sun"></i></button>
-      <button data-theme-set="dark" aria-label="Oscuro"><i data-lucide="moon"></i></button>
+    <div class="theme-toggle" role="group" aria-label="Tema">
+      <button data-theme-set="light" aria-label="Light"><i data-lucide="sun"></i></button>
+      <button data-theme-set="dark" aria-label="Dark"><i data-lucide="moon"></i></button>
     </div>
   </header>
 
-  <div class="app-shell">
-    <aside class="app-sidebar" aria-label="Navegacion de administracion">
-      <div class="brand"><span class="logo"><i data-lucide="shield" style="width:16px"></i></span> Admin</div>
-      <a class="nav-item active" href="#inbox"><i data-lucide="inbox" style="width:18px"></i> Bandeja <span class="count">10</span></a>
-      <a class="nav-item" href="#audit"><i data-lucide="scroll-text" style="width:18px"></i> Registro</a>
-    </aside>
+  <main>
+    <div class="app-shell">
+      <aside class="app-sidebar" aria-label="Navegacion principal">
+        <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
+        <a href="#" class="app-nav-link" data-stub><i data-lucide="layout-dashboard"></i>Hoy</a>
+        <a href="#" class="app-nav-link" data-stub><i data-lucide="package"></i>Pedidos</a>
+        <a href="#" class="app-nav-link" data-stub><i data-lucide="truck"></i>Entregas</a>
+        <a href="#" class="app-nav-link" data-stub><i data-lucide="store"></i>Tiendas</a>
+        <a href="#" class="app-nav-link" data-stub><i data-lucide="settings"></i>Ajustes</a>
+        <span class="demo-nav-label app-nav-section">Administracion</span>
+        <a href="#inbox" class="app-nav-link is-active" id="nav-moderation"><i data-lucide="shield"></i>Moderacion<span class="nav-count num">6</span></a>
+        <a href="#audit" class="app-nav-link" id="nav-audit"><i data-lucide="scroll-text"></i>Registro</a>
+        <div class="app-sidebar-footer">
+          <button class="app-sidebar-user" type="button" aria-label="Menu de usuario">
+            <span class="avatar">S</span>
+            <span class="info"><strong>Sergio Minei</strong><small>admin@pandatrack.dev</small></span>
+            <span class="chev"><i data-lucide="chevrons-up-down"></i></span>
+          </button>
+          <button class="app-sidebar-collapse-btn" type="button" data-sidebar-toggle aria-label="Colapsar / expandir sidebar">
+            <i data-lucide="panel-left-close"></i><span class="label">Colapsar</span>
+          </button>
+        </div>
+      </aside>
 
-    <div class="app-content">
-      <div class="app-topbar">
-        <span>Admin</span> <i data-lucide="chevron-right" style="width:14px"></i> <span class="crumb" id="crumb">Bandeja de moderacion</span>
-      </div>
+      <div class="app-content">
+        <div class="app-topbar">
+          <nav class="breadcrumbs" aria-label="Breadcrumbs">
+            <a href="#" data-stub>Inicio</a>
+            <span class="sep"><i data-lucide="chevron-right"></i></span>
+            <a href="#inbox">Moderacion</a>
+            <span class="sep"><i data-lucide="chevron-right"></i></span>
+            <span class="current" id="crumb">Bandeja de moderacion</span>
+          </nav>
+          <div class="app-topbar-spacer"></div>
+          <button type="button" class="lang-toggle" id="langToggle"><i data-lucide="languages"></i> ES</button>
+          <div class="theme-toggle-compact" role="group" aria-label="Tema">
+            <button type="button" data-theme-set="light" aria-label="Light"><i data-lucide="sun"></i></button>
+            <button type="button" data-theme-set="dark" aria-label="Dark"><i data-lucide="moon"></i></button>
+          </div>
+        </div>
 
-      <main class="app-main">
-        <!-- ── Screen 1: Moderation inbox ── -->
-        <section class="screen is-active" id="inbox">
-          <h1 class="page-title">Bandeja de moderacion</h1>
-          <p class="page-sub">Todo lo pendiente por revisar, ordenado por impacto.</p>
-
-          <div class="queue-counts">
-            <span class="count-chip"><span class="dot" style="background:var(--destructive)"></span> Reportes <b>2</b></span>
-            <span class="count-chip"><span class="dot" style="background:var(--warning)"></span> Tiendas <b>3</b></span>
-            <span class="count-chip"><span class="dot" style="background:var(--warning)"></span> Cambios <b>1</b></span>
-            <span class="count-chip"><span class="dot" style="background:var(--info)"></span> Tipos <b>4</b></span>
+        <!-- ══ Workspace: master-detail (inbox + per-type review pane) ══ -->
+        <section class="screen-workspace is-active" id="inbox" aria-label="Bandeja de moderacion">
+          <div class="page-heading">
+            <span class="eyebrow">Moderacion</span>
+            <h1>Bandeja de moderacion</h1>
+            <p>Todo lo pendiente por revisar, ordenado por impacto. Elige un elemento para revisarlo aqui mismo.</p>
           </div>
 
-          <div class="inbox-list">
-            <a class="inbox-item sev-crit" href="#" onclick="return false">
-              <span class="glyph"><i data-lucide="flag"></i></span>
-              <span class="body"><span class="cat">Reporte</span><div class="label">Panda Store</div><span class="detail">SPAM · reportada hace 2 h</span></span>
-              <span class="action">Revisar <i data-lucide="arrow-right" style="width:15px"></i></span>
-            </a>
-            <a class="inbox-item sev-crit" href="#" onclick="return false">
-              <span class="glyph"><i data-lucide="shield-alert"></i></span>
-              <span class="body"><span class="cat">Baja sugerida</span><div class="label">Figuras XYZ</div><span class="detail">3 reportes acumulados</span></span>
-              <span class="action">Revisar <i data-lucide="arrow-right" style="width:15px"></i></span>
-            </a>
-            <a class="inbox-item sev-warn" href="#" onclick="return false">
-              <span class="glyph"><i data-lucide="clock"></i></span>
-              <span class="body"><span class="cat">Tienda pendiente</span><div class="label">Nueva Tienda Anime</div><span class="detail">sin aprobar · creada hace 1 d</span></span>
-              <span class="action">Revisar <i data-lucide="arrow-right" style="width:15px"></i></span>
-            </a>
-            <a class="inbox-item sev-warn" href="#" onclick="return false">
-              <span class="glyph"><i data-lucide="pencil"></i></span>
-              <span class="body"><span class="cat">Cambio propuesto</span><div class="label">Anime Shop</div><span class="detail">4 campos modificados por la comunidad</span></span>
-              <span class="action">Revisar <i data-lucide="arrow-right" style="width:15px"></i></span>
-            </a>
-            <a class="inbox-item sev-info" href="#" onclick="return false">
-              <span class="glyph"><i data-lucide="tag"></i></span>
-              <span class="body"><span class="cat">Tipo de producto</span><div class="label">"Sobres coleccionables"</div><span class="detail">sugerido por un usuario</span></span>
-              <span class="action">Revisar <i data-lucide="arrow-right" style="width:15px"></i></span>
-            </a>
+          <div class="queue-counts">
+            <span class="qcount"><span class="dot" style="background:var(--destructive)"></span> Reportes <b>1</b></span>
+            <span class="qcount"><span class="dot" style="background:var(--warning)"></span> Tiendas <b>2</b></span>
+            <span class="qcount"><span class="dot" style="background:var(--warning)"></span> Cambios <b>2</b></span>
+            <span class="qcount"><span class="dot" style="background:var(--info)"></span> Tipos <b>1</b></span>
+          </div>
+
+          <div class="mod-split" id="split" data-view="list">
+            <!-- Left: queue -->
+            <div class="mod-queue" role="list" aria-label="Cola de moderacion">
+              <a class="mod-row sev-crit" href="#review-report" data-target="review-report" role="listitem">
+                <span class="glyph"><i data-lucide="flag"></i></span>
+                <span class="body"><span class="cat">Reporte</span><div class="label">Panda Store</div><span class="meta">Spam · hace 2 h</span></span>
+                <span class="chev"><i data-lucide="chevron-right"></i></span>
+              </a>
+              <a class="mod-row sev-crit" href="#review-flag" data-target="review-flag" role="listitem">
+                <span class="glyph"><i data-lucide="shield-alert"></i></span>
+                <span class="body"><span class="cat">Baja sugerida</span><div class="label">Figuras XYZ</div><span class="meta">3 reportes acumulados</span></span>
+                <span class="chev"><i data-lucide="chevron-right"></i></span>
+              </a>
+              <a class="mod-row sev-warn" href="#review-store" data-target="review-store" role="listitem">
+                <span class="glyph"><i data-lucide="clock"></i></span>
+                <span class="body"><span class="cat">Tienda pendiente</span><div class="label">Nueva Tienda Anime</div><span class="meta">sin aprobar · hace 1 d</span></span>
+                <span class="chev"><i data-lucide="chevron-right"></i></span>
+              </a>
+              <a class="mod-row sev-warn" href="#review-change" data-target="review-change" role="listitem">
+                <span class="glyph"><i data-lucide="pencil"></i></span>
+                <span class="body"><span class="cat">Cambio propuesto</span><div class="label">Anime Shop</div><span class="meta">4 campos modificados</span></span>
+                <span class="chev"><i data-lucide="chevron-right"></i></span>
+              </a>
+              <a class="mod-row sev-warn" href="#review-change-drift" data-target="review-change-drift" role="listitem">
+                <span class="glyph"><i data-lucide="git-compare"></i></span>
+                <span class="body"><span class="cat">Cambio propuesto</span><div class="label">Retro Cards</div><span class="meta">3 campos · con desfase</span></span>
+                <span class="chev"><i data-lucide="chevron-right"></i></span>
+              </a>
+              <a class="mod-row sev-info" href="#review-type" data-target="review-type" role="listitem">
+                <span class="glyph"><i data-lucide="tag"></i></span>
+                <span class="body"><span class="cat">Tipo de producto</span><div class="label">"Sobres coleccionables"</div><span class="meta">sugerido por un usuario</span></span>
+                <span class="chev"><i data-lucide="chevron-right"></i></span>
+              </a>
+            </div>
+
+            <!-- Right: detail pane -->
+            <div class="mod-detail-pane">
+
+              <!-- Placeholder (empty selection) -->
+              <div class="mod-empty-pane" id="detailPlaceholder">
+                <div>
+                  <span class="icon"><i data-lucide="mouse-pointer-click"></i></span>
+                  <p>Selecciona un elemento de la bandeja para revisarlo aqui.</p>
+                </div>
+              </div>
+
+              <!-- (a) Tienda pendiente -->
+              <article class="mod-detail sev-warn" id="review-store" aria-label="Revision de tienda pendiente">
+                <a class="mod-back" href="#inbox"><i data-lucide="corner-up-left"></i> Bandeja</a>
+                <div class="mod-detail-head">
+                  <span class="eyebrow-chip tone-warning"><i data-lucide="clock"></i> Tienda pendiente</span>
+                  <h2>Nueva Tienda Anime</h2>
+                  <div class="mod-meta">
+                    <span class="chip neutral"><i data-lucide="store"></i> Minorista</span>
+                    <span class="chip neutral"><i data-lucide="globe"></i> Japon</span>
+                    <span class="chip neutral"><i data-lucide="wifi"></i> En linea</span>
+                    <span class="chip warning"><i data-lucide="loader"></i> En revision</span>
+                  </div>
+                </div>
+                <div class="mod-sec">
+                  <p class="mod-sec-title"><i data-lucide="clipboard-list"></i> Resumen de la tienda</p>
+                  <dl class="mod-kv">
+                    <dt>Tipo de vendedor</dt><dd>Minorista</dd>
+                    <dt>Pais</dt><dd>Japon</dd>
+                    <dt>Presencia</dt><dd>En linea</dd>
+                    <dt>Categorias</dt><dd><div class="taglist"><span class="pill">Figuras</span><span class="pill">Peluches</span><span class="pill">Nendoroids</span></div></dd>
+                    <dt>Canales de contacto</dt><dd><div class="taglist"><span class="pill">Instagram</span><span class="pill">WhatsApp</span></div></dd>
+                    <dt>Importa desde</dt><dd><div class="taglist"><span class="pill">Japon</span><span class="pill">China</span></div></dd>
+                  </dl>
+                </div>
+                <p class="mod-hint" style="padding-top:16px">Al aprobar, la tienda se publica y queda indexable. Retirar la excluye de las superficies publicas.</p>
+                <div class="mod-actions">
+                  <button class="btn primary" type="button"><i data-lucide="check"></i> Aprobar</button>
+                  <button class="btn destructive-ghost" type="button" data-open-removal><i data-lucide="trash-2"></i> Retirar</button>
+                  <span class="spacer"></span>
+                  <button class="btn link" type="button"><i data-lucide="external-link"></i> Ver tienda</button>
+                </div>
+              </article>
+
+              <!-- (b) Reporte -->
+              <article class="mod-detail sev-crit" id="review-report" aria-label="Revision de reporte">
+                <a class="mod-back" href="#inbox"><i data-lucide="corner-up-left"></i> Bandeja</a>
+                <div class="mod-detail-head">
+                  <span class="eyebrow-chip tone-destructive"><i data-lucide="flag"></i> Reporte</span>
+                  <h2>Panda Store</h2>
+                  <div class="mod-meta">
+                    <span class="chip neutral"><i data-lucide="store"></i> Minorista</span>
+                    <span class="chip neutral"><i data-lucide="globe"></i> Chile</span>
+                    <span class="chip success"><i data-lucide="check-circle"></i> Aprobada</span>
+                  </div>
+                </div>
+                <div class="mod-sec">
+                  <p class="mod-sec-title"><i data-lucide="flag"></i> Reporte</p>
+                  <div class="mod-report">
+                    <div class="r-head">
+                      <span class="chip destructive"><i data-lucide="ban"></i> Spam</span>
+                      <span class="r-when">hace 2 h</span>
+                    </div>
+                    <p class="mod-quote">"Publica los mismos productos en bucle y responde con enlaces a otra web. Parece cuenta de spam."</p>
+                    <div class="mod-reporter">
+                      <i data-lucide="user"></i> Reportada por <b>@coleccionista_88</b>
+                      <span class="mod-admin-only"><i data-lucide="eye-off"></i> Solo visible para administradores</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mod-sec">
+                  <p class="mod-sec-title"><i data-lucide="history"></i> Reportes anteriores en esta tienda</p>
+                  <div class="mod-report">
+                    <div class="r-head">
+                      <span class="chip destructive"><i data-lucide="triangle-alert"></i> Informacion falsa</span>
+                      <span class="r-when"><span class="chip success" style="font-size:11px;padding:1px 8px;"><i data-lucide="check"></i> Resuelto</span> · hace 3 sem</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mod-actions">
+                  <button class="btn primary" type="button"><i data-lucide="check"></i> Resolver</button>
+                  <button class="btn ghost" type="button"><i data-lucide="x"></i> Descartar</button>
+                  <span class="divider"></span>
+                  <button class="btn destructive-ghost" type="button" data-open-removal><i data-lucide="trash-2"></i> Retirar tienda</button>
+                  <span class="spacer"></span>
+                  <button class="btn link" type="button"><i data-lucide="external-link"></i> Ver tienda</button>
+                </div>
+              </article>
+
+              <!-- (c) Baja sugerida (FLAGGED candidate) -->
+              <article class="mod-detail sev-crit" id="review-flag" aria-label="Revision de baja sugerida">
+                <a class="mod-back" href="#inbox"><i data-lucide="corner-up-left"></i> Bandeja</a>
+                <div class="mod-detail-head">
+                  <span class="eyebrow-chip tone-destructive"><i data-lucide="shield-alert"></i> Baja sugerida</span>
+                  <h2>Figuras XYZ</h2>
+                  <div class="mod-meta">
+                    <span class="chip neutral"><i data-lucide="store"></i> Minorista</span>
+                    <span class="chip neutral"><i data-lucide="globe"></i> Mexico</span>
+                    <span class="chip success"><i data-lucide="check-circle"></i> Aprobada</span>
+                    <span class="chip destructive"><i data-lucide="flag"></i> 3 reportes acumulados</span>
+                  </div>
+                </div>
+                <div class="mod-sec">
+                  <p class="mod-sec-title"><i data-lucide="layers"></i> Reportes acumulados</p>
+                  <div class="mod-report">
+                    <div class="r-head"><span class="chip destructive"><i data-lucide="triangle-alert"></i> Informacion falsa</span><span class="r-when">hace 4 d</span></div>
+                    <p class="mod-quote">"Cobra pre-reservas y no entrega. Ya somos varios afectados."</p>
+                    <div class="mod-reporter"><i data-lucide="user"></i> <b>@fig_hunter</b> <span class="mod-admin-only"><i data-lucide="eye-off"></i> Solo admin</span></div>
+                  </div>
+                  <div class="mod-report">
+                    <div class="r-head"><span class="chip destructive"><i data-lucide="shield-x"></i> Abuso</span><span class="r-when">hace 2 d</span></div>
+                    <p class="mod-quote">"Bloquea a quien reclama y borra los comentarios."</p>
+                    <div class="mod-reporter"><i data-lucide="user"></i> <b>@otaku_lima</b> <span class="mod-admin-only"><i data-lucide="eye-off"></i> Solo admin</span></div>
+                  </div>
+                  <div class="mod-report">
+                    <div class="r-head"><span class="chip destructive"><i data-lucide="ban"></i> Spam</span><span class="r-when">hace 1 d</span></div>
+                    <p class="mod-quote">"Publica links de pago externos en cada respuesta."</p>
+                    <div class="mod-reporter"><i data-lucide="user"></i> <b>@coleccion_mx</b> <span class="mod-admin-only"><i data-lucide="eye-off"></i> Solo admin</span></div>
+                  </div>
+                </div>
+                <p class="mod-hint" style="padding-top:16px">Marcar deja la tienda visible con una advertencia mas fuerte, sin retirarla. Retirar la excluye de las superficies publicas.</p>
+                <div class="mod-actions">
+                  <button class="btn warning" type="button"><i data-lucide="flag"></i> Marcar</button>
+                  <button class="btn destructive-ghost" type="button" data-open-removal><i data-lucide="trash-2"></i> Retirar</button>
+                  <span class="spacer"></span>
+                  <button class="btn link" type="button"><i data-lucide="external-link"></i> Ver tienda</button>
+                </div>
+              </article>
+
+              <!-- (d) Cambio propuesto (clean) -->
+              <article class="mod-detail sev-warn" id="review-change" aria-label="Revision de cambio propuesto">
+                <a class="mod-back" href="#inbox"><i data-lucide="corner-up-left"></i> Bandeja</a>
+                <div class="mod-detail-head">
+                  <span class="eyebrow-chip tone-warm"><i data-lucide="pencil"></i> Cambio propuesto</span>
+                  <h2>Anime Shop</h2>
+                  <div class="mod-meta">
+                    <span class="chip neutral"><i data-lucide="store"></i> Minorista</span>
+                    <span class="chip neutral"><i data-lucide="globe"></i> Argentina</span>
+                    <span class="chip warning"><i data-lucide="pencil"></i> 4 campos modificados</span>
+                  </div>
+                </div>
+                <div class="mod-sec">
+                  <p class="mod-sec-title"><i data-lucide="git-compare"></i> Cambios propuestos</p>
+                  <p class="diff-note"><i data-lucide="info"></i> Al aprobar, cada lista (categorias, canales, direcciones, importaciones) queda exactamente como se propone. Los cambios se muestran por elemento: lo que se agrega, lo que se elimina y lo que se mantiene.</p>
+                  <div class="diff-fields">
+                    <!-- scalar -->
+                    <div class="diff-field">
+                      <div class="diff-field-head"><i data-lucide="type"></i> Nombre <span class="diff-field-kind">campo de texto</span></div>
+                      <div class="diff-scalar">
+                        <span class="diff-before">Anime Shop</span>
+                        <span class="diff-arrow"><i data-lucide="arrow-right"></i></span>
+                        <span class="diff-after">Anime Shop AR</span>
+                      </div>
+                    </div>
+                    <!-- scalar -->
+                    <div class="diff-field">
+                      <div class="diff-field-head"><i data-lucide="wifi"></i> Presencia <span class="diff-field-kind">campo de texto</span></div>
+                      <div class="diff-scalar">
+                        <span class="diff-before">En linea</span>
+                        <span class="diff-arrow"><i data-lucide="arrow-right"></i></span>
+                        <span class="diff-after">En linea y fisica</span>
+                      </div>
+                    </div>
+                    <!-- list: contact channels -->
+                    <div class="diff-field">
+                      <div class="diff-field-head"><i data-lucide="at-sign"></i> Canales de contacto <span class="diff-field-kind">lista · reemplazo completo</span></div>
+                      <div class="diff-items">
+                        <div class="diff-item is-keep"><span class="di-glyph"><i data-lucide="equal"></i></span><span class="di-value">WhatsApp</span><span class="di-tag">Se mantiene</span></div>
+                        <div class="diff-item is-add"><span class="di-glyph"><i data-lucide="plus"></i></span><span class="di-value">Instagram</span><span class="di-tag">Se agrega</span></div>
+                      </div>
+                    </div>
+                    <!-- list: import countries -->
+                    <div class="diff-field">
+                      <div class="diff-field-head"><i data-lucide="globe"></i> Importa desde <span class="diff-field-kind">lista · reemplazo completo</span></div>
+                      <div class="diff-items">
+                        <div class="diff-item is-keep"><span class="di-glyph"><i data-lucide="equal"></i></span><span class="di-value">Japon</span><span class="di-tag">Se mantiene</span></div>
+                        <div class="diff-item is-add"><span class="di-glyph"><i data-lucide="plus"></i></span><span class="di-value">Corea del Sur</span><span class="di-tag">Se agrega</span></div>
+                        <div class="diff-item is-remove"><span class="di-glyph"><i data-lucide="minus"></i></span><span class="di-value">China</span><span class="di-tag">Se elimina</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="mod-sec">
+                  <p class="mod-sec-title"><i data-lucide="message-square"></i> Comentario de quien propone</p>
+                  <p class="mod-quote">"Ahora tambien tienen local fisico en Palermo y empezaron a traer de Corea; ya no traen de China. Actualizo los datos."</p>
+                  <div class="mod-reporter"><i data-lucide="user"></i> Propuesto por <b>@animeshop_fan</b> · hace 5 h</div>
+                </div>
+                <div class="mod-actions">
+                  <button class="btn primary" type="button"><i data-lucide="check-check"></i> Aprobar y aplicar</button>
+                  <button class="btn destructive-ghost" type="button"><i data-lucide="x"></i> Rechazar</button>
+                  <span class="spacer"></span>
+                  <a class="btn link" href="#review-change-drift"><i data-lucide="git-compare"></i> Ver variante con desfase</a>
+                  <button class="btn link" type="button"><i data-lucide="external-link"></i> Ver tienda</button>
+                </div>
+              </article>
+
+              <!-- (d2) Cambio propuesto (drift variant) -->
+              <article class="mod-detail sev-warn" id="review-change-drift" aria-label="Revision de cambio propuesto con desfase">
+                <a class="mod-back" href="#inbox"><i data-lucide="corner-up-left"></i> Bandeja</a>
+                <div class="mod-detail-head">
+                  <span class="eyebrow-chip tone-warning"><i data-lucide="git-compare"></i> Cambio propuesto</span>
+                  <h2>Retro Cards</h2>
+                  <div class="mod-meta">
+                    <span class="chip neutral"><i data-lucide="store"></i> Minorista</span>
+                    <span class="chip neutral"><i data-lucide="globe"></i> Peru</span>
+                    <span class="chip warning"><i data-lucide="triangle-alert"></i> Con desfase</span>
+                  </div>
+                </div>
+                <div class="mod-sec">
+                  <div class="store-banner warning" role="status">
+                    <i data-lucide="alert-triangle" class="banner-icon"></i>
+                    <div class="banner-copy">
+                      <strong>La tienda cambio desde que se propuso este cambio.</strong>
+                      <span>Al aprobar se recalcula contra el estado actual de la tienda. Para cada campo con desfase comparamos tres valores: cuando se propuso, ahora, y la propuesta.</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mod-sec">
+                  <p class="mod-sec-title"><i data-lucide="git-compare"></i> Cambios propuestos</p>
+                  <div class="diff-fields">
+                    <!-- drift + conflict: name -->
+                    <div class="diff-field is-drift">
+                      <div class="diff-field-head"><i data-lucide="type"></i> Nombre <span class="drift-tag conflict"><i data-lucide="alert-circle"></i> En conflicto</span></div>
+                      <div class="diff-triple">
+                        <div class="dv-cell"><span class="dv-label">Cuando se propuso</span><span class="dv-value">Retro Cards</span></div>
+                        <div class="dv-cell is-current"><span class="dv-label">Ahora</span><span class="dv-value">Retro Cards Peru</span></div>
+                        <div class="dv-cell is-proposed"><span class="dv-label">Propuesta</span><span class="dv-value">Retro Cards PE</span></div>
+                      </div>
+                      <p class="mod-hint" style="padding:8px 0 0">Otra persona edito el nombre despues de enviarse la solicitud. Aprobar sobrescribiria el valor mas nuevo.</p>
+                    </div>
+                    <!-- clean scalar: presence -->
+                    <div class="diff-field">
+                      <div class="diff-field-head"><i data-lucide="wifi"></i> Presencia <span class="diff-field-kind">campo de texto</span></div>
+                      <div class="diff-scalar">
+                        <span class="diff-before">En linea</span>
+                        <span class="diff-arrow"><i data-lucide="arrow-right"></i></span>
+                        <span class="diff-after">En linea y fisica</span>
+                      </div>
+                    </div>
+                    <!-- drift + already applied: contact channels list -->
+                    <div class="diff-field is-drift">
+                      <div class="diff-field-head"><i data-lucide="at-sign"></i> Canales de contacto <span class="drift-tag applied"><i data-lucide="check"></i> Ya aplicado</span></div>
+                      <div class="diff-triple">
+                        <div class="dv-cell"><span class="dv-label">Cuando se propuso</span><span class="dv-value">Instagram</span></div>
+                        <div class="dv-cell is-current"><span class="dv-label">Ahora</span><span class="dv-value">Instagram, WhatsApp</span></div>
+                        <div class="dv-cell is-proposed"><span class="dv-label">Propuesta</span><span class="dv-value">Instagram, WhatsApp</span></div>
+                      </div>
+                      <p class="mod-hint" style="padding:8px 0 0">La tienda ya agrego WhatsApp. La propuesta coincide con el estado actual: aprobar no cambia nada en este campo.</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="mod-sec">
+                  <p class="mod-sec-title"><i data-lucide="message-square"></i> Comentario de quien propone</p>
+                  <p class="mod-quote">"Corrijo el nombre y agrego el WhatsApp de atencion."</p>
+                  <div class="mod-reporter"><i data-lucide="user"></i> Propuesto por <b>@cards_collector</b> · hace 6 d</div>
+                </div>
+                <p class="mod-hint" style="padding-top:16px">Al aprobar, la lista queda exactamente como se propone y solo se aplican los campos que siguen teniendo efecto sobre el estado actual. Los campos en conflicto se resaltan antes de aplicar.</p>
+                <div class="mod-actions">
+                  <button class="btn primary" type="button"><i data-lucide="git-compare"></i> Revisar conflictos y aplicar</button>
+                  <button class="btn destructive-ghost" type="button"><i data-lucide="x"></i> Rechazar</button>
+                  <span class="spacer"></span>
+                  <a class="btn link" href="#review-change"><i data-lucide="git-compare"></i> Ver variante sin desfase</a>
+                  <button class="btn link" type="button"><i data-lucide="external-link"></i> Ver tienda</button>
+                </div>
+              </article>
+
+              <!-- (e) Tipo de producto sugerido -->
+              <article class="mod-detail sev-info" id="review-type" aria-label="Revision de tipo de producto sugerido">
+                <a class="mod-back" href="#inbox"><i data-lucide="corner-up-left"></i> Bandeja</a>
+                <div class="mod-detail-head">
+                  <span class="eyebrow-chip tone-cool"><i data-lucide="tag"></i> Tipo de producto</span>
+                  <h2>"Sobres coleccionables"</h2>
+                  <div class="mod-meta">
+                    <span class="chip neutral"><i data-lucide="user"></i> @cards_collector</span>
+                    <span class="chip neutral"><i data-lucide="clock"></i> hace 1 d</span>
+                  </div>
+                </div>
+                <div class="mod-sec">
+                  <p class="mod-sec-title"><i data-lucide="message-square"></i> Motivo</p>
+                  <p class="mod-quote">"Muchas tiendas venden sobres de cartas (Pokemon, deportivas) y no hay una categoria que los agrupe."</p>
+                </div>
+                <div class="mod-sec">
+                  <p class="mod-sec-title"><i data-lucide="tags"></i> En el catalogo</p>
+                  <div class="mod-catalog">
+                    <div class="cap"><i data-lucide="sparkles"></i> Al aprobar se crea esta entrada global del catalogo</div>
+                    <dl class="mod-kv">
+                      <dt>Nombre en espanol</dt><dd>Sobres coleccionables</dd>
+                      <dt>Nombre en ingles</dt><dd>Collectible packs</dd>
+                      <dt>Clave</dt><dd><span class="mono">collectible-packs</span></dd>
+                    </dl>
+                  </div>
+                </div>
+                <div class="mod-actions">
+                  <button class="btn primary" type="button"><i data-lucide="check"></i> Aprobar</button>
+                  <button class="btn ghost" type="button"><i data-lucide="x"></i> Rechazar</button>
+                </div>
+              </article>
+
+            </div>
           </div>
         </section>
 
-        <!-- ── Screen 2: Empty inbox ── -->
+        <!-- ══ Empty inbox ══ -->
         <section class="screen" id="inbox-empty">
-          <h1 class="page-title">Bandeja de moderacion</h1>
-          <p class="page-sub">Todo lo pendiente por revisar, ordenado por impacto.</p>
+          <div class="page-heading">
+            <span class="eyebrow">Moderacion</span>
+            <h1>Bandeja de moderacion</h1>
+            <p>Todo lo pendiente por revisar, ordenado por impacto.</p>
+          </div>
           <div class="empty">
-            <span class="icon"><i data-lucide="check-check" style="width:28px"></i></span>
+            <span class="icon"><i data-lucide="check-check"></i></span>
             <h3>Todo al dia</h3>
             <p>No hay nada pendiente por moderar.</p>
           </div>
         </section>
 
-        <!-- ── Screen 3: Audit log ── -->
+        <!-- ══ Audit log ══ -->
         <section class="screen" id="audit">
-          <h1 class="page-title">Registro de actividad</h1>
-          <p class="page-sub">Cada accion privilegiada queda registrada.</p>
+          <div class="page-heading">
+            <span class="eyebrow">Moderacion</span>
+            <h1>Registro de actividad</h1>
+            <p>Cada accion privilegiada queda registrada.</p>
+          </div>
           <div class="table-wrap">
             <table class="audit">
               <thead>
@@ -300,92 +1082,246 @@
                 <tr><td class="when">21 jul, 19:07</td><td>owner</td><td class="action-key mono">productType.approve</td><td class="target">Sobres coleccionables</td><td>—</td></tr>
               </tbody>
             </table>
-            <div class="pager"><button class="btn-ghost"><i data-lucide="history" style="width:15px"></i> Mas antiguos</button></div>
+            <div class="pager"><button class="btn ghost sm" type="button"><i data-lucide="history"></i> Mas antiguos</button></div>
           </div>
         </section>
 
-        <!-- ── Screen 4: Access denied ── -->
+        <!-- ══ Access denied ══ -->
         <section class="screen" id="access-denied">
           <div class="empty access-denied">
-            <span class="icon"><i data-lucide="lock" style="width:28px"></i></span>
+            <span class="icon"><i data-lucide="lock"></i></span>
             <h3>Acceso restringido</h3>
             <p>Esta area es solo para administradores.</p>
           </div>
         </section>
-      </main>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ══ Removal modal (canonical Semantic Depth, reused by pending store, report, baja sugerida) ══ -->
+  <div class="m01-overlay" id="removalModal" role="alertdialog" aria-modal="true" aria-labelledby="removalTitle" aria-describedby="removalSub">
+    <div class="m01-modal-base m01b-modal">
+      <div class="m01b-header">
+        <div class="m01b-icon-circle tone-destructive"><i data-lucide="trash-2"></i></div>
+        <div class="m01b-header-text">
+          <div class="m01b-header-row">
+            <h3 class="m01b-title" id="removalTitle">Retirar tienda</h3>
+            <button class="m01b-close" type="button" data-close-modal aria-label="Cerrar"><i data-lucide="x"></i></button>
+          </div>
+          <p class="m01b-subtitle" id="removalSub">Elige un motivo. La tienda dejara de mostrarse en las superficies publicas; los pedidos que la referencian se conservan.</p>
+        </div>
+      </div>
+      <div class="m01b-body">
+        <div class="modal-reasons" role="radiogroup" aria-label="Motivo de retiro">
+          <label class="reason"><input type="radio" name="removal-reason" /> Spam</label>
+          <label class="reason"><input type="radio" name="removal-reason" /> Abuso o estafa</label>
+          <label class="reason"><input type="radio" name="removal-reason" /> Tienda duplicada</label>
+          <label class="reason"><input type="radio" name="removal-reason" /> Informacion falsa</label>
+          <label class="reason"><input type="radio" name="removal-reason" /> Otro motivo</label>
+        </div>
+      </div>
+      <div class="m01b-footer">
+        <button class="btn ghost" type="button" data-close-modal>Cancelar</button>
+        <button class="btn destructive" type="button" data-close-modal><i data-lucide="trash-2"></i> Retirar tienda</button>
+      </div>
     </div>
   </div>
 
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
-    // Theme + palette persistence (storage keys distinct from other prototypes)
-    var KEY_THEME = "pt-admin-proto-theme", KEY_PALETTE = "pt-admin-proto-palette";
+    // ── Theme + palette + sidebar persistence (storage keys distinct per prototype) ──
+    var KEY_THEME = "pandatrack-frd02-theme", KEY_PALETTE = "pandatrack-frd02-palette", KEY_SIDEBAR = "pandatrack-frd02-sidebar";
+    var PALETTE_DEFAULT = "velvet";
+    var PALETTES = { velvet: "Velvet", lilac: "Lilac", plum: "Plum", lagoon: "Lagoon", forest: "Forest" };
     var root = document.documentElement;
-    try {
-      var t = localStorage.getItem(KEY_THEME); if (t) root.setAttribute("data-theme", t);
-      var p = localStorage.getItem(KEY_PALETTE); if (p) root.setAttribute("data-palette", p);
-    } catch (e) {}
 
-    function syncControls() {
+    function applyTheme(mode) {
+      if (mode !== "light" && mode !== "dark") mode = "light";
+      root.setAttribute("data-theme", mode);
       document.querySelectorAll("[data-theme-set]").forEach(function (b) {
-        b.classList.toggle("active", b.getAttribute("data-theme-set") === root.getAttribute("data-theme"));
+        b.setAttribute("aria-pressed", b.getAttribute("data-theme-set") === mode ? "true" : "false");
       });
-      var pal = root.getAttribute("data-palette");
-      var trig = document.getElementById("paletteTrigger");
-      if (trig) trig.childNodes[2].textContent = " " + pal.charAt(0).toUpperCase() + pal.slice(1) + " ";
     }
+    function setTheme(mode) { try { localStorage.setItem(KEY_THEME, mode); } catch (e) {} applyTheme(mode); }
     document.querySelectorAll("[data-theme-set]").forEach(function (b) {
-      b.addEventListener("click", function () {
-        root.setAttribute("data-theme", b.getAttribute("data-theme-set"));
-        try { localStorage.setItem(KEY_THEME, b.getAttribute("data-theme-set")); } catch (e) {}
-        syncControls();
-      });
+      b.addEventListener("click", function () { setTheme(b.getAttribute("data-theme-set")); });
     });
+
+    var paletteName = document.getElementById("palette-current-name");
+    function applyPalette(name) {
+      if (!PALETTES[name]) name = PALETTE_DEFAULT;
+      root.setAttribute("data-palette", name);
+      if (paletteName) paletteName.textContent = PALETTES[name];
+      document.querySelectorAll("[data-palette-set]").forEach(function (b) {
+        b.setAttribute("aria-pressed", b.getAttribute("data-palette-set") === name ? "true" : "false");
+      });
+    }
+    function setPalette(name) {
+      if (name === PALETTE_DEFAULT) { try { localStorage.removeItem(KEY_PALETTE); } catch (e) {} }
+      else { try { localStorage.setItem(KEY_PALETTE, name); } catch (e) {} }
+      applyPalette(name);
+    }
     document.querySelectorAll("[data-palette-set]").forEach(function (b) {
       b.addEventListener("click", function () {
-        root.setAttribute("data-palette", b.getAttribute("data-palette-set"));
-        try { localStorage.setItem(KEY_PALETTE, b.getAttribute("data-palette-set")); } catch (e) {}
-        document.getElementById("paletteMenu").classList.remove("open");
-        syncControls();
+        setPalette(b.getAttribute("data-palette-set"));
+        document.getElementById("paletteMenu").classList.remove("is-open");
+        document.getElementById("paletteTrigger").setAttribute("aria-expanded", "false");
       });
     });
 
-    // Dropdown menus
-    function wireMenu(triggerId, menuId) {
+    // Restore stored prefs
+    (function () {
+      var t; try { t = localStorage.getItem(KEY_THEME); } catch (e) {}
+      applyTheme(t === "light" || t === "dark" ? t : "light");
+      var p; try { p = localStorage.getItem(KEY_PALETTE); } catch (e) {}
+      if (p && !PALETTES[p]) { try { localStorage.removeItem(KEY_PALETTE); } catch (e) {} p = null; }
+      applyPalette(p || PALETTE_DEFAULT);
+    })();
+
+    // ── Sidebar collapse / expand ──
+    function applySidebar(state) { root.setAttribute("data-sidebar", state === "collapsed" ? "collapsed" : "expanded"); }
+    (function () { var s; try { s = localStorage.getItem(KEY_SIDEBAR); } catch (e) {} applySidebar(s || "expanded"); })();
+    document.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-sidebar-toggle]");
+      if (!btn) return;
+      var next = root.getAttribute("data-sidebar") === "collapsed" ? "expanded" : "collapsed";
+      try { localStorage.setItem(KEY_SIDEBAR, next); } catch (er) {}
+      applySidebar(next);
+    });
+
+    // ── Lang toggle (decorative) ──
+    var langToggle = document.getElementById("langToggle");
+    if (langToggle) langToggle.addEventListener("click", function () {
+      var cur = langToggle.textContent.trim();
+      langToggle.innerHTML = '<i data-lucide="languages"></i> ' + (cur === "ES" ? "EN" : "ES");
+      if (window.lucide) window.lucide.createIcons();
+    });
+
+    // ── Dropdown menus (Pantallas + palette) ──
+    function wireMenu(triggerId, menuId, openClass) {
       var trigger = document.getElementById(triggerId), menu = document.getElementById(menuId);
+      if (!trigger || !menu) return;
       trigger.addEventListener("click", function (e) {
         e.stopPropagation();
-        var open = menu.classList.toggle("open");
+        var open = menu.classList.toggle(openClass);
         trigger.setAttribute("aria-expanded", String(open));
       });
     }
-    wireMenu("screensTrigger", "screensMenu");
-    wireMenu("paletteTrigger", "paletteMenu");
-    document.addEventListener("click", function () {
-      document.querySelectorAll(".demo-menu.open").forEach(function (m) { m.classList.remove("open"); });
+    wireMenu("screensTrigger", "screensMenu", "is-open");
+    wireMenu("paletteTrigger", "paletteMenu", "is-open");
+    document.getElementById("demo-nav-group").classList.add("has-js");
+    // demo-nav dropdown uses the same is-open toggle for the group
+    (function () {
+      var trigger = document.getElementById("screensTrigger"), group = document.getElementById("demo-nav-group");
+      trigger.addEventListener("click", function () { group.classList.toggle("is-open", document.getElementById("screensMenu").classList.contains("is-open")); });
+    })();
+    document.addEventListener("click", function (e) {
+      if (!e.target.closest("#demo-nav-group")) {
+        document.getElementById("screensMenu").classList.remove("is-open");
+        document.getElementById("demo-nav-group").classList.remove("is-open");
+        document.getElementById("screensTrigger").setAttribute("aria-expanded", "false");
+      }
+      if (!e.target.closest(".palette-switch")) {
+        document.getElementById("paletteMenu").classList.remove("is-open");
+        document.getElementById("paletteTrigger").setAttribute("aria-expanded", "false");
+      }
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        document.getElementById("screensMenu").classList.remove("is-open");
+        document.getElementById("demo-nav-group").classList.remove("is-open");
+        document.getElementById("paletteMenu").classList.remove("is-open");
+        closeRemoval();
+      }
     });
 
-    // Hash router: fall back to the home screen (inbox) when the hash is empty/unknown
-    var CRUMBS = { inbox: "Bandeja de moderacion", "inbox-empty": "Bandeja de moderacion", audit: "Registro de actividad", "access-denied": "Acceso restringido" };
+    // ── Stub links (collector nav + Inicio breadcrumb): keep the hash intact ──
+    document.querySelectorAll("[data-stub]").forEach(function (el) {
+      el.addEventListener("click", function (e) { e.preventDefault(); });
+    });
+
+    // ── Removal modal ──
+    var removalModal = document.getElementById("removalModal");
+    function openRemoval() { removalModal.classList.add("open"); }
+    function closeRemoval() { removalModal.classList.remove("open"); }
+    document.querySelectorAll("[data-open-removal]").forEach(function (b) {
+      b.addEventListener("click", function (e) { e.stopPropagation(); e.preventDefault(); openRemoval(); });
+    });
+    document.querySelectorAll("[data-close-modal]").forEach(function (b) { b.addEventListener("click", closeRemoval); });
+    removalModal.addEventListener("click", function (e) { if (e.target === removalModal) closeRemoval(); });
+
+    // ── Master-detail hash router ──
+    var WORKSPACE_IDS = ["inbox", "review-store", "review-report", "review-flag", "review-change", "review-change-drift", "review-type"];
+    var STANDALONE_IDS = ["inbox-empty", "audit", "access-denied"];
+    var DEFAULT_PANEL = "review-report";
+    var CRUMBS = {
+      inbox: "Bandeja de moderacion", "review-store": "Bandeja de moderacion", "review-report": "Bandeja de moderacion",
+      "review-flag": "Bandeja de moderacion", "review-change": "Bandeja de moderacion", "review-change-drift": "Bandeja de moderacion",
+      "review-type": "Bandeja de moderacion", "inbox-empty": "Bandeja de moderacion",
+      audit: "Registro de actividad", "access-denied": "Acceso restringido"
+    };
+    var SCREEN_LABELS = {
+      inbox: "Bandeja", "review-store": "Tienda pendiente", "review-report": "Reporte", "review-flag": "Baja sugerida",
+      "review-change": "Cambio propuesto", "review-change-drift": "Cambio · con desfase", "review-type": "Tipo de producto",
+      "inbox-empty": "Bandeja vacia", audit: "Registro de actividad", "access-denied": "Acceso restringido"
+    };
+    var navCurrentEl = document.getElementById("demo-nav-current");
+    function isDesktop() { return window.matchMedia("(min-width: 861px)").matches; }
+
     function route() {
       var id = (location.hash || "#inbox").slice(1);
-      var target = document.getElementById(id);
-      if (!target) { id = "inbox"; target = document.getElementById("inbox"); }
+      if (WORKSPACE_IDS.indexOf(id) === -1 && STANDALONE_IDS.indexOf(id) === -1) id = "inbox";
+      var showWorkspace = WORKSPACE_IDS.indexOf(id) !== -1;
+
+      document.getElementById("inbox").classList.toggle("is-active", showWorkspace);
       document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("is-active"); });
-      target.classList.add("is-active");
+      if (!showWorkspace) { document.getElementById(id).classList.add("is-active"); }
+
+      if (showWorkspace) {
+        var split = document.getElementById("split");
+        var view = id === "inbox" ? "list" : "detail";
+        split.setAttribute("data-view", view);
+        var panelId = id === "inbox" ? (isDesktop() ? DEFAULT_PANEL : null) : id;
+
+        document.querySelectorAll(".mod-detail").forEach(function (pn) { pn.classList.remove("is-shown"); });
+        var placeholder = document.getElementById("detailPlaceholder");
+        if (panelId) {
+          var panel = document.getElementById(panelId);
+          if (panel) panel.classList.add("is-shown");
+          placeholder.classList.remove("is-shown");
+        } else {
+          placeholder.classList.remove("is-shown");
+        }
+        document.querySelectorAll(".mod-row").forEach(function (r) {
+          r.classList.toggle("is-selected", r.getAttribute("data-target") === panelId);
+        });
+      }
+
       document.getElementById("crumb").textContent = CRUMBS[id] || "Bandeja de moderacion";
-      document.querySelectorAll(".app-sidebar .nav-item").forEach(function (n) {
-        var href = n.getAttribute("href").slice(1);
-        n.classList.toggle("active", href === id || (id === "inbox-empty" && href === "inbox"));
+
+      // Sidebar admin entry points: Moderacion active for workspace + empty inbox; Registro for audit.
+      var modActive = showWorkspace || id === "inbox-empty";
+      document.getElementById("nav-moderation").classList.toggle("is-active", modActive);
+      document.getElementById("nav-audit").classList.toggle("is-active", id === "audit");
+
+      // Demo nav current + aria-current
+      if (navCurrentEl) { var label = SCREEN_LABELS[id] || id; navCurrentEl.textContent = label ? "→ " + label : ""; }
+      document.querySelectorAll(".demo-nav-dropdown a").forEach(function (a) {
+        a.setAttribute("aria-current", a.getAttribute("data-screen") === id ? "true" : "false");
       });
-      document.getElementById("screensMenu").classList.remove("open");
+
+      document.getElementById("screensMenu").classList.remove("is-open");
+      document.getElementById("demo-nav-group").classList.remove("is-open");
+      closeRemoval();
       window.scrollTo(0, 0);
+      if (window.lucide) window.lucide.createIcons();
     }
     window.addEventListener("hashchange", route);
+    window.addEventListener("resize", function () { if ((location.hash || "#inbox").slice(1) === "inbox") route(); });
 
     // Init
     route();
-    syncControls();
     if (window.lucide) window.lucide.createIcons();
   </script>
 </body>
