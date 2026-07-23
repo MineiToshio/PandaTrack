@@ -72,7 +72,7 @@ As the product owner, I want every non-administrator to default to the lowest pr
 
 ### Bootstrap and migration
 
-- `FR-01-07`: The system must provide a one-time, idempotent bootstrap that grants the first administrator by setting `role` `admin` on the owner's account.
+- `FR-01-07`: The system must provide a one-time, idempotent bootstrap that grants the first administrator by setting `role` `admin` on the owner's account. The bootstrap identifies the owner by a supplied email and resolves it to the account's `user id` inside the operation; the email is the stable per-environment key and the resolved id differs per environment.
 - `FR-01-08`: After the bootstrap is verified, `getIsAdmin()` must read the database `role` and the `ADMIN_EMAILS` environment allowlist must be removed, leaving the database role as the single source of truth.
 - `FR-01-09`: The two existing admin-gated behaviors (store auto-approval and direct edit) must continue to work unchanged once they read the database role instead of the environment allowlist.
 
@@ -161,11 +161,13 @@ As the product owner, I want every non-administrator to default to the lowest pr
 - The environment allowlist is retired only after the bootstrap is verified.
 - The audit log is append-only and stores identifiers plus an optional non-sensitive reason, never PII.
 - Impersonation, ban management, and resource-scoped permissions are deferred; the schema shape keeps them available without rework.
+- The bootstrap ships as a committed, idempotent maintenance script (`scripts/bootstrap-admin.ts`, run via `npx tsx`), not a Prisma migration, so it runs per environment against the target database and can be verified before the allowlist is removed. It identifies the owner by a supplied email resolved to the account's `user id`.
+- The bootstrap writes no audit entry: it is an operator-run provisioning step with no in-app actor, and the action vocabulary (`BR-01-05`) stays stable. A `role.grant` action key with a `user` target type is deferred until the in-app grant path ships in FRD-02.
+- A second administrator is granted durably through the plugin's server-gated role endpoint via the admin UI in FRD-02, which writes a `role.grant` audit entry when that path ships. Interim, the same bootstrap script serves as the operator path by running it with another account's email.
 
 ## Open Questions
 
-- Whether the bootstrap ships as a Prisma migration or a guarded maintenance script keyed by the owner's user id.
-- Whether a second administrator, when added, is granted through the plugin's role endpoint or through a small internal action recorded in the audit log.
+- None. The bootstrap mechanism, per-environment owner identification, audit handling, and the second-administrator grant path are resolved above (see WO-02).
 
 ## Out of Scope
 

@@ -74,9 +74,11 @@ This blueprint describes how to build the platform defined in [FRD-01](../frd-01
 
 ### Bootstrap contract
 
-- The bootstrap is idempotent and keyed by the owner's user id; running it twice is a no-op.
-- `ADMIN_EMAILS` is removed from configuration and `.env.example` only after the bootstrap is verified in the target environment.
-- The two existing admin behaviors (store auto-approval, direct edit) switch from the env read to the role read with no behavioral change.
+- The bootstrap is a committed, idempotent maintenance script (`scripts/bootstrap-admin.ts`, run via `npx tsx`) rather than a Prisma migration, because the target account differs per environment and a migration keyed to a fixed id or email would be brittle across dev, preview/staging, and prod. It follows the existing idempotent data-script pattern (`scripts/backfill-store-search-name.ts`, `scripts/seed-dev-data.ts`).
+- The bootstrap identifies the owner by a supplied email and resolves it to the account's `user id` inside the script, then writes the role by id; running it twice is a no-op. The email is the stable per-environment key; the resolved id differs per environment.
+- `ADMIN_EMAILS` is removed from configuration and `.env.example` only after the bootstrap is verified in the target environment. The per-environment cutover order is bootstrap, then verify, then deploy the `getIsAdmin()` flip and the allowlist removal, so the owner is never locked out.
+- The two existing admin behaviors (store auto-approval, direct edit) switch from the env read to the role read with no behavioral change; `getIsAdmin()` is rewritten to read `session.user.role` via `roleGrantsAdmin()` and keeps its non-throwing boolean signature so its call sites, including the UI/visibility reads, stay unchanged.
+- The bootstrap writes no audit entry. It is an operator-run provisioning step with no in-app actor, so it is a documented exception to the audit-write contract; a `role.grant` action key with a `user` target type is deferred until the in-app grant path ships in FRD-02.
 
 ### Audit-write contract
 
