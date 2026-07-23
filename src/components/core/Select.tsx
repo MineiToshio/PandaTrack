@@ -222,35 +222,42 @@ function ControlledSelect({
     }
   }
 
-  function handleTriggerKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
-    if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
-      e.preventDefault();
-      openDropdown();
-    } else if (e.key === "Escape") {
-      closeDropdown();
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      openDropdown();
-    }
+  // Moves activeIndex by one step, wrapping at both ends. Starting from -1 (nothing
+  // highlighted yet) lands on the first option going down and the last option going up.
+  function moveActiveIndex(direction: 1 | -1) {
+    setActiveIndex((prev) => {
+      if (flat.length === 0) return -1;
+      if (prev < 0) return direction === 1 ? 0 : flat.length - 1;
+      return (prev + direction + flat.length) % flat.length;
+    });
   }
 
-  function handleListKeyDown(e: React.KeyboardEvent<HTMLUListElement>) {
-    const safeActive = flat.length === 0 || activeIndex < 0 ? -1 : Math.min(activeIndex, flat.length - 1);
+  // Single keyboard handler on the trigger button: DOM focus stays on the button while the
+  // listbox is open (aria-activedescendant combobox pattern), so all navigation must live here
+  // rather than on the listbox `<ul>`, which never receives focus and is a sibling, not an
+  // ancestor, of the button.
+  function handleTriggerKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
+    if (!open) {
+      if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        openDropdown();
+      }
+      return;
+    }
+
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
-        setActiveIndex((prev) => (Math.max(prev, 0) + 1) % flat.length);
+        moveActiveIndex(1);
         break;
       case "ArrowUp":
         e.preventDefault();
-        setActiveIndex((prev) => {
-          const current = prev <= 0 ? flat.length : prev;
-          return current - 1;
-        });
+        moveActiveIndex(-1);
         break;
-      case "Enter": {
+      case "Enter":
+      case " ": {
         e.preventDefault();
-        const idx = safeActive >= 0 ? safeActive : 0;
+        const idx = activeIndex >= 0 ? activeIndex : 0;
         const opt = flat[idx];
         if (opt && !opt.disabled) selectOption(opt);
         break;
@@ -260,8 +267,7 @@ function ControlledSelect({
         closeDropdown();
         triggerRef.current?.focus();
         break;
-      case "Tab":
-        closeDropdown();
+      default:
         break;
     }
   }
@@ -318,6 +324,14 @@ function ControlledSelect({
     };
   }, [open, updatePlacement]);
 
+  // Keep the highlighted option in view as it moves via keyboard, including when the
+  // list itself scrolls (long option lists, e.g. page-size pickers).
+  useEffect(() => {
+    if (!open || activeIndex < 0) return;
+    const activeOption = document.getElementById(`${listboxId}-${activeIndex}`);
+    activeOption?.scrollIntoView?.({ block: "nearest" });
+  }, [open, activeIndex, listboxId]);
+
   const triggerLabel = selectedOption
     ? renderValue
       ? renderValue(selectedOption)
@@ -325,6 +339,7 @@ function ControlledSelect({
     : placeholder;
 
   const ariaDescribedBy = errorMessage ? errorId : helperText ? helperId : undefined;
+  const activeDescendant = open && activeIndex >= 0 ? `${listboxId}-${activeIndex}` : undefined;
 
   return (
     <div ref={containerRef} className={cn("relative w-full", className)} onBlur={handleContainerBlur}>
@@ -338,6 +353,7 @@ function ControlledSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
+        aria-activedescendant={activeDescendant}
         aria-required={required ? "true" : undefined}
         aria-invalid={hasError ? "true" : undefined}
         aria-describedby={ariaDescribedBy}
@@ -422,7 +438,6 @@ function ControlledSelect({
           role="listbox"
           aria-required={required ? "true" : undefined}
           tabIndex={-1}
-          onKeyDown={handleListKeyDown}
           className={cn(
             "absolute left-0 z-[var(--z-popover)] w-full",
             placement === "up" ? "bottom-full mb-1" : "top-full mt-1",
