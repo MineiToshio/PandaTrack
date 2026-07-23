@@ -42,9 +42,10 @@ enum OrderItemDeliveryState {
   DELIVERED
 }
 
-enum StoreType {
-  BUSINESS
+enum SellerType {
+  RETAILER
   PERSON
+  PROXY
 }
 
 enum StoreStatus {
@@ -224,7 +225,7 @@ model Store {
   searchName          String                    @default("")
   description         String?
   logoUrl             String?
-  storeType           StoreType
+  sellerType          SellerType
   status              StoreStatus               @default(PENDING)
   visibility          StoreVisibility           @default(PUBLIC)
   isActive            Boolean                   @default(true)

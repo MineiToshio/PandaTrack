@@ -1,5 +1,5 @@
 import ViewTransitionLink from "@/components/core/ViewTransitionLink";
-import { MapPin, Minus, Store as StoreIcon, User as UserIcon } from "lucide-react";
+import { MapPin, Minus, Store as StoreIcon, Truck, User as UserIcon } from "lucide-react";
 import Chip from "@/components/core/Chip";
 import StarRating from "@/components/core/StarRating";
 import StoreAvatar from "@/components/core/StoreAvatar";
@@ -45,7 +45,7 @@ const MAX_CHIP_SLOTS = 4;
 
 /**
  * Listing card for the public stores directory.
- * Avatar 56px (accent tint for BUSINESS, muted for PERSON) + identity + categories + import countries + stats.
+ * Avatar 56px (logo/monogram for RETAILER and PROXY, muted user icon for PERSON) + identity + categories + import countries + stats.
  * Anchored — the entire card is a clickable link to the store detail.
  *
  * Visual contract: see the Stores prototype at `docs/product/prd-02-collector-app/frd-04-store-domain/prototype/store-domain.html`
@@ -58,8 +58,10 @@ export default function StoreCard({ store, locale, labels, viewerOrderCount, cla
   const hasOverflow = store.productTypeKeys.length > MAX_CHIP_SLOTS;
   const visibleCategories = store.productTypeKeys.slice(0, hasOverflow ? MAX_CHIP_SLOTS - 1 : MAX_CHIP_SLOTS);
   const hiddenCategoriesCount = store.productTypeKeys.length - visibleCategories.length;
-  const isPerson = store.storeType === "PERSON";
-  const TypeIcon = isPerson ? UserIcon : StoreIcon;
+  const isPerson = store.sellerType === "PERSON";
+  const isProxy = store.sellerType === "PROXY";
+  // PROXY (intermediary) and RETAILER render a logo/monogram avatar; only PERSON uses the muted user icon.
+  const TypeIcon = isPerson ? UserIcon : isProxy ? Truck : StoreIcon;
   const hasImports = store.importCountryCodes.length > 0;
 
   return (
@@ -78,7 +80,11 @@ export default function StoreCard({ store, locale, labels, viewerOrderCount, cla
       )}
     >
       <div className="flex min-w-0 items-start gap-3">
-        <StoreAvatar store={{ name: store.name }} size={56} isPerson={isPerson} />
+        {store.logoUrl ? (
+          <StoreAvatar store={{ name: store.name, logo: { src: store.logoUrl, aspect: "square" } }} size={56} />
+        ) : (
+          <StoreAvatar store={{ name: store.name }} size={56} isPerson={isPerson} />
+        )}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex min-w-0 items-center gap-1.5">
             <TypeIcon size={14} aria-hidden="true" className="flex-shrink-0 [color:var(--text-muted)]" />

@@ -142,9 +142,10 @@ The defining choice: the body is a **responsive CSS card grid** (1 col `<640px` 
 orders/deliveries. Each cell is a `.store-card` anchor (`<a href>` to the detail), so the
 whole card is one keyboardable link.
 
-**StoreCard anatomy** (component `StoreCard`, fixed-height card): `StoreAvatar` s56 (accent
-tint for `BUSINESS`; `user` icon + muted tint for `PERSON`) → store name with an inline type
-icon (`store` 12px / `user` 12px muted) → `map-pin` + country name → a row of `chip accent`
+**StoreCard anatomy** (component `StoreCard`, fixed-height card): `StoreAvatar` s56 — the store
+**logo** when one is set (same as the detail hero), otherwise an accent-tint monogram for
+`RETAILER`/`PROXY` and a `user` icon + muted tint for `PERSON` → store name with an inline type
+icon (`store` 12px for `RETAILER` / `truck` 12px for `PROXY` / `user` 12px muted for `PERSON`) → `map-pin` + country name → a row of `chip accent`
 **product-type** chips (icon + label) with a `chip neutral` `"+N más"` overflow pill → an
 "Importa de" text line in `text-muted` (or a muted "no imports" fallback) → a top-bordered
 stats row (rating number bold `.num` + review count, the viewer's order count when present,
@@ -172,10 +173,12 @@ detail-grid
 **StoreHero** (prototype `.detail-hero`, a `.card`-style surface): `detail-hero-head` =
 `store-avatar s56` + identity block (display name + `map-pin` city/country + a status
 `chip`) + a right-aligned rating block (`.stars` + `"4.7 · 92 reseñas"`). Below the head:
-the description in `text-secondary`, then (BUSINESS only) a commercial chip row that renders
+the description in `text-secondary`, then (non-`PERSON` only) a commercial chip row that renders
 only the signals that apply: `chip info` `Tienda física` (`store`) / `chip info` `Web`
-(`globe`), `chip success` for in-stock, and `chip warning` for accepts-pre-orders. There is
-**no** "Envía a N países" chip. The richer
+(`globe`), `chip success` for in-stock, and `chip warning` for accepts-pre-orders. A `PROXY`
+has null stock / pre-order and no catalog, so it only ever shows presence chips here, plus a
+`chip neutral` **"Proxy"** badge (`truck`) next to the name to signal it is an intermediary
+(FR-04-39). There is **no** "Envía a N países" chip. The richer
 "other user" variant additionally adopts the system Chip-Eyebrow + Top-Accent surface
 treatment on the aside cards (`.s8-card-warm`, `.s8-eyebrow-chip`).
 
@@ -184,10 +187,10 @@ header is `.subcard-toggle` with `.eyebrow` + a `text-muted` count + `.chev`):
 
 - **Categorías** — `chip accent` per assigned product type.
 - **Importa desde** — `chip neutral` per import country (full name, not code).
-- **Contactos** (BUSINESS only) — `.channel-row`s: `.channel-icon` (Lucide or Simple Icon) +
+- **Contactos** (`RETAILER` and `PROXY` only) — `.channel-row`s: `.channel-icon` (Lucide or Simple Icon) +
   `.label` + `.value` + a ghost `IconButton` (`external-link` / `copy`). Header shows the
   channel count.
-- **Direcciones** (BUSINESS only) — `.channel-row`s with `map-pin` + label + address + a map
+- **Direcciones** (`RETAILER` and `PROXY` only) — `.channel-row`s with `map-pin` + label + address + a map
   `IconButton`.
 - **Reseñas** — a prominent rating block (38px number + `.stars` 20px + count, separated by
   `border-bottom`), the viewer's own review form on a tinted panel, then `.review-row`s
@@ -203,12 +206,13 @@ header is `.subcard-toggle` with `.eyebrow` + a `text-muted` count + `.chev`):
 
 **State variants** (prototype anchors in parentheses):
 
-| State / viewer                                         | Treatment                                                                                                                                                                                                                             |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `APPROVED` owner (`#s6-store-detail-published-viewer`) | Owner aside: viewer "Resumen", "Anotar pedido aquí" primary, "Editar tienda" ghost, "Reportar tienda" destructive-ghost, private note; pending reports surface via the governance-summary banner above the layout (not an aside chip) |
-| `APPROVED` other user (`#s6-store-detail-other-user`)  | Viewer aside: "Anotar pedido aquí" primary, "Sugerir cambios" ghost (signed-in), "Reportar tienda" destructive-ghost; warm-toned private note (`.s8-card-warm`). No "Guardar tienda" action exists                                    |
-| `PENDING` (`#s6-store-detail-pending`)                 | A soft disclaimer banner before the hero ("En revisión…"), visible only to creator/admins; detail metadata is non-indexable (BR-04-04)                                                                                                |
-| `PERSON` (`#s6-store-detail-person`)                   | No logo, no Contactos subcard, no Direcciones subcard; avatar is the `user` icon (FR-04-21/23, AC-04-05)                                                                                                                              |
+| State / viewer                                         | Treatment                                                                                                                                                                                                                                                                                         |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APPROVED` owner (`#s6-store-detail-published-viewer`) | Owner aside: viewer "Resumen", "Anotar pedido aquí" primary, "Editar tienda" ghost, "Reportar tienda" destructive-ghost, private note; pending reports surface via the governance-summary banner above the layout (not an aside chip)                                                             |
+| `APPROVED` other user (`#s6-store-detail-other-user`)  | Viewer aside: "Anotar pedido aquí" primary, "Sugerir cambios" ghost (signed-in), "Reportar tienda" destructive-ghost; warm-toned private note (`.s8-card-warm`). No "Guardar tienda" action exists                                                                                                |
+| `PENDING` (`#s6-store-detail-pending`)                 | A soft disclaimer banner before the hero ("En revisión…"), visible only to creator/admins; detail metadata is non-indexable (BR-04-04)                                                                                                                                                            |
+| `PERSON` (`#s6-store-detail-person`)                   | No logo, no Contactos subcard, no Direcciones subcard; avatar is the `user` icon (FR-04-21/23, AC-04-05)                                                                                                                                                                                          |
+| `PROXY`                                                | Logo shown (like `RETAILER`, not the `user` icon); a `chip neutral` "Proxy" badge (`truck`) next to the name; Contactos + Direcciones subcards kept; the categories/imports subcard keeps **Importa desde** but omits the product-types block; no stock / pre-order chips (FR-04-38/39, AC-04-19) |
 
 **404-guard on private Person stores:** a `private` Person store renders for its creator
 only; any other viewer must get a not-found response, not a hidden page
@@ -231,12 +235,19 @@ summary in their head. Step state is autosaved to `localStorage` between steps (
 State). The aside is a single **Resumen** card mirroring the live form (Tipo, Nombre, País,
 Categorías, Estado).
 
-- **Step 1 — Tipo** (`#s6-store-create-step-1-type`): two `.big-choice` cards (`store` =
-  **Negocio**, `user` = **Persona**). When `PERSON` is chosen, a `border-top` section reveals
-  the **"Perfil privado"** `Switch` — shown _only_ for Person type (FR-04-34, ADR 0009).
+- **Step 1 — Tipo** (`#s6-store-create-step-1-type`): a **three-way** `.big-choice` seller-type
+  picker (`ToggleChoiceGroup` tiles), each with a one-line helper — **Comercio** (`store`
+  icon; "Un negocio que te vende sus productos"), **Persona** (`user` icon; "Un vendedor
+  individual — amigo, scout, revendedor"), and **Proxy** (`truck` icon; "Un intermediario que
+  compra por ti (p. ej. ZenMarket)"). Values map to `sellerType` `RETAILER` / `PERSON` /
+  `PROXY`. When `PERSON` is chosen, a `border-top` section reveals the **"Perfil privado"**
+  `Switch` — shown _only_ for Person type (FR-04-34, ADR 0009). Choosing **Proxy** gates the
+  downstream steps: the categories selection and the stock / pre-order switches are hidden and
+  cleared (FR-04-38), while the logo and Canales step are kept (FR-04-39); Proxy keeps the
+  5-step flow, Persona uses 4 (no Canales).
 - **Step 2 — Identidad** (`#s6-store-create-step-2-identity`): `grid-2` Nombre `Input` +
   País `Combobox`; description `Textarea`; presence multi-select; import-countries multi-select
-  `Combobox`. **Logo (BUSINESS only)** is a drop/upload zone; once set
+  `Combobox`. **Logo (RETAILER and PROXY only)** is a drop/upload zone; once set
   (`#s6-store-create-step-2-logo-set`) it shows a 150×150 thumbnail + file name/size + ghost
   "Edit"/"Remove". Name blur with ≥2 chars triggers duplicate detection (§5.5). The
   name-error variant (`#s6-store-create-step-2-error`) gives the field a `--destructive`
@@ -244,7 +255,9 @@ Categorías, Estado).
 - **Step 3 — Categorías** (`#s6-store-create-step-3-categories`): selectable `.cat-chip`s
   - a dashed inline `"Solicitar nueva categoría"` chip opening the request modal; then a
     presence section and a **"Comportamiento comercial"** section grouping the
-    `Tiene stock` / `Recibe preórdenes` switches.
+    `Tiene stock` / `Recibe preórdenes` switches. For a **`PROXY`** the categories block and
+    the "Comportamiento comercial" switches are hidden (a proxy has no catalog, FR-04-38);
+    only presence and import countries remain in this step.
 - **Step 4 — Canales** (`#s6-store-create-step-4-channels`): **staged-add** contact channels
   and addresses — the add form starts collapsed; nothing is appended until the user confirms
   (no empty rows). Per-type value validation is inline; an open add-form **blocks advancing**.
@@ -393,7 +406,8 @@ count; free text does not increment that count.
 | Accepts pre-orders    | (pre-orders label) | `warning` | `calendar-clock` |
 
 The commercial chips (physical / online / stock / pre-orders) render on the **detail hero**
-(BUSINESS only); moderation chips render on **detail only**, not on list cards (S6.1). The
+(non-`PERSON` only; a `PROXY` only ever shows presence chips since it has null stock / pre-order,
+plus its "Proxy" badge); moderation chips render on **detail only**, not on list cards (S6.1). The
 `FLAGGED` "Con reportes" mapping is **prototype-only and not reachable on the shipped public
 detail page**: `getStoreBySlug` resolves only `PENDING`/`APPROVED` stores, so `FLAGGED` (and
 `REJECTED`) stores 404 rather than rendering a warning chip or banner. There is **no** "Envía a

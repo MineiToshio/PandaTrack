@@ -8,7 +8,7 @@ const BASE_STORE: EditableStore = {
   description: "Original description",
   logoUrl: "https://cdn.example.com/store-logos/store-1.webp",
   status: "APPROVED",
-  storeType: "BUSINESS",
+  sellerType: "RETAILER",
   countryCode: "PE",
   createdByUserId: "user-1",
   hasStock: true,

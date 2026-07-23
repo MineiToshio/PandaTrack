@@ -1,4 +1,4 @@
-import type { Prisma, StoreReportReason, StoreType } from "../../../../generated/prisma/client";
+import type { Prisma, StoreReportReason, SellerType } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { normalizeStoreName } from "@/lib/store/duplicateMatch";
 import type { EditableStore, EditableStoreDiff, EditableStoreInput } from "./storeGovernanceQueries";
@@ -12,48 +12,50 @@ function normalizeNullableString(value?: string | null) {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-function normalizeEditableStoreInput(input: EditableStoreInput, storeType: StoreType): Required<EditableStoreInput> {
-  const normalizedContactChannels =
-    storeType === "BUSINESS"
-      ? (input.contactChannels ?? [])
-          .map((channel) => ({
-            type: channel.type,
-            value: channel.value.trim(),
-            label: normalizeNullableString(channel.label),
-          }))
-          .filter((channel) => channel.value.length > 0)
-          .sort((left, right) => {
-            const typeCompare = left.type.localeCompare(right.type);
-            if (typeCompare !== 0) return typeCompare;
-            return left.value.localeCompare(right.value);
-          })
-      : [];
+function normalizeEditableStoreInput(input: EditableStoreInput, sellerType: SellerType): Required<EditableStoreInput> {
+  // RETAILER and PROXY sellers keep contact channels; PERSON sellers do not expose them.
+  const exposesContactInfo = sellerType !== "PERSON";
+  // A PROXY is an intermediary with no catalog of its own: no categories, stock, or pre-order signal.
+  const isProxy = sellerType === "PROXY";
+  const normalizedContactChannels = exposesContactInfo
+    ? (input.contactChannels ?? [])
+        .map((channel) => ({
+          type: channel.type,
+          value: channel.value.trim(),
+          label: normalizeNullableString(channel.label),
+        }))
+        .filter((channel) => channel.value.length > 0)
+        .sort((left, right) => {
+          const typeCompare = left.type.localeCompare(right.type);
+          if (typeCompare !== 0) return typeCompare;
+          return left.value.localeCompare(right.value);
+        })
+    : [];
 
-  const normalizedAddresses =
-    storeType === "BUSINESS"
-      ? (input.addresses ?? [])
-          .map((address) => ({
-            city: normalizeNullableString(address.city),
-            addressLine: address.addressLine.trim(),
-            reference: normalizeNullableString(address.reference),
-          }))
-          .filter((address) => address.addressLine.length > 0)
-          .sort((left, right) => {
-            const cityCompare = (left.city ?? "").localeCompare(right.city ?? "");
-            if (cityCompare !== 0) return cityCompare;
-            return left.addressLine.localeCompare(right.addressLine);
-          })
-      : [];
+  const normalizedAddresses = exposesContactInfo
+    ? (input.addresses ?? [])
+        .map((address) => ({
+          city: normalizeNullableString(address.city),
+          addressLine: address.addressLine.trim(),
+          reference: normalizeNullableString(address.reference),
+        }))
+        .filter((address) => address.addressLine.length > 0)
+        .sort((left, right) => {
+          const cityCompare = (left.city ?? "").localeCompare(right.city ?? "");
+          if (cityCompare !== 0) return cityCompare;
+          return left.addressLine.localeCompare(right.addressLine);
+        })
+    : [];
 
   return {
     name: input.name.trim(),
     description: normalizeNullableString(input.description),
-    logoUrl: storeType === "BUSINESS" ? normalizeNullableString(input.logoUrl) : null,
+    logoUrl: exposesContactInfo ? normalizeNullableString(input.logoUrl) : null,
     presenceTypes: [...new Set(input.presenceTypes)].sort((left, right) => left.localeCompare(right)),
-    productTypeKeys: uniqueSorted(input.productTypeKeys),
-    hasStock: input.hasStock ?? null,
-    receivesOrders: input.receivesOrders ?? null,
-    isPrivate: storeType === "PERSON" ? Boolean(input.isPrivate) : false,
+    productTypeKeys: isProxy ? [] : uniqueSorted(input.productTypeKeys),
+    hasStock: isProxy ? null : (input.hasStock ?? null),
+    receivesOrders: isProxy ? null : (input.receivesOrders ?? null),
+    isPrivate: sellerType === "PERSON" ? Boolean(input.isPrivate) : false,
     isActive: input.isActive ?? true,
     contactChannels: normalizedContactChannels,
     addresses: normalizedAddresses,
@@ -168,7 +170,7 @@ export async function updateStoreEditableFields(
   store: EditableStore,
   input: EditableStoreInput,
 ): Promise<{ id: string; slug: string }> {
-  const normalizedInput = normalizeEditableStoreInput(input, store.storeType);
+  const normalizedInput = normalizeEditableStoreInput(input, store.sellerType);
 
   return prisma.$transaction(async (tx) => {
     const updatedStore = await tx.store.update({
@@ -266,7 +268,7 @@ export async function upsertStoreChangeRequest(
   | { status: "saved"; changeRequestId: string; changedFieldCount: number }
   | { status: "discarded"; deletedExisting: boolean }
 > {
-  const normalizedInput = normalizeEditableStoreInput(input, store.storeType);
+  const normalizedInput = normalizeEditableStoreInput(input, store.sellerType);
   const diff = buildEditableStoreDiff(store, normalizedInput);
   const commentValue = normalizeNullableString(comment);
 

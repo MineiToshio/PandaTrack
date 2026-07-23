@@ -99,7 +99,7 @@ describe("createStore persists normalized searchName", () => {
 
     await createStore({
       name: "Pokémon Center",
-      storeType: "BUSINESS",
+      sellerType: "RETAILER",
       countryCode: "JP",
       presenceTypes: ["ONLINE"],
       productTypeKeys: ["figures"],
@@ -128,7 +128,7 @@ describe("updateStoreEditableFields refreshes searchName on a name edit", () => 
       description: null,
       logoUrl: null,
       status: "APPROVED",
-      storeType: "BUSINESS",
+      sellerType: "RETAILER",
       countryCode: "JP",
       createdByUserId: "u1",
       hasStock: null,

@@ -82,7 +82,7 @@ export async function saveStoreEdit(
     locale: formData.get("locale"),
     name: formData.get("name") ?? "",
     description: formData.get("description") ?? undefined,
-    storeType: formData.get("storeType") ?? "BUSINESS",
+    sellerType: formData.get("sellerType") ?? "RETAILER",
     countryCode: formData.get("countryCode") ?? "US",
     presenceTypes: formData.getAll("presenceTypes").filter((value): value is string => typeof value === "string"),
     productTypeKeys: formData.getAll("productTypeKeys").filter((value): value is string => typeof value === "string"),
@@ -121,7 +121,9 @@ export async function saveStoreEdit(
   const storeEditPath = `${storeDetailPath}/edit`;
   const canDirectEdit = canDirectlyEditStore(store, session.user.id, isAdmin);
   const currentLogoUrl = viewerContext.openChangeRequest?.changes.logoUrl ?? store.logoUrl;
-  const isBusinessLogoSet = store.storeType === "BUSINESS" && parsed.data.logoAction === "set";
+  // RETAILER and PROXY sellers expose a logo; PERSON sellers do not.
+  const exposesContactInfo = store.sellerType !== "PERSON";
+  const isBusinessLogoSet = exposesContactInfo && parsed.data.logoAction === "set";
 
   if (isBusinessLogoSet && !logoFile) {
     return {
@@ -134,7 +136,7 @@ export async function saveStoreEdit(
   const posthogClient = getPostHogClient();
   let nextLogoUrl = currentLogoUrl;
 
-  if (store.storeType === "BUSINESS") {
+  if (exposesContactInfo) {
     if (parsed.data.logoAction === "remove") {
       nextLogoUrl = null;
     }

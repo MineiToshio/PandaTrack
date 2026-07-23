@@ -22,7 +22,7 @@ import type {
   OrderItemDeliveryState,
   StoreContactChannelType,
   StorePresenceType,
-  StoreType,
+  SellerType,
 } from "../generated/prisma/client";
 import { deriveOrderStatus, type ItemDeliveryState } from "../src/lib/orders/orderState";
 import { normalizeStoreName } from "../src/lib/store/duplicateMatch";
@@ -60,7 +60,7 @@ type SeedStore = {
   key: string;
   name: string;
   countryCode: string;
-  storeType: StoreType;
+  sellerType: SellerType;
   description: string;
   presences: StorePresenceType[];
   productTypes: string[];
@@ -76,7 +76,7 @@ const STORES: SeedStore[] = [
     key: "kinokuniya",
     name: "Kinokuniya Books",
     countryCode: "JP",
-    storeType: "BUSINESS",
+    sellerType: "RETAILER",
     description: "Japanese bookstore chain shipping manga, light novels and art books worldwide.",
     presences: ["ONLINE", "PHYSICAL"],
     productTypes: ["manga", "light_novels", "art_books"],
@@ -90,7 +90,7 @@ const STORES: SeedStore[] = [
     key: "mandarake",
     name: "Mandarake",
     countryCode: "JP",
-    storeType: "BUSINESS",
+    sellerType: "RETAILER",
     description: "Second-hand figures, doujinshi and vintage collectibles.",
     presences: ["ONLINE"],
     productTypes: ["figures", "manga", "merchandise"],
@@ -103,7 +103,7 @@ const STORES: SeedStore[] = [
     key: "amiami",
     name: "AmiAmi",
     countryCode: "JP",
-    storeType: "BUSINESS",
+    sellerType: "RETAILER",
     description: "Pre-orders for scale figures, nendoroids and hobby merchandise.",
     presences: ["ONLINE"],
     productTypes: ["figures", "merchandise"],
@@ -116,7 +116,7 @@ const STORES: SeedStore[] = [
     key: "otaku-lima",
     name: "Otaku Store Lima",
     countryCode: "PE",
-    storeType: "BUSINESS",
+    sellerType: "RETAILER",
     description: "Tienda limeña de manga, funkos y merchandising importado.",
     presences: ["PHYSICAL", "ONLINE"],
     productTypes: ["manga", "funkos", "merchandise"],
@@ -130,7 +130,7 @@ const STORES: SeedStore[] = [
     key: "comics-peru",
     name: "Comics Perú",
     countryCode: "PE",
-    storeType: "BUSINESS",
+    sellerType: "RETAILER",
     description: "Cómics, trading cards y singles en español.",
     presences: ["PHYSICAL"],
     productTypes: ["comics", "trading_cards"],
@@ -144,7 +144,7 @@ const STORES: SeedStore[] = [
     key: "panini-es",
     name: "Panini España",
     countryCode: "ES",
-    storeType: "BUSINESS",
+    sellerType: "RETAILER",
     description: "Editorial de cómic y manga en castellano.",
     presences: ["ONLINE"],
     productTypes: ["comics", "manga"],
@@ -157,7 +157,7 @@ const STORES: SeedStore[] = [
     key: "bbts",
     name: "BigBadToyStore",
     countryCode: "US",
-    storeType: "BUSINESS",
+    sellerType: "RETAILER",
     description: "Action figures, statues and import collectibles.",
     presences: ["ONLINE"],
     productTypes: ["figures", "funkos", "funko_accessories"],
@@ -170,7 +170,7 @@ const STORES: SeedStore[] = [
     key: "tcg-vault",
     name: "TCG Vault",
     countryCode: "US",
-    storeType: "BUSINESS",
+    sellerType: "RETAILER",
     description: "Sealed product and graded singles for trading card games.",
     presences: ["ONLINE"],
     productTypes: ["trading_cards"],
@@ -183,7 +183,7 @@ const STORES: SeedStore[] = [
     key: "vinyl-haus",
     name: "Vinyl Haus",
     countryCode: "DE",
-    storeType: "BUSINESS",
+    sellerType: "RETAILER",
     description: "Limited pressings, box sets and soundtrack vinyl.",
     presences: ["ONLINE", "PHYSICAL"],
     productTypes: ["albums", "music"],
@@ -197,7 +197,7 @@ const STORES: SeedStore[] = [
     key: "coleccionista-mx",
     name: "Coleccionista MX",
     countryCode: "MX",
-    storeType: "PERSON",
+    sellerType: "PERSON",
     description: "Vendedor particular de videojuegos retro y merchandising.",
     presences: ["ONLINE"],
     productTypes: ["video_games", "merchandise"],
@@ -865,7 +865,7 @@ async function createStores(userId: string): Promise<Map<string, string>> {
         name: store.name,
         searchName: normalizeStoreName(store.name),
         description: store.description,
-        storeType: store.storeType,
+        sellerType: store.sellerType,
         status: "APPROVED",
         visibility: "PUBLIC",
         isActive: true,

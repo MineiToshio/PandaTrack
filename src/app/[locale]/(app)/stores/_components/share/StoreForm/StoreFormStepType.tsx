@@ -1,6 +1,6 @@
 "use client";
 
-import { Store, User } from "lucide-react";
+import { Store, User, Truck } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import Label from "@/components/core/Label";
@@ -8,34 +8,34 @@ import ToggleChoiceGroup from "@/components/core/ToggleChoiceGroup";
 import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
 import { WizardStep } from "@/components/modules/WizardAccordion";
-import type { StoreTypeValue } from "./types";
+import { sellerTypeLabelKey, type SellerTypeValue } from "./types";
 
 type StoreFormStepTypeProps = {
   isEditMode: boolean;
   lockedCaption: string | null;
-  storeType: StoreTypeValue;
+  sellerType: SellerTypeValue;
   isPrivate: boolean;
-  onStoreTypeChange: (next: StoreTypeValue) => void;
+  onSellerTypeChange: (next: SellerTypeValue) => void;
   onIsPrivateChange: (next: boolean) => void;
 };
 
 export default function StoreFormStepType({
   isEditMode,
   lockedCaption,
-  storeType,
+  sellerType,
   isPrivate,
-  onStoreTypeChange,
+  onSellerTypeChange,
   onIsPrivateChange,
 }: StoreFormStepTypeProps) {
   const tCreate = useTranslations("stores.create");
   const tCreateRedesign = useTranslations("stores.redesign.create");
 
-  const storeTypeOptions = useMemo(
+  const sellerTypeOptions = useMemo(
     () => [
       {
-        value: "BUSINESS",
-        label: tCreateRedesign("step1.businessLabel"),
-        description: tCreateRedesign("step1.businessDesc"),
+        value: "RETAILER",
+        label: tCreateRedesign("step1.retailerLabel"),
+        description: tCreateRedesign("step1.retailerDesc"),
         icon: <Store aria-hidden />,
       },
       {
@@ -43,6 +43,12 @@ export default function StoreFormStepType({
         label: tCreateRedesign("step1.personLabel"),
         description: tCreateRedesign("step1.personDesc"),
         icon: <User aria-hidden />,
+      },
+      {
+        value: "PROXY",
+        label: tCreateRedesign("step1.proxyLabel"),
+        description: tCreateRedesign("step1.proxyDesc"),
+        icon: <Truck aria-hidden />,
       },
     ],
     [tCreateRedesign],
@@ -58,7 +64,7 @@ export default function StoreFormStepType({
       eyebrow={tCreateRedesign("step1.eyebrow")}
       title={tCreateRedesign("step1.title")}
       primaryAction={{ label: tCreateRedesign("continue") }}
-      summary={storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
+      summary={tCreate(sellerTypeLabelKey(sellerType))}
       actionsLayout={isEditMode ? "inline" : "sticky-on-mobile"}
     >
       <div className="space-y-4">
@@ -70,10 +76,10 @@ export default function StoreFormStepType({
           <ToggleChoiceGroup
             mode="single"
             appearance="tile"
-            options={storeTypeOptions}
-            value={storeType}
+            options={sellerTypeOptions}
+            value={sellerType}
             disabled={isEditMode}
-            onChange={(value) => onStoreTypeChange(value as StoreTypeValue)}
+            onChange={(value) => onSellerTypeChange(value as SellerTypeValue)}
           />
           {isEditMode && lockedCaption && (
             <Typography size="xs" className="text-text-muted">
@@ -82,7 +88,7 @@ export default function StoreFormStepType({
           )}
         </div>
 
-        {storeType === "PERSON" && (
+        {sellerType === "PERSON" && (
           <div className="pt-4 [border-top:1px_solid_var(--border)]">
             <div className="flex items-start gap-3">
               <button

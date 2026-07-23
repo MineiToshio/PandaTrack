@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
-import type { EditableStore, EditableStoreInput, StoreGovernanceViewerContext } from "@/lib/data/stores/storeGovernanceQueries";
+import type {
+  EditableStore,
+  EditableStoreInput,
+  StoreGovernanceViewerContext,
+} from "@/lib/data/stores/storeGovernanceQueries";
 import type { StoreContactChannelType } from "../StoreContactChannelList";
 
 /**
@@ -49,7 +53,16 @@ export type StoreFormProps = {
   submit: StoreFormSubmit;
 };
 
-export type StoreTypeValue = "BUSINESS" | "PERSON";
+export type SellerTypeValue = "RETAILER" | "PERSON" | "PROXY";
+
+/** Maps a seller type to its `stores.create` label translation key. */
+export function sellerTypeLabelKey(
+  sellerType: SellerTypeValue,
+): "sellerTypeRetailer" | "sellerTypePerson" | "sellerTypeProxy" {
+  if (sellerType === "RETAILER") return "sellerTypeRetailer";
+  if (sellerType === "PROXY") return "sellerTypeProxy";
+  return "sellerTypePerson";
+}
 
 export type StorePresenceType = "ONLINE" | "PHYSICAL";
 
@@ -67,7 +80,7 @@ export type StoreCountryOption = {
 
 /** Current form values consumed by the review step and the desktop aside. */
 export type StoreFormValuesSnapshot = {
-  storeType: StoreTypeValue;
+  sellerType: SellerTypeValue;
   isPrivate: boolean;
   name: string;
   countryCode: string;

@@ -1,4 +1,4 @@
-import { CalendarClock, Clock, Globe, Info, MapPin, PackageCheck, Store as StoreIcon, User } from "lucide-react";
+import { CalendarClock, Clock, Globe, Info, MapPin, PackageCheck, Store as StoreIcon, Truck, User } from "lucide-react";
 import Chip from "@/components/core/Chip";
 import StarRating from "@/components/core/StarRating";
 import StoreAvatar from "@/components/core/StoreAvatar";
@@ -17,6 +17,8 @@ export type StoreHeroLabels = {
   personChip?: string;
   /** Info note shown under the description on PERSON-type stores explaining why no contacts are public. */
   personNote?: string;
+  /** "Proxy" — chip shown on PROXY-type stores to signal an intermediary/forwarding service. */
+  proxyChip?: string;
   /** "En revisión" — chip shown when status is PENDING. */
   pendingChip?: string;
 };
@@ -38,7 +40,8 @@ export type StoreHeroProps = {
  * and the Velvet design system at `docs/design/`.
  */
 export default function StoreHero({ store, labels, className }: StoreHeroProps) {
-  const isPerson = store.storeType === "PERSON";
+  const isPerson = store.sellerType === "PERSON";
+  const isProxy = store.sellerType === "PROXY";
   const isPending = store.status === "PENDING";
   const hasPhysical = store.presenceTypes.includes("PHYSICAL");
   const hasOnline = store.presenceTypes.includes("ONLINE");
@@ -88,6 +91,11 @@ export default function StoreHero({ store, labels, className }: StoreHeroProps) 
             {isPerson && labels.personChip && (
               <Chip variant="neutral" size="sm" icon={<User size={11} aria-hidden="true" />}>
                 {labels.personChip}
+              </Chip>
+            )}
+            {isProxy && labels.proxyChip && (
+              <Chip variant="neutral" size="sm" icon={<Truck size={11} aria-hidden="true" />}>
+                {labels.proxyChip}
               </Chip>
             )}
           </div>

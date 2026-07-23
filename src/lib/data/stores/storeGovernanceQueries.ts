@@ -4,7 +4,7 @@ import type {
   StorePresenceType,
   StoreReportReason,
   StoreStatus,
-  StoreType,
+  SellerType,
 } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
@@ -43,7 +43,7 @@ export type EditableStore = {
   description: string | null;
   logoUrl: string | null;
   status: StoreStatus;
-  storeType: StoreType;
+  sellerType: SellerType;
   countryCode: string;
   createdByUserId: string;
   hasStock: boolean | null;
@@ -112,7 +112,7 @@ function mapStoreToEditableStore(store: {
   description: string | null;
   logoUrl: string | null;
   status: StoreStatus;
-  storeType: StoreType;
+  sellerType: SellerType;
   countryCode: string;
   createdByUserId: string;
   hasStock: boolean | null;
@@ -132,7 +132,7 @@ function mapStoreToEditableStore(store: {
     description: store.description,
     logoUrl: store.logoUrl,
     status: store.status,
-    storeType: store.storeType,
+    sellerType: store.sellerType,
     countryCode: store.countryCode,
     createdByUserId: store.createdByUserId,
     hasStock: store.hasStock,
@@ -207,7 +207,7 @@ export async function getEditableStoreBySlug(slug: string): Promise<EditableStor
       description: true,
       logoUrl: true,
       status: true,
-      storeType: true,
+      sellerType: true,
       countryCode: true,
       createdByUserId: true,
       hasStock: true,

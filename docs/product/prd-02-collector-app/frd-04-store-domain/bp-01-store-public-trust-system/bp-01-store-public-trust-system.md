@@ -71,6 +71,21 @@ Role:
 - persist discovery metadata and future trust/governance data
 - support future links to orders and deliveries
 
+**Seller-type model (data-model decision, ADR 0016):** `Store` classifies its seller via
+`Store.sellerType` (Prisma enum `SellerType`), one of `RETAILER | PERSON | PROXY`. This field
+and enum were **renamed** from `Store.storeType` / `enum StoreType` (value `BUSINESS` →
+`RETAILER`) to disambiguate the classification from the "Tienda" (`Store`) entity/section and
+to name the seller's role rather than its legal category; `PROXY` (a forwarding/intermediary
+service with no catalog of its own, e.g. ZenMarket) is a new value. The migration is a
+hand-written enum rename (`ALTER TYPE … RENAME VALUE`, `ADD VALUE 'PROXY'`, `RENAME TO
+"SellerType"`, `ALTER TABLE "store" RENAME COLUMN`) so existing rows are preserved in place
+(the former `BUSINESS` rows become `RETAILER`). Prisma cannot auto-detect enum/column renames,
+so this uses the hand-written-SQL fallback of `prisma-migration-workflow.mdc`. PROXY behavior
+gating (no product types, null `hasStock` / `receivesOrders`; keeps logo, import countries,
+contact channels, addresses, reviews; always public) is enforced in the create action, the
+governance edit mutation, and the `getStoreBySlug` payload assembly (`sellerType !== "PERSON"`
+exposes logo/contacts/addresses).
+
 ### 2. Query layer
 
 Primary source:

@@ -40,7 +40,11 @@ import type {
   StoreViewerReview,
   ViewerStoreActivity,
 } from "@/lib/data/stores/storeQueries";
-import type { EditableStore, StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/lib/data/stores/storeGovernanceQueries";
+import type {
+  EditableStore,
+  StoreGovernanceSummary,
+  StoreGovernanceViewerContext,
+} from "@/lib/data/stores/storeGovernanceQueries";
 import StoreHero from "../../_components/share/StoreHero";
 import CollapsibleSection from "@/components/modules/CollapsibleSection";
 import StorePublicReviewsSection from "./StorePublicReviewsSection";
@@ -122,7 +126,11 @@ export default function StoreDetailContent({
     governanceSummary.totalChangeRequests > 0 ||
     governanceViewerContext.openChangeRequest != null ||
     governanceViewerContext.openReport != null;
-  const isBusiness = store.storeType === "BUSINESS";
+  // RETAILER and PROXY sellers expose logo, contact channels, and addresses; PERSON does not.
+  const exposesContactInfo = store.sellerType !== "PERSON";
+  const isPerson = store.sellerType === "PERSON";
+  // A PROXY is an intermediary with no catalog of its own.
+  const isProxy = store.sellerType === "PROXY";
   const contactChannelsCount = store.contactChannels?.length ?? 0;
   const addressesCount = store.addresses?.length ?? 0;
   const editModeLabel = canDirectlyEdit ? tStores("edit.direct.shortLabel") : tStores("edit.changeRequest.shortLabel");
@@ -191,7 +199,8 @@ export default function StoreDetailContent({
                 hasStock: tStores("redesign.detail.hasStock"),
                 acceptsPreorders: tStores("redesign.detail.acceptsPreorders"),
                 personChip: tStores("redesign.detail.personChip"),
-                personNote: isBusiness ? undefined : tStores("redesign.detail.personNote"),
+                personNote: isPerson ? tStores("redesign.detail.personNote") : undefined,
+                proxyChip: tStores("redesign.detail.proxyChip"),
                 pendingChip: tStores("redesign.detail.pendingChip"),
               }}
             />
@@ -205,22 +214,25 @@ export default function StoreDetailContent({
               topAccent="cool"
             >
               <div className="space-y-4">
-                <div>
-                  <Eyebrow as="p">{tStores("create.productTypesLabel")}</Eyebrow>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {store.productTypeKeys.length > 0 ? (
-                      store.productTypeKeys.map((key) => (
-                        <Chip key={key} variant="accent">
-                          {tProductTypes(key)}
-                        </Chip>
-                      ))
-                    ) : (
-                      <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
-                        {tStores("detail.noProductTypes")}
-                      </span>
-                    )}
+                {/* A PROXY has no catalog of its own, so the product-types block is omitted. */}
+                {!isProxy && (
+                  <div>
+                    <Eyebrow as="p">{tStores("create.productTypesLabel")}</Eyebrow>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {store.productTypeKeys.length > 0 ? (
+                        store.productTypeKeys.map((key) => (
+                          <Chip key={key} variant="accent">
+                            {tProductTypes(key)}
+                          </Chip>
+                        ))
+                      ) : (
+                        <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
+                          {tStores("detail.noProductTypes")}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <Eyebrow as="p">{tStores("redesign.detail.importsFrom")}</Eyebrow>
@@ -241,7 +253,7 @@ export default function StoreDetailContent({
               </div>
             </CollapsibleSection>
 
-            {isBusiness && contactChannelsCount > 0 && (
+            {exposesContactInfo && contactChannelsCount > 0 && (
               <CollapsibleSection
                 eyebrow={
                   <Eyebrow variant="chip" tone="cool" icon={AtSign}>
@@ -289,7 +301,7 @@ export default function StoreDetailContent({
               </CollapsibleSection>
             )}
 
-            {isBusiness && addressesCount > 0 && (
+            {exposesContactInfo && addressesCount > 0 && (
               <CollapsibleSection
                 eyebrow={
                   <Eyebrow variant="chip" tone="cool" icon={MapPin}>

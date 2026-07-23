@@ -83,7 +83,7 @@ const PARSED_DATA = {
   locale: "en",
   name: "Acme",
   description: undefined,
-  storeType: "PERSON",
+  sellerType: "PERSON",
   countryCode: "US",
   presenceTypes: ["online"],
   productTypeKeys: ["figures"],
@@ -101,7 +101,7 @@ const PARSED_DATA = {
 const EDITABLE_PERSON_STORE = {
   id: "store-1",
   slug: "acme",
-  storeType: "PERSON",
+  sellerType: "PERSON",
   status: "PENDING",
   createdByUserId: "user-1",
   logoUrl: null,

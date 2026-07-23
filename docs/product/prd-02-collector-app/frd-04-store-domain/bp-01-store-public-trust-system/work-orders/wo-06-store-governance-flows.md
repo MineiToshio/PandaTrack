@@ -117,8 +117,8 @@ Relevant acceptance signals:
 - If the resulting diff becomes empty, the system must not create a new change request and must delete an existing pending change request for that user/store pair.
 - Store fields editable through direct edit and change-request flows should stay aligned, except:
   - `country` is not editable
-  - `storeType` is not editable
-- If a user wants to challenge `storeType`, they must use the report flow and explain the issue in free text.
+  - `sellerType` is not editable
+- If a user wants to challenge `sellerType`, they must use the report flow and explain the issue in free text.
 - Pending-store direct edits and approved-store change requests should reuse the same route shape: `/stores/[slug]/edit`.
 
 ## Security Notes

@@ -47,8 +47,9 @@ import type {
   StoreFormSubmitResult,
   StoreFormValuesSnapshot,
   StorePresenceType,
-  StoreTypeValue,
+  SellerTypeValue,
 } from "./types";
+import { sellerTypeLabelKey } from "./types";
 
 export type {
   EditableStoreFormValues,
@@ -76,7 +77,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
   const existingChangeRequest = mode.kind === "changeRequest" ? (mode.existingChangeRequest ?? null) : null;
 
   // Initial values derived from edit mode (or empty defaults for create).
-  const initialStoreType: StoreTypeValue = (editStore?.storeType as StoreTypeValue | undefined) ?? "BUSINESS";
+  const initialSellerType: SellerTypeValue = (editStore?.sellerType as SellerTypeValue | undefined) ?? "RETAILER";
   const initialIsPrivate = editInitial?.isPrivate ?? false;
   const initialHasStock = Boolean(editInitial?.hasStock);
   const initialReceivesOrders = Boolean(editInitial?.receivesOrders);
@@ -108,7 +109,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
     [editInitial],
   );
 
-  const [storeType, setStoreType] = useState<StoreTypeValue>(initialStoreType);
+  const [sellerType, setSellerType] = useState<SellerTypeValue>(initialSellerType);
   const [isPrivate, setIsPrivate] = useState<boolean>(initialIsPrivate);
   const [hasStock, setHasStock] = useState<boolean>(initialHasStock);
   const [receivesOrders, setReceivesOrders] = useState<boolean>(initialReceivesOrders);
@@ -203,13 +204,24 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
     [countries, tCountries],
   );
 
-  const handleStoreTypeChange = (nextStoreType: StoreTypeValue) => {
+  // RETAILER and PROXY sellers expose contact channels + addresses; PERSON does not.
+  const showChannels = sellerType !== "PERSON";
+
+  const handleSellerTypeChange = (nextSellerType: SellerTypeValue) => {
     if (isEditMode) return;
-    setStoreType(nextStoreType);
-    if (nextStoreType === "PERSON") {
+    setSellerType(nextSellerType);
+    if (nextSellerType === "PERSON") {
+      // PERSON stores have no logo; drop any pending upload.
       setLogoSubmission({ action: "keep", file: null });
     } else {
+      // Only PERSON can be private; RETAILER and PROXY default to public.
       setIsPrivate(false);
+    }
+    if (nextSellerType === "PROXY") {
+      // A PROXY has no catalog; clear categories/stock so a stale selection is not submitted.
+      setSelectedProductTypeKeys([]);
+      setHasStock(false);
+      setReceivesOrders(false);
     }
   };
 
@@ -294,7 +306,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
     event.preventDefault();
     const nextFormData = new FormData(event.currentTarget);
 
-    if (storeType === "BUSINESS") {
+    if (showChannels) {
       nextFormData.set("logoAction", logoSubmission.action);
       if (logoSubmission.action === "set" && logoSubmission.file) {
         nextFormData.set("logoFile", logoSubmission.file, logoSubmission.file.name);
@@ -377,7 +389,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
 
   // Wizard step list. For PERSON the "Channels" step is omitted (no contact channels / addresses).
   const stepperSteps: StepperStep[] = useMemo(() => {
-    if (storeType === "BUSINESS") {
+    if (showChannels) {
       return [
         { n: 1, label: tCreateRedesign("step1.shortLabel") },
         { n: 2, label: tCreateRedesign("step2.shortLabel") },
@@ -392,7 +404,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
       { n: 3, label: tCreateRedesign("step3.shortLabel") },
       { n: 4, label: tCreateRedesign("step5.shortLabel") },
     ];
-  }, [storeType, tCreateRedesign]);
+  }, [showChannels, tCreateRedesign]);
 
   if (mode.kind === "create" && success) {
     return (
@@ -404,7 +416,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
     );
   }
 
-  const reviewStepN = storeType === "BUSINESS" ? 5 : 4;
+  const reviewStepN = showChannels ? 5 : 4;
   const handleStepperClick = (n: number) => wizardRef.current?.activate(n);
 
   // Submit button copy depends on mode.
@@ -425,7 +437,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
 
   const lockedCaption = isEditMode
     ? tEdit("immutableFieldsHelper", {
-        storeType: storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson"),
+        sellerType: tCreate(sellerTypeLabelKey(sellerType)),
         country: countryCode ? tCountries(countryCode) : "",
       })
     : null;
@@ -434,7 +446,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
     !showConfirmDuplicate && mode.kind === "create" && duplicateCandidates.length > 0 ? duplicateCandidates : [];
 
   const valuesSnapshot: StoreFormValuesSnapshot = {
-    storeType,
+    sellerType,
     isPrivate,
     name: nameValue,
     countryCode,
@@ -491,8 +503,8 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
 
       <form ref={formRef} onSubmit={handleFormSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
         {/* Hidden inputs that the server actions read regardless of which step renders them */}
-        <input type="hidden" name="storeType" value={storeType} />
-        {storeType === "PERSON" && isPrivate && <input type="hidden" name="isPrivate" value="on" />}
+        <input type="hidden" name="sellerType" value={sellerType} />
+        {sellerType === "PERSON" && isPrivate && <input type="hidden" name="isPrivate" value="on" />}
         {hasStock && <input type="hidden" name="hasStock" value="on" />}
         {receivesOrders && <input type="hidden" name="receivesOrders" value="on" />}
         {isEditMode && isClosed && <input type="hidden" name="closed" value="on" />}
@@ -542,16 +554,16 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
             <StoreFormStepType
               isEditMode={isEditMode}
               lockedCaption={lockedCaption}
-              storeType={storeType}
+              sellerType={sellerType}
               isPrivate={isPrivate}
-              onStoreTypeChange={handleStoreTypeChange}
+              onSellerTypeChange={handleSellerTypeChange}
               onIsPrivateChange={setIsPrivate}
             />
 
             <StoreFormStepIdentity
               isEditMode={isEditMode}
               lockedCaption={lockedCaption}
-              storeType={storeType}
+              sellerType={sellerType}
               nameValue={nameValue}
               onNameChange={handleNameChange}
               onNameBlur={handleNameBlur}
@@ -573,6 +585,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
 
             <StoreFormStepCatalog
               isEditMode={isEditMode}
+              sellerType={sellerType}
               requestModalSource={mode.kind === "create" ? "create" : "edit"}
               productTypes={productTypes}
               countryOptions={countryOptions}
@@ -591,7 +604,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
               onClientErrorsChange={setClientErrors}
             />
 
-            {storeType === "BUSINESS" && (
+            {showChannels && (
               <StoreFormStepChannels
                 isEditMode={isEditMode}
                 contactChannelEntries={contactChannelEntries}

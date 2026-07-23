@@ -47,7 +47,7 @@ Ship the public store listing and detail experience, including search, filters, 
 - `FR-04-17`: Public detail must resolve through the canonical route `/{locale}/stores/[slug]`.
 - `FR-04-18`: Public detail must show a pending disclaimer for `PENDING` stores.
 - `FR-04-19`: Public detail must show an inactivity warning for inactive stores.
-- `FR-04-20`: Business stores may expose public contact channels and public addresses.
+- `FR-04-20`: `RETAILER` and `PROXY` stores may expose public contact channels and public addresses.
 - `FR-04-21`: Person stores must not expose logo, public contact channels, or public addresses.
 - `FR-04-22`: Business-store detail payloads must include public contact and address data when present.
 - `FR-04-23`: Person-store detail payloads must omit those fields from the public payload.

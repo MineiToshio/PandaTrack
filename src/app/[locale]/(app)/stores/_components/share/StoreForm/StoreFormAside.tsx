@@ -4,7 +4,7 @@ import { Clock } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Chip from "@/components/core/Chip";
 import { AsideSummary, AsideSummaryRow } from "@/components/modules/AsideSummary";
-import type { StoreFormInitialSnapshot, StoreFormValuesSnapshot } from "./types";
+import { sellerTypeLabelKey, type StoreFormInitialSnapshot, type StoreFormValuesSnapshot } from "./types";
 
 type StoreFormAsideProps = {
   isEditMode: boolean;
@@ -20,7 +20,7 @@ export default function StoreFormAside({ isEditMode, values, initialValues }: St
     <AsideSummary eyebrow={tCreateRedesign("summaryEyebrow")} className="hidden lg:block">
       <AsideSummaryRow
         label={tCreateRedesign("aside.typeLabel")}
-        value={values.storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
+        value={tCreate(sellerTypeLabelKey(values.sellerType))}
       />
       <AsideSummaryRow
         label={tCreateRedesign("aside.nameLabel")}
@@ -34,17 +34,19 @@ export default function StoreFormAside({ isEditMode, values, initialValues }: St
         muted={!values.countryCode}
         changed={isEditMode && values.countryCode !== initialValues.countryCode}
       />
-      <AsideSummaryRow
-        label={tCreateRedesign("aside.categoriesLabel")}
-        value={values.productTypeKeys.length > 0 ? `${values.productTypeKeys.length}` : "—"}
-        muted={values.productTypeKeys.length === 0}
-        changed={
-          isEditMode &&
-          (values.productTypeKeys.length !== initialValues.productTypeKeys.length ||
-            values.productTypeKeys.some((k) => !initialValues.productTypeKeys.includes(k)))
-        }
-      />
-      {values.storeType === "BUSINESS" && (
+      {values.sellerType !== "PROXY" && (
+        <AsideSummaryRow
+          label={tCreateRedesign("aside.categoriesLabel")}
+          value={values.productTypeKeys.length > 0 ? `${values.productTypeKeys.length}` : "—"}
+          muted={values.productTypeKeys.length === 0}
+          changed={
+            isEditMode &&
+            (values.productTypeKeys.length !== initialValues.productTypeKeys.length ||
+              values.productTypeKeys.some((k) => !initialValues.productTypeKeys.includes(k)))
+          }
+        />
+      )}
+      {values.sellerType !== "PERSON" && (
         <AsideSummaryRow
           label={tCreateRedesign("aside.channelsLabel")}
           value={`${values.contactChannels.length}`}
@@ -52,7 +54,7 @@ export default function StoreFormAside({ isEditMode, values, initialValues }: St
           changed={isEditMode && values.contactChannels.length !== initialValues.contactChannelCount}
         />
       )}
-      {values.storeType === "BUSINESS" && (
+      {values.sellerType !== "PERSON" && (
         <AsideSummaryRow
           label={tCreateRedesign("aside.addressesLabel")}
           value={`${values.addresses.length}`}
@@ -60,7 +62,7 @@ export default function StoreFormAside({ isEditMode, values, initialValues }: St
           changed={isEditMode && values.addresses.length !== initialValues.addressCount}
         />
       )}
-      {values.storeType === "PERSON" && values.isPrivate && (
+      {values.sellerType === "PERSON" && values.isPrivate && (
         <AsideSummaryRow label={tCreateRedesign("step1.privateLabel")} value="✓" />
       )}
       <div className="flex items-center justify-between gap-3 py-2 [border-top:1px_solid_var(--border)]">

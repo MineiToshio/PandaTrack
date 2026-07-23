@@ -19,10 +19,11 @@ import {
 import InlineSwitch from "../InlineSwitch";
 import StoreProductTypeRequestModal from "../StoreProductTypeRequestModal";
 import FieldErrorMsg from "./FieldErrorMsg";
-import type { StoreCountryOption, StoreFormFieldErrors, StorePresenceType } from "./types";
+import type { SellerTypeValue, StoreCountryOption, StoreFormFieldErrors, StorePresenceType } from "./types";
 
 type StoreFormStepCatalogProps = {
   isEditMode: boolean;
+  sellerType: SellerTypeValue;
   requestModalSource: "create" | "edit";
   productTypes: { key: string }[];
   countryOptions: StoreCountryOption[];
@@ -43,6 +44,7 @@ type StoreFormStepCatalogProps = {
 
 export default function StoreFormStepCatalog({
   isEditMode,
+  sellerType,
   requestModalSource,
   productTypes,
   countryOptions,
@@ -66,6 +68,8 @@ export default function StoreFormStepCatalog({
   const tValidation = useTranslations("stores.validation");
   const tProductTypes = useTranslations("storeProductTypes");
 
+  // A PROXY is an intermediary with no catalog: no categories, stock, or pre-order signal.
+  const isProxy = sellerType === "PROXY";
   const hasPresenceError = !!fieldErrors.presenceTypes?.length;
   const hasProductTypeError = !!fieldErrors.productTypeKeys?.length;
 
@@ -94,6 +98,7 @@ export default function StoreFormStepCatalog({
     const stepErrors = validateCatalogStep({
       productTypeKeys: selectedProductTypeKeys,
       presenceTypes,
+      requireProductTypes: !isProxy,
     });
     onClientErrorsChange((prev) => mergeStepClientErrors(prev, CATALOG_STEP_FIELDS, stepErrors));
     return Object.keys(stepErrors).length === 0;
@@ -118,41 +123,45 @@ export default function StoreFormStepCatalog({
       validate={handleValidate}
     >
       <div className="space-y-5">
-        <div className="space-y-3">
-          <Label className={cn((hasProductTypeError || clientErrors.productTypeKeys) && "[color:var(--destructive)]")}>
-            {tCreate("productTypesLabel")}
-          </Label>
-          <Typography size="sm" className="[color:var(--text-muted)]">
-            {tCreateRedesign("step3.productTypesHelper")}
-          </Typography>
-          <div
-            data-field="productTypeKeys"
-            className={cn(
-              (hasProductTypeError || clientErrors.productTypeKeys) &&
-                "rounded-lg p-2 [border:1px_solid_var(--destructive)]",
-            )}
-          >
-            <ToggleChoiceGroup
-              mode="multiple"
-              options={productTypeOptions}
-              selectedValues={selectedProductTypeKeys}
-              onChange={onProductTypeKeysChange}
-              formName="productTypeKeys"
-              trailingSlot={
-                <StoreProductTypeRequestModal locale={locale} source={requestModalSource} triggerVariant="chip" />
-              }
-            />
-          </div>
-          {(fieldErrors.productTypeKeys?.[0] || clientErrors.productTypeKeys) && (
-            <FieldErrorMsg>
-              {tValidation(
-                (fieldErrors.productTypeKeys?.[0] ?? clientErrors.productTypeKeys) as
-                  | "productTypeRequired"
-                  | "productTypeInvalid",
+        {/* A PROXY has no catalog of its own, so the categories selection is hidden for it. */}
+        {!isProxy && (
+          <div className="space-y-3">
+            <Label
+              className={cn((hasProductTypeError || clientErrors.productTypeKeys) && "[color:var(--destructive)]")}
+            >
+              {tCreate("productTypesLabel")}
+            </Label>
+            <Typography size="sm" className="[color:var(--text-muted)]">
+              {tCreateRedesign("step3.productTypesHelper")}
+            </Typography>
+            <div
+              data-field="productTypeKeys"
+              className={cn(
+                (hasProductTypeError || clientErrors.productTypeKeys) &&
+                  "rounded-lg p-2 [border:1px_solid_var(--destructive)]",
               )}
-            </FieldErrorMsg>
-          )}
-        </div>
+            >
+              <ToggleChoiceGroup
+                mode="multiple"
+                options={productTypeOptions}
+                selectedValues={selectedProductTypeKeys}
+                onChange={onProductTypeKeysChange}
+                formName="productTypeKeys"
+                trailingSlot={
+                  <StoreProductTypeRequestModal locale={locale} source={requestModalSource} triggerVariant="chip" />
+                }
+              />
+            </div>
+            {(fieldErrors.productTypeKeys?.[0] || clientErrors.productTypeKeys) && (
+              <FieldErrorMsg>
+                {tValidation(
+                  (fieldErrors.productTypeKeys?.[0] ?? clientErrors.productTypeKeys) as
+                    "productTypeRequired" | "productTypeInvalid",
+                )}
+              </FieldErrorMsg>
+            )}
+          </div>
+        )}
 
         <div className="space-y-3">
           <Label className={cn((hasPresenceError || clientErrors.presenceTypes) && "[color:var(--destructive)]")}>
@@ -198,21 +207,24 @@ export default function StoreFormStepCatalog({
           />
         </div>
 
-        <div className="space-y-3">
-          <Label>{tCreateRedesign("step3.stockSectionLabel")}</Label>
-          <div className="flex flex-wrap gap-6">
-            <InlineSwitch
-              label={tCreateRedesign("step3.hasStockLabel")}
-              checked={hasStock}
-              onChange={onHasStockChange}
-            />
-            <InlineSwitch
-              label={tCreateRedesign("step3.receivesOrdersLabel")}
-              checked={receivesOrders}
-              onChange={onReceivesOrdersChange}
-            />
+        {/* Stock / pre-order signal does not apply to a PROXY, which sells no products of its own. */}
+        {!isProxy && (
+          <div className="space-y-3">
+            <Label>{tCreateRedesign("step3.stockSectionLabel")}</Label>
+            <div className="flex flex-wrap gap-6">
+              <InlineSwitch
+                label={tCreateRedesign("step3.hasStockLabel")}
+                checked={hasStock}
+                onChange={onHasStockChange}
+              />
+              <InlineSwitch
+                label={tCreateRedesign("step3.receivesOrdersLabel")}
+                checked={receivesOrders}
+                onChange={onReceivesOrdersChange}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </WizardStep>
   );

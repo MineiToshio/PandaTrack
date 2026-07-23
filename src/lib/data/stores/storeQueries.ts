@@ -49,7 +49,7 @@ export interface StoreDetail {
   name: string;
   description: string | null;
   status: StoreStatus;
-  storeType: "BUSINESS" | "PERSON";
+  sellerType: "RETAILER" | "PERSON" | "PROXY";
   countryCode: string;
   isActive: boolean;
   isPrivate: boolean;
@@ -62,11 +62,11 @@ export interface StoreDetail {
   presenceTypes: StorePresenceType[];
   productTypeKeys: string[];
   importCountryCodes: string[];
-  /** Only for BUSINESS stores; PERSON stores do not expose these. */
+  /** Exposed for RETAILER and PROXY sellers; PERSON sellers do not expose these. */
   logoUrl?: string | null;
-  /** Only for BUSINESS stores; public channels only. */
+  /** Exposed for RETAILER and PROXY sellers; public channels only. */
   contactChannels?: Array<{ type: StoreContactChannelType; value: string; label?: string | null }>;
-  /** Only for BUSINESS stores; public addresses only. */
+  /** Exposed for RETAILER and PROXY sellers; public addresses only. */
   addresses?: Array<{
     city?: string | null;
     addressLine: string;
@@ -79,7 +79,8 @@ export interface PublicStoreListingItem {
   name: string;
   countryCode: string;
   status: StoreStatus;
-  storeType: "BUSINESS" | "PERSON";
+  sellerType: "RETAILER" | "PERSON" | "PROXY";
+  logoUrl: string | null;
   presenceTypes: StorePresenceType[];
   productTypeKeys: string[];
   importCountryCodes: string[];
@@ -281,7 +282,8 @@ function mapPublicStoreListingItem(store: {
   name: string;
   countryCode: string;
   status: StoreStatus;
-  storeType: "BUSINESS" | "PERSON";
+  sellerType: "RETAILER" | "PERSON" | "PROXY";
+  logoUrl: string | null;
   receivesOrders: boolean | null;
   hasStock: boolean | null;
   averageRating: number | null;
@@ -296,7 +298,8 @@ function mapPublicStoreListingItem(store: {
     name: store.name,
     countryCode: store.countryCode,
     status: store.status,
-    storeType: store.storeType,
+    sellerType: store.sellerType,
+    logoUrl: store.logoUrl,
     presenceTypes: store.presences.map((p) => p.presenceType),
     productTypeKeys: store.productTypeAssignments.map((assignment) => assignment.productTypeKey),
     importCountryCodes: store.importCountries.map((country) => country.countryCode),
@@ -311,9 +314,7 @@ function mapPublicStoreListingItem(store: {
   };
 }
 
-export async function getPublicStoresListingPage(
-  filters: PublicStoreListingFilters,
-): Promise<PublicStoreListingPage> {
+export async function getPublicStoresListingPage(filters: PublicStoreListingFilters): Promise<PublicStoreListingPage> {
   const requestedPage = filters.page && Number.isInteger(filters.page) && filters.page > 0 ? filters.page : 1;
   const requestedPageSize =
     filters.pageSize && Number.isInteger(filters.pageSize) && filters.pageSize > 0
@@ -333,7 +334,8 @@ export async function getPublicStoresListingPage(
       name: true,
       countryCode: true,
       status: true,
-      storeType: true,
+      sellerType: true,
+      logoUrl: true,
       receivesOrders: true,
       hasStock: true,
       averageRating: true,
@@ -375,7 +377,7 @@ export async function countPublicStores(filters: PublicStoreListingFilters): Pro
 /**
  * Returns a public store by slug for the store detail page.
  * Pending stores are included so they can be discovered in-app; inactive stores are included and should show a warning.
- * Business vs person visibility: BUSINESS exposes logo, contact channels, and addresses; PERSON does not.
+ * Seller-type visibility: RETAILER and PROXY expose logo, contact channels, and addresses; PERSON does not.
  */
 export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> {
   const store = await prisma.store.findFirst({
@@ -390,7 +392,7 @@ export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> 
       name: true,
       description: true,
       status: true,
-      storeType: true,
+      sellerType: true,
       countryCode: true,
       isActive: true,
       isPrivate: true,
@@ -449,7 +451,7 @@ export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> 
     name: store.name,
     description: store.description,
     status: store.status,
-    storeType: store.storeType,
+    sellerType: store.sellerType,
     countryCode: store.countryCode,
     isActive: store.isActive,
     isPrivate: store.isPrivate,
@@ -464,7 +466,8 @@ export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> 
     importCountryCodes,
   };
 
-  if (store.storeType === "BUSINESS") {
+  // RETAILER and PROXY sellers expose logo, contact channels, and addresses; PERSON does not.
+  if (store.sellerType !== "PERSON") {
     return {
       ...base,
       logoUrl: store.logoUrl,
@@ -490,9 +493,7 @@ export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> 
  * Only PUBLIC, PENDING or APPROVED stores. Closed (inactive) stores are hidden by default and
  * only included when `includeClosed` is set; they remain reachable by direct URL (detail page shows warning).
  */
-export async function getPublicStoresListing(
-  filters: PublicStoreListingFilters,
-): Promise<PublicStoreListingItem[]> {
+export async function getPublicStoresListing(filters: PublicStoreListingFilters): Promise<PublicStoreListingItem[]> {
   const listingPage = await getPublicStoresListingPage(filters);
   return listingPage.items;
 }
@@ -590,10 +591,7 @@ export async function getPublicStoreReviews(
   return mapRowsToPublicStoreReviews(combinedRows, viewerUserId);
 }
 
-export async function getStoreViewerContext(
-  storeId: string,
-  userId: string,
-): Promise<StoreViewerContext> {
+export async function getStoreViewerContext(storeId: string, userId: string): Promise<StoreViewerContext> {
   const [review, note] = await Promise.all([
     prisma.storeReview.findUnique({
       where: {
@@ -651,10 +649,7 @@ export type ViewerStoreActivity = {
  * Only orders owned by `userId` at `storeId` are counted. Returns zeroed totals
  * when the viewer has not placed any order at this store.
  */
-export async function getViewerStoreActivity(
-  userId: string,
-  storeId: string,
-): Promise<ViewerStoreActivity> {
+export async function getViewerStoreActivity(userId: string, storeId: string): Promise<ViewerStoreActivity> {
   const orders = await prisma.order.findMany({
     where: { userId, storeId },
     select: { status: true, currencyCode: true, totalCost: true },

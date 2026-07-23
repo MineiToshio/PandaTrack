@@ -9,7 +9,7 @@ import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import { WizardStep } from "@/components/modules/WizardAccordion";
 import InlineSwitch from "../InlineSwitch";
-import type { StoreFormValuesSnapshot } from "./types";
+import { sellerTypeLabelKey, type StoreFormValuesSnapshot } from "./types";
 
 type StoreFormStepReviewProps = {
   n: number;
@@ -50,11 +50,8 @@ export default function StoreFormStepReview({
   const renderReviewSummary = () => (
     <div className="rounded-[var(--radius-lg)] p-4 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
       <dl className="grid [grid-template-columns:auto_1fr] items-baseline [gap:6px_16px] [font-size:var(--text-body)]">
-        <ReviewRow
-          label={tCreateRedesign("aside.typeLabel")}
-          value={values.storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
-        />
-        {values.storeType === "PERSON" && values.isPrivate && (
+        <ReviewRow label={tCreateRedesign("aside.typeLabel")} value={tCreate(sellerTypeLabelKey(values.sellerType))} />
+        {values.sellerType === "PERSON" && values.isPrivate && (
           <ReviewRow label={tCreateRedesign("step1.privateLabel")} value="✓" />
         )}
         <ReviewRow label={tCreateRedesign("aside.nameLabel")} value={values.name || "—"} />
@@ -63,10 +60,12 @@ export default function StoreFormStepReview({
           value={values.countryCode ? tCountries(values.countryCode) : "—"}
         />
         <ReviewSeparator />
-        <ReviewRow
-          label={tCreateRedesign("aside.categoriesLabel")}
-          value={values.productTypeKeys.map((k) => tProductTypes(k)).join(", ") || "—"}
-        />
+        {values.sellerType !== "PROXY" && (
+          <ReviewRow
+            label={tCreateRedesign("aside.categoriesLabel")}
+            value={values.productTypeKeys.map((k) => tProductTypes(k)).join(", ") || "—"}
+          />
+        )}
         <ReviewRow
           label={tCreateRedesign("aside.presenceLabel")}
           value={
@@ -83,10 +82,10 @@ export default function StoreFormStepReview({
             value={values.importCountries.map((code) => tCountries(code)).join(", ")}
           />
         )}
-        {values.storeType === "BUSINESS" && (values.contactChannels.length > 0 || values.addresses.length > 0) && (
+        {values.sellerType !== "PERSON" && (values.contactChannels.length > 0 || values.addresses.length > 0) && (
           <ReviewSeparator />
         )}
-        {values.storeType === "BUSINESS" && values.contactChannels.length > 0 && (
+        {values.sellerType !== "PERSON" && values.contactChannels.length > 0 && (
           <>
             <dt className="pt-0.5 [font-size:var(--text-caption)] [color:var(--text-muted)]">
               {tCreateRedesign("aside.channelsLabel")}
@@ -105,7 +104,7 @@ export default function StoreFormStepReview({
             </dd>
           </>
         )}
-        {values.storeType === "BUSINESS" && values.addresses.length > 0 && (
+        {values.sellerType !== "PERSON" && values.addresses.length > 0 && (
           <>
             <dt className="pt-0.5 [font-size:var(--text-caption)] [color:var(--text-muted)]">
               {tCreateRedesign("aside.addressesLabel")}
