@@ -14,5 +14,13 @@
   "arrivalOverdue": {
     "title": "Overdue arrival",
     "body": "Your package from {subject} is past its expected arrival. Time to follow up."
+  },
+  "storeRejected": {
+    "title": "Your store was not approved",
+    "body": "We reviewed {store} and did not approve it for the directory."
+  },
+  "storeRejectedAbuse": {
+    "title": "Your store was removed",
+    "body": "We removed {store} for breaking our policies."
   }
 }

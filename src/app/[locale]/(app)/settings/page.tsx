@@ -100,6 +100,7 @@ export default async function SettingsPage({ params, searchParams }: SettingsPag
               PAYMENT_DUE: notificationPreferences[NotificationType.PAYMENT_DUE],
               ARRIVAL_DUE: notificationPreferences[NotificationType.ARRIVAL_DUE],
               ARRIVAL_OVERDUE: notificationPreferences[NotificationType.ARRIVAL_OVERDUE],
+              STORE_REJECTED: notificationPreferences[NotificationType.STORE_REJECTED],
             }}
           />
         }

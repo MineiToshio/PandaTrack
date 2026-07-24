@@ -1,5 +1,6 @@
 import { getTodayStart, resolveTimeZone } from "@/lib/data/dashboard/dashboardPeriods";
 import { NotificationType } from "../../../generated/prisma/client";
+import type { ReminderNotificationType } from "@/lib/data/notifications/reminderCandidateQueries";
 import { REMINDER_ARRIVAL_LEAD_DAYS, REMINDER_PAYMENT_LEAD_DAYS } from "./reminderConstants";
 
 /**
@@ -15,7 +16,7 @@ import { REMINDER_ARRIVAL_LEAD_DAYS, REMINDER_PAYMENT_LEAD_DAYS } from "./remind
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /** Forward lead window, in days, for each "due" reminder type. */
-const LEAD_DAYS_BY_TYPE: Record<NotificationType, number> = {
+const LEAD_DAYS_BY_TYPE: Record<ReminderNotificationType, number> = {
   [NotificationType.PAYMENT_DUE]: REMINDER_PAYMENT_LEAD_DAYS,
   [NotificationType.ARRIVAL_DUE]: REMINDER_ARRIVAL_LEAD_DAYS,
   // Overdue is a "past" gate, not a forward window; the value is unused for it.
@@ -49,7 +50,7 @@ export function isOverdue(referenceDate: Date, todayStart: Date): boolean {
  * the overdue type uses the past gate. Candidate queries pre-filter coarsely in UTC,
  * so this is the single source of truth for inclusion.
  */
-export function isCandidateInWindow(type: NotificationType, dueDate: Date, todayStart: Date): boolean {
+export function isCandidateInWindow(type: ReminderNotificationType, dueDate: Date, todayStart: Date): boolean {
   if (type === NotificationType.ARRIVAL_OVERDUE) {
     return isOverdue(dueDate, todayStart);
   }

@@ -1,7 +1,7 @@
 import { NotificationType } from "../../../generated/prisma/client";
 import type { NotificationPreferenceMap } from "@/lib/data/notifications/notificationQueries";
 import type { RecordNotificationDeliveryInput } from "@/lib/data/notifications/notificationMutations";
-import type { ReminderCandidate } from "@/lib/data/notifications/reminderCandidateQueries";
+import type { ReminderCandidate, ReminderNotificationType } from "@/lib/data/notifications/reminderCandidateQueries";
 import type { PushMessagePayload, PushSendResult, PushSubscriptionTarget } from "@/lib/push";
 import { composeReminderPayload, type ReminderTranslator } from "./reminderPayload";
 import { isCandidateInWindow, resolveTodayStart } from "./reminderWindows";
@@ -24,7 +24,7 @@ export interface ReminderTypeSummary {
 
 /** The dispatch run summary returned to the route and reported to analytics. */
 export interface DispatchRunSummary {
-  byType: Record<NotificationType, ReminderTypeSummary>;
+  byType: Record<ReminderNotificationType, ReminderTypeSummary>;
   totals: ReminderTypeSummary;
 }
 

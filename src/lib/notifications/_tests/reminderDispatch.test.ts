@@ -10,6 +10,7 @@ const ALL_ENABLED: NotificationPreferenceMap = {
   [NotificationType.PAYMENT_DUE]: true,
   [NotificationType.ARRIVAL_DUE]: true,
   [NotificationType.ARRIVAL_OVERDUE]: true,
+  [NotificationType.STORE_REJECTED]: true,
 };
 
 const SUBSCRIPTION: DispatchSubscription = { endpoint: "https://push.example.com/a", p256dh: "p", auth: "a" };

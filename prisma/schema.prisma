@@ -114,11 +114,13 @@ enum NotificationType {
   PAYMENT_DUE
   ARRIVAL_DUE
   ARRIVAL_OVERDUE
+  STORE_REJECTED
 }
 
 enum NotificationSubjectType {
   ORDER
   DELIVERY
+  STORE
 }
 
 model User {
@@ -669,6 +671,7 @@ model NotificationPreference {
   paymentDueEnabled     Boolean  @default(true)
   arrivalDueEnabled     Boolean  @default(true)
   arrivalOverdueEnabled Boolean  @default(true)
+  storeRejectedEnabled  Boolean  @default(true)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)

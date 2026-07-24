@@ -302,6 +302,10 @@
       "ARRIVAL_OVERDUE": {
         "label": "Llegada atrasada",
         "helper": "Avísame cuando una llegada esperada ya haya pasado."
+      },
+      "STORE_REJECTED": {
+        "label": "Tienda rechazada",
+        "helper": "Avísame si un administrador rechaza o retira una tienda que creé."
       }
     },
     "test": {

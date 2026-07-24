@@ -29,6 +29,10 @@ export interface StoreModerationResult {
   status: StoreStatus;
   /** Prior status before the transition, useful for analytics and unflag derivation. */
   previousStatus: StoreStatus;
+  /** Creator of the store, so the action layer can notify them of a rejection. */
+  createdByUserId: string;
+  /** Store display name, used for creator-facing notification copy. */
+  name: string;
 }
 
 /** Common shape: the store to act on plus the resolved admin actor id (never taken from the client). */
@@ -47,6 +51,8 @@ const MODERATION_STORE_SELECT = {
   id: true,
   slug: true,
   status: true,
+  name: true,
+  createdByUserId: true,
   approvedAt: true,
   approvedByUserId: true,
 } satisfies Prisma.StoreSelect;
@@ -121,6 +127,8 @@ async function runModerationTransition(params: {
       slug: updated.slug,
       status: nextStatus,
       previousStatus: current.status,
+      createdByUserId: current.createdByUserId,
+      name: current.name,
     };
   });
 }

@@ -14,5 +14,13 @@
   "arrivalOverdue": {
     "title": "Llegada atrasada",
     "body": "Tu paquete de {subject} pasó su fecha estimada de llegada. Conviene hacer seguimiento."
+  },
+  "storeRejected": {
+    "title": "Tu tienda no fue aprobada",
+    "body": "Revisamos {store} y no la aprobamos para el directorio."
+  },
+  "storeRejectedAbuse": {
+    "title": "Tu tienda fue retirada",
+    "body": "Retiramos {store} por incumplir nuestras políticas."
   }
 }

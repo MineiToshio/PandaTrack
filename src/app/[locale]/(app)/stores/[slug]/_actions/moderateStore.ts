@@ -14,6 +14,7 @@ import {
   StoreModerationError,
   unflagStore,
 } from "@/lib/data/stores/storeModerationMutations";
+import { notifyStoreRejected } from "@/lib/notifications/storeRejectionNotifier";
 import { storeModerationSchema, storeRemovalSchema } from "../_schemas/storeModerationSchema";
 
 export type ModerateStoreResult = { success: true } | { success: false; error: string };
@@ -97,6 +98,23 @@ export async function removeStoreAction(input: unknown): Promise<ModerateStoreRe
       // Only the reason category is sent, never the free-text internal note.
       properties: { store_slug: result.slug, removal_reason: parsed.data.removalReason },
     });
+
+    // Notify the creator that their store was rejected. Awaited (not a fire-and-forget
+    // promise or post-response hook, which Vercel can terminate early) but fully isolated:
+    // any failure is swallowed so it never blocks or rolls back the moderation transition,
+    // which has already committed. Expected non-send outcomes (opt-out, no subscription,
+    // same-day duplicate) resolve silently inside the notifier and are not captured.
+    try {
+      await notifyStoreRejected({
+        creatorUserId: result.createdByUserId,
+        storeId: result.id,
+        storeName: result.name,
+        removalReason: parsed.data.removalReason,
+        locale: parsed.data.locale,
+      });
+    } catch (notifyError) {
+      Sentry.captureException(notifyError);
+    }
 
     revalidateStoreSurfaces(parsed.data.locale, result.slug);
     return { success: true };

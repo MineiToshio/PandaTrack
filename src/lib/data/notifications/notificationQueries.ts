@@ -12,6 +12,7 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferenceMap = {
   [NotificationType.PAYMENT_DUE]: true,
   [NotificationType.ARRIVAL_DUE]: true,
   [NotificationType.ARRIVAL_OVERDUE]: true,
+  [NotificationType.STORE_REJECTED]: true,
 };
 
 /**
@@ -36,6 +37,7 @@ export async function getNotificationPreferences(userId: string): Promise<Notifi
       paymentDueEnabled: true,
       arrivalDueEnabled: true,
       arrivalOverdueEnabled: true,
+      storeRejectedEnabled: true,
     },
   });
 
@@ -47,6 +49,7 @@ export async function getNotificationPreferences(userId: string): Promise<Notifi
     [NotificationType.PAYMENT_DUE]: row.paymentDueEnabled,
     [NotificationType.ARRIVAL_DUE]: row.arrivalDueEnabled,
     [NotificationType.ARRIVAL_OVERDUE]: row.arrivalOverdueEnabled,
+    [NotificationType.STORE_REJECTED]: row.storeRejectedEnabled,
   };
 }
 

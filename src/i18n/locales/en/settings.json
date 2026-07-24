@@ -302,6 +302,10 @@
       "ARRIVAL_OVERDUE": {
         "label": "Overdue arrival",
         "helper": "Alert me when an expected arrival is already past due."
+      },
+      "STORE_REJECTED": {
+        "label": "Store rejected",
+        "helper": "Notify me if an administrator rejects or removes a store I created."
       }
     },
     "test": {
