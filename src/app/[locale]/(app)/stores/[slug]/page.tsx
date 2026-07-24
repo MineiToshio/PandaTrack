@@ -12,6 +12,7 @@ import {
   getStoreGovernanceSummary,
   getStoreGovernanceViewerContext,
 } from "@/lib/data/stores/storeGovernanceQueries";
+import { getAdminOpenStoreReports } from "@/lib/data/admin/adminStoreReportQueries";
 import { buildStoreDetailMetadata } from "@/lib/seo";
 import { safeRelativeReturnTo } from "@/lib/navigation/safeRelativeReturnTo";
 import StoreDetailContent from "./_components/StoreDetailContent";
@@ -57,17 +58,21 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
   if (store.isPrivate && !isAdmin && store.createdByUserId !== session?.user?.id) {
     notFound();
   }
-  const [reviews, viewerContext, governanceSummary, governanceViewerContext, viewerActivity] = await Promise.all([
-    session?.user?.id ? getPublicStoreReviews(store.id, session.user.id, store.reviewCount) : [],
-    session?.user?.id ? getStoreViewerContext(store.id, session.user.id) : { review: null, note: null },
-    getStoreGovernanceSummary(store.id),
-    session?.user?.id
-      ? getStoreGovernanceViewerContext(store.id, session.user.id)
-      : { openReport: null, openChangeRequest: null },
-    session?.user?.id
-      ? getViewerStoreActivity(session.user.id, store.id)
-      : ({ ordersTotal: 0, ordersActive: 0, totalSpentByCurrency: [] } satisfies ViewerStoreActivity),
-  ]);
+  const [reviews, viewerContext, governanceSummary, governanceViewerContext, viewerActivity, adminOpenReports] =
+    await Promise.all([
+      session?.user?.id ? getPublicStoreReviews(store.id, session.user.id, store.reviewCount) : [],
+      session?.user?.id ? getStoreViewerContext(store.id, session.user.id) : { review: null, note: null },
+      getStoreGovernanceSummary(store.id),
+      session?.user?.id
+        ? getStoreGovernanceViewerContext(store.id, session.user.id)
+        : { openReport: null, openChangeRequest: null },
+      session?.user?.id
+        ? getViewerStoreActivity(session.user.id, store.id)
+        : ({ ordersTotal: 0, ordersActive: 0, totalSpentByCurrency: [] } satisfies ViewerStoreActivity),
+      // Admin-only read of raw report free-text and reporter identity. Gated by `isAdmin` so a
+      // non-admin request never triggers it; the public read model is never widened (BR-04-25).
+      isAdmin ? getAdminOpenStoreReports(store.id) : undefined,
+    ]);
 
   const canAccessEditRoute = session?.user?.id != null;
   const canDirectlyEdit = Boolean(
@@ -86,6 +91,7 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
       governanceSummary={governanceSummary}
       governanceViewerContext={governanceViewerContext}
       viewerActivity={viewerActivity}
+      adminOpenReports={adminOpenReports}
       canAccessEditRoute={canAccessEditRoute}
       canDirectlyEdit={canDirectlyEdit}
       canModerate={isAdmin}

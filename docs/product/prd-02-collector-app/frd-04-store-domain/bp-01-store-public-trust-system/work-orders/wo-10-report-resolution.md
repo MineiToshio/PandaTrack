@@ -7,7 +7,7 @@ status: ACTIVE
 parent: BP-01
 source_features: []
 source_issue: 132
-implementation_status: PLANNED
+implementation_status: IN_PROGRESS
 last_updated: 2026-07-23
 ---
 

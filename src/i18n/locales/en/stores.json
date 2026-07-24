@@ -242,6 +242,18 @@
       "unflagged": "Reports flag removed.",
       "removed": "Store removed."
     },
+    "reports": {
+      "sectionTitle": "Open reports",
+      "reportedBy": "Reported by @{username}",
+      "adminOnlyCaption": "Details and author are visible to administrators only.",
+      "noDetails": "No additional details.",
+      "resolveCta": "Resolve",
+      "dismissCta": "Dismiss",
+      "toasts": {
+        "resolved": "Report resolved.",
+        "dismissed": "Report dismissed."
+      }
+    },
     "removeModal": {
       "title": "Remove store",
       "description": "Choose the reason. The store stops being public, but the orders that reference it are kept.",
@@ -266,6 +278,8 @@
       "noteTooLong": "The internal note is too long.",
       "slugRequired": "The store could not be identified.",
       "localeRequired": "The language could not be identified.",
+      "reportRequired": "The report could not be identified.",
+      "reportNotFound": "This report is no longer available.",
       "validation_failed": "Check the form and try again.",
       "moderationFailed": "The action could not be completed. Try again."
     }

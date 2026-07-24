@@ -59,6 +59,22 @@ async function createBusinessStoreAndOpenDetail(page: Page, name: string): Promi
   return page.url();
 }
 
+/**
+ * Files one open report on the store detail page currently shown, then reloads so the governance
+ * banner (which only renders when the store has reports) appears. Any signed-in user can report.
+ */
+async function fileOpenReport(page: Page): Promise<void> {
+  await page.getByRole("button", { name: /report store/i }).click();
+  const reportDialog = page.getByRole("dialog", { name: /report/i });
+  await expect(reportDialog).toBeVisible();
+  await reportDialog.getByRole("radio", { name: /spam or scam/i }).click();
+  await reportDialog.getByRole("button", { name: /save report/i }).click();
+  // The modal shows an inline success status; close it and reload to surface the governance banner.
+  await expect(reportDialog.getByRole("status")).toBeVisible({ timeout: 10_000 });
+  await page.keyboard.press("Escape");
+  await page.reload();
+}
+
 test.describe("Store moderation", () => {
   test.describe.configure({ mode: "serial" });
 
@@ -123,5 +139,62 @@ test.describe("Store moderation", () => {
 
     // The removed store leaves every public surface, so the admin is routed back to the listing.
     await expect(page).toHaveURL(/\/en\/stores(\/)?(\?.*)?$/, { timeout: 15_000 });
+  });
+
+  test("an admin resolves an open report from the governance panel (AC-04-24)", async ({ page }) => {
+    skipUnlessAdminEnv();
+    await signInAsAdmin(page);
+
+    await createBusinessStoreAndOpenDetail(page, `E2E Report Resolve ${Date.now()}`);
+    await fileOpenReport(page);
+
+    await page.getByRole("button", { name: /view summary/i }).click();
+    const summaryDialog = page.getByRole("dialog", { name: /reports and suggestions/i });
+    await expect(summaryDialog).toBeVisible();
+
+    // The admin-only open-reports section exposes the raw detail and the reporter identity.
+    await expect(summaryDialog.getByText(/reported by @/i)).toBeVisible();
+
+    const resolveButton = summaryDialog.getByRole("button", { name: /^resolve$/i }).first();
+    await expect(resolveButton).toBeVisible();
+    await resolveButton.click();
+
+    // Optimistic: the resolved row leaves the list immediately; the modal stays open.
+    await expect(summaryDialog.getByRole("button", { name: /^resolve$/i })).toHaveCount(0, { timeout: 10_000 });
+    await expect(summaryDialog).toBeVisible();
+  });
+
+  test("an admin dismisses an open report from the governance panel (AC-04-24)", async ({ page }) => {
+    skipUnlessAdminEnv();
+    await signInAsAdmin(page);
+
+    await createBusinessStoreAndOpenDetail(page, `E2E Report Dismiss ${Date.now()}`);
+    await fileOpenReport(page);
+
+    await page.getByRole("button", { name: /view summary/i }).click();
+    const summaryDialog = page.getByRole("dialog", { name: /reports and suggestions/i });
+    await expect(summaryDialog).toBeVisible();
+
+    const dismissButton = summaryDialog.getByRole("button", { name: /^dismiss$/i }).first();
+    await expect(dismissButton).toBeVisible();
+    await dismissButton.click();
+
+    await expect(summaryDialog.getByRole("button", { name: /^dismiss$/i })).toHaveCount(0, { timeout: 10_000 });
+  });
+
+  test("a non-admin does not see the admin open-reports section (AC-04-25)", async ({ page }) => {
+    skipUnlessAuthenticatedEnv();
+    await signInAndLandOnDashboard(page);
+
+    await createBusinessStoreAndOpenDetail(page, `E2E Report NonAdmin ${Date.now()}`);
+    await fileOpenReport(page);
+
+    await page.getByRole("button", { name: /view summary/i }).click();
+    const summaryDialog = page.getByRole("dialog", { name: /reports and suggestions/i });
+    await expect(summaryDialog).toBeVisible();
+
+    // BR-04-25: the reporter identity and the admin resolve control never reach a non-admin viewer.
+    await expect(summaryDialog.getByText(/reported by @/i)).toHaveCount(0);
+    await expect(summaryDialog.getByRole("button", { name: /^resolve$/i })).toHaveCount(0);
   });
 });

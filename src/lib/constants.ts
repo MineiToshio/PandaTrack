@@ -208,6 +208,8 @@ export const POSTHOG_EVENTS = {
     REMOVED: "store_removed",
     FLAGGED: "store_flagged",
     UNFLAGGED: "store_unflagged",
+    REPORT_RESOLVED: "store_report_resolved",
+    REPORT_DISMISSED: "store_report_dismissed",
   },
   NAVIGATION: {
     VIEW_TRANSITION_NAVIGATED: "view_transition_navigated",

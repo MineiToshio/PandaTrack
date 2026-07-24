@@ -242,6 +242,18 @@
       "unflagged": "Se quitó la marca de reportes.",
       "removed": "Tienda retirada."
     },
+    "reports": {
+      "sectionTitle": "Reportes abiertos",
+      "reportedBy": "Reportado por @{username}",
+      "adminOnlyCaption": "Detalles y autor visibles solo para administradores.",
+      "noDetails": "Sin detalles adicionales.",
+      "resolveCta": "Resolver",
+      "dismissCta": "Descartar",
+      "toasts": {
+        "resolved": "Reporte resuelto.",
+        "dismissed": "Reporte descartado."
+      }
+    },
     "removeModal": {
       "title": "Retirar tienda",
       "description": "Elige el motivo. La tienda deja de ser pública, pero los pedidos que la referencian se conservan.",
@@ -266,6 +278,8 @@
       "noteTooLong": "La nota interna es demasiado larga.",
       "slugRequired": "No se pudo identificar la tienda.",
       "localeRequired": "No se pudo identificar el idioma.",
+      "reportRequired": "No se pudo identificar el reporte.",
+      "reportNotFound": "Este reporte ya no está disponible.",
       "validation_failed": "Revisa el formulario e inténtalo otra vez.",
       "moderationFailed": "No se pudo completar la acción. Inténtalo otra vez."
     }

@@ -47,6 +47,7 @@ import type {
   StoreGovernanceSummary,
   StoreGovernanceViewerContext,
 } from "@/lib/data/stores/storeGovernanceQueries";
+import type { AdminOpenStoreReport } from "@/lib/data/admin/adminStoreReportQueries";
 import StoreHero from "../../_components/share/StoreHero";
 import CollapsibleSection from "@/components/modules/CollapsibleSection";
 import StorePublicReviewsSection from "./StorePublicReviewsSection";
@@ -66,6 +67,11 @@ type StoreDetailContentProps = {
   governanceSummary: StoreGovernanceSummary;
   governanceViewerContext: StoreGovernanceViewerContext;
   viewerActivity: ViewerStoreActivity;
+  /**
+   * Open reports with reporter identity and raw free-text, populated only when the viewer is an
+   * administrator. Absent for every non-admin viewer, so no admin read is exposed to the client.
+   */
+  adminOpenReports?: AdminOpenStoreReport[];
   canAccessEditRoute: boolean;
   canDirectlyEdit: boolean;
   /** When true, the viewer is an administrator and the admin moderation panel is rendered. */
@@ -113,6 +119,7 @@ export default function StoreDetailContent({
   governanceSummary,
   governanceViewerContext,
   viewerActivity,
+  adminOpenReports,
   canAccessEditRoute,
   canDirectlyEdit,
   canModerate,
@@ -199,6 +206,7 @@ export default function StoreDetailContent({
             triggerVariant="banner"
             viewerOpenReport={governanceViewerContext.openReport}
             viewerOpenChangeRequest={governanceViewerContext.openChangeRequest}
+            adminReports={adminOpenReports}
           />
         )}
 

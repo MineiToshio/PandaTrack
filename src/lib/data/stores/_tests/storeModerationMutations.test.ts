@@ -6,6 +6,10 @@ const { prismaMock, txMock } = vi.hoisted(() => {
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    storeReport: {
+      findUnique: vi.fn(),
+      update: vi.fn(),
+    },
   };
   return {
     txMock,
@@ -23,7 +27,15 @@ vi.mock("@/lib/data/admin/adminAuditMutations", () => ({
   writeAuditEntry: (...args: unknown[]) => writeAuditEntryMock(...args),
 }));
 
-import { approveStore, flagStore, removeStore, StoreModerationError, unflagStore } from "../storeModerationMutations";
+import {
+  approveStore,
+  dismissStoreReport,
+  flagStore,
+  removeStore,
+  resolveStoreReport,
+  StoreModerationError,
+  unflagStore,
+} from "../storeModerationMutations";
 
 type StoreRow = {
   id: string;
@@ -181,5 +193,85 @@ describe("unflagStore", () => {
     await expect(unflagStore({ storeId: "store-1", actorId: ACTOR })).rejects.toMatchObject({
       code: "invalidTransition",
     });
+  });
+});
+
+type ReportRow = { id: string; status: "OPEN" | "REVIEWED" | "DISMISSED" };
+
+function mockCurrentReport(row: ReportRow) {
+  txMock.storeReport.findUnique.mockResolvedValue(row);
+  txMock.storeReport.update.mockImplementation(async ({ data }: { data: { status: ReportRow["status"] } }) => ({
+    id: row.id,
+    status: data.status,
+  }));
+}
+
+describe("resolveStoreReport", () => {
+  it("moves an OPEN report to REVIEWED and audits report.resolve inside the transaction", async () => {
+    mockCurrentReport({ id: "report-1", status: "OPEN" });
+
+    const result = await resolveStoreReport({ reportId: "report-1", actorId: ACTOR });
+
+    expect(result).toMatchObject({ status: "REVIEWED", previousStatus: "OPEN" });
+    expect(txMock.storeReport.update.mock.calls[0][0].data).toEqual({ status: "REVIEWED" });
+
+    expect(writeAuditEntryMock).toHaveBeenCalledTimes(1);
+    const [auditInput, tx] = writeAuditEntryMock.mock.calls[0];
+    expect(auditInput).toMatchObject({
+      actorId: ACTOR,
+      action: "report.resolve",
+      targetType: "report",
+      targetId: "report-1",
+    });
+    // The audit write receives the transaction client so it is atomic with the report update.
+    expect(tx).toBe(txMock);
+  });
+
+  it("throws reportNotFound when the report does not exist", async () => {
+    txMock.storeReport.findUnique.mockResolvedValue(null);
+
+    await expect(resolveStoreReport({ reportId: "missing", actorId: ACTOR })).rejects.toBeInstanceOf(
+      StoreModerationError,
+    );
+    await expect(resolveStoreReport({ reportId: "missing", actorId: ACTOR })).rejects.toMatchObject({
+      code: "reportNotFound",
+    });
+    expect(txMock.storeReport.update).not.toHaveBeenCalled();
+    expect(writeAuditEntryMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects resolving a report that is not OPEN without writing anything", async () => {
+    mockCurrentReport({ id: "report-1", status: "REVIEWED" });
+
+    await expect(resolveStoreReport({ reportId: "report-1", actorId: ACTOR })).rejects.toMatchObject({
+      code: "invalidTransition",
+    });
+    expect(txMock.storeReport.update).not.toHaveBeenCalled();
+    expect(writeAuditEntryMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("dismissStoreReport", () => {
+  it("moves an OPEN report to DISMISSED and audits report.dismiss inside the transaction", async () => {
+    mockCurrentReport({ id: "report-2", status: "OPEN" });
+
+    const result = await dismissStoreReport({ reportId: "report-2", actorId: ACTOR });
+
+    expect(result).toMatchObject({ status: "DISMISSED", previousStatus: "OPEN" });
+    expect(txMock.storeReport.update.mock.calls[0][0].data).toEqual({ status: "DISMISSED" });
+    expect(writeAuditEntryMock.mock.calls[0][0]).toMatchObject({
+      action: "report.dismiss",
+      targetType: "report",
+      targetId: "report-2",
+    });
+  });
+
+  it("rejects dismissing an already-DISMISSED report", async () => {
+    mockCurrentReport({ id: "report-2", status: "DISMISSED" });
+
+    await expect(dismissStoreReport({ reportId: "report-2", actorId: ACTOR })).rejects.toMatchObject({
+      code: "invalidTransition",
+    });
+    expect(writeAuditEntryMock).not.toHaveBeenCalled();
   });
 });

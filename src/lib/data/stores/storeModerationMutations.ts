@@ -1,14 +1,14 @@
-import type { Prisma, StoreRemovalReason, StoreStatus } from "../../../../generated/prisma/client";
+import type { Prisma, StoreRemovalReason, StoreReportStatus, StoreStatus } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AUDIT_ACTIONS, AUDIT_TARGET_TYPES, type AuditAction } from "@/lib/data/admin/adminAuditVocabulary";
 import { writeAuditEntry } from "@/lib/data/admin/adminAuditMutations";
 
 /**
- * Expected outcomes of a moderation mutation that are not bugs: the store no longer exists, or the
- * requested transition is not valid from the store's current status. Callers translate these into a
- * user-facing message; they must not be reported to Sentry.
+ * Expected outcomes of a moderation mutation that are not bugs: the store or report no longer
+ * exists, or the requested transition is not valid from the current status. Callers translate these
+ * into a user-facing message; they must not be reported to Sentry.
  */
-export type StoreModerationErrorCode = "storeNotFound" | "invalidTransition";
+export type StoreModerationErrorCode = "storeNotFound" | "reportNotFound" | "invalidTransition";
 
 export class StoreModerationError extends Error {
   readonly code: StoreModerationErrorCode;
@@ -165,6 +165,96 @@ export async function removeStore(input: RemoveStoreInput): Promise<StoreModerat
         },
       };
     },
+  });
+}
+
+/** Result of a report resolution transition, mirroring {@link StoreModerationResult} for stores. */
+export interface StoreReportModerationResult {
+  id: string;
+  status: StoreReportStatus;
+  /** Prior status before the transition, useful for analytics. */
+  previousStatus: StoreReportStatus;
+}
+
+/** Shared shape for a report resolution: which report, the admin actor, and an optional note. */
+interface ReportModerationInput {
+  reportId: string;
+  actorId: string;
+  /** Optional non-sensitive moderator note persisted on the audit entry only. */
+  note?: string | null;
+}
+
+/**
+ * Moves an `OPEN` `StoreReport` to a resolved status and appends the matching audit entry inside a
+ * single transaction, so no orphaned or missing audit rows are possible. A missing row throws
+ * `reportNotFound`; a non-`OPEN` report throws `invalidTransition`, both before any write. The actor
+ * id must come from `requireAdmin()` at the action layer, never from the client. Report resolution
+ * accountability is audit-only (no reviewer columns on `StoreReport`): the actor and time live on
+ * the `report.resolve` / `report.dismiss` audit entry.
+ */
+async function runReportResolution(params: {
+  reportId: string;
+  actorId: string;
+  action: AuditAction;
+  nextStatus: Extract<StoreReportStatus, "REVIEWED" | "DISMISSED">;
+  note?: string | null;
+}): Promise<StoreReportModerationResult> {
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.storeReport.findUnique({
+      where: { id: params.reportId },
+      select: { id: true, status: true },
+    });
+    if (!current) {
+      throw new StoreModerationError("reportNotFound");
+    }
+    if (current.status !== "OPEN") {
+      throw new StoreModerationError("invalidTransition");
+    }
+
+    const updated = await tx.storeReport.update({
+      where: { id: current.id },
+      data: { status: params.nextStatus },
+      select: { id: true, status: true },
+    });
+
+    await writeAuditEntry(
+      {
+        actorId: params.actorId,
+        action: params.action,
+        targetType: AUDIT_TARGET_TYPES.REPORT,
+        targetId: current.id,
+        reason: params.note ?? null,
+      },
+      tx,
+    );
+
+    return {
+      id: updated.id,
+      status: updated.status,
+      previousStatus: current.status,
+    };
+  });
+}
+
+/** Resolves an `OPEN` report (`OPEN` to `REVIEWED`); frees the reporter to file a new report. */
+export async function resolveStoreReport(input: ReportModerationInput): Promise<StoreReportModerationResult> {
+  return runReportResolution({
+    reportId: input.reportId,
+    actorId: input.actorId,
+    action: AUDIT_ACTIONS.REPORT_RESOLVE,
+    nextStatus: "REVIEWED",
+    note: input.note,
+  });
+}
+
+/** Dismisses an `OPEN` report (`OPEN` to `DISMISSED`); frees the reporter to file a new report. */
+export async function dismissStoreReport(input: ReportModerationInput): Promise<StoreReportModerationResult> {
+  return runReportResolution({
+    reportId: input.reportId,
+    actorId: input.actorId,
+    action: AUDIT_ACTIONS.REPORT_DISMISS,
+    nextStatus: "DISMISSED",
+    note: input.note,
   });
 }
 

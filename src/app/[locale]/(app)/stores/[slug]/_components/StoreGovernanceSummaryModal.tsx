@@ -3,16 +3,23 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Flag, GitPullRequestArrow, MessageSquareWarning, Pencil, Scale, Users } from "lucide-react";
+import { Flag, GitPullRequestArrow, Lock, MessageSquareWarning, Pencil, Scale, ShieldAlert, Users } from "lucide-react";
 import posthog from "posthog-js";
 import Button from "@/components/core/Button/Button";
 import { buttonVariants } from "@/components/core/Button/buttonVariants";
 import Typography from "@/components/core/Typography";
 import Modal from "@/components/modules/Modal/Modal";
+import { useToast } from "@/contexts/ToastContext";
 import { getPosthogDataAttributes } from "@/lib/analytics/posthogDataAttributes";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import type { StoreGovernanceSummary, StoreGovernanceViewerContext } from "@/lib/data/stores/storeGovernanceQueries";
+import type { AdminOpenStoreReport } from "@/lib/data/admin/adminStoreReportQueries";
+import {
+  dismissStoreReportAction,
+  resolveStoreReportAction,
+  type ModerateStoreReportResult,
+} from "../_actions/moderateStoreReport";
 import StoreReportModal from "./StoreReportModal";
 
 type StoreGovernanceSummaryModalProps = {
@@ -30,6 +37,12 @@ type StoreGovernanceSummaryModalProps = {
   showTopSeparator?: boolean;
   viewerOpenReport: StoreGovernanceViewerContext["openReport"];
   viewerOpenChangeRequest: StoreGovernanceViewerContext["openChangeRequest"];
+  /**
+   * Open reports with reporter identity and raw free-text, present only when the viewer is an
+   * administrator. When present, the admin resolution section renders; when absent (every non-admin
+   * viewer), it does not and no admin data reaches the client.
+   */
+  adminReports?: AdminOpenStoreReport[];
 };
 
 export default function StoreGovernanceSummaryModal({
@@ -41,10 +54,17 @@ export default function StoreGovernanceSummaryModal({
   showTopSeparator = false,
   viewerOpenReport,
   viewerOpenChangeRequest,
+  adminReports,
 }: StoreGovernanceSummaryModalProps) {
   const t = useTranslations("stores");
+  const { addToast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [reportModalOpenRequest, setReportModalOpenRequest] = useState(0);
+  // Optimistic resolution: an id here is hidden from the admin list immediately on action. On
+  // failure it is removed from the set (row restored); on success the server revalidation drops it
+  // from `adminReports` for good. The modal stays open so several reports can be resolved in a row.
+  const [pendingResolvedReportIds, setPendingResolvedReportIds] = useState<ReadonlySet<string>>(new Set());
+  const [resolvingReportId, setResolvingReportId] = useState<string | null>(null);
 
   const viewerChangeFieldKeys = useMemo(() => {
     if (!viewerOpenChangeRequest) return [];
@@ -100,11 +120,65 @@ export default function StoreGovernanceSummaryModal({
   // The community section's pending count includes the viewer's own request when present,
   // so we surface that fact in the caption instead of letting the user infer it.
   const communityIncludesViewerChangeRequest = viewerOpenChangeRequest != null && hasCommunityChangeRequests;
+  // Admin-only open reports still awaiting a resolution, minus any optimistically resolved this
+  // session. Empty for every non-admin viewer (the prop is absent).
+  const visibleAdminReports = useMemo(
+    () => (adminReports ?? []).filter((report) => !pendingResolvedReportIds.has(report.id)),
+    [adminReports, pendingResolvedReportIds],
+  );
+
   const hasAnyContent =
     viewerOpenReport != null ||
     summary.totalReports > 0 ||
     viewerOpenChangeRequest != null ||
-    hasCommunityChangeRequests;
+    hasCommunityChangeRequests ||
+    visibleAdminReports.length > 0;
+
+  const translateReportError = (errorKey: string) =>
+    t.has(`moderation.errors.${errorKey}`)
+      ? t(`moderation.errors.${errorKey}`)
+      : t("moderation.errors.moderationFailed");
+
+  /** Optimistic resolve / dismiss: hide the row, run the action, restore it and toast on failure. */
+  const runReportResolution = async (
+    reportId: string,
+    action: () => Promise<ModerateStoreReportResult>,
+    successToastKey: string,
+  ) => {
+    if (resolvingReportId != null) return;
+    setResolvingReportId(reportId);
+    setPendingResolvedReportIds((current) => new Set(current).add(reportId));
+
+    const result = await action();
+
+    if (result.success) {
+      addToast(t(successToastKey), { variant: "success" });
+    } else {
+      setPendingResolvedReportIds((current) => {
+        const next = new Set(current);
+        next.delete(reportId);
+        return next;
+      });
+      addToast(translateReportError(result.error), { variant: "error" });
+    }
+    setResolvingReportId(null);
+  };
+
+  const handleResolveReport = (reportId: string) => {
+    void runReportResolution(
+      reportId,
+      () => resolveStoreReportAction({ slug: storeSlug, locale, reportId }),
+      "moderation.reports.toasts.resolved",
+    );
+  };
+
+  const handleDismissReport = (reportId: string) => {
+    void runReportResolution(
+      reportId,
+      () => dismissStoreReportAction({ slug: storeSlug, locale, reportId }),
+      "moderation.reports.toasts.dismissed",
+    );
+  };
 
   const handleOpenReportEditor = () => {
     setIsOpen(false);
@@ -248,6 +322,66 @@ export default function StoreGovernanceSummaryModal({
                 <p className="m-0 mt-2 [font-size:11.5px] [color:var(--text-muted)]">
                   {t("governance.summary.communityPrivacyNote")}
                 </p>
+              </SectionGroup>
+            )}
+
+            {/* ─── Reportes abiertos (solo admin) ─────────────────────────── */}
+            {visibleAdminReports.length > 0 && (
+              <SectionGroup
+                icon={<ShieldAlert size={14} aria-hidden="true" />}
+                eyebrow={t("moderation.reports.sectionTitle")}
+              >
+                <div className="space-y-2.5">
+                  {visibleAdminReports.map((report) => (
+                    <div
+                      key={report.id}
+                      className="space-y-2.5 rounded-[10px] px-3.5 py-3 [background:color-mix(in_oklch,var(--warning)_7%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--warning)_20%,transparent)]"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="inline-flex items-center rounded-full px-2 py-0.5 [font-size:11px] [font-weight:500] [color:var(--warning)] [background:color-mix(in_oklch,var(--warning)_14%,transparent)] [border:1px_solid_color-mix(in_oklch,var(--warning)_25%,transparent)]">
+                          {t(`governance.report.reasonOptions.${report.reason}`)}
+                        </span>
+                        <span className="shrink-0 [font-size:11px] [color:var(--text-muted)]">
+                          {formatRelativeShort(locale, new Date(report.createdAt))}
+                        </span>
+                      </div>
+                      <p className="m-0 [font-size:13px] [line-height:1.5] [color:var(--text-secondary)]">
+                        {report.details ? (
+                          <>&ldquo;{report.details}&rdquo;</>
+                        ) : (
+                          <span className="[color:var(--text-muted)] italic">{t("moderation.reports.noDetails")}</span>
+                        )}
+                      </p>
+                      <p className="m-0 [font-size:12px] [color:var(--text-primary)]">
+                        {t("moderation.reports.reportedBy", { username: report.reporter.username })}
+                      </p>
+                      <p className="m-0 inline-flex items-center gap-1.5 [font-size:11px] [color:var(--text-muted)]">
+                        <Lock size={11} aria-hidden="true" />
+                        {t("moderation.reports.adminOnlyCaption")}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleResolveReport(report.id)}
+                          disabled={resolvingReportId != null}
+                        >
+                          {t("moderation.reports.resolveCta")}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDismissReport(report.id)}
+                          disabled={resolvingReportId != null}
+                        >
+                          {t("moderation.reports.dismissCta")}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </SectionGroup>
             )}
 
