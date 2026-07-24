@@ -9,7 +9,7 @@ children:
   - WO-01
   - WO-02
   - WO-03
-last_updated: 2026-07-23
+last_updated: 2026-07-24
 implementation_status: PLANNED
 ---
 
@@ -78,8 +78,8 @@ This blueprint describes how to build the admin surface defined in [FRD-02](../f
 
 - The inbox read is server-only and admin-only; it composes the existing per-store governance reads rather than widening the public model.
 - The read groups open reports per store and derives a flag-candidate (suggested-removal) row when a store's open-report count reaches a threshold of 2 or more; that derived row collapses the store's individual report rows into one in the queue. The threshold is a named constant, to be promoted to `src/lib/constants.ts` at implementation time rather than repeated as a literal.
-- Items are ordered by impact: derived flag-candidate rows and other reported or removable stores first, then pending stores and change requests, then product-type suggestions. Flag candidates are a derived queue row, not a fifth persisted aggregation category; the four persisted categories stay pending stores, open reports, pending change requests, and pending product-type requests.
-- The same read shapes both the queue row and the selected item's per-type review payload, so the two never drift apart.
+- Items are ordered by impact in five tiers, highest first: flag candidate (suggested removal), open reports, pending stores, change requests, product-type suggestions; within a tier, oldest first. Flag candidates are a derived queue row, not a fifth persisted aggregation category; the four persisted categories stay pending stores, open reports, pending change requests, and pending product-type requests.
+- The same read shapes both the queue row and the selected item's per-type review payload, so the two never drift apart. The change-request review payload reuses the two-value drift cut already shipped by PRD-02, FRD-04 · [WO-11](../../../prd-02-collector-app/frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-11-change-request-review.md) (current value versus proposed value, plus the per-field "Ya aplicado" tag and the store-level drift banner); the stored diff has no base snapshot, so a three-value conflict view is not derivable and is not built.
 
 ### Invoke-in-place contract
 

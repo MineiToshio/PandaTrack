@@ -7,7 +7,7 @@ status: DRAFT
 parent: PRD-03
 children:
   - BP-01
-last_updated: 2026-07-23
+last_updated: 2026-07-24
 implementation_status: PLANNED
 ---
 
@@ -92,7 +92,7 @@ These reviews invoke the moderation actions owned by PRD-02, [FRD-04](../../prd-
 - `FR-02-14`: Opening a pending-store item must render a review showing the store's submitted summary (seller type, country, presence, categories, contact channels, import countries), with actions to approve (`FR-04-40`) or remove (`FR-04-41`) the store.
 - `FR-02-15`: Opening a report item must render a review showing the report reason, free text, admin-only reporter identity, and prior reports on the same store, with actions to resolve or dismiss the report (`FR-04-44`) and a secondary path to remove the store (`FR-04-41`).
 - `FR-02-16`: Opening a flag-candidate (suggested-removal) item (a row derived per the `FR-02-05` rule, not a persisted category) must render a review showing the store's accumulated reports, with actions to flag or unflag the store (`FR-04-43`) and a secondary path to remove it (`FR-04-41`).
-- `FR-02-17`: Opening a change-request item must render a review showing the field-by-field diff and the requester's comment, with actions to apply (`FR-04-46`) or reject the request; when the underlying store changed since submission, the review must show a drift notice and tag each affected field, matching the FRD-04 drift handling (`FR-04-47`). For list fields the review must itemize the diff as add, remove, and keep deltas, because the stored request replaces the whole list with the proposed set.
+- `FR-02-17`: Opening a change-request item must render a review showing the field-by-field diff and the requester's comment, with actions to apply (`FR-04-46`) or reject the request; when the underlying store changed since submission, the review must show a store-level drift notice and present each affected field as two values (the current store value and the proposed value), tagging a field "Ya aplicado" when its current value already equals the proposal, matching the FRD-04 drift handling (`FR-04-47`). The stored request persists only proposed values with no base snapshot, so the value the requester originally saw is not derivable and no third value or "En conflicto" state is shown. For list fields the review must itemize the diff as add, remove, and keep deltas, because the stored request replaces the whole list with the proposed set.
 - `FR-02-18`: Opening a product-type-suggestion item must render a review showing the requester, the reason, and a catalog preview (`es`/`en` names and the generated key), with actions to approve (`FR-04-49`) or reject the request.
 - `FR-02-19`: On viewports wide enough for the master-detail split, the inbox must present the queue and the selected item's review side by side, ordered by impact, and must auto-preview the top item when no item is explicitly selected.
 - `FR-02-20`: Below the master-detail breakpoint, the inbox must show the queue as a single stacked column; opening an item must route to a full-width review screen with a back link to the queue.
@@ -193,9 +193,10 @@ These reviews invoke the moderation actions owned by PRD-02, [FRD-04](../../prd-
 
 - Given a change request whose store changed after submission
 - When the administrator opens its review
-- Then a drift notice is shown, and each affected field presents three values (the value when it was proposed, the current value, and the proposed value) tagged "Ya aplicado" when the current value already equals the proposal or "En conflicto" when the current value changed and differs from it
+- Then a store-level drift notice is shown, and each affected field presents two values (the current store value and the proposed value), tagged "Ya aplicado" when the current value already equals the proposal
 - And list fields show per-item deltas ("Se agrega", "Se elimina", "Se mantiene"), since applying replaces the list with the proposed set
 - And approving re-derives the diff against the current store state, applying only the changes that still have effect (`FR-04-47`)
+- The stored request persists only proposed values with no base snapshot, so the value the requester originally saw is not derivable and no third value or "En conflicto" state is shown
 
 ### `AC-02-13` Desktop master-detail selection
 
@@ -279,7 +280,7 @@ Screens 2 to 7 are the per-type review views (`FR-02-14` through `FR-02-18`), re
 
 ## Open Questions
 
-- The exact impact-ordering weights across the four categories.
+- Resolved (2026-07-24, WO-02 enrichment): impact ordering is five tiers, highest first: flag candidate (suggested removal), open reports, pending stores, change requests, product-type suggestions; within a tier, oldest first. The flag-candidate row is derived per `FR-02-05` and is not a fifth persisted category.
 
 ## Out of Scope
 
