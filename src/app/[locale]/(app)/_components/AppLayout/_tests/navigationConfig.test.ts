@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { getActiveNavItem, getPrivateAppNavItems, getPrivateAppPathSegment } from "../navigationConfig";
+import {
+  getActiveAdminNavItemId,
+  getActiveNavItem,
+  getAdminNavItems,
+  getPrivateAppNavItems,
+  getPrivateAppPathSegment,
+} from "../navigationConfig";
 
 describe("getPrivateAppPathSegment", () => {
   it("returns the second segment when it is a known private app segment", () => {
@@ -47,5 +53,42 @@ describe("getPrivateAppNavItems", () => {
     const items = getPrivateAppNavItems();
     expect(items[0].href("es")).toBe("/es/dashboard");
     expect(items[1].href("en")).toBe("/en/stores");
+  });
+});
+
+describe("getAdminNavItems", () => {
+  it("returns the grouped Administración section items in order", () => {
+    const items = getAdminNavItems();
+    expect(items.map((i) => i.id)).toEqual(["moderation", "audit"]);
+  });
+
+  it("builds locale-prefixed hrefs for the admin landing and audit routes", () => {
+    const items = getAdminNavItems();
+    expect(items[0].href("es")).toBe("/es/admin");
+    expect(items[1].href("en")).toBe("/en/admin/audit");
+  });
+
+  it("resolves labels against the admin namespace", () => {
+    const items = getAdminNavItems();
+    expect(items.map((i) => i.labelKey)).toEqual(["nav.moderation", "nav.audit"]);
+  });
+});
+
+describe("getActiveAdminNavItemId", () => {
+  it("matches the moderation landing for the admin root", () => {
+    expect(getActiveAdminNavItemId("/es/admin")).toBe("moderation");
+    expect(getActiveAdminNavItemId("/en/admin")).toBe("moderation");
+  });
+
+  it("matches the audit entry for the nested audit route", () => {
+    expect(getActiveAdminNavItemId("/es/admin/audit")).toBe("audit");
+    expect(getActiveAdminNavItemId("/en/admin/audit")).toBe("audit");
+  });
+
+  it("returns undefined for non-admin routes so no collector item is displaced", () => {
+    expect(getActiveAdminNavItemId("/es/dashboard")).toBeUndefined();
+    expect(getActiveAdminNavItemId("/en/stores")).toBeUndefined();
+    expect(getActiveAdminNavItemId("/es")).toBeUndefined();
+    expect(getActiveAdminNavItemId("")).toBeUndefined();
   });
 });

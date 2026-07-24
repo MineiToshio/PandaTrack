@@ -5,7 +5,7 @@ import AppLayout from "@/app/[locale]/(app)/_components/AppLayout/AppLayout";
 import { buildStoresNavHref } from "@/app/[locale]/(app)/_utils/storesNavHref";
 import VerifyEmailBanner from "@/components/modules/auth/VerifyEmailBanner";
 import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
-import { getSession } from "@/lib/auth/auth-server";
+import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
 import { getVerificationSnapshot, maybeSendDaySixVerificationReminder } from "@/lib/auth/authVerification";
 import { ROUTES, VERIFICATION_BANNER_HEIGHT_PX } from "@/lib/constants";
 import { listCountryCodesCached } from "@/lib/data/catalog/countryQueries";
@@ -24,6 +24,9 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
   if (!session) {
     redirect(`/${locale}${ROUTES.signIn}`);
   }
+
+  // Only a boolean crosses the client boundary; the role string is never exposed to the client.
+  const isAdmin = getIsAdmin(session);
 
   const snapshot = await getVerificationSnapshot(session.user.id);
 
@@ -80,6 +83,7 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
           currentUser={currentUser}
           storesHref={storesHref}
           storedTimezone={storedTimezone}
+          isAdmin={isAdmin}
         >
           {children}
         </AppLayout>
@@ -112,6 +116,7 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
         currentUser={currentUser}
         storesHref={storesHref}
         storedTimezone={storedTimezone}
+        isAdmin={isAdmin}
       >
         {children}
       </AppLayout>

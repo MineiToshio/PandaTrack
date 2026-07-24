@@ -44,6 +44,8 @@ export const ROUTES = {
   payments: "/payments",
   budget: "/budget",
   settings: "/settings",
+  admin: "/admin",
+  adminAudit: "/admin/audit",
 } as const;
 
 /**
@@ -234,6 +236,9 @@ export const POSTHOG_EVENTS = {
     COLLECTION_ZONE_VIEWED: "dashboard_collection_zone_viewed",
     TOP_STORE_CTA_CLICKED: "dashboard_top_store_cta_clicked",
     PRODUCT_TYPE_SEGMENT_CLICKED: "dashboard_product_type_segment_clicked",
+  },
+  ADMIN: {
+    SPACE_ENTERED: "admin_space_entered",
   },
 } as const;
 

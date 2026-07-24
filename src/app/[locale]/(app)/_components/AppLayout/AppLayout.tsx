@@ -21,6 +21,8 @@ type AppLayoutProps = {
   storesHref?: string;
   /** Timezone already stored for the collector; `null` when it has never been captured. */
   storedTimezone: string | null;
+  /** Whether the current user is an administrator; gates the Administración nav section (BR-02-05). */
+  isAdmin: boolean;
   children: React.ReactNode;
 };
 
@@ -30,6 +32,7 @@ export default function AppLayout({
   currentUser: initialUser,
   storesHref,
   storedTimezone,
+  isAdmin,
   children,
 }: AppLayoutProps) {
   const pathname = usePathname();
@@ -77,6 +80,7 @@ export default function AppLayout({
             floatingOpen={floatingOpen}
             onFloatingChange={setFloatingOpen}
             storesHref={storesHref}
+            isAdmin={isAdmin}
           />
 
           {/* Mobile nav drawer */}
@@ -88,6 +92,7 @@ export default function AppLayout({
             onClose={handleCloseDrawer}
             returnFocusRef={burgerButtonRef}
             storesHref={storesHref}
+            isAdmin={isAdmin}
           />
 
           {/* Content area: padded left on desktop to accommodate sidebar PUSH */}

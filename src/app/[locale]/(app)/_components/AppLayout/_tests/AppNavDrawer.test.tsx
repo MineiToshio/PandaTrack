@@ -19,6 +19,9 @@ const translationMap: Record<string, string> = {
   "account.terms": "Terms and Conditions",
   "accessibility.mainNavigation": "Main navigation",
   "accessibility.languageNavigation": "Language",
+  "nav.section": "Administration",
+  "nav.moderation": "Moderation",
+  "nav.audit": "Audit log",
 };
 
 vi.mock("next-intl", () => ({
@@ -52,6 +55,7 @@ describe("AppNavDrawer", () => {
     signOutLabel: "Sign out",
     onClose: vi.fn(),
     returnFocusRef: { current: null } as RefObject<HTMLButtonElement | null>,
+    isAdmin: false,
   };
 
   it("renders nothing when closed", () => {
@@ -109,6 +113,20 @@ describe("AppNavDrawer", () => {
     await user.click(backdrop as HTMLButtonElement);
 
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides the Administración section for non-administrators", () => {
+    render(<AppNavDrawer locale="en" isOpen {...drawerProps} />);
+
+    expect(screen.queryByRole("link", { name: "Moderation" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Audit log" })).not.toBeInTheDocument();
+  });
+
+  it("renders the Administración section for administrators", () => {
+    render(<AppNavDrawer locale="en" isOpen {...drawerProps} isAdmin />);
+
+    expect(screen.getByRole("link", { name: "Moderation" })).toHaveAttribute("href", "/en/admin");
+    expect(screen.getByRole("link", { name: "Audit log" })).toHaveAttribute("href", "/en/admin/audit");
   });
 
   it("marks current route link as current page", () => {

@@ -1,0 +1,23 @@
+{
+  "nav": {
+    "section": "Administration",
+    "moderation": "Moderation",
+    "audit": "Audit log"
+  },
+  "landing": {
+    "title": "Moderation inbox",
+    "placeholder": "The moderation inbox is coming soon."
+  },
+  "audit": {
+    "title": "Activity log",
+    "placeholder": "The activity log is coming soon."
+  },
+  "accessDenied": {
+    "title": "Restricted access",
+    "description": "This area is for administrators only."
+  },
+  "meta": {
+    "landingTitle": "Moderation",
+    "auditTitle": "Audit log"
+  }
+}

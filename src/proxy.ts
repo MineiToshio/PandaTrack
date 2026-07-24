@@ -22,6 +22,7 @@ const PRIVATE_ROUTE_PREFIXES = [
   ROUTES.budget,
   ROUTES.stores,
   ROUTES.settings,
+  ROUTES.admin,
 ] as const;
 
 function getLocalizedPath(pathname: string): { locale: string; localizedPath: string } | null {

@@ -1,0 +1,23 @@
+{
+  "nav": {
+    "section": "Administración",
+    "moderation": "Moderación",
+    "audit": "Registro"
+  },
+  "landing": {
+    "title": "Bandeja de moderación",
+    "placeholder": "La bandeja de moderación llegará pronto."
+  },
+  "audit": {
+    "title": "Registro de actividad",
+    "placeholder": "El registro de actividad llegará pronto."
+  },
+  "accessDenied": {
+    "title": "Acceso restringido",
+    "description": "Esta área es solo para administradores."
+  },
+  "meta": {
+    "landingTitle": "Moderación",
+    "auditTitle": "Registro"
+  }
+}
