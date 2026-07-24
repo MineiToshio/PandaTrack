@@ -12,7 +12,7 @@ import {
   SANCTION_STORE_REMOVAL_REASONS,
   type StoreRemovalReasonValue,
 } from "@/lib/store/removalReason";
-import ReportReasonPicker from "../../_components/share/ReportReasonPicker";
+import ReportReasonPicker from "./ReportReasonPicker";
 
 const NOTE_MAX_LENGTH = 500;
 

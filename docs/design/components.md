@@ -113,12 +113,13 @@ Multi-part organisms and orchestration.
 
 ### Overlays
 
-| Component      | Path                      | When to use                                                                                                                                                                              |
-| -------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Modal`        | `modules/Modal/Modal.tsx` | **The** canonical modal (Semantic Depth, adaptive). Internals: `ModalDialog` (desktop), `ModalSheet` (mobile), `ModalContent` (shared). [ADR 0008](decisions/0008-modal-enhancement.md). |
-| `Sheet`        | `modules/Sheet/`          | Mobile bottom sheet (same language; only approved `vaul` consumer).                                                                                                                      |
-| `FilterDrawer` | `modules/FilterDrawer/`   | List filtering surface.                                                                                                                                                                  |
-| `MobilePicker` | `modules/MobilePicker/`   | Mobile-native-style picker.                                                                                                                                                              |
+| Component           | Path                            | When to use                                                                                                                                                                                                             |
+| ------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Modal`             | `modules/Modal/Modal.tsx`       | **The** canonical modal (Semantic Depth, adaptive). Internals: `ModalDialog` (desktop), `ModalSheet` (mobile), `ModalContent` (shared). [ADR 0008](decisions/0008-modal-enhancement.md).                                |
+| `Sheet`             | `modules/Sheet/`                | Mobile bottom sheet (same language; only approved `vaul` consumer).                                                                                                                                                     |
+| `FilterDrawer`      | `modules/FilterDrawer/`         | List filtering surface.                                                                                                                                                                                                 |
+| `MobilePicker`      | `modules/MobilePicker/`         | Mobile-native-style picker.                                                                                                                                                                                             |
+| `StoreRemovalModal` | `modules/StoreRemovalModal.tsx` | Store-removal confirmation (`alertdialog`) with a reason radiogroup + optional note. Shared by the store-detail moderation panel and the admin moderation console. Presentational: parent owns Optimistic Confirmation. |
 
 ### Content & detail
 
@@ -135,12 +136,13 @@ Multi-part organisms and orchestration.
 
 ### Forms
 
-| Component             | Path                        | When to use                                           |
-| --------------------- | --------------------------- | ----------------------------------------------------- |
-| `WizardAccordion`     | `modules/WizardAccordion/`  | Multi-step form (3+ steps); step CTAs never disabled. |
-| `FilterTriggerButton` | `core/FilterTriggerButton/` | Opens the `FilterDrawer`; shows active-filter count.  |
-| `FaqAccordion`        | `modules/FaqAccordion/`     | FAQ / disclosure list (landing).                      |
-| `ImageCropper`        | `modules/ImageCropper/`     | Avatar / image crop.                                  |
+| Component             | Path                             | When to use                                                                                                                                       |
+| --------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WizardAccordion`     | `modules/WizardAccordion/`       | Multi-step form (3+ steps); step CTAs never disabled.                                                                                             |
+| `FilterTriggerButton` | `core/FilterTriggerButton/`      | Opens the `FilterDrawer`; shows active-filter count.                                                                                              |
+| `FaqAccordion`        | `modules/FaqAccordion/`          | FAQ / disclosure list (landing).                                                                                                                  |
+| `ImageCropper`        | `modules/ImageCropper/`          | Avatar / image crop.                                                                                                                              |
+| `ReportReasonPicker`  | `modules/ReportReasonPicker.tsx` | Vertical single-select reason radiogroup (icon + label, ≥44px targets). Shared by the store report and store removal flows and the admin console. |
 
 ### States, feedback & marketing
 

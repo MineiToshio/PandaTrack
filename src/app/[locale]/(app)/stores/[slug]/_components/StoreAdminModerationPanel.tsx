@@ -15,7 +15,7 @@ import {
   unflagStoreAction,
   type ModerateStoreResult,
 } from "../_actions/moderateStore";
-import StoreRemovalModal from "./StoreRemovalModal";
+import StoreRemovalModal from "@/components/modules/StoreRemovalModal";
 
 /** Statuses this panel can act on; a `REJECTED` store 404s before the panel ever renders. */
 type ModeratableStatus = "PENDING" | "APPROVED" | "FLAGGED";

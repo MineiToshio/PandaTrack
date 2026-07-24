@@ -15,7 +15,7 @@ import Modal from "@/components/modules/Modal/Modal";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import type { StoreGovernanceViewerContext } from "@/lib/data/stores/storeGovernanceQueries";
-import ReportReasonPicker from "../../_components/share/ReportReasonPicker";
+import ReportReasonPicker from "@/components/modules/ReportReasonPicker";
 import { saveStoreReport, type SaveStoreReportResult } from "../_actions/saveStoreReport";
 
 type StoreReportModalProps = {

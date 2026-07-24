@@ -8,6 +8,160 @@
     "title": "Moderation inbox",
     "placeholder": "The moderation inbox is coming soon."
   },
+  "inbox": {
+    "title": "Moderation inbox",
+    "subtitle": "Everything pending review, ordered by impact. Pick an item to review it right here.",
+    "queueLabel": "Moderation queue",
+    "counts": {
+      "reports": "Reports",
+      "stores": "Stores",
+      "changes": "Changes",
+      "types": "Types"
+    },
+    "emptySelection": "Select an item from the inbox to review it here.",
+    "empty": {
+      "title": "All caught up",
+      "subtitle": "Nothing is pending moderation."
+    },
+    "backToQueue": "Inbox"
+  },
+  "queue": {
+    "category": {
+      "flag": "Suggested removal",
+      "report": "Report",
+      "pending_store": "Pending store",
+      "change_request": "Proposed change",
+      "product_type": "Product type"
+    },
+    "reportsAccumulated": "{count, plural, one {# report accumulated} other {# reports accumulated}}",
+    "fieldsChanged": "{count, plural, one {# field changed} other {# fields changed}}",
+    "driftTag": "Out of sync"
+  },
+  "review": {
+    "adminOnly": "Only visible to administrators",
+    "adminOnlyShort": "Admin only",
+    "viewStore": "View store",
+    "reportedBy": "Reported by",
+    "proposedBy": "Proposed by",
+    "sellerType": {
+      "RETAILER": "Retailer",
+      "PERSON": "Person",
+      "PROXY": "Proxy"
+    },
+    "presence": {
+      "ONLINE": "Online",
+      "PHYSICAL": "Physical"
+    },
+    "storeStatus": {
+      "PENDING": "In review",
+      "APPROVED": "Approved",
+      "FLAGGED": "Flagged"
+    },
+    "reportReason": {
+      "SPAM": "Spam",
+      "DUPLICATE": "Duplicate",
+      "INCORRECT_INFO": "Incorrect info",
+      "DOES_NOT_EXIST": "Does not exist",
+      "INAPPROPRIATE": "Inappropriate"
+    },
+    "empty": "—",
+    "store": {
+      "sectionSummary": "Store summary",
+      "fields": {
+        "sellerType": "Seller type",
+        "country": "Country",
+        "presence": "Presence",
+        "categories": "Categories",
+        "channels": "Contact channels",
+        "importCountries": "Imports from"
+      },
+      "hint": "Approving publishes and indexes the store; removing excludes it from public surfaces.",
+      "approve": "Approve",
+      "remove": "Remove"
+    },
+    "report": {
+      "sectionReport": "Report",
+      "resolve": "Resolve",
+      "dismiss": "Dismiss",
+      "remove": "Remove store"
+    },
+    "flag": {
+      "sectionReports": "Accumulated reports",
+      "hint": "Flagging keeps the store visible with a stronger warning; removing excludes it from public surfaces.",
+      "flag": "Flag",
+      "unflag": "Remove flag",
+      "remove": "Remove"
+    },
+    "change": {
+      "sectionDiff": "Proposed changes",
+      "sectionComment": "Requester comment",
+      "noComment": "No comment",
+      "listHint": "On approval, each list (categories, channels, addresses, imports) becomes exactly the proposed set.",
+      "fieldKindText": "text field",
+      "fieldKindList": "list · full replacement",
+      "delta": {
+        "added": "Added",
+        "removed": "Removed",
+        "kept": "Kept"
+      },
+      "boolTrue": "Yes",
+      "boolFalse": "No",
+      "apply": "Approve and apply",
+      "reject": "Reject",
+      "field": {
+        "name": "Name",
+        "description": "Description",
+        "logoUrl": "Logo",
+        "presenceTypes": "Presence",
+        "productTypeKeys": "Categories",
+        "importCountries": "Imports from",
+        "contactChannels": "Contact channels",
+        "addresses": "Addresses",
+        "hasStock": "Has stock",
+        "receivesOrders": "Receives orders",
+        "isPrivate": "Private",
+        "isActive": "Active"
+      }
+    },
+    "drift": {
+      "bannerTitle": "The store changed after this request was filed.",
+      "bannerBody": "Approving recalculates against the store's current state.",
+      "now": "Now",
+      "proposed": "Proposed",
+      "appliedTag": "Already applied",
+      "appliedNote": "The proposal already matches the current state: approving changes nothing for this field.",
+      "nothingToApply": "Nothing left to apply: the store already matches the whole proposal."
+    },
+    "type": {
+      "sectionReason": "Reason",
+      "sectionCatalog": "In the catalog",
+      "noReason": "No reason",
+      "catalogHint": "Approving creates this global catalog entry.",
+      "nameEs": "Spanish name",
+      "nameEn": "English name",
+      "key": "Key",
+      "keyHelper": "Optional. Generated from the name when left blank.",
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "toast": {
+      "approved": "Store approved.",
+      "removed": "Store removed.",
+      "flagged": "Store flagged.",
+      "unflagged": "Flag removed.",
+      "reportResolved": "Report resolved.",
+      "reportDismissed": "Report dismissed.",
+      "changeApplied": "Change applied.",
+      "changeSuperseded": "The proposal no longer had any effect; it was marked as superseded.",
+      "changeRejected": "Change rejected.",
+      "typeApproved": "Product type approved.",
+      "typeRejected": "Product type rejected."
+    },
+    "errors": {
+      "generic": "The action could not be completed. Please try again.",
+      "nameRequired": "Enter the name in both languages."
+    }
+  },
   "audit": {
     "tableLabel": "Moderation activity log",
     "utcLabel": "UTC",

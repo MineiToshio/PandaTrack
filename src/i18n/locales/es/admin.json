@@ -8,6 +8,160 @@
     "title": "Bandeja de moderación",
     "placeholder": "La bandeja de moderación llegará pronto."
   },
+  "inbox": {
+    "title": "Bandeja de moderación",
+    "subtitle": "Todo lo pendiente por revisar, ordenado por impacto. Elige un elemento para revisarlo aquí mismo.",
+    "queueLabel": "Cola de moderación",
+    "counts": {
+      "reports": "Reportes",
+      "stores": "Tiendas",
+      "changes": "Cambios",
+      "types": "Tipos"
+    },
+    "emptySelection": "Selecciona un elemento de la bandeja para revisarlo aquí.",
+    "empty": {
+      "title": "Todo al día",
+      "subtitle": "No hay nada pendiente por moderar."
+    },
+    "backToQueue": "Bandeja"
+  },
+  "queue": {
+    "category": {
+      "flag": "Baja sugerida",
+      "report": "Reporte",
+      "pending_store": "Tienda pendiente",
+      "change_request": "Cambio propuesto",
+      "product_type": "Tipo de producto"
+    },
+    "reportsAccumulated": "{count, plural, one {# reporte acumulado} other {# reportes acumulados}}",
+    "fieldsChanged": "{count, plural, one {# campo modificado} other {# campos modificados}}",
+    "driftTag": "Con desfase"
+  },
+  "review": {
+    "adminOnly": "Solo visible para administradores",
+    "adminOnlyShort": "Solo admin",
+    "viewStore": "Ver tienda",
+    "reportedBy": "Reportada por",
+    "proposedBy": "Propuesto por",
+    "sellerType": {
+      "RETAILER": "Minorista",
+      "PERSON": "Persona",
+      "PROXY": "Intermediario"
+    },
+    "presence": {
+      "ONLINE": "En línea",
+      "PHYSICAL": "Física"
+    },
+    "storeStatus": {
+      "PENDING": "En revisión",
+      "APPROVED": "Aprobada",
+      "FLAGGED": "Marcada"
+    },
+    "reportReason": {
+      "SPAM": "Spam",
+      "DUPLICATE": "Duplicada",
+      "INCORRECT_INFO": "Información incorrecta",
+      "DOES_NOT_EXIST": "No existe",
+      "INAPPROPRIATE": "Inapropiado"
+    },
+    "empty": "—",
+    "store": {
+      "sectionSummary": "Resumen de la tienda",
+      "fields": {
+        "sellerType": "Tipo de vendedor",
+        "country": "País",
+        "presence": "Presencia",
+        "categories": "Categorías",
+        "channels": "Canales de contacto",
+        "importCountries": "Importa desde"
+      },
+      "hint": "Aprobar publica e indexa la tienda; retirar la excluye de las superficies públicas.",
+      "approve": "Aprobar",
+      "remove": "Retirar"
+    },
+    "report": {
+      "sectionReport": "Reporte",
+      "resolve": "Resolver",
+      "dismiss": "Descartar",
+      "remove": "Retirar tienda"
+    },
+    "flag": {
+      "sectionReports": "Reportes acumulados",
+      "hint": "Marcar mantiene la tienda visible con una advertencia más fuerte; retirar la excluye de las superficies públicas.",
+      "flag": "Marcar",
+      "unflag": "Quitar marca",
+      "remove": "Retirar"
+    },
+    "change": {
+      "sectionDiff": "Cambios propuestos",
+      "sectionComment": "Comentario de quien propone",
+      "noComment": "Sin comentario",
+      "listHint": "Al aprobar, cada lista (categorías, canales, direcciones, importaciones) queda exactamente como se propone.",
+      "fieldKindText": "campo de texto",
+      "fieldKindList": "lista · reemplazo completo",
+      "delta": {
+        "added": "Se agrega",
+        "removed": "Se elimina",
+        "kept": "Se mantiene"
+      },
+      "boolTrue": "Sí",
+      "boolFalse": "No",
+      "apply": "Aprobar y aplicar",
+      "reject": "Rechazar",
+      "field": {
+        "name": "Nombre",
+        "description": "Descripción",
+        "logoUrl": "Logo",
+        "presenceTypes": "Presencia",
+        "productTypeKeys": "Categorías",
+        "importCountries": "Importa desde",
+        "contactChannels": "Canales de contacto",
+        "addresses": "Direcciones",
+        "hasStock": "Tiene stock",
+        "receivesOrders": "Recibe pedidos",
+        "isPrivate": "Privada",
+        "isActive": "Activa"
+      }
+    },
+    "drift": {
+      "bannerTitle": "La tienda cambió desde que se propuso este cambio.",
+      "bannerBody": "Al aprobar se recalcula contra el estado actual de la tienda.",
+      "now": "Ahora",
+      "proposed": "Propuesta",
+      "appliedTag": "Ya aplicado",
+      "appliedNote": "La propuesta ya coincide con el estado actual: aprobar no cambia nada en este campo.",
+      "nothingToApply": "No queda nada por aplicar: la tienda ya coincide con toda la propuesta."
+    },
+    "type": {
+      "sectionReason": "Motivo",
+      "sectionCatalog": "En el catálogo",
+      "noReason": "Sin motivo",
+      "catalogHint": "Al aprobar se crea esta entrada global del catálogo.",
+      "nameEs": "Nombre en español",
+      "nameEn": "Nombre en inglés",
+      "key": "Clave",
+      "keyHelper": "Opcional. Se genera desde el nombre si lo dejas vacío.",
+      "approve": "Aprobar",
+      "reject": "Rechazar"
+    },
+    "toast": {
+      "approved": "Tienda aprobada.",
+      "removed": "Tienda retirada.",
+      "flagged": "Tienda marcada.",
+      "unflagged": "Marca retirada.",
+      "reportResolved": "Reporte resuelto.",
+      "reportDismissed": "Reporte descartado.",
+      "changeApplied": "Cambio aplicado.",
+      "changeSuperseded": "La propuesta ya no tenía efecto; se marcó como superada.",
+      "changeRejected": "Cambio rechazado.",
+      "typeApproved": "Tipo de producto aprobado.",
+      "typeRejected": "Tipo de producto rechazado."
+    },
+    "errors": {
+      "generic": "No se pudo completar la acción. Inténtalo de nuevo.",
+      "nameRequired": "Ingresa el nombre en ambos idiomas."
+    }
+  },
   "audit": {
     "tableLabel": "Registro de actividad de moderación",
     "utcLabel": "UTC",

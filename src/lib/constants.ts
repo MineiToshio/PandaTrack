@@ -75,6 +75,13 @@ export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 /** Default page size applied when no `perPage` param is present or it falls outside `PAGE_SIZE_OPTIONS`. */
 export const DEFAULT_PAGE_SIZE = 25;
 
+/**
+ * Open-report count at which a store's individual report rows collapse into a single suggested-removal
+ * (flag-candidate) row in the moderation inbox. A store at or above this many open reports reads as one
+ * store-level decision, not several separate reports.
+ */
+export const STORE_FLAG_REPORT_THRESHOLD = 2;
+
 export const POSTHOG_EVENTS = {
   LANDING: {
     HERO_CTA_CLICKED: "hero_cta_clicked",
@@ -247,6 +254,7 @@ export const POSTHOG_EVENTS = {
   ADMIN: {
     SPACE_ENTERED: "admin_space_entered",
     AUDIT_VIEWED: "admin_audit_viewed",
+    INBOX_ITEM_OPENED: "admin_inbox_item_opened",
   },
 } as const;
 

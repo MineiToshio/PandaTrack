@@ -503,13 +503,13 @@
     .diff-item.is-keep .di-tag { color: var(--text-muted); background: var(--surface-warm); }
 
     /* Three-value drift presentation */
-    .diff-triple { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .dv-pair { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
     .dv-cell { border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; background: var(--surface-elevated); }
     .dv-cell .dv-label { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; display: block; }
     .dv-cell .dv-value { font-size: 13px; color: var(--text-primary); line-height: 1.4; }
     .dv-cell.is-current { border-color: color-mix(in oklch, var(--warning) 35%, transparent); background: color-mix(in oklch, var(--warning) 8%, var(--surface)); }
     .dv-cell.is-proposed { border-color: color-mix(in oklch, var(--accent) 30%, transparent); }
-    @media (max-width: 620px) { .diff-triple { grid-template-columns: 1fr; } .diff-scalar { grid-template-columns: 1fr; gap: 4px; } .diff-scalar .diff-arrow { transform: rotate(90deg); } }
+    @media (max-width: 620px) { .dv-pair { grid-template-columns: 1fr; } .diff-scalar { grid-template-columns: 1fr; gap: 4px; } .diff-scalar .diff-arrow { transform: rotate(90deg); } }
 
     /* Drift derived tags */
     .drift-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 1px 8px; border-radius: 999px; font-family: 'Inter', sans-serif; }
@@ -959,22 +959,21 @@
                     <i data-lucide="alert-triangle" class="banner-icon"></i>
                     <div class="banner-copy">
                       <strong>La tienda cambio desde que se propuso este cambio.</strong>
-                      <span>Al aprobar se recalcula contra el estado actual de la tienda. Para cada campo con desfase comparamos tres valores: cuando se propuso, ahora, y la propuesta.</span>
+                      <span>Al aprobar se recalcula contra el estado actual de la tienda. Cada campo con desfase muestra dos valores: ahora y la propuesta.</span>
                     </div>
                   </div>
                 </div>
                 <div class="mod-sec">
                   <p class="mod-sec-title"><i data-lucide="git-compare"></i> Cambios propuestos</p>
                   <div class="diff-fields">
-                    <!-- drift + conflict: name -->
+                    <!-- drift: name (two-value cut) -->
                     <div class="diff-field is-drift">
-                      <div class="diff-field-head"><i data-lucide="type"></i> Nombre <span class="drift-tag conflict"><i data-lucide="alert-circle"></i> En conflicto</span></div>
-                      <div class="diff-triple">
-                        <div class="dv-cell"><span class="dv-label">Cuando se propuso</span><span class="dv-value">Retro Cards</span></div>
+                      <div class="diff-field-head"><i data-lucide="type"></i> Nombre <span class="diff-field-kind">campo de texto</span></div>
+                      <div class="dv-pair">
                         <div class="dv-cell is-current"><span class="dv-label">Ahora</span><span class="dv-value">Retro Cards Peru</span></div>
                         <div class="dv-cell is-proposed"><span class="dv-label">Propuesta</span><span class="dv-value">Retro Cards PE</span></div>
                       </div>
-                      <p class="mod-hint" style="padding:8px 0 0">Otra persona edito el nombre despues de enviarse la solicitud. Aprobar sobrescribiria el valor mas nuevo.</p>
+                      <p class="mod-hint" style="padding:8px 0 0">Otra persona edito el nombre despues de enviarse la solicitud. Al aprobar, la propuesta reemplaza el valor actual.</p>
                     </div>
                     <!-- clean scalar: presence -->
                     <div class="diff-field">
@@ -988,10 +987,9 @@
                     <!-- drift + already applied: contact channels list -->
                     <div class="diff-field is-drift">
                       <div class="diff-field-head"><i data-lucide="at-sign"></i> Canales de contacto <span class="drift-tag applied"><i data-lucide="check"></i> Ya aplicado</span></div>
-                      <div class="diff-triple">
-                        <div class="dv-cell"><span class="dv-label">Cuando se propuso</span><span class="dv-value">Instagram</span></div>
-                        <div class="dv-cell is-current"><span class="dv-label">Ahora</span><span class="dv-value">Instagram, WhatsApp</span></div>
-                        <div class="dv-cell is-proposed"><span class="dv-label">Propuesta</span><span class="dv-value">Instagram, WhatsApp</span></div>
+                      <div class="diff-items">
+                        <div class="diff-item is-keep"><span class="di-glyph"><i data-lucide="equal"></i></span><span class="di-value">Instagram</span><span class="di-tag">Se mantiene</span></div>
+                        <div class="diff-item is-keep"><span class="di-glyph"><i data-lucide="equal"></i></span><span class="di-value">WhatsApp</span><span class="di-tag">Se mantiene</span></div>
                       </div>
                       <p class="mod-hint" style="padding:8px 0 0">La tienda ya agrego WhatsApp. La propuesta coincide con el estado actual: aprobar no cambia nada en este campo.</p>
                     </div>
@@ -1002,9 +1000,9 @@
                   <p class="mod-quote">"Corrijo el nombre y agrego el WhatsApp de atencion."</p>
                   <div class="mod-reporter"><i data-lucide="user"></i> Propuesto por <b>@cards_collector</b> · hace 6 d</div>
                 </div>
-                <p class="mod-hint" style="padding-top:16px">Al aprobar, la lista queda exactamente como se propone y solo se aplican los campos que siguen teniendo efecto sobre el estado actual. Los campos en conflicto se resaltan antes de aplicar.</p>
+                <p class="mod-hint" style="padding-top:16px">Al aprobar, cada lista queda exactamente como se propone y solo se aplican los campos que aun tienen efecto sobre el estado actual.</p>
                 <div class="mod-actions">
-                  <button class="btn primary" type="button"><i data-lucide="git-compare"></i> Revisar conflictos y aplicar</button>
+                  <button class="btn primary" type="button"><i data-lucide="check-check"></i> Aprobar y aplicar</button>
                   <button class="btn destructive-ghost" type="button"><i data-lucide="x"></i> Rechazar</button>
                   <span class="spacer"></span>
                   <a class="btn link" href="#review-change"><i data-lucide="git-compare"></i> Ver variante sin desfase</a>

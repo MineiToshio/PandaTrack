@@ -6,7 +6,7 @@ title: Moderation Inbox
 status: ACTIVE
 parent: BP-01
 source_issue: 129
-implementation_status: PLANNED
+implementation_status: IN_PROGRESS
 last_updated: 2026-07-24
 ---
 

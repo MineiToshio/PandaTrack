@@ -12,10 +12,12 @@ const DASHBOARD_URL = /\/en\/dashboard/;
 const EN_ADMIN_URL = /\/en\/admin$/;
 const ES_ADMIN_URL = /\/es\/admin$/;
 
-// Landing copy is the `admin` namespace `landing.title`, asserted per locale so the test proves the
-// console is localized rather than hard-wired to one language.
-const EN_LANDING_COPY = /moderation inbox/i;
-const ES_LANDING_COPY = /bandeja de moderación/i;
+// Console copy from the `admin` namespace, asserted per locale so the test proves the console is
+// localized rather than hard-wired to one language. Each alternation covers both console states: the
+// populated inbox title (`inbox.title`) or the success-toned empty state (`inbox.empty.title`), since
+// the E2E account's pending backlog is not seeded by this spec.
+const EN_LANDING_COPY = /moderation inbox|all caught up/i;
+const ES_LANDING_COPY = /bandeja de moderación|todo al día/i;
 
 test.describe("Admin space shell and gating", () => {
   test("non-admin sees no admin nav entry and is refused at the admin space", async ({ page }) => {
