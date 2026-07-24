@@ -29,7 +29,7 @@ export default async function AdminPage({ params, searchParams }: AdminPageProps
   const { item } = await searchParams;
   const t = await getTranslations({ locale, namespace: "admin" });
 
-  const queue = await getModerationQueue();
+  const queue = await getModerationQueue(locale);
   const selectedItem = resolveSelectedItem(queue.items, item);
 
   return (

@@ -1,6 +1,11 @@
 import { getTranslations } from "next-intl/server";
 import { ClipboardList, Store } from "lucide-react";
 import type { ModerationPendingStoreSummary, ModerationStoreRef } from "@/lib/data/admin/moderationQueueQueries";
+import { listAuthoredStoreProductTypeNamesCached } from "@/lib/data/catalog/storeProductTypeQueries";
+import {
+  buildAuthoredStoreProductTypeNameMap,
+  resolveStoreProductTypeName,
+} from "@/lib/catalog/resolveStoreProductTypeName";
 import { ReviewActions, ReviewCard, ReviewHeader, ReviewHint, ReviewSection } from "../ReviewShell";
 import StoreMetaChips from "../StoreMetaChips";
 import PendingStoreReviewActions from "./PendingStoreReviewActions";
@@ -16,9 +21,16 @@ export default async function PendingStoreReview({ store, summary, locale }: Pen
   const t = await getTranslations({ locale, namespace: "admin.review" });
   const tQueue = await getTranslations({ locale, namespace: "admin.queue" });
   const tCountries = await getTranslations({ locale, namespace: "countries" });
+  const tProductTypes = await getTranslations({ locale, namespace: "storeProductTypes" });
+  const authoredProductTypeNames = buildAuthoredStoreProductTypeNameMap(
+    await listAuthoredStoreProductTypeNamesCached(),
+  );
 
   const presence = summary.presenceTypes.map((value) => t(`presence.${value}`)).join(", ") || t("empty");
-  const categories = summary.productTypeKeys.join(", ") || t("empty");
+  const categories =
+    summary.productTypeKeys
+      .map((key) => resolveStoreProductTypeName(authoredProductTypeNames[key], tProductTypes(key), locale))
+      .join(", ") || t("empty");
   const channels =
     summary.contactChannels
       .map((channel) => (channel.label ? `${channel.label}: ${channel.value}` : channel.value))

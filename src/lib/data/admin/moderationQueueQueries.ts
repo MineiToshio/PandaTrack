@@ -259,8 +259,11 @@ function toStoreRef(row: {
  * never the public governance read model (BR-02-03). The individual reads are batched per store and
  * the derivation runs in {@link assembleModerationQueue}, so the queue row and its review payload are
  * shaped from the same read and can never drift apart.
+ *
+ * `locale` is threaded to {@link getAdminPendingStoreChangeRequests} so its change-request field rows
+ * carry localized list-item labels (presence, product types, import countries) instead of raw tokens.
  */
-export async function getModerationQueue(): Promise<ModerationQueue> {
+export async function getModerationQueue(locale: string): Promise<ModerationQueue> {
   const [pendingStoreRows, reportStoreIdRows, changeRequestStoreIdRows, productTypeRequests] = await Promise.all([
     prisma.store.findMany({
       where: { status: "PENDING" },
@@ -300,7 +303,7 @@ export async function getModerationQueue(): Promise<ModerationQueue> {
 
   const [reportsByStore, changeRequestsByStore] = await Promise.all([
     Promise.all(reportStoreIds.map((storeId) => getAdminOpenStoreReports(storeId))),
-    Promise.all(changeRequestStoreIds.map((storeId) => getAdminPendingStoreChangeRequests(storeId))),
+    Promise.all(changeRequestStoreIds.map((storeId) => getAdminPendingStoreChangeRequests(storeId, locale))),
   ]);
 
   const storeReports: StoreReportsGroup[] = reportStoreIds.flatMap((storeId, index) => {

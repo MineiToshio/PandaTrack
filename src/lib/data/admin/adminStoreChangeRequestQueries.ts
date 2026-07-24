@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { prisma } from "@/lib/prisma";
 import {
   getEditableStoreForRebase,
@@ -5,6 +6,11 @@ import {
   type EditableStoreDiff,
 } from "@/lib/data/stores/storeGovernanceQueries";
 import { rebaseChangeRequestDiff } from "@/lib/data/stores/storeGovernanceMutations";
+import { listAuthoredStoreProductTypeNamesCached } from "@/lib/data/catalog/storeProductTypeQueries";
+import {
+  buildAuthoredStoreProductTypeNameMap,
+  resolveStoreProductTypeName,
+} from "@/lib/catalog/resolveStoreProductTypeName";
 
 /**
  * A single scalar field value, shaped for display. Booleans are kept as a tri-state so the client can
@@ -72,16 +78,32 @@ const BOOL_FIELDS = new Set(["hasStock", "receivesOrders", "isPrivate", "isActiv
 
 type ObjectListEntry = { token: string; label: string };
 
-function buildStringListItems(current: string[], proposed: string[]): AdminChangeRequestListItem[] {
+/**
+ * Builds itemized list-field deltas, resolving each token to a display label. `labelOf` defaults to
+ * the identity function so callers that have no display concept (tests, other future fields) keep
+ * working without a resolver.
+ */
+function buildStringListItems(
+  current: string[],
+  proposed: string[],
+  labelOf: (token: string) => string = (token) => token,
+): AdminChangeRequestListItem[] {
   const currentSet = new Set(current);
   const proposedSet = new Set(proposed);
   const tokens = [...new Set([...current, ...proposed])].sort((left, right) => left.localeCompare(right));
   return tokens.map((token) => ({
     token,
-    label: token,
+    label: labelOf(token),
     delta: proposedSet.has(token) ? (currentSet.has(token) ? "kept" : "added") : "removed",
   }));
 }
+
+/** Per-request label resolvers for the string-token list fields (presence, product types, import countries). */
+type StringListLabelResolvers = {
+  presence: (value: string) => string;
+  productType: (key: string) => string;
+  country: (code: string) => string;
+};
 
 function buildObjectListItems(current: ObjectListEntry[], proposed: ObjectListEntry[]): AdminChangeRequestListItem[] {
   const currentTokens = new Set(current.map((entry) => entry.token));
@@ -118,6 +140,7 @@ function buildFieldRows(
   store: EditableStore,
   storedDiff: EditableStoreDiff,
   alreadyAppliedKeys: Set<string>,
+  labels: StringListLabelResolvers,
 ): AdminChangeRequestFieldRow[] {
   const rows: AdminChangeRequestFieldRow[] = [];
 
@@ -155,7 +178,7 @@ function buildFieldRows(
       rows.push({
         fieldKey,
         type: "list",
-        items: buildStringListItems(store.presenceTypes, storedDiff.presenceTypes ?? []),
+        items: buildStringListItems(store.presenceTypes, storedDiff.presenceTypes ?? [], labels.presence),
         alreadyApplied,
       });
       continue;
@@ -165,7 +188,7 @@ function buildFieldRows(
       rows.push({
         fieldKey,
         type: "list",
-        items: buildStringListItems(store.productTypeKeys, storedDiff.productTypeKeys ?? []),
+        items: buildStringListItems(store.productTypeKeys, storedDiff.productTypeKeys ?? [], labels.productType),
         alreadyApplied,
       });
       continue;
@@ -175,7 +198,7 @@ function buildFieldRows(
       rows.push({
         fieldKey,
         type: "list",
-        items: buildStringListItems(store.importCountryCodes, storedDiff.importCountries ?? []),
+        items: buildStringListItems(store.importCountryCodes, storedDiff.importCountries ?? [], labels.country),
         alreadyApplied,
       });
       continue;
@@ -212,9 +235,17 @@ function buildFieldRows(
  * Lists every `PENDING` change request for a store, newest first, with requester identity and a
  * rebased, presentation-ready diff for the admin review surface. Server-only and admin-only: it must
  * never be reached from a public route, and it never widens the public governance read model.
+ *
+ * `locale` resolves the list-field labels (presence, product types, import countries) the same way
+ * the pending-store review does: presence and country codes through their i18n namespaces, and
+ * product types through the hybrid catalog-names resolver (DB name first, i18n fallback). The stored
+ * diff itself never changes; only the display label attached to each item does.
  */
-export async function getAdminPendingStoreChangeRequests(storeId: string): Promise<AdminPendingStoreChangeRequest[]> {
-  const [store, storeMeta, requests] = await Promise.all([
+export async function getAdminPendingStoreChangeRequests(
+  storeId: string,
+  locale: string,
+): Promise<AdminPendingStoreChangeRequest[]> {
+  const [store, storeMeta, requests, t, tCountries, tProductTypes, authoredProductTypeNames] = await Promise.all([
     getEditableStoreForRebase(prisma, storeId),
     prisma.store.findUnique({ where: { id: storeId }, select: { updatedAt: true } }),
     prisma.storeChangeRequest.findMany({
@@ -229,14 +260,25 @@ export async function getAdminPendingStoreChangeRequests(storeId: string): Promi
         requestedBy: { select: { id: true, username: true, name: true } },
       },
     }),
+    getTranslations({ locale, namespace: "admin.review" }),
+    getTranslations({ locale, namespace: "countries" }),
+    getTranslations({ locale, namespace: "storeProductTypes" }),
+    listAuthoredStoreProductTypeNamesCached(),
   ]);
 
   if (!store || !storeMeta) return [];
 
+  const authoredProductTypeNameMap = buildAuthoredStoreProductTypeNameMap(authoredProductTypeNames);
+  const labels: StringListLabelResolvers = {
+    presence: (value) => t(`presence.${value}`),
+    productType: (key) => resolveStoreProductTypeName(authoredProductTypeNameMap[key], tProductTypes(key), locale),
+    country: (code) => tCountries(code),
+  };
+
   return requests.map((request) => {
     const storedDiff = (request.changes as EditableStoreDiff | null) ?? {};
     const { effectiveDiff, alreadyAppliedKeys } = rebaseChangeRequestDiff(store, storedDiff);
-    const fieldRows = buildFieldRows(store, storedDiff, new Set(alreadyAppliedKeys));
+    const fieldRows = buildFieldRows(store, storedDiff, new Set(alreadyAppliedKeys), labels);
 
     return {
       id: request.id,

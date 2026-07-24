@@ -1,17 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { prismaMock } = vi.hoisted(() => ({
+const { prismaMock, getTranslationsMock, listAuthoredStoreProductTypeNamesCachedMock } = vi.hoisted(() => ({
   prismaMock: {
     store: { findUnique: vi.fn() },
     storeChangeRequest: { findMany: vi.fn() },
   },
+  getTranslationsMock: vi.fn(),
+  listAuthoredStoreProductTypeNamesCachedMock: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
+vi.mock("next-intl/server", () => ({ getTranslations: getTranslationsMock }));
+
+vi.mock("@/lib/data/catalog/storeProductTypeQueries", () => ({
+  listAuthoredStoreProductTypeNamesCached: listAuthoredStoreProductTypeNamesCachedMock,
+}));
+
 import { getAdminPendingStoreChangeRequests } from "../adminStoreChangeRequestQueries";
 
 const STORE_ID = "store-1";
+const LOCALE = "en";
+
+/** Namespace-aware passthrough translator: prefixes the resolved key so a test can tell which
+ * namespace served it and that the resolver actually ran, rather than the raw token leaking through. */
+function translatorFor(namespace: string): (key: string) => string {
+  return (key: string) => `${namespace}:${key}`;
+}
 
 const STORE_ROW = {
   id: STORE_ID,
@@ -38,6 +53,12 @@ const STORE_ROW = {
 beforeEach(() => {
   vi.clearAllMocks();
   prismaMock.store.findUnique.mockResolvedValue(STORE_ROW);
+  // Passthrough translator prefixed with the requested namespace, so an assertion can tell a label
+  // came from the resolver (and which namespace) rather than leaking the raw stored token.
+  getTranslationsMock.mockImplementation(async ({ namespace }: { namespace: string }) => translatorFor(namespace));
+  // No admin-authored (non-seed) product types by default; individual tests override this to
+  // exercise the hybrid resolver's DB-name-first branch.
+  listAuthoredStoreProductTypeNamesCachedMock.mockResolvedValue([]);
 });
 
 describe("getAdminPendingStoreChangeRequests", () => {
@@ -48,7 +69,9 @@ describe("getAdminPendingStoreChangeRequests", () => {
         changes: {
           name: "New Name", // surviving scalar
           description: "Original description", // already equals current -> already applied
+          presenceTypes: ["ONLINE", "PHYSICAL"], // list: ONLINE kept, PHYSICAL added
           productTypeKeys: ["figures", "manga"], // list: figures kept, manga added
+          importCountries: ["JP", "PE"], // list: JP kept, PE added
         },
         comment: "Please update the name",
         createdAt: new Date("2026-07-20T09:00:00Z"),
@@ -56,8 +79,12 @@ describe("getAdminPendingStoreChangeRequests", () => {
         requestedBy: { id: "user-9", username: "collector99", name: "Nine Collector" },
       },
     ]);
+    // Admin-authored DB name wins over the i18n fallback for "figures" in this request.
+    listAuthoredStoreProductTypeNamesCachedMock.mockResolvedValue([
+      { key: "figures", nameEs: "Figuras a medida", nameEn: "Custom Figures" },
+    ]);
 
-    const [request] = await getAdminPendingStoreChangeRequests(STORE_ID);
+    const [request] = await getAdminPendingStoreChangeRequests(STORE_ID, LOCALE);
 
     expect(prismaMock.storeChangeRequest.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { storeId: STORE_ID, status: "PENDING" } }),
@@ -78,11 +105,32 @@ describe("getAdminPendingStoreChangeRequests", () => {
     const descriptionRow = request.fieldRows.find((row) => row.fieldKey === "description");
     expect(descriptionRow?.alreadyApplied).toBe(true);
 
+    // Presence labels resolve through the `admin.review` namespace, the same keys the pending-store
+    // review uses, instead of leaking the raw `StorePresenceType` token.
+    const presenceRow = request.fieldRows.find((row) => row.fieldKey === "presenceTypes");
+    expect(presenceRow?.type).toBe("list");
+    if (presenceRow?.type === "list") {
+      const byToken = Object.fromEntries(presenceRow.items.map((item) => [item.token, item.label]));
+      expect(byToken).toEqual({ ONLINE: "admin.review:presence.ONLINE", PHYSICAL: "admin.review:presence.PHYSICAL" });
+    }
+
+    // Product-type labels resolve via the hybrid resolver: the authored DB name wins for "figures",
+    // and the seeded "manga" key falls back to the `storeProductTypes` i18n namespace.
     const productRow = request.fieldRows.find((row) => row.fieldKey === "productTypeKeys");
     expect(productRow?.type).toBe("list");
     if (productRow?.type === "list") {
       const byToken = Object.fromEntries(productRow.items.map((item) => [item.token, item.delta]));
       expect(byToken).toEqual({ figures: "kept", manga: "added" });
+      const labelByToken = Object.fromEntries(productRow.items.map((item) => [item.token, item.label]));
+      expect(labelByToken).toEqual({ figures: "Custom Figures", manga: "storeProductTypes:manga" });
+    }
+
+    // Import-country labels resolve through the shared `countries` namespace convention.
+    const importRow = request.fieldRows.find((row) => row.fieldKey === "importCountries");
+    expect(importRow?.type).toBe("list");
+    if (importRow?.type === "list") {
+      const byToken = Object.fromEntries(importRow.items.map((item) => [item.token, item.label]));
+      expect(byToken).toEqual({ JP: "countries:JP", PE: "countries:PE" });
     }
   });
 
@@ -98,7 +146,7 @@ describe("getAdminPendingStoreChangeRequests", () => {
       },
     ]);
 
-    const [request] = await getAdminPendingStoreChangeRequests(STORE_ID);
+    const [request] = await getAdminPendingStoreChangeRequests(STORE_ID, LOCALE);
 
     expect(request.effectiveDiffEmpty).toBe(true);
     expect(request.storeDriftedSinceSubmission).toBe(false);

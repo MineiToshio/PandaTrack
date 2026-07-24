@@ -85,7 +85,7 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
     isAdmin ? getAdminOpenStoreReports(store.id) : undefined,
     // Admin-only read of pending change requests with the rebased diff and requester identity, gated
     // the same way; never widens the public governance read model.
-    isAdmin ? getAdminPendingStoreChangeRequests(store.id) : undefined,
+    isAdmin ? getAdminPendingStoreChangeRequests(store.id, locale) : undefined,
     listAuthoredStoreProductTypeNamesCached(),
   ]);
 
