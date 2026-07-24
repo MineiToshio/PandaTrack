@@ -1,4 +1,8 @@
 {
+  "orderTombstone": {
+    "neutral": "This store is no longer available.",
+    "sanction": "This store was removed for violating our policies."
+  },
   "create": {
     "heroEyebrow": "Add a store",
     "heroDescription": "Create a public listing so collectors can discover this store, its channels, and what it sells.",

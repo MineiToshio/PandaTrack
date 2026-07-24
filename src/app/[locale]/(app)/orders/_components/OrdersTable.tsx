@@ -11,8 +11,10 @@ import { isOrderOverdue } from "@/lib/orders/orderDerivedState";
 import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import OrderUnpaidPill from "./share/OrderUnpaidPill";
+import StoreTombstoneNotice from "./share/StoreTombstoneNotice";
 import { describeOrderListChip, describeOverdueDays, getOrderListChipToneClassName } from "./share/orderListStatusChip";
 import { describeItemDeliveryState, getItemDeliveryStateToneClassName } from "./share/orderItemDeliveryChip";
+import { resolveStoreTombstone } from "@/lib/store/storeTombstone";
 import type { OrdersListPageItem } from "@/lib/data/orders/orderQueries";
 
 type OrdersTableProps = {
@@ -79,6 +81,7 @@ export default function OrdersTable({ orders, locale, today, returnTo, expandedI
           const isCompletedOrCancelled = order.status === "COMPLETED" || order.status === "CANCELLED";
           const isExpanded = expandedIds.has(order.id);
           const detailHref = `/${locale}${ROUTES.orders}/${order.id}?returnTo=${encodeURIComponent(returnTo)}`;
+          const storeTombstone = resolveStoreTombstone(order.store);
 
           const progressTone = isCompletedOrCancelled
             ? "[background:var(--success)]"
@@ -116,9 +119,12 @@ export default function OrdersTable({ orders, locale, today, returnTo, expandedI
               <StoreAvatar store={{ name: order.store.name }} size={32} className="pointer-events-none" />
 
               <div className="pointer-events-none relative min-w-0">
-                <p className="truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
-                  {order.store.name}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <p className="min-w-0 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+                    {order.store.name}
+                  </p>
+                  {storeTombstone.isRemoved && <StoreTombstoneNotice tone={storeTombstone.tone} variant="compact" />}
+                </div>
                 <p className="truncate [font-family:var(--font-mono)] [font-size:12px] [color:var(--text-muted)] tabular-nums">
                   {order.humanReadableId} · {formatDate(order.orderDate, locale)}
                 </p>

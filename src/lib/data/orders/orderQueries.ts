@@ -8,6 +8,8 @@ import {
   DeliveryStatus,
   type OrderItemDeliveryState as OrderItemDeliveryStatePrisma,
   type OrderStatus,
+  type StoreRemovalReason,
+  type StoreStatus,
 } from "../../../../generated/prisma/client";
 
 export type OrderItem = {
@@ -81,7 +83,7 @@ export type OrderFlags = {
 };
 
 export type OrderDetailFull = Omit<OrderDetail, "items"> & {
-  store: { id: string; name: string; slug: string };
+  store: { id: string; name: string; slug: string; status: StoreStatus; removalReason: StoreRemovalReason | null };
   items: OrderItemWithDeliveryState[];
   eligibility: OrderEligibility;
   flags: OrderFlags;
@@ -195,7 +197,7 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
       id: true,
       humanReadableId: true,
       storeId: true,
-      store: { select: { id: true, name: true, slug: true } },
+      store: { select: { id: true, name: true, slug: true, status: true, removalReason: true } },
       orderDate: true,
       expectedDeliveryFrom: true,
       expectedDeliveryTo: true,
@@ -304,7 +306,7 @@ export type OrdersListPageItem = {
   exchangeRate: number | null;
   totalCost: number;
   status: OrderStatus;
-  store: { id: string; name: string; slug: string };
+  store: { id: string; name: string; slug: string; status: StoreStatus; removalReason: StoreRemovalReason | null };
   itemCount: number;
   items: Array<{
     id: string;
@@ -567,7 +569,7 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
     exchangeRate: true,
     totalCost: true,
     status: true,
-    store: { select: { id: true, name: true, slug: true } },
+    store: { select: { id: true, name: true, slug: true, status: true, removalReason: true } },
     items: {
       select: {
         id: true,

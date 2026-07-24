@@ -8,7 +8,7 @@ import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
 import { deriveHasUnpaidBalance } from "@/lib/orders/orderState";
 import { formatAmountSymbolOnly } from "@/lib/currency";
 import type { OrderEligibility, OrderFlags } from "@/lib/data/orders/orderQueries";
-import type { OrderStatus } from "../../../../../../../generated/prisma/client";
+import type { OrderStatus, StoreRemovalReason, StoreStatus } from "../../../../../../../generated/prisma/client";
 import { addPaymentAction, deletePaymentAction } from "../_actions/orderPaymentActions";
 import OrderDetailHero from "./OrderDetailHero";
 import OrderPaymentsAsideCard, { type OrderPaymentsAsideCardHandle } from "./OrderPaymentsAsideCard";
@@ -19,7 +19,7 @@ import OrderCancelModal from "./OrderCancelModal";
 import OrderDeleteModal from "./OrderDeleteModal";
 
 type PaymentRecord = { id: string; amount: number; paymentDate: Date };
-type Store = { id: string; name: string; slug: string };
+type Store = { id: string; name: string; slug: string; status: StoreStatus; removalReason: StoreRemovalReason | null };
 
 type OrderDetailClientProps = {
   order: {

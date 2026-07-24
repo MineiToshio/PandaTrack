@@ -1,4 +1,8 @@
 {
+  "orderTombstone": {
+    "neutral": "Esta tienda ya no está disponible.",
+    "sanction": "Esta tienda fue retirada por incumplir nuestras políticas."
+  },
   "create": {
     "heroEyebrow": "Añadir tienda",
     "heroDescription": "Crea una ficha pública para que otros coleccionistas descubran la tienda, sus canales y qué vende.",

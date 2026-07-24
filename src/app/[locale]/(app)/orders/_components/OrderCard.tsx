@@ -11,8 +11,10 @@ import { isOrderOverdue } from "@/lib/orders/orderDerivedState";
 import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import OrderUnpaidPill from "./share/OrderUnpaidPill";
+import StoreTombstoneNotice from "./share/StoreTombstoneNotice";
 import { describeOrderListChip, describeOverdueDays, getOrderListChipToneClassName } from "./share/orderListStatusChip";
 import { describeItemDeliveryState, getItemDeliveryStateToneClassName } from "./share/orderItemDeliveryChip";
+import { resolveStoreTombstone } from "@/lib/store/storeTombstone";
 import type { OrdersListPageItem } from "@/lib/data/orders/orderQueries";
 
 type OrderCardProps = {
@@ -45,6 +47,7 @@ export default function OrderCard({ order, locale, today, returnTo, isExpanded, 
   const showUnpaid = order.status === "COMPLETED" && order.hasUnpaidBalance;
   const detailHref = `/${locale}${ROUTES.orders}/${order.id}?returnTo=${encodeURIComponent(returnTo)}`;
   const isCompletedOrCancelled = order.status === "COMPLETED" || order.status === "CANCELLED";
+  const storeTombstone = resolveStoreTombstone(order.store);
 
   const progressTone = isCompletedOrCancelled
     ? "[background:var(--success)]"
@@ -82,9 +85,12 @@ export default function OrderCard({ order, locale, today, returnTo, isExpanded, 
       <div className="pointer-events-none relative flex items-start gap-3">
         <StoreAvatar store={{ name: order.store.name }} size={40} />
         <div className="min-w-0 flex-1">
-          <p className="truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
-            {order.store.name}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="min-w-0 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+              {order.store.name}
+            </p>
+            {storeTombstone.isRemoved && <StoreTombstoneNotice tone={storeTombstone.tone} variant="compact" />}
+          </div>
           <p className="truncate [font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums">
             {order.humanReadableId} · {formatDate(order.orderDate, locale)}
           </p>
