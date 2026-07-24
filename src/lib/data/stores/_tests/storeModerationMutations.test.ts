@@ -10,6 +10,11 @@ const { prismaMock, txMock } = vi.hoisted(() => {
       findUnique: vi.fn(),
       update: vi.fn(),
     },
+    // The post-write supersede sweep re-reads the store and its open change requests.
+    storeChangeRequest: {
+      findMany: vi.fn(),
+      update: vi.fn(),
+    },
   };
   return {
     txMock,
@@ -53,12 +58,33 @@ function mockCurrentStore(row: Partial<StoreRow> & Pick<StoreRow, "status">) {
     approvedByUserId: null,
     ...row,
   };
-  txMock.store.findUnique.mockResolvedValue(full);
+  // The same `findUnique` mock serves the moderation read and the editable read the sweep performs,
+  // so the row carries both the moderation fields and the editable shape (with empty relations).
+  txMock.store.findUnique.mockResolvedValue({
+    ...full,
+    name: "Store One",
+    description: null,
+    logoUrl: null,
+    sellerType: "RETAILER",
+    countryCode: "PE",
+    createdByUserId: "user-1",
+    hasStock: null,
+    receivesOrders: null,
+    isPrivate: false,
+    isActive: true,
+    presences: [],
+    productTypeAssignments: [],
+    importCountries: [],
+    contactChannels: [],
+    addresses: [],
+  });
   txMock.store.update.mockImplementation(async ({ data }: { data: { status: StoreRow["status"] } }) => ({
     id: full.id,
     slug: full.slug,
     status: data.status,
   }));
+  // No open change requests, so the sweep is a no-op for these transitions.
+  txMock.storeChangeRequest.findMany.mockResolvedValue([]);
 }
 
 const ACTOR = "admin-1";

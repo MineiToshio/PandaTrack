@@ -11,7 +11,10 @@ const { storeFindManyMock, storeCreateMock, transactionMock, txStoreUpdateMock }
     transactionMock: vi.fn(async (callback: (tx: unknown) => unknown) => {
       const noop = vi.fn().mockResolvedValue(undefined);
       const tx = {
-        store: { update: txStoreUpdateMock },
+        // `findUnique` returns null so the post-write supersede sweep short-circuits harmlessly; this
+        // test only asserts the store write itself.
+        store: { update: txStoreUpdateMock, findUnique: vi.fn().mockResolvedValue(null) },
+        storeChangeRequest: { findMany: vi.fn().mockResolvedValue([]), update: noop },
         storePresence: { deleteMany: noop, createMany: noop },
         storeProductTypeAssignment: { deleteMany: noop, createMany: noop },
         storeImportCountry: { deleteMany: noop, createMany: noop },

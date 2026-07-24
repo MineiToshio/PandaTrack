@@ -48,6 +48,7 @@ import type {
   StoreGovernanceViewerContext,
 } from "@/lib/data/stores/storeGovernanceQueries";
 import type { AdminOpenStoreReport } from "@/lib/data/admin/adminStoreReportQueries";
+import type { AdminPendingStoreChangeRequest } from "@/lib/data/admin/adminStoreChangeRequestQueries";
 import StoreHero from "../../_components/share/StoreHero";
 import CollapsibleSection from "@/components/modules/CollapsibleSection";
 import StorePublicReviewsSection from "./StorePublicReviewsSection";
@@ -72,6 +73,11 @@ type StoreDetailContentProps = {
    * administrator. Absent for every non-admin viewer, so no admin read is exposed to the client.
    */
   adminOpenReports?: AdminOpenStoreReport[];
+  /**
+   * Pending change requests with the rebased diff and requester identity, populated only when the
+   * viewer is an administrator. Absent for every non-admin viewer.
+   */
+  adminChangeRequests?: AdminPendingStoreChangeRequest[];
   canAccessEditRoute: boolean;
   canDirectlyEdit: boolean;
   /** When true, the viewer is an administrator and the admin moderation panel is rendered. */
@@ -120,6 +126,7 @@ export default function StoreDetailContent({
   governanceViewerContext,
   viewerActivity,
   adminOpenReports,
+  adminChangeRequests,
   canAccessEditRoute,
   canDirectlyEdit,
   canModerate,
@@ -207,6 +214,7 @@ export default function StoreDetailContent({
             viewerOpenReport={governanceViewerContext.openReport}
             viewerOpenChangeRequest={governanceViewerContext.openChangeRequest}
             adminReports={adminOpenReports}
+            adminChangeRequests={adminChangeRequests}
           />
         )}
 

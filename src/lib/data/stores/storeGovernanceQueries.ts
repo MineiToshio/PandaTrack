@@ -1,4 +1,5 @@
 import type {
+  Prisma,
   StoreChangeRequestStatus,
   StoreContactChannelType,
   StorePresenceType,
@@ -8,6 +9,32 @@ import type {
 } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PUBLIC_VISIBLE_STORE_STATUSES } from "./storeQueries";
+
+/**
+ * Single source of truth for the columns and relations {@link mapStoreToEditableStore} consumes.
+ * Shared by the public slug read and the transaction-scoped by-id read so both hydrate the exact
+ * same editable shape.
+ */
+const EDITABLE_STORE_SELECT = {
+  id: true,
+  slug: true,
+  name: true,
+  description: true,
+  logoUrl: true,
+  status: true,
+  sellerType: true,
+  countryCode: true,
+  createdByUserId: true,
+  hasStock: true,
+  receivesOrders: true,
+  isPrivate: true,
+  isActive: true,
+  presences: { select: { presenceType: true } },
+  productTypeAssignments: { select: { productTypeKey: true } },
+  importCountries: { select: { countryCode: true } },
+  contactChannels: { select: { type: true, value: true, label: true } },
+  addresses: { select: { city: true, addressLine: true, reference: true } },
+} satisfies Prisma.StoreSelect;
 
 export type EditableContactChannelInput = {
   type: StoreContactChannelType;
@@ -104,7 +131,7 @@ export type EditableStoreDiff = Partial<{
 }>;
 
 const REPORT_REASONS: StoreReportReason[] = ["SPAM", "DUPLICATE", "INCORRECT_INFO", "DOES_NOT_EXIST", "INAPPROPRIATE"];
-const CHANGE_REQUEST_STATUSES: StoreChangeRequestStatus[] = ["PENDING", "APPROVED", "REJECTED"];
+const CHANGE_REQUEST_STATUSES: StoreChangeRequestStatus[] = ["PENDING", "APPROVED", "REJECTED", "SUPERSEDED"];
 
 function mapStoreToEditableStore(store: {
   id: string;
@@ -203,38 +230,25 @@ export async function getEditableStoreBySlug(slug: string): Promise<EditableStor
       // detail still renders and can be reported / change-requested; the tombstone stays hidden.
       status: { in: [...PUBLIC_VISIBLE_STORE_STATUSES] },
     },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      description: true,
-      logoUrl: true,
-      status: true,
-      sellerType: true,
-      countryCode: true,
-      createdByUserId: true,
-      hasStock: true,
-      receivesOrders: true,
-      isPrivate: true,
-      isActive: true,
-      presences: { select: { presenceType: true } },
-      productTypeAssignments: { select: { productTypeKey: true } },
-      importCountries: { select: { countryCode: true } },
-      contactChannels: {
-        select: {
-          type: true,
-          value: true,
-          label: true,
-        },
-      },
-      addresses: {
-        select: {
-          city: true,
-          addressLine: true,
-          reference: true,
-        },
-      },
-    },
+    select: EDITABLE_STORE_SELECT,
+  });
+
+  return store ? mapStoreToEditableStore(store) : null;
+}
+
+/**
+ * Loads the editable shape of a store by id through a supplied client (typically a transaction
+ * client), with no visibility filter, so the change-request rebase and the cross-request supersede
+ * sweep can re-derive diffs against the store's current state inside the same write transaction.
+ * Admin-only surfaces reach it; callers must gate before invoking.
+ */
+export async function getEditableStoreForRebase(
+  client: Prisma.TransactionClient,
+  storeId: string,
+): Promise<EditableStore | null> {
+  const store = await client.store.findUnique({
+    where: { id: storeId },
+    select: EDITABLE_STORE_SELECT,
   });
 
   return store ? mapStoreToEditableStore(store) : null;

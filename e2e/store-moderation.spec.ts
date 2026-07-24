@@ -75,6 +75,21 @@ async function fileOpenReport(page: Page): Promise<void> {
   await page.reload();
 }
 
+/**
+ * Files a change request that renames the store, from the store's edit route. The current user must
+ * be a non-owner of the store (or the store must be APPROVED) so the edit form submits a change
+ * request instead of a direct edit. Redirects back to the store detail on success.
+ */
+async function fileNameChangeRequest(page: Page, detailUrl: string, newName: string): Promise<void> {
+  await page.goto(`${detailUrl}/edit`);
+  const nameField = page.getByLabel(/store name|nombre de la tienda/i);
+  await expect(nameField).toBeVisible({ timeout: 10_000 });
+  await nameField.fill(newName);
+  await page.getByRole("button", { name: /submit change request|enviar solicitud/i }).click();
+  // A successful submission leaves the edit route and returns to the store detail.
+  await expect(page).toHaveURL(STORE_DETAIL_URL, { timeout: 15_000 });
+}
+
 test.describe("Store moderation", () => {
   test.describe.configure({ mode: "serial" });
 
@@ -180,6 +195,64 @@ test.describe("Store moderation", () => {
     await dismissButton.click();
 
     await expect(summaryDialog.getByRole("button", { name: /^dismiss$/i })).toHaveCount(0, { timeout: 10_000 });
+  });
+
+  test("an admin applies a change request and the store reflects it (AC-04-26)", async ({ page }) => {
+    skipUnlessAuthenticatedEnv();
+    skipUnlessAdminEnv();
+
+    // The admin owns an APPROVED store; a different (non-owner) user files a change request against
+    // it, which is the path that produces a `StoreChangeRequest` rather than a direct edit.
+    await signInAsAdmin(page);
+    const detailUrl = await createBusinessStoreAndOpenDetail(page, `E2E CR Apply ${Date.now()}`);
+
+    await signInAndLandOnDashboard(page);
+    const proposedName = `Renamed By CR ${Date.now()}`;
+    await fileNameChangeRequest(page, detailUrl, proposedName);
+
+    // The admin approves and applies it from the governance panel.
+    await signInAsAdmin(page);
+    await page.goto(detailUrl);
+    await page.getByRole("button", { name: /view summary/i }).click();
+    const summaryDialog = page.getByRole("dialog", { name: /reports and suggestions/i });
+    await expect(summaryDialog).toBeVisible();
+    // The admin-only change-request section exposes the requester identity and the diff.
+    await expect(summaryDialog.getByText(/requested by @/i)).toBeVisible();
+
+    const applyButton = summaryDialog.getByRole("button", { name: /approve and apply/i }).first();
+    await expect(applyButton).toBeVisible();
+    await applyButton.click();
+
+    // Optimistic: the request block leaves the list immediately; the modal stays open.
+    await expect(summaryDialog.getByRole("button", { name: /approve and apply/i })).toHaveCount(0, { timeout: 10_000 });
+    await expect(summaryDialog).toBeVisible();
+
+    // The applied change is reflected on the store detail after a reload.
+    await page.reload();
+    await expect(page.getByText(proposedName).first()).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("an admin rejects a change request from the governance panel (AC-04-30)", async ({ page }) => {
+    skipUnlessAuthenticatedEnv();
+    skipUnlessAdminEnv();
+
+    await signInAsAdmin(page);
+    const detailUrl = await createBusinessStoreAndOpenDetail(page, `E2E CR Reject ${Date.now()}`);
+
+    await signInAndLandOnDashboard(page);
+    await fileNameChangeRequest(page, detailUrl, `Rejected Rename ${Date.now()}`);
+
+    await signInAsAdmin(page);
+    await page.goto(detailUrl);
+    await page.getByRole("button", { name: /view summary/i }).click();
+    const summaryDialog = page.getByRole("dialog", { name: /reports and suggestions/i });
+    await expect(summaryDialog).toBeVisible();
+
+    const rejectButton = summaryDialog.getByRole("button", { name: /^reject$/i }).first();
+    await expect(rejectButton).toBeVisible();
+    await rejectButton.click();
+
+    await expect(summaryDialog.getByRole("button", { name: /^reject$/i })).toHaveCount(0, { timeout: 10_000 });
   });
 
   test("a non-admin does not see the admin open-reports section (AC-04-25)", async ({ page }) => {

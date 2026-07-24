@@ -2,6 +2,9 @@ import type { Prisma, StoreRemovalReason, StoreReportStatus, StoreStatus } from 
 import { prisma } from "@/lib/prisma";
 import { AUDIT_ACTIONS, AUDIT_TARGET_TYPES, type AuditAction } from "@/lib/data/admin/adminAuditVocabulary";
 import { writeAuditEntry } from "@/lib/data/admin/adminAuditMutations";
+// One-way dependency: the moderation transitions reuse the shared supersede sweep that lives with
+// the change-request diff machinery; that module must never import back from here.
+import { supersedeStaleChangeRequests } from "./storeGovernanceMutations";
 
 /**
  * Expected outcomes of a moderation mutation that are not bugs: the store or report no longer
@@ -108,6 +111,10 @@ async function runModerationTransition(params: {
       },
       tx,
     );
+
+    // Any store write re-evaluates other open change requests; one whose diff is now empty against
+    // the new state is superseded, atomically with this transition.
+    await supersedeStaleChangeRequests(tx, current.id);
 
     return {
       id: updated.id,

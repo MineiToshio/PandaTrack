@@ -107,6 +107,7 @@ enum StoreChangeRequestStatus {
   PENDING
   APPROVED
   REJECTED
+  SUPERSEDED
 }
 
 enum NotificationType {

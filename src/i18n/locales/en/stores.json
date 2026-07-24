@@ -281,7 +281,43 @@
       "reportRequired": "The report could not be identified.",
       "reportNotFound": "This report is no longer available.",
       "validation_failed": "Check the form and try again.",
-      "moderationFailed": "The action could not be completed. Try again."
+      "moderationFailed": "The action could not be completed. Try again.",
+      "changeRequestRequired": "We could not identify the change request.",
+      "changeRequestNotFound": "This change request is no longer available."
+    },
+    "changeRequests": {
+      "sectionTitle": "Change requests",
+      "requestedBy": "Requested by @{username}",
+      "adminOnlyCaption": "Requester and details visible to administrators only.",
+      "noComment": "No additional comment.",
+      "commentLabel": "Comment",
+      "currentLabel": "Current",
+      "proposedLabel": "Proposed",
+      "alreadyAppliedTag": "Already applied",
+      "emptyValue": "Not set",
+      "boolValues": {
+        "true": "Yes",
+        "false": "No",
+        "unset": "Not set"
+      },
+      "itemDelta": {
+        "added": "Added",
+        "removed": "Removed",
+        "kept": "Kept"
+      },
+      "driftBanner": {
+        "title": "The store changed since this request",
+        "helper": "The values shown reflect the current state; approving applies only the changes that still have effect."
+      },
+      "rebaseNote": "On approval, the changes are recomputed against the store's current state.",
+      "nothingToApply": "No changes left to apply: the store already matches the proposal.",
+      "applyCta": "Approve and apply",
+      "rejectCta": "Reject",
+      "toasts": {
+        "applied": "Changes applied to the store.",
+        "superseded": "There were no changes left to apply.",
+        "rejected": "Change request rejected."
+      }
     }
   },
   "governance": {
@@ -337,7 +373,9 @@
         "receivesOrders": "Overseas buying for you",
         "contactChannels": "Contact channels",
         "addresses": "Addresses",
-        "importCountries": "Import countries"
+        "importCountries": "Import countries",
+        "isPrivate": "Private store",
+        "isActive": "Active store"
       }
     },
     "report": {

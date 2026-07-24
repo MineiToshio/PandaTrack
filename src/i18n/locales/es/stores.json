@@ -281,7 +281,43 @@
       "reportRequired": "No se pudo identificar el reporte.",
       "reportNotFound": "Este reporte ya no está disponible.",
       "validation_failed": "Revisa el formulario e inténtalo otra vez.",
-      "moderationFailed": "No se pudo completar la acción. Inténtalo otra vez."
+      "moderationFailed": "No se pudo completar la acción. Inténtalo otra vez.",
+      "changeRequestRequired": "No se pudo identificar la solicitud de cambio.",
+      "changeRequestNotFound": "Esta solicitud de cambio ya no está disponible."
+    },
+    "changeRequests": {
+      "sectionTitle": "Solicitudes de cambio",
+      "requestedBy": "Solicitado por @{username}",
+      "adminOnlyCaption": "Autor y detalles visibles solo para administradores.",
+      "noComment": "Sin comentario adicional.",
+      "commentLabel": "Comentario",
+      "currentLabel": "Ahora",
+      "proposedLabel": "Propuesta",
+      "alreadyAppliedTag": "Ya aplicado",
+      "emptyValue": "Sin especificar",
+      "boolValues": {
+        "true": "Sí",
+        "false": "No",
+        "unset": "Sin especificar"
+      },
+      "itemDelta": {
+        "added": "Se agrega",
+        "removed": "Se quita",
+        "kept": "Se mantiene"
+      },
+      "driftBanner": {
+        "title": "La tienda cambió desde esta solicitud",
+        "helper": "Los valores mostrados reflejan el estado actual; al aprobar solo se aplican los cambios que aún tienen efecto."
+      },
+      "rebaseNote": "Al aprobar, los cambios se recalculan sobre el estado actual de la tienda.",
+      "nothingToApply": "No quedan cambios por aplicar: la tienda ya coincide con la propuesta.",
+      "applyCta": "Aprobar y aplicar",
+      "rejectCta": "Rechazar",
+      "toasts": {
+        "applied": "Cambios aplicados a la tienda.",
+        "superseded": "No quedaban cambios por aplicar.",
+        "rejected": "Solicitud de cambio rechazada."
+      }
     }
   },
   "governance": {
@@ -337,7 +373,9 @@
         "receivesOrders": "Acepta pedidos",
         "contactChannels": "Canales de contacto",
         "addresses": "Direcciones",
-        "importCountries": "Países de importación"
+        "importCountries": "Países de importación",
+        "isPrivate": "Tienda privada",
+        "isActive": "Tienda activa"
       }
     },
     "report": {
