@@ -78,12 +78,12 @@ As an administrator, I want to review the audit log, so that I can see who did w
 
 ### Audit log viewer
 
-- `FR-02-11`: The system must provide an audit log viewer listing `AdminAuditLog` entries newest first, showing actor, action, target, UTC timestamp, and reason when present.
+- `FR-02-11`: The system must provide an audit log viewer listing `AdminAuditLog` entries newest first, showing actor, action, target, UTC timestamp, and reason when present. The timestamp is displayed in UTC with a visible label so administrators in different time zones read one canonical instant. In the first release the target is presented as the localized target type plus the `targetId`; resolving the id to a human-readable name is a later enhancement.
 - `FR-02-12`: The audit log viewer must support baseline pagination or a simple recent-window view so it stays usable as entries accumulate.
 
 ### Analytics
 
-- `FR-02-13`: The console must emit analytics for administrator navigation and for opening an inbox item, following the shared PostHog conventions.
+- `FR-02-13`: The console must emit analytics for administrator navigation, for opening an inbox item, and for opening the audit log viewer, following the shared PostHog conventions.
 
 ### Per-type review
 
