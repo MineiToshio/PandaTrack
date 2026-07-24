@@ -3,12 +3,12 @@ id: WO-07
 type: WORK_ORDER
 slug: store-rejection-notification
 title: Store Rejection Notification
-status: DRAFT
+status: ACTIVE
 parent: BP-01
 source_features: []
 source_issue: 135
 implementation_status: PLANNED
-last_updated: 2026-07-22
+last_updated: 2026-07-23
 ---
 
 # WO-07 Store Rejection Notification
@@ -20,12 +20,12 @@ Add a fourth notification type so a store creator is told when an administrator 
 ## In Scope
 
 - Prisma migration adding `STORE_REJECTED` to `NotificationType` and `STORE` to `NotificationSubjectType`, plus `storeRejectedEnabled Boolean @default(true)` on `NotificationPreference`.
-- A narrow send helper (for example `notifyStoreRejected(userId, storeId, removalReason)`) in `src/lib/data/notifications/` alongside the existing `notificationMutations.ts`, invoked directly by `WO-09`'s store-removal mutation. It performs the same checks the daily dispatcher performs per candidate (active subscription, master state, `storeRejectedEnabled`) before sending, then writes the `NotificationDelivery` dedup row.
-- A localized `storeRejected` (neutral) and `storeRejectedAbuse` (sanction-toned) pair of keys in the `notifications` next-intl namespace (`es` default, `en`), each with `title` / `body`, following the `{ title, body }` shape the namespace already uses for `paymentDue` / `arrivalDue` / `arrivalOverdue`.
-- Wiring the per-type toggle into the existing Notifications section in Settings (a fourth row next to the other three), reusing `setNotificationPreferenceAction`.
+- A narrow send orchestrator (for example `notifyStoreRejected({ userId, storeId, storeName, removalReason })`) in `src/lib/notifications/storeRejectionNotifier.ts`, next to the existing `reminderDispatch.ts`, not in the data layer. It reuses the existing data-layer functions (`getUserPushSubscriptions`, `getNotificationPreferences`, `recordNotificationDelivery`, `pruneExpiredPushSubscription`) plus `sendPushMessage`, and it performs the same per-collector gating the daily dispatcher performs (active subscription, derived master state, `storeRejectedEnabled`) before sending, then writes the `NotificationDelivery` dedup row. The orchestrator is invoked from the action layer (`removeStoreAction`) after `removeStore` commits, never from the data-layer mutation itself, because i18n, PostHog, and push transport are action-layer concerns and must not leak into `src/lib/data/`.
+- A localized `storeRejected` (neutral) and `storeRejectedAbuse` (sanction-toned) pair of keys in the `notifications` next-intl namespace (`es` default, `en`), each with `title` / `body`, following the `{ title, body }` shape the namespace already uses for `paymentDue` / `arrivalDue` / `arrivalOverdue`. Copy is creator-facing and interpolates the store name via `{store}`. Neutral (`es`): `title` "Tu tienda no fue aprobada", `body` "Revisamos {store} y no la aprobamos para el directorio." Sanction (`es`): `title` "Tu tienda fue retirada", `body` "Retiramos {store} por incumplir nuestras politicas." The `en` equivalents mirror this voice.
+- Wiring the per-type toggle into the existing Notifications section in Settings (a fourth row next to the other three), reusing `setNotificationPreferenceAction`. Concretely: add `STORE_REJECTED` to the `REMINDER_TYPES` array in `SettingsNotificationsSection.tsx`, thread `storeRejectedEnabled` through `settings/page.tsx` into `initialNotificationPreferences`, and add `settings.notifications.types.STORE_REJECTED` copy (`label` "Tienda rechazada", plus helper). The `notificationPreferenceInputSchema` already derives its `type` union from `NotificationType`, so it accepts the new value without an edit.
 - A deep link to the store listing (`/{locale}/stores`), chosen because the store's own detail page 404s once it leaves `PENDING`/`APPROVED` (`getStoreBySlug` filters to those two statuses; see [`FRD-04`](../../../frd-04-store-domain/frd-04-store-domain.md#screens-and-data-contract)), so it is not a valid deep-link target after rejection.
 - A new PostHog event for the send.
-- Unit test coverage for the migration-adjacent data layer, the send helper's gating logic, and the localized copy selection; an E2E scenario exercising the trigger-to-push path at the level this FRD's other slices are tested.
+- Unit test coverage for the migration-adjacent data layer, the orchestrator's gating and dedup branches, the payload composer, and the localized copy selection. E2E is scoped honestly to what Playwright can drive (see Testing): a real trigger-to-push delivery is not E2E-testable because Playwright's Chromium does not implement the Push API.
 
 ## Out of Scope
 
@@ -52,7 +52,9 @@ Add a fourth notification type so a store creator is told when an administrator 
 - The send helper reuses the `web-push` wrapper and the `SENT` / `EXPIRED` / `TRANSIENT_FAILURE` result union already defined for the dispatch route, so pruning an expired subscription behaves identically whether the send came from the cron or from this event-driven path.
 - Dependency: this slice can only be implemented after [`PRD-02 FRD-04` · `WO-09 store-approval-and-removal`](../../../frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md) ships its store-removal mutation (the trigger call site) and after the admin platform in [`PRD-03 FRD-01` · `WO-01`](../../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/bp-01-admin-identity-and-access-platform/work-orders/wo-01-role-admin-plugin-and-audit-foundation.md) exists to gate who can call it. It is otherwise independent of, and can proceed in parallel with, `WO-05` and `WO-06`.
 
-## E2E Acceptance Tests
+## Acceptance Scenarios
+
+These are the behavioral scenarios the slice must satisfy (mirroring `AC-09-12` through `AC-09-17`). Their automated-coverage split is defined in Testing: the send, gating, dedup, and copy-variant scenarios are proven by unit tests (a real push cannot be delivered under Playwright), while the Settings toggle scenario and the "approve does not notify" scenario are the automated E2E paths.
 
 - An administrator rejects a store whose creator has an active push subscription, the master notification state on, and `storeRejectedEnabled` on: the creator receives one `STORE_REJECTED` push, and clicking it opens the store listing for their locale.
 - The same rejection is processed a second time (for example a retried mutation): no second push is sent, because the `NotificationDelivery` dedup row already exists for that (`userId`, `STORE_REJECTED`, storeId) tuple.
@@ -63,16 +65,21 @@ Add a fourth notification type so a store creator is told when an administrator 
 
 ## Assumptions
 
-- **The `removalReason` value is supplied by the caller, not derived here.** `WO-09`'s moderation action decides and passes `Store.removalReason`, including whether it is abuse-related; this slice only branches copy on that value. If `WO-09` ships before its own abuse-vs-other classification is fully settled, the neutral copy is the safe default until one is added.
+- **The `removalReason` value is supplied by the caller, not derived here.** `WO-09`'s moderation action decides and passes `Store.removalReason`, including whether it is abuse-related; this slice only branches copy on that value using `isSanctionRemovalReason` (`src/lib/store/removalReason.ts`): `ABUSE` selects the sanction variant, every other reason selects the neutral variant. If `WO-09` ships before its own abuse-vs-other classification is fully settled, the neutral copy is the safe default until one is added.
+- **The creator's `userId` and the store `name` must be surfaced by the removal mutation.** `removeStore`'s `MODERATION_STORE_SELECT` and its `StoreModerationResult` do not currently expose `createdByUserId` or `name`; both live on the store row the transaction already loads, so this slice extends that select and result at zero extra query cost and passes them from `removeStoreAction` into `notifyStoreRejected`. Without the creator id there is no recipient to target.
+- **The dedup `dueDate` is the decision date truncated to midnight UTC.** The `NotificationDelivery` tuple is (`creatorUserId`, `STORE_REJECTED`, `storeId`, day). Two calls to `new Date()` differ by milliseconds, so keying on the raw timestamp would let a retried mutation send a second push; truncating to the UTC day makes a same-day retry idempotent without widening the schema (there is no `Store.removedAt` column, and adding one is out of scope). A retry on a later calendar day is a new tuple and may legitimately re-send, which is acceptable for this one-shot event.
 - **Removal and rejection are the same trigger for this slice.** "Reject" and "remove" both land the store in `StoreStatus.REJECTED` per `WO-09`; there is one notification path for that one terminal transition, not two.
 - **The store listing, not a "my stores" surface, is the deep-link target**, because no creator-scoped store list exists in the product today (the `/stores` route is the general public listing). Linking to the store's own detail is not viable, since `getStoreBySlug` already 404s any non-`PENDING`/`APPROVED` store. If a creator-scoped surface ships later, this deep link should move to it.
 - **This Work Order takes the next available number in this blueprint (`WO-07`)**, independent of `PRD-02 FRD-04`'s own local numbering (whose blueprint is currently at `WO-09` for `store-approval-and-removal`). `BP-NN` / `WO-NN` numbering is local to each FRD's blueprint tree, so the two sequences are unrelated.
 
 ## Technical Notes
 
-- Data layer: the send helper lives in `src/lib/data/notifications/notificationMutations.ts` next to the existing subscribe/unsubscribe/preference writers, keeping the notifications domain self-contained per [`project-structure.mdc`](../../../../../../.agents/rules/project-structure.mdc).
-- Dedup key: (`userId`, `type: STORE_REJECTED`, `subjectId: storeId`, `dueDate`), reusing the existing `NotificationDelivery` unique constraint. `dueDate` here holds the rejection decision's date (not a future due date), which is enough to make a retried mutation call idempotent without widening the schema.
-- The send helper never throws into the calling mutation: a failure to notify must not block or roll back the moderation action. It follows the same typed-result, single-Sentry-capture discipline as the rest of this FRD's send path.
+- Layering: the send orchestrator lives in `src/lib/notifications/storeRejectionNotifier.ts`, next to `reminderDispatch.ts`, not in the data layer. Only the pure data pieces stay under `src/lib/data/notifications/`: `getNotificationPreferences` and `notificationQueries`'s `NotificationPreferenceMap` gain a `STORE_REJECTED` key sourced from the new `storeRejectedEnabled` column, and `notificationMutations`'s `PREFERENCE_COLUMN_BY_TYPE` gains its column mapping. Push transport, `getTranslations`, and PostHog must not appear under `src/lib/data/` per [`prisma-data-layer.mdc`](../../../../../../.agents/rules/prisma-data-layer.mdc) and [`project-structure.mdc`](../../../../../../.agents/rules/project-structure.mdc).
+- Trigger site: `notifyStoreRejected` is called from `removeStoreAction` (`src/app/[locale]/(app)/stores/[slug]/_actions/moderateStore.ts`) after `removeStore` returns success, mirroring how that action already fires its PostHog capture and `revalidatePath`. The data-layer `removeStore` stays push-agnostic; its existing comment already anticipates a notification running "after the transaction commits".
+- Recipient wiring: extend `MODERATION_STORE_SELECT` and `StoreModerationResult` in `storeModerationMutations.ts` with `createdByUserId` and `name`, then pass them from `removeStoreAction` to the orchestrator.
+- Dedup key: (`userId`, `type: STORE_REJECTED`, `subjectType: STORE`, `subjectId: storeId`, `dueDate`), reusing the existing `NotificationDelivery` unique constraint. `dueDate` holds the rejection decision date truncated to midnight UTC (not a future due date), which makes a retried mutation call idempotent within the same day without widening the schema.
+- Failure isolation: the orchestrator is awaited inside a `try/catch` in the action so a failed send is swallowed and never blocks or rolls back the moderation transition; the moderation action always returns its success result. An unexpected failure is captured once with Sentry. It uses no unawaited promise or `after()` hook, because post-response async work can be terminated on Vercel before it completes. Expected outcomes (`EXPIRED`, transient failure) reuse the `web-push` wrapper's typed-result union and are not monitored errors.
+- Enum-widening ripple: adding `STORE_REJECTED` to `NotificationType` forces every exhaustive `Record<NotificationType, ...>` to gain the key. Introduce a `ReminderNotificationType` subtype (the three cron types) for the dispatcher-only maps in `reminderDispatch.ts` (`emptyRunSummary`/`byType`) and `reminderPayload.ts` (`TRANSLATION_PREFIX_BY_TYPE`) so the cron summary keeps no meaningless always-zero `STORE_REJECTED` bucket, while `NotificationType` stays the full enum for preferences and dedup.
 - Copy resolution uses `getTranslations` server-side at send time, exactly like the daily dispatcher, never a client hook.
 
 ## Analytics
@@ -81,5 +88,5 @@ Add a fourth notification type so a store creator is told when an administrator 
 
 ## Testing
 
-- Unit: migration-adjacent Prisma client typing (new enum values compile), the send helper's gating branches (subscription/master/per-type on and off, dedup hit, expired-subscription pruning), and the copy-selection branch (abuse vs other, `es` vs `en`).
-- E2E: one scenario driving the trigger call site through to a delivered push, covering the acceptance scenarios above, at the same depth [`WO-04`](wo-04-scheduled-reminders.md) uses for its own dispatch scenarios.
+- Unit: migration-adjacent Prisma client typing (new enum values compile), the orchestrator's gating branches (subscription/master/per-type on and off, dedup hit, expired-subscription pruning), the dedup key's midnight-UTC truncation (a same-day retry is idempotent), and the copy-selection branch (abuse vs other, `es` vs `en`). The orchestrator is exercised with mocked data-layer and transport collaborators, exactly as `reminderDispatch.test.ts` mocks its dependencies.
+- E2E: honest scope, because Playwright's bundled Chromium does not implement the Push API (the existing `e2e/notifications-opt-in.spec.ts` stubs `PushManager` to test the opt-in UI, and no spec delivers a real push). This slice adds an E2E that verifies the fourth toggle row renders in the Settings Notifications section and persists through `setNotificationPreferenceAction`, following that same opt-in spec's shape. The "approve does not notify" path (`AC-09-15`) is covered as an assertion in `e2e/store-moderation.spec.ts`. The real send, gating, dedup, and copy-variant behavior is proven by the unit tests above, not by an end-to-end push.

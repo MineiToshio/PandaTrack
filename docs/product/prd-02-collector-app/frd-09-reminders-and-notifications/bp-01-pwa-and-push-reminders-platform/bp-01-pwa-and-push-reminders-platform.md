@@ -37,7 +37,7 @@ Define the single technical platform behind [`FRD-09`](../frd-09-reminders-and-n
 - dispatch route handler `src/app/api/notifications/dispatch/route.ts` guarded by `CRON_SECRET`.
 - `vercel.json` cron entry driving the dispatcher daily.
 - a new next-intl `notifications` message namespace resolved server-side at dispatch time.
-- a fourth `NotificationType` value (`STORE_REJECTED`), a `STORE` `NotificationSubjectType` value, and a `storeRejectedEnabled` column on `NotificationPreference`, plus a narrow event-driven send helper invoked directly from the store-moderation mutation instead of from the cron dispatcher (`WO-07`).
+- a fourth `NotificationType` value (`STORE_REJECTED`), a `STORE` `NotificationSubjectType` value, and a `storeRejectedEnabled` column on `NotificationPreference`, plus a narrow event-driven send orchestrator (`src/lib/notifications/storeRejectionNotifier.ts`) invoked from the store-moderation action layer after the removal mutation commits, instead of from the cron dispatcher (`WO-07`). Widening `NotificationType` introduces a `ReminderNotificationType` subtype (the three cron types) for the dispatcher-only exhaustive maps in `reminderDispatch.ts` and `reminderPayload.ts`, so the cron run summary keeps no always-zero `STORE_REJECTED` bucket while preferences and dedup use the full enum.
 
 ## Architecture Decisions
 
@@ -78,9 +78,10 @@ Define the single technical platform behind [`FRD-09`](../frd-09-reminders-and-n
   - manifest: `name`, `short_name`, `start_url`, `scope`, `display: standalone`, token-sourced `theme_color` / `background_color`, and the icon set (`192`, `512`, `512` maskable).
   - service worker: registered on authenticated load, idempotent, handling `push` and `notificationclick`.
 - store rejection notice contract (`WO-07`)
-  - input: `userId` (the store's creator), `storeId`, and a `reasonCategory` supplied by the caller (`PRD-02 FRD-04`'s moderation mutation), distinguishing at least an abuse-related category from every other category.
-  - behavior: skip when `storeRejectedEnabled` is off or no active subscription exists (mirrors `BR-09-01`); skip when a `NotificationDelivery` row already exists for (`userId`, `STORE_REJECTED`, `storeId`, decision date); otherwise send to every active subscription, write the dedup row, and prune expired endpoints, reusing the same `SENT` / `EXPIRED` / `TRANSIENT_FAILURE` result union as the dispatch route.
-  - output: never throws into the calling mutation; a failed send is captured once with Sentry and does not block or roll back the store-rejection decision.
+  - location: a send orchestrator (`notifyStoreRejected`) in `src/lib/notifications/`, next to `reminderDispatch.ts`, not in the data layer. It reuses the existing notification data-layer readers/writers plus the `web-push` wrapper; i18n, PostHog, and transport stay out of `src/lib/data/`. It is invoked from the store-moderation action layer (`removeStoreAction`) after the removal mutation commits, never from the data-layer mutation itself.
+  - input: `userId` (the store's creator) and `storeName`, both surfaced by the removal mutation's store row (its select and result are extended with `createdByUserId` and `name`); `storeId`; and the `removalReason` supplied by the caller (`PRD-02 FRD-04`'s moderation mutation), from which an abuse-vs-other category is derived via `isSanctionRemovalReason`.
+  - behavior: skip when `storeRejectedEnabled` is off or no active subscription exists (mirrors `BR-09-01`); skip when a `NotificationDelivery` row already exists for (`userId`, `STORE_REJECTED`, `storeId`, decision date truncated to midnight UTC, so a same-day retried mutation stays idempotent); otherwise send to every active subscription, write the dedup row, and prune expired endpoints, reusing the same `SENT` / `EXPIRED` / `TRANSIENT_FAILURE` result union as the dispatch route.
+  - output: never throws into the calling mutation. The action awaits the orchestrator inside a `try/catch` that swallows every failure and captures only unexpected ones once with Sentry; the moderation decision always returns its success result. No unawaited promise or post-response hook is used, because such work can be terminated on Vercel before it completes.
 
 ## Operational Priorities
 
