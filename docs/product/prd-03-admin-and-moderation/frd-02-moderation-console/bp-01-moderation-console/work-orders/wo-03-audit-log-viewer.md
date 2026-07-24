@@ -6,7 +6,7 @@ title: Audit Log Viewer
 status: ACTIVE
 parent: BP-01
 source_issue: 130
-implementation_status: PLANNED
+implementation_status: IN_PROGRESS
 last_updated: 2026-07-23
 ---
 

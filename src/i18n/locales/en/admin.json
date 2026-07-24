@@ -9,8 +9,42 @@
     "placeholder": "The moderation inbox is coming soon."
   },
   "audit": {
-    "title": "Activity log",
-    "placeholder": "The activity log is coming soon."
+    "tableLabel": "Moderation activity log",
+    "utcLabel": "UTC",
+    "columns": {
+      "when": "When",
+      "admin": "Admin",
+      "action": "Action",
+      "target": "Target",
+      "reason": "Reason"
+    },
+    "targetType": {
+      "store": "Store",
+      "report": "Report",
+      "changeRequest": "Change request",
+      "productType": "Product type"
+    },
+    "action": {
+      "store_approve": "Store approved and published",
+      "store_remove": "Store removed from public surfaces",
+      "store_flag": "Store flagged with a warning",
+      "store_unflag": "Warning flag removed from the store",
+      "report_resolve": "Report resolved",
+      "report_dismiss": "Report dismissed",
+      "changeRequest_apply": "Change request applied",
+      "changeRequest_reject": "Change request rejected",
+      "productType_approve": "Product type approved",
+      "productType_reject": "Product type rejected"
+    },
+    "pagination": {
+      "regionLabel": "Audit log pagination",
+      "older": "Older",
+      "newer": "Newer"
+    },
+    "empty": {
+      "title": "No activity recorded yet",
+      "subtitle": "Every privileged moderation action will appear here."
+    }
   },
   "accessDenied": {
     "title": "Restricted access",

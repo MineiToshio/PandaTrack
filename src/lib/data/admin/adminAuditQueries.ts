@@ -16,6 +16,9 @@ const AUDIT_ENTRY_SELECT = {
   targetId: true,
   reason: true,
   createdAt: true,
+  // Joined so the viewer renders the acting admin without a second read. The relation is
+  // `onDelete: Restrict`, so the actor always exists; `username` is shown, `name` is the tooltip.
+  actor: { select: { username: true, name: true } },
 } satisfies Prisma.AdminAuditLogSelect;
 
 export type AuditLogEntry = Prisma.AdminAuditLogGetPayload<{ select: typeof AUDIT_ENTRY_SELECT }>;

@@ -239,6 +239,7 @@ export const POSTHOG_EVENTS = {
   },
   ADMIN: {
     SPACE_ENTERED: "admin_space_entered",
+    AUDIT_VIEWED: "admin_audit_viewed",
   },
 } as const;
 

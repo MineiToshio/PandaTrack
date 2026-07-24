@@ -9,8 +9,42 @@
     "placeholder": "La bandeja de moderación llegará pronto."
   },
   "audit": {
-    "title": "Registro de actividad",
-    "placeholder": "El registro de actividad llegará pronto."
+    "tableLabel": "Registro de actividad de moderación",
+    "utcLabel": "UTC",
+    "columns": {
+      "when": "Cuándo",
+      "admin": "Admin",
+      "action": "Acción",
+      "target": "Objetivo",
+      "reason": "Motivo"
+    },
+    "targetType": {
+      "store": "Tienda",
+      "report": "Reporte",
+      "changeRequest": "Solicitud de cambio",
+      "productType": "Tipo de producto"
+    },
+    "action": {
+      "store_approve": "Tienda aprobada y publicada",
+      "store_remove": "Tienda retirada de las superficies públicas",
+      "store_flag": "Tienda marcada con una advertencia",
+      "store_unflag": "Marca de advertencia retirada de la tienda",
+      "report_resolve": "Reporte resuelto",
+      "report_dismiss": "Reporte descartado",
+      "changeRequest_apply": "Solicitud de cambio aplicada",
+      "changeRequest_reject": "Solicitud de cambio rechazada",
+      "productType_approve": "Tipo de producto aprobado",
+      "productType_reject": "Tipo de producto rechazado"
+    },
+    "pagination": {
+      "regionLabel": "Paginación del registro de actividad",
+      "older": "Más antiguos",
+      "newer": "Más recientes"
+    },
+    "empty": {
+      "title": "Sin actividad registrada todavía",
+      "subtitle": "Cada acción privilegiada de moderación aparecerá aquí."
+    }
   },
   "accessDenied": {
     "title": "Acceso restringido",
