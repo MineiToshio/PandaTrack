@@ -5,9 +5,13 @@ import { redirect } from "next/navigation";
 import { buildPageMetadata } from "@/lib/seo";
 import { domainDateToIsoString } from "@/lib/domainDate";
 import { getSession } from "@/lib/auth/auth-server";
-import { prisma } from "@/lib/prisma";
-import { getOrdersList, listOrdersPendingFxReconciliation } from "@/lib/data/orders/orderQueries";
+import {
+  getOrdersHeadingCounts,
+  getOrdersList,
+  listOrdersPendingFxReconciliation,
+} from "@/lib/data/orders/orderQueries";
 import { getOrderableStores } from "@/lib/data/stores/storeQueries";
+import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import { DEFAULT_PAGE_SIZE, POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import {
   DEFAULT_ORDER_LIST_SORT,
@@ -218,12 +222,10 @@ export default async function OrdersPage({ params, searchParams }: OrdersPagePro
 
 /** Global active/closed order counts for the heading meta. Suspended (the counter is a skeleton). */
 async function OrdersHeadingCount({ locale, userId }: { locale: string; userId: string }) {
-  const [t, totalAcrossUser, closedCount] = await Promise.all([
+  const [t, { activeCount, closedCount }] = await Promise.all([
     getTranslations({ locale, namespace: "orderListing" }),
-    prisma.order.count({ where: { userId } }),
-    prisma.order.count({ where: { userId, status: { in: ["COMPLETED", "CANCELLED"] } } }),
+    getOrdersHeadingCounts(userId),
   ]);
-  const activeCount = Math.max(0, totalAcrossUser - closedCount);
   return (
     <span className="[font-size:var(--text-caption)] [color:var(--text-muted)] tabular-nums">
       {t("heading.meta", { active: activeCount, closed: closedCount })}
@@ -247,11 +249,8 @@ async function OrdersDataSection({
   basePath: string;
   resetHref: string;
 }) {
-  const userRow = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { baseCurrencyCode: true },
-  });
-  const baseCurrencyCode = userRow?.baseCurrencyCode ?? null;
+  const preferences = await getCollectorPreferencesSnapshot(userId);
+  const baseCurrencyCode = preferences?.baseCurrencyCode ?? null;
 
   const listing = await getOrdersList(userId, {
     nameQuery: parsed.nameQuery,

@@ -419,6 +419,27 @@ export async function listOrdersPendingFxReconciliation(
   });
 }
 
+export type OrdersHeadingCounts = {
+  activeCount: number;
+  closedCount: number;
+};
+
+/**
+ * Global active/closed order counts for the orders page heading meta ("N active, N closed").
+ * "Closed" means a terminal status (COMPLETED or CANCELLED); "active" is everything else,
+ * derived as `total - closed` rather than a separate query.
+ */
+export async function getOrdersHeadingCounts(userId: string): Promise<OrdersHeadingCounts> {
+  const [totalAcrossUser, closedCount] = await Promise.all([
+    prisma.order.count({ where: { userId } }),
+    prisma.order.count({ where: { userId, status: { in: ["COMPLETED", "CANCELLED"] } } }),
+  ]);
+  return {
+    activeCount: Math.max(0, totalAcrossUser - closedCount),
+    closedCount,
+  };
+}
+
 export async function getOrdersList(userId: string, filters: OrdersListPageFilters): Promise<OrdersListPageResult> {
   const {
     nameQuery,
