@@ -3861,6 +3861,8 @@
     .adm-diff { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
     .adm-diff-row { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: var(--surface); }
     .adm-diff-row.is-drift { border-color: color-mix(in oklch, var(--warning) 40%, transparent); background: color-mix(in oklch, var(--warning) 7%, transparent); }
+    .adm-diff-row.is-applied { opacity: 0.6; }
+    .adm-diff-legend { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 10px 0 0; display: inline-flex; align-items: center; gap: 6px; }
     .adm-diff-field { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
     .adm-diff-values { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; font-size: 13px; }
     .adm-diff-before { color: var(--text-muted); text-decoration: line-through; }
@@ -7654,6 +7656,7 @@
         <div class="card elevated">
           <span class="s8-eyebrow-chip"><i data-lucide="git-pull-request-arrow"></i>Solicitud de cambio</span>
           <p class="text-muted" style="font-size:12px;margin:8px 0 0;"><i data-lucide="user" style="width:11px;height:11px;vertical-align:-1px;"></i> Enviada por <strong>@collector_92</strong> · hace 1 semana</p>
+          <p class="adm-diff-legend">Ahora <i data-lucide="arrow-right" style="width:12px;height:12px;"></i> Propuesta</p>
 
           <div class="adm-diff">
             <div class="adm-diff-row">
@@ -7713,21 +7716,20 @@
           <i data-lucide="alert-triangle" class="banner-icon" style="width:16px;height:16px;"></i>
           <div class="banner-copy">
             <strong>La tienda cambió desde esta solicitud</strong>
-            <span>Algunos campos se modificaron después de enviarse. Revisa los conflictos antes de aplicar; no se aplicarán valores desactualizados en silencio.</span>
+            <span>Alguien editó la tienda después de enviarse la solicitud. Los valores mostrados reflejan el estado actual; al aprobar solo se aplican los cambios que aún tienen efecto.</span>
           </div>
         </div>
 
         <div class="card elevated">
           <span class="s8-eyebrow-chip"><i data-lucide="git-pull-request-arrow"></i>Solicitud de cambio</span>
           <p class="text-muted" style="font-size:12px;margin:8px 0 0;"><i data-lucide="user" style="width:11px;height:11px;vertical-align:-1px;"></i> Enviada por <strong>@collector_92</strong> · hace 2 semanas</p>
+          <p class="adm-diff-legend">Ahora <i data-lucide="arrow-right" style="width:12px;height:12px;"></i> Propuesta</p>
 
           <div class="adm-diff">
-            <div class="adm-diff-row is-drift">
-              <div class="adm-diff-field"><i data-lucide="align-left" style="width:12px;height:12px;"></i> Descripción <span class="chip warning" style="font-size:10px;padding:1px 6px;"><i data-lucide="alert-circle"></i> En conflicto</span></div>
-              <div class="adm-diff-values">
-                <span class="adm-diff-before">Tienda de vinilo japonés (editada después por otra persona).</span>
-                <span class="adm-diff-arrow"><i data-lucide="arrow-right" style="width:14px;height:14px;"></i></span>
-                <span class="adm-diff-after">Tienda de vinilo japonés y press limitados de anime OST.</span>
+            <div class="adm-diff-row is-applied">
+              <div class="adm-diff-field"><i data-lucide="align-left" style="width:12px;height:12px;"></i> Descripción <span class="chip info" style="font-size:10px;padding:1px 6px;"><i data-lucide="check-circle-2"></i> Ya aplicado</span></div>
+              <div class="adm-diff-values" style="grid-template-columns:1fr;">
+                <span class="adm-diff-after" style="color:var(--text-muted);font-weight:400;">Tienda de vinilo japonés y press limitados de anime OST. El valor propuesto ya coincide con el actual, así que no se vuelve a aplicar.</span>
               </div>
             </div>
             <div class="adm-diff-row">
@@ -7740,11 +7742,11 @@
             </div>
           </div>
 
-          <p class="adm-note">La descripción cambió en la tienda después de enviarse la solicitud. El sistema detecta el desfase (drift) y lo muestra en vez de aplicar el valor viejo. Resuelve el conflicto antes de aplicar.</p>
+          <p class="adm-note">La descripción ya se actualizó en la tienda después de enviarse la solicitud, así que su cambio queda marcado como "Ya aplicado" y se excluye. Al aprobar solo se aplican los campos que aún cambian algo (aquí, Categorías). El sistema recalcula el diff sobre el estado actual y nunca aplica valores desactualizados en silencio.</p>
 
           <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
             <button class="btn ghost" type="button"><i data-lucide="x"></i> Rechazar</button>
-            <button class="btn primary" type="button"><i data-lucide="git-compare"></i> Revisar conflictos</button>
+            <button class="btn primary" type="button"><i data-lucide="check"></i> Aprobar y aplicar</button>
           </div>
         </div>
       </div>

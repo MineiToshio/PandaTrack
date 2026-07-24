@@ -164,7 +164,7 @@ These requirements are the inline moderation controls exposed on the store surfa
 - `FR-04-44`: Administrators must be able to resolve or dismiss an open store report inline from the governance panel, transitioning `StoreReport` from `OPEN` to `REVIEWED` or `DISMISSED`. Resolving a report frees the reporter to file a new report for that store (`AC-04-12`).
 - `FR-04-45`: Raw report free-text details and reporter identity must be readable by administrators only, through a new server-only admin data-access layer, and must never be exposed by widening the public governance read model (`BR-04-13` stays honored for non-admin viewers).
 - `FR-04-46`: Administrators must be able to approve or reject a `StoreChangeRequest` inline. On approval, the system must re-derive the diff against the store's current state at approval time (rebase) and apply the resulting changes in one transaction, including the relation fields (`contactChannels`, `addresses`, `productTypeKeys`, `importCountries`), and must persist `reviewedByUserId` and `reviewedAt`. Rejection closes the request without applying it. The stored diff must never be blind-applied.
-- `FR-04-47`: When the stored change-request diff no longer cleanly applies to the store's current state (drift, because the store changed after the request was filed), the system must detect and surface the drift to the administrator rather than silently applying stale values.
+- `FR-04-47`: When the stored change-request diff no longer cleanly applies to the store's current state (drift, because the store changed after the request was filed), the system must detect and surface the drift to the administrator rather than silently applying stale values. Because the stored diff persists only proposed values and no base snapshot, drift surfacing at this store-detail surface is bounded to the two signals derivable from diff-only storage: a per-field "already applied" tag when the current value already equals the proposal (dropped from the apply), and a store-level "changed since filed" banner when `store.updatedAt > changeRequest.updatedAt`; approval applies only the changes that still have effect. The richer per-field three-value conflict view (`what was proposed against` / `now` / `proposed`) belongs to the moderation console ([PRD-03 (FRD-02)](../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md)) and depends on a forward-only base-snapshot decision taken there.
 - `FR-04-48`: After any write to a store (direct edit, an applied change request, or a moderation transition), other open change requests on the same store must be re-evaluated: a request whose diff is now empty against the new state is superseded (invalidated) so stale requests do not linger (extends `BR-04-16`).
 - `FR-04-49`: Administrators must be able to approve or reject a `StoreProductTypeRequest` inline. Approval authors a new entry into the global `StoreProductType` catalog: its `key` plus localized names in both `es` and `en` in the `storeProductTypes` i18n namespace. Rejection closes the request without writing to the catalog.
 - `FR-04-50`: The `PENDING` store disclaimer copy must read as non-alarmist "en revision" review language rather than a warning about unverified or untrustworthy data, so a newly created community store is not framed as suspect while it awaits moderation.
@@ -256,7 +256,7 @@ Beyond creation, moderation state changes only through the admin inline controls
 Three viewer-scoped governance records each enforce a one-open-per-store-per-user invariant via upsert:
 
 - `StoreReport` — one open report per (user, store) (`BR-04-14`); admin resolution moves `OPEN` to `REVIEWED` or `DISMISSED` inline (`FR-04-44`), which then lets the user file a new report (`AC-04-12`).
-- `StoreChangeRequest` — one open change request per (user, store) (`BR-04-15`); persists only changed fields and is discarded when no effective diff remains (`BR-04-16`, `AC-04-14`). Admin review either applies it (rebased against the store's current state, relation fields included, `FR-04-46`) or rejects it, setting `reviewedByUserId` / `reviewedAt`; any store write can supersede other open requests (`FR-04-48`, `BR-04-27`).
+- `StoreChangeRequest` — one open change request per (user, store) (`BR-04-15`); persists only changed fields and is discarded when no effective diff remains (`BR-04-16`, `AC-04-14`). Admin review either applies it (rebased against the store's current state, relation fields included, `FR-04-46`, status `APPROVED`) or rejects it (`REJECTED`), setting `reviewedByUserId` / `reviewedAt`; any store write can supersede other open requests, moving them to a terminal `SUPERSEDED` status with `reviewedAt` stamped and `reviewedByUserId` null since no human decided them (`FR-04-48`, `BR-04-27`). `StoreChangeRequestStatus` is therefore `PENDING | APPROVED | REJECTED | SUPERSEDED`.
 - `StoreProductTypeRequest` — a request to add a new catalog product type, openable from create and edit (`FR-04-28`); admin approval authors the new type into the global catalog with `es`/`en` names (`FR-04-49`, `BR-04-28`), and rejection closes it without a catalog write.
 
 Admin transitions on these records are gated by `requireAdmin()` and audited (`FR-04-51`). Raw report free-text and reporter identity remain admin-only, read through a server-only admin data-access layer (`FR-04-45`, `BR-04-25`).
@@ -493,14 +493,15 @@ Admin transitions on these records are gated by `requireAdmin()` and audited (`F
 ### `AC-04-27` Change-request drift is surfaced, not blind-applied
 
 - Given an open `StoreChangeRequest` whose stored diff was computed against an older store state
-- When the store's current state has since changed under the affected fields
-- Then the administrator is shown the drift rather than the stored values being silently applied
+- When the store's current state has since changed (`store.updatedAt > changeRequest.updatedAt`)
+- Then a store-level "changed since filed" banner is shown, any field whose current value already equals the proposal is tagged "already applied" and excluded, and only the changes that still have effect are applied
+- And the stored values are never silently applied (the richer per-field three-value conflict view is deferred to the moderation console behind a base-snapshot decision, `FR-04-47`)
 
 ### `AC-04-28` Other open change requests are superseded after a store write
 
 - Given two open change requests on the same store
 - When any store write (direct edit, an applied change request, or a moderation transition) lands
-- Then each remaining open request whose diff is now empty against the new state is superseded (invalidated)
+- Then each remaining open request whose diff is now empty against the new state moves to `SUPERSEDED` (invalidated), while a request that still has a non-empty diff stays `PENDING`
 
 ### `AC-04-29` Product-type request approval authors the catalog
 

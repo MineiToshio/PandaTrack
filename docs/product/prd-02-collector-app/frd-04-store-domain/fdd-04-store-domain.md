@@ -368,16 +368,23 @@ untouched for non-admins. The raw rows are read through `getAdminOpenStoreReport
 
 **Change-request review** (`#s6-store-change-request-review`). A focused `card elevated` review
 surface: requester + submitted date, then an **`adm-diff` field list**, one `adm-diff-row` per
-changed field showing the `adm-diff-before` (struck-through) → `adm-diff-after` value. Footer is
-**"Aprobar y aplicar"** (primary) and **"Rechazar"** (ghost). Approval **rebases** the diff onto
-the store's current state and applies it, relation fields included, in one transaction
-(`FR-04-46`, BR-04-26, `AC-04-26`); the stored diff is never blind-applied.
+changed field showing the current store value (`adm-diff-before`, labeled **"Ahora"**) →
+the requested value (`adm-diff-after`, labeled **"Propuesta"**). Footer is **"Aprobar y aplicar"**
+(primary) and **"Rechazar"** (ghost). Approval **rebases** the diff onto the store's current state
+and applies it, relation fields included, in one transaction (`FR-04-46`, BR-04-26, `AC-04-26`);
+the stored diff is never blind-applied.
 
-**Drift variant** (`#s6-store-change-request-review-drift`). When the store changed under an
-affected field after the request was filed, a `store-banner warning` (`role="alert"`) surfaces
-the drift, the conflicting `adm-diff-row` gets the `.is-drift` treatment plus a `chip warning`
-**"En conflicto"**, and the primary CTA becomes **"Revisar conflictos"** rather than a silent
-apply (`FR-04-47`, `AC-04-27`). Stale values are never applied silently.
+**Drift variant** (`#s6-store-change-request-review-drift`). Drift surfacing at this surface is
+bounded to what diff-only storage supports (no base snapshot is persisted). When the store changed
+after the request was filed (`store.updatedAt > changeRequest.updatedAt`), a `store-banner warning`
+(`role="alert"`) surfaces the store-level drift (**"La tienda cambió desde esta solicitud"**); a
+field whose current value already equals the proposal is marked with an informational **"Ya
+aplicado"** tag on its `adm-diff-row` and is excluded from the apply. The primary CTA stays
+**"Aprobar y aplicar"** and applies only the changes that still have effect; stale values are never
+applied silently (`FR-04-47`, `AC-04-27`). The richer per-field three-value conflict view (`cuando
+se propuso` / `ahora` / `propuesta` with an "En conflicto" tag) is **not derivable here** and is
+deferred to the moderation console ([FRD-02](../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md)),
+which must first decide a forward-only base-snapshot capture in `upsertStoreChangeRequest`.
 
 ---
 
@@ -612,13 +619,15 @@ alongside the audit write.
   leaves the open list optimistically; resolving frees the reporter to file a new report
   (`AC-04-12`, `AC-04-24`).
 - **Change-request review** (`#s6-store-change-request-review`): approve rebases and applies in
-  one transaction; after any store write, other open change requests whose diff is now empty are
-  **superseded** so stale requests do not linger (`FR-04-48`, BR-04-27); surfaced to their
+  one transaction; after any store write, other open change requests whose diff is now empty move
+  to `SUPERSEDED` so stale requests do not linger (`FR-04-48`, BR-04-27); surfaced to their
   authors through the existing personalized governance summary, not a new surface.
-- **Drift** (`#s6-store-change-request-review-drift`): when the stored diff no longer applies
-  cleanly, the drift is surfaced (banner + `.is-drift` row + "En conflicto" chip) and the apply
-  path is blocked in favor of a conflict-review CTA; stale values are never applied silently
-  (`FR-04-47`, `AC-04-27`).
+- **Drift** (`#s6-store-change-request-review-drift`): drift surfacing is bounded to what diff-only
+  storage supports. A store-level banner appears when the store changed after the request was filed,
+  each field whose current value already matches the proposal is tagged "Ya aplicado" and excluded,
+  and the apply proceeds with only the changes that still have effect; stale values are never
+  applied silently (`FR-04-47`, `AC-04-27`). The per-field three-value "En conflicto" view is
+  deferred to the console behind a base-snapshot decision.
 
 ---
 
@@ -666,8 +675,8 @@ the action and its consequence plainly, without alarm or mascot. These belong to
 | Removal reasons                          | neutral vs sanción | neutral: `"Tienda duplicada"` · `"Tienda cerrada o inactiva"` · `"Información falsa o engañosa"`; sanción: `"Abuso, estafa o fraude"`                                                         |
 | Order tombstone (`FR-04-42`)             | neutral by default | `"Esta tienda ya no está disponible"` (sanction wording only for the abuse category)                                                                                                          |
 | Report resolution                        | operational        | `"Resolver"` · `"Descartar"` · `"Detalles y autor visibles solo para administradores."`                                                                                                       |
-| Change-request review                    | operational        | `"Aprobar y aplicar"` · `"Rechazar"` · `"Al aprobar, los cambios se recalculan sobre el estado actual de la tienda."`                                                                         |
-| Change-request drift (`FR-04-47`)        | cautionary         | `"La tienda cambió desde esta solicitud"` · `"En conflicto"` · `"Revisar conflictos"`                                                                                                         |
+| Change-request review                    | operational        | `"Aprobar y aplicar"` · `"Rechazar"` · `"Ahora"` · `"Propuesta"` · `"Al aprobar, los cambios se recalculan sobre el estado actual de la tienda."`                                             |
+| Change-request drift (`FR-04-47`)        | cautionary         | `"La tienda cambió desde esta solicitud"` · `"Ya aplicado"` (per-field, excluded from the apply). The per-field `"En conflicto"` / `"Revisar conflictos"` copy is deferred to the console.    |
 
 The softened pending disclaimer **supersedes** the earlier alarmist copy
 (`detail.pendingDisclaimerMessage`, "aún no ha sido verificada… revisar con precaución"): per
@@ -739,8 +748,8 @@ Admin moderation scope (§2.4, planned) specifics:
   ([ADR 0008](../../../design/decisions/0008-modal-enhancement.md)): `role="dialog"` +
   `aria-modal="true"` + `aria-labelledby`, focus trapped and returned to the invoking control on
   close. The two reason groups are `radiogroup`s with `aria-checked` roving state.
-- **Drift is announced**: the drift banner is `role="alert"` so the conflict is announced when it
-  appears, before any apply is attempted.
+- **Drift is announced**: the store-level "changed since filed" banner is `role="alert"` so the
+  drift is announced when it appears, before any apply is attempted.
 - **Governance rows**: raw report detail and reporter identity are admin-only content; the
   admin-only caveat is exposed as text (`lock` icon plus label), not conveyed by styling alone.
 
