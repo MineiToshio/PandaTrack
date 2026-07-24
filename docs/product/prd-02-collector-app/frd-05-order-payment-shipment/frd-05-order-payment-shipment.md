@@ -8,7 +8,7 @@ parent: PRD-02
 children:
   - BP-01
   - BP-02
-last_updated: 2026-07-11
+last_updated: 2026-07-23
 source_features:
   - FEAT-0014
 implementation_status: IMPLEMENTED
@@ -328,6 +328,11 @@ Payment progress is tracked separately from `OrderStatus` (`FR-05-33`) and is **
 ## Open Questions
 
 - whether future post-MVP finance reporting should move exchange-rate context from order level to payment level
+
+## Cross-domain requirements delivered here
+
+- **Order-side removed-store tombstone (`FR-04-42` / `AC-04-22`, order-side portion of `BR-04-23`).** These requirements are owned by [FRD-04](../frd-04-store-domain/frd-04-store-domain.md): a collector order that references a `REJECTED` store must keep rendering, showing a neutral tombstone message by default and sanction wording only when `Store.removalReason` is the abuse category. The store-side lifecycle (`REJECTED` status, `Store.removalReason`, `isSanctionRemovalReason`) is delivered by [FRD-04 · BP-01 · WO-09](../frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md); the order-side rendering is delivered in this FRD by [BP-02 · WO-08](bp-02-order-workspace-and-list-experience/work-orders/wo-08-order-side-removed-store-tombstone.md), with its design record in [FDD-05 · §5.7](fdd-05-order-payment-shipment.md). The order side only consumes `removalReason`; it never re-classifies removal reasons.
+- The equivalent tombstone marker on delivery and dashboard surfaces (which also render a store name and would otherwise show a stale name for a removed store) is a documented sibling follow-up, not part of `WO-08`: `FR-04-42` is scoped to collector orders, and those surfaces will reuse the same `resolveStoreTombstone` helper and `stores.json` copy that `WO-08` introduces.
 
 ## Out of Scope
 

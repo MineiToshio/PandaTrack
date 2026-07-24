@@ -344,9 +344,10 @@ drive the neutral order message, only the abuse reason uses sanction wording.
 not a store surface. Where a referencing order shows its store, it renders a neutral line by
 default, `"Esta tienda ya no está disponible"`, and sanction wording only when the
 `removalReason` is an abuse category (`FR-04-42`, `AC-04-22`, BR-04-23). The exact order-row
-pixel belongs to the order surfaces and is documented with
-[FRD-05](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md); it is intentionally
-**not** mocked in this prototype, which has no order-detail surface.
+pixel belongs to the order surfaces and is now documented in the FDD-05 design record
+([FDD-05 · §5.7 Removed-store tombstone](../frd-05-order-payment-shipment/fdd-05-order-payment-shipment.md)),
+delivered by [FRD-05 · BP-02 · WO-08](../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-08-order-side-removed-store-tombstone.md);
+it is intentionally **not** mocked in this prototype, which has no order-detail surface.
 
 **Admin governance panel** (`#s6-store-detail-admin-governance`). The public
 reports-and-suggestions summary (§5.6) has an admin superset: the same modal shell lists each

@@ -65,6 +65,8 @@ Define how collectors create, inspect, edit, filter, and act on orders across th
   - output: URL-canonical filter state plus result chips
   - `fxPending=true` maps to the persisted-flag FX-pending predicate (`needsExchangeRateUpdate = true` AND currency ≠ base currency AND status ≠ `CANCELLED`). Handled by `parseOrderListingParams` in `src/app/[locale]/(app)/orders/_utils/orderListingParams.ts` and `buildFxPendingWhere` in `src/lib/data/orders/orderQueries.ts`
   - `FxReconciliationModal` at `src/app/[locale]/(app)/orders/_components/FxReconciliationModal.tsx` is the reconciliation entry point (triggered from the orders list banner via `FxAnnouncer`); applying a rate there clears `needsExchangeRateUpdate`. The Settings currency-change flags the affected orders via `flagOrdersForFxReconciliation` and, on Path A, redirects here to reconcile
+- read-model store shape:
+  - the list (`getOrdersList`) and detail (`getOrderDetail`) read models expose the referenced store as `{ id, name, slug, status, removalReason }`. The added `status` and `removalReason` fields let the order surfaces render the removed-store tombstone (`FR-04-42`) without a second query, consuming the values persisted by [FRD-04 · BP-01 · WO-09](../../frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md); see [`WO-08`](work-orders/wo-08-order-side-removed-store-tombstone.md)
 
 ## Operational Priorities
 

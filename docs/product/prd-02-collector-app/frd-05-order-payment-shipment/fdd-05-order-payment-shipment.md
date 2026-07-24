@@ -5,7 +5,7 @@ slug: order-payment-shipment
 title: Orders, Payments & Shipment — Feature Design Document
 status: ACTIVE
 parent: FRD-05
-last_updated: 2026-06-16
+last_updated: 2026-07-23
 prototype: ./prototype/order-payment-shipment.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -501,6 +501,43 @@ All mutations are **optimistic** — see the `optimistic-client-updates` policy 
 > ([ADR 0014](../../../design/decisions/0014-motion-system-and-view-transitions.md)) and the
 > mascot cooldown are implementation concerns, not design changes.
 
+### 5.7 Removed-store tombstone (`FR-04-42`, `AC-04-22`)
+
+This is the order-side render of a cross-FRD requirement whose store-side lifecycle
+(`REJECTED` status + `Store.removalReason`) is owned by
+[FRD-04 · BP-01 · WO-09](../../frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md)
+and delivered here by
+[BP-02 · WO-08](bp-02-order-workspace-and-list-experience/work-orders/wo-08-order-side-removed-store-tombstone.md).
+[FDD-04](../../frd-04-store-domain/fdd-04-store-domain.md) deferred the exact order-row pixel
+to this FDD because a `REJECTED` store is a **collector-order** surface, not a store surface
+(the store detail route 404s and no store-detail tombstone screen exists).
+
+Presentation **accompanies** the store name, it does not replace it: the store row is
+retained by the tombstone, so the historical `store.name` stays visible as plain text and a
+marker is added next to it. This preserves the collector's "who did I buy from" context
+across a list of orders spanning many stores.
+
+| Surface                     | Marker treatment                                                                                               |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `OrderCard` (mobile list)   | Compact inline marker beside the name: lucide icon + core `Tooltip` with the full message + screen-reader text |
+| `OrdersTable` row (desktop) | Same compact inline marker beside the name                                                                     |
+| `OrderDetailHero`           | Fuller inline line under the store `<h1>`: neutral rendered muted, sanction rendered in `--warning` tone       |
+| `OrderDetailContent`        | Pass-through: threads `store.status` + `store.removalReason` to the hero; no store link to hide today          |
+
+Variant selection is neutral by default and sanction only for the abuse category, driven by
+`isSanctionRemovalReason(store.removalReason)` via the shared `resolveStoreTombstone` helper.
+The order side **never re-classifies** removal reasons; it consumes the value WO-09 persisted.
+The two variants use distinct lucide icons, each with an `aria-label`, so the state is never
+color-only (ADR 0006), and the hero message is real, announceable text.
+
+Presentation is a small route-level `StoreTombstoneNotice`
+(`orders/_components/share/`, `variant: "compact" | "full"`) reading `useTranslations("stores")`.
+It is intentionally **not** mocked in the FRD-05 prototype (which predates this record); it is
+reconstructible from this section plus the copy row in §6. The delivery and dashboard surfaces
+that also render a store name are a documented sibling follow-up (they would show a stale name
+for a removed store) and will reuse the same helper and copy; `FR-04-42` itself is scoped to
+collector orders.
+
 ---
 
 ## 6. Copy & voice
@@ -512,23 +549,33 @@ live in `src/i18n/locales/{es,en}/orders.json` (list copy under `orderListing`).
 
 Key strings (es), by surface and tone:
 
-| Surface                  | Tone                   | String                                                                                                                              |
-| ------------------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| List heading meta        | neutral, factual       | `"{active} activos · {closed} cerrado"`                                                                                             |
-| List search placeholder  | helpful                | `"Código o producto (ORD-20260428-01, Evangelion OST…)"`                                                                            |
-| Hero eyebrow             | warm-possessive        | `"Tu pedido · {currency}"`                                                                                                          |
-| Hero balance label       | factual                | `"Saldo pendiente"` / `"de {total} {currency}"`                                                                                     |
-| Hero progress caption    | reassuring             | `"{pct}% pagado · entrega estimada {date}"`                                                                                         |
-| Payment success (full)   | celebratory-restrained | `"¡Cubierto! Una pre-orden menos. ✨"`                                                                                              |
-| Overdue banner           | alerting               | `"Atrasado {days} días"` · `"Estimado el {date} · aún sin entrega confirmada"`                                                      |
-| Private note placeholder | inviting               | `"Escribe una nota o recordatorio para este pedido…"`                                                                               |
-| FX banner                | confidence-building    | `"Tienes {count} pedidos con el tipo de cambio desactualizado. Actualízalos para que tus reportes reflejen tu moneda base actual."` |
-| Empty (initial)          | encouraging            | `"Aún no hay pedidos"`                                                                                                              |
-| Empty (filtered)         | neutral                | `"Sin resultados"`                                                                                                                  |
-| No eligible stores       | explanatory            | `"Sin tiendas aún"`                                                                                                                 |
-| Edit, immutable store    | explanatory            | `"La tienda no se puede cambiar una vez creado el pedido."`                                                                         |
-| Discrepancy modal title  | factual                | `"Importe no coincide"`                                                                                                             |
-| Delete confirm body      | concrete               | `"Se eliminarán también los pagos y el historial asociados. Las entregas vinculadas no se verán afectadas."`                        |
+| Surface                            | Tone                    | String                                                                                                                              |
+| ---------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| List heading meta                  | neutral, factual        | `"{active} activos · {closed} cerrado"`                                                                                             |
+| List search placeholder            | helpful                 | `"Código o producto (ORD-20260428-01, Evangelion OST…)"`                                                                            |
+| Hero eyebrow                       | warm-possessive         | `"Tu pedido · {currency}"`                                                                                                          |
+| Hero balance label                 | factual                 | `"Saldo pendiente"` / `"de {total} {currency}"`                                                                                     |
+| Hero progress caption              | reassuring              | `"{pct}% pagado · entrega estimada {date}"`                                                                                         |
+| Payment success (full)             | celebratory-restrained  | `"¡Cubierto! Una pre-orden menos. ✨"`                                                                                              |
+| Overdue banner                     | alerting                | `"Atrasado {days} días"` · `"Estimado el {date} · aún sin entrega confirmada"`                                                      |
+| Private note placeholder           | inviting                | `"Escribe una nota o recordatorio para este pedido…"`                                                                               |
+| FX banner                          | confidence-building     | `"Tienes {count} pedidos con el tipo de cambio desactualizado. Actualízalos para que tus reportes reflejen tu moneda base actual."` |
+| Empty (initial)                    | encouraging             | `"Aún no hay pedidos"`                                                                                                              |
+| Empty (filtered)                   | neutral                 | `"Sin resultados"`                                                                                                                  |
+| No eligible stores                 | explanatory             | `"Sin tiendas aún"`                                                                                                                 |
+| Edit, immutable store              | explanatory             | `"La tienda no se puede cambiar una vez creado el pedido."`                                                                         |
+| Discrepancy modal title            | factual                 | `"Importe no coincide"`                                                                                                             |
+| Delete confirm body                | concrete                | `"Se eliminarán también los pagos y el historial asociados. Las entregas vinculadas no se verán afectadas."`                        |
+| Removed-store tombstone (neutral)  | factual, non-accusatory | `"Esta tienda ya no está disponible."`                                                                                              |
+| Removed-store tombstone (sanction) | firm, non-accusatory    | `"Esta tienda fue retirada por incumplir nuestras políticas."`                                                                      |
+
+The two removed-store tombstone strings (§5.7) live in `src/i18n/locales/{es,en}/stores.json`
+under a dedicated `orderTombstone` group, not in `orders.json`: the copy is store-semantic,
+the neutral wording already exists store-side, and the order list and detail surfaces read
+different namespaces (`orderListing` and `orders`), so a single store-namespace home avoids a
+duplicated key. The exact sanction wording is subject to copywriting review; the neutral vs
+sanction split is fixed by `Store.removalReason`. See
+[WO-08](bp-02-order-workspace-and-list-experience/work-orders/wo-08-order-side-removed-store-tombstone.md).
 
 Tone rule for this FRD: **confirmations and errors carry no mascot** (decálogo #6); the
 panda appears only in the celebratory/empty register (sleeping/confused empty states, the
