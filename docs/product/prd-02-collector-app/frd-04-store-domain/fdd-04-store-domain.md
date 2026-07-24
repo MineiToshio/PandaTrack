@@ -357,6 +357,15 @@ identity (`"Reportado por @handle"`, `lock`-noted as admin-only), with per-repor
 data-access layer and never widen the public governance read model (`FR-04-45`, BR-04-25,
 `AC-04-25`). The change-requests block links each pending request to its review surface.
 
+Implementation reconciliation ([BP-01 · WO-10](bp-01-store-public-trust-system/work-orders/wo-10-report-resolution.md)):
+the admin superset is delivered as an admin-only section **inside the existing
+`StoreGovernanceSummaryModal`** (an optional `adminReports` prop populated server-side only when
+the viewer is an administrator), not a separate modal, so the public modal and read model stay
+untouched for non-admins. The raw rows are read through `getAdminOpenStoreReports(storeId)`
+(`src/lib/data/admin/adminStoreReportQueries.ts`), and a resolution is accountable through the
+`report.resolve` / `report.dismiss` audit entry only (no reviewer column is added to
+`StoreReport`).
+
 **Change-request review** (`#s6-store-change-request-review`). A focused `card elevated` review
 surface: requester + submitted date, then an **`adm-diff` field list**, one `adm-diff-row` per
 changed field showing the `adm-diff-before` (struck-through) → `adm-diff-after` value. Footer is

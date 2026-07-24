@@ -360,6 +360,12 @@ Concretized by [WO-09](work-orders/wo-09-store-approval-and-removal.md) during i
 - the public governance read model (`getStoreGovernanceSummary`) must not be widened to carry that data; the non-admin guarantee (`BR-04-13`) stays intact
 - this mirrors the moderation console's own secure-read requirement (`BR-02-03` of [PRD-03 (FRD-02)](../../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md))
 
+Concretized for store reports by [WO-10](work-orders/wo-10-report-resolution.md) during its enrichment pass:
+
+- the admin read is `getAdminOpenStoreReports(storeId)` in a new `src/lib/data/admin/adminStoreReportQueries.ts`, returning each `OPEN` report as `{ id, reason, details, createdAt, reporter: { id, username, name, image } }`, newest first. It lives under `src/lib/data/admin/` (beside the audit modules) because the admin-only, server-only security boundary is the stronger grouping signal than domain colocation. The name is store-report specific so it does not collide with the cross-store moderation inbox module owned by [PRD-03 (FRD-02)](../../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md)
+- report resolution adds no reviewer column to `StoreReport`: the `OPEN → REVIEWED` / `DISMISSED` transition is accountable through the `report.resolve` / `report.dismiss` `AdminAuditLog` entry only, matching the audit-only stance WO-09 (D2) took for removal. `StoreReportStatus` already carries `REVIEWED` / `DISMISSED`, so WO-10 requires no schema migration
+- the `resolveStoreReport` / `dismissStoreReport` transitions are added to `src/lib/data/stores/storeModerationMutations.ts` (the same module and one-transaction-plus-audit pattern as the store-state transitions), so the moderation console can invoke them later; the admin report rows render inside the existing `StoreGovernanceSummaryModal` (an admin superset section, populated server-side only for admins), not a new modal
+
 ### Admin moderation gating contract (planned)
 
 - every moderation mutation (approve, remove, flag, unflag, resolve report, dismiss report, apply change request, reject change request, approve product-type request, reject product-type request) authorizes with `requireAdmin()` before any write
