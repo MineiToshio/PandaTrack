@@ -4,10 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { flagOrdersForFxReconciliation } from "@/lib/data/orders/orderMutations";
 import { flagDeliveriesForFxReconciliation } from "@/lib/data/deliveries/deliveryMutations";
 import {
+  assertKnownProductTypeKeys,
   parseCollectorPreferencesPatch,
   type CollectorPreferencesPatchInput,
   validateCollectorPreferencesState,
 } from "@/lib/user-settings/collectorPreferencesValidation";
+import { listExistingStoreProductTypeKeys } from "@/lib/data/catalog/storeProductTypeQueries";
 
 function buildUserScalarUpdate(patch: CollectorPreferencesPatchInput): Prisma.UserUncheckedUpdateInput {
   const data: Prisma.UserUncheckedUpdateInput = {};
@@ -84,6 +86,15 @@ async function applyCollectorPreferencesPatchWithin(
 
   if (hasProductTypes) {
     const keys = patch.preferredProductTypeKeys ?? [];
+    // Membership is a catalog-existence check (not a hardcoded union), so admin-authored types are
+    // selectable while typos still fail. Runs in the same tx as the write it guards.
+    if (keys.length > 0) {
+      const existing = await listExistingStoreProductTypeKeys(keys, tx);
+      assertKnownProductTypeKeys(
+        keys,
+        existing.map((row) => row.key),
+      );
+    }
     await tx.userPreferredProductType.deleteMany({ where: { userId } });
     if (keys.length > 0) {
       await tx.userPreferredProductType.createMany({

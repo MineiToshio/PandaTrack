@@ -49,6 +49,10 @@ import type {
 } from "@/lib/data/stores/storeGovernanceQueries";
 import type { AdminOpenStoreReport } from "@/lib/data/admin/adminStoreReportQueries";
 import type { AdminPendingStoreChangeRequest } from "@/lib/data/admin/adminStoreChangeRequestQueries";
+import {
+  resolveStoreProductTypeName,
+  type AuthoredStoreProductTypeNameMap,
+} from "@/lib/catalog/resolveStoreProductTypeName";
 import StoreHero from "../../_components/share/StoreHero";
 import CollapsibleSection from "@/components/modules/CollapsibleSection";
 import StorePublicReviewsSection from "./StorePublicReviewsSection";
@@ -82,6 +86,8 @@ type StoreDetailContentProps = {
   canDirectlyEdit: boolean;
   /** When true, the viewer is an administrator and the admin moderation panel is rendered. */
   canModerate: boolean;
+  /** Authored (non-seed) catalog names so category chips resolve admin-authored types; seeds use i18n. */
+  authoredProductTypeNames: AuthoredStoreProductTypeNameMap;
   backHref?: string | null;
   backOrderLabel?: string | null;
 };
@@ -130,6 +136,7 @@ export default function StoreDetailContent({
   canAccessEditRoute,
   canDirectlyEdit,
   canModerate,
+  authoredProductTypeNames,
   backHref,
   backOrderLabel,
 }: StoreDetailContentProps) {
@@ -256,7 +263,7 @@ export default function StoreDetailContent({
                       {store.productTypeKeys.length > 0 ? (
                         store.productTypeKeys.map((key) => (
                           <Chip key={key} variant="accent">
-                            {tProductTypes(key)}
+                            {resolveStoreProductTypeName(authoredProductTypeNames[key], tProductTypes(key), locale)}
                           </Chip>
                         ))
                       ) : (

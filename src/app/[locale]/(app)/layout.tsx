@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import AppLayout from "@/app/[locale]/(app)/_components/AppLayout/AppLayout";
+import { StoreProductTypeNamesProvider } from "@/app/[locale]/(app)/_components/StoreProductTypeNamesProvider";
 import { buildStoresNavHref } from "@/app/[locale]/(app)/_utils/storesNavHref";
 import VerifyEmailBanner from "@/components/modules/auth/VerifyEmailBanner";
 import { AUTH_RETURN_TO_PARAM } from "@/lib/auth/authRedirect";
@@ -9,7 +10,11 @@ import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
 import { getVerificationSnapshot, maybeSendDaySixVerificationReminder } from "@/lib/auth/authVerification";
 import { ROUTES, VERIFICATION_BANNER_HEIGHT_PX } from "@/lib/constants";
 import { listCountryCodesCached } from "@/lib/data/catalog/countryQueries";
-import { listActiveStoreProductTypeKeysCached } from "@/lib/data/catalog/storeProductTypeQueries";
+import {
+  listActiveStoreProductTypeKeysCached,
+  listAuthoredStoreProductTypeNamesCached,
+} from "@/lib/data/catalog/storeProductTypeQueries";
+import { buildAuthoredStoreProductTypeNameMap } from "@/lib/catalog/resolveStoreProductTypeName";
 import { getAppShellUserIdentity, getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 
 type PrivateAppLayoutProps = {
@@ -41,13 +46,18 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
     await maybeSendDaySixVerificationReminder(snapshot, `/${locale}${ROUTES.dashboard}`, requestHeaders);
   }
 
-  const [tAuth, shellIdentity, collectorPrefs, catalogCountryCodes, catalogProductTypeKeys] = await Promise.all([
-    getTranslations({ locale, namespace: "auth" }),
-    getAppShellUserIdentity(session.user.id),
-    getCollectorPreferencesSnapshot(session.user.id),
-    listCountryCodesCached(),
-    listActiveStoreProductTypeKeysCached(),
-  ]);
+  const [tAuth, shellIdentity, collectorPrefs, catalogCountryCodes, catalogProductTypeKeys, authoredProductTypeNames] =
+    await Promise.all([
+      getTranslations({ locale, namespace: "auth" }),
+      getAppShellUserIdentity(session.user.id),
+      getCollectorPreferencesSnapshot(session.user.id),
+      listCountryCodesCached(),
+      listActiveStoreProductTypeKeysCached(),
+      listAuthoredStoreProductTypeNamesCached(),
+    ]);
+
+  // Admin-authored types resolve through the DB name; seeded keys stay on the i18n namespace.
+  const authoredProductTypeNameMap = buildAuthoredStoreProductTypeNameMap(authoredProductTypeNames);
 
   const currentUser = shellIdentity ?? {
     username: session.user.name?.trim() || "user",
@@ -85,7 +95,9 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
           storedTimezone={storedTimezone}
           isAdmin={isAdmin}
         >
-          {children}
+          <StoreProductTypeNamesProvider authoredNames={authoredProductTypeNameMap}>
+            {children}
+          </StoreProductTypeNamesProvider>
         </AppLayout>
       </div>
     );
@@ -118,7 +130,9 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
         storedTimezone={storedTimezone}
         isAdmin={isAdmin}
       >
-        {children}
+        <StoreProductTypeNamesProvider authoredNames={authoredProductTypeNameMap}>
+          {children}
+        </StoreProductTypeNamesProvider>
       </AppLayout>
     </div>
   );

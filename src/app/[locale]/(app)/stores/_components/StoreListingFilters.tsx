@@ -13,6 +13,7 @@ import Select from "@/components/core/Select";
 import FilterDrawer, { type FilterDrawerValues, type FilterSection } from "@/components/modules/FilterDrawer";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { useStoreProductTypeName } from "@/app/[locale]/(app)/_components/StoreProductTypeNamesProvider";
 import CollectorCountryFlagEmoji from "./share/CollectorCountryFlagEmoji";
 import { useStoreListingNavigation } from "./StoreListingPendingContext";
 
@@ -79,7 +80,7 @@ export default function StoreListingFilters({
   const { navigate, isPending } = useStoreListingNavigation();
   const tListing = useTranslations("storeListing");
   const tStores = useTranslations("stores");
-  const tProductTypes = useTranslations("storeProductTypes");
+  const productTypeName = useStoreProductTypeName();
   const tCountries = useTranslations("countries");
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -125,11 +126,11 @@ export default function StoreListingFilters({
         const Icon = getStoreProductTypeIcon(p.key);
         return {
           value: p.key,
-          label: tProductTypes(p.key),
+          label: productTypeName(p.key),
           icon: <Icon size={14} aria-hidden />,
         };
       }),
-    [productTypeOptions, tProductTypes],
+    [productTypeOptions, productTypeName],
   );
 
   const countryOptionsMemo = useMemo(
@@ -334,7 +335,7 @@ export default function StoreListingFilters({
     initialProductTypeKeys.forEach((key) => {
       chips.push({
         key: `productType-${key}`,
-        label: tProductTypes(key),
+        label: productTypeName(key),
         onRemove: () => removeFilter({ kind: "productType", value: key }),
       });
     });
@@ -377,7 +378,7 @@ export default function StoreListingFilters({
     initialCountryCodes,
     initialImportCountryCodes,
     initialFlags,
-    tProductTypes,
+    productTypeName,
     tCountries,
     tStores,
     flagLabel,

@@ -6,6 +6,11 @@ import StatusChip from "@/components/core/StatusChip";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import EmptyState from "@/components/modules/EmptyState";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { listAuthoredStoreProductTypeNamesCached } from "@/lib/data/catalog/storeProductTypeQueries";
+import {
+  buildAuthoredStoreProductTypeNameMap,
+  resolveStoreProductTypeName,
+} from "@/lib/catalog/resolveStoreProductTypeName";
 import type { DashboardData } from "@/lib/data/dashboard/dashboardTypes";
 import type { OrderItemDeliveryState, OrderStatus } from "../../../../../../generated/prisma/client";
 import { formatDashboardMoney, formatDashboardMoneyCompact } from "../_utils/dashboardMoney";
@@ -77,18 +82,24 @@ function rankCategories(
 
 /** "Tu colección": status split, spend and product count by category, and top stores. */
 export default async function DashboardCollectionZone({ data, locale, storesHref }: DashboardCollectionZoneProps) {
-  const [t, tTypes, tStatus, tStates] = await Promise.all([
+  const [t, tTypes, tStatus, tStates, authoredProductTypeNames] = await Promise.all([
     getTranslations({ locale, namespace: "dashboard" }),
     getTranslations({ locale, namespace: "storeProductTypes" }),
     getTranslations({ locale, namespace: "components.statusChip.orderStatus" }),
     getTranslations({ locale, namespace: "components.statusChip.itemDeliveryState" }),
+    listAuthoredStoreProductTypeNamesCached(),
   ]);
+  const authoredProductTypeNameMap = buildAuthoredStoreProductTypeNameMap(authoredProductTypeNames);
   const { collection, paidVsOutstanding, baseCurrencyCode } = data;
   const money = (minor: number): string => formatDashboardMoney(minor, baseCurrencyCode, locale);
   const moneyCompact = (minor: number): string => formatDashboardMoneyCompact(minor, baseCurrencyCode, locale);
 
-  // Product type keys are a closed catalog; unknown or missing keys fall back to "uncategorized".
-  const labelOf = (key: string | null): string => (key ? tTypes(key as "figures") : t("collection.uncategorized"));
+  // Hybrid catalog names: authored types resolve via the DB name, seeded keys via i18n; a null or
+  // unknown key falls back to "uncategorized".
+  const labelOf = (key: string | null): string =>
+    key
+      ? resolveStoreProductTypeName(authoredProductTypeNameMap[key], tTypes(key as "figures"), locale)
+      : t("collection.uncategorized");
 
   const cardProps = {
     titleId: COLLECTION_TITLE_ID,

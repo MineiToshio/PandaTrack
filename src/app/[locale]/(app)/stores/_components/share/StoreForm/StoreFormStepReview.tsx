@@ -8,6 +8,7 @@ import Label from "@/components/core/Label";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import { WizardStep } from "@/components/modules/WizardAccordion";
+import { useStoreProductTypeName } from "@/app/[locale]/(app)/_components/StoreProductTypeNamesProvider";
 import InlineSwitch from "../InlineSwitch";
 import { sellerTypeLabelKey, type StoreFormValuesSnapshot } from "./types";
 
@@ -44,7 +45,7 @@ export default function StoreFormStepReview({
   const tCreateRedesign = useTranslations("stores.redesign.create");
   const tEdit = useTranslations("stores.edit");
   const tCountries = useTranslations("countries");
-  const tProductTypes = useTranslations("storeProductTypes");
+  const productTypeName = useStoreProductTypeName();
   const tChannelTypes = useTranslations("stores.contactChannelTypes");
 
   const renderReviewSummary = () => (
@@ -63,7 +64,7 @@ export default function StoreFormStepReview({
         {values.sellerType !== "PROXY" && (
           <ReviewRow
             label={tCreateRedesign("aside.categoriesLabel")}
-            value={values.productTypeKeys.map((k) => tProductTypes(k)).join(", ") || "—"}
+            value={values.productTypeKeys.map((k) => productTypeName(k)).join(", ") || "—"}
           />
         )}
         <ReviewRow

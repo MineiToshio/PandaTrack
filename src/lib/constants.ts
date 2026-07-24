@@ -212,6 +212,8 @@ export const POSTHOG_EVENTS = {
     REPORT_DISMISSED: "store_report_dismissed",
     CHANGE_REQUEST_APPLIED: "store_change_request_applied",
     CHANGE_REQUEST_REJECTED: "store_change_request_rejected",
+    PRODUCT_TYPE_REQUEST_APPROVED: "store_product_type_request_approved",
+    PRODUCT_TYPE_REQUEST_REJECTED: "store_product_type_request_rejected",
   },
   NAVIGATION: {
     VIEW_TRANSITION_NAVIGATED: "view_transition_navigated",

@@ -10,6 +10,7 @@ import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
 import { WizardStep } from "@/components/modules/WizardAccordion";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
+import { useStoreProductTypeName } from "@/app/[locale]/(app)/_components/StoreProductTypeNamesProvider";
 import {
   CATALOG_STEP_FIELDS,
   mergeStepClientErrors,
@@ -66,7 +67,7 @@ export default function StoreFormStepCatalog({
   const tCreate = useTranslations("stores.create");
   const tCreateRedesign = useTranslations("stores.redesign.create");
   const tValidation = useTranslations("stores.validation");
-  const tProductTypes = useTranslations("storeProductTypes");
+  const productTypeName = useStoreProductTypeName();
 
   // A PROXY is an intermediary with no catalog: no categories, stock, or pre-order signal.
   const isProxy = sellerType === "PROXY";
@@ -87,11 +88,11 @@ export default function StoreFormStepCatalog({
         const Icon = getStoreProductTypeIcon(productType.key);
         return {
           value: productType.key,
-          label: tProductTypes(productType.key),
+          label: productTypeName(productType.key),
           icon: <Icon aria-hidden />,
         };
       }),
-    [productTypes, tProductTypes],
+    [productTypes, productTypeName],
   );
 
   const handleValidate = () => {
@@ -114,7 +115,7 @@ export default function StoreFormStepCatalog({
       summary={
         selectedProductTypeKeys.length > 0
           ? selectedProductTypeKeys.length === 1
-            ? tProductTypes(selectedProductTypeKeys[0])
+            ? productTypeName(selectedProductTypeKeys[0])
             : `${selectedProductTypeKeys.length}`
           : undefined
       }

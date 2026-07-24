@@ -367,6 +367,10 @@ model StoreImportCountry {
 
 model StoreProductType {
   key         String                    @id
+  // Admin-authored types persist their localized names here; seeded keys keep their names in the
+  // `storeProductTypes` i18n namespace and a resolver prefers the DB name with an i18n fallback.
+  nameEs      String?
+  nameEn      String?
   isActive    Boolean                   @default(true)
   createdAt   DateTime                  @default(now())
   updatedAt   DateTime                  @updatedAt

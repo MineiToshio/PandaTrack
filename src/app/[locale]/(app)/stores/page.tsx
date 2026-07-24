@@ -13,7 +13,11 @@ import {
   type PublicStoreListingFilters,
 } from "@/lib/data/stores/storeQueries";
 import { listCountryCodesCached } from "@/lib/data/catalog/countryQueries";
-import { listActiveStoreProductTypeKeysCached } from "@/lib/data/catalog/storeProductTypeQueries";
+import {
+  listActiveStoreProductTypeKeysCached,
+  listAuthoredStoreProductTypeNamesCached,
+} from "@/lib/data/catalog/storeProductTypeQueries";
+import { buildAuthoredStoreProductTypeNameMap } from "@/lib/catalog/resolveStoreProductTypeName";
 import { buildPageMetadata } from "@/lib/seo";
 import { DEFAULT_PAGE_SIZE, ROUTES } from "@/lib/constants";
 import { parseListingSearchParams } from "./_utils/listingParams";
@@ -204,7 +208,10 @@ async function StoresGridSection({
   buildPaginationHref: (page: number) => string;
   buildPerPageHref: (size: number) => string;
 }) {
-  const listingPage = await getPublicStoresListingPage(filters);
+  const [listingPage, authoredProductTypeNames] = await Promise.all([
+    getPublicStoresListingPage(filters),
+    listAuthoredStoreProductTypeNamesCached(),
+  ]);
 
   if (listingPage.totalCount === 0) {
     return <StoresEmptyState locale={locale} hasFilters={hasFilters} />;
@@ -223,6 +230,7 @@ async function StoresGridSection({
       <StoreListingContent
         locale={locale}
         stores={listingPage.items}
+        authoredProductTypeNames={buildAuthoredStoreProductTypeNameMap(authoredProductTypeNames)}
         viewerOrderCountsBySlug={viewerOrderCountsBySlug}
       />
       <StoreListingPagination

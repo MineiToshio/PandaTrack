@@ -14,6 +14,8 @@ import {
 } from "@/lib/data/stores/storeGovernanceQueries";
 import { getAdminOpenStoreReports } from "@/lib/data/admin/adminStoreReportQueries";
 import { getAdminPendingStoreChangeRequests } from "@/lib/data/admin/adminStoreChangeRequestQueries";
+import { listAuthoredStoreProductTypeNamesCached } from "@/lib/data/catalog/storeProductTypeQueries";
+import { buildAuthoredStoreProductTypeNameMap } from "@/lib/catalog/resolveStoreProductTypeName";
 import { buildStoreDetailMetadata } from "@/lib/seo";
 import { safeRelativeReturnTo } from "@/lib/navigation/safeRelativeReturnTo";
 import StoreDetailContent from "./_components/StoreDetailContent";
@@ -67,6 +69,7 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
     viewerActivity,
     adminOpenReports,
     adminChangeRequests,
+    authoredProductTypeNames,
   ] = await Promise.all([
     session?.user?.id ? getPublicStoreReviews(store.id, session.user.id, store.reviewCount) : [],
     session?.user?.id ? getStoreViewerContext(store.id, session.user.id) : { review: null, note: null },
@@ -83,6 +86,7 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
     // Admin-only read of pending change requests with the rebased diff and requester identity, gated
     // the same way; never widens the public governance read model.
     isAdmin ? getAdminPendingStoreChangeRequests(store.id) : undefined,
+    listAuthoredStoreProductTypeNamesCached(),
   ]);
 
   const canAccessEditRoute = session?.user?.id != null;
@@ -107,6 +111,7 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
       canAccessEditRoute={canAccessEditRoute}
       canDirectlyEdit={canDirectlyEdit}
       canModerate={isAdmin}
+      authoredProductTypeNames={buildAuthoredStoreProductTypeNameMap(authoredProductTypeNames)}
       backHref={backHref}
       backOrderLabel={backOrderLabel}
     />
