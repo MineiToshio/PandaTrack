@@ -2,7 +2,6 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import {
-  AlertCircle,
   AtSign,
   CircleAlert,
   Clock,
@@ -59,6 +58,8 @@ import StorePublicReviewsSection from "./StorePublicReviewsSection";
 import StoreReviewsStateProvider from "./StoreReviewsStateProvider";
 import StoreNoteForm from "./StoreNoteForm";
 import StoreGovernanceSummaryModal from "./StoreGovernanceSummaryModal";
+import StoreReportNoticeProvider from "./StoreReportNoticeProvider";
+import StoreReportNoticeBanner, { StoreReportedChip } from "./StoreReportNotice";
 import StoreReportModal from "./StoreReportModal";
 import StoreAdminModerationPanel from "./StoreAdminModerationPanel";
 
@@ -147,7 +148,6 @@ export default function StoreDetailContent({
   const tChannelTypes = useTranslations("stores.contactChannelTypes");
 
   const isPendingReview = store.status === "PENDING";
-  const isFlagged = store.status === "FLAGGED";
   const isInactive = !store.isActive;
   const hasGovernanceSummaryContent =
     governanceSummary.totalReports > 0 ||
@@ -172,347 +172,346 @@ export default function StoreDetailContent({
       reviews={reviews}
       viewerReview={viewerReview}
     >
-      <div className="text-foreground space-y-4">
-        <BackNavLink href={backHref ?? `/${locale}${ROUTES.stores}`}>{backLabel}</BackNavLink>
+      <StoreReportNoticeProvider
+        openReportCount={governanceSummary.openReports}
+        adminOpenReportIds={adminOpenReports?.map((report) => report.id)}
+      >
+        <div className="text-foreground space-y-4">
+          <BackNavLink href={backHref ?? `/${locale}${ROUTES.stores}`}>{backLabel}</BackNavLink>
 
-        {store.isPrivate && (
-          <AlertBanner tone="info" icon={<Lock size={14} aria-hidden="true" />}>
-            {tStores("redesign.detail.privateBadge")}
-          </AlertBanner>
-        )}
+          {store.isPrivate && (
+            <AlertBanner tone="info" icon={<Lock size={14} aria-hidden="true" />}>
+              {tStores("redesign.detail.privateBadge")}
+            </AlertBanner>
+          )}
 
-        {/* Status alerts (PENDING / FLAGGED / inactive / governance) — tonal banner per demo
+          {/* Status alerts (PENDING / inactive / governance) — tonal banner per demo
             `s6-store-detail-pending`. The pending banner is a calm `info` tone: it frames the
-            store as under review, not as untrustworthy data (FR-04-50). */}
-        {isPendingReview && (
-          <AlertBanner
-            tone="info"
-            icon={<Clock size={16} aria-hidden="true" />}
-            title={tStores("detail.pendingDisclaimerTitle")}
-          >
-            {tStores("detail.pendingDisclaimerMessage")}
-          </AlertBanner>
-        )}
-        {isFlagged && (
-          <AlertBanner
-            tone="warning"
-            icon={<AlertCircle size={16} aria-hidden="true" />}
-            title={tStores("detail.flaggedDisclaimerTitle")}
-          >
-            {tStores("detail.flaggedDisclaimerMessage")}
-          </AlertBanner>
-        )}
-        {isInactive && (
-          <AlertBanner
-            tone="destructive"
-            icon={<CircleAlert size={16} aria-hidden="true" />}
-            title={tStores("detail.inactiveWarningTitle")}
-          >
-            {tStores("detail.inactiveWarningMessage")}
-          </AlertBanner>
-        )}
-        {hasGovernanceSummaryContent && (
-          <StoreGovernanceSummaryModal
-            locale={locale}
-            storeSlug={store.slug}
-            storeName={store.name}
-            summary={governanceSummary}
-            triggerVariant="banner"
-            viewerOpenReport={governanceViewerContext.openReport}
-            viewerOpenChangeRequest={governanceViewerContext.openChangeRequest}
-            adminReports={adminOpenReports}
-            adminChangeRequests={adminChangeRequests}
-          />
-        )}
-
-        {/* Two-column layout: main + sticky aside on lg. 320px rail matches orders/deliveries detail. */}
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          {/* ── Main column ── */}
-          <div className="min-w-0 space-y-3">
-            <StoreHero
-              store={store}
-              labels={{
-                countryName: (code) => tCountries(code),
-                ratingCount: (count) => tListing("ratingCount", { count }),
-                ratingFallback: tStores("redesign.detail.ratingFallback"),
-                presencePhysical: tStores("redesign.detail.presence.physical"),
-                presenceOnline: tStores("redesign.detail.presence.online"),
-                hasStock: tStores("redesign.detail.hasStock"),
-                acceptsPreorders: tStores("redesign.detail.acceptsPreorders"),
-                personChip: tStores("redesign.detail.personChip"),
-                personNote: isPerson ? tStores("redesign.detail.personNote") : undefined,
-                proxyChip: tStores("redesign.detail.proxyChip"),
-                pendingChip: tStores("redesign.detail.pendingChip"),
-              }}
-            />
-
-            <CollapsibleSection
-              eyebrow={
-                <Eyebrow variant="chip" tone="cool" icon={Tags}>
-                  {tStores("redesign.detail.categoriesTitle")}
-                </Eyebrow>
-              }
-              topAccent="cool"
+            store as under review, not as untrustworthy data (FR-04-50). The report notice follows
+            it, never replaces it: the lifecycle statement first, then the report information. */}
+          {isPendingReview && (
+            <AlertBanner
+              tone="info"
+              icon={<Clock size={16} aria-hidden="true" />}
+              title={tStores("detail.pendingDisclaimerTitle")}
             >
-              <div className="space-y-4">
-                {/* A PROXY has no catalog of its own, so the product-types block is omitted. */}
-                {!isProxy && (
+              {tStores("detail.pendingDisclaimerMessage")}
+            </AlertBanner>
+          )}
+          <StoreReportNoticeBanner />
+          {isInactive && (
+            <AlertBanner
+              tone="destructive"
+              icon={<CircleAlert size={16} aria-hidden="true" />}
+              title={tStores("detail.inactiveWarningTitle")}
+            >
+              {tStores("detail.inactiveWarningMessage")}
+            </AlertBanner>
+          )}
+          {hasGovernanceSummaryContent && (
+            <StoreGovernanceSummaryModal
+              locale={locale}
+              storeSlug={store.slug}
+              storeName={store.name}
+              summary={governanceSummary}
+              triggerVariant="banner"
+              viewerOpenReport={governanceViewerContext.openReport}
+              viewerOpenChangeRequest={governanceViewerContext.openChangeRequest}
+              adminReports={adminOpenReports}
+              adminChangeRequests={adminChangeRequests}
+            />
+          )}
+
+          {/* Two-column layout: main + sticky aside on lg. 320px rail matches orders/deliveries detail. */}
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            {/* ── Main column ── */}
+            <div className="min-w-0 space-y-3">
+              <StoreHero
+                store={store}
+                derivedSignals={<StoreReportedChip />}
+                labels={{
+                  countryName: (code) => tCountries(code),
+                  ratingCount: (count) => tListing("ratingCount", { count }),
+                  ratingFallback: tStores("redesign.detail.ratingFallback"),
+                  presencePhysical: tStores("redesign.detail.presence.physical"),
+                  presenceOnline: tStores("redesign.detail.presence.online"),
+                  hasStock: tStores("redesign.detail.hasStock"),
+                  acceptsPreorders: tStores("redesign.detail.acceptsPreorders"),
+                  personChip: tStores("redesign.detail.personChip"),
+                  personNote: isPerson ? tStores("redesign.detail.personNote") : undefined,
+                  proxyChip: tStores("redesign.detail.proxyChip"),
+                  pendingChip: tStores("redesign.detail.pendingChip"),
+                }}
+              />
+
+              <CollapsibleSection
+                eyebrow={
+                  <Eyebrow variant="chip" tone="cool" icon={Tags}>
+                    {tStores("redesign.detail.categoriesTitle")}
+                  </Eyebrow>
+                }
+                topAccent="cool"
+              >
+                <div className="space-y-4">
+                  {/* A PROXY has no catalog of its own, so the product-types block is omitted. */}
+                  {!isProxy && (
+                    <div>
+                      <Eyebrow as="p">{tStores("create.productTypesLabel")}</Eyebrow>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {store.productTypeKeys.length > 0 ? (
+                          store.productTypeKeys.map((key) => (
+                            <Chip key={key} variant="accent">
+                              {resolveStoreProductTypeName(authoredProductTypeNames[key], tProductTypes(key), locale)}
+                            </Chip>
+                          ))
+                        ) : (
+                          <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
+                            {tStores("detail.noProductTypes")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div>
-                    <Eyebrow as="p">{tStores("create.productTypesLabel")}</Eyebrow>
+                    <Eyebrow as="p">{tStores("redesign.detail.importsFrom")}</Eyebrow>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {store.productTypeKeys.length > 0 ? (
-                        store.productTypeKeys.map((key) => (
-                          <Chip key={key} variant="accent">
-                            {resolveStoreProductTypeName(authoredProductTypeNames[key], tProductTypes(key), locale)}
+                      {store.importCountryCodes.length > 0 ? (
+                        store.importCountryCodes.map((code) => (
+                          <Chip key={code} variant="neutral">
+                            {tCountries(code)}
                           </Chip>
                         ))
                       ) : (
                         <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
-                          {tStores("detail.noProductTypes")}
+                          {tStores("detail.noImportCountries")}
                         </span>
                       )}
                     </div>
                   </div>
-                )}
-
-                <div>
-                  <Eyebrow as="p">{tStores("redesign.detail.importsFrom")}</Eyebrow>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {store.importCountryCodes.length > 0 ? (
-                      store.importCountryCodes.map((code) => (
-                        <Chip key={code} variant="neutral">
-                          {tCountries(code)}
-                        </Chip>
-                      ))
-                    ) : (
-                      <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
-                        {tStores("detail.noImportCountries")}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </CollapsibleSection>
-
-            {exposesContactInfo && contactChannelsCount > 0 && (
-              <CollapsibleSection
-                eyebrow={
-                  <Eyebrow variant="chip" tone="cool" icon={AtSign}>
-                    {tStores("redesign.detail.channelsTitle")}
-                  </Eyebrow>
-                }
-                count={contactChannelsCount}
-                topAccent="cool"
-              >
-                <div className="flex flex-col">
-                  {store.contactChannels?.map((ch) => {
-                    const href = buildContactHref(ch.type, ch.value);
-                    if (!href) return null;
-                    return (
-                      <ChannelRow
-                        key={`${ch.type}-${ch.value}`}
-                        icon={getContactIcon(ch.type)}
-                        label={ch.label ?? tChannelTypes(ch.type)}
-                        value={ch.value}
-                        trailing={
-                          ch.type === "EMAIL" || ch.type === "PHONE" ? (
-                            <a
-                              href={href}
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]"
-                              aria-label={tChannelTypes(ch.type)}
-                            >
-                              <Copy size={14} aria-hidden="true" />
-                            </a>
-                          ) : (
-                            <a
-                              href={href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]"
-                              aria-label={tChannelTypes(ch.type)}
-                            >
-                              <ExternalLink size={14} aria-hidden="true" />
-                            </a>
-                          )
-                        }
-                      />
-                    );
-                  })}
                 </div>
               </CollapsibleSection>
-            )}
 
-            {exposesContactInfo && addressesCount > 0 && (
-              <CollapsibleSection
-                eyebrow={
-                  <Eyebrow variant="chip" tone="cool" icon={MapPin}>
-                    {tStores("redesign.detail.addressesTitle")}
-                  </Eyebrow>
-                }
-                count={addressesCount}
-                topAccent="cool"
-              >
-                <div className="flex flex-col">
-                  {store.addresses?.map((address, index) => {
-                    // Postal-style multi-line: street → reference → city, country.
-                    // Each part flows on its own line and wraps independently so long
-                    // addresses (e.g. Japanese full addresses) stay fully visible.
-                    const lines = [
-                      address.addressLine,
-                      address.reference ?? "",
-                      [address.city, tCountries(store.countryCode)].filter(Boolean).join(", "),
-                    ];
-                    return (
-                      <ChannelRow
-                        key={`${address.addressLine}-${index}`}
-                        icon={<MapPin size={14} aria-hidden="true" />}
-                        label={tStores("redesign.detail.addressDefaultLabel")}
-                        valueLines={lines}
-                        trailing={
-                          <span
-                            aria-hidden="true"
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)]"
-                          >
-                            <MapIcon size={13} aria-hidden="true" />
-                          </span>
-                        }
-                      />
-                    );
-                  })}
-                </div>
-              </CollapsibleSection>
-            )}
-
-            <CollapsibleSection
-              eyebrow={
-                <Eyebrow variant="chip" tone="warm" icon={Star}>
-                  {tStores("redesign.detail.reviewsTitle")}
-                </Eyebrow>
-              }
-              topAccent="warm"
-            >
-              <StorePublicReviewsSection locale={locale} storeSlug={store.slug} />
-            </CollapsibleSection>
-          </div>
-
-          {/* ── Sticky aside ── */}
-          <DetailSidebar
-            ariaLabel={tStores("detail.quickSummaryLabel")}
-            labels={{
-              resumen: tStores("redesign.detail.aside.resumen"),
-              acciones: tStores("redesign.detail.aside.acciones"),
-              notaPrivada: tStores("redesign.detail.aside.notaPrivada"),
-              notaPrivadaEyebrow: tStores("redesign.detail.aside.notaPrivada"),
-              governance: tStores("moderation.panelTitle"),
-            }}
-            accents={{
-              resumen: { tone: "accent", icon: Package, topAccent: "accent" },
-              acciones: { tone: "accent", icon: Zap, topAccent: "accent" },
-              governance: { tone: "warning", icon: ShieldAlert, topAccent: "warning" },
-            }}
-            governance={
-              canModerate ? (
-                <StoreAdminModerationPanel
-                  key={store.status}
-                  locale={locale}
-                  storeSlug={store.slug}
-                  storeName={store.name}
-                  initialStatus={store.status as "PENDING" | "APPROVED" | "FLAGGED"}
-                />
-              ) : undefined
-            }
-            resumen={
-              viewerActivity.ordersTotal > 0 ? (
-                <>
-                  {/* Rows wrap in a single container so the sidebar's flex gap doesn't
-                      pull them apart from their border-top separators. */}
-                  <div className="flex flex-col">
-                    <SummaryStatRow
-                      label={tStores("redesign.detail.aside.ordersTotalLabel")}
-                      value={String(viewerActivity.ordersTotal)}
-                    />
-                    <SummaryStatRow
-                      label={tStores("redesign.detail.aside.ordersActiveLabel")}
-                      value={String(viewerActivity.ordersActive)}
-                    />
-                    {viewerActivity.totalSpentByCurrency.length > 0 && (
-                      <SummaryStatRow
-                        label={tStores("redesign.detail.aside.totalSpentLabel")}
-                        value={viewerActivity.totalSpentByCurrency
-                          .map(({ currencyCode, totalMinorUnits }) => formatAmount(totalMinorUnits, currencyCode))
-                          .join(" · ")}
-                      />
-                    )}
-                  </div>
-                  {/* Inline hyperlink recipe (playbook §1, `link` variant is legacy) — matches
-                      the "Ver entregas" link in OrderItemsReadOnlyList. */}
-                  <Link
-                    href={`/${locale}${ROUTES.orders}?store=${store.id}`}
-                    className="text-accent inline-flex items-center gap-1.5 self-start [font-size:var(--text-caption)] font-medium underline-offset-2 hover:underline"
-                  >
-                    <ExternalLink size={14} aria-hidden="true" />
-                    {tStores("redesign.detail.aside.viewLinkedOrders")}
-                  </Link>
-                </>
-              ) : (
-                <Typography size="xs" className="text-text-muted">
-                  {tStores("redesign.detail.aside.noOrdersYet")}
-                </Typography>
-              )
-            }
-            acciones={
-              <>
-                <Button
-                  as="a"
-                  href={`/${locale}${ROUTES.ordersNew}?store=${store.id}`}
-                  variant="primary"
-                  leadingIcon={<PlusCircle size={16} aria-hidden="true" />}
-                  fullWidth
-                  className="justify-start"
+              {exposesContactInfo && contactChannelsCount > 0 && (
+                <CollapsibleSection
+                  eyebrow={
+                    <Eyebrow variant="chip" tone="cool" icon={AtSign}>
+                      {tStores("redesign.detail.channelsTitle")}
+                    </Eyebrow>
+                  }
+                  count={contactChannelsCount}
+                  topAccent="cool"
                 >
-                  {tStores("redesign.detail.actions.anotarPedido")}
-                </Button>
-                {canAccessEditRoute && (
+                  <div className="flex flex-col">
+                    {store.contactChannels?.map((ch) => {
+                      const href = buildContactHref(ch.type, ch.value);
+                      if (!href) return null;
+                      return (
+                        <ChannelRow
+                          key={`${ch.type}-${ch.value}`}
+                          icon={getContactIcon(ch.type)}
+                          label={ch.label ?? tChannelTypes(ch.type)}
+                          value={ch.value}
+                          trailing={
+                            ch.type === "EMAIL" || ch.type === "PHONE" ? (
+                              <a
+                                href={href}
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]"
+                                aria-label={tChannelTypes(ch.type)}
+                              >
+                                <Copy size={14} aria-hidden="true" />
+                              </a>
+                            ) : (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)] hover:[background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]"
+                                aria-label={tChannelTypes(ch.type)}
+                              >
+                                <ExternalLink size={14} aria-hidden="true" />
+                              </a>
+                            )
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+                </CollapsibleSection>
+              )}
+
+              {exposesContactInfo && addressesCount > 0 && (
+                <CollapsibleSection
+                  eyebrow={
+                    <Eyebrow variant="chip" tone="cool" icon={MapPin}>
+                      {tStores("redesign.detail.addressesTitle")}
+                    </Eyebrow>
+                  }
+                  count={addressesCount}
+                  topAccent="cool"
+                >
+                  <div className="flex flex-col">
+                    {store.addresses?.map((address, index) => {
+                      // Postal-style multi-line: street → reference → city, country.
+                      // Each part flows on its own line and wraps independently so long
+                      // addresses (e.g. Japanese full addresses) stay fully visible.
+                      const lines = [
+                        address.addressLine,
+                        address.reference ?? "",
+                        [address.city, tCountries(store.countryCode)].filter(Boolean).join(", "),
+                      ];
+                      return (
+                        <ChannelRow
+                          key={`${address.addressLine}-${index}`}
+                          icon={<MapPin size={14} aria-hidden="true" />}
+                          label={tStores("redesign.detail.addressDefaultLabel")}
+                          valueLines={lines}
+                          trailing={
+                            <span
+                              aria-hidden="true"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] [color:var(--text-secondary)]"
+                            >
+                              <MapIcon size={13} aria-hidden="true" />
+                            </span>
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+                </CollapsibleSection>
+              )}
+
+              <CollapsibleSection
+                eyebrow={
+                  <Eyebrow variant="chip" tone="warm" icon={Star}>
+                    {tStores("redesign.detail.reviewsTitle")}
+                  </Eyebrow>
+                }
+                topAccent="warm"
+              >
+                <StorePublicReviewsSection locale={locale} storeSlug={store.slug} />
+              </CollapsibleSection>
+            </div>
+
+            {/* ── Sticky aside ── */}
+            <DetailSidebar
+              ariaLabel={tStores("detail.quickSummaryLabel")}
+              labels={{
+                resumen: tStores("redesign.detail.aside.resumen"),
+                acciones: tStores("redesign.detail.aside.acciones"),
+                notaPrivada: tStores("redesign.detail.aside.notaPrivada"),
+                notaPrivadaEyebrow: tStores("redesign.detail.aside.notaPrivada"),
+                governance: tStores("moderation.panelTitle"),
+              }}
+              accents={{
+                resumen: { tone: "accent", icon: Package, topAccent: "accent" },
+                acciones: { tone: "accent", icon: Zap, topAccent: "accent" },
+                governance: { tone: "warning", icon: ShieldAlert, topAccent: "warning" },
+              }}
+              governance={
+                canModerate ? (
+                  <StoreAdminModerationPanel
+                    key={store.status}
+                    locale={locale}
+                    storeSlug={store.slug}
+                    storeName={store.name}
+                    initialStatus={store.status as "PENDING" | "APPROVED"}
+                  />
+                ) : undefined
+              }
+              resumen={
+                viewerActivity.ordersTotal > 0 ? (
+                  <>
+                    {/* Rows wrap in a single container so the sidebar's flex gap doesn't
+                      pull them apart from their border-top separators. */}
+                    <div className="flex flex-col">
+                      <SummaryStatRow
+                        label={tStores("redesign.detail.aside.ordersTotalLabel")}
+                        value={String(viewerActivity.ordersTotal)}
+                      />
+                      <SummaryStatRow
+                        label={tStores("redesign.detail.aside.ordersActiveLabel")}
+                        value={String(viewerActivity.ordersActive)}
+                      />
+                      {viewerActivity.totalSpentByCurrency.length > 0 && (
+                        <SummaryStatRow
+                          label={tStores("redesign.detail.aside.totalSpentLabel")}
+                          value={viewerActivity.totalSpentByCurrency
+                            .map(({ currencyCode, totalMinorUnits }) => formatAmount(totalMinorUnits, currencyCode))
+                            .join(" · ")}
+                        />
+                      )}
+                    </div>
+                    {/* Inline hyperlink recipe (playbook §1, `link` variant is legacy) — matches
+                      the "Ver entregas" link in OrderItemsReadOnlyList. */}
+                    <Link
+                      href={`/${locale}${ROUTES.orders}?store=${store.id}`}
+                      className="text-accent inline-flex items-center gap-1.5 self-start [font-size:var(--text-caption)] font-medium underline-offset-2 hover:underline"
+                    >
+                      <ExternalLink size={14} aria-hidden="true" />
+                      {tStores("redesign.detail.aside.viewLinkedOrders")}
+                    </Link>
+                  </>
+                ) : (
+                  <Typography size="xs" className="text-text-muted">
+                    {tStores("redesign.detail.aside.noOrdersYet")}
+                  </Typography>
+                )
+              }
+              acciones={
+                <>
                   <Button
                     as="a"
-                    href={`/${locale}${ROUTES.stores}/${editableStore.slug}/edit`}
-                    variant="ghost"
-                    leadingIcon={
-                      canDirectlyEdit ? (
-                        <Pencil size={16} aria-hidden="true" />
-                      ) : (
-                        <GitPullRequestArrow size={16} aria-hidden="true" />
-                      )
-                    }
+                    href={`/${locale}${ROUTES.ordersNew}?store=${store.id}`}
+                    variant="primary"
+                    leadingIcon={<PlusCircle size={16} aria-hidden="true" />}
                     fullWidth
                     className="justify-start"
                   >
-                    {editModeLabel}
+                    {tStores("redesign.detail.actions.anotarPedido")}
                   </Button>
-                )}
-                <StoreReportModal
-                  locale={locale}
-                  storeSlug={store.slug}
-                  storeName={store.name}
-                  existingReport={governanceViewerContext.openReport}
-                  triggerClassName="w-full justify-start"
-                  triggerVariant="destructive-ghost"
-                  showTriggerLabel
-                  triggerIcon={<Flag size={16} aria-hidden="true" />}
-                />
-              </>
-            }
-            notaPrivada={
-              <StoreNoteForm key={store.slug} locale={locale} storeSlug={store.slug} existingNote={viewerNote} />
-            }
-          />
-        </div>
+                  {canAccessEditRoute && (
+                    <Button
+                      as="a"
+                      href={`/${locale}${ROUTES.stores}/${editableStore.slug}/edit`}
+                      variant="ghost"
+                      leadingIcon={
+                        canDirectlyEdit ? (
+                          <Pencil size={16} aria-hidden="true" />
+                        ) : (
+                          <GitPullRequestArrow size={16} aria-hidden="true" />
+                        )
+                      }
+                      fullWidth
+                      className="justify-start"
+                    >
+                      {editModeLabel}
+                    </Button>
+                  )}
+                  <StoreReportModal
+                    locale={locale}
+                    storeSlug={store.slug}
+                    storeName={store.name}
+                    existingReport={governanceViewerContext.openReport}
+                    triggerClassName="w-full justify-start"
+                    triggerVariant="destructive-ghost"
+                    showTriggerLabel
+                    triggerIcon={<Flag size={16} aria-hidden="true" />}
+                  />
+                </>
+              }
+              notaPrivada={
+                <StoreNoteForm key={store.slug} locale={locale} storeSlug={store.slug} existingNote={viewerNote} />
+              }
+            />
+          </div>
 
-        {/* Hidden h1 for SR (the visible title is in StoreHero) */}
-        <h1 id="store-detail-heading" className="sr-only">
-          {store.name}
-        </h1>
-      </div>
+          {/* Hidden h1 for SR (the visible title is in StoreHero) */}
+          <h1 id="store-detail-heading" className="sr-only">
+            {store.name}
+          </h1>
+        </div>
+      </StoreReportNoticeProvider>
     </StoreReviewsStateProvider>
   );
 }

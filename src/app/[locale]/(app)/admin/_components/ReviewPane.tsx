@@ -6,7 +6,7 @@ import { analyticsItemType } from "../_utils/moderationItemView";
 import InboxItemOpenedCapture from "./InboxItemOpenedCapture";
 import PendingStoreReview from "./reviews/PendingStoreReview";
 import ReportReview from "./reviews/ReportReview";
-import FlagReview from "./reviews/FlagReview";
+import ReportClusterReview from "./reviews/ReportClusterReview";
 import ChangeRequestReview from "./reviews/ChangeRequestReview";
 import ProductTypeReview from "./reviews/ProductTypeReview";
 
@@ -38,7 +38,9 @@ export default async function ReviewPane({ item, locale }: ReviewPaneProps) {
         <PendingStoreReview store={item.store} summary={item.summary} locale={locale} />
       )}
       {item.type === "report" && <ReportReview store={item.store} report={item.report} locale={locale} />}
-      {item.type === "flag" && <FlagReview store={item.store} reports={item.reports} locale={locale} />}
+      {item.type === "report_cluster" && (
+        <ReportClusterReview store={item.store} reports={item.reports} locale={locale} />
+      )}
       {item.type === "change_request" && (
         <ChangeRequestReview store={item.store} request={item.request} locale={locale} />
       )}

@@ -9,6 +9,7 @@ const { prismaMock, txMock } = vi.hoisted(() => {
     storeReport: {
       findUnique: vi.fn(),
       update: vi.fn(),
+      count: vi.fn(),
     },
     // The post-write supersede sweep re-reads the store and its open change requests.
     storeChangeRequest: {
@@ -35,17 +36,15 @@ vi.mock("@/lib/data/admin/adminAuditMutations", () => ({
 import {
   approveStore,
   dismissStoreReport,
-  flagStore,
   removeStore,
   resolveStoreReport,
   StoreModerationError,
-  unflagStore,
 } from "../storeModerationMutations";
 
 type StoreRow = {
   id: string;
   slug: string;
-  status: "PENDING" | "APPROVED" | "FLAGGED" | "REJECTED";
+  status: "PENDING" | "APPROVED" | "REJECTED";
   approvedAt: Date | null;
   approvedByUserId: string | null;
 };
@@ -137,7 +136,7 @@ describe("approveStore", () => {
 });
 
 describe("removeStore", () => {
-  it.each(["PENDING", "APPROVED", "FLAGGED"] as const)(
+  it.each(["PENDING", "APPROVED"] as const)(
     "removes a %s store to REJECTED with the removalReason and a store.remove audit entry",
     async (status) => {
       mockCurrentStore({ status });
@@ -173,63 +172,15 @@ describe("removeStore", () => {
   });
 });
 
-describe("flagStore", () => {
-  it.each(["PENDING", "APPROVED"] as const)("flags a %s store as FLAGGED and audits store.flag", async (status) => {
-    mockCurrentStore({ status });
+type ReportRow = { id: string; status: "OPEN" | "REVIEWED" | "DISMISSED"; storeId?: string };
 
-    const result = await flagStore({ storeId: "store-1", actorId: ACTOR });
-
-    expect(result).toMatchObject({ status: "FLAGGED", previousStatus: status });
-    expect(txMock.store.update.mock.calls[0][0].data).toEqual({ status: "FLAGGED" });
-    expect(writeAuditEntryMock.mock.calls[0][0]).toMatchObject({ action: "store.flag" });
-  });
-
-  it("rejects flagging a store that is already FLAGGED", async () => {
-    mockCurrentStore({ status: "FLAGGED" });
-
-    await expect(flagStore({ storeId: "store-1", actorId: ACTOR })).rejects.toMatchObject({
-      code: "invalidTransition",
-    });
-  });
-});
-
-describe("unflagStore", () => {
-  it("restores APPROVED when the store had been approved before flagging", async () => {
-    mockCurrentStore({ status: "FLAGGED", approvedAt: new Date("2026-01-01T00:00:00Z"), approvedByUserId: "admin-0" });
-
-    const result = await unflagStore({ storeId: "store-1", actorId: ACTOR });
-
-    expect(result).toMatchObject({ status: "APPROVED", previousStatus: "FLAGGED" });
-    expect(txMock.store.update.mock.calls[0][0].data).toEqual({ status: "APPROVED" });
-    expect(writeAuditEntryMock.mock.calls[0][0]).toMatchObject({ action: "store.unflag" });
-  });
-
-  it("restores PENDING when the store had never been approved", async () => {
-    mockCurrentStore({ status: "FLAGGED", approvedAt: null, approvedByUserId: null });
-
-    const result = await unflagStore({ storeId: "store-1", actorId: ACTOR });
-
-    expect(result.status).toBe("PENDING");
-    expect(txMock.store.update.mock.calls[0][0].data).toEqual({ status: "PENDING" });
-  });
-
-  it("rejects unflagging a store that is not FLAGGED", async () => {
-    mockCurrentStore({ status: "APPROVED" });
-
-    await expect(unflagStore({ storeId: "store-1", actorId: ACTOR })).rejects.toMatchObject({
-      code: "invalidTransition",
-    });
-  });
-});
-
-type ReportRow = { id: string; status: "OPEN" | "REVIEWED" | "DISMISSED" };
-
-function mockCurrentReport(row: ReportRow) {
-  txMock.storeReport.findUnique.mockResolvedValue(row);
+function mockCurrentReport(row: ReportRow, openReportsRemaining = 0) {
+  txMock.storeReport.findUnique.mockResolvedValue({ storeId: "store-1", ...row });
   txMock.storeReport.update.mockImplementation(async ({ data }: { data: { status: ReportRow["status"] } }) => ({
     id: row.id,
     status: data.status,
   }));
+  txMock.storeReport.count.mockResolvedValue(openReportsRemaining);
 }
 
 describe("resolveStoreReport", () => {
@@ -266,6 +217,25 @@ describe("resolveStoreReport", () => {
     expect(writeAuditEntryMock).not.toHaveBeenCalled();
   });
 
+  it("reports zero open reports remaining and writes no store row when it was the last one", async () => {
+    mockCurrentReport({ id: "report-1", status: "OPEN" }, 0);
+
+    const result = await resolveStoreReport({ reportId: "report-1", actorId: ACTOR });
+
+    // The derived public notice clears because the count reached zero, not because anything was
+    // written onto the store: the notice has no writer.
+    expect(result).toMatchObject({ storeId: "store-1", openReportsRemaining: 0 });
+    expect(txMock.store.update).not.toHaveBeenCalled();
+  });
+
+  it("reports the reports still open when others remain, so the notice stays up", async () => {
+    mockCurrentReport({ id: "report-1", status: "OPEN" }, 2);
+
+    const result = await resolveStoreReport({ reportId: "report-1", actorId: ACTOR });
+
+    expect(result.openReportsRemaining).toBe(2);
+  });
+
   it("rejects resolving a report that is not OPEN without writing anything", async () => {
     mockCurrentReport({ id: "report-1", status: "REVIEWED" });
 
@@ -283,7 +253,7 @@ describe("dismissStoreReport", () => {
 
     const result = await dismissStoreReport({ reportId: "report-2", actorId: ACTOR });
 
-    expect(result).toMatchObject({ status: "DISMISSED", previousStatus: "OPEN" });
+    expect(result).toMatchObject({ status: "DISMISSED", previousStatus: "OPEN", openReportsRemaining: 0 });
     expect(txMock.storeReport.update.mock.calls[0][0].data).toEqual({ status: "DISMISSED" });
     expect(writeAuditEntryMock.mock.calls[0][0]).toMatchObject({
       action: "report.dismiss",

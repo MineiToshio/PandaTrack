@@ -6,7 +6,8 @@ title: Derived Report Notice and Flag Removal
 status: DRAFT
 parent: BP-01
 source_features: []
-implementation_status: PLANNED
+source_issue: 137
+implementation_status: IN_PROGRESS
 last_updated: 2026-07-27
 ---
 
@@ -50,11 +51,18 @@ repository state and still be referenced by the console in another.
 
 ### Data layer
 
-- Add the open-report count to the store-detail read model (`getStoreBySlug`) as
-  `openReportCount`, so the detail page can decide the notice without a second round trip. The count
-  is over `StoreReport` rows with `status: "OPEN"` for that store.
+- Read the open-report count from `getStoreGovernanceSummary`, which the store-detail page already
+  loads in the same `Promise.all` as `getStoreBySlug` and which already exposes `openReports` over
+  `StoreReport` rows with `status: "OPEN"`. **Amended during implementation** (2026-07-27): the
+  original wording added an `openReportCount` to `getStoreBySlug`, which would have duplicated a count
+  the page already has and, worse, charged that count to `generateMetadata`, which calls
+  `getStoreBySlug` and must deliberately not read reports. The notice therefore costs zero extra
+  queries and the read model stays as it was.
 - Derive the notice through one shared predicate rather than an inline comparison, keyed on the named
-  constant `STORE_REPORT_NOTICE_THRESHOLD` (Decision D1).
+  constant `STORE_REPORT_NOTICE_THRESHOLD` (Decision D1). Both predicates live together in
+  `src/lib/store/reportNotice.ts`: `hasDerivedReportNotice()` for the public notice and
+  `isReportCluster()` for the queue collapse, each reading its own constant, so no call site writes a
+  bare `count >= n` comparison and the two thresholds stay independent (Decision D7).
 - Update `PUBLIC_VISIBLE_STORE_STATUSES` to `["PENDING", "APPROVED"]`. The constant stays: it is still
   the single point that excludes `REJECTED` from the listing where-builder, `getStoreBySlug`, and
   `getOrderableStores`.
@@ -125,12 +133,17 @@ repository state and still be referenced by the console in another.
 - Unit: `getStoreBySlug` returns `openReportCount`, and the public governance read model is still not
   widened with reporter identity or free text.
 - Unit: resolving the last open report drives the derived notice off; no store row is written.
-- Migration: an integration check that no row carries a lifecycle value that used to be `FLAGGED`
-  without `approvedAt` being honored, run against a seeded fixture.
-- E2E: a store with one open report shows the notice to an anonymous visitor and to an administrator;
-  an administrator resolves the last open report and the notice is gone on reload; the store's
-  metadata is **not** `noindex` at any point in that flow while the store is `APPROVED`.
-- Remove the flag/unflag E2E from `WO-09`'s spec and the flag assertions from the console spec.
+- Migration: verified by applying it, since the enum value no longer exists afterwards and no fixture
+  can hold it. `migrate dev` reported the database in sync with the schema and `migrate status` reads
+  clean.
+- E2E: a store with one open report shows the notice to an administrator; resolving the last open
+  report clears it optimistically and it is still gone on reload; the store stays reachable
+  throughout. The flag/unflag spec in `e2e/store-moderation.spec.ts` is replaced by this one.
+  **Amended during implementation** (2026-07-27): the anonymous-visitor half is not covered by an E2E,
+  because the store detail lives under the authenticated `(app)` segment and no anonymous route
+  reaches it; the "for every viewer" behavior is instead covered by the notice being rendered from the
+  same server payload for all viewers with no viewer-role condition. The `noindex` assertion is left to
+  the unit level for the same reason. The console spec carried no flag assertions to remove.
 
 ### Prototypes
 
@@ -354,8 +367,8 @@ Unit and integration (`vitest`):
   `STORE_REPORT_CLUSTER_THRESHOLD`, and emits individual rows below it.
 - Changing one threshold constant in a test does not move the other behavior, proving they are not
   the same value by accident.
-- `getStoreBySlug` returns `openReportCount` for a store with open reports and `0` otherwise, and
-  `getStoreGovernanceSummary` still exposes neither reporter identity nor free text.
+- `getStoreGovernanceSummary` reports the store's open-report count and still exposes neither
+  reporter identity nor free text.
 - `resolveStoreReport` on a store's last open report leaves the store row untouched and reports
   `openReportsRemaining: 0`.
 - `PUBLIC_VISIBLE_STORE_STATUSES` excludes `REJECTED` and contains exactly the two lifecycle values.
@@ -380,11 +393,16 @@ trusted port (`docs/development/testing.md`).
 
 ## Notes
 
-- GitHub tracking: to be created as a slice issue under Epic `#68` (FEAT-0012), sequenced after
+- GitHub tracking: slice issue `#137`, created under Epic `#68` (FEAT-0012), sequenced after
   `#131` (`WO-09`) through `#134` (`WO-12`) per `github-tracking-sync.mdc`. Because the slice also
   changes console files, cross-link it from the FRD-02 inbox slice `#129`.
 - The schema change follows `prisma-migration-workflow.mdc` using the hand-written-SQL fallback, and
   is not complete until the SQL is written, applied, `prisma generate` has run, and `type-check`
   passes.
-- `docs/development/database-schema.md` describes the shipped schema and is updated when this
-  migration is applied, not when this work order is written.
+- `docs/development/database-schema.md` describes the shipped schema and was updated when this
+  migration was applied (`20260727012229_drop_flagged_store_status`).
+- Optimistic clearing is keyed on the resolved report's **id** rather than on a decremented counter:
+  the notice count is recomputed from the server's open-report list minus the ids still in flight, so
+  it stays correct when the revalidated payload lands and a failed resolution restores the notice by
+  restoring its id. The action's `openReportsRemaining` remains the server-side authority and the
+  analytics signal; it is the value the derived count converges on.

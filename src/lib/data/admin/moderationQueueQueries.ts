@@ -5,7 +5,7 @@ import type {
   StoreStatus,
 } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { STORE_FLAG_REPORT_THRESHOLD } from "@/lib/constants";
+import { isReportCluster } from "@/lib/store/reportNotice";
 import { getAdminOpenStoreReports, type AdminOpenStoreReport } from "./adminStoreReportQueries";
 import {
   getAdminPendingStoreChangeRequests,
@@ -17,11 +17,12 @@ import {
 } from "./adminStoreProductTypeRequestQueries";
 
 /**
- * The five row types the moderation inbox renders. Four map to a persisted pending category; `flag`
- * is derived when a store accumulates enough open reports (see {@link STORE_FLAG_REPORT_THRESHOLD}).
+ * The five row types the moderation inbox renders. Four map to a persisted pending category;
+ * `report_cluster` is derived when a store accumulates enough open reports (see
+ * {@link isReportCluster}).
  */
 export const MODERATION_QUEUE_ITEM_TYPES = [
-  "flag",
+  "report_cluster",
   "report",
   "pending_store",
   "change_request",
@@ -34,12 +35,18 @@ export type ModerationQueueItemType = (typeof MODERATION_QUEUE_ITEM_TYPES)[numbe
  * Impact tiers, highest first. A tier's items sort oldest-first among themselves. Encoding the order
  * here keeps the queue composition and any test in lockstep with the single ordering rule.
  */
-const TIER_ORDER: ModerationQueueItemType[] = ["flag", "report", "pending_store", "change_request", "product_type"];
+const TIER_ORDER: ModerationQueueItemType[] = [
+  "report_cluster",
+  "report",
+  "pending_store",
+  "change_request",
+  "product_type",
+];
 
 /**
  * Store identity plus the light metadata every store-related row shows in its header chips. The
- * `slug` lets each review invoke the slug-based FRD-04 actions and offer "Ver tienda"; `status`
- * drives the flag / unflag toggle; `sellerType` and `countryCode` render as metadata tags.
+ * `slug` lets each review invoke the slug-based FRD-04 actions and offer "Ver tienda"; `status`,
+ * `sellerType`, and `countryCode` render as metadata tags.
  */
 export type ModerationStoreRef = {
   storeId: string;
@@ -61,12 +68,12 @@ export type ModerationPendingStoreSummary = {
 };
 
 /**
- * One inbox item. `id` is the value carried in `?item=<type>:<id>`: the store id for `flag` and
- * `pending_store`, the report id for `report`, the change-request id for `change_request`, and the
+ * One inbox item. `id` is the value carried in `?item=<type>:<id>`: the store id for `report_cluster`
+ * and `pending_store`, the report id for `report`, the change-request id for `change_request`, and the
  * request id for `product_type`. `sortAt` is the timestamp the tier sorts by (oldest first).
  */
 export type ModerationQueueItem =
-  | { type: "flag"; id: string; sortAt: Date; store: ModerationStoreRef; reports: AdminOpenStoreReport[] }
+  | { type: "report_cluster"; id: string; sortAt: Date; store: ModerationStoreRef; reports: AdminOpenStoreReport[] }
   | { type: "report"; id: string; sortAt: Date; store: ModerationStoreRef; report: AdminOpenStoreReport }
   | {
       type: "pending_store";
@@ -86,7 +93,7 @@ export type ModerationQueueItem =
 
 /**
  * Per-category counters shown above the queue. They map to the four persisted categories; the derived
- * flag-candidate rows count inside the `stores` bucket alongside pending stores, since both are
+ * report-cluster rows count inside the `stores` bucket alongside pending stores, since both are
  * store-level decisions (FDD-02 section 6.1).
  */
 export type ModerationQueueCounts = {
@@ -132,7 +139,7 @@ export type ModerationQueueInput = {
   productTypeRequests: AdminPendingStoreProductTypeRequest[];
 };
 
-/** Earliest report timestamp in a group, used as a flag candidate's sort key. */
+/** Earliest report timestamp in a group, used as a report cluster's sort key. */
 function earliestReportAt(reports: AdminOpenStoreReport[]): Date {
   return reports.reduce(
     (earliest, report) => (report.createdAt.getTime() < earliest.getTime() ? report.createdAt : earliest),
@@ -147,20 +154,20 @@ function byOldestFirst(left: ModerationQueueItem, right: ModerationQueueItem): n
 }
 
 /**
- * Composes the four pending categories into one impact-ordered list and derives the flag-candidate
- * rows. A store with at least {@link STORE_FLAG_REPORT_THRESHOLD} open reports collapses into a single
- * `flag` row and contributes no individual `report` rows; below the threshold each open report is its
- * own `report` row. Pure over its inputs.
+ * Composes the four pending categories into one impact-ordered list and derives the report-cluster
+ * rows. A store whose open reports reach the cluster threshold ({@link isReportCluster}) collapses
+ * into a single `report_cluster` row and contributes no individual `report` rows; below the threshold
+ * each open report is its own `report` row. Pure over its inputs.
  */
 export function assembleModerationQueue(input: ModerationQueueInput): ModerationQueue {
-  const flagItems: ModerationQueueItem[] = [];
+  const reportClusterItems: ModerationQueueItem[] = [];
   const reportItems: ModerationQueueItem[] = [];
 
   for (const group of input.storeReports) {
     if (group.reports.length === 0) continue;
-    if (group.reports.length >= STORE_FLAG_REPORT_THRESHOLD) {
-      flagItems.push({
-        type: "flag",
+    if (isReportCluster(group.reports.length)) {
+      reportClusterItems.push({
+        type: "report_cluster",
         id: group.store.storeId,
         sortAt: earliestReportAt(group.reports),
         store: group.store,
@@ -205,7 +212,7 @@ export function assembleModerationQueue(input: ModerationQueueInput): Moderation
   }));
 
   const byTier: Record<ModerationQueueItemType, ModerationQueueItem[]> = {
-    flag: flagItems,
+    report_cluster: reportClusterItems,
     report: reportItems,
     pending_store: pendingStoreItems,
     change_request: changeRequestItems,
@@ -218,7 +225,7 @@ export function assembleModerationQueue(input: ModerationQueueInput): Moderation
     items,
     counts: {
       reports: reportItems.length,
-      stores: pendingStoreItems.length + flagItems.length,
+      stores: pendingStoreItems.length + reportClusterItems.length,
       changes: changeRequestItems.length,
       types: productTypeItems.length,
     },

@@ -19,15 +19,11 @@ const DEFAULT_PUBLIC_STORE_REVIEW_LIMIT = 10;
 
 /**
  * Single source of truth for which store statuses are visible on every public surface (listing,
- * search, detail, and the order-creation picker). `REJECTED` is excluded everywhere (tombstone),
- * while `FLAGGED` is included: a flagged store stays publicly visible with a stronger warning; only
- * removal hides. Encoding the rule once keeps the surfaces from diverging.
+ * search, detail, and the order-creation picker). `REJECTED` is excluded everywhere (tombstone); only
+ * removal hides a store. Open reports never hide one: they drive a derived notice on the detail, not a
+ * visibility rule. Encoding the rule once keeps the surfaces from diverging.
  */
-export const PUBLIC_VISIBLE_STORE_STATUSES = [
-  "PENDING",
-  "APPROVED",
-  "FLAGGED",
-] as const satisfies readonly StoreStatus[];
+export const PUBLIC_VISIBLE_STORE_STATUSES = ["PENDING", "APPROVED"] as const satisfies readonly StoreStatus[];
 
 /**
  * Safety cap on rows fed into in-memory duplicate scoring. The query already pre-filters in SQL
@@ -505,7 +501,7 @@ export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> 
  * Public store listing with optional filters.
  * OR within same filter family (e.g. any of selected product types), AND across families.
  * Only PUBLIC stores in a publicly visible status (`PUBLIC_VISIBLE_STORE_STATUSES`); `REJECTED` is
- * excluded and `FLAGGED` is included. Closed (inactive) stores are hidden by default and
+ * excluded. Closed (inactive) stores are hidden by default and
  * only included when `includeClosed` is set; they remain reachable by direct URL (detail page shows warning).
  */
 export async function getPublicStoresListing(filters: PublicStoreListingFilters): Promise<PublicStoreListingItem[]> {
@@ -723,8 +719,8 @@ export async function getViewerOrderCountsByStoreSlugs(
  * Stores are shared across users — a collector can buy from any catalog store, not
  * only the ones they created themselves. `PENDING` is included so that a user who
  * just registered a new store (which starts as `PENDING`) can immediately use it
- * without waiting for moderation. `FLAGGED` stays orderable too: the warning is
- * informational, not a lock. This matches the public store listing query
+ * without waiting for moderation. A store with open reports stays orderable too: the derived
+ * report notice is informational, not a lock. This matches the public store listing query
  * in `getPublicStoresListingPage`.
  */
 export async function getOrderableStores(): Promise<UserStoreOption[]> {

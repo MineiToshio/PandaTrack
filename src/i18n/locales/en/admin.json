@@ -27,13 +27,13 @@
   },
   "queue": {
     "category": {
-      "flag": "Suggested removal",
+      "report_cluster": "Accumulated reports",
       "report": "Report",
       "pending_store": "Pending store",
       "change_request": "Proposed change",
       "product_type": "Product type"
     },
-    "reportsAccumulated": "{count, plural, one {# report accumulated} other {# reports accumulated}}",
+    "openReports": "{count, plural, one {# open report} other {# open reports}}",
     "fieldsChanged": "{count, plural, one {# field changed} other {# fields changed}}",
     "driftTag": "Out of sync"
   },
@@ -55,8 +55,7 @@
     "storeStatus": {
       "PENDING": "In review",
       "APPROVED": "Approved",
-      "REJECTED": "Rejected",
-      "FLAGGED": "Flagged"
+      "REJECTED": "Rejected"
     },
     "reportReason": {
       "SPAM": "Spam",
@@ -86,12 +85,10 @@
       "dismiss": "Dismiss",
       "remove": "Remove store"
     },
-    "flag": {
+    "reportCluster": {
       "sectionReports": "Accumulated reports",
-      "hint": "Flagging keeps the store visible with a stronger warning; removing excludes it from public surfaces.",
-      "flag": "Flag with reports warning",
-      "unflag": "Remove reports warning",
-      "remove": "Remove"
+      "hint": "Resolve or dismiss each report on its own. The public notice clears only once no open report is left; removing the store excludes it from public surfaces.",
+      "remove": "Remove store"
     },
     "change": {
       "sectionDiff": "Proposed changes",
@@ -148,8 +145,6 @@
     "toast": {
       "approved": "Store approved.",
       "removed": "Store removed.",
-      "flagged": "Store flagged.",
-      "unflagged": "Flag removed.",
       "reportResolved": "Report resolved.",
       "reportDismissed": "Report dismissed.",
       "changeApplied": "Change applied.",

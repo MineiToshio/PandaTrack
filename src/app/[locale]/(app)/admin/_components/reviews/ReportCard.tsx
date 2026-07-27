@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
 import { Flag, Lock, User } from "lucide-react";
 import Chip from "@/components/core/Chip";
@@ -7,8 +8,19 @@ import type { AdminOpenStoreReport } from "@/lib/data/admin/adminStoreReportQuer
  * A single open report card: reason chip, the raw free-text detail, and the reporter identity. Both the
  * detail and the identity come from the server-only admin DAL and are marked "Solo visible para
  * administradores" (`BR-02-03`), never sourced from the public governance read model.
+ *
+ * `actions` is the per-report decision footer used by the report-cluster review, where each report is
+ * resolved or dismissed on its own; the single-report review keeps its decisions in the review footer.
  */
-export default async function ReportCard({ report, locale }: { report: AdminOpenStoreReport; locale: string }) {
+export default async function ReportCard({
+  report,
+  locale,
+  actions,
+}: {
+  report: AdminOpenStoreReport;
+  locale: string;
+  actions?: ReactNode;
+}) {
   const t = await getTranslations({ locale, namespace: "admin.review" });
 
   return (
@@ -26,6 +38,7 @@ export default async function ReportCard({ report, locale }: { report: AdminOpen
           {t("adminOnlyShort")}
         </span>
       </div>
+      {actions != null && <div className="flex flex-wrap gap-2">{actions}</div>}
     </div>
   );
 }

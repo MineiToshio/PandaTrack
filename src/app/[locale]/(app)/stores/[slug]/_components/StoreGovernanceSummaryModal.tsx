@@ -36,6 +36,7 @@ import {
 } from "../_actions/moderateStoreReport";
 import { applyStoreChangeRequestAction, rejectStoreChangeRequestAction } from "../_actions/moderateStoreChangeRequest";
 import StoreReportModal from "./StoreReportModal";
+import { useStoreReportNotice } from "./StoreReportNoticeProvider";
 
 type StoreGovernanceSummaryModalProps = {
   locale: string;
@@ -82,10 +83,11 @@ export default function StoreGovernanceSummaryModal({
   const { addToast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [reportModalOpenRequest, setReportModalOpenRequest] = useState(0);
-  // Optimistic resolution: an id here is hidden from the admin list immediately on action. On
-  // failure it is removed from the set (row restored); on success the server revalidation drops it
-  // from `adminReports` for good. The modal stays open so several reports can be resolved in a row.
-  const [pendingResolvedReportIds, setPendingResolvedReportIds] = useState<ReadonlySet<string>>(new Set());
+  // Optimistic resolution lives in the store-detail report-notice provider, because the same set
+  // drives the derived public notice: hiding the row and clearing the banner are one update. On
+  // failure the id is restored (row and notice both return); on success the server revalidation drops
+  // it from `adminReports` for good. The modal stays open so several reports can be resolved in a row.
+  const { pendingResolvedReportIds, markReportResolved, restoreReport } = useStoreReportNotice();
   const [resolvingReportId, setResolvingReportId] = useState<string | null>(null);
   // Optimistic change-request review: an id here leaves the admin list immediately on action. On
   // failure it is restored; on success the server revalidation drops it from `adminChangeRequests`.
@@ -176,7 +178,11 @@ export default function StoreGovernanceSummaryModal({
       ? t(`moderation.errors.${errorKey}`)
       : t("moderation.errors.moderationFailed");
 
-  /** Optimistic resolve / dismiss: hide the row, run the action, restore it and toast on failure. */
+  /**
+   * Optimistic resolve / dismiss: hide the row and, when it was the store's last open report, the
+   * derived notice with it; run the action; restore both and toast on failure. The action's
+   * `openReportsRemaining` is what the notice settles on once the revalidated payload arrives.
+   */
   const runReportResolution = async (
     reportId: string,
     action: () => Promise<ModerateStoreReportResult>,
@@ -184,18 +190,14 @@ export default function StoreGovernanceSummaryModal({
   ) => {
     if (resolvingReportId != null) return;
     setResolvingReportId(reportId);
-    setPendingResolvedReportIds((current) => new Set(current).add(reportId));
+    markReportResolved(reportId);
 
     const result = await action();
 
     if (result.success) {
       addToast(t(successToastKey), { variant: "success" });
     } else {
-      setPendingResolvedReportIds((current) => {
-        const next = new Set(current);
-        next.delete(reportId);
-        return next;
-      });
+      restoreReport(reportId);
       addToast(translateReportError(result.error), { variant: "error" });
     }
     setResolvingReportId(null);

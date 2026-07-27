@@ -78,7 +78,7 @@ Reference for what each table and attribute is for, where it is used, and why it
 - **searchName** – Diacritic-stripped, lowercased, punctuation-collapsed copy of `name` (`normalizeStoreName`), indexed. Lets duplicate detection pre-filter in SQL with `contains` on normalized terms instead of scanning every store; written on create and on any name edit. See `docs/development/store-duplicate-detection.md`.
 - **logoUrl** – Logo for business stores; person stores do not show it on the public profile.
 - **storeType** – BUSINESS vs PERSON; drives visibility rules (contact/address/logo visibility).
-- **status** – PENDING, APPROVED, REJECTED, FLAGGED; controls indexing and who can edit (see `docs/product/prd-02-collector-app/frd-04-store-domain/frd-04-store-domain.md`).
+- **status** – PENDING, APPROVED, REJECTED; lifecycle only. Controls indexing and who can edit (see `docs/product/prd-02-collector-app/frd-04-store-domain/frd-04-store-domain.md`). The public "has reports" notice is not a status: it is derived at read time from the store's open `StoreReport` rows (`docs/design/decisions/0019-derived-trust-signals-moderation-status-lifecycle-only.md`).
 - **visibility** – PUBLIC vs PRIVATE.
 - **isActive** – Whether the store is still operating; inactive stores stay visible but should show a warning.
 - **hasStock / receivesOrders** – Optional hints for discovery and filters.
@@ -265,7 +265,7 @@ Reference for what each table and attribute is for, where it is used, and why it
 ## Enums (summary)
 
 - **StoreType** – BUSINESS, PERSON (store identity and visibility rules).
-- **StoreStatus** – PENDING, APPROVED, REJECTED, FLAGGED (moderation and indexing).
+- **StoreStatus** – PENDING, APPROVED, REJECTED (moderation lifecycle and indexing).
 - **StoreVisibility** – PUBLIC, PRIVATE.
 - **StorePresenceType** – ONLINE, PHYSICAL (filters and profile).
 - **StoreContactChannelType** – INSTAGRAM, WHATSAPP, EMAIL, PHONE, WEBSITE, FACEBOOK, TIKTOK, OTHER.

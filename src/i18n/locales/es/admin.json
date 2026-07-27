@@ -27,13 +27,13 @@
   },
   "queue": {
     "category": {
-      "flag": "Baja sugerida",
+      "report_cluster": "Reportes acumulados",
       "report": "Reporte",
       "pending_store": "Tienda pendiente",
       "change_request": "Cambio propuesto",
       "product_type": "Tipo de producto"
     },
-    "reportsAccumulated": "{count, plural, one {# reporte acumulado} other {# reportes acumulados}}",
+    "openReports": "{count, plural, one {# reporte abierto} other {# reportes abiertos}}",
     "fieldsChanged": "{count, plural, one {# campo modificado} other {# campos modificados}}",
     "driftTag": "Con desfase"
   },
@@ -55,8 +55,7 @@
     "storeStatus": {
       "PENDING": "En revisión",
       "APPROVED": "Aprobada",
-      "REJECTED": "Rechazada",
-      "FLAGGED": "Marcada"
+      "REJECTED": "Rechazada"
     },
     "reportReason": {
       "SPAM": "Spam",
@@ -86,12 +85,10 @@
       "dismiss": "Descartar",
       "remove": "Retirar tienda"
     },
-    "flag": {
+    "reportCluster": {
       "sectionReports": "Reportes acumulados",
-      "hint": "Marcar mantiene la tienda visible con una advertencia más fuerte; retirar la excluye de las superficies públicas.",
-      "flag": "Marcar con aviso de reportes",
-      "unflag": "Quitar aviso de reportes",
-      "remove": "Retirar"
+      "hint": "Resuelve o descarta cada reporte por separado. El aviso público se retira solo cuando ya no queda ninguno abierto; retirar la tienda la excluye de las superficies públicas.",
+      "remove": "Retirar tienda"
     },
     "change": {
       "sectionDiff": "Cambios propuestos",
@@ -148,8 +145,6 @@
     "toast": {
       "approved": "Tienda aprobada.",
       "removed": "Tienda retirada.",
-      "flagged": "Tienda marcada.",
-      "unflagged": "Marca retirada.",
       "reportResolved": "Reporte resuelto.",
       "reportDismissed": "Reporte descartado.",
       "changeApplied": "Cambio aplicado.",

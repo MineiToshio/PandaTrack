@@ -100,12 +100,12 @@ describe("assembleModerationQueue", () => {
     expect(result.counts).toEqual({ reports: 1, stores: 1, changes: 1, types: 1 });
   });
 
-  it("derives a single flag row and drops individual report rows at the threshold", () => {
+  it("derives a single report-cluster row and drops individual report rows at the threshold", () => {
     const result = assembleModerationQueue({
       ...EMPTY_INPUT,
       storeReports: [
         {
-          store: storeRef({ storeId: "s-flag" }),
+          store: storeRef({ storeId: "s-cluster" }),
           reports: [
             report({ id: "r-a", createdAt: new Date("2026-07-03T00:00:00Z") }),
             report({ id: "r-b", createdAt: new Date("2026-07-02T00:00:00Z") }),
@@ -116,14 +116,14 @@ describe("assembleModerationQueue", () => {
 
     expect(result.items).toHaveLength(1);
     const [item] = result.items;
-    expect(item.type).toBe("flag");
-    expect(item.id).toBe("s-flag");
-    if (item.type === "flag") {
+    expect(item.type).toBe("report_cluster");
+    expect(item.id).toBe("s-cluster");
+    if (item.type === "report_cluster") {
       expect(item.reports).toHaveLength(2);
       // Sort key is the earliest of the accumulated reports.
       expect(item.sortAt).toEqual(new Date("2026-07-02T00:00:00Z"));
     }
-    // Flag candidates count inside the stores bucket, not reports.
+    // Report clusters count inside the stores bucket, not reports.
     expect(result.counts).toEqual({ reports: 0, stores: 1, changes: 0, types: 0 });
   });
 
@@ -146,9 +146,9 @@ describe("assembleModerationQueue", () => {
         { store: storeRef({ storeId: "s-pending" }), summary: summary(), createdAt: new Date("2026-07-05T00:00:00Z") },
       ],
       storeReports: [
-        // Flag candidate (>= threshold) and a separate single-report store.
+        // Report cluster (>= threshold) and a separate single-report store.
         {
-          store: storeRef({ storeId: "s-flag" }),
+          store: storeRef({ storeId: "s-cluster" }),
           reports: [report({ id: "r-1" }), report({ id: "r-2" })],
         },
         { store: storeRef({ storeId: "s-report" }), reports: [report({ id: "r-3" })] },
@@ -158,7 +158,7 @@ describe("assembleModerationQueue", () => {
     });
 
     expect(result.items.map((item) => item.type)).toEqual([
-      "flag",
+      "report_cluster",
       "report",
       "pending_store",
       "change_request",
@@ -185,7 +185,7 @@ describe("assembleModerationQueue", () => {
       ...EMPTY_INPUT,
       storeReports: [
         {
-          store: storeRef({ storeId: "s-x", slug: "panda-store", name: "Panda Store", status: "FLAGGED" }),
+          store: storeRef({ storeId: "s-x", slug: "panda-store", name: "Panda Store", status: "PENDING" }),
           reports: [report({ id: "r-x" })],
         },
       ],
@@ -196,7 +196,7 @@ describe("assembleModerationQueue", () => {
       storeId: "s-x",
       slug: "panda-store",
       name: "Panda Store",
-      status: "FLAGGED",
+      status: "PENDING",
     });
   });
 
@@ -206,13 +206,13 @@ describe("assembleModerationQueue", () => {
     expect(result.counts).toEqual({ reports: 0, stores: 0, changes: 0, types: 0 });
   });
 
-  it("counts a pending store and a flag candidate together in the stores bucket", () => {
+  it("counts a pending store and a report cluster together in the stores bucket", () => {
     const result = assembleModerationQueue({
       pendingStores: [
         { store: storeRef({ storeId: "s-p" }), summary: summary(), createdAt: new Date("2026-07-04T00:00:00Z") },
       ],
       storeReports: [
-        { store: storeRef({ storeId: "s-flag" }), reports: [report({ id: "r-1" }), report({ id: "r-2" })] },
+        { store: storeRef({ storeId: "s-cluster" }), reports: [report({ id: "r-1" }), report({ id: "r-2" })] },
       ],
       storeChangeRequests: [],
       productTypeRequests: [],

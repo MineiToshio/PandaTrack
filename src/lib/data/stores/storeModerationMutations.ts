@@ -27,7 +27,7 @@ export interface StoreModerationResult {
   id: string;
   slug: string;
   status: StoreStatus;
-  /** Prior status before the transition, useful for analytics and unflag derivation. */
+  /** Prior status before the transition, useful for analytics. */
   previousStatus: StoreStatus;
   /** Creator of the store, so the action layer can notify them of a rejection. */
   createdByUserId: string;
@@ -53,15 +53,13 @@ const MODERATION_STORE_SELECT = {
   status: true,
   name: true,
   createdByUserId: true,
-  approvedAt: true,
-  approvedByUserId: true,
 } satisfies Prisma.StoreSelect;
 
 type ModerationStoreRow = Prisma.StoreGetPayload<{ select: typeof MODERATION_STORE_SELECT }>;
 
 /**
  * Resolves a store by slug for the admin moderation layer, regardless of status or visibility (so a
- * `FLAGGED` store, which the public reads exclude by slug filter, still resolves). Admin-only:
+ * `REJECTED` store, which the public reads exclude by slug filter, still resolves). Admin-only:
  * callers must gate with `requireAdmin()` before invoking. Returns null when no store matches.
  */
 export async function getModerationStoreBySlug(
@@ -157,7 +155,7 @@ export async function approveStore(input: BaseModerationInput): Promise<StoreMod
 }
 
 /**
- * Removes (rejects) a `PENDING`, `APPROVED`, or `FLAGGED` store, persisting the `removalReason`.
+ * Removes (rejects) a `PENDING` or `APPROVED` store, persisting the `removalReason`.
  * Tombstone semantics: the row is retained so referencing records keep resolving; the store is
  * excluded from every public surface by `PUBLIC_VISIBLE_STORE_STATUSES`. The transition logic is
  * kept isolated so a future notification enqueue can run after the transaction commits.
@@ -169,7 +167,7 @@ export async function removeStore(input: RemoveStoreInput): Promise<StoreModerat
     action: AUDIT_ACTIONS.STORE_REMOVE,
     note: input.note,
     resolve: (current) => {
-      if (current.status !== "PENDING" && current.status !== "APPROVED" && current.status !== "FLAGGED") {
+      if (current.status !== "PENDING" && current.status !== "APPROVED") {
         throw new StoreModerationError("invalidTransition");
       }
       return {
@@ -189,6 +187,14 @@ export interface StoreReportModerationResult {
   status: StoreReportStatus;
   /** Prior status before the transition, useful for analytics. */
   previousStatus: StoreReportStatus;
+  /** The report's store, so the caller can revalidate and attribute the resolution. */
+  storeId: string;
+  /**
+   * Open reports left on that store after this transition, read inside the same transaction. A `0`
+   * means this resolution cleared the store's derived public report notice; the value is also what an
+   * optimistic client restores from when the action fails. It is a count only, never report content.
+   */
+  openReportsRemaining: number;
 }
 
 /** Shared shape for a report resolution: which report, the admin actor, and an optional note. */
@@ -217,7 +223,7 @@ async function runReportResolution(params: {
   return prisma.$transaction(async (tx) => {
     const current = await tx.storeReport.findUnique({
       where: { id: params.reportId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, storeId: true },
     });
     if (!current) {
       throw new StoreModerationError("reportNotFound");
@@ -243,10 +249,18 @@ async function runReportResolution(params: {
       tx,
     );
 
+    // Read inside the transaction so the count reflects this resolution and nothing in between. The
+    // store row itself is never written: the public notice is derived from this count, not stored.
+    const openReportsRemaining = await tx.storeReport.count({
+      where: { storeId: current.storeId, status: "OPEN" },
+    });
+
     return {
       id: updated.id,
       status: updated.status,
       previousStatus: current.status,
+      storeId: current.storeId,
+      openReportsRemaining,
     };
   });
 }
@@ -270,48 +284,5 @@ export async function dismissStoreReport(input: ReportModerationInput): Promise<
     action: AUDIT_ACTIONS.REPORT_DISMISS,
     nextStatus: "DISMISSED",
     note: input.note,
-  });
-}
-
-/** Flags a `PENDING` or `APPROVED` store as `FLAGGED`; the store stays publicly visible. */
-export async function flagStore(input: BaseModerationInput): Promise<StoreModerationResult> {
-  return runModerationTransition({
-    storeId: input.storeId,
-    actorId: input.actorId,
-    action: AUDIT_ACTIONS.STORE_FLAG,
-    note: input.note,
-    resolve: (current) => {
-      if (current.status !== "PENDING" && current.status !== "APPROVED") {
-        throw new StoreModerationError("invalidTransition");
-      }
-      return {
-        nextStatus: "FLAGGED",
-        data: { status: "FLAGGED" },
-      };
-    },
-  });
-}
-
-/**
- * Removes the flag from a `FLAGGED` store, restoring its prior public state. The prior state is
- * derived from `approvedAt` / `approvedByUserId`: an approved store returns to `APPROVED`, an
- * unapproved one returns to `PENDING`. No dedicated column is needed to record the prior state.
- */
-export async function unflagStore(input: BaseModerationInput): Promise<StoreModerationResult> {
-  return runModerationTransition({
-    storeId: input.storeId,
-    actorId: input.actorId,
-    action: AUDIT_ACTIONS.STORE_UNFLAG,
-    note: input.note,
-    resolve: (current) => {
-      if (current.status !== "FLAGGED") {
-        throw new StoreModerationError("invalidTransition");
-      }
-      const wasApproved = current.approvedAt != null || current.approvedByUserId != null;
-      return {
-        nextStatus: wasApproved ? "APPROVED" : "PENDING",
-        data: { status: wasApproved ? "APPROVED" : "PENDING" },
-      };
-    },
   });
 }

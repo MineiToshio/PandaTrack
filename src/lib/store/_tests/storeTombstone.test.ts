@@ -9,9 +9,8 @@ describe("resolveStoreTombstone", () => {
     });
   });
 
-  it("treats a pending or flagged store as not removed", () => {
+  it("treats a pending store as not removed", () => {
     expect(resolveStoreTombstone({ status: "PENDING", removalReason: null }).isRemoved).toBe(false);
-    expect(resolveStoreTombstone({ status: "FLAGGED", removalReason: null }).isRemoved).toBe(false);
   });
 
   it.each(["DUPLICATE", "CLOSED_OR_INACTIVE", "FALSE_INFO"] as const)(

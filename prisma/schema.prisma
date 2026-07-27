@@ -52,7 +52,6 @@ enum StoreStatus {
   PENDING
   APPROVED
   REJECTED
-  FLAGGED
 }
 
 enum StoreRemovalReason {

@@ -8,11 +8,9 @@ import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import {
   approveStore,
-  flagStore,
   getModerationStoreBySlug,
   removeStore,
   StoreModerationError,
-  unflagStore,
 } from "@/lib/data/stores/storeModerationMutations";
 import { notifyStoreRejected } from "@/lib/notifications/storeRejectionNotifier";
 import { storeModerationSchema, storeRemovalSchema } from "../_schemas/storeModerationSchema";
@@ -115,70 +113,6 @@ export async function removeStoreAction(input: unknown): Promise<ModerateStoreRe
     } catch (notifyError) {
       Sentry.captureException(notifyError);
     }
-
-    revalidateStoreSurfaces(parsed.data.locale, result.slug);
-    return { success: true };
-  } catch (error) {
-    return mapModerationError(error);
-  }
-}
-
-export async function flagStoreAction(input: unknown): Promise<ModerateStoreResult> {
-  try {
-    const session = await requireAdmin();
-    const parsed = storeModerationSchema.safeParse(input);
-    if (!parsed.success) {
-      return { success: false, error: collectFirstIssue(parsed.error) };
-    }
-
-    const store = await getModerationStoreBySlug(parsed.data.slug);
-    if (!store) {
-      return { success: false, error: "storeNotFound" };
-    }
-
-    const result = await flagStore({
-      storeId: store.id,
-      actorId: session.user.id,
-      note: parsed.data.note,
-    });
-
-    getPostHogClient().capture({
-      distinctId: session.user.id,
-      event: POSTHOG_EVENTS.STORE.FLAGGED,
-      properties: { store_slug: result.slug },
-    });
-
-    revalidateStoreSurfaces(parsed.data.locale, result.slug);
-    return { success: true };
-  } catch (error) {
-    return mapModerationError(error);
-  }
-}
-
-export async function unflagStoreAction(input: unknown): Promise<ModerateStoreResult> {
-  try {
-    const session = await requireAdmin();
-    const parsed = storeModerationSchema.safeParse(input);
-    if (!parsed.success) {
-      return { success: false, error: collectFirstIssue(parsed.error) };
-    }
-
-    const store = await getModerationStoreBySlug(parsed.data.slug);
-    if (!store) {
-      return { success: false, error: "storeNotFound" };
-    }
-
-    const result = await unflagStore({
-      storeId: store.id,
-      actorId: session.user.id,
-      note: parsed.data.note,
-    });
-
-    getPostHogClient().capture({
-      distinctId: session.user.id,
-      event: POSTHOG_EVENTS.STORE.UNFLAGGED,
-      properties: { store_slug: result.slug, restored_status: result.status },
-    });
 
     revalidateStoreSurfaces(parsed.data.locale, result.slug);
     return { success: true };

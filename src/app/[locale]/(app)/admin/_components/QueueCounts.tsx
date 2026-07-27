@@ -8,7 +8,7 @@ type QueueCountsProps = {
 
 /**
  * The per-category counter row above the queue. Four counters map to the four persisted categories;
- * the derived flag-candidate rows are already folded into the `stores` count (FDD-02 section 6.1).
+ * the derived report-cluster rows are already folded into the `stores` count (FDD-02 section 6.1).
  */
 export default async function QueueCounts({ counts, locale }: QueueCountsProps) {
   const t = await getTranslations({ locale, namespace: "admin.inbox" });

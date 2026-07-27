@@ -27,9 +27,9 @@ export default async function QueueRow({ item, locale, isSelected }: QueueRowPro
   let entityName: string;
   let metaText: string;
   switch (item.type) {
-    case "flag":
+    case "report_cluster":
       entityName = item.store.name;
-      metaText = tQueue("reportsAccumulated", { count: item.reports.length });
+      metaText = tQueue("openReports", { count: item.reports.length });
       break;
     case "report":
       entityName = item.store.name;

@@ -1,4 +1,4 @@
-import { GitCompare, Pencil, ShieldAlert, Store, Tag, TriangleAlert, type LucideIcon } from "lucide-react";
+import { GitCompare, Layers, Pencil, ShieldAlert, Store, Tag, type LucideIcon } from "lucide-react";
 import type { ModerationQueueItemType } from "@/lib/data/admin/moderationQueueQueries";
 
 type ItemVisual = {
@@ -9,7 +9,7 @@ type ItemVisual = {
 };
 
 const ITEM_VISUALS: Record<ModerationQueueItemType, ItemVisual> = {
-  flag: { Icon: TriangleAlert, severityColorVar: "var(--destructive)" },
+  report_cluster: { Icon: Layers, severityColorVar: "var(--destructive)" },
   report: { Icon: ShieldAlert, severityColorVar: "var(--destructive)" },
   pending_store: { Icon: Store, severityColorVar: "var(--warning)" },
   change_request: { Icon: Pencil, severityColorVar: "var(--warning)" },
@@ -29,9 +29,10 @@ export function itemHref(type: ModerationQueueItemType, id: string): string {
 }
 
 /**
- * Analytics `item_type` value. Mirrors the persisted category names, mapping the derived `flag` row to
- * `flag_candidate` so the event vocabulary matches the FDD observability contract.
+ * Analytics `item_type` value. The row types are already the event vocabulary the FDD observability
+ * contract names (`report`, `report_cluster`, `pending_store`, `change_request`, `product_type`), so
+ * this stays the single boundary where that is asserted rather than a mapping table.
  */
 export function analyticsItemType(type: ModerationQueueItemType): string {
-  return type === "flag" ? "flag_candidate" : type;
+  return type;
 }

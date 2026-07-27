@@ -35,8 +35,9 @@ export async function generateMetadata({ params }: StoreDetailPageProps) {
     locale,
     storeName: store.name,
     slug,
-    // FLAGGED stores stay publicly visible but must not be indexed, like PENDING ones.
-    noindex: store.status === "PENDING" || store.status === "FLAGGED",
+    // `PENDING` is the only `noindex` rule. Reports deliberately never affect indexing: deindexing
+    // is slow to reverse, so a single report must not be able to cost a store its discoverability.
+    noindex: store.status === "PENDING",
   });
 }
 

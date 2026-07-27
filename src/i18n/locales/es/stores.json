@@ -132,8 +132,8 @@
   "detail": {
     "pendingDisclaimerTitle": "Tienda en revisión",
     "pendingDisclaimerMessage": "Una persona de la comunidad creó esta tienda y el equipo la está revisando. Ya puedes usarla con normalidad; solo no aparece en buscadores hasta que se apruebe.",
-    "flaggedDisclaimerTitle": "Tienda con reportes",
-    "flaggedDisclaimerMessage": "Esta tienda acumula reportes con credibilidad. Sigue visible, pero revisa la información con atención antes de operar.",
+    "reportNoticeTitle": "Esta tienda tiene reportes por revisar",
+    "reportNoticeMessage": "Personas de la comunidad reportaron que la información publicada aquí podría no estar correcta, y el equipo todavía no la revisa. Un reporte no califica a la tienda: para eso están las reseñas. Sigue visible; revisa sus datos con atención y decide por tu cuenta.",
     "governanceAlertTitle": "Reportes y sugerencias",
     "governanceAlertMessage": "Esta tienda tiene reportes o solicitudes de cambio registradas. Abre el resumen para revisar los aportes de la comunidad.",
     "inactiveWarningTitle": "Tienda sin actividad",
@@ -237,13 +237,9 @@
   "moderation": {
     "panelTitle": "Moderación",
     "approveCta": "Aprobar tienda",
-    "flagCta": "Marcar con aviso de reportes",
-    "unflagCta": "Quitar aviso de reportes",
     "removeCta": "Retirar tienda",
     "toasts": {
       "approved": "Tienda aprobada.",
-      "flagged": "Tienda marcada con reportes.",
-      "unflagged": "Se quitó la marca de reportes.",
       "removed": "Tienda retirada."
     },
     "reports": {
@@ -520,7 +516,8 @@
       "noteSaved": "Guardada hace {time}",
       "reportButton": "Reportar tienda",
       "pendingDisclaimer": "En revisión. Visible en la app; no indexable en buscadores.",
-      "flaggedDisclaimer": "Esta tienda acumula reportes con credibilidad. Sigue visible, pero revisa la información con atención antes de operar.",
+      "reportNotice": "Tiene reportes por revisar. Sigue visible; revisa sus datos y decide por tu cuenta.",
+      "reportedChip": "Con reportes",
       "privateBadge": "Privada, solo tú la ves",
       "presence": {
         "physical": "Tienda física",

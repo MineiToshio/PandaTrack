@@ -13,6 +13,10 @@
 export const AUDIT_ACTIONS = {
   STORE_APPROVE: "store.approve",
   STORE_REMOVE: "store.remove",
+  // Retired from writing: no code path emits these anymore, since the public report notice is derived
+  // from open reports instead of set by hand. They stay in the vocabulary (and in the `audit.action.*`
+  // i18n keys) because historical entries still carry them and the audit viewer resolves its localized
+  // action title with no fallback.
   STORE_FLAG: "store.flag",
   STORE_UNFLAG: "store.unflag",
   REPORT_RESOLVE: "report.resolve",

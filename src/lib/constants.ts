@@ -76,11 +76,22 @@ export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 export const DEFAULT_PAGE_SIZE = 25;
 
 /**
- * Open-report count at which a store's individual report rows collapse into a single suggested-removal
- * (flag-candidate) row in the moderation inbox. A store at or above this many open reports reads as one
- * store-level decision, not several separate reports.
+ * Open-report count at which the public store detail shows the derived report notice. One report is
+ * enough because the notice makes no accusation: it states that a report exists and has not been
+ * reviewed yet, and a single reader may be the only one who noticed a real problem.
  */
-export const STORE_FLAG_REPORT_THRESHOLD = 2;
+export const STORE_REPORT_NOTICE_THRESHOLD = 1;
+
+/**
+ * Open-report count at which a store's individual report rows collapse into a single report-cluster
+ * row in the moderation inbox. A store at or above this many open reports reads as one store-level
+ * decision, not several separate reports.
+ *
+ * Deliberately a separate constant from {@link STORE_REPORT_NOTICE_THRESHOLD}: the public notice
+ * answers "should the buyer be informed" and this one answers "does the queue need one decision
+ * instead of several", so they must stay independently movable.
+ */
+export const STORE_REPORT_CLUSTER_THRESHOLD = 2;
 
 export const POSTHOG_EVENTS = {
   LANDING: {
@@ -213,8 +224,6 @@ export const POSTHOG_EVENTS = {
     NOTE_SAVED: "store_note_saved",
     APPROVED: "store_approved",
     REMOVED: "store_removed",
-    FLAGGED: "store_flagged",
-    UNFLAGGED: "store_unflagged",
     REPORT_RESOLVED: "store_report_resolved",
     REPORT_DISMISSED: "store_report_dismissed",
     CHANGE_REQUEST_APPLIED: "store_change_request_applied",

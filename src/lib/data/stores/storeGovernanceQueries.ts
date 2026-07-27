@@ -226,8 +226,8 @@ export async function getEditableStoreBySlug(slug: string): Promise<EditableStor
     where: {
       slug,
       visibility: "PUBLIC",
-      // Publicly visible statuses only (`REJECTED` excluded, `FLAGGED` included) so a flagged store's
-      // detail still renders and can be reported / change-requested; the tombstone stays hidden.
+      // Publicly visible statuses only (`REJECTED` excluded) so a reported store's detail still
+      // renders and can be reported / change-requested; the tombstone stays hidden.
       status: { in: [...PUBLIC_VISIBLE_STORE_STATUSES] },
     },
     select: EDITABLE_STORE_SELECT,

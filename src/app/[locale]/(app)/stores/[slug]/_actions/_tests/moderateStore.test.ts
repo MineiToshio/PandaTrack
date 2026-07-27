@@ -30,8 +30,6 @@ vi.mock("@/lib/auth/auth-server", () => ({
 vi.mock("@/lib/data/stores/storeModerationMutations", () => ({
   approveStore: approveStoreMock,
   removeStore: removeStoreMock,
-  flagStore: vi.fn(),
-  unflagStore: vi.fn(),
   getModerationStoreBySlug: getModerationStoreBySlugMock,
   StoreModerationError: class StoreModerationError extends Error {},
 }));

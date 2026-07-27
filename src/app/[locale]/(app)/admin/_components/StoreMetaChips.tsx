@@ -7,7 +7,7 @@ import type { ModerationStoreRef } from "@/lib/data/admin/moderationQueueQueries
 const STATUS_CHIP_VARIANT: Record<string, ChipVariant> = {
   PENDING: "warning",
   APPROVED: "neutral",
-  FLAGGED: "destructive",
+  REJECTED: "neutral",
 };
 
 /**

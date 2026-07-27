@@ -132,8 +132,8 @@
   "detail": {
     "pendingDisclaimerTitle": "Store under review",
     "pendingDisclaimerMessage": "Someone from the community created this store and the team is reviewing it. You can already use it as normal; it just won't appear in search engines until it's approved.",
-    "flaggedDisclaimerTitle": "Store with reports",
-    "flaggedDisclaimerMessage": "This store has accumulated credible reports. It stays visible, but review its information carefully before dealing with it.",
+    "reportNoticeTitle": "This store has reports pending review",
+    "reportNoticeMessage": "People in the community reported that the information published here may not be right, and the team has not reviewed it yet. A report is not a rating of the store: reviews are for that. It stays visible; check its details and decide for yourself.",
     "governanceAlertTitle": "Reports and suggestions",
     "governanceAlertMessage": "This store has public reports or change requests. Open the summary to review the community input.",
     "inactiveWarningTitle": "Store no longer active",
@@ -237,13 +237,9 @@
   "moderation": {
     "panelTitle": "Moderation",
     "approveCta": "Approve store",
-    "flagCta": "Flag with reports warning",
-    "unflagCta": "Remove reports warning",
     "removeCta": "Remove store",
     "toasts": {
       "approved": "Store approved.",
-      "flagged": "Store flagged with reports.",
-      "unflagged": "Reports flag removed.",
       "removed": "Store removed."
     },
     "reports": {
@@ -520,7 +516,8 @@
       "noteSaved": "Saved {time} ago",
       "reportButton": "Report store",
       "pendingDisclaimer": "Under review. Visible in the app; not indexed in search engines.",
-      "flaggedDisclaimer": "This store has accumulated credible reports. It stays visible, but review its information carefully before dealing with it.",
+      "reportNotice": "It has reports pending review. It stays visible; check its details and decide for yourself.",
+      "reportedChip": "Reported",
       "privateBadge": "Private, only you can see this",
       "presence": {
         "physical": "Physical store",

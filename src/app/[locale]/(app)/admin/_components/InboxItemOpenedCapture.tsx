@@ -5,7 +5,7 @@ import posthog from "posthog-js";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 
 type InboxItemOpenedCaptureProps = {
-  /** Normalized item category (`report` / `flag_candidate` / `pending_store` / `change_request` / `product_type`). */
+  /** Normalized item category (`report` / `report_cluster` / `pending_store` / `change_request` / `product_type`). */
   itemType: string;
 };
 

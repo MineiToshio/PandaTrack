@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { CalendarClock, Clock, Globe, Info, MapPin, PackageCheck, Store as StoreIcon, Truck, User } from "lucide-react";
 import Chip from "@/components/core/Chip";
 import StarRating from "@/components/core/StarRating";
@@ -26,6 +27,12 @@ export type StoreHeroLabels = {
 export type StoreHeroProps = {
   store: StoreDetail;
   labels: StoreHeroLabels;
+  /**
+   * Derived trust signals rendered after the lifecycle status chip (currently the "Con reportes"
+   * chip). A slot rather than a label because the signal is computed at read time and re-renders on
+   * its own, unlike the status chips which follow the store row.
+   */
+  derivedSignals?: ReactNode;
   className?: string;
 };
 
@@ -39,7 +46,7 @@ export type StoreHeroProps = {
  * Visual contract: see the Stores prototype at `docs/product/prd-02-collector-app/frd-04-store-domain/prototype/store-domain.html`
  * and the Velvet design system at `docs/design/`.
  */
-export default function StoreHero({ store, labels, className }: StoreHeroProps) {
+export default function StoreHero({ store, labels, derivedSignals, className }: StoreHeroProps) {
   const isPerson = store.sellerType === "PERSON";
   const isProxy = store.sellerType === "PROXY";
   const isPending = store.status === "PENDING";
@@ -88,6 +95,7 @@ export default function StoreHero({ store, labels, className }: StoreHeroProps) 
                 {labels.pendingChip}
               </Chip>
             )}
+            {derivedSignals}
             {isPerson && labels.personChip && (
               <Chip variant="neutral" size="sm" icon={<User size={11} aria-hidden="true" />}>
                 {labels.personChip}

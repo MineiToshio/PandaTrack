@@ -124,18 +124,34 @@ test.describe("Store moderation", () => {
     await expect(approveButton).toHaveCount(0, { timeout: 10_000 });
   });
 
-  test("an admin flags then unflags a store, toggling the flagged banner (AC-04-23)", async ({ page }) => {
+  test("an open report raises the derived notice and resolving the last one clears it (AC-04-23)", async ({ page }) => {
     skipUnlessAdminEnv();
     await signInAsAdmin(page);
 
-    await createBusinessStoreAndOpenDetail(page, `E2E Mod Flag ${Date.now()}`);
+    await createBusinessStoreAndOpenDetail(page, `E2E Report Notice ${Date.now()}`);
 
-    await page.getByRole("button", { name: /flag with reports/i }).click();
-    // FLAGGED stays visible with a stronger warning banner.
-    await expect(page.getByText(/store with reports/i).first()).toBeVisible({ timeout: 10_000 });
+    // No open report, no notice: it is derived, never a state somebody sets.
+    await expect(page.getByText(/reports pending review/i)).toHaveCount(0);
 
-    await page.getByRole("button", { name: /remove reports flag/i }).click();
-    await expect(page.getByText(/store with reports/i)).toHaveCount(0, { timeout: 10_000 });
+    await fileOpenReport(page);
+
+    // One open report is enough for the notice, and it never hides the store.
+    await expect(page.getByText(/reports pending review/i).first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("button", { name: /remove store/i })).toBeVisible();
+
+    // Resolving the store's last open report is what clears it; there is no flag control to toggle.
+    await page.getByRole("button", { name: /view summary/i }).click();
+    const summaryDialog = page.getByRole("dialog", { name: /reports and suggestions/i });
+    await expect(summaryDialog).toBeVisible();
+    await summaryDialog
+      .getByRole("button", { name: /^resolve$/i })
+      .first()
+      .click();
+    // Optimistic: the notice goes with the report row, before the reload confirms it.
+    await expect(page.getByText(/reports pending review/i)).toHaveCount(0, { timeout: 10_000 });
+
+    await page.reload();
+    await expect(page.getByText(/reports pending review/i)).toHaveCount(0);
   });
 
   test("an admin removes a store via the removal modal (AC-04-21)", async ({ page }) => {
