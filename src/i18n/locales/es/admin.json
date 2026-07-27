@@ -96,6 +96,7 @@
       "noComment": "Sin comentario",
       "listHint": "Al aprobar, cada lista (categorías, canales, direcciones, importaciones) queda exactamente como se propone.",
       "fieldKindText": "campo de texto",
+      "fieldKindBool": "campo de sí o no",
       "fieldKindList": "lista · reemplazo completo",
       "delta": {
         "added": "Se agrega",

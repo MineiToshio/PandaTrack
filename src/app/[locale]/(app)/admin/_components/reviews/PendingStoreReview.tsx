@@ -51,7 +51,7 @@ export default async function PendingStoreReview({ store, summary, locale }: Pen
       <ReviewHeader
         eyebrowIcon={Store}
         eyebrowTone="warm"
-        eyebrowLabel={store.name}
+        eyebrowLabel={tQueue("category.pending_store")}
         title={store.name}
         meta={<StoreMetaChips store={store} locale={locale} />}
       />

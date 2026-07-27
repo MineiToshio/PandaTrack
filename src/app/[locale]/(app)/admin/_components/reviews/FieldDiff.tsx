@@ -48,6 +48,7 @@ const DELTA_GLYPH: Record<AdminChangeRequestListItem["delta"], ComponentType<SVG
 type Labels = {
   fieldLabel: (fieldKey: string) => string;
   kindText: string;
+  kindBool: string;
   kindList: string;
   delta: (delta: AdminChangeRequestListItem["delta"]) => string;
   now: string;
@@ -102,6 +103,12 @@ function ListItems({ items, labels }: { items: AdminChangeRequestListItem[]; lab
   );
 }
 
+/** The row's kind label: lists get their own copy, scalars branch on the boolean vs. text value shape. */
+function fieldKindLabel(row: AdminChangeRequestFieldRow, labels: Labels): string {
+  if (row.type === "list") return labels.kindList;
+  return row.current.kind === "bool" ? labels.kindBool : labels.kindText;
+}
+
 function FieldRow({
   row,
   storeDrifted,
@@ -128,9 +135,7 @@ function FieldRow({
           <Icon className="size-3 shrink-0" aria-hidden />
           {labels.fieldLabel(row.fieldKey)}
         </span>
-        <span className="text-xs [color:var(--text-muted)]">
-          {row.type === "scalar" ? labels.kindText : labels.kindList}
-        </span>
+        <span className="text-xs [color:var(--text-muted)]">{fieldKindLabel(row, labels)}</span>
         {row.alreadyApplied && (
           <span className="ml-auto flex items-center gap-1 rounded-full px-2 py-0.5 text-xs [color:var(--success)] [background:color-mix(in_oklch,var(--success)_12%,transparent)]">
             <Check className="size-3" aria-hidden />
@@ -157,8 +162,10 @@ function FieldRow({
           </div>
         ) : (
           <div className="flex flex-wrap items-center gap-2">
+            <span className="sr-only">{labels.now}</span>
             <ScalarValue text={labels.scalarText(row.current)} tone="before" />
             <ArrowRight className="size-4 shrink-0 [color:var(--text-muted)]" aria-hidden />
+            <span className="sr-only">{labels.proposed}</span>
             <ScalarValue text={labels.scalarText(row.proposed)} tone="after" />
           </div>
         )
@@ -192,6 +199,7 @@ export default async function FieldDiff({
   const labels: Labels = {
     fieldLabel: (fieldKey) => (t.has(`change.field.${fieldKey}`) ? t(`change.field.${fieldKey}`) : fieldKey),
     kindText: t("change.fieldKindText"),
+    kindBool: t("change.fieldKindBool"),
     kindList: t("change.fieldKindList"),
     delta: (delta) => t(`change.delta.${delta}`),
     now: t("drift.now"),

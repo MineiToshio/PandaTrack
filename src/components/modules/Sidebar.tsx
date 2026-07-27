@@ -174,7 +174,11 @@ export default function Sidebar({
         })}
 
         {isAdmin && (
-          <div className="border-border mt-2 flex flex-col gap-1 border-t pt-3" aria-label={tAdmin("nav.section")}>
+          <div
+            role="group"
+            className="border-border mt-2 flex flex-col gap-1 border-t pt-3"
+            aria-label={tAdmin("nav.section")}
+          >
             {isExpanded && (
               <p className="text-text-muted px-3 pb-1 text-xs font-medium tracking-wide uppercase">
                 {tAdmin("nav.section")}

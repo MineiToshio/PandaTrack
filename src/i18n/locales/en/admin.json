@@ -96,6 +96,7 @@
       "noComment": "No comment",
       "listHint": "On approval, each list (categories, channels, addresses, imports) becomes exactly the proposed set.",
       "fieldKindText": "text field",
+      "fieldKindBool": "yes or no field",
       "fieldKindList": "list · full replacement",
       "delta": {
         "added": "Added",

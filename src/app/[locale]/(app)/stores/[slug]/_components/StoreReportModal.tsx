@@ -14,6 +14,7 @@ import Typography from "@/components/core/Typography";
 import Modal from "@/components/modules/Modal/Modal";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { cn } from "@/lib/styles";
+import { useToast } from "@/contexts/ToastContext";
 import type { StoreGovernanceViewerContext } from "@/lib/data/stores/storeGovernanceQueries";
 import ReportReasonPicker from "@/components/modules/ReportReasonPicker";
 import { saveStoreReport, type SaveStoreReportResult } from "../_actions/saveStoreReport";
@@ -59,6 +60,7 @@ export default function StoreReportModal({
   triggerIcon,
 }: StoreReportModalProps) {
   const t = useTranslations("stores");
+  const { addToast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [state, setState] = useState<SaveStoreReportResult | null>(null);
@@ -124,10 +126,19 @@ export default function StoreReportModal({
       });
       return;
     }
+    const formData = new FormData(event.currentTarget);
+    // Optimistic Confirmation: close the modal synchronously on submit so the report notice and
+    // "Con reportes" chip (already revalidated server-side) are visible behind it. Success and
+    // failure surface as a toast once the modal is gone.
+    setIsOpen(false);
     setIsPending(true);
-    const result = await saveStoreReport(null, new FormData(event.currentTarget));
-    setState(result);
+    const result = await saveStoreReport(null, formData);
     setIsPending(false);
+    if (result.success) {
+      addToast(t("governance.report.success"), { variant: "success" });
+    } else {
+      addToast(translateError(t, result.error), { variant: "error" });
+    }
   };
 
   const reasonOptions = REPORT_REASONS.map((value) => ({
@@ -230,16 +241,6 @@ export default function StoreReportModal({
               </Typography>
             )}
           </div>
-
-          {state?.success && (
-            <Typography
-              size="xs"
-              className="bg-primary/8 text-text-body border-primary/12 rounded-2xl border px-4 py-3"
-              role="status"
-            >
-              {t("governance.report.success")}
-            </Typography>
-          )}
 
           {state?.success === false && state.error && (
             <Typography
