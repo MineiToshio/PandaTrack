@@ -117,7 +117,7 @@ As a collector, I want to turn reminders on or off and choose which kinds I get,
 - `BR-09-06`: Cancelled orders and cancelled deliveries are never reminded on, matching how they are excluded from dashboard obligations and spend.
 - `BR-09-07`: Pruning an expired subscription is a normal lifecycle event. It must not raise a monitored error and must not abort the rest of the dispatch batch.
 - `BR-09-08`: A payment reminder is produced only when the order still has an outstanding balance (`outstanding > 0`). A fully paid order never triggers a payment reminder even if its expected date is inside the window.
-- `BR-09-09`: Only a store's rejection or removal (a transition to `StoreStatus.REJECTED`) notifies its creator. Approving a store, or flagging it for review without removing it, never sends a notification.
+- `BR-09-09`: Only a store's rejection or removal (a transition to `StoreStatus.REJECTED`) notifies its creator. Approving a store never sends a notification, and neither does a store accumulating open reports: the public report notice is a derived read with no state transition behind it (PRD-02, FRD-04 `FR-04-43`).
 - `BR-09-10`: `STORE_REJECTED` delivery is event-triggered at the moment of the admin decision. It never runs through the daily dispatcher's due-soon/overdue batch or its thin candidate queries (`BR-09-04`, `BR-09-05`).
 - `BR-09-11`: The choice between the neutral and the sanction-toned `STORE_REJECTED` copy is driven entirely by the `Store.removalReason` value `WO-09`'s moderation action supplies. This FRD consumes that value; it does not classify rejection reasons itself.
 - `BR-09-12`: `STORE_REJECTED` is subject to the same opt-in gating as every other reminder type (`BR-09-01`). A moderation-relevant notice never bypasses the collector's subscription, master toggle, or per-type preference in MVP.
@@ -349,7 +349,7 @@ A reminder subject moves from "due inside window" to "sent" once a `Notification
 - An in-app notification center or notification history surface.
 - Offline data support beyond basic installability (no offline reads, writes, caching, or background sync of domain data).
 - Per-order custom reminders authored by the collector (custom dates, custom messages, snooze).
-- A notification for store approval, or for a `FLAGGED` status transition; only rejection/removal (`StoreStatus.REJECTED`) notifies (`BR-09-09`).
+- A notification for store approval, or for a store receiving reports; only rejection/removal (`StoreStatus.REJECTED`) notifies (`BR-09-09`).
 - Defining or building the admin moderation action, the admin role/identity platform, or the moderation console inbox; those belong to `PRD-02 FRD-04` and `PRD-03 FRD-01` / `FRD-02` respectively.
 
 ## Linked Blueprints

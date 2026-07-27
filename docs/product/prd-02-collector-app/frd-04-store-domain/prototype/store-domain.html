@@ -3924,7 +3924,7 @@
         <a href="#s6-store-create-edit-mode" data-screen="s6-store-create-edit-mode">Store create edit mode</a>
         <a href="#s6-store-detail-admin-pending" data-screen="s6-store-detail-admin-pending">Store detail admin (pending)</a>
         <a href="#s6-store-detail-remove-modal" data-screen="s6-store-detail-remove-modal">Store detail remove modal</a>
-        <a href="#s6-store-detail-admin-flagged" data-screen="s6-store-detail-admin-flagged">Store detail admin (flagged)</a>
+        <a href="#s6-store-detail-report-notice" data-screen="s6-store-detail-report-notice">Store detail report notice</a>
         <a href="#s6-store-detail-admin-governance" data-screen="s6-store-detail-admin-governance">Store detail admin governance</a>
         <a href="#s6-store-change-request-review" data-screen="s6-store-change-request-review">Store change-request review</a>
         <a href="#s6-store-change-request-review-drift" data-screen="s6-store-change-request-review-drift">Store change-request review (drift)</a>
@@ -5178,7 +5178,7 @@
         <div style="margin-top:8px;line-height:1.6;">
           <strong>Viewer público:</strong> Banner amarillo "Tienda en revisión" como se muestra aquí.<br>
           <strong>Creador:</strong> Banner azul info "Creaste esta tienda. El equipo la revisará antes de que sea visible. Te avisamos cuando esté aprobada." + botón Editar en Acciones.<br>
-          <strong>Admin:</strong> mismo aviso calmado + panel de moderación (Aprobar / Marcar con reportes / Retirar) en el rail — ver la variante <a href="#s6-store-detail-admin-pending" data-screen-link="s6-store-detail-admin-pending">Detalle · Admin (pendiente)</a>.
+          <strong>Admin:</strong> mismo aviso calmado + panel de moderación (Aprobar / Retirar) en el rail, ver la variante <a href="#s6-store-detail-admin-pending" data-screen-link="s6-store-detail-admin-pending">Detalle · Admin (pendiente)</a>.
         </div>
       </details>
 
@@ -7319,7 +7319,7 @@
       <details style="background:color-mix(in oklch,var(--accent) 8%,transparent);border:1px dashed color-mix(in oklch,var(--accent) 35%,transparent);border-radius:8px;padding:10px 14px;margin-bottom:20px;font-size:11.5px;color:var(--text-muted);">
         <summary style="cursor:pointer;font-weight:600;color:var(--accent);list-style:none;display:flex;align-items:center;gap:6px;"><i data-lucide="shield" style="width:13px;height:13px;"></i> Spec · controles de moderación (solo admin)</summary>
         <div style="margin-top:8px;line-height:1.6;">
-          Los controles <strong>Aprobar</strong>, <strong>Retirar</strong> y <strong>Marcar con reportes</strong> solo aparecen para administradores (<code>requireAdmin()</code>). Cada acción se audita en el registro append-only de PRD-03 y confirma con un toast. Un viewer normal ve únicamente el aviso azul de arriba.
+Los controles <strong>Aprobar</strong> y <strong>Retirar</strong> solo aparecen para administradores (<code>requireAdmin()</code>). Cada acción se audita en el registro append-only de PRD-03 y confirma con un toast. Un viewer normal ve únicamente el aviso azul de arriba. No existe un control para marcar la tienda con reportes: ese aviso es derivado de los reportes abiertos (ver <em>Detalle · Aviso de reportes</em>).
         </div>
       </details>
 
@@ -7365,7 +7365,6 @@
             <span class="s8-eyebrow-chip tone-warm"><i data-lucide="shield"></i>Moderación</span>
             <div class="actions-list" style="margin-top: 10px;">
               <button class="btn primary" type="button"><i data-lucide="check-circle"></i> Aprobar tienda</button>
-              <button class="btn ghost" type="button"><i data-lucide="flag"></i> Marcar con reportes</button>
               <a href="#s6-store-detail-remove-modal" class="btn destructive-ghost" data-screen-link="s6-store-detail-remove-modal"><i data-lucide="ban"></i> Retirar tienda</a>
             </div>
             <p class="adm-note">Aprobar publica la tienda al instante. Retirar la convierte en un registro histórico (tombstone) sin borrarla. Cada acción queda auditada.</p>
@@ -7468,8 +7467,8 @@
   </div>
 </section>
 
-<!-- (c) DETALLE TIENDA · VARIANTE ADMIN sobre tienda FLAGGED -->
-<section id="s6-store-detail-admin-flagged" class="screen" aria-labelledby="s6-store-detail-admin-flagged-title">
+<!-- (c) DETALLE TIENDA · AVISO DE REPORTES (derivado de los reportes abiertos) · rail admin sin control de marcado -->
+<section id="s6-store-detail-report-notice" class="screen" aria-labelledby="s6-store-detail-report-notice-title">
   <div class="app-shell">
     <aside class="app-sidebar" aria-label="Navegación principal">
       <div class="app-sidebar-brand"><div class="demo-brand-mark">P</div>PandaTrack</div>
@@ -7492,16 +7491,16 @@
     <div class="app-content">
       <div class="app-topbar">
         <a href="#stores" class="btn ghost sm" data-screen-link="stores"><i data-lucide="arrow-left"></i> Tiendas</a>
-        <h2 id="s6-store-detail-admin-flagged-title" style="margin-left: 6px;">Akiba Records</h2>
+        <h2 id="s6-store-detail-report-notice-title" style="margin-left: 6px;">Akiba Records</h2>
         <div class="app-topbar-spacer"></div>
       </div>
 
-      <!-- disclaimer FLAGGED · más fuerte que el de pending (.store-banner.warning), nunca oculta la tienda -->
+      <!-- aviso de reportes · DERIVADO de los reportes abiertos (>= 1), no es un estado; nunca oculta la tienda ni afecta la indexación -->
       <div class="store-banner warning" style="margin-bottom:20px;" role="alert">
         <i data-lucide="alert-triangle" class="banner-icon" style="width:16px;height:16px;"></i>
         <div class="banner-copy">
-          <strong>Tienda con reportes</strong>
-          <span>Esta tienda acumula reportes con credibilidad. Sigue visible, pero revisa la información con atención antes de operar.</span>
+          <strong>Esta tienda tiene reportes por revisar</strong>
+          <span>Personas de la comunidad reportaron que la información publicada aquí podría no estar correcta, y el equipo todavía no la revisa. Un reporte no califica a la tienda: para eso están las reseñas. Sigue visible; revisa sus datos con atención y decide por tu cuenta.</span>
         </div>
       </div>
 
@@ -7526,11 +7525,10 @@
           <div class="card elevated s8-card-warm" style="position: sticky; top: 80px;">
             <span class="s8-eyebrow-chip tone-warm"><i data-lucide="shield"></i>Moderación</span>
             <div class="actions-list" style="margin-top: 10px;">
-              <button class="btn primary" type="button"><i data-lucide="shield-check"></i> Quitar marca de reportes</button>
               <a href="#s6-store-detail-admin-governance" class="btn ghost" data-screen-link="s6-store-detail-admin-governance"><i data-lucide="message-square-warning"></i> Ver reportes</a>
               <a href="#s6-store-detail-remove-modal" class="btn destructive-ghost" data-screen-link="s6-store-detail-remove-modal"><i data-lucide="ban"></i> Retirar tienda</a>
             </div>
-            <p class="adm-note">Marcar con reportes nunca oculta la tienda: vuelve al estado anterior (pendiente o aprobada) al quitar la marca.</p>
+            <p class="adm-note">El aviso es derivado: aparece con el primer reporte abierto y desaparece cuando se resuelve o descarta el último. No hay control manual. Nunca oculta la tienda ni la desindexa; para eso está Retirar.</p>
           </div>
         </aside>
       </div>
@@ -7556,7 +7554,7 @@
     <div class="app-content" style="position:relative;overflow:hidden;">
       <div style="opacity:0.28;pointer-events:none;">
         <div class="app-topbar">
-          <a href="#s6-store-detail-admin-flagged" class="btn ghost sm"><i data-lucide="arrow-left"></i> Tiendas</a>
+          <a href="#s6-store-detail-report-notice" class="btn ghost sm"><i data-lucide="arrow-left"></i> Tiendas</a>
           <h2 id="s6-store-detail-admin-governance-title" style="margin-left:6px;">Akiba Records</h2>
           <div class="app-topbar-spacer"></div>
         </div>
@@ -7577,7 +7575,7 @@
           <div style="display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border);">
             <i data-lucide="shield" style="width:18px;height:18px;color:var(--warning);"></i>
             <h3 id="adm-gov-title" style="margin:0;font-size:16px;font-weight:700;flex:1;">Reportes y sugerencias · Admin</h3>
-            <a href="#s6-store-detail-admin-flagged" class="topbar-iconbtn" data-screen-link="s6-store-detail-admin-flagged" aria-label="Cerrar"><i data-lucide="x"></i></a>
+            <a href="#s6-store-detail-report-notice" class="topbar-iconbtn" data-screen-link="s6-store-detail-report-notice" aria-label="Cerrar"><i data-lucide="x"></i></a>
           </div>
           <div style="overflow-y:auto;padding:20px;">
             <div style="margin-bottom:20px;">
@@ -7951,7 +7949,7 @@
     's6-store-detail-reports-summary':   [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Akiba Records', null]],
     's6-store-detail-admin-pending':       [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['HMV Japan', null]],
     's6-store-detail-remove-modal':        [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['HMV Japan', null]],
-    's6-store-detail-admin-flagged':       [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Akiba Records', null]],
+    's6-store-detail-report-notice':       [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Akiba Records', null]],
     's6-store-detail-admin-governance':    [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Akiba Records', null]],
     's6-store-change-request-review':      [['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Akiba Records', null]],
     's6-store-change-request-review-drift':[['Inicio', '#dashboard'], ['Tiendas', '#stores'], ['Akiba Records', null]],
@@ -8111,7 +8109,7 @@
     's6-store-detail-reports-summary':    'S6 · Detalle · Reportes',
     's6-store-detail-admin-pending':      'S6 · Detalle · Admin (pendiente)',
     's6-store-detail-remove-modal':       'S6 · Detalle · Retirar (modal)',
-    's6-store-detail-admin-flagged':      'S6 · Detalle · Admin (con reportes)',
+    's6-store-detail-report-notice':      'S6 · Detalle · Aviso de reportes',
     's6-store-detail-admin-governance':   'S6 · Detalle · Admin gobernanza',
     's6-store-change-request-review':     'S6 · Solicitud de cambio · Revisión',
     's6-store-change-request-review-drift': 'S6 · Solicitud de cambio · Conflicto',

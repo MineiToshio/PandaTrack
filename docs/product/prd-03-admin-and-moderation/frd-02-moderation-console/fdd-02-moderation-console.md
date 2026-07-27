@@ -5,14 +5,14 @@ slug: moderation-console
 title: Moderation Console - Feature Design Document
 status: ACTIVE
 parent: FRD-02
-last_updated: 2026-07-24
+last_updated: 2026-07-27
 prototype: ./prototype/moderation-console.html
 design_system: ../../../design/README.md
 demo_anchors:
   - "#inbox"
   - "#review-store"
   - "#review-report"
-  - "#review-flag"
+  - "#review-cluster"
   - "#review-change"
   - "#review-change-drift"
   - "#review-type"
@@ -50,7 +50,7 @@ The desktop inbox is a **master-detail split**: a compact queue list on the left
 | 1   | Moderation inbox (master-detail)  | `/[locale]/admin`             | `#inbox`               |
 | 2   | Review: pending store             | `/[locale]/admin` (item open) | `#review-store`        |
 | 3   | Review: report                    | `/[locale]/admin` (item open) | `#review-report`       |
-| 4   | Review: suggested removal (flag)  | `/[locale]/admin` (item open) | `#review-flag`         |
+| 4   | Review: report cluster            | `/[locale]/admin` (item open) | `#review-cluster`      |
 | 5   | Review: change request            | `/[locale]/admin` (item open) | `#review-change`       |
 | 6   | Review: change request with drift | `/[locale]/admin` (item open) | `#review-change-drift` |
 | 7   | Review: product-type suggestion   | `/[locale]/admin` (item open) | `#review-type`         |
@@ -93,7 +93,9 @@ Every review panel (`.mod-detail`) shares one anatomy: a header (`.mod-detail-he
 
 **(b) Report (`#review-report`).** Sections: the store mini-summary in the header; the report card (reason chip, free-text quote, reporter identity marked admin-only); and prior reports on the same store. Actions: `Resolver` (primary, `report.resolve`, `FR-04-44`), `Descartar` (secondary, `report.dismiss`), a divider, then `Retirar tienda` (destructive-ghost, removal modal, `store.remove`) and `Ver tienda` (link). The reporter identity and raw text are labeled "Solo visible para administradores", reflecting that they come from the server-only admin data layer (`FR-04-45`, `BR-02-03`), never the public governance read model.
 
-**(c) Suggested removal, flag candidate (`#review-flag`).** A store accumulating credible reports. The header carries a strong "N reportes acumulados" tag; the section lists the accumulated reports (reason chip, quote, admin-only reporter). Actions: `Marcar con aviso de reportes` / `Quitar aviso de reportes` (warning tonal toggle, `store.flag` / `store.unflag`, `FR-04-43`), `Retirar` (destructive-ghost, removal modal, `store.remove`), `Ver tienda` (link). A helper line contrasts marking (stays visible with a stronger warning) with removing (excluded from public surfaces).
+**(c) Report cluster (`#review-cluster`).** A store with several open reports at once, collapsed into one escalation row so it reads as one decision instead of several (`FR-02-05`, threshold 2). The header carries a strong "N reportes abiertos" tag; the section lists each open report as its own card (reason chip, quote, admin-only reporter) with its own `Resolver` (primary) and `Descartar` (ghost) actions (`report.resolve` / `report.dismiss`, `FR-04-44`). Footer actions: `Retirar tienda` (destructive-ghost, removal modal, `store.remove`, `FR-04-41`) and `Ver tienda` (link).
+
+There is **no** flag or unflag control, and no bulk "resolve all". The public "has reports" notice on the store detail is derived from exactly these open reports (PRD-02, FRD-04 `FR-04-43`), so resolving them is what clears it; a helper line states that plainly, and contrasts it with removing (which excludes the store from every public surface). Actions stay per report because each report is an independent claim: a store can carry one accurate report and one mistaken one, and one click should not decide both. Panel severity stays `sev-crit`, since a cluster is the highest tier in the queue.
 
 **(d) Change request (`#review-change`).** Sections: a field-by-field diff and the requester comment. The stored change request is a field-level replacement diff: for list fields the server persists the entire proposed array, not a per-item delta (see `buildEditableStoreDiff` in `src/lib/data/stores/storeGovernanceMutations.ts`). The review therefore derives the per-item deltas by comparing the current store against the proposed set, so an administrator never reads a bare proposed list. A helper line (`.diff-note`) states the semantics up front: applying replaces each list with exactly the proposed set. Each field renders in its own card (`.diff-field`): scalar fields as a struck-through before value, an arrow, and the highlighted proposed value (`.diff-scalar`, `.diff-before` / `.diff-after`); list fields (contact channels, addresses, categories, import countries) as itemized rows (`.diff-items`, `.diff-item`), each carrying an icon, the value, and a text tag that classifies it as "Se agrega" (`+`, success tint), "Se elimina" (`-`, destructive tint, value struck), or "Se mantiene" (`=`, neutral muted). Actions: `Aprobar y aplicar` (success intent, `changeRequest.apply`, `FR-04-46`), `Rechazar` (destructive-ghost, `changeRequest.reject`), `Ver tienda` (link). A demo link cross-navigates to the drift variant.
 
@@ -126,7 +128,7 @@ The Moderation Console introduces no new tokens, palettes, surfaces, or type ram
 | Role in this FRD                   | Token / class                 | Where                                                       |
 | ---------------------------------- | ----------------------------- | ----------------------------------------------------------- |
 | Critical items (reports, removals) | `--destructive`               | queue severity rail and glyph, report reason chips          |
-| Attention items (pending, changes) | `--warning`                   | queue severity glyph, flag toggle, drift banner and tags    |
+| Attention items (pending, changes) | `--warning`                   | queue severity glyph, drift banner and tags                 |
 | Low-risk items (product types)     | `--info`                      | queue severity glyph                                        |
 | Selected queue row                 | `--accent`                    | `.mod-row.is-selected` tinted surface + rail                |
 | Diff scalar before / after         | muted / `--text-primary`      | `.diff-before` (struck) / `.diff-after`                     |
@@ -172,7 +174,7 @@ Selecting a queue row opens its review in the right pane (desktop) or routes to 
 
 ### 5.3 Review actions are FRD-04 actions
 
-Every action in a review panel dispatches the corresponding FRD-04 server action (`store.approve`, `store.remove`, `store.flag`, `store.unflag`, `report.resolve`, `report.dismiss`, `changeRequest.apply`, `changeRequest.reject`, `productType.approve`, `productType.reject`), each gated by `requireAdmin()` and each writing an `AdminAuditLog` entry (`FR-04-51`, `BR-04-29`). The console is the caller. When an action reaches a terminal state, the item leaves the inbox on the next read, and the pane advances to the next item or the empty-selection prompt.
+Every action in a review panel dispatches the corresponding FRD-04 server action (`store.approve`, `store.remove`, `report.resolve`, `report.dismiss`, `changeRequest.apply`, `changeRequest.reject`, `productType.approve`, `productType.reject`), each gated by `requireAdmin()` and each writing an `AdminAuditLog` entry (`FR-04-51`, `BR-04-29`). The console is the caller. When an action reaches a terminal state, the item leaves the inbox on the next read, and the pane advances to the next item or the empty-selection prompt. A report-cluster row is the exception in kind, not in mechanism: it holds no record of its own, so it leaves the queue when its underlying reports fall below the cluster threshold or the store is removed. The audit vocabulary also carries `store.flag` / `store.unflag`, which no console action dispatches: they are retired from writing and appear only as historical rows in the audit viewer.
 
 ### 5.4 Optimistic behavior and motion
 
@@ -189,21 +191,21 @@ Tone follows [ux-copy.md](../../../design/ux-copy.md); terminology follows [../.
 | Inbox title      | plain, direct | "Bandeja de moderacion"                                                                             |
 | Inbox subtitle   | plain         | "Todo lo pendiente por revisar, ordenado por impacto. Elige un elemento para revisarlo aqui mismo." |
 | Counters         | terse         | "Reportes", "Tiendas", "Cambios", "Tipos"                                                           |
-| Queue categories | terse         | "Reporte", "Baja sugerida", "Tienda pendiente", "Cambio propuesto", "Tipo de producto"              |
+| Queue categories | terse         | "Reporte", "Reportes acumulados", "Tienda pendiente", "Cambio propuesto", "Tipo de producto"        |
 | Empty selection  | neutral       | "Selecciona un elemento de la bandeja para revisarlo aqui."                                         |
 | Empty inbox      | reassuring    | "Todo al dia", "No hay nada pendiente por moderar."                                                 |
 | Back to queue    | destination   | "Bandeja"                                                                                           |
 
-The four counters map to the four persisted categories (Reportes, Tiendas, Cambios, Tipos). "Baja sugerida" is a derived row, not a fifth persisted category: it appears when 2 or more open reports on the same store collapse into it (see `FR-02-05`), and it counts inside the "Tiendas" counter bucket alongside pending stores, since both are store-level items awaiting a store decision.
+The four counters map to the four persisted categories (Reportes, Tiendas, Cambios, Tipos). "Reportes acumulados" is a derived row, not a fifth persisted category: it appears when 2 or more open reports on the same store collapse into it (see `FR-02-05`), and it counts inside the "Tiendas" counter bucket alongside pending stores, since both are store-level items awaiting a store decision. The label deliberately names the fact (several reports on one store) rather than a recommendation: the earlier "Baja sugerida" framing pre-decided the outcome, and the console does not: removal is one of the choices, not the suggestion.
 
 ### 6.2 Review sections and fields
 
 | Surface            | String (`es`)                                                                                                                                                                                                            |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Section titles     | "Resumen de la tienda", "Reporte", "Reportes anteriores en esta tienda", "Reportes acumulados", "Cambios propuestos", "Comentario de quien propone", "Motivo", "En el catalogo"                                          |
+| Section titles     | "Resumen de la tienda", "Reporte", "Reportes anteriores en esta tienda", "Reportes abiertos", "Cambios propuestos", "Comentario de quien propone", "Motivo", "En el catalogo"                                            |
 | Store fields       | "Tipo de vendedor", "Pais", "Presencia", "Categorias", "Canales de contacto", "Importa desde"                                                                                                                            |
 | Catalog fields     | "Nombre en espanol", "Nombre en ingles", "Clave", "Al aprobar se crea esta entrada global del catalogo"                                                                                                                  |
-| Status / meta tags | "En revision", "Aprobada", "{n} reportes acumulados", "{n} campos modificados", "Con desfase"                                                                                                                            |
+| Status / meta tags | "En revision", "Aprobada", "{n} reportes abiertos", "{n} campos modificados", "Con desfase"                                                                                                                            |
 | Reason chips       | "Spam", "Abuso", "Duplicada", "Informacion falsa", "Otro"                                                                                                                                                                |
 | Admin-only markers | "Reportada por", "Propuesto por", "Solo visible para administradores", "Solo admin"                                                                                                                                      |
 | Diff helper (list) | "Al aprobar, cada lista (categorias, canales, direcciones, importaciones) queda exactamente como se propone."                                                                                                            |
@@ -219,7 +221,7 @@ The four counters map to the four persisted categories (Reportes, Tiendas, Cambi
 | ---------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Store actions          | verb-first  | "Aprobar", "Retirar", "Ver tienda"                                                                                                                          |
 | Report actions         | verb-first  | "Resolver", "Descartar", "Retirar tienda", "Ver tienda"                                                                                                     |
-| Flag actions           | verb-first  | "Marcar con aviso de reportes", "Quitar aviso de reportes", "Retirar", "Ver tienda"                                                                         |
+| Report-cluster actions | verb-first  | "Resolver", "Descartar" (per report), "Retirar tienda", "Ver tienda". No marcado manual: el aviso publico sale de estos mismos reportes.                    |
 | Change actions         | verb-first  | "Aprobar y aplicar", "Rechazar", "Ver tienda"                                                                                                               |
 | Change actions (drift) | verb-first  | "Aprobar y aplicar", "Rechazar", "Ver tienda" (same primary as non-drift; approval re-derives against the current store, matching WO-11)                    |
 | Product-type actions   | verb-first  | "Aprobar", "Rechazar"                                                                                                                                       |
@@ -251,6 +253,7 @@ Beyond the system WCAG 2.2 AA baseline:
 - **Focus into the detail.** Opening an item moves focus to the review pane so keyboard users land on the review, not back at the top of the queue; on mobile the back link is an early focus stop that returns to the queue.
 - **Action naming.** Every action button reads as an unambiguous verb plus object ("Aprobar", "Retirar tienda", "Aprobar y aplicar"); icon-only affordances (theme, back) carry accessible labels. The removal control opens a `role="alertdialog"` with a labelled reason radiogroup, and the destructive confirm is distinct from cancel.
 - **Severity is never color-only.** Each queue row and review carries a text category label and a glyph in addition to the severity color; reason chips pair an icon with the reason text.
+- **Per-report actions are individually named.** In the report-cluster review each report card carries its own `Resolver` / `Descartar` pair, so the accessible name of every button resolves to one specific report (reason plus reporter), never an ambiguous repeated label across the list. Resolving one card removes it from the list and leaves focus in the review, so a keyboard user can work down the cluster without losing place.
 - **Diff and drift markers are never color-only.** Each list-delta row pairs its tint with an icon (`+` / `-` / `=`) and a written tag ("Se agrega" / "Se elimina" / "Se mantiene"); each drift field pairs its tint with a written derived tag ("Ya aplicado") and a plain-language note, and the two drift values carry the text labels "Ahora" / "Propuesta". No add/remove/keep or drift state is signalled by color alone.
 - **Admin-only data is marked in text.** Reporter identity and raw report text carry a visible "Solo visible para administradores" marker, not a color cue alone.
 - The audit table uses proper header cells; the access-denied state is announced and focus moves to its heading.

@@ -12,7 +12,7 @@
   separate mini-app.
 
   Desktop pattern: master-detail (queue list left, review pane right).
-  Screens: #inbox, #review-store, #review-report, #review-flag,
+  Screens: #inbox, #review-store, #review-report, #review-cluster,
            #review-change, #review-change-drift, #review-type,
            #inbox-empty, #audit, #access-denied.
 -->
@@ -600,7 +600,7 @@
           <span class="demo-nav-label">Revision por tipo</span>
           <a href="#review-store" data-screen="review-store">Tienda pendiente</a>
           <a href="#review-report" data-screen="review-report">Reporte</a>
-          <a href="#review-flag" data-screen="review-flag">Baja sugerida</a>
+          <a href="#review-cluster" data-screen="review-cluster">Reportes acumulados</a>
           <a href="#review-change" data-screen="review-change">Cambio propuesto</a>
           <a href="#review-change-drift" data-screen="review-change-drift">Cambio propuesto (con desfase)</a>
           <a href="#review-type" data-screen="review-type">Tipo de producto</a>
@@ -719,9 +719,9 @@
                 <span class="body"><span class="cat">Reporte</span><div class="label">Panda Store</div><span class="meta">Spam · hace 2 h</span></span>
                 <span class="chev"><i data-lucide="chevron-right"></i></span>
               </a>
-              <a class="mod-row sev-crit" href="#review-flag" data-target="review-flag" role="listitem">
-                <span class="glyph"><i data-lucide="shield-alert"></i></span>
-                <span class="body"><span class="cat">Baja sugerida</span><div class="label">Figuras XYZ</div><span class="meta">3 reportes acumulados</span></span>
+              <a class="mod-row sev-crit" href="#review-cluster" data-target="review-cluster" role="listitem">
+                <span class="glyph"><i data-lucide="layers"></i></span>
+                <span class="body"><span class="cat">Reportes acumulados</span><div class="label">Figuras XYZ</div><span class="meta">3 reportes abiertos</span></span>
                 <span class="chev"><i data-lucide="chevron-right"></i></span>
               </a>
               <a class="mod-row sev-warn" href="#review-store" data-target="review-store" role="listitem">
@@ -835,41 +835,52 @@
                 </div>
               </article>
 
-              <!-- (c) Baja sugerida (FLAGGED candidate) -->
-              <article class="mod-detail sev-crit" id="review-flag" aria-label="Revision de baja sugerida">
+              <!-- (c) Reportes acumulados (report cluster) · vista de escalamiento sobre los mismos reportes abiertos -->
+              <article class="mod-detail sev-crit" id="review-cluster" aria-label="Revision de reportes acumulados">
                 <a class="mod-back" href="#inbox"><i data-lucide="corner-up-left"></i> Bandeja</a>
                 <div class="mod-detail-head">
-                  <span class="eyebrow-chip tone-destructive"><i data-lucide="shield-alert"></i> Baja sugerida</span>
+                  <span class="eyebrow-chip tone-destructive"><i data-lucide="layers"></i> Reportes acumulados</span>
                   <h2>Figuras XYZ</h2>
                   <div class="mod-meta">
                     <span class="chip neutral"><i data-lucide="store"></i> Minorista</span>
                     <span class="chip neutral"><i data-lucide="globe"></i> Mexico</span>
                     <span class="chip success"><i data-lucide="check-circle"></i> Aprobada</span>
-                    <span class="chip destructive"><i data-lucide="flag"></i> 3 reportes acumulados</span>
+                    <span class="chip destructive"><i data-lucide="flag"></i> 3 reportes abiertos</span>
                   </div>
                 </div>
                 <div class="mod-sec">
-                  <p class="mod-sec-title"><i data-lucide="layers"></i> Reportes acumulados</p>
+                  <p class="mod-sec-title"><i data-lucide="layers"></i> Reportes abiertos</p>
                   <div class="mod-report">
                     <div class="r-head"><span class="chip destructive"><i data-lucide="triangle-alert"></i> Informacion falsa</span><span class="r-when">hace 4 d</span></div>
                     <p class="mod-quote">"Cobra pre-reservas y no entrega. Ya somos varios afectados."</p>
                     <div class="mod-reporter"><i data-lucide="user"></i> <b>@fig_hunter</b> <span class="mod-admin-only"><i data-lucide="eye-off"></i> Solo admin</span></div>
+                    <div class="mod-actions" style="padding-top:10px;border-top:none;background:transparent;">
+                      <button class="btn primary sm" type="button"><i data-lucide="check"></i> Resolver</button>
+                      <button class="btn ghost sm" type="button"><i data-lucide="x"></i> Descartar</button>
+                    </div>
                   </div>
                   <div class="mod-report">
                     <div class="r-head"><span class="chip destructive"><i data-lucide="shield-x"></i> Abuso</span><span class="r-when">hace 2 d</span></div>
                     <p class="mod-quote">"Bloquea a quien reclama y borra los comentarios."</p>
                     <div class="mod-reporter"><i data-lucide="user"></i> <b>@otaku_lima</b> <span class="mod-admin-only"><i data-lucide="eye-off"></i> Solo admin</span></div>
+                    <div class="mod-actions" style="padding-top:10px;border-top:none;background:transparent;">
+                      <button class="btn primary sm" type="button"><i data-lucide="check"></i> Resolver</button>
+                      <button class="btn ghost sm" type="button"><i data-lucide="x"></i> Descartar</button>
+                    </div>
                   </div>
                   <div class="mod-report">
                     <div class="r-head"><span class="chip destructive"><i data-lucide="ban"></i> Spam</span><span class="r-when">hace 1 d</span></div>
                     <p class="mod-quote">"Publica links de pago externos en cada respuesta."</p>
                     <div class="mod-reporter"><i data-lucide="user"></i> <b>@coleccion_mx</b> <span class="mod-admin-only"><i data-lucide="eye-off"></i> Solo admin</span></div>
+                    <div class="mod-actions" style="padding-top:10px;border-top:none;background:transparent;">
+                      <button class="btn primary sm" type="button"><i data-lucide="check"></i> Resolver</button>
+                      <button class="btn ghost sm" type="button"><i data-lucide="x"></i> Descartar</button>
+                    </div>
                   </div>
                 </div>
-                <p class="mod-hint" style="padding-top:16px">Marcar deja la tienda visible con una advertencia mas fuerte, sin retirarla. Retirar la excluye de las superficies publicas.</p>
+                <p class="mod-hint" style="padding-top:16px">Cada reporte se resuelve o descarta por separado: son afirmaciones independientes. El aviso publico de la ficha sale de estos mismos reportes abiertos, asi que desaparece solo cuando se resuelve el ultimo. No hay marcado manual. Retirar excluye la tienda de las superficies publicas.</p>
                 <div class="mod-actions">
-                  <button class="btn warning" type="button"><i data-lucide="flag"></i> Marcar</button>
-                  <button class="btn destructive-ghost" type="button" data-open-removal><i data-lucide="trash-2"></i> Retirar</button>
+                  <button class="btn destructive-ghost" type="button" data-open-removal><i data-lucide="trash-2"></i> Retirar tienda</button>
                   <span class="spacer"></span>
                   <button class="btn link" type="button"><i data-lucide="external-link"></i> Ver tienda</button>
                 </div>
@@ -1250,17 +1261,17 @@
     removalModal.addEventListener("click", function (e) { if (e.target === removalModal) closeRemoval(); });
 
     // ── Master-detail hash router ──
-    var WORKSPACE_IDS = ["inbox", "review-store", "review-report", "review-flag", "review-change", "review-change-drift", "review-type"];
+    var WORKSPACE_IDS = ["inbox", "review-store", "review-report", "review-cluster", "review-change", "review-change-drift", "review-type"];
     var STANDALONE_IDS = ["inbox-empty", "audit", "access-denied"];
     var DEFAULT_PANEL = "review-report";
     var CRUMBS = {
       inbox: "Bandeja de moderacion", "review-store": "Bandeja de moderacion", "review-report": "Bandeja de moderacion",
-      "review-flag": "Bandeja de moderacion", "review-change": "Bandeja de moderacion", "review-change-drift": "Bandeja de moderacion",
+      "review-cluster": "Bandeja de moderacion", "review-change": "Bandeja de moderacion", "review-change-drift": "Bandeja de moderacion",
       "review-type": "Bandeja de moderacion", "inbox-empty": "Bandeja de moderacion",
       audit: "Registro de actividad", "access-denied": "Acceso restringido"
     };
     var SCREEN_LABELS = {
-      inbox: "Bandeja", "review-store": "Tienda pendiente", "review-report": "Reporte", "review-flag": "Baja sugerida",
+      inbox: "Bandeja", "review-store": "Tienda pendiente", "review-report": "Reporte", "review-cluster": "Reportes acumulados",
       "review-change": "Cambio propuesto", "review-change-drift": "Cambio · con desfase", "review-type": "Tipo de producto",
       "inbox-empty": "Bandeja vacia", audit: "Registro de actividad", "access-denied": "Acceso restringido"
     };

@@ -35,7 +35,7 @@ The surface is embedded in the same repository and deployment as the rest of Pan
 
 ## History and Context
 
-The store domain (PRD-02, FRD-04) shipped the "citizen" half of governance: any authenticated collector can create a store, report a store, propose changes to an approved store as a diff-based change request, and suggest a new product type. Every one of those records has a lifecycle with terminal states (`APPROVED`, `REJECTED`, `FLAGGED`, `REVIEWED`, `DISMISSED`) defined in the schema.
+The store domain (PRD-02, FRD-04) shipped the "citizen" half of governance: any authenticated collector can create a store, report a store, propose changes to an approved store as a diff-based change request, and suggest a new product type. Every one of those records has a lifecycle with terminal states (`APPROVED`, `REJECTED`, `REVIEWED`, `DISMISSED`) defined in the schema. (The schema also carried a `FLAGGED` store status at the time; it is removed, because the public "has reports" signal is derived from open reports rather than persisted as a moderation state, see [ADR 0019](../../design/decisions/0019-derived-trust-signals-moderation-status-lifecycle-only.md).)
 
 None of those terminal transitions is reachable today. There is no role in the database (admin identity is a transitional environment allowlist), no privileged route, and no mutation that resolves a report, applies a change request, or approves a pending store. FRD-04 records an explicit open question about the store lifecycle beyond creation, and PRD-02 deliberately deferred the "full moderation backoffice" as out of scope. PRD-03 is where that deferred capability now lives, cut to a minimal but real first release.
 

@@ -82,7 +82,7 @@ This blueprint describes how to build the platform defined in [FRD-01](../frd-01
 
 ### Audit-write contract
 
-- Every privileged mutation calls `writeAuditEntry()` with a stable action key from the shared vocabulary (`store.approve`, `store.remove`, `store.flag`, `store.unflag`, `report.resolve`, `report.dismiss`, `changeRequest.apply`, `changeRequest.reject`, `productType.approve`, `productType.reject`).
+- Every privileged mutation calls `writeAuditEntry()` with a stable action key from the shared vocabulary (`store.approve`, `store.remove`, `store.flag`, `store.unflag`, `report.resolve`, `report.dismiss`, `changeRequest.apply`, `changeRequest.reject`, `productType.approve`, `productType.reject`). The vocabulary is append-only in spirit: a key may become **retired from writing** when its mutation is removed (as `store.flag` / `store.unflag` were, see PRD-02, FRD-04 `FR-04-43`), but it is never deleted, because historical `AdminAuditLog` rows still carry it and the audit viewer resolves its localized action title with no fallback.
 - `action` and `targetType` are stored as strings validated against constant vocabularies in code, not database enums, so the vocabulary can stay stable without a migration per new key.
 - The entry stores identifiers plus an optional non-sensitive reason; it never stores report free text or reporter identity.
 

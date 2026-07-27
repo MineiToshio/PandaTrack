@@ -7,7 +7,7 @@ status: DRAFT
 parent: PRD-03
 children:
   - BP-01
-last_updated: 2026-07-24
+last_updated: 2026-07-27
 implementation_status: PLANNED
 ---
 
@@ -69,7 +69,7 @@ As an administrator, I want to review the audit log, so that I can see who did w
 
 ### Moderation inbox
 
-- `FR-02-05`: The inbox must aggregate, into one list, the pending stores, open reports, pending change requests, and pending product-type requests. The queue derives a flag-candidate row when a store accumulates 2 or more open reports, collapsing that store's individual report rows into the single derived row.
+- `FR-02-05`: The inbox must aggregate, into one list, the pending stores, open reports, pending change requests, and pending product-type requests. The queue derives a **report-cluster** row when a store accumulates `STORE_REPORT_CLUSTER_THRESHOLD` (2) or more open reports, collapsing that store's individual report rows into the single derived row. This is an escalation view over the same records, not a store state: it exists so a store with several unresolved reports reads as one decision rather than several. It is a different threshold, and a different question, from the public report notice on the store detail, which appears at 1 open report (PRD-02, [FRD-04](../../prd-02-collector-app/frd-04-store-domain/frd-04-store-domain.md) `FR-04-43`); the two are separate named constants and are independently tunable ([ADR 0019](../../../design/decisions/0019-derived-trust-signals-moderation-status-lifecycle-only.md)).
 - `FR-02-06`: The inbox must order items by impact, with reported and removable stores ahead of lower-risk items such as product-type suggestions.
 - `FR-02-07`: Each inbox item must open a per-type review in the console from which the administrator invokes the owning action (the PRD-02, FRD-04 server action for that item type); a secondary "Ver tienda" link to the store detail remains available from the review.
 - `FR-02-08`: The inbox must show a count per category so the administrator can see the shape of the backlog at a glance.
@@ -91,12 +91,12 @@ These reviews invoke the moderation actions owned by PRD-02, [FRD-04](../../prd-
 
 - `FR-02-14`: Opening a pending-store item must render a review showing the store's submitted summary (seller type, country, presence, categories, contact channels, import countries), with actions to approve (`FR-04-40`) or remove (`FR-04-41`) the store.
 - `FR-02-15`: Opening a report item must render a review showing the report reason, free text, admin-only reporter identity, and prior reports on the same store, with actions to resolve or dismiss the report (`FR-04-44`) and a secondary path to remove the store (`FR-04-41`).
-- `FR-02-16`: Opening a flag-candidate (suggested-removal) item (a row derived per the `FR-02-05` rule, not a persisted category) must render a review showing the store's accumulated reports, with actions to flag or unflag the store (`FR-04-43`) and a secondary path to remove it (`FR-04-41`).
+- `FR-02-16`: Opening a report-cluster item (a row derived per the `FR-02-05` rule, not a persisted category) must render a review showing the store's accumulated open reports, with **per-report** resolve and dismiss actions (`FR-04-44`) and a secondary path to remove the store (`FR-04-41`). There is no flag or unflag action, because there is no flag state: the public report notice is derived from these same open reports, so resolving them is what clears it (`FR-04-43`). Resolving is per report rather than a bulk sweep, because each report is an independent claim that deserves its own decision.
 - `FR-02-17`: Opening a change-request item must render a review showing the field-by-field diff and the requester's comment, with actions to apply (`FR-04-46`) or reject the request; when the underlying store changed since submission, the review must show a store-level drift notice and present each affected field as two values (the current store value and the proposed value), tagging a field "Ya aplicado" when its current value already equals the proposal, matching the FRD-04 drift handling (`FR-04-47`). The stored request persists only proposed values with no base snapshot, so the value the requester originally saw is not derivable and no third value or "En conflicto" state is shown. For list fields the review must itemize the diff as add, remove, and keep deltas, because the stored request replaces the whole list with the proposed set.
 - `FR-02-18`: Opening a product-type-suggestion item must render a review showing the requester, the reason, and a catalog preview (`es`/`en` names and the generated key), with actions to approve (`FR-04-49`) or reject the request.
 - `FR-02-19`: On viewports wide enough for the master-detail split, the inbox must present the queue and the selected item's review side by side, ordered by impact, and must auto-preview the top item when no item is explicitly selected.
 - `FR-02-20`: Below the master-detail breakpoint, the inbox must show the queue as a single stacked column; opening an item must route to a full-width review screen with a back link to the queue.
-- `FR-02-21`: Removing a store from any review (pending store, report, or suggested removal) must go through the reason-selection removal modal owned by PRD-02, FRD-04 (`FR-04-41`), not a console-local confirmation.
+- `FR-02-21`: Removing a store from any review (pending store, report, or report cluster) must go through the reason-selection removal modal owned by PRD-02, FRD-04 (`FR-04-41`), not a console-local confirmation.
 
 ### Admin navigation entry point
 
@@ -126,7 +126,7 @@ These reviews invoke the moderation actions owned by PRD-02, [FRD-04](../../prd-
 - Then the inbox lists the pending stores, open reports, pending change requests, and pending product-type requests
 - And reported and removable stores appear ahead of product-type suggestions
 - And each category shows a count
-- And a store with 2 or more open reports appears as one suggested-removal row, not as its individual report rows
+- And a store with 2 or more open reports appears as one report-cluster row, not as its individual report rows
 
 ### `AC-02-03` Empty inbox
 
@@ -167,12 +167,15 @@ These reviews invoke the moderation actions owned by PRD-02, [FRD-04](../../prd-
 - Then the review shows the report reason, quote, and admin-only reporter identity, plus prior reports on the store
 - And Resolve and Dismiss actions are available, invoking `FR-04-44`
 
-### `AC-02-09` Open review: flag candidate / suggested removal
+### `AC-02-09` Open review: report cluster
 
-- Given a store with 2 or more open reports (a flag-candidate row derived per `FR-02-05`)
+- Given a store with 2 or more open reports (a report-cluster row derived per `FR-02-05`)
 - When the administrator opens its item
-- Then the review lists the accumulated reports
-- And Flag/Unflag and Remove actions are available, invoking `FR-04-43` and `FR-04-41`
+- Then the review lists the store's accumulated open reports, each with its reason, free text, and admin-only reporter identity
+- And each report carries its own Resolve and Dismiss actions, invoking `FR-04-44`
+- And a Remove action is available through the shared removal modal, invoking `FR-04-41`
+- And no flag or unflag control is offered anywhere in the review
+- And when the last open report is resolved, the store's public report notice is gone on the next read (`FR-04-43`), with no separate action
 
 ### `AC-02-10` Open review: change request
 
@@ -244,8 +247,8 @@ These reviews invoke the moderation actions owned by PRD-02, [FRD-04](../../prd-
 
 ### Inbox item state
 
-- `pending`: the item is unresolved and appears in the inbox. Four row types read directly off a persisted state: pending store `PENDING`, report `OPEN`, change request `PENDING`, product-type request `PENDING`. The fifth row type, flag candidate (suggested removal), is not a persisted state: it is derived when a store, `PENDING` or `APPROVED`, has 2 or more open reports, and it replaces that store's individual report rows in the queue for as long as the count holds.
-- `resolved`: once the underlying action (owned by FRD-04) reaches a terminal state, the item leaves the inbox on the next read. A derived flag-candidate row leaves the inbox once the store is flagged into a terminal outcome, removed, or its open-report count drops below 2, at which point any remaining open report goes back to showing as its own row.
+- `pending`: the item is unresolved and appears in the inbox. Four row types read directly off a persisted state: pending store `PENDING`, report `OPEN`, change request `PENDING`, product-type request `PENDING`. The fifth row type, the report cluster, is not a persisted state: it is derived when a store, `PENDING` or `APPROVED`, has 2 or more open reports, and it replaces that store's individual report rows in the queue for as long as the count holds.
+- `resolved`: once the underlying action (owned by FRD-04) reaches a terminal state, the item leaves the inbox on the next read. A derived report-cluster row leaves the inbox once the store is removed, or once its open-report count drops below 2, at which point any remaining open report goes back to showing as its own row. There is no terminal outcome for the cluster itself, because it is not a record: it is a view over reports that are each resolved on their own.
 
 ## Screens and Data Contract
 
@@ -256,7 +259,7 @@ These reviews invoke the moderation actions owned by PRD-02, [FRD-04](../../prd-
 | 1   | Moderation inbox (master-detail)  | `/[locale]/admin`             | `#inbox`               |
 | 2   | Review: pending store             | `/[locale]/admin` (item open) | `#review-store`        |
 | 3   | Review: report                    | `/[locale]/admin` (item open) | `#review-report`       |
-| 4   | Review: suggested removal (flag)  | `/[locale]/admin` (item open) | `#review-flag`         |
+| 4   | Review: report cluster            | `/[locale]/admin` (item open) | `#review-cluster`      |
 | 5   | Review: change request            | `/[locale]/admin` (item open) | `#review-change`       |
 | 6   | Review: change request with drift | `/[locale]/admin` (item open) | `#review-change-drift` |
 | 7   | Review: product-type suggestion   | `/[locale]/admin` (item open) | `#review-type`         |
@@ -280,7 +283,7 @@ Screens 2 to 7 are the per-type review views (`FR-02-14` through `FR-02-18`), re
 
 ## Open Questions
 
-- Resolved (2026-07-24, WO-02 enrichment): impact ordering is five tiers, highest first: flag candidate (suggested removal), open reports, pending stores, change requests, product-type suggestions; within a tier, oldest first. The flag-candidate row is derived per `FR-02-05` and is not a fifth persisted category.
+- Resolved (2026-07-24, WO-02 enrichment; renamed 2026-07-27): impact ordering is five tiers, highest first: report cluster, open reports, pending stores, change requests, product-type suggestions; within a tier, oldest first. The report-cluster row is derived per `FR-02-05` and is not a fifth persisted category.
 
 ## Out of Scope
 

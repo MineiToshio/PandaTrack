@@ -73,7 +73,7 @@ Relevant acceptance criteria:
 ## Dependencies
 
 - [PRD-03 (FRD-01) · WO-01](../../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/bp-01-admin-identity-and-access-platform/work-orders/wo-01-role-admin-plugin-and-audit-foundation.md) for the durable `role`, `requireAdmin()`, `AdminAuditLog`, and `writeAuditEntry()`.
-- `WO-09 Store Approval and Removal` first: the supersede-after-write sweep must fire on the store-state moderation writes introduced there (approve, remove, flag/unflag) as well as on direct edits, so the store-write surface `WO-09` establishes is a prerequisite.
+- `WO-09 Store Approval and Removal` first: the supersede-after-write sweep must fire on the store-state moderation writes introduced there (approve, remove) as well as on direct edits, so the store-write surface `WO-09` establishes is a prerequisite. The flag/unflag writes originally listed here are superseded by [WO-13](wo-13-derived-report-notice-and-flag-removal.md); the derived report notice writes nothing to the store row, so it never triggers the sweep.
 - `WO-06 Store Governance Flows` for the `StoreChangeRequest` model, the diff persistence, and the governance panel.
 
 ## E2E Acceptance Tests

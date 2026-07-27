@@ -42,7 +42,7 @@ Relevant business rules:
 
 - `BR-01-01`: After bootstrap, the database role is the single authority; the allowlist is retired and must not grant admin in parallel.
 - `BR-01-03`: Ban and impersonation stay UI-less; users still default to `user`.
-- `BR-01-05`: The audit action vocabulary stays stable; the bootstrap is a documented exception that writes no audit entry (see Security Notes).
+- `BR-01-05`: The audit action vocabulary stays stable; the bootstrap is a documented exception that writes no audit entry (see Security Notes). Stability also runs the other way: a key whose mutation is removed becomes retired from writing rather than being deleted (`store.flag`, `store.unflag`).
 
 ## Blueprints
 

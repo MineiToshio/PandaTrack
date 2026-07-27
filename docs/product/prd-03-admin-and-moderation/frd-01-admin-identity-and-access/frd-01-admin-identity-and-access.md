@@ -88,7 +88,7 @@ As the product owner, I want every non-administrator to default to the lowest pr
 - `BR-01-02`: `AdminAuditLog` is append-only; the system must expose no update or delete path for it.
 - `BR-01-03`: Impersonation and ban management have no UI in this release; the plugin must still default every user to `user` and keep those endpoints admin-only.
 - `BR-01-04`: The audit log must never store personal data of reporters or the free-text body of reports; it stores identifiers and an optional non-sensitive reason only.
-- `BR-01-05`: The action key vocabulary (`store.approve`, `store.remove`, `store.flag`, `store.unflag`, `report.resolve`, `report.dismiss`, `changeRequest.apply`, `changeRequest.reject`, `productType.approve`, `productType.reject`) is shared across the domains that write audit entries and must stay stable once defined.
+- `BR-01-05`: The action key vocabulary (`store.approve`, `store.remove`, `store.flag`, `store.unflag`, `report.resolve`, `report.dismiss`, `changeRequest.apply`, `changeRequest.reject`, `productType.approve`, `productType.reject`) is shared across the domains that write audit entries and must stay stable once defined. The vocabulary is append-only in spirit: a key may become **retired from writing** when its mutation is removed (as `store.flag` / `store.unflag` were, see PRD-02, FRD-04 `FR-04-43`), but it is never deleted, because historical `AdminAuditLog` rows still carry it and the audit viewer resolves its localized action title with no fallback.
 
 ## Acceptance Criteria
 

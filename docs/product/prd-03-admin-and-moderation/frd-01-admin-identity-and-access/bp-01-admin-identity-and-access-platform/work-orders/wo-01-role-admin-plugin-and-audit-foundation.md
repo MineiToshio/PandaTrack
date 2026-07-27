@@ -22,7 +22,7 @@ Foundation slice for the admin platform. Adds the database-backed administrator 
 - Prisma schema: add `role` (`String @default("user")`, non-nullable), `banned`, `banReason`, `banExpires` to `User` and `impersonatedBy` to `Session`; add the `AdminAuditLog` model with a real foreign key to `User`; write and apply the migration with the standard `migrate dev` flow; run `prisma generate`.
 - `requireAdmin()` server helper co-located in `src/lib/auth/auth-server.ts`, built on `getSession()`; it throws a typed error for non-administrators before any work runs and returns the session/user when the check passes.
 - `writeAuditEntry({ actorId, action, targetType, targetId, reason? }, tx?)` append-only writer that accepts an optional Prisma transaction client, plus read helpers for later use.
-- The shared audit action-key vocabulary (`store.approve`, `store.remove`, `store.flag`, `store.unflag`, `report.resolve`, `report.dismiss`, `changeRequest.apply`, `changeRequest.reject`, `productType.approve`, `productType.reject`).
+- The shared audit action-key vocabulary (`store.approve`, `store.remove`, `store.flag`, `store.unflag`, `report.resolve`, `report.dismiss`, `changeRequest.apply`, `changeRequest.reject`, `productType.approve`, `productType.reject`). The vocabulary is append-only in spirit: a key may become **retired from writing** when its mutation is removed (as `store.flag` / `store.unflag` were, see PRD-02, FRD-04 `FR-04-43`), but it is never deleted, because historical `AdminAuditLog` rows still carry it and the audit viewer resolves its localized action title with no fallback.
 - Unit tests for `requireAdmin()` and `writeAuditEntry()`.
 
 ## Out of Scope
@@ -47,7 +47,7 @@ Relevant business rules:
 
 - `BR-01-02`: `AdminAuditLog` is append-only; no update or delete path.
 - `BR-01-04`: The audit log never stores reporter PII or report free text.
-- `BR-01-05`: The action-key vocabulary is shared and stable once defined.
+- `BR-01-05`: The action-key vocabulary is shared and stable once defined; a key may become retired from writing but is never deleted.
 
 ## Blueprints
 
@@ -87,7 +87,7 @@ These follow established repository conventions and are applied without re-decid
 - Fields: `id`, `actorId` (foreign key to `User`), `action String`, `targetType String`, `targetId String`, `reason String?`, `createdAt DateTime @default(now())`.
 - `actorId` is a real relation to `User` (referential integrity; the actor is always an existing account). This adds an inverse relation on `User`.
 - Indexes: `@@index([actorId])`, `@@index([targetType, targetId])`, `@@index([createdAt])`, matching how the later audit viewer (FRD-02 · WO-03) filters by actor, by target, and orders by time.
-- `action` and `targetType` are stored as strings validated against constant vocabularies in code, not database enums, so the vocabulary can stay stable (`BR-01-05`) without a migration per new key.
+- `action` and `targetType` are stored as strings validated against constant vocabularies in code, not database enums, so the vocabulary can stay stable (`BR-01-05`) without a migration per new key, and a retired-from-writing key can keep resolving for historical rows without a migration either.
 - The module exposes create plus read helpers only; there is no update or delete path (`BR-01-02`, `AC-01-05`).
 
 ### `writeAuditEntry()` contract
@@ -118,5 +118,5 @@ These follow established repository conventions and are applied without re-decid
 
 ## Dependencies
 
-- `requireAdmin()` and `writeAuditEntry()` are consumed by every privileged slice in FRD-02 (moderation console) and by the inline moderation controls in [FRD-04 · Store Domain](../../../../prd-02-collector-app/frd-04-store-domain/frd-04-store-domain.md) (PRD-02). The `store.flag` and `store.unflag` action keys anticipate that consumer.
+- `requireAdmin()` and `writeAuditEntry()` are consumed by every privileged slice in FRD-02 (moderation console) and by the inline moderation controls in [FRD-04 · Store Domain](../../../../prd-02-collector-app/frd-04-store-domain/frd-04-store-domain.md) (PRD-02). The `store.flag` and `store.unflag` action keys anticipated that consumer; the consumer was removed before it shipped (PRD-02, FRD-04 `FR-04-43`), so both keys stay defined here as retired from writing (`BR-01-05`).
 - WO-02 depends on this slice for the role machinery it cuts `getIsAdmin()` over to.

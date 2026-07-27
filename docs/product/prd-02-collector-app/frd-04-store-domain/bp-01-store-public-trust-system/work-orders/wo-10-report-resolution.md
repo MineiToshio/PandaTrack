@@ -8,7 +8,7 @@ parent: BP-01
 source_features: []
 source_issue: 132
 implementation_status: IN_PROGRESS
-last_updated: 2026-07-23
+last_updated: 2026-07-27
 ---
 
 # WO-10 Report Resolution
@@ -23,13 +23,13 @@ Add the admin inline resolution of store reports from the governance panel: move
 - Resolution frees the reporter to file a new report for that store, exactly as `AC-04-12` already specifies (the re-report path after resolution already exists; this work order is what causes a report to reach a resolved state).
 - A **new server-only admin data-access layer** that exposes raw report free-text and reporter identity to administrators only. This is additive and must never widen the public governance read model (`getStoreGovernanceSummary`); the existing non-admin guarantee (`BR-04-13`) stays honored unchanged.
 - `requireAdmin()` gating on the resolve / dismiss mutations and on the admin report read, with an `AdminAuditLog` entry via `writeAuditEntry()` for `report.resolve` and `report.dismiss`.
-- PostHog analytics for the user-visible actions: `store_report_resolved`, `store_report_dismissed`, namespaced under `POSTHOG_EVENTS.STORE`, carrying identifiers only (`store_slug`, `report_id`), never raw report text or reporter identity.
+- PostHog analytics for the user-visible actions: `store_report_resolved`, `store_report_dismissed`, namespaced under `POSTHOG_EVENTS.STORE`, carrying identifiers only (`store_slug`, `report_id`), never raw report text or reporter identity. [WO-13](wo-13-derived-report-notice-and-flag-removal.md) adds an `open_reports_remaining` count to both, so a resolution that cleared the store's public report notice is identifiable.
 
 This slice ships with **no schema migration** (see Decision D1). The `StoreReportStatus` enum already carries `REVIEWED` and `DISMISSED`, `StoreReport.status` already exists with a default of `OPEN`, and the audit vocabulary already defines `report.resolve` / `report.dismiss` and the `report` target type, so no Prisma change is required.
 
 ## Out of Scope
 
-- Store-state moderation (approve, remove, flag/unflag) owned by `WO-09`.
+- Store-state moderation (approve, remove) owned by `WO-09`. Flag/unflag was also `WO-09` scope and is superseded by [WO-13](wo-13-derived-report-notice-and-flag-removal.md), which makes the public report notice derived from the open reports this work order resolves.
 - Change-request review (`WO-11`) and product-type approval (`WO-12`).
 - The public community reports summary and the reporter-side report create/update flow, both already shipped by `WO-06`.
 - The moderation inbox that aggregates open reports across stores (owned by PRD-03, FRD-02); this work order provides the inline resolution the inbox links to.

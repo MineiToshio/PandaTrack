@@ -5,7 +5,7 @@ slug: store-domain
 title: Store Domain — Feature Design Document
 status: ACTIVE
 parent: FRD-04
-last_updated: 2026-07-23
+last_updated: 2026-07-27
 prototype: ./prototype/store-domain.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -36,7 +36,7 @@ demo_anchors:
   - "#s6-store-create-edit-mode"
   - "#s6-store-detail-admin-pending"
   - "#s6-store-detail-remove-modal"
-  - "#s6-store-detail-admin-flagged"
+  - "#s6-store-detail-report-notice"
   - "#s6-store-detail-admin-governance"
   - "#s6-store-change-request-review"
   - "#s6-store-change-request-review-drift"
@@ -114,7 +114,7 @@ creator (FR-04-33/34, [ADR 0009](../../../design/decisions/0009-private-person-s
 | 24  | Edit store                         | `/{locale}/stores/[slug]/edit` | `#s6-store-create-edit-mode`            |
 | 25  | Detail · admin on `PENDING`        | `/{locale}/stores/[slug]`      | `#s6-store-detail-admin-pending`        |
 | 26  | Detail · removal modal (admin)     | (detail overlay)               | `#s6-store-detail-remove-modal`         |
-| 27  | Detail · admin on `FLAGGED`        | `/{locale}/stores/[slug]`      | `#s6-store-detail-admin-flagged`        |
+| 27  | Detail · derived report notice     | `/{locale}/stores/[slug]`      | `#s6-store-detail-report-notice`        |
 | 28  | Governance panel · admin           | (detail overlay)               | `#s6-store-detail-admin-governance`     |
 | 29  | Change-request review (admin)      | (admin surface)                | `#s6-store-change-request-review`       |
 | 30  | Change-request review · drift      | (admin surface)                | `#s6-store-change-request-review-drift` |
@@ -308,7 +308,7 @@ and the report-modal / governance-panel patterns already in the prototype: no ne
 families are introduced.
 
 **Admin moderation cluster on the aside** (`#s6-store-detail-admin-pending`,
-`#s6-store-detail-admin-flagged`). A `card elevated` **"Moderación"** panel sits in the sticky
+`#s6-store-detail-report-notice`). A `card elevated` **"Moderación"** panel sits in the sticky
 aside rail, carrying the same one-primary / ghost / destructive action grammar as every other
 Acciones card. As shipped by [BP-01 · WO-09](bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md),
 the panel renders in the `DetailSidebar` **Gestión** slot (its dedicated governance/admin slot)
@@ -316,12 +316,24 @@ rather than a new slot above Resumen, because the aside slot order is inviolable
 [ADR 0003 · Decision 7](../../../design/decisions/0003-demo-decisions.md):
 
 - On a `PENDING` store: **"Aprobar tienda"** (primary, `check-circle`) → `APPROVED`;
-  **"Marcar con aviso de reportes"** (ghost, `flag`) → `FLAGGED`; **"Retirar tienda"**
-  (destructive-ghost, `ban`) → opens the removal modal.
-- On a `FLAGGED` store: **"Quitar aviso de reportes"** (primary, `shield-check`) → prior public
-  state; **"Ver reportes"** (ghost) → governance panel; **"Retirar tienda"** (destructive-ghost).
-  A stronger `store-banner warning` sits before the hero and the hero status chip reads
-  `chip warning` **"Con reportes"** (`alert-circle`). Flagging never hides the store (BR-04-24).
+  **"Retirar tienda"** (destructive-ghost, `ban`) → opens the removal modal.
+- On an `APPROVED` store: **"Ver reportes"** (ghost) → governance panel; **"Retirar tienda"**
+  (destructive-ghost).
+- There is **no** "mark with a report notice" control, in any state. The cluster offers two
+  decisions, publish or take down, plus the way to act on the reports themselves. The middle
+  "mark it" option is deliberately absent: the product informs the buyer that reports exist and
+  removes stores it judges harmful, and it does not publish its own verdict on a seller in
+  between (`FR-04-43`, [ADR 0019](../../../design/decisions/0019-derived-trust-signals-moderation-status-lifecycle-only.md)).
+
+**Derived report notice** (`#s6-store-detail-report-notice`, `FR-04-43`, BR-04-24). Independent of
+moderation status and of who is viewing. When the store has at least one open report
+(`STORE_REPORT_NOTICE_THRESHOLD` = 1), a `store-banner warning` (`role="alert"`) renders above the
+layout for **every** viewer, anonymous included, and the hero carries a `chip warning`
+**"Con reportes"** (`alert-circle`) beside the lifecycle status chip. Both are **derived reads**, not
+a status: the banner appears when the first report is filed and is gone on the next read once the
+last open report is resolved or dismissed. On a `PENDING` store with open reports, the calm pending
+disclaimer renders first and this notice second: lifecycle statement, then report information. The
+notice never hides the store and never affects indexing.
 
 **Softened `PENDING` disclaimer** (`FR-04-50`, `AC-04-31`). The pending banner is demoted from
 the alarmist warning treatment to the calm base `store-banner` (info tone): it frames the store
@@ -399,16 +411,16 @@ system; the definitions live in
 
 ### 3.1 Color roles
 
-| Role in this FRD                                       | Token / class                                | Where                                                              |
-| ------------------------------------------------------ | -------------------------------------------- | ------------------------------------------------------------------ |
-| Primary CTA (`Nueva tienda`, `Crear tienda`, `Editar`) | `--accent` (Button primary)                  | toolbar, wizard step 5, owner aside                                |
-| Category & selected affordances                        | `chip accent` / `.cat-chip` (accent ~10%)    | StoreCard, detail categorías, step 3                               |
-| Neutral signals (import countries, overflow, Persona)  | `chip neutral`                               | detail "Importa desde", card "+N más"                              |
-| Presence (physical/online) / pending status            | `--info` (`chip info`)                       | hero presence chips, pending chip                                  |
-| Stock available                                        | `--success` (`chip success`)                 | hero stock chip, autosave check                                    |
-| Accepts pre-orders / FLAGGED warning                   | `--warning` (`chip warning`)                 | hero pre-orders chip (FLAGGED banner is prototype-only — see §5.3) |
-| Warm private-note surface                              | `s8-card-warm` + `s8-eyebrow-chip tone-warm` | aside "Tu nota privada"                                            |
-| Destructive (report)                                   | `--destructive`                              | Button destructive-ghost (report)                                  |
+| Role in this FRD                                       | Token / class                                | Where                                                             |
+| ------------------------------------------------------ | -------------------------------------------- | ----------------------------------------------------------------- |
+| Primary CTA (`Nueva tienda`, `Crear tienda`, `Editar`) | `--accent` (Button primary)                  | toolbar, wizard step 5, owner aside                               |
+| Category & selected affordances                        | `chip accent` / `.cat-chip` (accent ~10%)    | StoreCard, detail categorías, step 3                              |
+| Neutral signals (import countries, overflow, Persona)  | `chip neutral`                               | detail "Importa desde", card "+N más"                             |
+| Presence (physical/online) / pending status            | `--info` (`chip info`)                       | hero presence chips, pending chip                                 |
+| Stock available                                        | `--success` (`chip success`)                 | hero stock chip, autosave check                                   |
+| Accepts pre-orders / report notice                     | `--warning` (`chip warning`)                 | hero pre-orders chip; derived report banner + "Con reportes" chip |
+| Warm private-note surface                              | `s8-card-warm` + `s8-eyebrow-chip tone-warm` | aside "Tu nota privada"                                           |
+| Destructive (report)                                   | `--destructive`                              | Button destructive-ghost (report)                                 |
 
 The **Chip-Eyebrow + Top-Accent** pattern (`s8-eyebrow-chip` + `s8-card-*`) is the system's
 section-identity device — see [interface-patterns.md](../../../design/interface-patterns.md).
@@ -509,7 +521,7 @@ count; free text does not increment that count.
 | --------------------- | ------------------ | --------- | ---------------- |
 | Moderation `APPROVED` | `Aprobada`         | `accent`  | (detail only)    |
 | Moderation `PENDING`  | `En revisión`      | `info`    | `clock`          |
-| Moderation `FLAGGED`  | `Con reportes`     | `warning` | `alert-circle`   |
+| Derived: open reports | `Con reportes`     | `warning` | `alert-circle`   |
 | Presence physical     | `Tienda física`    | `info`    | `store`          |
 | Presence online       | `Web`              | `info`    | `globe`          |
 | Has stock             | (in-stock label)   | `success` | `package-check`  |
@@ -517,15 +529,16 @@ count; free text does not increment that count.
 
 The commercial chips (physical / online / stock / pre-orders) render on the **detail hero**
 (non-`PERSON` only; a `PROXY` only ever shows presence chips since it has null stock / pre-order,
-plus its "Proxy" badge); moderation chips render on **detail only**, not on list cards (S6.1). The
-`FLAGGED` "Con reportes" mapping is **not reachable on the shipped public detail page today**:
-`getStoreBySlug` resolves only `PENDING`/`APPROVED` stores, so `FLAGGED` (and `REJECTED`) stores
-404 rather than rendering a warning chip or banner. The **planned admin moderation scope**
-(§2.4, `FR-04-43`, BR-04-24) makes `FLAGGED` reachable: it becomes publicly visible with a
-stronger warning than the pending disclaimer and the "Con reportes" chip renders, while
-`REJECTED` stays a public 404 **by design** and surfaces only as an order-side tombstone (§2.4,
-`FR-04-42`). There is **no** "Envía a N países" chip anywhere. Person stores omit the
-contact/presence chips entirely.
+plus its "Proxy" badge); moderation chips render on **detail only**, not on list cards (S6.1).
+
+Only the first two rows are **moderation status**: they state where the store sits in its lifecycle.
+"Con reportes" is a **derived trust signal**, not a status. It renders whenever the store has at
+least one open report, alongside whichever lifecycle chip applies, and it disappears when the last
+open report is resolved (`FR-04-43`, §2.4). It is deliberately **not** rendered on list cards
+(`WO-13` D6): the notice is a detail-page surface, and a listing signal would require a
+denormalized counter the data layer does not keep. `REJECTED` has no chip because it stays a public
+404 **by design** and surfaces only as an order-side tombstone (§2.4, `FR-04-42`). There is **no**
+"Envía a N países" chip anywhere. Person stores omit the contact/presence chips entirely.
 
 ### 5.4 Detail actions by viewer role (§2.2 aside)
 
@@ -603,15 +616,20 @@ Admin-only, gated by `requireAdmin()`, and layered onto the detail surface (§2.
 mutation is **optimistic** like the rest of the app and each one writes an append-only
 `AdminAuditLog` entry through the shared audit helper (`FR-04-51`, BR-04-29); the audit is a
 backend concern with **no visual footprint beyond a confirmation `Toast`** in the existing toast
-pattern (§5.7). The planned analytics events (`store_approved`, `store_removed`, `store_flagged`,
-`store_unflagged`, `store_report_resolved`, `store_report_dismissed`,
-`store_change_request_applied`, `store_change_request_rejected`, plus the product-type pair) fire
-alongside the audit write.
+pattern (§5.7). The planned analytics events (`store_approved`, `store_removed`, `store_report_resolved`,
+`store_report_dismissed`, `store_change_request_applied`, `store_change_request_rejected`, plus the
+product-type pair) fire alongside the audit write. The two report-resolution events carry an
+`open_reports_remaining` count, so a resolution that reached `0` is the one that cleared the store's
+public notice.
 
-- **Approve / flag / unflag** (`#s6-store-detail-admin-pending`, `#s6-store-detail-admin-flagged`):
-  optimistic state transition on the detail; the status chip and any disclaimer banner update in
-  place, then a confirmation toast. Unflag returns the store to its prior public state
-  (`PENDING`/`APPROVED`), never a new one.
+- **Approve** (`#s6-store-detail-admin-pending`): optimistic state transition on the detail; the
+  status chip and the pending disclaimer update in place, then a confirmation toast. There is no
+  flag or unflag transition: the report notice is derived, so no control writes it (`FR-04-43`).
+- **Report notice** (`#s6-store-detail-report-notice`): not an interaction. It is a read-time
+  derivation that appears and clears on its own as reports are filed and resolved. The only
+  optimistic movement it has is the one below: resolving the last open report clears the banner and
+  the "Con reportes" chip in the same local update that removes the report row, restoring both from
+  the returned `openReportsRemaining` if the action fails.
 - **Remove** (`#s6-store-detail-remove-modal`): the modal closes synchronously on confirm
   (Optimistic Confirmation); the store drops from the current view and the referencing-order
   tombstone message is derived from the chosen `removalReason` category. Removal is a tombstone,
@@ -667,27 +685,40 @@ Admin-only strings for the scope in §2.4 / §5.8. Voice is **operational and ne
 the action and its consequence plainly, without alarm or mascot. These belong to the same
 `stores.json` namespace as the rest of the domain.
 
-| Surface                                  | Tone               | String                                                                                                                                                                                        |
-| ---------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Softened pending disclaimer (`FR-04-50`) | calm, non-alarmist | `"Tienda en revisión"` · `"Una persona de la comunidad creó esta tienda y el equipo la está revisando. Ya puedes usarla con normalidad; solo no aparece en buscadores hasta que se apruebe."` |
-| Flagged warning (`FR-04-43`)             | firm, not alarmist | `"Tienda con reportes"` · `"Esta tienda acumula reportes con credibilidad. Sigue visible, pero revisa la información con atención antes de operar."`                                          |
-| Moderation actions                       | operational        | `"Aprobar tienda"` · `"Marcar con aviso de reportes"` · `"Quitar aviso de reportes"` · `"Retirar tienda"`                                                                                     |
-| Removal modal                            | plain, factual     | `"Retirar tienda"` · `"Elige el motivo. La tienda deja de ser pública, pero los pedidos que la referencian se conservan."`                                                                    |
-| Removal reasons                          | neutral vs sanción | neutral: `"Tienda duplicada"` · `"Tienda cerrada o inactiva"` · `"Información falsa o engañosa"`; sanción: `"Abuso, estafa o fraude"`                                                         |
-| Order tombstone (`FR-04-42`)             | neutral by default | `"Esta tienda ya no está disponible"` (sanction wording only for the abuse category)                                                                                                          |
-| Report resolution                        | operational        | `"Resolver"` · `"Descartar"` · `"Detalles y autor visibles solo para administradores."`                                                                                                       |
-| Change-request review                    | operational        | `"Aprobar y aplicar"` · `"Rechazar"` · `"Ahora"` · `"Propuesta"` · `"Al aprobar, los cambios se recalculan sobre el estado actual de la tienda."`                                             |
-| Change-request drift (`FR-04-47`)        | cautionary         | `"La tienda cambió desde esta solicitud"` · `"Ya aplicado"` (per-field, excluded from the apply). The per-field `"En conflicto"` / `"Revisar conflictos"` copy is deferred to the console.    |
+| Surface                                  | Tone                          | String                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Softened pending disclaimer (`FR-04-50`) | calm, non-alarmist            | `"Tienda en revisión"` · `"Una persona de la comunidad creó esta tienda y el equipo la está revisando. Ya puedes usarla con normalidad; solo no aparece en buscadores hasta que se apruebe."`                                                                                                                           |
+| Report notice (`FR-04-43`)               | informative, never accusatory | `"Esta tienda tiene reportes por revisar"` · `"Personas de la comunidad reportaron que la información publicada aquí podría no estar correcta, y el equipo todavía no la revisa. Un reporte no califica a la tienda: para eso están las reseñas. Sigue visible; revisa sus datos con atención y decide por tu cuenta."` |
+| Moderation actions                       | operational                   | `"Aprobar tienda"` · `"Ver reportes"` · `"Retirar tienda"` (there is no mark/unmark control, `FR-04-43`)                                                                                                                                                                                                                |
+| Removal modal                            | plain, factual                | `"Retirar tienda"` · `"Elige el motivo. La tienda deja de ser pública, pero los pedidos que la referencian se conservan."`                                                                                                                                                                                              |
+| Removal reasons                          | neutral vs sanción            | neutral: `"Tienda duplicada"` · `"Tienda cerrada o inactiva"` · `"Información falsa o engañosa"`; sanción: `"Abuso, estafa o fraude"`                                                                                                                                                                                   |
+| Order tombstone (`FR-04-42`)             | neutral by default            | `"Esta tienda ya no está disponible"` (sanction wording only for the abuse category)                                                                                                                                                                                                                                    |
+| Report resolution                        | operational                   | `"Resolver"` · `"Descartar"` · `"Detalles y autor visibles solo para administradores."`                                                                                                                                                                                                                                 |
+| Change-request review                    | operational                   | `"Aprobar y aplicar"` · `"Rechazar"` · `"Ahora"` · `"Propuesta"` · `"Al aprobar, los cambios se recalculan sobre el estado actual de la tienda."`                                                                                                                                                                       |
+| Change-request drift (`FR-04-47`)        | cautionary                    | `"La tienda cambió desde esta solicitud"` · `"Ya aplicado"` (per-field, excluded from the apply). The per-field `"En conflicto"` / `"Revisar conflictos"` copy is deferred to the console.                                                                                                                              |
 
 The softened pending disclaimer **supersedes** the earlier alarmist copy
 (`detail.pendingDisclaimerMessage`, "aún no ha sido verificada… revisar con precaución"): per
 `AC-04-31` the pending state must read as under review, not as untrustworthy data. The `en`
-equivalents live in `src/i18n/locales/en/stores.json`; the reused `flaggedDisclaimer` key
-already exists but was previously unwired. Its current value is a placeholder ("Tienda con
-reportes pendientes. Procede con precaución."); [BP-01 · WO-09](bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md)
-replaces it with the §6.1 flagged-warning copy above ("Tienda con reportes" title plus the
-credibility-warning body) in both locales and wires it into the flagged banner, so the shipped
-string matches this design record rather than the earlier placeholder.
+equivalents live in `src/i18n/locales/en/stores.json`.
+
+**The report-notice copy is a mandatory rewrite, not an edit.** The shipped `flaggedDisclaimer`
+strings ("Esta tienda acumula reportes con credibilidad." / "This store has accumulated credible
+reports.") are deleted along with their keys and replaced by `reportNoticeTitle` /
+`reportNoticeMessage` and `detail.reportNotice`, carrying the copy in the table above
+([BP-01 · WO-13](bp-01-store-public-trust-system/work-orders/wo-13-derived-report-notice-and-flag-removal.md)).
+The old wording asserted that somebody had validated the reports, and nobody had. Three rules govern
+the replacement and any future edit of it:
+
+1. **The subject is the information, never the seller.** The notice says the published information
+   may not be right. It never says or implies the store is dishonest, a scam, or fraudulent.
+2. **It states that the reports are unreviewed.** That is the whole point of showing it: a report
+   exists and the team has not looked at it yet.
+3. **It hands the decision to the reader.** A report is not a rating; reviews and ratings are where
+   a store's quality is judged. The notice informs, then explicitly leaves the judgment to the buyer.
+
+The `en` string is normative in its own right, not a translation gloss of the `es` one. Both are
+quoted verbatim in [WO-13](bp-01-store-public-trust-system/work-orders/wo-13-derived-report-notice-and-flag-removal.md).
 
 ---
 
@@ -741,7 +772,7 @@ Admin moderation scope (§2.4, planned) specifics:
 - **Admin controls have accessible names**: every moderation control is a real `<button>` or
   link with a visible text label ("Aprobar tienda", "Retirar tienda", "Resolver", "Descartar",
   "Aprobar y aplicar"); no icon-only affordance is unlabeled.
-- **Severity is never color-only**: the flagged warning, the "Con reportes" and "En conflicto"
+- **Severity is never color-only**: the derived report notice, the "Con reportes" and "En conflicto"
   chips, and the drifted diff row each pair color with an icon and text label
   ([ADR 0006](../../../design/decisions/0006-color-blindness-icon-label-contract.md)); the
   `.is-drift` row does not rely on its tint alone.
@@ -761,7 +792,7 @@ Admin moderation scope (§2.4, planned) specifics:
 - **Pixel truth**: [`./prototype/store-domain.html`](./prototype/store-domain.html)
   (self-contained; opens standalone in light + dark; default palette Velvet). Verified S15;
   extended 2026-07-22 with the admin inline moderation screens (`#s6-store-detail-admin-pending`,
-  `#s6-store-detail-remove-modal`, `#s6-store-detail-admin-flagged`,
+  `#s6-store-detail-remove-modal`, `#s6-store-detail-report-notice`,
   `#s6-store-detail-admin-governance`, `#s6-store-change-request-review`,
   `#s6-store-change-request-review-drift`).
 - **System rules**: [`docs/design/`](../../../design/README.md) — visual-foundations,
