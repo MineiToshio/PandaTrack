@@ -55,6 +55,7 @@
     "storeStatus": {
       "PENDING": "In review",
       "APPROVED": "Approved",
+      "REJECTED": "Rejected",
       "FLAGGED": "Flagged"
     },
     "reportReason": {
@@ -88,8 +89,8 @@
     "flag": {
       "sectionReports": "Accumulated reports",
       "hint": "Flagging keeps the store visible with a stronger warning; removing excludes it from public surfaces.",
-      "flag": "Flag",
-      "unflag": "Remove flag",
+      "flag": "Flag with reports warning",
+      "unflag": "Remove reports warning",
       "remove": "Remove"
     },
     "change": {

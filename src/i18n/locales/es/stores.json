@@ -237,8 +237,8 @@
   "moderation": {
     "panelTitle": "Moderación",
     "approveCta": "Aprobar tienda",
-    "flagCta": "Marcar con reportes",
-    "unflagCta": "Quitar marca de reportes",
+    "flagCta": "Marcar con aviso de reportes",
+    "unflagCta": "Quitar aviso de reportes",
     "removeCta": "Retirar tienda",
     "toasts": {
       "approved": "Tienda aprobada.",

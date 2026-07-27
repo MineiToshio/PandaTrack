@@ -237,8 +237,8 @@
   "moderation": {
     "panelTitle": "Moderation",
     "approveCta": "Approve store",
-    "flagCta": "Flag with reports",
-    "unflagCta": "Remove reports flag",
+    "flagCta": "Flag with reports warning",
+    "unflagCta": "Remove reports warning",
     "removeCta": "Remove store",
     "toasts": {
       "approved": "Store approved.",

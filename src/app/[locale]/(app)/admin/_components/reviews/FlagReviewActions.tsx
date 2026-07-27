@@ -18,8 +18,8 @@ type FlagReviewActionsProps = {
 
 /**
  * Suggested-removal (flag candidate) review actions. The flag control is a toggle keyed on the store's
- * current status: a `FLAGGED` store offers "Quitar marca" (unflag), any other status offers "Marcar"
- * (flag). Removal always goes through the shared modal.
+ * current status: a `FLAGGED` store offers the unflag action, any other status offers the flag action.
+ * Removal always goes through the shared modal.
  */
 export default function FlagReviewActions({ slug, storeName, locale, status }: FlagReviewActionsProps) {
   const t = useTranslations("admin.review");

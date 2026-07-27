@@ -316,9 +316,9 @@ rather than a new slot above Resumen, because the aside slot order is inviolable
 [ADR 0003 · Decision 7](../../../design/decisions/0003-demo-decisions.md):
 
 - On a `PENDING` store: **"Aprobar tienda"** (primary, `check-circle`) → `APPROVED`;
-  **"Marcar con reportes"** (ghost, `flag`) → `FLAGGED`; **"Retirar tienda"**
+  **"Marcar con aviso de reportes"** (ghost, `flag`) → `FLAGGED`; **"Retirar tienda"**
   (destructive-ghost, `ban`) → opens the removal modal.
-- On a `FLAGGED` store: **"Quitar marca de reportes"** (primary, `shield-check`) → prior public
+- On a `FLAGGED` store: **"Quitar aviso de reportes"** (primary, `shield-check`) → prior public
   state; **"Ver reportes"** (ghost) → governance panel; **"Retirar tienda"** (destructive-ghost).
   A stronger `store-banner warning` sits before the hero and the hero status chip reads
   `chip warning` **"Con reportes"** (`alert-circle`). Flagging never hides the store (BR-04-24).
@@ -671,7 +671,7 @@ the action and its consequence plainly, without alarm or mascot. These belong to
 | ---------------------------------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Softened pending disclaimer (`FR-04-50`) | calm, non-alarmist | `"Tienda en revisión"` · `"Una persona de la comunidad creó esta tienda y el equipo la está revisando. Ya puedes usarla con normalidad; solo no aparece en buscadores hasta que se apruebe."` |
 | Flagged warning (`FR-04-43`)             | firm, not alarmist | `"Tienda con reportes"` · `"Esta tienda acumula reportes con credibilidad. Sigue visible, pero revisa la información con atención antes de operar."`                                          |
-| Moderation actions                       | operational        | `"Aprobar tienda"` · `"Marcar con reportes"` · `"Quitar marca de reportes"` · `"Retirar tienda"`                                                                                              |
+| Moderation actions                       | operational        | `"Aprobar tienda"` · `"Marcar con aviso de reportes"` · `"Quitar aviso de reportes"` · `"Retirar tienda"`                                                                                     |
 | Removal modal                            | plain, factual     | `"Retirar tienda"` · `"Elige el motivo. La tienda deja de ser pública, pero los pedidos que la referencian se conservan."`                                                                    |
 | Removal reasons                          | neutral vs sanción | neutral: `"Tienda duplicada"` · `"Tienda cerrada o inactiva"` · `"Información falsa o engañosa"`; sanción: `"Abuso, estafa o fraude"`                                                         |
 | Order tombstone (`FR-04-42`)             | neutral by default | `"Esta tienda ya no está disponible"` (sanction wording only for the abuse category)                                                                                                          |

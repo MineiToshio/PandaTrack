@@ -55,6 +55,7 @@
     "storeStatus": {
       "PENDING": "En revisión",
       "APPROVED": "Aprobada",
+      "REJECTED": "Rechazada",
       "FLAGGED": "Marcada"
     },
     "reportReason": {
@@ -88,8 +89,8 @@
     "flag": {
       "sectionReports": "Reportes acumulados",
       "hint": "Marcar mantiene la tienda visible con una advertencia más fuerte; retirar la excluye de las superficies públicas.",
-      "flag": "Marcar",
-      "unflag": "Quitar marca",
+      "flag": "Marcar con aviso de reportes",
+      "unflag": "Quitar aviso de reportes",
       "remove": "Retirar"
     },
     "change": {
