@@ -201,13 +201,14 @@ For detail-page hero headers, never place three standalone buttons side by side:
 - Move contextual navigation (e.g. "View store") into `More` rather than adding a third visible button.
 - Applies across mobile and desktop; wrapping to a second line does not justify three visible hero buttons.
 
-### Sizing, icon buttons, FAB
+### Sizing and icon buttons
 
 - Comfortable tap targets (≥ 44×44 on mobile at `md`/`lg`); controls must not feel cramped.
 - Button text reads as an action, not as metadata.
 - **Never break a button label onto a newline.** Keep labels on one line.
 - Icon-only buttons require an accessible label.
-- A floating action button (FAB), when used, follows the layout tokens; do not hand-roll its size.
+
+**No floating action button.** The app shell does not mount a FAB, and no screen should reintroduce one. The mobile primary CTA lives in each screen's **sticky bottom action bar** — see the _Sticky bottom action bar (mobile)_ rules under [Secondary actions on tinted panels](#secondary-actions-on-tinted-panels-mobile-detail-adr-0011). A labeled, state-aware bar keeps the primary action consistent with the desktop hierarchy instead of floating an unlabeled icon over the content.
 
 ### Form controls
 

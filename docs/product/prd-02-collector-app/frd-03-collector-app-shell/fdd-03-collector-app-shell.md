@@ -174,8 +174,10 @@ BR-03-05). The drawer is a **fixed-position overlay dialog** (`role="dialog"`,
 
 > **Removed during the redesign (do not reintroduce):** the 4-tab `MobileTabBar` (its token
 > `--mobile-tab-bar-h` and `mobileTabBar.*` i18n keys were dropped — S5.2), and the floating
-> action button (`FAB`) + idle `MascotBubble` (the component files survive but the shell no
-> longer mounts them). The burger drawer is the sole primary mobile navigation.
+> action button (`FAB`) + idle `MascotBubble`. The `FAB` component and its route-to-action
+> helper have since been deleted, along with the `--fab-size` / `--fab-offset` / `--z-fab`
+> tokens; the `MascotBubble` component file survives but the shell no longer mounts it. The
+> burger drawer is the sole primary mobile navigation.
 
 ---
 
@@ -243,8 +245,10 @@ components**; it must not fork or reinvent any of them.
 | `LangToggle`       | core   | `es` / `en` switch in the top bar                                                                                                          |
 | `AppPageHero`      | module | Private-app page intro header, rendered by the workspaces _inside_ the content frame (not by the shell)                                    |
 
-> **Not consumed by the shell (intentionally):** `FAB` and `MobileTabBar` — see the removed
-> list in §2.4. They remain in the catalog but the app layout no longer mounts them.
+> **Deleted, not merely unmounted:** `FAB` and `MobileTabBar` — see the removed list in §2.4.
+> Neither component exists in the repo any more, and neither appears in the component catalog.
+> Do not reintroduce either one; the mobile primary CTA belongs in the screen's sticky action
+> bar and primary mobile navigation belongs in the burger drawer.
 
 The cross-app redesign patterns the shell **hosts but does not own** — the adaptive `Modal`,
 the single-primary sticky action bar, and the Chip-Eyebrow + Top-Accent section card — belong

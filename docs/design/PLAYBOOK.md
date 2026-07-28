@@ -216,7 +216,7 @@ Componente canónico cross-app para navegación "Volver" / "Atrás". Vive típic
 
 ### Layout magic numbers
 
-Sidebar widths, header height, drawer widths, FAB size — todos como tokens (`--sidebar-w-expanded`, `--header-h`, `--drawer-w`, etc.). **Cero literales** `240px`, `64px`, `440px`.
+Sidebar widths, header height, drawer widths — todos como tokens (`--sidebar-w-expanded`, `--header-h`, `--drawer-w`, etc.). **Cero literales** `240px`, `64px`, `440px`.
 
 ### Fechas de dominio (display UTC) — L076
 

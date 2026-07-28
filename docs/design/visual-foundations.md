@@ -272,8 +272,6 @@ These are shell contracts, not spacing. No component declares a literal `240px`,
 | `--toast-max-w`           | 352   | Single-toast max width.                                                |
 | `--container-max-w`       | 1280  | Admin page max width.                                                  |
 | `--container-max-w-prose` | 672   | Prose / reading max width.                                             |
-| `--fab-size`              | 56    | FAB diameter (mobile).                                                 |
-| `--fab-offset`            | 16    | FAB offset from the viewport edge.                                     |
 
 ## Border Radius
 
@@ -294,7 +292,7 @@ Per-component assignment:
 | Component                                                 | Token                                                                        |
 | --------------------------------------------------------- | ---------------------------------------------------------------------------- |
 | input, button                                             | `--radius-md`                                                                |
-| icon button, chip / badge, FAB, mobile avatar             | `--radius-pill`                                                              |
+| icon button, chip / badge, mobile avatar                  | `--radius-pill`                                                              |
 | list card, sub-card inside section, toast, popover / menu | `--radius-lg`                                                                |
 | section card (form), centered modal, command palette      | `--radius-xl`                                                                |
 | desktop avatar                                            | `--radius-lg`                                                                |
@@ -331,15 +329,15 @@ Each dark elevation is an inset highlight plus a border ring, with `--elevation-
 
 ### Per-component elevation
 
-| Component                                                                      | Elevation                               |
-| ------------------------------------------------------------------------------ | --------------------------------------- |
-| List card                                                                      | `1`                                     |
-| Row hover                                                                      | `0` (uses a state layer, does not lift) |
-| Section card (form), popover / dropdown, right drawer, neutral-undo toast, FAB | `2`                                     |
-| Mascot bubble                                                                  | `3`                                     |
-| Centered modal (desktop)                                                       | `--modal-shadow` (bespoke, see below)   |
-| Achievement toast                                                              | `3` + achievement halo (composition)    |
-| Command palette                                                                | `4`                                     |
+| Component                                                                 | Elevation                               |
+| ------------------------------------------------------------------------- | --------------------------------------- |
+| List card                                                                 | `1`                                     |
+| Row hover                                                                 | `0` (uses a state layer, does not lift) |
+| Section card (form), popover / dropdown, right drawer, neutral-undo toast | `2`                                     |
+| Mascot bubble                                                             | `3`                                     |
+| Centered modal (desktop)                                                  | `--modal-shadow` (bespoke, see below)   |
+| Achievement toast                                                         | `3` + achievement halo (composition)    |
+| Command palette                                                           | `4`                                     |
 
 The achievement halo is an ad-hoc composition over `--elevation-3` (a warm ring + warm wide glow built from `--accent-warm`), not a reusable token.
 
@@ -369,7 +367,7 @@ The authenticated app may apply a **very soft vertical wash** to the root canvas
 
 These foundation tokens exist and are normative, but their detail is owned by adjacent documents so this file stays focused on the visual language:
 
-- **Z-index** — the stacking scale (`--z-sticky`, `--z-sidebar`, `--z-header`, `--z-mascot`, `--z-popover`, `--z-drawer`, `--z-sheet`, `--z-modal-backdrop`, `--z-modal`, `--z-toast`, `--z-command`, `--z-tooltip`, `--z-fab`) is declared in [`tokens-css.md`](tokens-css.md). Always use a token; never a literal `z-index` value.
+- **Z-index** — the stacking scale (`--z-sticky`, `--z-sidebar`, `--z-header`, `--z-mascot`, `--z-popover`, `--z-drawer`, `--z-sheet`, `--z-modal-backdrop`, `--z-modal`, `--z-toast`, `--z-command`, `--z-tooltip`) is declared in [`tokens-css.md`](tokens-css.md). Always use a token; never a literal `z-index` value.
 - **Breakpoints** — the breakpoint tokens (`--breakpoint-xs` … `--breakpoint-2xl`, with PandaTrack's extra `xs` at 360px) live in [`tokens-css.md`](tokens-css.md); the mobile cutoff (`< md` mobile, `≥ md` desktop) and the responsive rules that consume them are in [`interface-patterns.md`](interface-patterns.md).
 - **Motion** — durations, easings, the transform/opacity rule, reduced-motion policy, and View Transitions are owned by [`motion.md`](motion.md). Their literal CSS values are in [`tokens-css.md`](tokens-css.md).
 

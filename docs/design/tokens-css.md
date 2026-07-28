@@ -121,8 +121,6 @@ owner: Sergio Minei
   --toast-max-w: 22rem;
   --container-max-w: 80rem;
   --container-max-w-prose: 42rem;
-  --fab-size: 3.5rem;
-  --fab-offset: 1rem;
 
   /* ─── Radius ─── */
   --radius-xs: 0.25rem;
@@ -148,7 +146,6 @@ owner: Sergio Minei
   --z-sidebar: 20;
   --z-header: 30;
   --z-mascot: 35;
-  --z-fab: 38;
   --z-popover: 40;
   --z-drawer: 50;
   --z-sheet: 60;
