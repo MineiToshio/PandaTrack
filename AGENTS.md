@@ -65,6 +65,7 @@ Product architecture:
 - Keep all code identifiers, comments, logs, and developer-facing strings in English.
 - Never hardcode user-facing copy in components.
 - Put locale-dependent content in `src/i18n/locales/{locale}/*.json`.
+- Never use the em dash (`—`) in user-facing copy (any locale, marketing or in-app, including hardcoded labels). Use a comma, colon, period, parentheses, or the `·` separator. The only exception is a standalone `—` used as a null/empty placeholder. Enforced by `src/test/em-dash-copy-guard.test.ts`; see `docs/design/ux-copy.md` §4 and `.agents/rules/role-copywriting-marketing.mdc`.
 - Do not reference planning artifacts in source comments (no `FEAT-*`, `epic`, `slice`, ticket IDs, or issue URLs in code comments/JSDoc).
 
 ### React and Next.js
@@ -199,6 +200,7 @@ If a command cannot be run, state it explicitly and why.
 ## 10) Anti-patterns to avoid
 
 - Hardcoded user-facing strings in TS/TSX
+- Em dash (`—`) in user-facing copy (use `,` `:` `.` `(...)` or `·`; the sole exception is a standalone `—` null placeholder)
 - Theme-blind colors (`#fff`, `text-white`, etc.) in app UI
 - Prisma calls directly from React components
 - Repeated inline PostHog event strings

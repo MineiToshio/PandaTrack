@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/styles";
 import { useId, useRef } from "react";
 
@@ -8,6 +9,12 @@ export type RadioOption<T extends string = string> = {
   label: string;
   description?: string;
   disabled?: boolean;
+  /**
+   * Visual weight for an option that represents a heavier / irreversible choice (e.g. deleting
+   * data). Adds a warning icon next to the label and tints the label + selected circle with the
+   * destructive color. Opt-in per option; omitting it keeps the default neutral/accent look.
+   */
+  tone?: "destructive";
 };
 
 export type RadioSize = "sm" | "md";
@@ -127,7 +134,9 @@ export default function Radio<T extends string = string>({
                     "[transition-duration:var(--motion-fast)] [transition-timing-function:var(--ease-emphasis)]",
                     circle,
                     isChecked && !isDisabled
-                      ? "[background:color-mix(in_oklch,var(--accent)_10%,var(--surface))] [border:1.5px_solid_var(--accent)]"
+                      ? option.tone === "destructive"
+                        ? "[background:color-mix(in_oklch,var(--destructive)_10%,var(--surface))] [border:1.5px_solid_var(--destructive)]"
+                        : "[background:color-mix(in_oklch,var(--accent)_10%,var(--surface))] [border:1.5px_solid_var(--accent)]"
                       : "[background:transparent] [border:1.5px_solid_var(--border-strong)]",
                     isDisabled && "[border-color:var(--text-muted)]",
                   )}
@@ -139,7 +148,11 @@ export default function Radio<T extends string = string>({
                         "rounded-[var(--radius-pill)]",
                         "animate-check-zoom",
                         dot,
-                        isDisabled ? "[background:var(--text-muted)]" : "[background:var(--accent)]",
+                        isDisabled
+                          ? "[background:var(--text-muted)]"
+                          : option.tone === "destructive"
+                            ? "[background:var(--destructive)]"
+                            : "[background:var(--accent)]",
                       )}
                     />
                   )}
@@ -149,10 +162,17 @@ export default function Radio<T extends string = string>({
                 <span
                   className={cn(
                     text,
-                    "[font-family:var(--font-sans)] [color:var(--text-primary)]",
-                    isDisabled && "[color:var(--text-muted)]",
+                    "inline-flex items-center gap-1.5 [font-family:var(--font-sans)]",
+                    isDisabled
+                      ? "[color:var(--text-muted)]"
+                      : option.tone === "destructive"
+                        ? "[color:var(--destructive)]"
+                        : "[color:var(--text-primary)]",
                   )}
                 >
+                  {option.tone === "destructive" && !isDisabled && (
+                    <AlertTriangle aria-hidden="true" className="size-3.5 shrink-0" />
+                  )}
                   {option.label}
                 </span>
                 {option.description && (

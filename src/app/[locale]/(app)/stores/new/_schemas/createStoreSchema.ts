@@ -8,7 +8,7 @@ const MAX_CONTACT_CHANNELS = 50;
 const MAX_ADDRESSES = 50;
 const MAX_IMPORT_COUNTRIES = 300;
 
-const storeTypeEnum = z.enum(["BUSINESS", "PERSON"]);
+const sellerTypeEnum = z.enum(["RETAILER", "PERSON", "PROXY"]);
 const presenceTypeEnum = z.enum(["ONLINE", "PHYSICAL"]);
 const contactChannelTypeEnum = z.enum([
   "INSTAGRAM",
@@ -144,10 +144,12 @@ const addressSchema = z.object({
 export const createStoreShape = {
   name: z.string().min(1, "nameRequired").max(200, "nameTooLong").trim(),
   description: z.string().max(2000).trim().optional().nullable(),
-  storeType: storeTypeEnum,
+  sellerType: sellerTypeEnum,
   countryCode: z.string().length(2, "countryInvalid").toUpperCase(),
   presenceTypes: z.array(presenceTypeEnum).min(1, "presenceRequired").max(MAX_PRESENCE_TYPES),
-  productTypeKeys: z.array(z.string().min(1)).min(1, "productTypeRequired").max(MAX_PRODUCT_TYPE_KEYS),
+  // A PROXY has no catalog of its own, so at least one product type is required only for the other seller types
+  // (enforced in `refineProductTypesForCatalogSellers`).
+  productTypeKeys: z.array(z.string().min(1)).max(MAX_PRODUCT_TYPE_KEYS).optional().default([]),
   hasStock: z.boolean().optional().nullable(),
   receivesOrders: z.boolean().optional().nullable(),
   isPrivate: z.boolean().optional().default(false),
@@ -159,12 +161,14 @@ export const createStoreShape = {
 
 const createStoreBaseSchema = z.object(createStoreShape);
 
+type SellerTypeValue = "RETAILER" | "PERSON" | "PROXY";
+
 /** Refinement enforcing, per ADR 0009, that `isPrivate` is only valid for PERSON. */
 export const refinePrivateOnlyPerson = (
-  input: { isPrivate?: boolean | null; storeType: "BUSINESS" | "PERSON" },
+  input: { isPrivate?: boolean | null; sellerType: SellerTypeValue },
   ctx: z.RefinementCtx,
 ) => {
-  if (input.isPrivate && input.storeType !== "PERSON") {
+  if (input.isPrivate && input.sellerType !== "PERSON") {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["isPrivate"],
@@ -173,6 +177,25 @@ export const refinePrivateOnlyPerson = (
   }
 };
 
-export const createStoreSchema = createStoreBaseSchema.superRefine(refinePrivateOnlyPerson);
+/**
+ * Refinement enforcing that at least one product type is provided for sellers that own a catalog
+ * (RETAILER and PERSON). A PROXY is an intermediary with no catalog, so it may save with none.
+ */
+export const refineProductTypesForCatalogSellers = (
+  input: { sellerType: SellerTypeValue; productTypeKeys?: string[] },
+  ctx: z.RefinementCtx,
+) => {
+  if (input.sellerType !== "PROXY" && (input.productTypeKeys?.length ?? 0) === 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["productTypeKeys"],
+      message: "productTypeRequired",
+    });
+  }
+};
+
+export const createStoreSchema = createStoreBaseSchema
+  .superRefine(refinePrivateOnlyPerson)
+  .superRefine(refineProductTypesForCatalogSellers);
 
 export type CreateStoreInput = z.infer<typeof createStoreSchema>;

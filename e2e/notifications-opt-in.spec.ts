@@ -82,6 +82,7 @@ test.describe("Notifications opt-in", () => {
     await expect(paymentToggle).toBeEnabled();
     await expect(page.getByRole("switch", { name: /upcoming arrival|llegada próxima/i })).toBeEnabled();
     await expect(page.getByRole("switch", { name: /overdue arrival|llegada atrasada/i })).toBeEnabled();
+    await expect(page.getByRole("switch", { name: /store rejected|tienda rechazada/i })).toBeEnabled();
 
     // The test-send action only appears once the channel is active.
     await expect(page.getByRole("button", { name: /send test|enviar prueba/i })).toBeVisible();

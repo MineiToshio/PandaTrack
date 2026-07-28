@@ -30,9 +30,13 @@ export function validateIdentityStep(values: {
 export function validateCatalogStep(values: {
   productTypeKeys: string[];
   presenceTypes: string[];
+  /** PROXY sellers have no catalog, so at least one product type is not required for them. Defaults to true. */
+  requireProductTypes?: boolean;
 }): StoreFormClientErrors {
   const errors: StoreFormClientErrors = {};
-  if (values.productTypeKeys.length === 0) errors.productTypeKeys = "productTypeRequired";
+  if ((values.requireProductTypes ?? true) && values.productTypeKeys.length === 0) {
+    errors.productTypeKeys = "productTypeRequired";
+  }
   if (values.presenceTypes.length === 0) errors.presenceTypes = "presenceRequired";
   return errors;
 }

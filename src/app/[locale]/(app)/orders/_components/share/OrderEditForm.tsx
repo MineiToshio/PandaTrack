@@ -23,6 +23,7 @@ import Input from "@/components/core/Input";
 import { Modal } from "@/components/modules/Modal";
 import { AsideSummary, AsideSummaryRow } from "@/components/modules/AsideSummary";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useStoreProductTypeName } from "@/app/[locale]/(app)/_components/StoreProductTypeNamesProvider";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { formatAmount, formatCentsForInput } from "@/lib/currency";
 import { utcDomainDateToLocal } from "@/lib/domainDate";
@@ -110,7 +111,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
   const tCreate = useTranslations("orders.create");
   const tForm = useTranslations("orders.form");
   const tCurrencies = useTranslations("orders.currencies");
-  const tProductTypes = useTranslations("storeProductTypes");
+  const productTypeName = useStoreProductTypeName();
   const locale = useLocale();
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -199,7 +200,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
   const [state, formAction, isPending] = useActionState(action, null);
 
   const currencyCode = initialOrder.currencyCode;
-  const currencyLabel = `${currencyCode} — ${tCurrencies(currencyCode as never)}`;
+  const currencyLabel = `${currencyCode} · ${tCurrencies(currencyCode as never)}`;
   const showExchangeRate = baseCurrencyCode !== null && currencyCode !== "" && currencyCode !== baseCurrencyCode;
 
   // Per-field dirty flags — drive both the `isDirty` aggregate (to enable Save) and the
@@ -612,7 +613,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
                     onChange={setItems}
                     currencyCode={currencyCode}
                     productTypeKeys={productTypeKeys}
-                    tProductTypes={(key) => tProductTypes(key as never)}
+                    tProductTypes={productTypeName}
                     nextRowId={nextRowId}
                   />
                 ) : (
@@ -621,7 +622,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
                       rows={items}
                       onChange={setItems}
                       productTypeKeys={productTypeKeys}
-                      tProductTypes={(key) => tProductTypes(key as never)}
+                      tProductTypes={productTypeName}
                       itemErrors={itemErrors}
                       createNewRow={() => createEmptyRow(nextRowId())}
                       currencyCode={currencyCode || undefined}

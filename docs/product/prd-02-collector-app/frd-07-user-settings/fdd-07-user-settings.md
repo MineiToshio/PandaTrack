@@ -5,7 +5,7 @@ slug: user-settings
 title: User Settings — Feature Design Document
 status: ACTIVE
 parent: FRD-07
-last_updated: 2026-06-16
+last_updated: 2026-07-20
 prototype: ./prototype/user-settings.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -18,14 +18,12 @@ demo_anchors:
   - "#s8-settings-modal-avatar-remove"
   - "#s8-settings-modal-email"
   - "#s8-settings-modal-password"
-  - "#s8-settings-modal-currency"
   - "#s8-settings-profile-mobile"
   - "#s8-settings-account-mobile"
   - "#s8-settings-preferences-mobile"
   - "#s8-settings-username-sheet-mobile"
   - "#s8-settings-displayname-sheet-mobile"
   - "#s8-settings-avatar-sheet-mobile"
-  - "#s8-settings-currency-sheet-mobile"
 ---
 
 # FDD-07 · User Settings — Feature Design Document
@@ -68,9 +66,12 @@ Two design constraints define the feature:
    tabs on desktop** and a **sticky segmented control on mobile** — in-page panes, never
    separate routes. The intent (a single settings surface, no deep navigation) is preserved.
 2. **Sensitive edits are isolated into modals, not bundled into a form save** (`BR-07-13`).
-   Every consequential change — username (rate-limited), display name, avatar, email,
-   password, base currency — opens its own focused overlay; the page body never carries a
-   single "Save profile" button that mixes safe and unsafe writes.
+   Every consequential identity/credential change — username (rate-limited), display name,
+   avatar, email, password — opens its own focused overlay; the page body never carries a
+   single "Save profile" button that mixes safe and unsafe writes. The **base-currency change**
+   is the one preference that also demands confirmation, but it is handled **inline** — an
+   explicit `"Guardar"` / `"Cancelar"` confirm on the Preferences pane's select, not a modal
+   (see §2.5).
 
 Settings is also the **origin of the Chip-Eyebrow + Top-Accent section-header pattern**
 (now [interface-patterns.md §7](../../../design/interface-patterns.md)): every section card
@@ -91,14 +92,12 @@ and icon before reading any label.
 | 7   | Modal · remove avatar        | (settings overlay)   | `#s8-settings-modal-avatar-remove`      |
 | 8   | Modal · change email         | (settings overlay)   | `#s8-settings-modal-email`              |
 | 9   | Modal · change password      | (settings overlay)   | `#s8-settings-modal-password`           |
-| 10  | Modal · change base currency | (settings overlay)   | `#s8-settings-modal-currency`           |
-| 11  | Mobile · Profile pane        | `/{locale}/settings` | `#s8-settings-profile-mobile`           |
-| 12  | Mobile · Account pane        | `/{locale}/settings` | `#s8-settings-account-mobile`           |
-| 13  | Mobile · Preferences pane    | `/{locale}/settings` | `#s8-settings-preferences-mobile`       |
-| 14  | Mobile · username sheet      | (settings overlay)   | `#s8-settings-username-sheet-mobile`    |
-| 15  | Mobile · display-name sheet  | (settings overlay)   | `#s8-settings-displayname-sheet-mobile` |
-| 16  | Mobile · avatar sheet        | (settings overlay)   | `#s8-settings-avatar-sheet-mobile`      |
-| 17  | Mobile · currency sheet      | (settings overlay)   | `#s8-settings-currency-sheet-mobile`    |
+| 10  | Mobile · Profile pane        | `/{locale}/settings` | `#s8-settings-profile-mobile`           |
+| 11  | Mobile · Account pane        | `/{locale}/settings` | `#s8-settings-account-mobile`           |
+| 12  | Mobile · Preferences pane    | `/{locale}/settings` | `#s8-settings-preferences-mobile`       |
+| 13  | Mobile · username sheet      | (settings overlay)   | `#s8-settings-username-sheet-mobile`    |
+| 14  | Mobile · display-name sheet  | (settings overlay)   | `#s8-settings-displayname-sheet-mobile` |
+| 15  | Mobile · avatar sheet        | (settings overlay)   | `#s8-settings-avatar-sheet-mobile`      |
 
 Requirements traced throughout: `FR-07-01 … FR-07-34`, `BR-07-01 … BR-07-18`,
 `AC-07-01 … AC-07-14` (see [`frd-07-user-settings.md`](./frd-07-user-settings.md)). The
@@ -205,9 +204,17 @@ button as workshop residue; the shipped contract is the two-option model in the 
 **Coleccionista** (tone `warm`, eyebrow `heart`, title "País, moneda y categorías" /
 "Cambiar la moneda base no convierte tus datos anteriores."), four rows:
 
-- **País** — `"Argentina · AR"`, inline change (no modal in this release) — `FR-07-21`.
-- **Moneda base** — `"USD · Aplicada a totales y resúmenes."`, `"Cambiar"` → currency modal
-  (the only preference gated behind a confirmation flow — `FR-07-20`, `FR-07-32`).
+- **País** — inline searchable select showing the localized country name (`"🇵🇪 Perú"` in es,
+  `"🇵🇪 Peru"` in en), no modal in this release — `FR-07-21`.
+- **Moneda base** — inline searchable select showing `"CODE — Localized name"` (e.g.
+  `"PEN — Sol peruano"`), searchable by code or name. Unlike the other preferences it is **not**
+  autosaved: changing the selection stages a pending choice and reveals an explicit `"Guardar"` /
+  `"Cancelar"` confirm with a one-line hint ("No convierte tus datos anteriores."); only `"Guardar"`
+  commits (`FR-07-20`, `FR-07-32`). After a commit, when the change left foreign-currency orders with
+  stale rates, a single conditional shortcut — `"Actualizar tasas · {n} pedidos →"` — links into the
+  existing `/orders` FX reconciliation flow; it renders only when `n > 0`. (Replaces the former
+  base-currency modal and its two-path "save without / save and update" footer — the reconcile
+  entry point already lives on `/orders`, so a single save plus a conditional shortcut is enough.)
 - **Categorías favoritas** — `category-chips`: multi-select `cat-chip` toggles (Vinyl / Manga
   / Figuras / Anime / Cards / Plush); active chips take an `--accent` 10% tint. Heading copy
   asks `"¿Qué tipos de productos coleccionás?"` (`FR-07-22`, `FR-07-23`).
@@ -219,8 +226,9 @@ of the Preferences pane; desktop omits it (sign-out lives in the sidebar account
 
 ### 2.6 Modals & sheets
 
-Seven sub-flows, each adaptive (desktop centered dialog `m01b` / mobile bottom sheet
-`s7-mob-sheet`). Anatomy and behavior in §5.4.
+Six sub-flows, each adaptive (desktop centered dialog `m01b` / mobile bottom sheet
+`s7-mob-sheet`). Anatomy and behavior in §5.4. (Base currency is no longer among them — it
+changed to an inline confirm select in the Preferences pane; see the Moneda base row above.)
 
 ---
 
@@ -233,17 +241,17 @@ definitions live in [visual-foundations.md](../../../design/visual-foundations.m
 
 ### 3.1 Color roles
 
-| Role in this FRD                             | Token / class                                    | Where                                                  |
-| -------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------ |
-| Active tab / segmented button / primary CTA  | `--accent`                                       | SettingsNav active tab, segmented, modal CTAs          |
-| Perfil section identity                      | `s8-card-accent` + `s8-eyebrow-chip`             | Profile card top-accent + eyebrow                      |
-| Cuenta / Interfaz section identity           | `s8-card-cool` + `s8-eyebrow-chip tone-cool`     | Account & Interface cards                              |
-| Coleccionista section identity               | `s8-card-warm` + `s8-eyebrow-chip tone-warm`     | Collector card                                         |
-| Avatar fallback                              | `linear-gradient(135deg,--accent→--accent-warm)` | `s8-avatar-hero`                                       |
-| Verified email                               | `--success`                                      | `Chip success` "Verificado"                            |
-| Username cooldown / email & currency warning | `--warning`                                      | `s8-cooldown-chip`, `tone-warning` modals, warning box |
-| Remove avatar (destructive)                  | `--destructive`                                  | avatar-remove modal, mobile "Cerrar sesión"            |
-| Active category chip / selected currency row | `color-mix(in oklab, --accent …)`                | `cat-chip.is-active`, `s8-currency-row` selected       |
+| Role in this FRD                              | Token / class                                    | Where                                                  |
+| --------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------ |
+| Active tab / segmented button / primary CTA   | `--accent`                                       | SettingsNav active tab, segmented, modal CTAs          |
+| Perfil section identity                       | `s8-card-accent` + `s8-eyebrow-chip`             | Profile card top-accent + eyebrow                      |
+| Cuenta / Interfaz section identity            | `s8-card-cool` + `s8-eyebrow-chip tone-cool`     | Account & Interface cards                              |
+| Coleccionista section identity                | `s8-card-warm` + `s8-eyebrow-chip tone-warm`     | Collector card                                         |
+| Avatar fallback                               | `linear-gradient(135deg,--accent→--accent-warm)` | `s8-avatar-hero`                                       |
+| Verified email                                | `--success`                                      | `Chip success` "Verificado"                            |
+| Username cooldown / email warning             | `--warning`                                      | `s8-cooldown-chip`, `tone-warning` email modal         |
+| Remove avatar (destructive)                   | `--destructive`                                  | avatar-remove modal, mobile "Cerrar sesión"            |
+| Active category chip / selected select option | `color-mix(in oklab, --accent …)`                | `cat-chip.is-active`, `SearchableSelect` active option |
 
 Status color is **never** carried by color alone: the verified chip is icon + label, the
 cooldown chip is `clock-3` + text ([ADR 0006](../../../design/decisions/0006-color-blindness-icon-label-contract.md)).
@@ -284,19 +292,21 @@ components**; it must not fork or reinvent any of them.
 | `MonoCode`                                             | core   | `@username` identifier                                                                         |
 | `StatusChip`                                           | core   | "Verificado" email chip, per [ADR 0002](../../../design/decisions/0002-status-chip-mapping.md) |
 | `Button`                                               | core   | "Cambiar" ghost, primary / tonal / destructive-ghost CTAs                                      |
-| `Modal` (`ModalDialog` / `ModalSheet`)                 | module | All seven sub-flows — [ADR 0008](../../../design/decisions/0008-modal-enhancement.md)          |
+| `Modal` (`ModalDialog` / `ModalSheet`)                 | module | All six sub-flows — [ADR 0008](../../../design/decisions/0008-modal-enhancement.md)            |
 | `TextField` / `Input` (+ `input-prefix`)               | core   | username (@), display name, email, password, budget                                            |
 | `CooldownChip`                                         | core   | `s8-cooldown-chip` username rate-limit indicator (`FR-07-33`)                                  |
 | `ImageCropper`                                         | module | Avatar upload + circular crop (shared with store logo)                                         |
-| `Select`                                               | core   | budget reset day, currency picker                                                              |
+| `Select`                                               | core   | budget reset day                                                                               |
+| `SearchableSelect`                                     | core   | inline country + base-currency pickers (Preferences pane)                                      |
 | `Checkbox` / chip toggle                               | core   | `cat-chip` category multi-select                                                               |
-| `MobilePicker`                                         | module | mobile avatar / currency picker rows (`s7-mob-picker-row`)                                     |
+| `MobilePicker`                                         | module | mobile avatar picker rows (`s7-mob-picker-row`)                                                |
 | `Toast`                                                | module | confirmed-save feedback (`src/contexts/ToastContext.tsx`)                                      |
 
 New data needs (Phase B, not design): `updateUsername` (rate-limited), `updateDisplayName`,
 avatar upload/remove (R2), `changeEmail`, `setPassword` / `changePassword`,
-`updateCurrency({ saveFxRates })`, and autosaving preference actions (country, categories,
-budget). These are implementation contracts, not design surfaces.
+`updateCurrency({ baseCurrencyCode })` (returns the count of orders still needing FX
+reconciliation), and autosaving preference actions (country, categories, budget). These are
+implementation contracts, not design surfaces.
 
 ---
 
@@ -351,7 +361,6 @@ the same flows as `s7-mob-sheet` (handle + scrollable body + footer, `s7-mob-bac
 | Avatar remove (`…-avatar-remove`) | `tone-destructive` | explains the exact image cannot be restored and the initial fallback returns (`FR-07-12`, ADR 0012)             | `"Eliminar foto"` (destructive)                                                      |
 | Email (`…-modal-email`)           | `tone-warning`     | new email + **current password** field; explains verification restarts (`FR-07-16`)                             | `"Cambiar email"`                                                                    |
 | Password (`…-modal-password`)     | `tone-default`     | current + new + confirm; **inline strength meter + rule checklist** (length/upper/number)                       | `"Guardar contraseña"`                                                               |
-| Currency (`…-modal-currency`)     | `tone-warning`     | currency picker + warning box (does **not** convert historical data) — see §5.6                                 | two-path footer (§5.6)                                                               |
 
 > Prototype honesty: the avatar modal currently renders the empty dropzone with a disabled
 > `"Recortar y confirmar"` button (the circular `ImageCropper` step is described here but not
@@ -376,19 +385,23 @@ Behavior follows the `optimistic-client-updates.mdc` policy and
 - **Pane switch** cross-fades 150ms; modal enter is scale 0.96→1 + backdrop fade; all
   respect `prefers-reduced-motion`.
 
-### 5.6 Currency two-path flow (`FR-07-32`)
+### 5.6 Base-currency inline confirm (`FR-07-20` / `FR-07-32`)
 
-Changing the base currency does **not** convert historical data, so the flow forces an
-explicit choice. Both surfaces carry the warning box `"Cambiar la moneda base no convierte
-tus pedidos anteriores. Los totales históricos seguirán en su moneda original hasta que los
-actualicés manualmente."` and two save paths backed by `updateCurrency({ saveFxRates })`:
+Changing the base currency does **not** convert historical data, so — unlike the other
+preferences — it is **not autosaved**. It is an inline explicit-confirm control on the
+Preferences pane (no modal, no separate sheet; the same on desktop and mobile):
 
-- **Desktop** (`#s8-settings-modal-currency`, `tone-warning`): a 3-button horizontal footer —
-  `"Cancelar"` (ghost) · `"Guardar sin actualizar"` (tonal, Path B) · `"Guardar y
-actualizar"` (primary, `refresh-cw`, Path A).
-- **Mobile** (`#s8-settings-currency-sheet-mobile`, max-height 88svh): a vertical footer
-  with the primary action on top — `"Guardar y actualizar tipos de cambio"` (full-width
-  primary) then `"Guardar sin actualizar"` (full-width ghost).
+- Picking a new value in the base-currency `SearchableSelect` **stages a pending choice** and
+  reveals a `"Guardar"` / `"Cancelar"` confirm row with a one-line hint
+  `"No convierte tus datos anteriores."`. `"Cancelar"` discards the pending value; only
+  `"Guardar"` commits it via `updateCurrencyAction({ baseCurrencyCode })`, which persists the new
+  base **and** flags stale-rate orders in the same transaction (see §2.5 and `FR-07-32`).
+- The commit **never mutates any order's exchange rate** — it only sets the reconcile flag. On
+  success the action returns the count of foreign-currency orders still needing a rate. When that
+  count is `> 0`, the row swaps the confirm for a single conditional shortcut
+  `"Actualizar tasas · {n} pedidos →"` linking into the existing `/orders` FX reconciliation flow;
+  it renders only when `n > 0` and forces no navigation. (Replaces the former base-currency modal
+  and its two-path "save without / save and update" footer.)
 
 ---
 
@@ -400,24 +413,24 @@ keeps the canonical glossary (`tienda ↔ store`, `pedido ↔ order`) — see
 
 Key strings (es), by surface and tone:
 
-| Surface                 | Tone              | String                                                                                                                                                      |
-| ----------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Page title              | neutral           | `"Ajustes"`                                                                                                                                                 |
-| Tabs                    | neutral           | `"Perfil"` · `"Cuenta"` · `"Preferencias"`                                                                                                                  |
-| Profile card            | warm-possessive   | `"Tu identidad pública"` / `"Así te ven los demás en la app."`                                                                                              |
-| Username cooldown chip  | considerate       | `"Próximo cambio en {days} días."`                                                                                                                          |
-| Username modal subtitle | considerate       | `"El cambio es posible cada 7 días · quedan {days} días"`                                                                                                   |
-| Username modal chip     | concrete          | `"Próximo cambio: {date}"`                                                                                                                                  |
-| Account card            | reassuring        | `"Email, contraseña y acceso"` / `"Los cambios sensibles requieren tu contraseña actual."`                                                                  |
-| Email verified          | factual           | `"Verificado"`                                                                                                                                              |
-| Avatar dropzone         | inviting          | `"Arrastrá una imagen aquí o buscá en tu dispositivo"` · `"PNG · JPG · WebP · máx 5 MB"`                                                                    |
-| Interface card          | quiet             | `"Tema e idioma"` / `"Los cambios son inmediatos."`                                                                                                         |
-| Collector card          | helpful           | `"País, moneda y categorías"` / `"Cambiar la moneda base no convierte tus datos anteriores."`                                                               |
-| Categories prompt       | conversational    | `"¿Qué tipos de productos coleccionás?"`                                                                                                                    |
-| Currency warning        | cautionary        | `"Cambiar la moneda base no convierte tus pedidos anteriores. Los totales históricos seguirán en su moneda original hasta que los actualicés manualmente."` |
-| Currency save (Path A)  | active            | `"Guardar y actualizar tipos de cambio"`                                                                                                                    |
-| Currency save (Path B)  | neutral           | `"Guardar sin actualizar"`                                                                                                                                  |
-| Sign out (mobile)       | quiet-destructive | `"Cerrar sesión"`                                                                                                                                           |
+| Surface                   | Tone              | String                                                                                        |
+| ------------------------- | ----------------- | --------------------------------------------------------------------------------------------- |
+| Page title                | neutral           | `"Ajustes"`                                                                                   |
+| Tabs                      | neutral           | `"Perfil"` · `"Cuenta"` · `"Preferencias"`                                                    |
+| Profile card              | warm-possessive   | `"Tu identidad pública"` / `"Así te ven los demás en la app."`                                |
+| Username cooldown chip    | considerate       | `"Próximo cambio en {days} días."`                                                            |
+| Username modal subtitle   | considerate       | `"El cambio es posible cada 7 días · quedan {days} días"`                                     |
+| Username modal chip       | concrete          | `"Próximo cambio: {date}"`                                                                    |
+| Account card              | reassuring        | `"Email, contraseña y acceso"` / `"Los cambios sensibles requieren tu contraseña actual."`    |
+| Email verified            | factual           | `"Verificado"`                                                                                |
+| Avatar dropzone           | inviting          | `"Arrastrá una imagen aquí o buscá en tu dispositivo"` · `"PNG · JPG · WebP · máx 5 MB"`      |
+| Interface card            | quiet             | `"Tema e idioma"` / `"Los cambios son inmediatos."`                                           |
+| Collector card            | helpful           | `"País, moneda y categorías"` / `"Cambiar la moneda base no convierte tus datos anteriores."` |
+| Categories prompt         | conversational    | `"¿Qué tipos de productos coleccionás?"`                                                      |
+| Currency confirm hint     | cautionary        | `"No convierte tus datos anteriores."`                                                        |
+| Currency confirm / cancel | active / neutral  | `"Guardar"` · `"Cancelar"`                                                                    |
+| Currency reconcile link   | active            | `"Actualizar tasas · {n} pedidos →"` (conditional, `n > 0`)                                   |
+| Sign out (mobile)         | quiet-destructive | `"Cerrar sesión"`                                                                             |
 
 Tone rule for this FRD: settings is a **utility surface** — no mascot in confirmations or
 errors (decálogo #6); copy stays plain and conversational, and the voseo register (`actualicés`,
@@ -439,8 +452,9 @@ Mobile-first; desktop is extra room (decálogo #10). Breakpoint behavior is the 
   Collector controls unchanged; the Preferences pane gains the full-width `"Cerrar sesión"`
   ghost-destructive button at its foot.
 - **Modals → sheets**: all sub-flows render as `s7-mob-sheet` (vaul) on mobile — username,
-  display-name, avatar (with `s7-mob-picker-row` actions subir / eliminar), and currency
-  (`#s8-settings-currency-sheet-mobile`, vertical two-path footer, primary first).
+  display-name, and avatar (with `s7-mob-picker-row` actions subir / eliminar). Base currency
+  is **not** a sheet — it is the inline confirm select from the Preferences pane (see the
+  Moneda base row and §5.6), so it reads identically on mobile and desktop.
 - **Touch targets**: sheet footer buttons keep `min-height: 44px`.
 
 ---
@@ -473,8 +487,9 @@ specifically here:
 ## 9. Sources & provenance
 
 - **Pixel truth**: [`./prototype/user-settings.html`](./prototype/user-settings.html)
-  (self-contained; opens standalone in light + dark; default palette Velvet). Enumerated
-  S15: 17 sections (3 desktop panes, 7 desktop modals, 3 mobile panes, 4 mobile sheets).
+  (self-contained; opens standalone in light + dark; default palette Velvet). 15 sections
+  (3 desktop panes, 6 desktop modals, 3 mobile panes, 3 mobile sheets); base currency is an
+  inline confirm select in the Preferences panes, not a modal or sheet.
 - **System rules**: [`docs/design/`](../../../design/README.md) — visual-foundations,
   tokens-css, interface-patterns (§7 Chip-Eyebrow + Top-Accent), components, motion, states,
   ux-copy, and ADRs 0001/0002/0003/0006/0007/0008/0012/0013.

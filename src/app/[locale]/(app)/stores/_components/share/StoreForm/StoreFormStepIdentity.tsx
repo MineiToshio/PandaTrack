@@ -21,12 +21,12 @@ import CollectorCountryFlagEmoji from "../CollectorCountryFlagEmoji";
 import DuplicateAlertInline from "../DuplicateAlertInline";
 import StoreLogoField, { type StoreLogoSubmission } from "../StoreLogoField/StoreLogoField";
 import FieldErrorMsg from "./FieldErrorMsg";
-import type { StoreCountryOption, StoreFormFieldErrors, StoreTypeValue } from "./types";
+import type { StoreCountryOption, StoreFormFieldErrors, SellerTypeValue } from "./types";
 
 type StoreFormStepIdentityProps = {
   isEditMode: boolean;
   lockedCaption: string | null;
-  storeType: StoreTypeValue;
+  sellerType: SellerTypeValue;
   nameValue: string;
   onNameChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onNameBlur: () => void;
@@ -50,7 +50,7 @@ type StoreFormStepIdentityProps = {
 export default function StoreFormStepIdentity({
   isEditMode,
   lockedCaption,
-  storeType,
+  sellerType,
   nameValue,
   onNameChange,
   onNameBlur,
@@ -195,7 +195,7 @@ export default function StoreFormStepIdentity({
           </div>
         )}
 
-        {storeType === "BUSINESS" && (
+        {sellerType !== "PERSON" && (
           <div className="md:col-span-2">
             <StoreLogoField
               id="store-logo"

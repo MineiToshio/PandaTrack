@@ -34,7 +34,7 @@ describe("store queries", () => {
       const result = await createStore({
         name: "Integration Test Store",
         description: "For tests",
-        storeType: "BUSINESS",
+        sellerType: "RETAILER",
         countryCode: "ES",
         presenceTypes: ["ONLINE", "PHYSICAL"],
         productTypeKeys: ["manga", "comics"],
@@ -81,7 +81,7 @@ describe("store queries", () => {
       try {
         const { id, slug } = await createStore({
           name: "Logo Ready Store",
-          storeType: "BUSINESS",
+          sellerType: "RETAILER",
           countryCode: "PE",
           presenceTypes: ["ONLINE"],
           productTypeKeys: ["figures"],
@@ -119,7 +119,7 @@ describe("store queries", () => {
     try {
       const result = await createStore({
         name: "Admin Created Store",
-        storeType: "PERSON",
+        sellerType: "PERSON",
         countryCode: "US",
         presenceTypes: ["ONLINE"],
         productTypeKeys: ["figures"],
@@ -152,7 +152,7 @@ describe("store queries", () => {
     try {
       const created = await createStore({
         name: "Unique Manga Shop",
-        storeType: "BUSINESS",
+        sellerType: "RETAILER",
         countryCode: "ES",
         presenceTypes: ["ONLINE"],
         productTypeKeys: ["manga"],
@@ -187,7 +187,7 @@ describe("store queries", () => {
       try {
         const a = await createStore({
           name: "Alpha Manga Shop",
-          storeType: "BUSINESS",
+          sellerType: "RETAILER",
           countryCode: "ES",
           presenceTypes: ["ONLINE"],
           productTypeKeys: ["manga"],
@@ -197,7 +197,7 @@ describe("store queries", () => {
         });
         const b = await createStore({
           name: "Beta Comics Store",
-          storeType: "BUSINESS",
+          sellerType: "RETAILER",
           countryCode: "US",
           presenceTypes: ["PHYSICAL"],
           productTypeKeys: ["comics"],
@@ -229,7 +229,7 @@ describe("store queries", () => {
     },
   );
 
-  it.skipIf(!hasDatabase)("getStoreBySlug returns isActive and BUSINESS-only fields for business stores", async () => {
+  it.skipIf(!hasDatabase)("getStoreBySlug returns isActive and contact fields for RETAILER stores", async () => {
     await runSeed(prisma);
 
     const user = await prisma.user.create({
@@ -243,7 +243,7 @@ describe("store queries", () => {
     try {
       const { slug } = await createStore({
         name: "Business With Contact",
-        storeType: "BUSINESS",
+        sellerType: "RETAILER",
         countryCode: "ES",
         presenceTypes: ["ONLINE"],
         productTypeKeys: ["manga"],
@@ -256,7 +256,7 @@ describe("store queries", () => {
       const store = await getStoreBySlug(slug);
       expect(store).not.toBeNull();
       expect(store?.isActive).toBe(true);
-      expect(store?.storeType).toBe("BUSINESS");
+      expect(store?.sellerType).toBe("RETAILER");
       expect(store?.contactChannels).toHaveLength(1);
       expect(store?.contactChannels?.[0].type).toBe("EMAIL");
       expect(store?.contactChannels?.[0].value).toBe("test@example.com");
@@ -280,7 +280,7 @@ describe("store queries", () => {
     try {
       const { slug } = await createStore({
         name: "Person Seller",
-        storeType: "PERSON",
+        sellerType: "PERSON",
         countryCode: "MX",
         presenceTypes: ["ONLINE"],
         productTypeKeys: ["figures"],
@@ -291,10 +291,53 @@ describe("store queries", () => {
 
       const store = await getStoreBySlug(slug);
       expect(store).not.toBeNull();
-      expect(store?.storeType).toBe("PERSON");
+      expect(store?.sellerType).toBe("PERSON");
       expect(store?.contactChannels).toBeUndefined();
       expect(store?.addresses).toBeUndefined();
       expect(store?.logoUrl).toBeUndefined();
+    } finally {
+      await prisma.store.deleteMany({ where: { createdByUserId: user.id } });
+      await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
+    }
+  });
+
+  it.skipIf(!hasDatabase)("createStore persists a PROXY with no catalog but keeps contact channels", async () => {
+    await runSeed(prisma);
+
+    const user = await prisma.user.create({
+      data: createTestUserData({
+        id: `test-proxy-${Date.now()}`,
+        email: `proxy-${Date.now()}@example.com`,
+        name: "Proxy Test",
+      }),
+    });
+
+    try {
+      const { slug } = await createStore({
+        name: "ZenProxy Service",
+        sellerType: "PROXY",
+        countryCode: "JP",
+        presenceTypes: ["ONLINE"],
+        // A PROXY has no catalog; the action normalizes these away.
+        productTypeKeys: [],
+        hasStock: null,
+        receivesOrders: null,
+        createdByUserId: user.id,
+        status: "APPROVED",
+        approvedByUserId: user.id,
+        contactChannels: [{ type: "WEBSITE", value: "https://zenmarket.jp" }],
+      });
+
+      const store = await getStoreBySlug(slug);
+      expect(store).not.toBeNull();
+      expect(store?.sellerType).toBe("PROXY");
+      // No catalog, no stock / pre-order signal.
+      expect(store?.productTypeKeys).toEqual([]);
+      expect(store?.hasStock).toBeNull();
+      expect(store?.receivesOrders).toBeNull();
+      // But contact channels (and logo/addresses) remain exposed like a RETAILER.
+      expect(store?.contactChannels).toHaveLength(1);
+      expect(store?.contactChannels?.[0].type).toBe("WEBSITE");
     } finally {
       await prisma.store.deleteMany({ where: { createdByUserId: user.id } });
       await prisma.user.delete({ where: { id: user.id } }).catch(() => {});
@@ -322,7 +365,7 @@ describe("store queries", () => {
     try {
       const { id: storeId } = await createStore({
         name: "Review Aggregate Store",
-        storeType: "BUSINESS",
+        sellerType: "RETAILER",
         countryCode: "ES",
         presenceTypes: ["ONLINE"],
         productTypeKeys: ["manga"],
@@ -400,7 +443,7 @@ describe("store queries", () => {
       try {
         const { id: storeId } = await createStore({
           name: "Pinned Review Store",
-          storeType: "BUSINESS",
+          sellerType: "RETAILER",
           countryCode: "ES",
           presenceTypes: ["ONLINE"],
           productTypeKeys: ["manga"],
@@ -489,7 +532,7 @@ describe("store queries", () => {
     try {
       const { id: storeId, slug } = await createStore({
         name: "Private Note Store",
-        storeType: "BUSINESS",
+        sellerType: "RETAILER",
         countryCode: "MX",
         presenceTypes: ["ONLINE"],
         productTypeKeys: ["figures"],

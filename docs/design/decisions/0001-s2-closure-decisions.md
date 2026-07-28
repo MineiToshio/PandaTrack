@@ -221,6 +221,13 @@ Aplica a:
 
 ## Decisión 9 — Orders list: paginación mobile = botón "Cargar más", desktop = clásica
 
+> **Superseded (2026-07-23) by [ADR 0018](0018-list-pagination-page-size-and-desktop-summary.md).**
+> The desktop paginator now ships a user-selectable page size (10/25/50/100, default 25) plus a
+> results summary in the same row as the numbered nav, and the shared `ListPagination` pattern
+> (mobile "Cargar más" + summary) is standardized across orders, deliveries, **and stores** — the
+> `pageSize 20/30` figures below are historical. This record is preserved as written; see ADR 0018
+> for the current decision.
+
 **Origen:** assumptions OL4 + research-dashboard-lists.
 
 **Decisión.**

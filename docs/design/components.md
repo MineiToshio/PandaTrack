@@ -56,13 +56,14 @@ Single-purpose building blocks. Theme-safe, token-driven.
 
 ### Actions
 
-| Component                    | Path                                          | When to use                                                                                  |
-| ---------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `Button`                     | `core/Button/`                                | All buttons. Variant hierarchy primary / accent / ghost / destructive; one primary per area. |
-| `IconButton`                 | `core/IconButton.tsx`                         | Icon-only action; requires an accessible label.                                              |
-| `AnchorLink` / `BackNavLink` | `core/AnchorLink.tsx`, `core/BackNavLink.tsx` | In-text link; canonical back/up navigation.                                                  |
-| `CodeCopyButton`             | `core/CodeCopyButton.tsx`                     | Copy-to-clipboard for an identifier.                                                         |
-| `ViewTransitionLink`         | `core/ViewTransitionLink.tsx`                 | List→detail navigation with View Transitions (see [motion.md](motion.md)).                   |
+| Component                    | Path                                          | When to use                                                                                                                                                           |
+| ---------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`                     | `core/Button/`                                | All buttons. Variant hierarchy primary / accent / ghost / destructive; one primary per area.                                                                          |
+| `IconButton`                 | `core/IconButton.tsx`                         | Icon-only action; requires an accessible label.                                                                                                                       |
+| `AnchorLink` / `BackNavLink` | `core/AnchorLink.tsx`, `core/BackNavLink.tsx` | In-text link; canonical back/up navigation.                                                                                                                           |
+| `CodeCopyButton`             | `core/CodeCopyButton.tsx`                     | Copy-to-clipboard for an identifier.                                                                                                                                  |
+| `ViewTransitionLink`         | `core/ViewTransitionLink.tsx`                 | List→detail navigation with View Transitions (see [motion.md](motion.md)).                                                                                            |
+| `ExpandAllToggle`            | `core/ExpandAllToggle.tsx`                    | Single expand-all / collapse-all toggle for a list of expandable rows; label shows the next action, `aria-pressed` carries the honest tri-state (all / none / mixed). |
 
 ### Form controls
 
@@ -90,7 +91,6 @@ Single-purpose building blocks. Theme-safe, token-driven.
 | `Skeleton`                            | `core/Skeleton.tsx`                                            | Loading placeholder — see [states.md](states.md).                                                                                                                                                                         |
 | `Toast`                               | `core/Toast/`                                                  | Transient feedback + neutral-undo — see [interface-patterns.md](interface-patterns.md).                                                                                                                                   |
 | `Tooltip`                             | `core/Tooltip.tsx`                                             | Hover/focus hint.                                                                                                                                                                                                         |
-| `Pagination`                          | `core/Pagination.tsx`                                          | Page controls.                                                                                                                                                                                                            |
 | `Portal`                              | `core/Portal.tsx`                                              | Low-level portal primitive (used by overlays; not for hand-rolling modals).                                                                                                                                               |
 | `ThemeToggle` / `LangToggle`          | `core/ThemeToggle.tsx`, `core/LangToggle.tsx`                  | Light/dark toggle; locale toggle.                                                                                                                                                                                         |
 
@@ -112,12 +112,13 @@ Multi-part organisms and orchestration.
 
 ### Overlays
 
-| Component      | Path                      | When to use                                                                                                                                                                              |
-| -------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Modal`        | `modules/Modal/Modal.tsx` | **The** canonical modal (Semantic Depth, adaptive). Internals: `ModalDialog` (desktop), `ModalSheet` (mobile), `ModalContent` (shared). [ADR 0008](decisions/0008-modal-enhancement.md). |
-| `Sheet`        | `modules/Sheet/`          | Mobile bottom sheet (same language; only approved `vaul` consumer).                                                                                                                      |
-| `FilterDrawer` | `modules/FilterDrawer/`   | List filtering surface.                                                                                                                                                                  |
-| `MobilePicker` | `modules/MobilePicker/`   | Mobile-native-style picker.                                                                                                                                                              |
+| Component           | Path                            | When to use                                                                                                                                                                                                             |
+| ------------------- | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Modal`             | `modules/Modal/Modal.tsx`       | **The** canonical modal (Semantic Depth, adaptive). Internals: `ModalDialog` (desktop), `ModalSheet` (mobile), `ModalContent` (shared). [ADR 0008](decisions/0008-modal-enhancement.md).                                |
+| `Sheet`             | `modules/Sheet/`                | Mobile bottom sheet (same language; only approved `vaul` consumer).                                                                                                                                                     |
+| `FilterDrawer`      | `modules/FilterDrawer/`         | List filtering surface.                                                                                                                                                                                                 |
+| `MobilePicker`      | `modules/MobilePicker/`         | Mobile-native-style picker.                                                                                                                                                                                             |
+| `StoreRemovalModal` | `modules/StoreRemovalModal.tsx` | Store-removal confirmation (`alertdialog`) with a reason radiogroup + optional note. Shared by the store-detail moderation panel and the admin moderation console. Presentational: parent owns Optimistic Confirmation. |
 
 ### Content & detail
 
@@ -128,17 +129,19 @@ Multi-part organisms and orchestration.
 | `SummaryStatRow`                                                   | `modules/SummaryStatRow.tsx`                                                                         | Dashboard micro-stat row ([ADR 0005](decisions/0005-dashboard-microstat-icon-tile.md)).                                                            |
 | `PrivateNoteCard`                                                  | `modules/PrivateNoteCard.tsx`                                                                        | Private note block on detail screens.                                                                                                              |
 | `ChannelRow`                                                       | `modules/ChannelRow.tsx`                                                                             | Store contact/channel row.                                                                                                                         |
-| `ListPagination`                                                   | `modules/ListPagination.tsx`                                                                         | List pagination ("load more" on mobile).                                                                                                           |
+| `ListPagination`                                                   | `modules/ListPagination.tsx`                                                                         | List pagination (mobile "load more"; desktop summary + page-size select + numbered nav).                                                           |
+| `PerPageSelect`                                                    | `modules/PerPageSelect.tsx`                                                                          | Desktop page-size control paired with `ListPagination`'s numbered nav.                                                                             |
 | `StoreCombobox`                                                    | `modules/StoreCombobox/`                                                                             | Store selection combobox.                                                                                                                          |
 
 ### Forms
 
-| Component             | Path                        | When to use                                           |
-| --------------------- | --------------------------- | ----------------------------------------------------- |
-| `WizardAccordion`     | `modules/WizardAccordion/`  | Multi-step form (3+ steps); step CTAs never disabled. |
-| `FilterTriggerButton` | `core/FilterTriggerButton/` | Opens the `FilterDrawer`; shows active-filter count.  |
-| `FaqAccordion`        | `modules/FaqAccordion/`     | FAQ / disclosure list (landing).                      |
-| `ImageCropper`        | `modules/ImageCropper/`     | Avatar / image crop.                                  |
+| Component             | Path                             | When to use                                                                                                                                       |
+| --------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `WizardAccordion`     | `modules/WizardAccordion/`       | Multi-step form (3+ steps); step CTAs never disabled.                                                                                             |
+| `FilterTriggerButton` | `core/FilterTriggerButton/`      | Opens the `FilterDrawer`; shows active-filter count.                                                                                              |
+| `FaqAccordion`        | `modules/FaqAccordion/`          | FAQ / disclosure list (landing).                                                                                                                  |
+| `ImageCropper`        | `modules/ImageCropper/`          | Avatar / image crop.                                                                                                                              |
+| `ReportReasonPicker`  | `modules/ReportReasonPicker.tsx` | Vertical single-select reason radiogroup (icon + label, ≥44px targets). Shared by the store report and store removal flows and the admin console. |
 
 ### States, feedback & marketing
 

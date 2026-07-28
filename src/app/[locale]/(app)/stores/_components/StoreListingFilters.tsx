@@ -13,6 +13,7 @@ import Select from "@/components/core/Select";
 import FilterDrawer, { type FilterDrawerValues, type FilterSection } from "@/components/modules/FilterDrawer";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { useStoreProductTypeName } from "@/app/[locale]/(app)/_components/StoreProductTypeNamesProvider";
 import CollectorCountryFlagEmoji from "./share/CollectorCountryFlagEmoji";
 import { useStoreListingNavigation } from "./StoreListingPendingContext";
 
@@ -27,6 +28,7 @@ type StoreListingFiltersProps = {
   initialPresenceTypes: string[];
   initialReceivesOrders: boolean;
   initialHasStock: boolean;
+  initialIncludeClosed: boolean;
 };
 
 type ListingFilterValues = {
@@ -39,6 +41,7 @@ type ListingFilterValues = {
 
 const FLAGS_RECEIVES_ORDERS = "receivesOrders";
 const FLAGS_HAS_STOCK = "hasStock";
+const FLAGS_INCLUDE_CLOSED = "includeClosed";
 
 function buildSearchParams(input: { nameQuery: string; values: ListingFilterValues; page?: number; sortBy?: string }) {
   const params = new URLSearchParams();
@@ -49,6 +52,7 @@ function buildSearchParams(input: { nameQuery: string; values: ListingFilterValu
   input.values.presenceTypes.forEach((value) => params.append("presence", value));
   if (input.values.flags.includes(FLAGS_RECEIVES_ORDERS)) params.set("receivesOrders", "true");
   if (input.values.flags.includes(FLAGS_HAS_STOCK)) params.set("hasStock", "true");
+  if (input.values.flags.includes(FLAGS_INCLUDE_CLOSED)) params.set("includeClosed", "true");
   if (input.sortBy && input.sortBy !== "topRated") params.set("sortBy", input.sortBy);
   if (input.page && input.page > 1) params.set("page", String(input.page));
   return params;
@@ -70,12 +74,13 @@ export default function StoreListingFilters({
   initialPresenceTypes,
   initialReceivesOrders,
   initialHasStock,
+  initialIncludeClosed,
 }: StoreListingFiltersProps) {
   const pathname = usePathname();
   const { navigate, isPending } = useStoreListingNavigation();
   const tListing = useTranslations("storeListing");
   const tStores = useTranslations("stores");
-  const tProductTypes = useTranslations("storeProductTypes");
+  const productTypeName = useStoreProductTypeName();
   const tCountries = useTranslations("countries");
 
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -94,8 +99,18 @@ export default function StoreListingFilters({
     const flags: string[] = [];
     if (initialReceivesOrders) flags.push(FLAGS_RECEIVES_ORDERS);
     if (initialHasStock) flags.push(FLAGS_HAS_STOCK);
+    if (initialIncludeClosed) flags.push(FLAGS_INCLUDE_CLOSED);
     return flags;
-  }, [initialReceivesOrders, initialHasStock]);
+  }, [initialReceivesOrders, initialHasStock, initialIncludeClosed]);
+
+  const flagLabel = useCallback(
+    (flag: string) => {
+      if (flag === FLAGS_RECEIVES_ORDERS) return tStores("redesign.filter.receivesOrders");
+      if (flag === FLAGS_HAS_STOCK) return tStores("redesign.filter.hasStock");
+      return tStores("redesign.filter.showClosed");
+    },
+    [tStores],
+  );
 
   const [draftValues, setDraftValues] = useState<FilterDrawerValues>({
     productTypeKeys: initialProductTypeKeys,
@@ -111,11 +126,11 @@ export default function StoreListingFilters({
         const Icon = getStoreProductTypeIcon(p.key);
         return {
           value: p.key,
-          label: tProductTypes(p.key),
+          label: productTypeName(p.key),
           icon: <Icon size={14} aria-hidden />,
         };
       }),
-    [productTypeOptions, tProductTypes],
+    [productTypeOptions, productTypeName],
   );
 
   const countryOptionsMemo = useMemo(
@@ -170,6 +185,7 @@ export default function StoreListingFilters({
         options: [
           { value: FLAGS_RECEIVES_ORDERS, label: tStores("redesign.filter.receivesOrders") },
           { value: FLAGS_HAS_STOCK, label: tStores("redesign.filter.hasStock") },
+          { value: FLAGS_INCLUDE_CLOSED, label: tStores("redesign.filter.showClosed") },
         ],
       },
     ],
@@ -209,6 +225,7 @@ export default function StoreListingFilters({
       presence_count: stateValues.presenceTypes.length,
       receives_orders: stateValues.flags.includes(FLAGS_RECEIVES_ORDERS),
       has_stock: stateValues.flags.includes(FLAGS_HAS_STOCK),
+      include_closed: stateValues.flags.includes(FLAGS_INCLUDE_CLOSED),
     });
     const params = buildSearchParams({ nameQuery, values: stateValues, sortBy });
     const queryString = params.toString();
@@ -318,7 +335,7 @@ export default function StoreListingFilters({
     initialProductTypeKeys.forEach((key) => {
       chips.push({
         key: `productType-${key}`,
-        label: tProductTypes(key),
+        label: productTypeName(key),
         onRemove: () => removeFilter({ kind: "productType", value: key }),
       });
     });
@@ -349,10 +366,7 @@ export default function StoreListingFilters({
     initialFlags.forEach((flag) => {
       chips.push({
         key: `flag-${flag}`,
-        label:
-          flag === FLAGS_RECEIVES_ORDERS
-            ? tStores("redesign.filter.receivesOrders")
-            : tStores("redesign.filter.hasStock"),
+        label: flagLabel(flag),
         onRemove: () => removeFilter({ kind: "flag", value: flag }),
       });
     });
@@ -364,9 +378,10 @@ export default function StoreListingFilters({
     initialCountryCodes,
     initialImportCountryCodes,
     initialFlags,
-    tProductTypes,
+    productTypeName,
     tCountries,
     tStores,
+    flagLabel,
     removeFilter,
   ]);
 

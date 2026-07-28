@@ -336,6 +336,94 @@ describe("buildDashboardData - exclusions and FX", () => {
   });
 });
 
+describe("buildDashboardData - lost on cancelled (BR-06-10)", () => {
+  it("sums payments retained on a cancelled order as lost money", () => {
+    const data = build([
+      makeOrder({
+        id: "cancelledWithPayments",
+        status: "CANCELLED",
+        totalCost: 20000,
+        payments: [
+          { amount: 12000, paymentDate: utc(2026, 5, 10) },
+          { amount: 4000, paymentDate: utc(2026, 5, 20) },
+        ],
+      }),
+    ]);
+    expect(data.lostOnCancelled.totalMinor).toBe(16000);
+    expect(data.lostOnCancelled.totalMinor).toBeGreaterThan(0);
+    // The retained payments never leak into the disbursed-spend series or any live rollup.
+    expect(data.spend.currentMonthMinor).toBe(0);
+    expect(data.paidVsOutstanding.paidMinor).toBe(0);
+    expect(data.collection.totalOrders).toBe(0);
+  });
+
+  it("reports zero when the cancelled order has no payments", () => {
+    const data = build([makeOrder({ id: "cancelledClean", status: "CANCELLED", totalCost: 9999 })]);
+    expect(data.lostOnCancelled.totalMinor).toBe(0);
+    expect(data.lostOnCancelled.isPartial).toBe(false);
+  });
+
+  it("ignores payments on non-cancelled orders", () => {
+    const data = build([
+      makeOrder({ id: "open", totalCost: 10000, payments: [{ amount: 5000, paymentDate: utc(2026, 5, 5) }] }),
+    ]);
+    expect(data.lostOnCancelled.totalMinor).toBe(0);
+  });
+
+  it("excludes an FX-unreconciled cancelled order and flags the figure partial", () => {
+    const data = build([
+      makeOrder({
+        id: "fxCancelled",
+        status: "CANCELLED",
+        currencyCode: "EUR",
+        exchangeRate: 1.1,
+        needsExchangeRateUpdate: true,
+        totalCost: 10000,
+        payments: [{ amount: 8000, paymentDate: utc(2026, 5, 5) }],
+      }),
+      makeOrder({
+        id: "usdCancelled",
+        status: "CANCELLED",
+        totalCost: 10000,
+        payments: [{ amount: 3000, paymentDate: utc(2026, 5, 5) }],
+      }),
+    ]);
+    // Only the reconciled cancelled order contributes; the FX-pending one is dropped and flagged.
+    expect(data.lostOnCancelled.totalMinor).toBe(3000);
+    expect(data.lostOnCancelled.isPartial).toBe(true);
+    expect(data.lostOnCancelled.excludedOrderCount).toBe(1);
+  });
+
+  it("converts a reconciled foreign cancelled order via its stored rate", () => {
+    const data = build([
+      makeOrder({
+        id: "eurCancelled",
+        status: "CANCELLED",
+        currencyCode: "EUR",
+        exchangeRate: 1.1,
+        totalCost: 10000,
+        payments: [{ amount: 5000, paymentDate: utc(2026, 5, 5) }],
+      }),
+    ]);
+    expect(data.lostOnCancelled.totalMinor).toBe(5500);
+  });
+
+  it("reports zero when no base currency is configured", () => {
+    const data = build(
+      [
+        makeOrder({
+          id: "cancelledWithPayments",
+          status: "CANCELLED",
+          totalCost: 20000,
+          payments: [{ amount: 12000, paymentDate: utc(2026, 5, 10) }],
+        }),
+      ],
+      { baseCurrencyCode: null },
+    );
+    expect(data.lostOnCancelled.totalMinor).toBe(0);
+  });
+});
+
 describe("buildDashboardData - arrival punctuality", () => {
   const arrivedItem = (deliveryDates: Date[]) => [
     { quantity: 1, productTypeKey: null, unitPrice: null, deliveryState: "DELIVERED" as const, deliveryDates },
@@ -506,6 +594,24 @@ describe("buildDashboardData - activity and collection", () => {
       committedMinor: 3000,
       orderCount: 1,
     });
+  });
+
+  it("splits product quantity by item delivery state, ranked by quantity", () => {
+    const data = build([
+      makeOrder({
+        id: "states",
+        totalCost: 3000,
+        items: [
+          { quantity: 3, productTypeKey: "figure", unitPrice: 1000, deliveryState: "DELIVERED", deliveryDates: [] },
+          { quantity: 2, productTypeKey: "manga", unitPrice: 1000, deliveryState: "IN_TRANSIT", deliveryDates: [] },
+          { quantity: 1, productTypeKey: "book", unitPrice: 1000, deliveryState: "DELIVERED", deliveryDates: [] },
+        ],
+      }),
+    ]);
+    expect(data.collection.itemDeliveryStates).toEqual([
+      { state: "DELIVERED", quantity: 4 },
+      { state: "IN_TRANSIT", quantity: 2 },
+    ]);
   });
 
   it("distributes an order's committed value across its items by line value", () => {

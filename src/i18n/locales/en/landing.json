@@ -28,7 +28,7 @@
     "ctaSecondary": "See how it works",
     "trust": "Free to start · No card",
     "demo": {
-      "windowLabel": "PandaTrack demo: a collectible travels through the cycle —store, order, payment and delivery— and everything is viewed and managed in a single panel.",
+      "windowLabel": "PandaTrack demo: a collectible travels through the cycle (store, order, payment and delivery) and everything is viewed and managed in a single panel.",
       "caption": "Your collectible's journey",
       "steps": {
         "store": "Store",

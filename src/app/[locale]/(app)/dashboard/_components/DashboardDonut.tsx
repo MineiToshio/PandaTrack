@@ -10,8 +10,10 @@ export type DashboardDonutSlice = {
 
 export type DashboardDonutProps = {
   slices: DashboardDonutSlice[];
-  /** Headline rendered in the middle of the ring. */
+  /** Headline rendered in the middle of the ring. May be abbreviated (e.g. `S/ 234.3K`). */
   centerValue: string;
+  /** Full, unabbreviated headline surfaced on hover when `centerValue` is compacted. */
+  centerTitle?: string;
   centerLabel: string;
   /** Sentence describing the whole split, for screen readers. */
   ariaLabel: string;
@@ -30,6 +32,7 @@ const STROKE_WIDTH = 5;
 export default function DashboardDonut({
   slices,
   centerValue,
+  centerTitle,
   centerLabel,
   ariaLabel,
   className,
@@ -70,7 +73,10 @@ export default function DashboardDonut({
         })}
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="[font-size:19px] [font-weight:var(--font-weight-bold)] [letter-spacing:-0.02em] [color:var(--text-primary)] tabular-nums">
+        <span
+          title={centerTitle}
+          className="[font-size:19px] [font-weight:var(--font-weight-bold)] [letter-spacing:-0.02em] [color:var(--text-primary)] tabular-nums"
+        >
           {centerValue}
         </span>
         <span className="[font-size:10.5px] [letter-spacing:0.05em] [color:var(--text-muted)] uppercase">

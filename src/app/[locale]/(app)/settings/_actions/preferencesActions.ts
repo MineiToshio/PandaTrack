@@ -5,6 +5,7 @@ import * as Sentry from "@sentry/nextjs";
 import { getSession } from "@/lib/auth/auth-server";
 import { updateUserLocale } from "@/lib/data/auth/userMutations";
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
+import { countOrdersPendingFxReconciliation } from "@/lib/data/orders/orderQueries";
 import {
   applyBaseCurrencyChange,
   parseAndApplyCollectorPreferencesPatch,
@@ -105,22 +106,20 @@ export async function getPreferencesSnapshotAction(): Promise<PreferencesSnapsho
 
 export type UpdateCurrencyInput = {
   baseCurrencyCode: string;
-  /** Two-path flag. When true, the client should be routed to the FX reconciliation flow afterwards. */
-  saveFxRates: boolean;
 };
 
 export type UpdateCurrencyResult =
-  { ok: true; redirectToFxReconcile: boolean } | { ok: false; error: PreferencesErrorCode };
+  { ok: true; pendingFxOrderCount: number } | { ok: false; error: PreferencesErrorCode };
 
 /**
- * Persists the base currency change (two-path). Path B (`saveFxRates: true`) does
- * not run a bulk FX reconciliation here — it signals the client to redirect into the existing
- * `FxReconciliationModal` flow on `/orders`, where the user can preview and confirm per-row.
+ * Persists the base-currency change and flags stale-rate orders for FX reconciliation atomically,
+ * then reports how many foreign-currency orders were left needing a rate update. The client uses
+ * that count to surface an optional "reconcile rates" shortcut into the existing `/orders` FX flow,
+ * where the user previews and confirms per-row.
  *
- * Rationale (S8 Fase B research synthesis): silent bulk mutation from a Settings modal
- * erodes user trust and conflicts with the Splitwise/Toshl regret pattern. Centralizing
- * reconciliation in the orders modal honors transparent-automation expectations for the
- * 18–25 collector audience and avoids partial-failure errors landing on the wrong surface.
+ * Rationale (S8 Fase B research synthesis): silent bulk rate mutation from Settings erodes trust
+ * (Splitwise/Toshl regret pattern). Reconciliation stays centralized in the orders FX modal, which
+ * honors transparent-automation expectations and keeps partial-failure errors on the right surface.
  */
 export async function updateCurrencyAction(input: UpdateCurrencyInput): Promise<UpdateCurrencyResult> {
   const session = await getSession();
@@ -157,7 +156,8 @@ export async function updateCurrencyAction(input: UpdateCurrencyInput): Promise<
       return { ok: false, error: "validation" };
     }
 
-    return { ok: true, redirectToFxReconcile: input.saveFxRates };
+    const pendingFxOrderCount = await countOrdersPendingFxReconciliation(session.user.id, trimmed);
+    return { ok: true, pendingFxOrderCount };
   } catch (error) {
     Sentry.captureException(error, {
       extra: { action: "updateCurrencyAction", userId: session.user.id },

@@ -29,7 +29,7 @@ Use this index to find documentation by domain.
 - `docs/design/ux-copy.md`: voice, tone-by-context, and in-app copy patterns
 - `docs/design/components.md`: component map — what exists, when to use which, and where the canonical code lives
 - `docs/design/PLAYBOOK.md`: operational UI-implementation playbook (mandatory pre-implementation workflow + anti-patterns)
-- `docs/design/decisions/`: accepted design ADRs (0001–0014)
+- `docs/design/decisions/`: accepted design ADRs (0001–0018) — see `docs/design/decisions/README.md` for the full index
 
 ## Development
 

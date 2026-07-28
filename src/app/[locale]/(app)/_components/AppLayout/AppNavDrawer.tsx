@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Package, ShoppingBag, Store, X } from "lucide-react";
+import { LayoutDashboard, Package, ScrollText, Shield, ShoppingBag, Store, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -13,7 +13,14 @@ import IconButton from "@/components/core/IconButton";
 import Logo from "@/components/core/Logo";
 import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS } from "@/lib/constants";
-import { getActiveNavItem, getPrivateAppNavItems, type NavItemId } from "./navigationConfig";
+import {
+  getActiveAdminNavItemId,
+  getActiveNavItem,
+  getAdminNavItems,
+  getPrivateAppNavItems,
+  type AdminNavItemId,
+  type NavItemId,
+} from "./navigationConfig";
 import ShellAccountMenu from "./ShellAccountMenu";
 import type { AppShellUserIdentity } from "./types";
 
@@ -24,6 +31,11 @@ const NAV_ICON_MAP: Record<PrimaryNavItemId, React.ComponentType<{ className?: s
   stores: Store,
   orders: ShoppingBag,
   deliveries: Package,
+};
+
+const ADMIN_ICON_MAP: Record<AdminNavItemId, React.ComponentType<{ className?: string }>> = {
+  moderation: Shield,
+  audit: ScrollText,
 };
 
 const TABLET_BREAKPOINT_PX = 768;
@@ -41,6 +53,7 @@ type AppNavDrawerProps = {
   onClose: () => void;
   returnFocusRef: React.RefObject<HTMLButtonElement | null>;
   storesHref?: string;
+  isAdmin: boolean;
 };
 
 export default function AppNavDrawer({
@@ -51,12 +64,15 @@ export default function AppNavDrawer({
   onClose,
   returnFocusRef,
   storesHref,
+  isAdmin,
 }: AppNavDrawerProps) {
   const pathname = usePathname();
   const t = useTranslations("appLayout");
+  const tAdmin = useTranslations("admin");
   const drawerRootRef = useRef<HTMLDivElement>(null);
   const navItems = getPrivateAppNavItems();
   const activeItem = getActiveNavItem(pathname ?? "");
+  const activeAdminId = getActiveAdminNavItemId(pathname ?? "");
   const appShellMainNavigationLabel = t("accessibility.mainNavigation");
   const appShellLanguageLabel = t("accessibility.languageNavigation");
   const drawerPreferencesLabel = t("drawer.preferencesAriaLabel");
@@ -149,6 +165,44 @@ export default function AppNavDrawer({
               </Link>
             );
           })}
+
+          {isAdmin && (
+            <div
+              role="group"
+              className="border-border mt-2 flex flex-col gap-1 border-t pt-3"
+              aria-label={tAdmin("nav.section")}
+            >
+              <p className="text-text-muted px-2.5 pb-1 text-xs font-medium tracking-wide uppercase">
+                {tAdmin("nav.section")}
+              </p>
+              {getAdminNavItems().map((item) => {
+                const Icon = ADMIN_ICON_MAP[item.id];
+                const isActive = activeAdminId === item.id;
+                return (
+                  <Link
+                    key={item.id}
+                    href={item.href(locale)}
+                    onClick={onClose}
+                    className={cn(
+                      "focus-visible:ring-ring focus-visible:ring-offset-background flex h-11 min-h-11 items-center gap-3 rounded-lg px-2.5 pr-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                      isActive
+                        ? "bg-primary/20 text-primary"
+                        : "text-text-body hover:bg-foreground/15 hover:text-foreground",
+                    )}
+                    aria-current={isActive ? "page" : undefined}
+                    data-ph-event={POSTHOG_EVENTS.APP_SHELL.NAV_CLICKED}
+                    data-ph-props={JSON.stringify({
+                      destination: item.id,
+                      navigation_level: "admin",
+                    })}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    <span>{tAdmin(item.labelKey)}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
         </nav>
         <section
           aria-label={drawerPreferencesLabel}

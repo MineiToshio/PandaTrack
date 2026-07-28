@@ -1,7 +1,8 @@
 import { cn } from "@/lib/styles";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 
-/** Matches `DEFAULT_PUBLIC_STORE_PAGE_SIZE` without importing the server-only query module. */
-const SKELETON_COUNT = 12;
+/** Matches `DEFAULT_PUBLIC_STORE_PAGE_SIZE`, which is `DEFAULT_PAGE_SIZE`. */
+const SKELETON_COUNT = DEFAULT_PAGE_SIZE;
 
 // Canonical skeleton atom (ADR 0013): `.skeleton` shimmer from globals.css, static under
 // `prefers-reduced-motion`. Replaces the prior `animate-pulse` + `--border` fill (no motion-safe guard).

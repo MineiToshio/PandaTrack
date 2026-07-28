@@ -12,6 +12,10 @@ import {
   getStoreGovernanceSummary,
   getStoreGovernanceViewerContext,
 } from "@/lib/data/stores/storeGovernanceQueries";
+import { getAdminOpenStoreReports } from "@/lib/data/admin/adminStoreReportQueries";
+import { getAdminPendingStoreChangeRequests } from "@/lib/data/admin/adminStoreChangeRequestQueries";
+import { listAuthoredStoreProductTypeNamesCached } from "@/lib/data/catalog/storeProductTypeQueries";
+import { buildAuthoredStoreProductTypeNameMap } from "@/lib/catalog/resolveStoreProductTypeName";
 import { buildStoreDetailMetadata } from "@/lib/seo";
 import { safeRelativeReturnTo } from "@/lib/navigation/safeRelativeReturnTo";
 import StoreDetailContent from "./_components/StoreDetailContent";
@@ -31,6 +35,8 @@ export async function generateMetadata({ params }: StoreDetailPageProps) {
     locale,
     storeName: store.name,
     slug,
+    // `PENDING` is the only `noindex` rule. Reports deliberately never affect indexing: deindexing
+    // is slow to reverse, so a single report must not be able to cost a store its discoverability.
     noindex: store.status === "PENDING",
   });
 }
@@ -56,7 +62,16 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
   if (store.isPrivate && !isAdmin && store.createdByUserId !== session?.user?.id) {
     notFound();
   }
-  const [reviews, viewerContext, governanceSummary, governanceViewerContext, viewerActivity] = await Promise.all([
+  const [
+    reviews,
+    viewerContext,
+    governanceSummary,
+    governanceViewerContext,
+    viewerActivity,
+    adminOpenReports,
+    adminChangeRequests,
+    authoredProductTypeNames,
+  ] = await Promise.all([
     session?.user?.id ? getPublicStoreReviews(store.id, session.user.id, store.reviewCount) : [],
     session?.user?.id ? getStoreViewerContext(store.id, session.user.id) : { review: null, note: null },
     getStoreGovernanceSummary(store.id),
@@ -66,6 +81,13 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
     session?.user?.id
       ? getViewerStoreActivity(session.user.id, store.id)
       : ({ ordersTotal: 0, ordersActive: 0, totalSpentByCurrency: [] } satisfies ViewerStoreActivity),
+    // Admin-only read of raw report free-text and reporter identity. Gated by `isAdmin` so a
+    // non-admin request never triggers it; the public read model is never widened (BR-04-25).
+    isAdmin ? getAdminOpenStoreReports(store.id) : undefined,
+    // Admin-only read of pending change requests with the rebased diff and requester identity, gated
+    // the same way; never widens the public governance read model.
+    isAdmin ? getAdminPendingStoreChangeRequests(store.id, locale) : undefined,
+    listAuthoredStoreProductTypeNamesCached(),
   ]);
 
   const canAccessEditRoute = session?.user?.id != null;
@@ -85,8 +107,12 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
       governanceSummary={governanceSummary}
       governanceViewerContext={governanceViewerContext}
       viewerActivity={viewerActivity}
+      adminOpenReports={adminOpenReports}
+      adminChangeRequests={adminChangeRequests}
       canAccessEditRoute={canAccessEditRoute}
       canDirectlyEdit={canDirectlyEdit}
+      canModerate={isAdmin}
+      authoredProductTypeNames={buildAuthoredStoreProductTypeNameMap(authoredProductTypeNames)}
       backHref={backHref}
       backOrderLabel={backOrderLabel}
     />

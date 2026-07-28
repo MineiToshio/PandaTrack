@@ -26,8 +26,8 @@ import {
 } from "@/app/[locale]/(app)/settings/_actions/notificationActions";
 import SettingsRow from "./SettingsRow";
 
-/** Reminder types in display order. Values match the `NotificationType` Prisma enum. */
-const REMINDER_TYPES = ["PAYMENT_DUE", "ARRIVAL_DUE", "ARRIVAL_OVERDUE"] as const;
+/** Notification types in display order. Values match the `NotificationType` Prisma enum. */
+const REMINDER_TYPES = ["PAYMENT_DUE", "ARRIVAL_DUE", "ARRIVAL_OVERDUE", "STORE_REJECTED"] as const;
 type ReminderType = (typeof REMINDER_TYPES)[number];
 
 export type NotificationPreferencesState = Record<ReminderType, boolean>;

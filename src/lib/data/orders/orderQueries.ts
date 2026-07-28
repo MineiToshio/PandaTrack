@@ -3,10 +3,13 @@ import { deriveHasUnpaidBalance } from "@/lib/orders/orderState";
 import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
 import type { ItemDeliveryState } from "@/lib/orders/orderState";
 import type { OrderListPaymentState, OrderListSort } from "@/lib/orders/orderListSort";
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
 import {
   DeliveryStatus,
   type OrderItemDeliveryState as OrderItemDeliveryStatePrisma,
   type OrderStatus,
+  type StoreRemovalReason,
+  type StoreStatus,
 } from "../../../../generated/prisma/client";
 
 export type OrderItem = {
@@ -80,7 +83,7 @@ export type OrderFlags = {
 };
 
 export type OrderDetailFull = Omit<OrderDetail, "items"> & {
-  store: { id: string; name: string; slug: string };
+  store: { id: string; name: string; slug: string; status: StoreStatus; removalReason: StoreRemovalReason | null };
   items: OrderItemWithDeliveryState[];
   eligibility: OrderEligibility;
   flags: OrderFlags;
@@ -194,7 +197,7 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
       id: true,
       humanReadableId: true,
       storeId: true,
-      store: { select: { id: true, name: true, slug: true } },
+      store: { select: { id: true, name: true, slug: true, status: true, removalReason: true } },
       orderDate: true,
       expectedDeliveryFrom: true,
       expectedDeliveryTo: true,
@@ -303,7 +306,7 @@ export type OrdersListPageItem = {
   exchangeRate: number | null;
   totalCost: number;
   status: OrderStatus;
-  store: { id: string; name: string; slug: string };
+  store: { id: string; name: string; slug: string; status: StoreStatus; removalReason: StoreRemovalReason | null };
   itemCount: number;
   items: Array<{
     id: string;
@@ -377,6 +380,68 @@ function buildFxPendingWhere(userId: string, baseCurrencyCode: string | null | u
   };
 }
 
+/**
+ * Counts the collector's non-cancelled foreign-currency orders flagged for FX reconciliation
+ * against the given base currency. Used by Settings to decide whether to surface a
+ * "reconcile rates" shortcut after a base-currency change. Returns 0 when there is no base
+ * currency (nothing can be flagged as stale without one).
+ */
+export async function countOrdersPendingFxReconciliation(
+  userId: string,
+  baseCurrencyCode: string | null,
+): Promise<number> {
+  const where = buildFxPendingWhere(userId, baseCurrencyCode);
+  if (!where) return 0;
+  return prisma.order.count({ where });
+}
+
+export type FxReconciliationOrder = {
+  id: string;
+  humanReadableId: string;
+  totalCost: number;
+  currencyCode: string;
+};
+
+/**
+ * Lists the same set of orders `countOrdersPendingFxReconciliation` counts, using the identical
+ * `buildFxPendingWhere` predicate. Feeds the "Actualizar tipos de cambio" modal so its rows can
+ * never diverge from the banner count. Returns `[]` when there is no base currency.
+ */
+export async function listOrdersPendingFxReconciliation(
+  userId: string,
+  baseCurrencyCode: string | null,
+): Promise<FxReconciliationOrder[]> {
+  const where = buildFxPendingWhere(userId, baseCurrencyCode);
+  if (!where) return [];
+  return prisma.order.findMany({
+    where,
+    select: { id: true, humanReadableId: true, totalCost: true, currencyCode: true },
+    orderBy: { orderDate: "desc" },
+    take: 500,
+  });
+}
+
+export type OrdersHeadingCounts = {
+  activeCount: number;
+  closedCount: number;
+};
+
+/**
+ * Global active/closed order counts for the orders page heading meta ("N active, N closed").
+ * "Closed" means a terminal status (COMPLETED or CANCELLED); "active" is everything else,
+ * derived as `total - closed` rather than a separate query.
+ */
+export async function getOrdersHeadingCounts(userId: string): Promise<OrdersHeadingCounts> {
+  const [totalAcrossUser, closedCount] = await Promise.all([
+    prisma.order.count({ where: { userId } }),
+    prisma.order.count({ where: { userId, status: { in: ["COMPLETED", "CANCELLED"] } } }),
+  ]);
+  return {
+    activeCount: Math.max(0, totalAcrossUser - closedCount),
+    closedCount,
+  };
+}
+
 export async function getOrdersList(userId: string, filters: OrdersListPageFilters): Promise<OrdersListPageResult> {
   const {
     nameQuery,
@@ -394,8 +459,12 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
     baseCurrencyCode,
     sort = "recent",
     page,
-    pageSize,
+    pageSize: requestedPageSize,
   } = filters;
+  // Hardened against arbitrary URL values: only the allow-listed options are honored.
+  const pageSize = (PAGE_SIZE_OPTIONS as readonly number[]).includes(requestedPageSize)
+    ? requestedPageSize
+    : DEFAULT_PAGE_SIZE;
   const now = new Date();
 
   const itemConditions: Array<Record<string, unknown>> = [];
@@ -500,7 +569,7 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
     exchangeRate: true,
     totalCost: true,
     status: true,
-    store: { select: { id: true, name: true, slug: true } },
+    store: { select: { id: true, name: true, slug: true, status: true, removalReason: true } },
     items: {
       select: {
         id: true,

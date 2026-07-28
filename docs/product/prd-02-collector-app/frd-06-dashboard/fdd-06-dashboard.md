@@ -131,10 +131,13 @@ filled backgrounds, so the surfaces stay quiet.
 `--surface-elevated` with a hairline border, a **3px colored top edge**, and a **tinted lucide
 icon tile** (`14%`-mix background in its accent). The four accents are in a **fixed order**
 (`accent → cool → warm → success`), one metric each: **Pedidos** (`package`, `38`),
-**Productos** (`boxes`, `112`), **Comprometido** (`wallet`, `S/ 18.4k`), **Tiendas** (`store`,
-`9`). This is a low-weight glance summary of `FR-06-11` totals; "Comprometido" (`Order.totalCost`)
-is labeled distinctly so it is never read as disbursed spend (`BR-06-05`). Tinted-icon treatment
-per [ADR 0005](../../../design/decisions/0005-dashboard-microstat-icon-tile.md).
+**Productos** (`boxes`, `112`), **Valor de pedidos** (`wallet`, `S/ 18,400`), **Tiendas** (`store`,
+`9`). This is a low-weight glance summary of `FR-06-11` totals; "Valor de pedidos" (`Order.totalCost`,
+paid + still owed — the word "comprometido" is avoided as confusing) is labeled distinctly so it is
+never read as disbursed spend, and carries an always-available tooltip explaining it. The
+partial/complete state is shown by the icon only (info-toned; warning-toned naming the excluded
+count when FX-unreconciled orders are dropped), never by changing the label — no separate caption
+(`BR-06-05`). Money uses thousand separators. Tinted-icon treatment per [ADR 0005](../../../design/decisions/0005-dashboard-microstat-icon-tile.md).
 
 **ZONA 1 · Caja y obligaciones** (`s8-card-accent top-accent`, span-8, stretched to the row).
 Eyebrow `wallet · "Caja y obligaciones"`, title `"Lo que tienes que tener listo"`, a
@@ -231,9 +234,18 @@ title `"El panorama completo"`, a `"Ver tiendas →"` link (`FR-06-11`, `FR-06-2
   `sg-transit` / `sg-done` / `sg-cancel`) plus a chip legend `Abierto` (accent, `circle-dot`) ·
   `En camino` (info, `truck`) · `Completo` (success, `circle-check`) · `Cancelado` (neutral,
   `ban`), each with its count.
-- **coll-triple** — three distribution blocks: **Gasto por categoría · dinero** (donut with the
-  total `S/ 16.5k` in its center + legend rows) · **Productos por categoría · conteo** (count
-  bars, `FR-06-20`) · **Tiendas top** (a ranked `.dist-row` list, `StoreAvatar s24` + amount).
+- **coll-row ×2** — four distribution blocks laid out as **two rows of two columns** (`.coll-row`)
+  so the bar lists get the full column width. **Row 1 (two donuts):** **Gasto por categoría · dinero** (donut
+  with the committed total in its center + legend rows; the center value is **abbreviated** when
+  large — `S/ 234.3K`, `S/ 1.2M` — so it always fits the ring, with the full grouped amount on a
+  hover `title`) · **Productos por estado de entrega** (a
+  second donut, item quantity split by delivery state — `Entregado` `--success` / `En camino`
+  `--info` / `Listo en tienda` `--accent-warm` / `Pendiente en tienda` neutral, empty states
+  dropped; center shows the product count. Labels are shared with the item-delivery `StatusChip`).
+  **Row 2 (two ranked bar lists):** **Productos por categoría · conteo** (count bars, `FR-06-20`) ·
+  **Tiendas top** (a ranked `.dist-row` list, `StoreAvatar s24` + amount). In both bar lists the
+  name sits in a fixed-width column so every bar starts at the same x and spans the remaining
+  width; long names truncate with a native `title` tooltip for the full text.
 
 ### 2.3 State variants
 
@@ -462,7 +474,7 @@ Key strings (es), by surface and tone:
 | Empty · movimiento    | encouraging            | `"Todavía no registraste pedidos"` → `"Crear tu primer pedido"`                                                                         |
 | Empty · colección     | inviting               | `"Tu colección aparecerá aquí"` → `"Explorar tiendas"`                                                                                  |
 | Collection zone title | celebratory-restrained | `"El panorama completo"`                                                                                                                |
-| Committed KPI label   | distinct from spend    | `"Comprometido"`                                                                                                                        |
+| Order-value KPI label | distinct from spend    | `"Valor de pedidos"` (+ tooltip: `"Suma del valor de todos tus pedidos activos: lo que ya pagaste más lo que aún debes."`)              |
 
 Tone rule for this FRD: the Dashboard is **read-only**, so it carries **no confirmations or
 errors**; the mascot register applies only to the empty/celebratory edges (the floating panda

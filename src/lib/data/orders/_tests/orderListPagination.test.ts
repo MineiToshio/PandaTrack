@@ -11,6 +11,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 
 import { getOrdersList } from "../orderQueries";
 import type { OrdersListPageFilters } from "../orderQueries";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
 
 type OrderRow = {
   id: string;
@@ -53,8 +54,10 @@ function makeRow(id: string, overrides: Partial<OrderRow> = {}): OrderRow {
   };
 }
 
+/** `pageSize` defaults to the smallest allow-listed option (`PAGE_SIZE_OPTIONS`) — the query
+ *  layer clamps anything else back to `DEFAULT_PAGE_SIZE`, so tests must use an allow-listed value. */
 function baseFilters(overrides: Partial<OrdersListPageFilters> = {}): OrdersListPageFilters {
-  return { sort: "recent", page: 1, pageSize: 2, ...overrides };
+  return { sort: "recent", page: 1, pageSize: 10, ...overrides };
 }
 
 function findManyArgs(callIndex = 0) {
@@ -81,12 +84,12 @@ describe("getOrdersList SQL payment-state pagination", () => {
   it("pushes the payment-state filter into SQL and paginates natively (no in-memory full fetch)", async () => {
     prismaMock.order.count.mockResolvedValue(5);
 
-    await getOrdersList("user-1", baseFilters({ paymentStates: ["paid"], page: 2, pageSize: 2 }));
+    await getOrdersList("user-1", baseFilters({ paymentStates: ["paid"], page: 2, pageSize: 10 }));
 
     const args = findManyArgs();
     // Native skip/take pagination — the removed path used `take: 1000` with no skip.
-    expect(args.skip).toBe(2);
-    expect(args.take).toBe(2);
+    expect(args.skip).toBe(10);
+    expect(args.take).toBe(10);
     // The paid state maps onto the persisted paymentPercent cache.
     expect(paymentBranch()).toEqual({ OR: [{ paymentPercent: { gte: 100 } }] });
   });
@@ -94,14 +97,14 @@ describe("getOrdersList SQL payment-state pagination", () => {
   it("derives totalCount and totalPages from the filtered DB count, not an in-memory length", async () => {
     // The original bug surfaced when totals came from an unfiltered count; they must track the
     // same filtered `where` the DB paginates over.
-    prismaMock.order.count.mockResolvedValue(5);
+    prismaMock.order.count.mockResolvedValue(25);
 
-    const result = await getOrdersList("user-1", baseFilters({ paymentStates: ["paid"], pageSize: 2 }));
+    const result = await getOrdersList("user-1", baseFilters({ paymentStates: ["paid"], pageSize: 10 }));
 
     expect(prismaMock.order.count).toHaveBeenCalledWith({
       where: expect.objectContaining({ AND: expect.any(Array) }),
     });
-    expect(result.totalCount).toBe(5);
+    expect(result.totalCount).toBe(25);
     expect(result.totalPages).toBe(3);
   });
 
@@ -111,7 +114,7 @@ describe("getOrdersList SQL payment-state pagination", () => {
     const args = findManyArgs();
     expect(args.orderBy).toEqual([{ paymentPercent: "asc" }, { orderDate: "desc" }]);
     expect(args.skip).toBe(0);
-    expect(args.take).toBe(2);
+    expect(args.take).toBe(10);
   });
 
   it("maps paidAmount, paymentPercentage and hasUnpaidBalance straight from the persisted cache", async () => {
@@ -166,13 +169,23 @@ describe("getOrdersList SQL payment-state pagination", () => {
   });
 
   it("uses native skip/take pagination and the DB count when no payment filter is present", async () => {
-    prismaMock.order.count.mockResolvedValue(10);
+    prismaMock.order.count.mockResolvedValue(45);
 
-    const result = await getOrdersList("user-1", baseFilters({ page: 2, pageSize: 2 }));
+    const result = await getOrdersList("user-1", baseFilters({ page: 2, pageSize: 10 }));
 
-    expect(prismaMock.order.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 2, take: 2 }));
-    expect(result.totalCount).toBe(10);
+    expect(prismaMock.order.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 10, take: 10 }));
+    expect(result.totalCount).toBe(45);
     expect(result.totalPages).toBe(5);
+  });
+
+  it("clamps an out-of-allow-list pageSize back to the default instead of trusting the caller", async () => {
+    prismaMock.order.count.mockResolvedValue(0);
+
+    const result = await getOrdersList("user-1", baseFilters({ pageSize: 2 }));
+
+    const args = findManyArgs();
+    expect(args.take).toBe(DEFAULT_PAGE_SIZE);
+    expect(result.pageSize).toBe(DEFAULT_PAGE_SIZE);
   });
 });
 

@@ -8,7 +8,9 @@ import Label from "@/components/core/Label";
 import Textarea from "@/components/core/Textarea";
 import Typography from "@/components/core/Typography";
 import { WizardStep } from "@/components/modules/WizardAccordion";
-import type { StoreFormValuesSnapshot } from "./types";
+import { useStoreProductTypeName } from "@/app/[locale]/(app)/_components/StoreProductTypeNamesProvider";
+import InlineSwitch from "../InlineSwitch";
+import { sellerTypeLabelKey, type StoreFormValuesSnapshot } from "./types";
 
 type StoreFormStepReviewProps = {
   n: number;
@@ -21,6 +23,8 @@ type StoreFormStepReviewProps = {
   onSubmit: () => void;
   comment: string;
   onCommentChange: (event: ChangeEvent<HTMLTextAreaElement>) => void;
+  isClosed: boolean;
+  onIsClosedChange: (next: boolean) => void;
 };
 
 export default function StoreFormStepReview({
@@ -34,22 +38,21 @@ export default function StoreFormStepReview({
   onSubmit,
   comment,
   onCommentChange,
+  isClosed,
+  onIsClosedChange,
 }: StoreFormStepReviewProps) {
   const tCreate = useTranslations("stores.create");
   const tCreateRedesign = useTranslations("stores.redesign.create");
   const tEdit = useTranslations("stores.edit");
   const tCountries = useTranslations("countries");
-  const tProductTypes = useTranslations("storeProductTypes");
+  const productTypeName = useStoreProductTypeName();
   const tChannelTypes = useTranslations("stores.contactChannelTypes");
 
   const renderReviewSummary = () => (
     <div className="rounded-[var(--radius-lg)] p-4 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
       <dl className="grid [grid-template-columns:auto_1fr] items-baseline [gap:6px_16px] [font-size:var(--text-body)]">
-        <ReviewRow
-          label={tCreateRedesign("aside.typeLabel")}
-          value={values.storeType === "BUSINESS" ? tCreate("storeTypeBusiness") : tCreate("storeTypePerson")}
-        />
-        {values.storeType === "PERSON" && values.isPrivate && (
+        <ReviewRow label={tCreateRedesign("aside.typeLabel")} value={tCreate(sellerTypeLabelKey(values.sellerType))} />
+        {values.sellerType === "PERSON" && values.isPrivate && (
           <ReviewRow label={tCreateRedesign("step1.privateLabel")} value="✓" />
         )}
         <ReviewRow label={tCreateRedesign("aside.nameLabel")} value={values.name || "—"} />
@@ -58,10 +61,12 @@ export default function StoreFormStepReview({
           value={values.countryCode ? tCountries(values.countryCode) : "—"}
         />
         <ReviewSeparator />
-        <ReviewRow
-          label={tCreateRedesign("aside.categoriesLabel")}
-          value={values.productTypeKeys.map((k) => tProductTypes(k)).join(", ") || "—"}
-        />
+        {values.sellerType !== "PROXY" && (
+          <ReviewRow
+            label={tCreateRedesign("aside.categoriesLabel")}
+            value={values.productTypeKeys.map((k) => productTypeName(k)).join(", ") || "—"}
+          />
+        )}
         <ReviewRow
           label={tCreateRedesign("aside.presenceLabel")}
           value={
@@ -78,10 +83,10 @@ export default function StoreFormStepReview({
             value={values.importCountries.map((code) => tCountries(code)).join(", ")}
           />
         )}
-        {values.storeType === "BUSINESS" && (values.contactChannels.length > 0 || values.addresses.length > 0) && (
+        {values.sellerType !== "PERSON" && (values.contactChannels.length > 0 || values.addresses.length > 0) && (
           <ReviewSeparator />
         )}
-        {values.storeType === "BUSINESS" && values.contactChannels.length > 0 && (
+        {values.sellerType !== "PERSON" && values.contactChannels.length > 0 && (
           <>
             <dt className="pt-0.5 [font-size:var(--text-caption)] [color:var(--text-muted)]">
               {tCreateRedesign("aside.channelsLabel")}
@@ -100,7 +105,7 @@ export default function StoreFormStepReview({
             </dd>
           </>
         )}
-        {values.storeType === "BUSINESS" && values.addresses.length > 0 && (
+        {values.sellerType !== "PERSON" && values.addresses.length > 0 && (
           <>
             <dt className="pt-0.5 [font-size:var(--text-caption)] [color:var(--text-muted)]">
               {tCreateRedesign("aside.addressesLabel")}
@@ -149,6 +154,17 @@ export default function StoreFormStepReview({
       <div className="space-y-4">
         <Eyebrow as="p">{tCreateRedesign("summaryEyebrow")}</Eyebrow>
         {renderReviewSummary()}
+        {isEditMode && (
+          <div className="space-y-2 rounded-[var(--radius-lg)] p-4 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
+            <Label>{tEdit("closure.sectionLabel")}</Label>
+            <Typography size="xs" className="text-text-muted">
+              {tEdit("closure.help")}
+            </Typography>
+            <div className="pt-1">
+              <InlineSwitch label={tEdit("closure.label")} checked={isClosed} onChange={onIsClosedChange} />
+            </div>
+          </div>
+        )}
         {isChangeRequestMode && (
           <div>
             <Label htmlFor="store-change-request-comment">{tEdit("commentLabel")}</Label>

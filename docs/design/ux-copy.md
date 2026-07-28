@@ -212,6 +212,22 @@ Helper text answers "why does this field exist / what goes here?", never repeats
 - Bad: label "Moneda base", helper "Selecciona tu moneda base."
 - Good: label "Moneda base", helper "Se usa para convertir los costos de tus pedidos y calcular tu presupuesto."
 
+### Never use the em dash (`—`) in copy
+
+The em dash (`—`, U+2014) is banned in every user-facing string — `es`, `en`, marketing, in-app, and hardcoded labels built in components. Reach for the punctuation the sentence actually needs:
+
+| Instead of an em dash…          | Use                          | Example                                                                         |
+| ------------------------------- | ---------------------------- | ------------------------------------------------------------------------------- |
+| Aside / appositive              | Parentheses or paired commas | "el ciclo (tienda, pedido, pago y entrega)"                                     |
+| Two independent clauses         | Period or semicolon          | "Opcional. Puedes editarlo después."                                            |
+| Label + explanation             | Colon or comma               | "Un vendedor individual: amigo, scout, revendedor." / "Privada, solo tú la ves" |
+| Code / name or inline separator | Middot `·`                   | "PEN · Sol peruano"                                                             |
+| Numeric range                   | En dash `–` (keep)           | "15 – 22 may"                                                                   |
+
+**The only allowed em dash** is a standalone null / empty placeholder — a value that is _exactly_ `—`, showing an absent number, name, or date in a summary cell. There it is the "nothing here" glyph, not punctuation.
+
+Enforced automatically by `src/test/em-dash-copy-guard.test.ts`, which fails on any em dash in `src/i18n/locales/**` that is not a standalone placeholder.
+
 ---
 
 ## 5. Neutral Spanish (hard constraint)
@@ -306,6 +322,7 @@ Enforcement is layered: the glossary fixes the _terms_; this document's matrix (
 - Voice is constant; tone varies by reader state. When in doubt, go neutral.
 - One idea per line, active voice, ~12 words max; ~30 words max per screen.
 - `tú` always; the data is the hero; figures carry context.
+- No em dash (`—`) in copy — comma, colon, period, parentheses, or `·`; the only exception is a standalone `—` null placeholder (§4). Guarded by `src/test/em-dash-copy-guard.test.ts`.
 - Neutral Spanish — no voseo. es ↔ en is reinterpreted, not literal-translated.
 - ≤ 1 emoji, celebratory moments only.
 - Every new string is placed in the matrix and checked against the glossary before merge.
@@ -320,5 +337,6 @@ Enforcement is layered: the glossary fixes the _terms_; this document's matrix (
 - Voseo / regionalisms in copy ("dejás", "podés", "anotá").
 - Bare figures without context; synonyms outside the glossary (`orden`, `envío`).
 - Delight on a trust surface (money, delivery, error). Hardcoded strings in components — copy belongs in `src/i18n/locales/{es,en}/*.json`.
+- Em dash (`—`) as sentence punctuation or a label separator (e.g. `` `${code} — ${name}` ``). It is copy, not a null placeholder, so it is banned.
 
 > Historical note: this voice system was distilled during the "Velvet" redesign; the prior design system's copy conventions are superseded by this document.

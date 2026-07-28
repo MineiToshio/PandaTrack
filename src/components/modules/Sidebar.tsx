@@ -1,6 +1,16 @@
 "use client";
 
-import { LayoutDashboard, Package, PanelLeftClose, PanelLeftOpen, Settings, ShoppingBag, Store } from "lucide-react";
+import {
+  LayoutDashboard,
+  Package,
+  PanelLeftClose,
+  PanelLeftOpen,
+  ScrollText,
+  Settings,
+  Shield,
+  ShoppingBag,
+  Store,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -11,8 +21,11 @@ import Logo from "@/components/core/Logo";
 import { cn } from "@/lib/styles";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import {
+  getActiveAdminNavItemId,
   getActiveNavItem,
+  getAdminNavItems,
   getAllNavItems,
+  type AdminNavItemId,
   type NavItemId,
 } from "@/app/[locale]/(app)/_components/AppLayout/navigationConfig";
 import ShellAccountMenu, {
@@ -28,6 +41,11 @@ const NAV_ICON_MAP: Record<NavItemId, React.ComponentType<{ className?: string }
   settings: Settings,
 };
 
+const ADMIN_ICON_MAP: Record<AdminNavItemId, React.ComponentType<{ className?: string }>> = {
+  moderation: Shield,
+  audit: ScrollText,
+};
+
 type SidebarProps = {
   locale: string;
   currentUser: AppShellUserIdentity;
@@ -37,6 +55,7 @@ type SidebarProps = {
   floatingOpen: boolean;
   onFloatingChange: (open: boolean) => void;
   storesHref?: string;
+  isAdmin: boolean;
 };
 
 export default function Sidebar({
@@ -48,11 +67,15 @@ export default function Sidebar({
   floatingOpen,
   onFloatingChange,
   storesHref,
+  isAdmin,
 }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations("appLayout");
+  const tAdmin = useTranslations("admin");
   const navItems = getAllNavItems();
   const activeItem = getActiveNavItem(pathname ?? "");
+  const activeAdminId = getActiveAdminNavItemId(pathname ?? "");
+  const isAdminRoute = activeAdminId !== undefined;
   const isExpanded = expanded || floatingOpen;
 
   const handleToggle = () => {
@@ -119,7 +142,7 @@ export default function Sidebar({
       >
         {navItems.map((item) => {
           const Icon = NAV_ICON_MAP[item.id];
-          const isActive = activeItem.id === item.id;
+          const isActive = !isAdminRoute && activeItem.id === item.id;
           const href = item.id === "stores" && storesHref != null ? storesHref : item.href(locale);
           const storesHrefKind =
             item.id === "stores" ? (href.includes("?") ? "preference_filters" : "plain") : undefined;
@@ -149,6 +172,52 @@ export default function Sidebar({
             </Link>
           );
         })}
+
+        {isAdmin && (
+          <div
+            role="group"
+            className="border-border mt-2 flex flex-col gap-1 border-t pt-3"
+            aria-label={tAdmin("nav.section")}
+          >
+            {isExpanded && (
+              <p className="text-text-muted px-3 pb-1 text-xs font-medium tracking-wide uppercase">
+                {tAdmin("nav.section")}
+              </p>
+            )}
+            {getAdminNavItems().map((item) => {
+              const Icon = ADMIN_ICON_MAP[item.id];
+              const isActive = activeAdminId === item.id;
+
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href(locale)}
+                  aria-current={isActive ? "page" : undefined}
+                  className={cn(
+                    "focus-visible:ring-ring focus-visible:ring-offset-background flex h-10 items-center gap-3 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none",
+                    isExpanded ? "px-3" : "w-full justify-center",
+                    isActive
+                      ? "bg-accent/14 text-accent font-medium"
+                      : "text-text-body hover:bg-foreground/15 hover:text-foreground",
+                  )}
+                  data-ph-event={POSTHOG_EVENTS.APP_SHELL.NAV_CLICKED}
+                  data-ph-props={JSON.stringify({
+                    destination: item.id,
+                    navigation_level: "admin",
+                    viewport: "desktop",
+                  })}
+                >
+                  <Icon className="h-5 w-5 shrink-0" aria-hidden />
+                  {isExpanded ? (
+                    <span>{tAdmin(item.labelKey)}</span>
+                  ) : (
+                    <span className="sr-only">{tAdmin(item.labelKey)}</span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </nav>
 
       {/* Footer: user widget + collapse/expand toggle */}

@@ -145,7 +145,7 @@ export default function DeliveryDataFields({
             <option value="">{t("create.fields.currencyPlaceholder")}</option>
             {(ALLOWED_COLLECTOR_BASE_CURRENCY_CODES as readonly string[]).map((code) => (
               <option key={code} value={code}>
-                {code} — {tCurrencies(code as never)}
+                {code} · {tCurrencies(code as never)}
               </option>
             ))}
           </Select>

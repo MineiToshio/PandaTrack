@@ -1,5 +1,6 @@
 import { NotificationSubjectType, NotificationType } from "../../../generated/prisma/client";
 import { ROUTES } from "@/lib/constants";
+import type { ReminderNotificationType } from "@/lib/data/notifications/reminderCandidateQueries";
 import type { PushMessagePayload } from "@/lib/push";
 
 /**
@@ -9,8 +10,8 @@ import type { PushMessagePayload } from "@/lib/push";
  */
 export type ReminderTranslator = (key: string, values?: Record<string, string>) => string;
 
-/** Maps each reminder type to its `notifications` namespace copy prefix. */
-const TRANSLATION_PREFIX_BY_TYPE: Record<NotificationType, string> = {
+/** Maps each dispatcher reminder type to its `notifications` namespace copy prefix. */
+const TRANSLATION_PREFIX_BY_TYPE: Record<ReminderNotificationType, string> = {
   [NotificationType.PAYMENT_DUE]: "paymentDue",
   [NotificationType.ARRIVAL_DUE]: "arrivalDue",
   [NotificationType.ARRIVAL_OVERDUE]: "arrivalOverdue",
@@ -23,7 +24,7 @@ function buildDeepLink(locale: string, subjectType: NotificationSubjectType, sub
 }
 
 export interface ComposeReminderPayloadInput {
-  type: NotificationType;
+  type: ReminderNotificationType;
   subjectType: NotificationSubjectType;
   subjectId: string;
   locale: string;

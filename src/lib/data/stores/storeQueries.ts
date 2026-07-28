@@ -11,10 +11,19 @@ import {
   normalizeStoreName,
   SIMILARITY_THRESHOLD_PERCENT,
 } from "@/lib/store/duplicateMatch";
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
 
 const DEFAULT_DUPLICATE_CANDIDATES_LIMIT = 5;
-export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = 12;
+export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = DEFAULT_PAGE_SIZE;
 const DEFAULT_PUBLIC_STORE_REVIEW_LIMIT = 10;
+
+/**
+ * Single source of truth for which store statuses are visible on every public surface (listing,
+ * search, detail, and the order-creation picker). `REJECTED` is excluded everywhere (tombstone); only
+ * removal hides a store. Open reports never hide one: they drive a derived notice on the detail, not a
+ * visibility rule. Encoding the rule once keeps the surfaces from diverging.
+ */
+export const PUBLIC_VISIBLE_STORE_STATUSES = ["PENDING", "APPROVED"] as const satisfies readonly StoreStatus[];
 
 /**
  * Safety cap on rows fed into in-memory duplicate scoring. The query already pre-filters in SQL
@@ -49,7 +58,7 @@ export interface StoreDetail {
   name: string;
   description: string | null;
   status: StoreStatus;
-  storeType: "BUSINESS" | "PERSON";
+  sellerType: "RETAILER" | "PERSON" | "PROXY";
   countryCode: string;
   isActive: boolean;
   isPrivate: boolean;
@@ -62,11 +71,11 @@ export interface StoreDetail {
   presenceTypes: StorePresenceType[];
   productTypeKeys: string[];
   importCountryCodes: string[];
-  /** Only for BUSINESS stores; PERSON stores do not expose these. */
+  /** Exposed for RETAILER and PROXY sellers; PERSON sellers do not expose these. */
   logoUrl?: string | null;
-  /** Only for BUSINESS stores; public channels only. */
+  /** Exposed for RETAILER and PROXY sellers; public channels only. */
   contactChannels?: Array<{ type: StoreContactChannelType; value: string; label?: string | null }>;
-  /** Only for BUSINESS stores; public addresses only. */
+  /** Exposed for RETAILER and PROXY sellers; public addresses only. */
   addresses?: Array<{
     city?: string | null;
     addressLine: string;
@@ -79,7 +88,8 @@ export interface PublicStoreListingItem {
   name: string;
   countryCode: string;
   status: StoreStatus;
-  storeType: "BUSINESS" | "PERSON";
+  sellerType: "RETAILER" | "PERSON" | "PROXY";
+  logoUrl: string | null;
   presenceTypes: StorePresenceType[];
   productTypeKeys: string[];
   importCountryCodes: string[];
@@ -98,6 +108,8 @@ export interface PublicStoreListingFilters {
   presenceTypes?: StorePresenceType[];
   receivesOrders?: boolean;
   hasStock?: boolean;
+  /** When true, closed (inactive) stores are included in the listing. Defaults to false (closed stores hidden). */
+  includeClosed?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -215,7 +227,12 @@ export async function findDuplicateCandidatesInCountry(
     .map((item) => item.store);
 }
 
-function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prisma.StoreWhereInput {
+/**
+ * Builds the Prisma `where` for the public store listing.
+ * By default it hides closed (inactive) stores; pass `includeClosed: true` to surface them.
+ * Exported for unit testing of the default-hidden behavior.
+ */
+export function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prisma.StoreWhereInput {
   const {
     nameQuery,
     productTypeKeys = [],
@@ -224,6 +241,7 @@ function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prism
     presenceTypes = [],
     receivesOrders = false,
     hasStock = false,
+    includeClosed = false,
   } = filters;
 
   const trimmedName = nameQuery?.trim();
@@ -234,8 +252,10 @@ function buildPublicStoreListingWhere(filters: PublicStoreListingFilters): Prism
 
   return {
     visibility: "PUBLIC",
-    status: { in: ["PENDING", "APPROVED"] },
+    status: { in: [...PUBLIC_VISIBLE_STORE_STATUSES] },
     isPrivate: false,
+    // Closed stores are hidden by default; the listing exposes an opt-in "show closed" filter.
+    ...(!includeClosed && { isActive: true }),
     ...(trimmedName && {
       name: { contains: trimmedName, mode: "insensitive" },
     }),
@@ -271,7 +291,8 @@ function mapPublicStoreListingItem(store: {
   name: string;
   countryCode: string;
   status: StoreStatus;
-  storeType: "BUSINESS" | "PERSON";
+  sellerType: "RETAILER" | "PERSON" | "PROXY";
+  logoUrl: string | null;
   receivesOrders: boolean | null;
   hasStock: boolean | null;
   averageRating: number | null;
@@ -286,7 +307,8 @@ function mapPublicStoreListingItem(store: {
     name: store.name,
     countryCode: store.countryCode,
     status: store.status,
-    storeType: store.storeType,
+    sellerType: store.sellerType,
+    logoUrl: store.logoUrl,
     presenceTypes: store.presences.map((p) => p.presenceType),
     productTypeKeys: store.productTypeAssignments.map((assignment) => assignment.productTypeKey),
     importCountryCodes: store.importCountries.map((country) => country.countryCode),
@@ -301,12 +323,11 @@ function mapPublicStoreListingItem(store: {
   };
 }
 
-export async function getPublicStoresListingPage(
-  filters: PublicStoreListingFilters,
-): Promise<PublicStoreListingPage> {
+export async function getPublicStoresListingPage(filters: PublicStoreListingFilters): Promise<PublicStoreListingPage> {
   const requestedPage = filters.page && Number.isInteger(filters.page) && filters.page > 0 ? filters.page : 1;
+  // Hardened against arbitrary URL values: only the allow-listed options are honored.
   const requestedPageSize =
-    filters.pageSize && Number.isInteger(filters.pageSize) && filters.pageSize > 0
+    filters.pageSize && (PAGE_SIZE_OPTIONS as readonly number[]).includes(filters.pageSize)
       ? filters.pageSize
       : DEFAULT_PUBLIC_STORE_PAGE_SIZE;
   const where = buildPublicStoreListingWhere(filters);
@@ -323,7 +344,8 @@ export async function getPublicStoresListingPage(
       name: true,
       countryCode: true,
       status: true,
-      storeType: true,
+      sellerType: true,
+      logoUrl: true,
       receivesOrders: true,
       hasStock: true,
       averageRating: true,
@@ -365,14 +387,14 @@ export async function countPublicStores(filters: PublicStoreListingFilters): Pro
 /**
  * Returns a public store by slug for the store detail page.
  * Pending stores are included so they can be discovered in-app; inactive stores are included and should show a warning.
- * Business vs person visibility: BUSINESS exposes logo, contact channels, and addresses; PERSON does not.
+ * Seller-type visibility: RETAILER and PROXY expose logo, contact channels, and addresses; PERSON does not.
  */
 export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> {
   const store = await prisma.store.findFirst({
     where: {
       slug,
       visibility: "PUBLIC",
-      status: { in: ["PENDING", "APPROVED"] },
+      status: { in: [...PUBLIC_VISIBLE_STORE_STATUSES] },
     },
     select: {
       id: true,
@@ -380,7 +402,7 @@ export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> 
       name: true,
       description: true,
       status: true,
-      storeType: true,
+      sellerType: true,
       countryCode: true,
       isActive: true,
       isPrivate: true,
@@ -439,7 +461,7 @@ export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> 
     name: store.name,
     description: store.description,
     status: store.status,
-    storeType: store.storeType,
+    sellerType: store.sellerType,
     countryCode: store.countryCode,
     isActive: store.isActive,
     isPrivate: store.isPrivate,
@@ -454,7 +476,8 @@ export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> 
     importCountryCodes,
   };
 
-  if (store.storeType === "BUSINESS") {
+  // RETAILER and PROXY sellers expose logo, contact channels, and addresses; PERSON does not.
+  if (store.sellerType !== "PERSON") {
     return {
       ...base,
       logoUrl: store.logoUrl,
@@ -477,11 +500,11 @@ export async function getStoreBySlug(slug: string): Promise<StoreDetail | null> 
 /**
  * Public store listing with optional filters.
  * OR within same filter family (e.g. any of selected product types), AND across families.
- * Only PUBLIC, PENDING or APPROVED stores; isActive is not filtered so inactive stores can appear (detail page shows warning).
+ * Only PUBLIC stores in a publicly visible status (`PUBLIC_VISIBLE_STORE_STATUSES`); `REJECTED` is
+ * excluded. Closed (inactive) stores are hidden by default and
+ * only included when `includeClosed` is set; they remain reachable by direct URL (detail page shows warning).
  */
-export async function getPublicStoresListing(
-  filters: PublicStoreListingFilters,
-): Promise<PublicStoreListingItem[]> {
+export async function getPublicStoresListing(filters: PublicStoreListingFilters): Promise<PublicStoreListingItem[]> {
   const listingPage = await getPublicStoresListingPage(filters);
   return listingPage.items;
 }
@@ -579,10 +602,7 @@ export async function getPublicStoreReviews(
   return mapRowsToPublicStoreReviews(combinedRows, viewerUserId);
 }
 
-export async function getStoreViewerContext(
-  storeId: string,
-  userId: string,
-): Promise<StoreViewerContext> {
+export async function getStoreViewerContext(storeId: string, userId: string): Promise<StoreViewerContext> {
   const [review, note] = await Promise.all([
     prisma.storeReview.findUnique({
       where: {
@@ -640,10 +660,7 @@ export type ViewerStoreActivity = {
  * Only orders owned by `userId` at `storeId` are counted. Returns zeroed totals
  * when the viewer has not placed any order at this store.
  */
-export async function getViewerStoreActivity(
-  userId: string,
-  storeId: string,
-): Promise<ViewerStoreActivity> {
+export async function getViewerStoreActivity(userId: string, storeId: string): Promise<ViewerStoreActivity> {
   const orders = await prisma.order.findMany({
     where: { userId, storeId },
     select: { status: true, currencyCode: true, totalCost: true },
@@ -697,19 +714,20 @@ export async function getViewerOrderCountsByStoreSlugs(
 
 /**
  * Returns the catalog of stores a collector can place a pedido at: publicly visible
- * and active, in `PENDING` or `APPROVED` moderation status.
+ * and active, in any publicly visible moderation status (`PUBLIC_VISIBLE_STORE_STATUSES`).
  *
  * Stores are shared across users — a collector can buy from any catalog store, not
  * only the ones they created themselves. `PENDING` is included so that a user who
  * just registered a new store (which starts as `PENDING`) can immediately use it
- * without waiting for moderation. This matches the public store listing query
+ * without waiting for moderation. A store with open reports stays orderable too: the derived
+ * report notice is informational, not a lock. This matches the public store listing query
  * in `getPublicStoresListingPage`.
  */
 export async function getOrderableStores(): Promise<UserStoreOption[]> {
   return prisma.store.findMany({
     where: {
       visibility: "PUBLIC",
-      status: { in: ["PENDING", "APPROVED"] },
+      status: { in: [...PUBLIC_VISIBLE_STORE_STATUSES] },
       isActive: true,
     },
     select: { id: true, name: true, countryCode: true },

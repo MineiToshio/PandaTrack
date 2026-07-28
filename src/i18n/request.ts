@@ -32,6 +32,7 @@ export default getRequestConfig(async ({ requestLocale }) => {
       orderListing: (await import(`./locales/${locale}/orderListing.json`)).default,
       deliveries: (await import(`./locales/${locale}/deliveries.json`)).default,
       components: (await import(`./locales/${locale}/components.json`)).default,
+      admin: (await import(`./locales/${locale}/admin.json`)).default,
     },
   };
 });

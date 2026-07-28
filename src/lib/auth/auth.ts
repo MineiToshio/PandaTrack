@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { createAuthMiddleware } from "better-auth/api";
+import { admin } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import * as Sentry from "@sentry/nextjs";
@@ -90,7 +91,10 @@ export const auth = betterAuth({
       enabled: false,
     },
   },
-  plugins: [nextCookies()],
+  // `admin` adds the database-backed role and the plugin's forward-compatible ban/impersonation
+  // fields. `adminRoles` and `defaultRole` are both explicit; new accounts default to `user` and no
+  // account is an administrator until the bootstrap grants the first one. `nextCookies` stays last.
+  plugins: [admin({ adminRoles: ["admin"], defaultRole: "user" }), nextCookies()],
   account: {
     accountLinking: {
       enabled: true,

@@ -5,7 +5,7 @@ slug: order-payment-shipment
 title: Orders, Payments & Shipment — Feature Design Document
 status: ACTIVE
 parent: FRD-05
-last_updated: 2026-06-16
+last_updated: 2026-07-23
 prototype: ./prototype/order-payment-shipment.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -217,6 +217,13 @@ with item-icon + name + subtype + item-state + qty + price, then `"+ N más…"`
 divergence from `FR-05-28`'s original oldest-first, because collectors manage recent orders
 first).
 
+A thin right-aligned row above the list (below `orders-filter-chips`, shown only from 2 rows
+up) carries a single `Expand all` / `Collapse all` toggle (`ExpandAllToggle`) driving one
+shared multi-open expansion set for every row on the current page + filter — the desktop
+table is no longer a single-open accordion. Its label always shows the _next_ action
+(`"Expandir todo"` until every row is open, then `"Colapsar todo"`), while `aria-pressed`
+carries the true `true`/`false`/`mixed` state for assistive tech.
+
 The **FX banner** (`#s7-orders-list-fx-banner`, `role="status"`, `aria-live="polite"`,
 leading `refresh-cw` in `--accent`) sits between the chips and the list when
 `pendingFxCount > 0`; its tonal CTA opens the FX reconciliation modal (§5.6).
@@ -353,35 +360,35 @@ Everything below already exists in the catalog — see
 [components.md](../../../design/components.md). Orders, Payments & Shipment is an
 **assembly of existing components**; it must not fork or reinvent any of them.
 
-| Component                              | Tier        | Role in FRD-05                                                                                                                |
-| -------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `Sidebar`, `Header`                    | module      | App shell chrome (PUSH sidebar, breadcrumbs/lang/theme topbar)                                                                |
-| `StoreAvatar`                          | core        | s32 in list rows, s56 in detail hero                                                                                          |
-| `MonoCode`                             | core        | `ORD-…` identifiers in rows, hero, breadcrumb                                                                                 |
-| `StatusChip`                           | core        | Order + item status, per [ADR 0002](../../../design/decisions/0002-status-chip-mapping.md)                                    |
-| `CodeCopyButton`                       | core        | copy the `ORD-…` in the mobile hero                                                                                           |
-| `Button`                               | core        | primary / accent (tonal) / ghost / destructive-ghost hierarchy                                                                |
-| `ViewTransitionLink`                   | core        | list row → detail (`view-transition-name: order-{id}`)                                                                        |
-| `FilterTriggerButton` + `FilterDrawer` | core/module | list filtering (`FR-05-26`); side drawer (desktop) / bottom sheet (mobile, ADR 0003 D8)                                       |
-| `AppliedFilterChip`                    | core        | removable active-filter chips, incl. the default "Solo activas"                                                               |
-| `Pagination` / `ListPagination`        | core/module | desktop numeric / mobile "Cargar más"                                                                                         |
-| `Select`                               | core        | sort, currency                                                                                                                |
-| `WizardAccordion`                      | module      | 3-step create flow                                                                                                            |
-| `StoreCombobox`                        | module      | create store selection (+ inline "Crear nueva tienda" with `returnTo` context)                                                |
-| `OrderItemsGrid`                       | module      | spreadsheet item entry (keyboard nav, drag reorder) — `FR-05-06`…`FR-05-10`, `BR-05-04`                                       |
-| `DateRangePickerInput`                 | core        | estimated delivery range (with quick-range presets)                                                                           |
-| `DateInput`                            | core        | order date, payment date                                                                                                      |
-| `Textarea`                             | core        | inline-editable private note, cancellation reason                                                                             |
-| `CollapsibleSubcard`                   | module      | Productos / Historial subcards                                                                                                |
-| `AsideSummary` / `DetailSidebar`       | module      | Pagos / Acciones / Nota rail; reactive create/edit Resumen                                                                    |
-| `PrivateNoteCard`                      | module      | inline-editable private note (autosave on blur, ~800ms debounce — `FR-05-21`)                                                 |
-| `Modal` (`ModalDialog` / `ModalSheet`) | module      | pay / cancel / delete / discard / discrepancy / FX overlays — [ADR 0008](../../../design/decisions/0008-modal-enhancement.md) |
-| `FxReconciliationModal`                | module      | bulk FX reconciliation grouped by currency pair (`FR-05-36`…`FR-05-38`)                                                       |
-| `MobilePicker`                         | module      | mobile store / currency / product-type / date-range pickers                                                                   |
-| `EmptyState`                           | module      | initial empty, filtered empty, no-eligible-stores                                                                             |
-| `Skeleton`                             | core        | list loading                                                                                                                  |
-| `Toast`                                | core        | payment-complete achievement, save confirmations, add-payment failure reverts                                                 |
-| `MascotBubble`                         | core        | celebratory register only — empty states and the payment-complete toast                                                       |
+| Component                              | Tier        | Role in FRD-05                                                                                                                                                                  |
+| -------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Sidebar`, `Header`                    | module      | App shell chrome (PUSH sidebar, breadcrumbs/lang/theme topbar)                                                                                                                  |
+| `StoreAvatar`                          | core        | s32 in list rows, s56 in detail hero                                                                                                                                            |
+| `MonoCode`                             | core        | `ORD-…` identifiers in rows, hero, breadcrumb                                                                                                                                   |
+| `StatusChip`                           | core        | Order + item status, per [ADR 0002](../../../design/decisions/0002-status-chip-mapping.md)                                                                                      |
+| `CodeCopyButton`                       | core        | copy the `ORD-…` in the mobile hero                                                                                                                                             |
+| `Button`                               | core        | primary / accent (tonal) / ghost / destructive-ghost hierarchy                                                                                                                  |
+| `ViewTransitionLink`                   | core        | list row → detail (`view-transition-name: order-{id}`)                                                                                                                          |
+| `FilterTriggerButton` + `FilterDrawer` | core/module | list filtering (`FR-05-26`); side drawer (desktop) / bottom sheet (mobile, ADR 0003 D8)                                                                                         |
+| `AppliedFilterChip`                    | core        | removable active-filter chips, incl. the default "Solo activas"                                                                                                                 |
+| `ListPagination` / `PerPageSelect`     | module      | desktop summary + page-size select + numbered nav / mobile summary + "Cargar más" ([ADR 0018](../../../design/decisions/0018-list-pagination-page-size-and-desktop-summary.md)) |
+| `Select`                               | core        | sort, currency                                                                                                                                                                  |
+| `WizardAccordion`                      | module      | 3-step create flow                                                                                                                                                              |
+| `StoreCombobox`                        | module      | create store selection (+ inline "Crear nueva tienda" with `returnTo` context)                                                                                                  |
+| `OrderItemsGrid`                       | module      | spreadsheet item entry (keyboard nav, drag reorder) — `FR-05-06`…`FR-05-10`, `BR-05-04`                                                                                         |
+| `DateRangePickerInput`                 | core        | estimated delivery range (with quick-range presets)                                                                                                                             |
+| `DateInput`                            | core        | order date, payment date                                                                                                                                                        |
+| `Textarea`                             | core        | inline-editable private note, cancellation reason                                                                                                                               |
+| `CollapsibleSubcard`                   | module      | Productos / Historial subcards                                                                                                                                                  |
+| `AsideSummary` / `DetailSidebar`       | module      | Pagos / Acciones / Nota rail; reactive create/edit Resumen                                                                                                                      |
+| `PrivateNoteCard`                      | module      | inline-editable private note (autosave on blur, ~800ms debounce — `FR-05-21`)                                                                                                   |
+| `Modal` (`ModalDialog` / `ModalSheet`) | module      | pay / cancel / delete / discard / discrepancy / FX overlays — [ADR 0008](../../../design/decisions/0008-modal-enhancement.md)                                                   |
+| `FxReconciliationModal`                | module      | bulk FX reconciliation grouped by currency pair (`FR-05-36`…`FR-05-38`)                                                                                                         |
+| `MobilePicker`                         | module      | mobile store / currency / product-type / date-range pickers                                                                                                                     |
+| `EmptyState`                           | module      | initial empty, filtered empty, no-eligible-stores                                                                                                                               |
+| `Skeleton`                             | core        | list loading                                                                                                                                                                    |
+| `Toast`                                | core        | payment-complete achievement, save confirmations, add-payment failure reverts                                                                                                   |
+| `MascotBubble`                         | core        | celebratory register only — empty states and the payment-complete toast                                                                                                         |
 
 Implementation contracts (not design surfaces): the `getOrdersList` / `getOrderDetail`
 queries, the `pendingFxCount` derivation, `deriveOrderStatus` (`BR-05-02`), and the
@@ -494,6 +501,43 @@ All mutations are **optimistic** — see the `optimistic-client-updates` policy 
 > ([ADR 0014](../../../design/decisions/0014-motion-system-and-view-transitions.md)) and the
 > mascot cooldown are implementation concerns, not design changes.
 
+### 5.7 Removed-store tombstone (`FR-04-42`, `AC-04-22`)
+
+This is the order-side render of a cross-FRD requirement whose store-side lifecycle
+(`REJECTED` status + `Store.removalReason`) is owned by
+[FRD-04 · BP-01 · WO-09](../../frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-09-store-approval-and-removal.md)
+and delivered here by
+[BP-02 · WO-08](bp-02-order-workspace-and-list-experience/work-orders/wo-08-order-side-removed-store-tombstone.md).
+[FDD-04](../../frd-04-store-domain/fdd-04-store-domain.md) deferred the exact order-row pixel
+to this FDD because a `REJECTED` store is a **collector-order** surface, not a store surface
+(the store detail route 404s and no store-detail tombstone screen exists).
+
+Presentation **accompanies** the store name, it does not replace it: the store row is
+retained by the tombstone, so the historical `store.name` stays visible as plain text and a
+marker is added next to it. This preserves the collector's "who did I buy from" context
+across a list of orders spanning many stores.
+
+| Surface                     | Marker treatment                                                                                               |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `OrderCard` (mobile list)   | Compact inline marker beside the name: lucide icon + core `Tooltip` with the full message + screen-reader text |
+| `OrdersTable` row (desktop) | Same compact inline marker beside the name                                                                     |
+| `OrderDetailHero`           | Fuller inline line under the store `<h1>`: neutral rendered muted, sanction rendered in `--warning` tone       |
+| `OrderDetailContent`        | Pass-through: threads `store.status` + `store.removalReason` to the hero; no store link to hide today          |
+
+Variant selection is neutral by default and sanction only for the abuse category, driven by
+`isSanctionRemovalReason(store.removalReason)` via the shared `resolveStoreTombstone` helper.
+The order side **never re-classifies** removal reasons; it consumes the value WO-09 persisted.
+The two variants use distinct lucide icons, each with an `aria-label`, so the state is never
+color-only (ADR 0006), and the hero message is real, announceable text.
+
+Presentation is a small route-level `StoreTombstoneNotice`
+(`orders/_components/share/`, `variant: "compact" | "full"`) reading `useTranslations("stores")`.
+It is intentionally **not** mocked in the FRD-05 prototype (which predates this record); it is
+reconstructible from this section plus the copy row in §6. The delivery and dashboard surfaces
+that also render a store name are a documented sibling follow-up (they would show a stale name
+for a removed store) and will reuse the same helper and copy; `FR-04-42` itself is scoped to
+collector orders.
+
 ---
 
 ## 6. Copy & voice
@@ -505,23 +549,33 @@ live in `src/i18n/locales/{es,en}/orders.json` (list copy under `orderListing`).
 
 Key strings (es), by surface and tone:
 
-| Surface                  | Tone                   | String                                                                                                                              |
-| ------------------------ | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| List heading meta        | neutral, factual       | `"{active} activos · {closed} cerrado"`                                                                                             |
-| List search placeholder  | helpful                | `"Código o producto (ORD-20260428-01, Evangelion OST…)"`                                                                            |
-| Hero eyebrow             | warm-possessive        | `"Tu pedido · {currency}"`                                                                                                          |
-| Hero balance label       | factual                | `"Saldo pendiente"` / `"de {total} {currency}"`                                                                                     |
-| Hero progress caption    | reassuring             | `"{pct}% pagado · entrega estimada {date}"`                                                                                         |
-| Payment success (full)   | celebratory-restrained | `"¡Cubierto! Una pre-orden menos. ✨"`                                                                                              |
-| Overdue banner           | alerting               | `"Atrasado {days} días"` · `"Estimado el {date} · aún sin entrega confirmada"`                                                      |
-| Private note placeholder | inviting               | `"Escribe una nota o recordatorio para este pedido…"`                                                                               |
-| FX banner                | confidence-building    | `"Tienes {count} pedidos con el tipo de cambio desactualizado. Actualízalos para que tus reportes reflejen tu moneda base actual."` |
-| Empty (initial)          | encouraging            | `"Aún no hay pedidos"`                                                                                                              |
-| Empty (filtered)         | neutral                | `"Sin resultados"`                                                                                                                  |
-| No eligible stores       | explanatory            | `"Sin tiendas aún"`                                                                                                                 |
-| Edit, immutable store    | explanatory            | `"La tienda no se puede cambiar una vez creado el pedido."`                                                                         |
-| Discrepancy modal title  | factual                | `"Importe no coincide"`                                                                                                             |
-| Delete confirm body      | concrete               | `"Se eliminarán también los pagos y el historial asociados. Las entregas vinculadas no se verán afectadas."`                        |
+| Surface                            | Tone                    | String                                                                                                                              |
+| ---------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| List heading meta                  | neutral, factual        | `"{active} activos · {closed} cerrado"`                                                                                             |
+| List search placeholder            | helpful                 | `"Código o producto (ORD-20260428-01, Evangelion OST…)"`                                                                            |
+| Hero eyebrow                       | warm-possessive         | `"Tu pedido · {currency}"`                                                                                                          |
+| Hero balance label                 | factual                 | `"Saldo pendiente"` / `"de {total} {currency}"`                                                                                     |
+| Hero progress caption              | reassuring              | `"{pct}% pagado · entrega estimada {date}"`                                                                                         |
+| Payment success (full)             | celebratory-restrained  | `"¡Cubierto! Una pre-orden menos. ✨"`                                                                                              |
+| Overdue banner                     | alerting                | `"Atrasado {days} días"` · `"Estimado el {date} · aún sin entrega confirmada"`                                                      |
+| Private note placeholder           | inviting                | `"Escribe una nota o recordatorio para este pedido…"`                                                                               |
+| FX banner                          | confidence-building     | `"Tienes {count} pedidos con el tipo de cambio desactualizado. Actualízalos para que tus reportes reflejen tu moneda base actual."` |
+| Empty (initial)                    | encouraging             | `"Aún no hay pedidos"`                                                                                                              |
+| Empty (filtered)                   | neutral                 | `"Sin resultados"`                                                                                                                  |
+| No eligible stores                 | explanatory             | `"Sin tiendas aún"`                                                                                                                 |
+| Edit, immutable store              | explanatory             | `"La tienda no se puede cambiar una vez creado el pedido."`                                                                         |
+| Discrepancy modal title            | factual                 | `"Importe no coincide"`                                                                                                             |
+| Delete confirm body                | concrete                | `"Se eliminarán también los pagos y el historial asociados. Las entregas vinculadas no se verán afectadas."`                        |
+| Removed-store tombstone (neutral)  | factual, non-accusatory | `"Esta tienda ya no está disponible."`                                                                                              |
+| Removed-store tombstone (sanction) | firm, non-accusatory    | `"Esta tienda fue retirada por incumplir nuestras políticas."`                                                                      |
+
+The two removed-store tombstone strings (§5.7) live in `src/i18n/locales/{es,en}/stores.json`
+under a dedicated `orderTombstone` group, not in `orders.json`: the copy is store-semantic,
+the neutral wording already exists store-side, and the order list and detail surfaces read
+different namespaces (`orderListing` and `orders`), so a single store-namespace home avoids a
+duplicated key. The exact sanction wording is subject to copywriting review; the neutral vs
+sanction split is fixed by `Store.removalReason`. See
+[WO-08](bp-02-order-workspace-and-list-experience/work-orders/wo-08-order-side-removed-store-tombstone.md).
 
 Tone rule for this FRD: **confirmations and errors carry no mascot** (decálogo #6); the
 panda appears only in the celebratory/empty register (sleeping/confused empty states, the

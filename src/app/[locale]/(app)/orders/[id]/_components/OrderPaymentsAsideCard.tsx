@@ -2,7 +2,8 @@
 
 import { forwardRef, useImperativeHandle, useState } from "react";
 import { useTranslations } from "next-intl";
-import { CircleDollarSign, Wallet } from "lucide-react";
+import { CircleDollarSign, CircleOff, Wallet } from "lucide-react";
+import Chip from "@/components/core/Chip";
 import Eyebrow, { type EyebrowTone } from "@/components/core/Eyebrow";
 import { cn } from "@/lib/styles";
 import type { PaymentSummary } from "@/lib/orders/paymentSummary";
@@ -109,6 +110,10 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
     const isFullyPaid = summary.paymentPercentage >= 100;
     const canAddPayment = !isCancelled && !isFullyPaid;
     const tone = derivePaymentsTone({ isFullyPaid, isOverdue, isCompleted, hasUnpaidBalance });
+    // A cancelled order that still carries payments kept them deliberately at cancel time —
+    // that money is sunk, not an active balance. A cancelled order with no payments (removed,
+    // refunded, or never paid) shows no marker.
+    const showLostMarker = isCancelled && summary.paidAmount > 0;
 
     async function handleAddPayment(amount: number, paymentDate: Date) {
       const result = await onAddPayment(amount, paymentDate);
@@ -154,8 +159,15 @@ const OrderPaymentsAsideCard = forwardRef<OrderPaymentsAsideCardHandle, OrderPay
             + gap, keeps amounts aligned with pay-row amounts above) · gap 4px between rows.
             Always rendered — see comment above. */}
         <div className={cn("border-border space-y-1 border-t pt-2 pr-10", payments.length === 0 ? "mt-3" : "mt-0")}>
-          <div className="flex items-baseline justify-between">
-            <span className="text-text-muted text-[12px]">{t("detail.payments.totalPaid")}</span>
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="flex items-center gap-1.5">
+              <span className="text-text-muted text-[12px]">{t("detail.payments.totalPaid")}</span>
+              {showLostMarker && (
+                <Chip variant="warning" size="sm" icon={<CircleOff size={12} aria-hidden="true" />}>
+                  {t("detail.payments.lostMarker")}
+                </Chip>
+              )}
+            </span>
             <span className="text-text-title text-[13px] font-semibold tabular-nums">
               {formatAmountSymbolOnly(summary.paidAmount, currencyCode, locale)}
             </span>

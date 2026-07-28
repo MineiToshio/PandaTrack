@@ -111,7 +111,7 @@
       "cta": "Create your first store",
       "backToList": "Back to Orders",
       "mobileTitle": "First, create a store",
-      "mobileDescription": "To create an order you need at least one store — where you'll record the purchase: name, contact, and currencies."
+      "mobileDescription": "To create an order you need at least one store. That's where you'll record the purchase: name, contact, and currencies."
     }
   },
   "picker": {
@@ -182,7 +182,7 @@
     "exchangeRateHint": "PandaTrack uses this number to convert this order into your base currency. That way what you see when you open the app and your budget stay in the same currency. Enter how many {to} equal 1 {from}, using the real rate you paid (bank or card).",
     "exchangeRatePlaceholder": "0.00",
     "exchangeRateHelper": "{from} → {to}",
-    "exchangeRateOutdatedWarning": "Rate may be outdated after your base-currency change — review it.",
+    "exchangeRateOutdatedWarning": "Rate may be outdated after your base-currency change. Review it.",
     "baseCurrencyBannerText": "We'll show you how much you've spent in total, even when you buy from stores in different countries. Just choose your base currency and we'll convert each order to it for you.",
     "baseCurrencyBannerCta": "Choose base currency →",
     "itemsSectionTitle": "Items",
@@ -339,6 +339,7 @@
       "listSectionTitle": "Recorded payments",
       "asideEmpty": "No payments recorded.",
       "totalPaid": "Total paid",
+      "lostMarker": "Lost",
       "saldoPendiente": "Outstanding balance",
       "summaryRegionAria": "Payment summary",
       "summaryPaid": "Paid",
@@ -378,7 +379,12 @@
     "cancelModal": {
       "title": "Cancel order?",
       "subtitle": "The order will be archived as Cancelled",
-      "descriptionBase": "You can reactivate it later from the order detail. Payments and history are preserved.",
+      "descriptionBase": "You can reactivate it later from the order detail. The history is preserved.",
+      "paymentsQuestion": "This order has recorded payments ({amount}). What do you want to do with them?",
+      "paymentsKeepLabel": "Keep them (money lost)",
+      "paymentsKeepHint": "Use this if you paid and were not refunded. It will be recorded as lost.",
+      "paymentsRemoveLabel": "Remove them",
+      "paymentsRemoveHint": "Use this if you were refunded or moved the money as credit to another order.",
       "reasonLabel": "Reason (optional)",
       "reasonPlaceholder": "e.g. The store closed, I changed my mind…",
       "confirm": "Cancel order",

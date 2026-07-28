@@ -51,7 +51,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
   const raw = {
     name: formData.get("name") ?? undefined,
     description: formData.get("description") ?? undefined,
-    storeType: formData.get("storeType") ?? undefined,
+    sellerType: formData.get("sellerType") ?? undefined,
     countryCode: formData.get("countryCode") ?? undefined,
     presenceTypes: formData.getAll("presenceTypes").filter((v): v is string => typeof v === "string"),
     productTypeKeys: formData.getAll("productTypeKeys").filter((v): v is string => typeof v === "string"),
@@ -71,7 +71,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
   const parsed = createStoreSchema.safeParse({
     name: typeof raw.name === "string" ? raw.name : "",
     description: typeof raw.description === "string" ? raw.description : undefined,
-    storeType: raw.storeType,
+    sellerType: raw.sellerType,
     countryCode: typeof raw.countryCode === "string" ? raw.countryCode : "",
     presenceTypes: raw.presenceTypes,
     productTypeKeys: raw.productTypeKeys,
@@ -95,7 +95,11 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
   }
 
   const input = parsed.data as CreateStoreInput;
-  const isBusinessLogoSet = input.storeType === "BUSINESS" && input.logoAction === "set";
+  // RETAILER and PROXY sellers expose a logo; PERSON sellers do not.
+  const exposesContactInfo = input.sellerType !== "PERSON";
+  // A PROXY is an intermediary with no catalog of its own.
+  const isProxy = input.sellerType === "PROXY";
+  const isBusinessLogoSet = exposesContactInfo && input.logoAction === "set";
   if (isBusinessLogoSet && !logoFile) {
     return {
       success: false,
@@ -145,7 +149,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
         properties: {
           flow: "create",
           stage: "processing",
-          store_type: input.storeType,
+          seller_type: input.sellerType,
           error_code: errorCode,
         },
       });
@@ -157,7 +161,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
           scope.setTag("severity", "high");
           scope.setContext("storeLogo", {
             flow: "create",
-            storeType: input.storeType,
+            sellerType: input.sellerType,
             sourceMimeType: logoFile.type,
             sourceSizeBytes: logoFile.size,
           });
@@ -182,18 +186,19 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
       createdStore = await createStoreQuery({
         name: input.name,
         description: input.description ?? null,
-        storeType: input.storeType,
+        sellerType: input.sellerType,
         countryCode: input.countryCode,
         presenceTypes: input.presenceTypes,
-        productTypeKeys: input.productTypeKeys,
+        // A PROXY has no catalog: it saves with no categories, stock, or pre-order signal.
+        productTypeKeys: isProxy ? [] : input.productTypeKeys,
         createdByUserId: session.user.id,
         status,
         approvedByUserId: isAdmin ? session.user.id : null,
-        hasStock: input.hasStock ?? null,
-        receivesOrders: input.receivesOrders ?? null,
-        isPrivate: input.storeType === "PERSON" ? Boolean(input.isPrivate) : false,
-        contactChannels: input.storeType === "BUSINESS" ? input.contactChannels : [],
-        addresses: input.storeType === "BUSINESS" ? input.addresses : [],
+        hasStock: isProxy ? null : (input.hasStock ?? null),
+        receivesOrders: isProxy ? null : (input.receivesOrders ?? null),
+        isPrivate: input.sellerType === "PERSON" ? Boolean(input.isPrivate) : false,
+        contactChannels: exposesContactInfo ? input.contactChannels : [],
+        addresses: exposesContactInfo ? input.addresses : [],
         importCountries: input.importCountries?.length ? input.importCountries : undefined,
         logoUrl: null,
       });
@@ -205,7 +210,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
           properties: {
             flow: "create",
             stage: "upload",
-            store_type: input.storeType,
+            seller_type: input.sellerType,
           },
         });
 
@@ -227,7 +232,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
         distinctId: session.user.id,
         event: POSTHOG_EVENTS.STORE.CREATED,
         properties: {
-          store_type: input.storeType,
+          seller_type: input.sellerType,
           status,
           presence_count: input.presenceTypes.length,
           product_type_count: input.productTypeKeys.length,
@@ -257,7 +262,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
           properties: {
             flow: "create",
             stage: "upload",
-            store_type: input.storeType,
+            seller_type: input.sellerType,
             error_code: "logoUploadFailed",
           },
         });
@@ -268,7 +273,7 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
           scope.setTag("severity", "high");
           scope.setContext("storeLogo", {
             flow: "create",
-            storeType: input.storeType,
+            sellerType: input.sellerType,
           });
           Sentry.captureException(e);
         });

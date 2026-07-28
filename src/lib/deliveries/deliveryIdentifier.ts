@@ -29,16 +29,21 @@ export async function generateDeliveryHumanReadableId(
 ): Promise<string> {
   const prefix = buildDailyPrefix(date);
 
-  const latestDelivery = await tx.delivery.findFirst({
+  // Lexicographic ordering breaks once sequences reach three digits ("99" > "100"),
+  // so the highest sequence must be computed numerically over the day's identifiers.
+  const sameDayDeliveries = await tx.delivery.findMany({
     where: {
       userId,
       humanReadableId: { startsWith: prefix },
     },
-    orderBy: { humanReadableId: "desc" },
     select: { humanReadableId: true },
   });
 
-  const nextSequence = latestDelivery ? parseSequenceFromId(latestDelivery.humanReadableId) + 1 : 1;
+  const highestSequence = sameDayDeliveries.reduce(
+    (max, delivery) => Math.max(max, parseSequenceFromId(delivery.humanReadableId)),
+    0,
+  );
+  const nextSequence = highestSequence + 1;
   const paddedSequence = String(nextSequence).padStart(SEQUENCE_PADDING_LENGTH, "0");
   return `${prefix}${paddedSequence}`;
 }

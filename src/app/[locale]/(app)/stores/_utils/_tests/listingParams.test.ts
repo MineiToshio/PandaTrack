@@ -1,82 +1,54 @@
 import { describe, expect, it } from "vitest";
 import { parseListingSearchParams } from "../listingParams";
+import { DEFAULT_PAGE_SIZE } from "@/lib/constants";
+
+const EMPTY_FILTERS = {
+  nameQuery: undefined,
+  productTypeKeys: [],
+  countryCodes: [],
+  importCountryCodes: [],
+  presenceTypes: [],
+  receivesOrders: false,
+  hasStock: false,
+  includeClosed: false,
+  page: 1,
+  perPage: DEFAULT_PAGE_SIZE,
+};
 
 describe("parseListingSearchParams", () => {
   it("returns empty filters when searchParams is empty", () => {
-    expect(parseListingSearchParams({})).toEqual({
-      nameQuery: undefined,
-      productTypeKeys: [],
-      countryCodes: [],
-      importCountryCodes: [],
-      presenceTypes: [],
-      receivesOrders: false,
-      hasStock: false,
-      page: 1,
-    });
+    expect(parseListingSearchParams({})).toEqual(EMPTY_FILTERS);
   });
 
   it("parses single name query", () => {
     expect(parseListingSearchParams({ q: "manga" })).toEqual({
+      ...EMPTY_FILTERS,
       nameQuery: "manga",
-      productTypeKeys: [],
-      countryCodes: [],
-      importCountryCodes: [],
-      presenceTypes: [],
-      receivesOrders: false,
-      hasStock: false,
-      page: 1,
     });
   });
 
   it("trims name query", () => {
     expect(parseListingSearchParams({ q: "  manga  " })).toEqual({
+      ...EMPTY_FILTERS,
       nameQuery: "manga",
-      productTypeKeys: [],
-      countryCodes: [],
-      importCountryCodes: [],
-      presenceTypes: [],
-      receivesOrders: false,
-      hasStock: false,
-      page: 1,
     });
   });
 
   it("treats empty string name as undefined", () => {
-    expect(parseListingSearchParams({ q: "   " })).toEqual({
-      nameQuery: undefined,
-      productTypeKeys: [],
-      countryCodes: [],
-      importCountryCodes: [],
-      presenceTypes: [],
-      receivesOrders: false,
-      hasStock: false,
-      page: 1,
-    });
+    expect(parseListingSearchParams({ q: "   " })).toEqual(EMPTY_FILTERS);
   });
 
   it("parses multiple product type keys", () => {
     expect(parseListingSearchParams({ productType: ["manga", "comics"] })).toEqual({
-      nameQuery: undefined,
+      ...EMPTY_FILTERS,
       productTypeKeys: ["manga", "comics"],
-      countryCodes: [],
-      importCountryCodes: [],
-      presenceTypes: [],
-      receivesOrders: false,
-      hasStock: false,
-      page: 1,
     });
   });
 
   it("parses single product type as array of one", () => {
     expect(parseListingSearchParams({ productType: "manga" })).toEqual({
-      nameQuery: undefined,
+      ...EMPTY_FILTERS,
       productTypeKeys: ["manga"],
-      countryCodes: [],
-      importCountryCodes: [],
-      presenceTypes: [],
-      receivesOrders: false,
-      hasStock: false,
-      page: 1,
     });
   });
 
@@ -87,14 +59,9 @@ describe("parseListingSearchParams", () => {
         presence: ["ONLINE", "PHYSICAL"],
       }),
     ).toEqual({
-      nameQuery: undefined,
-      productTypeKeys: [],
+      ...EMPTY_FILTERS,
       countryCodes: ["ES"],
-      importCountryCodes: [],
       presenceTypes: ["ONLINE", "PHYSICAL"],
-      receivesOrders: false,
-      hasStock: false,
-      page: 1,
     });
   });
 
@@ -104,14 +71,8 @@ describe("parseListingSearchParams", () => {
         presence: ["ONLINE", "INVALID", "PHYSICAL"],
       }),
     ).toEqual({
-      nameQuery: undefined,
-      productTypeKeys: [],
-      countryCodes: [],
-      importCountryCodes: [],
+      ...EMPTY_FILTERS,
       presenceTypes: ["ONLINE", "PHYSICAL"],
-      receivesOrders: false,
-      hasStock: false,
-      page: 1,
     });
   });
 
@@ -123,40 +84,46 @@ describe("parseListingSearchParams", () => {
         hasStock: "true",
       }),
     ).toEqual({
-      nameQuery: undefined,
-      productTypeKeys: [],
-      countryCodes: [],
+      ...EMPTY_FILTERS,
       importCountryCodes: ["JP", "US"],
-      presenceTypes: [],
       receivesOrders: true,
       hasStock: true,
-      page: 1,
     });
+  });
+
+  it("parses includeClosed when set to true", () => {
+    expect(parseListingSearchParams({ includeClosed: "true" })).toEqual({
+      ...EMPTY_FILTERS,
+      includeClosed: true,
+    });
+  });
+
+  it("keeps includeClosed false for any non-true value", () => {
+    expect(parseListingSearchParams({ includeClosed: "1" })).toEqual(EMPTY_FILTERS);
   });
 
   it("parses page when value is valid", () => {
     expect(parseListingSearchParams({ page: "3" })).toEqual({
-      nameQuery: undefined,
-      productTypeKeys: [],
-      countryCodes: [],
-      importCountryCodes: [],
-      presenceTypes: [],
-      receivesOrders: false,
-      hasStock: false,
+      ...EMPTY_FILTERS,
       page: 3,
     });
   });
 
   it("defaults page to one when value is invalid", () => {
-    expect(parseListingSearchParams({ page: "0" })).toEqual({
-      nameQuery: undefined,
-      productTypeKeys: [],
-      countryCodes: [],
-      importCountryCodes: [],
-      presenceTypes: [],
-      receivesOrders: false,
-      hasStock: false,
-      page: 1,
-    });
+    expect(parseListingSearchParams({ page: "0" })).toEqual(EMPTY_FILTERS);
+  });
+
+  it("defaults perPage when the param is missing", () => {
+    expect(parseListingSearchParams({}).perPage).toBe(DEFAULT_PAGE_SIZE);
+  });
+
+  it("accepts an allow-listed perPage value", () => {
+    expect(parseListingSearchParams({ perPage: "10" }).perPage).toBe(10);
+    expect(parseListingSearchParams({ perPage: "100" }).perPage).toBe(100);
+  });
+
+  it("clamps an out-of-range or invalid perPage back to the default", () => {
+    expect(parseListingSearchParams({ perPage: "37" }).perPage).toBe(DEFAULT_PAGE_SIZE);
+    expect(parseListingSearchParams({ perPage: "abc" }).perPage).toBe(DEFAULT_PAGE_SIZE);
   });
 });

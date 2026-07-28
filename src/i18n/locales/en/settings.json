@@ -226,11 +226,14 @@
         "noResults": "No country found."
       },
       "currency": {
-        "empty": "No base currency",
-        "summary": "Applied to totals and summaries.",
         "changeButton": "Change",
         "placeholder": "Search currency…",
-        "noResults": "No currency found."
+        "noResults": "No currency found.",
+        "save": "Save",
+        "cancel": "Cancel",
+        "pending": "Saving…",
+        "dirtyHint": "It won't convert your past data.",
+        "reconcileLink": "Update rates · {count, plural, one {# order} other {# orders}}"
       },
       "categories": {
         "helper": "Used as default filters when browsing stores.",
@@ -252,19 +255,6 @@
       "savedAgo": "Saved {seconds}s ago",
       "savedRecently": "Saved a moment ago",
       "error": "Could not save."
-    },
-    "currencyModal": {
-      "title": "Change base currency",
-      "subtitle": "This change affects your reports and totals.",
-      "intro": "Your past orders stay in their original currency. This only changes how your summary is totalled.",
-      "listAriaLabel": "Select base currency",
-      "warning": "Changing the base currency does not convert your past orders. Historical totals remain in their original currency until you update them manually.",
-      "cancel": "Cancel",
-      "saveWithout": "Save without updating",
-      "saveAndUpdate": "Save and update",
-      "pending": "Saving…",
-      "successSaved": "Base currency updated.",
-      "successRedirect": "Base currency updated. Reviewing exchange rates…"
     },
     "signOut": {
       "mobile": "Sign out"
@@ -312,6 +302,10 @@
       "ARRIVAL_OVERDUE": {
         "label": "Overdue arrival",
         "helper": "Alert me when an expected arrival is already past due."
+      },
+      "STORE_REJECTED": {
+        "label": "Store rejected",
+        "helper": "Notify me if an administrator rejects or removes a store I created."
       }
     },
     "test": {

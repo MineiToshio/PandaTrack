@@ -225,6 +225,12 @@ export type TypeCount = {
   quantity: number;
 };
 
+/** Product quantity grouped by item delivery state (its progress from store to collector). */
+export type DeliveryStateCount = {
+  state: OrderItemDeliveryState;
+  quantity: number;
+};
+
 export type TopStore = {
   storeId: string;
   storeName: string;
@@ -242,6 +248,8 @@ export type CollectionBlock = {
   spendByType: TypeSpend[];
   spendByTypeIsPartial: boolean;
   productCountByType: TypeCount[];
+  /** Product quantity split by delivery state (how much of the collection has arrived). */
+  itemDeliveryStates: DeliveryStateCount[];
   topStores: TopStore[];
   topStoresIsPartial: boolean;
 };
@@ -273,4 +281,11 @@ export type DashboardData = {
   activity: ActivityBlock;
   collection: CollectionBlock;
   paidVsOutstanding: PaidVsOutstandingBlock;
+  /**
+   * "Lost on cancelled": Σ `OrderPayment.amount` over `CANCELLED` orders that still carry
+   * payments — money deliberately retained on a cancelled order and treated as sunk/lost. Base
+   * currency, FX-excluded like every other total (`FR-06-13`). `totalMinor` is 0 when no cancelled
+   * order retains payments; the surface renders only when it is greater than 0.
+   */
+  lostOnCancelled: BaseCurrencyTotal;
 };

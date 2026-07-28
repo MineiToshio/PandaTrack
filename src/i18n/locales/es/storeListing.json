@@ -30,12 +30,13 @@
   "noResults": "Ninguna tienda coincide con los filtros. Prueba a cambiarlos o quitarlos.",
   "clearFilters": "Quitar filtros",
   "pagination": {
-    "summary": "{total} tiendas en total - mostrando {start}-{end}",
-    "summaryEmpty": "0 tiendas en total",
+    "showing": "Mostrando {start}–{end} de {total} {total, plural, one {tienda} other {tiendas}}",
+    "loadMore": "Cargar más",
     "navigationAriaLabel": "Paginacion de tiendas",
     "goToPageAriaLabel": "Ir a la pagina {page}",
     "previous": "Anterior",
-    "next": "Siguiente"
+    "next": "Siguiente",
+    "perPage": "Por página"
   },
   "ratingCount": "{count, plural, one {# reseña} other {# reseñas}}",
   "pendingBadge": "Pendiente de revisión",

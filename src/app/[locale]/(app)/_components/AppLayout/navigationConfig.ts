@@ -45,6 +45,41 @@ const NAV_ROUTE_ITEMS: NavItem[] = [
 
 const PRIMARY_NAV_ITEM_IDS: NavItemId[] = ["dashboard", "stores", "orders", "deliveries"];
 
+export type AdminNavItemId = "moderation" | "audit";
+
+export interface AdminNavItem {
+  id: AdminNavItemId;
+  href: (locale: string) => string;
+  /** Label key resolved against the `admin` namespace (all admin copy lives there, BR-02-01). */
+  labelKey: string;
+}
+
+/**
+ * The grouped "Administración" section rendered in the collector shell for administrators only.
+ * It is presentation gated by `isAdmin`; `requireAdmin()` remains the real boundary (BR-02-05).
+ */
+const ADMIN_NAV_ITEMS: AdminNavItem[] = [
+  { id: "moderation", href: (locale) => `/${locale}${ROUTES.admin}`, labelKey: "nav.moderation" },
+  { id: "audit", href: (locale) => `/${locale}${ROUTES.adminAudit}`, labelKey: "nav.audit" },
+];
+
+export function getAdminNavItems(): AdminNavItem[] {
+  return ADMIN_NAV_ITEMS;
+}
+
+/**
+ * Returns the active admin nav item id for a pathname inside the admin space, or `undefined` when
+ * the pathname is not an admin route. The audit route is nested, so it is matched before the
+ * landing; any other `/admin/*` path highlights the moderation landing entry.
+ */
+export function getActiveAdminNavItemId(pathname: string): AdminNavItemId | undefined {
+  const segments = pathname.split("/").filter(Boolean);
+  const adminSegmentIndex = 1;
+  if (segments[adminSegmentIndex] !== "admin") return undefined;
+  if (segments[adminSegmentIndex + 1] === "audit") return "audit";
+  return "moderation";
+}
+
 export function getPrivateAppNavItems(): NavItem[] {
   return NAV_ROUTE_ITEMS.filter((item) => PRIMARY_NAV_ITEM_IDS.includes(item.id));
 }

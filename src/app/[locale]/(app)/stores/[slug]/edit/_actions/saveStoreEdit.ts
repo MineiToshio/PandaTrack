@@ -82,13 +82,15 @@ export async function saveStoreEdit(
     locale: formData.get("locale"),
     name: formData.get("name") ?? "",
     description: formData.get("description") ?? undefined,
-    storeType: formData.get("storeType") ?? "BUSINESS",
+    sellerType: formData.get("sellerType") ?? "RETAILER",
     countryCode: formData.get("countryCode") ?? "US",
     presenceTypes: formData.getAll("presenceTypes").filter((value): value is string => typeof value === "string"),
     productTypeKeys: formData.getAll("productTypeKeys").filter((value): value is string => typeof value === "string"),
     hasStock: formData.get("hasStock") === "on" ? true : undefined,
     receivesOrders: formData.get("receivesOrders") === "on" ? true : undefined,
     isPrivate: formData.get("isPrivate") === "on" ? true : undefined,
+    // Stores are active by default; the edit form posts `closed=on` to mark a store as closed.
+    isActive: formData.get("closed") === "on" ? false : true,
     contactChannels,
     addresses,
     importCountries: formData
@@ -119,7 +121,9 @@ export async function saveStoreEdit(
   const storeEditPath = `${storeDetailPath}/edit`;
   const canDirectEdit = canDirectlyEditStore(store, session.user.id, isAdmin);
   const currentLogoUrl = viewerContext.openChangeRequest?.changes.logoUrl ?? store.logoUrl;
-  const isBusinessLogoSet = store.storeType === "BUSINESS" && parsed.data.logoAction === "set";
+  // RETAILER and PROXY sellers expose a logo; PERSON sellers do not.
+  const exposesContactInfo = store.sellerType !== "PERSON";
+  const isBusinessLogoSet = exposesContactInfo && parsed.data.logoAction === "set";
 
   if (isBusinessLogoSet && !logoFile) {
     return {
@@ -132,7 +136,7 @@ export async function saveStoreEdit(
   const posthogClient = getPostHogClient();
   let nextLogoUrl = currentLogoUrl;
 
-  if (store.storeType === "BUSINESS") {
+  if (exposesContactInfo) {
     if (parsed.data.logoAction === "remove") {
       nextLogoUrl = null;
     }
@@ -219,6 +223,7 @@ export async function saveStoreEdit(
         hasStock: parsed.data.hasStock,
         receivesOrders: parsed.data.receivesOrders,
         isPrivate: parsed.data.isPrivate,
+        isActive: parsed.data.isActive,
         contactChannels: parsed.data.contactChannels,
         addresses: parsed.data.addresses,
         importCountries: parsed.data.importCountries,
@@ -258,6 +263,7 @@ export async function saveStoreEdit(
         hasStock: parsed.data.hasStock,
         receivesOrders: parsed.data.receivesOrders,
         isPrivate: parsed.data.isPrivate,
+        isActive: parsed.data.isActive,
         contactChannels: parsed.data.contactChannels,
         addresses: parsed.data.addresses,
         importCountries: parsed.data.importCountries,

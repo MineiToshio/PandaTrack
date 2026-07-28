@@ -38,7 +38,7 @@ Finish the remaining hardening work required for the store MVP after governance 
 
 ## Requirements
 
-- `FR-04-31`: Business stores must support logo upload backed by external storage.
+- `FR-04-31`: `RETAILER` and `PROXY` stores must support logo upload backed by external storage.
 
 Relevant business rules:
 
@@ -68,13 +68,13 @@ Relevant acceptance signals:
 
 - Governance flows, report submission, and change-request behavior are already covered by `WO-06 Store Governance Flows` and are not redefined here.
 - The existing `/stores/[slug]/edit` route remains the edit entry point, and `stores/new` is also in scope for business-logo upload.
-- Logo upload applies only to `BUSINESS` stores.
+- Logo upload applies to `RETAILER` and `PROXY` stores (not `PERSON`). See WO-08 for the seller-type rename and the PROXY type.
 
 ## UX Notes
 
-- Business stores should support a consistent logo experience in both create and edit flows.
+- `RETAILER` and `PROXY` stores should support a consistent logo experience in both create and edit flows.
 - In both flows, the logo control should live in step 1 (`base information`) so it is visible as part of the primary store identity block.
-- In the create flow, step 1 should begin with `store type` before `name`, `description`, and logo so the user establishes the seller category before the form reveals business-only fields.
+- In the create flow, step 1 should begin with `seller type` before `name`, `description`, and logo so the user establishes the seller category before the form reveals seller-type-specific fields.
 - The initial state should render a clearly visible placeholder that makes the logo slot obvious even when no image exists yet.
 - The empty state should include a clear upload affordance such as click-to-upload guidance while also supporting drag and drop.
 - The logo interaction should support:

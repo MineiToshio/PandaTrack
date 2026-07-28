@@ -11,7 +11,10 @@ const { storeFindManyMock, storeCreateMock, transactionMock, txStoreUpdateMock }
     transactionMock: vi.fn(async (callback: (tx: unknown) => unknown) => {
       const noop = vi.fn().mockResolvedValue(undefined);
       const tx = {
-        store: { update: txStoreUpdateMock },
+        // `findUnique` returns null so the post-write supersede sweep short-circuits harmlessly; this
+        // test only asserts the store write itself.
+        store: { update: txStoreUpdateMock, findUnique: vi.fn().mockResolvedValue(null) },
+        storeChangeRequest: { findMany: vi.fn().mockResolvedValue([]), update: noop },
         storePresence: { deleteMany: noop, createMany: noop },
         storeProductTypeAssignment: { deleteMany: noop, createMany: noop },
         storeImportCountry: { deleteMany: noop, createMany: noop },
@@ -99,7 +102,7 @@ describe("createStore persists normalized searchName", () => {
 
     await createStore({
       name: "Pokémon Center",
-      storeType: "BUSINESS",
+      sellerType: "RETAILER",
       countryCode: "JP",
       presenceTypes: ["ONLINE"],
       productTypeKeys: ["figures"],
@@ -128,12 +131,13 @@ describe("updateStoreEditableFields refreshes searchName on a name edit", () => 
       description: null,
       logoUrl: null,
       status: "APPROVED",
-      storeType: "BUSINESS",
+      sellerType: "RETAILER",
       countryCode: "JP",
       createdByUserId: "u1",
       hasStock: null,
       receivesOrders: null,
       isPrivate: false,
+      isActive: true,
       presenceTypes: [],
       productTypeKeys: [],
       importCountryCodes: [],

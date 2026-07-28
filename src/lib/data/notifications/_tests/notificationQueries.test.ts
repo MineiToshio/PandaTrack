@@ -51,6 +51,7 @@ describe("getNotificationPreferences", () => {
       [NotificationType.PAYMENT_DUE]: true,
       [NotificationType.ARRIVAL_DUE]: true,
       [NotificationType.ARRIVAL_OVERDUE]: true,
+      [NotificationType.STORE_REJECTED]: true,
     });
   });
 
@@ -59,6 +60,7 @@ describe("getNotificationPreferences", () => {
       paymentDueEnabled: false,
       arrivalDueEnabled: true,
       arrivalOverdueEnabled: false,
+      storeRejectedEnabled: false,
     });
 
     const result = await getNotificationPreferences("user-1");
@@ -67,6 +69,7 @@ describe("getNotificationPreferences", () => {
       [NotificationType.PAYMENT_DUE]: false,
       [NotificationType.ARRIVAL_DUE]: true,
       [NotificationType.ARRIVAL_OVERDUE]: false,
+      [NotificationType.STORE_REJECTED]: false,
     });
   });
 });

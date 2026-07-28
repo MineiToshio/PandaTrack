@@ -67,21 +67,46 @@ describe("cancelOrderAction", () => {
     const result = await cancelOrderAction(VALID_ORDER_ID, "  Changed my mind  ");
 
     expect(result).toEqual({ ok: true });
-    expect(cancelOrderMock).toHaveBeenCalledWith(VALID_ORDER_ID, "user-1", "Changed my mind");
+    expect(cancelOrderMock).toHaveBeenCalledWith(VALID_ORDER_ID, "user-1", "Changed my mind", "keep");
     expect(posthogCaptureMock).toHaveBeenCalledWith({
       distinctId: "user-1",
       event: POSTHOG_EVENTS.ORDER.CANCELLED,
-      properties: { orderId: VALID_ORDER_ID, hasReason: true },
+      properties: { orderId: VALID_ORDER_ID, hasReason: true, paymentsChoice: "keep" },
     });
   });
 
-  it("passes null when the cancellation reason is blank", async () => {
+  it("defaults to keeping payments and passes null when the reason is blank", async () => {
     getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
     cancelOrderMock.mockResolvedValue({ ok: true });
 
     await cancelOrderAction(VALID_ORDER_ID, "   ");
 
-    expect(cancelOrderMock).toHaveBeenCalledWith(VALID_ORDER_ID, "user-1", null);
+    expect(cancelOrderMock).toHaveBeenCalledWith(VALID_ORDER_ID, "user-1", null, "keep");
+  });
+
+  it("forwards the remove choice and records it on the tracked event", async () => {
+    getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
+    cancelOrderMock.mockResolvedValue({ ok: true });
+
+    const result = await cancelOrderAction(VALID_ORDER_ID, null, "remove");
+
+    expect(result).toEqual({ ok: true });
+    expect(cancelOrderMock).toHaveBeenCalledWith(VALID_ORDER_ID, "user-1", null, "remove");
+    expect(posthogCaptureMock).toHaveBeenCalledWith({
+      distinctId: "user-1",
+      event: POSTHOG_EVENTS.ORDER.CANCELLED,
+      properties: { orderId: VALID_ORDER_ID, hasReason: false, paymentsChoice: "remove" },
+    });
+  });
+
+  it("rejects an invalid payments choice via schema validation", async () => {
+    getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
+
+    // @ts-expect-error deliberately passing an invalid choice to assert the boundary rejects it
+    const result = await cancelOrderAction(VALID_ORDER_ID, null, "transfer");
+
+    expect(result).toEqual({ ok: false, error: "validation" });
+    expect(cancelOrderMock).not.toHaveBeenCalled();
   });
 
   it("maps a data-layer failure to its error code", async () => {

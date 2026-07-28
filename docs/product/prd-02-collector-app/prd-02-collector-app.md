@@ -16,7 +16,7 @@ children:
   - FRD-08
   - FRD-09
   - FRD-10
-last_updated: 2026-07-13
+last_updated: 2026-07-22
 ---
 
 # PRD-02 PandaTrack Collector App
@@ -124,6 +124,7 @@ A collector with lower order volume who still wants:
 - Controlled failure experience: full 404 and error-surface coverage across all app surfaces ([`FRD-10`](frd-10-error-experience-hardening/frd-10-error-experience-hardening.md))
 - User settings for budget, preferred currency, and notification preferences
 - User settings for account identity, profile management, preferred country and product types, budget defaults, and store-entry defaults
+- Minimal inline store moderation performed by administrators inside the collector app: approve a pending store, remove a store with a public tombstone, resolve a community report, apply or reject a community change request, and approve a suggested product type (`FRD-04`); the administrator role and the audit trail that records these actions are consumed from [PRD-03 · FRD-01](../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md)
 
 ### Out of scope
 
@@ -134,11 +135,11 @@ A collector with lower order volume who still wants:
 - Attachment management in MVP
 - Dynamic metadata systems for stores
 - Advanced finance and accounting features
-- Full moderation backoffice for stores
+- The full moderation backoffice and admin console (dedicated admin space, moderation inbox, audit log viewer, role and access platform); owned by [PRD-03 (Admin and Moderation)](../prd-03-admin-and-moderation/prd-03-admin-and-moderation.md)
 
 ## Core Product Entities
 
-- `User`
+- `User` (extended with a moderation role consumed from [PRD-03 · FRD-01](../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md))
 - `Session`
 - `Store`
 - `Order`
@@ -148,6 +149,10 @@ A collector with lower order volume who still wants:
 - `Reminder`
 - `UserSettings`
 - `Budget`
+
+## Relationship to PRD-03 (Admin and Moderation)
+
+Store moderation is split across two PRDs by ownership, not by feature: [PRD-03](../prd-03-admin-and-moderation/prd-03-admin-and-moderation.md) owns the administrator role, the `/[locale]/admin` console, and the audit-log platform; PRD-02 (`FRD-04`) owns the store lifecycle transitions themselves and the inline moderation controls that trigger them inside the collector app. A single moderation outcome, such as approving a store, therefore spans both: the inline action lives here (PRD-02 · FRD-04), while the role that gates it and the audit entry it produces come from [PRD-03 · FRD-01](../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md). Sequencing crosses PRDs: PRD-03's role and audit foundation (PRD-03 · FRD-01) must land before this PRD's inline moderation actions can ship.
 
 ## Core User Flows
 
@@ -228,6 +233,7 @@ A collector with lower order volume who still wants:
 - Auth and route-protection regressions would block the whole collector workspace.
 - A weak testing baseline would make AI-assisted delivery brittle as the product expands.
 - Overdefining future domains too early could create brittle requirements.
+- Pending stores are publicly visible by design (to prevent duplicate creation), so removal speed and quality directly protect trust in the store layer.
 
 ## Linked FRDs
 

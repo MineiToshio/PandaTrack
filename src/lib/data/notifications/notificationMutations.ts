@@ -2,12 +2,13 @@ import { Prisma, NotificationType, NotificationSubjectType } from "../../../../g
 import { prisma } from "@/lib/prisma";
 import type { PushSubscriptionInput } from "@/lib/notifications/notificationValidation";
 
-type PreferenceColumn = "paymentDueEnabled" | "arrivalDueEnabled" | "arrivalOverdueEnabled";
+type PreferenceColumn = "paymentDueEnabled" | "arrivalDueEnabled" | "arrivalOverdueEnabled" | "storeRejectedEnabled";
 
 const PREFERENCE_COLUMN_BY_TYPE: Record<NotificationType, PreferenceColumn> = {
   [NotificationType.PAYMENT_DUE]: "paymentDueEnabled",
   [NotificationType.ARRIVAL_DUE]: "arrivalDueEnabled",
   [NotificationType.ARRIVAL_OVERDUE]: "arrivalOverdueEnabled",
+  [NotificationType.STORE_REJECTED]: "storeRejectedEnabled",
 };
 
 const UNIQUE_CONSTRAINT_ERROR = "P2002";

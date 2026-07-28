@@ -42,16 +42,23 @@ enum OrderItemDeliveryState {
   DELIVERED
 }
 
-enum StoreType {
-  BUSINESS
+enum SellerType {
+  RETAILER
   PERSON
+  PROXY
 }
 
 enum StoreStatus {
   PENDING
   APPROVED
   REJECTED
-  FLAGGED
+}
+
+enum StoreRemovalReason {
+  DUPLICATE
+  CLOSED_OR_INACTIVE
+  FALSE_INFO
+  ABUSE
 }
 
 enum StoreVisibility {
@@ -99,17 +106,20 @@ enum StoreChangeRequestStatus {
   PENDING
   APPROVED
   REJECTED
+  SUPERSEDED
 }
 
 enum NotificationType {
   PAYMENT_DUE
   ARRIVAL_DUE
   ARRIVAL_OVERDUE
+  STORE_REJECTED
 }
 
 enum NotificationSubjectType {
   ORDER
   DELIVERY
+  STORE
 }
 
 model User {
@@ -135,6 +145,14 @@ model User {
   /// first sign-in and kept in sync when the collector switches language. Null until
   /// captured, in which case the default locale applies.
   locale                      String?
+  /// Moderation role backing the better-auth admin plugin. Non-null with a `user` default so
+  /// every account resolves to a concrete role; only the plugin's server-gated endpoint elevates it.
+  role                        String                 @default("user")
+  /// better-auth admin plugin ban fields. No ban surface ships in this release; the columns exist
+  /// so the plugin's forward-compatible shape is present.
+  banned                      Boolean?
+  banReason                   String?
+  banExpires                  DateTime?
   createdAt                   DateTime
   updatedAt                   DateTime
   sessions                    Session[]
@@ -156,6 +174,7 @@ model User {
   pushSubscriptions           PushSubscription[]
   notificationDeliveries      NotificationDelivery[]
   notificationPreference      NotificationPreference?
+  adminAuditLogs              AdminAuditLog[]        @relation("AdminAuditLogActor")
 
   @@index([preferredCountryCode])
   @@map("user")
@@ -170,6 +189,8 @@ model Session {
   ipAddress String?
   userAgent String?
   userId    String
+  /// better-auth admin plugin: set to the acting admin's id during impersonation. No impersonation surface ships in this release.
+  impersonatedBy String?
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("session")
@@ -205,6 +226,26 @@ model Verification {
   @@map("verification")
 }
 
+/// Append-only accountability trail for privileged moderation actions. Rows are written through
+/// `writeAuditEntry()` and never updated or deleted. Entries reference records by type and id and
+/// store no reporter identity or report free text; `action` and `targetType` are validated in code
+/// against stable constant vocabularies rather than database enums.
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  action     String
+  targetType String
+  targetId   String
+  reason     String?
+  createdAt  DateTime @default(now())
+  actor      User     @relation("AdminAuditLogActor", fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("admin_audit_log")
+}
+
 model Country {
   code           String               @id
   stores         Store[]
@@ -224,7 +265,7 @@ model Store {
   searchName          String                    @default("")
   description         String?
   logoUrl             String?
-  storeType           StoreType
+  sellerType          SellerType
   status              StoreStatus               @default(PENDING)
   visibility          StoreVisibility           @default(PUBLIC)
   isActive            Boolean                   @default(true)
@@ -237,6 +278,7 @@ model Store {
   createdByUserId     String
   approvedByUserId    String?
   approvedAt          DateTime?
+  removalReason       StoreRemovalReason?
   createdAt           DateTime                  @default(now())
   updatedAt           DateTime                  @updatedAt
   country             Country                   @relation(fields: [countryCode], references: [code], onDelete: Restrict)
@@ -326,6 +368,10 @@ model StoreImportCountry {
 
 model StoreProductType {
   key         String                    @id
+  // Admin-authored types persist their localized names here; seeded keys keep their names in the
+  // `storeProductTypes` i18n namespace and a resolver prefers the DB name with an i18n fallback.
+  nameEs      String?
+  nameEn      String?
   isActive    Boolean                   @default(true)
   createdAt   DateTime                  @default(now())
   updatedAt   DateTime                  @updatedAt
@@ -624,6 +670,7 @@ model NotificationPreference {
   paymentDueEnabled     Boolean  @default(true)
   arrivalDueEnabled     Boolean  @default(true)
   arrivalOverdueEnabled Boolean  @default(true)
+  storeRejectedEnabled  Boolean  @default(true)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)

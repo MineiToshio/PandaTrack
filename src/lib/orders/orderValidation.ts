@@ -150,6 +150,10 @@ export const orderEditSchema = z
 
 export const orderCancelSchema = z.object({
   orderId: z.string().cuid({ message: "INVALID_ORDER_ID" }),
+  // What to do with the order's recorded payments on cancel. `keep` (default) preserves the
+  // ledger — the money is treated as sunk/lost and surfaced on the dashboard; `remove` deletes
+  // it, for money that was refunded or moved as credit to another order.
+  paymentsChoice: z.enum(["keep", "remove"]).default("keep"),
 });
 
 export const orderDeleteSchema = z.object({

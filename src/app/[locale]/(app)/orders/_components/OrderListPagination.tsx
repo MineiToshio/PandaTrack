@@ -8,6 +8,7 @@ type OrderListPaginationProps = {
   totalCount: number;
   pageSize: number;
   createPageHref: (page: number) => string;
+  buildPerPageHref: (size: number) => string;
 };
 
 export default async function OrderListPagination({
@@ -17,6 +18,7 @@ export default async function OrderListPagination({
   totalCount,
   pageSize,
   createPageHref,
+  buildPerPageHref,
 }: OrderListPaginationProps) {
   if (totalCount === 0) return null;
 
@@ -38,6 +40,9 @@ export default async function OrderListPagination({
         next: t("pagination.next"),
         goToPage: (page) => t("pagination.goToPageAriaLabel", { page }),
       }}
+      perPage={pageSize}
+      buildPerPageHref={buildPerPageHref}
+      perPageLabel={t("pagination.perPage")}
     />
   );
 }

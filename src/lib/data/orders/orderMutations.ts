@@ -1,10 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import {
-  DeliveryStatus,
-  OrderItemDeliveryState,
-  OrderStatus,
-  type Prisma,
-} from "../../../../generated/prisma/client";
+import { DeliveryStatus, OrderItemDeliveryState, OrderStatus, type Prisma } from "../../../../generated/prisma/client";
 import { generateOrderHumanReadableId } from "@/lib/orders/orderIdentifier";
 import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
 import { appendOrderHistoryEntry, OrderHistoryEventType } from "./orderHistoryMutations";
@@ -179,6 +174,7 @@ export async function cancelOrder(
   orderId: string,
   userId: string,
   cancellationReason: string | null = null,
+  paymentsChoice: "keep" | "remove" = "keep",
 ): Promise<CancelOrderResult> {
   return prisma.$transaction(async (tx) => {
     const order = await tx.order.findFirst({
@@ -202,15 +198,25 @@ export async function cancelOrder(
       return { ok: false, error: "HAS_LIVE_DELIVERY_LINKS" };
     }
 
-    // Cancellation preserves payments and history per spec — the order is archived,
-    // not destroyed. The reactivate flow relies on the payment trail still being
-    // available so the collector can see what they paid before they paused the order.
-    // (Previously this called `tx.orderPayment.deleteMany(...)` which contradicted the
-    // cancel modal copy and broke `Reactivar pedido`.)
+    // Cancellation preserves payments and history by default — the order is archived, not
+    // destroyed, and the reactivate flow relies on the payment trail still being available so
+    // the collector can see what they paid before they paused the order. Kept payments are
+    // treated as sunk/lost money on the dashboard.
     await tx.order.update({
       where: { id: orderId },
       data: { status: OrderStatus.CANCELLED, cancellationReason },
     });
+
+    // Remove branch: the collector was refunded, or moved the money as credit to another order,
+    // so the payments must not linger here (they would double-count or read as lost money). Drop
+    // the ledger and reset the denormalized payment cache the orders list reads.
+    if (paymentsChoice === "remove") {
+      await tx.orderPayment.deleteMany({ where: { orderId } });
+      await tx.order.update({
+        where: { id: orderId },
+        data: { paidAmountMinor: 0, paymentPercent: 0 },
+      });
+    }
 
     await appendOrderHistoryEntry({
       tx,
@@ -393,8 +399,7 @@ export async function deleteOrder(orderId: string, userId: string): Promise<Dele
 }
 
 type SaveOrderNoteResult =
-  | { ok: true; note: string | null; updatedAt: Date; changed: boolean }
-  | { ok: false; error: "ORDER_NOT_FOUND" };
+  { ok: true; note: string | null; updatedAt: Date; changed: boolean } | { ok: false; error: "ORDER_NOT_FOUND" };
 
 export async function saveOrderNote(
   orderId: string,

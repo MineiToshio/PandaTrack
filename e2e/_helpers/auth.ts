@@ -50,11 +50,25 @@ async function settleOnDashboard(page: Page) {
   await page.waitForLoadState("load");
 }
 
-export async function signInAndLandOnDashboard(page: Page) {
+/** True when the dedicated admin E2E account is not configured. Admin moderation specs skip then. */
+export function shouldSkipAdminE2E() {
+  return !process.env.E2E_ADMIN_EMAIL || !process.env.E2E_ADMIN_PASSWORD;
+}
+
+/** Skips the current test unless the admin E2E account is configured and the port is trusted. */
+export function skipUnlessAdminEnv() {
+  test.skip(shouldSkipAdminE2E(), "E2E_ADMIN_EMAIL and E2E_ADMIN_PASSWORD must be set");
+  test.skip(
+    !isAuthenticatedPortTrusted(),
+    "Authenticated E2E requires PLAYWRIGHT_PORT to be Better Auth's default (3000) or listed in BETTER_AUTH_EXTRA_ORIGINS",
+  );
+}
+
+async function signInWithCredentialsAndLandOnDashboard(page: Page, email: string, password: string) {
   await page.context().clearCookies();
   await page.goto(SIGN_IN_RETURN_TO_DASHBOARD);
-  await page.getByLabel("Email").fill(process.env.E2E_USER_EMAIL!);
-  await page.locator('input[name="password"]').fill(process.env.E2E_USER_PASSWORD!);
+  await page.getByLabel("Email").fill(email);
+  await page.locator('input[name="password"]').fill(password);
   const submitButton = page.locator('form button[type="submit"]');
 
   for (let attempt = 0; attempt < RETRY_ATTEMPTS; attempt += 1) {
@@ -90,4 +104,13 @@ export async function signInAndLandOnDashboard(page: Page) {
   }
 
   await expect(page).toHaveURL(DASHBOARD_URL_REGEX, { timeout: 10_000 });
+}
+
+export async function signInAndLandOnDashboard(page: Page) {
+  await signInWithCredentialsAndLandOnDashboard(page, process.env.E2E_USER_EMAIL!, process.env.E2E_USER_PASSWORD!);
+}
+
+/** Signs in as the dedicated administrator account (durable admin role) and lands on the dashboard. */
+export async function signInAsAdmin(page: Page) {
+  await signInWithCredentialsAndLandOnDashboard(page, process.env.E2E_ADMIN_EMAIL!, process.env.E2E_ADMIN_PASSWORD!);
 }

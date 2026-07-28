@@ -58,3 +58,6 @@ generated/prisma
 
 # Transient agent worktrees
 .claude/worktrees/
+
+# One-off local migration/maintenance scripts (never committed)
+/scripts/local/

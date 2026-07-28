@@ -73,7 +73,7 @@
       "fxLabel": "Exchange rate",
       "fxPlaceholder": "0.00",
       "fxHelper": "1 {from} = ? {to}. We only ask because the currency differs from your base.",
-      "fxOutdatedWarning": "Rate may be outdated after your base-currency change — review it."
+      "fxOutdatedWarning": "Rate may be outdated after your base-currency change. Review it."
     },
     "step4": {
       "eyebrow": "Step 4 · Confirm",
@@ -375,7 +375,8 @@
       "navigationAriaLabel": "Deliveries pagination",
       "previous": "Previous page",
       "next": "Next page",
-      "goToPageAriaLabel": "Go to page {page}"
+      "goToPageAriaLabel": "Go to page {page}",
+      "perPage": "Per page"
     }
   }
 }

@@ -61,15 +61,6 @@
       "toAfterFrom": "La fecha «Hasta» tiene que ser posterior a «Desde»."
     }
   },
-  "pagination": {
-    "ariaLabel": "Paginación",
-    "previous": "Anterior",
-    "next": "Siguiente",
-    "page": "Página {page}",
-    "loadMore": "Cargar más",
-    "loading": "Cargando",
-    "loadedOf": "{loaded} de {total}"
-  },
   "mascotBubble": {
     "contextMenu": {
       "open": "Abrir menú de mascota",
@@ -118,5 +109,9 @@
   },
   "skeleton": {
     "loading": "Cargando…"
+  },
+  "expandAllToggle": {
+    "expandAll": "Expandir todo",
+    "collapseAll": "Colapsar todo"
   }
 }

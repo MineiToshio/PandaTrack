@@ -8,10 +8,12 @@ import { useAnimatedNumber } from "@/hooks/useAnimatedNumber";
 import { cn } from "@/lib/styles";
 import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
-import type { OrderStatus } from "../../../../../../../generated/prisma/client";
+import { resolveStoreTombstone } from "@/lib/store/storeTombstone";
+import type { OrderStatus, StoreRemovalReason, StoreStatus } from "../../../../../../../generated/prisma/client";
 import OrderCodeCopyButton from "./OrderCodeCopyButton";
+import StoreTombstoneNotice from "../../_components/share/StoreTombstoneNotice";
 
-type Store = { id: string; name: string; slug: string };
+type Store = { id: string; name: string; slug: string; status: StoreStatus; removalReason: StoreRemovalReason | null };
 
 type OrderDetailHeroProps = {
   order: {
@@ -78,6 +80,7 @@ export default function OrderDetailHero({
 }: OrderDetailHeroProps) {
   const t = useTranslations("orders");
 
+  const storeTombstone = resolveStoreTombstone(order.store);
   const isCancelled = order.status === "CANCELLED";
   const isCompleted = order.status === "COMPLETED";
   const completedUnpaid = isCompleted && hasUnpaidBalance;
@@ -155,6 +158,7 @@ export default function OrderDetailHero({
         />
         <div className="min-w-0 flex-1">
           <h1 className="text-text-title text-[17px] leading-tight font-semibold">{order.store.name}</h1>
+          {storeTombstone.isRemoved && <StoreTombstoneNotice tone={storeTombstone.tone} variant="full" />}
           <div className="mt-1 flex flex-wrap items-center gap-2.5">
             <OrderCodeCopyButton code={order.humanReadableId} locale={locale} />
             <span

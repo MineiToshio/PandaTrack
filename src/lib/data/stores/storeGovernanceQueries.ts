@@ -1,12 +1,40 @@
 import type {
+  Prisma,
   StoreChangeRequestStatus,
   StoreContactChannelType,
   StorePresenceType,
   StoreReportReason,
   StoreStatus,
-  StoreType,
+  SellerType,
 } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { PUBLIC_VISIBLE_STORE_STATUSES } from "./storeQueries";
+
+/**
+ * Single source of truth for the columns and relations {@link mapStoreToEditableStore} consumes.
+ * Shared by the public slug read and the transaction-scoped by-id read so both hydrate the exact
+ * same editable shape.
+ */
+const EDITABLE_STORE_SELECT = {
+  id: true,
+  slug: true,
+  name: true,
+  description: true,
+  logoUrl: true,
+  status: true,
+  sellerType: true,
+  countryCode: true,
+  createdByUserId: true,
+  hasStock: true,
+  receivesOrders: true,
+  isPrivate: true,
+  isActive: true,
+  presences: { select: { presenceType: true } },
+  productTypeAssignments: { select: { productTypeKey: true } },
+  importCountries: { select: { countryCode: true } },
+  contactChannels: { select: { type: true, value: true, label: true } },
+  addresses: { select: { city: true, addressLine: true, reference: true } },
+} satisfies Prisma.StoreSelect;
 
 export type EditableContactChannelInput = {
   type: StoreContactChannelType;
@@ -29,6 +57,8 @@ export type EditableStoreInput = {
   hasStock?: boolean | null;
   receivesOrders?: boolean | null;
   isPrivate?: boolean;
+  /** Operational state. `false` marks the store as closed / no longer operating. Defaults to active. */
+  isActive?: boolean;
   contactChannels?: EditableContactChannelInput[];
   addresses?: EditableAddressInput[];
   importCountries?: string[];
@@ -41,12 +71,13 @@ export type EditableStore = {
   description: string | null;
   logoUrl: string | null;
   status: StoreStatus;
-  storeType: StoreType;
+  sellerType: SellerType;
   countryCode: string;
   createdByUserId: string;
   hasStock: boolean | null;
   receivesOrders: boolean | null;
   isPrivate: boolean;
+  isActive: boolean;
   presenceTypes: StorePresenceType[];
   productTypeKeys: string[];
   importCountryCodes: string[];
@@ -93,13 +124,14 @@ export type EditableStoreDiff = Partial<{
   hasStock: boolean | null;
   receivesOrders: boolean | null;
   isPrivate: boolean;
+  isActive: boolean;
   contactChannels: EditableContactChannelInput[];
   addresses: EditableAddressInput[];
   importCountries: string[];
 }>;
 
 const REPORT_REASONS: StoreReportReason[] = ["SPAM", "DUPLICATE", "INCORRECT_INFO", "DOES_NOT_EXIST", "INAPPROPRIATE"];
-const CHANGE_REQUEST_STATUSES: StoreChangeRequestStatus[] = ["PENDING", "APPROVED", "REJECTED"];
+const CHANGE_REQUEST_STATUSES: StoreChangeRequestStatus[] = ["PENDING", "APPROVED", "REJECTED", "SUPERSEDED"];
 
 function mapStoreToEditableStore(store: {
   id: string;
@@ -108,12 +140,13 @@ function mapStoreToEditableStore(store: {
   description: string | null;
   logoUrl: string | null;
   status: StoreStatus;
-  storeType: StoreType;
+  sellerType: SellerType;
   countryCode: string;
   createdByUserId: string;
   hasStock: boolean | null;
   receivesOrders: boolean | null;
   isPrivate: boolean;
+  isActive: boolean;
   presences: Array<{ presenceType: StorePresenceType }>;
   productTypeAssignments: Array<{ productTypeKey: string }>;
   importCountries: Array<{ countryCode: string }>;
@@ -127,12 +160,13 @@ function mapStoreToEditableStore(store: {
     description: store.description,
     logoUrl: store.logoUrl,
     status: store.status,
-    storeType: store.storeType,
+    sellerType: store.sellerType,
     countryCode: store.countryCode,
     createdByUserId: store.createdByUserId,
     hasStock: store.hasStock,
     receivesOrders: store.receivesOrders,
     isPrivate: store.isPrivate,
+    isActive: store.isActive,
     presenceTypes: store.presences
       .map((presence) => presence.presenceType)
       .sort((left, right) => left.localeCompare(right)),
@@ -180,6 +214,7 @@ export function mergeEditableStoreWithChangeRequest(
     hasStock: changeRequest?.hasStock ?? store.hasStock,
     receivesOrders: changeRequest?.receivesOrders ?? store.receivesOrders,
     isPrivate: changeRequest?.isPrivate ?? store.isPrivate,
+    isActive: changeRequest?.isActive ?? store.isActive,
     contactChannels: changeRequest?.contactChannels ?? store.contactChannels,
     addresses: changeRequest?.addresses ?? store.addresses,
     importCountries: changeRequest?.importCountries ?? store.importCountryCodes,
@@ -191,39 +226,29 @@ export async function getEditableStoreBySlug(slug: string): Promise<EditableStor
     where: {
       slug,
       visibility: "PUBLIC",
-      status: { in: ["PENDING", "APPROVED"] },
+      // Publicly visible statuses only (`REJECTED` excluded) so a reported store's detail still
+      // renders and can be reported / change-requested; the tombstone stays hidden.
+      status: { in: [...PUBLIC_VISIBLE_STORE_STATUSES] },
     },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      description: true,
-      logoUrl: true,
-      status: true,
-      storeType: true,
-      countryCode: true,
-      createdByUserId: true,
-      hasStock: true,
-      receivesOrders: true,
-      isPrivate: true,
-      presences: { select: { presenceType: true } },
-      productTypeAssignments: { select: { productTypeKey: true } },
-      importCountries: { select: { countryCode: true } },
-      contactChannels: {
-        select: {
-          type: true,
-          value: true,
-          label: true,
-        },
-      },
-      addresses: {
-        select: {
-          city: true,
-          addressLine: true,
-          reference: true,
-        },
-      },
-    },
+    select: EDITABLE_STORE_SELECT,
+  });
+
+  return store ? mapStoreToEditableStore(store) : null;
+}
+
+/**
+ * Loads the editable shape of a store by id through a supplied client (typically a transaction
+ * client), with no visibility filter, so the change-request rebase and the cross-request supersede
+ * sweep can re-derive diffs against the store's current state inside the same write transaction.
+ * Admin-only surfaces reach it; callers must gate before invoking.
+ */
+export async function getEditableStoreForRebase(
+  client: Prisma.TransactionClient,
+  storeId: string,
+): Promise<EditableStore | null> {
+  const store = await client.store.findUnique({
+    where: { id: storeId },
+    select: EDITABLE_STORE_SELECT,
   });
 
   return store ? mapStoreToEditableStore(store) : null;

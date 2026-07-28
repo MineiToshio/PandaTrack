@@ -14,6 +14,7 @@ export const STORE_PRODUCT_TYPE_KEYS = [
   "funko_accessories",
   "home_video",
   "light_novels",
+  "magazines",
   "manga",
   "merchandise",
   "music",

@@ -61,15 +61,6 @@
       "toAfterFrom": "\"To\" date must come after \"From\"."
     }
   },
-  "pagination": {
-    "ariaLabel": "Pagination",
-    "previous": "Previous",
-    "next": "Next",
-    "page": "Page {page}",
-    "loadMore": "Load more",
-    "loading": "Loading",
-    "loadedOf": "{loaded} of {total}"
-  },
   "mascotBubble": {
     "contextMenu": {
       "open": "Open mascot menu",
@@ -118,5 +109,9 @@
   },
   "skeleton": {
     "loading": "Loading…"
+  },
+  "expandAllToggle": {
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all"
   }
 }

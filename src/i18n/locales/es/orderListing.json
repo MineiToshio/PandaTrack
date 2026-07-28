@@ -179,6 +179,7 @@
     "previous": "Anterior",
     "next": "Siguiente",
     "loadMore": "Cargar más",
-    "showing": "Mostrando {start}–{end} de {total} {total, plural, one {pedido} other {pedidos}}"
+    "showing": "Mostrando {start}–{end} de {total} {total, plural, one {pedido} other {pedidos}}",
+    "perPage": "Por página"
   }
 }

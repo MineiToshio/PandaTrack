@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useToast } from "@/contexts/ToastContext";
@@ -8,7 +8,7 @@ import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
 import { deriveHasUnpaidBalance } from "@/lib/orders/orderState";
 import { formatAmountSymbolOnly } from "@/lib/currency";
 import type { OrderEligibility, OrderFlags } from "@/lib/data/orders/orderQueries";
-import type { OrderStatus } from "../../../../../../../generated/prisma/client";
+import type { OrderStatus, StoreRemovalReason, StoreStatus } from "../../../../../../../generated/prisma/client";
 import { addPaymentAction, deletePaymentAction } from "../_actions/orderPaymentActions";
 import OrderDetailHero from "./OrderDetailHero";
 import OrderPaymentsAsideCard, { type OrderPaymentsAsideCardHandle } from "./OrderPaymentsAsideCard";
@@ -19,7 +19,7 @@ import OrderCancelModal from "./OrderCancelModal";
 import OrderDeleteModal from "./OrderDeleteModal";
 
 type PaymentRecord = { id: string; amount: number; paymentDate: Date };
-type Store = { id: string; name: string; slug: string };
+type Store = { id: string; name: string; slug: string; status: StoreStatus; removalReason: StoreRemovalReason | null };
 
 type OrderDetailClientProps = {
   order: {
@@ -76,6 +76,23 @@ export default function OrderDetailClient({
   const [payments, setPayments] = useState<PaymentRecord[]>(order.initialPayments);
   const [paySheetOpen, setPaySheetOpen] = useState(false);
   const [mobileModal, setMobileModal] = useState<"cancel" | "delete" | null>(null);
+
+  // Keep the live payments list in sync with the server whenever `router.refresh()` delivers a
+  // genuinely new list — e.g. after cancelling with "remove payments", where the server drops the
+  // ledger but the optimistic add/delete flow would otherwise leave this client state stale (the
+  // panel would keep showing the removed amount as "lost" until a full reload). Keyed on a stable
+  // signature of the server list so it fires only on real server changes, never clobbering an
+  // in-flight optimistic mutation (which reconciles local state before it calls refresh()).
+  const serverPaymentsSignature = order.initialPayments
+    .map((p) => `${p.id}:${p.amount}:${p.paymentDate.getTime()}`)
+    .join("|");
+  const lastServerSignatureRef = useRef(serverPaymentsSignature);
+  useEffect(() => {
+    if (serverPaymentsSignature !== lastServerSignatureRef.current) {
+      lastServerSignatureRef.current = serverPaymentsSignature;
+      setPayments(order.initialPayments);
+    }
+  }, [serverPaymentsSignature, order.initialPayments]);
 
   // Derived state — recomputed every render so the hero animates whenever `payments` changes.
   const summary = useMemo(() => calculatePaymentSummary(order.totalCost, payments), [order.totalCost, payments]);
@@ -252,6 +269,9 @@ export default function OrderDetailClient({
         orderId={order.id}
         humanReadableId={order.humanReadableId}
         storeName={order.storeName}
+        paidAmountMinor={summary.paidAmount}
+        currencyCode={order.currencyCode}
+        hasPayments={payments.length > 0}
         onSuccess={() => {
           setMobileModal(null);
           router.refresh();

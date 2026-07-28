@@ -28,13 +28,22 @@ import {
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
+ * The reminder types produced by the daily dispatcher: a strict subset of `NotificationType`.
+ * Event-driven types (for example a store-rejection notice) are never emitted by the cron, so
+ * they are excluded from the dispatcher's exhaustive per-type maps and run summary. The full
+ * `NotificationType` still governs preferences and delivery deduplication.
+ */
+export type ReminderNotificationType =
+  typeof NotificationType.PAYMENT_DUE | typeof NotificationType.ARRIVAL_DUE | typeof NotificationType.ARRIVAL_OVERDUE;
+
+/**
  * The minimal reminder candidate the dispatcher consumes. `locale` is the collector's
  * stored browsing locale; it stays nullable for collectors captured before the locale was
  * persisted, and the dispatcher falls back to the default locale in that case.
  */
 export interface ReminderCandidate {
   userId: string;
-  type: NotificationType;
+  type: ReminderNotificationType;
   subjectType: NotificationSubjectType;
   subjectId: string;
   /** Deduplication key and window-gate input. */

@@ -1,16 +1,14 @@
 "use client";
 
 import ViewTransitionLink from "@/components/core/ViewTransitionLink";
-import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
-import posthog from "posthog-js";
 import StatusChip from "@/components/core/StatusChip";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { formatAmountWithSymbol } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
-import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import { formatArrivalWindow, formatShortDate, getDeliveryOverdueDays } from "../_utils/deliveryDates";
 import type { DeliveriesListPageItem } from "@/lib/data/deliveries/deliveryQueries";
@@ -20,6 +18,9 @@ type DeliveriesTableProps = {
   locale: string;
   today: Date;
   returnTo: string;
+  /** Multi-open expansion owned by the list coordinator (drives "expand/collapse all"). */
+  expandedIds: Set<string>;
+  onToggle: (deliveryId: string) => void;
 };
 
 const MAX_EXPANDED_ITEMS = 5;
@@ -30,17 +31,15 @@ const GRID_COLS =
 const HEADER_CELL_CLASS =
   "[font-family:var(--font-mono)] [font-size:11px] [letter-spacing:0.06em] uppercase [color:var(--text-muted)]";
 
-export default function DeliveriesTable({ deliveries, locale, today, returnTo }: DeliveriesTableProps) {
+export default function DeliveriesTable({
+  deliveries,
+  locale,
+  today,
+  returnTo,
+  expandedIds,
+  onToggle,
+}: DeliveriesTableProps) {
   const t = useTranslations("deliveries");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  const toggle = (deliveryId: string) => {
-    const next = expandedId === deliveryId ? null : deliveryId;
-    setExpandedId(next);
-    posthog.capture(next ? POSTHOG_EVENTS.DELIVERY.LIST_CARD_EXPANDED : POSTHOG_EVENTS.DELIVERY.LIST_CARD_COLLAPSED, {
-      delivery_id: deliveryId,
-    });
-  };
 
   return (
     <div
@@ -68,7 +67,7 @@ export default function DeliveriesTable({ deliveries, locale, today, returnTo }:
         {deliveries.map((delivery) => {
           const overdueDays =
             delivery.status === "IN_TRANSIT" ? getDeliveryOverdueDays(delivery.expectedArrivalTo, today) : 0;
-          const isExpanded = expandedId === delivery.id;
+          const isExpanded = expandedIds.has(delivery.id);
           const detailHref = `/${locale}${ROUTES.deliveries}/${delivery.id}?returnTo=${encodeURIComponent(returnTo)}`;
           const arrivalWindow = formatArrivalWindow(delivery.expectedArrivalFrom, delivery.expectedArrivalTo, locale);
 
@@ -148,7 +147,7 @@ export default function DeliveriesTable({ deliveries, locale, today, returnTo }:
 
               <button
                 type="button"
-                onClick={() => toggle(delivery.id)}
+                onClick={() => onToggle(delivery.id)}
                 aria-expanded={isExpanded}
                 aria-controls={`delivery-row-items-${delivery.id}`}
                 aria-label={isExpanded ? t("list.card.collapse") : t("list.card.expand")}
@@ -171,7 +170,14 @@ export default function DeliveriesTable({ deliveries, locale, today, returnTo }:
               {isExpanded && (
                 <div
                   id={`delivery-row-items-${delivery.id}`}
-                  className="relative col-span-7 mt-2 flex flex-col gap-1.5 pt-3 [border-top:1px_dashed_var(--border)]"
+                  className={cn(
+                    // Recessed "drawer" so the expanded detail reads as this delivery's interior,
+                    // not another row: bleeds to the row edges, tinted surface + accent-cool rail,
+                    // ending before the next delivery's clean row divider.
+                    "relative col-span-7 -mx-4 mt-3 -mb-3 flex flex-col gap-1.5 py-3 pr-4 pl-[calc(1rem-2px)]",
+                    "[border-left:2px_solid_color-mix(in_oklch,var(--accent-cool)_55%,transparent)]",
+                    "[background:color-mix(in_oklch,var(--text-primary)_3.5%,transparent)]",
+                  )}
                 >
                   <ul role="list" className="flex max-w-[720px] flex-col">
                     {visibleItems.map((item, idx) => {

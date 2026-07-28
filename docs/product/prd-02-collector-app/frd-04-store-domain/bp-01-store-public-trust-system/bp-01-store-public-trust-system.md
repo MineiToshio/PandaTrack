@@ -13,8 +13,14 @@ children:
   - WO-05
   - WO-06
   - WO-07
-last_updated: 2026-04-27
-implementation_status: IMPLEMENTED
+  - WO-08
+  - WO-09
+  - WO-10
+  - WO-11
+  - WO-12
+  - WO-13
+last_updated: 2026-07-27
+implementation_status: PARTIALLY_IMPLEMENTED
 ---
 
 # BP-01 Store Public Trust System
@@ -70,6 +76,21 @@ Role:
 - persist store identity and moderation state
 - persist discovery metadata and future trust/governance data
 - support future links to orders and deliveries
+
+**Seller-type model (data-model decision, ADR 0016):** `Store` classifies its seller via
+`Store.sellerType` (Prisma enum `SellerType`), one of `RETAILER | PERSON | PROXY`. This field
+and enum were **renamed** from `Store.storeType` / `enum StoreType` (value `BUSINESS` →
+`RETAILER`) to disambiguate the classification from the "Tienda" (`Store`) entity/section and
+to name the seller's role rather than its legal category; `PROXY` (a forwarding/intermediary
+service with no catalog of its own, e.g. ZenMarket) is a new value. The migration is a
+hand-written enum rename (`ALTER TYPE … RENAME VALUE`, `ADD VALUE 'PROXY'`, `RENAME TO
+"SellerType"`, `ALTER TABLE "store" RENAME COLUMN`) so existing rows are preserved in place
+(the former `BUSINESS` rows become `RETAILER`). Prisma cannot auto-detect enum/column renames,
+so this uses the hand-written-SQL fallback of `prisma-migration-workflow.mdc`. PROXY behavior
+gating (no product types, null `hasStock` / `receivesOrders`; keeps logo, import countries,
+contact channels, addresses, reviews; always public) is enforced in the create action, the
+governance edit mutation, and the `getStoreBySlug` payload assembly (`sellerType !== "PERSON"`
+exposes logo/contacts/addresses).
 
 ### 2. Query layer
 
@@ -215,7 +236,7 @@ Role:
   - presence
   - receives orders
   - has stock
-- pagination defaults to page size `10`
+- pagination defaults to page size `25` (`DEFAULT_PAGE_SIZE`), user-selectable among `10`/`25`/`50`/`100` (`PAGE_SIZE_OPTIONS`) via `?perPage=`. **Updated 2026-07-23 (ADR 0018):** unifies the earlier store-only default of `10`–`12` with the shared orders/deliveries default; see [ADR 0018](../../../../design/decisions/0018-list-pagination-page-size-and-desktop-summary.md).
 
 ### Detail contract
 
@@ -249,7 +270,7 @@ Role:
 - duplicate scoring lives in reusable utilities, not inline in the UI
 - store listing and detail shaping live in query-layer read models
 - create-store flow uses server actions instead of direct client writes
-- catalogs are seed-backed and displayed through i18n keys, not localized DB text
+- catalogs are seed-backed: the seeded product-type keys carry their names in the `storeProductTypes` i18n namespace. Admin-authored product types (added via `WO-12`) carry their names in `nameEs` / `nameEn` columns on the `StoreProductType` row instead, because a Server Action cannot write locale files at runtime on a read-only filesystem. A single name resolver reads the DB name first and falls back to the i18n namespace for seeded keys, so render sites resolve one canonical name per key regardless of origin
 
 ## Planned Extension Points
 
@@ -277,9 +298,9 @@ Current logo-storage decision is already implemented:
 
 ## Risks and Constraints
 
-- Review, report, and change-request flows now exist in the store domain, but future work must not assume admin moderation actions or dashboards already exist.
+- Review, report, and change-request flows exist in the store domain. Admin moderation actions are now defined (see [Admin Moderation Extension](#admin-moderation-extension-planned)) but are planned, not shipped; work in that area must build on the [PRD-03 (FRD-01)](../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md) platform rather than assuming a standalone dashboard already exists.
 - Public governance summary reads must avoid exposing requester identity or raw free-text report details to non-admin viewers.
-- Change-request persistence must stay diff-based; snapshot-style writes would make moderation review noisier and increase accidental drift.
+- Change-request persistence must stay diff-based; snapshot-style writes would make moderation review noisier and increase accidental drift. The tradeoff is that drift detection at approval is bounded to what diff-only storage supports (per-field "already applied" and a store-level "changed since filed" signal); a true three-value conflict view is deferred to the console behind an explicit forward-only base-snapshot decision (see the [change-request rebase-apply contract](#change-request-rebase-apply-contract-planned)).
 - Pending-store direct edits and approved-store change requests now share the same route shape, so permission checks must stay explicit at the action and query boundaries.
 - Remaining store work should assume the logo upload path already exists and extend it carefully rather than replacing it.
 
@@ -300,3 +321,92 @@ Potential ADR candidates when the next store slice starts:
 - `work-orders/wo-05-store-reviews-and-private-notes.md`
 - `work-orders/wo-06-store-governance-flows.md`
 - `work-orders/wo-07-store-permissions-logo-and-hardening.md`
+- `work-orders/wo-08-seller-type-and-proxy.md`
+- `work-orders/wo-09-store-approval-and-removal.md`
+- `work-orders/wo-10-report-resolution.md`
+- `work-orders/wo-11-change-request-review.md`
+- `work-orders/wo-12-product-type-request-approval.md`
+- `work-orders/wo-13-derived-report-notice-and-flag-removal.md`
+
+## Admin Moderation Extension (planned)
+
+Work orders `WO-09` through `WO-12` add the admin inline moderation actions defined by [FRD-04 `FR-04-40` through `FR-04-51`](../frd-04-store-domain.md#admin-moderation-actions), and `WO-13` narrows that surface by replacing the manual flag control with a derived report notice. They consume the administrator platform (durable `role`, `requireAdmin()`, `AdminAuditLog`, `writeAuditEntry()`) from [PRD-03 (FRD-01)](../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md), whose foundation is [FRD-01 · WO-01](../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/bp-01-admin-identity-and-access-platform/work-orders/wo-01-role-admin-plugin-and-audit-foundation.md). The moderation console at `/[locale]/admin` ([PRD-03 (FRD-02)](../../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md)) routes administrators to these inline controls; the controls themselves live here.
+
+Sequencing:
+
+- All four (`WO-09`, `WO-10`, `WO-11`, `WO-12`) depend on [FRD-01 · WO-01](../../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/bp-01-admin-identity-and-access-platform/work-orders/wo-01-role-admin-plugin-and-audit-foundation.md) and cannot start before it.
+- `WO-09` (store approval and removal), `WO-10` (report resolution), and `WO-12` (product-type request approval) are parallelizable once that foundation exists.
+- `WO-11` (change-request review) follows `WO-09`, because its supersede-after-write sweep (`FR-04-48`, `BR-04-27`) must fire on the store-state moderation writes that `WO-09` introduces, not only on direct edits.
+- `WO-13` (derived report notice and flag removal) follows `WO-09` and `WO-10`, because it deletes the flag/unflag mutations `WO-09` introduces and extends the report-resolution result `WO-10` introduces. It also spans the moderation console files, so it must land as one slice: dropping `FLAGGED` from the enum while the console still references it would not compile. See the [derived report-notice contract](#derived-report-notice-contract-planned).
+
+### Store removal tombstone contract (planned)
+
+Concretized by [WO-09](work-orders/wo-09-store-approval-and-removal.md) during its enrichment pass.
+
+- store removal sets moderation state `REJECTED` and persists a new `Store.removalReason`; it is a tombstone, never a hard delete
+- `removalReason` is a Prisma enum `StoreRemovalReason` with four values matching the FDD reasons: `DUPLICATE`, `CLOSED_OR_INACTIVE`, `FALSE_INFO` (neutral) and `ABUSE` (sanction). A shared helper `isSanctionRemovalReason(reason) => reason === "ABUSE"` gates the sanction-vs-neutral order message. No `removedAt` / `removedByUserId` columns are added: the actor and timestamp already live in the `store.remove` `AdminAuditLog` entry, and neither is read on a public or SEO path (unlike `approvedByUserId` / `approvedAt`, which stay denormalized on `Store`)
+- public read exclusion is centralized in a single constant `PUBLIC_VISIBLE_STORE_STATUSES = ["PENDING", "APPROVED"]` applied by the listing where-builder (`buildPublicStoreListingWhere`), `getStoreBySlug` (direct URL 404), and `getOrderableStores` (order picker). This is the single point that excludes `REJECTED`. It carries the two lifecycle values only: there is no `FLAGGED` status to admit, because the report signal is derived at read time and never affects which stores are publicly readable (`FR-04-43`, `BR-04-24`, [ADR 0019](../../../../design/decisions/0019-derived-trust-signals-moderation-status-lifecycle-only.md)). `noindex` stays scoped to `PENDING` alone
+- the store row is retained so collector orders that reference it keep resolving; the order-side store surface reads the tombstone and shows a neutral message by default, with sanction wording only when `removalReason` is an abuse category. That order-side rendering is delivered by [FRD-05 · BP-02 · WO-08](../../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-08-order-side-removed-store-tombstone.md); this blueprint and WO-09 own the state and the `removalReason`, the FRD-05 slice owns the rendering
+- the rejection transition is where FRD-04 hands off to [FRD-09](../../frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md) for the creator notification; this blueprint owns the state and reason, not the notification delivery. The removal transition is factored (in `src/lib/data/stores/storeModerationMutations.ts`) so a post-commit notification enqueue can slot in when FRD-09 lands, without speculative code or ticket-id comments in this slice
+
+### Derived report-notice contract (planned)
+
+Owned by [WO-13](work-orders/wo-13-derived-report-notice-and-flag-removal.md); the durable principle is [ADR 0019](../../../../design/decisions/0019-derived-trust-signals-moderation-status-lifecycle-only.md).
+
+- **The store row holds lifecycle only.** `StoreStatus` is `PENDING | APPROVED | REJECTED`. `FLAGGED` is removed from the enum, and no field replaces it: no boolean, no `flaggedAt`, no denormalized report counter. Removing an enum value is a hand-written migration (`prisma-migration-workflow.mdc`) whose data `UPDATE` of any surviving `FLAGGED` row must precede the type rewrite in the same file.
+- **The notice is a read-time derivation.** `getStoreBySlug` returns `openReportCount` (the store's `OPEN` `StoreReport` count) alongside the rest of the detail payload, and the detail renders the notice when that count is at or above `STORE_REPORT_NOTICE_THRESHOLD` (1). Exactly one store is read per detail render, so a denormalized counter buys nothing; it is deliberately not added.
+- **One predicate, two consumers.** The threshold comparison lives beside the constant and is imported by both the store detail and the moderation-console aggregate, so the public surface and the console can never disagree about whether a store counts as reported.
+- **Two thresholds, two names.** `STORE_REPORT_NOTICE_THRESHOLD` (1, what the buyer is told) and `STORE_REPORT_CLUSTER_THRESHOLD` (2, when the inbox collapses a store's report rows into one escalation row) are separate constants in `src/lib/constants.ts`. Sharing one value would couple a buyer-facing information decision to a queue-ergonomics tuning decision.
+- **No writer.** There is no mutation that sets or clears the notice. `resolveStoreReport` / `dismissStoreReport` are the only functions that move it, as a side effect of the report transition they already perform, and they return the remaining open-report count so the client can clear the banner optimistically.
+- **Indexing is out of the derivation.** `generateMetadata` keeps `status === "PENDING"` as its only `noindex` condition and does not read the report count. Deindexing is not symmetric with the banner: a banner clears on the next render, re-indexing takes days or weeks, so a false report must never be able to reach SEO.
+
+### Change-request rebase-apply contract (planned)
+
+- approving a `StoreChangeRequest` re-derives the diff against the store's current state at approval time (rebase), never blind-applying the stored diff
+- the apply runs in one transaction and includes relation fields: `contactChannels`, `addresses`, `productTypeKeys`, `importCountries`
+- `reviewedByUserId` and `reviewedAt` are persisted; `sellerType` and country stay immutable (`BR-04-17`, enforced structurally: `EditableStoreDiff` cannot carry those fields)
+- drift (the current store state diverged from what the request was authored against) is detected and surfaced to the administrator, not silently applied
+
+Concretized by [WO-11](work-orders/wo-11-change-request-review.md) during its enrichment pass:
+
+- **Drift semantics are bounded by diff-only storage (v1).** The stored diff persists only the proposed values, never a base snapshot of the store at submission, so a true three-value conflict (`what was proposed against` / `now` / `proposed`) is not derivable at approval time. Two signals are derivable and are surfaced: a per-field **"already applied"** tag when the current value already equals the proposed value (the rebase drops it), and a store-level **"changed since filed"** banner when `store.updatedAt > changeRequest.updatedAt`. Approval applies only the changes that still have effect. This satisfies `FR-04-47` (drift surfaced, never silently applied) without weakening the diff-based persistence stance above.
+- **Console seam (deferred, kept visible).** The richer per-field three-value conflict view documented for the moderation console FDD ([PRD-03 (FRD-02)](../../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md)) is equally non-derivable without a persisted base. Enabling it requires deciding a **forward-only base-snapshot capture in `upsertStoreChangeRequest`** at FRD-02 WO-02 enrichment time (persist the affected fields' base values alongside the diff, applied only to requests filed after the change). WO-11 does not add that capture; the decision is recorded here so it surfaces at the console rather than staying buried.
+- **Apply transaction and reuse.** The transactional relation-write body of `updateStoreEditableFields` is extracted into a `tx`-accepting helper `writeEditableStoreFields(tx, store, input)` reused by both the direct-edit path and the apply path. The apply stamps `reviewedByUserId` / `reviewedAt`, sets status `APPROVED`, runs the supersede sweep, and writes the `changeRequest.apply` audit entry, all in one transaction.
+- **Supersede sweep and `SUPERSEDED` status.** After any store write (direct edit, applied change request, or moderation transition), a shared `supersedeStaleChangeRequests(tx, storeId, { excludeId })` re-evaluates other open requests; a request whose rebased diff is now empty moves to a new terminal `SUPERSEDED` value on `StoreChangeRequestStatus` (`reviewedAt` stamped, `reviewedByUserId` null, no audit entry, no analytics event) rather than reusing `REJECTED` (which would misattribute a human decision). This extends the author-side no-op discard (`BR-04-16`) to cross-request invalidation. The apply / reject mutations and the sweep are co-located in `src/lib/data/stores/storeGovernanceMutations.ts`; `storeModerationMutations.ts` imports the sweep one-way so `WO-09`'s moderation writes also fire it.
+- **Admin read.** The full diff and requester identity are read through a new server-only `src/lib/data/admin/adminStoreChangeRequestQueries.ts`, injected into `StoreGovernanceSummaryModal` as an admin superset section populated server-side only for admins; the public `getStoreGovernanceSummary` is never widened.
+
+### Admin data-access-layer contract (planned)
+
+- raw report free-text and reporter identity are exposed to administrators only, through a new server-only admin data-access module (for example under `src/lib/data/admin/`)
+- the public governance read model (`getStoreGovernanceSummary`) must not be widened to carry that data; the non-admin guarantee (`BR-04-13`) stays intact
+- this mirrors the moderation console's own secure-read requirement (`BR-02-03` of [PRD-03 (FRD-02)](../../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md))
+
+Concretized for store reports by [WO-10](work-orders/wo-10-report-resolution.md) during its enrichment pass:
+
+- the admin read is `getAdminOpenStoreReports(storeId)` in a new `src/lib/data/admin/adminStoreReportQueries.ts`, returning each `OPEN` report as `{ id, reason, details, createdAt, reporter: { id, username, name, image } }`, newest first. It lives under `src/lib/data/admin/` (beside the audit modules) because the admin-only, server-only security boundary is the stronger grouping signal than domain colocation. The name is store-report specific so it does not collide with the cross-store moderation inbox module owned by [PRD-03 (FRD-02)](../../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md)
+- report resolution adds no reviewer column to `StoreReport`: the `OPEN → REVIEWED` / `DISMISSED` transition is accountable through the `report.resolve` / `report.dismiss` `AdminAuditLog` entry only, matching the audit-only stance WO-09 (D2) took for removal. `StoreReportStatus` already carries `REVIEWED` / `DISMISSED`, so WO-10 requires no schema migration
+- the `resolveStoreReport` / `dismissStoreReport` transitions are added to `src/lib/data/stores/storeModerationMutations.ts` (the same module and one-transaction-plus-audit pattern as the store-state transitions), so the moderation console can invoke them later; the admin report rows render inside the existing `StoreGovernanceSummaryModal` (an admin superset section, populated server-side only for admins), not a new modal
+
+### Product-type request approval contract (planned)
+
+Concretized by [WO-12](work-orders/wo-12-product-type-request-approval.md) during its enrichment pass. Unlike `WO-09` / `WO-10` / `WO-11`, `StoreProductTypeRequest` is global (it carries `requestedById`, no `storeId`), so it has no per-store detail surface; the review UI is owned by the moderation console (**FRD-02** · WO-02, review surface `#review-type`, [`wo-02-moderation-inbox.md`](../../../prd-03-admin-and-moderation/frd-02-moderation-console/bp-01-moderation-console/work-orders/wo-02-moderation-inbox.md)), which makes `WO-12` a prerequisite of that console slice. `WO-12` delivers the mutation, the admin data-access layer, the schema change, and the name resolver; it ships no UI of its own.
+
+- **Hybrid catalog names (schema).** `StoreProductType` gains `nameEs` and `nameEn` columns. The migration backfills the seeded rows from the current `src/i18n/locales/{es,en}/storeProductTypes.json` values so no key renders nameless, then the columns are non-null. The seeded keys keep the i18n namespace as their source; only admin-authored types rely on the DB columns. This reconciles the prior "names live in i18n, not localized DB text" stance (see [Architectural Decisions Already Visible](#architectural-decisions-already-visible)) into the hybrid model, which is the only design that lets approval author a usable type at runtime on a read-only filesystem (`FR-04-49`, `BR-04-28`).
+- **Name resolver.** A single resolver returns the DB `nameEs` / `nameEn` when present and falls back to the `storeProductTypes` i18n namespace for seeded keys. The catalog render sites (create/edit catalog step, listing filters, listing cards, store detail, dashboard, order forms, settings preferences) route through it so an admin-authored key resolves a real name everywhere, satisfying the "immediately selectable and filterable" acceptance in `FR-04-49` / `AC-04-29`.
+- **Approval mutation (runtime, one transaction).** Approval generates a stable `key` (a snake_case slug of the `es` name, or the request's `suggestedKey` when present), inserts `StoreProductType { key, nameEs, nameEn, isActive: true }`, flips the request `status` to `APPROVED`, and writes the `productType.approve` `AdminAuditLog` entry, all atomically. Rejection flips `status` to `REJECTED` and writes `productType.reject`, with no catalog write. A key collision (the generated key already exists) surfaces a typed `StoreProductTypeApprovalError("duplicateKey")` the console shows so the admin can adjust the name/key; there is no fuzzy name deduplication in v1 (a semantically duplicate suggestion is a reject decision). The final `key` may be persisted back into the request's existing `suggestedKey` column for traceability.
+- **Audit-only resolution (no reviewer columns).** `StoreProductTypeRequest` gets no `reviewedByUserId` / `reviewedAt` columns; only `status` flips. The reviewing administrator and timestamp are accountable through the `AdminAuditLog` entry (`actorId`, `createdAt`, `targetId` = request id), matching the audit-only stance WO-09 (D2) and WO-10 took. The only schema migration in this slice is the two `StoreProductType` name columns.
+- **Placement.** The mutation lives in `src/lib/data/catalog/` (beside `storeProductTypeQueries.ts`); the admin pending-request read is `getAdminPendingStoreProductTypeRequests()` in a new server-only `src/lib/data/admin/adminStoreProductTypeRequestQueries.ts`, mirroring the `adminStoreReportQueries.ts` naming and the admin-only grouping rationale used for reports. The thin `requireAdmin()`-gated actions (`approveProductTypeRequest` / `rejectProductTypeRequest`) live in `src/app/[locale]/(app)/admin/_actions/` (the admin space already exists), ready for the console to invoke, with server-side PostHog capture (`store_product_type_request_approved` / `_rejected`).
+- **Validation coupling.** `collectorPreferencesValidation` switches its product-type key check from the hardcoded `STORE_PRODUCT_TYPE_KEYS` union (`src/lib/catalog/storeProductTypes.ts`) to a DB-existence check, so admin-authored types are also selectable as user preferences; the const stays as the seed list.
+
+### Admin moderation gating contract (planned)
+
+- every moderation mutation (approve, remove, resolve report, dismiss report, apply change request, reject change request, approve product-type request, reject product-type request) authorizes with `requireAdmin()` before any write
+- each writes an append-only `AdminAuditLog` entry via `writeAuditEntry()` using a stable action key (`store.approve`, `store.remove`, `report.resolve`, `report.dismiss`, `changeRequest.apply`, `changeRequest.reject`, `productType.approve`, `productType.reject`). The vocabulary also holds `store.flag` / `store.unflag`, retired from writing once [WO-13](work-orders/wo-13-derived-report-notice-and-flag-removal.md) removes their mutations; they stay defined so historical entries keep resolving (`BR-01-05`)
+- audit entries store identifiers and an optional non-sensitive reason only, never raw report text or reporter identity
+- each user-visible action also emits its PostHog event alongside the audit entry (`store_approved`, `store_removed`, `store_report_resolved`, `store_report_dismissed`, `store_change_request_applied`, `store_change_request_rejected`, `store_product_type_request_approved`, `store_product_type_request_rejected`). The two report-resolution events carry an `open_reports_remaining` count so a resolution that cleared a store's public report notice is identifiable
+
+Concretized for the store-state transitions by [WO-09](work-orders/wo-09-store-approval-and-removal.md):
+
+- each transition runs as one `prisma.$transaction`: the `store.update` plus its `writeAuditEntry(input, tx)` call, so the audit row cannot be orphaned from or missing relative to the state change. The actor id comes from the session returned by `requireAdmin()`, never from the client
+- **Unflag derivation, retained as migration logic only.** The removed unflag path restored the prior public state from `approvedAt` (`APPROVED` when set, otherwise `PENDING`), with no `preFlagStatus` column stored. That derivation has no runtime caller after [WO-13](work-orders/wo-13-derived-report-notice-and-flag-removal.md), but it is exactly the expression the enum-removal migration uses to pre-update any surviving `FLAGGED` row before dropping the value. It is documented here so the migration author does not have to reinvent the mapping, and it is deleted from the data layer once the migration is applied
+- the store-state transition logic lives in a reusable data-layer module `src/lib/data/stores/storeModerationMutations.ts` so the moderation console ([PRD-03 (FRD-02)](../../../prd-03-admin-and-moderation/frd-02-moderation-console/frd-02-moderation-console.md)) can invoke the same functions later; thin Server Actions under `stores/[slug]/_actions/` are the collector-app entry points, and a `StoreAdminModerationPanel` client component renders the inline controls in the store-detail aside for admin viewers (optimistic actions; the removal modal follows the canonical modal pattern, ADR 0008, with grouped neutral / sanction reason radiogroups)

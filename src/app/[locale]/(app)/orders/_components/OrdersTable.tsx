@@ -1,20 +1,20 @@
 "use client";
 
 import ViewTransitionLink from "@/components/core/ViewTransitionLink";
-import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { useTranslations } from "next-intl";
-import posthog from "posthog-js";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { formatAmountWithSymbol } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
 import { isOrderOverdue } from "@/lib/orders/orderDerivedState";
-import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import OrderUnpaidPill from "./share/OrderUnpaidPill";
+import StoreTombstoneNotice from "./share/StoreTombstoneNotice";
 import { describeOrderListChip, describeOverdueDays, getOrderListChipToneClassName } from "./share/orderListStatusChip";
 import { describeItemDeliveryState, getItemDeliveryStateToneClassName } from "./share/orderItemDeliveryChip";
+import { resolveStoreTombstone } from "@/lib/store/storeTombstone";
 import type { OrdersListPageItem } from "@/lib/data/orders/orderQueries";
 
 type OrdersTableProps = {
@@ -22,6 +22,9 @@ type OrdersTableProps = {
   locale: string;
   today: Date;
   returnTo: string;
+  /** Multi-open expansion owned by the list coordinator (drives "expand/collapse all"). */
+  expandedIds: Set<string>;
+  onToggle: (orderId: string) => void;
 };
 
 const MAX_EXPANDED_ITEMS = 5;
@@ -36,17 +39,8 @@ function formatDate(date: Date, locale: string): string {
   return formatDomainDate(date, locale);
 }
 
-export default function OrdersTable({ orders, locale, today, returnTo }: OrdersTableProps) {
+export default function OrdersTable({ orders, locale, today, returnTo, expandedIds, onToggle }: OrdersTableProps) {
   const t = useTranslations("orderListing");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  const toggle = (orderId: string) => {
-    const next = expandedId === orderId ? null : orderId;
-    setExpandedId(next);
-    posthog.capture(next ? POSTHOG_EVENTS.ORDER.LIST_CARD_EXPANDED : POSTHOG_EVENTS.ORDER.LIST_CARD_COLLAPSED, {
-      order_id: orderId,
-    });
-  };
 
   return (
     <div
@@ -85,8 +79,9 @@ export default function OrdersTable({ orders, locale, today, returnTo }: OrdersT
           const ChipIcon = chip.icon;
           const showUnpaid = order.status === "COMPLETED" && order.hasUnpaidBalance;
           const isCompletedOrCancelled = order.status === "COMPLETED" || order.status === "CANCELLED";
-          const isExpanded = expandedId === order.id;
+          const isExpanded = expandedIds.has(order.id);
           const detailHref = `/${locale}${ROUTES.orders}/${order.id}?returnTo=${encodeURIComponent(returnTo)}`;
+          const storeTombstone = resolveStoreTombstone(order.store);
 
           const progressTone = isCompletedOrCancelled
             ? "[background:var(--success)]"
@@ -124,9 +119,12 @@ export default function OrdersTable({ orders, locale, today, returnTo }: OrdersT
               <StoreAvatar store={{ name: order.store.name }} size={32} className="pointer-events-none" />
 
               <div className="pointer-events-none relative min-w-0">
-                <p className="truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
-                  {order.store.name}
-                </p>
+                <div className="flex items-center gap-1.5">
+                  <p className="min-w-0 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+                    {order.store.name}
+                  </p>
+                  {storeTombstone.isRemoved && <StoreTombstoneNotice tone={storeTombstone.tone} variant="compact" />}
+                </div>
                 <p className="truncate [font-family:var(--font-mono)] [font-size:12px] [color:var(--text-muted)] tabular-nums">
                   {order.humanReadableId} · {formatDate(order.orderDate, locale)}
                 </p>
@@ -180,7 +178,7 @@ export default function OrdersTable({ orders, locale, today, returnTo }: OrdersT
               {/* Chevron — center-aligned to the % Pago row, not pinned to top */}
               <button
                 type="button"
-                onClick={() => toggle(order.id)}
+                onClick={() => onToggle(order.id)}
                 aria-expanded={isExpanded}
                 aria-controls={`order-row-items-${order.id}`}
                 aria-label={isExpanded ? t("card.collapse") : t("card.expand")}
@@ -202,7 +200,14 @@ export default function OrdersTable({ orders, locale, today, returnTo }: OrdersT
               {isExpanded && (
                 <div
                   id={`order-row-items-${order.id}`}
-                  className="relative col-span-7 mt-2 flex flex-col gap-1.5 pt-3 [border-top:1px_dashed_var(--border)]"
+                  className={cn(
+                    // Recessed "drawer" so the expanded detail reads as this order's interior,
+                    // not another row: bleeds to the row edges, tinted surface + accent-cool rail,
+                    // ending before the next order's clean row divider.
+                    "relative col-span-7 -mx-4 mt-3 -mb-3 flex flex-col gap-1.5 py-3 pr-4 pl-[calc(1rem-2px)]",
+                    "[border-left:2px_solid_color-mix(in_oklch,var(--accent-cool)_55%,transparent)]",
+                    "[background:color-mix(in_oklch,var(--text-primary)_3.5%,transparent)]",
+                  )}
                 >
                   {/* Width cap brings qty + price closer to the name on wide tables. Demo uses
                        a narrower viewport implicitly; mirroring that here avoids the orphaned

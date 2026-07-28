@@ -193,7 +193,7 @@ Delivery events are namespaced under `POSTHOG_EVENTS.DELIVERY` in `src/lib/const
 
 - create/edit flow: `delivery_create_flow_opened`, `delivery_created`, `delivery_edit_flow_opened`, `delivery_edited`
 - lifecycle: `delivery_marked_delivered`, `delivery_reopened`, `delivery_cancelled`, `delivery_deleted`, `delivery_note_saved`, `delivery_note_deleted`
-- list: `deliveries_list_filtered`, `deliveries_list_filter_chip_removed`, `deliveries_list_filters_reset`, `deliveries_list_card_expanded`, `deliveries_list_card_collapsed`
+- list: `deliveries_list_filtered`, `deliveries_list_filter_chip_removed`, `deliveries_list_filters_reset`, `deliveries_list_card_expanded`, `deliveries_list_card_collapsed`, `deliveries_list_expanded_all`, `deliveries_list_collapsed_all`
 - mobile detail chrome: `delivery_detail_sticky_primary_clicked`, `delivery_detail_actions_sheet_opened`
 
 Mutation events carry counts (product / affected-order / added / removed) but never the free-text note value.
@@ -205,7 +205,7 @@ Each delivery route under `/{locale}/(app)/deliveries`. All routes are authentic
 ### List — `/{locale}/deliveries`
 
 - **Purpose:** the deliveries workspace, opened focused on active follow-up work.
-- **Data loaded:** `getDeliveriesList(userId, filters)` (paginated cards with aggregated product count, 30/page); `getDeliveryStoreOptions(userId)` (distinct stores that appear in the user's deliveries, for the filter picker); heading counts for `IN_TRANSIT` and `DELIVERED`.
+- **Data loaded:** `getDeliveriesList(userId, filters)` (paginated cards with aggregated product count, 25/page by default — `DELIVERY_LIST_PAGE_SIZE` = `DEFAULT_PAGE_SIZE`, user-selectable among 10/25/50/100 via `?perPage=`; **updated 2026-07-23, owner-approved**, replaces the earlier fixed `30`/page, see [ADR 0018](../../../design/decisions/0018-list-pagination-page-size-and-desktop-summary.md)); `getDeliveryStoreOptions(userId)` (distinct stores that appear in the user's deliveries, for the filter picker); heading counts for `IN_TRANSIT` and `DELIVERED`.
 - **Actions:** navigation only — `New delivery` → `/new`; each card → detail carrying the current list URL via `?returnTo=`. No mutations.
 - **States:** loading skeleton; empty (`noDeliveries`, with create / browse-orders CTAs); empty-filtered (`noResults`, keeps chips, offers reset). Default URL canonicalizes to `?status=IN_TRANSIT` (see filter contract).
 

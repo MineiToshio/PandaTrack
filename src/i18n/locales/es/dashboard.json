@@ -97,10 +97,18 @@
   "kpi": {
     "orders": "Pedidos",
     "products": "Productos",
-    "committed": "Comprometido",
+    "committed": "Valor de pedidos",
     "stores": "Tiendas",
     "committedPartial": "{count, plural, one {Excluye # pedido con tipo de cambio pendiente} other {Excluye # pedidos con tipo de cambio pendiente}}.",
-    "committedPartialHint": "Cifra parcial"
+    "committedPartialHint": "Cifra parcial",
+    "committedMeaning": "Suma del valor de todos tus pedidos activos: lo que ya pagaste más lo que aún debes.",
+    "committedInfoHint": "Qué significa"
+  },
+  "lostOnCancelled": {
+    "eyebrow": "Cancelados",
+    "title": "Perdido en cancelados",
+    "help": "Pagos que hiciste en pedidos cancelados y no recuperaste.",
+    "partial": "{count, plural, one {Excluye # pedido con tipo de cambio pendiente} other {Excluye # pedidos con tipo de cambio pendiente}}."
   },
   "collection": {
     "eyebrow": "Tu colección",
@@ -112,6 +120,10 @@
     "spendAria": "Gasto por categoría: {summary}",
     "spendEmpty": "Todavía no hay gasto por categoría.",
     "donutTotalLabel": "Total",
+    "stateLabel": "Productos por estado de entrega",
+    "stateAria": "Productos por estado de entrega: {summary}",
+    "stateEmpty": "Todavía no hay productos para mostrar.",
+    "stateCenterLabel": "Productos",
     "countLabel": "Productos por categoría · conteo",
     "topStoresLabel": "Tiendas top",
     "otherCategory": "Otros",

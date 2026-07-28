@@ -1,20 +1,20 @@
 "use client";
 
 import ViewTransitionLink from "@/components/core/ViewTransitionLink";
-import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
-import posthog from "posthog-js";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { formatAmountWithSymbol } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
 import { isOrderOverdue } from "@/lib/orders/orderDerivedState";
-import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import OrderUnpaidPill from "./share/OrderUnpaidPill";
+import StoreTombstoneNotice from "./share/StoreTombstoneNotice";
 import { describeOrderListChip, describeOverdueDays, getOrderListChipToneClassName } from "./share/orderListStatusChip";
 import { describeItemDeliveryState, getItemDeliveryStateToneClassName } from "./share/orderItemDeliveryChip";
+import { resolveStoreTombstone } from "@/lib/store/storeTombstone";
 import type { OrdersListPageItem } from "@/lib/data/orders/orderQueries";
 
 type OrderCardProps = {
@@ -22,15 +22,17 @@ type OrderCardProps = {
   locale: string;
   today: Date;
   returnTo: string;
+  /** Expansion is owned by the list coordinator so "expand/collapse all" can drive every card. */
+  isExpanded: boolean;
+  onToggle: () => void;
 };
 
 function formatDate(date: Date, locale: string): string {
   return formatDomainDate(date, locale);
 }
 
-export default function OrderCard({ order, locale, today, returnTo }: OrderCardProps) {
+export default function OrderCard({ order, locale, today, returnTo, isExpanded, onToggle }: OrderCardProps) {
   const t = useTranslations("orderListing");
-  const [isExpanded, setIsExpanded] = useState(false);
 
   const overdue = isOrderOverdue({ expectedDeliveryTo: order.expectedDeliveryTo, status: order.status }, today);
   const overdueDays = overdue ? describeOverdueDays(order.expectedDeliveryTo, today) : 0;
@@ -45,6 +47,7 @@ export default function OrderCard({ order, locale, today, returnTo }: OrderCardP
   const showUnpaid = order.status === "COMPLETED" && order.hasUnpaidBalance;
   const detailHref = `/${locale}${ROUTES.orders}/${order.id}?returnTo=${encodeURIComponent(returnTo)}`;
   const isCompletedOrCancelled = order.status === "COMPLETED" || order.status === "CANCELLED";
+  const storeTombstone = resolveStoreTombstone(order.store);
 
   const progressTone = isCompletedOrCancelled
     ? "[background:var(--success)]"
@@ -55,13 +58,10 @@ export default function OrderCard({ order, locale, today, returnTo }: OrderCardP
         : "[background:var(--accent)]";
 
   const handleToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+    // The card is overlaid by a full-bleed detail link; stop the toggle from navigating.
     event.preventDefault();
     event.stopPropagation();
-    const next = !isExpanded;
-    setIsExpanded(next);
-    posthog.capture(next ? POSTHOG_EVENTS.ORDER.LIST_CARD_EXPANDED : POSTHOG_EVENTS.ORDER.LIST_CARD_COLLAPSED, {
-      order_id: order.id,
-    });
+    onToggle();
   };
 
   return (
@@ -85,9 +85,12 @@ export default function OrderCard({ order, locale, today, returnTo }: OrderCardP
       <div className="pointer-events-none relative flex items-start gap-3">
         <StoreAvatar store={{ name: order.store.name }} size={40} />
         <div className="min-w-0 flex-1">
-          <p className="truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
-            {order.store.name}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="min-w-0 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+              {order.store.name}
+            </p>
+            {storeTombstone.isRemoved && <StoreTombstoneNotice tone={storeTombstone.tone} variant="compact" />}
+          </div>
           <p className="truncate [font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums">
             {order.humanReadableId} · {formatDate(order.orderDate, locale)}
           </p>
@@ -133,7 +136,17 @@ export default function OrderCard({ order, locale, today, returnTo }: OrderCardP
       </div>
 
       {isExpanded && (
-        <ul id={`order-card-items-${order.id}`} role="list" className="pointer-events-none relative flex flex-col">
+        <ul
+          id={`order-card-items-${order.id}`}
+          role="list"
+          className={cn(
+            // Recessed detail band (matches the desktop table drawer) so the items read as this
+            // order's interior, distinct from the summary above.
+            "pointer-events-none relative -mx-4 flex flex-col py-1 pr-4 pl-[calc(1rem-2px)]",
+            "[border-left:2px_solid_color-mix(in_oklch,var(--accent-cool)_55%,transparent)]",
+            "[background:color-mix(in_oklch,var(--text-primary)_3.5%,transparent)]",
+          )}
+        >
           {order.items.map((item, idx) => {
             const ItemIcon = getStoreProductTypeIcon(item.productTypeKey ?? "");
             const itemState = describeItemDeliveryState(item.deliveryState);

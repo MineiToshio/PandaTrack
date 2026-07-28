@@ -42,8 +42,9 @@ WO-06 does not introduce any Prisma migration. It adds `getOrdersList` to the ex
 - `Atrasada` overdue warning chip and highlighted delivery range
 - `Impago` pill for `COMPLETED` orders with pending payment
 - Expandable cards revealing associated items (name, quantity, delivery state badge)
+- `Expand all` / `Collapse all` toggle above the list, driving a shared multi-open expansion set (desktop table included) for the current page + filter
 - Empty states for no orders and for no results matching active filters
-- Pagination with `?page=` and `pageSize = 30` (`ORDER_LIST_PAGE_SIZE`)
+- Pagination with `?page=` and a user-selectable `?perPage=` (10/25/50/100, default `25` — `PAGE_SIZE_OPTIONS` / `DEFAULT_PAGE_SIZE`; `ORDER_LIST_PAGE_SIZE` is now an alias of `DEFAULT_PAGE_SIZE`). **Updated (2026-07-23, owner-approved):** replaces the original fixed `pageSize = 30`; see [ADR 0018](../../../../../design/decisions/0018-list-pagination-page-size-and-desktop-summary.md).
 - Back navigation from detail to list preserving filter state via `?returnTo=`
 - `isOrderOverdue` pure helper with unit tests
 - PostHog analytics events
@@ -189,7 +190,16 @@ Items render in `position ASC` order. Delivery state chips (`orderItemDeliveryCh
 
 Individual payment records are not shown in the expanded card. The payment percentage and progress bar on the collapsed card are the list-level financial summary; full payment detail is available in the order detail view (WO-05).
 
-Multiple cards may be expanded simultaneously.
+Multiple cards may be expanded simultaneously. The desktop table shares the same multi-open expansion set as the mobile cards — it is no longer a single-open accordion — so several rows can stay open together on any viewport.
+
+### Expand all / Collapse all
+
+A single `ExpandAllToggle` (`src/components/core/ExpandAllToggle.tsx`) sits in a thin right-aligned row directly above the list, below the filter chips. It only renders when the current page + filter has at least two rows.
+
+- **Label shows the next action:** the button reads `Expandir todo` / `Expand all` until every row on the current page + filter is expanded, then switches to `Colapsar todo` / `Collapse all`. A partially-expanded list still reads `Expandir todo`.
+- **`aria-pressed` carries the honest tri-state** for assistive tech: `"true"` when all rows are expanded, `"false"` when none are, `"mixed"` when some are.
+- **Scope:** the toggle drives the same shared multi-open expansion set used by the individual row/card expand triggers, scoped to the current page + active filter; it does not affect other pages or filter states.
+- Expanding or collapsing all fires `orders_list_expanded_all` / `orders_list_collapsed_all` (see Analytics).
 
 ### Overdue signal
 
@@ -265,7 +275,7 @@ interface OrderListResult {
   orders: OrderListItem[];
   totalCount: number;
   page: number;
-  pageSize: number; // 30
+  pageSize: number; // 25 by default; user-selectable — one of PAGE_SIZE_OPTIONS (10/25/50/100)
 }
 ```
 
@@ -321,7 +331,7 @@ export function isOrderOverdue(order: { expectedDeliveryTo: Date | null; status:
 
 ### Pagination
 
-`pageSize = 30` (`ORDER_LIST_PAGE_SIZE`). Prisma query uses `skip = (page - 1) * pageSize` and `take = pageSize`. Invalid or missing `?page=` values default to `1`.
+`pageSize` defaults to `25` (`ORDER_LIST_PAGE_SIZE` = `DEFAULT_PAGE_SIZE`) and is user-selectable via `?perPage=` among `PAGE_SIZE_OPTIONS` (`10`/`25`/`50`/`100`); an invalid or out-of-range value falls back to the default. Prisma query uses `skip = (page - 1) * pageSize` and `take = pageSize`. Invalid or missing `?page=` values default to `1`; changing `?perPage=` resets the URL to page `1`. `?perPage=` is omitted from the URL when it equals the default. Desktop pairs the numbered nav with a `PerPageSelect` control; mobile keeps "Cargar más" only, no per-page selector. See [ADR 0018](../../../../../design/decisions/0018-list-pagination-page-size-and-desktop-summary.md).
 
 ### Order sort
 
@@ -354,6 +364,8 @@ All event names are added to `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 | `orders_list_filters_reset`       | User clicks `Restablecer`              |
 | `orders_list_card_expanded`       | User expands an order card             |
 | `orders_list_card_collapsed`      | User collapses an order card           |
+| `orders_list_expanded_all`        | User clicks `Expandir todo`            |
+| `orders_list_collapsed_all`       | User clicks `Colapsar todo`            |
 | `orders_list_page_changed`        | User navigates to a different page     |
 
 ## Assumptions
@@ -442,8 +454,9 @@ All event names are added to `POSTHOG_EVENTS` in `src/lib/constants.ts`.
 
 ### Pagination
 
-- A user with more than 30 orders sees pagination controls. Navigating to page 2 updates `?page=2` in the URL and shows the next 30 orders.
+- A user with more orders than the current page size sees pagination controls. Navigating to page 2 updates `?page=2` in the URL and shows the next page of orders (25 by default).
 - Direct URL access to `?page=2` with active filters renders the correct page and preserves the filter chips.
+- Changing the per-page `Select` to `10`/`50`/`100` updates `?perPage=` and resets the URL to page `1`; changing any other filter preserves the current `?perPage=` value.
 
 ### Back navigation
 

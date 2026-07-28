@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { ZodError } from "zod";
 import {
+  assertKnownProductTypeKeys,
   isValidIanaTimezone,
   parseCollectorPreferencesPatch,
   validateCollectorPreferencesState,
@@ -58,11 +60,18 @@ describe("parseCollectorPreferencesPatch", () => {
     expect(parseCollectorPreferencesPatch({ budgetAmount: 1_000_000_000 }).ok).toBe(false);
   });
 
-  it("rejects unknown preferred product type keys", () => {
+  it("rejects malformed preferred product type keys by shape", () => {
+    // Membership is now a DB-existence check; the schema only guards the snake_case shape, so a
+    // hyphen or uppercase still fails here.
+    expect(parseCollectorPreferencesPatch({ preferredProductTypeKeys: ["manga", "unknown-type"] }).ok).toBe(false);
+    expect(parseCollectorPreferencesPatch({ preferredProductTypeKeys: ["Figures"] }).ok).toBe(false);
+  });
+
+  it("accepts well-formed non-seed keys at the schema layer (membership deferred to the DB check)", () => {
     const parsed = parseCollectorPreferencesPatch({
-      preferredProductTypeKeys: ["manga", "unknown-type"],
+      preferredProductTypeKeys: ["manga", "vinyl_toys"],
     });
-    expect(parsed.ok).toBe(false);
+    expect(parsed.ok).toBe(true);
   });
 
   it("deduplicates repeated preferred product type keys", () => {
@@ -72,6 +81,27 @@ describe("parseCollectorPreferencesPatch", () => {
     expect(parsed.ok).toBe(true);
     if (parsed.ok) {
       expect(parsed.value.preferredProductTypeKeys).toEqual(["manga", "figures"]);
+    }
+  });
+});
+
+describe("assertKnownProductTypeKeys", () => {
+  it("accepts submitted keys that all exist in the catalog, including admin-authored ones", () => {
+    expect(() => assertKnownProductTypeKeys(["manga", "vinyl_toys"], ["manga", "vinyl_toys", "figures"])).not.toThrow();
+  });
+
+  it("accepts an empty submission", () => {
+    expect(() => assertKnownProductTypeKeys([], ["manga"])).not.toThrow();
+  });
+
+  it("throws a ZodError on preferredProductTypeKeys when a submitted key is not in the catalog", () => {
+    try {
+      assertKnownProductTypeKeys(["manga", "ghost_type"], ["manga", "figures"]);
+      expect.unreachable("should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ZodError);
+      expect((error as ZodError).issues[0]?.path).toEqual(["preferredProductTypeKeys"]);
+      expect((error as ZodError).issues[0]?.message).toBe("INVALID_PRODUCT_TYPE");
     }
   });
 });

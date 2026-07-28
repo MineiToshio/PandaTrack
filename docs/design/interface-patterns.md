@@ -261,6 +261,16 @@ Use tabs only when content groups are parallel (not parent-child), the user focu
 
 Do **not** use tabs for sequential/top-to-bottom reading, side-by-side comparison, content small enough that tabs add more chrome than value, or critical information users could miss. Prefer instead: one structured vertical layout (hierarchical), stacked sections or a responsive grid (comparison), accordions (progressive disclosure), or a wizard (step-by-step choice).
 
+### List pagination (ADR 0018)
+
+Canonical for every collector-app list (orders, deliveries, stores) via `ListPagination` (`src/components/modules/ListPagination.tsx`), paired with `PerPageSelect` (`src/components/modules/PerPageSelect.tsx`) — see [components.md](components.md). One shared component, one URL contract; no module hand-rolls its own paginator.
+
+- **Page size.** `PAGE_SIZE_OPTIONS` = 10 / 25 / 50 / 100, `DEFAULT_PAGE_SIZE` = 25 (`src/lib/constants.ts`), unified across all three lists. The choice is user-selectable, never a fixed module constant.
+- **Desktop — one row, `justify-between`.** Left: the results summary, `"Mostrando 1–25 de 92"` (en dash in the numeric range, `--text-muted`, `tabular-nums`). Right: the per-page `Select` (core `Select`, **never** a native `<select>`) immediately followed by the numbered page nav (`«`/`‹` … page numbers … `›`/`»`). `flex-wrap` is the only overflow behavior at narrow desktop widths — the right-hand cluster drops to its own line, it never shrinks the numbered nav or duplicates the summary.
+- **Mobile — summary + "Cargar más".** A centered results summary above a single centered "Cargar más" button. No numbered pages, no per-page selector on mobile — the load-more button already covers "see more" at that breakpoint (see also [Responsive Rules](#12-responsive-rules)).
+- **URL contract.** `?perPage=` is present only when it differs from the default (25); changing the page size resets `?page=` to `1`; changing any other filter preserves the current `?perPage=` value. `?page=` follows the existing omit-when-`1` convention.
+- **History.** Supersedes [ADR 0001](decisions/0001-s2-closure-decisions.md) Decision 9 (fixed per-module page size, no user control); see [ADR 0018](decisions/0018-list-pagination-page-size-and-desktop-summary.md) for the full record, including why stores' prior mobile numbered-pages/no-summary layout was folded into this shared pattern.
+
 ---
 
 ## 5. Modals and Overlays

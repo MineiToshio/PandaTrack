@@ -44,6 +44,8 @@ export const ROUTES = {
   payments: "/payments",
   budget: "/budget",
   settings: "/settings",
+  admin: "/admin",
+  adminAudit: "/admin/audit",
 } as const;
 
 /**
@@ -66,6 +68,30 @@ export const CLOUDFLARE_ASSET_ROUTES = {
   STORE_LOGOS_PENDING: "store-logos/pending",
   USER_IMAGES: "user-images",
 } as const;
+
+/** Selectable page-size options for the desktop list pagination control (orders/deliveries/stores). */
+export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
+
+/** Default page size applied when no `perPage` param is present or it falls outside `PAGE_SIZE_OPTIONS`. */
+export const DEFAULT_PAGE_SIZE = 25;
+
+/**
+ * Open-report count at which the public store detail shows the derived report notice. One report is
+ * enough because the notice makes no accusation: it states that a report exists and has not been
+ * reviewed yet, and a single reader may be the only one who noticed a real problem.
+ */
+export const STORE_REPORT_NOTICE_THRESHOLD = 1;
+
+/**
+ * Open-report count at which a store's individual report rows collapse into a single report-cluster
+ * row in the moderation inbox. A store at or above this many open reports reads as one store-level
+ * decision, not several separate reports.
+ *
+ * Deliberately a separate constant from {@link STORE_REPORT_NOTICE_THRESHOLD}: the public notice
+ * answers "should the buyer be informed" and this one answers "does the queue need one decision
+ * instead of several", so they must stay independently movable.
+ */
+export const STORE_REPORT_CLUSTER_THRESHOLD = 2;
 
 export const POSTHOG_EVENTS = {
   LANDING: {
@@ -145,6 +171,8 @@ export const POSTHOG_EVENTS = {
     LIST_FILTERS_RESET: "orders_list_filters_reset",
     LIST_CARD_EXPANDED: "orders_list_card_expanded",
     LIST_CARD_COLLAPSED: "orders_list_card_collapsed",
+    LIST_EXPANDED_ALL: "orders_list_expanded_all",
+    LIST_COLLAPSED_ALL: "orders_list_collapsed_all",
     LIST_PAGE_CHANGED: "orders_list_page_changed",
     ITEM_MARKED_ARRIVED: "order_item_marked_arrived",
     ITEM_REVERTED_PENDING: "order_item_reverted_pending",
@@ -160,6 +188,8 @@ export const POSTHOG_EVENTS = {
     LIST_FILTERS_RESET: "deliveries_list_filters_reset",
     LIST_CARD_EXPANDED: "deliveries_list_card_expanded",
     LIST_CARD_COLLAPSED: "deliveries_list_card_collapsed",
+    LIST_EXPANDED_ALL: "deliveries_list_expanded_all",
+    LIST_COLLAPSED_ALL: "deliveries_list_collapsed_all",
     MARKED_DELIVERED: "delivery_marked_delivered",
     REOPENED: "delivery_reopened",
     CANCELLED: "delivery_cancelled",
@@ -192,6 +222,14 @@ export const POSTHOG_EVENTS = {
     REVIEW_EDIT_CLICKED: "store_review_edit_clicked",
     REVIEW_DELETED: "store_review_deleted",
     NOTE_SAVED: "store_note_saved",
+    APPROVED: "store_approved",
+    REMOVED: "store_removed",
+    REPORT_RESOLVED: "store_report_resolved",
+    REPORT_DISMISSED: "store_report_dismissed",
+    CHANGE_REQUEST_APPLIED: "store_change_request_applied",
+    CHANGE_REQUEST_REJECTED: "store_change_request_rejected",
+    PRODUCT_TYPE_REQUEST_APPROVED: "store_product_type_request_approved",
+    PRODUCT_TYPE_REQUEST_REJECTED: "store_product_type_request_rejected",
   },
   NAVIGATION: {
     VIEW_TRANSITION_NAVIGATED: "view_transition_navigated",
@@ -204,6 +242,7 @@ export const POSTHOG_EVENTS = {
     NOTIFICATION_TYPE_TOGGLED: "notification_type_toggled",
     NOTIFICATION_TEST_SENT: "notification_test_sent",
     NOTIFICATION_DISPATCH_RUN: "notification_dispatch_run",
+    NOTIFICATION_STORE_REJECTED_SENT: "notification_store_rejected_sent",
   },
   DASHBOARD: {
     CASH_ZONE_VIEWED: "dashboard_cash_zone_viewed",
@@ -220,6 +259,11 @@ export const POSTHOG_EVENTS = {
     COLLECTION_ZONE_VIEWED: "dashboard_collection_zone_viewed",
     TOP_STORE_CTA_CLICKED: "dashboard_top_store_cta_clicked",
     PRODUCT_TYPE_SEGMENT_CLICKED: "dashboard_product_type_segment_clicked",
+  },
+  ADMIN: {
+    SPACE_ENTERED: "admin_space_entered",
+    AUDIT_VIEWED: "admin_audit_viewed",
+    INBOX_ITEM_OPENED: "admin_inbox_item_opened",
   },
 } as const;
 

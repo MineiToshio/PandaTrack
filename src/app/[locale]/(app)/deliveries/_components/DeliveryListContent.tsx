@@ -1,6 +1,5 @@
-import DeliveryCard from "./DeliveryCard";
 import DeliveryListEmptyState from "./DeliveryListEmptyState";
-import DeliveriesTable from "./DeliveriesTable";
+import DeliveryListInteractive from "./DeliveryListInteractive";
 import type { DeliveriesListPageItem } from "@/lib/data/deliveries/deliveryQueries";
 
 type DeliveryListContentProps = {
@@ -29,16 +28,5 @@ export default function DeliveryListContent({
     return <DeliveryListEmptyState locale={locale} variant={variant} searchTerm={searchTerm} resetHref={resetHref} />;
   }
 
-  return (
-    <div id="deliveries-list" className="flex flex-col gap-3">
-      <ul className="flex flex-col gap-3 lg:hidden" role="list">
-        {deliveries.map((delivery) => (
-          <li key={delivery.id}>
-            <DeliveryCard delivery={delivery} locale={locale} today={today} returnTo={returnTo} />
-          </li>
-        ))}
-      </ul>
-      <DeliveriesTable deliveries={deliveries} locale={locale} today={today} returnTo={returnTo} />
-    </div>
-  );
+  return <DeliveryListInteractive deliveries={deliveries} locale={locale} today={today} returnTo={returnTo} />;
 }

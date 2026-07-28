@@ -52,11 +52,11 @@ export function isWholeMajorAmount(minorUnits: number): boolean {
  *          formatAmount(88850, "USD") → "888.50 USD"
  *
  * Pattern: {amount} {code} — value first, identifier after.
- * Always uses period (.) as the decimal separator and NO thousand separator, regardless of UI
- * locale. Fraction digits follow the currency exponent (2 for most, 0 for CLP/JPY/KRW). Sergio
- * prefers a single canonical number layout so collectors don't get tripped up reading `$1.240,00`
- * vs `$1,240.00` vs `$1240`.
- * See docs/design/visual-foundations.md — "Number and currency formatting".
+ * Canonical number layout, locale-INDEPENDENT: comma thousand separators + period decimal
+ * (`1,240.00`). Fraction digits follow the currency exponent (2 for most, 0 for CLP/JPY/KRW, so
+ * `43,000 CLP` has no decimals). A single canonical layout keeps collectors from getting tripped up
+ * reading `$1.240,00` vs `$1,240.00`. See docs/design/visual-foundations.md — "Number and currency
+ * formatting".
  */
 export function formatAmount(minorUnits: number, currencyCode: string): string {
   const decimals = getCurrencyDecimals(currencyCode);
@@ -65,7 +65,7 @@ export function formatAmount(minorUnits: number, currencyCode: string): string {
       style: "decimal",
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
-      useGrouping: false,
+      useGrouping: true,
     }).format(minorUnits / MINOR_UNITS_PER_MAJOR);
     return `${formatted} ${currencyCode}`;
   } catch {
@@ -134,8 +134,10 @@ function getCurrencyNarrowSymbol(currencyCode: string, locale: string): string {
  * would be redundant.
  *
  * Symbol is ALWAYS prefixed regardless of locale conventions (Spanish locale normally puts
- * `$` after the value — we override that). Number layout is locale-INDEPENDENT: always `.`
- * decimal, no thousand separator, always 2 decimals.
+ * `$` after the value — we override that). Number layout is locale-INDEPENDENT: comma thousand
+ * separators + period decimal (`S/ 51,248.00`), with fraction digits per the currency exponent
+ * (0 for CLP/JPY/KRW, 2 otherwise). Form inputs use `formatCentsForInput` instead — those stay
+ * ungrouped so the value round-trips through the parser.
  *
  * For places that should show the code explicitly (orders list price, hero sub line, etc.)
  * use `formatAmountWithSymbol` — that variant always appends the ISO code.
@@ -148,7 +150,7 @@ export function formatAmountSymbolOnly(minorUnits: number, currencyCode: string,
       style: "decimal",
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals,
-      useGrouping: false,
+      useGrouping: true,
     }).format(value);
     const symbol = getCurrencyNarrowSymbol(currencyCode, locale);
     // Insert a space when the symbol is multi-character text (e.g. "S/", "R$", "Bs") so it
@@ -159,6 +161,54 @@ export function formatAmountSymbolOnly(minorUnits: number, currencyCode: string,
   } catch {
     return value.toFixed(decimals);
   }
+}
+
+/**
+ * At/above this MAJOR amount a headline value is abbreviated (`234.3K`, `1.2M`) instead of shown
+ * in full. Below it, the exact 2-decimal value is kept. The threshold guarantees the abbreviated
+ * form never exceeds a bounded width (mantissa < 1000 + a single suffix letter), so it always fits
+ * a constrained container such as a donut center. The full value is surfaced on hover.
+ */
+const COMPACT_ABBREVIATION_THRESHOLD = 1000;
+
+/**
+ * Compact variant of `formatAmountSymbolOnly` for space-constrained headlines (e.g. a donut
+ * center): `S/ 234.3K`, `$ 1.2M`. Values below `COMPACT_ABBREVIATION_THRESHOLD` keep their exact
+ * exponent-correct decimals (`S/ 888.50`); at/above it they abbreviate with a K/M/B/T suffix and at
+ * most one decimal. The suffix letters are locale-independent (English compact) so the layout stays
+ * canonical; the currency symbol is resolved per locale. Pair with the full `formatAmountSymbolOnly`
+ * value as a hover `title`.
+ */
+export function formatAmountSymbolOnlyCompact(minorUnits: number, currencyCode: string, locale = "en"): string {
+  const value = minorUnits / MINOR_UNITS_PER_MAJOR;
+  try {
+    const symbol = getCurrencyNarrowSymbol(currencyCode, locale);
+    const needsSpace = symbol.length > 1;
+    return `${symbol}${needsSpace ? " " : ""}${formatCompactMajor(value, getCurrencyDecimals(currencyCode))}`;
+  } catch {
+    return value.toFixed(getCurrencyDecimals(currencyCode));
+  }
+}
+
+/**
+ * Formats a major-unit number for a constrained headline: full grouped decimals below the
+ * abbreviation threshold, K/M/B/T compact notation at/above it. Locale-independent (English) so the
+ * digit grouping and suffix letters stay canonical across the app.
+ */
+export function formatCompactMajor(value: number, decimals: number): string {
+  if (Math.abs(value) < COMPACT_ABBREVIATION_THRESHOLD) {
+    return new Intl.NumberFormat("en", {
+      style: "decimal",
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+      useGrouping: true,
+    }).format(value);
+  }
+  return new Intl.NumberFormat("en", {
+    notation: "compact",
+    compactDisplay: "short",
+    maximumFractionDigits: 1,
+  }).format(value);
 }
 
 /**

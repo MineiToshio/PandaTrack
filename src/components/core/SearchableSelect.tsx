@@ -28,6 +28,8 @@ export type SearchableSelectProps = {
   /** Form input name; emits a hidden input so the value is included in form submission. */
   name?: string;
   required?: boolean;
+  /** Accessible name for the combobox trigger, so multiple selects on one page are distinguishable. */
+  "aria-label"?: string;
   "aria-required"?: boolean;
   "aria-invalid"?: boolean;
 };
@@ -49,6 +51,7 @@ export default function SearchableSelect({
   disabled = false,
   name,
   required = false,
+  "aria-label": ariaLabel,
   "aria-required": ariaRequired,
   "aria-invalid": ariaInvalid = false,
 }: SearchableSelectProps) {
@@ -164,6 +167,7 @@ export default function SearchableSelect({
             type="button"
             id={id}
             disabled={disabled}
+            aria-label={ariaLabel}
             aria-haspopup="listbox"
             aria-expanded={isOpen}
             aria-controls={`${id}-options`}
@@ -189,6 +193,7 @@ export default function SearchableSelect({
             id={id}
             type="text"
             role="combobox"
+            aria-label={ariaLabel}
             aria-required={ariaRequired ?? required}
             aria-autocomplete="list"
             aria-expanded={isOpen}

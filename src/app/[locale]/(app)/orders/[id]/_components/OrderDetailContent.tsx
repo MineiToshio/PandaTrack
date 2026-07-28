@@ -129,6 +129,9 @@ export default async function OrderDetailContent({ order, locale, backHref }: Or
               storeName={order.store.name}
               status={order.status}
               eligibility={order.eligibility}
+              paidAmountMinor={order.paidAmount}
+              currencyCode={order.currencyCode}
+              hasPayments={order.flags.hasPayments}
               locale={locale}
             />
           }

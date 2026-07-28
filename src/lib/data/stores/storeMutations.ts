@@ -21,7 +21,7 @@ export interface CreateStoreInput {
   name: string;
   description?: string | null;
   logoUrl?: string | null;
-  storeType: "BUSINESS" | "PERSON";
+  sellerType: "RETAILER" | "PERSON" | "PROXY";
   countryCode: string;
   presenceTypes: StorePresenceType[];
   productTypeKeys: string[];
@@ -86,7 +86,7 @@ export async function createStore(input: CreateStoreInput): Promise<{ id: string
       searchName: normalizeStoreName(input.name),
       description: input.description?.trim() || null,
       logoUrl: input.logoUrl ?? null,
-      storeType: input.storeType,
+      sellerType: input.sellerType,
       countryCode: input.countryCode,
       status: input.status,
       createdByUserId: input.createdByUserId,
@@ -94,7 +94,7 @@ export async function createStore(input: CreateStoreInput): Promise<{ id: string
       approvedAt: input.status === "APPROVED" ? new Date() : null,
       hasStock: input.hasStock ?? null,
       receivesOrders: input.receivesOrders ?? null,
-      isPrivate: input.isPrivate === true && input.storeType === "PERSON" ? true : false,
+      isPrivate: input.isPrivate === true && input.sellerType === "PERSON" ? true : false,
       presences: {
         create: presenceTypes.map((presenceType) => ({ presenceType })),
       },
@@ -229,9 +229,7 @@ export async function upsertStoreReview(input: UpsertStoreReviewInput): Promise<
  * Deletes a store review owned by the given user and updates the store's review stats.
  * Returns the store slug for path revalidation. Returns null if the review was not found or not owned by the user.
  */
-export async function deleteStoreReview(
-  input: DeleteStoreReviewInput,
-): Promise<DeleteStoreReviewResult | null> {
+export async function deleteStoreReview(input: DeleteStoreReviewInput): Promise<DeleteStoreReviewResult | null> {
   const review = await prisma.storeReview.findFirst({
     where: {
       id: input.reviewId,

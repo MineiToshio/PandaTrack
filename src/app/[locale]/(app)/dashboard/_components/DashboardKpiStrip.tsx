@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Boxes, Package, Store, Wallet, type LucideIcon } from "lucide-react";
 import type { DashboardData } from "@/lib/data/dashboard/dashboardTypes";
 import { formatDashboardMoney } from "../_utils/dashboardMoney";
-import DashboardKpiPartialTooltip from "./DashboardKpiPartialTooltip";
+import DashboardKpiInfoTooltip from "./DashboardKpiInfoTooltip";
 
 export type DashboardKpiStripProps = {
   data: DashboardData;
@@ -16,32 +16,40 @@ type KpiTile = {
   accent: string;
   value: string;
   label: string;
-  /** Set when the figure excludes FX-unreconciled orders, so it is not read as a complete total. */
-  partialNote?: string;
+  /** When set, a tooltip explains what the figure means (warning-toned when `partial`). */
+  info?: { hint: string; note: string; partial: boolean };
 };
 
 /**
  * Four-tile overview of the collection: orders, products, committed value, and stores.
- * "Committed" is `Order.totalCost`, labelled distinctly so it never reads as disbursed spend.
- * Cancelled orders are excluded from every figure.
+ * "Committed value" is Σ `Order.totalCost` (paid + still owed) across active orders, labelled and
+ * explained via an always-available tooltip so it never reads as disbursed spend. When FX-pending
+ * orders are excluded, the tooltip turns into a warning and names the excluded count. Cancelled
+ * orders are excluded from every figure.
  */
 export default async function DashboardKpiStrip({ data, locale }: DashboardKpiStripProps) {
   const t = await getTranslations({ locale, namespace: "dashboard" });
   const { collection, paidVsOutstanding, baseCurrencyCode } = data;
+
+  const committedPartial = paidVsOutstanding.isPartial && paidVsOutstanding.excludedOrderCount > 0;
+  const committedMeaning = t("kpi.committedMeaning");
+  const committedNote = committedPartial
+    ? `${committedMeaning} ${t("kpi.committedPartial", { count: paidVsOutstanding.excludedOrderCount })}`
+    : committedMeaning;
 
   const tiles: KpiTile[] = [
     {
       key: "orders",
       icon: Package,
       accent: "var(--accent)",
-      value: collection.totalOrders.toLocaleString(locale),
+      value: collection.totalOrders.toLocaleString("en"),
       label: t("kpi.orders"),
     },
     {
       key: "products",
       icon: Boxes,
       accent: "var(--accent-cool)",
-      value: collection.totalProducts.toLocaleString(locale),
+      value: collection.totalProducts.toLocaleString("en"),
       label: t("kpi.products"),
     },
     {
@@ -50,22 +58,20 @@ export default async function DashboardKpiStrip({ data, locale }: DashboardKpiSt
       accent: "var(--accent-warm)",
       value: formatDashboardMoney(paidVsOutstanding.committedMinor, baseCurrencyCode, locale),
       label: t("kpi.committed"),
-      // The counts above include FX-pending orders; the money does not. Say so.
-      partialNote:
-        paidVsOutstanding.isPartial && paidVsOutstanding.excludedOrderCount > 0
-          ? t("kpi.committedPartial", { count: paidVsOutstanding.excludedOrderCount })
-          : undefined,
+      info: {
+        hint: committedPartial ? t("kpi.committedPartialHint") : t("kpi.committedInfoHint"),
+        note: committedNote,
+        partial: committedPartial,
+      },
     },
     {
       key: "stores",
       icon: Store,
       accent: "var(--success)",
-      value: collection.totalStores.toLocaleString(locale),
+      value: collection.totalStores.toLocaleString("en"),
       label: t("kpi.stores"),
     },
   ];
-
-  const partialNote = tiles.find((tile) => tile.partialNote)?.partialNote;
 
   return (
     <div>
@@ -94,8 +100,8 @@ export default async function DashboardKpiStrip({ data, locale }: DashboardKpiSt
                 </span>
                 <span className="flex items-center gap-1 [font-size:11px] [letter-spacing:0.05em] [color:var(--text-muted)] uppercase">
                   {tile.label}
-                  {tile.partialNote && (
-                    <DashboardKpiPartialTooltip label={t("kpi.committedPartialHint")} note={tile.partialNote} />
+                  {tile.info && (
+                    <DashboardKpiInfoTooltip label={tile.info.hint} note={tile.info.note} partial={tile.info.partial} />
                   )}
                 </span>
               </span>
@@ -103,9 +109,6 @@ export default async function DashboardKpiStrip({ data, locale }: DashboardKpiSt
           );
         })}
       </ul>
-      {partialNote && (
-        <p className="mt-2 [font-size:12px] [line-height:1.5] [color:var(--text-muted)]">{partialNote}</p>
-      )}
     </div>
   );
 }

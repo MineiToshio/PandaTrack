@@ -1,4 +1,8 @@
 {
+  "orderTombstone": {
+    "neutral": "Esta tienda ya no está disponible.",
+    "sanction": "Esta tienda fue retirada por incumplir nuestras políticas."
+  },
   "create": {
     "heroEyebrow": "Añadir tienda",
     "heroDescription": "Crea una ficha pública para que otros coleccionistas descubran la tienda, sus canales y qué vende.",
@@ -12,9 +16,10 @@
     "namePlaceholder": "Ej. Manga Store",
     "descriptionLabel": "Descripción (opcional)",
     "descriptionPlaceholder": "Breve descripción de la tienda",
-    "storeTypeLabel": "Tipo de tienda",
-    "storeTypeBusiness": "Negocio",
-    "storeTypePerson": "Vendedor particular",
+    "storeTypeLabel": "Tipo de vendedor",
+    "sellerTypeRetailer": "Comercio",
+    "sellerTypePerson": "Persona",
+    "sellerTypeProxy": "Proxy",
     "countryLabel": "País",
     "countryPlaceholder": "Selecciona país",
     "presenceLabel": "Canales de venta",
@@ -70,7 +75,12 @@
     "commentTitle": "¿Por qué sugieres este cambio?",
     "commentLabel": "Contexto de la solicitud (opcional)",
     "commentHelper": "Agrega contexto breve que ayude al moderador a entender por qué se necesita esta actualización.",
-    "immutableFieldsHelper": "El tipo de tienda ({storeType}) y el país ({country}) no se pueden cambiar desde este flujo.",
+    "immutableFieldsHelper": "El tipo de vendedor ({sellerType}) y el país ({country}) no se pueden cambiar desde este flujo.",
+    "closure": {
+      "sectionLabel": "Estado de la tienda",
+      "label": "Marcar tienda como cerrada",
+      "help": "Actívalo si esta tienda cerró o dejó de operar. Las tiendas cerradas se ocultan del listado por defecto y ya no se pueden elegir al crear un pedido, pero siguen accesibles por su enlace directo con un aviso."
+    },
     "direct": {
       "title": "Editar {storeName}",
       "description": "Puedes actualizar esta tienda pendiente directamente porque tienes permiso para administrarla.",
@@ -121,7 +131,9 @@
   },
   "detail": {
     "pendingDisclaimerTitle": "Tienda en revisión",
-    "pendingDisclaimerMessage": "Esta tienda fue creada por la comunidad y aún no ha sido verificada por el equipo. Te recomendamos revisar la información con precaución.",
+    "pendingDisclaimerMessage": "Una persona de la comunidad creó esta tienda y el equipo la está revisando. Ya puedes usarla con normalidad; solo no aparece en buscadores hasta que se apruebe.",
+    "reportNoticeTitle": "Esta tienda tiene reportes por revisar",
+    "reportNoticeMessage": "Personas de la comunidad reportaron que la información publicada aquí podría no estar correcta, y el equipo todavía no la revisa. Un reporte no califica a la tienda: para eso están las reseñas. Sigue visible; revisa sus datos con atención y decide por tu cuenta.",
     "governanceAlertTitle": "Reportes y sugerencias",
     "governanceAlertMessage": "Esta tienda tiene reportes o solicitudes de cambio registradas. Abre el resumen para revisar los aportes de la comunidad.",
     "inactiveWarningTitle": "Tienda sin actividad",
@@ -138,7 +150,7 @@
     "contactChannelsCountLabel": "Canales de contacto",
     "addressesCountLabel": "Direcciones",
     "businessSignalsTitle": "Modalidad de pedido",
-    "storeTypeLabel": "Tipo de tienda",
+    "storeTypeLabel": "Tipo de vendedor",
     "statusLabel": "Estado",
     "statusPending": "Pendiente de revisión",
     "statusApproved": "Aprobada",
@@ -146,7 +158,7 @@
     "noImportCountries": "No se registraron países de importación.",
     "noContactChannels": "No hay canales de contacto públicos disponibles.",
     "noAddresses": "No hay direcciones públicas disponibles.",
-    "notAvailableForStoreType": "Esta información no aplica para este tipo de tienda.",
+    "notAvailableForStoreType": "Esta información no aplica para este tipo de vendedor.",
     "receivesOrdersUnknown": "Acepta pedidos: sin indicar",
     "hasStockUnknown": "Venta con stock: sin indicar",
     "reviews": {
@@ -222,6 +234,92 @@
       }
     }
   },
+  "moderation": {
+    "panelTitle": "Moderación",
+    "approveCta": "Aprobar tienda",
+    "removeCta": "Retirar tienda",
+    "toasts": {
+      "approved": "Tienda aprobada.",
+      "removed": "Tienda retirada."
+    },
+    "reports": {
+      "sectionTitle": "Reportes abiertos",
+      "reportedBy": "Reportado por @{username}",
+      "adminOnlyCaption": "Detalles y autor visibles solo para administradores.",
+      "noDetails": "Sin detalles adicionales.",
+      "resolveCta": "Resolver",
+      "dismissCta": "Descartar",
+      "toasts": {
+        "resolved": "Reporte resuelto.",
+        "dismissed": "Reporte descartado."
+      }
+    },
+    "removeModal": {
+      "title": "Retirar tienda",
+      "description": "Elige el motivo. La tienda deja de ser pública, pero los pedidos que la referencian se conservan.",
+      "neutralGroupLabel": "Motivos neutrales",
+      "sanctionGroupLabel": "Motivo de sanción",
+      "noteLabel": "Nota interna (opcional)",
+      "noteHelper": "Solo visible para administradores en el registro de auditoría.",
+      "confirmCta": "Retirar tienda",
+      "cancelCta": "Cancelar",
+      "reasons": {
+        "DUPLICATE": "Tienda duplicada",
+        "CLOSED_OR_INACTIVE": "Tienda cerrada o inactiva",
+        "FALSE_INFO": "Información falsa o engañosa",
+        "ABUSE": "Abuso, estafa o fraude"
+      }
+    },
+    "errors": {
+      "unauthorized": "No tienes permisos para moderar esta tienda.",
+      "storeNotFound": "Esta tienda ya no está disponible.",
+      "invalidTransition": "Esta acción no es válida para el estado actual de la tienda.",
+      "removalReasonRequired": "Elige un motivo para retirar la tienda.",
+      "noteTooLong": "La nota interna es demasiado larga.",
+      "slugRequired": "No se pudo identificar la tienda.",
+      "localeRequired": "No se pudo identificar el idioma.",
+      "reportRequired": "No se pudo identificar el reporte.",
+      "reportNotFound": "Este reporte ya no está disponible.",
+      "validation_failed": "Revisa el formulario e inténtalo otra vez.",
+      "moderationFailed": "No se pudo completar la acción. Inténtalo otra vez.",
+      "changeRequestRequired": "No se pudo identificar la solicitud de cambio.",
+      "changeRequestNotFound": "Esta solicitud de cambio ya no está disponible."
+    },
+    "changeRequests": {
+      "sectionTitle": "Solicitudes de cambio",
+      "requestedBy": "Solicitado por @{username}",
+      "adminOnlyCaption": "Autor y detalles visibles solo para administradores.",
+      "noComment": "Sin comentario adicional.",
+      "commentLabel": "Comentario",
+      "currentLabel": "Ahora",
+      "proposedLabel": "Propuesta",
+      "alreadyAppliedTag": "Ya aplicado",
+      "emptyValue": "Sin especificar",
+      "boolValues": {
+        "true": "Sí",
+        "false": "No",
+        "unset": "Sin especificar"
+      },
+      "itemDelta": {
+        "added": "Se agrega",
+        "removed": "Se quita",
+        "kept": "Se mantiene"
+      },
+      "driftBanner": {
+        "title": "La tienda cambió desde esta solicitud",
+        "helper": "Los valores mostrados reflejan el estado actual; al aprobar solo se aplican los cambios que aún tienen efecto."
+      },
+      "rebaseNote": "Al aprobar, los cambios se recalculan sobre el estado actual de la tienda.",
+      "nothingToApply": "No quedan cambios por aplicar: la tienda ya coincide con la propuesta.",
+      "applyCta": "Aprobar y aplicar",
+      "rejectCta": "Rechazar",
+      "toasts": {
+        "applied": "Cambios aplicados a la tienda.",
+        "superseded": "No quedaban cambios por aplicar.",
+        "rejected": "Solicitud de cambio rechazada."
+      }
+    }
+  },
   "governance": {
     "summary": {
       "openCta": "Ver resumen",
@@ -275,7 +373,9 @@
         "receivesOrders": "Acepta pedidos",
         "contactChannels": "Canales de contacto",
         "addresses": "Direcciones",
-        "importCountries": "Países de importación"
+        "importCountries": "Países de importación",
+        "isPrivate": "Tienda privada",
+        "isActive": "Tienda activa"
       }
     },
     "report": {
@@ -394,6 +494,7 @@
       "other": "Otros",
       "receivesOrders": "Recibe pre-reservas",
       "hasStock": "Tiene stock",
+      "showClosed": "Mostrar tiendas cerradas",
       "presencePhysical": "Tienda física",
       "presenceOnline": "Tienda online",
       "countrySearchPlaceholder": "Cualquier país…",
@@ -415,8 +516,9 @@
       "noteSaved": "Guardada hace {time}",
       "reportButton": "Reportar tienda",
       "pendingDisclaimer": "En revisión. Visible en la app; no indexable en buscadores.",
-      "flaggedDisclaimer": "Tienda con reportes pendientes. Procede con precaución.",
-      "privateBadge": "Privada — solo tú la ves",
+      "reportNotice": "Tiene reportes por revisar. Sigue visible; revisa sus datos y decide por tu cuenta.",
+      "reportedChip": "Con reportes",
+      "privateBadge": "Privada, solo tú la ves",
       "presence": {
         "physical": "Tienda física",
         "online": "Tienda online"
@@ -427,6 +529,7 @@
       "ratingFallback": "Sin reseñas",
       "personChip": "Persona",
       "personNote": "Los perfiles de persona no muestran canales de contacto ni direcciones públicamente.",
+      "proxyChip": "Proxy",
       "pendingChip": "En revisión",
       "addressDefaultLabel": "Tienda principal",
       "aside": {
@@ -476,12 +579,14 @@
       "step1": {
         "eyebrow": "PASO 1 · TIPO",
         "shortLabel": "Tipo",
-        "title": "¿Qué tipo de tienda es?",
+        "title": "¿Qué tipo de vendedor es?",
         "helper": "Esto cambia los campos siguientes.",
-        "businessLabel": "Negocio",
-        "businessDesc": "Una tienda con marca, redes y direcciones.",
+        "retailerLabel": "Comercio",
+        "retailerDesc": "Un negocio que te vende sus productos.",
         "personLabel": "Persona",
-        "personDesc": "Alguien vendiendo — amigo, scout, vendedor.",
+        "personDesc": "Un vendedor individual: amigo, scout, revendedor.",
+        "proxyLabel": "Proxy",
+        "proxyDesc": "Un intermediario que compra por ti (p. ej. ZenMarket).",
         "privateLabel": "Perfil privado",
         "privateBadge": "(solo para Persona)",
         "privateHelper": "Solo tú puedes verlo. No aparece en el directorio público ni en búsquedas. Ideal para registrar coleccionistas o contactos privados sin visibilidad pública."
@@ -509,7 +614,7 @@
         "eyebrow": "PASO 4 · CANALES",
         "shortLabel": "Canales",
         "title": "¿Cómo se contacta?",
-        "helper": "Opcional — puedes agregar o editar esto después."
+        "helper": "Opcional. Puedes agregar o editar esto después."
       },
       "step5": {
         "eyebrow": "PASO 5 · LISTO",
@@ -588,7 +693,7 @@
       }
     },
     "toast": {
-      "created": "Tienda creada — pendiente de revisión",
+      "created": "Tienda creada, pendiente de revisión",
       "createdApproved": "Tienda creada"
     },
     "edit": {

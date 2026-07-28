@@ -24,6 +24,7 @@ import WizardAccordion, { type WizardAccordionHandle } from "@/components/module
 import WizardStep from "@/components/modules/WizardAccordion/WizardStep";
 import Stepper, { type StepperStep } from "@/components/core/Stepper";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import { useStoreProductTypeName } from "@/app/[locale]/(app)/_components/StoreProductTypeNamesProvider";
 import {
   ALLOWED_COLLECTOR_BASE_CURRENCY_CODES,
   PRIMARY_CURRENCY_BY_COUNTRY,
@@ -71,7 +72,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
   const tCreate = useTranslations("orders.create");
   const tForm = useTranslations("orders.form");
   const tCurrencies = useTranslations("orders.currencies");
-  const tProductTypes = useTranslations("storeProductTypes");
+  const productTypeName = useStoreProductTypeName();
   const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -164,7 +165,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
     () =>
       (ALLOWED_COLLECTOR_BASE_CURRENCY_CODES as readonly string[]).map((code) => ({
         code,
-        label: `${code} — ${tCurrencies(code as never)}`,
+        label: `${code} · ${tCurrencies(code as never)}`,
       })),
     [tCurrencies],
   );
@@ -559,7 +560,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                     onChange={setItems}
                     currencyCode={currencyCode}
                     productTypeKeys={productTypeKeys}
-                    tProductTypes={(key) => tProductTypes(key as never)}
+                    tProductTypes={productTypeName}
                     nextRowId={nextRowId}
                   />
                 ) : (
@@ -568,7 +569,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                       rows={items}
                       onChange={setItems}
                       productTypeKeys={productTypeKeys}
-                      tProductTypes={(key) => tProductTypes(key as never)}
+                      tProductTypes={productTypeName}
                       itemErrors={itemErrors}
                       createNewRow={() => createEmptyRow(nextRowId())}
                       currencyCode={currencyCode || undefined}
@@ -709,7 +710,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                     <dd className="font-medium">{selectedStore?.name ?? "—"}</dd>
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{tCreate("summaryCurrency")}</dt>
                     <dd className="font-medium">
-                      {currencyCode ? `${currencyCode} — ${tCurrencies(currencyCode as never)}` : "—"}
+                      {currencyCode ? `${currencyCode} · ${tCurrencies(currencyCode as never)}` : "—"}
                     </dd>
                     <dt className="text-[11.5px] [color:var(--text-muted)]">{tCreate("summaryDate")}</dt>
                     <dd className="font-medium">{orderDateForReview}</dd>

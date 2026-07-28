@@ -1,10 +1,16 @@
 import { useTranslations } from "next-intl";
 import type { PublicStoreListingItem } from "@/lib/data/stores/storeQueries";
+import {
+  resolveStoreProductTypeName,
+  type AuthoredStoreProductTypeNameMap,
+} from "@/lib/catalog/resolveStoreProductTypeName";
 import StoreCard from "./share/StoreCard";
 
 export type StoreListingContentProps = {
   locale: string;
   stores: PublicStoreListingItem[];
+  /** Authored (non-seed) catalog names so cards resolve admin-authored types; seeds use i18n. */
+  authoredProductTypeNames: AuthoredStoreProductTypeNameMap;
   /** Map of store slug → total viewer order count. Only populated for authenticated viewers. */
   viewerOrderCountsBySlug?: Record<string, number>;
 };
@@ -13,7 +19,12 @@ export type StoreListingContentProps = {
  * Grid of public stores rendered with the redesigned `StoreCard` (S6).
  * Empty state is rendered by the parent `StoresPage` when `stores.length === 0`.
  */
-export default function StoreListingContent({ locale, stores, viewerOrderCountsBySlug }: StoreListingContentProps) {
+export default function StoreListingContent({
+  locale,
+  stores,
+  authoredProductTypeNames,
+  viewerOrderCountsBySlug,
+}: StoreListingContentProps) {
   const tListing = useTranslations("storeListing");
   const tCountries = useTranslations("countries");
   const tProductTypes = useTranslations("storeProductTypes");
@@ -29,7 +40,8 @@ export default function StoreListingContent({ locale, stores, viewerOrderCountsB
               importCountriesLabel: tListing("s6.importCountriesLabel"),
               noImportCountries: tListing("s6.noImportCountries"),
               countryName: (code) => tCountries(code),
-              productTypeLabel: (key) => tProductTypes(key),
+              productTypeLabel: (key) =>
+                resolveStoreProductTypeName(authoredProductTypeNames[key], tProductTypes(key), locale),
               ratingCount: (count) => tListing("ratingCount", { count }),
               ratingFallback: tListing("s6.card.ratingFallback"),
               ariaLabel: (name) => tListing("s6.card.ariaLabel", { name }),

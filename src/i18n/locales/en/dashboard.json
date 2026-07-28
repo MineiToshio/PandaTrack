@@ -97,10 +97,18 @@
   "kpi": {
     "orders": "Orders",
     "products": "Products",
-    "committed": "Committed",
+    "committed": "Order value",
     "stores": "Stores",
     "committedPartial": "{count, plural, one {Excludes # order with a pending exchange rate} other {Excludes # orders with a pending exchange rate}}.",
-    "committedPartialHint": "Partial figure"
+    "committedPartialHint": "Partial figure",
+    "committedMeaning": "The total value of all your active orders: what you've already paid plus what you still owe.",
+    "committedInfoHint": "What it means"
+  },
+  "lostOnCancelled": {
+    "eyebrow": "Cancelled",
+    "title": "Lost on cancelled",
+    "help": "Payments you made on cancelled orders and didn't get back.",
+    "partial": "{count, plural, one {Excludes # order with a pending exchange rate} other {Excludes # orders with a pending exchange rate}}."
   },
   "collection": {
     "eyebrow": "Your collection",
@@ -112,6 +120,10 @@
     "spendAria": "Spend by category: {summary}",
     "spendEmpty": "No spend by category yet.",
     "donutTotalLabel": "Total",
+    "stateLabel": "Products by delivery state",
+    "stateAria": "Products by delivery state: {summary}",
+    "stateEmpty": "No products to show yet.",
+    "stateCenterLabel": "Items",
     "countLabel": "Products by category · count",
     "topStoresLabel": "Top stores",
     "otherCategory": "Other",

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { OrderItemDeliveryState, type DeliveryStatus } from "../../../../generated/prisma/client";
 import type { DeliveryListSort } from "@/lib/deliveries/deliveryListSort";
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
 
 export type EligibleStore = {
   storeId: string;
@@ -258,8 +259,12 @@ export async function getDeliveriesList(
     shippedTo,
     sort = "oldest",
     page,
-    pageSize,
+    pageSize: requestedPageSize,
   } = filters;
+  // Hardened against arbitrary URL values: only the allow-listed options are honored.
+  const pageSize = (PAGE_SIZE_OPTIONS as readonly number[]).includes(requestedPageSize)
+    ? requestedPageSize
+    : DEFAULT_PAGE_SIZE;
   const now = new Date();
 
   const baseWhere: Record<string, unknown> = {

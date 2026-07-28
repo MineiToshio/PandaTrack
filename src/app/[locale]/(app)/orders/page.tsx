@@ -5,13 +5,16 @@ import { redirect } from "next/navigation";
 import { buildPageMetadata } from "@/lib/seo";
 import { domainDateToIsoString } from "@/lib/domainDate";
 import { getSession } from "@/lib/auth/auth-server";
-import { prisma } from "@/lib/prisma";
-import { getOrdersList } from "@/lib/data/orders/orderQueries";
+import {
+  getOrdersHeadingCounts,
+  getOrdersList,
+  listOrdersPendingFxReconciliation,
+} from "@/lib/data/orders/orderQueries";
 import { getOrderableStores } from "@/lib/data/stores/storeQueries";
-import { ROUTES } from "@/lib/constants";
+import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
+import { DEFAULT_PAGE_SIZE, POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import {
   DEFAULT_ORDER_LIST_SORT,
-  ORDER_LIST_PAGE_SIZE,
   parseOrderListingParams,
   type OrderListActiveFilters,
 } from "./_utils/orderListingParams";
@@ -22,6 +25,16 @@ import OrderListPagination from "./_components/OrderListPagination";
 import FxAnnouncer from "./_components/FxAnnouncer";
 import OrderListLoadingSkeleton from "./_components/OrderListLoadingSkeleton";
 import type { FxPendingOrder } from "./_components/FxReconciliationModal";
+import { ListExpandAllToggle, ListExpansionProvider } from "@/hooks/useListExpansion";
+
+/** Wires the shared expand/collapse-all state to the orders list's analytics events. */
+const ORDER_EXPANSION_EVENTS = {
+  cardExpanded: POSTHOG_EVENTS.ORDER.LIST_CARD_EXPANDED,
+  cardCollapsed: POSTHOG_EVENTS.ORDER.LIST_CARD_COLLAPSED,
+  expandedAll: POSTHOG_EVENTS.ORDER.LIST_EXPANDED_ALL,
+  collapsedAll: POSTHOG_EVENTS.ORDER.LIST_COLLAPSED_ALL,
+  idProp: "order_id",
+};
 
 type OrdersPageProps = {
   params: Promise<{ locale: string }>;
@@ -47,8 +60,24 @@ function buildListUrl(
   return qs ? `${basePath}?${qs}` : basePath;
 }
 
-function startOfMonth(now: Date): Date {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+/** Changing the page size always resets to page 1; only a non-default size is kept in the URL. */
+function buildPerPageUrl(
+  basePath: string,
+  rawParams: Record<string, string | string[] | undefined>,
+  perPageSize: number,
+): string {
+  const params = new URLSearchParams();
+  Object.entries(rawParams).forEach(([key, value]) => {
+    if (key === "page" || key === "perPage" || value == null) return;
+    if (Array.isArray(value)) {
+      value.forEach((item) => params.append(key, item));
+      return;
+    }
+    params.set(key, value);
+  });
+  if (perPageSize !== DEFAULT_PAGE_SIZE) params.set("perPage", String(perPageSize));
+  const qs = params.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
 }
 
 function buildActiveFilters(parsed: ReturnType<typeof parseOrderListingParams>): OrderListActiveFilters {
@@ -67,6 +96,7 @@ function buildActiveFilters(parsed: ReturnType<typeof parseOrderListingParams>):
     deliveryToIso: domainDateToIsoString(parsed.deliveryTo),
     deliveryOverdueOnly: parsed.deliveryOverdueOnly,
     deliveryLateOnly: parsed.deliveryLateOnly,
+    perPage: parsed.perPage,
   };
 }
 
@@ -151,31 +181,40 @@ export default async function OrdersPage({ params, searchParams }: OrdersPagePro
           initial={activeFilters}
         />
 
-        <OrderListFilterChips locale={locale} basePath={basePath} filters={activeFilters} storesById={storesById} />
+        {/* Filter chips + expand/collapse-all share one row (chips left, toggle pinned right). The
+            provider wraps this row and the data Suspense so the toggle — outside the boundary —
+            stays flicker-free while the list re-suspends. `empty:hidden` drops the row when there
+            are neither chips nor a toggle. */}
+        <ListExpansionProvider events={ORDER_EXPANSION_EVENTS}>
+          <div className="flex items-center gap-3 empty:hidden">
+            <OrderListFilterChips locale={locale} basePath={basePath} filters={activeFilters} storesById={storesById} />
+            <ListExpandAllToggle className="ml-auto shrink-0" />
+          </div>
 
-        {/* Data region — only this suspends, with a layout-matching (table desktop / cards mobile) skeleton. */}
-        <Suspense
-          key={fingerprint}
-          fallback={
-            <OrderListLoadingSkeleton
-              loadingLabel={tc("skeleton.loading")}
-              headerOrder={t("table.headerOrder")}
-              headerProducts={t("table.headerProducts")}
-              headerStatus={t("table.headerStatus")}
-              headerTotal={t("table.headerTotal")}
-              headerProgress={t("table.headerProgress")}
+          {/* Data region — only this suspends, with a layout-matching (table desktop / cards mobile) skeleton. */}
+          <Suspense
+            key={fingerprint}
+            fallback={
+              <OrderListLoadingSkeleton
+                loadingLabel={tc("skeleton.loading")}
+                headerOrder={t("table.headerOrder")}
+                headerProducts={t("table.headerProducts")}
+                headerStatus={t("table.headerStatus")}
+                headerTotal={t("table.headerTotal")}
+                headerProgress={t("table.headerProgress")}
+              />
+            }
+          >
+            <OrdersDataSection
+              locale={locale}
+              userId={userId}
+              parsed={parsed}
+              rawParams={rawParams}
+              basePath={basePath}
+              resetHref={resetHref}
             />
-          }
-        >
-          <OrdersDataSection
-            locale={locale}
-            userId={userId}
-            parsed={parsed}
-            rawParams={rawParams}
-            basePath={basePath}
-            resetHref={resetHref}
-          />
-        </Suspense>
+          </Suspense>
+        </ListExpansionProvider>
       </div>
     </div>
   );
@@ -183,12 +222,10 @@ export default async function OrdersPage({ params, searchParams }: OrdersPagePro
 
 /** Global active/closed order counts for the heading meta. Suspended (the counter is a skeleton). */
 async function OrdersHeadingCount({ locale, userId }: { locale: string; userId: string }) {
-  const [t, totalAcrossUser, closedCount] = await Promise.all([
+  const [t, { activeCount, closedCount }] = await Promise.all([
     getTranslations({ locale, namespace: "orderListing" }),
-    prisma.order.count({ where: { userId } }),
-    prisma.order.count({ where: { userId, status: { in: ["COMPLETED", "CANCELLED"] } } }),
+    getOrdersHeadingCounts(userId),
   ]);
-  const activeCount = Math.max(0, totalAcrossUser - closedCount);
   return (
     <span className="[font-size:var(--text-caption)] [color:var(--text-muted)] tabular-nums">
       {t("heading.meta", { active: activeCount, closed: closedCount })}
@@ -212,11 +249,8 @@ async function OrdersDataSection({
   basePath: string;
   resetHref: string;
 }) {
-  const userRow = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { baseCurrencyCode: true },
-  });
-  const baseCurrencyCode = userRow?.baseCurrencyCode ?? null;
+  const preferences = await getCollectorPreferencesSnapshot(userId);
+  const baseCurrencyCode = preferences?.baseCurrencyCode ?? null;
 
   const listing = await getOrdersList(userId, {
     nameQuery: parsed.nameQuery,
@@ -234,35 +268,17 @@ async function OrdersDataSection({
     baseCurrencyCode,
     sort: parsed.sort,
     page: parsed.page,
-    pageSize: ORDER_LIST_PAGE_SIZE,
+    pageSize: parsed.perPage,
   });
 
   const today = new Date();
   const currentListUrl = buildListUrl(basePath, rawParams, listing.page);
   const buildPaginationHref = (targetPage: number) => buildListUrl(basePath, rawParams, targetPage);
+  const buildPerPageHref = (size: number) => buildPerPageUrl(basePath, rawParams, size);
 
   const fxPendingOrders: FxPendingOrder[] =
     listing.pendingFxCount > 0 && baseCurrencyCode
-      ? await prisma.order
-          .findMany({
-            where: {
-              userId,
-              status: { not: "CANCELLED" },
-              orderDate: { gte: startOfMonth(today) },
-              currencyCode: { not: baseCurrencyCode },
-            },
-            select: { id: true, humanReadableId: true, totalCost: true, currencyCode: true },
-            orderBy: { orderDate: "desc" },
-            take: 500,
-          })
-          .then((rows) =>
-            rows.map((row) => ({
-              id: row.id,
-              humanReadableId: row.humanReadableId,
-              totalCost: row.totalCost,
-              currencyCode: row.currencyCode,
-            })),
-          )
+      ? await listOrdersPendingFxReconciliation(userId, baseCurrencyCode)
       : [];
 
   return (
@@ -286,6 +302,7 @@ async function OrdersDataSection({
         totalCount={listing.totalCount}
         pageSize={listing.pageSize}
         createPageHref={buildPaginationHref}
+        buildPerPageHref={buildPerPageHref}
       />
     </>
   );

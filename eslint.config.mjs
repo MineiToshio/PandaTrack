@@ -24,6 +24,10 @@ const eslintConfig = defineConfig([
     // Transient full-repo copies created by agent worktrees; linting them
     // multiplies every warning by the number of active worktrees.
     ".claude/worktrees/**",
+    // Local, git-ignored one-off migration/maintenance scripts (see .gitignore).
+    // They are throwaway tooling, not part of the shipped codebase, so they are
+    // excluded from linting just as they are from version control.
+    "scripts/local/**",
   ]),
 ]);
 
