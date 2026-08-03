@@ -16,7 +16,8 @@ children:
   - FRD-08
   - FRD-09
   - FRD-10
-last_updated: 2026-07-22
+  - FRD-11
+last_updated: 2026-07-28
 ---
 
 # PRD-02 PandaTrack Collector App
@@ -34,6 +35,7 @@ This PRD covers:
 - the private collector workspace shell
 - the store trust domain
 - the collector workflow domains for orders, payments, deliveries, reminders, and preferences
+- assisted order intake: creating an order from an image instead of retyping it ([`FRD-11`](frd-11-order-image-intake/frd-11-order-image-intake.md))
 
 ## Product Summary
 
@@ -106,6 +108,7 @@ A collector with lower order volume who still wants:
 7. Dashboard clarity ([`FRD-06`](frd-06-dashboard/frd-06-dashboard.md) is dashboard-only)
 8. Reminders and alerts (delivered by [`FRD-09`](frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md) as an installable PWA with Web Push; this is why reminders are no longer bundled into the dashboard FRD)
 9. User settings required to support the above
+10. Assisted order intake from an image ([`FRD-11`](frd-11-order-image-intake/frd-11-order-image-intake.md)). It sits after the core workflow because it depends on the order, store, and settings domains already existing, and because it is an acceleration of order tracking rather than a new tracked concept.
 
 ## Scope
 
@@ -117,6 +120,7 @@ A collector with lower order volume who still wants:
 - Dashboard-first private navigation
 - Public store discovery and store trust layer
 - Orders as the primary tracked transaction entity with line items, derived totals, and private notes
+- Assisted order intake from an image (a chat screenshot, a store email, a web page, a photo of a receipt), including the extraction engine, the unskippable "Revisa y confirma" review screen, the product breakdown rule with split and merge, the single creation selector with its floating action button, the OS-level "Compartir a Panda" share target, and the monthly photo quota with its spend guards ([`FRD-11`](frd-11-order-image-intake/frd-11-order-image-intake.md))
 - Partial and complete payment tracking per order
 - Delivery tracking as a store-scoped workflow that may group products from multiple orders
 - Monthly budget and dashboard reporting
@@ -135,6 +139,7 @@ A collector with lower order volume who still wants:
 - Attachment management in MVP
 - Dynamic metadata systems for stores
 - Advanced finance and accounting features
+- Audio-note transcription, a Telegram or email capture inbox, and any WhatsApp API integration; these are named and excluded by [`FRD-11`](frd-11-order-image-intake/frd-11-order-image-intake.md)
 - The full moderation backoffice and admin console (dedicated admin space, moderation inbox, audit log viewer, role and access platform); owned by [PRD-03 (Admin and Moderation)](../prd-03-admin-and-moderation/prd-03-admin-and-moderation.md)
 
 ## Core Product Entities
@@ -149,6 +154,7 @@ A collector with lower order volume who still wants:
 - `Reminder`
 - `UserSettings`
 - `Budget`
+- `ImageIntakeUsage` and `ImageIntakePeriod` (assisted intake consumption ledger and its per-period aggregate, [`FRD-11`](frd-11-order-image-intake/frd-11-order-image-intake.md))
 
 ## Relationship to PRD-03 (Admin and Moderation)
 
@@ -169,6 +175,13 @@ Store moderation is split across two PRDs by ownership, not by feature: [PRD-03]
 2. User opens a store profile.
 3. User reviews trust signals, moderation state, and public details.
 4. User decides whether to use that store for future orders.
+
+### Create an order from an image
+
+1. User screenshots the chat, the store email, the web page, or photographs the paper receipt.
+2. User either shares it straight into PandaTrack from the system share sheet, or opens the app and picks "Desde una imagen" in the creation selector.
+3. The system extracts a draft (store, products, total, payments, delivery) and shows it on "Revisa y confirma", marking what it assumed and quoting the source phrase behind each product group.
+4. User corrects what needs correcting and presses "Crear pedido". Nothing is written before that ([`FRD-11`](frd-11-order-image-intake/frd-11-order-image-intake.md)).
 
 ### Track a new order
 
@@ -234,6 +247,7 @@ Store moderation is split across two PRDs by ownership, not by feature: [PRD-03]
 - A weak testing baseline would make AI-assisted delivery brittle as the product expands.
 - Overdefining future domains too early could create brittle requirements.
 - Pending stores are publicly visible by design (to prevent duplicate creation), so removal speed and quality directly protect trust in the store layer.
+- Assisted intake introduces the first external AI dependency and the first variable cost. A model that invents a value the user cannot detect would corrupt every total and dashboard signal, so the mandatory review screen and the spend guards in [`FRD-11`](frd-11-order-image-intake/frd-11-order-image-intake.md) are load-bearing, not polish.
 
 ## Linked FRDs
 
@@ -247,3 +261,4 @@ Store moderation is split across two PRDs by ownership, not by feature: [PRD-03]
 - `docs/product/prd-02-collector-app/frd-08-delivery-management/frd-08-delivery-management.md`
 - `docs/product/prd-02-collector-app/frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md`
 - `docs/product/prd-02-collector-app/frd-10-error-experience-hardening/frd-10-error-experience-hardening.md`
+- `docs/product/prd-02-collector-app/frd-11-order-image-intake/frd-11-order-image-intake.md`

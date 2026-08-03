@@ -23,6 +23,7 @@ Reference for what each table and attribute is for, where it is used, and why it
 - **budgetAmount** – Optional positive budget cap in the user’s base currency. Stored as an integer, so there are no fractional subunits.
 - **budgetResetDayOfMonth** – Optional calendar day `1–31` for budget reset; **null** means the last day of each month (months with fewer days clamp to the last day).
 - **timezone** – Optional IANA zone name for budget period boundaries; missing timezone falls back to UTC in evaluation logic.
+- **aiMonthlyPhotoLimit** – Optional per-user override of the monthly AI-photo bag, set by an administrator from the moderation console and audited. **null** means the product default applies; administrators are uncapped regardless of this column.
 - **createdAt / updatedAt** – Audit and ordering.
 
 ### `session`
@@ -231,6 +232,8 @@ Reference for what each table and attribute is for, where it is used, and why it
 - **id** – Unique order identifier.
 - **storeId** – Store that sold the items.
 - **userId** – Buyer.
+- **totalCost / currencyCode / exchangeRate** – Order total in minor units, the order's own currency, and the optional rate used to convert it into the user base currency.
+- **exchangeRateBaseCode** – The base currency `exchangeRate` converts INTO, written whenever a rate is persisted and null when there is no usable rate. "Needs FX reconciliation" is **derived** from it (currency differs from the current base and the stored rate is missing or was recorded against a different base), never stored as a flag; the single definition lives in `src/lib/fx/reconciliation.ts` and is shared by the dashboard rollup, the orders `?fxPending=true` filter, its count and the reconciliation modal. See [ADR 0024](../design/decisions/0024-fx-reconciliation-derived-from-rate-base.md).
 
 ### `order_item`
 
@@ -252,6 +255,7 @@ Reference for what each table and attribute is for, where it is used, and why it
 - **deliveryDate** – Required shipping date; create flow defaults to today and allows past or current dates.
 - **expectedArrivalFrom / expectedArrivalTo** – Optional expected arrival window.
 - **cost / currencyCode / exchangeRate** – Required delivery cost and currency, with optional FX context when it differs from the user base currency.
+- **exchangeRateBaseCode** – The base currency `exchangeRate` converts INTO, mirroring `order.exchangeRateBaseCode`; the delivery's FX-pending state is derived from it the same way, and per-delivery edit is the reconciliation path that re-stamps it.
 - **note** – Optional private note, edited by later delivery-detail actions.
 
 ### `delivery_order_item`
@@ -259,6 +263,40 @@ Reference for what each table and attribute is for, where it is used, and why it
 **Purpose:** Which order items are in which delivery. A delivery can have items from several orders of the same store. A product may be attached to only one active delivery at a time; delivery mutations enforce that eligibility rule.
 
 - **deliveryId / orderItemId** – Composite PK; this order item is included in this delivery.
+
+---
+
+## AI image intake
+
+### `image_intake_usage`
+
+**Purpose:** Reservation-then-settlement consumption ledger for "Crear desde imagen" (FRD-11). One row per extraction attempt, created `PENDING` with an estimated cost before the provider call and settled exactly once to `SUCCEEDED` or `FAILED` with the real tokens and cost; backs the global monthly spend cut-off (a single shared, paid Gemini API key) and the per-user photo quota. The same transaction that writes a reservation also moves the collector's `image_intake_period` roll-up, so both ceilings are decided under one lock.
+
+- **userId** – Duplicated owner id; who made the submission.
+- **periodKey** – Billing period the row belongs to, `YYYY-MM` (UTC), matching the global monthly cut-off.
+- **dayKey** – Calendar day the row belongs to, `YYYY-MM-DD` (UTC); kept alongside `periodKey` so a future daily breakdown never needs to re-derive it from `createdAt`.
+- **entrySource** – `IN_APP` or `SHARE`; which door the submission came through.
+- **status** – `PENDING` (a reservation holding an estimated cost, written before the provider call), `SUCCEEDED`, or `FAILED`. Each row receives exactly one settlement update from `PENDING` to `SUCCEEDED` or `FAILED`, so the ledger is no longer strictly append-only. A row left `PENDING` (a killed process) keeps counting at its estimate.
+- **imageCount** – Number of source images in the submission; what the photo quota counts, both monthly (through the roll-up) and daily (summed from these rows, excluding `FAILED`).
+- **model** – Model id used for the extraction (e.g. `gemini-3.1-flash-lite`).
+- **inputTokens / outputTokens** – Token usage reported by the provider.
+- **costMicroUsd** – Integer cost in micro-USD, matching the repository's minor-unit convention for money.
+- **orderId** – Optional weak reference only; this foundation slice never writes an order, so no relation/FK is declared and every row is created with `orderId: null`. A later slice may backfill it once a save action exists.
+- **createdAt** – Audit and ordering; also used for the 1-request/10-second rate limit.
+
+**Indexes:** `[userId, periodKey]`, `[userId, dayKey]` (the daily anti-burst cap), `[periodKey]`.
+
+### `image_intake_period`
+
+**Purpose:** Per-user, per-period roll-up of the monthly AI-photo bag (FRD-11 WO-07). Derivable from `image_intake_usage`, but kept as its own aggregate so the quota check on the reservation path and the passive counter on every create surface are one indexed read instead of a scan over the ledger. Reset is implicit through `periodKey`: **no scheduled job exists**, and a period with no row simply has nothing spent.
+
+- **userId** – Owner of the roll-up; unique together with `periodKey`.
+- **periodKey** – Billing period, `YYYY-MM` (UTC), the same key the ledger rows carry.
+- **usedPhotos** – Photos reserved (`PENDING`) or confirmed (`SUCCEEDED`) in the period. A failed submission gives its photos back at settlement, because a provider failure is never billed to the collector.
+- **costMicroUsd** – This collector's own running cost for the period, reserved at the estimate and corrected to the real figure at settlement.
+- **createdAt / updatedAt** – Audit and ordering.
+
+**Unique:** `[userId, periodKey]`.
 
 ---
 
@@ -274,3 +312,5 @@ Reference for what each table and attribute is for, where it is used, and why it
 - **StoreReportReason** – SPAM, DUPLICATE, INCORRECT_INFO, DOES_NOT_EXIST, INAPPROPRIATE.
 - **StoreReportStatus** – OPEN, REVIEWED, DISMISSED.
 - **StoreChangeRequestStatus** – PENDING, APPROVED, REJECTED.
+- **ImageIntakeEntrySource** – IN_APP, SHARE (which door an image-intake submission came through).
+- **ImageIntakeUsageStatus** – PENDING (reservation, before the provider call), SUCCEEDED, FAILED.

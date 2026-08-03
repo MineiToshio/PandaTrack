@@ -385,7 +385,6 @@ Spec completo: `docs/design/components.md`. Demo visual: `#s7-orders-list-filter
 - ❌ Copiar visual de modals viejos del demo HTML inline (`#s6-store-create-duplicate-detected`, etc. son flujos full-screen, no modals reales; `.report-modal*` ya está mapeado al canon).
 - ❌ Hardcodear `text-white` en código. Usar `--text-on-accent` (resuelve light/dark automático).
 - ❌ Hardcodear `border-radius: 8px` o cualquier literal de spacing/color/radius. Usar tokens.
-- ❌ Borrar `<AppPageHero>` legacy de pantallas no rediseñadas. Solo eliminarlo en pantallas que se están rediseñando ahora (Stores ya lo eliminó; Orders/Deliveries lo van a eliminar cuando se rediseñen).
 - ❌ Inventar `tone` o `variant` nuevos sin abrir ADR. Si necesitás algo que no existe, extender el componente in-place y documentar.
 - ❌ Devolver "cierre" sin verificar el código modificado. Después de cada Edit, leer el archivo y pegar el snippet en el reporte.
 - ❌ Mezclar visualmente paletas (Velvet en `src/` solamente; las alternativas viven solo en demo y docs).

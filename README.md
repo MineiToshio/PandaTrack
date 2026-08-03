@@ -117,18 +117,29 @@ Open [http://localhost:3000](http://localhost:3000). The app will redirect to th
 
 ## Scripts
 
-| Command                     | Description                                                          |
-| --------------------------- | -------------------------------------------------------------------- |
-| `npm run dev`               | Start Next.js dev server                                             |
-| `npm run build`             | Full deploy build: Prisma generate + migrate deploy + Next.js build  |
-| `npm run validate-build`    | Local validation: Prisma generate + Next.js build (no DB migrations) |
-| `npm run start`             | Start production server (after `build`)                              |
-| `npm run db-push`           | Push Prisma schema and generate client                               |
-| `npm run db-reset`          | Force-reset DB and push schema                                       |
-| `npm run type-check`        | Run TypeScript check (`tsc --noEmit`)                                |
-| `npm run lint`              | Run ESLint                                                           |
-| `npm run prettier`          | Format code with Prettier                                            |
-| `npm run download-og-fonts` | Download fonts used by OG image generation                           |
+| Command                      | Description                                                          |
+| ---------------------------- | -------------------------------------------------------------------- |
+| `npm run dev`                | Start Next.js dev server                                             |
+| `npm run build`              | Full deploy build: Prisma generate + migrate deploy + Next.js build  |
+| `npm run validate-build`     | Local validation: Prisma generate + Next.js build (no DB migrations) |
+| `npm run start`              | Start production server (after `build`)                              |
+| `npm run db-push`            | Push Prisma schema and generate client                               |
+| `npm run db-reset`           | Force-reset DB and push schema                                       |
+| `npm run type-check`         | Run TypeScript check (`tsc --noEmit`)                                |
+| `npm run lint`               | Run ESLint                                                           |
+| `npm run prettier`           | Format code with Prettier                                            |
+| `npm run download-og-fonts`  | Download fonts used by OG image generation                           |
+| `npm run smoke-image-intake` | Manual only. Sends 3 real Gemini requests (costs a few cents)        |
+
+`smoke-image-intake` is never part of `npm run test` or CI, and it is the only check that catches
+two failures nothing else can see. One is a mismatch between the request we build and what the
+Gemini API accepts, which fails as an opaque HTTP 400 and breaks every extraction at once. The
+other is a data-contract break: the model answers with a valid draft carrying amounts in the wrong
+unit, so a purchase of S/ 59.90 is saved as S/ 0.59 and no schema notices. The script sends
+synthetic receipts with known amounts and asserts the figures that come back. Run it by hand after
+changing `IMAGE_INTAKE_RESPONSE_SCHEMA`, `buildRequestConfig`, the extraction prompt, the draft
+contract, or the model id. It needs `GEMINI_API_KEY` and `IMAGE_INTAKE_PAID_TIER_CONFIRMED` in
+`.env`.
 
 ---
 
