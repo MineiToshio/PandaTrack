@@ -210,6 +210,9 @@ describe("createDelivery", () => {
       store: {
         findFirst: vi.fn().mockResolvedValue({ id: "store-1" }),
       },
+      user: {
+        findUnique: vi.fn().mockResolvedValue({ baseCurrencyCode: null }),
+      },
       orderItem: {
         findMany: vi.fn().mockResolvedValue([
           {
@@ -280,7 +283,26 @@ describe("createDelivery", () => {
         status: DeliveryStatus.IN_TRANSIT,
         cost: 0,
         currencyCode: "USD",
+        exchangeRateBaseCode: null,
       }),
+      select: { id: true },
+    });
+  });
+
+  it("records no rate base for a foreign-currency delivery created with no rate, so it reads as FX-pending", async () => {
+    const tx = makeCreateTx({
+      user: {
+        findUnique: vi.fn().mockResolvedValue({ baseCurrencyCode: "PEN" }),
+      } as unknown as Prisma.TransactionClient["user"],
+    });
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: Prisma.TransactionClient) => unknown) =>
+      callback(tx),
+    );
+
+    await createDelivery("user-1", input);
+
+    expect(tx.delivery.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ currencyCode: "USD", exchangeRate: null, exchangeRateBaseCode: null }),
       select: { id: true },
     });
     expect(tx.orderItem.updateMany).toHaveBeenCalledWith({

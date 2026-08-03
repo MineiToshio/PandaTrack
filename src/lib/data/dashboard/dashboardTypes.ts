@@ -45,7 +45,7 @@ export type DashboardOrderInput = {
   expectedDeliveryTo: Date | null;
   currencyCode: string;
   exchangeRate: number | null;
-  needsExchangeRateUpdate: boolean;
+  exchangeRateBaseCode: string | null;
   totalCost: number;
   status: OrderStatus;
   store: { id: string; name: string; slug: string };
@@ -70,7 +70,7 @@ export type DashboardDeliveryInput = {
   cost: number;
   currencyCode: string;
   exchangeRate: number | null;
-  needsExchangeRateUpdate: boolean;
+  exchangeRateBaseCode: string | null;
   /** Shipping date: the only date a delivery cost can be bucketed by, since cost has no ledger. */
   deliveryDate: Date;
   status: DeliveryStatus;
@@ -162,6 +162,17 @@ export type MonthlyOutstanding = MonthKey & {
 /** Outstanding debt trend: outstanding balance at each month-end across the range. */
 export type OutstandingTrendBlock = {
   series: MonthlyOutstanding[];
+  isPartial: boolean;
+};
+
+/** Total value of the orders placed in one month, in base currency. */
+export type MonthlyCommitted = MonthKey & {
+  totalMinor: number;
+};
+
+/** Committed-value trend: what the collector took on each month, the counterpart of `SpendBlock`. */
+export type CommittedTrendBlock = {
+  series: MonthlyCommitted[];
   isPartial: boolean;
 };
 
@@ -277,6 +288,7 @@ export type DashboardData = {
   cashObligations: CashObligationsBlock;
   budget: BudgetBlock;
   spend: SpendBlock;
+  committedTrend: CommittedTrendBlock;
   outstandingTrend: OutstandingTrendBlock;
   activity: ActivityBlock;
   collection: CollectionBlock;

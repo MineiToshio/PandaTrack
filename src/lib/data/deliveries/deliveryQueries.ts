@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { needsFxReconciliation } from "@/lib/fx/reconciliation";
+import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import { OrderItemDeliveryState, type DeliveryStatus } from "../../../../generated/prisma/client";
 import type { DeliveryListSort } from "@/lib/deliveries/deliveryListSort";
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
@@ -420,6 +422,7 @@ export type DeliveryDetail = {
 };
 
 export async function getDeliveryDetail(deliveryId: string, userId: string): Promise<DeliveryDetail | null> {
+  const preferences = await getCollectorPreferencesSnapshot(userId);
   const delivery = await prisma.delivery.findFirst({
     where: { id: deliveryId, userId },
     select: {
@@ -433,7 +436,7 @@ export async function getDeliveryDetail(deliveryId: string, userId: string): Pro
       cost: true,
       currencyCode: true,
       exchangeRate: true,
-      needsExchangeRateUpdate: true,
+      exchangeRateBaseCode: true,
       note: true,
       updatedAt: true,
       store: { select: { id: true, name: true, slug: true } },
@@ -498,7 +501,14 @@ export async function getDeliveryDetail(deliveryId: string, userId: string): Pro
     cost: delivery.cost,
     currencyCode: delivery.currencyCode,
     exchangeRate: delivery.exchangeRate ? Number(delivery.exchangeRate) : null,
-    needsExchangeRateUpdate: delivery.needsExchangeRateUpdate,
+    needsExchangeRateUpdate: needsFxReconciliation(
+      {
+        currencyCode: delivery.currencyCode,
+        exchangeRate: delivery.exchangeRate ? Number(delivery.exchangeRate) : null,
+        exchangeRateBaseCode: delivery.exchangeRateBaseCode,
+      },
+      preferences?.baseCurrencyCode ?? null,
+    ),
     note: delivery.note,
     updatedAt: delivery.updatedAt,
     store: delivery.store,

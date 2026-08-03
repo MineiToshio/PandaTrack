@@ -122,18 +122,32 @@ enum NotificationSubjectType {
   STORE
 }
 
+enum ImageIntakeEntrySource {
+  IN_APP
+  SHARE
+}
+
+enum ImageIntakeUsageStatus {
+  SUCCEEDED
+  FAILED
+  /// Reservation written before the provider call, carrying an estimated cost. The spend ceiling
+  /// counts it so concurrent submissions cannot each read the same under-budget total and all
+  /// pass; the row is updated to SUCCEEDED or FAILED with real tokens once the call settles.
+  PENDING
+}
+
 model User {
-  id                          String                 @id
+  id                          String                     @id
   name                        String
-  email                       String                 @unique
+  email                       String                     @unique
   emailVerified               Boolean
   /// When set, the 7-day credential verification grace window counts from this time (e.g. immediate email change). Otherwise `createdAt` is used.
   unverifiedGraceStartsAt     DateTime?
   image                       String?
-  username                    String                 @unique
+  username                    String                     @unique
   usernameChangedAt           DateTime?
   preferredCountryCode        String?
-  preferredCountry            Country?               @relation(fields: [preferredCountryCode], references: [code], onDelete: SetNull, onUpdate: Cascade)
+  preferredCountry            Country?                   @relation(fields: [preferredCountryCode], references: [code], onDelete: SetNull, onUpdate: Cascade)
   baseCurrencyCode            String?
   /// Minor units of `baseCurrencyCode`, like `Order.totalCost` and `OrderPayment.amount`.
   /// Always a whole number of major units (a DB check enforces `% 100 = 0`); the settings
@@ -145,9 +159,13 @@ model User {
   /// first sign-in and kept in sync when the collector switches language. Null until
   /// captured, in which case the default locale applies.
   locale                      String?
+  /// Per-user override of the monthly AI-photo bag, set by an administrator from the moderation
+  /// console and audited. Null means the product default applies; administrators are uncapped
+  /// regardless of this column.
+  aiMonthlyPhotoLimit         Int?
   /// Moderation role backing the better-auth admin plugin. Non-null with a `user` default so
   /// every account resolves to a concrete role; only the plugin's server-gated endpoint elevates it.
-  role                        String                 @default("user")
+  role                        String                     @default("user")
   /// better-auth admin plugin ban fields. No ban surface ships in this release; the columns exist
   /// so the plugin's forward-compatible shape is present.
   banned                      Boolean?
@@ -157,14 +175,14 @@ model User {
   updatedAt                   DateTime
   sessions                    Session[]
   accounts                    Account[]
-  createdStores               Store[]                @relation("StoreCreator")
-  approvedStores              Store[]                @relation("StoreApprover")
+  createdStores               Store[]                    @relation("StoreCreator")
+  approvedStores              Store[]                    @relation("StoreApprover")
   storeReviews                StoreReview[]
   storeNotes                  StoreNote[]
   storeReports                StoreReport[]
   storeProductTypeRequests    StoreProductTypeRequest[]
   storeChangeRequests         StoreChangeRequest[]
-  reviewedStoreChangeRequests StoreChangeRequest[]   @relation("StoreChangeRequestReviewer")
+  reviewedStoreChangeRequests StoreChangeRequest[]       @relation("StoreChangeRequestReviewer")
   orders                      Order[]
   orderItems                  OrderItem[]
   orderPayments               OrderPayment[]
@@ -174,24 +192,26 @@ model User {
   pushSubscriptions           PushSubscription[]
   notificationDeliveries      NotificationDelivery[]
   notificationPreference      NotificationPreference?
-  adminAuditLogs              AdminAuditLog[]        @relation("AdminAuditLogActor")
+  adminAuditLogs              AdminAuditLog[]            @relation("AdminAuditLogActor")
+  imageIntakeUsages           ImageIntakeUsage[]
+  imageIntakePeriods          ImageIntakePeriod[]
 
   @@index([preferredCountryCode])
   @@map("user")
 }
 
 model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String   @unique
-  createdAt DateTime
-  updatedAt DateTime
-  ipAddress String?
-  userAgent String?
-  userId    String
+  id             String   @id
+  expiresAt      DateTime
+  token          String   @unique
+  createdAt      DateTime
+  updatedAt      DateTime
+  ipAddress      String?
+  userAgent      String?
+  userId         String
   /// better-auth admin plugin: set to the acting admin's id during impersonation. No impersonation surface ships in this release.
   impersonatedBy String?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("session")
 }
@@ -256,45 +276,45 @@ model Country {
 }
 
 model Store {
-  id                  String                    @id @default(cuid())
-  slug                String                    @unique
-  name                String
+  id                     String                       @id @default(cuid())
+  slug                   String                       @unique
+  name                   String
   // Diacritic-stripped, lowercased, punctuation-collapsed copy of `name` (JS `normalizeStoreName`).
   // Lets duplicate detection pre-filter in SQL with `contains` on normalized terms instead of
   // scanning rows and scoring every name in memory. Written on every create/name edit.
-  searchName          String                    @default("")
-  description         String?
-  logoUrl             String?
-  sellerType          SellerType
-  status              StoreStatus               @default(PENDING)
-  visibility          StoreVisibility           @default(PUBLIC)
-  isActive            Boolean                   @default(true)
-  isPrivate           Boolean                   @default(false)
-  hasStock            Boolean?
-  receivesOrders      Boolean?
-  countryCode         String
-  averageRating       Float?
-  reviewCount         Int                       @default(0)
-  createdByUserId     String
-  approvedByUserId    String?
-  approvedAt          DateTime?
-  removalReason       StoreRemovalReason?
-  createdAt           DateTime                  @default(now())
-  updatedAt           DateTime                  @updatedAt
-  country             Country                   @relation(fields: [countryCode], references: [code], onDelete: Restrict)
-  createdByUser       User                      @relation("StoreCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  approvedByUser      User?                     @relation("StoreApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
-  presences           StorePresence[]
-  contactChannels     StoreContactChannel[]
-  addresses           StoreAddress[]
-  importCountries     StoreImportCountry[]
+  searchName             String                       @default("")
+  description            String?
+  logoUrl                String?
+  sellerType             SellerType
+  status                 StoreStatus                  @default(PENDING)
+  visibility             StoreVisibility              @default(PUBLIC)
+  isActive               Boolean                      @default(true)
+  isPrivate              Boolean                      @default(false)
+  hasStock               Boolean?
+  receivesOrders         Boolean?
+  countryCode            String
+  averageRating          Float?
+  reviewCount            Int                          @default(0)
+  createdByUserId        String
+  approvedByUserId       String?
+  approvedAt             DateTime?
+  removalReason          StoreRemovalReason?
+  createdAt              DateTime                     @default(now())
+  updatedAt              DateTime                     @updatedAt
+  country                Country                      @relation(fields: [countryCode], references: [code], onDelete: Restrict)
+  createdByUser          User                         @relation("StoreCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  approvedByUser         User?                        @relation("StoreApprover", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+  presences              StorePresence[]
+  contactChannels        StoreContactChannel[]
+  addresses              StoreAddress[]
+  importCountries        StoreImportCountry[]
   productTypeAssignments StoreProductTypeAssignment[]
-  reviews             StoreReview[]
-  notes               StoreNote[]
-  reports             StoreReport[]
-  changeRequests      StoreChangeRequest[]
-  orders              Order[]
-  deliveries          Delivery[]
+  reviews                StoreReview[]
+  notes                  StoreNote[]
+  reports                StoreReport[]
+  changeRequests         StoreChangeRequest[]
+  orders                 Order[]
+  deliveries             Delivery[]
 
   @@index([countryCode])
   @@index([createdByUserId])
@@ -367,27 +387,27 @@ model StoreImportCountry {
 }
 
 model StoreProductType {
-  key         String                    @id
+  key             String                       @id
   // Admin-authored types persist their localized names here; seeded keys keep their names in the
   // `storeProductTypes` i18n namespace and a resolver prefers the DB name with an i18n fallback.
-  nameEs      String?
-  nameEn      String?
-  isActive    Boolean                   @default(true)
-  createdAt   DateTime                  @default(now())
-  updatedAt   DateTime                  @updatedAt
-  assignments StoreProductTypeAssignment[]
+  nameEs          String?
+  nameEn          String?
+  isActive        Boolean                      @default(true)
+  createdAt       DateTime                     @default(now())
+  updatedAt       DateTime                     @updatedAt
+  assignments     StoreProductTypeAssignment[]
   userPreferences UserPreferredProductType[]
-  orderItems  OrderItem[]
+  orderItems      OrderItem[]
 
   @@map("store_product_type")
 }
 
 model UserPreferredProductType {
-  userId           String
-  productTypeKey   String
-  createdAt        DateTime         @default(now())
-  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  productType      StoreProductType @relation(fields: [productTypeKey], references: [key], onDelete: Restrict)
+  userId         String
+  productTypeKey String
+  createdAt      DateTime         @default(now())
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productType    StoreProductType @relation(fields: [productTypeKey], references: [key], onDelete: Restrict)
 
   @@id([userId, productTypeKey])
   @@index([productTypeKey])
@@ -460,15 +480,15 @@ model StoreReport {
 }
 
 model StoreProductTypeRequest {
-  id            String                     @id @default(cuid())
+  id            String                        @id @default(cuid())
   requestedById String
   suggestedKey  String?
   suggestedName String
   reason        String?
   status        StoreProductTypeRequestStatus @default(PENDING)
-  createdAt     DateTime                   @default(now())
-  updatedAt     DateTime                   @updatedAt
-  requestedBy   User                       @relation(fields: [requestedById], references: [id], onDelete: Cascade)
+  createdAt     DateTime                      @default(now())
+  updatedAt     DateTime                      @updatedAt
+  requestedBy   User                          @relation(fields: [requestedById], references: [id], onDelete: Cascade)
 
   @@index([requestedById])
   @@index([status])
@@ -497,37 +517,38 @@ model StoreChangeRequest {
 }
 
 model Order {
-  id                   String                @id @default(cuid())
-  storeId              String
-  userId               String
-  humanReadableId      String                @unique
-  orderDate            DateTime
-  expectedDeliveryFrom DateTime?
-  expectedDeliveryTo   DateTime?
-  currencyCode         String
-  exchangeRate         Decimal?              @db.Decimal(18, 8)
-  // Set true when the user changes their base currency, for every order whose currencyCode
-  // differs from the new base — its stored exchangeRate is now stale and must be reconciled.
-  // Cleared when the rate is (re)entered: on create, on edit, and on bulk FX reconciliation.
-  needsExchangeRateUpdate Boolean            @default(false)
-  totalCost            Int
+  id                      String         @id @default(cuid())
+  storeId                 String
+  userId                  String
+  humanReadableId         String         @unique
+  orderDate               DateTime
+  expectedDeliveryFrom    DateTime?
+  expectedDeliveryTo      DateTime?
+  currencyCode            String
+  exchangeRate            Decimal?       @db.Decimal(18, 8)
+  // The base currency `exchangeRate` converts INTO, captured whenever a rate is written. Makes
+  // "this order still needs FX reconciliation" fully derivable (currency differs from the user's
+  // base AND no rate, or a rate stored against a different base), so no boolean flag has to be
+  // kept in sync. See ADR 0024.
+  exchangeRateBaseCode    String?
+  totalCost               Int
   // Denormalized payment cache kept transactionally in sync by the payment/total mutations.
   // Payments stay the source of truth (single-order views recompute from them); these fields
   // exist so the orders list can filter by payment state and sort by paid ratio entirely in
   // SQL, instead of fetching every order to derive the percentage in memory. `paymentPercent`
   // is the same floor(paid/total*100) value the UI shows, so filter/sort/display never diverge.
-  paidAmountMinor      Int                   @default(0)
-  paymentPercent       Int                   @default(0)
-  note                 String?
-  status               OrderStatus           @default(OPEN)
-  cancellationReason   String?
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  store                Store                 @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  user                 User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items                OrderItem[]
-  payments             OrderPayment[]
-  history              OrderHistory[]
+  paidAmountMinor         Int            @default(0)
+  paymentPercent          Int            @default(0)
+  note                    String?
+  status                  OrderStatus    @default(OPEN)
+  cancellationReason      String?
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  store                   Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user                    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items                   OrderItem[]
+  payments                OrderPayment[]
+  history                 OrderHistory[]
 
   @@index([storeId])
   @@index([userId])
@@ -539,21 +560,21 @@ model Order {
 }
 
 model OrderItem {
-  id                String                 @id @default(cuid())
-  orderId           String
-  userId            String
-  name              String
-  quantity          Int                    @default(1)
-  unitPrice         Int?
-  productTypeKey    String?
-  position          Int
-  deliveryState     OrderItemDeliveryState @default(NONE)
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
-  order             Order                  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  productType       StoreProductType?      @relation(fields: [productTypeKey], references: [key], onDelete: Restrict)
-  deliveryItems     DeliveryOrderItem[]
+  id             String                 @id @default(cuid())
+  orderId        String
+  userId         String
+  name           String
+  quantity       Int                    @default(1)
+  unitPrice      Int?
+  productTypeKey String?
+  position       Int
+  deliveryState  OrderItemDeliveryState @default(NONE)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  order          Order                  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productType    StoreProductType?      @relation(fields: [productTypeKey], references: [key], onDelete: Restrict)
+  deliveryItems  DeliveryOrderItem[]
 
   @@unique([orderId, position])
   @@index([orderId])
@@ -593,28 +614,26 @@ model OrderHistory {
 }
 
 model Delivery {
-  id                  String              @id @default(cuid())
-  humanReadableId     String              @unique
-  storeId             String
-  userId              String
-  status              DeliveryStatus      @default(IN_TRANSIT)
-  deliveryDate        DateTime
-  expectedArrivalFrom DateTime?
-  expectedArrivalTo   DateTime?
-  receivedDate        DateTime?
-  cost                Int
-  currencyCode        String
-  exchangeRate        Decimal?            @db.Decimal(18, 8)
-  // Set true when the user changes their base currency, for every delivery whose currencyCode
-  // differs from the new base — its stored exchangeRate is now stale and must be reconciled.
-  // Cleared when the delivery is edited (the collector reaffirms cost/currency/rate on save).
-  needsExchangeRateUpdate Boolean         @default(false)
-  note                String?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  store               Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orderItems          DeliveryOrderItem[]
+  id                      String              @id @default(cuid())
+  humanReadableId         String              @unique
+  storeId                 String
+  userId                  String
+  status                  DeliveryStatus      @default(IN_TRANSIT)
+  deliveryDate            DateTime
+  expectedArrivalFrom     DateTime?
+  expectedArrivalTo       DateTime?
+  receivedDate            DateTime?
+  cost                    Int
+  currencyCode            String
+  exchangeRate            Decimal?            @db.Decimal(18, 8)
+  /// The base currency `exchangeRate` converts INTO. Mirrors `Order.exchangeRateBaseCode`; see ADR 0024.
+  exchangeRateBaseCode    String?
+  note                    String?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  store                   Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user                    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderItems              DeliveryOrderItem[]
 
   @@index([storeId])
   @@index([userId])
@@ -676,4 +695,64 @@ model NotificationPreference {
   user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notification_preference")
+}
+
+/// Spend ledger for the order image intake AI extraction feature. Every row is one billable
+/// extraction call against the shared, paid-tier Gemini key, successful or not: a call Google
+/// answered with an unusable response still cost money and must still count. A row is inserted
+/// PENDING (as a reservation, with an estimated cost) before the call and updated exactly once
+/// when it settles, so the only mutation a row ever sees is that settlement. The global monthly
+/// spend guard sums this table across all users because the key is shared, not per-user.
+/// `userId` is duplicated here (see data-layer-user-id-duplication.mdc) so the ledger can be
+/// queried and rate-limited per user without joining back to `User` on every check.
+model ImageIntakeUsage {
+  id           String                 @id @default(cuid())
+  userId       String
+  /// Billing period the row belongs to, `YYYY-MM` (UTC), matching the global monthly cut-off.
+  periodKey    String
+  /// Calendar day the row belongs to, `YYYY-MM-DD` (UTC). Kept alongside `periodKey` so a future
+  /// daily breakdown never needs to re-derive it from `createdAt` in application code.
+  dayKey       String
+  entrySource  ImageIntakeEntrySource
+  status       ImageIntakeUsageStatus
+  imageCount   Int
+  model        String
+  inputTokens  Int
+  outputTokens Int
+  costMicroUsd Int
+  /// Weak reference only: this WO-01 slice never writes an order (enforced by
+  /// image-intake-no-persistence-guard.test.ts), so no relation/FK is declared here and every row
+  /// is created with `orderId: null`. A later slice may backfill it once a save action exists.
+  orderId      String?
+  createdAt    DateTime               @default(now())
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, periodKey])
+  @@index([userId, dayKey])
+  @@index([periodKey])
+  @@map("image_intake_usage")
+}
+
+/// Per-user, per-period roll-up of the monthly AI-photo bag. Derivable from `ImageIntakeUsage`,
+/// but kept as its own aggregate so the quota check on the reservation path and the passive
+/// counter on every create surface are one indexed read instead of a scan over the ledger.
+///
+/// `usedPhotos` counts photos that are reserved (PENDING) or confirmed (SUCCEEDED): a failed
+/// submission gives its photos back at settlement, because a provider failure is never billed to
+/// the collector. Reset is implicit through `periodKey`; no scheduled job exists.
+model ImageIntakePeriod {
+  id           String   @id @default(cuid())
+  userId       String
+  /// Billing period the roll-up belongs to, `YYYY-MM` (UTC), same key the ledger rows carry.
+  periodKey    String
+  usedPhotos   Int      @default(0)
+  /// Running cost of this user's own submissions in the period, in micro-USD. Reserved at the
+  /// estimate and corrected to the real figure at settlement.
+  costMicroUsd Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, periodKey])
+  @@map("image_intake_period")
 }

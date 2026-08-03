@@ -1,8 +1,6 @@
 import type { Prisma } from "../../../../generated/prisma/client";
 import { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
-import { flagOrdersForFxReconciliation } from "@/lib/data/orders/orderMutations";
-import { flagDeliveriesForFxReconciliation } from "@/lib/data/deliveries/deliveryMutations";
 import {
   assertKnownProductTypeKeys,
   parseCollectorPreferencesPatch,
@@ -159,31 +157,4 @@ export async function parseAndApplyCollectorPreferencesPatch(
     throw error;
   }
   return { ok: true };
-}
-
-/**
- * Persists a base-currency change and, when the base currency actually changes, flags every order
- * AND delivery in a different currency for FX reconciliation — all in a single transaction. This
- * prevents the inconsistent state where the new base currency is saved but the affected orders or
- * deliveries keep their now stale rates unflagged (or vice versa). Flagging never mutates rates;
- * the collector reconciles orders in the orders FX modal and deliveries by editing each delivery.
- */
-export async function applyBaseCurrencyChange(
-  userId: string,
-  rawPatch: unknown,
-  options: { previousBaseCurrencyCode: string | null; nextBaseCurrencyCode: string },
-): Promise<{ ok: true } | { ok: false; error: ZodError }> {
-  return prisma.$transaction(async (tx) => {
-    const applied = await parseAndApplyCollectorPreferencesPatch(userId, rawPatch, tx);
-    if (!applied.ok) {
-      return applied;
-    }
-
-    if (options.previousBaseCurrencyCode !== options.nextBaseCurrencyCode) {
-      await flagOrdersForFxReconciliation(userId, options.nextBaseCurrencyCode, tx);
-      await flagDeliveriesForFxReconciliation(userId, options.nextBaseCurrencyCode, tx);
-    }
-
-    return applied;
-  });
 }

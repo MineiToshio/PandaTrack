@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { DeliveryStatus, OrderItemDeliveryState, OrderStatus, type Prisma } from "../../../../generated/prisma/client";
+import { DeliveryStatus, OrderItemDeliveryState, OrderStatus } from "../../../../generated/prisma/client";
+import { resolveExchangeRateBaseCode } from "@/lib/fx/reconciliation";
 import { generateOrderHumanReadableId } from "@/lib/orders/orderIdentifier";
 import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
 import { appendOrderHistoryEntry, OrderHistoryEventType } from "./orderHistoryMutations";
-import { createOrderItems, replaceOrderItems } from "./orderItemMutations";
+import { createOrderItems, findInvalidProductTypeKey, replaceOrderItems } from "./orderItemMutations";
 import type { OrderCreateInput, OrderEditInput } from "@/lib/orders/orderValidation";
 
 type CreateOrderResult =
@@ -32,6 +33,20 @@ type DeleteOrderResult = { ok: true } | { ok: false; error: "ORDER_NOT_FOUND" | 
 
 type ReactivateOrderResult = { ok: true } | { ok: false; error: "ORDER_NOT_FOUND" | "ORDER_NOT_CANCELLED" };
 
+/**
+ * Sentinel used to refuse an order mutation from a point where a plain `return` would be wrong.
+ *
+ * Returning normally from a `prisma.$transaction` callback COMMITS the transaction; only a thrown
+ * error rolls it back. So any refusal detected after a write must be raised as a throw and mapped
+ * back to the public discriminated result outside the transaction, never returned from inside it.
+ */
+class InvalidProductTypeRollback extends Error {
+  constructor() {
+    super("INVALID_PRODUCT_TYPE");
+    this.name = "InvalidProductTypeRollback";
+  }
+}
+
 async function hasLiveDeliveryLinks(orderId: string): Promise<boolean> {
   const link = await prisma.deliveryOrderItem.findFirst({
     where: {
@@ -44,52 +59,80 @@ async function hasLiveDeliveryLinks(orderId: string): Promise<boolean> {
 }
 
 export async function createOrder(userId: string, input: OrderCreateInput): Promise<CreateOrderResult> {
-  return prisma.$transaction(async (tx) => {
-    const store = await tx.store.findFirst({
-      where: { id: input.storeId },
-      select: { id: true },
-    });
+  return prisma
+    .$transaction<CreateOrderResult>(async (tx) => {
+      const store = await tx.store.findFirst({
+        where: { id: input.storeId },
+        select: { id: true },
+      });
 
-    if (!store) {
-      return { ok: false, error: "STORE_NOT_FOUND" };
-    }
-
-    const now = new Date();
-    const humanReadableId = await generateOrderHumanReadableId(tx, userId, now);
-
-    const order = await tx.order.create({
-      data: {
-        storeId: input.storeId,
-        userId,
-        humanReadableId,
-        orderDate: input.orderDate,
-        expectedDeliveryFrom: input.expectedDeliveryFrom ?? null,
-        expectedDeliveryTo: input.expectedDeliveryTo ?? null,
-        currencyCode: input.currencyCode,
-        exchangeRate: input.exchangeRate ?? null,
-        totalCost: input.totalCost,
-        note: input.note ?? null,
-        status: OrderStatus.OPEN,
-      },
-      select: { id: true, humanReadableId: true },
-    });
-
-    if (input.items && input.items.length > 0) {
-      const itemResult = await createOrderItems(tx, order.id, userId, input.items);
-      if (!itemResult.ok) {
-        return { ok: false, error: "INVALID_PRODUCT_TYPE" };
+      if (!store) {
+        return { ok: false, error: "STORE_NOT_FOUND" };
       }
-    }
 
-    await appendOrderHistoryEntry({
-      tx,
-      orderId: order.id,
-      userId,
-      eventType: OrderHistoryEventType.ORDER_CREATED,
+      // Category validation runs here, before the order row exists, even though `createOrderItems`
+      // below validates again. Returning normally from a `$transaction` callback COMMITS it — only a
+      // thrown error rolls it back — so refusing after `order.create` would leave a phantom order
+      // (no items, no history entry) in the collector's list while the UI reported a failure.
+      if (input.items && input.items.length > 0) {
+        const productTypeKeys = input.items
+          .map((item) => item.productTypeKey)
+          .filter((key): key is string => key != null);
+        const invalidKey = await findInvalidProductTypeKey(tx, productTypeKeys);
+        if (invalidKey !== null) {
+          return { ok: false, error: "INVALID_PRODUCT_TYPE" };
+        }
+      }
+
+      const now = new Date();
+      const humanReadableId = await generateOrderHumanReadableId(tx, userId, now);
+
+      const user = await tx.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } });
+      const exchangeRate = input.exchangeRate ?? null;
+
+      const order = await tx.order.create({
+        data: {
+          storeId: input.storeId,
+          userId,
+          humanReadableId,
+          orderDate: input.orderDate,
+          expectedDeliveryFrom: input.expectedDeliveryFrom ?? null,
+          expectedDeliveryTo: input.expectedDeliveryTo ?? null,
+          currencyCode: input.currencyCode,
+          exchangeRate,
+          exchangeRateBaseCode: resolveExchangeRateBaseCode(exchangeRate, user?.baseCurrencyCode ?? null),
+          totalCost: input.totalCost,
+          note: input.note ?? null,
+          status: OrderStatus.OPEN,
+        },
+        select: { id: true, humanReadableId: true },
+      });
+
+      if (input.items && input.items.length > 0) {
+        const itemResult = await createOrderItems(tx, order.id, userId, input.items);
+        if (!itemResult.ok) {
+          // Unreachable while the pre-write check above covers every refusal `createOrderItems` can
+          // raise, and deliberately a throw rather than a return: this point is past `order.create`,
+          // where a return would commit the phantom order instead of discarding it.
+          throw new InvalidProductTypeRollback();
+        }
+      }
+
+      await appendOrderHistoryEntry({
+        tx,
+        orderId: order.id,
+        userId,
+        eventType: OrderHistoryEventType.ORDER_CREATED,
+      });
+
+      return { ok: true, orderId: order.id, humanReadableId: order.humanReadableId };
+    })
+    .catch((error: unknown) => {
+      if (error instanceof InvalidProductTypeRollback) {
+        return { ok: false, error: "INVALID_PRODUCT_TYPE" } as const;
+      }
+      throw error;
     });
-
-    return { ok: true, orderId: order.id, humanReadableId: order.humanReadableId };
-  });
 }
 
 export async function editOrder(orderId: string, userId: string, input: OrderEditInput): Promise<EditOrderResult> {
@@ -138,24 +181,12 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
       paymentCacheUpdate = { paidAmountMinor: summary.paidAmount, paymentPercent: summary.paymentPercentage };
     }
 
-    await tx.order.update({
-      where: { id: orderId },
-      data: {
-        ...(input.storeId !== undefined ? { storeId: input.storeId } : {}),
-        ...(input.orderDate !== undefined ? { orderDate: input.orderDate } : {}),
-        ...(input.expectedDeliveryFrom !== undefined ? { expectedDeliveryFrom: input.expectedDeliveryFrom } : {}),
-        ...(input.expectedDeliveryTo !== undefined ? { expectedDeliveryTo: input.expectedDeliveryTo } : {}),
-        ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),
-        ...(input.exchangeRate !== undefined ? { exchangeRate: input.exchangeRate } : {}),
-        // Re-entering the exchange rate clears any pending FX-reconciliation flag: the
-        // collector has just affirmed the rate for this order's currency.
-        ...(input.exchangeRate !== undefined ? { needsExchangeRateUpdate: false } : {}),
-        ...(input.totalCost !== undefined ? { totalCost: input.totalCost } : {}),
-        ...(paymentCacheUpdate ?? {}),
-        ...(input.note !== undefined ? { note: input.note } : {}),
-      },
-    });
-
+    // Items are replaced before the order row is touched, because this is the last step that can
+    // still refuse the edit. Returning normally from a `$transaction` callback COMMITS it — only a
+    // thrown error rolls it back — so a refusal raised after `order.update` would persist the new
+    // dates/total/note while telling the caller the edit failed. `replaceOrderItems` decides both of
+    // its refusals before its own first write, so this whole block is all-or-nothing; keep it that
+    // way if new failure modes are ever added there.
     if (input.items !== undefined) {
       const replaceResult = await replaceOrderItems(tx, orderId, userId, input.items);
       if (!replaceResult.ok) {
@@ -165,6 +196,33 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
         return { ok: false, error: "INVALID_PRODUCT_TYPE" };
       }
     }
+
+    // Re-stamped whenever the rate is submitted, so a stored rate always carries the base it was
+    // entered against. An edit that leaves the rate untouched must not restamp it: the existing
+    // base code still describes the existing rate.
+    let rateUpdate: { exchangeRate: number | null; exchangeRateBaseCode: string | null } | undefined;
+    if (input.exchangeRate !== undefined) {
+      const user = await tx.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } });
+      rateUpdate = {
+        exchangeRate: input.exchangeRate,
+        exchangeRateBaseCode: resolveExchangeRateBaseCode(input.exchangeRate, user?.baseCurrencyCode ?? null),
+      };
+    }
+
+    await tx.order.update({
+      where: { id: orderId },
+      data: {
+        ...(input.storeId !== undefined ? { storeId: input.storeId } : {}),
+        ...(input.orderDate !== undefined ? { orderDate: input.orderDate } : {}),
+        ...(input.expectedDeliveryFrom !== undefined ? { expectedDeliveryFrom: input.expectedDeliveryFrom } : {}),
+        ...(input.expectedDeliveryTo !== undefined ? { expectedDeliveryTo: input.expectedDeliveryTo } : {}),
+        ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),
+        ...(rateUpdate ?? {}),
+        ...(input.totalCost !== undefined ? { totalCost: input.totalCost } : {}),
+        ...(paymentCacheUpdate ?? {}),
+        ...(input.note !== undefined ? { note: input.note } : {}),
+      },
+    });
 
     return { ok: true };
   });
@@ -261,61 +319,25 @@ export async function reactivateOrder(orderId: string, userId: string): Promise<
 }
 
 /**
- * Re-flag the user's orders for FX reconciliation after a base-currency change. Every order
- * whose currency now differs from the new base has a stale stored `exchangeRate`, so it is
- * marked `needsExchangeRateUpdate`; orders already in the new base currency are unmarked.
- *
- * This only sets the flag — it never mutates `exchangeRate`. The collector reconciles the real
- * rates per-row in the orders FX modal (the deliberate "no silent bulk rate mutation" rule).
- * Cancelled orders are flagged too so a later reactivation surfaces them.
- *
- * An optional transaction client lets the caller run the flagging inside a wider transaction (for
- * example alongside the base-currency change) so both commit or roll back together.
- */
-export async function flagOrdersForFxReconciliation(
-  userId: string,
-  newBaseCurrencyCode: string,
-  tx?: Prisma.TransactionClient,
-): Promise<void> {
-  if (tx) {
-    await tx.order.updateMany({
-      where: { userId, currencyCode: { not: newBaseCurrencyCode } },
-      data: { needsExchangeRateUpdate: true },
-    });
-    await tx.order.updateMany({
-      where: { userId, currencyCode: newBaseCurrencyCode },
-      data: { needsExchangeRateUpdate: false },
-    });
-    return;
-  }
-
-  await prisma.$transaction([
-    prisma.order.updateMany({
-      where: { userId, currencyCode: { not: newBaseCurrencyCode } },
-      data: { needsExchangeRateUpdate: true },
-    }),
-    prisma.order.updateMany({
-      where: { userId, currencyCode: newBaseCurrencyCode },
-      data: { needsExchangeRateUpdate: false },
-    }),
-  ]);
-}
-
-/**
  * Applies collector-confirmed exchange rates to the given orders. Each order is scoped by
- * `userId` so a tampered payload can only ever touch the caller's own orders, and reconciling a
- * rate clears its pending flag so the order leaves the FX-pending set. All updates commit in a
- * single transaction. Returns the number of orders actually updated.
+ * `userId` so a tampered payload can only ever touch the caller's own orders. Stamping each rate
+ * with the base currency it was entered against is what takes the order out of the FX-pending set,
+ * because pending-ness is derived from that pair rather than from a stored flag (ADR 0024). All
+ * updates commit in a single transaction. Returns the number of orders actually updated.
  */
 export async function applyOrderExchangeRates(
   userId: string,
+  baseCurrencyCode: string | null,
   updates: Array<{ orderId: string; exchangeRate: number }>,
 ): Promise<number> {
   const results = await prisma.$transaction(
     updates.map((update) =>
       prisma.order.updateMany({
         where: { id: update.orderId, userId },
-        data: { exchangeRate: update.exchangeRate, needsExchangeRateUpdate: false },
+        data: {
+          exchangeRate: update.exchangeRate,
+          exchangeRateBaseCode: resolveExchangeRateBaseCode(update.exchangeRate, baseCurrencyCode),
+        },
       }),
     ),
   );

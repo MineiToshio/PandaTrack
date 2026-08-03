@@ -6,34 +6,42 @@ import {
   hasOrderArrived,
   isCancelled,
   isCancelledDelivery,
-  isFxPending,
   rollUpToBaseCurrency,
   type RollupItem,
 } from "../dashboardRollup";
 
 describe("convertToBaseCurrencyMinor", () => {
   it("returns the amount unchanged when already in base currency", () => {
-    expect(convertToBaseCurrencyMinor(10000, "USD", null, "USD")).toBe(10000);
+    expect(
+      convertToBaseCurrencyMinor(10000, { currencyCode: "USD", exchangeRate: null, exchangeRateBaseCode: null }, "USD"),
+    ).toBe(10000);
   });
 
   it("multiplies foreign amounts by the stored rate and rounds to minor units", () => {
     // 1 EUR = 1.1 USD, so 10000 minor EUR -> 11000 minor USD.
-    expect(convertToBaseCurrencyMinor(10000, "EUR", 1.1, "USD")).toBe(11000);
+    expect(
+      convertToBaseCurrencyMinor(10000, { currencyCode: "EUR", exchangeRate: 1.1, exchangeRateBaseCode: "USD" }, "USD"),
+    ).toBe(11000);
     // Rounding: 12345 * 1.23 = 15184.35 -> 15184.
-    expect(convertToBaseCurrencyMinor(12345, "EUR", 1.23, "USD")).toBe(15184);
+    expect(
+      convertToBaseCurrencyMinor(12345, { currencyCode: "EUR", exchangeRate: 1.23, exchangeRateBaseCode: "USD" }, "USD"),
+    ).toBe(15184);
   });
 
   it("returns null for a foreign amount with no usable rate", () => {
-    expect(convertToBaseCurrencyMinor(10000, "EUR", null, "USD")).toBeNull();
-    expect(convertToBaseCurrencyMinor(10000, "EUR", 0, "USD")).toBeNull();
+    expect(
+      convertToBaseCurrencyMinor(10000, { currencyCode: "EUR", exchangeRate: null, exchangeRateBaseCode: null }, "USD"),
+    ).toBeNull();
+    expect(
+      convertToBaseCurrencyMinor(10000, { currencyCode: "EUR", exchangeRate: 0, exchangeRateBaseCode: "USD" }, "USD"),
+    ).toBeNull();
   });
-});
 
-describe("isFxPending", () => {
-  it("is true only for flagged orders in a different currency than base", () => {
-    expect(isFxPending({ currencyCode: "EUR", needsExchangeRateUpdate: true }, "USD")).toBe(true);
-    expect(isFxPending({ currencyCode: "USD", needsExchangeRateUpdate: true }, "USD")).toBe(false);
-    expect(isFxPending({ currencyCode: "EUR", needsExchangeRateUpdate: false }, "USD")).toBe(false);
+  it("refuses to convert with a rate stored against a different base currency", () => {
+    // The regression: a EUR->PEN rate must not be silently reused as if it were EUR->USD.
+    expect(
+      convertToBaseCurrencyMinor(10000, { currencyCode: "EUR", exchangeRate: 1.1, exchangeRateBaseCode: "PEN" }, "USD"),
+    ).toBeNull();
   });
 });
 
@@ -42,19 +50,20 @@ describe("rollUpToBaseCurrency", () => {
     amountMinor: 10000,
     currencyCode: "USD",
     exchangeRate: null,
-    needsExchangeRateUpdate: false,
+    exchangeRateBaseCode: null,
   };
   const reconciledEur: RollupItem = {
     amountMinor: 10000,
     currencyCode: "EUR",
     exchangeRate: 1.1,
-    needsExchangeRateUpdate: false,
+    exchangeRateBaseCode: "USD",
   };
+  // Carries a rate, but one entered against a different base, so it cannot be converted here.
   const fxPendingEur: RollupItem = {
     amountMinor: 5000,
     currencyCode: "EUR",
     exchangeRate: 1.1,
-    needsExchangeRateUpdate: true,
+    exchangeRateBaseCode: "PEN",
   };
 
   it("sums reconciled orders and converts foreign ones", () => {
@@ -72,7 +81,7 @@ describe("rollUpToBaseCurrency", () => {
       amountMinor: 7000,
       currencyCode: "EUR",
       exchangeRate: null,
-      needsExchangeRateUpdate: false,
+      exchangeRateBaseCode: null,
     };
     const result = rollUpToBaseCurrency([reconciledUsd, unconvertible], "USD");
     expect(result).toEqual({ totalMinor: 10000, isPartial: true, excludedOrderCount: 1 });

@@ -5,7 +5,6 @@ const {
   getSessionMock,
   getCollectorPreferencesSnapshotMock,
   parseAndApplyCollectorPreferencesPatchMock,
-  applyBaseCurrencyChangeMock,
   updateUserLocaleMock,
   cookiesMock,
   cookieStoreSetMock,
@@ -14,7 +13,6 @@ const {
   getSessionMock: vi.fn(),
   getCollectorPreferencesSnapshotMock: vi.fn(),
   parseAndApplyCollectorPreferencesPatchMock: vi.fn(),
-  applyBaseCurrencyChangeMock: vi.fn(),
   updateUserLocaleMock: vi.fn(),
   cookiesMock: vi.fn(),
   cookieStoreSetMock: vi.fn(),
@@ -31,7 +29,6 @@ vi.mock("@/lib/data/user-settings/userSettingsQueries", () => ({
 
 vi.mock("@/lib/data/user-settings/userSettingsMutations", () => ({
   parseAndApplyCollectorPreferencesPatch: parseAndApplyCollectorPreferencesPatchMock,
-  applyBaseCurrencyChange: applyBaseCurrencyChangeMock,
 }));
 
 vi.mock("next/headers", () => ({
@@ -52,14 +49,6 @@ const BASE_PAYLOAD = {
   budgetResetDayOfMonth: 1,
 };
 
-const BASE_SNAPSHOT = {
-  preferredCountryCode: "US",
-  baseCurrencyCode: "USD",
-  budgetAmount: 10000,
-  budgetResetDayOfMonth: 1,
-  preferredProductTypeKeys: ["figures"],
-};
-
 describe("savePreferencesAction", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -71,39 +60,11 @@ describe("savePreferencesAction", () => {
     const result = await savePreferencesAction(BASE_PAYLOAD);
 
     expect(result).toEqual({ ok: false, error: "unauthorized" });
-    expect(getCollectorPreferencesSnapshotMock).not.toHaveBeenCalled();
-  });
-
-  it("rejects when the current preferences snapshot cannot be loaded", async () => {
-    getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
-    getCollectorPreferencesSnapshotMock.mockResolvedValue(null);
-
-    const result = await savePreferencesAction(BASE_PAYLOAD);
-
-    expect(result).toEqual({ ok: false, error: "unauthorized" });
-    expect(applyBaseCurrencyChangeMock).not.toHaveBeenCalled();
     expect(parseAndApplyCollectorPreferencesPatchMock).not.toHaveBeenCalled();
   });
 
-  it("routes through applyBaseCurrencyChange when the base currency actually changes", async () => {
+  it("persists the patch through the single preferences path", async () => {
     getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
-    getCollectorPreferencesSnapshotMock.mockResolvedValue({ ...BASE_SNAPSHOT, baseCurrencyCode: "EUR" });
-    applyBaseCurrencyChangeMock.mockResolvedValue({ ok: true });
-
-    const result = await savePreferencesAction({ ...BASE_PAYLOAD, baseCurrencyCode: "USD" });
-
-    expect(result).toEqual({ ok: true });
-    expect(applyBaseCurrencyChangeMock).toHaveBeenCalledWith(
-      "user-1",
-      expect.objectContaining({ baseCurrencyCode: "USD" }),
-      { previousBaseCurrencyCode: "EUR", nextBaseCurrencyCode: "USD" },
-    );
-    expect(parseAndApplyCollectorPreferencesPatchMock).not.toHaveBeenCalled();
-  });
-
-  it("routes through parseAndApplyCollectorPreferencesPatch when the base currency is unchanged", async () => {
-    getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
-    getCollectorPreferencesSnapshotMock.mockResolvedValue(BASE_SNAPSHOT);
     parseAndApplyCollectorPreferencesPatchMock.mockResolvedValue({ ok: true });
 
     const result = await savePreferencesAction(BASE_PAYLOAD);
@@ -113,12 +74,27 @@ describe("savePreferencesAction", () => {
       "user-1",
       expect.objectContaining({ baseCurrencyCode: "USD" }),
     );
-    expect(applyBaseCurrencyChangeMock).not.toHaveBeenCalled();
+  });
+
+  it("takes the same path when the base currency changes, with no companion flagging write", async () => {
+    // Pending-ness is derived per row from the rate's own recorded base, so a currency change (or a
+    // change back) needs no bulk write. The old flagging pass is what re-marked already-reconciled
+    // orders on a PEN -> X -> PEN round trip.
+    getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
+    parseAndApplyCollectorPreferencesPatchMock.mockResolvedValue({ ok: true });
+
+    const result = await savePreferencesAction({ ...BASE_PAYLOAD, baseCurrencyCode: "PEN" });
+
+    expect(result).toEqual({ ok: true });
+    expect(parseAndApplyCollectorPreferencesPatchMock).toHaveBeenCalledTimes(1);
+    expect(parseAndApplyCollectorPreferencesPatchMock).toHaveBeenCalledWith(
+      "user-1",
+      expect.objectContaining({ baseCurrencyCode: "PEN" }),
+    );
   });
 
   it("maps a validation failure from the data layer to the validation error code", async () => {
     getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
-    getCollectorPreferencesSnapshotMock.mockResolvedValue(BASE_SNAPSHOT);
     parseAndApplyCollectorPreferencesPatchMock.mockResolvedValue({ ok: false, error: new ZodError([]) });
 
     const result = await savePreferencesAction(BASE_PAYLOAD);
@@ -128,7 +104,7 @@ describe("savePreferencesAction", () => {
 
   it("reports an unexpected error to Sentry and returns generic", async () => {
     getSessionMock.mockResolvedValue(AUTHENTICATED_SESSION);
-    getCollectorPreferencesSnapshotMock.mockRejectedValue(new Error("db down"));
+    parseAndApplyCollectorPreferencesPatchMock.mockRejectedValue(new Error("db down"));
 
     const result = await savePreferencesAction(BASE_PAYLOAD);
 

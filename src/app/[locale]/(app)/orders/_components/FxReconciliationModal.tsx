@@ -1,17 +1,18 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useId, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, RefreshCw } from "lucide-react";
 import Button from "@/components/core/Button/Button";
 import Input from "@/components/core/Input";
 import { Modal } from "@/components/modules/Modal";
 import { useToast } from "@/contexts/ToastContext";
 import { formatAmount } from "@/lib/currency";
-import { fetchTodayRate } from "@/lib/fx/frankfurter";
+import { fetchTodayRate } from "@/lib/fx/exchangeRates";
 import { cn } from "@/lib/styles";
 import { updateExchangeRatesAction } from "../_actions/orderFxActions";
+import FxRateAttribution from "./share/FxRateAttribution";
 
 export type FxPendingOrder = {
   id: string;
@@ -81,6 +82,9 @@ export default function FxReconciliationModal({
   const { addToast } = useToast();
   const [groups, setGroups] = useState<GroupedRate[]>(() => buildInitialGroups(orders, baseCurrencyCode));
   const [isPending, startTransition] = useTransition();
+  // One base id per modal instance, suffixed per currency pair: every group renders its own rate
+  // field, so the label association has to be unique per row rather than per modal.
+  const rateFieldId = useId();
 
   // Reset internal draft state when the pending order set or base currency changes.
   // Render-time prop→state sync via fingerprint (canonical React 18+ pattern).
@@ -196,32 +200,39 @@ export default function FxReconciliationModal({
                 </span>
               </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <label className="flex flex-1 flex-col gap-1">
-                  <span className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">
-                    {t("fx.modal.rateLabel", { from: group.fromCurrency, to: group.toCurrency })}
-                  </span>
+              <div className="flex flex-col gap-1">
+                <label
+                  htmlFor={`${rateFieldId}-${group.pairKey}`}
+                  className="[font-size:var(--text-caption)] [color:var(--text-secondary)]"
+                >
+                  {t("fx.modal.rateLabel", { from: group.fromCurrency, to: group.toCurrency })}
+                </label>
+                {/* The field and its action share one stretch row so the button matches the input's
+                    height on its own, the same pairing the order create and edit forms use. The
+                    label sits outside that row, or the button would stretch past the input to cover
+                    the label too. */}
+                <div className="flex items-stretch gap-2">
                   <Input
+                    id={`${rateFieldId}-${group.pairKey}`}
                     inputMode="decimal"
                     value={group.draftRate}
                     onChange={(event) => updateGroup(group.pairKey, { draftRate: event.target.value })}
                     placeholder={t("fx.modal.ratePlaceholder")}
+                    className="flex-1"
                   />
-                </label>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleTodayClick(group)}
-                  disabled={group.todayLoading}
-                  style={{
-                    color: "var(--accent)",
-                    background: "color-mix(in oklch, var(--accent) 12%, transparent)",
-                    borderColor: "color-mix(in oklch, var(--accent) 28%, transparent)",
-                  }}
-                  className="self-start sm:self-end"
-                >
-                  {group.todayLoading ? t("fx.modal.todayLoading") : t("fx.modal.todayButton")}
-                </Button>
+                  <Button
+                    type="button"
+                    variant="tonal"
+                    size="md"
+                    onClick={() => handleTodayClick(group)}
+                    disabled={group.todayLoading}
+                    leadingIcon={
+                      <RefreshCw size={14} aria-hidden className={group.todayLoading ? "animate-spin" : ""} />
+                    }
+                  >
+                    {group.todayLoading ? t("fx.modal.todayLoading") : t("fx.modal.todayButton")}
+                  </Button>
+                </div>
               </div>
               {group.todayError && (
                 <p className="[font-size:var(--text-caption)] [color:var(--destructive)]">{group.todayError}</p>
@@ -258,6 +269,7 @@ export default function FxReconciliationModal({
           );
         })}
       </ul>
+      <FxRateAttribution className="mt-3" />
     </Modal>
   );
 }

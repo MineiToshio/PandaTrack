@@ -17,6 +17,7 @@ import {
   resolveTimeZone,
   toMonthKey,
 } from "./dashboardPeriods";
+import { needsFxReconciliation } from "@/lib/fx/reconciliation";
 import {
   computeOutstandingMinor,
   computePaidMinor,
@@ -24,7 +25,6 @@ import {
   hasOrderArrived,
   isCancelled,
   isCancelledDelivery,
-  isFxPending,
   rollUpToBaseCurrency,
   type RollupItem,
 } from "./dashboardRollup";
@@ -37,6 +37,7 @@ import type {
   BuildDashboardDataInput,
   CashObligationsBlock,
   CollectionBlock,
+  CommittedTrendBlock,
   DashboardData,
   DeliveryStateCount,
   DashboardDeliveryInput,
@@ -82,7 +83,7 @@ function toRollupItem(order: DashboardOrderInput, amountMinor: number): RollupIt
     amountMinor,
     currencyCode: order.currencyCode,
     exchangeRate: order.exchangeRate,
-    needsExchangeRateUpdate: order.needsExchangeRateUpdate,
+    exchangeRateBaseCode: order.exchangeRateBaseCode,
   };
 }
 
@@ -92,16 +93,13 @@ function toDeliveryRollupItem(delivery: DashboardDeliveryInput): RollupItem {
     amountMinor: delivery.cost,
     currencyCode: delivery.currencyCode,
     exchangeRate: delivery.exchangeRate,
-    needsExchangeRateUpdate: delivery.needsExchangeRateUpdate,
+    exchangeRateBaseCode: delivery.exchangeRateBaseCode,
   };
 }
 
 /** Base-currency value of an order-currency amount, or null when the order is FX-excluded. */
 function convertOrderAmount(order: DashboardOrderInput, amountMinor: number, baseCurrencyCode: string): number | null {
-  if (isFxPending(order, baseCurrencyCode)) {
-    return null;
-  }
-  return convertToBaseCurrencyMinor(amountMinor, order.currencyCode, order.exchangeRate, baseCurrencyCode);
+  return convertToBaseCurrencyMinor(amountMinor, order, baseCurrencyCode);
 }
 
 function buildOrderSummary(order: DerivedOrder, baseCurrencyCode: string | null): OrderSummary {
@@ -119,7 +117,7 @@ function buildOrderSummary(order: DerivedOrder, baseCurrencyCode: string | null)
       ? convertOrderAmount(order.input, order.input.totalCost, baseCurrencyCode)
       : null,
     outstandingMinor: order.outstandingMinor,
-    isFxPending: baseCurrencyCode ? isFxPending(order.input, baseCurrencyCode) : false,
+    isFxPending: baseCurrencyCode ? needsFxReconciliation(order.input, baseCurrencyCode) : false,
   };
 }
 
@@ -192,7 +190,7 @@ function buildUpcomingPayments(datedOutstanding: DerivedOrder[], baseCurrencyCod
     .slice()
     .sort((a, b) => a.input.expectedDeliveryFrom!.getTime() - b.input.expectedDeliveryFrom!.getTime())
     .map((order) => {
-      const fxPending = baseCurrencyCode ? isFxPending(order.input, baseCurrencyCode) : true;
+      const fxPending = baseCurrencyCode ? needsFxReconciliation(order.input, baseCurrencyCode) : true;
       const baseOutstandingMinor = baseCurrencyCode
         ? convertOrderAmount(order.input, order.outstandingMinor, baseCurrencyCode)
         : null;
@@ -330,6 +328,33 @@ function buildOutstandingTrend(
         );
         return toRollupItem(order.input, Math.max(0, order.input.totalCost - paidByThen));
       });
+    const monthTotal = rollUpToBaseCurrency(items, baseCurrencyCode);
+    isPartial = isPartial || monthTotal.isPartial;
+    return { ...monthKey, totalMinor: monthTotal.totalMinor };
+  });
+
+  return { series, isPartial };
+}
+
+/**
+ * Committed value trend: the total value of the orders *placed* in each month of the range.
+ *
+ * Deliberately the counterpart of `buildSpend`, which tracks money that actually left the
+ * collector's hands. An order's full cost lands in the month it was placed, regardless of when it
+ * is paid, so the pair reads as "what I took on" against "what I have paid down"; the gap between
+ * them is what `buildOutstandingTrend` then carries forward as debt.
+ */
+function buildCommittedTrend(
+  orders: DerivedOrder[],
+  baseCurrencyCode: string | null,
+  range: DateRange,
+): CommittedTrendBlock {
+  let isPartial = false;
+
+  const series = enumerateMonthKeys(range).map((monthKey) => {
+    const items = orders
+      .filter((order) => isSameMonth(toMonthKey(order.input.orderDate), monthKey))
+      .map((order) => toRollupItem(order.input, order.input.totalCost));
     const monthTotal = rollUpToBaseCurrency(items, baseCurrencyCode);
     isPartial = isPartial || monthTotal.isPartial;
     return { ...monthKey, totalMinor: monthTotal.totalMinor };
@@ -671,6 +696,7 @@ export function buildDashboardData(input: BuildDashboardDataInput): DashboardDat
     cashObligations: buildCashObligations(nonCancelled, baseCurrencyCode, now, timeZone),
     budget: buildBudget(nonCancelled, baseCurrencyCode, budgetAmountMinor, now, timeZone, budgetResetDayOfMonth),
     spend: buildSpend(nonCancelled, nonCancelledDeliveries, baseCurrencyCode, range, now, timeZone),
+    committedTrend: buildCommittedTrend(nonCancelled, baseCurrencyCode, range),
     outstandingTrend: buildOutstandingTrend(nonCancelled, baseCurrencyCode, range),
     activity: buildActivity(nonCancelled, baseCurrencyCode, range, now, timeZone),
     collection: buildCollection(nonCancelled, baseCurrencyCode),

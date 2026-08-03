@@ -5,7 +5,7 @@ slug: user-settings
 title: User Settings — Feature Design Document
 status: ACTIVE
 parent: FRD-07
-last_updated: 2026-07-20
+last_updated: 2026-08-03
 prototype: ./prototype/user-settings.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -395,8 +395,10 @@ Preferences pane (no modal, no separate sheet; the same on desktop and mobile):
   reveals a `"Guardar"` / `"Cancelar"` confirm row with a one-line hint
   `"No convierte tus datos anteriores."`. `"Cancelar"` discards the pending value; only
   `"Guardar"` commits it via `updateCurrencyAction({ baseCurrencyCode })`, which persists the new
-  base **and** flags stale-rate orders in the same transaction (see §2.5 and `FR-07-32`).
-- The commit **never mutates any order's exchange rate** — it only sets the reconcile flag. On
+  base and writes nothing to any order (see §2.5 and `FR-07-32`).
+- The commit **never mutates any order's exchange rate** — nor any other order field. Orders start
+  reading as pending on their own, because whether a stored rate can convert into the base currency
+  is derived at read time. On
   success the action returns the count of foreign-currency orders still needing a rate. When that
   count is `> 0`, the row swaps the confirm for a single conditional shortcut
   `"Actualizar tasas · {n} pedidos →"` linking into the existing `/orders` FX reconciliation flow;

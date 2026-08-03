@@ -23,6 +23,7 @@ type TxOverrides = {
   delivery?: unknown;
   selectedItems?: SelectedItem[];
   addedUpdateCount?: number;
+  baseCurrencyCode?: string | null;
 };
 
 function makeTx(overrides: TxOverrides = {}) {
@@ -40,6 +41,7 @@ function makeTx(overrides: TxOverrides = {}) {
       deleteMany: vi.fn().mockResolvedValue(undefined),
     },
     order: { findMany: vi.fn().mockResolvedValue([]), updateMany: vi.fn() },
+    user: { findUnique: vi.fn().mockResolvedValue({ baseCurrencyCode: overrides.baseCurrencyCode ?? null }) },
   };
 }
 
@@ -191,10 +193,11 @@ describe("editDelivery", () => {
     });
   });
 
-  it("clears the FX-reconciliation flag on save (per-delivery edit is the reconciliation path)", async () => {
+  it("stamps the saved rate with the base it was entered against (per-delivery edit is the reconciliation path)", async () => {
     const tx = makeTx({
       delivery: deliveryFixture(["kept"]),
       selectedItems: [selectedItem("kept", OrderItemDeliveryState.IN_TRANSIT)],
+      baseCurrencyCode: "PEN",
     });
     useTx(tx);
 
@@ -208,7 +211,29 @@ describe("editDelivery", () => {
     expect(result.ok).toBe(true);
     expect(tx.delivery.update).toHaveBeenCalledWith({
       where: { id: "dlv-1" },
-      data: expect.objectContaining({ exchangeRate: 1.1, needsExchangeRateUpdate: false }),
+      data: expect.objectContaining({ exchangeRate: 1.1, exchangeRateBaseCode: "PEN" }),
+    });
+  });
+
+  it("records no base when saved with a foreign currency and no rate, so it stays FX-pending", async () => {
+    const tx = makeTx({
+      delivery: deliveryFixture(["kept"]),
+      selectedItems: [selectedItem("kept", OrderItemDeliveryState.IN_TRANSIT)],
+      baseCurrencyCode: "PEN",
+    });
+    useTx(tx);
+
+    const result = await editDelivery("dlv-1", USER_ID, {
+      ...BASE_INPUT,
+      currencyCode: "EUR",
+      exchangeRate: null,
+      productIds: ["kept"],
+    });
+
+    expect(result.ok).toBe(true);
+    expect(tx.delivery.update).toHaveBeenCalledWith({
+      where: { id: "dlv-1" },
+      data: expect.objectContaining({ exchangeRate: null, exchangeRateBaseCode: null }),
     });
   });
 });

@@ -5,6 +5,7 @@ import * as Sentry from "@sentry/nextjs";
 import { z } from "zod";
 import { getSession } from "@/lib/auth/auth-server";
 import { applyOrderExchangeRates } from "@/lib/data/orders/orderMutations";
+import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import { exchangeRateSchema } from "@/lib/orders/orderValidation";
 
 const updateSchema = z.object({
@@ -20,8 +21,7 @@ const updateSchema = z.object({
 });
 
 export type UpdateExchangeRatesResult =
-  | { success: true; updatedCount: number }
-  | { success: false; error: "unauthorized" | "invalid" | "server_error" };
+  { success: true; updatedCount: number } | { success: false; error: "unauthorized" | "invalid" | "server_error" };
 
 export async function updateExchangeRatesAction(input: {
   updates: Array<{ orderId: string; exchangeRate: number }>;
@@ -34,8 +34,16 @@ export async function updateExchangeRatesAction(input: {
   if (!parsed.success) return { success: false, error: "invalid" };
 
   try {
-    const updatedCount = await applyOrderExchangeRates(userId, parsed.data.updates);
+    const preferences = await getCollectorPreferencesSnapshot(userId);
+    const updatedCount = await applyOrderExchangeRates(
+      userId,
+      preferences?.baseCurrencyCode ?? null,
+      parsed.data.updates,
+    );
     revalidatePath("/[locale]/orders", "page");
+    // The dashboard reads the same derivation for its partial-totals banner, so it has to be
+    // revalidated here too; otherwise reconciling leaves the banner still claiming N pending.
+    revalidatePath("/[locale]/dashboard", "page");
     return { success: true, updatedCount };
   } catch (error) {
     Sentry.captureException(error, { tags: { feature: "orders.fx-reconciliation" } });

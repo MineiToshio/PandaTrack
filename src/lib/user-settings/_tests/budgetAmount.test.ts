@@ -82,7 +82,7 @@ describe("settings budget reaches the dashboard at the right magnitude", () => {
       expectedDeliveryTo: null,
       currencyCode: "USD",
       exchangeRate: null,
-      needsExchangeRateUpdate: false,
+      exchangeRateBaseCode: "USD",
       totalCost: amountMinor,
       status: "OPEN",
       store: { id: "store-1", name: "Store One", slug: "store-one" },

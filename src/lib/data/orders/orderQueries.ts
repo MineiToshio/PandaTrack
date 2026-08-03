@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { buildNeedsFxReconciliationWhere, needsFxReconciliation } from "@/lib/fx/reconciliation";
+import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import { deriveHasUnpaidBalance } from "@/lib/orders/orderState";
 import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
 import type { ItemDeliveryState } from "@/lib/orders/orderState";
@@ -104,7 +106,22 @@ export async function getOrderHeader(
   });
 }
 
+/**
+ * Finds an order this user already saved under a given note marker, following the marker precedent
+ * of `scripts/local/migrate-pedidos/chat-load.ts`. Scoped by `userId` so one collector's marker can
+ * never resolve to another's order, and selected down to the id because the only question the
+ * caller has is "does this already exist".
+ */
+export async function findOrderIdByNoteMarker(userId: string, marker: string): Promise<string | null> {
+  const row = await prisma.order.findFirst({
+    where: { userId, note: { contains: marker } },
+    select: { id: true },
+  });
+  return row?.id ?? null;
+}
+
 export async function getOrderById(orderId: string, userId: string): Promise<OrderDetail | null> {
+  const preferences = await getCollectorPreferencesSnapshot(userId);
   const row = await prisma.order.findFirst({
     where: { id: orderId, userId },
     select: {
@@ -117,7 +134,7 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
       expectedDeliveryTo: true,
       currencyCode: true,
       exchangeRate: true,
-      needsExchangeRateUpdate: true,
+      exchangeRateBaseCode: true,
       totalCost: true,
       note: true,
       status: true,
@@ -160,7 +177,14 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
     expectedDeliveryTo: row.expectedDeliveryTo,
     currencyCode: row.currencyCode,
     exchangeRate: row.exchangeRate ? Number(row.exchangeRate) : null,
-    needsExchangeRateUpdate: row.needsExchangeRateUpdate,
+    needsExchangeRateUpdate: needsFxReconciliation(
+      {
+        currencyCode: row.currencyCode,
+        exchangeRate: row.exchangeRate ? Number(row.exchangeRate) : null,
+        exchangeRateBaseCode: row.exchangeRateBaseCode,
+      },
+      preferences?.baseCurrencyCode ?? null,
+    ),
     totalCost: row.totalCost,
     note: row.note,
     cancellationReason: row.cancellationReason,
@@ -191,6 +215,7 @@ function deriveItemDeliveryState(
 }
 
 export async function getOrderDetail(orderId: string, userId: string): Promise<OrderDetailFull | null> {
+  const preferences = await getCollectorPreferencesSnapshot(userId);
   const row = await prisma.order.findFirst({
     where: { id: orderId, userId },
     select: {
@@ -203,7 +228,7 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
       expectedDeliveryTo: true,
       currencyCode: true,
       exchangeRate: true,
-      needsExchangeRateUpdate: true,
+      exchangeRateBaseCode: true,
       totalCost: true,
       note: true,
       status: true,
@@ -277,7 +302,14 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
     expectedDeliveryTo: row.expectedDeliveryTo,
     currencyCode: row.currencyCode,
     exchangeRate: row.exchangeRate ? Number(row.exchangeRate) : null,
-    needsExchangeRateUpdate: row.needsExchangeRateUpdate,
+    needsExchangeRateUpdate: needsFxReconciliation(
+      {
+        currencyCode: row.currencyCode,
+        exchangeRate: row.exchangeRate ? Number(row.exchangeRate) : null,
+        exchangeRateBaseCode: row.exchangeRateBaseCode,
+      },
+      preferences?.baseCurrencyCode ?? null,
+    ),
     totalCost: row.totalCost,
     note: row.note,
     cancellationReason: row.cancellationReason,
@@ -368,15 +400,15 @@ export type OrdersListPageResult = {
 };
 
 function buildFxPendingWhere(userId: string, baseCurrencyCode: string | null | undefined) {
-  if (!baseCurrencyCode) return null;
-  // An order is FX-pending when it was explicitly flagged on a base-currency change
-  // (`needsExchangeRateUpdate`) and still holds a foreign currency. Cancelled orders are
-  // excluded; reactivating one re-surfaces it because the flag is preserved.
+  const fxWhere = buildNeedsFxReconciliationWhere(baseCurrencyCode);
+  if (!fxWhere) return null;
+  // Pending-ness comes straight from the shared derivation, so this list, its count, the modal's
+  // rows, and the dashboard rollup can never disagree. Cancelled orders are excluded; reactivating
+  // one re-surfaces it, because nothing about the rate changed while it was cancelled.
   return {
     userId,
-    needsExchangeRateUpdate: true,
     status: { not: "CANCELLED" as OrderStatus },
-    currencyCode: { not: baseCurrencyCode },
+    ...fxWhere,
   };
 }
 
@@ -482,8 +514,10 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
   }
 
   const trimmedQuery = nameQuery?.trim();
-  const fxFilterBase = fxPendingOnly && baseCurrencyCode ? { currencyCode: { not: baseCurrencyCode } } : {};
-  const fxFilterFlag = fxPendingOnly && baseCurrencyCode ? { needsExchangeRateUpdate: true } : {};
+  // Same derivation the banner count and the modal rows use, so "N pedidos por reconciliar" always
+  // lands on exactly those N rows. Joined as an AND group rather than spread at the top level: it
+  // carries its own `OR`, which would otherwise sit alongside the search/payment-state `OR`s.
+  const fxPendingWhere = fxPendingOnly ? buildNeedsFxReconciliationWhere(baseCurrencyCode) : null;
 
   // Delivery filter — `deliveryLateOnly` ("Atrasados") wins over `deliveryOverdueOnly`
   // ("Por recibir"), which wins over an explicit range, when more than one is present.
@@ -530,8 +564,6 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
           },
         }
       : {}),
-    ...fxFilterBase,
-    ...fxFilterFlag,
     ...deliveryWhere,
   };
 
@@ -553,6 +585,7 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
   const andGroups: Array<Record<string, unknown>> = Array.isArray(existingAnd) ? [...existingAnd] : [];
   if (matchAny.length > 0) andGroups.push({ OR: matchAny });
   if (paymentStateWhere) andGroups.push(paymentStateWhere);
+  if (fxPendingWhere) andGroups.push(fxPendingWhere);
 
   const { AND: _ignoredBaseAnd, ...baseWithoutAnd } = baseFilters;
   const where = andGroups.length > 0 ? { ...baseWithoutAnd, AND: andGroups } : baseFilters;
@@ -703,7 +736,6 @@ export async function listOrders(userId: string, filters: OrderListFilters = {})
       expectedDeliveryTo: true,
       currencyCode: true,
       exchangeRate: true,
-      needsExchangeRateUpdate: true,
       totalCost: true,
       status: true,
       createdAt: true,

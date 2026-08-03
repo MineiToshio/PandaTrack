@@ -1,6 +1,7 @@
+import { needsFxReconciliation, type FxContext } from "@/lib/fx/reconciliation";
 import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
 import { OrderItemDeliveryState, type DeliveryStatus, type OrderStatus } from "../../../../generated/prisma/client";
-import type { BaseCurrencyTotal, DashboardOrderInput } from "./dashboardTypes";
+import type { BaseCurrencyTotal } from "./dashboardTypes";
 
 /**
  * Base-currency money helpers for the dashboard.
@@ -12,42 +13,33 @@ import type { BaseCurrencyTotal, DashboardOrderInput } from "./dashboardTypes";
 
 /**
  * Converts an order-currency minor amount to base-currency minor units.
- * Returns null when conversion is impossible (foreign currency with no usable rate).
+ * Returns null exactly when `needsFxReconciliation` says the row has no usable rate for this base,
+ * so a figure is never quietly computed from a rate that belongs to a different base currency.
  */
 export function convertToBaseCurrencyMinor(
   amountMinor: number,
-  orderCurrencyCode: string,
-  exchangeRate: number | null,
+  context: FxContext,
   baseCurrencyCode: string,
 ): number | null {
-  if (orderCurrencyCode === baseCurrencyCode) {
+  if (context.currencyCode === baseCurrencyCode) {
     return amountMinor;
   }
-  if (exchangeRate === null || exchangeRate <= 0) {
+  if (needsFxReconciliation(context, baseCurrencyCode)) {
     return null;
   }
-  return Math.round(amountMinor * exchangeRate);
-}
-
-/** True when an order must be excluded from single-currency base totals. */
-export function isFxPending(
-  order: Pick<DashboardOrderInput, "currencyCode" | "needsExchangeRateUpdate">,
-  baseCurrencyCode: string,
-): boolean {
-  return order.needsExchangeRateUpdate && order.currencyCode !== baseCurrencyCode;
+  return Math.round(amountMinor * (context.exchangeRate as number));
 }
 
 /** An amount denominated in a specific order currency, carrying that order's FX context. */
-export type RollupItem = {
+export type RollupItem = FxContext & {
   amountMinor: number;
-  currencyCode: string;
-  exchangeRate: number | null;
-  needsExchangeRateUpdate: boolean;
 };
 
 /**
- * Sums order-currency amounts into a base-currency total, excluding FX-unreconciled orders and
- * any order whose currency cannot be converted, and reporting how many were excluded.
+ * Sums order-currency amounts into a base-currency total, excluding every row that cannot be
+ * converted and reporting how many were excluded. The exclusion test is the same
+ * `needsFxReconciliation` the orders list filters on, so the banner's count and the rows the
+ * collector can act on are the same set by construction, not by coincidence.
  * A null base currency yields a zeroed, non-partial total (the collector must configure one first).
  */
 export function rollUpToBaseCurrency(items: RollupItem[], baseCurrencyCode: string | null): BaseCurrencyTotal {
@@ -60,17 +52,7 @@ export function rollUpToBaseCurrency(items: RollupItem[], baseCurrencyCode: stri
   let isPartial = false;
 
   for (const item of items) {
-    if (isFxPending(item, baseCurrencyCode)) {
-      excludedOrderCount += 1;
-      isPartial = true;
-      continue;
-    }
-    const converted = convertToBaseCurrencyMinor(
-      item.amountMinor,
-      item.currencyCode,
-      item.exchangeRate,
-      baseCurrencyCode,
-    );
+    const converted = convertToBaseCurrencyMinor(item.amountMinor, item, baseCurrencyCode);
     if (converted === null) {
       excludedOrderCount += 1;
       isPartial = true;

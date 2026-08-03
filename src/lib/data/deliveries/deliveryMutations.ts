@@ -3,6 +3,7 @@ import { DeliveryStatus, OrderItemDeliveryState, OrderStatus } from "../../../..
 import { deriveOrderStatus } from "@/lib/orders/orderState";
 import { getNextItemDeliveryState, mapToItemDeliveryState } from "@/lib/deliveries/deliveryState";
 import { generateDeliveryHumanReadableId } from "@/lib/deliveries/deliveryIdentifier";
+import { resolveExchangeRateBaseCode } from "@/lib/fx/reconciliation";
 import { prisma } from "@/lib/prisma";
 import type { DeliveryCreateInput, DeliveryEditInput } from "@/lib/deliveries/deliveryValidation";
 
@@ -125,6 +126,8 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
       }
 
       const humanReadableId = await generateDeliveryHumanReadableId(tx, userId, input.deliveryDate);
+      const user = await tx.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } });
+      const exchangeRate = input.exchangeRate ?? null;
       const delivery = await tx.delivery.create({
         data: {
           humanReadableId,
@@ -136,7 +139,8 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
           expectedArrivalTo: input.expectedArrivalTo ?? null,
           cost: input.cost,
           currencyCode: input.currencyCode,
-          exchangeRate: input.exchangeRate ?? null,
+          exchangeRate,
+          exchangeRateBaseCode: resolveExchangeRateBaseCode(exchangeRate, user?.baseCurrencyCode ?? null),
         },
         select: { id: true },
       });
@@ -184,10 +188,7 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
 // ---------------------------------------------------------------------------
 
 export type DeliveryLifecycleError =
-  | "DELIVERY_NOT_FOUND"
-  | "INVALID_STATUS"
-  | "PRODUCTS_IN_OTHER_DELIVERY"
-  | "RECEIVED_DATE_REQUIRED";
+  "DELIVERY_NOT_FOUND" | "INVALID_STATUS" | "PRODUCTS_IN_OTHER_DELIVERY" | "RECEIVED_DATE_REQUIRED";
 
 export type DeliveryLifecycleResult = { ok: true; productCount: number } | { ok: false; error: DeliveryLifecycleError };
 
@@ -357,8 +358,7 @@ export async function deleteDelivery(deliveryId: string, userId: string): Promis
 }
 
 export type UpdateDeliveryNoteResult =
-  | { ok: true; note: string | null; updatedAt: Date; changed: boolean }
-  | { ok: false; error: "DELIVERY_NOT_FOUND" };
+  { ok: true; note: string | null; updatedAt: Date; changed: boolean } | { ok: false; error: "DELIVERY_NOT_FOUND" };
 
 /** Saves the private note; an empty/whitespace note clears the field. */
 export async function updateDeliveryNote(
@@ -433,6 +433,7 @@ export async function editDelivery(
           id: true,
           status: true,
           storeId: true,
+          currencyCode: true,
           orderItems: { select: { orderItem: { select: { id: true, orderId: true } } } },
         },
       });
@@ -503,6 +504,13 @@ export async function editDelivery(
         });
       }
 
+      // The edit form always resends the rate (it is never a partial patch), so the write below is
+      // the delivery's final rate and gets stamped with the base it was entered against. Editing
+      // is the per-delivery reconciliation path: a saved rate leaves the FX-pending set because
+      // pending-ness is derived from that pair, not from a stored flag (ADR 0024).
+      const exchangeRate = input.exchangeRate ?? null;
+      const user = await tx.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } });
+
       await tx.delivery.update({
         where: { id: deliveryId },
         data: {
@@ -511,11 +519,8 @@ export async function editDelivery(
           expectedArrivalTo: input.expectedArrivalTo ?? null,
           ...(input.cost !== undefined ? { cost: input.cost } : {}),
           ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),
-          exchangeRate: input.exchangeRate ?? null,
-          // Saving an edit reaffirms this delivery's currency + rate, so it leaves the
-          // FX-pending set. Individual edit is the reconciliation path for deliveries
-          // (no bulk delivery FX modal); a delivery in base currency stays unflagged too.
-          needsExchangeRateUpdate: false,
+          exchangeRate,
+          exchangeRateBaseCode: resolveExchangeRateBaseCode(exchangeRate, user?.baseCurrencyCode ?? null),
         },
       });
 
@@ -538,50 +543,4 @@ export async function editDelivery(
       }
       throw error;
     });
-}
-
-// ---------------------------------------------------------------------------
-// FX reconciliation
-// ---------------------------------------------------------------------------
-
-/**
- * Re-flag the user's deliveries for FX reconciliation after a base-currency change. Every
- * delivery whose currency now differs from the new base has a stale stored `exchangeRate`, so
- * it is marked `needsExchangeRateUpdate`; deliveries already in the new base currency are
- * unmarked. This mirrors the order-level flagging (`flagOrdersForFxReconciliation`).
- *
- * This only sets the flag — it never mutates `exchangeRate`. The collector reconciles the real
- * rate by editing the delivery (the deliberate "no silent bulk rate mutation" rule). There is no
- * bulk delivery FX modal; per-delivery edit is the reconciliation path.
- *
- * An optional transaction client lets the caller run the flagging inside a wider transaction (for
- * example alongside the base-currency change) so both commit or roll back together.
- */
-export async function flagDeliveriesForFxReconciliation(
-  userId: string,
-  newBaseCurrencyCode: string,
-  tx?: Prisma.TransactionClient,
-): Promise<void> {
-  if (tx) {
-    await tx.delivery.updateMany({
-      where: { userId, currencyCode: { not: newBaseCurrencyCode } },
-      data: { needsExchangeRateUpdate: true },
-    });
-    await tx.delivery.updateMany({
-      where: { userId, currencyCode: newBaseCurrencyCode },
-      data: { needsExchangeRateUpdate: false },
-    });
-    return;
-  }
-
-  await prisma.$transaction([
-    prisma.delivery.updateMany({
-      where: { userId, currencyCode: { not: newBaseCurrencyCode } },
-      data: { needsExchangeRateUpdate: true },
-    }),
-    prisma.delivery.updateMany({
-      where: { userId, currencyCode: newBaseCurrencyCode },
-      data: { needsExchangeRateUpdate: false },
-    }),
-  ]);
 }

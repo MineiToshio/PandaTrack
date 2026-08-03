@@ -6,10 +6,7 @@ import { getSession } from "@/lib/auth/auth-server";
 import { updateUserLocale } from "@/lib/data/auth/userMutations";
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import { countOrdersPendingFxReconciliation } from "@/lib/data/orders/orderQueries";
-import {
-  applyBaseCurrencyChange,
-  parseAndApplyCollectorPreferencesPatch,
-} from "@/lib/data/user-settings/userSettingsMutations";
+import { parseAndApplyCollectorPreferencesPatch } from "@/lib/data/user-settings/userSettingsMutations";
 import { isLocale, type Locale } from "@/types/locale";
 
 export type PreferencesErrorCode = "unauthorized" | "validation" | "generic";
@@ -44,21 +41,10 @@ export async function savePreferencesAction(payload: PreferencesPayload): Promis
       preferredProductTypeKeys: payload.preferredProductTypeKeys,
     };
 
-    // A base-currency change must always flag stale-rate orders in the same transaction,
-    // even when it arrives through this generic action instead of updateCurrencyAction —
-    // otherwise a crafted payload could switch currency and leave conversions silently stale.
-    const current = await getCollectorPreferencesSnapshot(session.user.id);
-    if (!current) {
-      return { ok: false, error: "unauthorized" };
-    }
-
-    const result =
-      payload.baseCurrencyCode && payload.baseCurrencyCode !== current.baseCurrencyCode
-        ? await applyBaseCurrencyChange(session.user.id, patch, {
-            previousBaseCurrencyCode: current.baseCurrencyCode,
-            nextBaseCurrencyCode: payload.baseCurrencyCode,
-          })
-        : await parseAndApplyCollectorPreferencesPatch(session.user.id, patch);
+    // A base-currency change needs no companion write: whether an order or delivery still needs FX
+    // reconciliation is derived from the rate's own recorded base against the current one, so
+    // switching currency (or switching back) re-reads correctly on its own. See ADR 0024.
+    const result = await parseAndApplyCollectorPreferencesPatch(session.user.id, patch);
 
     if (!result.ok) {
       return { ok: false, error: "validation" };
@@ -112,10 +98,10 @@ export type UpdateCurrencyResult =
   { ok: true; pendingFxOrderCount: number } | { ok: false; error: PreferencesErrorCode };
 
 /**
- * Persists the base-currency change and flags stale-rate orders for FX reconciliation atomically,
- * then reports how many foreign-currency orders were left needing a rate update. The client uses
- * that count to surface an optional "reconcile rates" shortcut into the existing `/orders` FX flow,
- * where the user previews and confirms per-row.
+ * Persists the base-currency change, then reports how many foreign-currency orders now read as
+ * needing a rate against the new base. The client uses that count to surface an optional
+ * "reconcile rates" shortcut into the existing `/orders` FX flow, where the user previews and
+ * confirms per-row.
  *
  * Rationale (S8 Fase B research synthesis): silent bulk rate mutation from Settings erodes trust
  * (Splitwise/Toshl regret pattern). Reconciliation stays centralized in the orders FX modal, which
@@ -138,19 +124,13 @@ export async function updateCurrencyAction(input: UpdateCurrencyInput): Promise<
       return { ok: false, error: "unauthorized" };
     }
 
-    // Persist the base-currency change and flag stale-rate orders for FX reconciliation atomically,
-    // so we never leave the user with a new base currency but stale, unflagged order rates.
-    const result = await applyBaseCurrencyChange(
-      session.user.id,
-      {
-        preferredCountryCode: current.preferredCountryCode,
-        baseCurrencyCode: trimmed,
-        budgetAmount: current.budgetAmount,
-        budgetResetDayOfMonth: current.budgetResetDayOfMonth,
-        preferredProductTypeKeys: current.preferredProductTypeKeys,
-      },
-      { previousBaseCurrencyCode: current.baseCurrencyCode, nextBaseCurrencyCode: trimmed },
-    );
+    const result = await parseAndApplyCollectorPreferencesPatch(session.user.id, {
+      preferredCountryCode: current.preferredCountryCode,
+      baseCurrencyCode: trimmed,
+      budgetAmount: current.budgetAmount,
+      budgetResetDayOfMonth: current.budgetResetDayOfMonth,
+      preferredProductTypeKeys: current.preferredProductTypeKeys,
+    });
 
     if (!result.ok) {
       return { ok: false, error: "validation" };

@@ -19,31 +19,39 @@ describe("applyOrderExchangeRates", () => {
   });
 
   it("scopes every update by userId so a tampered payload cannot touch another user's orders", async () => {
-    await applyOrderExchangeRates("user-1", [
+    await applyOrderExchangeRates("user-1", "PEN", [
       { orderId: "order-1", exchangeRate: 1.5 },
       { orderId: "order-2", exchangeRate: 2 },
     ]);
 
     expect(prismaMock.order.updateMany).toHaveBeenNthCalledWith(1, {
       where: { id: "order-1", userId: "user-1" },
-      data: { exchangeRate: 1.5, needsExchangeRateUpdate: false },
+      data: { exchangeRate: 1.5, exchangeRateBaseCode: "PEN" },
     });
     expect(prismaMock.order.updateMany).toHaveBeenNthCalledWith(2, {
       where: { id: "order-2", userId: "user-1" },
-      data: { exchangeRate: 2, needsExchangeRateUpdate: false },
+      data: { exchangeRate: 2, exchangeRateBaseCode: "PEN" },
     });
   });
 
-  it("clears the pending flag while applying the confirmed rate", async () => {
-    await applyOrderExchangeRates("user-1", [{ orderId: "order-1", exchangeRate: 3.25 }]);
+  it("stamps the confirmed rate with the base it was entered against, which is what ends the pending state", async () => {
+    await applyOrderExchangeRates("user-1", "PEN", [{ orderId: "order-1", exchangeRate: 3.25 }]);
 
     expect(prismaMock.order.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { exchangeRate: 3.25, needsExchangeRateUpdate: false } }),
+      expect.objectContaining({ data: { exchangeRate: 3.25, exchangeRateBaseCode: "PEN" } }),
+    );
+  });
+
+  it("records no base for a rate confirmed while the collector has no base currency", async () => {
+    await applyOrderExchangeRates("user-1", null, [{ orderId: "order-1", exchangeRate: 3.25 }]);
+
+    expect(prismaMock.order.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { exchangeRate: 3.25, exchangeRateBaseCode: null } }),
     );
   });
 
   it("runs all updates in a single transaction and returns the total updated count", async () => {
-    const updatedCount = await applyOrderExchangeRates("user-1", [
+    const updatedCount = await applyOrderExchangeRates("user-1", "PEN", [
       { orderId: "order-1", exchangeRate: 1.5 },
       { orderId: "order-2", exchangeRate: 2 },
     ]);
