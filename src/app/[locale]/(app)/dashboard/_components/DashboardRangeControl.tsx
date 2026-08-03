@@ -1,7 +1,5 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { useTransition } from "react";
 import posthog from "posthog-js";
 import DateRangePickerInput, { type DateRangePreset } from "@/components/core/DateRangePickerInput";
 import { POSTHOG_EVENTS } from "@/lib/constants";
@@ -10,6 +8,7 @@ import { toIsoDateString } from "@/lib/localDate";
 import { cn } from "@/lib/styles";
 import type { DashboardRangePreset } from "@/lib/data/dashboard/dashboardTypes";
 import { DASHBOARD_DEFAULT_RANGE_PRESET, buildDashboardRangeQuery } from "../_utils/dashboardRangeParams";
+import { useTrendsRangeTransition } from "./DashboardTrendsRangeProvider";
 
 export type DashboardRangeControlProps = {
   presets: DateRangePreset[];
@@ -39,15 +38,9 @@ export default function DashboardRangeControl({
   locale,
   disabled = false,
 }: DashboardRangeControlProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const [isPending, startTransition] = useTransition();
-
-  const pushRange = (query: string) => {
-    startTransition(() => {
-      router.replace(`${pathname}${query}`, { scroll: false });
-    });
-  };
+  // The transition is owned by the provider so the chart surface can show its loading state from
+  // the same flag; this control only reports it on itself.
+  const { isPending, navigate: pushRange } = useTrendsRangeTransition();
 
   const handlePresetSelect = (value: string) => {
     posthog.capture(POSTHOG_EVENTS.DASHBOARD.RANGE_PRESET_SELECTED, { preset: value });

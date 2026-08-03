@@ -1,6 +1,6 @@
 # Interface Patterns
 
-This document is the normative source of truth for PandaTrack's reusable interaction and layout patterns: the collector app shell, content hierarchy, interaction states, buttons and controls, navigation, modals and overlays, forms in context, the Chip-Eyebrow + Top-Accent section header system, status chips, toasts, responsive behavior, accessibility, and monetary display.
+This document is the normative source of truth for PandaTrack's reusable interaction and layout patterns: the collector app shell, content hierarchy, interaction states, buttons and controls, navigation, modals and overlays, forms in context, the Chip-Eyebrow + Top-Accent section header system, status chips, toasts, responsive behavior, accessibility, monetary display, and trend charts.
 
 It is paired with two companion documents that own adjacent concerns:
 
@@ -53,11 +53,9 @@ All `(app)` routes share one outer content width and horizontal padding via the 
 
 For long forms and reading-heavy stacks, wrap the relevant block in the shared form rail (`APP_SHELL_FORM_RAIL_CLASSNAME`) so fields stay at a comfortable measure while page chrome still aligns with other routes. When a create/edit form has a reactive summary aside, use a `grid lg:grid-cols-[1fr_18rem]` form inside the shell column rather than duplicating a width wrapper.
 
-### Page headers — `AppPageHero`
+### Page headers
 
-Use `AppPageHero` (`src/components/modules/AppPageHero.tsx`) for authenticated routes that introduce a screen with a primary title: first-level areas, listing pages with one main CTA, create/edit flows, and detail views with a compact hero.
-
-Structure:
+`AppPageHero` was the shared component for this pattern; every screen has since moved off it (listing pages use a bare `h1` at the shared hero scale, detail/profile pages use a route-local hero component such as `OrderDetailHero.tsx`), and the component was removed as dead code. The structural intent below still applies to routes that need it:
 
 1. optional eyebrow pill (small, primary-tinted chip) — optional, not mandatory; omit it when the breadcrumb plus `h1` already give enough context
 2. page title: `Heading` as `h1` with the shared hero scale and title color
@@ -100,7 +98,7 @@ Collector detail pages choose one of two complementary layouts and use it intent
 For the split layout:
 
 1. `BackNavLink`
-2. `AppPageHero` (or rich profile hero) with identity, status, metadata, and top-level actions
+2. a route-local hero (e.g. `OrderDetailHero.tsx`) with identity, status, metadata, and top-level actions
 3. desktop two-column layout: left content column plus sticky right rail
 4. mobile sequence that preserves the same priority order
 
@@ -143,6 +141,8 @@ When secondary actions on this card sit on a tinted hero, gradient band, or illu
 3. **Pick the primary by frequency × FRD priority.** In PandaTrack, payment > shipment (FRD #3 vs #4).
 4. **Single CTA is fine** when only one action applies to the current state (full-width).
 5. **Never put a "More" / `⋯` trigger in the sticky bar.** Secondary actions live only in the inline "Actions" card.
+6. **The bar is mobile-only, and it always has a desktop counterpart.** A bar pinned to the viewport bottom on a wide monitor spans the whole window and reads as detached from the column it belongs to. Every fixed bottom bar therefore carries a hide variant (`md:hidden` on form-style screens, `lg:hidden` on detail screens whose desktop shape is the sticky rail), and the same actions are rendered a second time for the wider viewport. On a **form-style screen** that second copy is an inline footer at the end of the content: right-aligned, top border, secondary before primary (`hidden ... md:flex md:justify-end`, as in `OrderEditForm`, `WizardStep`, and the image-intake review screen). On a **detail screen** it is the sticky rail (see above).
+7. **Hide with `display`, and reserve room only where the bar exists.** `hidden` / `md:hidden` drop the copy from the accessibility tree too, so a screen reader hears exactly one primary at any width; hiding with opacity or off-screen positioning would announce both. The bottom padding that clears the fixed bar (`pb-[calc(...+env(safe-area-inset-bottom))]`) must be gated to the same breakpoint, or the desktop layout ends in dead space.
 
 ---
 
@@ -208,7 +208,9 @@ For detail-page hero headers, never place three standalone buttons side by side:
 - **Never break a button label onto a newline.** Keep labels on one line.
 - Icon-only buttons require an accessible label.
 
-**No floating action button.** The app shell does not mount a FAB, and no screen should reintroduce one. The mobile primary CTA lives in each screen's **sticky bottom action bar** — see the _Sticky bottom action bar (mobile)_ rules under [Secondary actions on tinted panels](#secondary-actions-on-tinted-panels-mobile-detail-adr-0011). A labeled, state-aware bar keeps the primary action consistent with the desktop hierarchy instead of floating an unlabeled icon over the content.
+**No generic floating action buttons.** The app shell does not mount FABs for arbitrary screens, and no module should introduce one of its own. The mobile primary CTA on detail-style screens still lives in each screen's **sticky bottom action bar** — see the _Sticky bottom action bar (mobile)_ rules under [Secondary actions on tinted panels](#secondary-actions-on-tinted-panels-mobile-detail-adr-0011). A labeled, state-aware bar keeps the primary action consistent with the desktop hierarchy instead of floating an unlabeled icon over the content.
+
+**Exactly one exception exists:** `<CreateOrderFab>` (`modules/CreateOrderFab/`), the single-action "Nuevo pedido" entry point defined by FRD-11. It is a labelled pill (icon plus text, never a bare circle), route- and breakpoint-gated (Dashboard and Orders list only, below `1024px` only — see `fabRouteGate.ts`), performs one action (open `OrderCreateMethodSelector`), and never fans out into a menu. Do not copy this pattern for other create flows without a new FRD-level decision; it exists because order creation specifically needed one door reachable from two list-like surfaces that otherwise have no bottom action bar.
 
 ### Form controls
 
@@ -346,6 +348,55 @@ For contextual additions that need no information from another screen and only a
 - Use `FilterDrawer` for list refinement (section types include pills, pills-search, icon-pills, autocomplete, tag-autocomplete, date-range, switches, text). Entity filters (store, user) use `MultiTagAutocomplete` with chips **inside** the bordered input, not below it.
 - After applying, render a **filter chips row** above the list: each selected filter is a filled `primary` chip with a one-click remove (`<X>`). The active-filter shell reuses the shared collector card surface.
 - Use `FilterTriggerButton` (`src/components/core/FilterTriggerButton/`) as the entry point, aligned with the create CTA. The badge counts **visible chips only** (drawer filters, one chip = one unit); the search query never increments the badge or paints the active state. Use `variant="icon-only"` with an `aria-label` when the button lives in the mobile top bar.
+
+### File attach surface: picker, drop, paste
+
+An attach surface offers up to three doors into the **same** handler, never three code paths: the file `<input>` plus its visible button, a drop, and a clipboard paste. Canonical implementation: `IntakeUploadPanel` in the image-intake flow.
+
+- **The picker is the primary and only guaranteed door.** Dragging needs a pointer and pasting needs a keyboard with an image already on the clipboard, so neither may ever be the only way in. Keep the `<input>` visually hidden (`sr-only`) with a real `<button>` in front of it.
+- **The whole panel is the drop target**, not just the dashed card: a photo released over the thumbnails or the CTA must still attach rather than make the browser navigate to the image. `preventDefault()` on both `dragover` and `drop`, always.
+- **Track drag nesting with a depth counter, never a boolean.** Entering a child element fires `dragleave` on the element left behind, so a flag switches the highlight off while the pointer is still inside the zone.
+- **Drag-active state** paints on the dashed card only: dashed border in `var(--accent)` plus the selected-surface tint `color-mix(in oklch, var(--accent) var(--state-selected-bg-mix), var(--surface))`, matching the `.state-selected` language. The card's title swaps to a "drop here" label while the drag hovers.
+- **Filter by MIME type and say so.** Anything outside the accepted list (a PDF, a folder, an iPhone HEIC) reuses the surface's existing format error instead of being ignored. A mixed payload attaches what it can and still reports the rest.
+- **A paste listener is document-scoped, and that is only safe with two guards.** Bind it on the document (a `paste` event reaches only the focused element, and after a screenshot nothing in the panel has focus), then: mount the listening surface only in the phase where attaching is valid, so leaving that phase removes the listener, and ignore any paste whose target is an `input`, `textarea`, `select`, or `contenteditable`. A paste carrying no image is left uncancelled so ordinary typing keeps working.
+- **The drag/paste hint is CSS-gated to `md:` and up**, not branched on a viewport hook: neither gesture exists on touch, and a hydration-time read would render the desktop wording first and swap it.
+
+### Ordered attachment list (when the order of the files is data)
+
+When a list of attached files is read as a **sequence** rather than as a set, the order stops being a layout detail and becomes content the user must be able to see and correct. Canonical implementation: the thumbnail grid in `IntakeUploadPanel`, whose photos are read as one conversation from the first to the last.
+
+- **State the position on every tile.** A small numbered badge (pill on `--surface-elevated`, `1px solid var(--border)`, top-left, with a `GripVertical` glyph as the drag affordance). Visible number for sighted users, plus an `sr-only` full phrase ("Photo 2") so the badge is not read as a bare digit.
+- **Two ways to move an item, always both.** Native HTML drag events on the list item for a pointer, and a pair of earlier / later icon buttons on every tile for everything else. Dragging fires no events at all on a touch screen and is unreachable by keyboard, so the buttons are the guaranteed path, not the fallback. No drag-and-drop library (ADR 0010: hand-roll).
+- **Name the direction and the subject in the button label**: "Move photo 2 earlier", never a bare "Move up". Disable, do not hide, the move that would fall off either end.
+- **Announce every move in a polite live region** (`role="status" aria-live="polite"`, `sr-only`) stating the new position and the total. A reorder has no other spoken evidence: the grid rearranges silently.
+- **Route every gesture through one move function** so the live region is written exactly once per move and cannot drift from the list.
+- **Keep the reorder drag out of the file-drop path.** The surface-wide dropzone keys off `dataTransfer.types` containing `"Files"`; an internal reorder carries `text/plain` (also required by Firefox to start a drag at all) and `stopPropagation()`s its own `dragover`/`drop`.
+- **Drag feedback:** the dragged tile at `opacity-50`, the hovered target outlined in `var(--accent)` with a 2px offset. Set `draggable={false}` on the thumbnail image, or the browser starts an image drag instead.
+- **Auto-ordering is a guess about NEW files only.** Sort each incoming batch by its own file dates and append it at the end; never re-sort the whole list on an add, which would silently undo the order the user just set by hand.
+
+### Costed re-do offer (asking for one more input after an expensive step)
+
+When a result screen can be improved by one more input, but getting it means re-running a step the user already paid for (a metered AI read, a paid lookup), offer it as a **priced, pointed, non-blocking** suggestion. Canonical implementation: the product-page-screenshot offer on the image-intake review screen (`IntakeReviewScreen`).
+
+- **Point at the row, never at the screen.** The notice names the specific item it would fix and why that item is weak. A generic "some data may be incomplete" banner is noise, because the user cannot act on it without hunting.
+- **State the cost in the unit the user is metered in**, as a real number, in the same notice: not "this may use more of your quota" but "reading again spends the 3 photos you already uploaded once more, plus the new one". Say why, in one clause, when the cost is counter-intuitive (here: the read is a single pass over the whole batch).
+- **Show the balance when a cap applies**, and when the balance cannot pay for the re-do, keep the notice and drop the button rather than offering a door that leads to a blocked submit.
+- **Never block the primary path.** The notice closes with the way forward without accepting it ("you can save it as is and rename it later"), and the primary CTA stays enabled.
+- **Accepting returns to the input surface with the previous input intact**, so the user adds only what was missing. Discard the derived result (it is about to be replaced), never the inputs.
+- **Surface:** `AlertBanner tone="info"` with the reason list as the body, the cost line at `--text-caption`, and the re-do action in the banner's `action` slot. The offer is derived from live state, so it disappears by itself once the user fixes the item another way.
+
+### Permanent informational note inside a flow (canonical: `AlertBanner tone="info"`)
+
+A rule of use that is always true on a step (not a validation error, not a state that just changed, nothing to dismiss) renders as **`<AlertBanner tone="info">`** with a Lucide icon at 16 px. That is the canonical treatment, and it is the component the design system already owns: `--info` at 9% background and 22% border, body at `--text-body`, `role="note"` by default. Canonical implementation: the pre-upload guidance in `IntakeUploadPanel`.
+
+- **Never hand-roll the tinted box.** A local `div` with its own `color-mix` and its own font size is how the same note ends up in three sizes across three flows.
+- **Emphasise the rule inside the sentence**, not by adding a title: `t.rich` with a `strong` tag at `--font-weight-semibold` / `--text-primary`. The `title` slot is for a note that genuinely has a heading and a body.
+- **One banner, several lines, when the lines are one thought.** Two rules about the same submission share a banner and one icon (`<p>` plus `<p className="mt-1">`); two banners stacked read as an alert wall, and the second one stops being read.
+- **`info` is not `warning`.** A rule that is always true has not materialised into a risk; `warning` is reserved for a condition the user must resolve now (see `ux-copy.md` §6).
+- **The icon must carry meaning alongside the text** so the tone colour is never the only signal (ADR 0006).
+- **A permanent note is not a disclosure.** What every user needs on every pass stays visible; what a minority needs goes behind a labelled trigger beside it, never inside the banner.
+
+**Pending migration.** Two earlier hand-rolled versions of this exact pattern predate the rule and still ship: the step-3 info banner in `OrderCreateForm` and the review-step info banner in `DeliveryCreateWizard`. Both paint `--info` at 6% with 12.5 px text and a 14 px icon, so the same note is visually lighter there than here. They are known deviations to be migrated onto `AlertBanner tone="info"` in a pass of their own; do not copy them, and do not add a third variant.
 
 ### Submit shortcut hint
 
@@ -519,7 +570,62 @@ Rationale: reading left-to-right, the number (the primary information) reaches t
 
 ---
 
-## 15. Design System Usage Rules (anti-patterns)
+## 15. Trend Charts
+
+The dashboard's "Tendencias" section is the system's only charting surface, and its rules are written here rather than per-screen because the next analytical view must inherit them. The canonical implementation is `DashboardLineChart` (hand-rolled SVG, no charting dependency, per `ui-libs-policy.mdc`); the screen-level record is [`fdd-06-dashboard.md`](../product/prd-02-collector-app/frd-06-dashboard/fdd-06-dashboard.md). Series colors come from the semantic tokens, not from a categorical palette (see [visual-foundations.md → Chart series colors](visual-foundations.md)).
+
+### The chart renders 1:1 (measured `viewBox`)
+
+**A chart's `viewBox` must track its measured pixel width**, so one SVG user unit is one CSS pixel and a declared `font-size={12}` really renders at 12px. The component measures its container with a `ResizeObserver` and sets `viewBox="0 0 {measuredWidth} 220"`.
+
+Do **not** give a chart a fixed `viewBox` plus `width:100%`. That scales _everything_ with the container, type included: the previous fixed `600×220` viewBox rendered axis labels at 5.5px in a three-column grid and 5.0px on a 375px phone. There is no CSS escape hatch, `vector-effect: non-scaling-size` is unimplemented in every browser, which is why Highcharts, ECharts, Recharts, nivo, Vega and Observable Plot all measure instead. A measured width of `0` means "not laid out" (`display:none`, jsdom), never "0px wide", and must be discarded in favour of a fallback so the plot cannot collapse.
+
+Everything below depends on this contract. Break it and every pixel constant in the chart silently becomes a ratio.
+
+### 12px is the floor for chart text
+
+Axis labels, legends, and tooltips never go below **12px**. IBM Carbon's type scale has no token under it, Atlassian treats 12px as fine-print-only, the Urban Institute style guide specifies 12px for axis labels, and Chart.js defaults there. Datawrapper's rule is ">12px", with the explicit instruction that when the labels do not fit you **enlarge the chart rather than shrink the type**, which is what the column rule below does.
+
+### Column count comes from a minimum card width, not from breakpoints
+
+A grid of charts sizes itself by **minimum card width**:
+
+```
+grid-cols-[repeat(auto-fit,minmax(min(100%,460px),1fr))]
+```
+
+Viewport breakpoints are the wrong input, because the content column also narrows when the app sidebar expands: a `md:grid-cols-2` rule handed an 820px tablet two 320px plots, exactly the cramping the layout exists to prevent. `min(100%, …)` keeps a single card from overflowing a container narrower than the floor.
+
+**460px** is the floor for a month-bucketed line: it leaves ~428px of plot, enough for twelve 12px month labels. Measured results at that value: a 1440px viewport resolves to 2 columns at 478px of plot, 820px to 1 column at 692px, and 375px to 1 column at 271px with no horizontal overflow. Because the dashboard content column is capped at `max-w-6xl` (1152px), the rule never resolves to three columns, which is the intent.
+
+Precedent for deriving columns from a minimum panel width: Grafana's auto-grid uses a 448px standard column width (capped at three), SAP Fiori sets a 20rem/320px minimum chart-card width, and Datawrapper's small-multiples "auto" mode derives its column count from a minimum panel size.
+
+### Aspect ratio: aim near 2:1
+
+At two columns a trend plot is ~478×220 ≈ **2.18:1**, inside the band between Tufte's ~1.5:1 and Cleveland's banking-to-45° ~2.5:1, and near Observable Plot's 1.62 default. Both ends of that band are real failures, not preferences: a full-width single column would be 1008×220 ≈ 4.6:1, and Heer & Agrawala ("Multi-Scale Banking to 45°", IEEE InfoVis 2006) show with the Mauna Loa CO₂ series that a very wide ratio (7.87) makes the low-frequency trend bend hard to see. The old three-column layout was ~1.37:1, cramped the other way.
+
+### Density-aware markers and labels
+
+Decoration that stops being readable is removed, never overlapped:
+
+- **Point markers** are dropped once the spacing between points falls under `MIN_MARKER_SPACING` (14px), because the markers are 8px across and start touching. Below the threshold only the **hovered** point keeps a marker, so the crosshair still has a target.
+- **Axis labels** thin to the capacity implied by `MIN_LABEL_SPACING` (36px), keeping evenly spaced ticks and **always the final month**, so the series' most recent bucket is never anonymous.
+
+### A time axis prints the year when the range spans one
+
+When a range crosses a year boundary, the axis prints the **year** at the first tick and wherever the year changes, as a `<tspan>` under the month, so a multi-year range never shows "ago … ago" for two different years. The hover tooltip header carries the year on the same condition.
+
+### The trailing-card rule (house rule)
+
+**When a grid of cards would leave the last row half empty, add a card rather than stretch the trailing one full width.** No design system publishes guidance on this, so it is a house rule and named as one.
+
+The reasoning is Gestalt: NN/g's similarity principle holds that an item differing in size within a group reads as _not belonging to_ the group, and their visual-design principles hold that bigger reads as more important. Stretching the trailing card would therefore say "this chart is a different kind of thing, and more important than its siblings", which is false. The dashboard's trends section resolves this by shipping a fourth chart (comprometido por mes) so the two-column grid closes evenly.
+
+If no honest fourth metric exists, leave the gap. Inventing a chart to fill space is worse than white space.
+
+---
+
+## 16. Design System Usage Rules (anti-patterns)
 
 Before implementing UI work, decide whether the task is mainly visual foundations or interface patterns, read the matching file in `docs/design/`, and reuse the established pattern before inventing a new one. If a new reusable rule is needed, update the matching design doc in the same change.
 
@@ -536,3 +642,5 @@ Do **not**:
 - Render disabled state via opacity — use the muted token.
 - Apply the Chip-Eyebrow + Top-Accent pattern to homogeneous surfaces (wizard steps, list rows, modal/drawer internals), or use a tone outside the frozen cross-module vocabulary.
 - Invent a new `tone`, `variant`, or reusable pattern without an ADR — extend the canonical component in place and document it.
+- Give a chart a fixed `viewBox` plus `width:100%` — that scales the type along with the drawing; measure the container instead (§15).
+- Size a grid of charts by viewport breakpoints, or stretch a trailing card to fill a half-empty row (§15).

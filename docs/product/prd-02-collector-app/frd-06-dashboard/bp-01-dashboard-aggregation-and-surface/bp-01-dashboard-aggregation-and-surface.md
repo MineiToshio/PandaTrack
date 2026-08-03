@@ -12,7 +12,7 @@ children:
   - WO-04
   - WO-05
   - WO-06
-last_updated: 2026-07-10
+last_updated: 2026-08-03
 implementation_status: IMPLEMENTED
 ---
 
@@ -26,13 +26,13 @@ Define how the read-only collector dashboard is built: one shared aggregation/da
 
 - a dashboard data-access module under `src/lib/data/dashboard/` (queries + aggregation; no mutations)
 - shared period helpers: calendar-month boundaries and budget-cycle boundaries (from `User.budgetResetDayOfMonth`), computed in the user's timezone
-- shared base-currency rollup helper that converts per-order amounts via stored exchange rate and **excludes** `needsExchangeRateUpdate` orders, returning both the total and an `isPartial` flag + excluded count (`FR-06-13`)
+- shared base-currency rollup helper that converts per-order amounts via stored exchange rate and **excludes** orders that need FX reconciliation, derived through `needsFxReconciliation` (`src/lib/fx/reconciliation.ts`) so the exclusion matches the orders list exactly, returning both the total and an `isPartial` flag + excluded count (`FR-06-13`)
 - shared outstanding-balance helper reused from the order domain (`calculatePaymentSummary` / `totalCost − Σ payments`)
 - the dashboard route `src/app/[locale]/(app)/dashboard/page.tsx` (Server Component) replacing the current placeholder
 - route-level `_components/` for each dashboard zone (cash/obligations, budget, spend, activity, collection)
-- a client date-range control that drives the three range-controlled trend charts (gasto por mes, hechos vs llegados, deuda viva), placed in the header of one scoped "Gráficos / Tendencias" section
+- a client date-range control that drives the four range-controlled trend charts (gasto por mes, comprometido por mes, deuda viva, hechos vs llegados), placed in the header of one scoped "Gráficos / Tendencias" section
 - charting primitives (per `ui-libs-policy.mdc`; hand-rolled or an approved lib): SVG line charts with hover tooltips, donuts (category spend + arrival punctuality), a framed mini bar chart (próximos meses), and segmented/stacked bars (pagado-vs-pendiente, order-status)
-- the additional derived surfaces the aggregation layer must feed: pagado-vs-pendiente split (`FR-06-19`), próximos-pagos itemized list (`FR-06-18`), arrival punctuality (`FR-06-17`), product count by type (`FR-06-20`), and the deuda-viva trend (`FR-06-21`)
+- the additional derived surfaces the aggregation layer must feed: pagado-vs-pendiente split (`FR-06-19`), próximos-pagos itemized list (`FR-06-18`), arrival punctuality (`FR-06-17`), product count by type (`FR-06-20`), the deuda-viva trend (`FR-06-21`), and the comprometido-por-mes trend (`FR-06-24`)
 - `POSTHOG_EVENTS.DASHBOARD.*` analytics constants in `src/lib/constants.ts`
 - `dashboard` locale namespaces in `src/i18n/locales/{es,en}/dashboard.json`
 
@@ -44,6 +44,8 @@ Define how the read-only collector dashboard is built: one shared aggregation/da
 - Money stays in minor units through all aggregation; formatting to the base currency happens only at the view edge.
 - Period boundaries (calendar month, budget cycle) are computed in the user's timezone to avoid off-by-one bucketing.
 - The date-range control is the single interactive boundary; it is scoped to the trend charts only. Current-period metrics (this month, budget cycle) are computed server-side for the fixed active period and never react to the range control (`FR-06-12`).
+- Range resolution owns the first-activity clamp (`FR-06-25`, `BR-06-11`): every preset window is trimmed forward to the month of the collector's earliest activity before any series is bucketed, so the clamp is applied once, in the period layer, rather than per chart. Custom ranges bypass it. Only the leading run is trimmed; interior months always survive as zero buckets, which is what keeps the time axis evenly spaced.
+- Charts render **1:1**: the SVG `viewBox` tracks the container's measured pixel width so declared type sizes are real, and the charts grid derives its column count from a minimum card width rather than viewport breakpoints (the content column also narrows when the app sidebar expands). Both rules, plus the 12px chart-text floor, the ~2:1 aspect target, density-aware markers/labels, and the trailing-card rule, are system-level and documented in [interface-patterns.md § 15](../../../../design/interface-patterns.md).
 - The FX-reconciliation exclusion is centralized in the rollup helper so every money surface behaves identically and the partial-totals warning is driven by one source of truth.
 - The dashboard renders on the server in one pass; zones are server components fed by the single aggregation payload, keeping the client bundle to the range control and charts.
 - Every zone has a coherent empty / first-run state (`FR-06-22`): with no data it shows a calm empty or configure state with first-action CTAs, never blank widgets or fabricated data. The full layout, states, responsive/mobile behavior, and the adaptive puntualidad donut are documented in the FDD.
@@ -52,13 +54,14 @@ Define how the read-only collector dashboard is built: one shared aggregation/da
 
 - aggregation contract
   - input: `userId`, `baseCurrencyCode`, `timezone`, `budgetAmount`, `budgetResetDayOfMonth`, and the selected chart range
-  - output: a single `DashboardData` object grouping the cash/obligations block, the budget block, the spend block (current-month total + monthly series), the activity block (recent / upcoming / overdue), and the collection block (totals, status distribution, by-type, top stores)
+  - output: a single `DashboardData` object grouping the cash/obligations block, the budget block, the spend block (current-month total + monthly series), the committed-trend block (`Σ totalCost` by `orderDate` month, `FR-06-24`), the outstanding-trend block, the activity block (recent / upcoming / overdue), and the collection block (totals, status distribution, by-type, top stores)
   - every money field is base-currency minor units and carries the `isPartial` / excluded-count context where `FR-06-13` applies
 - base-currency rollup contract
-  - input: a set of orders (or payments) with their `currencyCode`, `exchangeRate`, `needsExchangeRateUpdate`
-  - output: `{ totalMinor, isPartial, excludedOrderCount }` — flagged orders excluded from `totalMinor`, surfaced via `isPartial`
+  - input: a set of orders (or payments) with their `currencyCode`, `exchangeRate`, `exchangeRateBaseCode`, plus the collector's base currency
+  - output: `{ totalMinor, isPartial, excludedOrderCount }` — orders that `needsFxReconciliation` reports as pending are excluded from `totalMinor` and surfaced via `isPartial`
 - period contract
   - `getCalendarMonthRange(now, timezone)` and `getBudgetCycleRange(now, timezone, resetDay)` return `{ start, end }` half-open intervals
+  - `resolveDashboardRange(selection, now, timezone, earliestActivity)` turns the collector's selection into a whole-month half-open window, applying the first-activity clamp to every preset and leaving a custom range untouched (`FR-06-25`)
 - obligations contract
   - "a pagar este mes" = Σ outstanding of orders with `expectedDeliveryFrom` in the current month + Σ outstanding of overdue orders; orders without `expectedDeliveryFrom` excluded and returned separately as the "sin fecha" figure (`BR-06-02`)
 - read-only contract
@@ -76,7 +79,7 @@ Define how the read-only collector dashboard is built: one shared aggregation/da
 ## Dependencies
 
 - order, payment, and outstanding-balance logic from [`FRD-05`](../../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md)
-- FX-reconciliation flag and flow from [`FRD-05 · BP-02 · WO-07`](../../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-07-currency-reconciliation-filter-and-bulk-fx-reconciliation.md)
+- FX-reconciliation derivation and flow from [`FRD-05 · BP-02 · WO-07`](../../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-07-currency-reconciliation-filter-and-bulk-fx-reconciliation.md)
 - persisted `OrderItem.deliveryState` from [`FRD-08`](../../frd-08-delivery-management/frd-08-delivery-management.md)
 - base currency, `budgetAmount`, `budgetResetDayOfMonth`, and `timezone` from [`FRD-07`](../../frd-07-user-settings/frd-07-user-settings.md)
 - the private app shell and dashboard route slot from [`FRD-03`](../../frd-03-collector-app-shell/frd-03-collector-app-shell.md)

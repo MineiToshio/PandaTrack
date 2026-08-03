@@ -9,7 +9,7 @@ source_features:
   - FEAT-0016
 source_issue: 106
 implementation_status: IMPLEMENTED
-last_updated: 2026-07-10
+last_updated: 2026-08-03
 ---
 
 # WO-01 Dashboard Aggregation Foundation
@@ -22,7 +22,7 @@ Establish the read-only dashboard data layer that every dashboard zone depends o
 
 - dashboard data-access module under `src/lib/data/dashboard/` (queries + aggregation only; no mutations)
 - shared period helpers: `getCalendarMonthRange(now, timezone)` and `getBudgetCycleRange(now, timezone, resetDay)` returning half-open `{ start, end }` intervals in the user's timezone
-- centralized base-currency rollup helper: given orders/payments with `currencyCode` + `exchangeRate` + `needsExchangeRateUpdate`, returns `{ totalMinor, isPartial, excludedOrderCount }`, excluding flagged orders (`FR-06-13`)
+- centralized base-currency rollup helper: given orders/payments with `currencyCode` + `exchangeRate` + `exchangeRateBaseCode`, returns `{ totalMinor, isPartial, excludedOrderCount }`, excluding the orders that `needsFxReconciliation` (`src/lib/fx/reconciliation.ts`) reports as pending against the collector's base currency, which is the same derivation the orders list and its `?fxPending=true` filter use (`FR-06-13`, ADR 0024)
 - outstanding-balance aggregation reusing the order domain's payment-summary logic (`totalCost − Σ payments`, never negative)
 - the `getDashboardData(userId, range)` entry point returning the single `DashboardData` shape consumed by all zones (cash/obligations, budget, spend, activity, collection); [`WO-04`](wo-04-disbursed-spend-zone.md) later widened `range` into a range **selection** (preset or custom), resolved server-side because presets depend on the collector's timezone and `all` depends on their data
 - shared TypeScript types for `DashboardData` and its blocks
@@ -38,8 +38,8 @@ Establish the read-only dashboard data layer that every dashboard zone depends o
 
 ## Requirements
 
-- `FR-06-02` through `FR-06-14` (data/computation portions)
-- `BR-06-01` through `BR-06-08`
+- `FR-06-02` through `FR-06-14` (data/computation portions), plus `FR-06-24` and `FR-06-25`
+- `BR-06-01` through `BR-06-08`, plus `BR-06-11`
 
 ## Blueprints
 
@@ -54,24 +54,27 @@ Establish the read-only dashboard data layer that every dashboard zone depends o
 - budget consumption = Σ `OrderPayment.amount` in the current budget cycle ÷ `budgetAmount` (`FR-06-06`, `BR-06-03`)
 - disbursed this month = Σ `OrderPayment.amount` with `paymentDate` in the current calendar month (`FR-06-07`, `BR-06-04`)
 - monthly disbursed series = Σ payments grouped by `paymentDate` month over the range (`FR-06-08`)
+- monthly committed series = Σ `Order.totalCost` grouped by `orderDate` month over the range, non-cancelled and FX-excluded like every other rollup (`FR-06-24`); it is the counterpart of the disbursed series and is never merged into it (`BR-06-05`)
 - placed vs arrived = orders by `orderDate` month vs orders by arrival month, "arrived" = any item left `NONE` state (`FR-06-09`, `BR-06-06`)
 - collection totals = non-cancelled order count, Σ item quantity, status distribution, by-product-type, top stores (`FR-06-11`)
-- all base-currency totals exclude `needsExchangeRateUpdate` orders and carry the partial flag (`FR-06-13`); `CANCELLED` orders excluded from rollups (`BR-06-07`)
+- all base-currency totals exclude the orders derived as needing FX reconciliation and carry the partial flag (`FR-06-13`); `CANCELLED` orders excluded from rollups (`BR-06-07`)
 
 ## E2E Acceptance Tests
 
 This foundation slice is exempt from the "must include an E2E acceptance path" rule because by design it ships no UI. Validation is done via unit tests covering, at minimum:
 
 - calendar-month and budget-cycle boundaries are correct, including the reset-day edge and a non-UTC timezone
-- the FX rollup excludes flagged orders, returns `isPartial = true` and the correct excluded count, and sums only reconciled orders
+- the FX rollup excludes the orders the shared derivation reports as pending (including a foreign-currency order with no rate at all), returns `isPartial = true` and the correct excluded count, and sums only convertible orders
 - outstanding balance never goes negative and overdue balances fold into the current month while future-dated and no-date balances do not
 - disbursed totals count partial payments in the month of their `paymentDate`
 - `CANCELLED` orders are excluded from every rollup, and "arrived" is true once any item leaves `NONE`
+- a preset window is clamped forward to the month of the first recorded activity, a custom range is not, and an interior empty month survives as a zero bucket (`FR-06-25`, `BR-06-11`)
+- the committed-per-month series buckets an order's full `totalCost` in its `orderDate` month regardless of when it is paid (`FR-06-24`)
 
 ## Notes
 
 - Reuse existing order/payment derivations from [`FRD-05`](../../../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md) and persisted `OrderItem.deliveryState` from [`FRD-08`](../../../frd-08-delivery-management/frd-08-delivery-management.md); do not re-implement balance or delivery-state logic.
-- The FX-pending signal is the persisted `Order.needsExchangeRateUpdate` flag, consistent with [`FRD-05 · BP-02 · WO-07`](../../../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-07-currency-reconciliation-filter-and-bulk-fx-reconciliation.md).
+- The FX-pending signal is the derived `needsFxReconciliation` predicate (`src/lib/fx/reconciliation.ts`), the same one used by [`FRD-05 · BP-02 · WO-07`](../../../frd-05-order-payment-shipment/bp-02-order-workspace-and-list-experience/work-orders/wo-07-currency-reconciliation-filter-and-bulk-fx-reconciliation.md); the rollup must call it rather than apply its own exclusion rule.
 - All money stays in minor units through aggregation.
 - No base-currency conversion helper existed before this slice; the direction is fixed by the order form copy (`exchangeRate` = "how many base-currency units equal 1 order-currency unit"), so base = `round(orderMinor × exchangeRate)`.
 
@@ -82,3 +85,5 @@ Resolutions for the parent FRD's open questions, applied by this foundation slic
 - **Payments on later-`CANCELLED` orders**: excluded from the disbursed-spend series and every rollup. `BR-06-07` (cancelled orders excluded from all rollups) governs; refund-vs-sunk accounting is out of MVP scope.
 - **"Gasto por tipo" and "top tiendas"**: use **committed value**, all-time, base-currency, FX-excluded. [`WO-06`](wo-06-collection-overview-zone.md) later refined by-type to distribute each order's `totalCost` across its items (weighted by line value, falling back to quantity), because summing `unitPrice × quantity` reported zero for orders priced only at order level. Top stores rank by `Σ totalCost`. Labeled as committed per `BR-06-05`; neither surface is driven by the trend range.
 - **"Arrived" bucketing date and arrival punctuality (`FR-06-17`)**: originally approximated here against `expectedDeliveryFrom` and against the current date. [`WO-05`](wo-05-order-activity-zone.md) replaced both with dated delivery evidence (the dispatch date of the order's first non-cancelled delivery) before surfacing them, because judging the window against _today_ reclassified every past arrival as late over time.
+- **Range resolution clamps to the collector's first activity** (`FR-06-25`, `BR-06-11`). `resolveDashboardRange` trims the leading months of every preset window forward to the month of the earliest recorded activity, so no series plots months that predate the collector's history. The clamp lives here, in the period layer, so it is applied once for every trend series rather than per chart. A custom range is exempt. **Only the leading run is trimmed**: an interior empty month stays as a zero bucket, because removing it would put unequal intervals on a time axis and misrepresent the slope between the points it joins.
+- **A committed-per-month series** (`FR-06-24`) is built here alongside the disbursed and outstanding series, reusing the same month enumeration and the same base-currency rollup, so all three carry the FX-partial flag through one code path.

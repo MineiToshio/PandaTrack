@@ -9,7 +9,7 @@ source_features:
   - FEAT-0016
 source_issue: 107
 implementation_status: IMPLEMENTED
-last_updated: 2026-07-10
+last_updated: 2026-08-03
 ---
 
 # WO-02 Cash and Obligations Zone
@@ -60,7 +60,7 @@ Implement the dashboard's cash-planning zone end-to-end: "a pagar este mes" (cur
 - An order due in the current month with a balance and an overdue order with a balance both contribute to "a pagar este mes".
 - An order with no expected-arrival date appears only in "deuda sin fecha" and not in the dated totals.
 - The forward breakdown shows per-month outstanding for the next months.
-- When an order is FX-flagged, the affected totals exclude it and the partial-totals warning is shown with a reconcile link.
+- When an order reads as FX-pending, the affected totals exclude it and the partial-totals warning is shown with a reconcile link.
 - With no orders, the zone shows its empty state.
 
 ## Analytics

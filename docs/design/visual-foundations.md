@@ -167,7 +167,24 @@ In light mode the base status color does not reach 4.5:1 on a 14% chip, so each 
 
 ### Categorical palette
 
-There is **no categorical palette** in the system (see [ADR 0004](decisions/0004-categorical-palette-removal.md)). Category identity is carried by **Lucide icons in `--accent-cool` with an adjacent label**, not by per-category colors. The MVP ships no charts or analytical views; carrying unused color tokens would be visual and technical debt and would tempt accidental decorative use. When a future data-visualization need arrives, a fresh `--chart-1…N` set is to be **designed from scratch** with proper data-viz calibration (perceptual uniformity, color-blind safety, ordered sequences) — not revived from any historical reserve.
+There is **no categorical palette** in the system (see [ADR 0004](decisions/0004-categorical-palette-removal.md)). Category identity is carried by **Lucide icons in `--accent-cool` with an adjacent label**, not by per-category colors. Carrying unused color tokens would be visual and technical debt and would tempt accidental decorative use.
+
+### Chart series colors
+
+Charts do ship: the dashboard's "Tendencias" section renders four line charts (see [interface-patterns.md § 15](interface-patterns.md)), and the collection zone renders donuts and bars. They take their series colors from the **existing semantic tokens** — `--accent`, `--accent-cool`, `--warning`, `--success` — and introduce no `--chart-*` set.
+
+In the **trend charts**, nothing here is a category:
+
+- Three of the four trend charts are **single-series** (gasto por mes `--accent`, comprometido por mes `--accent-cool`, deuda viva `--warning`). A single line has nothing to be distinguished from, so its color is a section-identity choice, not an encoding.
+- Only **pedidos hechos vs llegados** puts two series in one plot (`--accent` vs `--accent-cool`), and two is a contrast, not a scale.
+- Each chart is self-contained in its own card, so the **same accent repeating across separate cards is deliberate**, not a category collision: `--accent` means "spend" in one card and "placed" in another, and the two are never read against each other.
+
+The **collection zone is the exception, and it is a known deviation.** `CATEGORY_COLORS` in `DashboardCollectionZone.tsx` is a four-color categorical palette (`--accent`, `--accent-cool`, `--accent-warm`, `--success`) assigned **by rank** — `CATEGORY_COLORS[index]` over a list sorted by value, with a long tail folded into a neutral "other". Two consequences worth naming rather than leaving to be rediscovered:
+
+- It is the improvised categorical set ADR 0004 says should be designed from scratch, so it is debt, not precedent. Do not copy it into a new chart.
+- Assigning color by rank means **color does not follow the entity**: when one product type overtakes another, the two swap colors, and a reader comparing two dashboard visits sees the same hue meaning different things. The fix, when this is picked up, is to key color off a stable property of the category rather than its position in a sorted list.
+
+ADR 0004's forward-looking clause is unchanged and still governs: the day a single plot needs **N mutually distinguishable categories**, a fresh `--chart-1…N` set is to be **designed from scratch** with proper data-viz calibration (perceptual uniformity, color-blind safety, ordered sequences), not improvised from the accents above and not revived from any historical reserve. Until then, color in a chart still obeys the system rule that meaning never rests on hue alone: every series carries a text legend, a direct value label, or a hover tooltip naming it ([ADR 0006](decisions/0006-color-blindness-icon-label-contract.md)).
 
 ## Typography
 

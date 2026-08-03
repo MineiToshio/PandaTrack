@@ -121,10 +121,38 @@ function getTrailingMonthsRange(now: Date, timeZone: string, months: number): Da
 }
 
 /**
+ * Trims months that precede the collector's first recorded activity.
+ *
+ * Those months are not "a month where nothing happened" — they are outside the series' domain
+ * entirely, so plotting them buys a flat run of zeros that pushes the real data into a fraction of
+ * the plot. A collector one month into the product asking for "last 12 months" would otherwise
+ * spend 11/12 of the chart on months that predate their account.
+ *
+ * Only the leading run is trimmed. Interior gaps are left exactly where they are: an empty month
+ * between two active ones is real data, and closing it up would put unequal time intervals on a
+ * time axis, which misrepresents the slope between the points it joins (Few, *Line Graphs and
+ * Irregular Intervals*; Tufte on scales that must "march to the very end in a consistent fashion").
+ */
+function clampToFirstActivity(range: DateRange, earliestActivity: Date | null): DateRange {
+  if (!earliestActivity) {
+    return range;
+  }
+  const activityMonth = utcMidnight(earliestActivity.getUTCFullYear(), earliestActivity.getUTCMonth(), 1);
+  if (activityMonth.getTime() <= range.start.getTime() || activityMonth.getTime() >= range.end.getTime()) {
+    return range;
+  }
+  return { start: activityMonth, end: range.end };
+}
+
+/**
  * Turns the collector's range selection into a concrete half-open month window.
  * Presets are anchored on the current month in the collector's timezone; `all` starts at the month
  * of their earliest recorded activity and falls back to the default window when they have none.
  * A custom range is snapped outward to whole months, since every trend series is bucketed by month.
+ *
+ * Every resolved window is then clamped forward to the collector's first activity, so no preset
+ * ever renders months that predate their history. A custom range is exempt: the collector named
+ * those bounds explicitly, and silently moving them would contradict the dates shown in the control.
  */
 export function resolveDashboardRange(
   selection: DashboardRangeSelection,
@@ -148,24 +176,28 @@ export function resolveDashboardRange(
   const { year, monthIndex } = getCivilDate(now, zone);
   const end = utcMidnight(year, monthIndex + 1, 1);
 
-  switch (selection.preset) {
-    case "3m":
-      return getTrailingMonthsRange(now, zone, 3);
-    case "12m":
-      return getTrailingMonthsRange(now, zone, 12);
-    case "ytd":
-      return { start: utcMidnight(year, 0, 1), end };
-    case "all": {
-      if (!earliestActivity) {
-        return getDefaultDashboardRange(now, zone);
+  const preset = ((): DateRange => {
+    switch (selection.preset) {
+      case "3m":
+        return getTrailingMonthsRange(now, zone, 3);
+      case "12m":
+        return getTrailingMonthsRange(now, zone, 12);
+      case "ytd":
+        return { start: utcMidnight(year, 0, 1), end };
+      case "all": {
+        if (!earliestActivity) {
+          return getDefaultDashboardRange(now, zone);
+        }
+        const start = utcMidnight(earliestActivity.getUTCFullYear(), earliestActivity.getUTCMonth(), 1);
+        return start.getTime() < end.getTime() ? { start, end } : getDefaultDashboardRange(now, zone);
       }
-      const start = utcMidnight(earliestActivity.getUTCFullYear(), earliestActivity.getUTCMonth(), 1);
-      return start.getTime() < end.getTime() ? { start, end } : getDefaultDashboardRange(now, zone);
+      case "6m":
+      default:
+        return getDefaultDashboardRange(now, zone);
     }
-    case "6m":
-    default:
-      return getDefaultDashboardRange(now, zone);
-  }
+  })();
+
+  return clampToFirstActivity(preset, earliestActivity);
 }
 
 /** Month bucket of a domain date, keyed by its UTC calendar components. */

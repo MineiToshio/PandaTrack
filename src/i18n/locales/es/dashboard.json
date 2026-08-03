@@ -41,6 +41,8 @@
     "customLabel": "Rango personalizado",
     "emptyTitle": "Aún no hay datos suficientes.",
     "partialNote": "Solo cuenta pedidos con tipo de cambio reconciliado, así que la serie es parcial.",
+    "clampedNote": "Tu historial empieza en {month}, así que los gráficos parten de ahí.",
+    "loadingLabel": "Actualizando los gráficos con el nuevo rango.",
     "presets": {
       "3m": "Últimos 3 meses",
       "6m": "Últimos 6 meses",
@@ -54,6 +56,13 @@
       "currentMonthLabel": "Desembolsado este mes",
       "seriesName": "Gasto",
       "chartAria": "Gasto por mes, {count} meses"
+    },
+    "committed": {
+      "title": "Comprometido por mes",
+      "subtitle": "El valor de los pedidos que hiciste cada mes, los pagues cuando los pagues.",
+      "totalLabel": "Comprometido en el rango",
+      "seriesName": "Comprometido",
+      "chartAria": "Comprometido por mes, {count} meses"
     },
     "debt": {
       "title": "Deuda viva",

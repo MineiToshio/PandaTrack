@@ -6,17 +6,17 @@ This folder is the source of truth for PandaTrack's design system — the "Velve
 
 Read this file first, then open the matching topic document.
 
-| Document                                       | Open it for                                                                                                                                                                                                           |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [visual-foundations.md](visual-foundations.md) | Color (light + dark), typography, spacing, radius, surfaces & elevation, gradients, number/currency formatting.                                                                                                       |
-| [tokens-css.md](tokens-css.md)                 | The literal CSS-variable contract (the `@theme` block, `:root[data-theme]` overrides, palettes, recipes) — the human-readable mirror of `src/app/globals.css`.                                                        |
-| [interface-patterns.md](interface-patterns.md) | Layout & app shell, page hero & section titles, interaction states, buttons & controls, navigation, modals & overlays, forms, the Chip-Eyebrow + Top-Accent pattern, status chips, toasts, responsive, accessibility. |
-| [motion.md](motion.md)                         | Motion token taxonomy, the transform/opacity rule, reduced-motion policy, View Transitions, microinteraction recipes.                                                                                                 |
-| [states.md](states.md)                         | Cross-cutting empty / loading / error states — skeleton vs spinner, error tiers, Sentry ownership, mascot policy.                                                                                                     |
-| [ux-copy.md](ux-copy.md)                       | Voice (constant) + tone (by context), the do/don't library, neutral Spanish, copy patterns for empty states, banners, errors, confirmations, toasts, CTAs, helper text.                                               |
-| [components.md](components.md)                 | The component map: what exists, when to use which, and where the canonical code lives. Read **before building any UI**.                                                                                               |
-| [decisions/](decisions/)                       | The accepted ADRs (0001–0015) that govern the system.                                                                                                                                                                 |
-| [PLAYBOOK.md](PLAYBOOK.md)                     | The operational playbook — the mandatory workflow, anti-patterns, and self-audit checklist for building UI in this repo.                                                                                              |
+| Document                                       | Open it for                                                                                                                                                                                                                         |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [visual-foundations.md](visual-foundations.md) | Color (light + dark), typography, spacing, radius, surfaces & elevation, gradients, number/currency formatting.                                                                                                                     |
+| [tokens-css.md](tokens-css.md)                 | The literal CSS-variable contract (the `@theme` block, `:root[data-theme]` overrides, palettes, recipes) — the human-readable mirror of `src/app/globals.css`.                                                                      |
+| [interface-patterns.md](interface-patterns.md) | Layout & app shell, page hero & section titles, interaction states, buttons & controls, navigation, modals & overlays, forms, the Chip-Eyebrow + Top-Accent pattern, status chips, toasts, responsive, accessibility, trend charts. |
+| [motion.md](motion.md)                         | Motion token taxonomy, the transform/opacity rule, reduced-motion policy, View Transitions, microinteraction recipes.                                                                                                               |
+| [states.md](states.md)                         | Cross-cutting empty / loading / error states — skeleton vs spinner, error tiers, Sentry ownership, mascot policy.                                                                                                                   |
+| [ux-copy.md](ux-copy.md)                       | Voice (constant) + tone (by context), the do/don't library, neutral Spanish, copy patterns for empty states, banners, errors, confirmations, toasts, CTAs, helper text.                                                             |
+| [components.md](components.md)                 | The component map: what exists, when to use which, and where the canonical code lives. Read **before building any UI**.                                                                                                             |
+| [decisions/](decisions/)                       | The accepted ADRs (0001–0015) that govern the system.                                                                                                                                                                               |
+| [PLAYBOOK.md](PLAYBOOK.md)                     | The operational playbook — the mandatory workflow, anti-patterns, and self-audit checklist for building UI in this repo.                                                                                                            |
 
 ## How the design system is enforced
 
@@ -65,7 +65,6 @@ PandaTrack is dark-first in feel, contrast-led, softly rounded, and youthful wit
 - `src/components/core/Typography.tsx` — body text scale.
 - `src/components/core/Heading.tsx` — heading scale.
 - `src/components/core/Button/` — button variants.
-- `src/components/modules/AppPageHero.tsx` — private-app page intro header.
 - `src/components/modules/SectionTitleWithAccent.tsx` — in-page section title row.
 
 ## Rule for new reusable variables

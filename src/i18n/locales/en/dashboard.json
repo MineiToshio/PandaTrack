@@ -41,6 +41,8 @@
     "customLabel": "Custom range",
     "emptyTitle": "Not enough data yet.",
     "partialNote": "Only orders with a reconciled exchange rate count, so this series is partial.",
+    "clampedNote": "Your history starts in {month}, so the charts start there.",
+    "loadingLabel": "Updating the charts with the new range.",
     "presets": {
       "3m": "Last 3 months",
       "6m": "Last 6 months",
@@ -54,6 +56,13 @@
       "currentMonthLabel": "Disbursed this month",
       "seriesName": "Spend",
       "chartAria": "Spend by month, {count} months"
+    },
+    "committed": {
+      "title": "Committed by month",
+      "subtitle": "The value of the orders you placed each month, whenever you end up paying them.",
+      "totalLabel": "Committed in range",
+      "seriesName": "Committed",
+      "chartAria": "Committed by month, {count} months"
     },
     "debt": {
       "title": "Live debt",

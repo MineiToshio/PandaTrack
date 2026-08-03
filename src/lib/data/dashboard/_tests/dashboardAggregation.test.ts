@@ -14,7 +14,7 @@ function makeOrder(overrides: Partial<DashboardOrderInput> & { id: string }): Da
     expectedDeliveryTo: null,
     currencyCode: "USD",
     exchangeRate: null,
-    needsExchangeRateUpdate: false,
+    exchangeRateBaseCode: "USD",
     totalCost: 0,
     status: "OPEN",
     store: { id: "store-1", name: "Store One", slug: "store-one" },
@@ -30,7 +30,7 @@ function makeDelivery(overrides: Partial<DashboardDeliveryInput> & { id: string 
     cost: 0,
     currencyCode: "USD",
     exchangeRate: null,
-    needsExchangeRateUpdate: false,
+    exchangeRateBaseCode: "USD",
     deliveryDate: utc(2026, 6, 1),
     status: "IN_TRANSIT",
   };
@@ -175,7 +175,7 @@ describe("buildDashboardData - spend and budget", () => {
           cost: 5000,
           currencyCode: "EUR",
           exchangeRate: 1.1,
-          needsExchangeRateUpdate: true,
+          exchangeRateBaseCode: null,
           deliveryDate: utc(2026, 6, 10),
         }),
         makeDelivery({ id: "usd", cost: 300, deliveryDate: utc(2026, 6, 10) }),
@@ -251,6 +251,64 @@ describe("buildDashboardData - spend and budget", () => {
   });
 });
 
+describe("buildDashboardData - committed trend", () => {
+  const range = { start: utc(2026, 0, 1), end: utc(2026, 3, 1) }; // Jan, Feb, Mar 2026
+
+  it("books an order's full value in the month it was placed, not when it is paid", () => {
+    const data = build(
+      [
+        makeOrder({
+          id: "jan",
+          orderDate: utc(2026, 0, 10),
+          totalCost: 10000,
+          // Paid across February and March; none of that moves the committed series.
+          payments: [
+            { amount: 4000, paymentDate: utc(2026, 1, 5) },
+            { amount: 6000, paymentDate: utc(2026, 2, 5) },
+          ],
+        }),
+      ],
+      { range },
+    );
+    expect(data.committedTrend.series).toEqual([
+      { year: 2026, month: 1, totalMinor: 10000 },
+      { year: 2026, month: 2, totalMinor: 0 },
+      { year: 2026, month: 3, totalMinor: 0 },
+    ]);
+  });
+
+  it("sums every order placed in the same month", () => {
+    const data = build(
+      [
+        makeOrder({ id: "a", orderDate: utc(2026, 1, 3), totalCost: 2500 }),
+        makeOrder({ id: "b", orderDate: utc(2026, 1, 27), totalCost: 1500 }),
+      ],
+      { range },
+    );
+    expect(data.committedTrend.series.map((month) => month.totalMinor)).toEqual([0, 4000, 0]);
+  });
+
+  it("excludes cancelled orders and flags FX-pending exclusions as partial", () => {
+    const data = build(
+      [
+        makeOrder({ id: "cancelled", orderDate: utc(2026, 0, 2), status: "CANCELLED", totalCost: 9999 }),
+        makeOrder({
+          id: "fx",
+          orderDate: utc(2026, 0, 2),
+          currencyCode: "EUR",
+          exchangeRate: 1.1,
+          exchangeRateBaseCode: null,
+          totalCost: 5000,
+        }),
+        makeOrder({ id: "usd", orderDate: utc(2026, 0, 2), totalCost: 3000 }),
+      ],
+      { range },
+    );
+    expect(data.committedTrend.series[0]).toEqual({ year: 2026, month: 1, totalMinor: 3000 });
+    expect(data.committedTrend.isPartial).toBe(true);
+  });
+});
+
 describe("buildDashboardData - deuda viva trend", () => {
   const range = { start: utc(2026, 0, 1), end: utc(2026, 3, 1) }; // Jan, Feb, Mar 2026
 
@@ -288,7 +346,7 @@ describe("buildDashboardData - deuda viva trend", () => {
           orderDate: utc(2026, 0, 2),
           currencyCode: "EUR",
           exchangeRate: 1.1,
-          needsExchangeRateUpdate: true,
+          exchangeRateBaseCode: null,
           totalCost: 5000,
         }),
         makeOrder({ id: "usd", orderDate: utc(2026, 0, 2), totalCost: 3000 }),
@@ -313,7 +371,7 @@ describe("buildDashboardData - exclusions and FX", () => {
   it("excludes FX-pending orders and flags partial totals (AC-06-05)", () => {
     const data = build([
       makeOrder({ id: "usd", totalCost: 10000 }),
-      makeOrder({ id: "eur", currencyCode: "EUR", exchangeRate: 1.1, needsExchangeRateUpdate: true, totalCost: 5000 }),
+      makeOrder({ id: "eur", currencyCode: "EUR", exchangeRate: 1.1, exchangeRateBaseCode: null, totalCost: 5000 }),
     ]);
     expect(data.cashObligations.totalOutstanding.totalMinor).toBe(10000);
     expect(data.cashObligations.totalOutstanding.isPartial).toBe(true);
@@ -377,7 +435,7 @@ describe("buildDashboardData - lost on cancelled (BR-06-10)", () => {
         status: "CANCELLED",
         currencyCode: "EUR",
         exchangeRate: 1.1,
-        needsExchangeRateUpdate: true,
+        exchangeRateBaseCode: null,
         totalCost: 10000,
         payments: [{ amount: 8000, paymentDate: utc(2026, 5, 5) }],
       }),
@@ -755,7 +813,7 @@ describe("buildDashboardData - order summaries carry a base-currency amount", ()
           id: "a",
           currencyCode: "JPY",
           exchangeRate: 0.0067,
-          needsExchangeRateUpdate: true,
+          exchangeRateBaseCode: null,
           totalCost: 980_000,
         }),
       ],

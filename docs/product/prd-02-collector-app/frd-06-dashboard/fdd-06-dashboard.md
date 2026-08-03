@@ -5,7 +5,7 @@ slug: dashboard
 title: Dashboard — Feature Design Document
 status: ACTIVE
 parent: FRD-06
-last_updated: 2026-07-11
+last_updated: 2026-08-03
 prototype: ./prototype/dashboard.html
 design_system: ../../../design/README.md
 demo_anchors:
@@ -61,7 +61,7 @@ Reading order, top to bottom, and its functional-group mapping:
 2. **Caja y obligaciones** — `FR-06-02 … FR-06-05`, `FR-06-19`, `FR-06-13`
 3. **Presupuesto** — `FR-06-06`
 4. **Puntualidad de llegadas** — `FR-06-17`
-5. **Tendencias** (three range-scoped line charts) — `FR-06-07`, `FR-06-08`, `FR-06-09`, `FR-06-21`, `FR-06-12`
+5. **Tendencias** (four range-scoped line charts) — `FR-06-07`, `FR-06-08`, `FR-06-09`, `FR-06-21`, `FR-06-24`, `FR-06-12`, `FR-06-25`
 6. **Movimiento de pedidos** (recent / upcoming / overdue tabs) — `FR-06-10`
 7. **Próximos pagos** — `FR-06-18` (`FR-06-04`, `FR-06-07`)
 8. **Colección** — `FR-06-11`, `FR-06-20`
@@ -79,8 +79,8 @@ The **empty / first-run** state (`FR-06-22`) is a full screen of its own.
 | 5   | Dashboard · loading           | `/{locale}/dashboard` | `#d6-dashboard-loading`     |
 | 6   | Dashboard · mobile            | `/{locale}/dashboard` | `#d6-dashboard-mobile`      |
 
-Requirements traced throughout: `FR-06-01 … FR-06-22`, `BR-06-01 … BR-06-08`,
-`AC-06-01 … AC-06-07` (see [`frd-06-dashboard.md`](./frd-06-dashboard.md)).
+Requirements traced throughout: `FR-06-01 … FR-06-25`, `BR-06-01 … BR-06-11`,
+`AC-06-01 … AC-06-09` (see [`frd-06-dashboard.md`](./frd-06-dashboard.md)).
 Status-chip mapping is governed by [ADR 0002](../../../design/decisions/0002-status-chip-mapping.md);
 the tinted icon-tile treatment by [ADR 0005](../../../design/decisions/0005-dashboard-microstat-icon-tile.md);
 the icon+label status contract by [ADR 0006](../../../design/decisions/0006-color-blindness-icon-label-contract.md).
@@ -113,7 +113,7 @@ with a `20px` gap above it, capped by the shell content width. Zone spans, deskt
 KPI overview strip        dash-span-12   (kpi-strip · 4 tinted tiles)
 ZONA 1 Caja y oblig.      dash-span-8    (s8-card-accent · top-accent · dash-stretch)
 Right column              dash-span-4    (right-stack · Presupuesto + Puntualidad)
-ZONA 3 Tendencias         dash-span-12   (top-warm · scoped range picker + 3 line charts)
+ZONA 3 Tendencias         dash-span-12   (top-warm · scoped range picker + 4 line charts, 2 per row)
 ZONA 4b Movimiento        dash-span-6    (top-info · tabbed activity)
 ZONA 4c Próximos pagos    dash-span-6    (top-warning · itemized payments)
 ZONA 5 Colección          dash-span-12   (s8-card-warm · top-warm)
@@ -189,22 +189,47 @@ max-width:100%; max-height:280px`), horizontally centered inside a `flex:1 1 aut
 **ZONA 3 · Tendencias** (`top-warm`, span-12). A **scoped charts section**. The header
 (`.charts-head`) carries the eyebrow `line-chart · "Gráficos"`, the title `"Tendencias"`, a
 one-line note that the range applies **only** to these charts, and — pinned to the right — the
-**date-range picker** (§5.4). Below, a `.charts-grid` of **three hand-rolled SVG line charts**:
+**date-range picker** (§5.4). When a preset window was clamped to the collector's first recorded
+month (`FR-06-25`), a muted `role="status"` line sits under the header naming that month
+(`"Tu historial empieza en {mes}, así que los gráficos parten de ahí."`). Below, a grid of
+**four hand-rolled SVG line charts**, in this reading order:
 
 - **Gasto por mes** — single series, filled **area** in `--accent`, a **direct last-point
-  label** (`S/ 1,290`), and hover crosshair + tooltip (`FR-06-07`, `FR-06-08`, `BR-06-04`). The
-  series is order payments **plus** delivery shipping cost, merged into one total per month —
-  delivery cost is never plotted as its own series (`BR-06-09`).
-- **Pedidos hechos vs llegados** — two series with a text legend (`Hechos` `--accent` /
-  `Llegados` `--accent-cool`) and hover (`FR-06-09`, `BR-06-06`). "Arrived" means an order has at
-  least one item that has **left the `NONE` delivery state** (`AC-06-07`).
-- **Deuda viva** — single series trend, area in `--warning`, direct last-point label
-  (`S/ 4,610`): the outstanding balance at each month's close (`FR-06-21`).
+  label**, and hover crosshair + tooltip (`FR-06-07`, `FR-06-08`, `BR-06-04`). The series is order
+  payments **plus** delivery shipping cost, merged into one total per month — delivery cost is
+  never plotted as its own series (`BR-06-09`). Card figure: **Desembolsado este mes**.
+- **Comprometido por mes** — single series, area in `--accent-cool`, direct last-point label
+  (`FR-06-24`). What the collector **took on** each month (`Σ Order.totalCost` by `orderDate`),
+  the counterpart of the card beside it, which is what they actually paid out. It sits second so
+  the pair reads together. Card figure: **Comprometido en el rango**. It is never a second series
+  on the spend plot (`BR-06-05`).
+- **Deuda viva** — single series trend, area in `--warning`, direct last-point label: the
+  outstanding balance at each month's close (`FR-06-21`).
+- **Pedidos hechos vs llegados** — the only two-series plot, with a text legend (`Hechos`
+  `--accent` / `Llegados` `--accent-cool`) and hover (`FR-06-09`, `BR-06-06`). "Arrived" means an
+  order has at least one item that has **left the `NONE` delivery state** (`AC-06-07`).
 
-Each chart is a `600×220` viewBox with four gridlines, an axis-label row, dots per point, an
-optional area polygon and last-point label, plus a hover crosshair (`lc-cross`), per-series hover
-dots (`lc-hoverdot`), and a floating tooltip (`lc-tip`). The current-month points are reconciled
-to the cards (spend ends at `1.290`, deuda viva ends at `4.610`).
+> **Chart-rendering contract (load-bearing).** Each chart's `viewBox` is
+> `0 0 {measured container width} 220`, measured with a `ResizeObserver`, so **one SVG user unit
+> is one CSS pixel** and every declared px size below is real. Axis text is **12px**, the
+> design-system floor for chart type. Markers and axis labels **thin themselves** rather than
+> overlap: point markers disappear once spacing drops under 14px (only the hovered point keeps
+> one, so the crosshair still has a target), and axis labels thin to a 36px minimum spacing while
+> always keeping the final month. When the range spans more than one year, the axis prints the
+> year at the first tick and wherever the year changes, as a `<tspan>` under the month, and the
+> tooltip header carries the year too. The system-level rules behind all of this live in
+> [interface-patterns.md § 15](../../../design/interface-patterns.md); this section only records
+> that the Dashboard is their first consumer.
+
+The grid is `repeat(auto-fit, minmax(min(100%, 460px), 1fr))` with an `18px` gap: the column
+count comes from a **minimum card width**, not from viewport breakpoints, because the content
+column also narrows when the app sidebar expands. Given the page's `max-w-6xl` cap this resolves
+to **two columns on desktop** (~478px of plot, ~2.18:1) and one column below ~1000px, and never to
+three. Four charts is what makes that two-column grid close evenly, see §10.
+
+Beyond the line, each chart card carries four gridlines, an axis-label row, markers per point, an
+optional area polygon and last-point label, a hover crosshair, and a floating tooltip; the whole
+SVG is one `role="img"` with an aria-label naming the series and its month count.
 
 **ZONA 4b · Movimiento de pedidos** (`top-info`, span-6). Eyebrow `list · "Movimiento de
 pedidos"` (the visible `h2` is visually hidden — the eyebrow is the label). Below the eyebrow, a
@@ -284,10 +309,19 @@ live in [visual-foundations.md](../../../design/visual-foundations.md) and
 | Punctuality / trends / collection identity      | `--success` / `--accent-warm`                                | Puntualidad, Tendencias, Colección top edges   |
 | Paid segment / on-time / budget OK / spend line | `--success` (paid) / `--accent` (spend)                      | paidbar, punt donut, meter `is-ok`, gasto line |
 | Pending / late / budget warn / debt line        | warning-tone (`--warning` mixes)                             | paidbar pending, punt donut late, deuda line   |
+| Committed-per-month series                      | `--accent-cool`                                              | comprometido-por-mes line chart                |
 | Placed vs arrived series                        | `--accent` / `--accent-cool`                                 | hechos-vs-llegados line chart                  |
 | Budget over (> 100%) + FX warning               | `--destructive` / `--warning`                                | meter `is-over` (+ hatch); `.fx-warning`       |
 | Upcoming/overdue activity + nearest payment     | `--info` / `--warning`                                       | activity chips, próximos-pagos chips           |
 | Collection status distribution                  | accent / info / success / neutral                            | `.status-bar` + legend chips                   |
+
+Chart series draw from these same semantic tokens; there is no `--chart-*` set and no categorical
+palette (see [visual-foundations.md → Chart series colors](../../../design/visual-foundations.md)).
+Three of the four trend charts are single-series, so their color is section identity rather than an
+encoding, and the **same accent recurring in separate cards is deliberate**: `--accent` means
+"gasto" in one card and "hechos" in another, and the two are never read against each other. Only
+"hechos vs llegados" puts two series in one plot, and it carries a text legend so the pair is
+never distinguished by hue alone ([ADR 0006](../../../design/decisions/0006-color-blindness-icon-label-contract.md)).
 
 The **Chip-Eyebrow + Top-Accent** pattern is the system's section-identity device — see
 [interface-patterns.md](../../../design/interface-patterns.md). Status is **never** carried by
@@ -337,18 +371,18 @@ components**; it must not fork or reinvent any of them.
 [components.md](../../../design/components.md) **if reused elsewhere** — flagged here, not defined
 as FDD-local system rules, not yet added to the catalog):
 
-| Piece              | What it is                                                                             |
-| ------------------ | -------------------------------------------------------------------------------------- |
-| `KpiBlock`         | `kpi-label` + `kpi-amount` + optional `kpi-sub` — the zone protagonist                 |
-| `BudgetMeter`      | rounded track + status-banded fill (`is-ok` / `is-warn` / `is-over` + hatch)           |
-| `Bar` (mini-chart) | the framed CSS mini bar chart (surface + baseline axis + faint gridlines)              |
-| `LineChart`        | hand-rolled SVG line/area chart with legend, last-point label, hover crosshair/tooltip |
-| `Donut`            | SVG ring chart (fixed-size in collection; **adaptive `is-fluid`** in punctuality)      |
-| `RangeControl`     | trigger + popover (preset chips + custom from→to calendar) scoped to the trend charts  |
-| `PaidBar`          | the segmented paid-vs-pending bar with dot legend                                      |
-| `FxPartialNotice`  | the `.fx-warning` banner                                                               |
-| `StatusStackedBar` | the slim collection status bar + chip legend                                           |
-| `PaymentsTable`    | the itemized upcoming-payments list (avatar · amount · due chip)                       |
+| Piece              | What it is                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `KpiBlock`         | `kpi-label` + `kpi-amount` + optional `kpi-sub` — the zone protagonist                                                                                                                                                                                                                                                                                                    |
+| `BudgetMeter`      | rounded track + status-banded fill (`is-ok` / `is-warn` / `is-over` + hatch)                                                                                                                                                                                                                                                                                              |
+| `Bar` (mini-chart) | the framed CSS mini bar chart (surface + baseline axis + faint gridlines)                                                                                                                                                                                                                                                                                                 |
+| `LineChart`        | hand-rolled SVG line/area chart (`DashboardLineChart`): measured 1:1 `viewBox`, 12px axis type, density-aware markers/labels, multi-year axis, legend, last-point label, hover crosshair/tooltip. Consumes `points: DashboardChartPoint[]` (month label + year) rather than a bare `labels: string[]`, because the axis needs the year to disambiguate a multi-year range |
+| `Donut`            | SVG ring chart (fixed-size in collection; **adaptive `is-fluid`** in punctuality)                                                                                                                                                                                                                                                                                         |
+| `RangeControl`     | trigger + popover (preset chips + custom from→to calendar) scoped to the trend charts                                                                                                                                                                                                                                                                                     |
+| `PaidBar`          | the segmented paid-vs-pending bar with dot legend                                                                                                                                                                                                                                                                                                                         |
+| `FxPartialNotice`  | the `.fx-warning` banner                                                                                                                                                                                                                                                                                                                                                  |
+| `StatusStackedBar` | the slim collection status bar + chip legend                                                                                                                                                                                                                                                                                                                              |
+| `PaymentsTable`    | the itemized upcoming-payments list (avatar · amount · due chip)                                                                                                                                                                                                                                                                                                          |
 
 These are **chart/metric presentation primitives**, not new design-system tokens. New data needs
 (Phase B, not design): a single `getDashboardAggregate` query payload plus the range-scoped trend
@@ -383,7 +417,7 @@ a calm empty or CTA state — never fake data**:
   settings — same affordance as the no-budget state.
 - **Puntualidad**: a quiet `.empty-zone` (`clock` ring) `"Aún no hay entregas para medir la
 puntualidad."`
-- **Tendencias**: the range picker is **inert/disabled**; each of the three charts shows a small
+- **Tendencias**: the range picker is **inert/disabled**; each of the four charts shows a small
   `.empty-zone sm` `"Aún no hay datos suficientes."`
 - **Movimiento de pedidos**: an `.empty-zone` (`package-plus`) `"Todavía no registraste pedidos"`
   with the primary CTA `"Crear tu primer pedido"` → orders.
@@ -396,7 +430,9 @@ the stores link uses the preference-driven URL helper, not a hardcoded `/stores`
 
 ### 5.3 FX partial-totals warning (`FR-06-13`, `AC-06-05`)
 
-When at least one order is flagged `needsExchangeRateUpdate` (currency ≠ base, not cancelled),
+When at least one order reads as needing FX reconciliation (currency ≠ base, not cancelled, and its
+stored rate missing or recorded against a different base currency — the derived condition shared
+with the orders list, `needsFxReconciliation` in `src/lib/fx/reconciliation.ts`, ADR 0024),
 base-currency roll-ups **exclude** those orders and the cash zone shows a `warning`-toned
 `.fx-warning` banner (`role="status"`): an `alert-triangle` icon, the explanation that totals are
 **partial until reconciliation**, and a `"Reconciliar tipo de cambio"` link to the orders
@@ -408,7 +444,7 @@ presence is what makes Caja taller, which the right column's adaptive donut abso
 ### 5.4 Range picker (`FR-06-12`, `AC-06-06`)
 
 The trend section owns a single **date-range picker** pinned to its header, applying **only** to
-its three line charts. It is a trigger + popover:
+its four line charts. It is a trigger + popover:
 
 - **Trigger** (`.range-trigger`, `aria-haspopup="dialog"`, `aria-expanded`): a `calendar` icon, a
   label (default `"Últimos 6 meses"`), and a chevron.
@@ -417,7 +453,7 @@ its three line charts. It is a trigger + popover:
   personalizado** single-month calendar (prev/next nav, Monday-first grid) that selects a
   **from → day → to** range, gated by an `"Aplicar rango"` button that stays disabled until both
   ends are chosen. Picking a preset resets any custom selection and re-labels the trigger; both
-  paths re-render all three charts and close the popover with focus returned to the trigger.
+  paths re-render all four charts and close the popover with focus returned to the trigger.
 
 Selecting a range re-renders **only** the trend charts. It does **not** touch the current-month
 figures (a pagar este mes, presupuesto/desembolsado este mes) or the collection roll-ups — those
@@ -455,26 +491,28 @@ Dashboard keeps the canonical glossary (`pedido ↔ order`, `entrega ↔ deliver
 
 Key strings (es), by surface and tone:
 
-| Surface               | Tone                   | String                                                                                                                                  |
-| --------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Greeting              | warm, personal         | `"Hola, Sergio"` + meta `"jueves 18 jun · todo en S/ (soles)"`                                                                          |
-| Cash zone title       | direct, plain          | `"Lo que tienes que tener listo"`                                                                                                       |
-| A pagar — overdue sub | concrete               | `"Incluye S/ 520,00 ya atrasados de pedidos cuya llegada estimada ya pasó."`                                                            |
-| Deuda sin fecha note  | reassuring             | `"Además, S/ 760,00 en pedidos sin fecha de llegada estimada — informativo, fuera de los totales por mes."`                             |
-| Budget OK chip        | encouraging            | `"65% · vas bien"` + `"Quedan S/ 710"`                                                                                                  |
-| Budget over chip      | factual, not scolding  | `"122% · pasado"` + `"S/ 430 de más"`                                                                                                   |
-| Budget cycle helper   | clarifying             | `"Consumido en el ciclo actual (reinicia el día 1). Es la misma plata desembolsada este mes."`                                          |
-| No-budget CTA         | inviting               | `"Pon un tope mensual y te avisamos con color cuando te acerques."` → `"Configurar presupuesto"`                                        |
-| Punctuality helper    | plain                  | `"De cada 10 pedidos, unos 8 llegan dentro de la ventana estimada."`                                                                    |
-| Trends scope note     | clarifying             | `"El rango de la derecha aplica sólo a estos tres gráficos."`                                                                           |
-| FX warning            | calm, actionable       | `"… Sus saldos quedan fuera de estos totales hasta reconciliarlos, así que las cifras son parciales."` → `"Reconciliar tipo de cambio"` |
-| Overdue activity chip | neutral-urgent         | `"atrasado 12 d"`                                                                                                                       |
-| Nearest payment chip  | gentle-urgent          | `"vence pronto"`                                                                                                                        |
-| Empty · cash          | reassuring             | `"No debes nada por ahora"`                                                                                                             |
-| Empty · movimiento    | encouraging            | `"Todavía no registraste pedidos"` → `"Crear tu primer pedido"`                                                                         |
-| Empty · colección     | inviting               | `"Tu colección aparecerá aquí"` → `"Explorar tiendas"`                                                                                  |
-| Collection zone title | celebratory-restrained | `"El panorama completo"`                                                                                                                |
-| Order-value KPI label | distinct from spend    | `"Valor de pedidos"` (+ tooltip: `"Suma del valor de todos tus pedidos activos: lo que ya pagaste más lo que aún debes."`)              |
+| Surface               | Tone                   | String                                                                                                                                    |
+| --------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Greeting              | warm, personal         | `"Hola, Sergio"` + meta `"jueves 18 jun · todo en S/ (soles)"`                                                                            |
+| Cash zone title       | direct, plain          | `"Lo que tienes que tener listo"`                                                                                                         |
+| A pagar — overdue sub | concrete               | `"Incluye S/ 520,00 ya atrasados de pedidos cuya llegada estimada ya pasó."`                                                              |
+| Deuda sin fecha note  | reassuring             | `"Además, S/ 760,00 en pedidos sin fecha de llegada estimada — informativo, fuera de los totales por mes."`                               |
+| Budget OK chip        | encouraging            | `"65% · vas bien"` + `"Quedan S/ 710"`                                                                                                    |
+| Budget over chip      | factual, not scolding  | `"122% · pasado"` + `"S/ 430 de más"`                                                                                                     |
+| Budget cycle helper   | clarifying             | `"Consumido en el ciclo actual (reinicia el día 1). Es la misma plata desembolsada este mes."`                                            |
+| No-budget CTA         | inviting               | `"Pon un tope mensual y te avisamos con color cuando te acerques."` → `"Configurar presupuesto"`                                          |
+| Punctuality helper    | plain                  | `"De cada 10 pedidos, unos 8 llegan dentro de la ventana estimada."`                                                                      |
+| Trends scope note     | clarifying             | `"El rango de la derecha aplica solo a estos gráficos."`                                                                                  |
+| Trends clamped window | matter-of-fact         | `"Tu historial empieza en {month}, así que los gráficos parten de ahí."`                                                                  |
+| Comprometido card     | plain, non-accounting  | `"Comprometido por mes"` + `"El valor de los pedidos que hiciste cada mes, los pagues cuando los pagues."` + `"Comprometido en el rango"` |
+| FX warning            | calm, actionable       | `"… Sus saldos quedan fuera de estos totales hasta reconciliarlos, así que las cifras son parciales."` → `"Reconciliar tipo de cambio"`   |
+| Overdue activity chip | neutral-urgent         | `"atrasado 12 d"`                                                                                                                         |
+| Nearest payment chip  | gentle-urgent          | `"vence pronto"`                                                                                                                          |
+| Empty · cash          | reassuring             | `"No debes nada por ahora"`                                                                                                               |
+| Empty · movimiento    | encouraging            | `"Todavía no registraste pedidos"` → `"Crear tu primer pedido"`                                                                           |
+| Empty · colección     | inviting               | `"Tu colección aparecerá aquí"` → `"Explorar tiendas"`                                                                                    |
+| Collection zone title | celebratory-restrained | `"El panorama completo"`                                                                                                                  |
+| Order-value KPI label | distinct from spend    | `"Valor de pedidos"` (+ tooltip: `"Suma del valor de todos tus pedidos activos: lo que ya pagaste más lo que aún debes."`)                |
 
 Tone rule for this FRD: the Dashboard is **read-only**, so it carries **no confirmations or
 errors**; the mascot register applies only to the empty/celebratory edges (the floating panda
@@ -498,7 +536,7 @@ Mobile-first; desktop is extra room (decálogo #10). Breakpoint behavior is the 
     deuda-sin-fecha note, and FX warning.
   - **Presupuesto** and **Puntualidad** become separate stacked cards; the punctuality donut is a
     fixed `150px` centered ring (the adaptive rule is a desktop-column concern only).
-  - **Tendencias**: the three line charts render **full width, stacked**, as static SVG; the range
+  - **Tendencias**: the four line charts render **full width, stacked**, as static SVG; the range
     picker degrades to a **read-only** `range-trigger` (an `img`-labelled "Últimos 6 meses" chip),
     no popover.
   - **Movimiento de pedidos**: same tabs, made horizontally scrollable (`overflow-x:auto`).
@@ -517,7 +555,7 @@ specifically here:
   over-budget meter adds a diagonal **hatch** so "over" is perceivable without hue
   ([ADR 0006](../../../design/decisions/0006-color-blindness-icon-label-contract.md)).
 - **Charts are labelled**: the `.mini-chart`, `.budget-meter`, `.status-bar`, both donuts, and the
-  three line charts are each `role="img"` with an `aria-label` stating the values / series /
+  four line charts are each `role="img"` with an `aria-label` stating the values / series /
   percentage (and "excedido" on the over-budget meter); legends are text, not color-only.
 - **Range picker is keyboard-operable**: the trigger exposes `aria-haspopup="dialog"` +
   `aria-expanded`; the popover is `role="dialog"`; presets are a labelled button group; calendar
@@ -576,3 +614,11 @@ The dashboard shipped across [`BP-01 · WO-01…WO-06`](bp-01-dashboard-aggregat
 - **Per-order amounts read in the base currency wherever they can be converted** (`FR-06-13`, `FR-06-14`). The order's own currency is the fallback, used only when the order is FX-pending, and the row is then marked `· FX pendiente` — matching the prototype's `¥ 9.800` row. This governs both Movimiento and Lo que toca pagar, which had disagreed with each other.
 
 - **"Desembolsado este mes" and "Gasto por mes" now include delivery shipping cost**, not just order payments (`FR-06-07`, `FR-06-08`, `BR-06-04`, `BR-06-09`). The prototype's `S/ 1,290` figure predates this and reflects order payments only. Delivery cost is folded into the same total rather than drawn as a second series — plotting a typical shipping cost against a typical order total on one axis would be disproportionate.
+
+- **Tendencias ships four charts in a two-column grid, not three in a row** (`WO-04`, `FR-06-24`). The prototype's `.charts-grid` puts three charts side by side, which measured ~1.37:1 per plot: too cramped for a month-bucketed line, and it is what forced the type down in the first place. Two columns give ~478×220 ≈ 2.18:1, between Tufte's ~1.5:1 and Cleveland's banking-to-45° ~2.5:1. Two columns with three charts would leave a half-empty trailing row, and **stretching the trailing card full width was rejected**: an item that differs in size within a group reads as not belonging to it and as more important (NN/g's Gestalt similarity and visual-hierarchy principles), which would have been false of a third trend line. "Comprometido por mes" is an honest fourth metric, so the row closes evenly. The trailing-card rule is a house rule, recorded as one in [interface-patterns.md § 15](../../../design/interface-patterns.md). **Update the prototype, not the code.**
+
+- **The charts render 1:1 against a measured container, not a fixed `600×220` viewBox** (`WO-04`). The prototype's fixed viewBox with `width:100%` scales the type along with the drawing; shipped, that produced 5.5px axis labels in the three-column grid and 5.0px on a phone. The component measures its container with a `ResizeObserver` and sets `viewBox="0 0 {measuredWidth} 220"`, and the axis font was raised 11px → 12px, the system floor for chart text. There is no CSS alternative (`vector-effect: non-scaling-size` is unimplemented everywhere), which is why every mainstream charting library measures. **Update the prototype, not the code.**
+
+- **Column count is min-width-driven, not breakpoint-driven** (`WO-04`). The prototype expresses the charts grid in viewport breakpoints. The shipped grid uses `repeat(auto-fit, minmax(min(100%, 460px), 1fr))`, because the content column also narrows when the app sidebar expands: a viewport rule handed an 820px tablet two 320px plots. This changes §7's mobile description only in mechanism, not in result — mobile still stacks to one full-width column.
+
+- **A clamped trend window is disclosed under the section header** (`FR-06-25`, `BR-06-11`). The prototype has no such line because it regenerates a full window per preset. Shipped, a preset that was trimmed to the collector's first recorded month says so, so "Últimos 12 meses" never sits above six months of data. Interior empty months are still plotted as zeros.

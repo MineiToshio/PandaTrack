@@ -141,6 +141,36 @@ describe("resolveDashboardRange", () => {
     expect(iso(range.start)).toBe("2026-02-01T00:00:00.000Z");
   });
 
+  it("clamps a trailing preset forward to the collector's first month", () => {
+    // Account opened in May; "last 12 months" would otherwise spend 9 buckets on months that
+    // predate every order the collector has.
+    const range = resolveDashboardRange({ preset: "12m" }, now, "UTC", new Date("2026-05-09T00:00:00Z"));
+    expect(iso(range.start)).toBe("2026-05-01T00:00:00.000Z");
+    expect(iso(range.end)).toBe("2026-08-01T00:00:00.000Z");
+  });
+
+  it("leaves a preset alone when the collector's history predates it", () => {
+    const range = resolveDashboardRange({ preset: "6m" }, now, "UTC", new Date("2021-11-24T00:00:00Z"));
+    expect(iso(range.start)).toBe("2026-02-01T00:00:00.000Z");
+  });
+
+  it("never clamps past the end of the window", () => {
+    // First activity is in the current month: the window still has to contain it.
+    const range = resolveDashboardRange({ preset: "6m" }, now, "UTC", new Date("2026-07-02T00:00:00Z"));
+    expect(iso(range.start)).toBe("2026-07-01T00:00:00.000Z");
+    expect(range.start.getTime()).toBeLessThan(range.end.getTime());
+  });
+
+  it("does not clamp a custom range, whose bounds the collector chose explicitly", () => {
+    const range = resolveDashboardRange(
+      { preset: "custom", from: new Date("2026-01-10T00:00:00Z"), to: new Date("2026-06-02T00:00:00Z") },
+      now,
+      "UTC",
+      new Date("2026-04-01T00:00:00Z"),
+    );
+    expect(iso(range.start)).toBe("2026-01-01T00:00:00.000Z");
+  });
+
   it("snaps a custom range outward to whole months", () => {
     const range = resolveDashboardRange(
       { preset: "custom", from: new Date("2026-03-17T00:00:00Z"), to: new Date("2026-05-02T00:00:00Z") },
