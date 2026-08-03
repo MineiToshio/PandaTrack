@@ -26,6 +26,9 @@
     "paidLegend": "Pagado {amount}",
     "pendingLegend": "Pendiente · deuda viva {amount}",
     "noDateNote": "Además, {amount} en pedidos sin fecha de llegada estimada, informativo y fuera de los totales por mes.",
+    "cancelledNote": "Además, {amount} que pagaste en pedidos cancelados y no recuperaste, fuera de las cifras de arriba.",
+    "cancelledNotePartial": "Además, al menos {amount} que pagaste en pedidos cancelados y no recuperaste, fuera de las cifras de arriba. {count, plural, one {Excluye # pedido con tipo de cambio pendiente} other {Excluye # pedidos con tipo de cambio pendiente}}.",
+    "cancelledLink": "Ver cancelados",
     "partialWarning": "{count, plural, one {# pedido guardó su tipo de cambio con otra moneda base} other {# pedidos guardaron su tipo de cambio con otra moneda base}}. Sus saldos quedan fuera de estos totales hasta reconciliarlos, así que las cifras son parciales.",
     "reconcileLink": "Reconciliar tipo de cambio",
     "empty": {
@@ -112,12 +115,6 @@
     "committedPartialHint": "Cifra parcial",
     "committedMeaning": "Suma del valor de todos tus pedidos activos: lo que ya pagaste más lo que aún debes.",
     "committedInfoHint": "Qué significa"
-  },
-  "lostOnCancelled": {
-    "eyebrow": "Cancelados",
-    "title": "Perdido en cancelados",
-    "help": "Pagos que hiciste en pedidos cancelados y no recuperaste.",
-    "partial": "{count, plural, one {Excluye # pedido con tipo de cambio pendiente} other {Excluye # pedidos con tipo de cambio pendiente}}."
   },
   "collection": {
     "eyebrow": "Tu colección",

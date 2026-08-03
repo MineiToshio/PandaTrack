@@ -157,3 +157,29 @@ If the owner declines fork 1, keep the current full exclusion and the order-deta
 5. Docs: revise `BR-06-07`, add `BR-06-10`, revise `frd-06-dashboard.md:205`, add the new `FR`.
 
 **Not needed:** Prisma migration, `OrderStatus` change, `reactivateOrder` change.
+
+---
+
+## 7) Follow-up (2026-08-03, owner-approved): the figure moves into the cash zone
+
+The sign-off constraint in the header ("a ~1-in-500 corner case, so render only when greater than
+0, and occupy no dashboard space otherwise") was implemented as a conditional full-width zone. In
+use the owner found that the conditional guard solves only the empty case: once there **is** lost
+money, the card claims a full row permanently, and its relevance decays while its visual weight does
+not. Their own figure is S/ 169.00, of which S/ 160.00 comes from a January 2023 cancellation — 0.09%
+of committed value, three and a half years old, still rendered as loudly as the day it happened.
+
+**Decision:** keep the figure and its `> 0` guard, drop the dedicated zone. It now renders as a
+quiet line inside the cash zone, directly under paid-versus-pending, alongside the existing
+"no estimated arrival date" note, with a link to the cancelled orders (`BR-06-12`, `FR-06-23`).
+
+Why not simply delete it: paid and committed are computed from non-cancelled orders only, so this is
+exactly the money missing from them. Removing it would let the dashboard quietly overstate what the
+collector's money bought. The note belongs next to the figure it corrects.
+
+Why not time-bound it (show only for recent cancellations): rejected on evidence. The
+`ORDER_CANCELLED` history rows for both of the owner's cancelled-with-payments orders are stamped
+`2026-07-20`, the Notion migration date, not the real cancellation date — so a recency rule would
+misfire on precisely the migrated orders that motivated the change. A surface that appears and
+disappears on its own also invites a "why did it go" question, and the moment of loss is already
+surfaced where it happens by the keep/remove choice the cancel modal forces.

@@ -26,6 +26,9 @@
     "paidLegend": "Paid {amount}",
     "pendingLegend": "Pending · live debt {amount}",
     "noDateNote": "Plus {amount} in orders with no estimated arrival date, informational and outside the monthly totals.",
+    "cancelledNote": "Plus {amount} you paid on cancelled orders and never got back, outside the figures above.",
+    "cancelledNotePartial": "Plus at least {amount} you paid on cancelled orders and never got back, outside the figures above. {count, plural, one {Excludes # order with a pending exchange rate} other {Excludes # orders with a pending exchange rate}}.",
+    "cancelledLink": "View cancelled",
     "partialWarning": "{count, plural, one {# order saved its exchange rate against a different base currency} other {# orders saved their exchange rate against a different base currency}}. Their balances stay out of these totals until you reconcile them, so the figures are partial.",
     "reconcileLink": "Reconcile exchange rate",
     "empty": {
@@ -112,12 +115,6 @@
     "committedPartialHint": "Partial figure",
     "committedMeaning": "The total value of all your active orders: what you've already paid plus what you still owe.",
     "committedInfoHint": "What it means"
-  },
-  "lostOnCancelled": {
-    "eyebrow": "Cancelled",
-    "title": "Lost on cancelled",
-    "help": "Payments you made on cancelled orders and didn't get back.",
-    "partial": "{count, plural, one {Excludes # order with a pending exchange rate} other {Excludes # orders with a pending exchange rate}}."
   },
   "collection": {
     "eyebrow": "Your collection",

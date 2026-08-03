@@ -1,7 +1,9 @@
 import { getTranslations } from "next-intl/server";
+import Link from "next/link";
 import { PiggyBank, Wallet } from "lucide-react";
 import EmptyState from "@/components/modules/EmptyState";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { OrderStatus } from "../../../../../../generated/prisma/client";
 import type { DashboardData } from "@/lib/data/dashboard/dashboardTypes";
 import { formatDashboardMoney } from "../_utils/dashboardMoney";
 import DashboardFxPartialNotice from "./DashboardFxPartialNotice";
@@ -31,7 +33,7 @@ function toPercent(part: number, whole: number): number {
 /** Highest-value collector surface: what to have ready this month, ahead, and paid-vs-pending. */
 export default async function DashboardCashZone({ data, locale }: DashboardCashZoneProps) {
   const t = await getTranslations({ locale, namespace: "dashboard" });
-  const { cashObligations, paidVsOutstanding, collection, baseCurrencyCode } = data;
+  const { cashObligations, paidVsOutstanding, collection, lostOnCancelled, baseCurrencyCode } = data;
   const money = (minor: number): string => formatDashboardMoney(minor, baseCurrencyCode, locale);
 
   const ordersHref = `/${locale}${ROUTES.orders}`;
@@ -139,6 +141,29 @@ export default async function DashboardCashZone({ data, locale }: DashboardCashZ
           {cashObligations.noDateOutstanding.totalMinor > 0 && (
             <p className="mt-2.5 [font-size:var(--text-body)] [color:var(--text-secondary)]">
               {t("cash.noDateNote", { amount: money(cashObligations.noDateOutstanding.totalMinor) })}
+            </p>
+          )}
+          {/*
+            Money sunk on cancelled orders (`BR-06-10`). It rides here as a quiet line rather than
+            its own zone because the paid figure above is computed from non-cancelled orders only,
+            so this is precisely the amount missing from it: the note belongs next to the number it
+            corrects. It is also unrecoverable, so it earns no call to action and no standing card
+            whose visual weight would stay constant while its relevance decays.
+          */}
+          {lostOnCancelled.totalMinor > 0 && (
+            <p className="mt-2.5 [font-size:var(--text-body)] [color:var(--text-secondary)]">
+              {lostOnCancelled.isPartial && lostOnCancelled.excludedOrderCount > 0
+                ? t("cash.cancelledNotePartial", {
+                    amount: money(lostOnCancelled.totalMinor),
+                    count: lostOnCancelled.excludedOrderCount,
+                  })
+                : t("cash.cancelledNote", { amount: money(lostOnCancelled.totalMinor) })}{" "}
+              <Link
+                href={`${ordersHref}?status=${OrderStatus.CANCELLED}`}
+                className="[font-weight:var(--font-weight-semibold)] whitespace-nowrap [color:var(--accent)] hover:underline"
+              >
+                {t("cash.cancelledLink")}
+              </Link>
             </p>
           )}
         </div>
