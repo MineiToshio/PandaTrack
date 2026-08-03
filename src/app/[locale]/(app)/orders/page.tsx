@@ -4,12 +4,13 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { buildPageMetadata } from "@/lib/seo";
 import { domainDateToIsoString } from "@/lib/domainDate";
-import { getSession } from "@/lib/auth/auth-server";
+import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
 import {
   getOrdersHeadingCounts,
   getOrdersList,
   listOrdersPendingFxReconciliation,
 } from "@/lib/data/orders/orderQueries";
+import { getImageIntakeQuotaSnapshotCached } from "@/lib/data/imageIntake/imageIntakeQuotaQueries";
 import { getOrderableStores } from "@/lib/data/stores/storeQueries";
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import { DEFAULT_PAGE_SIZE, POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
@@ -134,6 +135,9 @@ export default async function OrdersPage({ params, searchParams }: OrdersPagePro
   const session = await getSession();
   if (!session?.user?.id) redirect(`/${locale}/sign-in`);
   const userId = session.user.id;
+  // Desktop toolbar entry point: the same selector the shell's floating button opens, so it shows
+  // the same balance. Memoized per request, so this does not read the roll-up a second time.
+  const photoCounter = await getImageIntakeQuotaSnapshotCached(userId, getIsAdmin(session));
   const rawParams = await searchParams;
   const basePath = `/${locale}${ROUTES.orders}`;
   const fingerprint = JSON.stringify(rawParams);
@@ -177,6 +181,7 @@ export default async function OrdersPage({ params, searchParams }: OrdersPagePro
 
         <OrderListFilters
           locale={locale}
+          photoCounter={photoCounter}
           storeOptions={storeOptions.map((store) => ({ id: store.id, name: store.name }))}
           initial={activeFilters}
         />

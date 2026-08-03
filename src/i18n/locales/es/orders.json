@@ -13,6 +13,25 @@
     "keepEntered": "Mantener el total ingresado",
     "useCalculated": "Usar el total calculado ({amount})"
   },
+  "createEntry": {
+    "fabLabel": "Nuevo pedido",
+    "title": "Nuevo pedido",
+    "subtitle": "Elige cómo quieres registrarlo.",
+    "fromImage": {
+      "title": "Desde una imagen",
+      "titleLong": "Crear desde imagen",
+      "description": "Sube la captura del chat, el correo de la tienda o la foto del recibo. Nosotros llenamos el pedido y tú lo revisas.",
+      "badge": "Más rápido",
+      "noStoreNeeded": "No necesitas crear la tienda antes.",
+      "photosRemaining": "Te quedan {count, plural, one {# foto} other {# fotos}} este mes"
+    },
+    "manual": {
+      "title": "A mano",
+      "description": "El formulario de siempre, en tres pasos. Sin límite de uso."
+    },
+    "wizardHint": "¿Tienes una captura? Créalo desde una imagen",
+    "backToManual": "Completar a mano"
+  },
   "create": {
     "backToList": "Pedidos",
     "heroEyebrow": "Nuevo pedido",
@@ -68,8 +87,8 @@
     "fxTodayButton": "Hoy",
     "fxTodayLoading": "Consultando…",
     "fxTodayError": "No se pudo obtener la tasa. Ingresa manualmente.",
-    "fxTodayHelper": "\"Hoy\" consulta Frankfurter (gratis, sin key) y rellena automáticamente.",
-    "fxTodayAria": "Obtener tipo de cambio de Frankfurter API",
+    "fxTodayHelper": "\"Hoy\" consulta el tipo de cambio del día y lo rellena automáticamente.",
+    "fxTodayAria": "Obtener el tipo de cambio de hoy",
     "addProductButton": "Añadir producto",
     "addProduct": {
       "title": "Añadir producto",
@@ -211,6 +230,9 @@
     "itemsShortcutsReorder": "Mover fila arriba / abajo",
     "itemsShortcutsTabHint": "Tab / Shift+Tab también se mueve entre celdas.",
     "itemsShortcutsHelpLabel": "Atajos de teclado para la tabla de productos"
+  },
+  "fx": {
+    "attribution": "Tipo de cambio de <link>exchangerate-api.com</link>, se actualiza una vez al día."
   },
   "currencies": {
     "ARS": "Peso argentino",

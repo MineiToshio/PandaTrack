@@ -7,8 +7,7 @@
     "eyebrow": "Tu espacio de trabajo",
     "title": "Pedidos",
     "description": "Revisa tus pedidos, controla los pagos y haz seguimiento de las entregas en un solo lugar.",
-    "newOrder": "Nuevo pedido",
-    "newOrderShort": "Nuevo"
+    "newOrder": "Nuevo pedido"
   },
   "heading": {
     "meta": "{active} {active, plural, one {activo} other {activos}} · {closed} {closed, plural, one {cerrado} other {cerrados}}",
@@ -141,8 +140,7 @@
   "empty": {
     "noOrders": {
       "title": "Aún no hay pedidos",
-      "description": "Anota tu primer pedido y empieza a seguir tus compras desde aquí.",
-      "cta": "Anotar primer pedido"
+      "description": "Anota tu primer pedido y empieza a seguir tus compras desde aquí."
     },
     "noResults": {
       "title": "Sin resultados",

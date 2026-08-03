@@ -22,7 +22,7 @@ import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { useTheme } from "@/contexts/ThemeContext";
 import type { Locale } from "@/types/locale";
 import { cn } from "@/lib/styles";
-import { authClient } from "@/lib/auth/auth-client";
+import { signOutClient } from "@/lib/auth/authSignOut";
 import { ROUTES } from "@/lib/constants";
 import {
   savePreferencesAction,
@@ -427,11 +427,9 @@ export default function SettingsPrefsPane({
         <button
           type="button"
           onClick={() => {
-            authClient.signOut({
-              fetchOptions: {
-                onSuccess: () => {
-                  router.push(`/${locale}${ROUTES.signIn}`);
-                },
+            void signOutClient({
+              onSuccess: () => {
+                router.push(`/${locale}${ROUTES.signIn}`);
               },
             });
           }}

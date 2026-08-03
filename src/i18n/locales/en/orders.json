@@ -13,6 +13,25 @@
     "keepEntered": "Keep entered total",
     "useCalculated": "Use calculated total ({amount})"
   },
+  "createEntry": {
+    "fabLabel": "New order",
+    "title": "New order",
+    "subtitle": "Choose how you want to add it.",
+    "fromImage": {
+      "title": "From an image",
+      "titleLong": "Create from image",
+      "description": "Upload the chat screenshot, the store email or a photo of the receipt. We fill the order in and you review it.",
+      "badge": "Fastest",
+      "noStoreNeeded": "No need to create the store first.",
+      "photosRemaining": "{count, plural, one {# photo} other {# photos}} left this month"
+    },
+    "manual": {
+      "title": "By hand",
+      "description": "The usual three-step form. No usage limit."
+    },
+    "wizardHint": "Got a screenshot? Create it from an image",
+    "backToManual": "Fill it in by hand"
+  },
   "create": {
     "backToList": "Orders",
     "heroEyebrow": "New order",
@@ -68,8 +87,8 @@
     "fxTodayButton": "Today",
     "fxTodayLoading": "Fetching…",
     "fxTodayError": "Couldn't fetch the rate. Enter it manually.",
-    "fxTodayHelper": "\"Today\" queries Frankfurter (free, no key) and fills in automatically.",
-    "fxTodayAria": "Fetch exchange rate from Frankfurter API",
+    "fxTodayHelper": "\"Today\" looks up the current exchange rate and fills it in automatically.",
+    "fxTodayAria": "Fetch today's exchange rate",
     "addProductButton": "Add item",
     "addProduct": {
       "title": "Add item",
@@ -211,6 +230,9 @@
     "itemsShortcutsReorder": "Move row up / down",
     "itemsShortcutsTabHint": "Tab / Shift+Tab also moves between cells.",
     "itemsShortcutsHelpLabel": "Keyboard shortcuts for item table"
+  },
+  "fx": {
+    "attribution": "Exchange rate from <link>exchangerate-api.com</link>, updated once a day."
   },
   "currencies": {
     "ARS": "Argentine peso",

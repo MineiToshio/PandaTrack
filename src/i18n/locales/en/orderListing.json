@@ -7,8 +7,7 @@
     "eyebrow": "Collector workspace",
     "title": "Orders",
     "description": "Review your orders, track payments, and follow deliveries from a single place.",
-    "newOrder": "New order",
-    "newOrderShort": "New"
+    "newOrder": "New order"
   },
   "heading": {
     "meta": "{active} {active, plural, one {active} other {active}} · {closed} {closed, plural, one {closed} other {closed}}",
@@ -141,8 +140,7 @@
   "empty": {
     "noOrders": {
       "title": "No orders yet",
-      "description": "Log your first order and start tracking your purchases from here.",
-      "cta": "Log first order"
+      "description": "Log your first order and start tracking your purchases from here."
     },
     "noResults": {
       "title": "No results",

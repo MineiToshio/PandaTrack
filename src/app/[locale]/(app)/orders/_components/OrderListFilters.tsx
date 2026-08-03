@@ -22,7 +22,7 @@ import SearchInput from "@/components/core/SearchInput";
 import Select from "@/components/core/Select";
 import FilterDrawer, { type FilterDrawerValues, type FilterSection } from "@/components/modules/FilterDrawer";
 import { useIsMobile } from "@/hooks/useIsMobile";
-import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { POSTHOG_EVENTS } from "@/lib/constants";
 import { ORDER_LIST_SORT_VALUES, type OrderListPaymentState, type OrderListSort } from "@/lib/orders/orderListSort";
 import type { OrderStatus } from "../../../../../../generated/prisma/client";
 import {
@@ -32,6 +32,8 @@ import {
   type OrderListActiveFilters,
 } from "../_utils/orderListingParams";
 import { addDays, endOfMonth, startOfMonth, toIsoDateString } from "@/lib/localDate";
+import OrderCreateMethodSelector from "@/components/modules/OrderCreateMethodSelector/OrderCreateMethodSelector";
+import type { PhotoCounterSnapshot } from "./share/photoCounterContract";
 
 type StoreOption = { id: string; name: string };
 
@@ -39,6 +41,8 @@ type OrderListFiltersProps = {
   locale: string;
   storeOptions: StoreOption[];
   initial: OrderListActiveFilters;
+  /** Photo balance for the create-method selector this toolbar opens; read server-side by the page. */
+  photoCounter?: PhotoCounterSnapshot | null;
 };
 
 const FX_PENDING_FLAG = "fxPending";
@@ -98,13 +102,19 @@ function classifyStatuses(values: string[]): { statuses: OrderStatus[]; appliedD
   return { statuses, appliedDefaultStatuses: isDefaultActiveStatusSet(statuses) };
 }
 
-export default function OrderListFilters({ locale, storeOptions, initial }: OrderListFiltersProps) {
+export default function OrderListFilters({
+  locale,
+  storeOptions,
+  initial,
+  photoCounter = null,
+}: OrderListFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("orderListing");
   const isMobile = useIsMobile();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [createSelectorOpen, setCreateSelectorOpen] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipNextDebounce = useRef(false);
 
@@ -388,8 +398,6 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
     });
   };
 
-  const newOrderHref = `/${locale}${ROUTES.ordersNew}`;
-
   return (
     <>
       {/* Desktop toolbar */}
@@ -420,15 +428,25 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
             options={sortOptions}
             className="w-auto"
           />
-          <Button as="a" href={newOrderHref} variant="primary" size="md" leadingIcon={<Plus size={16} aria-hidden />}>
+          <Button
+            type="button"
+            variant="primary"
+            size="md"
+            leadingIcon={<Plus size={16} aria-hidden />}
+            onClick={() => setCreateSelectorOpen(true)}
+            posthogEvent={POSTHOG_EVENTS.ORDER.CREATE_METHOD_SELECTOR_OPENED}
+            posthogProps={{ source: "toolbar" }}
+          >
             {t("hero.newOrder")}
           </Button>
         </div>
       </div>
 
-      {/* Mobile sticky action row — below the topbar (h-14 = 56px). The search wrapper takes
+      {/* Mobile sticky action row, below the topbar (h-14 = 56px). The search wrapper takes
           `min-w-0 flex-1` so it absorbs all shrink (an input's intrinsic min-content otherwise
-          keeps the row wider than the viewport — S9.1 overflow); the two buttons stay `shrink-0`. */}
+          keeps the row wider than the viewport, S9.1 overflow). No "Nuevo" button here: below
+          1024px the single-action floating button is the create entry point, and the two
+          affordances must never coexist on the same screen. */}
       <div className="sticky top-14 z-30 -mx-4 flex items-center gap-2 px-4 py-2 [background:color-mix(in_oklab,var(--background)_92%,transparent)] supports-[backdrop-filter:blur(8px)]:backdrop-blur lg:hidden">
         <div className="min-w-0 flex-1">
           <SearchInput
@@ -444,21 +462,19 @@ export default function OrderListFilters({ locale, storeOptions, initial }: Orde
           onClick={() => setDrawerOpen(true)}
           variant="icon-only"
           aria-label={t("filters.iconLabel")}
-          // Match the bordered look of the Search input + Nuevo button so all three controls
-          // share the same visual height + container affordance in the mobile action row.
+          // Match the bordered look of the Search input so both controls share the same
+          // visual height + container affordance in the mobile action row.
           className="shrink-0 [background:var(--surface-elevated)] [border:1px_solid_var(--border-strong)] hover:[background:color-mix(in_oklab,var(--text-primary)_4%,var(--surface-elevated))]"
         />
-        <Button
-          as="a"
-          href={newOrderHref}
-          variant="primary"
-          size="md"
-          leadingIcon={<Plus size={16} aria-hidden />}
-          className="shrink-0"
-        >
-          {t("hero.newOrderShort")}
-        </Button>
       </div>
+
+      <OrderCreateMethodSelector
+        presentation="overlay"
+        locale={locale}
+        isOpen={createSelectorOpen}
+        onClose={() => setCreateSelectorOpen(false)}
+        photoCounter={photoCounter}
+      />
 
       <FilterDrawer
         open={drawerOpen}
