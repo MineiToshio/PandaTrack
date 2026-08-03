@@ -448,15 +448,17 @@ function OrderItemRow({
       </td>
 
       {/* Delete */}
-      <td className="px-[3px] py-[2px] text-center align-top">
-        <button
-          type="button"
-          aria-label={`${t("itemDeleteLabel")} ${index + 1}`}
-          onClick={() => onDelete(row.rowId)}
-          className="inline-flex items-center rounded p-1 [color:var(--text-muted)] transition-colors hover:[color:var(--destructive)] focus-visible:[box-shadow:0_0_0_2px_var(--focus-ring)] focus-visible:outline-none"
-        >
-          <X size={13} aria-hidden />
-        </button>
+      <td className="px-[3px] py-[2px] align-top">
+        <div className="flex items-center justify-center gap-0.5">
+          <button
+            type="button"
+            aria-label={`${t("itemDeleteLabel")} ${index + 1}`}
+            onClick={() => onDelete(row.rowId)}
+            className="inline-flex items-center rounded p-1 [color:var(--text-muted)] transition-colors hover:[color:var(--destructive)] focus-visible:[box-shadow:0_0_0_2px_var(--focus-ring)] focus-visible:outline-none"
+          >
+            <X size={13} aria-hidden />
+          </button>
+        </div>
       </td>
     </tr>
   );
@@ -668,7 +670,7 @@ export default function OrderItemsGrid({
               <th scope="col" className={cn(headerCellClass, "w-[110px] text-left")}>
                 {t("itemProductTypeLabel")}
               </th>
-              <th scope="col" className="w-7 [border-bottom:1px_solid_var(--border)]" />
+              <th scope="col" className="w-14 [border-bottom:1px_solid_var(--border)]" />
             </tr>
           </thead>
           <tbody>

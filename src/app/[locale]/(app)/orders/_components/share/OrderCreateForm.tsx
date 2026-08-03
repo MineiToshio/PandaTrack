@@ -1,7 +1,8 @@
 "use client";
 
-import { Calculator, Check, Info, Keyboard, Plus, RefreshCw } from "lucide-react";
+import { Calculator, Check, Image as ImageIcon, Info, Keyboard, Plus, RefreshCw } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import posthog from "posthog-js";
 import {
@@ -33,11 +34,13 @@ import {
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { formatAmount, formatCentsForInput } from "@/lib/currency";
 import { isValidPositiveDecimal, sanitizeDecimalInput } from "@/lib/decimalInput";
-import { fetchTodayRate } from "@/lib/fx/frankfurter";
+import { fetchTodayRate } from "@/lib/fx/exchangeRates";
+import { deriveManualFormPrefill, readAndClearManualPrefillStash } from "@/lib/imageIntake/manualPrefillStash";
 import { deriveItemizedTotal, shouldShowDiscrepancyModal } from "@/lib/orders/orderItemUtils";
 import { cn, WIZARD_CONFIRM_PANEL_CLASSNAME } from "@/lib/styles";
 import type { OrderActionResult } from "../../_actions/orderActions";
 import DiscrepancyModal from "./DiscrepancyModal";
+import FxRateAttribution from "./FxRateAttribution";
 import OrderCurrencyField from "./OrderCurrencyField";
 import OrderDeliveryRangeField from "./OrderDeliveryRangeField";
 import OrderItemsGrid, { type ItemRow, createEmptyRow } from "./OrderItemsGrid";
@@ -72,6 +75,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
   const tCreate = useTranslations("orders.create");
   const tForm = useTranslations("orders.form");
   const tCurrencies = useTranslations("orders.currencies");
+  const tImageIntake = useTranslations("imageIntake");
   const productTypeName = useStoreProductTypeName();
   const locale = useLocale();
   const router = useRouter();
@@ -131,6 +135,56 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
       router.push(`/${locale}${ROUTES.orders}/${state.orderId}`);
     }
   }, [state, locale, router]);
+
+  // One-time hand-off from the intake review screen's "complete by hand" exit. A collector who
+  // gets here that way already spent photos and a real extraction on this draft, so the form
+  // opens seeded with it instead of blank. Reads and clears the stash on mount only — never on a
+  // later re-render — so a second visit to this same form (back button, a bookmark) always opens
+  // clean, exactly like every other arrival at this page. Absent or invalid stash content (nothing
+  // there, an expired entry, a shape that fails the draft schema) leaves every field exactly as it
+  // starts today, which is the overwhelming majority of visits to this form.
+  /* eslint-disable react-hooks/set-state-in-effect -- intentional client-only hydration from a
+     sessionStorage hand-off (mirrors useSidebarState's localStorage hydration): the read can only
+     happen post-mount, and every setter below is guarded to run once, not on a later re-render. */
+  useEffect(() => {
+    const prefillDraft = readAndClearManualPrefillStash();
+    if (!prefillDraft) return;
+
+    const prefill = deriveManualFormPrefill(
+      prefillDraft,
+      stores.map((store) => store.id),
+    );
+    // The draft's own currency, not the form's current default, prices the amounts below: it is
+    // what the chat actually stated (or the extraction assumed), and using anything else would
+    // format a number under the wrong code.
+    const prefillCurrencyCode = prefill.currencyCode ?? currencyCode;
+
+    if (prefill.storeId) setStoreId(prefill.storeId);
+    if (prefill.currencyCode) setCurrencyCode(prefill.currencyCode);
+    if (prefill.orderDateIso) {
+      const parsedOrderDate = new Date(`${prefill.orderDateIso}T00:00:00.000Z`);
+      if (!Number.isNaN(parsedOrderDate.getTime())) setOrderDate(parsedOrderDate);
+    }
+    if (prefill.totalCostMinorUnits !== null) {
+      setTotalCost(formatCentsForInput(prefill.totalCostMinorUnits, prefillCurrencyCode));
+    }
+    if (prefill.items.length > 0) {
+      setItems(
+        prefill.items.map((item) => ({
+          rowId: nextRowId(),
+          name: item.name,
+          quantity: "1",
+          unitPrice:
+            item.unitPriceMinorUnits !== null ? formatCentsForInput(item.unitPriceMinorUnits, prefillCurrencyCode) : "",
+          productTypeKey: item.productTypeKey ?? "",
+        })),
+      );
+    }
+    // Deliberately mount-only: this consumes a one-time hand-off, not a response to any of these
+    // values (or `stores`) changing afterward.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Step 2 entry — focus the first product name input so the user immediately
   // sees the spreadsheet cell is editable. WizardStep's generic autofocus picks
@@ -392,6 +446,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
   const serverError = state?.success === false && "error" in state && state.error !== "validation" ? state.error : null;
 
   const ordersHref = `/${locale}${ROUTES.orders}`;
+  const imageIntakeHref = `/${locale}${ROUTES.ordersNew}/image`;
 
   const orderDateForReview = orderDate
     ? orderDate.toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" })
@@ -537,6 +592,15 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                     />
                   </div>
                 </div>
+                {/* Discreet bridge into the image intake method: a text link, never a button, so
+                    it never competes with the step's own "Continuar" CTA. */}
+                <Link
+                  href={imageIntakeHref}
+                  className="inline-flex w-fit items-center gap-1.5 text-[12.5px] [color:var(--text-muted)] hover:[color:var(--accent)]"
+                >
+                  <ImageIcon size={13} aria-hidden className="shrink-0" />
+                  {tImageIntake("entry.wizardHint")}
+                </Link>
               </WizardStep>
 
               {/* STEP 2 — Productos y costos */}
@@ -680,6 +744,7 @@ export default function OrderCreateForm({ stores, productTypeKeys, baseCurrencyC
                       ) : (
                         <p className="text-[11.5px] [color:var(--text-muted)]">{tCreate("fxTodayHelper")}</p>
                       )}
+                      <FxRateAttribution />
                     </div>
                   )}
                 </div>

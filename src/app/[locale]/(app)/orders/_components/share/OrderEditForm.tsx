@@ -28,11 +28,12 @@ import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { formatAmount, formatCentsForInput } from "@/lib/currency";
 import { utcDomainDateToLocal } from "@/lib/domainDate";
 import { isValidPositiveDecimal, sanitizeDecimalInput } from "@/lib/decimalInput";
-import { fetchTodayRate } from "@/lib/fx/frankfurter";
+import { fetchTodayRate } from "@/lib/fx/exchangeRates";
 import { deriveItemizedTotal, shouldShowDiscrepancyModal } from "@/lib/orders/orderItemUtils";
 import { cn } from "@/lib/styles";
 import type { OrderActionResult } from "../../_actions/orderActions";
 import DiscrepancyModal from "./DiscrepancyModal";
+import FxRateAttribution from "./FxRateAttribution";
 import OrderDeliveryRangeField from "./OrderDeliveryRangeField";
 import OrderItemsGrid, { type ItemRow, createEmptyRow } from "./OrderItemsGrid";
 import OrderItemsMobileList from "./OrderItemsMobileList";
@@ -742,6 +743,7 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
                       ) : (
                         <p className="text-[11.5px] [color:var(--text-muted)]">{tCreate("fxTodayHelper")}</p>
                       )}
+                      <FxRateAttribution />
                     </div>
                   )}
                 </div>

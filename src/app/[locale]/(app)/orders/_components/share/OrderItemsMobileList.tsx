@@ -103,33 +103,39 @@ export default function OrderItemsMobileList({
             const qty = parseInt(row.quantity, 10) || 1;
             const priceCents = parseCentsFromDecimal(row.unitPrice);
             const priceLabel = priceCents != null ? formatAmount(priceCents, currencyCode) : null;
+            const rowBody = (
+              <>
+                <span
+                  className={cn(
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px]",
+                    "[color:var(--text-muted)] [background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]",
+                    "[&_svg]:h-[14px] [&_svg]:w-[14px]",
+                  )}
+                >
+                  {Icon ? <Icon /> : null}
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-[13px] font-medium [color:var(--text-primary)]">{row.name}</span>
+                  <span className="text-[11px] [color:var(--text-muted)]">
+                    ×{qty}
+                    {priceLabel ? ` · ${priceLabel}` : ""}
+                  </span>
+                </span>
+              </>
+            );
+
             return (
-              <li key={row.rowId}>
+              <li key={row.rowId} className="flex items-stretch gap-1.5">
                 <button
                   type="button"
                   onClick={() => setSheet({ open: true, rowId: row.rowId })}
                   className={cn(
-                    "flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-left",
+                    "flex min-w-0 flex-1 items-center gap-2.5 rounded-[10px] px-2.5 py-2.5 text-left",
                     "[background:var(--surface)] [border:1px_solid_var(--border)]",
                     "hover:[background:color-mix(in_oklch,var(--text-primary)_3%,transparent)]",
                   )}
                 >
-                  <span
-                    className={cn(
-                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px]",
-                      "[color:var(--text-muted)] [background:color-mix(in_oklch,var(--text-primary)_5%,transparent)]",
-                      "[&_svg]:h-[14px] [&_svg]:w-[14px]",
-                    )}
-                  >
-                    {Icon ? <Icon /> : null}
-                  </span>
-                  <span className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate text-[13px] font-medium [color:var(--text-primary)]">{row.name}</span>
-                    <span className="text-[11px] [color:var(--text-muted)]">
-                      ×{qty}
-                      {priceLabel ? ` · ${priceLabel}` : ""}
-                    </span>
-                  </span>
+                  {rowBody}
                   <Pencil size={14} className="shrink-0 [color:var(--text-muted)]" aria-label={tAdd("editAria")} />
                 </button>
               </li>

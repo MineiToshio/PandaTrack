@@ -1,0 +1,25 @@
+{
+  "cancel": "Cancel",
+  "noPrice": "No price",
+  "split": {
+    "title": "Split into products",
+    "confirm": "Split into products",
+    "partCountLabel": "How many products do you want to split it into?",
+    "priceNote": "We split {amount} equally. Adjust it if one piece is worth more than the other.",
+    "rowsLabel": "Resulting products",
+    "rowNameLabel": "Name of product {index}",
+    "rowNamePlaceholder": "Product {index}",
+    "rowPriceLabel": "Price of product {index}",
+    "nameRequiredError": "Give every product a name before splitting."
+  },
+  "merge": {
+    "title": "Merge into one",
+    "confirm": "Merge into one",
+    "sourceListLabel": "About to merge",
+    "consequenceWithPrice": "Their prices are added up to {amount}, and from now on they're delivered together, not separately.",
+    "consequenceNoPrice": "From now on they're delivered together, not separately.",
+    "nameLabel": "Merged product name",
+    "priceLabel": "Merged product price",
+    "nameRequiredError": "Give the merged product a name before continuing."
+  }
+}

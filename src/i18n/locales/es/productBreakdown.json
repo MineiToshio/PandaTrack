@@ -1,0 +1,25 @@
+{
+  "cancel": "Cancelar",
+  "noPrice": "Sin precio",
+  "split": {
+    "title": "Separar en productos",
+    "confirm": "Separar en productos",
+    "partCountLabel": "¿En cuántos productos lo separas?",
+    "priceNote": "Repartimos {amount} en partes iguales. Ajusta si una pieza vale más que la otra.",
+    "rowsLabel": "Productos resultantes",
+    "rowNameLabel": "Nombre del producto {index}",
+    "rowNamePlaceholder": "Producto {index}",
+    "rowPriceLabel": "Precio del producto {index}",
+    "nameRequiredError": "Ponle nombre a cada producto antes de separar."
+  },
+  "merge": {
+    "title": "Unir en uno",
+    "confirm": "Unir en uno",
+    "sourceListLabel": "Se van a unir",
+    "consequenceWithPrice": "Se suman sus precios en {amount} y a partir de ahora se entregan juntos, no por separado.",
+    "consequenceNoPrice": "A partir de ahora se entregan juntos, no por separado.",
+    "nameLabel": "Nombre del producto unido",
+    "priceLabel": "Precio del producto unido",
+    "nameRequiredError": "Ponle un nombre al producto unido antes de continuar."
+  }
+}

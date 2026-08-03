@@ -2,9 +2,9 @@ import { Box, Truck } from "lucide-react";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { cn } from "@/lib/styles";
+import { ROUTES } from "@/lib/constants";
 import { formatAmountSymbolOnly } from "@/lib/currency";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
-import { ROUTES } from "@/lib/constants";
 import type { OrderItemWithDeliveryState } from "@/lib/data/orders/orderQueries";
 import OrderItemStatePill from "./OrderItemStatePill";
 
@@ -27,6 +27,10 @@ type OrderItemsReadOnlyListProps = {
  * The state pill itself is the toggle (`<OrderItemStatePill>`) — no extra "Marcar como listo"
  * copy in the row. Pill is read-only when the item is locked by an active delivery or by a
  * cancelled order; otherwise tapping it flips `NONE ↔ ARRIVED_AT_STORE` with optimistic update.
+ *
+ * The list is otherwise read-only: the only interactive control is that pill, so the rows render
+ * on the server and the component holds no client boundary of its own. Changing which products an
+ * order has is order edit's job, reachable from the header action.
  */
 export default async function OrderItemsReadOnlyList({
   orderId,
