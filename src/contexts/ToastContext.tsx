@@ -46,7 +46,17 @@ export const NEUTRAL_UNDO_DURATION_MS = 5000;
  */
 export const ENTITY_DELETE_UNDO_DURATION_MS = 8000;
 
-export function ToastProvider({ children }: { children: React.ReactNode }) {
+type ToastProviderProps = {
+  children: React.ReactNode;
+  /**
+   * Raises the toast stack's bottom inset by the floating action button's height plus its
+   * margin on routes where that button renders. Owned by the caller (the app shell)
+   * since it already knows the current route and re-uses `isFabEligibleRoute`.
+   */
+  fabOffsetActive?: boolean;
+};
+
+export function ToastProvider({ children, fabOffsetActive = false }: ToastProviderProps) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const counterRef = useRef(0);
 
@@ -68,7 +78,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ addToast, removeToast }}>
       {children}
-      <ToastContainer toasts={toasts} onRemove={removeToast} />
+      <ToastContainer toasts={toasts} onRemove={removeToast} raiseForFab={fabOffsetActive} />
     </ToastContext.Provider>
   );
 }

@@ -16,6 +16,11 @@ export type CheckboxProps = {
   loading?: boolean;
   /** Visible label rendered next to the checkbox. */
   label?: string;
+  /**
+   * Accessible name for callers that already render the label text elsewhere in the row (so a
+   * second visible `label` would duplicate it). Ignored when `label` is set.
+   */
+  ariaLabel?: string;
   size?: CheckboxSize;
   className?: string;
 };
@@ -26,7 +31,7 @@ const SIZE_MAP: Record<CheckboxSize, { box: string; iconSize: number; text: stri
 };
 
 const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ id, name, checked, onChange, disabled, loading, label, size = "md", className }, ref) => {
+  ({ id, name, checked, onChange, disabled, loading, label, ariaLabel, size = "md", className }, ref) => {
     const { box, iconSize, text } = SIZE_MAP[size];
     const isIndeterminate = checked === "indeterminate";
     const isChecked = checked === true;
@@ -57,6 +62,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             checked={isChecked}
             onChange={handleChange}
             disabled={disabled || loading}
+            aria-label={!label && ariaLabel ? ariaLabel : undefined}
             aria-checked={isIndeterminate ? "mixed" : isChecked}
             aria-busy={loading ? "true" : undefined}
             className="sr-only"

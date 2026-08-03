@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import posthog from "posthog-js";
 import Button from "@/components/core/Button/Button";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import { authClient } from "@/lib/auth/auth-client";
+import { signOutClient } from "@/lib/auth/authSignOut";
 
 type SignOutButtonProps = {
   locale: string;
@@ -31,11 +31,9 @@ export default function SignOutButton({
   const handleSignOut = () => {
     onSignOut?.();
     posthog.capture(POSTHOG_EVENTS.AUTH.SIGNOUT, { locale });
-    authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push(`/${locale}${ROUTES.signIn}`);
-        },
+    void signOutClient({
+      onSuccess: () => {
+        router.push(`/${locale}${ROUTES.signIn}`);
       },
     });
     router.refresh();

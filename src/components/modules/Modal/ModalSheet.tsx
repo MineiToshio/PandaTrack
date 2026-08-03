@@ -4,7 +4,7 @@ import { useId, type ReactNode } from "react";
 import { Drawer } from "vaul";
 import { cn } from "@/lib/styles";
 import type { ModalProps } from "./Modal.types";
-import { ModalFooter, ModalHeader } from "./ModalContent";
+import { hasModalFooter, ModalFooter, ModalHeader } from "./ModalContent";
 
 /**
  * # ModalSheet — mobile bottom sheet (ADR 0008 Extension · Adaptive)
@@ -95,7 +95,19 @@ export default function ModalSheet({
             closeButtonLabel={closeButtonLabel}
           />
           {children != null && children !== false && (
-            <div className={cn("flex-1 overflow-y-auto px-6 pt-4 pb-1", bodyClassName)}>{children}</div>
+            <div
+              className={cn(
+                "flex-1 overflow-y-auto px-6 pt-4",
+                // Without a footer the body is the last thing in the sheet, so it also inherits the
+                // footer's job of clearing the iOS home indicator.
+                hasModalFooter({ primaryAction, secondaryAction, tertiaryAction })
+                  ? "pb-1"
+                  : "[padding-bottom:calc(20px+env(safe-area-inset-bottom))]",
+                bodyClassName,
+              )}
+            >
+              {children}
+            </div>
           )}
           <ModalFooter
             primaryAction={primaryAction}

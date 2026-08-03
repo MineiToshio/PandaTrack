@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
-import { AlertCircle, List, PackagePlus, Plus, Truck } from "lucide-react";
-import Button from "@/components/core/Button/Button";
+import { AlertCircle, List, PackagePlus, Truck } from "lucide-react";
 import Chip from "@/components/core/Chip";
 import EmptyState from "@/components/modules/EmptyState";
 import { formatAmountSymbolOnly } from "@/lib/currency";
@@ -12,6 +11,7 @@ import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import type { DashboardData, OrderSummary } from "@/lib/data/dashboard/dashboardTypes";
 import DashboardActivityRow from "./DashboardActivityRow";
 import DashboardActivityTabs, { type DashboardActivityTab } from "./DashboardActivityTabs";
+import DashboardCreateOrderButton from "./DashboardCreateOrderButton";
 import DashboardZoneCard from "./DashboardZoneCard";
 import DashboardZoneLink from "./DashboardZoneLink";
 import DashboardZoneView from "./DashboardZoneView";
@@ -72,17 +72,12 @@ export default async function DashboardActivityZone({ data, locale }: DashboardA
             subtitle={t("activity.empty.body")}
             className="flex-1"
             actions={
-              <Button
-                as="a"
-                href={`/${locale}${ROUTES.ordersNew}`}
-                variant="primary"
-                size="md"
-                leadingIcon={<Plus className="size-4" aria-hidden="true" />}
-                data-ph-event={POSTHOG_EVENTS.DASHBOARD.ACTIVITY_ITEM_CTA_CLICKED}
-                data-ph-props={JSON.stringify({ list: "empty" })}
-              >
-                {t("activity.empty.cta")}
-              </Button>
+              <DashboardCreateOrderButton
+                locale={locale}
+                source="dashboard_empty_state"
+                label={t("activity.empty.cta")}
+                posthogProps={{ list: "empty" }}
+              />
             }
           />
         </DashboardZoneCard>

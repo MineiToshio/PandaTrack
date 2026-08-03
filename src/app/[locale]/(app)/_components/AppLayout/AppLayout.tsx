@@ -6,12 +6,15 @@ import { ShellIdentityContext } from "@/contexts/ShellIdentityContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import Sidebar from "@/components/modules/Sidebar";
 import Header from "@/components/modules/Header";
+import CreateOrderFab, { isFabEligibleRoute } from "@/components/modules/CreateOrderFab";
 import { useSidebarState } from "@/hooks/useSidebarState";
 import { APP_SHELL_MAIN_CLASSNAME } from "@/lib/constants";
+import { cn } from "@/lib/styles";
 import AppNavDrawer from "./AppNavDrawer";
 import { HeaderTitleProvider } from "./HeaderTitleContext";
 import ServiceWorkerRegistration from "./ServiceWorkerRegistration";
 import TimezoneCapture from "./TimezoneCapture";
+import type { PhotoCounterSnapshot } from "@/app/[locale]/(app)/orders/_components/share/photoCounterContract";
 import type { AppShellUserIdentity } from "./types";
 
 type AppLayoutProps = {
@@ -23,6 +26,8 @@ type AppLayoutProps = {
   storedTimezone: string | null;
   /** Whether the current user is an administrator; gates the Administración nav section (BR-02-05). */
   isAdmin: boolean;
+  /** Photo balance for the create-method selector the floating button opens. */
+  photoCounter?: PhotoCounterSnapshot | null;
   children: React.ReactNode;
 };
 
@@ -33,6 +38,7 @@ export default function AppLayout({
   storesHref,
   storedTimezone,
   isAdmin,
+  photoCounter = null,
   children,
 }: AppLayoutProps) {
   const pathname = usePathname();
@@ -40,6 +46,9 @@ export default function AppLayout({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const burgerButtonRef = useRef<HTMLButtonElement>(null);
   const [currentUser, setCurrentUser] = useState<AppShellUserIdentity>(initialUser);
+  // Dashboard + Orders list only, shared with the FAB itself so the toast inset and the list's
+  // reserved bottom padding never drift from where the button actually renders.
+  const fabEligible = isFabEligibleRoute(pathname ?? "", locale);
 
   const updateUser = useCallback((patch: Partial<AppShellUserIdentity>) => {
     setCurrentUser((prev) => ({ ...prev, ...patch }));
@@ -54,7 +63,7 @@ export default function AppLayout({
 
   return (
     <ShellIdentityContext.Provider value={{ user: currentUser, updateUser }}>
-      <ToastProvider>
+      <ToastProvider fabOffsetActive={fabEligible}>
         <ServiceWorkerRegistration />
         <TimezoneCapture storedTimezone={storedTimezone} />
         {/* Shell root: carries --sidebar-current-w so all children can reference it */}
@@ -105,12 +114,21 @@ export default function AppLayout({
                 onOpenDrawer={handleOpenDrawer}
                 burgerButtonRef={burgerButtonRef}
               />
-              <main id="main-content" className={APP_SHELL_MAIN_CLASSNAME}>
+              <main
+                id="main-content"
+                className={cn(
+                  APP_SHELL_MAIN_CLASSNAME,
+                  // Reserve the same inset the FAB raises the toast by, so the last list card
+                  // never ends up underneath it. Matches the FAB's own `lg:hidden`.
+                  fabEligible && "max-lg:pb-[calc(var(--fab-offset)+var(--fab-h)+var(--space-3))]",
+                )}
+              >
                 {children}
               </main>
             </HeaderTitleProvider>
           </div>
         </div>
+        <CreateOrderFab locale={locale} photoCounter={photoCounter} />
       </ToastProvider>
     </ShellIdentityContext.Provider>
   );

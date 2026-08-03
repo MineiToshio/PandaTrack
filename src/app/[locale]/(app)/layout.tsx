@@ -10,6 +10,7 @@ import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
 import { getVerificationSnapshot, maybeSendDaySixVerificationReminder } from "@/lib/auth/authVerification";
 import { ROUTES, VERIFICATION_BANNER_HEIGHT_PX } from "@/lib/constants";
 import { listCountryCodesCached } from "@/lib/data/catalog/countryQueries";
+import { getImageIntakeQuotaSnapshotCached } from "@/lib/data/imageIntake/imageIntakeQuotaQueries";
 import {
   listActiveStoreProductTypeKeysCached,
   listAuthoredStoreProductTypeNamesCached,
@@ -46,15 +47,25 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
     await maybeSendDaySixVerificationReminder(snapshot, `/${locale}${ROUTES.dashboard}`, requestHeaders);
   }
 
-  const [tAuth, shellIdentity, collectorPrefs, catalogCountryCodes, catalogProductTypeKeys, authoredProductTypeNames] =
-    await Promise.all([
-      getTranslations({ locale, namespace: "auth" }),
-      getAppShellUserIdentity(session.user.id),
-      getCollectorPreferencesSnapshot(session.user.id),
-      listCountryCodesCached(),
-      listActiveStoreProductTypeKeysCached(),
-      listAuthoredStoreProductTypeNamesCached(),
-    ]);
+  const [
+    tAuth,
+    shellIdentity,
+    collectorPrefs,
+    catalogCountryCodes,
+    catalogProductTypeKeys,
+    authoredProductTypeNames,
+    // The shell owns this read because the create-method selector opens from the shell's own
+    // floating button; `cache()` keeps a page that also renders the selector from reading twice.
+    photoCounter,
+  ] = await Promise.all([
+    getTranslations({ locale, namespace: "auth" }),
+    getAppShellUserIdentity(session.user.id),
+    getCollectorPreferencesSnapshot(session.user.id),
+    listCountryCodesCached(),
+    listActiveStoreProductTypeKeysCached(),
+    listAuthoredStoreProductTypeNamesCached(),
+    getImageIntakeQuotaSnapshotCached(session.user.id, isAdmin),
+  ]);
 
   // Admin-authored types resolve through the DB name; seeded keys stay on the i18n namespace.
   const authoredProductTypeNameMap = buildAuthoredStoreProductTypeNameMap(authoredProductTypeNames);
@@ -94,6 +105,7 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
           storesHref={storesHref}
           storedTimezone={storedTimezone}
           isAdmin={isAdmin}
+          photoCounter={photoCounter}
         >
           <StoreProductTypeNamesProvider authoredNames={authoredProductTypeNameMap}>
             {children}
@@ -129,6 +141,7 @@ export default async function PrivateAppLayout({ children, params }: PrivateAppL
         storesHref={storesHref}
         storedTimezone={storedTimezone}
         isAdmin={isAdmin}
+        photoCounter={photoCounter}
       >
         <StoreProductTypeNamesProvider authoredNames={authoredProductTypeNameMap}>
           {children}

@@ -96,9 +96,18 @@ export type ModalFooterProps = {
  * right. In sticky mode (mobile sheet) the footer pins to the bottom and
  * respects the iOS safe area inset.
  */
+/**
+ * Whether a footer will render for these actions, and therefore whether it will supply the modal's
+ * bottom padding. Exported so the body's padding decision and the footer's own render decision read
+ * from one definition instead of two that can drift: when they drifted, the last element of a
+ * footer-less modal sat flush against the modal's bottom edge.
+ */
+export function hasModalFooter(props: Pick<ModalFooterProps, "primaryAction" | "secondaryAction" | "tertiaryAction">) {
+  return Boolean(props.primaryAction || props.secondaryAction || props.tertiaryAction);
+}
+
 export function ModalFooter({ primaryAction, secondaryAction, tertiaryAction, sticky = false }: ModalFooterProps) {
-  const hasAny = Boolean(primaryAction || secondaryAction || tertiaryAction);
-  if (!hasAny) return null;
+  if (!hasModalFooter({ primaryAction, secondaryAction, tertiaryAction })) return null;
 
   return (
     <footer
@@ -149,9 +158,17 @@ export function ModalFooter({ primaryAction, secondaryAction, tertiaryAction, st
 export type ModalBodyProps = {
   children?: ReactNode;
   className?: string;
+  /**
+   * Whether a footer renders below this body. The footer owns the modal's bottom breathing room, so
+   * the body keeps only a hairline of its own; without a footer the body has to supply that room
+   * itself, or its last element ends flush against the modal's edge.
+   */
+  hasFooter?: boolean;
 };
 
-export function ModalBody({ children, className }: ModalBodyProps) {
+export function ModalBody({ children, className, hasFooter = true }: ModalBodyProps) {
   if (children == null || children === false) return null;
-  return <div className={cn("flex-1 overflow-y-auto px-6 pt-4 pb-1", className)}>{children}</div>;
+  return (
+    <div className={cn("flex-1 overflow-y-auto px-6 pt-4", hasFooter ? "pb-1" : "pb-5", className)}>{children}</div>
+  );
 }

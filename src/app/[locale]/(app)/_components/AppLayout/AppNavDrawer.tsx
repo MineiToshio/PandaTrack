@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Package, ScrollText, Shield, ShoppingBag, Store, X } from "lucide-react";
+import { Image as ImageIcon, LayoutDashboard, Package, ScrollText, Shield, ShoppingBag, Store, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -35,6 +35,7 @@ const NAV_ICON_MAP: Record<PrimaryNavItemId, React.ComponentType<{ className?: s
 
 const ADMIN_ICON_MAP: Record<AdminNavItemId, React.ComponentType<{ className?: string }>> = {
   moderation: Shield,
+  imageIntake: ImageIcon,
   audit: ScrollText,
 };
 

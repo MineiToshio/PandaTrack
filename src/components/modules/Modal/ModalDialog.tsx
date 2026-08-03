@@ -6,7 +6,7 @@ import { cn } from "@/lib/styles";
 import { FOCUS_OPTIONS_NO_SCROLL, getFocusableElements } from "@/lib/a11y/focusable";
 import type { ModalProps } from "./Modal.types";
 import { SIZE_MAX_WIDTH } from "./Modal.types";
-import { ModalBody, ModalFooter, ModalHeader } from "./ModalContent";
+import { hasModalFooter, ModalBody, ModalFooter, ModalHeader } from "./ModalContent";
 
 /**
  * # ModalDialog — desktop centered modal (ADR 0008 · Semantic Depth)
@@ -170,7 +170,12 @@ export default function ModalDialog({
             descriptionId={descriptionId}
             closeButtonLabel={closeButtonLabel}
           />
-          <ModalBody className={bodyClassName}>{children}</ModalBody>
+          <ModalBody
+            className={bodyClassName}
+            hasFooter={hasModalFooter({ primaryAction, secondaryAction, tertiaryAction })}
+          >
+            {children}
+          </ModalBody>
           <ModalFooter
             primaryAction={primaryAction}
             secondaryAction={secondaryAction}

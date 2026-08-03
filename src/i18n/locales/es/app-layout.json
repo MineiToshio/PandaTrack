@@ -3,7 +3,6 @@
     "dashboard": "Panel",
     "stores": "Tiendas",
     "purchases": "Pedidos",
-    "preOrders": "Pre-reservas",
     "deliveries": "Entregas",
     "settings": "Ajustes"
   },
@@ -16,7 +15,8 @@
   },
   "orders": {
     "newOrder": "Nuevo pedido",
-    "editOrder": "Editar pedido"
+    "editOrder": "Editar pedido",
+    "createFromImage": "Crear desde imagen"
   },
   "sidebar": {
     "expand": "Expandir barra lateral",
@@ -57,8 +57,7 @@
   "placeholder": "Contenido próximamente.",
   "pageHero": {
     "eyebrow": "Tu espacio de trabajo",
-    "purchasesDescription": "Aquí vivirán tu historial y el seguimiento de pedidos. Muy pronto.",
-    "preOrdersDescription": "Aquí organizarás pre-reservas y pagos pendientes. Muy pronto."
+    "purchasesDescription": "Aquí vivirán tu historial y el seguimiento de pedidos. Muy pronto."
   },
   "meta": {
     "description": "Espacio de trabajo del coleccionista PandaTrack."

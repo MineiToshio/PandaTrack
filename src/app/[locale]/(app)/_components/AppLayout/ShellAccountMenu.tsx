@@ -7,7 +7,7 @@ import { ChevronUp, LogOut, Settings } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import posthog from "posthog-js";
-import { authClient } from "@/lib/auth/auth-client";
+import { signOutClient } from "@/lib/auth/authSignOut";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { cn, TINTED_SURFACE_GRADIENT_STOPS } from "@/lib/styles";
 import type { AppShellUserIdentity } from "./types";
@@ -145,11 +145,9 @@ export default function ShellAccountMenu({
   const handleSignOut = () => {
     handleItemSelect();
     posthog.capture(POSTHOG_EVENTS.AUTH.SIGNOUT, { locale });
-    authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          router.push(`/${locale}${ROUTES.signIn}`);
-        },
+    void signOutClient({
+      onSuccess: () => {
+        router.push(`/${locale}${ROUTES.signIn}`);
       },
     });
     router.refresh();

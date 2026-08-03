@@ -13,6 +13,7 @@ import DashboardActivityZone from "./_components/DashboardActivityZone";
 import DashboardBudgetZone from "./_components/DashboardBudgetZone";
 import DashboardCashZone from "./_components/DashboardCashZone";
 import DashboardCollectionZone from "./_components/DashboardCollectionZone";
+import DashboardCreateOrderButton from "./_components/DashboardCreateOrderButton";
 import DashboardKpiStrip from "./_components/DashboardKpiStrip";
 import DashboardLostOnCancelledZone from "./_components/DashboardLostOnCancelledZone";
 import DashboardPunctualityZone from "./_components/DashboardPunctualityZone";
@@ -87,11 +88,16 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
     <div className="flex flex-col gap-6">
       <DashboardZoneView event={POSTHOG_EVENTS.DASHBOARD.CASH_ZONE_VIEWED} />
 
-      <header className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <Heading as="h1" size="sm">
-          {greeting}
-        </Heading>
-        <span className="[font-size:13px] whitespace-nowrap [color:var(--text-muted)]">{headingMeta}</span>
+      <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <Heading as="h1" size="sm">
+            {greeting}
+          </Heading>
+          <span className="[font-size:13px] whitespace-nowrap [color:var(--text-muted)]">{headingMeta}</span>
+        </div>
+        {/* Desktop-only primary CTA: the FAB (`CreateOrderFab`) only covers viewports below
+            `1024px`, so `≥1024px` needs its own entry point into the same method selector. */}
+        <DashboardCreateOrderButton locale={locale} source="dashboard_header" className="hidden lg:inline-flex" />
       </header>
 
       <div className="grid grid-cols-1 gap-[18px] lg:grid-cols-12 lg:items-start lg:gap-5">

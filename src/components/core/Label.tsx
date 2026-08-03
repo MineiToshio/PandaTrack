@@ -30,7 +30,7 @@ export default function Label({
   spacing: _spacing,
   ...rest
 }: LabelProps) {
-  const t = useTranslations("label");
+  const t = useTranslations("components.label");
 
   return (
     <label

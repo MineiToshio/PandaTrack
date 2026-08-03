@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Image as ImageIcon,
   LayoutDashboard,
   Package,
   PanelLeftClose,
@@ -43,6 +44,7 @@ const NAV_ICON_MAP: Record<NavItemId, React.ComponentType<{ className?: string }
 
 const ADMIN_ICON_MAP: Record<AdminNavItemId, React.ComponentType<{ className?: string }>> = {
   moderation: Shield,
+  imageIntake: ImageIcon,
   audit: ScrollText,
 };
 

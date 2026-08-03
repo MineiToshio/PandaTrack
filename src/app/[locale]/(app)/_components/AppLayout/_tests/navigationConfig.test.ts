@@ -59,18 +59,19 @@ describe("getPrivateAppNavItems", () => {
 describe("getAdminNavItems", () => {
   it("returns the grouped Administración section items in order", () => {
     const items = getAdminNavItems();
-    expect(items.map((i) => i.id)).toEqual(["moderation", "audit"]);
+    expect(items.map((i) => i.id)).toEqual(["moderation", "imageIntake", "audit"]);
   });
 
-  it("builds locale-prefixed hrefs for the admin landing and audit routes", () => {
+  it("builds locale-prefixed hrefs for the admin landing and the nested routes", () => {
     const items = getAdminNavItems();
     expect(items[0].href("es")).toBe("/es/admin");
-    expect(items[1].href("en")).toBe("/en/admin/audit");
+    expect(items[1].href("es")).toBe("/es/admin/image-intake");
+    expect(items[2].href("en")).toBe("/en/admin/audit");
   });
 
   it("resolves labels against the admin namespace", () => {
     const items = getAdminNavItems();
-    expect(items.map((i) => i.labelKey)).toEqual(["nav.moderation", "nav.audit"]);
+    expect(items.map((i) => i.labelKey)).toEqual(["nav.moderation", "nav.imageIntake", "nav.audit"]);
   });
 });
 
@@ -83,6 +84,11 @@ describe("getActiveAdminNavItemId", () => {
   it("matches the audit entry for the nested audit route", () => {
     expect(getActiveAdminNavItemId("/es/admin/audit")).toBe("audit");
     expect(getActiveAdminNavItemId("/en/admin/audit")).toBe("audit");
+  });
+
+  it("matches the photo-quota entry for the nested image-intake route", () => {
+    expect(getActiveAdminNavItemId("/es/admin/image-intake")).toBe("imageIntake");
+    expect(getActiveAdminNavItemId("/en/admin/image-intake")).toBe("imageIntake");
   });
 
   it("returns undefined for non-admin routes so no collector item is displaced", () => {

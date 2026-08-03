@@ -3,7 +3,6 @@
     "dashboard": "Dashboard",
     "stores": "Stores",
     "purchases": "Orders",
-    "preOrders": "Pre-orders",
     "deliveries": "Deliveries",
     "settings": "Settings"
   },
@@ -16,7 +15,8 @@
   },
   "orders": {
     "newOrder": "New order",
-    "editOrder": "Edit order"
+    "editOrder": "Edit order",
+    "createFromImage": "Create from image"
   },
   "sidebar": {
     "expand": "Expand sidebar",
@@ -57,8 +57,7 @@
   "placeholder": "Content coming soon.",
   "pageHero": {
     "eyebrow": "Collector workspace",
-    "purchasesDescription": "Your order history and tracking will live here. More soon.",
-    "preOrdersDescription": "Pre-orders and payment timing will be organized here. More soon."
+    "purchasesDescription": "Your order history and tracking will live here. More soon."
   },
   "meta": {
     "description": "PandaTrack collector workspace."
