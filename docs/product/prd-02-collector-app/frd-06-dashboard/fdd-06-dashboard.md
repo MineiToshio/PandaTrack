@@ -131,8 +131,8 @@ filled backgrounds, so the surfaces stay quiet.
 `--surface-elevated` with a hairline border, a **3px colored top edge**, and a **tinted lucide
 icon tile** (`14%`-mix background in its accent). The four accents are in a **fixed order**
 (`accent → cool → warm → success`), one metric each: **Pedidos** (`package`, `38`),
-**Productos** (`boxes`, `112`), **Valor de pedidos** (`wallet`, `S/ 18,400`), **Tiendas** (`store`,
-`9`). This is a low-weight glance summary of `FR-06-11` totals; "Valor de pedidos" (`Order.totalCost`,
+**Productos** (`boxes`, `112`), **Valor de pedidos** (`wallet`, `S/ 18,400`), **Tiendas donde
+compraste** (`store`, `9`). This is a low-weight glance summary of `FR-06-11` totals; "Valor de pedidos" (`Order.totalCost`,
 paid + still owed — the word "comprometido" is avoided as confusing) is labeled distinctly so it is
 never read as disbursed spend, and carries an always-available tooltip explaining it. The
 partial/complete state is shown by the icon only (info-toned; warning-toned naming the excluded
@@ -166,7 +166,11 @@ gap `18px`) that fills the height of Caja. It holds two cards, both `rc-grow` (`
 vertically centered):
 
 - **ZONA 2 · Presupuesto** (`s8-card-cool top-cool`). Eyebrow `gauge · "Presupuesto"`, title
-  `"Este ciclo"`. The hero is `consumed / budget` (`S/ 1.290 / 2.000`) with a `kpi-sub`
+  `"Este ciclo"`. The hero pairs consumed with the budget it is measured against, joined by a
+  **word, not a slash** (`"S/ 1,290 de S/ 2,000"`): the sol's own symbol is `S/`, so a slash
+  separator renders three slashes in one line and reads as a formatting glitch before it reads as a
+  ratio. Each amount is `nowrap`, so a long pair breaks between the two rather than stranding a
+  symbol at the end of a row. Followed by a `kpi-sub`
   reminding that this is the **budget cycle** and equals disbursed-this-month; then a
   `.budget-meter` whose fill class encodes the band (`is-ok` `< 80%` green / `is-warn`
   `80–100%` amber / `is-over` `> 100%` red), and a `.budget-legend` pairing a status **chip**

@@ -110,7 +110,7 @@
     "orders": "Pedidos",
     "products": "Productos",
     "committed": "Valor de pedidos",
-    "stores": "Tiendas",
+    "stores": "Tiendas donde compraste",
     "committedPartial": "{count, plural, one {Excluye # pedido con tipo de cambio pendiente} other {Excluye # pedidos con tipo de cambio pendiente}}.",
     "committedPartialHint": "Cifra parcial",
     "committedMeaning": "Suma del valor de todos tus pedidos activos: lo que ya pagaste más lo que aún debes.",
@@ -156,6 +156,7 @@
   "budget": {
     "eyebrow": "Presupuesto",
     "title": "Este ciclo",
+    "ofGoal": "de {amount}",
     "titleUnset": "Aún sin definir",
     "cycleHelper": "Consumido en el ciclo actual (reinicia el día {day}).",
     "cycleHelperLastDay": "Consumido en el ciclo actual (reinicia el último día del mes).",

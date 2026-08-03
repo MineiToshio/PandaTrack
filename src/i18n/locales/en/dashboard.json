@@ -110,7 +110,7 @@
     "orders": "Orders",
     "products": "Products",
     "committed": "Order value",
-    "stores": "Stores",
+    "stores": "Stores you bought from",
     "committedPartial": "{count, plural, one {Excludes # order with a pending exchange rate} other {Excludes # orders with a pending exchange rate}}.",
     "committedPartialHint": "Partial figure",
     "committedMeaning": "The total value of all your active orders: what you've already paid plus what you still owe.",
@@ -156,6 +156,7 @@
   "budget": {
     "eyebrow": "Budget",
     "title": "This cycle",
+    "ofGoal": "of {amount}",
     "titleUnset": "Not set yet",
     "cycleHelper": "Spent in the current cycle (resets on day {day}).",
     "cycleHelperLastDay": "Spent in the current cycle (resets on the last day of the month).",

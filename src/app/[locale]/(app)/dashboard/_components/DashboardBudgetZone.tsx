@@ -98,9 +98,19 @@ export default async function DashboardBudgetZone({ data, locale }: DashboardBud
       <DashboardZoneCard {...cardBase} title={t("budget.title")}>
         <div className="flex flex-1 flex-col">
           <p className="[font-size:clamp(28px,4.4vw,38px)] [line-height:1] [font-weight:var(--font-weight-bold)] [letter-spacing:-0.03em] [color:var(--text-primary)] tabular-nums">
-            {money(budget.consumedMinor)}{" "}
-            <span className="[font-size:18px] [font-weight:var(--font-weight-semibold)] [color:var(--text-muted)]">
-              / {money(budgetAmountMinor)}
+            {/*
+              Spelled out rather than a "/" separator: the sol renders as "S/", so "S/ 0.00 / S/
+              1,000.00" puts three slashes in one line and reads as a formatting glitch before it
+              reads as a ratio. A word carries the relationship in every currency, including the
+              ones whose symbol has no slash.
+
+              Both halves are `nowrap` so a long pair breaks *between* the amounts instead of inside
+              one. Without it the line wraps mid-amount and strands the symbol on the previous row
+              ("… de S/" / "200,000.00"), which is worse than the slash it replaced.
+            */}
+            <span className="whitespace-nowrap">{money(budget.consumedMinor)}</span>{" "}
+            <span className="[font-size:18px] [font-weight:var(--font-weight-semibold)] whitespace-nowrap [color:var(--text-muted)]">
+              {t("budget.ofGoal", { amount: money(budgetAmountMinor) })}
             </span>
           </p>
           <p className="mt-1.5 [font-size:var(--text-body)] [color:var(--text-secondary)]">{cycleHelper}</p>
