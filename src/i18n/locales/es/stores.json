@@ -702,5 +702,21 @@
     "validationErrors": {
       "isPrivateOnlyPerson": "El perfil privado solo aplica a tiendas tipo Persona."
     }
+  },
+  "intakeResolution": {
+    "changeCta": "Cambiar",
+    "ambiguousPrompt": "¿Cuál de estas tiendas es?",
+    "ambiguousListLabel": "Tiendas posibles",
+    "noneOption": "Ninguna, crear una nueva",
+    "createIntro": "No encontramos esta tienda. Créala sin salir de esta pantalla.",
+    "createNameLabel": "Nombre de la tienda",
+    "createPhoneNote": "Teléfono del chat: {phone}",
+    "createPendingNote": "Se creará como pendiente de revisión, igual que cualquier tienda nueva.",
+    "createSubmit": "Crear tienda",
+    "createSubmitting": "Creando tienda...",
+    "createNameRequired": "Escribe el nombre de la tienda.",
+    "createErrorCountryRequired": "Primero completa tu país en Configuración.",
+    "createErrorServer": "No pudimos crear la tienda. Inténtalo de nuevo.",
+    "backToCandidates": "Volver a las opciones"
   }
 }

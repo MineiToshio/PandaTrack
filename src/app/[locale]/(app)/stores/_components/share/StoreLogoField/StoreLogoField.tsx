@@ -18,6 +18,7 @@ import {
   type StoreLogoAction,
 } from "@/lib/store/logoShared";
 import { getCroppedImageDataUrl } from "./getCroppedImageDataUrl";
+import { extensionForEncodedType } from "@/lib/images/canvasEncoding";
 import { getProcessedImageBlob } from "@/lib/images/getProcessedImageBlob";
 
 export type StoreLogoSubmission = {
@@ -216,11 +217,19 @@ export default function StoreLogoField({
     };
 
     try {
-      const [nextPreviewUrl, processedBlob] = await Promise.all([
+      const [nextPreviewUrl, processedImage] = await Promise.all([
         getCroppedImageDataUrl(editorImageUrl, cropArea),
         getProcessedImageBlob(editorImageUrl, cropArea, STORE_LOGO_OUTPUT_SIZE_PX),
       ]);
-      const processedFile = new File([processedBlob], "logo.webp", { type: "image/webp" });
+      // The encoder falls back to JPEG on engines without real WebP support (see canvasEncoding.ts),
+      // so the file extension must follow the verified mimeType instead of assuming WebP.
+      const processedFile = new File(
+        [processedImage.blob],
+        `logo.${extensionForEncodedType(processedImage.mimeType)}`,
+        {
+          type: processedImage.mimeType,
+        },
+      );
       setPreviewUrl(nextPreviewUrl);
       setConfirmedCrop(crop);
       setConfirmedZoom(zoom);

@@ -702,5 +702,21 @@
     "validationErrors": {
       "isPrivateOnlyPerson": "Private profile is only valid for Person stores."
     }
+  },
+  "intakeResolution": {
+    "changeCta": "Change",
+    "ambiguousPrompt": "Which of these stores is it?",
+    "ambiguousListLabel": "Possible stores",
+    "noneOption": "None, create a new one",
+    "createIntro": "We could not find this store. Create it without leaving this screen.",
+    "createNameLabel": "Store name",
+    "createPhoneNote": "Phone from the chat: {phone}",
+    "createPendingNote": "It will be created as pending review, just like any new store.",
+    "createSubmit": "Create store",
+    "createSubmitting": "Creating store...",
+    "createNameRequired": "Enter the store's name.",
+    "createErrorCountryRequired": "First complete your country in Settings.",
+    "createErrorServer": "We could not create the store. Try again.",
+    "backToCandidates": "Back to the options"
   }
 }

@@ -5,10 +5,28 @@ import {
   skipUnlessAdminEnv,
   skipUnlessAuthenticatedEnv,
 } from "./_helpers/auth";
+import { deleteStoresBySlug } from "./_helpers/dbCleanup";
 
 const CONTINUE = /^(continue|continuar)$/i;
-const STORE_DETAIL_URL = /\/en\/stores\/[a-z0-9-]+$/;
+// `(?!new)` excludes the wizard's own `/en/stores/new` URL, which otherwise also satisfies
+// `[a-z0-9-]+` and lets this assertion resolve before the post-create redirect actually lands.
+const STORE_DETAIL_URL = /\/en\/stores\/(?!new)[a-z0-9-]+$/;
 const HYDRATION_RETRY_MS = 250;
+
+/**
+ * Stores created by the current test, tracked so `afterEach` can hard-delete them (cascading to
+ * their orders/deliveries/reports/change requests). The UI has no store-delete affordance — the
+ * "remove store" moderation action is a soft delete (`status: REJECTED`) by design — so a direct
+ * DB delete is the only way to leave the database as it was before the test ran (BR: no
+ * E2E-created rows may persist, see `.agents/rules/testing-strategy.mdc`).
+ */
+let createdStoreSlugs: string[] = [];
+
+test.afterEach(async () => {
+  const slugs = createdStoreSlugs;
+  createdStoreSlugs = [];
+  await deleteStoresBySlug(slugs);
+});
 
 /**
  * Walks the create-store wizard for a BUSINESS (RETAILER) seller and lands on the new store's
@@ -56,7 +74,9 @@ async function createBusinessStoreAndOpenDetail(page: Page, name: string): Promi
   }
 
   await expect(page).toHaveURL(STORE_DETAIL_URL, { timeout: 15_000 });
-  return page.url();
+  const url = page.url();
+  createdStoreSlugs.push(url.split("/").pop()!);
+  return url;
 }
 
 /**

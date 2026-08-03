@@ -8,6 +8,7 @@ import {
   Film,
   GalleryThumbnails,
   Gamepad2,
+  Newspaper,
   Package,
   Palette,
   ScrollText,
@@ -19,7 +20,7 @@ import {
 } from "lucide-react";
 
 /**
- * Lucide icon mapping for the 16 catalog product type keys.
+ * Lucide icon mapping for the 17 seeded catalog product type keys.
  * Source of truth for product-type iconography across the app
  * (filter pills, store cards, store detail, future order detail "store info").
  *
@@ -37,6 +38,7 @@ export const STORE_PRODUCT_TYPE_ICON_MAP: Record<string, LucideIcon> = {
   funko_accessories: Tag,
   home_video: Film,
   light_novels: ScrollText,
+  magazines: Newspaper,
   manga: BookOpen,
   merchandise: ShoppingBag,
   music: Disc,

@@ -16,7 +16,6 @@ import {
   Package,
   Pencil,
   Phone,
-  PlusCircle,
   ShieldAlert,
   Star,
   Tags,
@@ -62,6 +61,7 @@ import StoreReportNoticeProvider from "./StoreReportNoticeProvider";
 import StoreReportNoticeBanner, { StoreReportedChip } from "./StoreReportNotice";
 import StoreReportModal from "./StoreReportModal";
 import StoreAdminModerationPanel from "./StoreAdminModerationPanel";
+import StoreCreateOrderButton from "./StoreCreateOrderButton";
 
 type StoreDetailContentProps = {
   locale: string;
@@ -460,16 +460,11 @@ export default function StoreDetailContent({
               }
               acciones={
                 <>
-                  <Button
-                    as="a"
-                    href={`/${locale}${ROUTES.ordersNew}?store=${store.id}`}
-                    variant="primary"
-                    leadingIcon={<PlusCircle size={16} aria-hidden="true" />}
-                    fullWidth
-                    className="justify-start"
-                  >
-                    {tStores("redesign.detail.actions.anotarPedido")}
-                  </Button>
+                  <StoreCreateOrderButton
+                    locale={locale}
+                    storeId={store.id}
+                    label={tStores("redesign.detail.actions.anotarPedido")}
+                  />
                   {canAccessEditRoute && (
                     <Button
                       as="a"
