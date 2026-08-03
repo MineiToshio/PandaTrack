@@ -530,6 +530,7 @@
       "personChip": "Persona",
       "personNote": "Los perfiles de persona no muestran canales de contacto ni direcciones públicamente.",
       "proxyChip": "Proxy",
+      "zoomLogo": "Ver el logo de {store} más grande",
       "pendingChip": "En revisión",
       "addressDefaultLabel": "Tienda principal",
       "aside": {

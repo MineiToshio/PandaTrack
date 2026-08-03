@@ -28,6 +28,14 @@ import ModalSheet from "./ModalSheet";
  * The choice is automatic via `useIsMobile()`. Consumers see a single
  * public API.
  *
+ * `presentation="centered"` opts out of the mobile sheet and keeps the
+ * centered dialog at every width. It exists for content the user only
+ * has to **look at** — an enlarged image, say. A bottom sheet reads as a
+ * task surface ("pick something", "confirm something") and anchoring to
+ * the bottom forfeits the height a viewed image wants, so for media it
+ * misreads the intent and wastes the screen. It is not an escape hatch
+ * for forms or confirms; those stay `adaptive`.
+ *
  * ## Visual contract (Semantic Depth, both variants)
  * - Backdrop `blur(8px)` with light/dark calibrated tints.
  * - Icon-circle 48px tonal (default `--accent`, destructive, warning, info).
@@ -60,7 +68,8 @@ import ModalSheet from "./ModalSheet";
  * - Cursor rules: `.agents/rules/modal-canonical-pattern.mdc`,
  *   `.agents/rules/ui-libs-policy.mdc`.
  */
-export default function Modal(props: ModalProps) {
+export default function Modal({ presentation = "adaptive", ...props }: ModalProps) {
   const isMobile = useIsMobile();
-  return isMobile ? <ModalSheet {...props} /> : <ModalDialog {...props} />;
+  const useSheet = isMobile && presentation === "adaptive";
+  return useSheet ? <ModalSheet {...props} /> : <ModalDialog {...props} />;
 }

@@ -349,3 +349,30 @@ Con la arquitectura final (Modal smart wrapper + ModalDialog + ModalSheet + Moda
 ### Confianza
 
 **Alta.** Validación cruzada con guidelines oficiales (Apple HIG, Material 3, NN/g, W3C APG) + adopción industrial unánime + datos cuantitativos de engagement. Decisión humana explícita 2026-05-11 tras revisar el informe del agente.
+
+---
+
+## Extensión (2026-08-03): `presentation="centered"` para contenido que solo se mira
+
+El adaptativo original asume que todo modal es una **tarea**: por eso bajo 768px se convierte en
+bottom sheet, anclado al pulgar. Ese supuesto se rompió al abrir el logo ampliado de una tienda
+(`StoreLogoZoom`, `FR-04-52`). El sheet resultaba extraño y el owner lo señaló sin conocer la
+implementación, que es la mejor señal de que el patrón no encajaba.
+
+Dos motivos, y ninguno es de gusto:
+
+1. **Semántica.** Un cajón que sube desde abajo anuncia "elige o confirma algo". Material describe
+   el modal bottom sheet como alternativa a menús y listas de acciones, con sitio para "ítems
+   adicionales, descripciones largas e iconografía". Mirar una imagen no es ninguna de esas cosas.
+2. **Espacio.** Anclarse al borde inferior regala justo la altura que una imagen quiere. Centrado
+   sobre un fondo atenuado es lo que hace cualquier visor de fotos de teléfono.
+
+**Decisión:** se añade la prop `presentation` (`adaptive` por defecto | `centered`) al componente
+canónico, no un componente nuevo ni una bifurcación, conforme a la regla 1 de
+`modal-canonical-pattern.mdc`. `centered` renderiza `ModalDialog` en todo ancho, así que hereda sin
+cambios el focus trap, Esc, devolución de foco y semántica de diálogo ya validados aquí.
+
+**Límite explícito:** `centered` es para contenido que se mira, no para esquivar el sheet en un
+formulario o un confirm. Todo lo accionable sigue siendo `adaptive`. El límite está escrito en el
+JSDoc del tipo y en la regla, porque una prop de presentación sin criterio se convierte en la puerta
+por la que se cuela cualquier preferencia personal.

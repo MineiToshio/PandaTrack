@@ -46,7 +46,15 @@ import { Trash2 } from "lucide-react";
 </Modal>
 ```
 
-The component covers: `tone` (default/destructive/warning/info), `size` (md/lg), `primaryAction` / `secondaryAction` / `tertiaryAction`, `dismissible`, `role` (`dialog` | `alertdialog`), focus management, keyboard, ARIA, motion, `prefers-reduced-motion` fallback. Read the component JSDoc for the full API.
+The component covers: `tone` (default/destructive/warning/info), `size` (md/lg), `presentation` (adaptive/centered), `primaryAction` / `secondaryAction` / `tertiaryAction`, `dismissible`, `role` (`dialog` | `alertdialog`), focus management, keyboard, ARIA, motion, `prefers-reduced-motion` fallback. Read the component JSDoc for the full API.
+
+### `presentation` — when the mobile sheet is the wrong shape
+
+Default `adaptive`: bottom sheet under 768px, centered dialog above. That is correct for everything the user has to **do** — confirms, forms, option lists, decisions. The sheet sits under the thumb and reads as a task surface.
+
+`presentation="centered"` keeps the centered dialog at every width. Use it only for content the user has to **look at** rather than act on — currently the enlarged store logo (`StoreLogoZoom`). Two reasons: a drawer sliding up from the bottom announces "choose or confirm something", which misdescribes viewing an image; and anchoring to the bottom edge forfeits the vertical room the image wants. A centered surface on a dimmed backdrop is the near-universal phone convention for viewing media.
+
+This is **not** an escape hatch for a form or confirm you would rather see centered. If you reach for it on an actionable modal, the answer is `adaptive`.
 
 ## Submit dismissal — Optimistic Confirmation
 

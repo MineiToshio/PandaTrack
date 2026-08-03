@@ -240,6 +240,7 @@ export const POSTHOG_EVENTS = {
     CHANGE_REQUEST_EDIT_ENTERED: "store_change_request_edit_entered",
     CHANGE_REQUEST_SUBMITTED: "store_change_request_submitted",
     CHANGE_REQUEST_NOOP_DISCARDED: "store_change_request_noop_discarded",
+    LOGO_ZOOM_OPENED: "store_logo_zoom_opened",
     LOGO_UPLOAD_STARTED: "store_logo_upload_started",
     LOGO_UPLOAD_SUCCEEDED: "store_logo_upload_succeeded",
     LOGO_UPLOAD_FAILED: "store_logo_upload_failed",

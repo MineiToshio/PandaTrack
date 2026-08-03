@@ -5,6 +5,7 @@ import StarRating from "@/components/core/StarRating";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import type { StoreDetail } from "@/lib/data/stores/storeQueries";
 import { cn } from "@/lib/styles";
+import StoreLogoZoom from "./StoreLogoZoom";
 
 export type StoreHeroLabels = {
   countryName: (code: string) => string;
@@ -22,6 +23,8 @@ export type StoreHeroLabels = {
   proxyChip?: string;
   /** "En revisión" — chip shown when status is PENDING. */
   pendingChip?: string;
+  /** Accessible name for the logo trigger, e.g. "Ver el logo de Akabane más grande". */
+  zoomLogo: (storeName: string) => string;
 };
 
 export type StoreHeroProps = {
@@ -68,7 +71,14 @@ export default function StoreHero({ store, labels, derivedSignals, className }: 
     >
       <div className="flex flex-wrap items-center gap-3">
         {store.logoUrl ? (
-          <StoreAvatar store={{ name: store.name, logo: { src: store.logoUrl, aspect: "square" } }} size={56} />
+          // Openable only here. The same avatar in store cards and dashboard rows sits inside a
+          // link, where a nested button would be invalid and would eat the row's navigation.
+          <StoreLogoZoom
+            storeName={store.name}
+            logoSrc={store.logoUrl}
+            size={56}
+            openLabel={labels.zoomLogo(store.name)}
+          />
         ) : isPending && !isPerson ? (
           // Pending without logo → info-tinted placeholder (matches `s6-store-detail-pending` hero avatar).
           <span

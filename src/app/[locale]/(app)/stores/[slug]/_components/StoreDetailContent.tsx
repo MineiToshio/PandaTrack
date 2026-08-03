@@ -241,6 +241,7 @@ export default function StoreDetailContent({
                   personNote: isPerson ? tStores("redesign.detail.personNote") : undefined,
                   proxyChip: tStores("redesign.detail.proxyChip"),
                   pendingChip: tStores("redesign.detail.pendingChip"),
+                  zoomLogo: (storeName) => tStores("redesign.detail.zoomLogo", { store: storeName }),
                 }}
               />
 

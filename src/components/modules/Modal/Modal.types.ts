@@ -6,6 +6,19 @@ export type ModalTone = "default" | "destructive" | "warning" | "info" | "succes
 
 export type ModalSize = "md" | "lg";
 
+/**
+ * How the modal presents itself on mobile.
+ *
+ * - `adaptive` (default) — bottom sheet under 768px, centered dialog above. Correct for anything
+ *   the user has to *do*: confirms, forms, option lists, decisions. The sheet sits under the thumb
+ *   and reads as a task surface.
+ * - `centered` — centered dialog at every width. For content the user only has to *look at*, where
+ *   a drawer misreads the intent and wastes the screen: a drawer implies "pick something", and
+ *   anchoring to the bottom forfeits the height a viewed image wants. Use it for media viewing,
+ *   not to dodge the sheet on a form.
+ */
+export type ModalPresentation = "adaptive" | "centered";
+
 export type ModalAction = {
   label: string;
   onClick: () => void;
@@ -50,6 +63,8 @@ export type ModalProps = {
   tone?: ModalTone;
   /** Width preset for desktop dialog: `md` (460px) | `lg` (768px). Default `md`. Ignored on mobile sheet. */
   size?: ModalSize;
+  /** Mobile presentation. Default `adaptive` (bottom sheet). See `ModalPresentation`. */
+  presentation?: ModalPresentation;
   /** Primary CTA in the footer. */
   primaryAction?: ModalAction;
   /** Secondary CTA in the footer (aligned to the left of primary). */
