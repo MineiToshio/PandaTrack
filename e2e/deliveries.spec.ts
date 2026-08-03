@@ -1,7 +1,25 @@
 import { expect, test, type Page } from "@playwright/test";
 import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers/auth";
+import { deleteDeliveriesById, deleteOrdersById } from "./_helpers/dbCleanup";
 
 const E2E_ITEM_NAME = `E2E Delivery Item ${Date.now()}`;
+
+/**
+ * Orders/deliveries created by the current test, tracked so `afterEach` can hard-delete them as a
+ * backstop even if the test fails before reaching its own UI-driven cleanup step (BR: no
+ * E2E-created rows may persist in the database, see `.agents/rules/testing-strategy.mdc`).
+ */
+let createdOrderIds: string[] = [];
+let createdDeliveryIds: string[] = [];
+
+test.afterEach(async () => {
+  const orderIds = createdOrderIds;
+  const deliveryIds = createdDeliveryIds;
+  createdOrderIds = [];
+  createdDeliveryIds = [];
+  await deleteDeliveriesById(deliveryIds);
+  await deleteOrdersById(orderIds);
+});
 
 /** Creates a minimal order through the create wizard and returns its detail URL. */
 async function createOrderWithOneItem(page: Page): Promise<string> {
@@ -33,7 +51,9 @@ async function createOrderWithOneItem(page: Page): Promise<string> {
   // instead of matching the wizard's own /orders/new URL.
   await page.getByRole("button", { name: /create order/i }).click();
   await expect(page).toHaveURL(/\/en\/orders\/(?!new)[a-z0-9]+$/i, { timeout: 15_000 });
-  return page.url();
+  const url = page.url();
+  createdOrderIds.push(url.split("/").pop()!);
+  return url;
 }
 
 /** Deletes the current entity through the type-to-confirm destructive modal. */
@@ -108,6 +128,7 @@ test.describe("Delivery lifecycle journey", () => {
     // 5. Lands on the delivery detail in transit.
     await expect(page).toHaveURL(/\/en\/deliveries\/(?!new)[a-z0-9]+$/i, { timeout: 15_000 });
     const deliveryUrl = page.url();
+    createdDeliveryIds.push(deliveryUrl.split("/").pop()!);
     await expect(page.getByText(/in transit/i).first()).toBeVisible();
 
     // 6. Mark as delivered (received date defaults to today) — optimistic flip.

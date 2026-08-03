@@ -1,7 +1,31 @@
 import { expect, test, type Page } from "@playwright/test";
 import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers/auth";
+import { deleteOrdersById } from "./_helpers/dbCleanup";
 
 const E2E_ITEM_NAME = `E2E Order Item ${Date.now()}`;
+
+/**
+ * Orders created by the current test, tracked so `afterEach` can hard-delete them as a backstop
+ * even if the test fails before reaching its own UI-driven cleanup step (BR: no E2E-created rows
+ * may persist in the database, see `.agents/rules/testing-strategy.mdc`).
+ */
+let createdOrderIds: string[] = [];
+
+/** Also restore this if a test changes it and fails before undoing the change itself. */
+let baseCurrencyToRestore: string | null = null;
+
+test.afterEach(async ({ page }) => {
+  if (baseCurrencyToRestore) {
+    const codeToRestore = baseCurrencyToRestore;
+    baseCurrencyToRestore = null;
+    await changeBaseCurrency(page, codeToRestore).catch(() => {});
+  }
+  if (createdOrderIds.length > 0) {
+    const ids = createdOrderIds;
+    createdOrderIds = [];
+    await deleteOrdersById(ids);
+  }
+});
 
 /** Creates a minimal order through the create wizard (in the account's base currency) and
  *  returns its detail URL. Mirrors the helper in `deliveries.spec.ts`. */
@@ -33,7 +57,9 @@ async function createOrderWithOneItem(page: Page): Promise<string> {
   // Step 3 — confirm; `(?!new)` waits for the detail redirect, not the wizard URL.
   await page.getByRole("button", { name: /create order/i }).click();
   await expect(page).toHaveURL(/\/en\/orders\/(?!new)[a-z0-9]+$/i, { timeout: 15_000 });
-  return page.url();
+  const url = page.url();
+  createdOrderIds.push(url.split("/").pop()!);
+  return url;
 }
 
 /** Cancels the order currently shown on its detail page (confirmation alertdialog). */
@@ -159,6 +185,9 @@ test.describe("Order FX reconciliation flag", () => {
     await page.getByRole("button", { name: /^save$|^guardar$/i }).click();
     // "Cancel" clears only once the server action resolves (stable label, unlike "Save" → "Saving…").
     await expect(page.getByRole("button", { name: /^cancel$|^cancelar$/i })).toHaveCount(0, { timeout: 15_000 });
+    // Base currency is real account state, not disposable test data — track it so `afterEach`
+    // restores it even if a later assertion in this test fails.
+    baseCurrencyToRestore = originalCode;
     // The conditional "reconcile rates" shortcut appears because the seeded order is now foreign.
     await expect(page.getByRole("link", { name: /update rates|actualizar tasas/i })).toBeVisible({ timeout: 15_000 });
 
@@ -207,8 +236,10 @@ test.describe("Order FX reconciliation flag", () => {
       await expect(page.locator(`a[href*="/orders/${orderId}"]`)).toHaveCount(0, { timeout: 2_000 });
     }).toPass({ timeout: 15_000 });
 
-    // 6. Cleanup — delete the order and restore the original base currency.
+    // 6. Cleanup — delete the order and restore the original base currency (afterEach is only the
+    //    backstop for a failure above; the happy path restores inline so state is right immediately).
     await deleteOrder(page, orderUrl);
     await changeBaseCurrency(page, originalCode);
+    baseCurrencyToRestore = null;
   });
 });

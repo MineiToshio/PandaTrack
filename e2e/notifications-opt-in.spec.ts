@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers/auth";
+import { deletePushSubscriptionsByEndpointPrefix } from "./_helpers/dbCleanup";
 
 /**
  * Push opt-in from the Settings Notifications section.
@@ -10,16 +11,26 @@ import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers
  * patching prototypes that may not exist; the server action still runs for real and persists the
  * (stubbed) subscription. Notification permission is granted at the Playwright context level so
  * `Notification.requestPermission` resolves `granted` without a prompt.
+ *
+ * That real persisted `PushSubscription` row needs its own cleanup: the fake endpoint always
+ * starts with `PUSH_ENDPOINT_PREFIX`, so `afterEach` sweeps it directly from the database as a
+ * backstop, since there is no "unsubscribe" UI affordance this spec drives.
  */
+const PUSH_ENDPOINT_PREFIX = "https://push.example.com/e2e-";
+
+test.afterEach(async () => {
+  await deletePushSubscriptionsByEndpointPrefix(PUSH_ENDPOINT_PREFIX);
+});
+
 test.describe("Notifications opt-in", () => {
   test("enables the master toggle and reveals the per-type reminder toggles", async ({ page, context }) => {
     skipUnlessAuthenticatedEnv();
 
     await context.grantPermissions(["notifications"]);
 
-    await page.addInitScript(() => {
+    await page.addInitScript((endpointPrefix) => {
       const fakeSubscription = {
-        endpoint: `https://push.example.com/e2e-${Math.random().toString(36).slice(2)}`,
+        endpoint: `${endpointPrefix}${Math.random().toString(36).slice(2)}`,
         toJSON() {
           return { endpoint: this.endpoint, keys: { p256dh: "e2e-p256dh", auth: "e2e-auth" } };
         },
@@ -56,7 +67,7 @@ test.describe("Notifications opt-in", () => {
           get: () => "granted" as NotificationPermission,
         });
       }
-    });
+    }, PUSH_ENDPOINT_PREFIX);
 
     await signInAndLandOnDashboard(page);
 

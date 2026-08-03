@@ -1,5 +1,26 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { signInAndLandOnDashboard, skipUnlessAuthenticatedEnv } from "./_helpers/auth";
+
+/** Base currency is real account state, not disposable test data — tracked so `afterEach` restores
+ *  it even if the test fails after changing it but before its own inline restore step runs. */
+let baseCurrencyToRestore: string | null = null;
+
+async function setBaseCurrency(page: Page, targetCode: string): Promise<void> {
+  await page.getByRole("button", { name: /base currency|moneda base/i }).click();
+  await page.getByRole("option", { name: new RegExp(`^${targetCode}`) }).click();
+  await page.getByRole("button", { name: /^save$|^guardar$/i }).click();
+  await expect(page.getByRole("button", { name: /^cancel$|^cancelar$/i })).toHaveCount(0, { timeout: 15_000 });
+}
+
+test.afterEach(async ({ page }) => {
+  if (!baseCurrencyToRestore) return;
+  const codeToRestore = baseCurrencyToRestore;
+  baseCurrencyToRestore = null;
+  await page.goto("/en/settings");
+  const tablist = page.getByRole("tablist", { name: /settings sections|secciones de ajustes/i }).first();
+  await tablist.getByRole("tab", { name: /preferences|preferencias/i }).click();
+  await setBaseCurrency(page, codeToRestore).catch(() => {});
+});
 
 test.describe("Settings", () => {
   test.describe.configure({ mode: "serial" });
@@ -68,11 +89,14 @@ test.describe("Settings", () => {
     // "Save" → "Saving…"), so it is the reliable commit signal.
     await expect(cancel).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByRole("button", { name: /base currency|moneda base/i })).toContainText(targetCode);
+    baseCurrencyToRestore = originalCode;
 
-    // Restore the original base currency so the run leaves the account as it found it.
+    // Restore the original base currency so the run leaves the account as it found it (the happy
+    // path restores inline; `afterEach` is only the backstop for a failure above).
     await page.getByRole("button", { name: /base currency|moneda base/i }).click();
     await page.getByRole("option", { name: new RegExp(`^${originalCode}`) }).click();
     await save.click();
     await expect(cancel).toHaveCount(0, { timeout: 15_000 });
+    baseCurrencyToRestore = null;
   });
 });

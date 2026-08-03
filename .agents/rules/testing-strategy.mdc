@@ -84,12 +84,28 @@ When finalizing a change, run the relevant automated tests so that updated or ne
 
 ## E2E database hygiene (required)
 
-E2E tests must not leave persistent test data in the database.
+E2E tests must not leave persistent test data in the database. This applies everywhere the suite
+runs — dev, staging, or production — never only "because it's not prod."
 
-- If a test creates records, clean them up in teardown (`afterEach`/`afterAll`) in the same spec.
-- Prefer deterministic cleanup keys (for example captured IDs or slugs) over broad deletes.
+- Cleanup must run from `test.afterEach` (or `afterAll` for suite-level fixtures), never only as
+  the last synchronous step inside the test body. Playwright still runs `afterEach` when a test
+  fails or times out; inline end-of-test cleanup does not, so a single failed assertion above it
+  orphans everything the test created. Track created ids/slugs in a variable the test populates as
+  it creates each record, and have `afterEach` sweep whatever is still tracked.
+- If the feature under test also mutates real account state (base currency, preferences, and
+  similar), track the original value the same way and restore it from `afterEach` too — a leaked
+  mutation on the shared dev account is as much a hygiene violation as a leaked row.
+- Prefer a direct-DB delete (see `e2e/_helpers/dbCleanup.ts`) as the cleanup mechanism, not a
+  UI-driven flow: a UI delete can itself be broken by the same failure that skipped the test's own
+  cleanup step, or may not exist at all (for example a moderation "remove" action is a soft
+  delete — `status: REJECTED` — never a hard delete; only a direct DB call removes the row). A
+  spec may still exercise UI-driven delete as part of its own coverage, but `afterEach` must not
+  depend on it succeeding.
+- Prefer deterministic cleanup keys (for example captured ids, slugs, or a unique fixture-value
+  prefix like a push-subscription endpoint) over broad deletes.
 - If you intentionally verify persistence, still delete the created records before the suite ends.
-- Never leave E2E-generated rows as permanent data in shared environments.
+- Never leave E2E-generated rows, or E2E-driven mutations of real rows, as permanent state in any
+  shared environment.
 
 ## Test file placement
 

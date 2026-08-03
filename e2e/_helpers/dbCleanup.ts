@@ -1,0 +1,66 @@
+import { execFile } from "node:child_process";
+import path from "node:path";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
+const REPO_ROOT = path.resolve(__dirname, "../..");
+const CLEANUP_SCRIPT = path.join(REPO_ROOT, "scripts/e2e-db-cleanup.ts");
+
+interface CleanupRequest {
+  orderIds?: readonly string[];
+  storeSlugs?: readonly string[];
+  deliveryIds?: readonly string[];
+  pushEndpointPrefix?: string;
+}
+
+/**
+ * Runs cleanup in a child `tsx` process instead of importing the generated Prisma client
+ * directly: Playwright's test transform cannot load that client's ESM `import.meta` usage, while
+ * `tsx` (the same runtime `scripts/seed-dev-data.ts` uses) handles it natively. See
+ * `scripts/e2e-db-cleanup.ts`.
+ */
+async function runCleanup(request: CleanupRequest): Promise<void> {
+  await execFileAsync("npx", ["tsx", CLEANUP_SCRIPT, JSON.stringify(request)], { cwd: REPO_ROOT });
+}
+
+/**
+ * Direct-DB backstop for specs that create orders through the UI. Call from `test.afterEach` so
+ * leftovers are removed even when the test fails or is interrupted before its own UI-driven
+ * cleanup step runs. Deleting an id already removed through the UI is a safe no-op.
+ */
+export async function deleteOrdersById(ids: readonly string[]): Promise<void> {
+  const candidates = ids.filter(Boolean);
+  if (candidates.length === 0) return;
+  await runCleanup({ orderIds: candidates });
+}
+
+/**
+ * Direct-DB backstop for specs that create stores through the UI (cascades to their orders and
+ * deliveries per schema). Call from `test.afterEach`; safe no-op for slugs already deleted.
+ */
+export async function deleteStoresBySlug(slugs: readonly string[]): Promise<void> {
+  const candidates = slugs.filter(Boolean);
+  if (candidates.length === 0) return;
+  await runCleanup({ storeSlugs: candidates });
+}
+
+/**
+ * Direct-DB backstop for specs that create deliveries through the UI. A `Delivery` has no direct
+ * FK to `Order` (it links via `DeliveryOrderItem`), so deleting the seed order does not cascade to
+ * it — it must be deleted explicitly or it survives as an orphan. Call from `test.afterEach`.
+ */
+export async function deleteDeliveriesById(ids: readonly string[]): Promise<void> {
+  const candidates = ids.filter(Boolean);
+  if (candidates.length === 0) return;
+  await runCleanup({ deliveryIds: candidates });
+}
+
+/**
+ * Direct-DB backstop for specs that opt into push notifications with a fake subscription (the
+ * server action persists a real `PushSubscription` row even though the endpoint is stubbed). Call
+ * from `test.afterEach` with the endpoint prefix used by the fake subscription.
+ */
+export async function deletePushSubscriptionsByEndpointPrefix(prefix: string): Promise<void> {
+  if (!prefix) return;
+  await runCleanup({ pushEndpointPrefix: prefix });
+}

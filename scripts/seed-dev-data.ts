@@ -241,7 +241,8 @@ type SeedOrder = {
   deliveries?: SeedDelivery[];
   cancelled?: boolean;
   cancellationReason?: string;
-  needsExchangeRateUpdate?: boolean;
+  /** Leaves the stored rate un-attributed, so the order reads as FX-pending (see ADR 0024). */
+  fxUnreconciled?: boolean;
   note?: string;
 };
 
@@ -591,7 +592,7 @@ const ORDERS: SeedOrder[] = [
       { name: "Metroid Prime Trilogy", quantity: 1, unitPrice: 180_000, productTypeKey: "video_games", state: "open" },
     ],
     payments: [],
-    needsExchangeRateUpdate: true,
+    fxUnreconciled: true,
     note: "Exchange rate needs to be re-entered.",
   },
 
@@ -955,7 +956,7 @@ async function createOrders(userId: string, storeIdsByKey: Map<string, string>):
         expectedDeliveryTo: seed.expectedDeliveryTo ? day(seed.expectedDeliveryTo) : null,
         currencyCode: seed.currencyCode,
         exchangeRate: EXCHANGE_RATES[seed.currencyCode],
-        needsExchangeRateUpdate: seed.needsExchangeRateUpdate ?? false,
+        exchangeRateBaseCode: seed.fxUnreconciled ? null : BASE_CURRENCY,
         totalCost: seed.totalCost,
         note: seed.note,
         status,
@@ -1008,6 +1009,7 @@ async function createOrders(userId: string, storeIdsByKey: Map<string, string>):
           cost: delivery.cost,
           currencyCode: seed.currencyCode,
           exchangeRate: EXCHANGE_RATES[seed.currencyCode],
+          exchangeRateBaseCode: BASE_CURRENCY,
           note: delivery.note,
           orderItems: {
             create: delivery.itemIndexes.map((position) => ({ orderItemId: itemIdByPosition.get(position)! })),

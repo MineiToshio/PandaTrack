@@ -72,6 +72,37 @@ Why they matter:
 - catch real regressions in App Router flows
 - provide confidence for release-critical paths
 
+### Live contract smoke tests (opt-in, never in CI)
+
+Every test that touches a paid external API uses a double, so `npm run test` never spends money and
+never depends on a third party being up. That is the right default and it has one blind spot: a
+mismatch between the request we build and what the provider actually accepts is invisible to a
+suite that only talks to doubles, and it surfaces as a production outage rather than a red test.
+
+The image intake feature already paid for this once. An unsupported keyword (`maxItems`) in the
+Gemini response schema made the API reject the whole request with an opaque HTTP 400, breaking every
+extraction, while the full provider suite stayed green.
+
+The pattern that closes the gap has two halves, and both are needed:
+
+1. **A static guard that runs in CI.** Cheap, offline, and specific: assert the request-shaping
+   constants stay inside the subset verified against the real API, with a failure message that
+   explains the consequence and points at the smoke test. See
+   `src/test/image-intake-response-schema-guard.test.ts`.
+2. **An opt-in smoke script, outside `npm run test`.** A few real calls, built from the SAME
+   production functions the app calls (imported, never copied: a copy drifts and stops proving
+   anything), that fail loudly with the provider's own error detail. See
+   `scripts/local/smoke-image-intake.ts`, run with `npm run smoke-image-intake`.
+
+A smoke script against a model must also assert the DATA it gets back, not only that the request was
+accepted and the answer parsed. A schema proves the shape and says nothing about the unit, so a
+model answering `59` where `5990` was meant produces a valid draft and a wrong order. The image
+intake smoke renders synthetic receipts with known amounts and fails loudly when a returned figure
+is exactly a hundred times off, which is the only way that class of bug is visible at all.
+
+Smoke scripts live in `scripts/local/`, are documented in the README's script table with their real
+cost, and state which changes oblige a run.
+
 ## Next.js App Router guidance
 
 PandaTrack uses Next.js App Router. That has an important implication:
