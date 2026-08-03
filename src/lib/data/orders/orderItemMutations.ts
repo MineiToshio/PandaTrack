@@ -10,16 +10,13 @@ import type { OrderItemRowInput } from "@/lib/orders/orderValidation";
 const POSITION_SHIFT_OFFSET = 1_000_000;
 
 export type CreateOrderItemsResult =
-  | { ok: true }
-  | { ok: false; error: "INVALID_PRODUCT_TYPE"; productTypeKey: string };
+  { ok: true } | { ok: false; error: "INVALID_PRODUCT_TYPE"; productTypeKey: string };
 
 export type DeleteOrderItemResult =
-  | { ok: true }
-  | { ok: false; error: "ITEM_NOT_FOUND" | "ITEM_HAS_LIVE_DELIVERY"; deliveryId?: string };
+  { ok: true } | { ok: false; error: "ITEM_NOT_FOUND" | "ITEM_HAS_LIVE_DELIVERY"; deliveryId?: string };
 
 export type ReplaceOrderItemsResult =
-  | { ok: true }
-  | { ok: false; error: "ITEM_HAS_LIVE_DELIVERY" | "INVALID_PRODUCT_TYPE"; detail?: string };
+  { ok: true } | { ok: false; error: "ITEM_HAS_LIVE_DELIVERY" | "INVALID_PRODUCT_TYPE"; detail?: string };
 
 /**
  * Normalizes a list of item inputs to consecutive positions starting at 1,
@@ -33,8 +30,11 @@ function normalizePositions<T extends { position: number }>(items: T[]): T[] {
 /**
  * Validates that all referenced productTypeKeys exist and are active.
  * Returns the first invalid key found, or null if all are valid.
+ *
+ * Exported so a caller that writes before it would reach `createOrderItems` (see `createOrder`) can
+ * run this check itself, up front, while the transaction still has nothing to lose.
  */
-async function findInvalidProductTypeKey(tx: Prisma.TransactionClient, keys: string[]): Promise<string | null> {
+export async function findInvalidProductTypeKey(tx: Prisma.TransactionClient, keys: string[]): Promise<string | null> {
   const uniqueKeys = [...new Set(keys)];
   if (uniqueKeys.length === 0) return null;
 
@@ -96,6 +96,17 @@ export async function replaceOrderItems(
   userId: string,
   items: Array<OrderItemRowInput & { id?: string }>,
 ): Promise<ReplaceOrderItemsResult> {
+  // Both refusals below must be decided before the first write. Returning normally from a
+  // `$transaction` callback COMMITS it — only a thrown error rolls it back — so an `{ ok: false }`
+  // return placed after a write persists that write while the caller is told the edit failed. This
+  // validation used to sit after the delete, which silently dropped the removed items on refusal.
+  const productTypeKeys = items.map((i) => i.productTypeKey).filter((k): k is string => k != null);
+
+  const invalidKey = await findInvalidProductTypeKey(tx, productTypeKeys);
+  if (invalidKey !== null) {
+    return { ok: false, error: "INVALID_PRODUCT_TYPE", detail: invalidKey };
+  }
+
   const existingItems = await tx.orderItem.findMany({
     where: { orderId, userId },
     select: { id: true },
@@ -122,13 +133,6 @@ export async function replaceOrderItems(
     }
 
     await tx.orderItem.deleteMany({ where: { id: { in: toDeleteIds } } });
-  }
-
-  const productTypeKeys = items.map((i) => i.productTypeKey).filter((k): k is string => k != null);
-
-  const invalidKey = await findInvalidProductTypeKey(tx, productTypeKeys);
-  if (invalidKey !== null) {
-    return { ok: false, error: "INVALID_PRODUCT_TYPE", detail: invalidKey };
   }
 
   const normalized = normalizePositions(items);

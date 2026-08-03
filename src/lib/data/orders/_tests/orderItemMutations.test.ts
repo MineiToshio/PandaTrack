@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const { prismaMock } = vi.hoisted(() => ({
-  prismaMock: { $transaction: vi.fn() },
+  prismaMock: { $transaction: vi.fn(), deliveryOrderItem: { findFirst: vi.fn() } },
 }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));

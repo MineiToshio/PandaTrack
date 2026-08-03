@@ -182,6 +182,83 @@ export async function applyEmailChangeTransaction(userId: string, newEmail: stri
 }
 ```
 
+### Refusing inside a transaction: return commits, only throw rolls back
+
+A normal `return` from a `$transaction` callback **commits everything written so far**. Only a thrown error rolls back. So a mutation that writes first and then returns a discriminated refusal leaves the writes committed while telling the caller it failed. This has already shipped as a real bug four separate times: an order row created, then reported as a failure, leaving a phantom empty order in the user's list.
+
+Two acceptable shapes, in order of preference:
+
+1. **Validate before the first write.** Every condition that can refuse is decided while the transaction has written nothing, so the refusal can safely `return`. Prefer this: the invariant is visible in the function's own order of statements.
+2. **Throw a typed sentinel and map it outside.** For a refusal that is only detectable after a write, throw inside the transaction and catch it around the `$transaction` call, returning the same discriminated result the caller already expects. Never change a public result shape to work around this.
+
+```ts
+// ❌ Bad: the create is committed, the caller is told it failed
+return prisma.$transaction(async (tx) => {
+  const order = await tx.order.create({ data });
+  const items = await createOrderItems(tx, order.id, userId, input.items);
+  if (!items.ok) return { ok: false, error: "INVALID_PRODUCT_TYPE" }; // commits the order
+  return { ok: true, orderId: order.id };
+});
+
+// ✅ Good: the condition that can refuse is decided before anything is written
+return prisma.$transaction(async (tx) => {
+  const invalidKey = await findInvalidProductTypeKey(tx, input.items);
+  if (invalidKey) return { ok: false, error: "INVALID_PRODUCT_TYPE" };
+  const order = await tx.order.create({ data });
+  await createOrderItems(tx, order.id, userId, input.items);
+  return { ok: true, orderId: order.id };
+});
+```
+
+A returned value that is an intended **success** outcome after a write (for example a change request deleted and reported as discarded) is not this bug: the write is meant to commit. Say so in the function's JSDoc so the next reader does not "fix" it.
+
+When a mutation function that returns refusals is also called from inside **another** function's transaction, its refusals become returns in that outer transaction too. Check both call shapes before assuming a function is safe. The rule therefore applies to **two scopes**: the body of a `$transaction` callback, and the body of any function that takes a `tx: Prisma.TransactionClient`.
+
+#### Canonical sentinel shape
+
+When the refusal genuinely cannot be hoisted — a concurrency check that reads the count a write just returned — throw inside and map outside. The reference implementation is `createDelivery` in `src/lib/data/deliveries/deliveryMutations.ts`:
+
+```ts
+return prisma
+  .$transaction<CreateDeliveryResult>(async (tx) => {
+    // Hoistable refusals stay plain returns.
+    const store = await tx.store.findFirst({ where: { id: input.storeId }, select: { id: true } });
+    if (!store) {
+      return { ok: false, error: "STORE_NOT_FOUND" };
+    }
+
+    const delivery = await tx.delivery.create({ data: { /* … */ }, select: { id: true } });
+
+    const stateUpdate = await tx.orderItem.updateMany({
+      where: { id: { in: uniqueProductIds }, userId, deliveryState: { in: eligibleStates } },
+      data: { deliveryState: getNextItemDeliveryState("create") },
+    });
+
+    // Only knowable from the write's own result → MUST throw. A return here commits the delivery.
+    if (stateUpdate.count !== uniqueProductIds.length) {
+      throw new Error("DELIVERY_PRODUCT_CONCURRENT_STATE_CHANGE");
+    }
+
+    return { ok: true, deliveryId: delivery.id /* … */ };
+  })
+  .catch((error: unknown) => {
+    // Mapped back to a code the caller ALREADY handles. No new error code, no widened result type.
+    if (error instanceof Error && error.message === "DELIVERY_PRODUCT_CONCURRENT_STATE_CHANGE") {
+      return { ok: false, error: "PRODUCT_NOT_ELIGIBLE" };
+    }
+    throw error; // Anything else is a real failure: let it propagate.
+  });
+```
+
+Rules for the sentinel:
+
+- **Write new ones as a named `Error` subclass**, not a message string (`instanceof` cannot collide with an unrelated error carrying the same text, and a sentinel that must relay data needs a class anyway). `InvalidProductTypeRollback` in `orderMutations.ts` and `BaseCurrencyChangeRollback` in `userSettingsMutations.ts` are the current examples. The string form in `deliveryMutations.ts` predates this and stays as written.
+- **Declare it next to the function it serves**, with a comment saying why the refusal cannot be hoisted. It is not shared across modules — a narrow sentinel cannot be caught by the wrong handler.
+- **Never let it change the public contract.** Same result shape, same `error` codes. The sentinel must not escape the `.catch`.
+- **Always re-`throw` unmatched errors** in the `.catch`, or a genuine failure gets swallowed as a refusal.
+
+Enforced by `src/test/transaction-refusal-guard.test.ts` (static scan) and recorded as **ADR 0022**. The guard only sees a literal `return { ok: false … }` after a direct `tx.*` write; a refusal returned through a variable, or a write buried in a helper, is invisible to it. Treat a green suite as no evidence — the rule is the contract.
+
 ## Typing
 
 Use Prisma-generated types (`Prisma`, `PrismaClient`, model types) for parameters and return values. Avoid manually redefining types that already come from the schema.
