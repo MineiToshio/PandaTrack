@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light" data-palette="velvet">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PandaTrack · FRD-11 Crear desde imagen · Prototipo (Velvet)</title>
+<style>
+  /* ─────────────────────────────────────────────────────────────
+     Tokens OKLCH · Velvet (light + dark), copied from the FRD-04
+     reference prototype (base tokens + Velvet palette merged).
+     ───────────────────────────────────────────────────────────── */
+  :root[data-theme="light"] {
+    --background: oklch(93% 0.020 285);
+    --surface: oklch(96.5% 0.014 285);
+    --surface-elevated: oklch(95% 0.016 285);
+    --border: oklch(85% 0.024 285);
+    --border-strong: oklch(74% 0.030 285);
+    --text-primary: oklch(22% 0.030 285);
+    --text-secondary: oklch(44% 0.024 285);
+    --text-muted: oklch(54% 0.022 285);
+
+    --success: oklch(58% 0.15 152);
+    --warning: oklch(70% 0.16 75);
+    --destructive: oklch(54% 0.21 25);
+    --info: oklch(62% 0.12 230);
+
+    --accent: oklch(46% 0.20 290);
+    --accent-warm: oklch(64% 0.20 22);
+    --accent-cool: oklch(58% 0.10 215);
+    --focus-ring: oklch(46% 0.20 290 / 0.55);
+    --text-on-accent: oklch(99% 0 0);
+
+    --shadow-1: 0 1px 2px rgba(60, 35, 10, 0.05);
+    --shadow-2: 0 4px 14px rgba(60, 35, 10, 0.07), 0 1px 2px rgba(60, 35, 10, 0.04);
+    --shadow-3: 0 14px 28px rgba(60, 35, 10, 0.10), 0 2px 6px rgba(60, 35, 10, 0.06);
+
+    --state-hover: 6%;
+    --state-pressed: 12%;
+    --color-scheme: light;
+  }
+
+  :root[data-theme="dark"] {
+    --background: oklch(10% 0.028 265);
+    --surface: oklch(13% 0.028 265);
+    --surface-elevated: oklch(16% 0.030 265);
+    --border: rgba(200, 200, 255, 0.07);
+    --border-strong: rgba(200, 200, 255, 0.14);
+    --text-primary: oklch(96% 0.012 280);
+    --text-secondary: oklch(76% 0.020 280);
+    --text-muted: oklch(64% 0.020 280);
+
+    --success: oklch(74% 0.16 152);
+    --warning: oklch(82% 0.15 75);
+    --destructive: oklch(70% 0.18 25);
+    --info: oklch(76% 0.12 230);
+
+    --accent: oklch(74% 0.19 290);
+    --accent-warm: oklch(80% 0.15 25);
+    --accent-cool: oklch(74% 0.11 215);
+    --focus-ring: oklch(74% 0.19 290 / 0.65);
+    --text-on-accent: oklch(14% 0 0);
+
+    --shadow-1: 0 0 0 1px rgba(255, 235, 210, 0.04);
+    --shadow-2: inset 0 1px 0 rgba(255, 235, 210, 0.04), 0 0 0 1px rgba(255, 235, 210, 0.06);
+    --shadow-3: inset 0 1px 0 rgba(255, 235, 210, 0.06), 0 0 0 1px rgba(255, 235, 210, 0.08), 0 0 24px rgba(255, 180, 140, 0.05);
+
+    --state-hover: 8%;
+    --state-pressed: 14%;
+    --color-scheme: dark;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     Reset + base
+     ───────────────────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { color-scheme: var(--color-scheme); }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.45;
+    background: var(--background);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 200ms cubic-bezier(0.2, 0, 0, 1), color 200ms cubic-bezier(0.2, 0, 0, 1);
+    overflow-x: hidden;
+  }
+  button { font-family: inherit; cursor: pointer; }
+  input, textarea, select { font-family: inherit; font-size: inherit; color: inherit; }
+  a { color: inherit; text-decoration: none; }
+  .num { font-variant-numeric: tabular-nums; }
+  .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-weight: 500; letter-spacing: 0.02em; }
+  .eyebrow { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-weight: 500; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  *:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: 4px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 150ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 150ms !important;
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     Icon sprite (inline SVG symbols, stroke icons, 24x24 viewBox)
+     ───────────────────────────────────────────────────────────── */
+  .icon { width: 18px; height: 18px; flex: 0 0 auto; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+  .icon.sm { width: 14px; height: 14px; }
+  .icon.lg { width: 22px; height: 22px; }
+
+  /* ─────────────────────────────────────────────────────────────
+     Fixed top bar
+     ───────────────────────────────────────────────────────────── */
+  .demo-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 500;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    background: color-mix(in oklch, var(--surface) 92%, transparent);
+    backdrop-filter: saturate(180%) blur(12px);
+    -webkit-backdrop-filter: saturate(180%) blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .demo-brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; white-space: nowrap; }
+  .demo-brand-mark {
+    width: 24px; height: 24px; border-radius: 8px;
+    background: color-mix(in oklch, var(--accent) 14%, var(--surface-elevated));
+    border: 1px solid color-mix(in oklch, var(--accent) 28%, var(--border));
+    color: var(--accent);
+    display: grid; place-items: center; font-weight: 700; font-size: 12px;
+  }
+  .demo-header-spacer { flex: 1; }
+  .screen-select {
+    height: 32px;
+    padding: 0 28px 0 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+    font-size: 12px;
+    max-width: 44vw;
+  }
+  .theme-toggle { display: inline-flex; gap: 2px; padding: 3px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: 999px; flex: 0 0 auto; }
+  .theme-toggle button {
+    width: 28px; height: 28px; border: 0; border-radius: 999px; background: transparent; color: var(--text-secondary);
+    display: grid; place-items: center;
+    transition: background 150ms cubic-bezier(0.2, 0, 0, 1), color 150ms cubic-bezier(0.2, 0, 0, 1);
+  }
+  .theme-toggle button[aria-pressed="true"] { background: color-mix(in oklch, var(--accent) 14%, transparent); color: var(--accent); }
+  .theme-toggle button:hover { color: var(--text-primary); }
+
+  /* ─────────────────────────────────────────────────────────────
+     Screens
+     ───────────────────────────────────────────────────────────── */
+  main { padding-top: 52px; }
+  .screen { display: none; padding: 28px 16px 72px; animation: screen-in 240ms cubic-bezier(0.2, 0, 0, 1); }
+  .screen.is-active { display: block; }
+  @keyframes screen-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .screen-head { max-width: 900px; margin: 0 auto 20px; }
+  .screen-tag { display: inline-block; margin-bottom: 6px; }
+  .screen-caption { margin: 0; color: var(--text-secondary); font-size: 13.5px; max-width: 62ch; }
+
+  .stage { display: flex; justify-content: center; }
+
+  /* ─────────────────────────────────────────────────────────────
+     Device frames
+     ───────────────────────────────────────────────────────────── */
+  .phone-frame {
+    width: 390px;
+    max-width: 100%;
+    border-radius: 40px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    box-shadow: var(--shadow-3);
+    padding: 10px;
+  }
+  .phone-screen {
+    background: var(--background);
+    border-radius: 30px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 720px;
+    max-height: 82vh;
+    position: relative;
+  }
+  .phone-statusbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 20px 4px; font-size: 12px; font-weight: 600; color: var(--text-primary);
+  }
+  .desktop-frame {
+    width: 100%;
+    max-width: 1080px;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow-2);
+    overflow: hidden;
+  }
+  .browser-chrome {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface-elevated);
+    border-bottom: 1px solid var(--border);
+  }
+  .browser-dots { display: flex; gap: 6px; }
+  .browser-dots span { width: 9px; height: 9px; border-radius: 999px; background: var(--border-strong); }
+  .browser-url {
+    flex: 1; max-width: 340px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    font-size: 11.5px;
+    color: var(--text-muted);
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     Buttons, chips, cards, fields
+     ───────────────────────────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 44px; padding: 0 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+    font-size: 13.5px; font-weight: 600;
+    transition: background 150ms, color 150ms, border-color 150ms;
+  }
+  .btn.sm { height: 32px; padding: 0 12px; font-size: 12.5px; }
+  .btn.block { width: 100%; }
+  .btn:hover { background: color-mix(in oklch, var(--text-primary) var(--state-hover), var(--surface-elevated)); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--text-on-accent); }
+  .btn.primary:hover { background: color-mix(in oklch, var(--accent) 88%, black); }
+  .btn.ghost { background: transparent; }
+  .btn.text { border-color: transparent; background: transparent; color: var(--accent); height: auto; padding: 4px 2px; font-weight: 600; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn:disabled:hover { background: var(--surface-elevated); }
+
+  .fab {
+    position: fixed;
+    right: 18px; bottom: 18px;
+    height: 48px; min-width: 48px; padding: 0 18px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: var(--text-on-accent);
+    border: 0;
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13.5px; font-weight: 700;
+    box-shadow: var(--shadow-3);
+    z-index: 20;
+  }
+
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 600;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .chip.neutral { background: var(--surface-elevated); border-color: var(--border); color: var(--text-secondary); }
+  .chip.success { background: color-mix(in oklch, var(--success) 16%, transparent); color: var(--success); }
+  .chip.warning { background: color-mix(in oklch, var(--warning) 18%, transparent); color: color-mix(in oklch, var(--warning) 70%, var(--text-primary)); }
+  .chip.info { background: color-mix(in oklch, var(--info) 16%, transparent); color: var(--info); }
+  .chip.destructive { background: color-mix(in oklch, var(--destructive) 14%, transparent); color: var(--destructive); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .field label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+  .input {
+    height: 44px; padding: 0 12px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--surface-elevated);
+    color: var(--text-primary);
+    font-size: 13.5px;
+  }
+  .input:focus-visible { border-color: var(--accent); }
+  .field .hint { font-size: 11.5px; color: var(--text-muted); }
+
+  .toast {
+    position: fixed;
+    left: 16px; right: 16px; bottom: 82px;
+    max-width: 358px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-3);
+    font-size: 13px;
+    z-index: 15;
+  }
+  .toast strong { font-weight: 600; }
+
+  /* ─────────────────────────────────────────────────────────────
+     Sidebar rail (desktop)
+     ───────────────────────────────────────────────────────────── */
+  .app-shell { display: grid; grid-template-columns: 1fr; min-height: 640px; }
+  @media (min-width: 720px) { .app-shell { grid-template-columns: 208px 1fr; } }
+  .app-sidebar { display: none; padding: 18px 12px; background: var(--surface-elevated); border-right: 1px solid var(--border); flex-direction: column; gap: 4px; }
+  @media (min-width: 720px) { .app-sidebar { display: flex; } }
+  .app-sidebar-brand { display: flex; align-items: center; gap: 8px; padding: 4px 8px 16px; font-weight: 700; font-size: 13px; }
+  .app-nav-link { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; color: var(--text-secondary); font-size: 13px; }
+  .app-nav-link.is-active { background: color-mix(in oklch, var(--accent) 12%, transparent); color: var(--accent); font-weight: 600; }
+  .app-content { padding: 20px 22px; min-width: 0; }
+  .app-topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .app-topbar h2 { margin: 0; font-size: 19px; }
+  .app-topbar-spacer { flex: 1; }
+  .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .toolbar .search { flex: 1; min-width: 160px; display: flex; align-items: center; gap: 8px; padding: 0 12px; height: 40px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface-elevated); color: var(--text-muted); }
+  .toolbar .search input { flex: 1; border: 0; background: transparent; outline: 0; color: var(--text-primary); }
+
+  /* ─────────────────────────────────────────────────────────────
+     Order list + cards
+     ───────────────────────────────────────────────────────────── */
+  .list-head { padding: 0 2px 12px; }
+  .list-head h1 { margin: 4px 0 4px; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .list-head p { margin: 0; color: var(--text-secondary); font-size: 13px; }
+  .order-list { display: flex; flex-direction: column; gap: 10px; padding: 0 14px 100px; }
+  .order-list.is-dimmed { opacity: 0.35; filter: saturate(0.7); pointer-events: none; }
+  .order-card {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .order-avatar {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: color-mix(in oklch, var(--accent) 12%, var(--surface-elevated));
+    border: 1px solid color-mix(in oklch, var(--accent) 26%, var(--border));
+    color: var(--accent);
+    display: grid; place-items: center; font-weight: 700; font-size: 14px; flex: 0 0 40px;
+  }
+  .order-info { flex: 1; min-width: 0; }
+  .order-info strong { display: block; font-size: 13.5px; }
+  .order-info .meta { display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .order-amount { text-align: right; flex: 0 0 auto; }
+  .order-amount .num { display: block; font-weight: 700; font-size: 13.5px; }
+
+  .desktop-order-row {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; align-items: center; gap: 12px;
+    padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); margin-bottom: 8px;
+  }
+  .desktop-order-row .store-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .desktop-order-row .store-cell strong { display: block; font-size: 13px; }
+  .desktop-order-row .store-cell small { color: var(--text-muted); font-size: 11.5px; }
+
+  .empty-state { padding: 44px 20px 24px; text-align: center; }
+  .empty-state .icon-tile { width: 52px; height: 52px; margin: 0 auto 14px; border-radius: 14px; background: var(--surface-elevated); border: 1px solid var(--border); display: grid; place-items: center; color: var(--text-muted); }
+  .empty-state h2 { margin: 0 0 6px; font-size: 16px; }
+  .empty-state p { margin: 0 0 20px; color: var(--text-secondary); font-size: 13px; }
+
+  /* ─────────────────────────────────────────────────────────────
+     Bottom sheet (selector) + backdrop
+     ───────────────────────────────────────────────────────────── */
+  .sheet-backdrop { position: absolute; inset: 0; background: color-mix(in oklch, black 42%, transparent); z-index: 30; }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 31;
+    background: var(--surface);
+    border-top-left-radius: 22px; border-top-right-radius: 22px;
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-3);
+    padding: 10px 16px 22px;
+  }
+  .sheet-grabber { width: 36px; height: 4px; border-radius: 999px; background: var(--border-strong); margin: 0 auto 14px; }
+  .sheet h2 { margin: 0 0 2px; font-size: 17px; }
+  .sheet .sheet-sub { margin: 0 0 16px; color: var(--text-secondary); font-size: 13px; }
+
+  /* ─────────────────────────────────────────────────────────────
+     Selector cards ("Desde una imagen" / "A mano")
+     ───────────────────────────────────────────────────────────── */
+  .selector-cards { display: flex; flex-direction: column; gap: 10px; }
+  .selector-card {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    text-align: left;
+    min-height: 44px;
+  }
+  .selector-card.is-disabled { opacity: 0.5; }
+  .selector-card-head { display: flex; align-items: center; gap: 10px; }
+  .selector-card-icon { width: 38px; height: 38px; border-radius: 10px; background: color-mix(in oklch, var(--accent) 12%, var(--surface-elevated)); color: var(--accent); display: grid; place-items: center; flex: 0 0 38px; }
+  .selector-card-title { display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 700; }
+  .selector-card p.desc { margin: 0; font-size: 12.5px; color: var(--text-secondary); }
+  .selector-card .notes { display: flex; flex-direction: column; gap: 3px; margin-top: 2px; }
+  .selector-card .notes span { font-size: 11.5px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+
+  /* ─────────────────────────────────────────────────────────────
+     Upload surface
+     ───────────────────────────────────────────────────────────── */
+  .upload-wrap { padding: 4px 16px 24px; }
+  .dropzone {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 28px 16px;
+    border-radius: 16px;
+    border: 1.5px dashed var(--border-strong);
+    background: var(--surface);
+    text-align: center;
+    color: var(--text-secondary);
+  }
+  .dropzone strong { color: var(--text-primary); font-size: 13.5px; }
+  .dropzone span { font-size: 12px; color: var(--text-muted); }
+  .thumb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .thumb { aspect-ratio: 1; border-radius: 12px; background: var(--surface-elevated); border: 1px solid var(--border); display: grid; place-items: center; color: var(--text-muted); position: relative; }
+  .thumb .remove { position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); display: grid; place-items: center; color: var(--text-secondary); }
+  .quota-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--surface-elevated); border: 1px solid var(--border); font-size: 12px; color: var(--text-secondary); margin: 14px 0 6px; }
+  .quota-chip.is-empty { color: var(--text-muted); }
+  .helper-text { font-size: 12.5px; color: var(--text-secondary); margin: 6px 0; }
+  .explainer-line { display: flex; gap: 8px; padding: 10px 12px; border-radius: 10px; background: color-mix(in oklch, var(--info) 10%, var(--surface)); border: 1px solid color-mix(in oklch, var(--info) 24%, var(--border)); font-size: 12px; color: var(--text-secondary); margin: 10px 0 18px; }
+  .explainer-line svg { color: var(--info); }
+
+  .banner {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 12px; border-radius: 12px; margin: 4px 0 16px;
+    font-size: 12.5px; line-height: 1.4;
+  }
+  .banner.warning { background: color-mix(in oklch, var(--warning) 14%, var(--surface)); border: 1px solid color-mix(in oklch, var(--warning) 32%, var(--border)); color: var(--text-primary); }
+  .banner svg { color: var(--warning); flex: 0 0 auto; margin-top: 1px; }
+
+  /* ─────────────────────────────────────────────────────────────
+     Processing screen
+     ───────────────────────────────────────────────────────────── */
+  .processing-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 90px 24px; text-align: center; }
+  .spinner { width: 46px; height: 46px; border-radius: 999px; border: 3px solid var(--border); border-top-color: var(--accent); animation: spin 900ms linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1600ms; } }
+  .step-list { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 280px; text-align: left; }
+  .step-row { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-muted); }
+  .step-row .dot { width: 22px; height: 22px; border-radius: 999px; display: grid; place-items: center; flex: 0 0 22px; border: 1.5px solid var(--border-strong); color: var(--text-muted); }
+  .step-row.is-done { color: var(--text-primary); }
+  .step-row.is-done .dot { background: var(--success); border-color: var(--success); color: var(--text-on-accent); }
+  .step-row.is-active { color: var(--text-primary); font-weight: 600; }
+  .step-row.is-active .dot { border-color: var(--accent); }
+  .step-row.is-active .dot .pulse { width: 8px; height: 8px; border-radius: 999px; background: var(--accent); animation: pulse 1200ms ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+  /* ─────────────────────────────────────────────────────────────
+     Review screen
+     ───────────────────────────────────────────────────────────── */
+  .review-wrap { padding: 0 16px 120px; }
+  .review-summary { font-size: 13.5px; color: var(--text-secondary); margin: 2px 0 18px; }
+  .attr-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface);
+    margin-bottom: 8px;
+  }
+  .attr-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .attr-label { font-size: 11px; color: var(--text-muted); }
+  .attr-value { font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .attr-note { display: flex; align-items: center; gap: 5px; margin: 4px 0 14px 2px; font-size: 11.5px; color: var(--text-muted); }
+  .attr-note svg { color: var(--text-muted); }
+
+  .group-card { border-radius: 14px; border: 1px solid var(--border); background: var(--surface); padding: 14px; margin-bottom: 12px; }
+  .group-status { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+  .group-status .dot { width: 9px; height: 9px; border-radius: 999px; flex: 0 0 9px; }
+  .group-status.good { color: var(--success); }
+  .group-status.good .dot { background: var(--success); }
+  .group-status.warn { color: color-mix(in oklch, var(--warning) 65%, var(--text-primary)); }
+  .group-status.warn .dot { background: var(--warning); }
+  .group-status.doubt { color: var(--text-secondary); }
+  .group-status.doubt .dot { background: var(--border-strong); }
+  .group-card h3 { margin: 0 0 4px; font-size: 14.5px; }
+  .group-quote { margin: 0 0 6px; font-size: 12.5px; color: var(--text-secondary); font-style: italic; }
+  .group-body { margin: 0 0 12px; font-size: 12.5px; color: var(--text-secondary); }
+  .group-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .group-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 9px; background: var(--surface-elevated); border: 1px solid var(--border); font-size: 12.5px; }
+  .group-row span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .group-row .price-input { flex: 0 0 96px; min-width: 0; width: 96px; height: 30px; padding: 0 8px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); font-size: 12.5px; text-align: right; }
+  .group-summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .group-summary strong { display: block; font-size: 13.5px; }
+  .group-meta { font-size: 11.5px; color: var(--text-muted); }
+  .group-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+  .rule-note { font-size: 11px; color: var(--text-muted); margin: -4px 0 10px 2px; }
+
+  .totals { border-top: 1px dashed var(--border-strong); padding-top: 12px; margin-top: 4px; }
+  .totals-row { display: flex; justify-content: space-between; padding: 5px 2px; font-size: 13px; color: var(--text-secondary); }
+  .totals-row.strong { font-weight: 700; color: var(--text-primary); font-size: 14.5px; }
+
+  .sticky-bar {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 10;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 12px 16px 16px;
+    background: color-mix(in oklch, var(--surface) 94%, transparent);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--border);
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     Split modal
+     ───────────────────────────────────────────────────────────── */
+  .modal-backdrop { position: absolute; inset: 0; background: color-mix(in oklch, black 45%, transparent); z-index: 40; display: flex; align-items: flex-end; }
+  .modal-card { width: 100%; background: var(--surface); border-top-left-radius: 20px; border-top-right-radius: 20px; border: 1px solid var(--border-strong); box-shadow: var(--shadow-3); padding: 18px 16px 20px; }
+  .modal-card h2 { margin: 0 0 4px; font-size: 16.5px; }
+  .modal-card p.body { margin: 0 0 14px; font-size: 13px; color: var(--text-secondary); }
+  .split-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .split-row input[type="text"] { flex: 1; min-width: 0; height: 38px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-elevated); font-size: 12.5px; }
+  .split-row input[type="text"].price { flex: 0 0 88px; min-width: 0; width: 88px; text-align: right; }
+  .modal-note { font-size: 11.5px; color: var(--text-muted); margin: 4px 0 16px; }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-actions .btn { flex: 1; }
+
+
+  /* ─────────────────────────────────────────────────────────────
+     Store creation / disambiguation
+     ───────────────────────────────────────────────────────────── */
+  .store-new-card { border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: 16px; }
+  .store-new-card h3 { margin: 0 0 4px; font-size: 14.5px; display: flex; align-items: center; gap: 8px; }
+  .store-new-card > p { margin: 0 0 14px; font-size: 12.5px; color: var(--text-secondary); }
+  .pending-note { display: flex; gap: 7px; margin-top: 4px; font-size: 11.5px; color: var(--text-muted); }
+  .pending-note svg { color: var(--text-muted); flex: 0 0 auto; margin-top: 1px; }
+
+  .candidate-list { display: flex; flex-direction: column; gap: 8px; }
+  .candidate-row {
+    display: flex; align-items: center; gap: 12px;
+    min-height: 44px;
+    padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface);
+  }
+  .candidate-radio {
+    appearance: none; -webkit-appearance: none;
+    width: 20px; height: 20px; border-radius: 999px;
+    border: 1.5px solid var(--border-strong);
+    background: var(--surface);
+    flex: 0 0 20px; margin: 0;
+  }
+  .candidate-radio:checked { border-color: var(--accent); box-shadow: inset 0 0 0 4px var(--surface), inset 0 0 0 999px var(--accent); }
+  .candidate-info { flex: 1; min-width: 0; }
+  .candidate-info strong { display: block; font-size: 13.5px; }
+  .candidate-info span { display: block; font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .candidate-row.is-new { border-style: dashed; }
+
+  /* ─────────────────────────────────────────────────────────────
+     Order detail (saved screen)
+     ───────────────────────────────────────────────────────────── */
+  .detail-wrap { padding: 4px 16px 40px; }
+  .detail-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+  .detail-head h1 { margin: 0; font-size: 18px; }
+  .detail-store { display: flex; align-items: center; gap: 10px; margin: 12px 0 16px; }
+  .detail-store .order-avatar { width: 36px; height: 36px; flex-basis: 36px; }
+  .detail-total { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 14px; border-radius: 12px; background: var(--surface-elevated); border: 1px solid var(--border); margin-bottom: 14px; }
+  .detail-total .num { font-size: 20px; font-weight: 700; }
+  .product-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 2px; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .product-row:last-child { border-bottom: 0; }
+
+  /* ─────────────────────────────────────────────────────────────
+     Utilities
+     ───────────────────────────────────────────────────────────── */
+  .text-muted { color: var(--text-muted); }
+  .text-secondary { color: var(--text-secondary); }
+  .mt-16 { margin-top: 16px; }
+  .section-label { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); margin: 18px 0 8px 2px; }
+
+  @media (max-width: 480px) {
+    .desktop-order-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Icon sprite: shared inline stroke icons, referenced via <use href="#icon-*"> -->
+<svg style="display:none" aria-hidden="true">
+  <symbol id="icon-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="icon-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="icon-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="icon-chevron-right" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></symbol>
+  <symbol id="icon-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+  <symbol id="icon-arrow-left" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+  <symbol id="icon-alert-triangle" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="icon-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></symbol>
+  <symbol id="icon-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="icon-store" viewBox="0 0 24 24"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v10h16V9"/><path d="M3 9a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0"/></symbol>
+  <symbol id="icon-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.34 1.84.57 2.8.7A2 2 0 0 1 22 16.92z"/></symbol>
+  <symbol id="icon-package" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></symbol>
+  <symbol id="icon-layers" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></symbol>
+  <symbol id="icon-scissors" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></symbol>
+  <symbol id="icon-upload-cloud" viewBox="0 0 24 24"><path d="M16 16l-4-4-4 4"/><path d="M12 12v9"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></symbol>
+  <symbol id="icon-edit" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></symbol>
+  <symbol id="icon-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></symbol>
+  <symbol id="icon-message" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></symbol>
+  <symbol id="icon-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+  <symbol id="icon-help-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="icon-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></symbol>
+  <symbol id="icon-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+  <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+  <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></symbol>
+  <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></symbol>
+</svg>
+
+<!-- Fixed top bar: title, screen jump select, theme toggle -->
+<header class="demo-header">
+  <div class="demo-brand"><span class="demo-brand-mark">P</span>FRD-11 · Crear desde imagen</div>
+  <div class="demo-header-spacer"></div>
+  <label class="visually-hidden" for="screen-select">Ir a pantalla</label>
+  <select id="screen-select" class="screen-select mono">
+    <option value="intake-entry-share">01 · Compartir a Panda</option>
+    <option value="intake-fab">02 · FAB + toast</option>
+    <option value="intake-selector">03 · Selector (sheet)</option>
+    <option value="intake-empty">04 · Selector (vacío)</option>
+    <option value="intake-desktop">05 · Desktop (sin FAB)</option>
+    <option value="intake-upload">06 · Subir fotos</option>
+    <option value="intake-quota-overflow">07 · Cuota insuficiente</option>
+    <option value="intake-processing">08 · Procesando</option>
+    <option value="intake-review">09 · Revisar y confirmar</option>
+    <option value="intake-group-collapsed">10 · Grupo largo colapsado</option>
+    <option value="intake-split-modal">11 · Modal separar</option>
+    <option value="intake-store-new">12 · Tienda nueva</option>
+    <option value="intake-store-ambiguous">13 · Tienda ambigua</option>
+    <option value="intake-saved">14 · Pedido guardado</option>
+    <option value="intake-quota-exhausted">15 · Cuota agotada</option>
+  </select>
+  <div class="theme-toggle" role="group" aria-label="Tema">
+    <button type="button" data-theme-set="light" aria-pressed="true" aria-label="Tema claro"><svg class="icon sm"><use href="#icon-sun"/></svg></button>
+    <button type="button" data-theme-set="dark" aria-pressed="false" aria-label="Tema oscuro"><svg class="icon sm"><use href="#icon-moon"/></svg></button>
+  </div>
+</header>
+
+<main>
+
+<!-- 1: OS share-sheet entry point. Shows PandaTrack surfaced as a share target
+     from a WhatsApp-like chat, the 3rd tap of a 4-tap flow (screenshot -> share -> Panda -> confirm). -->
+<section id="intake-entry-share" class="screen" aria-labelledby="intake-entry-share-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-entry-share-title">#intake-entry-share</span>
+    <p class="screen-caption">Punto de entrada del sistema operativo: el tercer toque de cuatro (captura, compartir, Panda, confirmar).</p>
+  </div>
+  <div class="stage">
+    <div class="phone-frame">
+      <div class="phone-screen" style="position: relative; background: #0b141a;">
+        <div class="phone-statusbar" style="color: #e9edef;"><span>9:41</span><span>●●● Wi-Fi</span></div>
+        <div style="padding: 8px 14px; display: flex; align-items: center; gap: 10px; color: #e9edef;">
+          <svg class="icon" style="color:#e9edef;"><use href="#icon-arrow-left"/></svg>
+          <div style="width:34px;height:34px;border-radius:999px;background:#2a3942;display:grid;place-items:center;font-weight:700;color:#e9edef;">PD</div>
+          <div><strong style="font-size:13.5px;">Pop Dealer</strong><div style="font-size:11px;color:#8696a0;">en línea</div></div>
+        </div>
+        <div style="padding: 10px 14px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="align-self:flex-start; max-width:78%; background:#202c33; color:#e9edef; padding:8px 10px; border-radius:10px; font-size:12.5px;">Hola! Ya llegó tu pedido del pack chase de Gojo, aquí el resumen:</div>
+          <div style="align-self:flex-start; max-width:78%; background:#202c33; color:#e9edef; padding:6px; border-radius:10px;">
+            <div style="width:100%; aspect-ratio: 16/10; border-radius:8px; background: linear-gradient(135deg, #2a3942, #12181c); display:grid; place-items:center; color:#8696a0; font-size:11px;">captura_pedido.jpg</div>
+          </div>
+          <div style="align-self:flex-start; max-width:78%; background:#202c33; color:#e9edef; padding:8px 10px; border-radius:10px; font-size:12.5px;">Total S/ 480.00, con S/ 150.00 de adelanto ya pagado.</div>
+        </div>
+        <div class="sheet-backdrop" style="background: rgba(0,0,0,0.55);"></div>
+        <div class="sheet" style="padding-bottom: 26px;" role="dialog" aria-modal="true" aria-labelledby="share-sheet-title">
+          <div class="sheet-grabber"></div>
+          <h2 id="share-sheet-title" style="font-size: 15px;">Compartir con</h2>
+          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 14px 0 6px;">
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+              <div style="width:52px;height:52px;border-radius:14px;background:var(--surface-elevated);border:1px solid var(--border);display:grid;place-items:center;"><svg class="icon"><use href="#icon-message"/></svg></div>
+              <span style="font-size:10.5px; color: var(--text-secondary);">Mensajes</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px; position: relative;">
+              <div style="width:56px;height:56px;border-radius:16px;background:var(--accent);color:var(--text-on-accent);display:grid;place-items:center; box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent) 30%, transparent);"><strong style="font-size:16px;">P</strong></div>
+              <span style="font-size:10.5px; font-weight:700; color: var(--accent);">PandaTrack</span>
+              <span class="chip info" style="position:absolute; top:-10px; right:-8px; font-size:9px; padding:2px 6px;">Sugerido</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+              <div style="width:52px;height:52px;border-radius:14px;background:var(--surface-elevated);border:1px solid var(--border);display:grid;place-items:center;"><svg class="icon"><use href="#icon-share"/></svg></div>
+              <span style="font-size:10.5px; color: var(--text-secondary);">Correo</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+              <div style="width:52px;height:52px;border-radius:14px;background:var(--surface-elevated);border:1px solid var(--border);display:grid;place-items:center;"><svg class="icon"><use href="#icon-image"/></svg></div>
+              <span style="font-size:10.5px; color: var(--text-secondary);">Guardar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2: Orders list with the FAB in resting state, plus a confirmation toast
+     positioned above the FAB (never overlapping it) after a quick action. -->
+<section id="intake-fab" class="screen" aria-labelledby="intake-fab-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-fab-title">#intake-fab</span>
+    <p class="screen-caption">El FAB vive junto a la lista de pedidos. El toast de confirmación se apila arriba del FAB, nunca lo tapa.</p>
+  </div>
+  <div class="stage">
+    <div class="phone-frame">
+      <div class="phone-screen" style="position: relative;">
+        <div class="phone-statusbar"><span>9:41</span><span>●●● Wi-Fi</span></div>
+        <div class="list-head" style="padding-left: 14px; padding-right: 14px;">
+          <span class="eyebrow">Hoy</span>
+          <h1>Tus pedidos</h1>
+          <p>3 pedidos activos · S/ 526.00 por cobrar</p>
+        </div>
+        <div class="order-list">
+          <div class="order-card">
+            <div class="order-avatar">P</div>
+            <div class="order-info"><strong>Pop Dealer</strong><span class="meta mono">ORD-20260722-04 · 3 productos</span></div>
+            <div class="order-amount"><span class="num">S/ 250.00</span><span class="chip success">Pagado</span></div>
+          </div>
+          <div class="order-card">
+            <div class="order-avatar">A</div>
+            <div class="order-info"><strong>Akiba Records</strong><span class="meta mono">ORD-20260718-02 · 1 producto</span></div>
+            <div class="order-amount"><span class="num">S/ 180.00</span><span class="chip warning">Pendiente</span></div>
+          </div>
+          <div class="order-card">
+            <div class="order-avatar">M</div>
+            <div class="order-info"><strong>Mercado Otaku</strong><span class="meta mono">ORD-20260710-11 · 2 productos</span></div>
+            <div class="order-amount"><span class="num">S/ 96.00</span><span class="chip info">Entregado</span></div>
+          </div>
+        </div>
+        <div class="toast">
+          <span><strong>Pedido creado.</strong> Mercado Otaku</span>
+          <button class="btn text" type="button">Deshacer</button>
+        </div>
+        <button class="fab" type="button"><svg class="icon"><use href="#icon-plus"/></svg>Nuevo pedido</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3: Tapping the FAB opens the creation-mode bottom sheet over the dimmed
+     list: "Desde una imagen" (fast path, with quota context) vs "A mano". -->
+<section id="intake-selector" class="screen" aria-labelledby="intake-selector-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-selector-title">#intake-selector</span>
+    <p class="screen-caption">El selector de modo de creación aparece como hoja inferior al tocar el FAB.</p>
+  </div>
+  <div class="stage">
+    <div class="phone-frame">
+      <div class="phone-screen" style="position: relative;">
+        <div class="phone-statusbar"><span>9:41</span><span>●●● Wi-Fi</span></div>
+        <div class="list-head" style="padding-left: 14px; padding-right: 14px;">
+          <span class="eyebrow">Hoy</span>
+          <h1>Tus pedidos</h1>
+        </div>
+        <div class="order-list is-dimmed">
+          <div class="order-card"><div class="order-avatar">P</div><div class="order-info"><strong>Pop Dealer</strong><span class="meta mono">ORD-20260722-04</span></div><div class="order-amount"><span class="num">S/ 250.00</span></div></div>
+          <div class="order-card"><div class="order-avatar">A</div><div class="order-info"><strong>Akiba Records</strong><span class="meta mono">ORD-20260718-02</span></div><div class="order-amount"><span class="num">S/ 180.00</span></div></div>
+          <div class="order-card"><div class="order-avatar">M</div><div class="order-info"><strong>Mercado Otaku</strong><span class="meta mono">ORD-20260710-11</span></div><div class="order-amount"><span class="num">S/ 96.00</span></div></div>
+        </div>
+        <div class="sheet-backdrop"></div>
+        <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="new-order-sheet-title">
+          <div class="sheet-grabber"></div>
+          <h2 id="new-order-sheet-title">Nuevo pedido</h2>
+          <p class="sheet-sub">Elige cómo quieres registrarlo.</p>
+          <div class="selector-cards">
+            <button class="selector-card" type="button" data-screen-link="intake-upload">
+              <div class="selector-card-head">
+                <div class="selector-card-icon"><svg class="icon"><use href="#icon-image"/></svg></div>
+                <div style="flex:1; min-width:0;">
+                  <div class="selector-card-title">Desde una imagen <span class="chip success">Más rápido</span></div>
+                </div>
+                <svg class="icon sm text-muted"><use href="#icon-chevron-right"/></svg>
+              </div>
+              <p class="desc">Sube la captura del chat, el correo de la tienda o la foto del recibo. Nosotros llenamos el pedido y tú lo revisas.</p>
+              <div class="notes">
+                <span><svg class="icon sm"><use href="#icon-info"/></svg>No necesitas crear la tienda antes.</span>
+                <span><svg class="icon sm"><use href="#icon-image"/></svg>Te quedan 17 fotos este mes.</span>
+              </div>
+            </button>
+            <button class="selector-card" type="button">
+              <div class="selector-card-head">
+                <div class="selector-card-icon"><svg class="icon"><use href="#icon-edit"/></svg></div>
+                <div style="flex:1; min-width:0;"><div class="selector-card-title">A mano</div></div>
+                <svg class="icon sm text-muted"><use href="#icon-chevron-right"/></svg>
+              </div>
+              <p class="desc">El formulario de siempre, en tres pasos. Sin límite de uso.</p>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4: Same two options rendered inline (not as a sheet) as the second form
+     of the selector, used on the empty-list state where there is no FAB context yet. -->
+<section id="intake-empty" class="screen" aria-labelledby="intake-empty-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-empty-title">#intake-empty</span>
+    <p class="screen-caption">Sin pedidos aún, las mismas dos tarjetas del selector se muestran en línea dentro del estado vacío.</p>
+  </div>
+  <div class="stage">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-statusbar"><span>9:41</span><span>●●● Wi-Fi</span></div>
+        <div class="empty-state">
+          <div class="icon-tile"><svg class="icon lg"><use href="#icon-package"/></svg></div>
+          <h2>Aún no tienes pedidos</h2>
+          <p>Registra el primero desde una captura o a mano.</p>
+        </div>
+        <div style="padding: 0 16px 24px;">
+          <div class="selector-cards">
+            <button class="selector-card" type="button" data-screen-link="intake-upload">
+              <div class="selector-card-head">
+                <div class="selector-card-icon"><svg class="icon"><use href="#icon-image"/></svg></div>
+                <div style="flex:1; min-width:0;"><div class="selector-card-title">Desde una imagen <span class="chip success">Más rápido</span></div></div>
+                <svg class="icon sm text-muted"><use href="#icon-chevron-right"/></svg>
+              </div>
+              <p class="desc">Sube la captura del chat, el correo de la tienda o la foto del recibo. Nosotros llenamos el pedido y tú lo revisas.</p>
+              <div class="notes">
+                <span><svg class="icon sm"><use href="#icon-info"/></svg>No necesitas crear la tienda antes.</span>
+                <span><svg class="icon sm"><use href="#icon-image"/></svg>Te quedan 17 fotos este mes.</span>
+              </div>
+            </button>
+            <button class="selector-card" type="button">
+              <div class="selector-card-head">
+                <div class="selector-card-icon"><svg class="icon"><use href="#icon-edit"/></svg></div>
+                <div style="flex:1; min-width:0;"><div class="selector-card-title">A mano</div></div>
+                <svg class="icon sm text-muted"><use href="#icon-chevron-right"/></svg>
+              </div>
+              <p class="desc">El formulario de siempre, en tres pasos. Sin límite de uso.</p>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5: Desktop orders list. At >=1024px the FAB disappears entirely and the
+     primary action moves into the list toolbar as a regular button. -->
+<section id="intake-desktop" class="screen" aria-labelledby="intake-desktop-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-desktop-title">#intake-desktop</span>
+    <p class="screen-caption">A 1024px y más, no hay FAB: la creación vive en el botón primario de la barra de herramientas.</p>
+  </div>
+  <div class="stage">
+    <div class="desktop-frame">
+      <div class="browser-chrome">
+        <div class="browser-dots"><span></span><span></span><span></span></div>
+        <div class="browser-url mono">app.pandatrack.app/orders</div>
+      </div>
+      <div class="app-shell">
+        <aside class="app-sidebar">
+          <div class="app-sidebar-brand"><span class="demo-brand-mark">P</span>PandaTrack</div>
+          <a href="#" class="app-nav-link"><svg class="icon"><use href="#icon-grid"/></svg>Hoy</a>
+          <a href="#" class="app-nav-link is-active"><svg class="icon"><use href="#icon-package"/></svg>Pedidos</a>
+          <a href="#" class="app-nav-link"><svg class="icon"><use href="#icon-store"/></svg>Tiendas</a>
+          <a href="#" class="app-nav-link"><svg class="icon"><use href="#icon-settings"/></svg>Ajustes</a>
+        </aside>
+        <div class="app-content">
+          <div class="app-topbar">
+            <h2>Pedidos</h2>
+            <div class="app-topbar-spacer"></div>
+          </div>
+          <div class="toolbar">
+            <div class="search"><svg class="icon sm"><use href="#icon-image"/></svg><input type="text" placeholder="Buscar por tienda o identificador..." /></div>
+            <button class="btn primary" type="button"><svg class="icon"><use href="#icon-plus"/></svg>Nuevo pedido</button>
+          </div>
+          <div class="desktop-order-row">
+            <div class="store-cell"><div class="order-avatar">P</div><div><strong>Pop Dealer</strong><small class="mono">ORD-20260722-04</small></div></div>
+            <div class="text-secondary" style="font-size:13px;">3 productos</div>
+            <div><span class="chip success">Pagado</span></div>
+            <div class="num" style="text-align:right; font-weight:700;">S/ 250.00</div>
+          </div>
+          <div class="desktop-order-row">
+            <div class="store-cell"><div class="order-avatar">A</div><div><strong>Akiba Records</strong><small class="mono">ORD-20260718-02</small></div></div>
+            <div class="text-secondary" style="font-size:13px;">1 producto</div>
+            <div><span class="chip warning">Pendiente</span></div>
+            <div class="num" style="text-align:right; font-weight:700;">S/ 180.00</div>
+          </div>
+          <div class="desktop-order-row">
+            <div class="store-cell"><div class="order-avatar">M</div><div><strong>Mercado Otaku</strong><small class="mono">ORD-20260710-11</small></div></div>
+            <div class="text-secondary" style="font-size:13px;">2 productos</div>
+            <div><span class="chip info">Entregado</span></div>
+            <div class="num" style="text-align:right; font-weight:700;">S/ 96.00</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6: Upload surface. Photos consume the monthly AI quota, shown as a passive
+     counter chip plus a first-time explainer, never a blocking gate. -->
+<section id="intake-upload" class="screen" aria-labelledby="intake-upload-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-upload-title">#intake-upload</span>
+    <p class="screen-caption">El contador de cuota es pasivo: informa sin bloquear mientras haya fotos disponibles.</p>
+  </div>
+  <div class="stage">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-statusbar"><span>9:41</span><span>●●● Wi-Fi</span></div>
+        <div style="display:flex; align-items:center; gap:10px; padding: 6px 14px 12px;">
+          <svg class="icon"><use href="#icon-arrow-left"/></svg>
+          <strong style="font-size:15px;">Desde una imagen</strong>
+        </div>
+        <div class="upload-wrap">
+          <div class="dropzone">
+            <svg class="icon lg"><use href="#icon-upload-cloud"/></svg>
+            <strong>Añadir fotos</strong>
+            <span>Captura de chat, correo o recibo</span>
+          </div>
+          <div class="thumb-grid">
+            <div class="thumb"><svg class="icon"><use href="#icon-image"/></svg><button class="remove" type="button" aria-label="Quitar foto"><svg class="icon sm"><use href="#icon-x"/></svg></button></div>
+            <div class="thumb"><svg class="icon"><use href="#icon-image"/></svg><button class="remove" type="button" aria-label="Quitar foto"><svg class="icon sm"><use href="#icon-x"/></svg></button></div>
+            <div class="thumb"><svg class="icon"><use href="#icon-image"/></svg><button class="remove" type="button" aria-label="Quitar foto"><svg class="icon sm"><use href="#icon-x"/></svg></button></div>
+          </div>
+          <div class="quota-chip"><svg class="icon sm"><use href="#icon-image"/></svg>Te quedan 17 fotos este mes</div>
+          <p class="helper-text">Sube las fotos que necesites. Cada foto gasta una de tu cuota mensual.</p>
+          <div class="explainer-line"><svg class="icon sm"><use href="#icon-info"/></svg>Cada foto que subes gasta una de tu bolsa mensual.</div>
+          <button class="btn primary block" type="button" data-screen-link="intake-processing">Extraer datos</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7: Same surface with 5 photos attached against only 3 remaining. The
+     warning banner explains the shortfall in plain numbers and the CTA is disabled. -->
+<section id="intake-quota-overflow" class="screen" aria-labelledby="intake-quota-overflow-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-quota-overflow-title">#intake-quota-overflow</span>
+    <p class="screen-caption">Cuando las fotos superan lo disponible, un aviso ámbar explica la brecha y el botón principal se desactiva.</p>
+  </div>
+  <div class="stage">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-statusbar"><span>9:41</span><span>●●● Wi-Fi</span></div>
+        <div style="display:flex; align-items:center; gap:10px; padding: 6px 14px 12px;">
+          <svg class="icon"><use href="#icon-arrow-left"/></svg>
+          <strong style="font-size:15px;">Desde una imagen</strong>
+        </div>
+        <div class="upload-wrap">
+          <div class="banner warning">
+            <svg class="icon"><use href="#icon-alert-triangle"/></svg>
+            <span>Vas a subir 5 fotos y te quedan 3. Quita 2 o guarda el resto para el mes que viene.</span>
+          </div>
+          <div class="thumb-grid">
+            <div class="thumb"><svg class="icon"><use href="#icon-image"/></svg><button class="remove" type="button" aria-label="Quitar foto"><svg class="icon sm"><use href="#icon-x"/></svg></button></div>
+            <div class="thumb"><svg class="icon"><use href="#icon-image"/></svg><button class="remove" type="button" aria-label="Quitar foto"><svg class="icon sm"><use href="#icon-x"/></svg></button></div>
+            <div class="thumb"><svg class="icon"><use href="#icon-image"/></svg><button class="remove" type="button" aria-label="Quitar foto"><svg class="icon sm"><use href="#icon-x"/></svg></button></div>
+            <div class="thumb"><svg class="icon"><use href="#icon-image"/></svg><button class="remove" type="button" aria-label="Quitar foto"><svg class="icon sm"><use href="#icon-x"/></svg></button></div>
+            <div class="thumb"><svg class="icon"><use href="#icon-image"/></svg><button class="remove" type="button" aria-label="Quitar foto"><svg class="icon sm"><use href="#icon-x"/></svg></button></div>
+          </div>
+          <div class="quota-chip"><svg class="icon sm"><use href="#icon-image"/></svg>Te quedan 3 fotos este mes</div>
+          <p class="helper-text">Sube las fotos que necesites. Cada foto gasta una de tu cuota mensual.</p>
+          <button class="btn primary block" type="button" disabled>Extraer datos</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8: Processing screen with a motion-safe spinner and three sequential
+     steps; the first two are complete, the third is actively running. -->
+<section id="intake-processing" class="screen" aria-labelledby="intake-processing-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-processing-title">#intake-processing</span>
+    <p class="screen-caption">Progreso lineal de tres pasos. Respeta prefers-reduced-motion desacelerando la animación.</p>
+  </div>
+  <div class="stage">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-statusbar"><span>9:41</span><span>●●● Wi-Fi</span></div>
+        <div class="processing-wrap">
+          <div class="spinner" role="status" aria-label="Procesando"></div>
+          <div class="step-list">
+            <div class="step-row is-done"><span class="dot"><svg class="icon sm"><use href="#icon-check"/></svg></span>Optimizando imágenes...</div>
+            <div class="step-row is-done"><span class="dot"><svg class="icon sm"><use href="#icon-check"/></svg></span>Subiendo...</div>
+            <div class="step-row is-active"><span class="dot"><span class="pulse"></span></span>Leyendo la conversación...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9: The key review screen. Demonstrates the confidence traffic light for
+     product groups (good/warn/doubtful, each with dot + icon + label, never
+     color alone) plus store attribution and a currency assumption chip. -->
+<section id="intake-review" class="screen" aria-labelledby="intake-review-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-review-title">#intake-review</span>
+    <p class="screen-caption">Semáforo de confianza por grupo de productos: color + ícono + etiqueta, nunca solo color.</p>
+  </div>
+  <div class="stage">
+    <div class="phone-frame">
+      <div class="phone-screen" style="position: relative;">
+        <div class="phone-statusbar"><span>9:41</span><span>●●● Wi-Fi</span></div>
+        <div style="display:flex; align-items:center; gap:10px; padding: 6px 16px 4px;">
+          <svg class="icon"><use href="#icon-arrow-left"/></svg>
+          <strong style="font-size:16px;">Revisa y confirma</strong>
+        </div>
+        <div class="review-wrap">
+          <p class="review-summary">Encontramos 6 productos por S/ 480.00. Revisa 2 datos y guarda.</p>
+
+          <div class="attr-row">
+            <div class="attr-main"><span class="attr-label">Tienda</span><span class="attr-value">Pop Dealer</span></div>
+            <a href="#intake-store-ambiguous" class="btn text" data-screen-link="intake-store-ambiguous">Cambiar</a>
+          </div>
+          <p class="attr-note"><svg class="icon sm"><use href="#icon-phone"/></svg>Coincidencia por teléfono</p>
+
+          <div class="attr-row">
+            <div class="attr-main"><span class="attr-label">Moneda</span><span class="attr-value">PEN (S/) <span class="chip warning">Asumido</span></span></div>
+          </div>
+          <p class="attr-note"><svg class="icon sm"><use href="#icon-info"/></svg>No la leímos en la conversación, la asumimos según tu configuración de cuenta.</p>
+
+          <div class="section-label">Productos</div>
+
+          <div class="group-card">
+            <div class="group-status good"><span class="dot"></span><svg class="icon sm"><use href="#icon-check"/></svg>Coincide</div>
+            <h3>Lo separamos en 2 productos.</h3>
+            <p class="group-quote">Del chat: "el pack chase de Gojo"</p>
+            <p class="group-body">Los vendieron juntos, pero pueden llegarte en días distintos.</p>
+            <div class="group-rows">
+              <div class="group-row"><span>Gojo</span><span class="num">S/ 90.00</span></div>
+              <div class="group-row"><span>Gojo (chase)</span><span class="num">S/ 60.00</span></div>
+            </div>
+            <button class="btn ghost sm" type="button"><svg class="icon sm"><use href="#icon-layers"/></svg>Unir en uno</button>
+          </div>
+
+          <div class="group-card">
+            <div class="group-status warn"><span class="dot"></span><svg class="icon sm"><use href="#icon-alert-triangle"/></svg>Verificar</div>
+            <h3>Repartimos S/ 180.00 en partes iguales.</h3>
+            <p class="group-body">Ajusta si una pieza vale más que la otra.</p>
+            <div class="group-rows">
+              <div class="group-row"><span id="rev-price-1-label">One Piece vol. 1</span><label class="visually-hidden" for="rev-price-1">Precio de One Piece vol. 1</label><input id="rev-price-1" class="price-input num" type="text" value="S/ 90.00" aria-labelledby="rev-price-1-label" /></div>
+              <div class="group-row"><span id="rev-price-2-label">One Piece vol. 2</span><label class="visually-hidden" for="rev-price-2">Precio de One Piece vol. 2</label><input id="rev-price-2" class="price-input num" type="text" value="S/ 90.00" aria-labelledby="rev-price-2-label" /></div>
+            </div>
+            <button class="btn ghost sm" type="button"><svg class="icon sm"><use href="#icon-layers"/></svg>Unir en uno</button>
+          </div>
+
+          <div class="group-card">
+            <div class="group-status doubt"><span class="dot"></span><svg class="icon sm"><use href="#icon-help-circle"/></svg>Dudoso, revisa</div>
+            <h3>Lo separamos, pero no estamos seguros.</h3>
+            <p class="group-quote">Del chat: "pack de Kenshin"</p>
+            <p class="group-body">Si viene sellado de editorial, únelo en uno.</p>
+            <div class="group-rows">
+              <div class="group-row"><span>Kenshin, tomo A</span><span class="num">S/ 65.00</span></div>
+              <div class="group-row"><span>Kenshin, tomo B</span><span class="num">S/ 65.00</span></div>
+            </div>
+            <button class="btn ghost sm" type="button"><svg class="icon sm"><use href="#icon-layers"/></svg>Unir en uno</button>
+          </div>
+
+          <div class="totals">
+            <div class="totals-row"><span>Adelanto pagado</span><span class="num">S/ 150.00</span></div>
+            <div class="totals-row strong"><span>Total del pedido</span><span class="num">S/ 480.00</span></div>
+          </div>
+        </div>
+        <div class="sticky-bar">
+          <button class="btn primary block" type="button" data-screen-link="intake-saved">Crear pedido</button>
+          <button class="btn text" type="button">Completar a mano</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10: Contrasts the 2-5 vs 6+ product expansion rule. A 50-item group stays
+     collapsed behind a summary row; a 3-item group arrives fully expanded. -->
+<section id="intake-group-collapsed" class="screen" aria-labelledby="intake-group-collapsed-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-group-collapsed-title">#intake-group-collapsed</span>
+    <p class="screen-caption">Grupos de 6+ productos llegan colapsados en un resumen; de 2 a 5, se expanden automáticamente.</p>
+  </div>
+  <div class="stage">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-statusbar"><span>9:41</span><span>●●● Wi-Fi</span></div>
+        <div class="review-wrap" style="padding-top: 16px;">
+          <div class="section-label">Colapsado (6 o más productos)</div>
+          <div class="group-card group-collapsed">
+            <div class="group-summary">
+              <div>
+                <strong>One Piece 1 a 50</strong>
+                <div class="group-meta">50 productos · S/ 12.00 c/u · S/ 600.00</div>
+              </div>
+            </div>
+            <div class="group-actions mt-16">
+              <button class="btn ghost sm" type="button">Ver los 50</button>
+              <button class="btn ghost sm" type="button"><svg class="icon sm"><use href="#icon-layers"/></svg>Unir en uno</button>
+            </div>
+          </div>
+
+          <div class="section-label">Expandido (2 a 5 productos)</div>
+          <div class="group-card">
+            <div class="group-status good"><span class="dot"></span><svg class="icon sm"><use href="#icon-check"/></svg>Coincide</div>
+            <h3>Detectamos 3 productos.</h3>
+            <p class="group-quote">Del chat: "las 3 figuras de la promo"</p>
+            <div class="group-rows">
+              <div class="group-row"><span>Figura Luffy</span><span class="num">S/ 120.00</span></div>
+              <div class="group-row"><span>Figura Zoro</span><span class="num">S/ 120.00</span></div>
+              <div class="group-row"><span>Figura Sanji</span><span class="num">S/ 120.00</span></div>
+            </div>
+            <button class="btn ghost sm" type="button"><svg class="icon sm"><use href="#icon-layers"/></svg>Unir en uno</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11: Split modal for a 3-item group, with editable name/price rows. Opened from the review
+     screen's group chip and nowhere else (ADR 0023): it reshapes the in-memory draft, so there
+     is no blocked state (a draft has no deliveries) and nothing is persisted. -->
+<section id="intake-split-modal" class="screen" aria-labelledby="intake-split-modal-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-split-modal-title">#intake-split-modal</span>
+    <p class="screen-caption">Separar siempre pide confirmación y precios editables. Solo se ofrece mientras revisas el borrador, antes de guardar el pedido.</p>
+  </div>
+  <div class="stage">
+    <div class="phone-frame">
+      <div class="phone-screen" style="position: relative;">
+        <div class="phone-statusbar"><span>9:41</span><span>●●● Wi-Fi</span></div>
+        <div class="review-wrap" style="padding-top: 16px;">
+          <div class="group-card">
+            <div class="group-status good"><span class="dot"></span><svg class="icon sm"><use href="#icon-check"/></svg>Coincide</div>
+            <h3>One Piece 1, 2 y 3</h3>
+            <p class="group-quote">Del chat: "los 3 tomos de One Piece"</p>
+            <button class="btn ghost sm" type="button">Separar en 3</button>
+          </div>
+        </div>
+
+        <div class="modal-backdrop">
+          <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="split-modal-title">
+            <h2 id="split-modal-title">¿Separar en 3 productos?</h2>
+            <p class="body">Cada uno se podrá entregar por su cuenta.</p>
+            <div class="split-row">
+              <label class="visually-hidden" for="split-name-1">Nombre del producto 1</label>
+              <input id="split-name-1" type="text" value="One Piece 1" />
+              <label class="visually-hidden" for="split-price-1">Precio del producto 1</label>
+              <input id="split-price-1" type="text" class="price num" value="S/ 12.00" />
+            </div>
+            <div class="split-row">
+              <label class="visually-hidden" for="split-name-2">Nombre del producto 2</label>
+              <input id="split-name-2" type="text" value="One Piece 2" />
+              <label class="visually-hidden" for="split-price-2">Precio del producto 2</label>
+              <input id="split-price-2" type="text" class="price num" value="S/ 12.00" />
+            </div>
+            <div class="split-row">
+              <label class="visually-hidden" for="split-name-3">Nombre del producto 3</label>
+              <input id="split-name-3" type="text" value="One Piece 3" />
+              <label class="visually-hidden" for="split-price-3">Precio del producto 3</label>
+              <input id="split-price-3" type="text" class="price num" value="S/ 12.00" />
+            </div>
+            <p class="modal-note">Dividimos el precio en partes iguales, ajústalo si alguno vale más.</p>
+            <div class="modal-actions">
+              <button class="btn ghost" type="button">Cancelar</button>
+              <button class="btn primary" type="button">Separar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 12: Inline store creation inside the review flow. Nothing navigates away;
+     the store is created as pending directly from the prefilled fields. -->
+<section id="intake-store-new" class="screen" aria-labelledby="intake-store-new-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-store-new-title">#intake-store-new</span>
+    <p class="screen-caption">Crear la tienda pasa dentro de la misma pantalla de revisión, sin salir del flujo.</p>
+  </div>
+  <div class="stage">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-statusbar"><span>9:41</span><span>●●● Wi-Fi</span></div>
+        <div class="review-wrap" style="padding-top: 16px;">
+          <div class="store-new-card">
+            <h3><svg class="icon"><use href="#icon-store"/></svg>No encontramos esta tienda</h3>
+            <p>Confirma los datos y la creamos para ti.</p>
+            <div class="field"><label for="sn-name">Nombre de la tienda</label><input id="sn-name" class="input" type="text" value="Pop Dealer" /></div>
+            <div class="field"><label for="sn-phone">Teléfono</label><input id="sn-phone" class="input" type="text" placeholder="+51 9xx xxx xxx" /></div>
+            <button class="btn primary block" type="button">Crear tienda</button>
+            <p class="pending-note"><svg class="icon sm"><use href="#icon-clock"/></svg>Se creará como tienda pendiente de revisión, la podrás usar de inmediato.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 13: Store disambiguator with three similarly named candidates and a
+     deliberately empty selection, plus the explicit escape hatch to create new. -->
+<section id="intake-store-ambiguous" class="screen" aria-labelledby="intake-store-ambiguous-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-store-ambiguous-title">#intake-store-ambiguous</span>
+    <p class="screen-caption">Ninguna opción viene preseleccionada a propósito: forzamos una elección consciente cuando hay ambigüedad.</p>
+  </div>
+  <div class="stage">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-statusbar"><span>9:41</span><span>●●● Wi-Fi</span></div>
+        <div style="display:flex; align-items:center; gap:10px; padding: 6px 16px 4px;">
+          <svg class="icon"><use href="#icon-arrow-left"/></svg>
+          <strong style="font-size:16px;">¿Cuál de estas tiendas es?</strong>
+        </div>
+        <div class="review-wrap" style="padding-top: 12px;">
+          <fieldset class="candidate-list" style="border: 0; margin: 0; padding: 0;">
+            <legend class="visually-hidden">Cuál de estas tiendas es</legend>
+            <label class="candidate-row"><input type="radio" name="store-candidate" class="candidate-radio" /><span class="candidate-info"><strong>Pop Dealer</strong><span>Lima, PE · coincide el nombre y el teléfono guardado</span></span></label>
+            <label class="candidate-row"><input type="radio" name="store-candidate" class="candidate-radio" /><span class="candidate-info"><strong>Pop Dealer Store</strong><span>Bogotá, CO · nombre parecido, otro país</span></span></label>
+            <label class="candidate-row"><input type="radio" name="store-candidate" class="candidate-radio" /><span class="candidate-info"><strong>Pop Dealer Anime</strong><span>Tokio, JP · nombre parecido, sin pedidos previos</span></span></label>
+            <label class="candidate-row is-new"><input type="radio" name="store-candidate" class="candidate-radio" /><span class="candidate-info"><strong>Ninguna, crear una nueva</strong><span>Registramos "Pop Dealer" como tienda pendiente</span></span></label>
+          </fieldset>
+          <button class="btn primary block mt-16" type="button" disabled>Continuar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 14: The saved order detail, byte-for-byte the same layout as a manually
+     created order. No AI badge, no "generated" label, anywhere on this screen. -->
+<section id="intake-saved" class="screen" aria-labelledby="intake-saved-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-saved-title">#intake-saved</span>
+    <p class="screen-caption">El detalle guardado es idéntico al de un pedido creado a mano. No hay insignia de IA en ninguna parte.</p>
+  </div>
+  <div class="stage">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-statusbar"><span>9:41</span><span>●●● Wi-Fi</span></div>
+        <div class="detail-wrap">
+          <div class="detail-head" style="padding-top: 8px;">
+            <div style="display:flex; align-items:center; gap:10px;"><svg class="icon"><use href="#icon-arrow-left"/></svg><h1>Detalle del pedido</h1></div>
+            <span class="mono text-muted" style="font-size:12px;">ORD-20260728-01</span>
+          </div>
+          <div class="detail-store">
+            <div class="order-avatar">P</div>
+            <div><strong style="display:block; font-size:14px;">Pop Dealer</strong><span class="chip warning">Pago parcial</span></div>
+          </div>
+          <div class="detail-total"><span class="text-secondary" style="font-size:13px;">Total del pedido</span><span class="num">S/ 480.00</span></div>
+          <div class="section-label">Productos</div>
+          <div class="product-row"><span>Gojo</span><span class="num">S/ 90.00</span></div>
+          <div class="product-row"><span>Gojo (chase)</span><span class="num">S/ 60.00</span></div>
+          <div class="product-row"><span>One Piece vol. 1</span><span class="num">S/ 90.00</span></div>
+          <div class="product-row"><span>One Piece vol. 2</span><span class="num">S/ 90.00</span></div>
+          <div class="product-row"><span>Kenshin, tomo A</span><span class="num">S/ 65.00</span></div>
+          <div class="product-row"><span>Kenshin, tomo B</span><span class="num">S/ 65.00</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 15: Quota-exhausted state. Manual entry stays fully available and unlimited;
+     only the image-based card is disabled, with the counter reading zero. -->
+<section id="intake-quota-exhausted" class="screen" aria-labelledby="intake-quota-exhausted-title">
+  <div class="screen-head">
+    <span class="eyebrow screen-tag mono" id="intake-quota-exhausted-title">#intake-quota-exhausted</span>
+    <p class="screen-caption">Agotada la bolsa mensual, el registro a mano sigue disponible sin límite ni funciones recortadas.</p>
+  </div>
+  <div class="stage">
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="phone-statusbar"><span>9:41</span><span>●●● Wi-Fi</span></div>
+        <div class="review-wrap" style="padding-top: 16px;">
+          <div class="banner warning">
+            <svg class="icon"><use href="#icon-alert-triangle"/></svg>
+            <span>Ya usaste tus 20 fotos con IA de este mes. Se renuevan el 1 de agosto. Puedes seguir registrando pedidos a mano, sin límite y con todas las funciones.</span>
+          </div>
+          <button class="btn primary block" type="button">Registrar a mano</button>
+          <div class="section-label">Modos de creación</div>
+          <div class="selector-cards">
+            <div class="selector-card is-disabled">
+              <div class="selector-card-head">
+                <div class="selector-card-icon"><svg class="icon"><use href="#icon-image"/></svg></div>
+                <div style="flex:1; min-width:0;"><div class="selector-card-title">Desde una imagen</div></div>
+              </div>
+              <p class="desc">Sube la captura del chat, el correo de la tienda o la foto del recibo.</p>
+              <div class="notes"><span><svg class="icon sm"><use href="#icon-image"/></svg>Te quedan 0 fotos este mes</span></div>
+            </div>
+            <button class="selector-card" type="button">
+              <div class="selector-card-head">
+                <div class="selector-card-icon"><svg class="icon"><use href="#icon-edit"/></svg></div>
+                <div style="flex:1; min-width:0;"><div class="selector-card-title">A mano</div></div>
+                <svg class="icon sm text-muted"><use href="#icon-chevron-right"/></svg>
+              </div>
+              <p class="desc">El formulario de siempre, en tres pasos. Sin límite de uso.</p>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+  // ── Theme management (light/dark, localStorage) ────────────────
+  var THEME_KEY = 'pandatrack-frd11-theme';
+  var mql = window.matchMedia('(prefers-color-scheme: dark)');
+
+  function applyTheme(mode) {
+    if (mode !== 'light' && mode !== 'dark') mode = mql.matches ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', mode);
+    document.querySelectorAll('[data-theme-set]').forEach(function (b) {
+      b.setAttribute('aria-pressed', b.dataset.themeSet === mode ? 'true' : 'false');
+    });
+  }
+  function getStoredTheme() {
+    var v = localStorage.getItem(THEME_KEY);
+    if (v === 'light' || v === 'dark') return v;
+    return mql.matches ? 'dark' : 'light';
+  }
+  document.querySelectorAll('[data-theme-set]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      localStorage.setItem(THEME_KEY, b.dataset.themeSet);
+      applyTheme(b.dataset.themeSet);
+    });
+  });
+  applyTheme(getStoredTheme());
+
+  // ── Hash router ──────────────────────────────────────────────
+  var screenSelect = document.getElementById('screen-select');
+
+  function showScreen(id) {
+    if (!document.getElementById(id)) id = 'intake-entry-share';
+    document.querySelectorAll('.screen').forEach(function (s) {
+      s.classList.toggle('is-active', s.id === id);
+    });
+    if (screenSelect) screenSelect.value = id;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  function fromHash() {
+    return (location.hash || '#intake-entry-share').replace('#', '');
+  }
+  window.addEventListener('hashchange', function () { showScreen(fromHash()); });
+  if (screenSelect) {
+    screenSelect.addEventListener('change', function () { location.hash = screenSelect.value; });
+  }
+  document.querySelectorAll('[data-screen-link]').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      e.preventDefault();
+      location.hash = el.dataset.screenLink;
+    });
+  });
+  showScreen(fromHash());
+</script>
+
+<script>
+  // Prototype bootstrap: land on the FRD home screen when the hash is empty
+  // or points at a screen not present in this self-contained slice.
+  (function () {
+    var ids = {};
+    document.querySelectorAll('.screen').forEach(function (s) { ids[s.id] = true; });
+    var current = location.hash.replace('#', '');
+    if (!current || !ids[current]) location.hash = '#intake-entry-share';
+  })();
+</script>
+
+</body>
+</html>

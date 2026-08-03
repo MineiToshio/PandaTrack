@@ -2,7 +2,8 @@
   "nav": {
     "section": "Administration",
     "moderation": "Moderation",
-    "audit": "Audit log"
+    "audit": "Audit log",
+    "imageIntake": "AI photos"
   },
   "landing": {
     "title": "Moderation inbox",
@@ -173,7 +174,8 @@
       "store": "Store",
       "report": "Report",
       "changeRequest": "Change request",
-      "productType": "Product type"
+      "productType": "Product type",
+      "user": "Account"
     },
     "action": {
       "store_approve": "Store approved and published",
@@ -185,7 +187,8 @@
       "changeRequest_apply": "Change request applied",
       "changeRequest_reject": "Change request rejected",
       "productType_approve": "Product type approved",
-      "productType_reject": "Product type rejected"
+      "productType_reject": "Product type rejected",
+      "imageIntake_quotaOverride": "AI photo quota changed"
     },
     "pagination": {
       "regionLabel": "Audit log pagination",
@@ -203,6 +206,35 @@
   },
   "meta": {
     "landingTitle": "Moderation",
-    "auditTitle": "Audit log"
+    "auditTitle": "Audit log",
+    "imageIntakeTitle": "AI photos"
+  },
+  "imageIntake": {
+    "intro": "Adjust an account's monthly bag of AI photos. With no adjustment, every account gets {defaultQuota} photos per month.",
+    "searchLabel": "Find an account",
+    "searchPlaceholder": "Username or email",
+    "searchSubmit": "Search",
+    "adminTag": "Admin",
+    "usage": "Used {used} of {limit} photos this month. {remaining} left.",
+    "usageUncapped": "Used {used} photos this month. No cap, this is an admin account.",
+    "idle": {
+      "title": "Find an account",
+      "subtitle": "Type the username or the email to see its usage and adjust its bag."
+    },
+    "noResults": {
+      "title": "No matches",
+      "subtitle": "No account matches that search."
+    },
+    "form": {
+      "limitLabel": "Photos per month",
+      "limitPlaceholder": "Default",
+      "limitHelp": "Leave it empty to go back to the default.",
+      "reasonLabel": "Reason",
+      "reasonRequired": "Write why you are changing it.",
+      "submit": "Save"
+    },
+    "toast": {
+      "overrideSaved": "Quota updated."
+    }
   }
 }

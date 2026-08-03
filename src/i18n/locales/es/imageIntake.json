@@ -1,0 +1,193 @@
+{
+  "title": "Crear desde imagen",
+  "backToList": "Pedidos",
+  "currencyGate": {
+    "title": "Primero elige tu moneda base",
+    "description": "Necesitamos saber en qué moneda registras tus compras antes de leer las fotos. Sin eso, el total que encontremos podría quedar en la moneda equivocada.",
+    "cta": "Ir a configuración",
+    "secondary": "Registrar a mano"
+  },
+  "upload": {
+    "title": "Sube la captura",
+    "description": "Leemos tus fotos y llenamos el pedido.",
+    "dropzoneTitle": "Añadir fotos",
+    "dropzoneHint": "Captura de chat, correo o recibo",
+    "chooseMore": "Añadir más fotos",
+    "helper": "Sube las fotos que necesites. Se aceptan PNG, JPEG y WebP.",
+    "attachedTitle": "Fotos adjuntas ({count})",
+    "removeOne": "Quitar {name}",
+    "submit": "Extraer datos",
+    "listLabel": "Fotos adjuntas",
+    "dragPasteHint": "Arrástralas aquí o pégalas desde el portapapeles",
+    "dropActive": "Suelta las fotos aquí",
+    "linkHintToggle": "¿Solo tienes el enlace del producto?",
+    "linkHint": "Adjunta una captura de su ficha en la tienda: de ahí sacamos el nombre. Si la añades después, hay que volver a leer todas las fotos.",
+    "guidanceOneOrder": "Sube <strong>un pedido a la vez</strong>: todo se junta en uno.",
+    "guidanceOrder": "Leemos <strong>en orden</strong>: primero el chat, las fichas de producto al final.",
+    "guidanceLabel": "Antes de subir",
+    "position": "Foto {position}",
+    "moveEarlier": "Mover la foto {position} antes",
+    "moveLater": "Mover la foto {position} después",
+    "reorderAnnouncement": "Foto movida a la posición {position} de {total}.",
+    "reorderHint": "Arrastra las fotos para cambiar el orden, o usa las flechas de cada foto."
+  },
+  "quota": {
+    "counter": "Te quedan {count, plural, one {# foto} other {# fotos}} este mes",
+    "explainer": "Cada foto que subes gasta una de tu bolsa mensual.",
+    "helper": "Sube las fotos que necesites. Cada foto gasta una de tu cuota mensual.",
+    "overflow": "Vas a subir {attached, plural, one {# foto} other {# fotos}} y te quedan {remaining}. Quita {excess} o guarda el resto para el mes que viene.",
+    "exhaustedTitle": "Ya usaste tus {limit} fotos con IA de este mes.",
+    "exhausted": "Se renuevan el {renewalDate}. Puedes seguir registrando pedidos a mano, sin límite y con todas las funciones.",
+    "exhaustedCta": "Registrar a mano"
+  },
+  "processing": {
+    "title": "Leyendo tus fotos",
+    "subtitle": "Suele tomar entre tres y ocho segundos. No cierres esta pantalla.",
+    "stepsLabel": "Progreso de la lectura",
+    "optimizing": "Optimizando imágenes...",
+    "uploading": "Subiendo...",
+    "reading": "Leyendo la conversación...",
+    "doneLabel": "Completado",
+    "activeLabel": "En curso",
+    "pendingLabel": "Pendiente"
+  },
+  "errors": {
+    "title": "No pudimos continuar",
+    "attachmentsKept": "Tus fotos siguen adjuntas.",
+    "emptySubmission": "Adjunta al menos una foto para continuar.",
+    "tooManyImages": "Son muchas fotos para una sola subida. Envía hasta 20 por vez.",
+    "fileTooLarge": "Una de las fotos es demasiado grande. El máximo es 2 MB.",
+    "submissionTooLarge": "Las fotos juntas pesan demasiado para un solo envío. Quita algunas e inténtalo de nuevo.",
+    "unsupportedFormat": "Solo se aceptan imágenes PNG, JPEG y WebP.",
+    "unreadableFile": "No se pudo leer la foto. Prueba con otro archivo.",
+    "dimensionsOutOfRange": "Una de las fotos es demasiado pequeña o demasiado grande para leerla.",
+    "compressionFailed": "No se pudo preparar una de las fotos. Prueba con otro archivo.",
+    "budgetBlocked": "La lectura con IA está en pausa por ahora. Puedes registrar el pedido a mano, sin límite y con todas las funciones.",
+    "rateLimited": "Espera unos segundos antes de enviar otras fotos.",
+    "quotaExceeded": "Ya no te quedan fotos suficientes este mes. Quita algunas o registra el pedido a mano.",
+    "dailyCapExceeded": "Llegaste al máximo de fotos por hoy. Vuelve mañana o registra el pedido a mano.",
+    "dailyAttemptCapExceeded": "Hubo demasiados intentos de lectura hoy. Vuelve mañana o registra el pedido a mano.",
+    "invalidModelResponse": "No entendimos lo que había en las fotos. Prueba con una captura más clara.",
+    "noOrderFound": "No encontramos ningún pedido en esas fotos. Suele pasar cuando la foto es solo del producto: necesitamos ver la conversación o el recibo, donde salgan los productos y los montos. Quita la foto que no corresponde y prueba con otra.",
+    "multipleOrders": "Esas fotos parecen de varias compras distintas. Cada pedido se sube por separado, aunque tenga varios productos. Quita las fotos que sobran y deja solo las de una compra.",
+    "providerError": "No pudimos leer las fotos en este momento. Inténtalo de nuevo en un minuto.",
+    "providerRejected": "Hubo un problema al leer las fotos. No se soluciona reintentando: ya estamos avisados y lo vamos a arreglar. Mientras tanto puedes registrar el pedido a mano.",
+    "ledgerError": "No pudimos completar la lectura. Inténtalo de nuevo en un minuto.",
+    "productCeilingExceeded": "Son demasiados productos para un pedido. El chat pide {productCount} y un pedido admite {maxProducts}. Únelos en un solo producto o divide la compra en dos pedidos.",
+    "missingBaseCurrency": "Primero elige tu moneda base en configuración.",
+    "unauthorized": "Tu sesión expiró. Vuelve a iniciar sesión.",
+    "serverError": "Algo salió mal. Inténtalo de nuevo.",
+    "saveInvalidDraft": "Faltan datos para crear el pedido. Revisa la tienda, la fecha, la moneda y el total.",
+    "saveStoreRequired": "Elige la tienda antes de guardar.",
+    "saveTotalRequired": "Escribe el total del pedido antes de guardar."
+  },
+  "review": {
+    "title": "Revisa y confirma",
+    "headerWithDoubts": "Encontramos {productCount, plural, one {# producto} other {# productos}} por {total}. {doubtCount, plural, one {Revisa # dato y guarda.} other {Revisa # datos y guarda.}}",
+    "headerClean": "Todo salió limpio del chat. Revísalo y guarda.",
+    "fieldsTitle": "Datos del pedido",
+    "store": {
+      "label": "Tienda",
+      "placeholder": "Busca la tienda",
+      "empty": "No encontramos tiendas con ese nombre.",
+      "mobileTitle": "Elige la tienda",
+      "mobileSearch": "Buscar tienda",
+      "listLabel": "Tiendas disponibles",
+      "readFromChat": "Del chat: \"{phrase}\"",
+      "help": "Elígela de tu lista para poder guardar el pedido.",
+      "createLabel": "Crear una tienda nueva",
+      "notFoundQuestion": "¿No está en tu lista?"
+    },
+    "fields": {
+      "orderDate": "Fecha del pedido",
+      "currency": "Moneda",
+      "total": "Total"
+    },
+    "provenance": {
+      "assumed": "asumido",
+      "missing": "falta"
+    },
+    "fx": {
+      "label": "Tipo de cambio {from} a {to}",
+      "placeholder": "Ej. 3.75",
+      "loading": "Consultando la tasa...",
+      "rateDate": "Tasa del {date}. Puedes cambiarla.",
+      "help": "Cuántos {to} equivalen a 1 {from}.",
+      "unavailable": "No pudimos consultar la tasa de hoy. Escríbela tú o déjala vacía: el pedido se guarda igual y luego lo reconcilias desde la lista.",
+      "invalid": "Escribe un número válido, con hasta 6 decimales, o deja el campo vacío."
+    },
+    "groupsTitle": "Productos",
+    "group": {
+      "split": "Lo separamos en {count, plural, one {# producto} other {# productos}}.",
+      "splitWhy": "Los vendieron juntos, pero pueden llegarte en días distintos.",
+      "splitDoubt": "Lo separamos, pero no estamos seguros.",
+      "splitDoubtWhy": "Si viene sellado de editorial, únelo en uno.",
+      "sealed": "Lo dejamos como un solo producto.",
+      "sealedWhy": "Viene sellado de editorial, así que llega completo o no llega.",
+      "notNameable": "No supimos qué trae.",
+      "notNameableWhy": "Lo guardamos como un producto.",
+      "openRange": "Lo separamos en {count, plural, one {# producto} other {# productos}}.",
+      "openRangeWhy": "El chat pide un rango, así que creamos un producto por cada número.",
+      "sourceQuote": "Del chat: \"{phrase}\"",
+      "sourceQuoteSealed": "El chat dice \"{phrase}\".",
+      "sourceQuoteNotNameable": "El chat dice \"{phrase}\" sin decir cuáles.",
+      "mergeAction": "Unir en uno",
+      "splitAction": "Separar",
+      "splitIntoAction": "Separar en {count} productos",
+      "comingSoon": "Disponible pronto",
+      "summaryMeta": "{count, plural, one {# producto} other {# productos}} · {unitPrice} c/u · {total}",
+      "summaryMetaNoPrice": "{count, plural, one {# producto} other {# productos}}",
+      "expand": "Ver los {count}",
+      "collapse": "Ocultar los {count}",
+      "rangeSeparator": "{first} a {last}",
+      "priceSplitUneven": "Repartimos {total} en partes iguales. Ajusta si una pieza vale más que la otra",
+      "doubtful": "Dudoso, revisa",
+      "clean": "Coincide",
+      "warning": "Verificar",
+      "noPrice": "Sin precio",
+      "rowsLabel": "Productos del grupo",
+      "categoryNone": "Sin categoría",
+      "categorySuggested": "sugerida",
+      "categoryMixed": "Categorías distintas",
+      "categoryProductAria": "Categoría de {product}: {category}. Cámbiala",
+      "categoryGroupAria": "Categoría de los {count} productos: {category}. Cámbiala",
+      "categoryGroupHint": "Se aplica a los {count} productos",
+      "referenceLinkAria": "Abrir el enlace del producto en {host}, en una pestaña nueva"
+    },
+    "productSheet": {
+      "title": "{count, plural, one {Podemos nombrar mejor este producto} other {Podemos nombrar mejor estos # productos}}",
+      "reasonHostOnly": "Del enlace solo sacamos el dominio: \"{name}\". El chat no dice qué producto es.",
+      "reasonDoubtful": "Leímos \"{name}\" del enlace de {host}, pero no estamos seguros de qué es.",
+      "body": "Adjunta una captura de su ficha en la tienda y lo nombramos de ahí. El precio y el total siguen saliendo del chat, nunca de la ficha.",
+      "cost": "Volver a leer gasta otra vez las {count, plural, one {# foto} other {# fotos}} que ya subiste, más la que añadas: la lectura es una sola pasada sobre todas las fotos.",
+      "costWithBalance": "Volver a leer gasta otra vez las {count, plural, one {# foto} other {# fotos}} que ya subiste, más la que añadas: la lectura es una sola pasada sobre todas las fotos. Te quedan {remaining} este mes.",
+      "costUnaffordable": "Volver a leer costaría {needed, plural, one {# foto} other {# fotos}} (las que ya subiste más la nueva) y te quedan {remaining} este mes.",
+      "cta": "Añadir la captura de la ficha",
+      "optional": "No es obligatorio: puedes guardar así y cambiarle el nombre después."
+    },
+    "payments": {
+      "title": "Pagos",
+      "row": "Pago del {date}",
+      "empty": "No encontramos pagos en el chat."
+    },
+    "totals": {
+      "paid": "Adelanto pagado",
+      "total": "Total del pedido"
+    },
+    "delivery": {
+      "cost": "Costo de envío",
+      "costNotSaved": "Lo leímos del chat, pero se guarda recién cuando registres la entrega."
+    },
+    "save": "Crear pedido",
+    "manual": "Completar a mano",
+    "saving": "Creando el pedido..."
+  },
+  "share": {
+    "attach": "No encontramos las fotos que compartiste. Adjúntalas aquí y seguimos desde ahí.",
+    "ios": "En iPhone el atajo abre esta pantalla, pero no puede traer las fotos. Adjunta las fotos que compartiste.",
+    "failed": "No pudimos recibir lo que compartiste. Adjunta las fotos aquí e inténtalo de nuevo."
+  },
+  "entry": {
+    "wizardHint": "¿Tienes una captura? Créalo desde una imagen"
+  }
+}

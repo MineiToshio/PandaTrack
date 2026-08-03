@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const captureExceptionMock = vi.fn();
+const sweepExpiredShareStashMock = vi.fn().mockResolvedValue(undefined);
 
 vi.mock("@sentry/nextjs", () => ({ captureException: captureExceptionMock }));
+vi.mock("@/lib/pwa/shareStash", () => ({ sweepExpiredShareStash: sweepExpiredShareStashMock }));
 
 async function importRegisterServiceWorker() {
   const registerServiceWorkerModule = await import("../registerServiceWorker");
@@ -13,6 +15,8 @@ describe("registerServiceWorker", () => {
   beforeEach(() => {
     vi.resetModules();
     captureExceptionMock.mockReset();
+    sweepExpiredShareStashMock.mockReset();
+    sweepExpiredShareStashMock.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -63,5 +67,45 @@ describe("registerServiceWorker", () => {
     expect(captureExceptionMock).toHaveBeenCalledWith(registrationError, {
       extra: { action: "registerServiceWorker" },
     });
+  });
+
+  it("sweeps an expired share stash on app start, once, even without service worker support", async () => {
+    vi.stubGlobal("navigator", {});
+
+    const registerServiceWorker = await importRegisterServiceWorker();
+    await registerServiceWorker();
+    await registerServiceWorker();
+
+    expect(sweepExpiredShareStashMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not wait for the sweep before registering the service worker", async () => {
+    const registerMock = vi.fn().mockResolvedValue({});
+    vi.stubGlobal("navigator", { serviceWorker: { register: registerMock } });
+    let resolveSweep: () => void = () => undefined;
+    sweepExpiredShareStashMock.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolveSweep = resolve;
+      }),
+    );
+
+    const registerServiceWorker = await importRegisterServiceWorker();
+    await registerServiceWorker();
+
+    // The sweep is still pending, yet registration already completed: it was never awaited.
+    expect(registerMock).toHaveBeenCalledTimes(1);
+    resolveSweep();
+  });
+
+  it("never breaks app start when the stash sweep itself fails (silent, no Sentry noise)", async () => {
+    const registerMock = vi.fn().mockResolvedValue({});
+    vi.stubGlobal("navigator", { serviceWorker: { register: registerMock } });
+    sweepExpiredShareStashMock.mockRejectedValue(new Error("cache storage unavailable"));
+
+    const registerServiceWorker = await importRegisterServiceWorker();
+
+    await expect(registerServiceWorker()).resolves.toBeUndefined();
+    expect(registerMock).toHaveBeenCalledTimes(1);
+    expect(captureExceptionMock).not.toHaveBeenCalled();
   });
 });

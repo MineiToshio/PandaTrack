@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { sweepExpiredShareStash } from "@/lib/pwa/shareStash";
 
 const SERVICE_WORKER_SCRIPT_URL = "/sw.js";
 const SERVICE_WORKER_SCOPE = "/";
@@ -16,10 +17,18 @@ let registrationAttempted = false;
  * Fails closed: a browser without service worker support is an expected, silent no-op. An
  * unexpected registration error is captured once with Sentry and never rethrown, so the app
  * shell keeps rendering regardless of the outcome.
+ *
+ * Also sweeps an expired share stash out of Cache Storage on every app start, not only when the
+ * intake screen mounts: opening PandaTrack on any screen is enough to reclaim a stash an
+ * interrupted share left behind. Kicked off before the service worker support check, since Cache
+ * Storage is independent of it, and never awaited: the sweep already resolves defensively on its
+ * own and must never delay or block the app shell from rendering.
  */
 export async function registerServiceWorker(): Promise<void> {
   if (registrationAttempted) return;
   registrationAttempted = true;
+
+  void sweepExpiredShareStash().catch(() => undefined);
 
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) {
     return;

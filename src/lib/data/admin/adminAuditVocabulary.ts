@@ -25,6 +25,8 @@ export const AUDIT_ACTIONS = {
   CHANGE_REQUEST_REJECT: "changeRequest.reject",
   PRODUCT_TYPE_APPROVE: "productType.approve",
   PRODUCT_TYPE_REJECT: "productType.reject",
+  /** Set or cleared a collector's monthly AI-photo allowance from the override console. */
+  IMAGE_INTAKE_QUOTA_OVERRIDE: "imageIntake.quotaOverride",
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
@@ -38,6 +40,8 @@ export const AUDIT_TARGET_TYPES = {
   REPORT: "report",
   CHANGE_REQUEST: "changeRequest",
   PRODUCT_TYPE: "productType",
+  /** A collector account, when the privileged action changes something about the account itself. */
+  USER: "user",
 } as const;
 
 export type AuditTargetType = (typeof AUDIT_TARGET_TYPES)[keyof typeof AUDIT_TARGET_TYPES];

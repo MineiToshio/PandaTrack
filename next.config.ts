@@ -7,7 +7,9 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
-      bodySizeLimit: "6mb",
+      // Vercel rejects request bodies over 4.5 MB with a raw 413 before the
+      // action runs; 4 MB keeps our own readable validation error in front.
+      bodySizeLimit: "4mb",
     },
   },
   images: {

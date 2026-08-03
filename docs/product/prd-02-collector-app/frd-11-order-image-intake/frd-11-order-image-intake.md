@@ -1,0 +1,480 @@
+---
+id: FRD-11
+type: FRD
+slug: order-image-intake
+title: Order Image Intake (Create from Image)
+status: ACTIVE
+parent: PRD-02
+children:
+  - BP-01
+last_updated: 2026-07-30
+source_features: []
+implementation_status: IMPLEMENTED
+---
+
+# FRD-11 Order Image Intake (Create from Image)
+
+## Overview
+
+**Create from image** ("Crear desde imagen") lets a collector turn a picture into a saved order without retyping it. The picture can be a WhatsApp or Messenger chat screenshot, a store confirmation email, a web page, or a photo of a paper receipt.
+
+The feature is a single pipeline with two doors into it:
+
+1. **In app**: the user opens PandaTrack, taps the create affordance, and picks "Desde una imagen".
+2. **From outside the app**: the user shares the screenshot straight from WhatsApp (or any app) into PandaTrack through the Android share sheet, or through an equivalent iOS Shortcut. This is "Compartir a Panda", and it is the change that takes the flow from about ten taps to four.
+
+Both doors converge on the same extraction engine and the same **"Revisa y confirma"** review screen, and both end on the same literal CTA as the manual form: **"Crear pedido"**.
+
+This is the first use of an AI model anywhere in the PandaTrack stack. It is therefore also the FRD that fixes the provider, the privacy posture, the spend guards, and the rule that extracted data is never written without a human confirming it.
+
+### Why this is its own FRD
+
+The order entity, the manual create form, and the payment flow are owned by **FRD-05** ([`frd-05-order-payment-shipment.md`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md)); the store entity and store creation are owned by **FRD-04** ([`frd-04-store-domain.md`](../frd-04-store-domain/frd-04-store-domain.md)). This FRD deliberately does **not** absorb either. It is a separate surface with its own engine, its own external-provider contract, its own consumption quota, and its own OS-level entry point (the PWA share target). Those have a different lifecycle from the order domain, and folding them into FRD-05 would make that document unreadable and would couple two release cadences that do not need to be coupled.
+
+What this FRD owns is the **path from an image to a validated order draft, and the confirmation of that draft**. The moment the user presses "Crear pedido", ownership passes back to FRD-05 and FRD-04.
+
+## Domain Goal
+
+Let a collector register a purchase from the evidence they already have (a screenshot) in four taps, without inventing a single data point, and without the possibility of a wrong value being written to the database without a human seeing it first.
+
+## Current State
+
+### Implemented
+
+The feature is shipped end to end, across all seven work orders in [BP-01](bp-01-order-image-intake/bp-01-order-image-intake.md):
+
+- **Extraction engine and intake foundation** (WO-01): the client image pipeline (compress, cap dimensions, split tall screenshots), the server-side upload validator, the Gemini extraction adapter and its draft contract with per-field provenance, the deterministic breakdown and price-split engine, and the spend guards with their reservation-then-settlement usage ledger.
+- **Upload and "Revisa y confirma"** (WO-02): the intake route under the orders subtree, the processing screen, the review screen with its read-vs-assumed rendering and group cards, and the save path that writes an order and its payments through the existing FRD-05 mutations, tagged with an idempotency marker.
+- **Split and merge** (WO-03): the shared modal on the review screen, wired to the deterministic price redistribution from WO-01 and applied to the in-memory draft (**ADR 0023** withdrew the saved-order and order-edit entry points and the live-delivery guard with them).
+- **Store matching and inline creation** (WO-04): phone-based matching against `StoreContactChannel`, the disambiguator for multiple candidates, and inline store creation when nothing matches.
+- **Creation entry architecture** (WO-05): the "Nuevo pedido" selector, the floating action button, the desktop toolbar and Dashboard header buttons, and the manual wizard's bridge into the image method.
+- **Share to Panda** (WO-06): the Android share target, the service-worker stash that hands an uncompressed shared file to the normal compress-and-upload path, the expired-session resume, and the documented iOS Shortcut.
+- **Photo quota and spend communication** (WO-07): the passive counter, the single overflow interruption, the exhausted state, and the per-user administrator override.
+
+See each work order's own **Implementation Notes** section for where the shipped code deviates from the plan.
+
+### Planned
+
+Nothing outstanding. The open items tracked in [Open Questions](#open-questions) are either resolved or explicitly non-blocking.
+
+## Terminology
+
+Canonical terms are registered in [`docs/product/glossary.md`](../../glossary.md). Summary:
+
+- **Crear desde imagen** (en: _Create from image_): the canonical name of the feature. Used in documentation, settings, quota copy, and analytics.
+- **Desde una imagen** / **A mano** (en: _From an image_ / _By hand_): the two selector cards. The verb lives in the selector title ("Nuevo pedido"), never repeated on the card.
+- **Foto** (en: _photo_): the unit the user attaches and the unit the quota is counted in. In the interface it is always "foto", never "extraccion", "credito", or "token".
+- **Imagen de origen** (en: _source image_): the image an extraction was produced from. It is processed in memory and discarded; only the extracted JSON survives.
+- **Revisa y confirma** (en: _Review and confirm_): the single, unskippable review screen.
+- **Dato asumido** (en: _assumed value_): a value the engine defaulted rather than read from the source image. Always visibly marked.
+- **Grupo** (en: _group_): the set of products produced by one source phrase. The group, not the row, is the unit of review.
+- **Compartir a Panda** (en: _Share to Panda_): the OS-level share entry point (Android share target, iOS Shortcut).
+- **Cuota de fotos** (en: _photo quota_): the monthly bag of 20 photos per user.
+
+Retired names that must not appear anywhere: "Capturar de WhatsApp", "captura rapida", "Nuevo desde captura". In code, the prefix is `imageIntake` / `OrderImageIntake`; the suffix `Capture` is forbidden because the repository analytics vocabulary already uses it for something else.
+
+## User Stories
+
+### US-01 Register a purchase from the chat I just closed
+
+As a collector who just finished negotiating on WhatsApp, I want to screenshot the conversation and get a filled-in order, so I do not retype prices, product names, and deposits that are already written down.
+
+### US-02 Register without leaving WhatsApp first
+
+As a collector, I want to share the screenshot straight into PandaTrack from the share sheet, so I do not have to open the app, find the button, and pick a source before anything useful happens.
+
+### US-03 Trust what got saved
+
+As a collector, I want to see exactly what the app read and what it assumed, quoted from my own chat, so I can confirm in one screen instead of auditing field by field.
+
+### US-04 Receive half of what I bought
+
+As a collector, I want a purchase of five volumes to be five products, so that when the store only receives three of them I can still register a partial delivery.
+
+### US-05 Not be surprised by a limit
+
+As a collector, I want to always see how many photos I have left, and to be interrupted only when the batch I am uploading does not fit, so the limit never feels like a toll booth.
+
+### US-06 Buy from a seller I never registered
+
+As a collector, I want the image method to create or match the store on my behalf, so a brand-new account can register its first order without creating a store by hand first.
+
+## Functional Requirements
+
+### Creation entry architecture
+
+- `FR-11-01`: The system must provide one creation selector titled "Nuevo pedido", with the subtitle "Elige cómo quieres registrarlo.", offering exactly two methods: "Desde una imagen" and "A mano".
+- `FR-11-02`: Every in-app affordance that starts order creation must open that selector. No in-app affordance may jump directly into one method.
+- `FR-11-03`: The selector must render as inline cards when the surface is empty (empty state) and as a modal on desktop / bottom sheet on mobile when the surface already has content. Both are the same selector.
+- `FR-11-04`: A floating action button labelled "Nuevo pedido" must appear bottom-right on the Dashboard and on the Orders list below `1024px`. It performs a single action (open the selector) and must not expand into a fan of options.
+- `FR-11-05`: The floating button must not appear at `1024px` and above (where the entry is a primary bar button on the Orders list and a primary button in the Dashboard header), nor on Stores, Deliveries, order detail, delivery detail, or inside any creation wizard.
+- `FR-11-06`: When the floating button is visible, the mobile bar "Nuevo" button must not render. Two affordances for the same action must never coexist on one screen.
+- `FR-11-07`: The sidebar and the mobile drawer must stay flat: no create actions, no submenus, and no "+" affordance next to a row.
+- `FR-11-08`: On surfaces where the floating button is visible, toasts must raise their bottom inset by the height of the button plus its margin, and the list must reserve matching bottom padding so no card ends up under the button.
+- `FR-11-09`: Step 1 of the manual order form must offer a discreet line into the image method ("¿Tienes una captura? Créalo desde una imagen"), and the review screen must offer "Completar a mano", which opens the manual form prefilled with whatever was successfully read, never empty.
+- `FR-11-10`: Both creation paths must end on the same literal CTA, reusing the existing `orders.create.submit` string ("Crear pedido").
+- `FR-11-11`: An order created from an image must be indistinguishable from a manually created one: same detail screen, same identifier, and no "created with AI" badge on any user-visible surface.
+
+### Intake, image pipeline, and extraction
+
+- `FR-11-12`: A user must be able to attach one or more images in a single submission with no product-level cap. The only ceilings are technical (`FR-11-19`) and quota (`FR-11-52`).
+- `FR-11-12a`: **The order of the images is information.** Images are read in the order the collector arranged them, and for a batch of chat screenshots that order is chronological: the first image is the earliest part of the conversation, the last is the most recent. The extraction prompt instructs the model to read the whole submission as one continuous conversation from first image to last, carrying what an earlier image established (a product named, a price agreed) into later images. Product-sheet screenshots are explicitly excluded from this continuity (`FR-11-98a`).
+- `FR-11-12b`: The upload surface must show each attached photo's position and let the collector correct it. Every thumbnail must display its position in the reading order, and a move-earlier / move-later control pair, each labelled with the photo's own position and disabled at the ends of the list, must let the collector reorder by keyboard or on a touch screen. Dragging a thumbnail must perform the identical move as the pointer shortcut for the same operation. Every reorder, by either gesture, must announce the photo's new position out of the total to assistive technology, since the grid rearranges with no other spoken evidence.
+- `FR-11-12c`: **Auto-ordering by capture time applies only to the batch just added, appended at the end.** When a new batch of photos is picked, dropped, or pasted, only that batch must be sorted oldest-first by file modification time before being appended after whatever is already attached; photos already attached must never be re-sorted. Sorting the whole list on every addition would silently undo any manual order the collector already set, and a capture-time sort is only a first guess: a screenshot taken while scrolling a conversation from the bottom up produces timestamps that run backwards.
+  The sort is deliberately **not** taught about roles. It cannot be: whether an image is a product sheet is only knowable from its pixels, which is what the extraction is for, so any client-side rule that tried to force sheets last would be wrong as often as it was right. A sheet captured before the conversation and picked in the same batch therefore lands first, and three things absorb that instead: the first-level order rule (`FR-11-12d`) states the arrangement before the photos are picked, the numbered tiles and their move controls (`FR-11-12b`) let the collector fix it in one click, and the prompt treats position as a hint about role rather than proof of it (`FR-11-98b`).
+- `FR-11-12d`: Before the attach control, the upload surface must render the pre-upload guidance in **two levels**, grouped under one accessible label ("Antes de subir"). The first level states, with no interaction required, the two rules that decide how the whole batch is read, each with its rule emphasised inside the sentence rather than left to be found in prose: (1) a submission is exactly one order and several products inside it is normal (`FR-11-28c`); (2) the images are read in the order they were attached, the conversation first and any product-page screenshot last (`FR-11-12a`, `FR-11-98a`). The second level holds the product-page advice (`FR-11-99`) behind a labelled disclosure trigger, collapsed by default, operable by keyboard and exposing its expanded state, because it applies to a minority of orders. A collector who reads nothing and uploads immediately is the expected case, so the first level carries only what a wrong guess would cost the whole batch.
+  The order rule may **not** be delegated to the reorder hint beside the thumbnail grid: that hint explains how to move a photo, never that the position is read, and it renders only once a second photo is attached, which is after the choice it would inform. Nor may it live behind the disclosure, since the prompt's own contract (`FR-11-98a`) depends on the collector having been asked for that arrangement on screen.
+- `FR-11-12e`: The instructional block above the attach control (heading, purpose line, both first-level rules, disclosure trigger) has a **40-word ceiling per locale**, pinned by a test over the locale files. This is a budget for that block, not for the screen: `docs/design/ux-copy.md` §1's ~30 words per screen is a different measurement, and the upload screen at rest reads about 87 words in Spanish once the passive counter, the dropzone labels, the two helper lines and the CTA are counted. The block budget must not be described as satisfying the screen budget. The disclosure body is excluded from the count because it costs nothing until it is asked for.
+- `FR-11-13`: Images must be compressed client-side to WebP at quality `0.85`, with real encoder-support detection and a JPEG quality `0.90` fallback.
+- `FR-11-14`: Images must be capped at `1080px` width and `2400px` height. They must never be upscaled, and an image already narrower than `1080px` must not be downscaled. Downscaling degrades text recognition between 7 and 16 times more than compression does.
+- `FR-11-15`: An image taller than `2400px` (long scrolling screenshot) must be split into segments with a 10% overlap so no line of text is cut in half.
+- `FR-11-16`: The re-encoded output must always be uploaded, never the original file, even when recompression does not reduce the byte size (which happens with some low-colour PNGs). Zero retention (`BR-11-13`) is absolute: only the re-encoded output is guaranteed EXIF-free, so falling back to the original would silently reopen the GPS leak the rule exists to close. A recompression that does not shrink the file is surfaced only as an informational `recompressedLarger` flag, never as a reason to keep the original.
+- `FR-11-17`: The server must revalidate every upload and never trust the client: 1 to 20 images and never more than the user's remaining photos, 2 MB per file and 3.5 MB in total, real file type read from the header bytes via `sharp.metadata()` rather than the declared MIME type, dimensions between `200x200` and `4000x8000`, and successful decoding.
+- `FR-11-18`: Server-side validation must only validate and measure. It must not recompress: a second lossy pass degrades what the model can read.
+- `FR-11-19`: The submission must respect Vercel's 4.5 MB request ceiling. With photos of about 160 KB this allows roughly 21 images per request; when the user attaches more, the upload must be sent in several batches.
+- `FR-11-20`: Extraction must run as a single pass on **Gemini 3.1 Flash-Lite**, with the reasoning level pinned to minimum, and must never escalate automatically to a more expensive model.
+- `FR-11-21`: The provider must be called through the paid tier (Cloud Billing). The free AI Studio tier must never be used, because its prompts may be used for model training and the images contain third-party personal data.
+- `FR-11-22`: Source images must be processed in memory and discarded. Only the extracted JSON is persisted.
+- `FR-11-23`: Extraction must return a draft shaped to `orderCreateSchema` covering store, products, order total, payments, and delivery.
+- `FR-11-24`: Every extracted value must carry provenance: **read** from the source image, or **assumed** by default. A value that is missing or illegible must be returned as `null`. The model must never fill a field silently to satisfy the schema.
+- `FR-11-24a`: **Amounts are reported as read and converted by the server.** The model must return every amount exactly as the source states it, in the currency's own major unit and with its decimals intact ("S/ 59.90" is `59.90`), and must never convert it to a subunit, multiply it, divide it, round it, or add two amounts together to produce a figure the source does not state. The server performs the single conversion into the ×100 minor units the money domain stores, in one place, for the order total, every unit price, every payment amount, and the delivery cost. Asking the model for minor units instead was rejected: it depends on the model doing arithmetic correctly on every extraction, it is wrong by construction for the zero-decimal currencies (`CLP`, `JPY`, `KRW`), and a hundred-times error produces a valid integer that no validation and no reviewer can distinguish from the right answer.
+- `FR-11-24b`: **Provenance is a pair with no third case.** A field's `value` and its `source` are both filled or both null; either half alone must invalidate the response, and that rule must be stated in the prompt, because the model is the only party that can satisfy it. The model may never report a value as assumed: `assumed` describes a value the server filled in by convention (`FR-11-32`), so it is not offered in the response schema at all and the case is structurally impossible rather than merely forbidden.
+- `FR-11-24c`: **A model response the draft contract rejects must be reported to error monitoring**, with the sanitized issue list (field path plus schema message, never content read from an image). Nothing else can reconstruct this failure afterwards: the images are discarded by design (`BR-11-13`) and the response body is never stored, so an unreported rejection leaves a collector telling the owner that the app did not understand their photos and no way to find out why.
+- `FR-11-24d`: **Product names are capitalized by the server, not by the model.** A transcription keeps whatever case the seller typed, so a product read from a chat arrives as "set de 6 mistery box de One Piece" and reads as a typo beside every hand-typed row. The server raises the first letter of each extracted product name and leaves every other character as read: title casing is wrong in Spanish and would destroy casing the source got right ("One Piece", "PS5"), and a name that does not start with a letter ("3 figuras de Gojo") is returned untouched. This runs on the extraction path only, so what the collector reviews is what is saved; a name the collector types themselves is their own choice and is never rewritten, and the quoted `sourcePhrase` stays verbatim because its whole job is to be evidence. Another instance of `BR-11-23`: a mechanical transform belongs where it is deterministic.
+- `FR-11-25`: The extraction prompt must encode the Peruvian collector glossary so the model does not read the terms literally: `cancelado` means fully paid (not annulled), `adelanto` / `a cuenta` means a partial payment with a balance outstanding, `35 c/u` means 35 per unit, `pack chase` is two products (see the breakdown rule), and `separo` / `apartado` means a pre-order with a deposit.
+- `FR-11-26`: Relative dates ("ayer", "el lunes") must be resolved against the visible message timestamp, defaulting to today, and must remain editable.
+- `FR-11-26a`: **The order date across a multi-day conversation is the oldest date visible, never the last message's date.** When a chat spans several days, the order date must be the day the purchase started (the earliest date visible in the conversation): a conversation running from Monday to Wednesday is one order dated Monday. This rule decides only the order's own date; a payment keeps the date it was actually made on, and a delivery window keeps the dates that were promised, even when those fall later than the order date.
+- `FR-11-27`: The saved order note must carry an idempotency marker, following the precedent already used by `scripts/local/migrate-pedidos/chat-load.ts`.
+- `FR-11-28`: Audio messages are not readable from a screenshot. The system must not attempt transcription; the review screen is the place where the user completes what the chat did not show.
+- `FR-11-28a`: When the submitted images carry no purchase at all (a photo of the product only, a pet, a landscape, an unrelated screenshot), the model must report it through the `no-order-found` warning rather than returning an all-null draft that reads like a failed extraction: every field left null, no groups and no payments, and one warning with that code. A conversation that talks about a purchase without stating amounts is not this case; whatever it does state must still be extracted and only the rest left null. This self-report is a hint, not a verdict: nothing downstream decides on it alone (`FR-11-28b`).
+- `FR-11-28b`: The server must reach its own verdict on whether a draft carries anything to review, from the draft's own content, before the review screen renders. A draft is reviewable when at least one of four signals is present: a product in any group, a read total, a store identity (name or phone), or a payment amount. `orderDate` and `currency` are never counted as signals, because a chat screenshot always carries a timestamp and an absent currency is filled in from the user's base currency, so both are present on a photo of a cat exactly as they would be on a real order. When none of the four signals are present, the submission fails with the `no-order-found` error and the review screen is never shown.
+- `FR-11-28c`: **Every submission is exactly one order.** All the images in a submission describe ONE purchase; several products inside that purchase is normal and expected, several unrelated purchases is not. The model must not open a second order because the conversation changed day, changed product, or resumed after a pause. When the images clearly describe separate purchases (unrelated stores, or conversations that share no thread at all), the model must add a `multiple-orders-detected` warning, return only what it can read of the first purchase, and invent nothing to complete it. Genuine ambiguity, where the images could plausibly be one purchase, is not this case, and no warning is raised. When the action observes this warning it must refuse the submission with the `multiple-orders` error and never deliver a draft to the review screen; the current attachments stay on screen so the extra photos can be removed rather than re-picked from scratch.
+- `FR-11-28d`: **This detection has no server-side derivation, unlike `FR-11-28b`'s emptiness verdict.** `FR-11-28b` is reached deterministically from the draft's own content, independent of the model's self-report. Whether a submission mixes two purchases cannot be reached the same way: a draft that silently fused two orders has exactly the same shape as a draft of one order, one store, one total, one product list, and the only evidence that would say otherwise lives in the images, which the server never reads. The `multiple-orders-detected` warning is therefore the entire safety mechanism for this case, not a hint checked against something else: a model that fuses two purchases without emitting it produces a mixed draft this system cannot catch before it reaches "Revisa y confirma". Prevention lives in the extraction prompt (`FR-11-28c`) and in the upload surface's guidance copy (`FR-11-12d`); the collector's own read of the review screen is the last safeguard left once the model has already failed to notice.
+
+### Currency
+
+- `FR-11-29`: When the source does not state a currency explicitly, the draft must use the user's base currency (`User.baseCurrencyCode`) and mark it as assumed. Currency must never be inferred from the store's country or from an ambiguous symbol such as `$`.
+- `FR-11-30`: When the user has no base currency configured, the system must ask for it **before** running extraction, and only process the submission once it is set.
+- `FR-11-31`: An explicitly stated currency in the source ("dólares", "USD", "yenes", an unambiguous symbol) overrides the base currency and is marked as read.
+- `FR-11-31a`: **The currency is reported as an ISO 4217 three-letter code, never as the symbol.** The prompt must state the rule and map the symbols and words the source material actually uses ("S/" and "soles" are `PEN`, "¥" and "yenes" are `JPY`, and so on). When the model answers with a symbol anyway, the server must treat it as "no currency was read" and fall back to `FR-11-29`'s assumed base currency, never reject the draft: a Peruvian chat shows "S/", and discarding a correct reading of the store, the products, the total, and the payments over that one field, while the photo is spent regardless, is the worse outcome by a wide margin.
+- `FR-11-32`: The draft's currency field must distinguish "read explicitly from the text" from "assumed by default", so the review screen can mark an assumed currency visibly.
+- `FR-11-32a`: When the draft's currency differs from the user's base currency, the review screen must offer one editable exchange-rate field, prefilled with the current published rate and showing the date that rate is dated. The value is saved onto the order as `Order.exchangeRate` (**FRD-05** · `FR-05-16`), which is what keeps the saved order inside the dashboard's base-currency totals instead of pending reconciliation.
+- `FR-11-32b`: When the rate provider cannot be reached or does not cover the pair, the field must be left empty and editable with a short explanation. No rate is ever prefilled from a fallback or an estimate. An order saved with an empty field is valid and simply waits for currency reconciliation from the order list.
+
+### Product breakdown rule
+
+- `FR-11-33`: A product is a thing that can arrive on a different day. The number of products a phrase yields must be decided by two ordered gates, never by the seller's vocabulary, the price, or the presence of the word "pack".
+- `FR-11-34`: Gate 1 (the door): if the source does not allow each unit to be named, the phrase yields exactly one product. Splitting without being able to name is inventing.
+- `FR-11-35`: Gate 2 (only if gate 1 passed): pieces the seller holds separately are split; a sealed object sold indivisibly stays as one product.
+- `FR-11-36`: On genuine doubt at gate 2, the engine must split and mark the group as doubtful.
+- `FR-11-37`: Every extracted product must have `quantity = 1`. The model must never emit a quantity greater than 1. Two copies of the same volume are two identical products of quantity 1.
+- `FR-11-38`: Only ranges closed at both ends may be expanded ("del 42 al 46" expands; "del 42 en adelante" does not and is stored as one product marked doubtful).
+- `FR-11-39`: Product knowledge may be used to judge packaging but never to enumerate units. The model may use what it knows to decide whether an edition ships sealed; it must not use what it knows to decide how many volumes a collection has.
+- `FR-11-40`: There is no expansion cap below the system ceiling. If the source says 50 volumes, 50 products are produced.
+- `FR-11-41`: The system ceiling is 200 products per order. Above it the system must stop and hand the decision back to the user ("Son demasiados productos para un pedido. ..."), and must never truncate silently.
+- `FR-11-42`: Price distribution must be deterministic: an explicit unit price is assigned as-is to each product; a lot total is divided with integer division and the remainder assigned to the first products so the sum always closes exactly; with no price, every unit price is null and no number is invented.
+- `FR-11-43`: For zero-decimal currencies (`CLP`, `JPY`, `KRW`) the split must be computed on the major unit **before** multiplying by 100, not after, or the validator will reject the resulting amounts.
+- `FR-11-44`: The order total must never be modified by the price split.
+
+### Product category and reference link
+
+- `FR-11-90`: Extraction must suggest one catalog category per product (`OrderItem.productTypeKey`), and the suggestion must be optional: `null` whenever no category fits or the source gives nothing to judge by. A category is never read from a source (no chat states one), it is always inferred, so it is carried as a plain suggestion rather than as a provenance-bearing field: there is no case in which a category could honestly be marked as **read**.
+- `FR-11-91`: The categories the model may choose from must be read live from the active catalog (`StoreProductType` where `isActive`) on every request and injected into the prompt as `key: label` pairs. They must never come from a list hardcoded in the prompt or in code: types approved by an administrator exist only as catalog rows, and a frozen list would make every one of them unreachable. Labels follow the app's hybrid catalog-name model (admin-authored name for the locale, otherwise the seeded `storeProductTypes` i18n name).
+- `FR-11-92`: The server must validate every suggested category against that same live, active catalog after extraction and set any key it cannot resolve to `null`, silently. This is a save-protecting requirement, not tidiness: `OrderItem.productTypeKey` is a real foreign key and the write path refuses the entire order over a single unresolvable key, so one invented category would cost the collector the whole purchase. A dropped suggestion costs them one tap.
+- `FR-11-93`: The review screen must show each product's category with its catalog icon, must mark it as a suggestion with a word and not only a colour, and must let the collector change it with the same picker the manual product form uses. A category the collector chose must stop being presented as a suggestion.
+- `FR-11-94`: On a collapsed group (`FR-11-53`), the category must render once for the whole group and setting it must apply to every product in it, consistent with `FR-11-56`. A shared category renders as itself; a group whose products disagree says so instead of showing one of them. Per-product precision stays available by expanding the group.
+- `FR-11-95`: When a buyer identifies a product by a link instead of a name (the "quiero este" plus a URL case), extraction must capture that link on the product and use the best text actually present in the image for the name, falling back to the link's host when the image carries no text at all. The model must never infer what the product is from the address, and must never open it. Only complete `http` or `https` addresses are accepted; any other scheme is refused at the contract boundary.
+- `FR-11-95a`: "Completar a mano" must carry a reviewed category across with the rest of the draft (`FR-11-09`): the manual form has that same control, so dropping the category there would silently undo an answer the collector had already accepted or corrected. The captured link is not carried, because the manual form has nowhere to put it and it is not persisted either way.
+- `FR-11-96`: The review screen must render a captured link as an openable anchor, labelled with its host rather than the full address, opening in a new tab with no access back to the app and no referrer. The link is never persisted: an order has no field for it, so the collector names the product on the review screen and that name is what gets saved. Nothing in the system fetches, previews, or prefetches the address.
+
+### Product page screenshots in a mixed submission
+
+- `FR-11-97`: A submission may deliberately mix images of different natures: the conversation or the receipt, plus one or more screenshots of a product page (a listing, a catalogue entry, a store product sheet) attached so the system can name a product the buyer only linked. No new limit is introduced for it: the submission already accepts up to the technical ceiling (`FR-11-19`) and the collector's remaining balance. Fetching the linked page server-side stays refused (`BR-11-19`); the screenshot is the collector's own way of supplying what the page says.
+- `FR-11-98`: The extraction prompt must instruct the model how to read such a submission, and these instructions are load-bearing rather than advisory: a product-page screenshot names a product the conversation already refers to and is never an additional product; a sheet is matched to a product by its link (host or path matching a URL visible in the conversation), the name visible on it, or its price, and when no match is confident nothing is changed; every amount, unit price and order total alike, is read from the conversation or the receipt and never from a product page, because a catalogue price is not what was paid; and the product count keeps coming from what the conversation says rather than from how many images were attached. These rules exist only as prompt text, so they are pinned by tests over that text.
+- `FR-11-98a`: **Product-sheet screenshots are never read as the continuation of the conversation.** The collector is asked on the upload surface to attach the conversation first, in order, and any product-sheet screenshot after it (`FR-11-12d`, `FR-11-99`), so a trailing product-sheet image carries no later message, no newer price, and no newer date. The model must never treat the last image in a submission as the end of the chat when that image is a product sheet. This is what keeps `FR-11-12a`'s "images are one continuous conversation" rule from misreading a catalogue page as the conversation's final word.
+- `FR-11-98b`: **Position is evidence about an image's role, never the definition of it.** The asked-for arrangement cannot be enforced: nothing client-side can tell a product sheet from a chat screenshot, and the capture-time sort of `FR-11-12c` will put a sheet first whenever it was screenshotted before the conversation and picked in the same batch. The prompt must therefore decide each image's role from what it shows, and must state that a misplaced product sheet is not the beginning of the conversation any more than a trailing one is its end, with the chat images keeping their own relative order regardless of what sits between them. Pinned by tests over the prompt text.
+- `FR-11-99`: The upload surface must advise attaching a product page screenshot when the conversation carries only a link, at helper weight beside the format hint. The advice must say that adding it later means reading every photo again, because the extraction is a single pass over the whole batch: asked for before the read it costs one photo, asked for after it costs the batch twice.
+  **Shipped deviation**: the advice renders as the second level of the pre-upload guidance (`FR-11-12d`, "Antes de subir"), behind a labelled disclosure trigger, rather than as a standalone line beside the format hint. It reaches a minority of orders, so it stays one click away instead of spending every collector's attention before the dropzone, while the arithmetic that makes it worth stating up front (one photo now against the whole batch later) is preserved: the review screen asks for the same screenshot afterwards (`FR-11-100`), but only this screen can ask for it before the read.
+- `FR-11-100`: The review screen must point at each product whose name is still weak and offer to name it from a product page screenshot. Weak means the product carries a captured link and either its name is only that link's host (the fallback of `FR-11-95`) or its group came back doubtful. The offer must name the products it is about rather than warn generically, must state what reading again costs in photos (the batch already uploaded plus the new screenshot) together with the balance left when a cap applies, must return to the attach surface with the submission's photos still attached, and must never block saving: the collector can save as is and rename the product afterwards. When the balance cannot pay for another read, the notice stays and the action is withdrawn rather than leading to a submission the quota would refuse. Showing the offer and accepting it are both measured through `POSTHOG_EVENTS` (`image_intake_product_sheet_hint_shown`, `image_intake_product_sheet_requested`), carrying counts and reason codes only, never extracted content, consistent with `FR-11-88`.
+- `FR-11-101`: The weak-name test must be a pure comparison of the product's name against its own link's host, insensitive to the scheme, a `www.` prefix, a trailing slash, surrounding space and letter case, and must not pattern-match for anything that merely looks like a domain: a real product may legitimately be named after a brand that is also a domain. It lives in `src/lib/imageIntake/referenceProductNaming.ts` and is unit-tested directly.
+
+### Split and merge
+
+- `FR-11-45`: Split and merge must be general bidirectional operations on any product in the draft, not a pack-specific feature. Only the prominence of the control is contextual.
+- `FR-11-46`: The operation must be reachable from exactly one place: inline on the review screen's group chip, before anything is saved (**ADR 0023**). It must never be offered on the manual create form, on order edit, or on a saved order's detail. In a form the collector writes the rows, so adding and removing rows is already the answer there; split and merge exist to correct what the model inferred.
+- `FR-11-46a`: Because its only surface is the unsaved draft, the operation must be a local transform of the draft held in memory, never a persisted mutation. No server action, no database write, and no `orderId` are involved.
+- `FR-11-47`: Split must propose names deduced from a detected range ("Pack One Piece 1 al 3" proposes One Piece 1, One Piece 2, One Piece 3). With no detectable range it must ask how many to split into, with a selector starting at 2. Proposed names must remain editable before confirming.
+- `FR-11-48`: _(Withdrawn by **ADR 0023**.)_ The live-delivery block no longer applies: a draft has no deliveries, so the condition it tested cannot occur on the only surface that offers the operation. Once the order is saved, the breakdown is corrected by editing the order and rewriting the rows, which is the cost the ADR records as accepted.
+- `FR-11-49`: The control label must be "Separar en productos", never "en tomos", because `producto` is the canonical name of an order line and PandaTrack targets general collecting, not manga only.
+
+### Review screen ("Revisa y confirma")
+
+- `FR-11-50`: The review screen must be shown on every extraction, at any confidence level. Auto-saving an extracted order is forbidden.
+- `FR-11-51`: The review screen must read as a document, not a form: values that were read render as plain text and are not focusable; only assumed values and missing values are focusable controls.
+- `FR-11-52`: An assumed currency must be visibly marked as assumed rather than presented as read.
+- `FR-11-52a`: The delivery information in a draft is an expectation, never a shipment. The extracted arrival window is stored on the order's own `expectedDeliveryFrom` / `expectedDeliveryTo`; an extracted shipping cost has no field on an order, so the review screen must show it and state that it is stored when the collector registers the delivery. Saving a draft must never create a `Delivery`, and an extracted shipping cost must never be dropped without the user seeing it.
+- `FR-11-53`: A group of 2 to 5 products must arrive expanded, showing every row with its name and price. A group of 6 or more must arrive collapsed, showing a summary line with the range, the product count, the unit price, and the group total, plus "Ver los N" and "Unir en uno".
+- `FR-11-54`: Confidence must aggregate upward: a warning that belongs to the whole group (for example the equal price split) lives on the group chip and is not repeated per row.
+- `FR-11-55`: A doubt on an individual row must force its group to arrive expanded. A collapsed summary must never be the reason something doubtful went unseen.
+- `FR-11-56`: Actions on a collapsed group must operate on the whole group.
+- `FR-11-57`: Each group chip must state four things in the same structure: what the system did, what the chat said (quoting the original phrase), why, and the button that reverses it.
+- `FR-11-58`: The screen header must summarise the outcome and the remaining work ("Encontramos 6 productos por S/ 480.00. Revisa 2 datos y guarda." / "Todo salió limpio del chat. Revísalo y guarda.").
+
+### Store matching and inline creation
+
+- `FR-11-59`: When exactly one existing store matches by phone number, the store step must collapse to an attribute row showing the matched store with a "Cambiar" link.
+- `FR-11-60`: When several stores are candidates, a disambiguator must be shown with **no preselection**, because preselecting invites blind acceptance.
+- `FR-11-61`: When no store matches, the review screen must offer inline store creation without leaving the screen. The image method must not require the store to exist beforehand ("No necesitas crear la tienda antes.").
+- `FR-11-62`: Store matching must reuse the existing normalisation (`normalizeStoreName`) and the store-resolution pattern already proven in `chat-load.ts`, so the same seller written differently across chats does not produce duplicate stores.
+- `FR-11-63`: A phone-to-store association confirmed or corrected by the user must be remembered, so a later intake from the same number matches exactly instead of asking again. See `OQ-11-03` for the open question on where that association is stored.
+
+### Share to Panda (share target)
+
+- `FR-11-64`: The PWA manifest (`src/app/manifest.ts`) must declare a `share_target` so PandaTrack appears in the Android share sheet for images.
+- `FR-11-65`: A shared image must land directly on the processing screen with the upload and the extraction already triggered, and then on "Revisa y confirma". It must not land on a screen asking the user to confirm that they do want to upload what they just shared.
+- `FR-11-66`: If the session has expired when the share arrives, the payload must be stashed in short-lived temporary storage, the user redirected to sign-in, and the flow resumed afterwards without losing the image.
+- `FR-11-67`: iOS must be covered by an equivalent Shortcut that uploads the image and posts to the same endpoint. The one-time installation friction must be handled by an onboarding step, and the absence of a native iOS share target must be stated honestly rather than hidden.
+- `FR-11-68`: The share path must respect the same quota, the same validation, and the same review screen as the in-app path. It is a different door, not a different pipeline.
+
+### Photo quota
+
+- `FR-11-69`: Each user has a monthly bag of **20 photos**, spent freely across submissions, resetting on day 1 of the calendar month in the user's timezone, consistent with `budgetResetDayOfMonth`. A rolling 30-day window is explicitly rejected as confusing.
+  **Shipped deviation**: `formatPeriodKey` (`src/lib/imageIntake/quota.ts`) derives the `YYYY-MM` period key from the UTC calendar, not the user's timezone, and never reads `budgetResetDayOfMonth`. The ledger (`ImageIntakeUsage`) and the reservation lock (`src/lib/data/imageIntake/imageIntakeMutations.ts`) both key off this same period string, so the reset instant has to be one fixed moment shared by every user regardless of their own clock, which a per-user, per-timezone reset cannot give it. The gap is at most a day at the edge of the month for a user far from UTC. Revisit if a custom reset day for this bag ever becomes a real requirement; today it inherits `budgetResetDayOfMonth`'s name in spirit only.
+- `FR-11-70`: There is no product-level cap on photos per submission. The only ceilings are the technical one (`FR-11-19`) and the user's remaining balance.
+- `FR-11-71`: A daily cap of 10 photos applies as an anti-burst guard.
+- `FR-11-72`: Pasted text does not consume quota. Only photos spend the bag.
+- `FR-11-73`: The manual form is always unlimited, always free, and always full-featured. It must never be blocked by quota.
+- `FR-11-74`: Administrators have no photo or submission cap, but their consumption must still be recorded, and the global spend cut-off still applies to them. Admin identity must be resolved through `getIsAdmin` / `requireAdmin`, never by reading `ADMIN_EMAILS` directly.
+- `FR-11-75`: A per-user monthly override (`User.aiMonthlyPhotoLimit`) must be settable by an administrator from the moderation console, and the change must be audited.
+- `FR-11-76`: A provider failure or timeout must consume no photos.
+- `FR-11-77`: Photos must be reserved **before** the provider call, inside a transaction, or two concurrent requests can jump the quota. The reservation covers the whole submission: either every photo fits or none is processed. Half a submission is never processed.
+- `FR-11-78`: There must be no pre-confirmation dialog. Quota is communicated by a permanent passive counter ("Te quedan 17 fotos este mes"), a first-time explainer shown once, and a single interruption: when the batch does not fit in the balance ("Vas a subir 5 fotos y te quedan 3. Quita 2 o guarda el resto para el mes que viene.").
+- `FR-11-79`: When the bag is exhausted, the message must state the renewal date and route the user to the manual method, which stays unlimited.
+- `FR-11-80`: Quota reset must be implicit through the period key. No scheduled job may exist for it.
+
+### Spend guards
+
+- `FR-11-81`: A global spend cut-off must exist, configured by environment variable: alert at USD 4 and hard stop at USD 5 per month. The cut-off is enforced through a reservation: before the provider call, an estimated cost is written as a `PENDING` ledger row inside a transaction holding an advisory lock, checked against the hard stop and the rate limit together with every prior row regardless of status, so `PENDING` and `FAILED` rows count exactly like `SUCCEEDED` ones. The call settles that same row to `SUCCEEDED` or `FAILED` with the real tokens and cost under the same lock, so a failed but billable request still moves the ceiling and the rate limit, and two concurrent requests can no longer both read the same under-budget total. Crossing the alert threshold sends an email to the administrator through Resend (`IMAGE_INTAKE_ALERT_EMAIL`, optional); an in-app admin notification is deferred, because the existing notification pipeline is per-collector and preference-gated, and an admin-targeted broadcast would need new schema. The hard stop fails closed: if the spend ledger cannot be read, extraction is refused rather than allowed through, and the same fail-closed rule applies if settling a successful extraction's real cost fails, in which case the extraction is rejected and the draft is never delivered.
+- `FR-11-82`: An independent Google Cloud budget must be configured as a second, out-of-app net.
+- `FR-11-83`: Input size guards: 5 MB per photo and 4.5 MB per request. The operative per-photo limit in the shipped validator is `FR-11-17`'s 2 MB, which is stricter and takes precedence in practice.
+- `FR-11-84`: `next.config.ts` `experimental.serverActions.bodySizeLimit` must be lowered from the current `6mb` to `4mb`, because `6mb` is unreachable (Vercel cuts first) and the app's own readable error must fire before Vercel's raw 413.
+- `FR-11-85`: A rate limit of 1 request per 10 seconds per user must guard against automated use.
+- `FR-11-86`: The provider call must time out at 30 seconds with at most one retry, and only on a transport error. Retrying in a loop is forbidden.
+- `FR-11-87`: Image retention must be zero.
+- `FR-11-87a`: A provider failure the collector can do nothing about must be told apart from one a retry can clear, and the copy must match. A `5xx`, a timeout, or a network failure may honestly offer a retry. A `4xx` may not: the API refused the request itself, so it is a defect on our side (a malformed request, an unsupported schema keyword, a credential problem) and every attempt fails identically. Its message must own the failure without blaming the collector, must not promise that trying again works, and must point at the manual form, which is always available. The same distinction must reach analytics (`failure_code`) and Sentry: a `4xx` is reported as a sanitized provider rejection, never as the SDK's own error object, whose message carries the provider's response body. Nothing about this changes `FR-11-76`: neither failure consumes photos.
+
+### Analytics
+
+- `FR-11-88`: All events must be centralised in `POSTHOG_EVENTS` (`src/lib/constants.ts`) following the existing naming convention, and must include at least: `image_intake_submitted` (with `photo_count` and `photos_remaining_before`), `image_intake_succeeded` (with the real cost), `image_intake_result_confirmed` (with how many fields the user edited, which is the real quality metric), `image_intake_quota_overflow_shown`, `image_intake_quota_blocked`, `image_intake_global_budget_blocked`, `image_intake_group_split` and `image_intake_group_merged` (each with the product count and whether the group was marked doubtful).
+  **Correction**: the shipped overflow event key is `image_intake_quota_overflow_shown` (`POSTHOG_EVENTS.IMAGE_INTAKE.QUOTA_OVERFLOW_SHOWN`), not `image_intake_overflow_shown` as originally drafted here. `image_intake_quota_blocked` (`POSTHOG_EVENTS.IMAGE_INTAKE.QUOTA_BLOCKED`) also exists and fires when a submission is refused outright for exceeding the remaining balance, distinct from the overflow interruption shown before a submission is attempted.
+  **Addition**: the review screen's two enrichment interactions are measured with `image_intake_category_set` (`POSTHOG_EVENTS.IMAGE_INTAKE.CATEGORY_SET`, carrying whether the change was made per product or for a whole collapsed group, and whether it replaced a suggestion) and `image_intake_reference_link_opened` (`POSTHOG_EVENTS.IMAGE_INTAKE.REFERENCE_LINK_OPENED`). Neither event ever carries the captured address or a product name.
+- `FR-11-89`: The entry architecture must also be measured, so the cost of the extra tap on the cold path can be evaluated: selector opened, method chosen, and share-target arrival. Exact event keys are proposed in BP-01 and are not fixed by the source memo.
+
+## Business Rules
+
+- `BR-11-01`: **Never auto-save.** No extracted order is written without the user confirming it on "Revisa y confirma". The review screen is not skipped at any confidence level. Four taps with mandatory review beat three without it, because an auto-saved order with an invented price contaminates every total and the user has no way of knowing.
+- `BR-11-02`: **The model never fills a field silently.** Illegible or absent means `null`, and `null` is shown as a focusable gap, not as a plausible value.
+- `BR-11-03`: **Currency is never guessed.** Absent an explicit currency in the source, the user's base currency is used and marked as assumed. The same applies to the exchange rate: a rate that could not be fetched is left blank rather than estimated, because a wrong rate silently distorts every base-currency total on the dashboard.
+- `BR-11-04`: **Quantity is always 1.** This is a data-model constraint, not a preference: the table linking products to deliveries (`DeliveryOrderItem`) has no quantity column, so a quantity above 1 could never be split across two deliveries. This is the same rule already stated in [`docs/product/glossary.md`](../../glossary.md) and in `FR-05-08a` (**FRD-05** · [functional requirements](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md#functional-requirements)).
+- `BR-11-05`: **The breakdown rule is deliberately asymmetric.** Splitting too much costs the user one extra checkbox when marking arrival plus one tap to merge, and is undoable. Merging too much costs the user the ability to register a partial arrival, which is the exact case the product exists to cover, and is not undoable once the product is inside a delivery. The two errors do not cost the same, so the rule leans toward splitting.
+- `BR-11-06`: **Split and merge are a prerequisite of the breakdown rule, not an enhancement.** The rule dares to split on doubt only because merging costs one tap. Without merge, the rule would have to turn conservative and the user would lose partial arrivals.
+- `BR-11-07`: **The verb is said once.** The selector is titled with the action ("Nuevo pedido"); the cards name only the method ("Desde una imagen", "A mano"). "Crear a mano" next to "Crear desde imagen" would read as two rival verbs and turn one flow into two.
+- `BR-11-08`: **The menu navigates, the button creates.** No create action lives in the sidebar or the mobile drawer.
+- `BR-11-09`: **Every in-app door opens the selector.** The only exception is sharing from outside the app, where the method is already implied by what the user shared.
+- `BR-11-10`: **Inform always, interrupt only on overflow.** The pre-confirmation dialog is not a decision, it is a toll: a user who just shared five screenshots has already decided.
+- `BR-11-11`: **Never half a submission.** Photos are reserved for the whole batch inside a transaction, before the provider call.
+- `BR-11-12`: **A provider failure is never billed to the user.** Failed or timed-out submissions consume no photos.
+- `BR-11-12a`: **A "no order found" refusal is not a provider failure, and it does consume photos.** `BR-11-12` protects the user from a request that failed or timed out; it does not extend to a request that succeeded. The images were read correctly, the model answered correctly, and the provider was billed for a real call: nothing failed. Refunding this case anyway would open a way to spend the monthly bag on anything, since uploading unrelated photos would cost nothing.
+- `BR-11-13`: **Zero image retention.** Source images are processed in memory and discarded. Canvas processing also strips EXIF metadata, including GPS coordinates, so location data never leaves the device. This is absolute: the client always uploads the re-encoded output, never the original file, even when re-encoding does not shrink it (`FR-11-16`), because the original is the only version that can still carry EXIF.
+- `BR-11-14`: **Compressing is safe, resizing is not.** Native width is preserved; only encoder quality is reduced. Quality `0.85` is set by product-photo recognition, not by text legibility: text survives down to `q50`, product photos collapse below `q85`.
+- `BR-11-15`: **The quota is an abuse ceiling, not a savings lever.** With 1000 registered users, moving the bag from 5 to 30 photos costs about USD 0.14 more per month. What protects the budget is the global spend cut-off and the per-request technical limits.
+- `BR-11-16`: **An order created from an image is just an order.** No AI badge, no separate identifier space, no different detail screen.
+- `BR-11-17`: **The equal price split inside a pack is knowingly imprecise.** In a chase pack the rare piece is worth more, and everyone knows it. The split stays equal, marked in amber, with copy that admits the imprecision ("Repartimos S/ 180.00 en partes iguales. Ajusta si una pieza vale más que la otra") instead of hiding it. Having the model propose a proportion would be inventing a number wearing the face of a datum, which is exactly what this feature must not do.
+
+- `BR-11-18`: **A convenience field may never cost the collector the reading.** A suggested category is worth one tap saved; the reading behind it is worth a spent photo and a real charge. So a suggestion that cannot be resolved against the live catalog is dropped rather than propagated, and a category the model simply did not answer is treated as "no category" rather than as a malformed response. Nothing about the category is allowed to invalidate a draft or refuse an order.
+- `BR-11-23`: **The model reads, the server computes.** Every figure the model returns is a reading, never a calculation: the amount as written, the currency code as stated, and null for whatever the images do not show. Every conversion, sum, split, and default belongs to the server. The reason is not elegance, it is detectability: a model that multiplies, rounds, or defaults produces a number that is shaped exactly like a correct one, so the error survives validation, survives the review screen, and lands in the collector's totals. This rule is what makes `FR-11-24a`, `FR-11-24b`, and `FR-11-31a` one decision rather than three.
+- `BR-11-19`: **A captured link is untrusted content, and capture is the whole of it.** The address comes out of an image, so it is read, validated as a web address, and shown for the collector to open if they choose. It is never interpolated into a prompt, never fetched server-side, never previewed, and never handed to a router that could prefetch it. Resolving a link into a product name would mean naming a product nobody in the conversation named, which is the same fabrication this feature exists to prevent.
+- `BR-11-20`: **A product page screenshot is naming evidence, never a line item and never a price.** It is the answer to "the buyer linked something and named nothing", and the collector supplies it instead of the server fetching the page, which would mean an outbound request to an address read out of an image, third-party HTML entering the prompt, and the page's tokens on the bill. What it may contribute is the product's name and at most its category. It may never add a product, because a chat plus four sheets is still the order the chat describes, and it may never contribute money, because a catalogue price ignores the discount, the shipping and whatever was agreed in the chat. Both failures are silent in the saved order, which is why they are stated as rules rather than left to the model's judgement.
+- `BR-11-21`: **Ask for the missing input before the expensive step, and price it honestly afterwards.** The read is one pass over every attached photo, so the same screenshot costs one photo when it arrives with the batch and the whole batch again when it arrives after. So the advice is given on the upload surface, and the offer on the review screen states the real photo cost instead of hiding it in small print. The offer is a suggestion: naming the product by hand is always available, and nothing about it may gate the save.
+- `BR-11-22`: **A "multiple orders" refusal is not a provider failure either, and it also consumes photos.** Same reasoning as `BR-11-12a`: the images were read correctly and the model's self-report was correct, so the request succeeded and was billed for a real call. Refunding this case anyway would open the same free-abuse door `BR-11-12a` already closed for `no-order-found`: a way to spend the monthly bag on anything at no cost.
+
+## Acceptance Criteria
+
+- `AC-11-01` **Entry selector**: from the Dashboard and the Orders list below 1024px, the floating button opens the selector with exactly two cards, and no in-app affordance jumps straight into a method.
+- `AC-11-02` **No duplicate affordance**: on a screen where the floating button renders, the mobile bar "Nuevo" button is absent.
+- `AC-11-03` **Flat navigation**: neither the sidebar nor the mobile drawer offers any create action.
+- `AC-11-04` **Toast clearance**: with the floating button visible, a toast and its undo control are fully visible and not covered.
+- `AC-11-05` **Empty state**: on an account with no orders, the two selector cards render inline and an order can be created from an image in three taps without creating a store first.
+- `AC-11-06` **Extraction happy path**: uploading a chat screenshot produces a draft with store, products, total, payments, and delivery within a few seconds, and lands on "Revisa y confirma".
+- `AC-11-07` **Read vs assumed**: values read from the image render as plain text and are not focusable; assumed and missing values are focusable and visibly marked, including an assumed currency.
+- `AC-11-08` **Glossary**: a chat containing "cancelado" produces a fully paid order, not a cancelled one; "adelanto" produces a partial payment with an outstanding balance; "35 c/u" produces a unit price of 35, not a total.
+- `AC-11-09` **Currency gate**: a user with no base currency configured is asked for it before extraction runs, and the submission proceeds only once it is set.
+- `AC-11-09a` **Foreign-currency rate**: a draft in a currency other than the base currency shows an editable exchange-rate field prefilled with the current rate and its date; a draft already in the base currency shows no such field. The value the user confirms is stored on the order, and that order is not flagged as pending reconciliation.
+- `AC-11-09b` **Rate provider unavailable**: when the lookup fails, the field is empty and editable with an explanation, saving still succeeds, and the resulting order appears in the currency-reconciliation flow.
+- `AC-11-10` **Closed range**: "Marvel Ultimate del 42 al 46" yields 5 products, each with quantity 1.
+- `AC-11-11` **Open range**: "del 42 en adelante" yields 1 product marked doubtful, and no volumes are invented.
+- `AC-11-12` **Sealed pack**: "Pack Tokyo Revengers 1 y 2 sellado" yields 1 product; "el pack chase de Gojo" yields 2.
+- `AC-11-13` **Non-nameable**: "pack de 5 chibis sorpresa" yields 1 product, with a chip explaining that the contents could not be named.
+- `AC-11-14` **Price split**: a lot total of 10000 across 3 products yields 3334, 3333, 3333, and the order total is unchanged. In a zero-decimal currency the resulting amounts pass validation.
+- `AC-11-15` **Product ceiling**: a source implying more than 200 products stops with the ceiling message and saves nothing; no silent truncation occurs.
+- `AC-11-16` **Group collapse**: a group of 50 products arrives collapsed with a summary row; a group of 3 arrives expanded; a group with a row-level doubt arrives expanded regardless of size.
+- `AC-11-17` **Split and merge**: splitting a group on the review screen updates the draft in place and the saved order carries the resulting products; merging a split group restores one product with the summed price. The manual create form, order edit, and a saved order's detail offer no split or merge control at all.
+- `AC-11-18` _(Withdrawn by **ADR 0023** together with `FR-11-48`.)_ There is no live-delivery guard to exercise: the only surface offering the operation works on a draft, which has no deliveries.
+- `AC-11-19` **Store exact match**: with one phone match, the store step is an attribute row with "Cambiar"; with several candidates, the disambiguator appears with nothing preselected; with no match, a store can be created inline without leaving the review screen.
+- `AC-11-20` **No auto-save**: no code path writes an order without passing through the review screen and an explicit "Crear pedido".
+- `AC-11-21` **Indistinguishable result**: the saved order's detail screen is identical to a manually created order's, with no AI marker.
+- `AC-11-22` **Share target (Android)**: with the PWA installed, PandaTrack appears in the Android share sheet for an image; sharing lands on the processing screen with extraction already running and then on "Revisa y confirma", for a total of four taps.
+- `AC-11-23` **Expired session**: sharing with an expired session redirects to sign-in and resumes with the shared image intact.
+- `AC-11-24` **iOS Shortcut**: the documented Shortcut posts to the same endpoint and reaches the same review screen.
+- `AC-11-25` **Passive counter**: the remaining-photo counter is visible on the upload surface, and no pre-confirmation dialog is shown.
+- `AC-11-26` **Overflow**: uploading 5 photos with 3 remaining shows the overflow message and processes nothing until the user resolves it.
+- `AC-11-27` **Exhausted**: with 0 photos left, the message states the renewal date and offers the manual method, which works unrestricted.
+- `AC-11-28` **Provider failure**: a timeout or provider error consumes no photos, and the counter is unchanged afterwards.
+- `AC-11-28b` **Provider rejection**: when the provider answers a `4xx`, the message says the failure is ours and already known, offers the manual form, and never tells the collector to try again in a minute; the failure is countable in analytics under its own `failure_code`, and it reaches Sentry as a sanitized rejection carrying no provider-supplied text.
+- `AC-11-29` **Concurrency**: two simultaneous submissions cannot together exceed the remaining balance.
+- `AC-11-30` **Server validation**: a file whose real header bytes do not match an accepted type is rejected regardless of its declared MIME type or extension.
+- `AC-11-31` **Body limit**: an over-limit submission produces PandaTrack's own readable error, not a raw 413.
+- `AC-11-32` **Retention**: after a successful extraction, no source image exists in any store; only the extracted JSON and the resulting records exist.
+- `AC-11-33` **Image quality**: a 1080x2400 screenshot is uploaded at its native width; a 1080x4800 screenshot is split into two segments with overlap; a PNG that grows on recompression is still uploaded as the re-encoded output, never the original, flagged `recompressedLarger`.
+- `AC-11-34` **No order found**: uploading photos of something other than a purchase (a pet, a landscape, a screenshot unrelated to buying) returns the `no-order-found` error with its own copy instead of an empty "Revisa y confirma"; the attachments stay on screen so the wrong photo can be removed and the batch retried; and the photos are deducted from the monthly quota, the same as a successful extraction.
+
+- `AC-11-35` **Suggested category**: a draft whose products carry categories shows each one with its icon, marked as a suggestion; changing one through the picker changes only that product and stops calling it a suggestion; a collapsed group offers one control that sets every product in it; and the picker offers only keys from the live active catalog, admin-authored types included.
+- `AC-11-36` **Invented category is dropped, never saved**: when the model answers with a key the active catalog does not have (or one that was deactivated), the review screen shows that product with no category and the rest of the draft unchanged, and the order saves normally. No suggestion can reach the order write with a key that would make it refuse.
+- `AC-11-37` **Product identified by a link**: a chat where the buyer pastes a URL and says "quiero este" yields a product whose link is shown next to it as an openable anchor labelled with the host, opening in a new tab with `rel="noopener noreferrer"`; the collector can name the product before saving; and the link itself is not persisted anywhere.
+
+- `AC-11-38` **Chat plus product pages**: a submission carrying one chat that links two products plus screenshots of those two product pages yields exactly the products the chat describes, named from the pages, with no extra product per screenshot; the order total and every unit price still come from the chat, not from the listed catalogue prices.
+- `AC-11-39` **Unmatchable product page**: a submission carrying a product page screenshot that matches nothing in the conversation leaves every product exactly as the conversation left it, and adds nothing.
+- `AC-11-40` **Targeted naming offer**: a draft whose product is named only after its link's host shows a notice naming that product, stating how many photos a second read would cost and how many are left, with an action that returns to the attach surface with the already-attached photos still there. Saving stays available throughout, and the notice disappears once the product is renamed. With a balance too small to pay for another read, the notice remains and the action is gone.
+
+- `AC-11-41` **Multiple orders detected**: uploading photos that clearly describe two unrelated purchases returns the `multiple-orders` error with its own copy instead of a fused draft; the review screen never renders; the attachments stay on screen so the extra photos can be removed and the batch resubmitted; and the photos are deducted from the monthly quota, the same as a successful extraction. A submission whose images could plausibly be one purchase does not trigger this refusal.
+- `AC-11-42` **Attachment ordering**: every attached photo shows its position; dragging a photo, or using its move-earlier / move-later buttons, changes that position and announces the new position and total to assistive technology; adding a new batch of photos sorts only that batch oldest-first by capture time and appends it after what is already attached, leaving the order of previously attached photos untouched.
+- `AC-11-44` **Amounts survive as written**: a source stating "Total: S/ 59.90" and a "S/ 30.00 de adelanto" produces a draft whose total reads 59.90 and whose payment reads 30.00 on the review screen and in the saved order, never 0.59 and 0.30. A source stating a total of 1200 in a zero-decimal currency (`JPY`) produces an order of 1200, not 12. Both are verified against the live model by `npm run smoke-image-intake`, which fails loudly on an amount that is exactly a hundred times off.
+- `AC-11-45` **A currency symbol never costs the reading**: a chat that writes amounts as "S/" yields a usable draft. Either the currency is read as `PEN`, or it falls back to the collector's base currency marked as assumed, but the submission is never refused with "no entendimos lo que había en las fotos" over the currency field alone.
+- `AC-11-43` **Multi-day order date**: a chat screenshot batch spanning Monday through Wednesday produces an order dated Monday, not Wednesday; a payment made on the Tuesday in that same chat keeps its own Tuesday date.
+
+## Intake States
+
+The intake flow is a linear state machine with one terminal success and a bounded set of terminal failures. Nothing is persisted before `saving`.
+
+| State        | Enter when                                            | Leaves to                        | User-visible                                                                        |
+| ------------ | ----------------------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------------- |
+| `idle`       | The upload surface is open with no photos attached    | `attached`                       | Attach control, helper text, passive counter                                        |
+| `attached`   | At least one photo is attached                        | `optimizing`, `overflow`, `idle` | Thumbnails, remove control, primary action enabled                                  |
+| `overflow`   | The batch exceeds the remaining balance               | `attached`                       | The single quota interruption; nothing is processed                                 |
+| `optimizing` | The user submitted                                    | `uploading`, `failed`            | "Optimizando imágenes..."                                                           |
+| `uploading`  | Compression finished                                  | `extracting`, `failed`           | "Subiendo..."; batched when the request ceiling requires it                         |
+| `extracting` | The provider call started                             | `review`, `ceiling`, `failed`    | "Leyendo la conversación..."                                                        |
+| `review`     | A valid draft was returned                            | `saving`, `manual`               | "Revisa y confirma"                                                                 |
+| `manual`     | The user chose "Completar a mano"                     | (leaves the flow)                | The manual order form, prefilled                                                    |
+| `saving`     | The user pressed "Crear pedido"                       | `saved`, `review`                | Optimistic confirmation; on failure the review screen returns with the draft intact |
+| `saved`      | The order and its payments were written               | (leaves the flow)                | The ordinary order detail, with an undo toast                                       |
+| `ceiling`    | The draft implies more than 200 products              | `attached`                       | The ceiling message; nothing is saved and nothing is truncated                      |
+| `failed`     | Validation, quota, global budget, or provider failure | `attached`                       | The specific cause and the specific remedy; the attachments are never lost          |
+
+Quota consumption is reserved on entry to `extracting` and released on `failed` (`FR-11-76`, `FR-11-77`), with one exception: a `failed` outcome carrying the `no-order-found` code settles as spent rather than being released, because the extraction itself succeeded (`BR-11-12a`).
+
+## Screen and Data Contract
+
+### Screens
+
+| Screen                | Owner      | Purpose                                                                |
+| --------------------- | ---------- | ---------------------------------------------------------------------- |
+| Creation selector     | This FRD   | The single door: two methods, one verb                                 |
+| Upload                | This FRD   | Attach, see the balance, submit                                        |
+| Processing            | This FRD   | Name the wait honestly                                                 |
+| "Revisa y confirma"   | This FRD   | The only place extracted data becomes real                             |
+| Split and merge modal | This FRD   | Correct the breakdown, on the review screen only (**ADR 0023**)        |
+| Order detail          | **FRD-05** | Unchanged. The result must be indistinguishable                        |
+| Store creation        | **FRD-04** | Reached inline, but the created store follows the store domain's rules |
+
+The visual and interaction contract for each screen is [`fdd-11-order-image-intake.md`](fdd-11-order-image-intake.md), with the prototype at [`prototype/order-image-intake.html`](prototype/order-image-intake.html).
+
+### Data
+
+- **Read, never written by this FRD**: `User.baseCurrencyCode`, `User.budgetResetDayOfMonth`, `Store` and its contact channels, the store product-type and country catalogs. The product-type catalog is read twice per extraction request from one query: once to tell the model which categories exist, and once to check what it answered (`FR-11-91`, `FR-11-92`).
+- **Written through existing domain mutations**: `Order`, `OrderItem`, `OrderPayment`, `Delivery`, and `Store` (inline creation), all through the paths owned by FRD-05 and FRD-04. This FRD adds no parallel write path for them.
+- **Owned by this FRD**: `ImageIntakeUsage` (reservation-then-settlement consumption ledger: a `PENDING` row with an estimated cost precedes the provider call, settled once to `SUCCEEDED` or `FAILED` with the real tokens and cost), `ImageIntakePeriod` (per-user, per-period aggregate), and `User.aiMonthlyPhotoLimit` (optional per-user override). Shapes are specified in [BP-01](bp-01-order-image-intake/bp-01-order-image-intake.md).
+- **Never persisted**: the source images, the extracted draft itself, and a product's captured reference link (`FR-11-96`: no order field exists for it, and this FRD adds none). The draft lives only in the client session between `review` and `saving`; there is no draft table in this FRD.
+
+## Implementation Notes
+
+- **Reuse over invention.** The save step must call the existing mutations (`createOrder`, `addOrderPayment`, `createDelivery`) and the existing validation (`orderCreateSchema`, `orderPaymentCreateSchema`). The extracted draft is an input to the existing domain, not a parallel write path.
+- **`resolveStore` is not an importable helper.** The memo refers to "the existing `resolveStore` pattern"; in the repository it exists only as a script-local function inside `scripts/local/migrate-pedidos/chat-load.ts`. It must be promoted into a shared data-layer helper as part of this FRD rather than imported as-is (see `OQ-11-04`).
+- **No AI SDK is installed today.** `package.json` has no `@google/genai`, `@anthropic-ai`, `openai`, or `ai` dependency. Adding a provider client is a new dependency decision, recorded in ADR 0020.
+- **The image pipeline extends an existing file.** `src/lib/images/getProcessedImageBlob.ts` already does canvas encoding; the compression helper extends that pattern. The library `browser-image-compression` is explicitly rejected: it has published nothing since March 2023, is classified as unmaintained, does not solve the Safari problem, and its iterative compression performs several encode passes, which is exactly what degrades model reading.
+- **A pre-existing production bug is fixed here.** `getProcessedImageBlob.ts` calls `canvas.toBlob(cb, "image/webp")` without checking encoder support. Safari has never encoded WebP in canvas, on iPhone or Mac, and fails silently by returning a PNG. Today that means avatars and store logos are stored as PNGs with a `.webp` extension, larger than the original, with no error shown. The fix (detect real support, fall back to JPEG) is a prerequisite of the pipeline and is included in this FRD's foundation slice.
+- **Server-side `sharp` is validate-only.** `sharp` is already a dependency but there is no server validation wrapper yet; one must be created. It must not re-encode.
+- **HEIC**: `image/heic` must never appear in the file input's `accept` attribute. In Safari 17 and later that makes Safari convert **toward** HEIC. iPhone screenshots are PNG, so the real risk is low, but the attribute must stay clean.
+- **EXIF rotation**: do not rotate manually. The browser already honours orientation; read dimensions from `ImageBitmap`.
+- **Dark mode**: do not invert or normalise contrast. The models are trained on dark screenshots, and inverting would degrade product photos.
+- **Naming**: everything new uses `imageIntake` / `OrderImageIntake`. The suffix `Capture` is forbidden because the repository's analytics vocabulary already uses it for something else and would create silent collisions when searching.
+- **Copy is localised.** Every new string lives in `src/i18n/locales/{es,en}/`, in a new `orders.createEntry` group plus an image-intake namespace. Nothing is hardcoded.
+- **Cost context (from the source memo, July 2026 pricing).** Gemini 3.1 Flash-Lite costs USD 0.25 per million input tokens and USD 1.50 per million output tokens; each photo is about 1120 tokens. A typical two-photo extraction costs about USD 0.0014, and each extra photo about USD 0.00023. The owner's expected usage (20 orders, 40 images per month) is about USD 0.03 per month; heavy usage (40 orders, 120 images) about USD 0.10. Fixed infrastructure is USD 0.00 (Vercel Hobby, Telegram, Cloudflare). The whole feature sits under the USD 2 per month ceiling, and the hard monthly brake is USD 5 (`FR-11-81`). Pinning the reasoning level to minimum matters more than any quota: without it a typical two-photo extraction triples from USD 0.0014 to USD 0.0037.
+- **Vercel plan caveat.** PandaTrack runs on the Vercel Hobby plan, which forbids commercial use (charging, advertising, and even asking for donations count as commercial). Today PandaTrack qualifies. The day it monetises, the migration to Pro (USD 20 per month) is forced by the business model, not by traffic.
+
+## Confirmed
+
+- The feature is named "Crear desde imagen" / "Create from image", not "Capturar de WhatsApp". Retired names must not reappear.
+- The engine is Gemini 3.1 Flash-Lite on the paid tier, single pass, reasoning pinned to minimum. Plan B is Claude Haiku 4.5 (about USD 0.10 per month). Qwen3-VL-Flash is validated free in parallel because it ranks first in Peruvian Spanish on IberBench, but it is not the production engine. Gemini 2.5 Flash-Lite is explicitly rejected: it shuts down on 16 October 2026 with `gemini-3.1-flash-lite` as its official replacement, so building on it would be technical debt on day one. See ADR 0020.
+- The review screen is never skipped, and extracted data is never auto-saved. See ADR 0021.
+- The breakdown rule is the two-gate rule with quantity always 1 and a deterministic price split. See ADR 0021.
+- The quota unit is the **photo**, in a single flexible monthly bag of 20, and the pre-confirmation dialog is removed.
+- "Compartir a Panda" ships in the same release as the engine. It is not a phase 2 item: it is the only change that takes the flow from ten taps to four, and those taps happen outside the app where no internal optimisation can reach them.
+- The floating button returns with a single action and only where creating an order is the primary action of the screen. A fan-out floating button is rejected permanently.
+- The extra tap on the cold path (manual creation from the Orders list goes from one tap to two) is accepted deliberately, so the button is never a dead end when the monthly quota runs out and so two rival buttons never share a bar. It is measured; if nobody picks "A mano", the visual weight of that card is reduced, not removed.
+
+## Open Questions
+
+- `OQ-11-01`: **1080px versus 720px has not been validated on real screenshots.** Google does not document how many pixels its high-resolution tier corresponds to. The 1080px recommendation rests on measured legibility thresholds, and the measurements were taken on synthetic screenshots. A comparative extraction test at 1080 versus 720 over about twenty of the owner's real screenshots should run before the numbers are frozen in code. **Resolved 2026-07-28**: the owner froze `1080x2400` (WebP `q0.85` / JPEG `q0.90` fallback) as specified in `FR-11-14`, shipped as-is in WO-01's client pipeline. The empirical comparison against real screenshots is still pending and now tracked only as the shared open item with `OQ-11-02` (extraction quality on the owner's real chats).
+- `OQ-11-02`: **There is no benchmark for informal WhatsApp Spanish.** The final engine choice is confirmed with the owner's real chats during implementation. If Qwen3-VL-Flash wins on those chats, the provider decision in ADR 0020 must be revisited rather than silently changed.
+- `OQ-11-03`: **Where does the phone-to-store association live?** `FR-11-63` requires the match to be remembered, but the source memo does not specify the mechanism. Candidates: reuse the existing store contact-channel records (matching on a normalised phone number), or add a dedicated association table. **Resolved 2026-07-28** (WO-04): the existing `StoreContactChannel` model (`PHONE`/`WHATSAPP` rows), matched by normalised digits. No dedicated table was added.
+- `OQ-11-04`: **How is `resolveStore` promoted?** It exists only inside the import script. It must become a shared data-layer helper (`src/lib/data/stores/`) without changing the script's behaviour, or be reimplemented for intake with the script left alone. **Resolved 2026-07-28** (WO-04): promoted as `findStoreMatchesForIntake` in `src/lib/data/stores/storeMatchingQueries.ts`, reusing `normalizeStoreName` and the same exact-then-normalised semantics. `chat-load.ts` was left unchanged.
+- `OQ-11-05`: **How does the share-target payload reach the client pipeline?** Android posts the original file to the share-target URL, so no client-side compression has happened yet, and an uncompressed multi-megabyte screenshot can breach the 4.5 MB request ceiling. The proposed contract (service worker intercepts the POST, stashes the file, the landing page reads it and runs the normal compress-and-upload path) is described in BP-01 and must be confirmed against the shipped service worker before WO-06 is enriched.
+- `OQ-11-06`: **Does the manual order form really have three steps?** The approved copy says "El formulario de siempre, en tres pasos", and the entry rules refer to "step 1 of the manual wizard" and a manual closing screen called "Revisar y confirmar". The shipped create flow at `src/app/[locale]/(app)/orders/new/page.tsx` is a single page built from `OrderCreateForm`. Either the copy must be corrected or the manual form's step model must be confirmed, in coordination with **FRD-05**. **Resolved 2026-07-29**: confirmed against the shipped DOM. `OrderCreateForm` is a single page component, but it renders `WizardAccordion` with three `WizardStep`s (store/currency/dates, items/cost, confirm), surfaced live as "Step 1 of 3" / "Step 2 of 3" / "Step 3 of 3" in the stepper. "En tres pasos" is accurate; no copy change was needed.
+- `OQ-11-07`: **Which existing i18n key is retired?** The memo says `hero.newOrderShort` becomes unused when the mobile bar button is removed. The key that actually exists is `newOrderShort` in `orderListing.json`; there is no `hero` namespace. The removal must target the real key. **Resolved 2026-07-29** (WO-05): the real key (`newOrderShort` in `orderListing.json`, `es` and `en`) was removed once the mobile bar "Nuevo" button it backed was replaced by the floating action button; no remaining reference exists in `src/`.
+- `OQ-11-08`: **Delivery creation from a draft.** `FR-11-23` includes a delivery in the extracted draft, and the save step calls `createDelivery`. Delivery management is being reworked in a separate track (see Dependencies), so the delivery fields written by intake must be revalidated against **FRD-08** before WO-02 is enriched. **Resolved 2026-07-28**: the owner confirmed the draft carries the minimal shape `delivery: { expectedFrom, expectedTo, cost } | null`, shipped as-is in WO-01's draft contract (`draftSchema.ts`). **Revalidated against FRD-08 on 2026-07-29 (WO-02), closing the open condition: intake creates no `Delivery`.** A `Delivery` is a shipment that already went out (`deliveryCreateSchema` requires a shipping date at or before now and at least one real product, and creating one puts those products in transit), while a chat provides a promised arrival window and a shipping cost. The window is stored on the order's own expected-delivery fields; the shipping cost has no field on an order and is shown on the review screen as read but not stored, per `FR-11-52a`.
+- `OQ-11-09`: **Quota copy and settings surface.** The counter, the first-time explainer, and the exhausted state are specified, but no decision exists on whether the remaining balance is also surfaced in user settings alongside the budget. Not blocking.
+
+## Out of Scope
+
+- **Everything about registering that an item arrived.** The three delivery moments, the product-state control and its visibility, the "Listo para enviar" view grouped by store, the "Llegó todo a la tienda" bulk button, and the one-tap arrival action are **not** part of this FRD. They use no AI, share no code with the extraction engine, and are being defined in a separate track. Where this FRD depends on them, it is recorded under Dependencies, never specified here.
+- **Audio transcription.** A large part of real negotiation happens in voice notes, and a screenshot shows only an "audio 0:47" bubble. Transcription is out of scope and out of budget. The review screen is where the user completes what the chat did not show.
+- **Buzón Panda** (Telegram bot plus web email inbox for capture-now-review-later). Optional and later; it reuses the same engine and the same review screen when it arrives.
+- **WhatsApp Business API integration.** Only if volume ever justifies it, never as a first step.
+- **Unofficial WhatsApp automation** (Baileys and similar). Permanently rejected: the risk of a permanent ban on the personal number the owner negotiates with is worth no saving.
+- **A fan-out floating button.** Permanently rejected: it hides the primary action behind an extra tap and many users never discover that it opens.
+- **Automatic escalation to a more capable model** when confidence is low. Single pass only.
+- **An "AI created this" badge** anywhere user-visible.
+
+## Dependencies
+
+### Owned by other FRDs
+
+- **FRD-05 Order and Payment Tracking** ([`frd-05-order-payment-shipment.md`](../frd-05-order-payment-shipment/frd-05-order-payment-shipment.md)) owns the `Order` entity, the manual create form, `orderCreateSchema`, and the payment flow. This FRD writes through them and adds the "Completar a mano" bridge and the wizard hint line into that surface. The atomic-shippable-unit rule (`FR-05-08a`) is the reason `FR-11-37` exists.
+- **FRD-04 Store Domain** ([`frd-04-store-domain.md`](../frd-04-store-domain/frd-04-store-domain.md)) owns the `Store` entity, store creation, moderation defaults, and duplicate prevention. Inline store creation from the review screen must produce a store that is indistinguishable from one created through **FRD-04** · [BP-01 · WO-03 _store-creation-and-duplicate-prevention_](../frd-04-store-domain/bp-01-store-public-trust-system/work-orders/wo-03-store-creation-and-duplicate-prevention.md), including the `PENDING` default for non-admin creators.
+- **FRD-03 Collector App Shell** ([`frd-03-collector-app-shell.md`](../frd-03-collector-app-shell/frd-03-collector-app-shell.md)) owns the sidebar, the mobile drawer, and the header. `FR-11-07` constrains that shell (it must stay flat) and `FR-11-08` changes toast placement on floating-button surfaces.
+- **FRD-08 Delivery Management** ([`frd-08-delivery-management.md`](../frd-08-delivery-management/frd-08-delivery-management.md)) owns the `Delivery` entity. It no longer gates split and merge: **ADR 0023** withdrew `FR-11-48` along with the saved-order entry points, so nothing in this FRD reads delivery state. Intake creates no delivery of its own (`OQ-11-08`, `FR-11-52a`): a shipping cost read from a chat is stored only when the collector registers the delivery through **FRD-08**.
+- **FRD-07 User Settings** ([`frd-07-user-settings.md`](../frd-07-user-settings/frd-07-user-settings.md)) owns `User.baseCurrencyCode` and `budgetResetDayOfMonth`, which the currency rule (`FR-11-29`, `FR-11-30`) and the quota reset (`FR-11-69`) depend on.
+- **FRD-09 Reminders and Notifications** ([`frd-09-reminders-and-notifications.md`](../frd-09-reminders-and-notifications/frd-09-reminders-and-notifications.md)) owns the PWA installability and the service worker that the Android share target depends on (`FR-11-64`, `OQ-11-05`).
+- **PRD-03 · FRD-01 Admin Identity and Access** ([`frd-01-admin-identity-and-access.md`](../../prd-03-admin-and-moderation/frd-01-admin-identity-and-access/frd-01-admin-identity-and-access.md)) owns the admin role and the audit log that `FR-11-74` and `FR-11-75` rely on.
+
+### External defects that are not this feature's work
+
+Two known defects are tracked separately. They are listed because one of them gates work outside this FRD, and both affect how the one-tap actions here behave:
+
+1. **The reception date is stored as local time and displayed as UTC**, so users east of UTC see the day before the one they registered. It is an independent, already-identified fix. It does not gate this FRD, but it does gate the one-tap arrival action in the separate delivery track.
+2. **Some order mutations write successfully and still return an error to the client**, leaving the user believing something was not saved when it was. It no longer touches split and merge, which since **ADR 0023** write nothing, but it still applies to the confirm step that saves the order.
+
+## Linked Blueprints
+
+- [`bp-01-order-image-intake`](bp-01-order-image-intake/bp-01-order-image-intake.md)
+
+## Linked Design
+
+- Feature design document: [`fdd-11-order-image-intake.md`](fdd-11-order-image-intake.md)
+- Prototype: [`prototype/order-image-intake.html`](prototype/order-image-intake.html)
+
+## Linked Decisions
+
+- [ADR 0020 - AI extraction provider and privacy posture](../../../design/decisions/0020-ai-extraction-provider-and-privacy-posture.md)
+- [ADR 0021 - Never auto-save extracted data, and the product breakdown rule](../../../design/decisions/0021-no-autosave-and-product-breakdown-rule.md)

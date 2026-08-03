@@ -2,7 +2,8 @@
   "nav": {
     "section": "Administración",
     "moderation": "Moderación",
-    "audit": "Registro"
+    "audit": "Registro",
+    "imageIntake": "Fotos con IA"
   },
   "landing": {
     "title": "Bandeja de moderación",
@@ -173,7 +174,8 @@
       "store": "Tienda",
       "report": "Reporte",
       "changeRequest": "Solicitud de cambio",
-      "productType": "Tipo de producto"
+      "productType": "Tipo de producto",
+      "user": "Cuenta"
     },
     "action": {
       "store_approve": "Tienda aprobada y publicada",
@@ -185,7 +187,8 @@
       "changeRequest_apply": "Solicitud de cambio aplicada",
       "changeRequest_reject": "Solicitud de cambio rechazada",
       "productType_approve": "Tipo de producto aprobado",
-      "productType_reject": "Tipo de producto rechazado"
+      "productType_reject": "Tipo de producto rechazado",
+      "imageIntake_quotaOverride": "Cuota de fotos con IA modificada"
     },
     "pagination": {
       "regionLabel": "Paginación del registro de actividad",
@@ -203,6 +206,35 @@
   },
   "meta": {
     "landingTitle": "Moderación",
-    "auditTitle": "Registro"
+    "auditTitle": "Registro",
+    "imageIntakeTitle": "Fotos con IA"
+  },
+  "imageIntake": {
+    "intro": "Ajusta la bolsa mensual de fotos con IA de una cuenta. Sin ajuste, cada cuenta tiene {defaultQuota} fotos al mes.",
+    "searchLabel": "Buscar cuenta",
+    "searchPlaceholder": "Usuario o correo",
+    "searchSubmit": "Buscar",
+    "adminTag": "Admin",
+    "usage": "Usó {used} de {limit} fotos este mes. Le quedan {remaining}.",
+    "usageUncapped": "Usó {used} fotos este mes. Sin tope por ser admin.",
+    "idle": {
+      "title": "Busca una cuenta",
+      "subtitle": "Escribe el usuario o el correo para ver su consumo y ajustar su bolsa."
+    },
+    "noResults": {
+      "title": "Sin coincidencias",
+      "subtitle": "Ninguna cuenta coincide con esa búsqueda."
+    },
+    "form": {
+      "limitLabel": "Fotos al mes",
+      "limitPlaceholder": "Por defecto",
+      "limitHelp": "Déjalo vacío para volver al valor por defecto.",
+      "reasonLabel": "Motivo",
+      "reasonRequired": "Escribe el motivo del cambio.",
+      "submit": "Guardar"
+    },
+    "toast": {
+      "overrideSaved": "Cuota actualizada."
+    }
   }
 }
