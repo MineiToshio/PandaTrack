@@ -20,8 +20,8 @@ Describe how PandaTrack publishes static-but-localized legal pages using route-l
 
 ## Runtime Components
 
-- `src/app/[locale]/privacy/page.tsx` — privacy route; defines `PRIVACY_SECTION_KEYS` (12) and `generateMetadata`
-- `src/app/[locale]/terms/page.tsx` — terms route; defines `TERMS_SECTION_KEYS` (9) and `generateMetadata`
+- `src/app/[locale]/privacy/page.tsx` — privacy route; defines `PRIVACY_SECTION_KEYS` (13) and `generateMetadata`
+- `src/app/[locale]/terms/page.tsx` — terms route; defines `TERMS_SECTION_KEYS` (11) and `generateMetadata`
 - `src/app/[locale]/_components/LegalPageLayout.tsx` — shared standalone legal-document layout (Server Component): public minibar, top/bottom back-link, eyebrow + title + updated-date head, intro, table of contents, sections (plain headings; only the TOC `<ol>` auto-numbers); splits each body on blank lines into paragraphs
 - `src/app/[locale]/_components/public/PublicMinibar.tsx` — public chrome (logo-home, locale switch, theme toggle)
 - `src/app/[locale]/privacy/opengraph-image.tsx` and `src/app/[locale]/terms/opengraph-image.tsx` — per-segment dynamic OG images via `getOgImageData` + `OgImageTemplate`

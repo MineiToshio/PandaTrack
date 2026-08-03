@@ -7,6 +7,7 @@ const TERMS_SECTION_KEYS = [
   "service",
   "eligibility",
   "conduct",
+  "aiFeatures",
   "ip",
   "privacyRef",
   "disclaimers",

@@ -7,7 +7,7 @@ status: ACTIVE
 parent: PRD-01
 children:
   - BP-01
-last_updated: 2026-07-19
+last_updated: 2026-07-29
 source_features:
   - FEAT-0006
   - FEAT-0007
@@ -29,13 +29,21 @@ These are **static, SSR-delivered, content-only** pages. They fetch nothing, mut
 > comes verbatim from i18n (FR-04-03). The look-and-feel is documented in the FDD; the
 > this was explored in the redesign subproject (historical).
 
+> **Content note (2026-07-29).** The AI photo intake shipped, so the legal documents were
+> brought in line with it: privacy gained an `aiPhotos` section (between `dataWeCollect` and
+> `howWeUse`) and terms gained an `aiFeatures` section (between `conduct` and `ip`);
+> `dataWeCollect`, `sharing`, and `conduct` were extended; the `sharing` section now names
+> every processor by name instead of describing them by category. This is a **content-only**
+> change plus two entries in the ordered key lists: no layout, routing, or metadata behavior
+> changed. See `BR-04-06` and [ADR 0020](../../../design/decisions/0020-ai-extraction-provider-and-privacy-posture.md).
+
 ## Current State
 
 ### Implemented
 
 - Both legal pages ship under `/{locale}/privacy` and `/{locale}/terms` as public top-level routes (no auth, no `(app)` group, outside the App Shell). Locales: `es` (default, unprefixed canonical) and `en`.
 - Both pages render through the shared `src/app/[locale]/_components/LegalPageLayout.tsx` (public minibar, top + bottom back-links, eyebrow + title + updated-date head, intro, table of contents, sections). The layout is a Server Component using next-intl hooks; there is no client boundary.
-- Section structure is driven by an explicit ordered key list in each page (`PRIVACY_SECTION_KEYS` — 12 keys; `TERMS_SECTION_KEYS` — 10 keys). Each key resolves to a `{key}Title` and `{key}Body` pair in the namespace; the body string is split on blank lines into paragraphs.
+- Section structure is driven by an explicit ordered key list in each page (`PRIVACY_SECTION_KEYS` — 13 keys; `TERMS_SECTION_KEYS` — 11 keys). Each key resolves to a `{key}Title` and `{key}Body` pair in the namespace; the body string is split on blank lines into paragraphs.
 - Localized metadata and per-segment OG images: `generateMetadata` calls `buildPageMetadata` (`src/lib/seo.ts`); each route has `opengraph-image.tsx` driven by `og*` i18n keys.
 - Both routes are registered in `src/app/sitemap.ts` (`monthly`, priority `0.5`).
 - Chrome strings live in the `common.legal` namespace (`eyebrow`, `backToHome`, `tableOfContents`); document content lives in the per-document namespaces.
@@ -78,6 +86,8 @@ As a reader, I want a clear, always-reachable way back to the localized home pag
 - `BR-04-03`: Section headings are plain title text in i18n (e.g. `"Quiénes somos"`, `"Tus derechos"`) with no number prefix and no CSS counter. The only numbering shown is the auto-numbering of the table-of-contents `<ol>`; the `<h2>` section headings render unnumbered.
 - `BR-04-04`: These pages carry no interactive product state — no loading, empty, error, or guard states of their own. Their only interaction is anchored in-page navigation plus the locale switch / theme toggle inherited from the public chrome.
 - `BR-04-05`: The default locale (`es`) is served at the unprefixed canonical path; `en` is served prefixed. Both the metadata canonical and the sitemap entries follow this rule.
+- `BR-04-06`: **The legal documents must describe what the product actually does, and are updated in the same release as the behavior they describe.** Concretely, for the AI photo intake ([FRD-11](../../prd-02-collector-app/frd-11-order-image-intake/frd-11-order-image-intake.md), [ADR 0020](../../../design/decisions/0020-ai-extraction-provider-and-privacy-posture.md)) the privacy policy must name the AI provider, state that the paid tier is used and that the provider does not train on the images, disclose the provider's own limited abuse-detection retention window, state that PandaTrack itself stores no source image, state that EXIF/GPS metadata is stripped on the device, state that nothing is persisted without the user's confirmation, and tell the third parties who appear in an uploaded screenshot how to request deletion. A change of provider, tier, or retention window is a legal-copy change, not only an implementation change.
+- `BR-04-07`: The `lastUpdated` line carries a day-level date (`29 de julio de 2026` / `July 29, 2026`) and must be bumped in the same change as any substantive clause edit, so readers can tell one revision from another within the same month.
 
 ## Acceptance Criteria
 
@@ -85,13 +95,13 @@ As a reader, I want a clear, always-reachable way back to the localized home pag
 
 - Given a user opens `/es/privacy` or `/en/privacy`
 - When the page renders
-- Then the complete localized privacy content is visible (title, last-updated line, intro, table of contents, and all 12 sections)
+- Then the complete localized privacy content is visible (title, last-updated line, intro, table of contents, and all 13 sections)
 
 ### `AC-04-02`
 
 - Given a user opens `/es/terms` or `/en/terms`
 - When the page renders
-- Then the complete localized terms content is visible (title, last-updated line, intro, table of contents, and all 10 sections)
+- Then the complete localized terms content is visible (title, last-updated line, intro, table of contents, and all 11 sections)
 
 ### `AC-04-03`
 
@@ -124,7 +134,7 @@ Both routes live directly under `/{locale}` (public, outside the App Shell). The
 ### Privacy — `/{locale}/privacy`
 
 - **Purpose:** the public privacy policy; trust/compliance reference reachable logged-out and logged-in.
-- **Component:** `LegalPageLayout` with `namespace="privacy"` and `sectionKeys=PRIVACY_SECTION_KEYS` (`whoWeAre`, `dataWeCollect`, `howWeUse`, `legalBasis`, `sharing`, `retention`, `yourRights`, `cookies`, `security`, `children`, `changes`, `contact` — 12 sections).
+- **Component:** `LegalPageLayout` with `namespace="privacy"` and `sectionKeys=PRIVACY_SECTION_KEYS` (`whoWeAre`, `dataWeCollect`, `aiPhotos`, `howWeUse`, `legalBasis`, `sharing`, `retention`, `yourRights`, `cookies`, `security`, `children`, `changes`, `contact` — 13 sections).
 - **Content source:** `privacy` namespace (`title`, `lastUpdated`, `intro`, and `{key}Title` / `{key}Body` per section) plus `common.legal` chrome strings. No queries, no server actions.
 - **Metadata / OG:** `generateMetadata` → `buildPageMetadata({ locale, namespace: "privacy", pathSegment: "privacy", titleKey: "title", descriptionKey: "intro" })` (the shipped call also passes the resolved `locale`); `opengraph-image.tsx` → `getOgImageData(locale, "privacy")` rendering `OgImageTemplate` from `ogEyebrow` / `ogHeadline` / `ogSubline`.
 - **States:** none beyond the rendered document. No loading/empty/error/guard/404 specific to this route (a missing-locale request is handled by the locale routing layer, not this page).
@@ -132,7 +142,7 @@ Both routes live directly under `/{locale}` (public, outside the App Shell). The
 ### Terms — `/{locale}/terms`
 
 - **Purpose:** the public terms of service; same public-web guarantees as privacy.
-- **Component:** `LegalPageLayout` with `namespace="terms"` and `sectionKeys=TERMS_SECTION_KEYS` (`acceptance`, `service`, `eligibility`, `conduct`, `ip`, `privacyRef`, `disclaimers`, `governingLaw`, `changes`, `contact` — 10 sections).
+- **Component:** `LegalPageLayout` with `namespace="terms"` and `sectionKeys=TERMS_SECTION_KEYS` (`acceptance`, `service`, `eligibility`, `conduct`, `aiFeatures`, `ip`, `privacyRef`, `disclaimers`, `governingLaw`, `changes`, `contact` — 11 sections).
 - **Content source:** `terms` namespace + `common.legal` chrome strings. No queries, no server actions.
 - **Metadata / OG:** `generateMetadata` → `buildPageMetadata({ locale, namespace: "terms", pathSegment: "terms", titleKey: "title", descriptionKey: "intro" })` (the shipped call also passes the resolved `locale`); `opengraph-image.tsx` → `getOgImageData(locale, "terms")`.
 - **States:** none beyond the rendered document (same as privacy).
@@ -168,6 +178,7 @@ This feature emits **no PostHog events**. The legal pages are static reading doc
 - both pages expose a localized back-to-home link at the top and bottom of the document
 - the table of contents links to every section and anchored jumps leave a scroll-margin gap above the landed section
 - the pages are reachable from the landing footer, the sign-up form, and the in-app account menu
+- the privacy policy carries a dedicated AI photo-processing section (`aiPhotos`) and the terms carry an AI-features section (`aiFeatures`), both added 2026-07-29 to match shipped behavior
 
 ## Out of Scope
 

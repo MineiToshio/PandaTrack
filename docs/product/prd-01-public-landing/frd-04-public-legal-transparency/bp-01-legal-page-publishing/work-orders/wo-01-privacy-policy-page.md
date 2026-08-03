@@ -20,7 +20,7 @@ Publish PandaTrack's localized privacy policy with public routing and SEO suppor
 ## In Scope
 
 - privacy route (`/{locale}/privacy`) outside the App Shell
-- localized section rendering via `PRIVACY_SECTION_KEYS` (12 sections) + `LegalPageLayout`
+- localized section rendering via `PRIVACY_SECTION_KEYS` (13 sections) + `LegalPageLayout`
 - localized metadata (`buildPageMetadata`) and per-segment OG image (`opengraph-image.tsx`)
 - top + bottom back-to-home link, table of contents, sitemap entry
 

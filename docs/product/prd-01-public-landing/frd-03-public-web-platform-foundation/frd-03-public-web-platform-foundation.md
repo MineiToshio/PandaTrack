@@ -151,7 +151,7 @@ Sets `metadataBase`, the `%s | PandaTrack` title template, and the default descr
 - `buildCanonicalPath(locale, segment)`: returns `/{locale}/{segment}` for non-default locales; omits the prefix for `es`.
 - `buildPageMetadata(opts)`: full `Metadata` object (title, description, `alternates.canonical`, `openGraph` with explicit `images` array). Accepts `absoluteTitle` to bypass the template.
 - `buildStoreDetailMetadata(opts)`: variant for store detail pages; supports `noindex` for `PENDING` stores.
-- `PageCanonicalSegment` union type: `""`, `"terms"`, `"privacy"`, `"dashboard"`, `"stores"`, `"orders"`, `"deliveries"`, `"orders/pre-orders"`, `"settings"`.
+- `PageCanonicalSegment` union type: `""`, `"terms"`, `"privacy"`, `"dashboard"`, `"stores"`, `"orders"`, `"deliveries"`, `"settings"`.
 
 ### OG image helpers — `src/lib/og.ts`
 

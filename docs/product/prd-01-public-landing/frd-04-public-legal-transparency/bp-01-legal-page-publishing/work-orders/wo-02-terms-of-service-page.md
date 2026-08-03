@@ -20,7 +20,7 @@ Publish PandaTrack's localized terms of service page with the same public-web gu
 ## In Scope
 
 - terms route (`/{locale}/terms`) outside the App Shell
-- localized section rendering via `TERMS_SECTION_KEYS` (10 sections, including a Peru governing-law clause) + `LegalPageLayout`
+- localized section rendering via `TERMS_SECTION_KEYS` (11 sections, including a Peru governing-law clause) + `LegalPageLayout`
 - localized metadata (`buildPageMetadata`) and per-segment OG image (`opengraph-image.tsx`)
 - top + bottom back-to-home link, table of contents, sitemap entry
 

@@ -5,6 +5,7 @@ import { buildPageMetadata } from "@/lib/seo";
 const PRIVACY_SECTION_KEYS = [
   "whoWeAre",
   "dataWeCollect",
+  "aiPhotos",
   "howWeUse",
   "legalBasis",
   "sharing",

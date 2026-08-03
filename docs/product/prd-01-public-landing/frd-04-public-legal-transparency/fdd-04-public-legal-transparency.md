@@ -61,8 +61,8 @@ requirement changed (see [`frd-04-public-legal-transparency.md`](./frd-04-public
 | 2   | Terms of service (desktop) | `/{locale}/terms`   | `#s11-legal-terms`          |
 | 3   | Privacy policy (mobile)    | `/{locale}/privacy` | `#s11-legal-privacy-mobile` |
 
-The privacy document carries **12 sections** (anchor ids `#whoWeAre … #contact`); the
-terms document carries **9** (`#acceptance … #contact`). The mobile variant renders
+The privacy document carries **13 sections** (anchor ids `#whoWeAre … #contact`); the
+terms document carries **11** (`#acceptance … #contact`). The mobile variant renders
 the privacy document and intentionally **drops the table of contents** (see §7).
 
 Requirements traced throughout: `FR-04-01 … FR-04-05`, `AC-04-01 … AC-04-03` (see

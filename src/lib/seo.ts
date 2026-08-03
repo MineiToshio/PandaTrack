@@ -16,15 +16,7 @@ export function getSiteUrl(): string {
 }
 
 export type PageCanonicalSegment =
-  | ""
-  | "terms"
-  | "privacy"
-  | "dashboard"
-  | "stores"
-  | "orders"
-  | "deliveries"
-  | "orders/pre-orders"
-  | "settings";
+  "" | "terms" | "privacy" | "dashboard" | "stores" | "orders" | "deliveries" | "settings";
 
 /**
  * Builds the path segment for a canonical URL (no leading slash for home, e.g. "" or "/en", "/terms", "/en/terms").
@@ -48,6 +40,7 @@ export type BuildPageMetadataOptions = {
     | "settings"
     | "orders"
     | "orderListing"
+    | "imageIntake"
     | "deliveries";
   pathSegment: PageCanonicalSegment;
   titleKey: string;
