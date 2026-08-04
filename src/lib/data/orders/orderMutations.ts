@@ -330,13 +330,34 @@ export async function applyOrderExchangeRates(
   baseCurrencyCode: string | null,
   updates: Array<{ orderId: string; exchangeRate: number }>,
 ): Promise<number> {
+  // Last entry wins for a repeated id, which is what a statement-per-update already did implicitly.
+  // Resolving it here keeps that outcome deterministic once the statements are merged below.
+  const rateByOrderId = new Map<string, number>();
+  for (const update of updates) {
+    rateByOrderId.set(update.orderId, update.exchangeRate);
+  }
+  if (rateByOrderId.size === 0) return 0;
+
+  // Orders that share a rate share the whole update, since the base code is derived from that same
+  // rate and one base currency, so they belong in one statement. One statement per order is what
+  // this did before, and it does not survive contact with a real collection: the reconciliation
+  // screen assigns one rate per currency pair, so a few hundred pending orders became a few hundred
+  // round trips inside a single transaction and the bulk apply timed out. Grouped, the same work is
+  // a handful of statements.
+  const orderIdsByRate = new Map<number, string[]>();
+  for (const [orderId, exchangeRate] of rateByOrderId) {
+    const grouped = orderIdsByRate.get(exchangeRate);
+    if (grouped) grouped.push(orderId);
+    else orderIdsByRate.set(exchangeRate, [orderId]);
+  }
+
   const results = await prisma.$transaction(
-    updates.map((update) =>
+    [...orderIdsByRate].map(([exchangeRate, orderIds]) =>
       prisma.order.updateMany({
-        where: { id: update.orderId, userId },
+        where: { id: { in: orderIds }, userId },
         data: {
-          exchangeRate: update.exchangeRate,
-          exchangeRateBaseCode: resolveExchangeRateBaseCode(update.exchangeRate, baseCurrencyCode),
+          exchangeRate,
+          exchangeRateBaseCode: resolveExchangeRateBaseCode(exchangeRate, baseCurrencyCode),
         },
       }),
     ),
