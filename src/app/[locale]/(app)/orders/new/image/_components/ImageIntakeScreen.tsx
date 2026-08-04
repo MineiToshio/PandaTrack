@@ -28,6 +28,7 @@ import {
   IMAGE_INTAKE_ENTRY_SOURCE_FIELD,
   IMAGE_INTAKE_FILES_FIELD,
   IMAGE_INTAKE_LOCALE_FIELD,
+  newImageIntakeSaveToken,
 } from "../../../_actions/imageIntakeContract";
 import { extractOrderFromImagesAction } from "../../../_actions/imageIntakeExtractAction";
 import { saveOrderFromDraftAction } from "../../../_actions/imageIntakeSaveAction";
@@ -197,6 +198,16 @@ export default function ImageIntakeScreen({
    * uploads the bag is charged for. The review screen states it back before offering to read again.
    */
   const [spentPhotoCount, setSpentPhotoCount] = useState(0);
+  /**
+   * The idempotency token this draft's save attempts share.
+   *
+   * Frozen at the first attempt and held for as long as the review screen shows this draft, because
+   * a save can report failure after the order was written and the collector's next move is usually
+   * to correct something and press save again. With the marker derived from the draft's contents,
+   * that correction made the retry look like a different order and produced a second one. It is
+   * cleared whenever a new extraction replaces the draft, which is a genuinely different order.
+   */
+  const saveTokenRef = useRef<string | null>(null);
 
   const previewUrlsRef = useRef<string[]>([]);
 
@@ -374,6 +385,7 @@ export default function ImageIntakeScreen({
           setPhase("upload");
           return;
         }
+        saveTokenRef.current = null;
         setDraft(result.draft);
         setSpentPhotoCount(segments.length);
         setPhase("review");
@@ -481,8 +493,9 @@ export default function ImageIntakeScreen({
     async (confirmedDraft: ImageIntakeDraft, exchangeRate: number | null) => {
       setIsSaving(true);
       setError(null);
+      saveTokenRef.current ??= newImageIntakeSaveToken();
       try {
-        const result = await saveOrderFromDraftAction(confirmedDraft, exchangeRate);
+        const result = await saveOrderFromDraftAction(confirmedDraft, exchangeRate, saveTokenRef.current);
         if (!result.ok) {
           setError({ messageKey: saveErrorMessageKey(result.code) });
           return;
@@ -526,6 +539,7 @@ export default function ImageIntakeScreen({
    */
   const handleAddProductSheet = useCallback(() => {
     setError(null);
+    saveTokenRef.current = null;
     setDraft(null);
     setPhase("upload");
   }, []);

@@ -14,18 +14,33 @@ import {
   mapDraftToOrderPaymentCreateInputs,
 } from "@/lib/imageIntake/mapDraftToOrderCreate";
 import { exchangeRateSchema, orderCreateSchema, orderPaymentCreateSchema } from "@/lib/orders/orderValidation";
-import type { ImageIntakeSaveResult } from "./imageIntakeContract";
+import { IMAGE_INTAKE_SAVE_TOKEN_PATTERN, type ImageIntakeSaveResult } from "./imageIntakeContract";
 
 /** Marker namespace, matching the `[import:<source>:<digest>]` shape already used by the chat importer. */
 const IMAGE_INTAKE_MARKER_NAMESPACE = "image-intake";
 const MARKER_DIGEST_LENGTH = 16;
 
 /**
- * Stable signature of one confirmed draft. Built from the fields that identify the purchase rather
- * than from the whole object, so a resubmission of the same reviewed draft (a double-tap, a
- * retried request) resolves to the same marker while two genuinely different orders never collide.
+ * Stable signature of one confirmed save, preferring the review screen's own token.
+ *
+ * The token is minted once per extracted draft and does not move when the draft is corrected, which
+ * is what makes a retry a retry. The content-derived signature below is the fallback for a caller
+ * that sends no token: it identifies the purchase rather than the whole object, so a double-tap on
+ * an unchanged draft still resolves to one order, but a retry after an edit does not, which is
+ * precisely the gap the token closes.
+ *
+ * The token is hashed, never stored: what lands in the order's note is a digest, like every other
+ * marker this namespace writes.
  */
-function buildIdempotencyMarker(userId: string, draft: ImageIntakeDraft): string {
+function buildIdempotencyMarker(userId: string, draft: ImageIntakeDraft, saveToken: string | null): string {
+  if (saveToken !== null) {
+    const tokenDigest = createHash("sha256")
+      .update([userId, saveToken].join("|"))
+      .digest("hex")
+      .slice(0, MARKER_DIGEST_LENGTH);
+    return `[${IMAGE_INTAKE_MARKER_NAMESPACE}:${tokenDigest}]`;
+  }
+
   const itemSignature = draft.groups
     .flatMap((group) => group.products.map((product) => `${product.name}:${product.unitPrice ?? ""}`))
     .join("|");
@@ -78,6 +93,7 @@ function resolveExchangeRate(raw: unknown): { ok: true; value: number | null } |
 export async function saveOrderFromDraftAction(
   rawDraft: unknown,
   rawExchangeRate?: unknown,
+  rawSaveToken?: unknown,
 ): Promise<ImageIntakeSaveResult> {
   const session = await getSession();
   if (!session?.user?.id) {
@@ -107,7 +123,12 @@ export async function saveOrderFromDraftAction(
     return { ok: false, code: "total-required" };
   }
 
-  const marker = buildIdempotencyMarker(userId, draft);
+  // Untrusted like everything else that crosses this hop, and checked for shape rather than
+  // trusted: it is only ever hashed with the caller's own id, so a token belonging to someone else
+  // resolves to a marker no order of theirs carries.
+  const saveToken =
+    typeof rawSaveToken === "string" && IMAGE_INTAKE_SAVE_TOKEN_PATTERN.test(rawSaveToken) ? rawSaveToken : null;
+  const marker = buildIdempotencyMarker(userId, draft, saveToken);
 
   const parsedOrder = orderCreateSchema.safeParse({
     storeId: createInput.storeId,

@@ -157,6 +157,36 @@ describe("saveOrderFromDraftAction", () => {
     expect(third).not.toBe(first);
   });
 
+  it("keeps one marker across a retry the collector corrected, so an edited retry is not a second order", async () => {
+    const saveToken = "0f9c1d2e-3a4b-5c6d-7e8f-90a1b2c3d4e5";
+
+    // The first attempt is the one that may have written the order while reporting failure. The
+    // second is the collector fixing a price and pressing save again — the same order, corrected.
+    await saveOrderFromDraftAction(buildDraft(), null, saveToken);
+    await saveOrderFromDraftAction(buildDraft({ totalCost: field(16000, "read") }), null, saveToken);
+
+    const [first, second] = findOrderIdByNoteMarkerMock.mock.calls.map((call) => call[1]);
+    expect(first).toBe(second);
+    expect(first).toMatch(/^\[image-intake:[0-9a-f]{16}\]$/);
+  });
+
+  it("gives two different drafts two different markers even under the token, since each mints its own", async () => {
+    await saveOrderFromDraftAction(buildDraft(), null, "0f9c1d2e-3a4b-5c6d-7e8f-90a1b2c3d4e5");
+    await saveOrderFromDraftAction(buildDraft(), null, "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d");
+
+    const [first, second] = findOrderIdByNoteMarkerMock.mock.calls.map((call) => call[1]);
+    expect(first).not.toBe(second);
+  });
+
+  it("falls back to the draft signature when the token is missing or malformed, rather than trusting it", async () => {
+    await saveOrderFromDraftAction(buildDraft());
+    await saveOrderFromDraftAction(buildDraft(), null, "not a token");
+    await saveOrderFromDraftAction(buildDraft(), null, 42);
+
+    const markers = findOrderIdByNoteMarkerMock.mock.calls.map((call) => call[1]);
+    expect(new Set(markers).size).toBe(1);
+  });
+
   it("records the draft payments and counts the ones the order domain refuses", async () => {
     addOrderPaymentMock
       .mockResolvedValueOnce({ ok: true, paymentId: "pay-1" })

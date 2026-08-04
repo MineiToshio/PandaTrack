@@ -88,3 +88,26 @@ export type ImageIntakeSaveErrorCode =
 export type ImageIntakeSaveResult =
   | { ok: true; orderId: string; paymentsRecorded: number; paymentsSkipped: number }
   | { ok: false; code: ImageIntakeSaveErrorCode };
+
+/**
+ * Shape a save token has to have to be accepted: an opaque hex-and-dash string, long enough to be
+ * unguessable and short enough to bound the hashing. Nothing is read out of it, so its only job is
+ * to be the same string on the second attempt as on the first.
+ */
+export const IMAGE_INTAKE_SAVE_TOKEN_PATTERN = /^[0-9a-fA-F-]{16,64}$/;
+
+/**
+ * Mints the token that keeps every retry of one review screen resolving to the same order.
+ *
+ * The save action's idempotency marker used to be derived from the draft's own contents, which is
+ * exactly the wrong basis here: a save can report failure after the write went through, and the
+ * collector's natural response is to correct something and press save again. A content-derived
+ * marker changes the moment they do, so the retry looks like a different order and a second one is
+ * created. A token minted once per extracted draft does not move when the draft does.
+ */
+export function newImageIntakeSaveToken(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 14)}`;
+}
