@@ -11,15 +11,13 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronDown, GripVertical, Search, X } from "lucide-react";
-import { createElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { GripVertical, X } from "lucide-react";
+import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
-import Portal from "@/components/core/Portal";
 import { cn } from "@/lib/styles";
 import { sanitizeDecimalInput } from "@/lib/decimalInput";
-import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { inheritProductTypeFromPrevious } from "@/lib/orders/orderItemUtils";
-import { foldSearchText } from "@/lib/strings/foldSearchText";
+import ItemTypePicker from "./ItemTypePicker";
 
 export type ItemRow = {
   rowId: string;
@@ -65,227 +63,6 @@ const CELL_INPUT_BASE =
   "w-full border-0 bg-transparent text-[13px] [color:var(--text-primary)] rounded-[5px] " +
   "placeholder:[color:var(--text-muted)] focus:outline-none " +
   "focus:[background:color-mix(in_oklch,var(--accent)_8%,transparent)]";
-
-type ItemTypePickerProps = {
-  rowId: string;
-  value: string;
-  productTypeKeys: string[];
-  tProductTypes: (key: string) => string;
-  placeholder: string;
-  ariaLabelFor: (label: string) => string;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onChange: (value: string) => void;
-  onKeyDown: (e: React.KeyboardEvent) => void;
-};
-
-/**
- * Compact, filterable single-select for the spreadsheet's "Tipo" column.
- *
- * Why not the canonical `<SearchableSelect>` / `<Combobox>` primitive:
- *  - Trigger height: those primitives render a ~46px input trigger, far too tall
- *    for an inline table cell (this grid uses a 12px font, ~26px borderless cell).
- *  - Overflow escape: the cell lives inside the table's `overflow-x-auto`, so the
- *    options list must render through a `Portal` with fixed positioning to avoid
- *    being clipped. `<SearchableSelect>` positions its listbox with `absolute`
- *    inside a `relative` wrapper, which would be clipped here.
- *  - Keyboard ownership: the trigger delegates key events to the grid's shared
- *    Ctrl+Shift cell-navigation and @dnd-kit reorder handler; embedding a primitive
- *    that owns its own key handling would break that integration.
- *
- * The ARIA contract still follows the canonical combobox/listbox pattern (as in
- * `<SearchableSelect>`), NOT a dialog: the trigger owns `aria-haspopup="listbox"`,
- * `aria-expanded`, and `aria-controls` pointing at the `role="listbox"` options
- * list. The popover container is a presentational positioning wrapper only.
- *
- * Portal + fixed positioning so the listbox escapes the table's `overflow-x`.
- * Outer-document scroll repositions; inner listbox scroll is preserved.
- */
-function ItemTypePicker({
-  rowId,
-  value,
-  productTypeKeys,
-  tProductTypes,
-  placeholder,
-  ariaLabelFor,
-  open,
-  onOpenChange,
-  onChange,
-  onKeyDown,
-}: ItemTypePickerProps) {
-  const tPicker = useTranslations("orders.picker");
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const popoverRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
-  const [coords, setCoords] = useState<{ top: number; left: number; minWidth: number } | null>(null);
-  const [query, setQuery] = useState("");
-
-  // Reset query each time the picker opens; focus the search input.
-  useEffect(() => {
-    if (!open) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setQuery("");
-    requestAnimationFrame(() => searchRef.current?.focus());
-  }, [open]);
-
-  // Position via Portal + fixed coords. Recompute on outer-document scroll
-  // (so the popover follows the trigger when the page scrolls) but ignore
-  // scroll events originating inside the listbox itself (so the user can
-  // wheel-scroll or grab the scrollbar to navigate long option lists).
-  useLayoutEffect(() => {
-    if (!open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCoords(null);
-      return;
-    }
-    const compute = () => {
-      const rect = triggerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      setCoords({ top: rect.bottom + 4, left: rect.left, minWidth: rect.width });
-    };
-    compute();
-    const onScroll = (e: Event) => {
-      // Ignore scroll inside our own popover — the user is navigating options.
-      if (popoverRef.current?.contains(e.target as Node)) return;
-      // Outer-document scroll: keep the popover anchored to the trigger.
-      compute();
-    };
-    window.addEventListener("scroll", onScroll, true);
-    window.addEventListener("resize", compute);
-    return () => {
-      window.removeEventListener("scroll", onScroll, true);
-      window.removeEventListener("resize", compute);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      const t = e.target as Node;
-      if (triggerRef.current?.contains(t)) return;
-      if (popoverRef.current?.contains(t)) return;
-      onOpenChange(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open, onOpenChange]);
-
-  const filteredKeys = useMemo(() => {
-    const folded = foldSearchText(query);
-    if (!folded) return productTypeKeys;
-    return productTypeKeys.filter((k) => foldSearchText(tProductTypes(k)).includes(folded));
-  }, [productTypeKeys, query, tProductTypes]);
-
-  const listboxId = `item-type-listbox-${rowId}`;
-  const selectedLabel = value ? tProductTypes(value) : null;
-  const iconNode = value
-    ? createElement(getStoreProductTypeIcon(value), { size: 12, "aria-hidden": true, className: "shrink-0" })
-    : null;
-
-  return (
-    <>
-      <button
-        ref={triggerRef}
-        id={cellInputId("type", rowId)}
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={open ? listboxId : undefined}
-        aria-label={ariaLabelFor(selectedLabel ?? placeholder)}
-        onClick={() => onOpenChange(!open)}
-        onKeyDown={onKeyDown}
-        className={cn(
-          "flex w-full items-center gap-1 rounded-[5px] px-1 py-1.5 text-left text-[12px] whitespace-nowrap",
-          "focus:outline-none focus:[background:color-mix(in_oklch,var(--accent)_8%,transparent)]",
-          selectedLabel ? "[color:var(--text-secondary)]" : "[color:var(--text-muted)]",
-        )}
-      >
-        {iconNode}
-        <span className="min-w-0 flex-1 truncate">{selectedLabel ?? placeholder}</span>
-        <ChevronDown size={10} className="shrink-0 opacity-50" aria-hidden />
-      </button>
-      {open && coords && (
-        <Portal>
-          <div
-            ref={popoverRef}
-            style={{
-              position: "fixed",
-              top: coords.top,
-              left: coords.left,
-              minWidth: Math.max(coords.minWidth, 220),
-            }}
-            className={cn(
-              "z-50 flex max-h-80 flex-col overflow-hidden rounded-[10px]",
-              "[background:var(--background)] [border:1px_solid_var(--border-strong)]",
-              "[box-shadow:var(--shadow-elevation-3)]",
-            )}
-          >
-            <div className="relative flex items-center px-2 py-2 [border-bottom:1px_solid_var(--border)]">
-              <Search size={13} aria-hidden className="pointer-events-none absolute left-4 [color:var(--text-muted)]" />
-              <input
-                ref={searchRef}
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    e.stopPropagation();
-                    onOpenChange(false);
-                  }
-                }}
-                placeholder={tPicker("productTypeSearch")}
-                aria-label={tPicker("productTypeSearch")}
-                className={cn(
-                  "w-full rounded-[6px] py-1.5 pr-2 pl-7 text-[13px]",
-                  "[color:var(--text-primary)] [background:var(--surface)] [border:1px_solid_var(--border)]",
-                  "placeholder:[color:var(--text-muted)]",
-                  "focus:[border-color:color-mix(in_oklch,var(--accent)_45%,var(--border))] focus:outline-none",
-                  "focus:[box-shadow:0_0_0_3px_color-mix(in_oklch,var(--accent)_15%,transparent)]",
-                )}
-              />
-            </div>
-            <ul
-              id={listboxId}
-              role="listbox"
-              aria-label={tPicker("productTypeTitle")}
-              className="flex-1 overflow-y-auto p-1"
-            >
-              {filteredKeys.length === 0 ? (
-                <li className="px-2 py-2 text-[12px] [color:var(--text-muted)]">{tPicker("productTypeEmpty")}</li>
-              ) : (
-                filteredKeys.map((key) => {
-                  const Icon = getStoreProductTypeIcon(key);
-                  return (
-                    <li key={key}>
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected={value === key}
-                        onClick={() => {
-                          onChange(key);
-                          onOpenChange(false);
-                        }}
-                        className={cn(
-                          "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12px] [color:var(--text-primary)]",
-                          value === key
-                            ? "[background:color-mix(in_oklch,var(--accent)_10%,transparent)]"
-                            : "hover:[background:color-mix(in_oklch,var(--text-primary)_4%,transparent)]",
-                        )}
-                      >
-                        <Icon size={13} aria-hidden className="shrink-0 [color:var(--accent-cool)]" />
-                        <span className="min-w-0 flex-1 truncate">{tProductTypes(key)}</span>
-                      </button>
-                    </li>
-                  );
-                })
-              )}
-            </ul>
-          </div>
-        </Portal>
-      )}
-    </>
-  );
-}
 
 type OrderItemRowProps = {
   row: ItemRow;
@@ -434,7 +211,8 @@ function OrderItemRow({
       {/* Type */}
       <td className="px-[3px] py-[2px] align-top">
         <ItemTypePicker
-          rowId={row.rowId}
+          instanceId={row.rowId}
+          triggerId={cellInputId("type", row.rowId)}
           value={row.productTypeKey}
           productTypeKeys={productTypeKeys}
           tProductTypes={tProductTypes}
