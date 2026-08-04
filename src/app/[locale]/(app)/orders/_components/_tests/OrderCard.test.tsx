@@ -40,6 +40,7 @@ const BASE_PROPS = {
   locale: "en",
   today: new Date("2024-02-01T00:00:00.000Z"),
   returnTo: "/en/orders",
+  baseCurrencyCode: "PEN",
   isExpanded: false,
   onToggle: vi.fn(),
 };

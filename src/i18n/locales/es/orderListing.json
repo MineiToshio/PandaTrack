@@ -179,5 +179,9 @@
     "loadMore": "Cargar más",
     "showing": "Mostrando {start}–{end} de {total} {total, plural, one {pedido} other {pedidos}}",
     "perPage": "Por página"
+  },
+  "rowActions": {
+    "quickArrivalAriaLabel": "Anotar la llegada de {code} de {store}",
+    "createDeliveryAriaLabel": "Crear una entrega para {code} de {store}"
   }
 }

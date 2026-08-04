@@ -16,12 +16,14 @@ import { describeOrderListChip, describeOverdueDays, getOrderListChipToneClassNa
 import { describeItemDeliveryState, getItemDeliveryStateToneClassName } from "./share/orderItemDeliveryChip";
 import { resolveStoreTombstone } from "@/lib/store/storeTombstone";
 import type { OrdersListPageItem } from "@/lib/data/orders/orderQueries";
+import OrderListRowActions from "./OrderListRowActions";
 
 type OrderCardProps = {
   order: OrdersListPageItem;
   locale: string;
   today: Date;
   returnTo: string;
+  baseCurrencyCode: string | null;
   /** Expansion is owned by the list coordinator so "expand/collapse all" can drive every card. */
   isExpanded: boolean;
   onToggle: () => void;
@@ -31,7 +33,15 @@ function formatDate(date: Date, locale: string): string {
   return formatDomainDate(date, locale);
 }
 
-export default function OrderCard({ order, locale, today, returnTo, isExpanded, onToggle }: OrderCardProps) {
+export default function OrderCard({
+  order,
+  locale,
+  today,
+  returnTo,
+  baseCurrencyCode,
+  isExpanded,
+  onToggle,
+}: OrderCardProps) {
   const t = useTranslations("orderListing");
 
   const overdue = isOrderOverdue({ expectedDeliveryTo: order.expectedDeliveryTo, status: order.status }, today);
@@ -136,17 +146,18 @@ export default function OrderCard({ order, locale, today, returnTo, isExpanded, 
       </div>
 
       {isExpanded && (
-        <ul
+        <div
           id={`order-card-items-${order.id}`}
-          role="list"
           className={cn(
             // Recessed detail band (matches the desktop table drawer) so the items read as this
-            // order's interior, distinct from the summary above.
-            "pointer-events-none relative -mx-4 flex flex-col py-1 pr-4 pl-[calc(1rem-2px)]",
+            // order's interior, distinct from the summary above. The band wraps the list so the
+            // row actions can sit inside it and stay clickable while the items stay inert.
+            "relative -mx-4 flex flex-col py-1 pr-4 pl-[calc(1rem-2px)]",
             "[border-left:2px_solid_color-mix(in_oklch,var(--accent-cool)_55%,transparent)]",
             "[background:color-mix(in_oklch,var(--text-primary)_3.5%,transparent)]",
           )}
         >
+          <ul role="list" className="pointer-events-none flex flex-col">
           {order.items.map((item, idx) => {
             const ItemIcon = getStoreProductTypeIcon(item.productTypeKey ?? "");
             const itemState = describeItemDeliveryState(item.deliveryState);
@@ -192,7 +203,15 @@ export default function OrderCard({ order, locale, today, returnTo, isExpanded, 
               </li>
             );
           })}
-        </ul>
+          </ul>
+          <OrderListRowActions
+            order={order}
+            baseCurrencyCode={baseCurrencyCode}
+            locale={locale}
+            detailHref={detailHref}
+            surface="card"
+          />
+        </div>
       )}
 
       {/* Footer — full-width expand affordance; bleeds to card edges and tints the whole

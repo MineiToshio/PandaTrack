@@ -298,6 +298,7 @@ async function OrdersDataSection({
         today={today}
         returnTo={currentListUrl}
         resetHref={resetHref}
+        baseCurrencyCode={baseCurrencyCode}
       />
 
       <OrderListPagination

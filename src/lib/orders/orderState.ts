@@ -7,6 +7,16 @@ import type { OrderStatus } from "../../../generated/prisma/client";
  */
 export type ItemDeliveryState = "open" | "arrived_at_store" | "in_transit" | "delivered";
 
+/**
+ * Products a new delivery could still take. The delivery domain expresses the same rule over the
+ * persisted enum (`isEligibleForDelivery` in `src/lib/deliveries/deliveryState.ts`); this is its
+ * counterpart for the display-level state the order surfaces carry, so no screen has to spell the
+ * pair of literals out again and drift from it.
+ */
+export function isItemEligibleForDelivery(state: ItemDeliveryState): boolean {
+  return state === "open" || state === "arrived_at_store";
+}
+
 export interface OrderItemState {
   itemId: string;
   deliveryState: ItemDeliveryState;

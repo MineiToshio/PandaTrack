@@ -10,6 +10,7 @@ type OrderListContentProps = {
   today: Date;
   returnTo: string;
   resetHref: string;
+  baseCurrencyCode: string | null;
 };
 
 export default function OrderListContent({
@@ -20,11 +21,20 @@ export default function OrderListContent({
   today,
   returnTo,
   resetHref,
+  baseCurrencyCode,
 }: OrderListContentProps) {
   if (orders.length === 0) {
     const variant = totalCount === 0 && !hasActiveFiltersBeyondDefault ? "noOrders" : "noResults";
     return <OrderListEmptyState locale={locale} variant={variant} resetHref={resetHref} />;
   }
 
-  return <OrderListInteractive orders={orders} locale={locale} today={today} returnTo={returnTo} />;
+  return (
+    <OrderListInteractive
+      orders={orders}
+      locale={locale}
+      today={today}
+      returnTo={returnTo}
+      baseCurrencyCode={baseCurrencyCode}
+    />
+  );
 }

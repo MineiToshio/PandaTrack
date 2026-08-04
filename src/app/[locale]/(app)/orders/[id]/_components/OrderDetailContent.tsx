@@ -4,6 +4,7 @@ import BackNavLink from "@/components/core/BackNavLink";
 import Eyebrow from "@/components/core/Eyebrow";
 import { ROUTES } from "@/lib/constants";
 import { formatDomainDate } from "@/lib/domainDate";
+import { isItemEligibleForDelivery } from "@/lib/orders/orderState";
 import type { OrderDetailFull } from "@/lib/data/orders/orderQueries";
 import OrderOverdueBanner from "./OrderOverdueBanner";
 import CancellationReasonCallout from "./CancellationReasonCallout";
@@ -38,7 +39,7 @@ export default async function OrderDetailContent({
   // Products the quick-arrival flow can close: the same eligibility the delivery wizard uses
   // (nothing already in transit or delivered).
   const quickArrivalItems = order.items
-    .filter((item) => item.deliveryState === "open" || item.deliveryState === "arrived_at_store")
+    .filter((item) => isItemEligibleForDelivery(item.deliveryState))
     .map((item) => ({ id: item.id, name: item.name }));
   // One condition behind every delivery affordance on this page (aside card, sticky bar, products
   // list): there has to be a product a delivery could still take.

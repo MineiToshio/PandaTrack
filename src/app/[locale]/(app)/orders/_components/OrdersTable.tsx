@@ -16,12 +16,14 @@ import { describeOrderListChip, describeOverdueDays, getOrderListChipToneClassNa
 import { describeItemDeliveryState, getItemDeliveryStateToneClassName } from "./share/orderItemDeliveryChip";
 import { resolveStoreTombstone } from "@/lib/store/storeTombstone";
 import type { OrdersListPageItem } from "@/lib/data/orders/orderQueries";
+import OrderListRowActions from "./OrderListRowActions";
 
 type OrdersTableProps = {
   orders: OrdersListPageItem[];
   locale: string;
   today: Date;
   returnTo: string;
+  baseCurrencyCode: string | null;
   /** Multi-open expansion owned by the list coordinator (drives "expand/collapse all"). */
   expandedIds: Set<string>;
   onToggle: (orderId: string) => void;
@@ -39,7 +41,15 @@ function formatDate(date: Date, locale: string): string {
   return formatDomainDate(date, locale);
 }
 
-export default function OrdersTable({ orders, locale, today, returnTo, expandedIds, onToggle }: OrdersTableProps) {
+export default function OrdersTable({
+  orders,
+  locale,
+  today,
+  returnTo,
+  baseCurrencyCode,
+  expandedIds,
+  onToggle,
+}: OrdersTableProps) {
   const t = useTranslations("orderListing");
 
   return (
@@ -263,16 +273,13 @@ export default function OrdersTable({ orders, locale, today, returnTo, expandedI
                       {t("card.moreItems", { count: hiddenCount })}
                     </p>
                   )}
-                  <div className="pointer-events-auto relative mt-1">
-                    <ViewTransitionLink
-                      href={detailHref}
-                      viewTransitionEntity="order"
-                      className="inline-flex items-center gap-1 [font-size:var(--text-caption)] [color:var(--accent)] hover:underline"
-                    >
-                      {t("card.openDetail")}
-                      <ChevronRight width={12} height={12} aria-hidden />
-                    </ViewTransitionLink>
-                  </div>
+                  <OrderListRowActions
+                    order={order}
+                    baseCurrencyCode={baseCurrencyCode}
+                    locale={locale}
+                    detailHref={detailHref}
+                    surface="table"
+                  />
                 </div>
               )}
             </li>

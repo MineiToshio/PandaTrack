@@ -17,7 +17,7 @@ type UseQuickArrivalParams = {
   orderId: string;
   locale: string;
   /** Where the launcher lives, so the funnel can compare the entry points against each other. */
-  source: "actions_card" | "mobile_actions" | "dashboard_activity";
+  source: "actions_card" | "mobile_actions" | "dashboard_activity" | "order_list";
   /** Extra granularity for launchers that appear in more than one list (upcoming vs overdue). */
   sourceList?: string;
 };

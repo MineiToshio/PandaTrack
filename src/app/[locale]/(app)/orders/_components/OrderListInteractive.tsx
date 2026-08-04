@@ -11,6 +11,7 @@ type OrderListInteractiveProps = {
   locale: string;
   today: Date;
   returnTo: string;
+  baseCurrencyCode: string | null;
 };
 
 /**
@@ -18,7 +19,13 @@ type OrderListInteractiveProps = {
  * `ListExpansionProvider`, so the "expand/collapse all" toggle can live up in the filter-chips row
  * (outside this Suspense boundary) while the mobile cards and desktop table stay controlled here.
  */
-export default function OrderListInteractive({ orders, locale, today, returnTo }: OrderListInteractiveProps) {
+export default function OrderListInteractive({
+  orders,
+  locale,
+  today,
+  returnTo,
+  baseCurrencyCode,
+}: OrderListInteractiveProps) {
   const { expandedIds, toggleOne, syncIds } = useListExpansion();
 
   const idsKey = orders.map((order) => order.id).join(",");
@@ -40,6 +47,7 @@ export default function OrderListInteractive({ orders, locale, today, returnTo }
               locale={locale}
               today={today}
               returnTo={returnTo}
+              baseCurrencyCode={baseCurrencyCode}
               isExpanded={expandedIds.has(order.id)}
               onToggle={() => toggleOne(order.id)}
             />
@@ -51,6 +59,7 @@ export default function OrderListInteractive({ orders, locale, today, returnTo }
         locale={locale}
         today={today}
         returnTo={returnTo}
+        baseCurrencyCode={baseCurrencyCode}
         expandedIds={expandedIds}
         onToggle={toggleOne}
       />
