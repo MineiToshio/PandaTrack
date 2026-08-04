@@ -89,7 +89,7 @@
       "start": "Correct",
       "done": "Done",
       "hint": "You can now change anything we read, including each product's name and price. Tap \"Done\" when you finish.",
-      "blankName": "One product was left without a name. Give it one so the order can be saved."
+      "blankName": "Product {position} was left without a name. Give it one so the order can be saved."
     },
     "fieldsTitle": "Order details",
     "store": {
@@ -162,7 +162,8 @@
       "referenceLinkAria": "Open the product link on {host}, in a new tab",
       "nameFieldLabel": "Name of product {position}",
       "priceFieldLabel": "Price of product {position}",
-      "editCollapsedHint": "Open the {count} to correct a name or a price."
+      "editCollapsedHint": "Open the {count} to correct a name or a price.",
+      "priceNotANumber": "Write the price as a number, with no thousands separators and no symbols. For example: 115.00"
     },
     "productSheet": {
       "title": "{count, plural, one {We can name this product better} other {We can name these # products better}}",

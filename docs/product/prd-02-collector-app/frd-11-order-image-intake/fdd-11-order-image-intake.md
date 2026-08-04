@@ -339,9 +339,9 @@ promoting one of them.
 
 The pill is the trigger of `<ItemTypePicker>` (`orders/_components/share/ItemTypePicker.tsx`), the
 same component the manual product form's item grid uses, in its `chip` appearance and `adaptive`
-presentation. Adaptive means it resolves the surface the way `<Modal>` does: the searchable popover
-below 768px is wrong for a pointer and the popover above it is wrong for a thumb, so the component
-picks. This is what `FR-11-93`'s "the same picker" has to mean in practice — the screen previously
+presentation. Adaptive means it resolves the surface the way `<Modal>` does: the searchable popover is right for a
+pointer and wrong for a thumb, and the bottom sheet is the reverse, so the component picks by
+viewport rather than each caller guessing. This is what `FR-11-93`'s "the same picker" has to mean in practice — the screen previously
 mounted `MobilePicker` unconditionally and served a phone drawer to desktop collectors. One picker is
 open per card at a time, pointed at whichever row asked for it, so a fifty-row group never mounts
 fifty option lists.
@@ -360,8 +360,12 @@ past and accepted, which is the failure the whole review screen exists to preven
 therefore stays a document, and the collector asks once.
 
 An editable value keeps the geometry of the value it replaces: label left, value right, 44px minimum
-row, and **no border at rest** — the border appears on focus. A permanent box around every corrected
-value would leave the screen reading as a form after the correction was made.
+row. The product rows' own name and price fields additionally carry **no border at rest**, the
+border appearing on focus (`.intake-field`, `globals.css` §14), because those are the fields a
+collector opens most and a permanent box around each one leaves the group card reading as a form.
+The attribute rows reuse the standard `<Input>` / `<Select>`, which keep their resting border: they
+are the same controls an assumed value has always rendered, and giving correction mode a second
+input treatment would make the same attribute look like two different fields.
 
 A collapsed group is not editable in place. Its one line is a range and an aggregate, not a value
 anyone can type into, so correcting a row inside it means opening the group first, which is the same
@@ -484,12 +488,12 @@ All from [components.md](../../../design/components.md) unless marked new.
 | `Card` / `SectionCard`                 | Selector cards, group cards, store block                                                                                                                                                                                                    |
 | `Chip` / `Pill`                        | Assumed marker, passive photo counter, group state chip                                                                                                                                                                                     |
 | `StatusChip`                           | The saved order's status, unchanged                                                                                                                                                                                                         |
-| `AlertBanner`                          | Quota overflow, the 200-product ceiling stop, no order found, provider failure                                                                                                                                                              |
+| `AlertBanner`                          | Quota overflow, the 200-product ceiling stop, no order found, provider failure, the product-page naming offer, the totals mismatch notice                                                                                                   |
 | `EmptyState`                           | Hosts the inline selector cards                                                                                                                                                                                                             |
 | `Skeleton`                             | Not used: the processing screen names real steps instead                                                                                                                                                                                    |
-| `Toast`                                | "Pedido creado" with undo; split and merge undo, grouped                                                                                                                                                                                    |
+| `Toast`                                | Not used by this feature today: the save navigates to the created order, and split and merge are local draft transforms with a visible inverse control rather than an undo window                                                           |
 | `Button` / `IconButton`                | Primary CTA, group actions, remove-photo control                                                                                                                                                                                            |
-| `Input` / `Select` / `Combobox`        | Only for assumed or missing values, and inside the split modal                                                                                                                                                                              |
+| `Input` / `Select` / `Combobox`        | For assumed and missing values at all times, for read values while correction mode is open, and inside the split modal                                                                                                                      |
 | `Radio` / `ReportReasonPicker` pattern | The store disambiguator's vertical single-select shape                                                                                                                                                                                      |
 | `StoreCombobox`                        | The "Cambiar" path on the store block                                                                                                                                                                                                       |
 | `ItemTypePicker`                       | The per-product (and per-collapsed-group) category picker, in `chip` appearance and `adaptive` presentation: literally the manual item grid's own component, so `FR-11-93` holds at every width. It delegates to `MobilePicker` below 768px |
@@ -540,7 +544,9 @@ The mascot never appears in any error, confirmation, or quota state
 
 ### 5.2 The confidence traffic light
 
-Three states, each carrying dot plus icon plus label:
+Three states, each carrying icon plus label in a `Chip`. There is no dot: `Chip` renders none in any
+variant, and the icon plus the word already satisfy ADR 0006's "never colour alone". The clean state
+uses the **neutral** variant rather than `success` (see §3.1).
 
 | State    | Meaning                                       | Reverting action              |
 | -------- | --------------------------------------------- | ----------------------------- |
@@ -554,14 +560,19 @@ cost is recorded and accepted in **ADR 0023**.
 
 ### 5.2b Motion
 
-Three moments, composed from the `docs/design/motion.md` §2 token vocabulary and no others. Only
-`transform`, `opacity`, and `clip-path` are animated; the CSS lives in `globals.css` §14.
+Three moments, composed from the `docs/design/motion.md` §2 token vocabulary and no others. The
+keyframe animations touch only `transform`, `opacity`, and `clip-path`; the CSS lives in
+`globals.css` §14. State changes on the controls (a border revealing on hover or focus) transition
+`border-color`, a paint-only property and the treatment the rest of the app already uses. Every
+animation uses `animation-fill-mode: backwards` rather than `both`, because `both` retains the
+reveal's final `clip-path` permanently and that clip cuts the focus ring off any field sitting on
+the container's edge.
 
 | Moment                        | Treatment                                                                                                         |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | Group cards arrive            | Rise 6px plus fade, `--motion-base` / `--ease-out-expressive`, staggered 50ms for the first six and instant after |
 | A group is opened             | `clip-path` reveal plus fade, same duration and curve                                                             |
-| The order total is recomputed | Opacity cross-fade at `--motion-fast`, keyed on the product count                                                 |
+| The order total is recomputed | Opacity cross-fade at `--motion-fast`, keyed on the figure and suppressed while correction mode is open           |
 
 Three deliberate choices inside that:
 
@@ -572,11 +583,14 @@ Three deliberate choices inside that:
   so a collapsed group has nothing tabbable hidden under a zero-height container. The price of that
   choice is that there is no node left to animate on the way out, and a focus trap in a collapsed
   group is the worse defect.
-- **The total cross-fades on a split or a merge, never on a keystroke.** `motion.md` §6.4 asks for
-  the count-roll on figures that change through an optimistic update, and this figure is not that:
-  it changes while a person types into it, many times per correction, and animating the most
-  frequent action on a screen is the anti-pattern the same document closes with. Keying the fade on
-  the product count keeps it for the rare, structural change and drops it for typing.
+- **The total cross-fades on the outcome of a correction, never on the keystrokes.** `motion.md`
+  §6.4 asks for the count-roll on figures that change through an optimistic update, and this figure
+  is not that: it changes while a person types into it, many times per correction, and animating the
+  most frequent action on a screen is the anti-pattern the same document closes with. The fade is
+  keyed on the formatted figure and switched off while correction mode is open, so it plays exactly
+  once, when the collector closes the mode having changed the total. Keying it on the product count
+  was tried first and was simply wrong: `FR-11-44` forbids the split from moving the total, so a
+  split or a merge is the one event that cannot change this number.
 
 Reduced motion is written explicitly rather than left to the global floor, per `motion.md` §4:
 travel and stagger go, the opacity cross-fade stays at 150ms, so an arriving card and a changed

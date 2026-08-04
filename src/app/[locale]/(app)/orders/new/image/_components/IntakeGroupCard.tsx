@@ -32,10 +32,14 @@ export const GROUP_EXPANDED_MAX_PRODUCTS = 5;
  */
 const SPLIT_MERGE_ENABLED = true;
 
+/** Mirrors `orderCreateSchema`'s own item-name ceiling (`orderValidation.ts`). */
+const MAX_PRODUCT_NAME_LENGTH = 500;
+
 /**
- * Which control the single category picker is currently serving: one product row by index, or the
- * whole group. One picker instance rather than one per row, because a fifty-volume group would
- * otherwise mount fifty pickers to serve one tap.
+ * Which category picker is currently open: the one on a product row, by index, or the group's own.
+ * Only one may be open at a time per card, which is what this holds; the pickers themselves are
+ * rendered per row, and a collapsed group renders exactly one for the whole group so a fifty-volume
+ * series does not grow fifty of them.
  */
 type CategoryPickerTarget = number | "group" | null;
 
@@ -59,6 +63,13 @@ export type IntakeGroupCardProps = {
    * category is always the model's guess rather than something the chat said.
    */
   isEditing?: boolean;
+  /**
+   * Opens the group regardless of its size. The screen sets it when it has to point at a row inside
+   * a collapsed group, so it never reports a problem about a row it is not showing.
+   */
+  forceExpanded?: boolean;
+  /** Reports whether any price in this group is text the money parser cannot read. */
+  onPriceValidityChange?: (hasInvalidPrice: boolean) => void;
   /**
    * Called with the group's full new shape after a split, a merge, a category change, or an inline
    * correction. The draft entry point has no `orderId` to call a server action with — the group's
@@ -109,11 +120,15 @@ export default function IntakeGroupCard({
   productTypeKeys,
   hasWarning,
   isEditing = false,
+  forceExpanded = false,
+  onPriceValidityChange,
   onApply,
 }: IntakeGroupCardProps) {
   const t = useTranslations("imageIntake.review.group");
   const productTypeName = useStoreProductTypeName();
   const [isExpanded, setIsExpanded] = useState(() => shouldArriveExpanded(group));
+  /** Row indexes whose price field holds text `parseDecimalToMinorUnits` refuses. */
+  const [invalidPriceIndexes, setInvalidPriceIndexes] = useState<ReadonlySet<number>>(() => new Set());
   const [isSplitMergeOpen, setIsSplitMergeOpen] = useState(false);
   const [categoryPickerTarget, setCategoryPickerTarget] = useState<CategoryPickerTarget>(null);
   // Rows the collector has chosen a category for themselves. A category is otherwise always the
@@ -141,6 +156,7 @@ export default function IntakeGroupCard({
     setPriceDrafts({});
   }
 
+  const showRows = isExpanded || forceExpanded;
   const tone = resolveTone(group, hasWarning);
   const productCount = group.products.length;
 
@@ -265,10 +281,32 @@ export default function IntakeGroupCard({
     applyProductPatch(index, { name: value });
   }
 
+  /**
+   * A price the money parser refuses is held, not swallowed.
+   *
+   * `parseDecimalToMinorUnits` rejects thousands separators, three decimals, and anything pasted
+   * with a currency symbol, and it answers `null` for all of them. Writing that `null` into the
+   * draft turned "S/ 1,500" into "no price": the row saved unpriced, and because the totals check
+   * goes quiet as soon as one price is missing, the notice that would have caught it went quiet
+   * too. So the row is marked invalid instead, the text stays on screen, and the save is held until
+   * it reads as a number.
+   */
   function handlePriceChange(index: number, raw: string) {
     setPriceDrafts((current) => ({ ...current, [index]: raw }));
     const trimmed = raw.trim();
-    applyProductPatch(index, { unitPrice: trimmed === "" ? null : parseDecimalToMinorUnits(trimmed, currencyCode) });
+    const parsed = trimmed === "" ? null : parseDecimalToMinorUnits(trimmed, currencyCode);
+    const isInvalid = trimmed !== "" && parsed === null;
+
+    setInvalidPriceIndexes((current) => {
+      const next = new Set(current);
+      if (isInvalid) next.add(index);
+      else next.delete(index);
+      onPriceValidityChange?.(next.size > 0);
+      return next;
+    });
+
+    if (isInvalid) return;
+    applyProductPatch(index, { unitPrice: parsed });
   }
 
   function resolvePriceInput(index: number, unitPrice: number | null): string {
@@ -385,7 +423,7 @@ export default function IntakeGroupCard({
         </p>
       )}
 
-      {!isExpanded && (
+      {!showRows && (
         <div className="flex flex-col gap-[var(--space-1)]">
           <strong className="[font-size:var(--text-body)] [color:var(--text-primary)]">{rangeLabel}</strong>
           <span className="numeric [font-size:var(--text-caption)] [color:var(--text-secondary)]">
@@ -429,19 +467,14 @@ export default function IntakeGroupCard({
         </div>
       )}
 
-      {isExpanded && (
+      {showRows && (
         /*
           Entry is animated, collapse is not. The rows are mounted only while the group is open, so
           a collapsed group has nothing tabbable hidden under a zero-height container; the price of
           that is that there is no node left to animate on the way out. `clip-path` and `opacity`
           stay off the layout path, unlike the `height` this could have been written with.
         */
-        <ul
-          id={rowsId}
-          aria-label={t("rowsLabel")}
-          className="intake-reveal flex flex-col gap-[var(--space-2)]"
-          key={isEditing ? "editing" : "reading"}
-        >
+        <ul id={rowsId} aria-label={t("rowsLabel")} className="intake-reveal flex flex-col gap-[var(--space-2)]">
           {group.products.map((product, index) => (
             // Keyed by position, never by name: the name is editable, and a key that changes on
             // every keystroke would remount the input and drop the caret after one character.
@@ -453,6 +486,9 @@ export default function IntakeGroupCard({
                     value={product.name}
                     onChange={(event) => handleNameChange(index, event.target.value)}
                     aria-label={t("nameFieldLabel", { position: index + 1 })}
+                    // Matches the order domain's own item-name ceiling, so a long paste is stopped
+                    // at the field rather than coming back as an unattributed "could not save".
+                    maxLength={MAX_PRODUCT_NAME_LENGTH}
                     className={cn(INLINE_FIELD_BASE, "min-w-0 flex-1")}
                   />
                   <input
@@ -462,6 +498,8 @@ export default function IntakeGroupCard({
                     onChange={(event) => handlePriceChange(index, event.target.value)}
                     placeholder={t("noPrice")}
                     aria-label={t("priceFieldLabel", { position: index + 1 })}
+                    aria-invalid={invalidPriceIndexes.has(index) || undefined}
+                    aria-describedby={invalidPriceIndexes.has(index) ? `${fieldsId}-price-error-${index}` : undefined}
                     className={cn(INLINE_FIELD_BASE, "numeric w-full sm:w-[8.5rem] sm:shrink-0 sm:text-right")}
                   />
                 </div>
@@ -472,6 +510,15 @@ export default function IntakeGroupCard({
                     {product.unitPrice !== null ? formatAmount(product.unitPrice, currencyCode) : t("noPrice")}
                   </span>
                 </div>
+              )}
+              {isEditing && invalidPriceIndexes.has(index) && (
+                <p
+                  id={`${fieldsId}-price-error-${index}`}
+                  role="alert"
+                  className="[font-size:var(--text-caption)] [color:var(--destructive)]"
+                >
+                  {t("priceNotANumber")}
+                </p>
               )}
               <div className="flex min-w-0 flex-wrap items-center gap-[var(--space-2)]">
                 {renderCategoryControl({
@@ -524,11 +571,11 @@ export default function IntakeGroupCard({
             variant="ghost"
             size="sm"
             onClick={handleToggle}
-            aria-expanded={isExpanded}
+            aria-expanded={showRows}
             aria-controls={rowsId}
             className={MOBILE_TAP_TARGET}
           >
-            {isExpanded ? t("collapse", { count: productCount }) : t("expand", { count: productCount })}
+            {showRows ? t("collapse", { count: productCount }) : t("expand", { count: productCount })}
           </Button>
         )}
         <Button

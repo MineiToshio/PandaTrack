@@ -1934,8 +1934,12 @@ body {
   }
 }
 
+/* `backwards`, never `both`: `both` retains the keyframes' end state forever, and for the reveal
+   below that end state is a `clip-path`, which keeps clipping long after the animation is over —
+   cutting the 2px focus ring off every field and chip that sits on the container's edge. `backwards`
+   applies the start state before the animation and hands the element back to its own styles after. */
 .intake-rise-in {
-  animation: intake-rise-in var(--motion-base) var(--ease-out-expressive) both;
+  animation: intake-rise-in var(--motion-base) var(--ease-out-expressive) backwards;
 }
 
 @keyframes intake-reveal {
@@ -1950,7 +1954,7 @@ body {
 }
 
 .intake-reveal {
-  animation: intake-reveal var(--motion-base) var(--ease-out-expressive) both;
+  animation: intake-reveal var(--motion-base) var(--ease-out-expressive) backwards;
 }
 
 @keyframes intake-value-in {
@@ -1963,7 +1967,7 @@ body {
 }
 
 .intake-value-in {
-  animation: intake-value-in var(--motion-fast) var(--ease-emphasis) both;
+  animation: intake-value-in var(--motion-fast) var(--ease-emphasis) backwards;
 }
 
 /* The fixed mobile action bar sits over the end of the document, so anything the browser

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronsUpDown, Search } from "lucide-react";
-import { createElement, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import Portal from "@/components/core/Portal";
 import { MobilePicker } from "@/components/modules/MobilePicker";
@@ -104,6 +104,19 @@ export default function ItemTypePicker({
 
   const usesSheet = presentation === "adaptive" && isMobile;
 
+  /**
+   * Closes the popover and puts focus back where it came from.
+   *
+   * Without the second half a keyboard user is dropped on `<body>` after every selection, which was
+   * survivable when this picker only ever appeared once per grid cell inside a form and is not now:
+   * the review screen mounts one per product row, and choosing a category is the main thing done
+   * there. The sheet manages its own focus, so this is the popover's job only.
+   */
+  const closeAndRestoreFocus = useCallback(() => {
+    onOpenChange(false);
+    triggerRef.current?.focus();
+  }, [onOpenChange]);
+
   // Reset query each time the picker opens; focus the search input.
   useEffect(() => {
     if (!open || usesSheet) return;
@@ -160,14 +173,18 @@ export default function ItemTypePicker({
     return productTypeKeys.filter((key) => foldSearchText(tProductTypes(key)).includes(folded));
   }, [productTypeKeys, query, tProductTypes]);
 
+  // Built only where a sheet can render. In `popover` presentation (every row of the manual item
+  // grid) it would be a whole-catalog map per mounted row that nothing ever reads.
   const sheetOptions = useMemo(
     () =>
-      productTypeKeys.map((key) => {
-        const Icon = getStoreProductTypeIcon(key);
-        const label = tProductTypes(key);
-        return { value: key, label, icon: <Icon />, searchText: label };
-      }),
-    [productTypeKeys, tProductTypes],
+      !usesSheet
+        ? []
+        : productTypeKeys.map((key) => {
+            const Icon = getStoreProductTypeIcon(key);
+            const label = tProductTypes(key);
+            return { value: key, label, icon: <Icon />, searchText: label };
+          }),
+    [productTypeKeys, tProductTypes, usesSheet],
   );
 
   const listboxId = `item-type-listbox-${instanceId}`;
@@ -238,6 +255,14 @@ export default function ItemTypePicker({
         <Portal>
           <div
             ref={popoverRef}
+            onKeyDown={(event) => {
+              // On the container, not only on the search input: Escape has to work from the option
+              // list too, which is where a keyboard user actually is by the time they want out.
+              if (event.key === "Escape") {
+                event.stopPropagation();
+                closeAndRestoreFocus();
+              }
+            }}
             style={{
               position: "fixed",
               top: coords.top,
@@ -257,12 +282,6 @@ export default function ItemTypePicker({
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    e.stopPropagation();
-                    onOpenChange(false);
-                  }
-                }}
                 placeholder={tPicker("productTypeSearch")}
                 aria-label={tPicker("productTypeSearch")}
                 className={cn(
@@ -286,14 +305,16 @@ export default function ItemTypePicker({
                 filteredKeys.map((key) => {
                   const Icon = getStoreProductTypeIcon(key);
                   return (
-                    <li key={key}>
+                    // `role="none"` strips the implicit `listitem`: a `listbox` owns `option`
+                    // children directly, and an intervening role breaks that relationship.
+                    <li key={key} role="none">
                       <button
                         type="button"
                         role="option"
                         aria-selected={value === key}
                         onClick={() => {
                           onChange(key);
-                          onOpenChange(false);
+                          closeAndRestoreFocus();
                         }}
                         className={cn(
                           "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12px] [color:var(--text-primary)]",

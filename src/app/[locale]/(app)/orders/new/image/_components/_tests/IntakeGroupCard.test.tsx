@@ -429,7 +429,7 @@ describe("IntakeGroupCard: category picker surface", () => {
     expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(PRODUCT_TYPE_KEYS);
   });
 
-  it("announces the picker as a listbox, not as a dialog, so the trigger reads as a combobox", () => {
+  it("announces the picker as a listbox on a pointer, not as a dialog", () => {
     render(
       <IntakeGroupCard
         productTypeKeys={PRODUCT_TYPE_KEYS}

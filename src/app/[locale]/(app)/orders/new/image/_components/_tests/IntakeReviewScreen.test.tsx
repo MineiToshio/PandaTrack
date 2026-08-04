@@ -908,3 +908,133 @@ describe("IntakeReviewScreen payments", () => {
     expect(saved.payments[0].amount).toEqual({ value: 15000, source: "read" });
   });
 });
+
+describe("IntakeReviewScreen: defects found by the adversarial pass", () => {
+  const assumedPayment = () =>
+    buildDraft({ payments: [{ amount: field(20000, "assumed"), paidAt: field("2026-07-20", "read") }] });
+
+  it("keeps an assumed payment field open across every keystroke, not just the first", () => {
+    renderScreen(assumedPayment());
+
+    const amount = screen.getByLabelText(/payments.amountLabel/);
+    // Typed a character at a time, which is what a person does. Recording the first keystroke as
+    // "read" used to flip the field back to plain text and strand the caret on the document body.
+    fireEvent.change(amount, { target: { value: "1" } });
+    fireEvent.change(screen.getByLabelText(/payments.amountLabel/), { target: { value: "15" } });
+    fireEvent.change(screen.getByLabelText(/payments.amountLabel/), { target: { value: "150" } });
+
+    expect((screen.getByLabelText(/payments.amountLabel/) as HTMLInputElement).value).toBe("150");
+  });
+
+  it("keeps an assumed payment date open across a correction too", () => {
+    renderScreen(buildDraft({ payments: [{ amount: field(20000, "read"), paidAt: field("2026-07-20", "assumed") }] }));
+    const date = screen.getByLabelText(/payments.dateLabel/);
+    fireEvent.change(date, { target: { value: "2026-07-21" } });
+    expect(screen.getByLabelText(/payments.dateLabel/)).toBeTruthy();
+  });
+
+  it("refuses to save a price the money parser cannot read, instead of storing it as no price", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft()}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "edit.start" }));
+    // Thousands separators are exactly what a person pastes out of a chat, and the parser rejects
+    // them. Writing that rejection into the draft turned a real price into "Sin precio".
+    fireEvent.change(screen.getAllByLabelText(/^priceFieldLabel/)[0], { target: { value: "1,500" } });
+    fireEvent.click(desktopSubmit());
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getAllByLabelText(/^priceFieldLabel/)[0].getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it("saves again once the unreadable price is rewritten as a number", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft()}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "edit.start" }));
+    const price = () => screen.getAllByLabelText(/^priceFieldLabel/)[0];
+    fireEvent.change(price(), { target: { value: "1,500" } });
+    fireEvent.change(price(), { target: { value: "1500" } });
+    fireEvent.click(desktopSubmit());
+
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect((onSave.mock.calls[0][0] as ImageIntakeDraft).groups[0].products[0].unitPrice).toBe(150000);
+  });
+
+  it("opens the group and names the row when a blank name blocks the save", () => {
+    const sixProducts = Array.from({ length: 6 }, (_, index) => ({
+      name: `One Piece ${index + 1}`,
+      unitPrice: 1200,
+      suggestedProductTypeKey: null,
+      referenceUrl: null,
+    }));
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft({
+          totalCost: field(7200, "read"),
+          groups: [
+            {
+              sourcePhrase: "One Piece del 1 al 6",
+              reason: "open-range",
+              doubtful: false,
+              priceSplit: "divided-lot",
+              products: sixProducts,
+            },
+          ],
+        })}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={vi.fn()}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    // Six products arrive collapsed. Correct one, blank it, then collapse the group again.
+    fireEvent.click(screen.getByRole("button", { name: /^expand:/ }));
+    fireEvent.click(screen.getByRole("button", { name: "edit.start" }));
+    fireEvent.change(screen.getAllByLabelText(/^nameFieldLabel/)[2], { target: { value: "  " } });
+    fireEvent.click(screen.getByRole("button", { name: /^collapse:/ }));
+    fireEvent.click(desktopSubmit());
+
+    // The row has to be on screen for the message to be actionable, and the message has to say
+    // which row it is about.
+    expect(screen.getByRole("alert").textContent).toContain('"position":3');
+    expect(screen.getAllByLabelText(/^nameFieldLabel/).length).toBeGreaterThan(0);
+  });
+
+  it("says nothing about totals on a draft that has no product rows at all", () => {
+    renderScreen(buildDraft({ groups: [], totalCost: field(48000, "read") }));
+    expect(screen.queryByText(/totals.mismatchTitle/)).toBeNull();
+  });
+});

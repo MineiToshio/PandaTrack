@@ -19,6 +19,7 @@ import type { ImageIntakeDraft } from "@/lib/imageIntake/draftSchema";
 import { findProductsNeedingReferenceSheet, formatReferenceHost } from "@/lib/imageIntake/referenceProductNaming";
 import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
 import { exchangeRateSchema } from "@/lib/orders/orderValidation";
+import { cn } from "@/lib/styles";
 import FxRateAttribution from "../../../_components/share/FxRateAttribution";
 import IntakeGroupCard from "./IntakeGroupCard";
 import StoreResolutionSection from "./StoreResolutionSection";
@@ -111,6 +112,10 @@ function countProducts(draft: ImageIntakeDraft): number {
  * the products with no figure, which the rows already show.
  */
 function sumProductPrices(draft: ImageIntakeDraft): number | null {
+  // No rows is not a sum of zero: a draft can legitimately arrive with a total and no products,
+  // and telling that collector their products add up to 0.00 is a statement about rows that do
+  // not exist.
+  if (countProducts(draft) === 0) return null;
   let sum = 0;
   for (const group of draft.groups) {
     for (const product of group.products) {
@@ -121,9 +126,20 @@ function sumProductPrices(draft: ImageIntakeDraft): number | null {
   return sum;
 }
 
-/** Every product carries a name the order write requires; an empty one is refused as a whole draft. */
-function hasBlankProductName(draft: ImageIntakeDraft): boolean {
-  return draft.groups.some((group) => group.products.some((product) => product.name.trim() === ""));
+/**
+ * Where the first nameless product is, or `null`.
+ *
+ * The position is the point: the order write refuses a blank name for the whole draft, and telling
+ * the collector that without saying which row, or while that row sits inside a collapsed group they
+ * cannot see, reproduces exactly the failure this check exists to remove.
+ */
+function findBlankProductName(draft: ImageIntakeDraft): { groupIndex: number; position: number } | null {
+  for (const [groupIndex, group] of draft.groups.entries()) {
+    for (const [productIndex, product] of group.products.entries()) {
+      if (product.name.trim() === "") return { groupIndex, position: productIndex + 1 };
+    }
+  }
+  return null;
 }
 
 /**
@@ -200,7 +216,10 @@ export default function IntakeReviewScreen({
    * default stays untouched, and a collector who wants to fix a name or a price says so once.
    */
   const [isEditing, setIsEditing] = useState(false);
-  const [blankNameError, setBlankNameError] = useState(false);
+  /** The row a blocked save is about, so the screen can open its group and name it. */
+  const [blankNameAt, setBlankNameAt] = useState<{ groupIndex: number; position: number } | null>(null);
+  /** Groups reporting a price field whose text the money parser cannot read. */
+  const [groupsWithInvalidPrice, setGroupsWithInvalidPrice] = useState<ReadonlySet<number>>(() => new Set());
   const [totalInput, setTotalInput] = useState(() =>
     initialDraft.totalCost.value !== null
       ? formatCentsForInput(initialDraft.totalCost.value, initialDraft.currency.value ?? NO_CURRENCY_CODE)
@@ -221,6 +240,24 @@ export default function IntakeReviewScreen({
         ? resolveProvenanceState(initialDraft.delivery.expectedFrom)
         : ("missing" as const),
     }),
+    [initialDraft],
+  );
+
+  /**
+   * The same freeze, for the payments.
+   *
+   * Without it a payment amount could take exactly one keystroke: correcting an assumed amount
+   * records it as read, `resolveProvenanceState` then answers `read`, and `ProvenanceValue` swaps
+   * the input for plain text mid-entry, leaving the collector with `1.00` where they meant `150.00`
+   * and focus on the document body. Provenance describes what the extraction produced, so it is
+   * read once from the draft that arrived and never from the one being edited.
+   */
+  const paymentProvenance = useMemo(
+    () =>
+      initialDraft.payments.map((payment) => ({
+        amount: resolveProvenanceState(payment.amount),
+        paidAt: resolveProvenanceState(payment.paidAt),
+      })),
     [initialDraft],
   );
 
@@ -245,6 +282,7 @@ export default function IntakeReviewScreen({
   const doubtCount = attributeDoubtCount + doubtfulGroupCount + storeDoubtCount;
 
   const paidTotal = draft.payments.reduce((sum, payment) => sum + (payment.amount.value ?? 0), 0);
+  const formattedTotal = draft.totalCost.value !== null ? formatAmount(draft.totalCost.value, currencyCode) : "";
 
   /**
    * Says out loud when the rows and the stated total disagree.
@@ -323,6 +361,8 @@ export default function IntakeReviewScreen({
   };
 
   const handleGroupApply = (groupIndex: number, updatedGroup: ImageIntakeDraft["groups"][number]) => {
+    // The alert must not outlive the problem: it goes as soon as every row has a name again.
+    setBlankNameAt((current) => (current === null ? null : null));
     setDraft((current) => ({
       ...current,
       groups: current.groups.map((group, index) => (index === groupIndex ? updatedGroup : group)),
@@ -410,19 +450,36 @@ export default function IntakeReviewScreen({
    */
   const handleToggleEditing = () => {
     setIsEditing((current) => !current);
-    setBlankNameError(false);
+    setBlankNameAt(null);
+  };
+
+  const handleGroupPriceValidity = (groupIndex: number, hasInvalidPrice: boolean) => {
+    setGroupsWithInvalidPrice((current) => {
+      if (current.has(groupIndex) === hasInvalidPrice) return current;
+      const next = new Set(current);
+      if (hasInvalidPrice) next.add(groupIndex);
+      else next.delete(groupIndex);
+      return next;
+    });
   };
 
   const handleSave = () => {
     // The order write refuses a product with no name, and it refuses the whole draft over it. That
     // is a correct rule enforced in the wrong place for a person to act on, so it is caught here,
     // beside the field, rather than coming back as "we could not save this".
-    if (hasBlankProductName(draft)) {
-      setBlankNameError(true);
+    const blankName = findBlankProductName(draft);
+    if (blankName !== null) {
+      setBlankNameAt(blankName);
       setIsEditing(true);
       return;
     }
-    setBlankNameError(false);
+    setBlankNameAt(null);
+    // A price the parser cannot read is held rather than written as "no price", so the save waits
+    // for it. The field carries its own error; this only keeps the draft from leaving without it.
+    if (groupsWithInvalidPrice.size > 0) {
+      setIsEditing(true);
+      return;
+    }
     if (!needsExchangeRate) {
       onSave(draft, null);
       return;
@@ -493,7 +550,6 @@ export default function IntakeReviewScreen({
             variant={isEditing ? "tonal" : "ghost"}
             size="sm"
             leadingIcon={isEditing ? <Check size={14} /> : <Pencil size={14} />}
-            aria-pressed={isEditing}
             onClick={handleToggleEditing}
             className={MOBILE_TAP_TARGET}
           >
@@ -686,9 +742,9 @@ export default function IntakeReviewScreen({
             <p className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{t("productSheet.optional")}</p>
           </AlertBanner>
         )}
-        {blankNameError && (
+        {blankNameAt !== null && (
           <p className="[font-size:var(--text-caption)] [color:var(--destructive)]" role="alert">
-            {t("edit.blankName")}
+            {t("edit.blankName", { position: blankNameAt.position })}
           </p>
         )}
         {draft.groups.map((group, index) => (
@@ -709,6 +765,8 @@ export default function IntakeReviewScreen({
               productTypeKeys={productTypeKeys}
               hasWarning={warningPhrases.has(group.sourcePhrase)}
               isEditing={isEditing}
+              forceExpanded={blankNameAt?.groupIndex === index}
+              onPriceValidityChange={(hasInvalidPrice) => handleGroupPriceValidity(index, hasInvalidPrice)}
               onApply={(updatedGroup) => handleGroupApply(index, updatedGroup)}
             />
           </div>
@@ -728,8 +786,9 @@ export default function IntakeReviewScreen({
           */
           <ul className="flex flex-col gap-[var(--space-3)]">
             {draft.payments.map((payment, index) => {
-              const amountState = resolveProvenanceState(payment.amount);
-              const dateState = resolveProvenanceState(payment.paidAt);
+              // Frozen at arrival, like every other attribute on this screen. See `paymentProvenance`.
+              const amountState = paymentProvenance[index]?.amount ?? "missing";
+              const dateState = paymentProvenance[index]?.paidAt ?? "missing";
               return (
                 // Keyed by position: the date is editable, so keying on it would remount the field.
                 <li key={index} className="flex flex-col gap-[var(--space-1)]">
@@ -793,16 +852,20 @@ export default function IntakeReviewScreen({
             {t("totals.total")}
           </span>
           {/*
-            Keyed on the product count so a split or a merge crossfades the figure, and typing does
-            not. A count that re-ran the fade on every keystroke would be the anti-pattern of
-            animating the most frequent action on the screen; changing how many rows there are is
-            rare and genuinely restructures what this number is a sum of.
+            Keyed on the figure itself, and inert while correction mode is open. The total only ever
+            changes through the field this screen opens, so suppressing the fade during editing and
+            keying on the value means it plays once, when the collector closes the mode with a
+            different total, and never on the keystrokes in between. Animating the most frequent
+            action on a screen is the anti-pattern; animating its outcome is the point.
           */}
           <span
-            key={productCount}
-            className="intake-value-in numeric [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
+            key={isEditing ? "editing" : formattedTotal}
+            className={cn(
+              "numeric [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]",
+              !isEditing && "intake-value-in",
+            )}
           >
-            {draft.totalCost.value !== null ? formatAmount(draft.totalCost.value, currencyCode) : ""}
+            {formattedTotal}
           </span>
         </div>
         {shippingCost !== null && (
