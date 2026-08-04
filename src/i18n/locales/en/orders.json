@@ -304,7 +304,8 @@
       "reactivate": "Reactivate order",
       "more": "More actions",
       "cancelDisabledTooltip": "This order has items linked to a delivery. Unlink them from the delivery before cancelling.",
-      "deleteDisabledTooltip": "This order can't be deleted because it has items linked to a delivery. Unlink them first."
+      "deleteDisabledTooltip": "This order can't be deleted because it has items linked to a delivery. Unlink them first.",
+      "quickArrival": "It arrived"
     },
     "items": {
       "sectionTitle": "Products",
@@ -469,8 +470,64 @@
       "sectionTitle": "Actions",
       "edit": "Edit order",
       "cancel": "Cancel order",
-      "delete": "Delete order"
+      "delete": "Delete order",
+      "quickArrival": "It arrived"
     },
-    "reactivateToast": "Order reactivated"
+    "reactivateToast": "Order reactivated",
+    "quickArrival": {
+      "title": "It arrived",
+      "confirm": "Log arrival",
+      "cancel": "Cancel",
+      "itemsLabel": "What arrived?",
+      "itemsHelper": "Everything starts selected. Uncheck whatever you do not have yet.",
+      "selectAll": "Select all",
+      "selectNone": "Clear all",
+      "selectedCount": "{count} of {total} selected",
+      "singleItem": "This logs the arrival of <strong>{name}</strong>.",
+      "receivedLabel": "When did it arrive?",
+      "receivedPlaceholder": "Pick a date",
+      "receivedHelper": "Today or earlier. If it arrived days ago, say so.",
+      "optional": "(optional)",
+      "shippedLabel": "Left the store on",
+      "shippedPlaceholder": "Pick a date",
+      "costLabel": "Delivery cost",
+      "costPlaceholder": "0.00",
+      "currencyLabel": "Currency",
+      "currencyPlaceholder": "Pick a currency",
+      "fxLabel": "Exchange rate",
+      "fxPlaceholder": "0.00",
+      "fxHelper": "1 {from} in {to}.",
+      "shipping": {
+        "show": "Add cost and dispatch date",
+        "hide": "Hide cost and dispatch date",
+        "defaultsNotice": "It will be saved with no delivery cost and with the dispatch date set to the arrival date, the only thing known for sure. You can fill this in later from the delivery."
+      },
+      "validation": {
+        "itemsRequired": "Select at least one product.",
+        "receivedRequired": "Tell us when it arrived.",
+        "shippedAfterReceived": "It cannot leave after it arrived.",
+        "costInvalid": "Enter a valid amount.",
+        "currencyRequired": "Pick the currency for the cost.",
+        "fxRequired": "Enter the exchange rate."
+      },
+      "toast": {
+        "success": "Arrival logged: {count, plural, one {# product} other {# products}}.",
+        "viewDelivery": "View delivery"
+      },
+      "error": {
+        "server_error": "Could not log the arrival. Try again.",
+        "unauthorized": "Your session expired. Sign in again.",
+        "ORDER_NOT_FOUND": "We could not find this order.",
+        "ORDER_CANCELLED": "This order is cancelled.",
+        "STORE_NOT_FOUND": "We could not find this order's store.",
+        "NO_PRODUCTS_SELECTED": "Select at least one product.",
+        "PRODUCT_NOT_ELIGIBLE": "One of the products is already in another delivery. Reload the page and try again.",
+        "PRODUCTS_FROM_DIFFERENT_STORE": "The products are not from the same store.",
+        "EXCHANGE_RATE_REQUIRED": "Enter the exchange rate.",
+        "RECEIVED_BEFORE_SHIPPED": "It cannot leave after it arrived.",
+        "RECEIVED_DATE_IN_FUTURE": "The arrival date cannot be in the future.",
+        "DELIVERY_DATE_IN_FUTURE": "The dispatch date cannot be in the future."
+      }
+    }
   }
 }

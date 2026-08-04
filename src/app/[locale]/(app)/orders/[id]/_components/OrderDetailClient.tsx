@@ -12,11 +12,13 @@ import type { OrderStatus, StoreRemovalReason, StoreStatus } from "../../../../.
 import { addPaymentAction, deletePaymentAction } from "../_actions/orderPaymentActions";
 import OrderDetailHero from "./OrderDetailHero";
 import OrderPaymentsAsideCard, { type OrderPaymentsAsideCardHandle } from "./OrderPaymentsAsideCard";
-import OrderDetailStickyActionBar from "./OrderDetailStickyActionBar";
+import OrderDetailStickyActionBar, { hasStickyBarActions } from "./OrderDetailStickyActionBar";
 import OrderMobileActionsCard from "./OrderMobileActionsCard";
 import OrderPaymentMobileSheet from "./OrderPaymentMobileSheet";
 import OrderCancelModal from "./OrderCancelModal";
 import OrderDeleteModal from "./OrderDeleteModal";
+import { QuickArrivalModal, type QuickArrivalItem } from "@/components/modules/QuickArrival";
+import { useQuickArrival } from "@/components/modules/QuickArrival/useQuickArrival";
 
 type PaymentRecord = { id: string; amount: number; paymentDate: Date };
 type Store = { id: string; name: string; slug: string; status: StoreStatus; removalReason: StoreRemovalReason | null };
@@ -44,6 +46,11 @@ type OrderDetailClientProps = {
   isOverdue: boolean;
   overdueDays: number;
   locale: string;
+  /** Products still eligible for a delivery; an empty list hides the quick-arrival action. */
+  quickArrivalItems: QuickArrivalItem[];
+  /** False once no product can join a new delivery, which retires every delivery affordance. */
+  canCreateDelivery: boolean;
+  baseCurrencyCode: string | null;
   /** Main-column content rendered directly under the hero (cancellation callout, productos, history). */
   mainColumnExtras: ReactNode;
   actionsCard: ReactNode;
@@ -65,6 +72,9 @@ export default function OrderDetailClient({
   isOverdue,
   overdueDays,
   locale,
+  quickArrivalItems,
+  canCreateDelivery,
+  baseCurrencyCode,
   mainColumnExtras,
   actionsCard,
   noteCard,
@@ -76,6 +86,8 @@ export default function OrderDetailClient({
   const [payments, setPayments] = useState<PaymentRecord[]>(order.initialPayments);
   const [paySheetOpen, setPaySheetOpen] = useState(false);
   const [mobileModal, setMobileModal] = useState<"cancel" | "delete" | null>(null);
+  const quickArrival = useQuickArrival({ orderId: order.id, locale, source: "mobile_actions" });
+  const canQuickArrive = order.status !== "CANCELLED" && quickArrivalItems.length > 0;
 
   // Keep the live payments list in sync with the server whenever `router.refresh()` delivers a
   // genuinely new list — e.g. after cancelling with "remove payments", where the server drops the
@@ -100,6 +112,14 @@ export default function OrderDetailClient({
     () => deriveHasUnpaidBalance(order.totalCost, summary.paidAmount),
     [order.totalCost, summary.paidAmount],
   );
+
+  // Same predicate the bar itself applies, so the spacer never outlives the bar.
+  const showStickyBar = hasStickyBarActions({
+    status: order.status,
+    hasUnpaidBalance,
+    remainingAmount: summary.remainingAmount,
+    canCreateDelivery,
+  });
 
   const isMobileBreakpoint = () => typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches;
 
@@ -233,13 +253,18 @@ export default function OrderDetailClient({
           locale={locale}
           status={order.status}
           eligibility={order.eligibility}
+          canQuickArrive={canQuickArrive}
+          onQuickArrival={quickArrival.open}
           onCancel={() => setMobileModal("cancel")}
           onDelete={() => setMobileModal("delete")}
         />
       </div>
 
-      {/* Reserve scroll space so the sticky bar never covers the last content row. */}
-      <div className="lg:hidden" style={{ height: "calc(76px + env(safe-area-inset-bottom))" }} aria-hidden />
+      {/* Reserve scroll space so the sticky bar never covers the last content row — but only
+          while there is a bar to clear. */}
+      {showStickyBar && (
+        <div className="lg:hidden" style={{ height: "calc(76px + env(safe-area-inset-bottom))" }} aria-hidden />
+      )}
 
       <OrderDetailStickyActionBar
         orderId={order.id}
@@ -248,6 +273,7 @@ export default function OrderDetailClient({
         remainingAmount={summary.remainingAmount}
         currencyCode={order.currencyCode}
         hasUnpaidBalance={hasUnpaidBalance}
+        canCreateDelivery={canCreateDelivery}
         locale={locale}
         onAnnotatePayment={handleAnnotatePayment}
       />
@@ -285,6 +311,21 @@ export default function OrderDetailClient({
         storeName={order.storeName}
         locale={locale}
       />
+
+      {/* Mobile instance of the quick-arrival modal; the desktop aside card owns its own,
+          mirroring how cancel + delete are already duplicated across the two action surfaces. */}
+      {canQuickArrive && (
+        <QuickArrivalModal
+          isOpen={quickArrival.isOpen}
+          onClose={quickArrival.close}
+          orderHumanReadableId={order.humanReadableId}
+          storeName={order.storeName}
+          items={quickArrivalItems}
+          baseCurrencyCode={baseCurrencyCode}
+          locale={locale}
+          onSubmit={quickArrival.submit}
+        />
+      )}
     </>
   );
 }

@@ -29,6 +29,7 @@ Give collectors a reliable way to consolidate products from one store into deliv
 
 - the full delivery vertical ships under `/{locale}/deliveries`: list (filters, removable URL chips, oldest-first sort, pagination, loading/empty/empty-filtered states), detail (per-status hero, source-order-grouped products, summary, private note), create (from-order and standalone entry points, eligibility empty state), and edit
 - delivery lifecycle actions: mark delivered (with required received date), reopen, cancel, delete, plus inline private-note save — each re-derives affected `OrderStatus` in the same transaction
+- quick arrival ("ya me llegó", `FR-08-36`): one-step capture of an already-received delivery, launched from the order detail (desktop + mobile action cards) and from the dashboard arrival rows (`FR-06-10a`), sharing the `createDelivery` transaction through an optional `receivedDate` rather than a parallel mutation
 - delivery persistence, eligibility queries, and `arrived at store` / `in transit` / `delivered to user` progression (data foundation from BP-01 WO-01/WO-02, lifecycle UI from the S9 redesign)
 - `Delivery.receivedDate` column added (migration `20260612224123_add-delivery-received-date`) to back FR-08-22 and FR-08-31
 - human-readable delivery id format `DLV-YYYYMMDD-NN`
@@ -71,11 +72,12 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - `FR-08-13`: Delivery state must be derived from lifecycle actions rather than edited directly through a free status field.
 - `FR-08-14`: Delivery states for MVP must include `IN_TRANSIT`, `DELIVERED`, and `CANCELLED`.
 - `FR-08-15`: The create-delivery flow must support starting from an order with store and eligible products preselected.
+- `FR-08-15a`: Every entry point into that flow on the order detail (the aside actions card, the mobile sticky bar, and the link under the products list) must disappear when the order has no product left that a delivery could take, that is when every product is already `IN_TRANSIT` or `DELIVERED`, or the order is cancelled. The wizard could otherwise only reach its own empty state, and on a completed order it reads as if the delivery had not been recorded. The quick-arrival action of `FR-08-36` shares the same condition, so the two appear and disappear together. When that leaves the mobile sticky bar with no action at all, the bar and the scroll space reserved for it are both dropped rather than rendered empty.
 - `FR-08-16`: The standalone create-delivery flow must first choose a store and then show eligible products for that store only.
 - `FR-08-17`: Delivery store options must include only stores that still have eligible products.
 - `FR-08-18`: Delivery product selection must show eligible products grouped by their source order.
 - `FR-08-19`: Products already delivered or already attached to another active delivery must not appear in delivery selection results.
-- `FR-08-20`: When a product is added to a delivery, it must automatically become `IN_TRANSIT` regardless of its prior state (`NONE` or `ARRIVED_AT_STORE`).
+- `FR-08-20`: When a product is added to a delivery through the create wizard or through edit, it must automatically become `IN_TRANSIT` regardless of its prior state (`NONE` or `ARRIVED_AT_STORE`). The single exception is the quick-arrival flow of `FR-08-36`, where the delivery is created already received and its products go straight to `DELIVERED`, because the box is in the collector's hands before any record exists and `IN_TRANSIT` would assert a milestone that never happened.
 - `FR-08-21`: A product may belong to only one delivery at a time.
 - `FR-08-22`: Marking a delivery as delivered must require the collector to select the received date, then mark every associated product as delivered to the user.
 - `FR-08-23`: Reopening a delivered or cancelled delivery must recalculate delivery-related product states so they are editable again, restoring the detail view to an editable lifecycle state. Reopen returns the delivery to `IN_TRANSIT`, returns its products to `IN_TRANSIT`, and clears the stored received date. Reopen is only valid from `DELIVERED` or `CANCELLED`; reopening an `IN_TRANSIT` delivery is rejected. When reopening a `CANCELLED` delivery, any product that was re-attached to another active (non-cancelled) delivery while this one was cancelled blocks the reopen (the one-delivery-per-product rule in `BR-08-08`); the collector must resolve that conflict first.
@@ -92,6 +94,15 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
 - `FR-08-34`: The delivery product selector must expose an in-section product-name search input that filters the already-loaded eligible products in place. Matching must be case-insensitive and accent-insensitive. Source-order groups with no matching products must be hidden, and when no products match the current query the section must show an empty-state message instead of the product list. Filtering must be entirely client-side and must not refetch eligible products.
 - `FR-08-35`: The deliveries list must expose a user-selectable sort control inside the filter surface with four options: `oldest` (shipping date ascending — the default per `FR-08-30`), `recent` (shipping date descending), `eta-asc` (expected-arrival start ascending, deliveries without an expected arrival sorted last), and `store-asc` (store name ascending). The active sort persists in the URL via a `sort` param, which is omitted from the URL when it equals the default (`oldest`).
 
+- `FR-08-36`: The app must expose a **quick-arrival** action ("ya me llegó") that records, in one step, a delivery that already reached the collector. It is the primary action of the order actions card (desktop and mobile) whenever the order is not cancelled and still has at least one eligible product, with the create wizard demoted to the secondary action; it is also the trailing control on each dashboard arrival row per [`FR-06-10a`](../frd-06-dashboard/frd-06-dashboard.md), which is where it closes the loop the arrival reminders open. Every launcher shares one modal and one coordinator, so a new entry point never means a second flow. The flow opens the canonical modal and asks for the minimum that is knowable after the fact:
+  - **products**: every eligible product of that order starts selected. When the order has more than one eligible product the full list renders as checkboxes so the collector can uncheck what has not arrived, plus a select-all / clear-all control; a single-product order renders no picker at all, only the product name.
+  - **arrival date**: required, prefilled with today, past or current dates only. It is written to `Delivery.receivedDate`.
+  - **shipping cost, currency and dispatch date**: collapsed and optional. While collapsed, the surface must state in plain copy what will be written (no cost recorded, dispatch date equal to the arrival date) instead of applying those defaults silently.
+
+  The resulting delivery is a normal, first-class `entrega`: it is created directly with status `DELIVERED`, its `receivedDate` set, its products moved to `DELIVERED`, and the source order status re-derived in the same transaction exactly as the wizard plus mark-delivered would. It can be opened, edited, reopened and deleted like any other delivery, which is also how a missing shipping cost is filled in later. The flow never runs on a cancelled order.
+
+- `FR-08-37`: When the quick-arrival flow records no dispatch date, `Delivery.deliveryDate` must be set to the arrival date rather than to the current date or to an invented earlier date. `Delivery.deliveryDate` is `NOT NULL` and is the value the dashboard reads as dated arrival evidence, so standing it in with the only date the collector actually stated keeps punctuality and monthly bucketing honest.
+
 ## Business Rules
 
 - `BR-08-01`: Delivery is a separate domain from orders because it can group products from multiple orders within one store.
@@ -106,7 +117,21 @@ As a collector, I want to reopen, cancel, or edit a delivery when the store chan
   - delete must stay visible in the detail action menu so the collector can discover the rule, but a `DELIVERED` delivery cannot be deleted until it is reopened
 - `BR-08-08`: A product belongs to at most one active (non-cancelled) delivery at a time (`FR-08-21`). Because cancelling a delivery returns its products to `arrived at store`, those products can be selected into a new delivery while the original stays `CANCELLED`. Reopening the original cancelled delivery is therefore blocked when any of its products now belongs to another active delivery, so reopen can never resurrect a duplicate delivery membership. The blocked reopen is surfaced as an expected, non-destructive error, not a silent failure.
 
+- `BR-08-09`: A delivery can never be received before it was dispatched. Whenever both dates are present, `receivedDate` must be greater than or equal to `deliveryDate`; the pair is rejected at the validation boundary. The rule is stated here because the quick-arrival modal is the first surface that puts both pickers side by side, but it holds for every delivery.
+- `BR-08-10`: A quick arrival records **no** shipping cost rather than a zero one that the collector never stated. `Delivery.cost` remains a required column, so an unstated cost is persisted as `0`; because that value feeds the dashboard's monthly shipping figure, the modal must say so on screen before saving and must keep the cost field one tap away. Making the column nullable so "not recorded" and "free shipping" become distinguishable is the known follow-up, deliberately out of scope of the quick-arrival change.
+- `BR-08-11`: The quick-arrival flow offers no undo affordance. Reversing it would require restoring each product's prior state, and `NONE` cannot be told apart from `ARRIVED_AT_STORE` once the delivery exists (delete returns products to `ARRIVED_AT_STORE` per `FR-08-25`), so an undo would assert a fact the collector never stated. The success toast links to the created delivery instead, where reopen, edit and delete already live.
+
 ## Acceptance Criteria
+
+### `AC-08-00`
+
+- Given an open order with more than one product still to receive
+- When the collector uses the quick-arrival action and confirms with today's date
+- Then every product of that order is selected by default and visible as a checkbox list
+- And one delivery is created already `DELIVERED` with that arrival date
+- And the selected products become `delivered to user`
+- And the order status is re-derived to `COMPLETED`, or to `PARTIALLY_DELIVERED` when the collector unchecked part of the list
+- And the surface states, before saving, that no shipping cost is recorded and that the dispatch date equals the arrival date
 
 ### `AC-08-01`
 
@@ -184,6 +209,7 @@ Each detail action has a distinct confirmation and feedback contract. The visual
 Delivery mutations return typed, expected error codes (not exceptions) so flows can recover without noisy monitoring. Unexpected failures are captured once with delivery-safe context. Expected codes:
 
 - create / edit: `STORE_NOT_FOUND`, `NO_PRODUCTS_SELECTED`, `PRODUCTS_FROM_DIFFERENT_STORE`, `PRODUCT_NOT_ELIGIBLE` (carries the offending product ids so the selector can refresh), `EXCHANGE_RATE_REQUIRED` (currency differs from base and no rate was supplied), and — edit only — `INVALID_STATUS` (the delivery is no longer `IN_TRANSIT`). A concurrent product-state change is reconciled into `PRODUCT_NOT_ELIGIBLE`.
+- quick arrival: `ORDER_NOT_FOUND` (the order is not the caller's), `ORDER_CANCELLED`, `EXCHANGE_RATE_REQUIRED`, plus every create code above, since it runs through the same mutation. Its validation layer additionally rejects `RECEIVED_DATE_IN_FUTURE` and `RECEIVED_BEFORE_SHIPPED` (`BR-08-09`).
 - mark delivered / cancel / delete / reopen / note: `DELIVERY_NOT_FOUND`; lifecycle guards return `INVALID_STATUS` (mark delivered and cancel require `IN_TRANSIT`; delete rejects `DELIVERED`; reopen rejects `IN_TRANSIT`); reopen additionally returns `PRODUCTS_IN_OTHER_DELIVERY` per `BR-08-08`.
 - The validation layer rejects malformed input before these run (future shipping/received dates, `expectedArrivalTo` before `expectedArrivalFrom`, negative or over-cap cost, unsupported currency, out-of-range exchange rate, empty product set).
 
@@ -235,11 +261,12 @@ Each delivery route under `/{locale}/(app)/deliveries`. All routes are authentic
 
 ### Delivery lifecycle (`DeliveryStatus`)
 
-A delivery is created `IN_TRANSIT` and never has its status edited through a free field (`FR-08-13`); status moves only through lifecycle actions:
+A delivery is created `IN_TRANSIT`, or directly `DELIVERED` through the quick-arrival flow (`FR-08-36`), and never has its status edited through a free field (`FR-08-13`); status moves only through lifecycle actions:
 
 | From                       | Action            | To           | Product effect                                     | Order re-derivation         |
 | -------------------------- | ----------------- | ------------ | -------------------------------------------------- | --------------------------- |
 | —                          | create            | `IN_TRANSIT` | selected products → `IN_TRANSIT`                   | yes                         |
+| —                          | quick arrival     | `DELIVERED`  | selected products → `DELIVERED`; sets `receivedDate` | yes                       |
 | `IN_TRANSIT`               | mark delivered    | `DELIVERED`  | all products → `DELIVERED`; sets `receivedDate`    | yes                         |
 | `IN_TRANSIT`               | cancel            | `CANCELLED`  | products → `ARRIVED_AT_STORE`                      | yes                         |
 | `IN_TRANSIT`               | edit (add/remove) | `IN_TRANSIT` | added → `IN_TRANSIT`; removed → `ARRIVED_AT_STORE` | yes                         |
@@ -251,7 +278,7 @@ A delivery is created `IN_TRANSIT` and never has its status edited through a fre
 
 ### Product delivery state (`OrderItemDeliveryState`)
 
-Persisted on `OrderItem.deliveryState`. Four values: `NONE`, `ARRIVED_AT_STORE`, `IN_TRANSIT`, `DELIVERED`. Eligibility for a new/edited delivery = `NONE` or `ARRIVED_AT_STORE` only. Once a product has been in a delivery it never returns to `NONE`; its resting state after cancel/delete/edit-remove is `ARRIVED_AT_STORE`.
+Persisted on `OrderItem.deliveryState`. Four values: `NONE`, `ARRIVED_AT_STORE`, `IN_TRANSIT`, `DELIVERED`. Eligibility for a new/edited delivery = `NONE` or `ARRIVED_AT_STORE` only. Once a product has been in a delivery it never returns to `NONE`; its resting state after cancel/delete/edit-remove is `ARRIVED_AT_STORE`. Quick arrival is the only transition that moves a product from `NONE`/`ARRIVED_AT_STORE` straight to `DELIVERED` without passing through `IN_TRANSIT` (`FR-08-36`); this asymmetry is why the flow has no undo (`BR-08-11`).
 
 ### Order-status re-derivation
 

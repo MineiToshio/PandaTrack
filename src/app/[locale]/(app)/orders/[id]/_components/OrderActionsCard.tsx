@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Ban, Pencil, RotateCcw, Trash2, Truck, Zap } from "lucide-react";
+import { Ban, PackageCheck, Pencil, RotateCcw, Trash2, Truck, Zap } from "lucide-react";
 import Button from "@/components/core/Button/Button";
 import Eyebrow from "@/components/core/Eyebrow";
 import Tooltip from "@/components/core/Tooltip";
@@ -13,6 +13,8 @@ import type { OrderStatus } from "../../../../../../../generated/prisma/client";
 import { reactivateOrderAction } from "../_actions/orderLifecycleActions";
 import OrderCancelModal from "./OrderCancelModal";
 import OrderDeleteModal from "./OrderDeleteModal";
+import { QuickArrivalModal, type QuickArrivalItem } from "@/components/modules/QuickArrival";
+import { useQuickArrival } from "@/components/modules/QuickArrival/useQuickArrival";
 
 type OrderActionsCardProps = {
   orderId: string;
@@ -26,6 +28,9 @@ type OrderActionsCardProps = {
   currencyCode: string;
   hasPayments: boolean;
   locale: string;
+  /** Products still eligible for a delivery; an empty list hides the quick-arrival action. */
+  quickArrivalItems: QuickArrivalItem[];
+  baseCurrencyCode: string | null;
 };
 
 /**
@@ -44,14 +49,18 @@ export default function OrderActionsCard({
   currencyCode,
   hasPayments,
   locale,
+  quickArrivalItems,
+  baseCurrencyCode,
 }: OrderActionsCardProps) {
   const t = useTranslations("orders");
   const router = useRouter();
   const [modal, setModal] = useState<"cancel" | "delete" | null>(null);
   const [isReactivating, setIsReactivating] = useState(false);
+  const quickArrival = useQuickArrival({ orderId, locale, source: "actions_card" });
 
   const isCancelled = status === "CANCELLED";
   const isCompleted = status === "COMPLETED";
+  const canQuickArrive = !isCancelled && quickArrivalItems.length > 0;
 
   async function handleReactivate() {
     setIsReactivating(true);
@@ -121,19 +130,40 @@ export default function OrderActionsCard({
           </>
         ) : (
           <>
-            <Button
-              as="a"
-              href={`/${locale}${ROUTES.deliveriesNew}?sourceOrderId=${orderId}`}
-              variant="primary"
-              size="md"
-              fullWidth
-              leadingIcon={<Truck size={16} aria-hidden />}
-              className="justify-start"
-              posthogEvent={POSTHOG_EVENTS.ORDER.CREATE_DELIVERY_CLICKED}
-              posthogProps={{ orderId, status }}
-            >
-              {t("detail.actions.createDelivery")}
-            </Button>
+            {/* Quick arrival outranks the wizard: the common miss is a box already in hand, not a
+                shipment being tracked in flight. The wizard stays one tap away as the tonal action. */}
+            {canQuickArrive && (
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                fullWidth
+                onClick={quickArrival.open}
+                leadingIcon={<PackageCheck size={16} aria-hidden />}
+                className="justify-start"
+              >
+                {t("detail.actions.quickArrival")}
+              </Button>
+            )}
+
+            {/* Both delivery actions need a product that is not yet in a delivery, so they appear
+                and disappear together: with everything delivered (or already in transit) the wizard
+                would only lead to its own empty state. */}
+            {canQuickArrive && (
+              <Button
+                as="a"
+                href={`/${locale}${ROUTES.deliveriesNew}?sourceOrderId=${orderId}`}
+                variant="tonal"
+                size="md"
+                fullWidth
+                leadingIcon={<Truck size={16} aria-hidden />}
+                className="justify-start"
+                posthogEvent={POSTHOG_EVENTS.ORDER.CREATE_DELIVERY_CLICKED}
+                posthogProps={{ orderId, status }}
+              >
+                {t("detail.actions.createDelivery")}
+              </Button>
+            )}
 
             <Button
               as="a"
@@ -186,6 +216,18 @@ export default function OrderActionsCard({
         storeName={storeName}
         locale={locale}
       />
+      {canQuickArrive && (
+        <QuickArrivalModal
+          isOpen={quickArrival.isOpen}
+          onClose={quickArrival.close}
+          orderHumanReadableId={humanReadableId}
+          storeName={storeName}
+          items={quickArrivalItems}
+          baseCurrencyCode={baseCurrencyCode}
+          locale={locale}
+          onSubmit={quickArrival.submit}
+        />
+      )}
     </section>
   );
 }

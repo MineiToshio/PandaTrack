@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Ban, Pencil, Trash2 } from "lucide-react";
+import { ChevronRight, Ban, PackageCheck, Pencil, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
@@ -13,6 +13,9 @@ type OrderMobileActionsCardProps = {
   locale: string;
   status: OrderStatus;
   eligibility: OrderEligibility;
+  /** Hidden when the order has no product left to receive. */
+  canQuickArrive: boolean;
+  onQuickArrival: () => void;
   onCancel: () => void;
   onDelete: () => void;
 };
@@ -22,6 +25,8 @@ export default function OrderMobileActionsCard({
   locale,
   status,
   eligibility,
+  canQuickArrive,
+  onQuickArrival,
   onCancel,
   onDelete,
 }: OrderMobileActionsCardProps) {
@@ -51,6 +56,13 @@ export default function OrderMobileActionsCard({
         </h2>
       </div>
       <div className="divide-border/60 divide-y">
+        {canQuickArrive && (
+          <button type="button" onClick={onQuickArrival} className={rowClass}>
+            <PackageCheck className="text-success size-4 shrink-0" aria-hidden />
+            <span className="flex-1">{t("detail.mobileActions.quickArrival")}</span>
+            <ChevronRight className="text-text-muted size-4 shrink-0" aria-hidden />
+          </button>
+        )}
         {showEdit && (
           <Link href={`/${locale}${ROUTES.orders}/${orderId}/edit`} className={rowClass}>
             <Pencil className="text-text-secondary size-4 shrink-0" aria-hidden />

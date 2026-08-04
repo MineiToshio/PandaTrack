@@ -26,10 +26,23 @@ function formatDate(date: Date, locale: string) {
   return formatDomainDate(date, locale);
 }
 
-export default async function OrderDetailContent({ order, locale, backHref }: OrderDetailContentProps) {
+export default async function OrderDetailContent({
+  order,
+  locale,
+  baseCurrencyCode,
+  backHref,
+}: OrderDetailContentProps) {
   const t = await getTranslations({ locale, namespace: "orders" });
 
   const isCancelled = order.status === "CANCELLED";
+  // Products the quick-arrival flow can close: the same eligibility the delivery wizard uses
+  // (nothing already in transit or delivered).
+  const quickArrivalItems = order.items
+    .filter((item) => item.deliveryState === "open" || item.deliveryState === "arrived_at_store")
+    .map((item) => ({ id: item.id, name: item.name }));
+  // One condition behind every delivery affordance on this page (aside card, sticky bar, products
+  // list): there has to be a product a delivery could still take.
+  const canCreateDelivery = !isCancelled && quickArrivalItems.length > 0;
   const isCompleted = order.status === "COMPLETED";
   const today = new Date();
   const isOverdue =
@@ -86,6 +99,9 @@ export default async function OrderDetailContent({ order, locale, backHref }: Or
           isOverdue={isOverdue}
           overdueDays={overdueDays}
           locale={locale}
+          quickArrivalItems={quickArrivalItems}
+          canCreateDelivery={canCreateDelivery}
+          baseCurrencyCode={baseCurrencyCode}
           mainColumnExtras={
             <>
               {isCancelled && order.cancellationReason && (
@@ -112,7 +128,7 @@ export default async function OrderDetailContent({ order, locale, backHref }: Or
                   currencyCode={order.currencyCode}
                   locale={locale}
                   isOrderCancelled={isCancelled}
-                  showCreateDeliveryLink={!isCancelled}
+                  showCreateDeliveryLink={canCreateDelivery}
                 />
               </CollapsibleSubcard>
 
@@ -133,6 +149,8 @@ export default async function OrderDetailContent({ order, locale, backHref }: Or
               currencyCode={order.currencyCode}
               hasPayments={order.flags.hasPayments}
               locale={locale}
+              quickArrivalItems={quickArrivalItems}
+              baseCurrencyCode={baseCurrencyCode}
             />
           }
           noteCard={

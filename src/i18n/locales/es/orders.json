@@ -304,7 +304,8 @@
       "reactivate": "Reactivar pedido",
       "more": "Más acciones",
       "cancelDisabledTooltip": "Este pedido tiene items asociados a una entrega. Desasócialos desde la entrega para poder cancelarlo.",
-      "deleteDisabledTooltip": "No se puede eliminar este pedido porque tiene items asociados a una entrega. Desasócialos primero."
+      "deleteDisabledTooltip": "No se puede eliminar este pedido porque tiene items asociados a una entrega. Desasócialos primero.",
+      "quickArrival": "Ya me llegó"
     },
     "items": {
       "sectionTitle": "Productos",
@@ -469,8 +470,64 @@
       "sectionTitle": "Acciones",
       "edit": "Editar pedido",
       "cancel": "Cancelar pedido",
-      "delete": "Eliminar pedido"
+      "delete": "Eliminar pedido",
+      "quickArrival": "Ya me llegó"
     },
-    "reactivateToast": "Pedido reactivado"
+    "reactivateToast": "Pedido reactivado",
+    "quickArrival": {
+      "title": "Ya me llegó",
+      "confirm": "Anotar llegada",
+      "cancel": "Cancelar",
+      "itemsLabel": "¿Qué llegó?",
+      "itemsHelper": "Vienen todos marcados. Desmarca lo que todavía no tienes.",
+      "selectAll": "Marcar todo",
+      "selectNone": "Desmarcar todo",
+      "selectedCount": "{count} de {total} seleccionados",
+      "singleItem": "Se anotará la llegada de <strong>{name}</strong>.",
+      "receivedLabel": "¿Cuándo llegó?",
+      "receivedPlaceholder": "Elige la fecha",
+      "receivedHelper": "Hoy o antes. Si llegó hace días, ponlo tal cual.",
+      "optional": "(opcional)",
+      "shippedLabel": "Salió de la tienda el",
+      "shippedPlaceholder": "Elige la fecha",
+      "costLabel": "Costo de entrega",
+      "costPlaceholder": "0.00",
+      "currencyLabel": "Moneda",
+      "currencyPlaceholder": "Elige una moneda",
+      "fxLabel": "Tipo de cambio",
+      "fxPlaceholder": "0.00",
+      "fxHelper": "1 {from} en {to}.",
+      "shipping": {
+        "show": "Añadir costo y fecha de salida",
+        "hide": "Ocultar costo y fecha de salida",
+        "defaultsNotice": "Se guardará sin costo de entrega y con la fecha de salida igual a la de llegada, que es lo único que se sabe con certeza. Puedes completarlo después desde la entrega."
+      },
+      "validation": {
+        "itemsRequired": "Marca al menos un producto.",
+        "receivedRequired": "Indica cuándo llegó.",
+        "shippedAfterReceived": "No pudo salir después de haber llegado.",
+        "costInvalid": "Escribe un monto válido.",
+        "currencyRequired": "Elige la moneda del costo.",
+        "fxRequired": "Indica el tipo de cambio."
+      },
+      "toast": {
+        "success": "Llegada anotada: {count, plural, one {# producto} other {# productos}}.",
+        "viewDelivery": "Ver entrega"
+      },
+      "error": {
+        "server_error": "No se pudo anotar la llegada. Inténtalo de nuevo.",
+        "unauthorized": "Tu sesión expiró. Vuelve a entrar.",
+        "ORDER_NOT_FOUND": "No encontramos este pedido.",
+        "ORDER_CANCELLED": "Este pedido está cancelado.",
+        "STORE_NOT_FOUND": "No encontramos la tienda de este pedido.",
+        "NO_PRODUCTS_SELECTED": "Marca al menos un producto.",
+        "PRODUCT_NOT_ELIGIBLE": "Algún producto ya está en otra entrega. Recarga la página y vuelve a intentarlo.",
+        "PRODUCTS_FROM_DIFFERENT_STORE": "Los productos no son de la misma tienda.",
+        "EXCHANGE_RATE_REQUIRED": "Indica el tipo de cambio.",
+        "RECEIVED_BEFORE_SHIPPED": "No pudo salir después de haber llegado.",
+        "RECEIVED_DATE_IN_FUTURE": "La fecha de llegada no puede ser futura.",
+        "DELIVERY_DATE_IN_FUTURE": "La fecha de salida no puede ser futura."
+      }
+    }
   }
 }

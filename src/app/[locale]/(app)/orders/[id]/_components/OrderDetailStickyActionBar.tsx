@@ -18,9 +18,36 @@ type OrderDetailStickyActionBarProps = {
   remainingAmount: number;
   currencyCode: string;
   hasUnpaidBalance: boolean;
+  /** False once every product is in a delivery or already delivered — see `hasStickyBarActions`. */
+  canCreateDelivery: boolean;
   locale: string;
   onAnnotatePayment: () => void;
 };
+
+export type StickyBarActionContext = {
+  status: OrderStatus;
+  hasUnpaidBalance: boolean;
+  remainingAmount: number;
+  canCreateDelivery: boolean;
+};
+
+/**
+ * Whether the bar still has anything to offer. Exported because the detail also reserves scroll
+ * space for the bar, and that spacer has to disappear with it: a fully paid, fully delivered order
+ * has no mobile action left, and reserving 76px for a bar that never renders leaves dead space.
+ */
+export function hasStickyBarActions({
+  status,
+  hasUnpaidBalance,
+  remainingAmount,
+  canCreateDelivery,
+}: StickyBarActionContext): boolean {
+  if (status === "CANCELLED") return true; // reactivate
+  if (status === "COMPLETED" && hasUnpaidBalance) return true; // settle the balance
+  // Fully paid: creating a delivery is the only action this branch offers.
+  if (remainingAmount === 0) return canCreateDelivery;
+  return true; // still owing → "Anotar pago" is always available
+}
 
 export default function OrderDetailStickyActionBar({
   orderId,
@@ -29,6 +56,7 @@ export default function OrderDetailStickyActionBar({
   remainingAmount,
   currencyCode,
   hasUnpaidBalance,
+  canCreateDelivery,
   locale,
   onAnnotatePayment,
 }: OrderDetailStickyActionBarProps) {
@@ -56,6 +84,12 @@ export default function OrderDetailStickyActionBar({
     "bg-primary text-primary-foreground hover:bg-primary/90 inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-sm transition-colors";
   const tonalBtnClass =
     "border-primary/30 bg-primary/10 text-primary hover:bg-primary/15 inline-flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors";
+
+  // Nothing left to do on this order from a phone (typically fully paid and fully delivered):
+  // render no bar at all rather than a strip whose only action leads to an empty wizard.
+  if (!hasStickyBarActions({ status, hasUnpaidBalance, remainingAmount, canCreateDelivery })) {
+    return null;
+  }
 
   let content: React.ReactNode;
 
@@ -106,15 +140,17 @@ export default function OrderDetailStickyActionBar({
     const secondaryLabel = isOverdue ? t("detail.stickyBar.delivery") : t("detail.stickyBar.createDelivery");
     content = (
       <>
-        <Link
-          href={`/${locale}${ROUTES.deliveriesNew}?sourceOrderId=${orderId}`}
-          className={tonalBtnClass}
-          data-ph-event={POSTHOG_EVENTS.ORDER.CREATE_DELIVERY_CLICKED}
-          data-ph-props={JSON.stringify({ orderId, status })}
-        >
-          <Truck className="size-4 shrink-0" aria-hidden />
-          {secondaryLabel}
-        </Link>
+        {canCreateDelivery && (
+          <Link
+            href={`/${locale}${ROUTES.deliveriesNew}?sourceOrderId=${orderId}`}
+            className={tonalBtnClass}
+            data-ph-event={POSTHOG_EVENTS.ORDER.CREATE_DELIVERY_CLICKED}
+            data-ph-props={JSON.stringify({ orderId, status })}
+          >
+            <Truck className="size-4 shrink-0" aria-hidden />
+            {secondaryLabel}
+          </Link>
+        )}
         <button
           type="button"
           onClick={onAnnotatePayment}
