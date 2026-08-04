@@ -17,6 +17,7 @@ import {
   resolveTimeZone,
   toMonthKey,
 } from "./dashboardPeriods";
+import { isEligibleForDelivery } from "@/lib/deliveries/deliveryState";
 import { needsFxReconciliation } from "@/lib/fx/reconciliation";
 import {
   computeOutstandingMinor,
@@ -30,6 +31,7 @@ import {
 } from "./dashboardRollup";
 import type {
   ActivityBlock,
+  ArrivalOrderSummary,
   ArrivalPunctuality,
   BaseCurrencyTotal,
   BudgetBlock,
@@ -379,6 +381,21 @@ function buildActivity(
   timeZone: string,
 ): ActivityBlock {
   const toSummary = (order: DerivedOrder): OrderSummary => buildOrderSummary(order, baseCurrencyCode);
+
+  // Arrival rows carry the products their quick-arrival modal would offer, so the dashboard can
+  // log a delivery inline without a second round trip. The eligibility predicate is the delivery
+  // domain's own (`isEligibleForDelivery`), never a copy of the rule: the dashboard must not be
+  // able to offer a product that `createDelivery` would then refuse.
+  //
+  // It is defensive today, because `hasOrderArrived` drops an order from these lists as soon as any
+  // product leaves `NONE`, so the rows only ever hold fully-open orders. It stays because that
+  // definition is not this module's to depend on.
+  const toArrivalSummary = (order: DerivedOrder): ArrivalOrderSummary => ({
+    ...toSummary(order),
+    quickArrivalItems: order.input.items
+      .filter((item) => isEligibleForDelivery(item.deliveryState))
+      .map((item) => ({ id: item.id, name: item.name })),
+  });
   const recentOrders = orders
     .slice()
     .sort((a, b) => b.input.orderDate.getTime() - a.input.orderDate.getTime())
@@ -396,7 +413,7 @@ function buildActivity(
     })
     .sort((a, b) => a.input.expectedDeliveryFrom!.getTime() - b.input.expectedDeliveryFrom!.getTime())
     .slice(0, DASHBOARD_ACTIVITY_LIST_LIMIT)
-    .map(toSummary);
+    .map(toArrivalSummary);
 
   // Not sliced: `overdueArrivals.length` also drives the "Atrasados" tab count badge, which must
   // reflect the true total. The component caps the rendered rows at `DASHBOARD_ACTIVITY_LIST_LIMIT`.
@@ -404,7 +421,7 @@ function buildActivity(
     .map((order) => ({ order, dueDate: resolveArrivalDueDate(order.input) }))
     .filter((entry) => entry.dueDate !== null && entry.dueDate.getTime() < todayStart.getTime())
     .sort((a, b) => a.dueDate!.getTime() - b.dueDate!.getTime())
-    .map((entry) => toSummary(entry.order));
+    .map((entry) => toArrivalSummary(entry.order));
 
   const placedVsArrived = enumerateMonthKeys(range).map((monthKey) => {
     const placedCount = orders.filter((order) => isSameMonth(toMonthKey(order.input.orderDate), monthKey)).length;

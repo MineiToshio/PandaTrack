@@ -104,6 +104,10 @@
       "title": "Todavía no registraste pedidos",
       "body": "Registra tu primer pedido y aquí verás los últimos movimientos, las próximas llegadas y los atrasos.",
       "cta": "Crear tu primer pedido"
+    },
+    "quickArrival": {
+      "action": "Llegó",
+      "ariaLabel": "Anotar la llegada de {code} de {store}"
     }
   },
   "kpi": {

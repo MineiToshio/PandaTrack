@@ -8,7 +8,8 @@ import { formatDomainShortDate } from "@/lib/domainDate";
 import { DASHBOARD_ACTIVITY_LIST_LIMIT } from "@/lib/data/dashboard/dashboardConstants";
 import { getTodayStart } from "@/lib/data/dashboard/dashboardPeriods";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
-import type { DashboardData, OrderSummary } from "@/lib/data/dashboard/dashboardTypes";
+import type { ArrivalOrderSummary, DashboardData, OrderSummary } from "@/lib/data/dashboard/dashboardTypes";
+import DashboardActivityQuickArrival from "./DashboardActivityQuickArrival";
 import DashboardActivityRow from "./DashboardActivityRow";
 import DashboardActivityTabs, { type DashboardActivityTab } from "./DashboardActivityTabs";
 import DashboardCreateOrderButton from "./DashboardCreateOrderButton";
@@ -50,6 +51,21 @@ export default async function DashboardActivityZone({ data, locale }: DashboardA
     order.baseTotalCostMinor !== null && data.baseCurrencyCode
       ? formatAmountSymbolOnly(order.baseTotalCostMinor, data.baseCurrencyCode, locale)
       : formatAmountSymbolOnly(order.totalCostMinor, order.currencyCode, locale);
+
+  // Arrival rows carry the action that closes the loop the reminders open; an order with nothing
+  // left to receive (every product already in transit or delivered) shows no control.
+  const quickArrivalAction = (order: ArrivalOrderSummary, listKey: string) =>
+    order.quickArrivalItems.length > 0 ? (
+      <DashboardActivityQuickArrival
+        orderId={order.orderId}
+        humanReadableId={order.humanReadableId}
+        storeName={order.storeName}
+        items={order.quickArrivalItems}
+        baseCurrencyCode={data.baseCurrencyCode}
+        locale={locale}
+        listKey={listKey}
+      />
+    ) : undefined;
 
   const cardProps = {
     titleId: ACTIVITY_TITLE_ID,
@@ -135,6 +151,7 @@ export default async function DashboardActivityZone({ data, locale }: DashboardA
             href={orderHref(order.orderId)}
             ariaLabel={rowLabel(order)}
             listKey="upcoming"
+            action={quickArrivalAction(order, "upcoming")}
             meta={
               <Chip variant="info" size="sm" icon={<Truck width={12} height={12} aria-hidden="true" />}>
                 {t("activity.arrivesOn", {
@@ -161,6 +178,7 @@ export default async function DashboardActivityZone({ data, locale }: DashboardA
             href={orderHref(order.orderId)}
             ariaLabel={rowLabel(order)}
             listKey="overdue"
+            action={quickArrivalAction(order, "overdue")}
             meta={
               <Chip variant="warning" size="sm" icon={<AlertCircle width={12} height={12} aria-hidden="true" />}>
                 {t("activity.overdueDays", { days: countOverdueDays(order, todayStart) })}

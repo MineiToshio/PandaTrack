@@ -104,6 +104,10 @@
       "title": "You haven't logged any orders yet",
       "body": "Log your first order and you'll see your latest activity, upcoming arrivals, and anything running late here.",
       "cta": "Create your first order"
+    },
+    "quickArrival": {
+      "action": "Arrived",
+      "ariaLabel": "Log the arrival of {code} from {store}"
     }
   },
   "kpi": {

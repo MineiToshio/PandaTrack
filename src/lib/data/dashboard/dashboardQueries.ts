@@ -31,6 +31,8 @@ async function fetchDashboardOrders(userId: string): Promise<DashboardOrderInput
       store: { select: { id: true, name: true, slug: true } },
       items: {
         select: {
+          id: true,
+          name: true,
           quantity: true,
           productTypeKey: true,
           unitPrice: true,
@@ -60,6 +62,8 @@ async function fetchDashboardOrders(userId: string): Promise<DashboardOrderInput
     status: row.status,
     store: { id: row.store.id, name: row.store.name, slug: row.store.slug },
     items: row.items.map((item) => ({
+      id: item.id,
+      name: item.name,
       quantity: item.quantity,
       productTypeKey: item.productTypeKey,
       unitPrice: item.unitPrice,

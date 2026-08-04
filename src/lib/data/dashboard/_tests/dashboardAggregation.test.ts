@@ -484,7 +484,15 @@ describe("buildDashboardData - lost on cancelled (BR-06-10)", () => {
 
 describe("buildDashboardData - arrival punctuality", () => {
   const arrivedItem = (deliveryDates: Date[]) => [
-    { quantity: 1, productTypeKey: null, unitPrice: null, deliveryState: "DELIVERED" as const, deliveryDates },
+    {
+      id: "item-1",
+      name: "Producto 1",
+      quantity: 1,
+      productTypeKey: null,
+      unitPrice: null,
+      deliveryState: "DELIVERED" as const,
+      deliveryDates,
+    },
   ];
 
   it("counts an order that shipped within its window as on time", () => {
@@ -534,7 +542,15 @@ describe("buildDashboardData - arrival punctuality", () => {
         expectedDeliveryFrom: utc(2026, 0, 1),
         expectedDeliveryTo: utc(2026, 0, 10),
         items: [
-          { quantity: 1, productTypeKey: null, unitPrice: null, deliveryState: "ARRIVED_AT_STORE", deliveryDates: [] },
+          {
+            id: "item-2",
+            name: "Producto 2",
+            quantity: 1,
+            productTypeKey: null,
+            unitPrice: null,
+            deliveryState: "ARRIVED_AT_STORE",
+            deliveryDates: [],
+          },
         ],
       }),
       // Delivered, but the collector never estimated a window to judge it against.
@@ -549,7 +565,17 @@ describe("buildDashboardData - arrival punctuality", () => {
         id: "pending",
         expectedDeliveryFrom: utc(2026, 0, 1),
         expectedDeliveryTo: utc(2026, 0, 10),
-        items: [{ quantity: 1, productTypeKey: null, unitPrice: null, deliveryState: "NONE", deliveryDates: [] }],
+        items: [
+          {
+            id: "item-3",
+            name: "Producto 3",
+            quantity: 1,
+            productTypeKey: null,
+            unitPrice: null,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
+        ],
       }),
     ]);
     expect(data.activity.punctuality).toEqual({ onTimeCount: 0, lateCount: 0, unknownCount: 0 });
@@ -565,6 +591,8 @@ describe("buildDashboardData - activity and collection", () => {
         expectedDeliveryFrom: utc(2026, 6, 1),
         items: [
           {
+            id: "item-4",
+            name: "Producto 4",
             quantity: 1,
             productTypeKey: "figure",
             unitPrice: 1000,
@@ -577,7 +605,17 @@ describe("buildDashboardData - activity and collection", () => {
         id: "notArrived",
         orderDate: utc(2026, 6, 1),
         expectedDeliveryFrom: utc(2026, 6, 1),
-        items: [{ quantity: 1, productTypeKey: "figure", unitPrice: 1000, deliveryState: "NONE", deliveryDates: [] }],
+        items: [
+          {
+            id: "item-5",
+            name: "Producto 5",
+            quantity: 1,
+            productTypeKey: "figure",
+            unitPrice: 1000,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
+        ],
       }),
     ]);
     const july = data.activity.placedVsArrived.find((month) => month.month === 7 && month.year === 2026);
@@ -594,6 +632,8 @@ describe("buildDashboardData - activity and collection", () => {
           // Dispatched in March, so the arrival belongs to March, not to the January window.
           items: [
             {
+              id: "item-6",
+              name: "Producto 6",
               quantity: 1,
               productTypeKey: null,
               unitPrice: null,
@@ -617,17 +657,101 @@ describe("buildDashboardData - activity and collection", () => {
       makeOrder({
         id: "soon",
         expectedDeliveryFrom: utc(2026, 6, 20),
-        items: [{ quantity: 1, productTypeKey: null, unitPrice: null, deliveryState: "NONE", deliveryDates: [] }],
+        items: [
+          {
+            id: "item-7",
+            name: "Producto 7",
+            quantity: 1,
+            productTypeKey: null,
+            unitPrice: null,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
+        ],
       }),
       makeOrder({
         id: "late",
         expectedDeliveryFrom: utc(2026, 4, 1),
         expectedDeliveryTo: utc(2026, 4, 10),
-        items: [{ quantity: 1, productTypeKey: null, unitPrice: null, deliveryState: "NONE", deliveryDates: [] }],
+        items: [
+          {
+            id: "item-8",
+            name: "Producto 8",
+            quantity: 1,
+            productTypeKey: null,
+            unitPrice: null,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
+        ],
       }),
     ]);
     expect(data.activity.upcomingArrivals.map((order) => order.orderId)).toEqual(["soon"]);
     expect(data.activity.overdueArrivals.map((order) => order.orderId)).toEqual(["late"]);
+  });
+
+  it("carries the row's products as quick-arrival items, so the dashboard modal needs no extra round trip", () => {
+    const data = build([
+      makeOrder({
+        id: "late",
+        expectedDeliveryFrom: utc(2026, 4, 1),
+        expectedDeliveryTo: utc(2026, 4, 10),
+        items: [
+          {
+            id: "first-item",
+            name: "Primer producto",
+            quantity: 1,
+            productTypeKey: null,
+            unitPrice: null,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
+          {
+            id: "second-item",
+            name: "Segundo producto",
+            quantity: 1,
+            productTypeKey: null,
+            unitPrice: null,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
+        ],
+      }),
+    ]);
+
+    expect(data.activity.overdueArrivals[0].quickArrivalItems).toEqual([
+      { id: "first-item", name: "Primer producto" },
+      { id: "second-item", name: "Segundo producto" },
+    ]);
+    expect(data.activity.upcomingArrivals).toEqual([]);
+  });
+
+  // `hasOrderArrived` treats an order as arrived the moment ANY product leaves `NONE`
+  // (dashboardRollup.ts), so an order with a product already at the store never reaches these
+  // lists at all. The eligibility filter on the summary is therefore defensive: it keeps the
+  // dashboard honest if that definition ever widens, and it can never offer the modal a product
+  // the delivery domain would reject.
+  it("keeps an order with a product already at the store out of the arrival lists entirely", () => {
+    const data = build([
+      makeOrder({
+        id: "late",
+        expectedDeliveryFrom: utc(2026, 4, 1),
+        expectedDeliveryTo: utc(2026, 4, 10),
+        items: [
+          {
+            id: "at-store-item",
+            name: "Listo en tienda",
+            quantity: 1,
+            productTypeKey: null,
+            unitPrice: null,
+            deliveryState: "ARRIVED_AT_STORE",
+            deliveryDates: [],
+          },
+        ],
+      }),
+    ]);
+
+    expect(data.activity.overdueArrivals).toEqual([]);
   });
 
   it("aggregates collection totals, product counts, and committed spend by type", () => {
@@ -637,8 +761,24 @@ describe("buildDashboardData - activity and collection", () => {
         totalCost: 3000,
         store: { id: "store-a", name: "Store A", slug: "store-a" },
         items: [
-          { quantity: 2, productTypeKey: "figure", unitPrice: 1000, deliveryState: "NONE", deliveryDates: [] },
-          { quantity: 1, productTypeKey: "manga", unitPrice: 1000, deliveryState: "NONE", deliveryDates: [] },
+          {
+            id: "item-9",
+            name: "Producto 9",
+            quantity: 2,
+            productTypeKey: "figure",
+            unitPrice: 1000,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
+          {
+            id: "item-10",
+            name: "Producto 10",
+            quantity: 1,
+            productTypeKey: "manga",
+            unitPrice: 1000,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
         ],
       }),
     ]);
@@ -660,9 +800,33 @@ describe("buildDashboardData - activity and collection", () => {
         id: "states",
         totalCost: 3000,
         items: [
-          { quantity: 3, productTypeKey: "figure", unitPrice: 1000, deliveryState: "DELIVERED", deliveryDates: [] },
-          { quantity: 2, productTypeKey: "manga", unitPrice: 1000, deliveryState: "IN_TRANSIT", deliveryDates: [] },
-          { quantity: 1, productTypeKey: "book", unitPrice: 1000, deliveryState: "DELIVERED", deliveryDates: [] },
+          {
+            id: "item-11",
+            name: "Producto 11",
+            quantity: 3,
+            productTypeKey: "figure",
+            unitPrice: 1000,
+            deliveryState: "DELIVERED",
+            deliveryDates: [],
+          },
+          {
+            id: "item-12",
+            name: "Producto 12",
+            quantity: 2,
+            productTypeKey: "manga",
+            unitPrice: 1000,
+            deliveryState: "IN_TRANSIT",
+            deliveryDates: [],
+          },
+          {
+            id: "item-13",
+            name: "Producto 13",
+            quantity: 1,
+            productTypeKey: "book",
+            unitPrice: 1000,
+            deliveryState: "DELIVERED",
+            deliveryDates: [],
+          },
         ],
       }),
     ]);
@@ -678,8 +842,24 @@ describe("buildDashboardData - activity and collection", () => {
         id: "priced",
         totalCost: 3000,
         items: [
-          { quantity: 2, productTypeKey: "figures", unitPrice: 1000, deliveryState: "NONE", deliveryDates: [] },
-          { quantity: 1, productTypeKey: "manga", unitPrice: 1000, deliveryState: "NONE", deliveryDates: [] },
+          {
+            id: "item-14",
+            name: "Producto 14",
+            quantity: 2,
+            productTypeKey: "figures",
+            unitPrice: 1000,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
+          {
+            id: "item-15",
+            name: "Producto 15",
+            quantity: 1,
+            productTypeKey: "manga",
+            unitPrice: 1000,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
         ],
       }),
     ]);
@@ -696,8 +876,24 @@ describe("buildDashboardData - activity and collection", () => {
         id: "unpriced",
         totalCost: 4000,
         items: [
-          { quantity: 3, productTypeKey: "figures", unitPrice: null, deliveryState: "NONE", deliveryDates: [] },
-          { quantity: 1, productTypeKey: "manga", unitPrice: null, deliveryState: "NONE", deliveryDates: [] },
+          {
+            id: "item-16",
+            name: "Producto 16",
+            quantity: 3,
+            productTypeKey: "figures",
+            unitPrice: null,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
+          {
+            id: "item-17",
+            name: "Producto 17",
+            quantity: 1,
+            productTypeKey: "manga",
+            unitPrice: null,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
         ],
       }),
     ]);
@@ -712,14 +908,40 @@ describe("buildDashboardData - activity and collection", () => {
       makeOrder({
         id: "a",
         totalCost: 1000,
-        items: [{ quantity: 3, productTypeKey: "figures", unitPrice: null, deliveryState: "NONE", deliveryDates: [] }],
+        items: [
+          {
+            id: "item-18",
+            name: "Producto 18",
+            quantity: 3,
+            productTypeKey: "figures",
+            unitPrice: null,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
+        ],
       }),
       makeOrder({
         id: "b",
         totalCost: 2500,
         items: [
-          { quantity: 1, productTypeKey: "manga", unitPrice: 500, deliveryState: "NONE", deliveryDates: [] },
-          { quantity: 1, productTypeKey: "books", unitPrice: 500, deliveryState: "NONE", deliveryDates: [] },
+          {
+            id: "item-19",
+            name: "Producto 19",
+            quantity: 1,
+            productTypeKey: "manga",
+            unitPrice: 500,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
+          {
+            id: "item-20",
+            name: "Producto 20",
+            quantity: 1,
+            productTypeKey: "books",
+            unitPrice: 500,
+            deliveryState: "NONE",
+            deliveryDates: [],
+          },
         ],
       }),
     ]);
@@ -734,6 +956,8 @@ describe("buildDashboardData - activity and collection", () => {
 
   it("counts distinct stores and excludes cancelled orders from the collection totals", () => {
     const item = {
+      id: "item-21",
+      name: "Producto 21",
       quantity: 2,
       productTypeKey: "figure",
       unitPrice: 1000,

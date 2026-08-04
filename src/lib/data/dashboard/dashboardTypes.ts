@@ -50,6 +50,8 @@ export type DashboardOrderInput = {
   status: OrderStatus;
   store: { id: string; name: string; slug: string };
   items: Array<{
+    id: string;
+    name: string;
     quantity: number;
     productTypeKey: string | null;
     unitPrice: number | null;
@@ -194,6 +196,21 @@ export type OrderSummary = {
   isFxPending: boolean;
 };
 
+/**
+ * One product of an arrival row that the quick-arrival flow can close: still `NONE` or
+ * `ARRIVED_AT_STORE`, so it is eligible for a new delivery. Only the arrival lists carry these
+ * (the recent-orders list has no quick action), which keeps the payload bounded.
+ */
+export type ArrivalQuickItem = {
+  id: string;
+  name: string;
+};
+
+/** An arrival-list row: an order summary plus the products its quick-arrival modal would offer. */
+export type ArrivalOrderSummary = OrderSummary & {
+  quickArrivalItems: ArrivalQuickItem[];
+};
+
 /** Orders placed vs arrived, per month. */
 export type MonthlyPlacedVsArrived = MonthKey & {
   placedCount: number;
@@ -213,8 +230,8 @@ export type ArrivalPunctuality = {
 
 export type ActivityBlock = {
   recentOrders: OrderSummary[];
-  upcomingArrivals: OrderSummary[];
-  overdueArrivals: OrderSummary[];
+  upcomingArrivals: ArrivalOrderSummary[];
+  overdueArrivals: ArrivalOrderSummary[];
   placedVsArrived: MonthlyPlacedVsArrived[];
   punctuality: ArrivalPunctuality;
 };
