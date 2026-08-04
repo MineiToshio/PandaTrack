@@ -35,13 +35,28 @@ const expectedArrivalRefinement = (
 };
 
 /**
+ * A delivery cannot reach the collector before the store dispatched it. Only enforced when both
+ * dates are present; the quick-arrival path is what makes the pair user-editable side by side,
+ * so this is where the rule is cheapest to state.
+ */
+const receivedAfterShippedRefinement = (
+  data: { deliveryDate?: Date; receivedDate?: Date | null },
+  ctx: z.RefinementCtx,
+) => {
+  if (data.deliveryDate && data.receivedDate && data.receivedDate < data.deliveryDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["receivedDate"],
+      message: "RECEIVED_BEFORE_SHIPPED",
+    });
+  }
+};
+
+/**
  * Zero-decimal currencies have no subunit, so the ×100 minor-units cost must land on a whole
  * major amount. Skips when currency or cost is absent (partial edit payloads).
  */
-const zeroDecimalCostRefinement = (
-  data: { currencyCode?: string; cost?: number },
-  ctx: z.RefinementCtx,
-) => {
+const zeroDecimalCostRefinement = (data: { currencyCode?: string; cost?: number }, ctx: z.RefinementCtx) => {
   if (!data.currencyCode || !isZeroDecimalCurrency(data.currencyCode)) {
     return;
   }
@@ -60,6 +75,15 @@ export const deliveryCreateSchema = z
     deliveryDate: z.coerce.date().refine((d) => d <= new Date(), { message: "DELIVERY_DATE_IN_FUTURE" }),
     expectedArrivalFrom: z.coerce.date().nullable().optional(),
     expectedArrivalTo: z.coerce.date().nullable().optional(),
+    /**
+     * Present only on the quick-arrival path: the delivery is born DELIVERED instead of
+     * IN_TRANSIT and skips the separate mark-delivered step. Absent on the wizard path.
+     */
+    receivedDate: z.coerce
+      .date()
+      .refine((d) => d <= new Date(), { message: "RECEIVED_DATE_IN_FUTURE" })
+      .nullable()
+      .optional(),
     cost: deliveryCostSchema,
     currencyCode: currencyCodeSchema,
     exchangeRate: exchangeRateSchema.nullable().optional(),
@@ -69,6 +93,38 @@ export const deliveryCreateSchema = z
       .max(MAX_DELIVERY_PRODUCTS, { message: "TOO_MANY_PRODUCTS" }),
   })
   .superRefine(expectedArrivalRefinement)
+  .superRefine(receivedAfterShippedRefinement)
+  .superRefine(zeroDecimalCostRefinement);
+
+/**
+ * Quick-arrival payload ("ya me llegó"): the collector logs a delivery that already reached
+ * them, from a single order, in one step. The store is never sent by the client, it is resolved
+ * from the owned order server-side. `shippedDate` is optional because it is genuinely unknowable
+ * after the fact; when omitted the arrival date stands in for it (see FR-08-36).
+ */
+export const deliveryQuickArrivalSchema = z
+  .object({
+    orderId: z.string().cuid({ message: "INVALID_ORDER_ID" }),
+    productIds: z
+      .array(z.string().cuid({ message: "INVALID_PRODUCT_ID" }))
+      .min(1, { message: "NO_PRODUCTS_SELECTED" })
+      .max(MAX_DELIVERY_PRODUCTS, { message: "TOO_MANY_PRODUCTS" }),
+    receivedDate: z.coerce.date().refine((d) => d <= new Date(), { message: "RECEIVED_DATE_IN_FUTURE" }),
+    shippedDate: z.coerce
+      .date()
+      .refine((d) => d <= new Date(), { message: "DELIVERY_DATE_IN_FUTURE" })
+      .nullable()
+      .optional(),
+    cost: deliveryCostSchema,
+    currencyCode: currencyCodeSchema,
+    exchangeRate: exchangeRateSchema.nullable().optional(),
+  })
+  .superRefine((data, ctx) =>
+    receivedAfterShippedRefinement(
+      { deliveryDate: data.shippedDate ?? undefined, receivedDate: data.receivedDate },
+      ctx,
+    ),
+  )
   .superRefine(zeroDecimalCostRefinement);
 
 export const deliveryEditSchema = z
@@ -115,6 +171,7 @@ export const deliveryNoteUpdateSchema = z.object({
 });
 
 export type DeliveryCreateInput = z.infer<typeof deliveryCreateSchema>;
+export type DeliveryQuickArrivalInput = z.infer<typeof deliveryQuickArrivalSchema>;
 export type DeliveryEditInput = z.infer<typeof deliveryEditSchema>;
 export type DeliveryMarkDeliveredInput = z.infer<typeof deliveryMarkDeliveredSchema>;
 export type DeliveryReopenInput = z.infer<typeof deliveryReopenSchema>;

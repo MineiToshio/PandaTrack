@@ -2,13 +2,7 @@ import { OrderItemDeliveryState } from "../../../generated/prisma/client";
 import type { ItemDeliveryState } from "@/lib/orders/orderState";
 
 export type DeliveryMutationType =
-  | "create"
-  | "edit-add"
-  | "edit-remove"
-  | "mark-delivered"
-  | "reopen"
-  | "cancel"
-  | "delete";
+  "create" | "create-received" | "edit-add" | "edit-remove" | "mark-delivered" | "reopen" | "cancel" | "delete";
 
 /**
  * Maps a persisted OrderItemDeliveryState to the ItemDeliveryState used by
@@ -34,6 +28,9 @@ export function mapToItemDeliveryState(state: OrderItemDeliveryState): ItemDeliv
  *
  * Transition rules:
  * - create / edit-add: NONE or ARRIVED_AT_STORE → IN_TRANSIT
+ * - create-received: NONE or ARRIVED_AT_STORE → DELIVERED (quick arrival: the box is already
+ *   in the collector's hands, so the delivery is born closed and the product never observes
+ *   the IN_TRANSIT milestone it factually skipped)
  * - edit-remove: IN_TRANSIT → ARRIVED_AT_STORE
  * - mark-delivered: IN_TRANSIT → DELIVERED
  * - reopen: DELIVERED → IN_TRANSIT
@@ -50,6 +47,7 @@ export function getNextItemDeliveryState(mutation: DeliveryMutationType): OrderI
     case "delete":
       return OrderItemDeliveryState.ARRIVED_AT_STORE;
 
+    case "create-received":
     case "mark-delivered":
       return OrderItemDeliveryState.DELIVERED;
 

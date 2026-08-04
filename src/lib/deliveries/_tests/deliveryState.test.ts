@@ -67,3 +67,9 @@ describe("isEligibleForDelivery", () => {
     expect(isEligibleForDelivery(OrderItemDeliveryState.DELIVERED)).toBe(false);
   });
 });
+
+describe("getNextItemDeliveryState create-received", () => {
+  it("sends a product straight to DELIVERED, skipping IN_TRANSIT", () => {
+    expect(getNextItemDeliveryState("create-received")).toBe(OrderItemDeliveryState.DELIVERED);
+  });
+});

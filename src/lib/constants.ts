@@ -218,6 +218,8 @@ export const POSTHOG_EVENTS = {
     LIST_EXPANDED_ALL: "deliveries_list_expanded_all",
     LIST_COLLAPSED_ALL: "deliveries_list_collapsed_all",
     MARKED_DELIVERED: "delivery_marked_delivered",
+    QUICK_ARRIVAL_OPENED: "delivery_quick_arrival_opened",
+    QUICK_ARRIVAL_LOGGED: "delivery_quick_arrival_logged",
     REOPENED: "delivery_reopened",
     CANCELLED: "delivery_cancelled",
     DELETED: "delivery_deleted",

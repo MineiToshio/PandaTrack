@@ -63,6 +63,17 @@ export async function persistDerivedOrderStatuses(tx: Prisma.TransactionClient, 
   }
 }
 
+/**
+ * Creates a delivery. Two entry points share this one transaction body:
+ *
+ * - the create wizard omits `receivedDate`, so the delivery is born IN_TRANSIT and its products
+ *   move to IN_TRANSIT, waiting for a later `markDeliveryDelivered`;
+ * - the quick-arrival flow passes `receivedDate`, so the delivery is born DELIVERED and its
+ *   products jump straight to DELIVERED, collapsing both steps into one write.
+ *
+ * They are deliberately not two functions: the store check, the eligibility compare-and-swap,
+ * the identifier, the FX base stamp and the order-status re-derivation must never drift apart.
+ */
 export async function createDelivery(userId: string, input: DeliveryCreateInput): Promise<CreateDeliveryResult> {
   const uniqueProductIds = [...new Set(input.productIds)];
   if (uniqueProductIds.length === 0) {
@@ -128,12 +139,15 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
       const humanReadableId = await generateDeliveryHumanReadableId(tx, userId, input.deliveryDate);
       const user = await tx.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } });
       const exchangeRate = input.exchangeRate ?? null;
+      const receivedDate = input.receivedDate ?? null;
+      const isBornDelivered = receivedDate !== null;
       const delivery = await tx.delivery.create({
         data: {
           humanReadableId,
           storeId: input.storeId,
           userId,
-          status: DeliveryStatus.IN_TRANSIT,
+          status: isBornDelivered ? DeliveryStatus.DELIVERED : DeliveryStatus.IN_TRANSIT,
+          receivedDate,
           deliveryDate: input.deliveryDate,
           expectedArrivalFrom: input.expectedArrivalFrom ?? null,
           expectedArrivalTo: input.expectedArrivalTo ?? null,
@@ -151,7 +165,7 @@ export async function createDelivery(userId: string, input: DeliveryCreateInput)
           userId,
           deliveryState: { in: eligibleStates },
         },
-        data: { deliveryState: getNextItemDeliveryState("create") },
+        data: { deliveryState: getNextItemDeliveryState(isBornDelivered ? "create-received" : "create") },
       });
 
       if (stateUpdate.count !== uniqueProductIds.length) {

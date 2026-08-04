@@ -28,3 +28,47 @@ describe("deliveryCreateSchema zero-decimal currency validation", () => {
     expect(result.success).toBe(true);
   });
 });
+
+describe("deliveryCreateSchema arrival date", () => {
+  const baseInput = {
+    storeId: VALID_CUID,
+    deliveryDate: new Date("2026-01-10T00:00:00.000Z"),
+    cost: 0,
+    currencyCode: "USD",
+    productIds: [VALID_CUID],
+  };
+
+  it("accepts an absent receivedDate (the wizard path)", () => {
+    expect(deliveryCreateSchema.safeParse(baseInput).success).toBe(true);
+  });
+
+  it("accepts a receivedDate on or after the shipping date", () => {
+    const result = deliveryCreateSchema.safeParse({
+      ...baseInput,
+      receivedDate: new Date("2026-01-12T00:00:00.000Z"),
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects a receivedDate earlier than the shipping date", () => {
+    const result = deliveryCreateSchema.safeParse({
+      ...baseInput,
+      receivedDate: new Date("2026-01-09T00:00:00.000Z"),
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.map((issue) => issue.message)).toContain("RECEIVED_BEFORE_SHIPPED");
+    }
+  });
+
+  it("rejects a receivedDate in the future", () => {
+    const result = deliveryCreateSchema.safeParse({
+      ...baseInput,
+      receivedDate: new Date(Date.now() + 86_400_000),
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.map((issue) => issue.message)).toContain("RECEIVED_DATE_IN_FUTURE");
+    }
+  });
+});

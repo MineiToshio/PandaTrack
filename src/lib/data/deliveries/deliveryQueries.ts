@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { needsFxReconciliation } from "@/lib/fx/reconciliation";
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
-import { OrderItemDeliveryState, type DeliveryStatus } from "../../../../generated/prisma/client";
+import { OrderItemDeliveryState, type DeliveryStatus, type OrderStatus } from "../../../../generated/prisma/client";
 import type { DeliveryListSort } from "@/lib/deliveries/deliveryListSort";
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
 
@@ -38,6 +38,8 @@ export type DeliverySourceOrder = {
   orderHumanReadableId: string;
   storeId: string;
   storeName: string;
+  /** Lets a caller refuse to attach a delivery to a cancelled order server-side. */
+  status: OrderStatus;
 };
 
 export type DeliveryStub = {
@@ -84,6 +86,7 @@ export async function getDeliverySourceOrder(orderId: string, userId: string): P
       id: true,
       humanReadableId: true,
       storeId: true,
+      status: true,
       store: { select: { name: true } },
     },
   });
@@ -95,6 +98,7 @@ export async function getDeliverySourceOrder(orderId: string, userId: string): P
     orderHumanReadableId: order.humanReadableId,
     storeId: order.storeId,
     storeName: order.store.name,
+    status: order.status,
   };
 }
 

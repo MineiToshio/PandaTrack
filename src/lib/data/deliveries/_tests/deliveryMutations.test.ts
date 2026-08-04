@@ -397,4 +397,116 @@ describe("createDelivery", () => {
     expect(result).toEqual({ ok: false, error: "PRODUCT_NOT_ELIGIBLE", ineligibleProductIds: ["item-2"] });
     expect(tx.delivery.create).not.toHaveBeenCalled();
   });
+
+  // Quick arrival ("ya me llegó") reuses this same transaction body with `receivedDate` set.
+  describe("with receivedDate (quick arrival)", () => {
+    const receivedDate = new Date("2026-05-02T00:00:00.000Z");
+    const quickInput = { ...input, receivedDate };
+
+    it("creates the delivery already DELIVERED and stores the received date", async () => {
+      const tx = makeCreateTx();
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: Prisma.TransactionClient) => unknown) =>
+        callback(tx),
+      );
+
+      const result = await createDelivery("user-1", quickInput);
+
+      expect(result).toEqual({ ok: true, deliveryId: "delivery-1", productCount: 2, orderCount: 1 });
+      expect(tx.delivery.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          status: DeliveryStatus.DELIVERED,
+          receivedDate,
+        }),
+        select: { id: true },
+      });
+    });
+
+    it("moves the products straight to DELIVERED, skipping IN_TRANSIT", async () => {
+      const tx = makeCreateTx();
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: Prisma.TransactionClient) => unknown) =>
+        callback(tx),
+      );
+
+      await createDelivery("user-1", quickInput);
+
+      expect(tx.orderItem.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: { in: ["item-1", "item-2"] },
+          userId: "user-1",
+          deliveryState: { in: [OrderItemDeliveryState.NONE, OrderItemDeliveryState.ARRIVED_AT_STORE] },
+        },
+        data: { deliveryState: OrderItemDeliveryState.DELIVERED },
+      });
+    });
+
+    it("re-derives the source order to COMPLETED when every product is delivered", async () => {
+      const tx = makeCreateTx({
+        order: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: "order-1",
+              status: OrderStatus.OPEN,
+              items: [
+                { id: "item-1", deliveryState: OrderItemDeliveryState.DELIVERED },
+                { id: "item-2", deliveryState: OrderItemDeliveryState.DELIVERED },
+              ],
+            },
+          ]),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        } as unknown as Prisma.TransactionClient["order"],
+      });
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: Prisma.TransactionClient) => unknown) =>
+        callback(tx),
+      );
+
+      await createDelivery("user-1", quickInput);
+
+      expect(tx.order.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ["order-1"] } },
+        data: { status: OrderStatus.COMPLETED },
+      });
+    });
+
+    it("re-derives the source order to PARTIALLY_DELIVERED when only some products arrived", async () => {
+      const tx = makeCreateTx({
+        order: {
+          findMany: vi.fn().mockResolvedValue([
+            {
+              id: "order-1",
+              status: OrderStatus.OPEN,
+              items: [
+                { id: "item-1", deliveryState: OrderItemDeliveryState.DELIVERED },
+                { id: "item-2", deliveryState: OrderItemDeliveryState.NONE },
+              ],
+            },
+          ]),
+          updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        } as unknown as Prisma.TransactionClient["order"],
+      });
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: Prisma.TransactionClient) => unknown) =>
+        callback(tx),
+      );
+
+      await createDelivery("user-1", { ...quickInput, productIds: ["item-1", "item-2"] });
+
+      expect(tx.order.updateMany).toHaveBeenCalledWith({
+        where: { id: { in: ["order-1"] } },
+        data: { status: OrderStatus.PARTIALLY_DELIVERED },
+      });
+    });
+
+    it("keeps the wizard path untouched: no receivedDate means IN_TRANSIT", async () => {
+      const tx = makeCreateTx();
+      prismaMock.$transaction.mockImplementation(async (callback: (tx: Prisma.TransactionClient) => unknown) =>
+        callback(tx),
+      );
+
+      await createDelivery("user-1", input);
+
+      expect(tx.delivery.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({ status: DeliveryStatus.IN_TRANSIT, receivedDate: null }),
+        select: { id: true },
+      });
+    });
+  });
 });
