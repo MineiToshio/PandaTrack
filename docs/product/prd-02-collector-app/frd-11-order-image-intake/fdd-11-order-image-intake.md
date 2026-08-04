@@ -335,9 +335,54 @@ than the collector's, because a category is inferred every time and must never r
 chat stated (`FR-11-90`, `FR-11-93`). Once the collector picks one, the chip goes away: it is their
 answer now. A collapsed group shows the pill once, for the whole group, with the caption "Se aplica a
 los N productos" (`FR-11-94`); a group whose rows disagree reads "Categorías distintas" instead of
-promoting one of them. The picker is the same `MobilePicker` the manual product form uses, mounted
-once per card and pointed at whichever row asked for it, so a fifty-row group does not mount fifty
-sheets.
+promoting one of them.
+
+The pill is the trigger of `<ItemTypePicker>` (`orders/_components/share/ItemTypePicker.tsx`), the
+same component the manual product form's item grid uses, in its `chip` appearance and `adaptive`
+presentation. Adaptive means it resolves the surface the way `<Modal>` does: the searchable popover
+below 768px is wrong for a pointer and the popover above it is wrong for a thumb, so the component
+picks. This is what `FR-11-93`'s "the same picker" has to mean in practice — the screen previously
+mounted `MobilePicker` unconditionally and served a phone drawer to desktop collectors. One picker is
+open per card at a time, pointed at whichever row asked for it, so a fifty-row group never mounts
+fifty option lists.
+
+**Correction mode** (`FR-11-51`, `FR-11-51a`). One control, in the screen header beside the title:
+`Corregir` (ghost, `Pencil`) becomes `Listo` (tonal, `Check`) while it is on, and it carries
+`aria-pressed`. Pressing it opens every value that was read: the order date, the currency, the total,
+the expected window, each payment, and each expanded product row's name and price. Pressing it again
+closes them.
+
+The alternative shapes were both rejected. A pencil per field puts twenty-one more targets on a
+six-product draft, on a card that already carries a category pill, a link, a disclosure, and a
+split/merge control per group, and it competes with the confidence chips, which are the things the
+header's count is about. Opening the form permanently is worse still: a screen of inputs is scrolled
+past and accepted, which is the failure the whole review screen exists to prevent. The default
+therefore stays a document, and the collector asks once.
+
+An editable value keeps the geometry of the value it replaces: label left, value right, 44px minimum
+row, and **no border at rest** — the border appears on focus. A permanent box around every corrected
+value would leave the screen reading as a form after the correction was made.
+
+A collapsed group is not editable in place. Its one line is a range and an aggregate, not a value
+anyone can type into, so correcting a row inside it means opening the group first, which is the same
+gesture as reading it. The card says so while correction mode is on.
+
+`ProductSplitMergeModal` is untouched by any of this and stays exactly where it is. Its job is
+cardinality — how many rows there are — and correcting text is not that. That separation is also why
+an inline correction does not reset `doubtful`, `priceSplit`, or a category the collector already
+owns, while a split or a merge does: those replace the model's answer about the group's shape, and a
+typo fix says nothing about it (`FR-11-51a`).
+
+**Totals reconciliation** (`FR-11-58a`). Inside the totals card, an amber `AlertBanner` appears when
+the products' prices do not add up to the stated total, naming both figures. It never blocks the
+save, and it is deliberately not part of the header's doubt count: it is derived from the draft
+rather than read from the chat, and the count has to keep matching what looks interactive. A stated
+shipping cost is added before the comparison, and a draft with any unpriced row raises nothing.
+
+**Payments** (`FR-11-51`). Each payment renders as two attribute rows, amount and date, through the
+same `ProvenanceValue` as every other attribute. They used to render as flat text whatever their
+`source` said, which hid the one case the provenance rule exists for: an amount the model filled in
+by convention looked exactly like one it had read.
 
 The reference link exists for the case where the buyer never typed a name, only a URL. It is shown so
 the collector can see what they are naming; the host alone is shown because a marketplace URL is
@@ -393,7 +438,7 @@ The feature introduces no new tokens. It applies existing ones from
 | ----------------------------------------------- | ------------------ | --------------------------------------------------------------------------------- |
 | Read value                                      | `--text-primary`   | Plain-text attribute values on the review screen                                  |
 | Supporting label and source quote               | `--text-secondary` | Attribute labels, the `Del chat: "..."` line                                      |
-| Confident group                                 | `--success`        | Group dot and icon when the split is clean                                        |
+| Confident group                                 | `--text-secondary` | Group chip when the split is clean, in the neutral chip variant                   |
 | Assumed value, price-split warning, low balance | `--warning`        | The assumed chip, the equal-split note, "Te quedan 6 fotos este mes."             |
 | Doubtful group, quota overflow                  | `--warning`        | Doubtful group chip, the overflow banner                                          |
 | Blocked or failed                               | `--destructive`    | Provider failure, the 200-product ceiling stop, no order found, validation errors |
@@ -403,6 +448,13 @@ The feature introduces no new tokens. It applies existing ones from
 "we guessed, look at this". It must never be the only signal
 ([ADR 0006](../../../design/decisions/0006-color-blindness-icon-label-contract.md)); every
 amber element carries an icon and a word.
+
+The clean group chip is **neutral, not green**, and that is the counterpart of the same decision.
+Amber only reads as "look here" if the chips that mean "nothing to do" stay quiet; a saturated
+success colour on every well-read group competes with the few amber ones for exactly the attention
+the header's count is directing. The chips carry neutral, amber, and destructive tints only, never
+the brand accent: the accent belongs to the primary CTA and the focus rings, and a chip wearing it
+would read as the thing to press.
 
 ### 3.2 Typography
 
@@ -426,23 +478,23 @@ pinned into it. The bottom sheet and the modal follow
 
 All from [components.md](../../../design/components.md) unless marked new.
 
-| Component                              | Use here                                                                                  |
-| -------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `Modal` / `Sheet`                      | Selector overlay, split and merge modal                                                   |
-| `Card` / `SectionCard`                 | Selector cards, group cards, store block                                                  |
-| `Chip` / `Pill`                        | Assumed marker, passive photo counter, group state chip                                   |
-| `StatusChip`                           | The saved order's status, unchanged                                                       |
-| `AlertBanner`                          | Quota overflow, the 200-product ceiling stop, no order found, provider failure            |
-| `EmptyState`                           | Hosts the inline selector cards                                                           |
-| `Skeleton`                             | Not used: the processing screen names real steps instead                                  |
-| `Toast`                                | "Pedido creado" with undo; split and merge undo, grouped                                  |
-| `Button` / `IconButton`                | Primary CTA, group actions, remove-photo control                                          |
-| `Input` / `Select` / `Combobox`        | Only for assumed or missing values, and inside the split modal                            |
-| `Radio` / `ReportReasonPicker` pattern | The store disambiguator's vertical single-select shape                                    |
-| `StoreCombobox`                        | The "Cambiar" path on the store block                                                     |
-| `MobilePicker`                         | The per-product (and per-collapsed-group) category picker, as in the manual product sheet |
-| `ImageCropper`                         | Not used: intake never crops, it compresses                                               |
-| `Tooltip`                              | Not used on mobile-critical affordances                                                   |
+| Component                              | Use here                                                                                                                                                                                                                                    |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Modal` / `Sheet`                      | Selector overlay, split and merge modal                                                                                                                                                                                                     |
+| `Card` / `SectionCard`                 | Selector cards, group cards, store block                                                                                                                                                                                                    |
+| `Chip` / `Pill`                        | Assumed marker, passive photo counter, group state chip                                                                                                                                                                                     |
+| `StatusChip`                           | The saved order's status, unchanged                                                                                                                                                                                                         |
+| `AlertBanner`                          | Quota overflow, the 200-product ceiling stop, no order found, provider failure                                                                                                                                                              |
+| `EmptyState`                           | Hosts the inline selector cards                                                                                                                                                                                                             |
+| `Skeleton`                             | Not used: the processing screen names real steps instead                                                                                                                                                                                    |
+| `Toast`                                | "Pedido creado" with undo; split and merge undo, grouped                                                                                                                                                                                    |
+| `Button` / `IconButton`                | Primary CTA, group actions, remove-photo control                                                                                                                                                                                            |
+| `Input` / `Select` / `Combobox`        | Only for assumed or missing values, and inside the split modal                                                                                                                                                                              |
+| `Radio` / `ReportReasonPicker` pattern | The store disambiguator's vertical single-select shape                                                                                                                                                                                      |
+| `StoreCombobox`                        | The "Cambiar" path on the store block                                                                                                                                                                                                       |
+| `ItemTypePicker`                       | The per-product (and per-collapsed-group) category picker, in `chip` appearance and `adaptive` presentation: literally the manual item grid's own component, so `FR-11-93` holds at every width. It delegates to `MobilePicker` below 768px |
+| `ImageCropper`                         | Not used: intake never crops, it compresses                                                                                                                                                                                                 |
+| `Tooltip`                              | Not used on mobile-critical affordances                                                                                                                                                                                                     |
 
 **Genuinely new reusable components** flagged for a `docs/design/` entry once they exist in
 `src/components/` (the component inventory guard keeps
@@ -456,7 +508,16 @@ here and added there in the change that creates them):
    domain needs a method selector.
 3. **`ProvenanceValue`** (`core/`): renders a `Field<T>` as plain text when read and as a
    marked control when assumed or missing. It is the component that makes `BR-11-02`
-   structurally true instead of a convention.
+   structurally true instead of a convention. Its `layout="row"` keeps an attribute's geometry
+   identical either way, and its `editing` prop is the single hook correction mode pulls
+   (`FR-11-51`) — screen-wide, never per field.
+
+`ItemTypePicker` is not new to the codebase, but it is newly shared: it was defined inside
+`OrderItemsGrid.tsx` and not exported, which is why the review screen had grown a second, phone-only
+picker instead of consuming it. It now lives at
+`src/app/[locale]/(app)/orders/_components/share/ItemTypePicker.tsx`. It stays in the orders subtree
+rather than moving to `src/components/`: both consumers are order-shaped, and the catalog it reads is
+the order item's product type.
 
 ---
 
@@ -467,11 +528,11 @@ here and added there in the change that creates them):
 Per [states.md](../../../design/states.md) and
 [ADR 0013](../../../design/decisions/0013-cross-cutting-state-system.md).
 
-| State   | Treatment here                                                                                       |
-| ------- | ---------------------------------------------------------------------------------------------------- |
-| Empty   | Orders empty state hosts the inline selector; no separate intake empty state exists                  |
-| Loading | The named three-step processing block, not a skeleton, because the wait is a process and not a fetch |
-| Error   | Inline `AlertBanner` with the specific cause and the specific remedy; the attachments are never lost |
+| State   | Treatment here                                                                                        |
+| ------- | ----------------------------------------------------------------------------------------------------- |
+| Empty   | Orders empty state hosts the inline selector; no separate intake empty state exists                   |
+| Loading | The named three-step processing block, not a skeleton, because the wait is a process and not a fetch  |
+| Error   | Inline `AlertBanner` with the specific cause and the specific remedy; the attachments are never lost  |
 | Blocked | Quota exhausted states the reason and offers the available path (split-blocked retired, **ADR 0023**) |
 
 The mascot never appears in any error, confirmation, or quota state
@@ -490,6 +551,36 @@ Three states, each carrying dot plus icon plus label:
 These reverting actions exist only here. After "Crear pedido" the breakdown is corrected by
 editing the order and rewriting the rows by hand, which loses the automatic price split. That
 cost is recorded and accepted in **ADR 0023**.
+
+### 5.2b Motion
+
+Three moments, composed from the `docs/design/motion.md` §2 token vocabulary and no others. Only
+`transform`, `opacity`, and `clip-path` are animated; the CSS lives in `globals.css` §14.
+
+| Moment                        | Treatment                                                                                                         |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Group cards arrive            | Rise 6px plus fade, `--motion-base` / `--ease-out-expressive`, staggered 50ms for the first six and instant after |
+| A group is opened             | `clip-path` reveal plus fade, same duration and curve                                                             |
+| The order total is recomputed | Opacity cross-fade at `--motion-fast`, keyed on the product count                                                 |
+
+Three deliberate choices inside that:
+
+- **The stagger is capped, and it blocks nothing.** Past the sixth card the delay is dropped rather
+  than extended, because a fifty-group stagger would put four seconds between the first card and the
+  last, and every card is interactive from the frame it exists.
+- **Opening a group animates; closing does not.** The rows are mounted only while the group is open,
+  so a collapsed group has nothing tabbable hidden under a zero-height container. The price of that
+  choice is that there is no node left to animate on the way out, and a focus trap in a collapsed
+  group is the worse defect.
+- **The total cross-fades on a split or a merge, never on a keystroke.** `motion.md` §6.4 asks for
+  the count-roll on figures that change through an optimistic update, and this figure is not that:
+  it changes while a person types into it, many times per correction, and animating the most
+  frequent action on a screen is the anti-pattern the same document closes with. Keying the fade on
+  the product count keeps it for the rare, structural change and drops it for typing.
+
+Reduced motion is written explicitly rather than left to the global floor, per `motion.md` §4:
+travel and stagger go, the opacity cross-fade stays at 150ms, so an arriving card and a changed
+figure still read as events.
 
 ### 5.3 Optimistic behaviour
 
@@ -602,6 +693,11 @@ The word is always **foto**. Never "extracción", "crédito", or "token".
 | Naming offer, action         | [Añadir la captura de la ficha]                                                                                                                                                                                                        |
 | Naming offer, way out        | No es obligatorio: puedes guardar así y cambiarle el nombre después.                                                                                                                                                                   |
 | Equal price split            | Repartimos S/ 180.00 en partes iguales. Ajusta si una pieza vale más que la otra                                                                                                                                                       |
+| Correction control           | Corregir / Listo                                                                                                                                                                                                                       |
+| Correction hint              | Ahora puedes cambiar cualquier dato que hayamos leído, incluido el nombre y el precio de cada producto. Toca "Listo" cuando termines.                                                                                                  |
+| Correction, collapsed group  | Abre los 50 para corregir un nombre o un precio.                                                                                                                                                                                       |
+| Blank product name           | Un producto se quedó sin nombre. Escríbele uno para poder guardar el pedido.                                                                                                                                                           |
+| Totals mismatch              | Los productos no suman el total · Los productos suman S/ 480.00 y el total del pedido dice S/ 110.00. Guardamos el total tal como está: revisa cuál de los dos es el correcto.                                                         |
 | Shipping cost                | Costo de envío · Lo leímos del chat, pero se guarda recién cuando registres la entrega.                                                                                                                                                |
 | Product ceiling              | Son demasiados productos para un pedido. El chat pide 240 y un pedido admite 200. Únelos en un solo producto o divide la compra en dos pedidos.                                                                                        |
 | No order found               | No encontramos ningún pedido en esas fotos. Suele pasar cuando la foto es solo del producto: necesitamos ver la conversación o el recibo, donde salgan los productos y los montos. Quita la foto que no corresponde y prueba con otra. |
@@ -676,14 +772,16 @@ Only the feature-specific behaviour is recorded here; the shell breakpoints are 
 [responsive-design.mdc](../../../../.agents/rules/responsive-design.mdc) and
 [interface-patterns.md](../../../design/interface-patterns.md).
 
-| Breakpoint      | Behaviour                                                                                                      |
-| --------------- | -------------------------------------------------------------------------------------------------------------- |
-| Below `1024px`  | Floating button on Dashboard and Orders; selector as a bottom `Sheet`; the mobile bar "Nuevo" button is absent |
-| `1024px` and up | No floating button; selector as a `Modal`; entry is a primary toolbar or header button                         |
-| Below `640px`   | Group rows stack name over price; the group summary keeps its numbers right-aligned so the column survives     |
-| Below `768px`   | The review actions are a sticky bottom bar, with the content reserving a strip of padding to clear it          |
-| `768px` and up  | The review actions become an inline right-aligned footer at the end of the content; the reserved strip is gone |
-| Any             | The review screen is a single column at every width; it never becomes a two-column form                        |
+| Breakpoint      | Behaviour                                                                                                                                                                                                                                            |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Below `1024px`  | Floating button on Dashboard and Orders; selector as a bottom `Sheet`; the mobile bar "Nuevo" button is absent                                                                                                                                       |
+| `1024px` and up | No floating button; selector as a `Modal`; entry is a primary toolbar or header button                                                                                                                                                               |
+| Below `640px`   | Group rows stack name over price; the group summary keeps its numbers right-aligned so the column survives                                                                                                                                           |
+| Below `768px`   | The review actions are a fixed bottom bar, with the content reserving a strip of padding to clear it, and every focusable descendant carrying an equal `scroll-margin-bottom` so a field scrolled into view stops above the bar rather than under it |
+| Below `768px`   | Every tap target on the review screen is at least 44px: the category pill, the reference link, and each inline correction field relax to the denser desktop geometry only from `md` up                                                               |
+| Below `640px`   | An expanded row's correction fields stack, name over price; from `sm` up they share one line with the price right-aligned                                                                                                                            |
+| `768px` and up  | The review actions become an inline right-aligned footer at the end of the content; the reserved strip is gone                                                                                                                                       |
+| Any             | The review screen is a single column at every width; it never becomes a two-column form                                                                                                                                                              |
 
 The upload thumbnail grid reflows from four columns to two. The processing block is centred and
 identical at every width. Nothing in this feature scrolls horizontally.
