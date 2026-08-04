@@ -10,6 +10,12 @@ const { getSessionMock, createDeliveryMock, getDeliverySourceOrderMock, preferen
     posthogCaptureMock: vi.fn(),
   }));
 
+// Cache revalidation is a Next request-scoped API; the unit under test only needs it to be
+// called, and calling it for real here throws outside a request.
+vi.mock("@/lib/cache/revalidateCollectionSurfaces", () => ({
+  revalidateCollectionSurfaces: vi.fn(),
+}));
+
 vi.mock("@/lib/auth/auth-server", () => ({ getSession: getSessionMock }));
 
 vi.mock("@/lib/data/deliveries/deliveryMutations", () => ({ createDelivery: createDeliveryMock }));

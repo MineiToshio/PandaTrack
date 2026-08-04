@@ -8,6 +8,7 @@ import { createDelivery } from "@/lib/data/deliveries/deliveryMutations";
 import { getDeliverySourceOrder } from "@/lib/data/deliveries/deliveryQueries";
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import { deliveryQuickArrivalSchema } from "@/lib/deliveries/deliveryValidation";
+import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSurfaces";
 
 export type QuickArrivalActionInput = {
   orderId: string;
@@ -73,6 +74,12 @@ export async function quickArrivalAction(input: QuickArrivalActionInput): Promis
     if (!result.ok) {
       return { ok: false, error: result.error };
     }
+
+    // Any cached copy of a list or the dashboard is now wrong; see the helper for why
+
+    // `router.refresh()` on the client is not enough.
+
+    revalidateCollectionSurfaces();
 
     const posthog = getPostHogClient();
     posthog.capture({

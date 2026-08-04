@@ -10,6 +10,7 @@ import { deliveryEditSchema } from "@/lib/deliveries/deliveryValidation";
 import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
 import { prisma } from "@/lib/prisma";
 import type { DeliveryCreateActionResult } from "../../../new/_actions/createDeliveryAction";
+import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSurfaces";
 
 function parseProductIds(raw: FormDataEntryValue | null): string[] {
   if (typeof raw !== "string" || raw.trim() === "") return [];
@@ -83,6 +84,12 @@ export async function editDeliveryAction(
     if (!result.ok) {
       return { success: false, error: result.error };
     }
+
+    // Any cached copy of a list or the dashboard is now wrong; see the helper for why
+
+    // `router.refresh()` on the client is not enough.
+
+    revalidateCollectionSurfaces();
 
     const posthog = getPostHogClient();
     posthog.capture({

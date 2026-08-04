@@ -13,6 +13,7 @@ import {
   orderReactivateSchema,
 } from "@/lib/orders/orderValidation";
 import { isLocale } from "@/types/locale";
+import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSurfaces";
 
 export type OrderLifecycleResult = { ok: true } | { ok: false; error: string };
 
@@ -33,6 +34,12 @@ export async function cancelOrderAction(
   try {
     const result = await cancelOrder(orderId, userId, reason, parsed.data.paymentsChoice);
     if (!result.ok) return { ok: false, error: result.error };
+
+    // Any cached copy of a list or the dashboard is now wrong; see the helper for why
+
+    // `router.refresh()` on the client is not enough.
+
+    revalidateCollectionSurfaces();
 
     const posthog = getPostHogClient();
     posthog.capture({
@@ -64,6 +71,12 @@ export async function deleteOrderAction(orderId: string, locale: string): Promis
     const result = await deleteOrder(orderId, userId);
     if (!result.ok) return { ok: false, error: result.error };
 
+    // Any cached copy of a list or the dashboard is now wrong; see the helper for why
+
+    // `router.refresh()` on the client is not enough.
+
+    revalidateCollectionSurfaces();
+
     const posthog = getPostHogClient();
     posthog.capture({ distinctId: userId, event: POSTHOG_EVENTS.ORDER.DELETED, properties: { orderId } });
     await posthog.shutdown();
@@ -87,6 +100,12 @@ export async function reactivateOrderAction(orderId: string): Promise<OrderLifec
   try {
     const result = await reactivateOrder(orderId, userId);
     if (!result.ok) return { ok: false, error: result.error };
+
+    // Any cached copy of a list or the dashboard is now wrong; see the helper for why
+
+    // `router.refresh()` on the client is not enough.
+
+    revalidateCollectionSurfaces();
 
     const posthog = getPostHogClient();
     posthog.capture({ distinctId: userId, event: POSTHOG_EVENTS.ORDER.REACTIVATED, properties: { orderId } });

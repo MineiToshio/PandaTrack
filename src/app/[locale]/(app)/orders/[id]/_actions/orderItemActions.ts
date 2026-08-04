@@ -6,6 +6,7 @@ import { getPostHogClient } from "@/lib/analytics/posthog-server";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { setOrderItemArrivedAtStore } from "@/lib/data/orders/orderMutations";
 import { orderItemDeleteSchema } from "@/lib/orders/orderValidation";
+import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSurfaces";
 
 export type SetOrderItemArrivedResult = { ok: true; arrived: boolean } | { ok: false; error: string };
 
@@ -25,6 +26,12 @@ export async function setOrderItemArrivedAction(
   try {
     const result = await setOrderItemArrivedAtStore(itemId, userId, arrived);
     if (!result.ok) return { ok: false, error: result.error };
+
+    // Any cached copy of a list or the dashboard is now wrong; see the helper for why
+
+    // `router.refresh()` on the client is not enough.
+
+    revalidateCollectionSurfaces();
 
     const posthog = getPostHogClient();
     posthog.capture({

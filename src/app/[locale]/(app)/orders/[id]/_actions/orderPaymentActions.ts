@@ -7,6 +7,7 @@ import { POSTHOG_EVENTS } from "@/lib/constants";
 import { addOrderPayment, deleteOrderPayment } from "@/lib/data/orders/orderPaymentMutations";
 import { orderPaymentCreateSchema, orderPaymentDeleteSchema } from "@/lib/orders/orderValidation";
 import type { PaymentSummary } from "@/lib/orders/paymentSummary";
+import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSurfaces";
 
 type PaymentRecord = { id: string; amount: number; paymentDate: Date };
 type PaymentMutationPayload = PaymentSummary & { payments: PaymentRecord[] };
@@ -33,6 +34,12 @@ export async function addPaymentAction(
     const result = await addOrderPayment({ orderId, userId, amount, paymentDate });
     if (!result.ok) return { ok: false, error: result.error };
 
+    // Any cached copy of a list or the dashboard is now wrong; see the helper for why
+
+    // `router.refresh()` on the client is not enough.
+
+    revalidateCollectionSurfaces();
+
     const posthog = getPostHogClient();
     posthog.capture({ distinctId: userId, event: POSTHOG_EVENTS.ORDER.PAYMENT_ADDED, properties: { orderId } });
     await posthog.shutdown();
@@ -55,6 +62,12 @@ export async function deletePaymentAction(paymentId: string, orderId: string): P
   try {
     const result = await deleteOrderPayment({ paymentId, orderId, userId });
     if (!result.ok) return { ok: false, error: result.error };
+
+    // Any cached copy of a list or the dashboard is now wrong; see the helper for why
+
+    // `router.refresh()` on the client is not enough.
+
+    revalidateCollectionSurfaces();
 
     const posthog = getPostHogClient();
     posthog.capture({ distinctId: userId, event: POSTHOG_EVENTS.ORDER.PAYMENT_DELETED, properties: { orderId } });

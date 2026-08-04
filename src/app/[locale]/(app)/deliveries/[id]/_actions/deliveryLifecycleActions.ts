@@ -18,6 +18,7 @@ import {
   deliveryReopenSchema,
 } from "@/lib/deliveries/deliveryValidation";
 import { isLocale } from "@/types/locale";
+import { revalidateCollectionSurfaces } from "@/lib/cache/revalidateCollectionSurfaces";
 
 export type DeliveryLifecycleActionResult = { ok: true } | { ok: false; error: string };
 
@@ -35,6 +36,12 @@ export async function markDeliveredAction(
   try {
     const result = await markDeliveryDelivered(parsed.data.deliveryId, userId, parsed.data.receivedDate);
     if (!result.ok) return { ok: false, error: result.error };
+
+    // Any cached copy of a list or the dashboard is now wrong; see the helper for why
+
+    // `router.refresh()` on the client is not enough.
+
+    revalidateCollectionSurfaces();
 
     const posthog = getPostHogClient();
     posthog.capture({
@@ -63,6 +70,12 @@ export async function reopenDeliveryAction(deliveryId: string): Promise<Delivery
     const result = await reopenDelivery(parsed.data.deliveryId, userId);
     if (!result.ok) return { ok: false, error: result.error };
 
+    // Any cached copy of a list or the dashboard is now wrong; see the helper for why
+
+    // `router.refresh()` on the client is not enough.
+
+    revalidateCollectionSurfaces();
+
     const posthog = getPostHogClient();
     posthog.capture({
       distinctId: userId,
@@ -89,6 +102,12 @@ export async function cancelDeliveryAction(deliveryId: string): Promise<Delivery
   try {
     const result = await cancelDelivery(parsed.data.deliveryId, userId);
     if (!result.ok) return { ok: false, error: result.error };
+
+    // Any cached copy of a list or the dashboard is now wrong; see the helper for why
+
+    // `router.refresh()` on the client is not enough.
+
+    revalidateCollectionSurfaces();
 
     const posthog = getPostHogClient();
     posthog.capture({
@@ -119,6 +138,12 @@ export async function deleteDeliveryAction(deliveryId: string, locale: string): 
   try {
     const result = await deleteDelivery(parsed.data.deliveryId, userId);
     if (!result.ok) return { ok: false, error: result.error };
+
+    // Any cached copy of a list or the dashboard is now wrong; see the helper for why
+
+    // `router.refresh()` on the client is not enough.
+
+    revalidateCollectionSurfaces();
 
     const posthog = getPostHogClient();
     posthog.capture({
