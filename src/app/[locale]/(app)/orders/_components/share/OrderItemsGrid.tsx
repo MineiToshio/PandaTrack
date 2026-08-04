@@ -12,7 +12,7 @@ import {
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, X } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/styles";
 import { sanitizeDecimalInput } from "@/lib/decimalInput";
@@ -69,6 +69,7 @@ type OrderItemRowProps = {
   index: number;
   productTypeKeys: string[];
   tProductTypes: (key: string) => string;
+  showQuantity: boolean;
   nameError?: string;
   quantityError?: string;
   unitPriceError?: string;
@@ -87,6 +88,7 @@ function OrderItemRow({
   index,
   productTypeKeys,
   tProductTypes,
+  showQuantity,
   nameError,
   quantityError,
   unitPriceError,
@@ -159,24 +161,26 @@ function OrderItemRow({
       </td>
 
       {/* Quantity */}
-      <td className="px-[3px] py-[2px] text-right align-top">
-        <input
-          id={cellInputId("qty", row.rowId)}
-          type="number"
-          min="1"
-          step="1"
-          value={row.quantity}
-          aria-label={t("itemQuantityLabel")}
-          aria-invalid={!!quantityError}
-          onChange={(e) => onQuantityChange(row.rowId, e.target.value)}
-          onKeyDown={(e) => onCellKeyDown(e, { column: "qty", rowId: row.rowId })}
-          className={cn(
-            CELL_INPUT_BASE,
-            "w-[52px] px-1 py-1.5 text-right",
-            quantityError && "[box-shadow:inset_0_0_0_1px_var(--destructive)]",
-          )}
-        />
-      </td>
+      {showQuantity && (
+        <td className="px-[3px] py-[2px] text-right align-top">
+          <input
+            id={cellInputId("qty", row.rowId)}
+            type="number"
+            min="1"
+            step="1"
+            value={row.quantity}
+            aria-label={t("itemQuantityLabel")}
+            aria-invalid={!!quantityError}
+            onChange={(e) => onQuantityChange(row.rowId, e.target.value)}
+            onKeyDown={(e) => onCellKeyDown(e, { column: "qty", rowId: row.rowId })}
+            className={cn(
+              CELL_INPUT_BASE,
+              "w-[52px] px-1 py-1.5 text-right",
+              quantityError && "[box-shadow:inset_0_0_0_1px_var(--destructive)]",
+            )}
+          />
+        </td>
+      )}
 
       {/* Unit price */}
       <td className="px-[3px] py-[2px] text-right align-top">
@@ -251,6 +255,13 @@ type OrderItemsGridProps = {
   createNewRow: () => ItemRow;
   /** Currency code shown in the "Precio unit. ({currency})" header. */
   currencyCode?: string;
+  /**
+   * Hides the quantity column. The image-intake review screen sets it: an extracted draft carries
+   * one product per unit by construction (the breakdown engine expands a lot into single-unit rows
+   * so a partial arrival can be tracked), so a quantity cell there would offer a second, conflicting
+   * way to say the same thing.
+   */
+  showQuantity?: boolean;
 };
 
 export function createEmptyRow(rowId: string): ItemRow {
@@ -271,6 +282,7 @@ export default function OrderItemsGrid({
   itemErrors = {},
   createNewRow,
   currencyCode,
+  showQuantity = true,
 }: OrderItemsGridProps) {
   const t = useTranslations("orders.form");
   const [openTypePickerRowId, setOpenTypePickerRowId] = useState<string | null>(null);
@@ -338,6 +350,13 @@ export default function OrderItemsGrid({
   //   Ctrl + Shift + Enter              insert new row below the current row, focus its name cell
   //   Ctrl + Shift + Backspace | Delete delete current row, move focus to same column of previous
   //   Alt + Shift + ↑/↓                 reorder current row up / down one position
+  // Without the quantity column its key is not a focus target, so Ctrl+Shift+←/→ has to walk the
+  // columns that exist rather than the canonical four.
+  const navigableColumns = useMemo(
+    () => (showQuantity ? COLUMN_ORDER : COLUMN_ORDER.filter((column) => column !== "qty")),
+    [showQuantity],
+  );
+
   const handleCellKeyDown = useCallback(
     (event: React.KeyboardEvent, ctx: CellKeyDownContext) => {
       const key = event.key;
@@ -391,11 +410,11 @@ export default function OrderItemsGrid({
 
       if (key === "ArrowLeft" || key === "ArrowRight") {
         event.preventDefault();
-        const currentColumnIdx = COLUMN_ORDER.indexOf(ctx.column);
+        const currentColumnIdx = navigableColumns.indexOf(ctx.column);
         const direction = key === "ArrowLeft" ? -1 : 1;
         const targetColumnIdx = currentColumnIdx + direction;
-        if (targetColumnIdx < 0 || targetColumnIdx >= COLUMN_ORDER.length) return;
-        focusCell(COLUMN_ORDER[targetColumnIdx], ctx.rowId);
+        if (targetColumnIdx < 0 || targetColumnIdx >= navigableColumns.length) return;
+        focusCell(navigableColumns[targetColumnIdx], ctx.rowId);
         return;
       }
 
@@ -421,7 +440,7 @@ export default function OrderItemsGrid({
         return;
       }
     },
-    [rows, onChange, buildInheritedRow],
+    [rows, onChange, buildInheritedRow, navigableColumns],
   );
 
   const headerCellClass =
@@ -439,9 +458,11 @@ export default function OrderItemsGrid({
               <th scope="col" className={cn(headerCellClass, "text-left")}>
                 {t("itemNameLabel")}
               </th>
-              <th scope="col" className={cn(headerCellClass, "w-16 text-right")}>
-                {t("itemQuantityLabel")}
-              </th>
+              {showQuantity && (
+                <th scope="col" className={cn(headerCellClass, "w-16 text-right")}>
+                  {t("itemQuantityLabel")}
+                </th>
+              )}
               <th scope="col" className={cn(headerCellClass, "w-[130px] text-right")}>
                 {priceHeader}
               </th>
@@ -460,6 +481,7 @@ export default function OrderItemsGrid({
                   index={index}
                   productTypeKeys={productTypeKeys}
                   tProductTypes={tProductTypes}
+                  showQuantity={showQuantity}
                   nameError={itemErrors[row.rowId]?.name}
                   quantityError={itemErrors[row.rowId]?.quantity}
                   unitPriceError={itemErrors[row.rowId]?.unitPrice}

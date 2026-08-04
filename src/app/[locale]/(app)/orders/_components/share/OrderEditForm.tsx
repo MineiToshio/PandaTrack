@@ -36,6 +36,13 @@ import DiscrepancyModal from "./DiscrepancyModal";
 import FxRateAttribution from "./FxRateAttribution";
 import OrderDeliveryRangeField from "./OrderDeliveryRangeField";
 import OrderItemsGrid, { type ItemRow, createEmptyRow } from "./OrderItemsGrid";
+import {
+  ORDER_SECTION_BODY_CLASS,
+  ORDER_SECTION_BULLET_CLASS,
+  ORDER_SECTION_CARD_CLASS,
+  ORDER_SECTION_EYEBROW_CLASS,
+  ORDER_SECTION_HEADING_CLASS,
+} from "./orderSectionChrome";
 import OrderItemsMobileList from "./OrderItemsMobileList";
 
 type StoreOption = { id: string; name: string; countryCode: string };
@@ -453,16 +460,13 @@ export default function OrderEditForm({ stores, productTypeKeys, baseCurrencyCod
 
   // STATIC SECTION CARD — header without chevron/button (L020 all-open).
   // Bullet shows a Lucide icon (Info / ShoppingCart) instead of a number to match
-  // the demo HTML `step-num` pattern for edit.
-  const sectionCardClass =
-    "[border-radius:var(--radius-xl)] [background:var(--surface-elevated)] [border:1px_solid_var(--border)] [box-shadow:inset_0_0_0_1px_color-mix(in_oklch,var(--accent)_10%,transparent)]";
-  const sectionBulletClass =
-    "inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full [background:color-mix(in_oklch,var(--text-primary)_6%,transparent)] [border:1px_solid_var(--border-strong)] [color:var(--text-muted)]";
-  const sectionEyebrowClass =
-    "block [font-family:var(--font-mono)] [font-size:var(--text-eyebrow)] [font-weight:var(--font-weight-mono)] [letter-spacing:0.06em] [color:var(--text-muted)] uppercase";
-  const sectionHeadingClass =
-    "mt-0.5 [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]";
-  const sectionBodyClass = "flex flex-col gap-4 p-4 md:pt-5 md:pr-5 md:pb-5 md:pl-[3.75rem]";
+  // the demo HTML `step-num` pattern for edit. The strings live in `orderSectionChrome` because
+  // the image-intake review screen is built out of the same sections.
+  const sectionCardClass = ORDER_SECTION_CARD_CLASS;
+  const sectionBulletClass = ORDER_SECTION_BULLET_CLASS;
+  const sectionEyebrowClass = ORDER_SECTION_EYEBROW_CLASS;
+  const sectionHeadingClass = ORDER_SECTION_HEADING_CLASS;
+  const sectionBodyClass = ORDER_SECTION_BODY_CLASS;
 
   return (
     <div

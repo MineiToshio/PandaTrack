@@ -18,20 +18,22 @@ describe("resolveProvenanceState", () => {
 });
 
 describe("ProvenanceValue", () => {
-  it("renders a read value as plain text with nothing focusable", () => {
-    const { container } = render(
+  it("renders a read value as a control carrying no marker, since nothing about it was guessed", () => {
+    render(
       <ProvenanceValue
         id="currency"
         label="Moneda"
         state="read"
-        readText="PEN"
-        control={() => <input id="currency" />}
+        markerLabel="asumido"
+        control={({ id }) => <input id={id} defaultValue="PEN" />}
       />,
     );
 
-    expect(screen.getByText("PEN")).toBeTruthy();
-    expect(container.querySelector("input")).toBeNull();
-    expect(container.querySelector("button")).toBeNull();
+    // Everything on the review screen is editable now, so a read value is a control too. What it
+    // must not have is a marker: the amber chip is the screen's way of saying "we guessed this",
+    // and putting it on a value the chat actually stated would make the header's count a lie.
+    expect(screen.getByLabelText(/Moneda/).tagName).toBe("INPUT");
+    expect(screen.queryByText("asumido")).toBeNull();
   });
 
   it("renders an assumed value as a control whose accessible name carries the marker word", () => {
@@ -68,7 +70,15 @@ describe("ProvenanceValue", () => {
   });
 
   it("renders the supporting hint under any state", () => {
-    render(<ProvenanceValue id="store" label="Tienda" state="read" readText="Pop Dealer" hint='Del chat: "pop"' />);
+    render(
+      <ProvenanceValue
+        id="store"
+        label="Tienda"
+        state="read"
+        hint='Del chat: "pop"'
+        control={({ id }) => <input id={id} />}
+      />,
+    );
     expect(screen.getByText('Del chat: "pop"')).toBeTruthy();
   });
 });

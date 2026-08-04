@@ -86,9 +86,6 @@
     "headerWithDoubts": "Encontramos {productCount, plural, one {# producto} other {# productos}} por {total}. {doubtCount, plural, one {Revisa # dato y guarda.} other {Revisa # datos y guarda.}}",
     "headerClean": "Todo salió limpio del chat. Revísalo y guarda.",
     "edit": {
-      "start": "Corregir",
-      "done": "Listo",
-      "hint": "Ahora puedes cambiar cualquier dato que hayamos leído, incluido el nombre y el precio de cada producto. Toca \"Listo\" cuando termines.",
       "blankName": "El producto {position} se quedó sin nombre. Escríbele uno para poder guardar el pedido."
     },
     "fieldsTitle": "Datos del pedido",
@@ -163,7 +160,9 @@
       "nameFieldLabel": "Nombre del producto {position}",
       "priceFieldLabel": "Precio del producto {position}",
       "editCollapsedHint": "Abre los {count} para corregir un nombre o un precio.",
-      "priceNotANumber": "Escribe el precio como número, sin separadores de miles ni símbolos. Ejemplo: 115.00"
+      "priceNotANumber": "Escribe el precio como número, sin separadores de miles ni símbolos. Ejemplo: 115.00",
+      "categorySuggestedHint": "Las categorías son sugerencias nuestras. Cámbialas si no encajan.",
+      "referenceLinkLead": "Enlace del chat:"
     },
     "productSheet": {
       "title": "{count, plural, one {Podemos nombrar mejor este producto} other {Podemos nombrar mejor estos # productos}}",
@@ -195,7 +194,12 @@
     },
     "save": "Crear pedido",
     "manual": "Completar a mano",
-    "saving": "Creando el pedido..."
+    "saving": "Creando el pedido...",
+    "sections": {
+      "orderEyebrow": "Paso 1",
+      "productsEyebrow": "Paso 2",
+      "paymentsEyebrow": "Paso 3"
+    }
   },
   "share": {
     "attach": "No encontramos las fotos que compartiste. Adjúntalas aquí y seguimos desde ahí.",

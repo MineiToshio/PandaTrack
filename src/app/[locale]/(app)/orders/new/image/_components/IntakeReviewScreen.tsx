@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ImagePlus, Pencil, Scale } from "lucide-react";
+import { ImagePlus, Info, Scale, ShoppingCart, Wallet } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import posthog from "posthog-js";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -21,6 +21,14 @@ import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
 import { exchangeRateSchema } from "@/lib/orders/orderValidation";
 import { cn } from "@/lib/styles";
 import FxRateAttribution from "../../../_components/share/FxRateAttribution";
+import {
+  ORDER_SECTION_BODY_CLASS,
+  ORDER_SECTION_BULLET_CLASS,
+  ORDER_SECTION_CARD_CLASS,
+  ORDER_SECTION_EYEBROW_CLASS,
+  ORDER_SECTION_HEADER_CLASS,
+  ORDER_SECTION_HEADING_CLASS,
+} from "../../../_components/share/orderSectionChrome";
 import IntakeGroupCard from "./IntakeGroupCard";
 import StoreResolutionSection from "./StoreResolutionSection";
 import OrderDeliveryRangeField from "@/app/[locale]/(app)/orders/_components/share/OrderDeliveryRangeField";
@@ -147,12 +155,6 @@ function findBlankProductName(draft: ImageIntakeDraft): { groupIndex: number; po
  * fifty-group stagger would make the last card arrive four seconds after the first, which is not
  * emphasis, it is a wait.
  */
-/**
- * Relaxes a `size="sm"` control to the 44px minimum a thumb needs, and only on a phone. The size
- * itself is right on a pointer, so this widens the target rather than changing the scale.
- */
-const MOBILE_TAP_TARGET = "min-h-[44px] md:min-h-8";
-
 const STAGGERED_GROUP_CARDS = 6;
 const GROUP_CARD_STAGGER_MS = 50;
 
@@ -206,16 +208,6 @@ export default function IntakeReviewScreen({
   const locale = useLocale();
 
   const [draft, setDraft] = useState<ImageIntakeDraft>(initialDraft);
-  /**
-   * Correction mode: one switch for the whole screen, never one affordance per field.
-   *
-   * The screen's job is to point at what needs a decision, and it does that by being a document in
-   * which exactly the assumed and missing values look interactive (`FR-11-51`). A pencil beside
-   * every value would put twenty more targets on a card that already has plenty and would compete
-   * with the confidence chips, which are the things the header's count is actually about. So the
-   * default stays untouched, and a collector who wants to fix a name or a price says so once.
-   */
-  const [isEditing, setIsEditing] = useState(false);
   /** The row a blocked save is about, so the screen can open its group and name it. */
   const [blankNameAt, setBlankNameAt] = useState<{ groupIndex: number; position: number } | null>(null);
   /** Groups reporting a price field whose text the money parser cannot read. */
@@ -441,18 +433,6 @@ export default function IntakeReviewScreen({
     setExchangeRateError(null);
   };
 
-  /**
-   * Opens every read value at once, and only on request.
-   *
-   * It also expands nothing: a collapsed group is a summary of rows the collector has not asked to
-   * see, and its one line is a range and an aggregate, not a value anyone can type into. Correcting
-   * a row inside one means opening it first, which is the same gesture as reading it.
-   */
-  const handleToggleEditing = () => {
-    setIsEditing((current) => !current);
-    setBlankNameAt(null);
-  };
-
   const handleGroupPriceValidity = (groupIndex: number, hasInvalidPrice: boolean) => {
     setGroupsWithInvalidPrice((current) => {
       if (current.has(groupIndex) === hasInvalidPrice) return current;
@@ -470,14 +450,12 @@ export default function IntakeReviewScreen({
     const blankName = findBlankProductName(draft);
     if (blankName !== null) {
       setBlankNameAt(blankName);
-      setIsEditing(true);
       return;
     }
     setBlankNameAt(null);
     // A price the parser cannot read is held rather than written as "no price", so the save waits
     // for it. The field carries its own error; this only keeps the draft from leaving without it.
     if (groupsWithInvalidPrice.size > 0) {
-      setIsEditing(true);
       return;
     }
     if (!needsExchangeRate) {
@@ -535,371 +513,365 @@ export default function IntakeReviewScreen({
       ),
     [draft.warnings],
   );
-
   return (
     // The bottom padding only exists to clear the fixed mobile bar, so it stops where that bar
     // does: on `md` and up the actions are inline and the reserved strip would be dead space.
-    <div className="intake-review-scroll-safe flex flex-col gap-[var(--space-6)] pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-0">
+    <div className="intake-review-scroll-safe flex flex-col gap-[var(--space-4)] pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-0">
       <header className="flex flex-col gap-[var(--space-2)]">
-        <div className="flex flex-wrap items-start justify-between gap-[var(--space-3)]">
-          <h2 className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
-            {t("title")}
-          </h2>
-          <Button
-            type="button"
-            variant={isEditing ? "tonal" : "ghost"}
-            size="sm"
-            leadingIcon={isEditing ? <Check size={14} /> : <Pencil size={14} />}
-            onClick={handleToggleEditing}
-            className={MOBILE_TAP_TARGET}
-          >
-            {isEditing ? t("edit.done") : t("edit.start")}
-          </Button>
-        </div>
+        <h2 className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+          {t("title")}
+        </h2>
         <p className="[font-size:var(--text-body)] [color:var(--text-secondary)]">
           {doubtCount === 0
             ? t("headerClean")
             : t("headerWithDoubts", {
                 productCount,
                 doubtCount,
-                total: draft.totalCost.value !== null ? formatAmount(draft.totalCost.value, currencyCode) : "",
+                total: formattedTotal,
               })}
         </p>
-        {isEditing && <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">{t("edit.hint")}</p>}
       </header>
 
-      <StoreResolutionSection store={draft.store} options={storeOptions} onChange={handleStoreChange} />
+      {/*
+        SECTION 1 — Datos del pedido. Same chrome as the manual order form, because this is the
+        same job: the fields of one order, all open, nothing behind a step.
+      */}
+      <section className={ORDER_SECTION_CARD_CLASS} aria-labelledby="intake-section-order">
+        <header className={ORDER_SECTION_HEADER_CLASS}>
+          <span className={ORDER_SECTION_BULLET_CLASS} aria-hidden="true">
+            <Info size={13} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <span className={ORDER_SECTION_EYEBROW_CLASS}>{t("sections.orderEyebrow")}</span>
+            <h3 id="intake-section-order" className={ORDER_SECTION_HEADING_CLASS}>
+              {t("fieldsTitle")}
+            </h3>
+          </div>
+        </header>
+        <div className={ORDER_SECTION_BODY_CLASS}>
+          <StoreResolutionSection store={draft.store} options={storeOptions} onChange={handleStoreChange} />
 
-      <section className="flex flex-col gap-[var(--space-4)]">
-        <h3 className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">{t("fieldsTitle")}</h3>
-
-        <ProvenanceValue
-          id="intake-order-date"
-          layout="row"
-          editing={isEditing}
-          label={t("fields.orderDate")}
-          state={provenance.orderDate}
-          markerLabel={t(provenance.orderDate === "assumed" ? "provenance.assumed" : "provenance.missing")}
-          readText={draft.orderDate.value ? formatIsoCalendarDay(draft.orderDate.value, locale) : null}
-          control={({ id }) => (
-            <Input
-              id={id}
-              type="date"
-              value={draft.orderDate.value ?? ""}
-              onChange={(event) => handleOrderDateChange(event.target.value)}
-            />
-          )}
-        />
-
-        <ProvenanceValue
-          id="intake-currency"
-          layout="row"
-          editing={isEditing}
-          label={t("fields.currency")}
-          state={provenance.currency}
-          markerLabel={t(provenance.currency === "assumed" ? "provenance.assumed" : "provenance.missing")}
-          readText={draft.currency.value}
-          control={({ id }) => (
-            <Select id={id} value={draft.currency.value} onChange={handleCurrencyChange} options={currencyOptions} />
-          )}
-        />
-
-        <ProvenanceValue
-          id="intake-total"
-          layout="row"
-          editing={isEditing}
-          label={t("fields.total")}
-          state={provenance.totalCost}
-          markerLabel={t(provenance.totalCost === "assumed" ? "provenance.assumed" : "provenance.missing")}
-          readText={draft.totalCost.value !== null ? formatAmount(draft.totalCost.value, currencyCode) : null}
-          control={({ id }) => (
-            <Input
-              id={id}
-              type="text"
-              inputMode="decimal"
-              value={totalInput}
-              suffix={currencyCode}
-              onChange={(event) => handleTotalChange(event.target.value)}
-            />
-          )}
-        />
-
-        <ProvenanceValue
-          id="intake-delivery-range"
-          layout="row"
-          editing={isEditing}
-          label={t("fields.deliveryRange")}
-          state={provenance.deliveryFrom}
-          markerLabel={t(provenance.deliveryFrom === "assumed" ? "provenance.assumed" : "provenance.missing")}
-          readText={
-            draft.delivery?.expectedFrom.value
-              ? [draft.delivery.expectedFrom.value, draft.delivery.expectedTo.value]
-                  .filter((iso): iso is string => Boolean(iso))
-                  .map((iso) => formatIsoCalendarDay(iso, locale))
-                  .join(" – ")
-              : null
-          }
-          control={({ id }) => (
-            <OrderDeliveryRangeField
-              id={id}
-              from={isoToLocalDate(draft.delivery?.expectedFrom.value ?? null)}
-              to={isoToLocalDate(draft.delivery?.expectedTo.value ?? null)}
-              onChange={handleDeliveryRangeChange}
-            />
-          )}
-        />
-
-        {needsExchangeRate && (
-          <div className="flex flex-col gap-[var(--space-2)]">
-            <label
-              htmlFor="intake-exchange-rate"
-              className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)]"
-            >
-              {t("fx.label", { from: currencyCode, to: baseCurrencyCode })}
-            </label>
-            <Input
-              id="intake-exchange-rate"
-              type="text"
-              inputMode="decimal"
-              value={exchangeRateInput}
-              placeholder={isRateLoading ? t("fx.loading") : t("fx.placeholder")}
-              error={Boolean(exchangeRateError)}
-              aria-describedby="intake-exchange-rate-hint"
-              onChange={(event) => handleExchangeRateChange(event.target.value)}
-            />
-            <div id="intake-exchange-rate-hint" className="flex flex-col gap-[var(--space-1)]">
-              {exchangeRateError ? (
-                <p className="[font-size:var(--text-caption)] [color:var(--destructive)]" role="alert">
-                  {exchangeRateError}
-                </p>
-              ) : isRateUnavailable ? (
-                <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">{t("fx.unavailable")}</p>
-              ) : exchangeRateDate ? (
-                <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">
-                  {t("fx.rateDate", { date: formatIsoCalendarDay(exchangeRateDate, locale) })}
-                </p>
-              ) : (
-                <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">
-                  {t("fx.help", { from: currencyCode, to: baseCurrencyCode })}
-                </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            <ProvenanceValue
+              id="intake-order-date"
+              label={t("fields.orderDate")}
+              state={provenance.orderDate}
+              markerLabel={t(provenance.orderDate === "assumed" ? "provenance.assumed" : "provenance.missing")}
+              control={({ id }) => (
+                <Input
+                  id={id}
+                  type="date"
+                  value={draft.orderDate.value ?? ""}
+                  onChange={(event) => handleOrderDateChange(event.target.value)}
+                />
               )}
-              <FxRateAttribution />
-            </div>
-          </div>
-        )}
-      </section>
+            />
 
-      <section className="flex flex-col gap-[var(--space-3)]">
-        <h3 className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">{t("groupsTitle")}</h3>
-        {/*
-          A pointed offer, never a generic warning: it names the rows whose name is still only a
-          link, and it says out loud what accepting it costs. It blocks nothing, because the
-          collector can save as is and rename the product later.
-        */}
-        {productsNeedingSheet.length > 0 && (
-          <AlertBanner
-            tone="info"
-            icon={<ImagePlus size={16} />}
-            title={t("productSheet.title", { count: productsNeedingSheet.length })}
-            action={
-              canAffordReread ? (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={onAddProductSheet}
-                  data-ph-event={POSTHOG_EVENTS.IMAGE_INTAKE.PRODUCT_SHEET_REQUESTED}
-                  data-ph-props={JSON.stringify({
-                    product_count: productsNeedingSheet.length,
-                    spent_photo_count: spentPhotoCount,
-                  })}
-                >
-                  {t("productSheet.cta")}
-                </Button>
-              ) : undefined
-            }
-          >
-            <ul className="flex flex-col gap-[var(--space-1)]">
-              {productsNeedingSheet.map((entry) => (
-                <li key={`${entry.groupIndex}-${entry.productIndex}`}>
-                  {entry.reason === "host-only-name"
-                    ? t("productSheet.reasonHostOnly", { name: entry.name })
-                    : t("productSheet.reasonDoubtful", {
-                        name: entry.name,
-                        host: formatReferenceHost(entry.referenceUrl),
-                      })}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-[var(--space-2)]">{t("productSheet.body")}</p>
-            <p className="mt-[var(--space-2)] [font-size:var(--text-caption)]">
-              {!canAffordReread && remainingAfterRead !== null
-                ? t("productSheet.costUnaffordable", { needed: rereadPhotoCost, remaining: remainingAfterRead })
-                : remainingAfterRead !== null
-                  ? t("productSheet.costWithBalance", { count: spentPhotoCount, remaining: remainingAfterRead })
-                  : t("productSheet.cost", { count: spentPhotoCount })}
-            </p>
-            <p className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{t("productSheet.optional")}</p>
-          </AlertBanner>
-        )}
-        {blankNameAt !== null && (
-          <p className="[font-size:var(--text-caption)] [color:var(--destructive)]" role="alert">
-            {t("edit.blankName", { position: blankNameAt.position })}
-          </p>
-        )}
-        {draft.groups.map((group, index) => (
-          /*
-            The cards arrive one after another, and stop doing so past the sixth: the point is to
-            let the eye land on the first card before the page is full, not to make a long draft
-            take longer to appear. Nothing waits on the animation, so a card is clickable from the
-            frame it exists.
-          */
-          <div
-            key={`${group.sourcePhrase}-${index}`}
-            className="intake-rise-in"
-            style={index < STAGGERED_GROUP_CARDS ? { animationDelay: `${index * GROUP_CARD_STAGGER_MS}ms` } : undefined}
-          >
-            <IntakeGroupCard
-              group={group}
-              currencyCode={currencyCode}
-              productTypeKeys={productTypeKeys}
-              hasWarning={warningPhrases.has(group.sourcePhrase)}
-              isEditing={isEditing}
-              forceExpanded={blankNameAt?.groupIndex === index}
-              onPriceValidityChange={(hasInvalidPrice) => handleGroupPriceValidity(index, hasInvalidPrice)}
-              onApply={(updatedGroup) => handleGroupApply(index, updatedGroup)}
+            <ProvenanceValue
+              id="intake-currency"
+              label={t("fields.currency")}
+              state={provenance.currency}
+              markerLabel={t(provenance.currency === "assumed" ? "provenance.assumed" : "provenance.missing")}
+              control={({ id }) => (
+                <Select id={id} value={draft.currency.value} onChange={handleCurrencyChange} options={currencyOptions} />
+              )}
+            />
+
+            <ProvenanceValue
+              id="intake-total"
+              label={t("fields.total")}
+              state={provenance.totalCost}
+              markerLabel={t(provenance.totalCost === "assumed" ? "provenance.assumed" : "provenance.missing")}
+              control={({ id }) => (
+                <Input
+                  id={id}
+                  type="text"
+                  inputMode="decimal"
+                  value={totalInput}
+                  suffix={currencyCode}
+                  onChange={(event) => handleTotalChange(event.target.value)}
+                />
+              )}
+            />
+
+            <ProvenanceValue
+              id="intake-delivery-range"
+              label={t("fields.deliveryRange")}
+              state={provenance.deliveryFrom}
+              markerLabel={t(provenance.deliveryFrom === "assumed" ? "provenance.assumed" : "provenance.missing")}
+              control={({ id }) => (
+                <OrderDeliveryRangeField
+                  id={id}
+                  from={isoToLocalDate(draft.delivery?.expectedFrom.value ?? null)}
+                  to={isoToLocalDate(draft.delivery?.expectedTo.value ?? null)}
+                  onChange={handleDeliveryRangeChange}
+                />
+              )}
             />
           </div>
-        ))}
-      </section>
 
-      <section className="flex flex-col gap-[var(--space-2)]">
-        <h3 className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">{t("payments.title")}</h3>
-        {draft.payments.length === 0 ? (
-          <p className="[font-size:var(--text-body)] [color:var(--text-secondary)]">{t("payments.empty")}</p>
-        ) : (
-          /*
-            A payment goes through the same provenance rule as every other attribute (`FR-11-51`).
-            It used to render as flat text whatever its `source` said, which quietly hid the case
-            the rule exists for: an amount the model filled in by convention looked exactly like one
-            it had read off the screenshot.
-          */
-          <ul className="flex flex-col gap-[var(--space-3)]">
-            {draft.payments.map((payment, index) => {
-              // Frozen at arrival, like every other attribute on this screen. See `paymentProvenance`.
-              const amountState = paymentProvenance[index]?.amount ?? "missing";
-              const dateState = paymentProvenance[index]?.paidAt ?? "missing";
-              return (
-                // Keyed by position: the date is editable, so keying on it would remount the field.
-                <li key={index} className="flex flex-col gap-[var(--space-1)]">
-                  <ProvenanceValue
-                    id={`intake-payment-amount-${index}`}
-                    layout="row"
-                    editing={isEditing}
-                    label={t("payments.amountLabel", { position: index + 1 })}
-                    state={amountState}
-                    markerLabel={t(amountState === "assumed" ? "provenance.assumed" : "provenance.missing")}
-                    readText={
-                      payment.amount.value !== null ? (
-                        <span className="numeric">{formatAmount(payment.amount.value, currencyCode)}</span>
-                      ) : null
-                    }
-                    control={({ id }) => (
-                      <Input
-                        id={id}
-                        type="text"
-                        inputMode="decimal"
-                        suffix={currencyCode}
-                        value={paymentAmountInput(index, payment.amount.value)}
-                        onChange={(event) => handlePaymentAmountChange(index, event.target.value)}
-                      />
-                    )}
-                  />
-                  <ProvenanceValue
-                    id={`intake-payment-date-${index}`}
-                    layout="row"
-                    editing={isEditing}
-                    label={t("payments.dateLabel")}
-                    state={dateState}
-                    markerLabel={t(dateState === "assumed" ? "provenance.assumed" : "provenance.missing")}
-                    readText={payment.paidAt.value ? formatIsoCalendarDay(payment.paidAt.value, locale) : null}
-                    control={({ id }) => (
-                      <Input
-                        id={id}
-                        type="date"
-                        value={payment.paidAt.value ?? ""}
-                        onChange={(event) => handlePaymentDateChange(index, event.target.value)}
-                      />
-                    )}
-                  />
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      <section
-        className="flex flex-col gap-[var(--space-2)] rounded-[var(--radius-lg)] p-[var(--space-4)]"
-        style={{ background: "var(--surface-elevated)", border: "1px solid var(--border)" }}
-      >
-        <div className="flex items-baseline justify-between gap-[var(--space-3)] [font-size:var(--text-body)]">
-          <span className="[color:var(--text-secondary)]">{t("totals.paid")}</span>
-          <span className="numeric [color:var(--text-primary)]">{formatAmount(paidTotal, currencyCode)}</span>
-        </div>
-        <div className="flex items-baseline justify-between gap-[var(--space-3)]">
-          <span className="[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
-            {t("totals.total")}
-          </span>
-          {/*
-            Keyed on the figure itself, and inert while correction mode is open. The total only ever
-            changes through the field this screen opens, so suppressing the fade during editing and
-            keying on the value means it plays once, when the collector closes the mode with a
-            different total, and never on the keystrokes in between. Animating the most frequent
-            action on a screen is the anti-pattern; animating its outcome is the point.
-          */}
-          <span
-            key={isEditing ? "editing" : formattedTotal}
-            className={cn(
-              "numeric [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]",
-              !isEditing && "intake-value-in",
-            )}
-          >
-            {formattedTotal}
-          </span>
-        </div>
-        {shippingCost !== null && (
-          <div className="flex flex-col gap-[var(--space-1)]">
-            <div className="flex items-baseline justify-between gap-[var(--space-3)] [font-size:var(--text-body)]">
-              <span className="[color:var(--text-secondary)]">{t("delivery.cost")}</span>
-              <span className="numeric [color:var(--text-primary)]">{formatAmount(shippingCost, currencyCode)}</span>
+          {needsExchangeRate && (
+            <div className="space-y-1.5">
+              <label
+                htmlFor="intake-exchange-rate"
+                className="text-[13px] font-medium [color:var(--text-secondary)]"
+              >
+                {t("fx.label", { from: currencyCode, to: baseCurrencyCode })}
+              </label>
+              <Input
+                id="intake-exchange-rate"
+                type="text"
+                inputMode="decimal"
+                value={exchangeRateInput}
+                placeholder={isRateLoading ? t("fx.loading") : t("fx.placeholder")}
+                error={Boolean(exchangeRateError)}
+                aria-describedby="intake-exchange-rate-hint"
+                onChange={(event) => handleExchangeRateChange(event.target.value)}
+              />
+              <div id="intake-exchange-rate-hint" className="flex flex-col gap-[var(--space-1)]">
+                {exchangeRateError ? (
+                  <p className="text-[11.5px] [color:var(--destructive)]" role="alert">
+                    {exchangeRateError}
+                  </p>
+                ) : isRateUnavailable ? (
+                  <p className="text-[11.5px] [color:var(--text-muted)]">{t("fx.unavailable")}</p>
+                ) : exchangeRateDate ? (
+                  <p className="text-[11.5px] [color:var(--text-muted)]">
+                    {t("fx.rateDate", { date: formatIsoCalendarDay(exchangeRateDate, locale) })}
+                  </p>
+                ) : (
+                  <p className="text-[11.5px] [color:var(--text-muted)]">
+                    {t("fx.help", { from: currencyCode, to: baseCurrencyCode })}
+                  </p>
+                )}
+                <FxRateAttribution />
+              </div>
             </div>
-            <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">
-              {t("delivery.costNotSaved")}
-            </p>
+          )}
+        </div>
+      </section>
+
+      {/* SECTION 2 — Productos, in the same table the manual form uses. */}
+      <section className={ORDER_SECTION_CARD_CLASS} aria-labelledby="intake-section-products">
+        <header className={ORDER_SECTION_HEADER_CLASS}>
+          <span className={ORDER_SECTION_BULLET_CLASS} aria-hidden="true">
+            <ShoppingCart size={13} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <span className={ORDER_SECTION_EYEBROW_CLASS}>{t("sections.productsEyebrow")}</span>
+            <h3 id="intake-section-products" className={ORDER_SECTION_HEADING_CLASS}>
+              {t("groupsTitle")}
+            </h3>
           </div>
-        )}
-        {totalMismatch !== null && (
-          <AlertBanner tone="warning" icon={<Scale size={16} />} title={t("totals.mismatchTitle")}>
-            {t("totals.mismatchBody", {
-              products: formatAmount(totalMismatch.productsTotal, currencyCode),
-              total: formatAmount(totalMismatch.statedTotal, currencyCode),
-            })}
-          </AlertBanner>
-        )}
+        </header>
+        <div className={ORDER_SECTION_BODY_CLASS}>
+          {/*
+            A pointed offer, never a generic warning: it names the rows whose name is still only a
+            link, and it says out loud what accepting it costs. It blocks nothing, because the
+            collector can save as is and rename the product later.
+          */}
+          {productsNeedingSheet.length > 0 && (
+            <AlertBanner
+              tone="info"
+              icon={<ImagePlus size={16} />}
+              title={t("productSheet.title", { count: productsNeedingSheet.length })}
+              action={
+                canAffordReread ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={onAddProductSheet}
+                    data-ph-event={POSTHOG_EVENTS.IMAGE_INTAKE.PRODUCT_SHEET_REQUESTED}
+                    data-ph-props={JSON.stringify({
+                      product_count: productsNeedingSheet.length,
+                      spent_photo_count: spentPhotoCount,
+                    })}
+                  >
+                    {t("productSheet.cta")}
+                  </Button>
+                ) : undefined
+              }
+            >
+              <ul className="flex flex-col gap-[var(--space-1)]">
+                {productsNeedingSheet.map((entry) => (
+                  <li key={`${entry.groupIndex}-${entry.productIndex}`}>
+                    {entry.reason === "host-only-name"
+                      ? t("productSheet.reasonHostOnly", { name: entry.name })
+                      : t("productSheet.reasonDoubtful", {
+                          name: entry.name,
+                          host: formatReferenceHost(entry.referenceUrl),
+                        })}
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-[var(--space-2)]">{t("productSheet.body")}</p>
+              <p className="mt-[var(--space-2)] [font-size:var(--text-caption)]">
+                {!canAffordReread && remainingAfterRead !== null
+                  ? t("productSheet.costUnaffordable", { needed: rereadPhotoCost, remaining: remainingAfterRead })
+                  : remainingAfterRead !== null
+                    ? t("productSheet.costWithBalance", { count: spentPhotoCount, remaining: remainingAfterRead })
+                    : t("productSheet.cost", { count: spentPhotoCount })}
+              </p>
+              <p className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{t("productSheet.optional")}</p>
+            </AlertBanner>
+          )}
+
+          {blankNameAt !== null && (
+            <p className="text-[12px] [color:var(--destructive)]" role="alert">
+              {t("edit.blankName", { position: blankNameAt.position })}
+            </p>
+          )}
+
+          {draft.groups.map((group, index) => (
+            /*
+              One block per group, separated by a hairline rather than nested in its own card: the
+              section card already draws the boundary, and a card inside a card is what made this
+              screen read as cramped.
+            */
+            <div
+              key={`${group.sourcePhrase}-${index}`}
+              className={cn(
+                "intake-rise-in",
+                index > 0 && "pt-[var(--space-4)] [border-top:1px_solid_var(--border)]",
+              )}
+              style={
+                index < STAGGERED_GROUP_CARDS ? { animationDelay: `${index * GROUP_CARD_STAGGER_MS}ms` } : undefined
+              }
+            >
+              <IntakeGroupCard
+                group={group}
+                groupKey={`g${index}`}
+                currencyCode={currencyCode}
+                productTypeKeys={productTypeKeys}
+                hasWarning={warningPhrases.has(group.sourcePhrase)}
+                forceExpanded={blankNameAt?.groupIndex === index}
+                onPriceValidityChange={(hasInvalidPrice) => handleGroupPriceValidity(index, hasInvalidPrice)}
+                onApply={(updatedGroup) => handleGroupApply(index, updatedGroup)}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SECTION 3 — Pagos y totales. */}
+      <section className={ORDER_SECTION_CARD_CLASS} aria-labelledby="intake-section-payments">
+        <header className={ORDER_SECTION_HEADER_CLASS}>
+          <span className={ORDER_SECTION_BULLET_CLASS} aria-hidden="true">
+            <Wallet size={13} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <span className={ORDER_SECTION_EYEBROW_CLASS}>{t("sections.paymentsEyebrow")}</span>
+            <h3 id="intake-section-payments" className={ORDER_SECTION_HEADING_CLASS}>
+              {t("payments.title")}
+            </h3>
+          </div>
+        </header>
+        <div className={ORDER_SECTION_BODY_CLASS}>
+          {draft.payments.length === 0 ? (
+            <p className="text-[13px] [color:var(--text-muted)]">{t("payments.empty")}</p>
+          ) : (
+            /*
+              A payment goes through the same provenance rule as every other attribute: an amount
+              the model filled in by convention carries its marker, so it can never look like one
+              it read off the screenshot.
+            */
+            <ul className="flex flex-col gap-[var(--space-4)]">
+              {draft.payments.map((payment, index) => {
+                // Frozen at arrival, like every other attribute. See `paymentProvenance`.
+                const amountState = paymentProvenance[index]?.amount ?? "missing";
+                const dateState = paymentProvenance[index]?.paidAt ?? "missing";
+                return (
+                  // Keyed by position: the date is editable, so keying on it would remount the field.
+                  <li key={index} className="grid gap-4 md:grid-cols-2">
+                    <ProvenanceValue
+                      id={`intake-payment-amount-${index}`}
+                      label={t("payments.amountLabel", { position: index + 1 })}
+                      state={amountState}
+                      markerLabel={t(amountState === "assumed" ? "provenance.assumed" : "provenance.missing")}
+                      control={({ id }) => (
+                        <Input
+                          id={id}
+                          type="text"
+                          inputMode="decimal"
+                          suffix={currencyCode}
+                          value={paymentAmountInput(index, payment.amount.value)}
+                          onChange={(event) => handlePaymentAmountChange(index, event.target.value)}
+                        />
+                      )}
+                    />
+                    <ProvenanceValue
+                      id={`intake-payment-date-${index}`}
+                      label={t("payments.dateLabel")}
+                      state={dateState}
+                      markerLabel={t(dateState === "assumed" ? "provenance.assumed" : "provenance.missing")}
+                      control={({ id }) => (
+                        <Input
+                          id={id}
+                          type="date"
+                          value={payment.paidAt.value ?? ""}
+                          onChange={(event) => handlePaymentDateChange(index, event.target.value)}
+                        />
+                      )}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <div className="flex flex-col gap-[var(--space-2)] pt-3.5 [border-top:1px_solid_var(--border)]">
+            <div className="flex items-baseline justify-between gap-[var(--space-3)] text-[13px]">
+              <span className="[color:var(--text-muted)]">{t("totals.paid")}</span>
+              <span className="numeric [color:var(--text-primary)]">{formatAmount(paidTotal, currencyCode)}</span>
+            </div>
+            {shippingCost !== null && (
+              <div className="flex flex-col gap-[var(--space-1)]">
+                <div className="flex items-baseline justify-between gap-[var(--space-3)] text-[13px]">
+                  <span className="[color:var(--text-muted)]">{t("delivery.cost")}</span>
+                  <span className="numeric [color:var(--text-primary)]">
+                    {formatAmount(shippingCost, currencyCode)}
+                  </span>
+                </div>
+                <p className="text-[11.5px] [color:var(--text-muted)]">{t("delivery.costNotSaved")}</p>
+              </div>
+            )}
+            <div className="flex items-baseline justify-between gap-[var(--space-3)]">
+              <span className="text-[13px] font-medium [color:var(--text-secondary)]">{t("totals.total")}</span>
+              {/*
+                Keyed on the figure itself. The total only ever changes through the field above, so
+                keying on the value plays the fade once, on the outcome, rather than on every
+                keystroke: animating the most frequent action on a screen is the anti-pattern.
+              */}
+              <span
+                key={formattedTotal}
+                className="intake-value-in numeric [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
+              >
+                {formattedTotal}
+              </span>
+            </div>
+            {totalMismatch !== null && (
+              <AlertBanner tone="warning" icon={<Scale size={16} />} title={t("totals.mismatchTitle")}>
+                {t("totals.mismatchBody", {
+                  products: formatAmount(totalMismatch.productsTotal, currencyCode),
+                  total: formatAmount(totalMismatch.statedTotal, currencyCode),
+                })}
+              </AlertBanner>
+            )}
+          </div>
+        </div>
       </section>
 
       {/*
         Desktop footer (inline). Mobile uses the fixed bar below. A bar pinned to the viewport
         bottom on a wide monitor spans the whole window and reads as detached from the column it
-        belongs to, so on `md` and up the actions end the document instead, right-aligned with the
-        secondary before the primary.
+        belongs to, so on `md` and up the actions end the document instead.
       */}
-      <div className="hidden pt-[var(--space-4)] [border-top:1px_solid_var(--border)] md:flex md:flex-row md:items-center md:justify-end md:gap-[var(--space-3)]">
+      <div className="hidden pt-[var(--space-2)] md:flex md:flex-row md:items-center md:justify-end md:gap-[var(--space-3)]">
         <button
           type="button"
           onClick={handleManualClick}
-          className="rounded-md px-[var(--space-2)] py-[var(--space-1)] [font-size:var(--text-caption)] [color:var(--text-secondary)] underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
+          className="rounded-md px-[var(--space-2)] py-[var(--space-1)] [font-size:var(--text-caption)] [color:var(--text-secondary)] underline-offset-4 hover:underline focus-visible:[box-shadow:0_0_0_2px_var(--focus-ring)] focus-visible:outline-none"
         >
           {t("manual")}
         </button>
