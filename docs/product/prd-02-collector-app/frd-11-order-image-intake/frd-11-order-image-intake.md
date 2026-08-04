@@ -230,7 +230,7 @@ As a collector, I want the image method to create or match the store on my behal
 
 ### Store matching and inline creation
 
-- `FR-11-59`: When exactly one existing store matches by phone number, the store step must collapse to an attribute row showing the matched store with a "Cambiar" link.
+- `FR-11-59`: When exactly one existing store matches by phone number, the store step must collapse to the store picker with that match already selected, and must ask for no confirmation. _(Amended 2026-08-04.)_ It previously required a read-only attribute row with a "Cambiar" link, which was the right shape while the screen read as a document: the row was the step disappearing. On a screen that is now a form, the row and the link are two controls one click apart that end in the same place, so the picker is the row.
 - `FR-11-60`: When several stores are candidates, a disambiguator must be shown with **no preselection**, because preselecting invites blind acceptance.
 - `FR-11-61`: When no store matches, the review screen must offer inline store creation without leaving the screen. The image method must not require the store to exist beforehand ("No necesitas crear la tienda antes.").
 - `FR-11-62`: Store matching must reuse the existing normalisation (`normalizeStoreName`) and the store-resolution pattern already proven in `chat-load.ts`, so the same seller written differently across chats does not produce duplicate stores.

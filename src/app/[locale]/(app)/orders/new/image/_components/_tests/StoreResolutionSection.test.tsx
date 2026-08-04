@@ -38,7 +38,7 @@ const OPTIONS = [{ id: "store-1", name: "Pop Dealer" }];
 describe("StoreResolutionSection · certain", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("renders an attribute row with no step and no selection control", () => {
+  it("names the matched store with no step and no confirmation to give", () => {
     const onChange = vi.fn();
     render(
       <StoreResolutionSection
@@ -53,7 +53,7 @@ describe("StoreResolutionSection · certain", () => {
     expect(screen.queryByRole("textbox")).toBeNull();
   });
 
-  it('reveals the store picker on "Cambiar" without changing the store yet', () => {
+  it("shows the picker straight away for a certain match, with no read-only row to click through", () => {
     const onChange = vi.fn();
     render(
       <StoreResolutionSection
@@ -63,11 +63,10 @@ describe("StoreResolutionSection · certain", () => {
       />,
     );
 
-    fireEvent.click(screen.getByText("changeCta"));
-
-    // The combobox opens with the current match already selected, so it renders its closed-select
-    // button shape (not the search input) until the user reopens it. The field's own <label for>
-    // association gives that toggle button its accessible name ("label", the mocked "Tienda" copy).
+    // The match used to render as a read-only row behind a "Cambiar" link, which cost a click to
+    // reach a control that was going to be shown anyway. The picker is the row now, with the match
+    // already selected. Its accessible name comes from the field's own <label for> ("label", the
+    // mocked "Tienda" copy).
     expect(screen.getByRole("button", { name: "label" })).toBeTruthy();
     expect(screen.queryByText("changeCta")).toBeNull();
     expect(onChange).not.toHaveBeenCalled();
@@ -113,8 +112,10 @@ describe("StoreResolutionSection · ambiguous", () => {
       phone: "987654321",
       candidateCount: 2,
     });
-    // The list collapses into the same attribute-row shape a certain match uses.
-    expect(await screen.findByText("Pop Dealer PE")).toBeTruthy();
+    // The list collapses into the same picker a certain match shows. (The fixture's candidate is
+    // not in `OPTIONS`, so the picker renders its search shape rather than the closed button; in
+    // the app the candidate is always one of the collector's stores.)
+    expect(await screen.findByLabelText("label")).toBeTruthy();
     expect(screen.queryByRole("radio")).toBeNull();
   });
 

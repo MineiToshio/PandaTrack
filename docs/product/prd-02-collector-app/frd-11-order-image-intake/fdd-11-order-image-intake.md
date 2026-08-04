@@ -417,8 +417,10 @@ before the collector asks for it (`FR-11-96`).
 
 Three shapes for one block, chosen by certainty:
 
-- **Certain** (one phone match): an attribute row, "Tienda · Pop Dealer", with a "Cambiar"
-  link. No step, no confirmation. This is the step disappearing, which is the point.
+- **Certain** (one phone match): the store picker with the match already selected. No step, no
+  confirmation, nothing to click through. It used to be a read-only row with a "Cambiar" link,
+  which read well as a document and costs a pointless click in a form: both shapes end at the same
+  picker.
 - **Ambiguous** (several candidates): a vertical single-select list with **nothing
   preselected**, plus "Ninguna, crear una nueva". The absence of a preselection is a design
   requirement, not an oversight: preselecting invites blind acceptance (`FR-11-60`).

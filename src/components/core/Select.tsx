@@ -69,9 +69,17 @@ function flatOptions(options: SelectOption[] | SelectGroup[]): SelectOption[] {
   return options;
 }
 
+/**
+ * `md` matches `<Input>`'s fixed `h-[2.875rem]` (46px) rather than tracking `<Button>`'s 44/40.
+ *
+ * A select is a form field, and the two sit side by side in every two-column form row in the app,
+ * where a 6px difference on a pointer reads as one of them having slipped. `<Input>` and the store
+ * combobox already agree on 46px, so the select was the outlier. Buttons are a different family and
+ * keep their own scale.
+ */
 const SIZE_CLASSES: Record<SelectSize, string> = {
   sm: "h-8 px-[var(--space-3)] [font-size:var(--text-caption)] [line-height:var(--text-caption--line-height)]",
-  md: "h-11 px-[var(--space-4)] md:h-10 [font-size:var(--text-body)] [line-height:var(--text-body--line-height)]",
+  md: "h-[2.875rem] px-[var(--space-4)] [font-size:var(--text-body)] [line-height:var(--text-body--line-height)]",
   lg: "h-12 px-[var(--space-5)] [font-size:var(--text-body-lg)] [line-height:var(--text-body-lg--line-height)]",
 };
 

@@ -1,13 +1,11 @@
 "use client";
 
-import { Pencil } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import Button from "@/components/core/Button/Button";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
 import Radio from "@/components/core/Radio";
-import StoreAvatar from "@/components/core/StoreAvatar";
 import { StoreCombobox, type StoreComboboxOption } from "@/components/modules/StoreCombobox";
 import type { ImageIntakeDraft } from "@/lib/imageIntake/draftSchema";
 import {
@@ -59,8 +57,10 @@ const CREATE_ERROR_COPY_KEY: Record<CreateStoreFromIntakeErrorCode, string> = {
  * (which shape is showing, an in-flight "Cambiar", the inline creation form) is local state private
  * to this component.
  *
- * - **Certain** (`store.matchedStoreId` set): an attribute row, no step, no confirmation, with a
- *   "Cambiar" link that reveals the canonical store picker.
+ * - **Certain** (`store.matchedStoreId` set): the canonical store picker with the match already
+ *   selected. It used to be a read-only attribute row with a "Cambiar" link that swapped it for
+ *   this picker, which was the right shape while the screen read as a document and is dead weight
+ *   now that it is a form: two controls, one click apart, that end in the same place.
  * - **Ambiguous** (`store.candidates` has entries): a vertical single-select list with nothing
  *   preselected, since a wrong guess would misattribute the purchase to the wrong seller, plus
  *   "Ninguna, crear una nueva".
@@ -81,7 +81,6 @@ export default function StoreResolutionSection({ store, options, onChange, error
   const [resolution, setResolution] = useState<Resolution>(() =>
     shape === "unknown" ? { kind: "creating" } : { kind: "unresolved" },
   );
-  const [isChangingMatch, setIsChangingMatch] = useState(false);
   const [radioValue, setRadioValue] = useState<string | null>(null);
 
   const [createName, setCreateName] = useState(store.name.value ?? "");
@@ -158,7 +157,6 @@ export default function StoreResolutionSection({ store, options, onChange, error
   function handleChangeSelect(nextStoreId: string | null) {
     if (!nextStoreId) return;
     const picked = comboboxOptions.find((option) => option.id === nextStoreId);
-    setIsChangingMatch(false);
     setResolution({ kind: "resolved", storeId: nextStoreId, name: picked?.name ?? nextStoreId });
     onChange(nextStoreId);
     if (nextStoreId !== store.matchedStoreId) {
@@ -185,45 +183,7 @@ export default function StoreResolutionSection({ store, options, onChange, error
           }
         : null;
 
-  // The row is the only place the chosen store is shown once resolved, so it deserves the same
-  // logo the picker offers rather than falling back to a monogram.
-  const resolvedLogoUrl = resolvedDisplay
-    ? (options.find((option) => option.id === resolvedDisplay.storeId)?.logoUrl ?? null)
-    : null;
-
-  if (resolvedDisplay && !isChangingMatch) {
-    return (
-      <section className="flex flex-col gap-[var(--space-2)]">
-        <div className="flex items-center gap-3 rounded-xl p-3 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
-          {resolvedLogoUrl ? (
-            <StoreAvatar
-              store={{ name: resolvedDisplay.name, logo: { src: resolvedLogoUrl, aspect: "square" } }}
-              size={40}
-              className="shrink-0"
-            />
-          ) : (
-            <StoreAvatar store={{ name: resolvedDisplay.name }} size={40} className="shrink-0" />
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="font-mono text-[10.5px] tracking-[0.06em] [color:var(--text-muted)] uppercase">
-              {tStore("label")}
-            </div>
-            <div className="truncate text-[14px] font-semibold [color:var(--text-primary)]">{resolvedDisplay.name}</div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsChangingMatch(true)}
-            className="inline-flex shrink-0 items-center gap-1.5 text-[12.5px] font-medium [color:var(--accent)] hover:underline"
-          >
-            <Pencil size={13} aria-hidden />
-            {t("changeCta")}
-          </button>
-        </div>
-      </section>
-    );
-  }
-
-  if (resolvedDisplay && isChangingMatch) {
+  if (resolvedDisplay) {
     return (
       <section className="flex flex-col gap-[var(--space-2)]">
         <Label htmlFor="intake-store-change" size="sm">
