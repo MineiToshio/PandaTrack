@@ -150,59 +150,61 @@ export default function OrderCard({
           id={`order-card-items-${order.id}`}
           className={cn(
             // Recessed detail band (matches the desktop table drawer) so the items read as this
-            // order's interior, distinct from the summary above. The band wraps the list so the
-            // row actions can sit inside it and stay clickable while the items stay inert.
-            "relative -mx-4 flex flex-col py-1 pr-4 pl-[calc(1rem-2px)]",
+            // order's interior, distinct from the summary above. Stays inert like the rest of the
+            // card so the full-bleed link keeps working over it; only the action row opts back in.
+            "pointer-events-none relative -mx-4 flex flex-col py-1 pr-4 pl-[calc(1rem-2px)]",
             "[border-left:2px_solid_color-mix(in_oklch,var(--accent-cool)_55%,transparent)]",
             "[background:color-mix(in_oklch,var(--text-primary)_3.5%,transparent)]",
           )}
         >
           <ul role="list" className="pointer-events-none flex flex-col">
-          {order.items.map((item, idx) => {
-            const ItemIcon = getStoreProductTypeIcon(item.productTypeKey ?? "");
-            const itemState = describeItemDeliveryState(item.deliveryState);
-            const StateIcon = itemState.icon;
-            const isLast = idx === order.items.length - 1;
-            return (
-              <li
-                key={item.id}
-                className={cn(
-                  "grid [grid-template-columns:32px_minmax(0,1fr)_auto] items-center gap-2 py-2",
-                  !isLast && "[border-bottom:1px_solid_var(--border)]",
-                )}
-              >
-                <span
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] [color:var(--accent-cool)] [background:color-mix(in_oklch,var(--accent-cool)_10%,transparent)]"
-                  aria-hidden
-                >
-                  <ItemIcon width={14} height={14} />
-                </span>
-                <div className="flex min-w-0 flex-col gap-0.5">
-                  <span className="truncate [font-size:var(--text-body)] [color:var(--text-primary)]">{item.name}</span>
-                  <span
-                    className={cn(
-                      "inline-flex w-fit items-center gap-1 rounded-[var(--radius-pill)] px-1.5 [font-size:11px]",
-                      getItemDeliveryStateToneClassName(itemState.toneKey),
-                    )}
-                  >
-                    <StateIcon width={10} height={10} aria-hidden />
-                    {t(itemState.labelKey)}
-                  </span>
-                </div>
-                <span className="shrink-0 [font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums">
-                  {t("card.itemQuantity", { quantity: item.quantity })}
-                  {item.unitPrice != null && (
-                    <>
-                      {" · "}
-                      <span className="[color:var(--text-primary)]">
-                        {formatAmountWithSymbol(item.unitPrice, order.currencyCode, locale)}
-                      </span>
-                    </>
+            {order.items.map((item, idx) => {
+              const ItemIcon = getStoreProductTypeIcon(item.productTypeKey ?? "");
+              const itemState = describeItemDeliveryState(item.deliveryState);
+              const StateIcon = itemState.icon;
+              const isLast = idx === order.items.length - 1;
+              return (
+                <li
+                  key={item.id}
+                  className={cn(
+                    "grid [grid-template-columns:32px_minmax(0,1fr)_auto] items-center gap-2 py-2",
+                    !isLast && "[border-bottom:1px_solid_var(--border)]",
                   )}
-                </span>
-              </li>
-            );
-          })}
+                >
+                  <span
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-md)] [color:var(--accent-cool)] [background:color-mix(in_oklch,var(--accent-cool)_10%,transparent)]"
+                    aria-hidden
+                  >
+                    <ItemIcon width={14} height={14} />
+                  </span>
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <span className="truncate [font-size:var(--text-body)] [color:var(--text-primary)]">
+                      {item.name}
+                    </span>
+                    <span
+                      className={cn(
+                        "inline-flex w-fit items-center gap-1 rounded-[var(--radius-pill)] px-1.5 [font-size:11px]",
+                        getItemDeliveryStateToneClassName(itemState.toneKey),
+                      )}
+                    >
+                      <StateIcon width={10} height={10} aria-hidden />
+                      {t(itemState.labelKey)}
+                    </span>
+                  </div>
+                  <span className="shrink-0 [font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums">
+                    {t("card.itemQuantity", { quantity: item.quantity })}
+                    {item.unitPrice != null && (
+                      <>
+                        {" · "}
+                        <span className="[color:var(--text-primary)]">
+                          {formatAmountWithSymbol(item.unitPrice, order.currencyCode, locale)}
+                        </span>
+                      </>
+                    )}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
           <OrderListRowActions
             order={order}

@@ -69,14 +69,14 @@ function makeOrder(overrides: Partial<OrdersListPageItem> = {}): OrdersListPageI
   } as OrdersListPageItem;
 }
 
-function renderActions(order: OrdersListPageItem) {
+function renderActions(order: OrdersListPageItem, surface: "table" | "card" = "table") {
   render(
     <OrderListRowActions
       order={order}
       baseCurrencyCode="PEN"
       locale="es"
       detailHref="/es/orders/order-1"
-      surface="table"
+      surface={surface}
     />,
   );
 }
@@ -137,6 +137,41 @@ describe("OrderListRowActions", () => {
     expect(screen.getByRole("checkbox", { name: "Sigue pendiente" })).toBeInTheDocument();
     expect(screen.getByRole("checkbox", { name: "Listo en tienda" })).toBeInTheDocument();
     expect(screen.queryByRole("checkbox", { name: "Ya entregado" })).not.toBeInTheDocument();
+  });
+
+
+  it("drops the detail link on a card, whose whole surface is already that link", () => {
+    renderActions(makeOrder(), "card");
+
+    expect(screen.getByRole("button", { name: "rowActions.quickArrivalAriaLabel" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /card.openDetail/ })).not.toBeInTheDocument();
+  });
+
+  it("renders nothing on a card with no action left, instead of an empty seam", () => {
+    const { container } = render(
+      <OrderListRowActions
+        order={makeOrder({ items: [makeItem({ deliveryState: "delivered" })], status: "COMPLETED" })}
+        baseCurrencyCode="PEN"
+        locale="es"
+        detailHref="/es/orders/order-1"
+        surface="card"
+      />,
+    );
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("gives the primary action the row's only accent, so the card keeps the emphasis", () => {
+    // Hierarchy is carried by colour alone: no fill, no taller control. A tonal pill here
+    // outranked the card it belongs to.
+    renderActions(makeOrder());
+
+    const primary = screen.getByRole("button", { name: "rowActions.quickArrivalAriaLabel" });
+    const secondary = screen.getByRole("link", { name: "rowActions.createDeliveryAriaLabel" });
+
+    expect(primary.className).toContain("[color:var(--accent)]");
+    expect(secondary.className).toContain("[color:var(--text-secondary)]");
+    expect(primary.className).not.toContain("background");
   });
 
   it("logs the arrival through the shared action and refreshes the list", async () => {
