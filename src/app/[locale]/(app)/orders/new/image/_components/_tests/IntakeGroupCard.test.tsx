@@ -105,7 +105,10 @@ describe("IntakeGroupCard", () => {
 
     expect(screen.getByText("Gojo")).toBeTruthy();
     expect(screen.getByText("Gojo (chase)")).toBeTruthy();
-    expect(screen.queryByRole("button", { expanded: false })).toBeNull();
+    // Matched by name, not by `expanded: false` alone: the category picker is a combobox trigger
+    // and carries its own `aria-expanded`, so the bare state query no longer identifies the
+    // disclosure on its own. The claim under test is unchanged — a small group has no disclosure.
+    expect(screen.queryByRole("button", { name: /^(expand|collapse):/ })).toBeNull();
   });
 
   it("renders a large group as a summary behind a labelled disclosure control", () => {
@@ -120,7 +123,7 @@ describe("IntakeGroupCard", () => {
     );
 
     expect(screen.queryByText("One Piece 1")).toBeNull();
-    const disclosure = screen.getByRole("button", { expanded: false });
+    const disclosure = screen.getByRole("button", { name: /^expand:/, expanded: false });
     expect(disclosure.textContent).toContain("50");
   });
 
@@ -397,5 +400,118 @@ describe("IntakeGroupCard: reference link", () => {
     );
 
     expect(screen.queryByRole("link")).toBeNull();
+  });
+});
+
+describe("IntakeGroupCard: category picker surface", () => {
+  const categorisedGroup = () =>
+    buildGroup({
+      products: [{ name: "Gojo", unitPrice: 9000, suggestedProductTypeKey: "figures", referenceUrl: null }],
+      reason: "sealed",
+    });
+
+  it("opens the manual form's own popover on a pointer, with its search and its option list", () => {
+    render(
+      <IntakeGroupCard
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        group={categorisedGroup()}
+        currencyCode="PEN"
+        hasWarning={false}
+        onApply={noopApply}
+      />,
+    );
+
+    // `useIsMobile()` reports desktop under jsdom (no `matchMedia` match), which is the branch the
+    // manual product grid uses too.
+    fireEvent.click(screen.getByRole("button", { name: /^categoryProductAria:/ }));
+
+    expect(screen.getByRole("listbox")).toBeTruthy();
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(PRODUCT_TYPE_KEYS);
+  });
+
+  it("announces the picker as a listbox, not as a dialog, so the trigger reads as a combobox", () => {
+    render(
+      <IntakeGroupCard
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        group={categorisedGroup()}
+        currencyCode="PEN"
+        hasWarning={false}
+        onApply={noopApply}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", { name: /^categoryProductAria:/ });
+    expect(trigger.getAttribute("aria-haspopup")).toBe("listbox");
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+  });
+});
+
+describe("IntakeGroupCard: inline correction", () => {
+  it("renames a sealed product without splitting and re-merging it, keeping its doubt intact", () => {
+    const onApply = vi.fn();
+    render(
+      <IntakeGroupCard
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        group={buildGroup({
+          reason: "sealed",
+          doubtful: true,
+          priceSplit: "divided-lot",
+          products: [{ name: "Chainsw Man", unitPrice: 48000, suggestedProductTypeKey: null, referenceUrl: null }],
+        })}
+        currencyCode="PEN"
+        hasWarning={false}
+        isEditing
+        onApply={onApply}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText(/^nameFieldLabel/), { target: { value: "Chainsaw Man" } });
+
+    const [updated] = onApply.mock.calls[0] as [ExtractedGroup];
+    expect(updated.products).toHaveLength(1);
+    expect(updated.products[0].name).toBe("Chainsaw Man");
+    expect(updated.doubtful).toBe(true);
+    expect(updated.priceSplit).toBe("divided-lot");
+    expect(updated.reason).toBe("sealed");
+  });
+
+  it("keeps names and prices as plain text until the screen says it is correcting", () => {
+    render(
+      <IntakeGroupCard
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        group={buildGroup()}
+        currencyCode="PEN"
+        hasWarning={false}
+        onApply={noopApply}
+      />,
+    );
+
+    expect(screen.queryByLabelText(/^nameFieldLabel/)).toBeNull();
+    expect(screen.queryByLabelText(/^priceFieldLabel/)).toBeNull();
+  });
+
+  it("leaves a category the collector already chose out of the suggestion wording after a correction", () => {
+    const onApply = vi.fn();
+    render(
+      <IntakeGroupCard
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        group={buildGroup({
+          products: [{ name: "Gojo", unitPrice: 9000, suggestedProductTypeKey: "figures", referenceUrl: null }],
+          reason: "sealed",
+        })}
+        currencyCode="PEN"
+        hasWarning={false}
+        isEditing
+        onApply={onApply}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /^categoryProductAria:/ }));
+    fireEvent.click(screen.getByRole("option", { name: "manga" }));
+    fireEvent.change(screen.getByLabelText(/^nameFieldLabel/), { target: { value: "Gojo Satoru" } });
+
+    // The category is the collector's answer now, and correcting the name beside it does not turn
+    // it back into a suggestion.
+    expect(screen.queryByText("categorySuggested")).toBeNull();
   });
 });

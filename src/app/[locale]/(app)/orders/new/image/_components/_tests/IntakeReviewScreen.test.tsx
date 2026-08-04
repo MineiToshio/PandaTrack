@@ -681,3 +681,230 @@ describe("IntakeReviewScreen action bars", () => {
     expect(screen.getByText(/fx.invalid/)).toBeTruthy();
   });
 });
+
+describe("IntakeReviewScreen correction mode", () => {
+  it("stays a document until the collector asks for the form, then opens every read value at once", () => {
+    renderScreen(buildDraft());
+
+    expect(screen.queryByLabelText(/fields.total/)).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "edit.start" }));
+
+    // One switch, not one affordance per field: the date, the currency and the total all open.
+    expect(screen.getByLabelText(/fields.orderDate/)).toBeTruthy();
+    expect(screen.getByLabelText(/fields.currency/)).toBeTruthy();
+    expect(screen.getByLabelText(/fields.total/)).toBeTruthy();
+  });
+
+  it("closes the form again, so the screen returns to reading as a document", () => {
+    renderScreen(buildDraft());
+
+    fireEvent.click(screen.getByRole("button", { name: "edit.start" }));
+    fireEvent.click(screen.getByRole("button", { name: "edit.done" }));
+
+    expect(screen.queryByLabelText(/fields.total/)).toBeNull();
+  });
+
+  it("offers exactly one correction control for the whole screen, never one per attribute", () => {
+    renderScreen(buildDraft());
+    expect(screen.getAllByRole("button", { name: /^edit\.(start|done)$/ })).toHaveLength(1);
+  });
+
+  it("corrects a product name in place, without the collector splitting and re-merging the group", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft({
+          groups: [
+            {
+              sourcePhrase: "el box sellado de Chainsaw Man",
+              reason: "sealed",
+              doubtful: true,
+              priceSplit: "divided-lot",
+              products: [{ name: "Chainsw Man box", unitPrice: 48000, suggestedProductTypeKey: null, referenceUrl: null }],
+            },
+          ],
+        })}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "edit.start" }));
+    fireEvent.change(screen.getByLabelText(/^nameFieldLabel/), { target: { value: "Chainsaw Man box" } });
+    desktopSubmit().click();
+
+    const [saved] = onSave.mock.calls[0] as [ImageIntakeDraft];
+    expect(saved.groups[0].products[0].name).toBe("Chainsaw Man box");
+    // The reason the correction exists is a typo, and a typo says nothing about the grouping: the
+    // doubt chip `FR-11-55` puts on screen and the price-split record both survive it.
+    expect(saved.groups[0].doubtful).toBe(true);
+    expect(saved.groups[0].priceSplit).toBe("divided-lot");
+    expect(saved.groups[0].reason).toBe("sealed");
+  });
+
+  it("corrects a unit price in place, in the draft's own minor units", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft()}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "edit.start" }));
+    const priceFields = screen.getAllByLabelText(/^priceFieldLabel/);
+    fireEvent.change(priceFields[0], { target: { value: "115" } });
+    desktopSubmit().click();
+
+    const [saved] = onSave.mock.calls[0] as [ImageIntakeDraft];
+    expect(saved.groups[0].products[0].unitPrice).toBe(11500);
+    expect(saved.groups[0].products[1].unitPrice).toBe(6000);
+  });
+
+  it("refuses to save a product left without a name, and opens the field instead of failing server-side", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft()}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "edit.start" }));
+    fireEvent.change(screen.getAllByLabelText(/^nameFieldLabel/)[0], { target: { value: "  " } });
+    fireEvent.click(desktopSubmit());
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert").textContent).toContain("edit.blankName");
+  });
+});
+
+describe("IntakeReviewScreen totals reconciliation", () => {
+  it("says so when the rows do not add up to the stated total", () => {
+    renderScreen(buildDraft({ totalCost: field(11000, "read") }));
+    expect(screen.getByText(/totals.mismatchTitle/)).toBeTruthy();
+  });
+
+  it("stays quiet when the rows add up exactly", () => {
+    renderScreen(buildDraft({ totalCost: field(15000, "read") }));
+    expect(screen.queryByText(/totals.mismatchTitle/)).toBeNull();
+  });
+
+  it("counts a stated shipping cost toward the total before calling it a mismatch", () => {
+    renderScreen(
+      buildDraft({
+        totalCost: field(17000, "read"),
+        delivery: { expectedFrom: field(null, null), expectedTo: field(null, null), cost: field(2000, "read") },
+      }),
+    );
+    expect(screen.queryByText(/totals.mismatchTitle/)).toBeNull();
+  });
+
+  it("stays quiet when a product carries no price, since the rows have no sum to compare", () => {
+    renderScreen(
+      buildDraft({
+        totalCost: field(48000, "read"),
+        groups: [
+          {
+            sourcePhrase: "el pack chase de Gojo",
+            reason: "split",
+            doubtful: false,
+            priceSplit: "none",
+            products: [
+              { name: "Gojo", unitPrice: null, suggestedProductTypeKey: null, referenceUrl: null },
+              { name: "Gojo (chase)", unitPrice: 6000, suggestedProductTypeKey: null, referenceUrl: null },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(screen.queryByText(/totals.mismatchTitle/)).toBeNull();
+  });
+
+  it("never blocks the save over a mismatch: the total is what the chat said and it is saved as is", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft({ totalCost: field(11000, "read") })}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    desktopSubmit().click();
+    expect(onSave).toHaveBeenCalledTimes(1);
+    expect((onSave.mock.calls[0][0] as ImageIntakeDraft).totalCost.value).toBe(11000);
+  });
+});
+
+describe("IntakeReviewScreen payments", () => {
+  const assumedPaymentDraft = () =>
+    buildDraft({
+      payments: [{ amount: field(20000, "assumed"), paidAt: field("2026-07-20", "read") }],
+    });
+
+  it("makes an assumed payment amount a control, like every other assumed value", () => {
+    renderScreen(assumedPaymentDraft());
+    expect(screen.getByLabelText(/payments.amountLabel/)).toBeTruthy();
+  });
+
+  it("leaves a payment that was genuinely read as plain text", () => {
+    renderScreen(buildDraft({ payments: [{ amount: field(20000, "read"), paidAt: field("2026-07-20", "read") }] }));
+    expect(screen.queryByLabelText(/payments.amountLabel/)).toBeNull();
+  });
+
+  it("hands a corrected payment amount to the save handler in minor units", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={assumedPaymentDraft()}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText(/payments.amountLabel/), { target: { value: "150" } });
+    desktopSubmit().click();
+
+    const [saved] = onSave.mock.calls[0] as [ImageIntakeDraft];
+    expect(saved.payments[0].amount).toEqual({ value: 15000, source: "read" });
+  });
+});

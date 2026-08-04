@@ -1,6 +1,6 @@
 "use client";
 
-import { ImagePlus } from "lucide-react";
+import { Check, ImagePlus, Pencil, Scale } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import posthog from "posthog-js";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -104,6 +104,42 @@ function countProducts(draft: ImageIntakeDraft): number {
   return draft.groups.reduce((sum, group) => sum + group.products.length, 0);
 }
 
+/**
+ * What the rows actually add up to, or `null` when at least one product carries no price.
+ *
+ * A partially priced draft has no sum worth stating: the gap between it and the total is exactly
+ * the products with no figure, which the rows already show.
+ */
+function sumProductPrices(draft: ImageIntakeDraft): number | null {
+  let sum = 0;
+  for (const group of draft.groups) {
+    for (const product of group.products) {
+      if (product.unitPrice === null) return null;
+      sum += product.unitPrice;
+    }
+  }
+  return sum;
+}
+
+/** Every product carries a name the order write requires; an empty one is refused as a whole draft. */
+function hasBlankProductName(draft: ImageIntakeDraft): boolean {
+  return draft.groups.some((group) => group.products.some((product) => product.name.trim() === ""));
+}
+
+/**
+ * Cards that animate in on arrival. Past this many the delay is dropped rather than extended: a
+ * fifty-group stagger would make the last card arrive four seconds after the first, which is not
+ * emphasis, it is a wait.
+ */
+/**
+ * Relaxes a `size="sm"` control to the 44px minimum a thumb needs, and only on a phone. The size
+ * itself is right on a pointer, so this widens the target rather than changing the scale.
+ */
+const MOBILE_TAP_TARGET = "min-h-[44px] md:min-h-8";
+
+const STAGGERED_GROUP_CARDS = 6;
+const GROUP_CARD_STAGGER_MS = 50;
+
 /** Matches the six-decimal precision `exchangeRateSchema` accepts. */
 const EXCHANGE_RATE_INPUT_DECIMALS = 6;
 
@@ -154,6 +190,17 @@ export default function IntakeReviewScreen({
   const locale = useLocale();
 
   const [draft, setDraft] = useState<ImageIntakeDraft>(initialDraft);
+  /**
+   * Correction mode: one switch for the whole screen, never one affordance per field.
+   *
+   * The screen's job is to point at what needs a decision, and it does that by being a document in
+   * which exactly the assumed and missing values look interactive (`FR-11-51`). A pencil beside
+   * every value would put twenty more targets on a card that already has plenty and would compete
+   * with the confidence chips, which are the things the header's count is actually about. So the
+   * default stays untouched, and a collector who wants to fix a name or a price says so once.
+   */
+  const [isEditing, setIsEditing] = useState(false);
+  const [blankNameError, setBlankNameError] = useState(false);
   const [totalInput, setTotalInput] = useState(() =>
     initialDraft.totalCost.value !== null
       ? formatCentsForInput(initialDraft.totalCost.value, initialDraft.currency.value ?? NO_CURRENCY_CODE)
@@ -198,6 +245,25 @@ export default function IntakeReviewScreen({
   const doubtCount = attributeDoubtCount + doubtfulGroupCount + storeDoubtCount;
 
   const paidTotal = draft.payments.reduce((sum, payment) => sum + (payment.amount.value ?? 0), 0);
+
+  /**
+   * Says out loud when the rows and the stated total disagree.
+   *
+   * Nothing reconciled the two before prices could be corrected, and nothing has to for the save to
+   * go through: the total is what the chat said and it is what gets stored, so a draft whose rows
+   * sum to something else is legal and is occasionally right (a discount nobody itemised). What is
+   * not acceptable is saving it without having been told. A stated shipping cost counts toward the
+   * total, because a chat that quotes one usually quotes a total with it in.
+   */
+  const productsTotal = sumProductPrices(draft);
+  const statedTotal = draft.totalCost.value;
+  const totalMismatch =
+    productsTotal !== null &&
+    statedTotal !== null &&
+    productsTotal !== statedTotal &&
+    productsTotal + (shippingCost ?? 0) !== statedTotal
+      ? { productsTotal, statedTotal }
+      : null;
 
   // An order priced in another currency needs a rate, or it lands saved but invisible: it is left
   // out of every base-currency dashboard total with nothing on screen that ever said so.
@@ -300,12 +366,63 @@ export default function IntakeReviewScreen({
     }));
   };
 
+  /** Raw text typed into a payment amount, by row index. Same reason as the order total's own input. */
+  const [paymentAmountInputs, setPaymentAmountInputs] = useState<Record<number, string>>({});
+
+  function paymentAmountInput(index: number, amount: number | null): string {
+    const typed = paymentAmountInputs[index];
+    if (typed !== undefined) return typed;
+    return amount !== null ? formatCentsForInput(amount, currencyCode) : "";
+  }
+
+  function patchPayment(index: number, patch: Partial<ImageIntakeDraft["payments"][number]>) {
+    setDraft((current) => ({
+      ...current,
+      payments: current.payments.map((payment, paymentIndex) =>
+        paymentIndex === index ? { ...payment, ...patch } : payment,
+      ),
+    }));
+  }
+
+  const handlePaymentAmountChange = (index: number, value: string) => {
+    setPaymentAmountInputs((current) => ({ ...current, [index]: value }));
+    const minorUnits = parseDecimalToMinorUnits(value, currencyCode);
+    patchPayment(index, {
+      amount: minorUnits === null ? { value: null, source: null } : { value: minorUnits, source: "read" },
+    });
+  };
+
+  const handlePaymentDateChange = (index: number, value: string) => {
+    patchPayment(index, { paidAt: value ? { value, source: "read" } : { value: null, source: null } });
+  };
+
   const handleExchangeRateChange = (value: string) => {
     setExchangeRateInput(value);
     setExchangeRateError(null);
   };
 
+  /**
+   * Opens every read value at once, and only on request.
+   *
+   * It also expands nothing: a collapsed group is a summary of rows the collector has not asked to
+   * see, and its one line is a range and an aggregate, not a value anyone can type into. Correcting
+   * a row inside one means opening it first, which is the same gesture as reading it.
+   */
+  const handleToggleEditing = () => {
+    setIsEditing((current) => !current);
+    setBlankNameError(false);
+  };
+
   const handleSave = () => {
+    // The order write refuses a product with no name, and it refuses the whole draft over it. That
+    // is a correct rule enforced in the wrong place for a person to act on, so it is caught here,
+    // beside the field, rather than coming back as "we could not save this".
+    if (hasBlankProductName(draft)) {
+      setBlankNameError(true);
+      setIsEditing(true);
+      return;
+    }
+    setBlankNameError(false);
     if (!needsExchangeRate) {
       onSave(draft, null);
       return;
@@ -365,11 +482,24 @@ export default function IntakeReviewScreen({
   return (
     // The bottom padding only exists to clear the fixed mobile bar, so it stops where that bar
     // does: on `md` and up the actions are inline and the reserved strip would be dead space.
-    <div className="flex flex-col gap-[var(--space-6)] pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-0">
+    <div className="intake-review-scroll-safe flex flex-col gap-[var(--space-6)] pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-0">
       <header className="flex flex-col gap-[var(--space-2)]">
-        <h2 className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
-          {t("title")}
-        </h2>
+        <div className="flex flex-wrap items-start justify-between gap-[var(--space-3)]">
+          <h2 className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+            {t("title")}
+          </h2>
+          <Button
+            type="button"
+            variant={isEditing ? "tonal" : "ghost"}
+            size="sm"
+            leadingIcon={isEditing ? <Check size={14} /> : <Pencil size={14} />}
+            aria-pressed={isEditing}
+            onClick={handleToggleEditing}
+            className={MOBILE_TAP_TARGET}
+          >
+            {isEditing ? t("edit.done") : t("edit.start")}
+          </Button>
+        </div>
         <p className="[font-size:var(--text-body)] [color:var(--text-secondary)]">
           {doubtCount === 0
             ? t("headerClean")
@@ -379,6 +509,7 @@ export default function IntakeReviewScreen({
                 total: draft.totalCost.value !== null ? formatAmount(draft.totalCost.value, currencyCode) : "",
               })}
         </p>
+        {isEditing && <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">{t("edit.hint")}</p>}
       </header>
 
       <StoreResolutionSection store={draft.store} options={storeOptions} onChange={handleStoreChange} />
@@ -388,6 +519,8 @@ export default function IntakeReviewScreen({
 
         <ProvenanceValue
           id="intake-order-date"
+          layout="row"
+          editing={isEditing}
           label={t("fields.orderDate")}
           state={provenance.orderDate}
           markerLabel={t(provenance.orderDate === "assumed" ? "provenance.assumed" : "provenance.missing")}
@@ -404,6 +537,8 @@ export default function IntakeReviewScreen({
 
         <ProvenanceValue
           id="intake-currency"
+          layout="row"
+          editing={isEditing}
           label={t("fields.currency")}
           state={provenance.currency}
           markerLabel={t(provenance.currency === "assumed" ? "provenance.assumed" : "provenance.missing")}
@@ -415,6 +550,8 @@ export default function IntakeReviewScreen({
 
         <ProvenanceValue
           id="intake-total"
+          layout="row"
+          editing={isEditing}
           label={t("fields.total")}
           state={provenance.totalCost}
           markerLabel={t(provenance.totalCost === "assumed" ? "provenance.assumed" : "provenance.missing")}
@@ -433,6 +570,8 @@ export default function IntakeReviewScreen({
 
         <ProvenanceValue
           id="intake-delivery-range"
+          layout="row"
+          editing={isEditing}
           label={t("fields.deliveryRange")}
           state={provenance.deliveryFrom}
           markerLabel={t(provenance.deliveryFrom === "assumed" ? "provenance.assumed" : "provenance.missing")}
@@ -484,7 +623,9 @@ export default function IntakeReviewScreen({
                   {t("fx.rateDate", { date: formatIsoCalendarDay(exchangeRateDate, locale) })}
                 </p>
               ) : (
-                <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">{t("fx.help")}</p>
+                <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">
+                  {t("fx.help", { from: currencyCode, to: baseCurrencyCode })}
+                </p>
               )}
               <FxRateAttribution />
             </div>
@@ -545,15 +686,32 @@ export default function IntakeReviewScreen({
             <p className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{t("productSheet.optional")}</p>
           </AlertBanner>
         )}
+        {blankNameError && (
+          <p className="[font-size:var(--text-caption)] [color:var(--destructive)]" role="alert">
+            {t("edit.blankName")}
+          </p>
+        )}
         {draft.groups.map((group, index) => (
-          <IntakeGroupCard
+          /*
+            The cards arrive one after another, and stop doing so past the sixth: the point is to
+            let the eye land on the first card before the page is full, not to make a long draft
+            take longer to appear. Nothing waits on the animation, so a card is clickable from the
+            frame it exists.
+          */
+          <div
             key={`${group.sourcePhrase}-${index}`}
-            group={group}
-            currencyCode={currencyCode}
-            productTypeKeys={productTypeKeys}
-            hasWarning={warningPhrases.has(group.sourcePhrase)}
-            onApply={(updatedGroup) => handleGroupApply(index, updatedGroup)}
-          />
+            className="intake-rise-in"
+            style={index < STAGGERED_GROUP_CARDS ? { animationDelay: `${index * GROUP_CARD_STAGGER_MS}ms` } : undefined}
+          >
+            <IntakeGroupCard
+              group={group}
+              currencyCode={currencyCode}
+              productTypeKeys={productTypeKeys}
+              hasWarning={warningPhrases.has(group.sourcePhrase)}
+              isEditing={isEditing}
+              onApply={(updatedGroup) => handleGroupApply(index, updatedGroup)}
+            />
+          </div>
         ))}
       </section>
 
@@ -562,20 +720,62 @@ export default function IntakeReviewScreen({
         {draft.payments.length === 0 ? (
           <p className="[font-size:var(--text-body)] [color:var(--text-secondary)]">{t("payments.empty")}</p>
         ) : (
-          <ul className="flex flex-col gap-[var(--space-2)]">
-            {draft.payments.map((payment, index) => (
-              <li
-                key={`${payment.paidAt.value ?? "unknown"}-${index}`}
-                className="flex items-baseline justify-between gap-[var(--space-3)] [font-size:var(--text-body)]"
-              >
-                <span className="[color:var(--text-secondary)]">
-                  {payment.paidAt.value ? t("payments.row", { date: payment.paidAt.value }) : t("payments.title")}
-                </span>
-                <span className="[color:var(--text-primary)] tabular-nums">
-                  {payment.amount.value !== null ? formatAmount(payment.amount.value, currencyCode) : ""}
-                </span>
-              </li>
-            ))}
+          /*
+            A payment goes through the same provenance rule as every other attribute (`FR-11-51`).
+            It used to render as flat text whatever its `source` said, which quietly hid the case
+            the rule exists for: an amount the model filled in by convention looked exactly like one
+            it had read off the screenshot.
+          */
+          <ul className="flex flex-col gap-[var(--space-3)]">
+            {draft.payments.map((payment, index) => {
+              const amountState = resolveProvenanceState(payment.amount);
+              const dateState = resolveProvenanceState(payment.paidAt);
+              return (
+                // Keyed by position: the date is editable, so keying on it would remount the field.
+                <li key={index} className="flex flex-col gap-[var(--space-1)]">
+                  <ProvenanceValue
+                    id={`intake-payment-amount-${index}`}
+                    layout="row"
+                    editing={isEditing}
+                    label={t("payments.amountLabel", { position: index + 1 })}
+                    state={amountState}
+                    markerLabel={t(amountState === "assumed" ? "provenance.assumed" : "provenance.missing")}
+                    readText={
+                      payment.amount.value !== null ? (
+                        <span className="numeric">{formatAmount(payment.amount.value, currencyCode)}</span>
+                      ) : null
+                    }
+                    control={({ id }) => (
+                      <Input
+                        id={id}
+                        type="text"
+                        inputMode="decimal"
+                        suffix={currencyCode}
+                        value={paymentAmountInput(index, payment.amount.value)}
+                        onChange={(event) => handlePaymentAmountChange(index, event.target.value)}
+                      />
+                    )}
+                  />
+                  <ProvenanceValue
+                    id={`intake-payment-date-${index}`}
+                    layout="row"
+                    editing={isEditing}
+                    label={t("payments.dateLabel")}
+                    state={dateState}
+                    markerLabel={t(dateState === "assumed" ? "provenance.assumed" : "provenance.missing")}
+                    readText={payment.paidAt.value ? formatIsoCalendarDay(payment.paidAt.value, locale) : null}
+                    control={({ id }) => (
+                      <Input
+                        id={id}
+                        type="date"
+                        value={payment.paidAt.value ?? ""}
+                        onChange={(event) => handlePaymentDateChange(index, event.target.value)}
+                      />
+                    )}
+                  />
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -586,11 +786,22 @@ export default function IntakeReviewScreen({
       >
         <div className="flex items-baseline justify-between gap-[var(--space-3)] [font-size:var(--text-body)]">
           <span className="[color:var(--text-secondary)]">{t("totals.paid")}</span>
-          <span className="[color:var(--text-primary)] tabular-nums">{formatAmount(paidTotal, currencyCode)}</span>
+          <span className="numeric [color:var(--text-primary)]">{formatAmount(paidTotal, currencyCode)}</span>
         </div>
-        <div className="flex items-baseline justify-between gap-[var(--space-3)] [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)]">
-          <span className="[color:var(--text-primary)]">{t("totals.total")}</span>
-          <span className="[color:var(--text-primary)] tabular-nums">
+        <div className="flex items-baseline justify-between gap-[var(--space-3)]">
+          <span className="[font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
+            {t("totals.total")}
+          </span>
+          {/*
+            Keyed on the product count so a split or a merge crossfades the figure, and typing does
+            not. A count that re-ran the fade on every keystroke would be the anti-pattern of
+            animating the most frequent action on the screen; changing how many rows there are is
+            rare and genuinely restructures what this number is a sum of.
+          */}
+          <span
+            key={productCount}
+            className="intake-value-in numeric [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
+          >
             {draft.totalCost.value !== null ? formatAmount(draft.totalCost.value, currencyCode) : ""}
           </span>
         </div>
@@ -598,14 +809,20 @@ export default function IntakeReviewScreen({
           <div className="flex flex-col gap-[var(--space-1)]">
             <div className="flex items-baseline justify-between gap-[var(--space-3)] [font-size:var(--text-body)]">
               <span className="[color:var(--text-secondary)]">{t("delivery.cost")}</span>
-              <span className="[color:var(--text-primary)] tabular-nums">
-                {formatAmount(shippingCost, currencyCode)}
-              </span>
+              <span className="numeric [color:var(--text-primary)]">{formatAmount(shippingCost, currencyCode)}</span>
             </div>
             <p className="[font-size:var(--text-caption)] [color:var(--text-secondary)]">
               {t("delivery.costNotSaved")}
             </p>
           </div>
+        )}
+        {totalMismatch !== null && (
+          <AlertBanner tone="warning" icon={<Scale size={16} />} title={t("totals.mismatchTitle")}>
+            {t("totals.mismatchBody", {
+              products: formatAmount(totalMismatch.productsTotal, currencyCode),
+              total: formatAmount(totalMismatch.statedTotal, currencyCode),
+            })}
+          </AlertBanner>
         )}
       </section>
 
@@ -644,7 +861,7 @@ export default function IntakeReviewScreen({
         <button
           type="button"
           onClick={handleManualClick}
-          className="mx-auto rounded-md px-[var(--space-2)] py-[var(--space-1)] [font-size:var(--text-caption)] [color:var(--text-secondary)] underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
+          className="mx-auto inline-flex min-h-[44px] items-center justify-center rounded-md px-[var(--space-3)] py-[var(--space-1)] [font-size:var(--text-caption)] [color:var(--text-secondary)] underline-offset-4 hover:underline focus-visible:[box-shadow:0_0_0_2px_var(--focus-ring)] focus-visible:outline-none"
         >
           {t("manual")}
         </button>

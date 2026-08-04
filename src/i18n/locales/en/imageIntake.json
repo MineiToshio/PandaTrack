@@ -85,6 +85,12 @@
     "title": "Review and confirm",
     "headerWithDoubts": "We found {productCount, plural, one {# product} other {# products}} for {total}. {doubtCount, plural, one {Check # detail and save.} other {Check # details and save.}}",
     "headerClean": "Everything came out clean from the chat. Review it and save.",
+    "edit": {
+      "start": "Correct",
+      "done": "Done",
+      "hint": "You can now change anything we read, including each product's name and price. Tap \"Done\" when you finish.",
+      "blankName": "One product was left without a name. Give it one so the order can be saved."
+    },
     "fieldsTitle": "Order details",
     "store": {
       "label": "Store",
@@ -153,7 +159,10 @@
       "categoryProductAria": "Category for {product}: {category}. Change it",
       "categoryGroupAria": "Category for all {count} products: {category}. Change it",
       "categoryGroupHint": "Applies to all {count} products",
-      "referenceLinkAria": "Open the product link on {host}, in a new tab"
+      "referenceLinkAria": "Open the product link on {host}, in a new tab",
+      "nameFieldLabel": "Name of product {position}",
+      "priceFieldLabel": "Price of product {position}",
+      "editCollapsedHint": "Open the {count} to correct a name or a price."
     },
     "productSheet": {
       "title": "{count, plural, one {We can name this product better} other {We can name these # products better}}",
@@ -169,11 +178,15 @@
     "payments": {
       "title": "Payments",
       "row": "Payment on {date}",
-      "empty": "We found no payments in the chat."
+      "empty": "We found no payments in the chat.",
+      "amountLabel": "Payment {position}",
+      "dateLabel": "Payment date"
     },
     "totals": {
       "paid": "Paid up front",
-      "total": "Order total"
+      "total": "Order total",
+      "mismatchTitle": "The products do not add up to the total",
+      "mismatchBody": "The products add up to {products} and the order total says {total}. We save the total as it is: check which of the two is right."
     },
     "delivery": {
       "cost": "Shipping cost",

@@ -85,6 +85,12 @@
     "title": "Revisa y confirma",
     "headerWithDoubts": "Encontramos {productCount, plural, one {# producto} other {# productos}} por {total}. {doubtCount, plural, one {Revisa # dato y guarda.} other {Revisa # datos y guarda.}}",
     "headerClean": "Todo salió limpio del chat. Revísalo y guarda.",
+    "edit": {
+      "start": "Corregir",
+      "done": "Listo",
+      "hint": "Ahora puedes cambiar cualquier dato que hayamos leído, incluido el nombre y el precio de cada producto. Toca \"Listo\" cuando termines.",
+      "blankName": "Un producto se quedó sin nombre. Escríbele uno para poder guardar el pedido."
+    },
     "fieldsTitle": "Datos del pedido",
     "store": {
       "label": "Tienda",
@@ -153,7 +159,10 @@
       "categoryProductAria": "Categoría de {product}: {category}. Cámbiala",
       "categoryGroupAria": "Categoría de los {count} productos: {category}. Cámbiala",
       "categoryGroupHint": "Se aplica a los {count} productos",
-      "referenceLinkAria": "Abrir el enlace del producto en {host}, en una pestaña nueva"
+      "referenceLinkAria": "Abrir el enlace del producto en {host}, en una pestaña nueva",
+      "nameFieldLabel": "Nombre del producto {position}",
+      "priceFieldLabel": "Precio del producto {position}",
+      "editCollapsedHint": "Abre los {count} para corregir un nombre o un precio."
     },
     "productSheet": {
       "title": "{count, plural, one {Podemos nombrar mejor este producto} other {Podemos nombrar mejor estos # productos}}",
@@ -169,11 +178,15 @@
     "payments": {
       "title": "Pagos",
       "row": "Pago del {date}",
-      "empty": "No encontramos pagos en el chat."
+      "empty": "No encontramos pagos en el chat.",
+      "amountLabel": "Pago {position}",
+      "dateLabel": "Fecha del pago"
     },
     "totals": {
       "paid": "Adelanto pagado",
-      "total": "Total del pedido"
+      "total": "Total del pedido",
+      "mismatchTitle": "Los productos no suman el total",
+      "mismatchBody": "Los productos suman {products} y el total del pedido dice {total}. Guardamos el total tal como está: revisa cuál de los dos es el correcto."
     },
     "delivery": {
       "cost": "Costo de envío",
