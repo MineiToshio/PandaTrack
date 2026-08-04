@@ -588,6 +588,9 @@ export default function IntakeReviewScreen({
 
             <ProvenanceValue
               id="intake-delivery-range"
+              // Alone on its row it left half the section empty, so it takes the whole row unless
+              // the exchange rate is there to fill the other half.
+              className={needsExchangeRate ? undefined : "md:col-span-2"}
               label={t("fields.deliveryRange")}
               state={provenance.deliveryFrom}
               markerLabel={t(provenance.deliveryFrom === "assumed" ? "provenance.assumed" : "provenance.missing")}
@@ -605,43 +608,48 @@ export default function IntakeReviewScreen({
                 />
               )}
             />
-          </div>
 
-          {needsExchangeRate && (
-            <div className="space-y-1.5">
-              <label htmlFor="intake-exchange-rate" className="text-[13px] font-medium [color:var(--text-secondary)]">
-                {t("fx.label", { from: currencyCode, to: baseCurrencyCode })}
-              </label>
-              <Input
-                id="intake-exchange-rate"
-                type="text"
-                inputMode="decimal"
-                value={exchangeRateInput}
-                placeholder={isRateLoading ? t("fx.loading") : t("fx.placeholder")}
-                error={Boolean(exchangeRateError)}
-                aria-describedby="intake-exchange-rate-hint"
-                onChange={(event) => handleExchangeRateChange(event.target.value)}
-              />
-              <div id="intake-exchange-rate-hint" className="flex flex-col gap-[var(--space-1)]">
-                {exchangeRateError ? (
-                  <p className="text-[11.5px] [color:var(--destructive)]" role="alert">
-                    {exchangeRateError}
-                  </p>
-                ) : isRateUnavailable ? (
-                  <p className="text-[11.5px] [color:var(--text-muted)]">{t("fx.unavailable")}</p>
-                ) : exchangeRateDate ? (
-                  <p className="text-[11.5px] [color:var(--text-muted)]">
-                    {t("fx.rateDate", { date: formatIsoCalendarDay(exchangeRateDate, locale) })}
-                  </p>
-                ) : (
-                  <p className="text-[11.5px] [color:var(--text-muted)]">
-                    {t("fx.help", { from: currencyCode, to: baseCurrencyCode })}
-                  </p>
-                )}
-                <FxRateAttribution />
+            {needsExchangeRate && (
+              <div className="space-y-1.5">
+                {/* Same minimum height as a `ProvenanceValue` label, so this field's input lines
+                    up with the one beside it whether or not that one carries a chip. */}
+                <label
+                  htmlFor="intake-exchange-rate"
+                  className="flex min-h-[1.625rem] items-center text-[13px] font-medium [color:var(--text-secondary)]"
+                >
+                  {t("fx.label", { from: currencyCode, to: baseCurrencyCode })}
+                </label>
+                <Input
+                  id="intake-exchange-rate"
+                  type="text"
+                  inputMode="decimal"
+                  value={exchangeRateInput}
+                  placeholder={isRateLoading ? t("fx.loading") : t("fx.placeholder")}
+                  error={Boolean(exchangeRateError)}
+                  aria-describedby="intake-exchange-rate-hint"
+                  onChange={(event) => handleExchangeRateChange(event.target.value)}
+                />
+                <div id="intake-exchange-rate-hint" className="flex flex-col gap-[var(--space-1)]">
+                  {exchangeRateError ? (
+                    <p className="text-[11.5px] [color:var(--destructive)]" role="alert">
+                      {exchangeRateError}
+                    </p>
+                  ) : isRateUnavailable ? (
+                    <p className="text-[11.5px] [color:var(--text-muted)]">{t("fx.unavailable")}</p>
+                  ) : exchangeRateDate ? (
+                    <p className="text-[11.5px] [color:var(--text-muted)]">
+                      {t("fx.rateDate", { date: formatIsoCalendarDay(exchangeRateDate, locale) })}
+                    </p>
+                  ) : (
+                    <p className="text-[11.5px] [color:var(--text-muted)]">
+                      {t("fx.help", { from: currencyCode, to: baseCurrencyCode })}
+                    </p>
+                  )}
+                  <FxRateAttribution />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </section>
 
