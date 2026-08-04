@@ -16,6 +16,9 @@ import {
   type CreateStoreFromIntakeErrorCode,
 } from "../../../_actions/imageIntakeStoreActions";
 
+/** Same 44px-on-a-phone relaxation the rest of the review screen applies to its `sm` controls. */
+const MOBILE_TAP_TARGET = "min-h-[44px] md:min-h-8";
+
 export type StoreResolutionSectionProps = {
   store: ImageIntakeDraft["store"];
   options: StoreComboboxOption[];
@@ -325,7 +328,14 @@ export default function StoreResolutionSection({ store, options, onChange, error
               </li>
             ))}
           </ul>
-          <Button type="button" variant="ghost" size="sm" onClick={() => void submitCreate(true)} loading={isCreating}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={MOBILE_TAP_TARGET}
+            onClick={() => void submitCreate(true)}
+            loading={isCreating}
+          >
             {tDuplicate("confirmCreate")}
           </Button>
         </div>
@@ -338,7 +348,14 @@ export default function StoreResolutionSection({ store, options, onChange, error
       )}
 
       <div className="flex items-center gap-[var(--space-3)]">
-        <Button type="button" variant="tonal" size="sm" onClick={() => void submitCreate(false)} loading={isCreating}>
+        <Button
+          type="button"
+          variant="tonal"
+          size="sm"
+          className={MOBILE_TAP_TARGET}
+          onClick={() => void submitCreate(false)}
+          loading={isCreating}
+        >
           {isCreating ? t("createSubmitting") : t("createSubmit")}
         </Button>
         {shape === "ambiguous" && (

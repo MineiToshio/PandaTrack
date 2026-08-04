@@ -1913,3 +1913,111 @@ body {
     animation-duration: 150ms !important;
   }
 }
+
+/* ───────────────────────────────────────────────────────────
+   14. Image intake review — arrival, disclosure, and value change
+
+   Three surfaces, three jobs, composed from the §2 motion tokens:
+   the group cards arrive (bounded stagger), an opened group reveals
+   its rows, and a figure that was recomputed cross-fades. Only
+   `transform`, `opacity`, and `clip-path` are animated — never
+   `height`, `padding`, or `margin`.
+   ─────────────────────────────────────────────────────────── */
+@keyframes intake-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.intake-rise-in {
+  animation: intake-rise-in var(--motion-base) var(--ease-out-expressive) both;
+}
+
+@keyframes intake-reveal {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.intake-reveal {
+  animation: intake-reveal var(--motion-base) var(--ease-out-expressive) both;
+}
+
+@keyframes intake-value-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.intake-value-in {
+  animation: intake-value-in var(--motion-fast) var(--ease-emphasis) both;
+}
+
+/* The fixed mobile action bar sits over the end of the document, so anything the browser
+   scrolls into view down there (a focused correction field, a group the user tabbed to)
+   has to stop above it. Desktop puts the actions inline, so the reservation is dropped. */
+.intake-review-scroll-safe :is(a, button, input, select, textarea, [tabindex]) {
+  scroll-margin-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  .intake-review-scroll-safe :is(a, button, input, select, textarea, [tabindex]) {
+    scroll-margin-bottom: 0;
+  }
+}
+
+/* Reduced ≠ none (motion.md §4). The travel and the stagger go; the cross-fade stays, so a
+   card that just appeared and a figure that just changed still read as events. Written with
+   `!important` because §12's global floor would otherwise clamp these to 0.01ms, which is
+   none. */
+@media (prefers-reduced-motion: reduce) {
+  .intake-rise-in,
+  .intake-reveal,
+  .intake-value-in {
+    animation-name: intake-value-in !important;
+    animation-duration: 150ms !important;
+    animation-delay: 0ms !important;
+  }
+}
+
+/* Inline correction field on the image-intake review screen.
+
+   Written as a real class rather than as Tailwind arbitrary-property utilities: a
+   non-variant `[border-color:…]` utility and a `focus:[border-color:…]` one land in the
+   same layer, and the plain one wins, which left the focus state invisible. The rule this
+   encodes is the one the design brief asks for — no border at rest, a border on focus —
+   so it is worth stating once, unambiguously. */
+.intake-field {
+  border: 1px solid transparent;
+  background: var(--surface);
+  transition: border-color var(--motion-fast) var(--ease-emphasis);
+}
+
+.intake-field:hover {
+  border-color: var(--border);
+}
+
+.intake-field:focus {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intake-field {
+    transition: none;
+  }
+}
