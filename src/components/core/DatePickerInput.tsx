@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { DayPicker, type ChevronProps, type Matcher } from "react-day-picker";
 import Pill from "@/components/core/Pill";
+import Portal from "@/components/core/Portal";
 import { cn } from "@/lib/styles";
 
 function CalendarChevron({ orientation = "right", disabled, className }: ChevronProps) {
@@ -47,6 +48,13 @@ type DatePickerInputProps = {
   size?: "md" | "sm";
 };
 
+/** Gap between the trigger and the popup. */
+const POPUP_OFFSET_PX = 4;
+/** Minimum breathing room kept between the popup and every viewport edge. */
+const VIEWPORT_PADDING_PX = 12;
+
+type PopupPosition = { top: number; left: number; maxWidth: number };
+
 function formatDate(date: Date, locale: string): string {
   return date.toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
 }
@@ -71,49 +79,87 @@ export default function DatePickerInput({
   size = "md",
 }: DatePickerInputProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [popupPos, setPopupPos] = useState<PopupPosition | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Positions the popup against the trigger with `position: fixed`. The popup renders through a
+   * `<Portal>`, so it escapes ancestor clipping (the modal panel is `overflow-hidden` and its body
+   * is `overflow-y-auto`, which used to slice the calendar in half); the price of leaving the
+   * container is that the offset has to be computed by hand from the trigger's viewport rect.
+   *
+   * `popupAlign` stays an explicit override: `start` and `end` pick the anchor edge outright and
+   * only `auto` measures for a flip. Every branch is then clamped into the viewport, which is a
+   * safety net against overflow, not an alignment decision.
+   */
+  const reposition = () => {
+    const trigger = containerRef.current;
+    const popup = popupRef.current;
+    if (!trigger || !popup) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const maxWidth = viewportWidth - VIEWPORT_PADDING_PX * 2;
+    // The popup is content-sized (no fixed width), so measure what it actually renders as.
+    const { width, height } = popup.getBoundingClientRect();
+
+    let left: number;
+    if (popupAlign === "end") {
+      left = rect.right - width;
+    } else if (popupAlign === "start") {
+      left = rect.left;
+    } else {
+      left = rect.left;
+      if (left + width > viewportWidth - VIEWPORT_PADDING_PX) left = rect.right - width;
+    }
+    left = Math.min(left, viewportWidth - width - VIEWPORT_PADDING_PX);
+    left = Math.max(left, VIEWPORT_PADDING_PX);
+
+    // Below the trigger by default; flip above when the calendar would run past the bottom edge.
+    let top = rect.bottom + POPUP_OFFSET_PX;
+    if (top + height > viewportHeight - VIEWPORT_PADDING_PX) {
+      top = rect.top - height - POPUP_OFFSET_PX;
+    }
+    // Clamp last, mirroring the horizontal axis: a trigger scrolled out of view can make even the
+    // flipped position overflow, and the calendar must stay reachable whatever the anchor does.
+    top = Math.min(top, viewportHeight - height - VIEWPORT_PADDING_PX);
+    top = Math.max(top, VIEWPORT_PADDING_PX);
+
+    setPopupPos({ top, left, maxWidth });
+  };
+
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    reposition();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `reposition` reads refs + props on call.
+  }, [isOpen, popupAlign]);
 
   useEffect(() => {
     if (!isOpen) return;
     function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
+      const target = e.target as Node;
+      // The popup lives outside `containerRef` now that it is portaled, so it needs its own
+      // check or selecting a day would register as an outside click and close the calendar.
+      if (containerRef.current?.contains(target)) return;
+      if (popupRef.current?.contains(target)) return;
+      setIsOpen(false);
+    }
+    function handleViewportChange() {
+      reposition();
     }
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [isOpen]);
-
-  // Auto-flip: on open, measure the popup against the viewport and mutate `left`/`right`
-  // directly so we don't trigger a render (lint blocks `setState` inside effects, and the
-  // visual flip is purely presentational — no derived state needed downstream).
-  useEffect(() => {
-    if (!isOpen) return;
-    const popup = popupRef.current;
-    const container = containerRef.current;
-    if (!popup || !container) return;
-    if (popupAlign === "end") {
-      popup.style.left = "auto";
-      popup.style.right = "0";
-      return;
-    }
-    if (popupAlign === "start") {
-      popup.style.left = "0";
-      popup.style.right = "auto";
-      return;
-    }
-    // auto
-    const containerRect = container.getBoundingClientRect();
-    const popupWidth = popup.getBoundingClientRect().width;
-    const overflowsRight = containerRect.left + popupWidth > window.innerWidth - 8;
-    if (overflowsRight) {
-      popup.style.left = "auto";
-      popup.style.right = "0";
-    } else {
-      popup.style.left = "0";
-      popup.style.right = "auto";
-    }
+    window.addEventListener("resize", handleViewportChange);
+    // Capture phase so scrolling any ancestor (the modal body, a drawer) keeps the popup pinned
+    // to its trigger instead of leaving it stranded mid-viewport.
+    window.addEventListener("scroll", handleViewportChange, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      window.removeEventListener("resize", handleViewportChange);
+      window.removeEventListener("scroll", handleViewportChange, true);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `reposition` reads refs + props on call.
   }, [isOpen, popupAlign]);
 
   const dayDisabled: Matcher | undefined = disableFuture ? isFutureCalendarDay : undefined;
@@ -156,71 +202,88 @@ export default function DatePickerInput({
       </button>
 
       {isOpen && (
-        <div
-          ref={popupRef}
-          role="dialog"
-          aria-label={placeholder}
-          className={cn(
-            "absolute top-full left-0 z-20 mt-1 flex flex-col gap-2 rounded-[var(--radius-lg)] p-3",
-            // Match DateRangePickerInput popup chrome — surface tier + border-strong + elevated
-            // shadow so single-date and range-date popovers feel like the same component family.
-            "[background:var(--background)] [border:1px_solid_var(--border-strong)]",
-            "[box-shadow:var(--shadow-elevation-3)]",
-          )}
-        >
-          {presets && presets.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pb-2 [border-bottom:1px_solid_var(--border)]">
-              {presets.map((preset) => (
-                <Pill
-                  key={preset.value}
-                  onClick={() => {
-                    onPresetSelect?.(preset.value);
-                    setIsOpen(false);
-                  }}
-                >
-                  {preset.label}
-                </Pill>
-              ))}
-            </div>
-          )}
-          <DayPicker
-            mode="single"
-            selected={value ?? undefined}
-            disabled={dayDisabled}
-            onSelect={(day) => {
-              onChange(day ?? null);
-              setIsOpen(false);
+        <Portal>
+          <div
+            ref={popupRef}
+            role="dialog"
+            aria-label={placeholder}
+            style={{
+              position: "fixed",
+              // Park it offscreen for the very first layout pass: the popup has to exist and be
+              // laid out before it can be measured, and `useLayoutEffect` corrects this before paint.
+              top: popupPos?.top ?? -9999,
+              left: popupPos?.left ?? -9999,
+              maxWidth: popupPos?.maxWidth,
             }}
-            components={{ Chevron: CalendarChevron }}
-            classNames={{
-              root: "text-sm",
-              // `months` is the positioning context for the absolutely placed nav chevrons.
-              months: "relative",
-              // Caption sits behind the chevrons (which flank it) with horizontal padding to clear them.
-              month_caption:
-                "flex items-center justify-center px-9 py-1 mb-2 [color:var(--text-primary)] font-semibold",
-              caption_label: "[color:var(--text-primary)]",
-              // Nav overlays the caption row — chevrons appear left and right of the month label.
-              nav: "pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-1 py-1",
-              button_previous:
-                "pointer-events-auto inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-[var(--radius-md)] [border:1px_solid_var(--border)] [background:var(--surface-elevated)] [color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--accent)_12%,transparent)] hover:[color:var(--accent)] hover:[border-color:color-mix(in_oklch,var(--accent)_28%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 disabled:pointer-events-none transition-colors",
-              button_next:
-                "pointer-events-auto inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-[var(--radius-md)] [border:1px_solid_var(--border)] [background:var(--surface-elevated)] [color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--accent)_12%,transparent)] hover:[color:var(--accent)] hover:[border-color:color-mix(in_oklch,var(--accent)_28%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 disabled:pointer-events-none transition-colors",
-              weeks: "space-y-1",
-              weekdays: "flex",
-              weekday: "w-9 text-center text-xs font-medium [color:var(--text-muted)]",
-              week: "flex",
-              day: "w-9 h-9 p-0 flex items-center justify-center",
-              day_button:
-                "w-full h-full cursor-pointer rounded-full text-center text-sm transition-colors hover:[background:color-mix(in_oklch,var(--accent)_12%,transparent)] hover:[color:var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              selected:
-                "[&>button]:rounded-full [&>button]:[background:var(--accent)] [&>button]:[color:var(--text-on-accent)] [&>button]:hover:[background:var(--accent)] [&>button]:hover:[color:var(--text-on-accent)]",
-              today: "[&>button]:font-semibold [&>button]:[color:var(--accent)]",
-              outside: "opacity-40",
-              disabled: "opacity-30 pointer-events-none",
-            }}
-          />
-        </div>
+            className={cn(
+              // Above `--z-modal` (80) because this picker is opened from inside modals, and below
+              // `--z-toast` (90) so feedback still surfaces over it. The sibling range picker sits
+              // at 60 instead: it is opened from drawers, where a modal should occlude it.
+              "z-[85] flex flex-col gap-2 rounded-[var(--radius-lg)] p-3",
+              // Vaul (the mobile `<ModalSheet>`) parks `pointer-events: none` on `document.body`
+              // and re-enables it only inside its own content. Portaling lands this popup as a body
+              // sibling, so without this it renders perfectly and ignores every click.
+              "pointer-events-auto",
+              // Match DateRangePickerInput popup chrome — surface tier + border-strong + elevated
+              // shadow so single-date and range-date popovers feel like the same component family.
+              "[background:var(--background)] [border:1px_solid_var(--border-strong)]",
+              "[box-shadow:var(--shadow-elevation-3)]",
+            )}
+          >
+            {presets && presets.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pb-2 [border-bottom:1px_solid_var(--border)]">
+                {presets.map((preset) => (
+                  <Pill
+                    key={preset.value}
+                    onClick={() => {
+                      onPresetSelect?.(preset.value);
+                      setIsOpen(false);
+                    }}
+                  >
+                    {preset.label}
+                  </Pill>
+                ))}
+              </div>
+            )}
+            <DayPicker
+              mode="single"
+              selected={value ?? undefined}
+              disabled={dayDisabled}
+              onSelect={(day) => {
+                onChange(day ?? null);
+                setIsOpen(false);
+              }}
+              components={{ Chevron: CalendarChevron }}
+              classNames={{
+                root: "text-sm",
+                // `months` is the positioning context for the absolutely placed nav chevrons.
+                months: "relative",
+                // Caption sits behind the chevrons (which flank it) with horizontal padding to clear them.
+                month_caption:
+                  "flex items-center justify-center px-9 py-1 mb-2 [color:var(--text-primary)] font-semibold",
+                caption_label: "[color:var(--text-primary)]",
+                // Nav overlays the caption row — chevrons appear left and right of the month label.
+                nav: "pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-1 py-1",
+                button_previous:
+                  "pointer-events-auto inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-[var(--radius-md)] [border:1px_solid_var(--border)] [background:var(--surface-elevated)] [color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--accent)_12%,transparent)] hover:[color:var(--accent)] hover:[border-color:color-mix(in_oklch,var(--accent)_28%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 disabled:pointer-events-none transition-colors",
+                button_next:
+                  "pointer-events-auto inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-[var(--radius-md)] [border:1px_solid_var(--border)] [background:var(--surface-elevated)] [color:var(--text-primary)] hover:[background:color-mix(in_oklch,var(--accent)_12%,transparent)] hover:[color:var(--accent)] hover:[border-color:color-mix(in_oklch,var(--accent)_28%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 disabled:pointer-events-none transition-colors",
+                weeks: "space-y-1",
+                weekdays: "flex",
+                weekday: "w-9 text-center text-xs font-medium [color:var(--text-muted)]",
+                week: "flex",
+                day: "w-9 h-9 p-0 flex items-center justify-center",
+                day_button:
+                  "w-full h-full cursor-pointer rounded-full text-center text-sm transition-colors hover:[background:color-mix(in_oklch,var(--accent)_12%,transparent)] hover:[color:var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                selected:
+                  "[&>button]:rounded-full [&>button]:[background:var(--accent)] [&>button]:[color:var(--text-on-accent)] [&>button]:hover:[background:var(--accent)] [&>button]:hover:[color:var(--text-on-accent)]",
+                today: "[&>button]:font-semibold [&>button]:[color:var(--accent)]",
+                outside: "opacity-40",
+                disabled: "opacity-30 pointer-events-none",
+              }}
+            />
+          </div>
+        </Portal>
       )}
     </div>
   );
