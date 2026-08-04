@@ -182,11 +182,25 @@ export default function StoreResolutionSection({ store, options, onChange, error
           }
         : null;
 
+  // The row is the only place the chosen store is shown once resolved, so it deserves the same
+  // logo the picker offers rather than falling back to a monogram.
+  const resolvedLogoUrl = resolvedDisplay
+    ? (options.find((option) => option.id === resolvedDisplay.storeId)?.logoUrl ?? null)
+    : null;
+
   if (resolvedDisplay && !isChangingMatch) {
     return (
       <section className="flex flex-col gap-[var(--space-2)]">
         <div className="flex items-center gap-3 rounded-xl p-3 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
-          <StoreAvatar store={{ name: resolvedDisplay.name }} size={40} className="shrink-0" />
+          {resolvedLogoUrl ? (
+            <StoreAvatar
+              store={{ name: resolvedDisplay.name, logo: { src: resolvedLogoUrl, aspect: "square" } }}
+              size={40}
+              className="shrink-0"
+            />
+          ) : (
+            <StoreAvatar store={{ name: resolvedDisplay.name }} size={40} className="shrink-0" />
+          )}
           <div className="min-w-0 flex-1">
             <div className="font-mono text-[10.5px] tracking-[0.06em] [color:var(--text-muted)] uppercase">
               {tStore("label")}

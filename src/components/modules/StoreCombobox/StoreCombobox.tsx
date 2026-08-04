@@ -12,11 +12,35 @@ import { foldSearchText } from "@/lib/strings/foldSearchText";
 export type StoreComboboxOption = {
   id: string;
   name: string;
+  /** Store logo. Absent falls back to the monogram, which is what every option used to show. */
+  logoUrl?: string | null;
   /** Optional trailing meta (e.g. "PE · PEN" or "3 productos sin entregar"). */
   meta?: string;
   /** Extra tokens folded into search matching. Defaults to the name. */
   searchText?: string;
 };
+
+/**
+ * `StoreAvatar` takes a discriminated union: a logo is either present with its aspect or the whole
+ * key is absent. This keeps that branch in one place instead of at each of the four call sites.
+ */
+function StoreOptionAvatar({
+  name,
+  logoUrl,
+  size,
+}: {
+  name: string;
+  logoUrl?: string | null;
+  size: 24 | 32;
+}) {
+  // Branch here rather than building the subject inline: `StoreAvatar` takes a discriminated union
+  // (logo present with its aspect, or the key absent), and TypeScript will not distribute a
+  // pre-built union across the JSX prop.
+  if (logoUrl) {
+    return <StoreAvatar store={{ name, logo: { src: logoUrl, aspect: "square" } }} size={size} />;
+  }
+  return <StoreAvatar store={{ name }} size={size} />;
+}
 
 export type StoreComboboxCreateAction = {
   label: string;
@@ -123,7 +147,7 @@ export default function StoreCombobox({
         value: o.id,
         label: o.name,
         description: o.meta,
-        avatar: <StoreAvatar store={{ name: o.name }} size={32} />,
+        avatar: <StoreOptionAvatar name={o.name} logoUrl={o.logoUrl} size={32} />,
         searchText: o.searchText ?? o.name,
       })),
     [options],
@@ -156,7 +180,7 @@ export default function StoreCombobox({
         >
           {selected ? (
             <>
-              <StoreAvatar store={{ name: selected.name }} size={24} />
+              <StoreOptionAvatar name={selected.name} logoUrl={selected.logoUrl} size={24} />
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium [color:var(--text-primary)]">
                 {selected.name}
               </span>
@@ -217,7 +241,7 @@ export default function StoreCombobox({
               }}
               className="flex min-w-0 flex-1 items-center gap-2.5 text-left"
             >
-              <StoreAvatar store={{ name: selected!.name }} size={24} />
+              <StoreOptionAvatar name={selected!.name} logoUrl={selected!.logoUrl} size={24} />
               <span className="min-w-0 flex-1 truncate text-[13px] font-medium [color:var(--text-primary)]">
                 {selected!.name}
               </span>
@@ -324,7 +348,7 @@ export default function StoreCombobox({
                         : "hover:[background:color-mix(in_oklch,var(--text-primary)_4%,transparent)]",
                     )}
                   >
-                    <StoreAvatar store={{ name: store.name }} size={24} />
+                    <StoreOptionAvatar name={store.name} logoUrl={store.logoUrl} size={24} />
                     <span className="min-w-0 flex-1 truncate font-medium">{store.name}</span>
                     {store.meta && <span className="shrink-0 text-[11px] [color:var(--text-muted)]">{store.meta}</span>}
                   </button>

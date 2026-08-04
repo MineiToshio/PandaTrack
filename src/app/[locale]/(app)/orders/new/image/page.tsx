@@ -82,7 +82,12 @@ export default async function OrdersNewImagePage({ params, searchParams }: Props
 
       {preferences?.baseCurrencyCode ? (
         <ImageIntakeScreen
-          storeOptions={stores.map((store) => ({ id: store.id, name: store.name, meta: store.countryCode }))}
+          storeOptions={stores.map((store) => ({
+            id: store.id,
+            name: store.name,
+            meta: store.countryCode,
+            logoUrl: store.logoUrl,
+          }))}
           quota={quota}
           baseCurrencyCode={preferences.baseCurrencyCode}
           productTypeKeys={productTypeRows.map((row) => row.key)}

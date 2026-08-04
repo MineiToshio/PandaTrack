@@ -152,6 +152,7 @@ export type UserStoreOption = {
   id: string;
   name: string;
   countryCode: string;
+  logoUrl: string | null;
 };
 
 /**
@@ -730,7 +731,7 @@ export async function getOrderableStores(): Promise<UserStoreOption[]> {
       status: { in: [...PUBLIC_VISIBLE_STORE_STATUSES] },
       isActive: true,
     },
-    select: { id: true, name: true, countryCode: true },
+    select: { id: true, name: true, countryCode: true, logoUrl: true },
     orderBy: { name: "asc" },
   });
 }

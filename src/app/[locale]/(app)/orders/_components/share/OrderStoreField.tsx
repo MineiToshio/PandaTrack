@@ -10,6 +10,7 @@ import { RETURN_TO_ORDER_CREATE, ROUTES } from "@/lib/constants";
 export type OrderStoreOption = {
   id: string;
   name: string;
+  logoUrl?: string | null;
   countryCode: string;
 };
 
@@ -44,6 +45,7 @@ export default function OrderStoreField({ id, stores, value, onChange, error }: 
       stores.map((s) => ({
         id: s.id,
         name: s.name,
+        logoUrl: s.logoUrl,
         meta: storeMeta(s),
         searchText: `${s.name} ${s.countryCode}`,
       })),
