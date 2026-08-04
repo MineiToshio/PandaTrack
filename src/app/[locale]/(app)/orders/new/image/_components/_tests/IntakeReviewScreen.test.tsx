@@ -184,8 +184,11 @@ describe("IntakeReviewScreen", () => {
       }),
     );
 
-    expect(screen.getAllByText("480.00 PEN").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("120.00 PEN").length).toBeGreaterThan(0);
+    // The total and the payments are fields now, so the currency shows as the input's suffix and
+    // its value rather than as rendered text.
+    expect((screen.getByLabelText(/fields.total/) as HTMLInputElement).value).toBe("480.00");
+    expect((screen.getByLabelText(/payments.amountLabel/) as HTMLInputElement).value).toBe("120.00");
+    expect(screen.getAllByText("PEN").length).toBeGreaterThan(0);
     expect(container.innerHTML).not.toContain("USD");
   });
 
@@ -193,7 +196,8 @@ describe("IntakeReviewScreen", () => {
     renderScreen(buildDraft({ currency: field("PEN", "assumed") }));
 
     expect(screen.getByText("provenance.assumed")).toBeTruthy();
-    expect(screen.getAllByText("480.00 PEN").length).toBeGreaterThan(0);
+    expect((screen.getByLabelText(/fields.total/) as HTMLInputElement).value).toBe("480.00");
+    expect(screen.getAllByText("PEN").length).toBeGreaterThan(0);
   });
 
   it("shows a shipping cost read from the chat and says it is not saved with the order", () => {
@@ -581,7 +585,7 @@ describe("IntakeReviewScreen action bars", () => {
     const { container } = renderScreen(buildDraft());
 
     const root = container.firstElementChild;
-    expect(root?.className).toContain("pb-[calc(96px+env(safe-area-inset-bottom))]");
+    expect(root?.className).toContain("pb-[calc(148px+env(safe-area-inset-bottom))]");
     expect(root?.className).toContain("md:pb-0");
   });
 

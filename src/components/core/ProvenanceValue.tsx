@@ -58,7 +58,10 @@ export default function ProvenanceValue({
     <div className={cn("space-y-1.5", className)}>
       <label
         htmlFor={id}
-        className="flex flex-wrap items-center gap-[var(--space-2)] text-[13px] font-medium [color:var(--text-secondary)]"
+        // A minimum height so a label carrying a provenance chip lines its control up with the one
+        // beside it: the chip is taller than a bare label, and without this a marked field sat a
+        // few pixels lower than its neighbour in every two-column row.
+        className="flex min-h-[1.625rem] flex-wrap items-center gap-[var(--space-2)] text-[13px] font-medium [color:var(--text-secondary)]"
       >
         {label}
         {state !== "read" && (

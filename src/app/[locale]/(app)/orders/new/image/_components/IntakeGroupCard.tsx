@@ -306,6 +306,7 @@ export default function IntakeGroupCard({
               productTypeKeys={productTypeKeys}
               tProductTypes={productTypeName}
               nextRowId={() => `${groupKey}-added-${rows.length}`}
+              showQuantity={false}
             />
           ) : (
             <OrderItemsGrid

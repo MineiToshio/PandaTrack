@@ -109,7 +109,10 @@
     },
     "provenance": {
       "assumed": "assumed",
-      "missing": "missing"
+      "missing": "missing",
+      "assumedHint": "The chat does not say it. We filled it in, so it is worth a look.",
+      "missingHint": "We did not find it in the chat. Fill it in if you know it.",
+      "totalHint": "The chat states no total. Add up the products or type it in."
     },
     "fx": {
       "label": "Exchange rate {from} to {to}",
@@ -145,9 +148,9 @@
       "collapse": "Hide all {count}",
       "rangeSeparator": "{first} to {last}",
       "priceSplitUneven": "We split {total} evenly. Adjust it if one piece is worth more than the other",
-      "doubtful": "Not sure, check it",
-      "clean": "Matches",
-      "warning": "Check this",
+      "doubtful": "We are not sure",
+      "clean": "From the chat",
+      "warning": "Price split",
       "noPrice": "No price",
       "rowsLabel": "Products in this group",
       "categoryNone": "No category",

@@ -109,7 +109,10 @@
     },
     "provenance": {
       "assumed": "asumido",
-      "missing": "falta"
+      "missing": "falta",
+      "assumedHint": "El chat no lo dice. Lo completamos nosotros, así que conviene revisarlo.",
+      "missingHint": "No lo encontramos en el chat. Complétalo si lo sabes.",
+      "totalHint": "El chat no dice un total. Súmalo de los productos o escríbelo."
     },
     "fx": {
       "label": "Tipo de cambio {from} a {to}",
@@ -145,9 +148,9 @@
       "collapse": "Ocultar los {count}",
       "rangeSeparator": "{first} a {last}",
       "priceSplitUneven": "Repartimos {total} en partes iguales. Ajusta si una pieza vale más que la otra",
-      "doubtful": "Dudoso, revisa",
-      "clean": "Coincide",
-      "warning": "Verificar",
+      "doubtful": "No estamos seguros",
+      "clean": "Del chat",
+      "warning": "Precio repartido",
       "noPrice": "Sin precio",
       "rowsLabel": "Productos del grupo",
       "categoryNone": "Sin categoría",

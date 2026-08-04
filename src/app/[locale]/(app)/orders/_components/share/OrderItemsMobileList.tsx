@@ -17,6 +17,8 @@ type Props = {
   productTypeKeys: string[];
   tProductTypes: (key: string) => string;
   nextRowId: () => string;
+  /** Forwarded to the edit sheet; see `OrderAddProductSheet`. */
+  showQuantity?: boolean;
 };
 
 function parseCentsFromDecimal(value: string): number | null {
@@ -32,6 +34,7 @@ export default function OrderItemsMobileList({
   productTypeKeys,
   tProductTypes,
   nextRowId,
+  showQuantity = true,
 }: Props) {
   const t = useTranslations("orders.create");
   const tAdd = useTranslations("orders.create.addProduct");
@@ -117,8 +120,8 @@ export default function OrderItemsMobileList({
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-[13px] font-medium [color:var(--text-primary)]">{row.name}</span>
                   <span className="text-[11px] [color:var(--text-muted)]">
-                    ×{qty}
-                    {priceLabel ? ` · ${priceLabel}` : ""}
+                    {/* "×1" on every row is noise where quantity is fixed at one by construction. */}
+                    {showQuantity ? `×${qty}${priceLabel ? ` · ${priceLabel}` : ""}` : (priceLabel ?? "")}
                   </span>
                 </span>
               </>
@@ -156,6 +159,7 @@ export default function OrderItemsMobileList({
       </Button>
 
       <OrderAddProductSheet
+        showQuantity={showQuantity}
         open={sheet.open}
         onOpenChange={(o) => setSheet({ open: o, rowId: o ? sheet.rowId : null })}
         mode={editingRow ? "edit" : "create"}

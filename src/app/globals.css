@@ -1974,7 +1974,7 @@ body {
    scrolls into view down there (a focused correction field, a group the user tabbed to)
    has to stop above it. Desktop puts the actions inline, so the reservation is dropped. */
 .intake-review-scroll-safe :is(a, button, input, select, textarea, [tabindex]) {
-  scroll-margin-bottom: calc(96px + env(safe-area-inset-bottom));
+  scroll-margin-bottom: calc(148px + env(safe-area-inset-bottom));
 }
 
 @media (min-width: 768px) {

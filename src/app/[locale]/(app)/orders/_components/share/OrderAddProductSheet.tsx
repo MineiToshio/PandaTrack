@@ -27,6 +27,12 @@ type OrderAddProductSheetProps = {
   onSubmit: (value: ProductFormValue) => void;
   onDelete?: () => void;
   currencyCode: string;
+  /**
+   * Hides the quantity field. The image-intake review screen sets it, matching the grid: an
+   * extracted draft carries one product per unit by construction, so a quantity input there would
+   * offer a second, conflicting way to say the same thing.
+   */
+  showQuantity?: boolean;
 };
 
 const EMPTY: ProductFormValue = { name: "", quantity: "1", unitPrice: "", productTypeKey: "" };
@@ -41,6 +47,7 @@ export default function OrderAddProductSheet({
   onSubmit,
   onDelete,
   currencyCode,
+  showQuantity = true,
 }: OrderAddProductSheetProps) {
   const t = useTranslations("orders.create.addProduct");
   const tPicker = useTranslations("orders.picker");
@@ -87,30 +94,35 @@ export default function OrderAddProductSheet({
         // sticky toolbar): compact secondary on the left, flex-1 primary on the right
         // with a leading icon. The user reads the primary as the main affordance
         // (add/save), and the cancel action stays out of the way as a small ghost.
-        <div className="flex items-stretch gap-2">
-          {mode === "edit" && onDelete && (
+        // On a narrow screen the primary takes its own full-width row above the secondaries:
+        // sharing one row with two 96px ghosts left it about 127px wide at 375px, which reads as
+        // the least important control on a sheet whose whole purpose it is.
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-stretch">
+          <div className="flex items-stretch gap-2 sm:contents">
+            {mode === "edit" && onDelete && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="md"
+                onClick={() => {
+                  onDelete();
+                  onOpenChange(false);
+                }}
+                className="flex-1 [justify-content:center] [color:var(--destructive)] sm:[min-width:96px] sm:flex-none sm:flex-shrink-0"
+              >
+                {t("delete")}
+              </Button>
+            )}
             <Button
               type="button"
               variant="ghost"
               size="md"
-              onClick={() => {
-                onDelete();
-                onOpenChange(false);
-              }}
-              className="[min-width:96px] flex-shrink-0 [justify-content:center] [color:var(--destructive)]"
+              onClick={() => onOpenChange(false)}
+              className="flex-1 [justify-content:center] sm:[min-width:96px] sm:flex-none sm:flex-shrink-0"
             >
-              {t("delete")}
+              {t("cancel")}
             </Button>
-          )}
-          <Button
-            type="button"
-            variant="ghost"
-            size="md"
-            onClick={() => onOpenChange(false)}
-            className="[min-width:96px] flex-shrink-0 [justify-content:center]"
-          >
-            {t("cancel")}
-          </Button>
+          </div>
           <Button
             type="button"
             variant="primary"
@@ -118,7 +130,7 @@ export default function OrderAddProductSheet({
             onClick={handleSubmit}
             disabled={nameInvalid}
             leadingIcon={mode === "edit" ? <Check size={14} aria-hidden /> : <Plus size={14} aria-hidden />}
-            className="flex-1 [justify-content:center]"
+            className="w-full [justify-content:center] sm:w-auto sm:flex-1"
           >
             {mode === "edit" ? t("save") : t("add")}
           </Button>
@@ -177,30 +189,37 @@ export default function OrderAddProductSheet({
           </button>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label htmlFor={qtyId} className="block text-[12px] font-medium [color:var(--text-secondary)]">
-              {t("quantityLabel")}
-            </label>
-            <input
-              id={qtyId}
-              type="number"
-              inputMode="numeric"
-              min={1}
-              value={value.quantity}
-              onChange={(e) => setValue({ ...value, quantity: e.target.value.replace(/[^0-9]/g, "") || "1" })}
-              className={cn(
-                "w-full rounded-[10px] px-3 py-2 text-[14px]",
-                "[color:var(--text-primary)] [background:var(--surface)] [border:1px_solid_var(--border)]",
-                "focus:[box-shadow:0_0_0_3px_color-mix(in_oklch,var(--accent)_18%,transparent)] focus:outline-none",
-              )}
-            />
-          </div>
+        {/*
+          `items-end` so the two inputs share a baseline whatever the labels do: the price label is
+          long enough to wrap on a narrow sheet, which used to leave the quantity input floating
+          above it. The "(opcional)" suffix is gone from the label because the helper line below
+          already says it, and it was most of the extra width.
+        */}
+        <div className={cn("grid gap-3", showQuantity ? "grid-cols-2 items-end" : "grid-cols-1")}>
+          {showQuantity && (
+            <div className="space-y-1.5">
+              <label htmlFor={qtyId} className="block text-[12px] font-medium [color:var(--text-secondary)]">
+                {t("quantityLabel")}
+              </label>
+              <input
+                id={qtyId}
+                type="number"
+                inputMode="numeric"
+                min={1}
+                value={value.quantity}
+                onChange={(e) => setValue({ ...value, quantity: e.target.value.replace(/[^0-9]/g, "") || "1" })}
+                className={cn(
+                  "w-full rounded-[10px] px-3 py-2 text-[14px]",
+                  "[color:var(--text-primary)] [background:var(--surface)] [border:1px_solid_var(--border)]",
+                  "focus:[box-shadow:0_0_0_3px_color-mix(in_oklch,var(--accent)_18%,transparent)] focus:outline-none",
+                )}
+              />
+            </div>
+          )}
           <div className="space-y-1.5">
             <label htmlFor={priceId} className="block text-[12px] font-medium [color:var(--text-secondary)]">
               <span>{t("unitPriceLabel")}</span>{" "}
-              {currencyCode && <span className="[color:var(--text-muted)]">({currencyCode})</span>}{" "}
-              <span className="[color:var(--text-muted)]">{t("unitPriceOptional")}</span>
+              {currencyCode && <span className="[color:var(--text-muted)]">({currencyCode})</span>}
             </label>
             <input
               id={priceId}

@@ -22,11 +22,10 @@ import { exchangeRateSchema } from "@/lib/orders/orderValidation";
 import { cn } from "@/lib/styles";
 import FxRateAttribution from "../../../_components/share/FxRateAttribution";
 import {
-  ORDER_SECTION_BODY_CLASS,
-  ORDER_SECTION_BULLET_CLASS,
   ORDER_SECTION_CARD_CLASS,
-  ORDER_SECTION_EYEBROW_CLASS,
-  ORDER_SECTION_HEADER_CLASS,
+  ORDER_SECTION_COMPACT_BODY_CLASS,
+  ORDER_SECTION_COMPACT_HEADER_CLASS,
+  ORDER_SECTION_COMPACT_ICON_CLASS,
   ORDER_SECTION_HEADING_CLASS,
 } from "../../../_components/share/orderSectionChrome";
 import IntakeGroupCard from "./IntakeGroupCard";
@@ -516,7 +515,7 @@ export default function IntakeReviewScreen({
   return (
     // The bottom padding only exists to clear the fixed mobile bar, so it stops where that bar
     // does: on `md` and up the actions are inline and the reserved strip would be dead space.
-    <div className="intake-review-scroll-safe flex flex-col gap-[var(--space-4)] pb-[calc(96px+env(safe-area-inset-bottom))] md:pb-0">
+    <div className="intake-review-scroll-safe flex flex-col gap-[var(--space-4)] pb-[calc(148px+env(safe-area-inset-bottom))] md:pb-0">
       <header className="flex flex-col gap-[var(--space-2)]">
         <h2 className="[font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
           {t("title")}
@@ -537,18 +536,13 @@ export default function IntakeReviewScreen({
         same job: the fields of one order, all open, nothing behind a step.
       */}
       <section className={ORDER_SECTION_CARD_CLASS} aria-labelledby="intake-section-order">
-        <header className={ORDER_SECTION_HEADER_CLASS}>
-          <span className={ORDER_SECTION_BULLET_CLASS} aria-hidden="true">
-            <Info size={13} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <span className={ORDER_SECTION_EYEBROW_CLASS}>{t("sections.orderEyebrow")}</span>
-            <h3 id="intake-section-order" className={ORDER_SECTION_HEADING_CLASS}>
-              {t("fieldsTitle")}
-            </h3>
-          </div>
+        <header className={ORDER_SECTION_COMPACT_HEADER_CLASS}>
+          <Info size={16} aria-hidden="true" className={ORDER_SECTION_COMPACT_ICON_CLASS} />
+          <h3 id="intake-section-order" className={ORDER_SECTION_HEADING_CLASS}>
+            {t("fieldsTitle")}
+          </h3>
         </header>
-        <div className={ORDER_SECTION_BODY_CLASS}>
+        <div className={ORDER_SECTION_COMPACT_BODY_CLASS}>
           <StoreResolutionSection store={draft.store} options={storeOptions} onChange={handleStoreChange} />
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -557,6 +551,11 @@ export default function IntakeReviewScreen({
               label={t("fields.orderDate")}
               state={provenance.orderDate}
               markerLabel={t(provenance.orderDate === "assumed" ? "provenance.assumed" : "provenance.missing")}
+              hint={
+                provenance.orderDate === "read"
+                  ? undefined
+                  : t(provenance.orderDate === "assumed" ? "provenance.assumedHint" : "provenance.missingHint")
+              }
               control={({ id }) => (
                 <Input
                   id={id}
@@ -572,24 +571,17 @@ export default function IntakeReviewScreen({
               label={t("fields.currency")}
               state={provenance.currency}
               markerLabel={t(provenance.currency === "assumed" ? "provenance.assumed" : "provenance.missing")}
+              hint={
+                provenance.currency === "read"
+                  ? undefined
+                  : t(provenance.currency === "assumed" ? "provenance.assumedHint" : "provenance.missingHint")
+              }
               control={({ id }) => (
-                <Select id={id} value={draft.currency.value} onChange={handleCurrencyChange} options={currencyOptions} />
-              )}
-            />
-
-            <ProvenanceValue
-              id="intake-total"
-              label={t("fields.total")}
-              state={provenance.totalCost}
-              markerLabel={t(provenance.totalCost === "assumed" ? "provenance.assumed" : "provenance.missing")}
-              control={({ id }) => (
-                <Input
+                <Select
                   id={id}
-                  type="text"
-                  inputMode="decimal"
-                  value={totalInput}
-                  suffix={currencyCode}
-                  onChange={(event) => handleTotalChange(event.target.value)}
+                  value={draft.currency.value}
+                  onChange={handleCurrencyChange}
+                  options={currencyOptions}
                 />
               )}
             />
@@ -599,6 +591,11 @@ export default function IntakeReviewScreen({
               label={t("fields.deliveryRange")}
               state={provenance.deliveryFrom}
               markerLabel={t(provenance.deliveryFrom === "assumed" ? "provenance.assumed" : "provenance.missing")}
+              hint={
+                provenance.deliveryFrom === "read"
+                  ? undefined
+                  : t(provenance.deliveryFrom === "assumed" ? "provenance.assumedHint" : "provenance.missingHint")
+              }
               control={({ id }) => (
                 <OrderDeliveryRangeField
                   id={id}
@@ -612,10 +609,7 @@ export default function IntakeReviewScreen({
 
           {needsExchangeRate && (
             <div className="space-y-1.5">
-              <label
-                htmlFor="intake-exchange-rate"
-                className="text-[13px] font-medium [color:var(--text-secondary)]"
-              >
+              <label htmlFor="intake-exchange-rate" className="text-[13px] font-medium [color:var(--text-secondary)]">
                 {t("fx.label", { from: currencyCode, to: baseCurrencyCode })}
               </label>
               <Input
@@ -653,18 +647,13 @@ export default function IntakeReviewScreen({
 
       {/* SECTION 2 — Productos, in the same table the manual form uses. */}
       <section className={ORDER_SECTION_CARD_CLASS} aria-labelledby="intake-section-products">
-        <header className={ORDER_SECTION_HEADER_CLASS}>
-          <span className={ORDER_SECTION_BULLET_CLASS} aria-hidden="true">
-            <ShoppingCart size={13} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <span className={ORDER_SECTION_EYEBROW_CLASS}>{t("sections.productsEyebrow")}</span>
-            <h3 id="intake-section-products" className={ORDER_SECTION_HEADING_CLASS}>
-              {t("groupsTitle")}
-            </h3>
-          </div>
+        <header className={ORDER_SECTION_COMPACT_HEADER_CLASS}>
+          <ShoppingCart size={16} aria-hidden="true" className={ORDER_SECTION_COMPACT_ICON_CLASS} />
+          <h3 id="intake-section-products" className={ORDER_SECTION_HEADING_CLASS}>
+            {t("groupsTitle")}
+          </h3>
         </header>
-        <div className={ORDER_SECTION_BODY_CLASS}>
+        <div className={ORDER_SECTION_COMPACT_BODY_CLASS}>
           {/*
             A pointed offer, never a generic warning: it names the rows whose name is still only a
             link, and it says out loud what accepting it costs. It blocks nothing, because the
@@ -731,10 +720,7 @@ export default function IntakeReviewScreen({
             */
             <div
               key={`${group.sourcePhrase}-${index}`}
-              className={cn(
-                "intake-rise-in",
-                index > 0 && "pt-[var(--space-4)] [border-top:1px_solid_var(--border)]",
-              )}
+              className={cn("intake-rise-in", index > 0 && "pt-[var(--space-4)] [border-top:1px_solid_var(--border)]")}
               style={
                 index < STAGGERED_GROUP_CARDS ? { animationDelay: `${index * GROUP_CARD_STAGGER_MS}ms` } : undefined
               }
@@ -751,23 +737,64 @@ export default function IntakeReviewScreen({
               />
             </div>
           ))}
+
+          {/*
+            The order's cost lives with the products, exactly as it does in the manual form: it is
+            the figure the rows are supposed to add up to, and putting it two sections away from
+            them meant nothing could be compared without scrolling.
+          */}
+          <div className="flex flex-col gap-[var(--space-3)] pt-3.5 [border-top:1px_solid_var(--border)]">
+            <ProvenanceValue
+              id="intake-total"
+              label={t("fields.total")}
+              state={provenance.totalCost}
+              markerLabel={t(provenance.totalCost === "assumed" ? "provenance.assumed" : "provenance.missing")}
+              hint={provenance.totalCost === "read" ? undefined : t("provenance.totalHint")}
+              control={({ id }) => (
+                <Input
+                  id={id}
+                  type="text"
+                  inputMode="decimal"
+                  value={totalInput}
+                  suffix={currencyCode}
+                  onChange={(event) => handleTotalChange(event.target.value)}
+                />
+              )}
+            />
+
+            {shippingCost !== null && (
+              <div className="flex flex-col gap-[var(--space-1)]">
+                <div className="flex items-baseline justify-between gap-[var(--space-3)] text-[13px]">
+                  <span className="[color:var(--text-muted)]">{t("delivery.cost")}</span>
+                  <span className="numeric [color:var(--text-primary)]">
+                    {formatAmount(shippingCost, currencyCode)}
+                  </span>
+                </div>
+                <p className="text-[11.5px] [color:var(--text-muted)]">{t("delivery.costNotSaved")}</p>
+              </div>
+            )}
+
+            {totalMismatch !== null && (
+              <AlertBanner tone="warning" icon={<Scale size={16} />} title={t("totals.mismatchTitle")}>
+                {t("totals.mismatchBody", {
+                  products: formatAmount(totalMismatch.productsTotal, currencyCode),
+                  total: formatAmount(totalMismatch.statedTotal, currencyCode),
+                })}
+              </AlertBanner>
+            )}
+          </div>
         </div>
       </section>
 
-      {/* SECTION 3 — Pagos y totales. */}
+      {/* SECTION 3 — Pagos. */}
       <section className={ORDER_SECTION_CARD_CLASS} aria-labelledby="intake-section-payments">
-        <header className={ORDER_SECTION_HEADER_CLASS}>
-          <span className={ORDER_SECTION_BULLET_CLASS} aria-hidden="true">
-            <Wallet size={13} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <span className={ORDER_SECTION_EYEBROW_CLASS}>{t("sections.paymentsEyebrow")}</span>
-            <h3 id="intake-section-payments" className={ORDER_SECTION_HEADING_CLASS}>
-              {t("payments.title")}
-            </h3>
-          </div>
+        <header className={ORDER_SECTION_COMPACT_HEADER_CLASS}>
+          <Wallet size={16} aria-hidden="true" className={ORDER_SECTION_COMPACT_ICON_CLASS} />
+          <h3 id="intake-section-payments" className={ORDER_SECTION_HEADING_CLASS}>
+            {t("payments.title")}
+          </h3>
         </header>
-        <div className={ORDER_SECTION_BODY_CLASS}>
+        <div className={ORDER_SECTION_COMPACT_BODY_CLASS}>
           {draft.payments.length === 0 ? (
             <p className="text-[13px] [color:var(--text-muted)]">{t("payments.empty")}</p>
           ) : (
@@ -789,6 +816,11 @@ export default function IntakeReviewScreen({
                       label={t("payments.amountLabel", { position: index + 1 })}
                       state={amountState}
                       markerLabel={t(amountState === "assumed" ? "provenance.assumed" : "provenance.missing")}
+                      hint={
+                        amountState === "read"
+                          ? undefined
+                          : t(amountState === "assumed" ? "provenance.assumedHint" : "provenance.missingHint")
+                      }
                       control={({ id }) => (
                         <Input
                           id={id}
@@ -805,6 +837,11 @@ export default function IntakeReviewScreen({
                       label={t("payments.dateLabel")}
                       state={dateState}
                       markerLabel={t(dateState === "assumed" ? "provenance.assumed" : "provenance.missing")}
+                      hint={
+                        dateState === "read"
+                          ? undefined
+                          : t(dateState === "assumed" ? "provenance.assumedHint" : "provenance.missingHint")
+                      }
                       control={({ id }) => (
                         <Input
                           id={id}
@@ -820,44 +857,9 @@ export default function IntakeReviewScreen({
             </ul>
           )}
 
-          <div className="flex flex-col gap-[var(--space-2)] pt-3.5 [border-top:1px_solid_var(--border)]">
-            <div className="flex items-baseline justify-between gap-[var(--space-3)] text-[13px]">
-              <span className="[color:var(--text-muted)]">{t("totals.paid")}</span>
-              <span className="numeric [color:var(--text-primary)]">{formatAmount(paidTotal, currencyCode)}</span>
-            </div>
-            {shippingCost !== null && (
-              <div className="flex flex-col gap-[var(--space-1)]">
-                <div className="flex items-baseline justify-between gap-[var(--space-3)] text-[13px]">
-                  <span className="[color:var(--text-muted)]">{t("delivery.cost")}</span>
-                  <span className="numeric [color:var(--text-primary)]">
-                    {formatAmount(shippingCost, currencyCode)}
-                  </span>
-                </div>
-                <p className="text-[11.5px] [color:var(--text-muted)]">{t("delivery.costNotSaved")}</p>
-              </div>
-            )}
-            <div className="flex items-baseline justify-between gap-[var(--space-3)]">
-              <span className="text-[13px] font-medium [color:var(--text-secondary)]">{t("totals.total")}</span>
-              {/*
-                Keyed on the figure itself. The total only ever changes through the field above, so
-                keying on the value plays the fade once, on the outcome, rather than on every
-                keystroke: animating the most frequent action on a screen is the anti-pattern.
-              */}
-              <span
-                key={formattedTotal}
-                className="intake-value-in numeric [font-size:var(--text-subtitle)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]"
-              >
-                {formattedTotal}
-              </span>
-            </div>
-            {totalMismatch !== null && (
-              <AlertBanner tone="warning" icon={<Scale size={16} />} title={t("totals.mismatchTitle")}>
-                {t("totals.mismatchBody", {
-                  products: formatAmount(totalMismatch.productsTotal, currencyCode),
-                  total: formatAmount(totalMismatch.statedTotal, currencyCode),
-                })}
-              </AlertBanner>
-            )}
+          <div className="flex items-baseline justify-between gap-[var(--space-3)] pt-3.5 text-[13px] [border-top:1px_solid_var(--border)]">
+            <span className="[color:var(--text-muted)]">{t("totals.paid")}</span>
+            <span className="numeric [color:var(--text-primary)]">{formatAmount(paidTotal, currencyCode)}</span>
           </div>
         </div>
       </section>

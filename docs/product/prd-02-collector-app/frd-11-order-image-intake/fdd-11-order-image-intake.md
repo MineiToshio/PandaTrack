@@ -349,8 +349,15 @@ fifty option lists.
 **The screen is the order form, all open** (`FR-11-51c`, `FR-11-51d`). It is built from the same
 section cards as `OrderEditForm` (`orderSectionChrome.ts`): a bordered elevated card per section,
 a circular Lucide bullet, a mono eyebrow, a subtitle heading, and a body indented to clear the
-bullet. Three sections, nothing behind a step: **Datos del pedido** (store, date, currency, total,
-expected window, exchange rate), **Productos**, **Pagos y totales**.
+bullet. Three sections, nothing behind a step: **Datos del pedido** (store, date, currency, expected
+window, exchange rate), **Productos y costos** (the tables plus the order total), **Pagos**.
+
+The total lives with the products, not with the dates, for the same reason the manual form puts it
+there: it is the figure the rows are supposed to add up to, and two sections away from them nothing
+could be compared without scrolling. The sections are **not numbered** and their icon sits inline
+with the title rather than in a reserved left rail. The order forms number theirs because the
+collector is walking a sequence; this screen is one order that already exists, so "PASO 1" invented
+an order that is not there and the rail spent 3.75rem of every row holding a 28px circle.
 
 This replaced a document that rendered read values as inert text and opened them through a
 screen-level "Corregir" control. Both halves failed in the same way: with the values inert, nothing
@@ -361,6 +368,14 @@ What is lost is the claim that only the guessed values are touchable. What is ke
 header's count was always really about, is that only the guessed values are **marked**: an assumed
 or missing value carries `asumido` / `falta` beside its label through `<ProvenanceValue>`, and a
 read value carries nothing.
+
+The marker alone was not enough. Everything on this screen came out of a photo, so "asumido" read as
+a synonym for the whole feature rather than as a distinction, and the group chips named a verdict
+("Verificar") without ever naming its cause. Both now explain themselves where they appear: a marked
+field carries a hint under it saying the chat did not state the value and we filled it in, and the
+group chips name the reason instead of the verdict, `Del chat` / `Precio repartido` / `No estamos
+seguros`. A hint under the field rather than a tooltip, because the tooltip would be unreachable on
+the surface where most of these drafts are reviewed.
 
 **Products are the manual form's own table** (`FR-11-51d`). `OrderItemsGrid` on a pointer,
 `OrderItemsMobileList` below 768px, exactly as the manual order form composes them, with

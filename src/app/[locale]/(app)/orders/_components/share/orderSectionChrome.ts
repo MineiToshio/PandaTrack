@@ -24,3 +24,18 @@ export const ORDER_SECTION_HEADING_CLASS =
 export const ORDER_SECTION_BODY_CLASS = "flex flex-col gap-4 p-4 md:pt-5 md:pr-5 md:pb-5 md:pl-[3.75rem]";
 
 export const ORDER_SECTION_HEADER_CLASS = "flex items-start gap-3 px-4 pt-4 md:px-5 md:pt-5";
+
+/**
+ * Compact section header, used where the sections are not steps.
+ *
+ * The order forms number their sections and reserve a left rail for the bullet, which is right
+ * there: the collector is walking a sequence. The image-intake review screen is not a sequence, it
+ * is one screen of an order that already exists, so the "PASO N" eyebrow was inventing an order
+ * that does not exist and the rail was spending 3.75rem of every row to hold a 28px circle. Here the
+ * icon sits inline with the title and the body starts at the card's own padding.
+ */
+export const ORDER_SECTION_COMPACT_HEADER_CLASS = "flex items-center gap-[var(--space-2)] px-4 pt-4 md:px-5 md:pt-5";
+
+export const ORDER_SECTION_COMPACT_ICON_CLASS = "flex-shrink-0 [color:var(--text-muted)]";
+
+export const ORDER_SECTION_COMPACT_BODY_CLASS = "flex flex-col gap-4 p-4 md:px-5 md:pt-4 md:pb-5";
