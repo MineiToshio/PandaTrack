@@ -137,8 +137,25 @@ describe("IntakeReviewScreen", () => {
   it("turns a missing total into a marked, editable control", () => {
     renderScreen(buildDraft({ totalCost: field(null, null) }));
 
-    expect(screen.getByLabelText(/fields.total/)).toBeTruthy();
-    expect(screen.getByText("provenance.missing")).toBeTruthy();
+    // Scoped to the total's own label: the delivery window is always a control when the chat did
+    // not carry one, so more than one "missing" marker on screen is the expected state.
+    const totalLabel = screen.getByLabelText(/fields.total/);
+    expect(totalLabel).toBeTruthy();
+    expect(screen.getAllByText("provenance.missing").length).toBeGreaterThan(0);
+  });
+
+  it("always offers the delivery window as a control, since a chat rarely carries one", () => {
+    renderScreen(buildDraft());
+
+    expect(screen.getByLabelText(/fields.deliveryRange/)).toBeTruthy();
+  });
+
+  it("does not count the absent delivery window as a doubt to resolve", () => {
+    // The header promises "review N things"; an optional field the chat almost never carries would
+    // inflate that number on nearly every draft and make the promise dishonest.
+    renderScreen(buildDraft());
+
+    expect(screen.getByText("headerClean")).toBeTruthy();
   });
 
   it("counts the outstanding work in the header when something was assumed", () => {

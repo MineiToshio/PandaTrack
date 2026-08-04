@@ -101,7 +101,8 @@
     "fields": {
       "orderDate": "Order date",
       "currency": "Currency",
-      "total": "Total"
+      "total": "Total",
+      "deliveryRange": "Estimated delivery"
     },
     "provenance": {
       "assumed": "assumed",

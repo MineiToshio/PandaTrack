@@ -22,6 +22,7 @@ import { exchangeRateSchema } from "@/lib/orders/orderValidation";
 import FxRateAttribution from "../../../_components/share/FxRateAttribution";
 import IntakeGroupCard from "./IntakeGroupCard";
 import StoreResolutionSection from "./StoreResolutionSection";
+import OrderDeliveryRangeField from "@/app/[locale]/(app)/orders/_components/share/OrderDeliveryRangeField";
 
 export type IntakeReviewScreenProps = {
   initialDraft: ImageIntakeDraft;
@@ -66,6 +67,7 @@ type AttributeProvenance = {
   orderDate: ProvenanceState;
   currency: ProvenanceState;
   totalCost: ProvenanceState;
+  deliveryFrom: ProvenanceState;
 };
 
 /**
@@ -78,6 +80,22 @@ type AttributeProvenance = {
 const NO_CURRENCY_CODE = "";
 
 /** A calendar-day ISO string renders through the UTC-forcing formatter, never through local getters. */
+/** `YYYY-MM-DD` to a local-midnight Date, the shape every date picker in the app works with. */
+function isoToLocalDate(isoDate: string | null): Date | null {
+  if (!isoDate) return null;
+  const [year, month, day] = isoDate.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
+/** Back to the `YYYY-MM-DD` calendar day the draft contract stores, read with local getters. */
+function localDateToIso(date: Date | null): string | null {
+  if (!date) return null;
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
 function formatIsoCalendarDay(isoDate: string, locale: string): string {
   return formatDomainDate(new Date(`${isoDate}T00:00:00.000Z`), locale);
 }
@@ -150,6 +168,11 @@ export default function IntakeReviewScreen({
       orderDate: resolveProvenanceState(initialDraft.orderDate),
       currency: resolveProvenanceState(initialDraft.currency),
       totalCost: resolveProvenanceState(initialDraft.totalCost),
+      // A draft with no `delivery` block at all is the same situation as one whose window came back
+      // empty: nothing was found, so the window is `missing` and therefore a control (FR-11-51).
+      deliveryFrom: initialDraft.delivery
+        ? resolveProvenanceState(initialDraft.delivery.expectedFrom)
+        : ("missing" as const),
     }),
     [initialDraft],
   );
@@ -164,7 +187,13 @@ export default function IntakeReviewScreen({
   // said out loud rather than dropped between the review screen and the write.
   const shippingCost = draft.delivery?.cost.value ?? null;
   const doubtfulGroupCount = draft.groups.filter((group) => group.doubtful).length;
-  const attributeDoubtCount = Object.values(provenance).filter((state) => state !== "read").length;
+  // Deliberately not `Object.values(provenance)`: the delivery window is optional information a
+  // chat rarely carries, so counting its absence would inflate "Revisa N datos" on nearly every
+  // draft and break the promise that the number matches what actually needs a decision. It is an
+  // input the collector may fill, not a doubt to resolve.
+  const attributeDoubtCount = [provenance.orderDate, provenance.currency, provenance.totalCost].filter(
+    (state) => state !== "read",
+  ).length;
   const storeDoubtCount = draft.store.matchedStoreId === null ? 1 : 0;
   const doubtCount = attributeDoubtCount + doubtfulGroupCount + storeDoubtCount;
 
@@ -253,6 +282,21 @@ export default function IntakeReviewScreen({
     setDraft((current) => ({
       ...current,
       totalCost: minorUnits === null ? { value: null, source: null } : { value: minorUnits, source: "read" },
+    }));
+  };
+
+  const handleDeliveryRangeChange = (from: Date | null, to: Date | null) => {
+    const fromIso = localDateToIso(from);
+    const toIso = localDateToIso(to);
+    setDraft((current) => ({
+      ...current,
+      // The draft's `delivery` block is nullable, so a window the collector supplies has to
+      // materialise it. `cost` stays empty: it is read-only on this screen and is not saved anyway.
+      delivery: {
+        cost: current.delivery?.cost ?? { value: null, source: null },
+        expectedFrom: fromIso === null ? { value: null, source: null } : { value: fromIso, source: "read" },
+        expectedTo: toIso === null ? { value: null, source: null } : { value: toIso, source: "read" },
+      },
     }));
   };
 
@@ -383,6 +427,29 @@ export default function IntakeReviewScreen({
               value={totalInput}
               suffix={currencyCode}
               onChange={(event) => handleTotalChange(event.target.value)}
+            />
+          )}
+        />
+
+        <ProvenanceValue
+          id="intake-delivery-range"
+          label={t("fields.deliveryRange")}
+          state={provenance.deliveryFrom}
+          markerLabel={t(provenance.deliveryFrom === "assumed" ? "provenance.assumed" : "provenance.missing")}
+          readText={
+            draft.delivery?.expectedFrom.value
+              ? [draft.delivery.expectedFrom.value, draft.delivery.expectedTo.value]
+                  .filter((iso): iso is string => Boolean(iso))
+                  .map((iso) => formatIsoCalendarDay(iso, locale))
+                  .join(" – ")
+              : null
+          }
+          control={({ id }) => (
+            <OrderDeliveryRangeField
+              id={id}
+              from={isoToLocalDate(draft.delivery?.expectedFrom.value ?? null)}
+              to={isoToLocalDate(draft.delivery?.expectedTo.value ?? null)}
+              onChange={handleDeliveryRangeChange}
             />
           )}
         />

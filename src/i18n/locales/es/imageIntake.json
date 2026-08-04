@@ -101,7 +101,8 @@
     "fields": {
       "orderDate": "Fecha del pedido",
       "currency": "Moneda",
-      "total": "Total"
+      "total": "Total",
+      "deliveryRange": "Entrega estimada"
     },
     "provenance": {
       "assumed": "asumido",
