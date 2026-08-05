@@ -569,22 +569,28 @@ export default function IntakeUploadPanel({
         Centered at every width instead of the default mobile bottom sheet, matching
         `StoreLogoZoom`: looking at a photo is not a task, and a sheet sliding up from the
         bottom announces "choose or confirm something", which misdescribes viewing an image.
+        `size="lg"` for the extra desktop width a chat screenshot's text needs to stay legible.
       */}
       <Modal
         isOpen={zoomedAttachment !== null}
         onClose={() => setZoomedIndex(null)}
         title={zoomedIndex !== null ? t("position", { position: zoomedIndex + 1 }) : ""}
         presentation="centered"
+        size="lg"
       >
         {zoomedAttachment?.previewUrl && (
-          <div className="flex justify-center">
+          // `fill` rather than a fixed width/height: a chat screenshot is portrait, and a square
+          // intrinsic size would force a square box, letterboxing the real image down far smaller
+          // than the space actually available. `fill` + `object-contain` sizes off the image's own
+          // aspect ratio instead, using the full height and width this box offers.
+          <div className="relative h-[75vh] w-full">
             <Image
               src={zoomedAttachment.previewUrl}
               alt=""
-              width={640}
-              height={640}
+              fill
               unoptimized
-              className="h-auto max-h-[70vh] w-full max-w-[560px] rounded-[var(--radius-lg)] object-contain [background:var(--surface-elevated)] [border:1px_solid_var(--border)]"
+              sizes="(min-width: 768px) 720px, 90vw"
+              className="rounded-[var(--radius-lg)] object-contain [background:var(--surface-elevated)] [border:1px_solid_var(--border)]"
             />
           </div>
         )}
