@@ -14,9 +14,12 @@ import {
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { type DragEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
+import posthog from "posthog-js";
 import Button from "@/components/core/Button/Button";
 import Card from "@/components/core/Card";
 import AlertBanner from "@/components/modules/AlertBanner";
+import Modal from "@/components/modules/Modal/Modal";
+import { POSTHOG_EVENTS } from "@/lib/constants";
 import { ACCEPTED_IMAGE_MIME_TYPES } from "@/lib/imageIntake/constants";
 import { cn } from "@/lib/styles";
 
@@ -183,6 +186,11 @@ export default function IntakeUploadPanel({
    * behind; counting enter and leave events keeps the state on until the drag really exits.
    */
   const dragDepthRef = useRef(0);
+  /**
+   * Index of the tile shown at readable size. A chat screenshot is dense text at the grid's
+   * thumbnail scale, so opening it is how the collector actually reads what they attached.
+   */
+  const [zoomedIndex, setZoomedIndex] = useState<number | null>(null);
 
   const handlePick = () => {
     inputRef.current?.click();
@@ -292,6 +300,11 @@ export default function IntakeUploadPanel({
     setReorderTargetIndex(null);
   };
 
+  const handleZoomOpen = (index: number) => {
+    setZoomedIndex(index);
+    posthog.capture(POSTHOG_EVENTS.IMAGE_INTAKE.PHOTO_ZOOM_OPENED);
+  };
+
   const handleItemDragEnd = () => {
     setReorderSourceIndex(null);
     setReorderTargetIndex(null);
@@ -322,6 +335,9 @@ export default function IntakeUploadPanel({
 
   const hasAttachments = attachments.length > 0;
   const dropzoneLabel = isDragActive ? t("dropActive") : hasAttachments ? t("chooseMore") : t("dropzoneTitle");
+  // Derived rather than trusted as-is: a removal while the zoom is open must close it instead of
+  // pointing at a stale or shifted index.
+  const zoomedAttachment = zoomedIndex !== null ? (attachments[zoomedIndex] ?? null) : null;
 
   return (
     <div
@@ -458,11 +474,15 @@ export default function IntakeUploadPanel({
                     "[outline:2px_solid_var(--accent)] [outline-offset:2px]",
                 )}
               >
-                <span
-                  className="block aspect-square w-full overflow-hidden rounded-[var(--radius-lg)]"
-                  style={{ background: "var(--surface-elevated)", border: "1px solid var(--border)" }}
-                >
-                  {attachment.previewUrl ? (
+                {attachment.previewUrl ? (
+                  <button
+                    type="button"
+                    onClick={() => handleZoomOpen(index)}
+                    aria-label={t("zoomOpen", { position: index + 1 })}
+                    aria-haspopup="dialog"
+                    className="block aspect-square w-full cursor-zoom-in overflow-hidden rounded-[var(--radius-lg)] transition-opacity hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
+                    style={{ background: "var(--surface-elevated)", border: "1px solid var(--border)" }}
+                  >
                     <Image
                       src={attachment.previewUrl}
                       alt=""
@@ -474,12 +494,17 @@ export default function IntakeUploadPanel({
                       draggable={false}
                       className="size-full object-cover"
                     />
-                  ) : (
+                  </button>
+                ) : (
+                  <span
+                    className="block aspect-square w-full overflow-hidden rounded-[var(--radius-lg)]"
+                    style={{ background: "var(--surface-elevated)", border: "1px solid var(--border)" }}
+                  >
                     <span className="flex size-full items-center justify-center [color:var(--text-muted)]">
                       <ImageIcon size={20} aria-hidden />
                     </span>
-                  )}
-                </span>
+                  </span>
+                )}
                 {/* The position, stated rather than inferred: the order is what the extraction
                     reads, so it must be visible without counting tiles. */}
                 <span
@@ -539,6 +564,31 @@ export default function IntakeUploadPanel({
           </p>
         </section>
       )}
+
+      {/*
+        Centered at every width instead of the default mobile bottom sheet, matching
+        `StoreLogoZoom`: looking at a photo is not a task, and a sheet sliding up from the
+        bottom announces "choose or confirm something", which misdescribes viewing an image.
+      */}
+      <Modal
+        isOpen={zoomedAttachment !== null}
+        onClose={() => setZoomedIndex(null)}
+        title={zoomedIndex !== null ? t("position", { position: zoomedIndex + 1 }) : ""}
+        presentation="centered"
+      >
+        {zoomedAttachment?.previewUrl && (
+          <div className="flex justify-center">
+            <Image
+              src={zoomedAttachment.previewUrl}
+              alt=""
+              width={640}
+              height={640}
+              unoptimized
+              className="h-auto max-h-[70vh] w-full max-w-[560px] rounded-[var(--radius-lg)] object-contain [background:var(--surface-elevated)] [border:1px_solid_var(--border)]"
+            />
+          </div>
+        )}
+      </Modal>
 
       {overflowExcess !== null && remainingPhotos !== null && (
         <AlertBanner tone="warning" role="status" icon={<AlertTriangle size={16} />}>

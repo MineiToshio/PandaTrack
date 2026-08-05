@@ -26,6 +26,7 @@
     "guidanceOrder": "We read them <strong>in order</strong>: the chat first, product pages last.",
     "guidanceLabel": "Before you upload",
     "position": "Photo {position}",
+    "zoomOpen": "View photo {position} larger",
     "moveEarlier": "Move photo {position} earlier",
     "moveLater": "Move photo {position} later",
     "reorderAnnouncement": "Photo moved to position {position} of {total}.",

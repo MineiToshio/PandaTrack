@@ -152,6 +152,9 @@ axis.
 Single content column: a pre-upload guidance block, an attach control (dropzone on desktop, a
 large button on mobile), a thumbnail grid of attached photos with a remove and two reorder
 controls on each, the helper line, the passive counter, and the primary "Extraer datos" action.
+Each thumbnail is itself a button that opens the photo full-size in the canonical `<Modal>`
+(`presentation="centered"`, same treatment as `StoreLogoZoom`): a chat screenshot is dense text at
+grid scale, so this is how the collector actually reads what they attached before extracting.
 
 The **passive counter** is a persistent chip in the header area of the block, never a dialog
 and never a modal. It is information, not a gate (`BR-11-10`).

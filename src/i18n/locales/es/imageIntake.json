@@ -26,6 +26,7 @@
     "guidanceOrder": "Leemos <strong>en orden</strong>: primero el chat, las fichas de producto al final.",
     "guidanceLabel": "Antes de subir",
     "position": "Foto {position}",
+    "zoomOpen": "Ver la foto {position} en grande",
     "moveEarlier": "Mover la foto {position} antes",
     "moveLater": "Mover la foto {position} después",
     "reorderAnnouncement": "Foto movida a la posición {position} de {total}.",
