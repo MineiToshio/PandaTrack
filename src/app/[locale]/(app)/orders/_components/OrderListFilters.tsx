@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import {
   AlertTriangle,
@@ -115,8 +115,6 @@ export default function OrderListFilters({
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [createSelectorOpen, setCreateSelectorOpen] = useState(false);
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const skipNextDebounce = useRef(false);
 
   const initialDrawer = useMemo<DrawerState>(
     () => ({
@@ -310,22 +308,6 @@ export default function OrderListFilters({
     [pushUrl],
   );
 
-  const handleSearchChange = (value: string) => {
-    setNameQuery(value);
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    if (skipNextDebounce.current) {
-      skipNextDebounce.current = false;
-      return;
-    }
-    debounceTimer.current = setTimeout(() => submitSearch(value), 300);
-  };
-
-  const handleSearchSubmit = (value: string) => {
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    skipNextDebounce.current = true;
-    submitSearch(value);
-  };
-
   const handleSortChange = (value: string) => {
     const next: OrderListSort = (ORDER_LIST_SORT_VALUES as readonly string[]).includes(value)
       ? (value as OrderListSort)
@@ -405,8 +387,8 @@ export default function OrderListFilters({
         <div className="flex-1">
           <SearchInput
             value={nameQuery}
-            onChange={handleSearchChange}
-            onSubmit={handleSearchSubmit}
+            onChange={setNameQuery}
+            onSubmit={submitSearch}
             placeholder={t("search.placeholder")}
             searchLabel={t("search.label")}
           />
@@ -451,8 +433,8 @@ export default function OrderListFilters({
         <div className="min-w-0 flex-1">
           <SearchInput
             value={nameQuery}
-            onChange={handleSearchChange}
-            onSubmit={handleSearchSubmit}
+            onChange={setNameQuery}
+            onSubmit={submitSearch}
             placeholder={t("search.placeholder")}
             searchLabel={t("search.label")}
           />

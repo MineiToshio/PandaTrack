@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Ban, CheckCircle, Plus, Truck } from "lucide-react";
 import posthog from "posthog-js";
@@ -41,8 +41,6 @@ type DrawerState = {
   sort: DeliveryListSort;
 };
 
-const SEARCH_DEBOUNCE_MS = 300;
-
 /** Forward-looking ETA presets per the Deliveries list design (mutually exclusive with manual range). */
 function resolveArrivalPreset(value: string): { from?: string; to?: string } {
   const today = new Date();
@@ -67,8 +65,6 @@ export default function DeliveryListFilters({ locale, storeOptions, initial }: D
   const isMobile = useIsMobile();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const skipNextDebounce = useRef(false);
 
   const initialDrawer = useMemo<DrawerState>(
     () => ({
@@ -211,22 +207,6 @@ export default function DeliveryListFilters({ locale, storeOptions, initial }: D
     [pushUrl],
   );
 
-  const handleSearchChange = (value: string) => {
-    setNameQuery(value);
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    if (skipNextDebounce.current) {
-      skipNextDebounce.current = false;
-      return;
-    }
-    debounceTimer.current = setTimeout(() => submitSearch(value), SEARCH_DEBOUNCE_MS);
-  };
-
-  const handleSearchSubmit = (value: string) => {
-    if (debounceTimer.current) clearTimeout(debounceTimer.current);
-    skipNextDebounce.current = true;
-    submitSearch(value);
-  };
-
   const handleSortChange = (value: string) => {
     const next: DeliveryListSort = (DELIVERY_LIST_SORT_VALUES as readonly string[]).includes(value)
       ? (value as DeliveryListSort)
@@ -295,8 +275,8 @@ export default function DeliveryListFilters({ locale, storeOptions, initial }: D
         <div className="flex-1">
           <SearchInput
             value={nameQuery}
-            onChange={handleSearchChange}
-            onSubmit={handleSearchSubmit}
+            onChange={setNameQuery}
+            onSubmit={submitSearch}
             placeholder={t("list.search.placeholder")}
             searchLabel={t("list.search.label")}
           />
@@ -337,8 +317,8 @@ export default function DeliveryListFilters({ locale, storeOptions, initial }: D
         <div className="min-w-0 flex-1">
           <SearchInput
             value={nameQuery}
-            onChange={handleSearchChange}
-            onSubmit={handleSearchSubmit}
+            onChange={setNameQuery}
+            onSubmit={submitSearch}
             placeholder={t("list.search.placeholderShort")}
             searchLabel={t("list.search.label")}
           />
