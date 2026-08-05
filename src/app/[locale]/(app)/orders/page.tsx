@@ -7,11 +7,11 @@ import { domainDateToIsoString } from "@/lib/domainDate";
 import { getIsAdmin, getSession } from "@/lib/auth/auth-server";
 import {
   getOrdersHeadingCounts,
+  getOrderStoreOptions,
   getOrdersList,
   listOrdersPendingFxReconciliation,
 } from "@/lib/data/orders/orderQueries";
 import { getImageIntakeQuotaSnapshotCached } from "@/lib/data/imageIntake/imageIntakeQuotaQueries";
-import { getOrderableStores } from "@/lib/data/stores/storeQueries";
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import { DEFAULT_PAGE_SIZE, POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import {
@@ -149,7 +149,7 @@ export default async function OrdersPage({ params, searchParams }: OrdersPagePro
 
   // Chrome data only (no heavy list query): store options feed the filter drawer + chips.
   const [storeOptions, t, tc] = await Promise.all([
-    getOrderableStores(),
+    getOrderStoreOptions(userId),
     getTranslations({ locale, namespace: "orderListing" }),
     getTranslations({ locale, namespace: "components" }),
   ]);

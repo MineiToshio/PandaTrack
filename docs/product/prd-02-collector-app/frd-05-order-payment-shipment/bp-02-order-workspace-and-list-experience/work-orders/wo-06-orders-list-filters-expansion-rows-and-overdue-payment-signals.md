@@ -134,7 +134,7 @@ export const DEFAULT_ACTIVE_STATUSES: OrderStatus[] = [
 Same drawer pattern as the Stores listing (`src/app/[locale]/(app)/stores/_components/StoreListingFilters.tsx`):
 
 - Trigger button positioned above the chip row
-- Filters: date range (from / to single date pickers), store (searchable select), product type (multi-select chips), status (multi-select chips exposing all six order states), free-text product name
+- Filters: date range (from / to single date pickers), store (searchable select), product type (multi-select chips), status (multi-select chips exposing all six order states), free-text search (matches product name, order code, or store name)
 - `Aplicar filtros` / `Apply filters` updates the URL with all selected values
 - `Restablecer` / `Reset` inside the sidebar clears all sidebar selections and navigates to the canonical default active-orders URL with the four explicit `status` params
 

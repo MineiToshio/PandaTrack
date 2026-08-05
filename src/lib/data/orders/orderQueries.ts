@@ -474,6 +474,23 @@ export async function getOrdersHeadingCounts(userId: string): Promise<OrdersHead
   };
 }
 
+export type OrderStoreOption = { id: string; name: string };
+
+/**
+ * Distinct stores the user has orders with — feeds the list filter drawer. Independent of current
+ * orderability (`getOrderableStores`, used by order creation): a store the user already ordered
+ * from must stay filterable even after it closes or is removed, mirroring `getDeliveryStoreOptions`.
+ */
+export async function getOrderStoreOptions(userId: string): Promise<OrderStoreOption[]> {
+  const rows = await prisma.order.findMany({
+    where: { userId },
+    select: { store: { select: { id: true, name: true } } },
+    distinct: ["storeId"],
+    orderBy: { store: { name: "asc" } },
+  });
+  return rows.map((row) => ({ id: row.store.id, name: row.store.name }));
+}
+
 export async function getOrdersList(userId: string, filters: OrdersListPageFilters): Promise<OrdersListPageResult> {
   const {
     nameQuery,
@@ -573,6 +590,7 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
   }
   if (trimmedQuery) {
     matchAny.push({ humanReadableId: { contains: trimmedQuery, mode: "insensitive" } });
+    matchAny.push({ store: { is: { name: { contains: trimmedQuery, mode: "insensitive" } } } });
   }
 
   // Payment-state filters map onto the persisted `paymentPercent` cache (kept in sync by the
