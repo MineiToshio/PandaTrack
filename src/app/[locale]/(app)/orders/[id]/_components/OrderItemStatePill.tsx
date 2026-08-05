@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { Clock, PackageCheck, Store as StoreIcon, Truck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/styles";
 import type { ItemDeliveryState } from "@/lib/orders/orderState";
-import { setOrderItemArrivedAction } from "../_actions/orderItemActions";
+import { useOrderItemArrivedToggle } from "../../_components/share/useOrderItemArrivedToggle";
 
 type OrderItemStatePillProps = {
   orderId: string;
@@ -57,13 +56,18 @@ export default function OrderItemStatePill({
   lockedByCancellation,
 }: OrderItemStatePillProps) {
   const t = useTranslations("orders");
-  const [state, setState] = useState<ItemDeliveryState>(initialState);
-  const [isPending, startTransition] = useTransition();
+  // The mutation, the optimistic swap and the revert are shared with the orders list, so both
+  // surfaces flip an item the same way; only the pill's own scale and tones live here.
+  const { state, isPending, canToggle, toggle } = useOrderItemArrivedToggle({
+    orderId,
+    itemId,
+    initialState,
+    lockedByDelivery,
+    lockedByCancellation,
+  });
 
   const Icon = STATE_ICON[state];
   const label = t(STATE_LABEL_KEY[state]);
-
-  const isToggleable = !lockedByDelivery && !lockedByCancellation;
 
   // Demo `.s7-istate`: gap 4px · padding 2px 8px · 11px / 500 · rounded-full · 1px border
   const baseClass = cn(
@@ -71,7 +75,7 @@ export default function OrderItemStatePill({
     STATE_CLASSES[state],
   );
 
-  if (!isToggleable) {
+  if (!canToggle) {
     return (
       <span
         className={baseClass}
@@ -90,20 +94,10 @@ export default function OrderItemStatePill({
   const nextStateLabel =
     state === "arrived_at_store" ? t("detail.items.revertToPending") : t("detail.items.markAsArrived");
 
-  const handleToggle = () => {
-    const target: ItemDeliveryState = state === "arrived_at_store" ? "open" : "arrived_at_store";
-    const previous = state;
-    setState(target);
-    startTransition(async () => {
-      const result = await setOrderItemArrivedAction(orderId, itemId, target === "arrived_at_store");
-      if (!result.ok) setState(previous);
-    });
-  };
-
   return (
     <button
       type="button"
-      onClick={handleToggle}
+      onClick={toggle}
       disabled={isPending}
       aria-label={nextStateLabel}
       title={nextStateLabel}

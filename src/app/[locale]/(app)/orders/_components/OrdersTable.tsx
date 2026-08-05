@@ -13,9 +13,9 @@ import { cn } from "@/lib/styles";
 import OrderUnpaidPill from "./share/OrderUnpaidPill";
 import StoreTombstoneNotice from "./share/StoreTombstoneNotice";
 import { describeOrderListChip, describeOverdueDays, getOrderListChipToneClassName } from "./share/orderListStatusChip";
-import { describeItemDeliveryState, getItemDeliveryStateToneClassName } from "./share/orderItemDeliveryChip";
 import { resolveStoreTombstone } from "@/lib/store/storeTombstone";
 import type { OrdersListPageItem } from "@/lib/data/orders/orderQueries";
+import OrderItemStateChip from "./share/OrderItemStateChip";
 import OrderListRowActions from "./OrderListRowActions";
 
 type OrdersTableProps = {
@@ -225,8 +225,6 @@ export default function OrdersTable({
                   <ul role="list" className="flex max-w-[720px] flex-col">
                     {visibleItems.map((item, idx) => {
                       const ItemIcon = getStoreProductTypeIcon(item.productTypeKey ?? "");
-                      const itemState = describeItemDeliveryState(item.deliveryState);
-                      const StateIcon = itemState.icon;
                       const isLast = idx === visibleItems.length - 1;
                       return (
                         <li
@@ -246,15 +244,12 @@ export default function OrdersTable({
                             <span className="min-w-0 truncate [font-size:var(--text-body)] [color:var(--text-primary)]">
                               {item.name}
                             </span>
-                            <span
-                              className={cn(
-                                "inline-flex w-fit items-center gap-1 rounded-[var(--radius-pill)] px-1.5 [font-size:11px]",
-                                getItemDeliveryStateToneClassName(itemState.toneKey),
-                              )}
-                            >
-                              <StateIcon width={10} height={10} aria-hidden />
-                              {t(itemState.labelKey)}
-                            </span>
+                            <OrderItemStateChip
+                              orderId={order.id}
+                              itemId={item.id}
+                              initialState={item.deliveryState}
+                              lockedByCancellation={order.status === "CANCELLED"}
+                            />
                           </div>
                           <span className="text-right [font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums">
                             {t("card.itemQuantity", { quantity: item.quantity })}

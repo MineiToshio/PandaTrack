@@ -19,7 +19,7 @@ vi.mock("next-intl", () => ({
 }));
 
 const actionMock = vi.fn();
-vi.mock("../../_actions/orderItemActions", () => ({
+vi.mock("../../../_actions/orderItemActions", () => ({
   setOrderItemArrivedAction: (...args: unknown[]) => actionMock(...args),
 }));
 
