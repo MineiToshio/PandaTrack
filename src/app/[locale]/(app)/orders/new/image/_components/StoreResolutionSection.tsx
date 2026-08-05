@@ -40,6 +40,12 @@ type Resolution =
   | { kind: "unresolved" }
   /** Ambiguous list pivoted to "Ninguna, crear una nueva", or the original shape was already "unknown". */
   | { kind: "creating" }
+  /**
+   * The collector chose to search the full catalog instead of trusting the shape the extraction
+   * produced (a wrong "certain" match, or "none of these" from the candidate list without wanting
+   * to create a new store). Renders the same picker as "resolved", with nothing preselected.
+   */
+  | { kind: "searching" }
   | { kind: "resolved"; storeId: string; name: string };
 
 type DuplicateCandidate = { storeId: string; name: string };
@@ -72,6 +78,13 @@ const CREATE_ERROR_COPY_KEY: Record<CreateStoreFromIntakeErrorCode, string> = {
  *   preselected, since a wrong guess would misattribute the purchase to the wrong seller, plus
  *   "Ninguna, crear una nueva".
  * - **Unknown** (neither): inline creation, prefilled from the extraction, without leaving the screen.
+ *
+ * Every shape is a starting guess, never a lock: the extraction can name the wrong seller (a
+ * marketplace link mid-conversation instead of who the collector was actually messaging) just as
+ * easily as it can miss a real match entirely, so the picker and the create form each carry a link
+ * to switch to the other one. Picking a candidate, confirming a match, or creating a store all
+ * converge on the same picker afterward, so the "create new store instead" escape hatch is always
+ * reachable regardless of how the collector got there.
  *
  * A resolution the user makes here (picking a candidate, correcting via "Cambiar") is remembered
  * for next time via `confirmStoreMatchAction`; creating a store goes through
@@ -185,16 +198,36 @@ export default function StoreResolutionSection({
     setDuplicateCandidates(null);
   }
 
-  // A resolved pick (from any origin) or the original certain match renders the same attribute row.
+  /**
+   * Lets the collector override the extraction either way: the picker below can pivot to "create a
+   * new store instead" when the match (certain or just confirmed) turns out wrong, and the create
+   * form's counterpart pivots back to searching the full catalog. Neither the "certain" shape nor a
+   * prior candidate pick is final until the draft is saved.
+   */
+  function handleSwitchToCreate() {
+    onChange(null);
+    setResolution({ kind: "creating" });
+  }
+
+  function handleSwitchToSearch() {
+    setResolution({ kind: "searching" });
+  }
+
+  // A resolved pick (from any origin), the original certain match, or an explicit "search instead"
+  // all render the same picker. Only "unresolved" ever falls back to the extraction's own certain
+  // match, so a deliberate pivot to "creating"/"searching" is never overridden by it.
   const resolvedDisplay =
     resolution.kind === "resolved"
       ? resolution
-      : shape === "certain" && store.matchedStoreId
-        ? {
-            storeId: store.matchedStoreId,
-            name: options.find((o) => o.id === store.matchedStoreId)?.name ?? store.name.value ?? store.matchedStoreId,
-          }
-        : null;
+      : resolution.kind === "searching"
+        ? { storeId: null }
+        : resolution.kind === "unresolved" && shape === "certain" && store.matchedStoreId
+          ? {
+              storeId: store.matchedStoreId,
+              name:
+                options.find((o) => o.id === store.matchedStoreId)?.name ?? store.name.value ?? store.matchedStoreId,
+            }
+          : null;
 
   if (resolvedDisplay) {
     return (
@@ -219,6 +252,13 @@ export default function StoreResolutionSection({
           listAriaLabel={tStore("listLabel")}
           error={error}
         />
+        <button
+          type="button"
+          onClick={handleSwitchToCreate}
+          className="self-start text-[12.5px] font-medium [color:var(--text-secondary)] hover:underline"
+        >
+          {t("switchToCreate")}
+        </button>
       </section>
     );
   }
@@ -351,6 +391,13 @@ export default function StoreResolutionSection({
             {t("backToCandidates")}
           </button>
         )}
+        <button
+          type="button"
+          onClick={handleSwitchToSearch}
+          className="text-[12.5px] font-medium [color:var(--text-secondary)] hover:underline"
+        >
+          {t("switchToSearch")}
+        </button>
       </div>
     </section>
   );

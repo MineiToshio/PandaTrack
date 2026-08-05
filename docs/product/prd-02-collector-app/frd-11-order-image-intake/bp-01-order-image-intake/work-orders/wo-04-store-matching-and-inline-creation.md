@@ -7,7 +7,7 @@ status: ACTIVE
 parent: BP-01
 source_features: []
 implementation_status: IMPLEMENTED
-last_updated: 2026-07-28
+last_updated: 2026-08-05
 ---
 
 # WO-04 Store Matching, Disambiguation, and Inline Creation
@@ -28,6 +28,8 @@ This is what makes the "No necesitas crear la tienda antes." promise on the sele
 - **Learning**: a confirmed or corrected phone-to-store association is remembered, so a later intake from the same number matches exactly instead of asking again.
 - Duplicate protection: the inline creation must not bypass the duplicate detection that protects the store layer.
 - Analytics for the three outcomes (exact match, disambiguation shown, inline creation), named per BP-01.
+- The extraction prompt must identify the store as the chat counterparty, never a marketplace/platform link the conversation happens to mention (`FR-11-63a`).
+- Every shape must let the collector switch to the other outcome: the resolved picker offers "create a new store instead," and the inline creation form offers "search the existing catalog instead" (`FR-11-63b`).
 
 ## Out of Scope
 
@@ -54,6 +56,8 @@ This is what makes the "No necesitas crear la tienda antes." promise on the sele
 - After confirming a store for a given phone number, a second intake from the same number matches exactly and shows the attribute row.
 - Correcting a wrong match through "Cambiar" updates the remembered association, so the next intake from that number matches the corrected store.
 - A store name written differently across two chats resolves to the same store rather than creating a duplicate.
+- From a resolved picker (a certain match, a confirmed candidate, or a just-created store), the collector can switch to the inline creation form instead, which clears the prior pick.
+- From the inline creation form, the collector can switch to searching the full store catalog instead, and picking a store there resolves it exactly as a certain match would.
 
 ## Implementation Notes
 
@@ -62,4 +66,5 @@ This is what makes the "No necesitas crear la tienda antes." promise on the sele
 - `OQ-11-03` resolved: the association lives on the existing `StoreContactChannel` model (`PHONE`/`WHATSAPP` rows), matched against orderable stores only (the same catalog `getOrderableStores` exposes). No dedicated table was added.
 - `src/lib/data/stores/storeMatchingMutations.ts`: `createStoreFromIntake` calls the existing `createStore` mutation (FRD-04 · WO-03) with `sellerType: "PERSON"` and `isPrivate: true` (the draft carries no seller-type signal yet, mirroring the script's default for an informal reseller) and status `PENDING` for a non-admin / `APPROVED` for an admin, exactly like the manual form. `recordConfirmedStoreMatch` implements the "Learning" requirement by adding a private `PHONE` channel to the store the user actively confirmed; it never edits another store.
 - `src/app/[locale]/(app)/orders/_actions/imageIntakeStoreActions.ts`: `createStoreFromIntakeAction` guards inline creation with the same `findDuplicateCandidatesInCountry` check the manual store form shows before submit, satisfying "must not bypass duplicate protection" from `In Scope`; a `possible-duplicate` response must be re-submitted with `confirmDuplicate: true` to proceed. `confirmStoreMatchAction` records a "Cambiar" correction or an ambiguous pick.
-- `src/app/[locale]/(app)/orders/new/image/_components/StoreResolutionSection.tsx` renders the three shapes from FDD §2.5 and owns all of the interaction state (which shape shows, an in-flight "Cambiar", the inline creation form); its public interface with `IntakeReviewScreen` stayed unchanged (`store` in, `storeId` out).
+- `src/app/[locale]/(app)/orders/new/image/_components/StoreResolutionSection.tsx` renders the three shapes from FDD §2.5 and owns all of the interaction state (which shape shows, an in-flight "Cambiar", the inline creation form); its public interface with `IntakeReviewScreen` stayed unchanged (`store` in, `storeId` out). A `Resolution` of kind `"searching"` (`FR-11-63b`) renders the same `StoreCombobox` picker with nothing preselected, reached from the create form's "switch to search" link; the picker's own "switch to create" link calls `onChange(null)` and sets `Resolution` to `"creating"`. The `shape` computed at mount only ever supplies the initial guess: `resolvedDisplay` falls back to the extraction's own certain match exclusively while `Resolution` is still `"unresolved"`, so a deliberate pivot to either escape hatch is never overridden by it.
+- `src/lib/imageIntake/prompt.ts`'s "Store and seller identity" section implements `FR-11-63a`: the store is who the collector is messaging, read from a chat contact name or signature, never a marketplace/platform domain (mercari.com, mercadolibre.com...) linked mid-conversation. `src/lib/imageIntake/draftSchema.ts`'s `storeFieldNameSchema` carries a matching doc comment.

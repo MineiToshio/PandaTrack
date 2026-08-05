@@ -71,6 +71,23 @@ describe("StoreResolutionSection · certain", () => {
     expect(screen.queryByText("changeCta")).toBeNull();
     expect(onChange).not.toHaveBeenCalled();
   });
+
+  it('lets the collector switch a certain match to "create a new store instead", clearing the pick', () => {
+    const onChange = vi.fn();
+    render(
+      <StoreResolutionSection
+        store={buildStore({ matchedStoreId: "store-1", name: field("Pop Dealer", "read") })}
+        options={OPTIONS}
+        onChange={onChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("switchToCreate"));
+
+    expect(onChange).toHaveBeenCalledWith(null);
+    expect(screen.getByText("createSubmit")).toBeTruthy();
+    expect(screen.queryByRole("combobox")).toBeNull();
+  });
 });
 
 describe("StoreResolutionSection · ambiguous", () => {
@@ -213,5 +230,26 @@ describe("StoreResolutionSection · unknown", () => {
     expect(createStoreFromIntakeActionMock).toHaveBeenLastCalledWith(
       expect.objectContaining({ confirmDuplicate: true }),
     );
+  });
+
+  it("lets the collector switch from creating a store to searching the existing catalog instead", () => {
+    // Mirrors the extraction naming the wrong seller (a marketplace link mid-conversation instead
+    // of who the collector was actually messaging): the true store exists, so the escape hatch out
+    // of "create" must reach the same catalog the certain/ambiguous shapes already search.
+    const onChange = vi.fn();
+    render(
+      <StoreResolutionSection
+        store={buildStore({ name: field("Mercari", "read") })}
+        options={OPTIONS}
+        onChange={onChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("switchToSearch"));
+    fireEvent.click(screen.getByRole("combobox"));
+    fireEvent.click(screen.getByRole("option", { name: /Pop Dealer/ }));
+
+    expect(onChange).toHaveBeenCalledWith("store-1");
+    expect(screen.queryByText("createSubmit")).toBeNull();
   });
 });

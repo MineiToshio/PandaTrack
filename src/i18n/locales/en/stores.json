@@ -718,6 +718,8 @@
     "createNameRequired": "Enter the store's name.",
     "createErrorCountryRequired": "First complete your country in Settings.",
     "createErrorServer": "We could not create the store. Try again.",
-    "backToCandidates": "Back to the options"
+    "backToCandidates": "Back to the options",
+    "switchToCreate": "Not this store? Create a new one",
+    "switchToSearch": "Search existing stores"
   }
 }

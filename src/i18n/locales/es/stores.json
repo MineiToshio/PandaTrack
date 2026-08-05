@@ -718,6 +718,8 @@
     "createNameRequired": "Escribe el nombre de la tienda.",
     "createErrorCountryRequired": "Primero completa tu país en Configuración.",
     "createErrorServer": "No pudimos crear la tienda. Inténtalo de nuevo.",
-    "backToCandidates": "Volver a las opciones"
+    "backToCandidates": "Volver a las opciones",
+    "switchToCreate": "¿No es esta tienda? Crear una nueva",
+    "switchToSearch": "Buscar en tiendas existentes"
   }
 }

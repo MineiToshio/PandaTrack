@@ -434,6 +434,14 @@ Three shapes for one block, chosen by certainty:
   with a note that it will be created as pending. Nothing navigates away, because leaving the
   review screen would lose the draft.
 
+None of the three shapes is a dead end (`FR-11-63b`): the extraction can name the wrong seller
+(a marketplace link mentioned mid-conversation instead of who the collector was actually
+messaging) just as easily as it can miss a real match, so the picker carries a "crear una tienda
+nueva" link and the inline creation card carries a "buscar en tiendas existentes" link back to it.
+Picking a candidate, confirming a match, or creating a store all converge on the same picker
+afterward, so the create-instead escape hatch stays reachable regardless of how the collector
+got there.
+
 ### 2.6 Split modal (`#intake-split-modal`)
 
 The canonical `Modal` with a list of editable name and price rows, the split note, and

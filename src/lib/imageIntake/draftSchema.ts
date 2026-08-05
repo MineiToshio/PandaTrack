@@ -46,6 +46,12 @@ const CURRENCY_CODE_PATTERN = /^[A-Z]{3}$/;
 // non-existent dates like "2026-02-30", which the order domain's own date coercion will catch.
 const ISO_DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
+/**
+ * Who the collector is buying from: the chat counterparty or the store named on a receipt, never a
+ * marketplace/platform domain (mercari.com, mercadolibre.com...) the conversation merely links to.
+ * The model always returns a plain name string here; `matchedStoreId` below is filled server-side
+ * from it (`findStoreMatchesForIntake`), never by the model itself.
+ */
 const storeFieldNameSchema = fieldSchema(z.string().min(1));
 const storeFieldPhoneSchema = fieldSchema(z.string().min(1));
 const currencyFieldSchema = fieldSchema(z.string().regex(CURRENCY_CODE_PATTERN, { message: "INVALID_CURRENCY_CODE" }));

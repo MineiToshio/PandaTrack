@@ -155,6 +155,10 @@ Write every product's name with standard capitalization, even when the source te
 
 Every product may carry one category in "suggestedProductTypeKey", and it is a suggestion, never a reading: no conversation states a category, you are inferring it from what the product is. Choose only from the allowed categories listed in the reference values below, and answer with the key exactly as written there, never the label and never a key of your own invention. Suggest a category only when the product's own name, the seller's words, or the listing it came from actually support it. Return null when no allowed category fits, when the list is empty, and whenever you would be guessing: a wrong category is worse than none, because the collector reads it as something the conversation said.
 
+## Store and seller identity
+
+The store is who the collector is buying from: the person or shop they are actually messaging in the conversation, or the store named on a receipt. Read the name from how the buyer and seller refer to themselves or each other, for example a chat contact name, a signature, or how the buyer addresses the seller, never from a marketplace, resale platform, or payment-app domain that merely appears inside the conversation as a link. A seller sharing a link to mercari.com, mercadolibre.com, or a similar platform to show a listing or a product page is still the same seller the buyer is messaging: the platform the link belongs to is never the store name. If the conversation never states or shows who the buyer is messaging, leave the store's name null rather than guessing it from an unrelated link.
+
 ## Products identified by a link
 
 A buyer often does not name what they want at all: they paste a link and say "quiero este". When a product is identified by a link, return that link in "referenceUrl" exactly as it appears in the image, complete and unmodified, and only ever a full http or https address. Return null for the reference URL of every product that was not identified by one.
