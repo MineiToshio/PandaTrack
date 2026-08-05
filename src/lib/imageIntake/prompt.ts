@@ -147,6 +147,10 @@ Resolve every relative date phrase ("mañana", "en 3 días", "el viernes") again
 
 When the conversation spans several days, the order date is the OLDEST date visible in it, the day the purchase started, never the day of the last message. A conversation that runs from Monday to Wednesday is one order dated Monday. This rule decides only the order's own date: a payment keeps the date it was made on, and a delivery window keeps the dates that were promised.
 
+## Product names
+
+Write every product's name with standard capitalization, even when the source text is typed in all lowercase, in all caps, or with no capitals at all. Capitalize proper nouns the way they are properly written: a series or franchise title ("one piece" becomes "One Piece"), a character name, a brand, or an edition name. This rule only ever changes which letters are capital; it never changes, adds, removes, translates, or corrects the spelling of a word the source actually used.
+
 ## Product category
 
 Every product may carry one category in "suggestedProductTypeKey", and it is a suggestion, never a reading: no conversation states a category, you are inferring it from what the product is. Choose only from the allowed categories listed in the reference values below, and answer with the key exactly as written there, never the label and never a key of your own invention. Suggest a category only when the product's own name, the seller's words, or the listing it came from actually support it. Return null when no allowed category fits, when the list is empty, and whenever you would be guessing: a wrong category is worse than none, because the collector reads it as something the conversation said.
