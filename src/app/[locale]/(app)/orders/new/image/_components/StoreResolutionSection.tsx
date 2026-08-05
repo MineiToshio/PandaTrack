@@ -5,6 +5,7 @@ import { useState } from "react";
 import Button from "@/components/core/Button/Button";
 import Input from "@/components/core/Input";
 import Label from "@/components/core/Label";
+import { cn } from "@/lib/styles";
 import Radio from "@/components/core/Radio";
 import { StoreCombobox, type StoreComboboxOption } from "@/components/modules/StoreCombobox";
 import type { ImageIntakeDraft } from "@/lib/imageIntake/draftSchema";
@@ -20,6 +21,12 @@ const MOBILE_TAP_TARGET = "min-h-[44px] md:min-h-8";
 export type StoreResolutionSectionProps = {
   store: ImageIntakeDraft["store"];
   options: StoreComboboxOption[];
+  /**
+   * Applied to the block's root. The caller places this inside its own field grid, and the block
+   * adds `md:col-span-2` to it whenever it is showing something taller than a field (the candidate
+   * list, the inline creation form), because those do not belong in half a row beside a select.
+   */
+  className?: string;
   onChange: (storeId: string | null) => void;
   error?: boolean;
 };
@@ -71,7 +78,13 @@ const CREATE_ERROR_COPY_KEY: Record<CreateStoreFromIntakeErrorCode, string> = {
  * `createStoreFromIntakeAction`, which reuses the same duplicate protection the manual store form
  * shows before submit.
  */
-export default function StoreResolutionSection({ store, options, onChange, error }: StoreResolutionSectionProps) {
+export default function StoreResolutionSection({
+  store,
+  options,
+  onChange,
+  error,
+  className,
+}: StoreResolutionSectionProps) {
   const t = useTranslations("stores.intakeResolution");
   const tStore = useTranslations("imageIntake.review.store");
   const tDuplicate = useTranslations("stores.duplicate");
@@ -185,10 +198,15 @@ export default function StoreResolutionSection({ store, options, onChange, error
 
   if (resolvedDisplay) {
     return (
-      <section className="flex flex-col gap-[var(--space-2)]">
-        <Label htmlFor="intake-store-change" size="sm">
+      // Same label geometry as `<ProvenanceValue>` (`space-y-1.5` + a 1.625rem minimum), so the
+      // store field's control lines up with whatever field shares its row, chip or no chip.
+      <section className={cn("space-y-1.5", className)}>
+        <label
+          htmlFor="intake-store-change"
+          className="flex min-h-[1.625rem] items-center text-[13px] font-medium [color:var(--text-secondary)]"
+        >
           {tStore("label")}
-        </Label>
+        </label>
         <StoreCombobox
           id="intake-store-change"
           options={comboboxOptions}
@@ -212,7 +230,7 @@ export default function StoreResolutionSection({ store, options, onChange, error
     ];
 
     return (
-      <section className="flex flex-col gap-[var(--space-2)]">
+      <section className={cn("flex flex-col gap-[var(--space-2)] md:col-span-2", className)}>
         <fieldset className="flex flex-col gap-[var(--space-2)]">
           <legend className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)]">
             {t("ambiguousPrompt")}
@@ -231,7 +249,13 @@ export default function StoreResolutionSection({ store, options, onChange, error
 
   // "creating": the original shape was "unknown", or an ambiguous list pivoted to "Ninguna, crear una nueva".
   return (
-    <section className="flex flex-col gap-[var(--space-2)] rounded-xl p-3 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
+    <section
+      className={cn(
+        "flex flex-col gap-[var(--space-2)] rounded-xl p-3 md:col-span-2",
+        "[background:var(--surface-elevated)] [border:1px_solid_var(--border)]",
+        className,
+      )}
+    >
       <div className="flex flex-col gap-[var(--space-1)]">
         <span className="[font-size:var(--text-caption)] [font-weight:var(--font-weight-medium)] [color:var(--text-primary)]">
           {tStore("createLabel")}

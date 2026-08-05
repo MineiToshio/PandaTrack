@@ -543,9 +543,36 @@ export default function IntakeReviewScreen({
           </h3>
         </header>
         <div className={ORDER_SECTION_COMPACT_BODY_CLASS}>
-          <StoreResolutionSection store={draft.store} options={storeOptions} onChange={handleStoreChange} />
+          {/*
+            The same two rows the manual order form uses, in the same order: store beside currency,
+            then order date beside the expected window. Whatever the collector already knows from
+            creating an order by hand should be where they last saw it.
+          */}
+          <div className="grid items-start gap-4 md:grid-cols-2">
+            <StoreResolutionSection store={draft.store} options={storeOptions} onChange={handleStoreChange} />
 
-          <div className="grid gap-4 md:grid-cols-2">
+            <ProvenanceValue
+              id="intake-currency"
+              label={t("fields.currency")}
+              state={provenance.currency}
+              markerLabel={t(provenance.currency === "assumed" ? "provenance.assumed" : "provenance.missing")}
+              hint={
+                provenance.currency === "read"
+                  ? undefined
+                  : t(provenance.currency === "assumed" ? "provenance.assumedHint" : "provenance.missingHint")
+              }
+              control={({ id }) => (
+                <Select
+                  id={id}
+                  value={draft.currency.value}
+                  onChange={handleCurrencyChange}
+                  options={currencyOptions}
+                />
+              )}
+            />
+          </div>
+
+          <div className="grid items-start gap-4 md:grid-cols-2">
             <ProvenanceValue
               id="intake-order-date"
               label={t("fields.orderDate")}
@@ -567,30 +594,7 @@ export default function IntakeReviewScreen({
             />
 
             <ProvenanceValue
-              id="intake-currency"
-              label={t("fields.currency")}
-              state={provenance.currency}
-              markerLabel={t(provenance.currency === "assumed" ? "provenance.assumed" : "provenance.missing")}
-              hint={
-                provenance.currency === "read"
-                  ? undefined
-                  : t(provenance.currency === "assumed" ? "provenance.assumedHint" : "provenance.missingHint")
-              }
-              control={({ id }) => (
-                <Select
-                  id={id}
-                  value={draft.currency.value}
-                  onChange={handleCurrencyChange}
-                  options={currencyOptions}
-                />
-              )}
-            />
-
-            <ProvenanceValue
               id="intake-delivery-range"
-              // Alone on its row it left half the section empty, so it takes the whole row unless
-              // the exchange rate is there to fill the other half.
-              className={needsExchangeRate ? undefined : "md:col-span-2"}
               label={t("fields.deliveryRange")}
               state={provenance.deliveryFrom}
               markerLabel={t(provenance.deliveryFrom === "assumed" ? "provenance.assumed" : "provenance.missing")}
@@ -610,7 +614,7 @@ export default function IntakeReviewScreen({
             />
 
             {needsExchangeRate && (
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 md:col-span-2">
                 {/* Same minimum height as a `ProvenanceValue` label, so this field's input lines
                     up with the one beside it whether or not that one carries a chip. */}
                 <label

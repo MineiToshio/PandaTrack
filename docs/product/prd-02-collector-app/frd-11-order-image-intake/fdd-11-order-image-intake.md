@@ -349,8 +349,11 @@ fifty option lists.
 **The screen is the order form, all open** (`FR-11-51c`, `FR-11-51d`). It is built from the same
 section cards as `OrderEditForm` (`orderSectionChrome.ts`): a bordered elevated card per section,
 a circular Lucide bullet, a mono eyebrow, a subtitle heading, and a body indented to clear the
-bullet. Three sections, nothing behind a step: **Datos del pedido** (store, date, currency, expected
-window, exchange rate), **Productos y costos** (the tables plus the order total), **Pagos**.
+bullet. Three sections, nothing behind a step: **Datos del pedido**, **Productos y costos** (the tables plus
+the order total), **Pagos**. The first section keeps the manual form's own field order, row for row:
+store beside currency, then order date beside the expected window, with the exchange rate taking a
+full-width row underneath when the order is in a foreign currency. Anything the collector already
+knows from creating an order by hand is where they last saw it.
 
 The total lives with the products, not with the dates, for the same reason the manual form puts it
 there: it is the figure the rows are supposed to add up to, and two sections away from them nothing
