@@ -84,7 +84,14 @@ export default async function DashboardUpcomingPaymentsZone({ data, locale }: Da
                     "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]",
                   )}
                 >
-                  <StoreAvatar store={{ name: payment.storeName }} size={32} />
+                  {payment.storeLogoUrl ? (
+                    <StoreAvatar
+                      store={{ name: payment.storeName, logo: { src: payment.storeLogoUrl, aspect: "square" } }}
+                      size={32}
+                    />
+                  ) : (
+                    <StoreAvatar store={{ name: payment.storeName }} size={32} />
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate [font-size:13.5px] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
                       {payment.storeName}

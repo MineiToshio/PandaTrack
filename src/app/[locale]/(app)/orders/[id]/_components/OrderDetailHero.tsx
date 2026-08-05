@@ -13,7 +13,14 @@ import type { OrderStatus, StoreRemovalReason, StoreStatus } from "../../../../.
 import OrderCodeCopyButton from "./OrderCodeCopyButton";
 import StoreTombstoneNotice from "../../_components/share/StoreTombstoneNotice";
 
-type Store = { id: string; name: string; slug: string; status: StoreStatus; removalReason: StoreRemovalReason | null };
+type Store = {
+  id: string;
+  name: string;
+  slug: string;
+  status: StoreStatus;
+  removalReason: StoreRemovalReason | null;
+  logoUrl: string | null;
+};
 
 type OrderDetailHeroProps = {
   order: {
@@ -151,11 +158,19 @@ export default function OrderDetailHero({
     >
       {/* Demo `.detail-hero-head`: items-center, gap 12px, margin-bottom 18px, flex-wrap */}
       <div className="mb-[18px] flex flex-wrap items-center gap-3">
-        <StoreAvatar
-          store={{ name: order.store.name }}
-          size={56}
-          className={cn("shrink-0 [&]:rounded-[14px]", isCancelled && "[filter:grayscale(0.6)]")}
-        />
+        {order.store.logoUrl ? (
+          <StoreAvatar
+            store={{ name: order.store.name, logo: { src: order.store.logoUrl, aspect: "square" } }}
+            size={56}
+            className={cn("shrink-0 [&]:rounded-[14px]", isCancelled && "[filter:grayscale(0.6)]")}
+          />
+        ) : (
+          <StoreAvatar
+            store={{ name: order.store.name }}
+            size={56}
+            className={cn("shrink-0 [&]:rounded-[14px]", isCancelled && "[filter:grayscale(0.6)]")}
+          />
+        )}
         <div className="min-w-0 flex-1">
           <h1 className="text-text-title text-[17px] leading-tight font-semibold">{order.store.name}</h1>
           {storeTombstone.isRemoved && <StoreTombstoneNotice tone={storeTombstone.tone} variant="full" />}

@@ -17,6 +17,7 @@ type DeliveryDetailHeroProps = {
     id: string;
     humanReadableId: string;
     storeName: string;
+    storeLogoUrl: string | null;
     deliveryDate: Date;
     expectedArrivalFrom: Date | null;
     expectedArrivalTo: Date | null;
@@ -128,11 +129,19 @@ export default function DeliveryDetailHero({
       style={{ viewTransitionName: `dlv-${delivery.id}` }}
     >
       <div className={cn("mb-[18px] flex flex-wrap items-center gap-3", isCancelled && "opacity-80")}>
-        <StoreAvatar
-          store={{ name: delivery.storeName }}
-          size={56}
-          className={cn("shrink-0 [&]:rounded-[14px]", isCancelled && "[filter:grayscale(0.6)]")}
-        />
+        {delivery.storeLogoUrl ? (
+          <StoreAvatar
+            store={{ name: delivery.storeName, logo: { src: delivery.storeLogoUrl, aspect: "square" } }}
+            size={56}
+            className={cn("shrink-0 [&]:rounded-[14px]", isCancelled && "[filter:grayscale(0.6)]")}
+          />
+        ) : (
+          <StoreAvatar
+            store={{ name: delivery.storeName }}
+            size={56}
+            className={cn("shrink-0 [&]:rounded-[14px]", isCancelled && "[filter:grayscale(0.6)]")}
+          />
+        )}
         <div className="min-w-0 flex-1">
           <h1 className="text-text-title text-[17px] leading-tight font-semibold">{delivery.storeName}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2.5">

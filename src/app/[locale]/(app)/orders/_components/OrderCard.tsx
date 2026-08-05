@@ -93,7 +93,14 @@ export default function OrderCard({
       />
 
       <div className="pointer-events-none relative flex items-start gap-3">
-        <StoreAvatar store={{ name: order.store.name }} size={40} />
+        {order.store.logoUrl ? (
+          <StoreAvatar
+            store={{ name: order.store.name, logo: { src: order.store.logoUrl, aspect: "square" } }}
+            size={40}
+          />
+        ) : (
+          <StoreAvatar store={{ name: order.store.name }} size={40} />
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <p className="min-w-0 truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">

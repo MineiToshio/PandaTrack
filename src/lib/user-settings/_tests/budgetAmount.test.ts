@@ -85,7 +85,7 @@ describe("settings budget reaches the dashboard at the right magnitude", () => {
       exchangeRateBaseCode: "USD",
       totalCost: amountMinor,
       status: "OPEN",
-      store: { id: "store-1", name: "Store One", slug: "store-one" },
+      store: { id: "store-1", name: "Store One", slug: "store-one", logoUrl: null },
       items: [],
       payments: [{ amount: amountMinor, paymentDate: new Date(Date.UTC(2026, 6, 5)) }],
     };

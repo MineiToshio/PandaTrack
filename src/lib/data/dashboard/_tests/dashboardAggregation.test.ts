@@ -17,7 +17,7 @@ function makeOrder(overrides: Partial<DashboardOrderInput> & { id: string }): Da
     exchangeRateBaseCode: "USD",
     totalCost: 0,
     status: "OPEN",
-    store: { id: "store-1", name: "Store One", slug: "store-one" },
+    store: { id: "store-1", name: "Store One", slug: "store-one", logoUrl: null },
     items: [],
     payments: [],
   };
@@ -759,7 +759,7 @@ describe("buildDashboardData - activity and collection", () => {
       makeOrder({
         id: "o1",
         totalCost: 3000,
-        store: { id: "store-a", name: "Store A", slug: "store-a" },
+        store: { id: "store-a", name: "Store A", slug: "store-a", logoUrl: null },
         items: [
           {
             id: "item-9",
@@ -967,26 +967,26 @@ describe("buildDashboardData - activity and collection", () => {
     const data = build([
       makeOrder({
         id: "a1",
-        store: { id: "store-a", name: "Store A", slug: "store-a" },
+        store: { id: "store-a", name: "Store A", slug: "store-a", logoUrl: null },
         totalCost: 2000,
         items: [item],
       }),
       makeOrder({
         id: "a2",
-        store: { id: "store-a", name: "Store A", slug: "store-a" },
+        store: { id: "store-a", name: "Store A", slug: "store-a", logoUrl: null },
         totalCost: 2000,
         items: [item],
       }),
       makeOrder({
         id: "b1",
-        store: { id: "store-b", name: "Store B", slug: "store-b" },
+        store: { id: "store-b", name: "Store B", slug: "store-b", logoUrl: null },
         totalCost: 2000,
         items: [item],
       }),
       makeOrder({
         id: "cancelled",
         status: "CANCELLED",
-        store: { id: "store-c", name: "Store C", slug: "store-c" },
+        store: { id: "store-c", name: "Store C", slug: "store-c", logoUrl: null },
         totalCost: 9999,
         items: [item],
       }),
@@ -1000,8 +1000,16 @@ describe("buildDashboardData - activity and collection", () => {
 
   it("ranks top stores by committed value, then by order count", () => {
     const data = build([
-      makeOrder({ id: "small", store: { id: "store-a", name: "Store A", slug: "store-a" }, totalCost: 1000 }),
-      makeOrder({ id: "big", store: { id: "store-b", name: "Store B", slug: "store-b" }, totalCost: 9000 }),
+      makeOrder({
+        id: "small",
+        store: { id: "store-a", name: "Store A", slug: "store-a", logoUrl: null },
+        totalCost: 1000,
+      }),
+      makeOrder({
+        id: "big",
+        store: { id: "store-b", name: "Store B", slug: "store-b", logoUrl: null },
+        totalCost: 9000,
+      }),
     ]);
     expect(data.collection.topStores.map((store) => store.storeId)).toEqual(["store-b", "store-a"]);
   });

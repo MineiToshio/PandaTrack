@@ -28,7 +28,7 @@ async function fetchDashboardOrders(userId: string): Promise<DashboardOrderInput
       exchangeRateBaseCode: true,
       totalCost: true,
       status: true,
-      store: { select: { id: true, name: true, slug: true } },
+      store: { select: { id: true, name: true, slug: true, logoUrl: true } },
       items: {
         select: {
           id: true,
@@ -60,7 +60,7 @@ async function fetchDashboardOrders(userId: string): Promise<DashboardOrderInput
     exchangeRateBaseCode: row.exchangeRateBaseCode,
     totalCost: row.totalCost,
     status: row.status,
-    store: { id: row.store.id, name: row.store.name, slug: row.store.slug },
+    store: { id: row.store.id, name: row.store.name, slug: row.store.slug, logoUrl: row.store.logoUrl },
     items: row.items.map((item) => ({
       id: item.id,
       name: item.name,

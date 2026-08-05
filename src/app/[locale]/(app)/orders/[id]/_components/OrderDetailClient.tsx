@@ -21,7 +21,14 @@ import { QuickArrivalModal, type QuickArrivalItem } from "@/components/modules/Q
 import { useQuickArrival } from "@/components/modules/QuickArrival/useQuickArrival";
 
 type PaymentRecord = { id: string; amount: number; paymentDate: Date };
-type Store = { id: string; name: string; slug: string; status: StoreStatus; removalReason: StoreRemovalReason | null };
+type Store = {
+  id: string;
+  name: string;
+  slug: string;
+  status: StoreStatus;
+  removalReason: StoreRemovalReason | null;
+  logoUrl: string | null;
+};
 
 type OrderDetailClientProps = {
   order: {

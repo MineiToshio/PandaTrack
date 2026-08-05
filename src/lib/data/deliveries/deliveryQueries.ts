@@ -196,7 +196,7 @@ export type DeliveriesListPageItem = {
   status: DeliveryStatus;
   cost: number;
   currencyCode: string;
-  store: { id: string; name: string; slug: string };
+  store: { id: string; name: string; slug: string; logoUrl: string | null };
   /** Sum of quantities across linked order items ("N productos"). */
   productCount: number;
   items: Array<{
@@ -331,7 +331,7 @@ export async function getDeliveriesList(
         status: true,
         cost: true,
         currencyCode: true,
-        store: { select: { id: true, name: true, slug: true } },
+        store: { select: { id: true, name: true, slug: true, logoUrl: true } },
         orderItems: {
           select: {
             orderItem: { select: { id: true, name: true, quantity: true, productTypeKey: true } },
@@ -418,7 +418,7 @@ export type DeliveryDetail = {
   needsExchangeRateUpdate: boolean;
   note: string | null;
   updatedAt: Date;
-  store: { id: string; name: string; slug: string };
+  store: { id: string; name: string; slug: string; logoUrl: string | null };
   /** Sum of quantities across linked items ("N productos"). */
   productCount: number;
   /** Items grouped by source order, ordered by order date. */
@@ -443,7 +443,7 @@ export async function getDeliveryDetail(deliveryId: string, userId: string): Pro
       exchangeRateBaseCode: true,
       note: true,
       updatedAt: true,
-      store: { select: { id: true, name: true, slug: true } },
+      store: { select: { id: true, name: true, slug: true, logoUrl: true } },
       orderItems: {
         select: {
           orderItem: {

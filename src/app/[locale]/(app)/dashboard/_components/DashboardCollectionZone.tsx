@@ -379,7 +379,14 @@ export default async function DashboardCollectionZone({ data, locale, storesHref
                       className="-mx-1 grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)_auto] items-center gap-2.5 rounded-[var(--radius-md)] px-1 py-[7px] transition-colors hover:[background:color-mix(in_oklab,var(--text-primary)_4%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
                     >
                       <span className="flex min-w-0 items-center gap-1.5">
-                        <StoreAvatar store={{ name: store.storeName }} size={24} />
+                        {store.storeLogoUrl ? (
+                          <StoreAvatar
+                            store={{ name: store.storeName, logo: { src: store.storeLogoUrl, aspect: "square" } }}
+                            size={24}
+                          />
+                        ) : (
+                          <StoreAvatar store={{ name: store.storeName }} size={24} />
+                        )}
                         <span
                           className="truncate [font-size:12.5px] [color:var(--text-secondary)]"
                           title={store.storeName}

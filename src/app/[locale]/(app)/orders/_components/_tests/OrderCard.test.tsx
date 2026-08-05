@@ -54,6 +54,7 @@ describe("OrderCard removed-store tombstone", () => {
           id: "s1",
           name: "Manga Store",
           slug: "manga-store",
+          logoUrl: null,
           status: "APPROVED",
           removalReason: null,
         })}
@@ -71,6 +72,7 @@ describe("OrderCard removed-store tombstone", () => {
           id: "s1",
           name: "Manga Store",
           slug: "manga-store",
+          logoUrl: null,
           status: "REJECTED",
           removalReason: "DUPLICATE",
         })}
@@ -89,6 +91,7 @@ describe("OrderCard removed-store tombstone", () => {
           id: "s1",
           name: "Manga Store",
           slug: "manga-store",
+          logoUrl: null,
           status: "REJECTED",
           removalReason: "ABUSE",
         })}

@@ -109,6 +109,7 @@ function buildOrderSummary(order: DerivedOrder, baseCurrencyCode: string | null)
     orderId: order.input.id,
     humanReadableId: order.input.humanReadableId,
     storeName: order.input.store.name,
+    storeLogoUrl: order.input.store.logoUrl,
     orderDate: order.input.orderDate,
     expectedDeliveryFrom: order.input.expectedDeliveryFrom,
     expectedDeliveryTo: order.input.expectedDeliveryTo,
@@ -200,6 +201,7 @@ function buildUpcomingPayments(datedOutstanding: DerivedOrder[], baseCurrencyCod
         orderId: order.input.id,
         humanReadableId: order.input.humanReadableId,
         storeName: order.input.store.name,
+        storeLogoUrl: order.input.store.logoUrl,
         dueDate: order.input.expectedDeliveryFrom!,
         currencyCode: order.input.currencyCode,
         outstandingMinor: order.outstandingMinor,
@@ -623,7 +625,13 @@ function buildTopStores(
 ): { entries: CollectionBlock["topStores"]; isPartial: boolean } {
   const byStore = new Map<
     string,
-    { storeName: string; storeSlug: string; committedMinor: number; orderCount: number }
+    {
+      storeName: string;
+      storeSlug: string;
+      storeLogoUrl: string | null;
+      committedMinor: number;
+      orderCount: number;
+    }
   >();
   let isPartial = false;
 
@@ -631,6 +639,7 @@ function buildTopStores(
     const entry = byStore.get(order.input.store.id) ?? {
       storeName: order.input.store.name,
       storeSlug: order.input.store.slug,
+      storeLogoUrl: order.input.store.logoUrl,
       committedMinor: 0,
       orderCount: 0,
     };

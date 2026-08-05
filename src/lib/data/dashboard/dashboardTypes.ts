@@ -48,7 +48,7 @@ export type DashboardOrderInput = {
   exchangeRateBaseCode: string | null;
   totalCost: number;
   status: OrderStatus;
-  store: { id: string; name: string; slug: string };
+  store: { id: string; name: string; slug: string; logoUrl: string | null };
   items: Array<{
     id: string;
     name: string;
@@ -102,6 +102,7 @@ export type UpcomingPayment = {
   orderId: string;
   humanReadableId: string;
   storeName: string;
+  storeLogoUrl: string | null;
   dueDate: Date;
   currencyCode: string;
   outstandingMinor: number;
@@ -183,6 +184,7 @@ export type OrderSummary = {
   orderId: string;
   humanReadableId: string;
   storeName: string;
+  storeLogoUrl: string | null;
   orderDate: Date;
   expectedDeliveryFrom: Date | null;
   expectedDeliveryTo: Date | null;
@@ -263,6 +265,7 @@ export type TopStore = {
   storeId: string;
   storeName: string;
   storeSlug: string;
+  storeLogoUrl: string | null;
   committedMinor: number;
   orderCount: number;
 };

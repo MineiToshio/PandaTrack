@@ -109,7 +109,15 @@ export default function DeliveriesTable({
                 className="absolute inset-0 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
               />
 
-              <StoreAvatar store={{ name: delivery.store.name }} size={32} className="pointer-events-none" />
+              {delivery.store.logoUrl ? (
+                <StoreAvatar
+                  store={{ name: delivery.store.name, logo: { src: delivery.store.logoUrl, aspect: "square" } }}
+                  size={32}
+                  className="pointer-events-none"
+                />
+              ) : (
+                <StoreAvatar store={{ name: delivery.store.name }} size={32} className="pointer-events-none" />
+              )}
 
               <div className="pointer-events-none relative min-w-0">
                 <p className="truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">

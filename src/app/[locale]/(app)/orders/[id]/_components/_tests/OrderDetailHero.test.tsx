@@ -20,7 +20,7 @@ function buildOrder(store: { status: StoreStatus; removalReason: StoreRemovalRea
   return {
     id: "o1",
     humanReadableId: "ORD-1",
-    store: { id: "s1", name: "Manga Store", slug: "manga-store", ...store },
+    store: { id: "s1", name: "Manga Store", slug: "manga-store", logoUrl: null, ...store },
     orderDate: new Date("2024-01-01T00:00:00.000Z"),
     expectedDeliveryFrom: null,
     expectedDeliveryTo: null,

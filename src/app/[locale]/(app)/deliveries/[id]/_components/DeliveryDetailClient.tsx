@@ -231,6 +231,7 @@ export default function DeliveryDetailClient({
             id: delivery.id,
             humanReadableId: delivery.humanReadableId,
             storeName: delivery.store.name,
+            storeLogoUrl: delivery.store.logoUrl,
             deliveryDate: delivery.deliveryDate,
             expectedArrivalFrom: delivery.expectedArrivalFrom,
             expectedArrivalTo: delivery.expectedArrivalTo,

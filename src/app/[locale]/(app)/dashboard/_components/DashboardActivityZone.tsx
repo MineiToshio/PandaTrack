@@ -118,6 +118,7 @@ export default async function DashboardActivityZone({ data, locale }: DashboardA
             orderId={order.orderId}
             humanReadableId={order.humanReadableId}
             storeName={order.storeName}
+            storeLogoUrl={order.storeLogoUrl}
             href={orderHref(order.orderId)}
             ariaLabel={rowLabel(order)}
             listKey="recent"
@@ -148,6 +149,7 @@ export default async function DashboardActivityZone({ data, locale }: DashboardA
             orderId={order.orderId}
             humanReadableId={order.humanReadableId}
             storeName={order.storeName}
+            storeLogoUrl={order.storeLogoUrl}
             href={orderHref(order.orderId)}
             ariaLabel={rowLabel(order)}
             listKey="upcoming"
@@ -175,6 +177,7 @@ export default async function DashboardActivityZone({ data, locale }: DashboardA
             orderId={order.orderId}
             humanReadableId={order.humanReadableId}
             storeName={order.storeName}
+            storeLogoUrl={order.storeLogoUrl}
             href={orderHref(order.orderId)}
             ariaLabel={rowLabel(order)}
             listKey="overdue"

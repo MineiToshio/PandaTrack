@@ -11,6 +11,7 @@ const BASE_PROPS = {
   orderId: "order-1",
   humanReadableId: "ORD-20260716-03",
   storeName: "AmiAmi",
+  storeLogoUrl: null,
   href: "/es/orders/order-1",
   ariaLabel: "Pedido ORD-20260716-03 de AmiAmi",
   listKey: "overdue",

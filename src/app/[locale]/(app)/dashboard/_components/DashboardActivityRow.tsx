@@ -8,6 +8,7 @@ export type DashboardActivityRowProps = {
   orderId: string;
   humanReadableId: string;
   storeName: string;
+  storeLogoUrl: string | null;
   href: string;
   ariaLabel: string;
   /** Which list the row belongs to, sent with the click event. */
@@ -30,6 +31,7 @@ export default function DashboardActivityRow({
   orderId,
   humanReadableId,
   storeName,
+  storeLogoUrl,
   href,
   ariaLabel,
   listKey,
@@ -57,7 +59,11 @@ export default function DashboardActivityRow({
           )}
         />
         <div className="pointer-events-none">
-          <StoreAvatar store={{ name: storeName }} size={32} />
+          {storeLogoUrl ? (
+            <StoreAvatar store={{ name: storeName, logo: { src: storeLogoUrl, aspect: "square" } }} size={32} />
+          ) : (
+            <StoreAvatar store={{ name: storeName }} size={32} />
+          )}
         </div>
         <div className="pointer-events-none min-w-0 flex-1">
           <p className="truncate [font-size:13.5px] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">

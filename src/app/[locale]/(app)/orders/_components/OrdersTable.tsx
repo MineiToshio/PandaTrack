@@ -126,7 +126,15 @@ export default function OrdersTable({
               />
 
               {/* Avatar — center-aligned to the row, not the top */}
-              <StoreAvatar store={{ name: order.store.name }} size={32} className="pointer-events-none" />
+              {order.store.logoUrl ? (
+                <StoreAvatar
+                  store={{ name: order.store.name, logo: { src: order.store.logoUrl, aspect: "square" } }}
+                  size={32}
+                  className="pointer-events-none"
+                />
+              ) : (
+                <StoreAvatar store={{ name: order.store.name }} size={32} className="pointer-events-none" />
+              )}
 
               <div className="pointer-events-none relative min-w-0">
                 <div className="flex items-center gap-1.5">

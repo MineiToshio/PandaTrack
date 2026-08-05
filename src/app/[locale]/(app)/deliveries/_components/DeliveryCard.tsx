@@ -69,7 +69,14 @@ export default function DeliveryCard({ delivery, locale, today, returnTo, isExpa
       />
 
       <div className="pointer-events-none relative flex items-start gap-3">
-        <StoreAvatar store={{ name: delivery.store.name }} size={40} />
+        {delivery.store.logoUrl ? (
+          <StoreAvatar
+            store={{ name: delivery.store.name, logo: { src: delivery.store.logoUrl, aspect: "square" } }}
+            size={40}
+          />
+        ) : (
+          <StoreAvatar store={{ name: delivery.store.name }} size={40} />
+        )}
         <div className="min-w-0 flex-1">
           <p className="truncate [font-size:var(--text-body)] [font-weight:var(--font-weight-semibold)] [color:var(--text-primary)]">
             {delivery.store.name}
