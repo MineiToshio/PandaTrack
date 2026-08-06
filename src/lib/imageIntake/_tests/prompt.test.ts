@@ -205,6 +205,20 @@ describe("IMAGE_INTAKE_SYSTEM_PROMPT: rules that only live in the prompt", () =>
     expect(IMAGE_INTAKE_SYSTEM_PROMPT).toContain("a payment keeps the date it was made on");
   });
 
+  it("resolves an approximate delivery lead time into a +/-7-day window instead of leaving it null", () => {
+    expect(IMAGE_INTAKE_SYSTEM_PROMPT).toContain("## Delivery windows");
+    expect(IMAGE_INTAKE_SYSTEM_PROMPT).toContain("An explicit two-ended window");
+    expect(IMAGE_INTAKE_SYSTEM_PROMPT).toContain("A single fixed delivery date");
+    expect(IMAGE_INTAKE_SYSTEM_PROMPT).toContain("An approximate lead time from now, with no explicit date");
+    expect(IMAGE_INTAKE_SYSTEM_PROMPT).toContain(
+      '"expectedFrom" as 7 calendar days before that date and "expectedTo" as 7 calendar days after it',
+    );
+    // The worked example locks the exact arithmetic the model must reproduce.
+    expect(IMAGE_INTAKE_SYSTEM_PROMPT).toContain("the estimated arrival is 2026-11-05");
+    expect(IMAGE_INTAKE_SYSTEM_PROMPT).toContain('"expectedFrom" is 2026-10-29 and "expectedTo" is 2026-11-12');
+    expect(IMAGE_INTAKE_SYSTEM_PROMPT).toContain("Nothing about arrival timing was said at all");
+  });
+
   it("binds a submission to exactly one order while allowing several products inside it", () => {
     expect(IMAGE_INTAKE_SYSTEM_PROMPT).toContain("## Every submission is exactly one order");
     expect(IMAGE_INTAKE_SYSTEM_PROMPT).toContain("Several products inside that purchase is normal and expected");

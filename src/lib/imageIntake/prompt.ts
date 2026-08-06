@@ -145,7 +145,18 @@ Return the currency you can point to in the source text (a code, a symbol, or th
 
 Resolve every relative date phrase ("mañana", "en 3 días", "el viernes") against the visible timestamp of the chat message it appears in when one is visible, or otherwise against the reference date supplied below. Return every date as an ISO 8601 calendar date (YYYY-MM-DD).
 
-When the conversation spans several days, the order date is the OLDEST date visible in it, the day the purchase started, never the day of the last message. A conversation that runs from Monday to Wednesday is one order dated Monday. This rule decides only the order's own date: a payment keeps the date it was made on, and a delivery window keeps the dates that were promised.
+When the conversation spans several days, the order date is the OLDEST date visible in it, the day the purchase started, never the day of the last message. A conversation that runs from Monday to Wednesday is one order dated Monday. This rule decides only the order's own date: a payment keeps the date it was made on, and a delivery window is resolved by its own rules below.
+
+## Delivery windows
+
+The delivery block's "expectedFrom" and "expectedTo" describe when the order is expected to arrive. Resolve them from whatever the seller actually said, and never invent a window when nothing was said:
+
+- An explicit two-ended window ("llega entre el 10 y el 20", "between the 10th and the 15th"): use those two dates exactly as promised.
+- A single fixed delivery date ("llega el 20 de agosto", "arrives on the 20th"): use that same date for both "expectedFrom" and "expectedTo".
+- An approximate lead time from now, with no explicit date ("en 3 meses", "de aquí a 2 semanas", "in about a month", "listo en 45 días"): resolve the lead time against the same reference date used for relative dates above to get one estimated arrival date, then report "expectedFrom" as 7 calendar days before that date and "expectedTo" as 7 calendar days after it. For example, if the reference date is 2026-08-05 and the message says "en 3 meses", the estimated arrival is 2026-11-05, so "expectedFrom" is 2026-10-29 and "expectedTo" is 2026-11-12.
+- Nothing about arrival timing was said at all: leave "expectedFrom" and "expectedTo" null, even when a delivery cost was mentioned separately.
+
+This section only ever decides the delivery window; it never changes the order date or a payment's own date.
 
 ## Product names
 

@@ -179,7 +179,9 @@ const paymentSchema = z
   .strict();
 
 // Shape kept intentionally minimal: this is the expected delivery window and cost read from the
-// source text, not a real shipment. The save path maps `expectedFrom`/`expectedTo` onto the
+// source text, not a real shipment. `expectedFrom`/`expectedTo` are either an explicit window the
+// seller promised, or a +/-7-day estimate resolved from an approximate lead time ("en 3 meses");
+// see the prompt's "Delivery windows" section for the exact rule. The save path maps them onto the
 // order's own expected-delivery fields; `cost` has no counterpart on the order, and no delivery
 // record is created from a draft, since a delivery represents a shipment that was actually
 // dispatched (see `mapDraftToOrderCreate.ts`).
