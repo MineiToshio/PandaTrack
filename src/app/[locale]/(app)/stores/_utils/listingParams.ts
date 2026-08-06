@@ -1,5 +1,8 @@
-import type { StorePresenceType } from "../../../../../../generated/prisma/client";
+import type { SellerType, StorePresenceType } from "../../../../../../generated/prisma/client";
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
+
+/** The seller kinds a listing filter may name. Anything else in the URL is discarded. */
+const SELLER_TYPE_VALUES: readonly SellerType[] = ["RETAILER", "PERSON", "PROXY"];
 
 /**
  * Normalizes searchParams from the store listing page into filter values.
@@ -11,9 +14,11 @@ export function parseListingSearchParams(raw: Record<string, string | string[] |
   countryCodes: string[];
   importCountryCodes: string[];
   presenceTypes: StorePresenceType[];
+  sellerTypes: SellerType[];
   receivesOrders: boolean;
   hasStock: boolean;
   includeClosed: boolean;
+  onlyOwnPrivate: boolean;
   page: number;
   /** Desktop page-size selector value — one of `PAGE_SIZE_OPTIONS`. */
   perPage: number;
@@ -25,9 +30,13 @@ export function parseListingSearchParams(raw: Record<string, string | string[] |
   const presenceTypes = arrayFromParam(raw.presence).filter(
     (p): p is StorePresenceType => p === "ONLINE" || p === "PHYSICAL",
   );
+  const sellerTypes = arrayFromParam(raw.sellerType).filter((value): value is SellerType =>
+    (SELLER_TYPE_VALUES as readonly string[]).includes(value),
+  );
   const receivesOrders = raw.receivesOrders === "true";
   const hasStock = raw.hasStock === "true";
   const includeClosed = raw.includeClosed === "true";
+  const onlyOwnPrivate = raw.onlyOwnPrivate === "true";
   const page = parsePositiveInteger(raw.page);
   const perPage = parsePageSize(raw.perPage);
   return {
@@ -36,9 +45,11 @@ export function parseListingSearchParams(raw: Record<string, string | string[] |
     countryCodes,
     importCountryCodes,
     presenceTypes,
+    sellerTypes,
     receivesOrders,
     hasStock,
     includeClosed,
+    onlyOwnPrivate,
     page,
     perPage,
   };

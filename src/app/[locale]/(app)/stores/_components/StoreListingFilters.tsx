@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Globe, Plus, Store } from "lucide-react";
+import { Globe, Plus, Store, Truck, User } from "lucide-react";
 import posthog from "posthog-js";
 import { useCallback, useMemo, useState } from "react";
 import AppliedFilterChip from "@/components/core/AppliedFilterChip";
@@ -26,9 +26,11 @@ type StoreListingFiltersProps = {
   initialCountryCodes: string[];
   initialImportCountryCodes: string[];
   initialPresenceTypes: string[];
+  initialSellerTypes: string[];
   initialReceivesOrders: boolean;
   initialHasStock: boolean;
   initialIncludeClosed: boolean;
+  initialOnlyOwnPrivate: boolean;
 };
 
 type ListingFilterValues = {
@@ -36,12 +38,14 @@ type ListingFilterValues = {
   countryCodes: string[];
   importCountryCodes: string[];
   presenceTypes: string[];
+  sellerTypes: string[];
   flags: string[];
 };
 
 const FLAGS_RECEIVES_ORDERS = "receivesOrders";
 const FLAGS_HAS_STOCK = "hasStock";
 const FLAGS_INCLUDE_CLOSED = "includeClosed";
+const FLAGS_ONLY_OWN_PRIVATE = "onlyOwnPrivate";
 
 function buildSearchParams(input: { nameQuery: string; values: ListingFilterValues; page?: number; sortBy?: string }) {
   const params = new URLSearchParams();
@@ -50,9 +54,11 @@ function buildSearchParams(input: { nameQuery: string; values: ListingFilterValu
   input.values.countryCodes.forEach((value) => params.append("country", value));
   input.values.importCountryCodes.forEach((value) => params.append("importCountry", value));
   input.values.presenceTypes.forEach((value) => params.append("presence", value));
+  input.values.sellerTypes.forEach((value) => params.append("sellerType", value));
   if (input.values.flags.includes(FLAGS_RECEIVES_ORDERS)) params.set("receivesOrders", "true");
   if (input.values.flags.includes(FLAGS_HAS_STOCK)) params.set("hasStock", "true");
   if (input.values.flags.includes(FLAGS_INCLUDE_CLOSED)) params.set("includeClosed", "true");
+  if (input.values.flags.includes(FLAGS_ONLY_OWN_PRIVATE)) params.set("onlyOwnPrivate", "true");
   if (input.sortBy && input.sortBy !== "topRated") params.set("sortBy", input.sortBy);
   if (input.page && input.page > 1) params.set("page", String(input.page));
   return params;
@@ -72,9 +78,11 @@ export default function StoreListingFilters({
   initialCountryCodes,
   initialImportCountryCodes,
   initialPresenceTypes,
+  initialSellerTypes,
   initialReceivesOrders,
   initialHasStock,
   initialIncludeClosed,
+  initialOnlyOwnPrivate,
 }: StoreListingFiltersProps) {
   const pathname = usePathname();
   const { navigate, isPending } = useStoreListingNavigation();
@@ -100,13 +108,24 @@ export default function StoreListingFilters({
     if (initialReceivesOrders) flags.push(FLAGS_RECEIVES_ORDERS);
     if (initialHasStock) flags.push(FLAGS_HAS_STOCK);
     if (initialIncludeClosed) flags.push(FLAGS_INCLUDE_CLOSED);
+    if (initialOnlyOwnPrivate) flags.push(FLAGS_ONLY_OWN_PRIVATE);
     return flags;
-  }, [initialReceivesOrders, initialHasStock, initialIncludeClosed]);
+  }, [initialReceivesOrders, initialHasStock, initialIncludeClosed, initialOnlyOwnPrivate]);
+
+  const sellerTypeLabel = useCallback(
+    (value: string) => {
+      if (value === "RETAILER") return tStores("create.sellerTypeRetailer");
+      if (value === "PERSON") return tStores("create.sellerTypePerson");
+      return tStores("create.sellerTypeProxy");
+    },
+    [tStores],
+  );
 
   const flagLabel = useCallback(
     (flag: string) => {
       if (flag === FLAGS_RECEIVES_ORDERS) return tStores("redesign.filter.receivesOrders");
       if (flag === FLAGS_HAS_STOCK) return tStores("redesign.filter.hasStock");
+      if (flag === FLAGS_ONLY_OWN_PRIVATE) return tStores("redesign.filter.onlyOwnPrivate");
       return tStores("redesign.filter.showClosed");
     },
     [tStores],
@@ -117,6 +136,7 @@ export default function StoreListingFilters({
     countryCodes: initialCountryCodes,
     importCountryCodes: initialImportCountryCodes,
     presenceTypes: initialPresenceTypes,
+    sellerTypes: initialSellerTypes,
     flags: initialFlags,
   });
 
@@ -150,6 +170,20 @@ export default function StoreListingFilters({
         type: "pills",
         label: tStores("redesign.filter.categories"),
         options: productTypeOptionsMemo,
+      },
+      {
+        id: "sellerTypes",
+        type: "pills",
+        label: tStores("redesign.filter.sellerType"),
+        options: [
+          {
+            value: "RETAILER",
+            label: tStores("create.sellerTypeRetailer"),
+            icon: <Store size={12} aria-hidden />,
+          },
+          { value: "PERSON", label: tStores("create.sellerTypePerson"), icon: <User size={12} aria-hidden /> },
+          { value: "PROXY", label: tStores("create.sellerTypeProxy"), icon: <Truck size={12} aria-hidden /> },
+        ],
       },
       {
         id: "presenceTypes",
@@ -186,6 +220,7 @@ export default function StoreListingFilters({
           { value: FLAGS_RECEIVES_ORDERS, label: tStores("redesign.filter.receivesOrders") },
           { value: FLAGS_HAS_STOCK, label: tStores("redesign.filter.hasStock") },
           { value: FLAGS_INCLUDE_CLOSED, label: tStores("redesign.filter.showClosed") },
+          { value: FLAGS_ONLY_OWN_PRIVATE, label: tStores("redesign.filter.onlyOwnPrivate") },
         ],
       },
     ],
@@ -197,6 +232,7 @@ export default function StoreListingFilters({
     countryCodes: Array.isArray(values.countryCodes) ? (values.countryCodes as string[]) : [],
     importCountryCodes: Array.isArray(values.importCountryCodes) ? (values.importCountryCodes as string[]) : [],
     presenceTypes: Array.isArray(values.presenceTypes) ? (values.presenceTypes as string[]) : [],
+    sellerTypes: Array.isArray(values.sellerTypes) ? (values.sellerTypes as string[]) : [],
     flags: Array.isArray(values.flags) ? (values.flags as string[]) : [],
   });
 
@@ -223,9 +259,11 @@ export default function StoreListingFilters({
       country_count: stateValues.countryCodes.length,
       import_country_count: stateValues.importCountryCodes.length,
       presence_count: stateValues.presenceTypes.length,
+      seller_type_count: stateValues.sellerTypes.length,
       receives_orders: stateValues.flags.includes(FLAGS_RECEIVES_ORDERS),
       has_stock: stateValues.flags.includes(FLAGS_HAS_STOCK),
       include_closed: stateValues.flags.includes(FLAGS_INCLUDE_CLOSED),
+      only_own_private: stateValues.flags.includes(FLAGS_ONLY_OWN_PRIVATE),
     });
     const params = buildSearchParams({ nameQuery, values: stateValues, sortBy });
     const queryString = params.toString();
@@ -239,6 +277,7 @@ export default function StoreListingFilters({
       countryCodes: [],
       importCountryCodes: [],
       presenceTypes: [],
+      sellerTypes: [],
       flags: [],
     });
   }, []);
@@ -260,6 +299,7 @@ export default function StoreListingFilters({
         | { kind: "country"; value: string }
         | { kind: "importCountry"; value: string }
         | { kind: "presence"; value: string }
+        | { kind: "sellerType"; value: string }
         | { kind: "flag"; value: string },
     ) => {
       const current: ListingFilterValues = {
@@ -267,6 +307,7 @@ export default function StoreListingFilters({
         countryCodes: initialCountryCodes,
         importCountryCodes: initialImportCountryCodes,
         presenceTypes: initialPresenceTypes,
+        sellerTypes: initialSellerTypes,
         flags: initialFlags,
       };
       let nextQuery = nameQuery;
@@ -291,6 +332,9 @@ export default function StoreListingFilters({
         case "presence":
           nextValues = { ...current, presenceTypes: current.presenceTypes.filter((v) => v !== action.value) };
           break;
+        case "sellerType":
+          nextValues = { ...current, sellerTypes: current.sellerTypes.filter((v) => v !== action.value) };
+          break;
         case "flag":
           nextValues = { ...current, flags: current.flags.filter((v) => v !== action.value) };
           break;
@@ -303,6 +347,7 @@ export default function StoreListingFilters({
       initialCountryCodes,
       initialImportCountryCodes,
       initialPresenceTypes,
+      initialSellerTypes,
       initialFlags,
       nameQuery,
       pushFiltered,
@@ -316,9 +361,13 @@ export default function StoreListingFilters({
       countryCodes: [],
       importCountryCodes: [],
       presenceTypes: [],
+      sellerTypes: [],
       flags: [],
     });
-    pushFiltered({ productTypeKeys: [], countryCodes: [], importCountryCodes: [], presenceTypes: [], flags: [] }, "");
+    pushFiltered(
+      { productTypeKeys: [], countryCodes: [], importCountryCodes: [], presenceTypes: [], sellerTypes: [], flags: [] },
+      "",
+    );
   }, [pushFiltered]);
 
   type ActiveChip = { key: string; label: string; onRemove: () => void };
@@ -349,6 +398,13 @@ export default function StoreListingFilters({
         onRemove: () => removeFilter({ kind: "presence", value }),
       });
     });
+    initialSellerTypes.forEach((value) => {
+      chips.push({
+        key: `sellerType-${value}`,
+        label: sellerTypeLabel(value),
+        onRemove: () => removeFilter({ kind: "sellerType", value }),
+      });
+    });
     initialCountryCodes.forEach((code) => {
       chips.push({
         key: `country-${code}`,
@@ -375,12 +431,14 @@ export default function StoreListingFilters({
     initialNameQuery,
     initialProductTypeKeys,
     initialPresenceTypes,
+    initialSellerTypes,
     initialCountryCodes,
     initialImportCountryCodes,
     initialFlags,
     productTypeName,
     tCountries,
     tStores,
+    sellerTypeLabel,
     flagLabel,
     removeFilter,
   ]);
@@ -390,10 +448,18 @@ export default function StoreListingFilters({
     () =>
       initialProductTypeKeys.length +
       initialPresenceTypes.length +
+      initialSellerTypes.length +
       initialCountryCodes.length +
       initialImportCountryCodes.length +
       initialFlags.length,
-    [initialProductTypeKeys, initialPresenceTypes, initialCountryCodes, initialImportCountryCodes, initialFlags],
+    [
+      initialProductTypeKeys,
+      initialPresenceTypes,
+      initialSellerTypes,
+      initialCountryCodes,
+      initialImportCountryCodes,
+      initialFlags,
+    ],
   );
 
   const newStoreHref = `/${locale}${ROUTES.stores}/new`;

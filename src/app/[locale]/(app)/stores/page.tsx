@@ -87,27 +87,17 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
   const { locale } = await params;
   const rawParams = await searchParams;
   const parsed = parseListingSearchParams(rawParams);
-  const filters: PublicStoreListingFilters = {
-    nameQuery: parsed.nameQuery,
-    productTypeKeys: parsed.productTypeKeys.length > 0 ? parsed.productTypeKeys : undefined,
-    countryCodes: parsed.countryCodes.length > 0 ? parsed.countryCodes : undefined,
-    importCountryCodes: parsed.importCountryCodes.length > 0 ? parsed.importCountryCodes : undefined,
-    presenceTypes: parsed.presenceTypes.length > 0 ? parsed.presenceTypes : undefined,
-    receivesOrders: parsed.receivesOrders,
-    hasStock: parsed.hasStock,
-    includeClosed: parsed.includeClosed,
-    page: parsed.page,
-    pageSize: parsed.perPage,
-  };
   const hasFilters = Boolean(
     parsed.nameQuery ||
     parsed.productTypeKeys.length > 0 ||
     parsed.countryCodes.length > 0 ||
     parsed.importCountryCodes.length > 0 ||
     parsed.presenceTypes.length > 0 ||
+    parsed.sellerTypes.length > 0 ||
     parsed.receivesOrders ||
     parsed.hasStock ||
-    parsed.includeClosed,
+    parsed.includeClosed ||
+    parsed.onlyOwnPrivate,
   );
 
   const storesBasePath = `/${locale}/stores`;
@@ -121,6 +111,25 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
     listActiveStoreProductTypeKeysCached(),
     listCountryCodesCached(),
   ]);
+
+  // Built after the session resolves: the viewer decides which private stores belong in the
+  // listing, and it travels inside `filters` so the grid and the heading count can never be built
+  // from different rules.
+  const filters: PublicStoreListingFilters = {
+    nameQuery: parsed.nameQuery,
+    productTypeKeys: parsed.productTypeKeys.length > 0 ? parsed.productTypeKeys : undefined,
+    countryCodes: parsed.countryCodes.length > 0 ? parsed.countryCodes : undefined,
+    importCountryCodes: parsed.importCountryCodes.length > 0 ? parsed.importCountryCodes : undefined,
+    presenceTypes: parsed.presenceTypes.length > 0 ? parsed.presenceTypes : undefined,
+    sellerTypes: parsed.sellerTypes.length > 0 ? parsed.sellerTypes : undefined,
+    receivesOrders: parsed.receivesOrders,
+    hasStock: parsed.hasStock,
+    includeClosed: parsed.includeClosed,
+    onlyOwnPrivate: parsed.onlyOwnPrivate,
+    viewerId: session?.user?.id ?? null,
+    page: parsed.page,
+    pageSize: parsed.perPage,
+  };
 
   return (
     <div className="text-foreground">
@@ -154,9 +163,11 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
             initialCountryCodes={parsed.countryCodes}
             initialImportCountryCodes={parsed.importCountryCodes}
             initialPresenceTypes={parsed.presenceTypes}
+            initialSellerTypes={parsed.sellerTypes}
             initialReceivesOrders={parsed.receivesOrders}
             initialHasStock={parsed.hasStock}
             initialIncludeClosed={parsed.includeClosed}
+            initialOnlyOwnPrivate={parsed.onlyOwnPrivate}
           />
 
           {/* Grid: useTransition swaps to the card skeleton on filter/sort/page changes;
@@ -232,6 +243,7 @@ async function StoresGridSection({
         stores={listingPage.items}
         authoredProductTypeNames={buildAuthoredStoreProductTypeNameMap(authoredProductTypeNames)}
         viewerOrderCountsBySlug={viewerOrderCountsBySlug}
+        viewerId={userId ?? null}
       />
       <StoreListingPagination
         locale={locale}

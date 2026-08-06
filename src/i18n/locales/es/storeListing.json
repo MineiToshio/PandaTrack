@@ -70,7 +70,10 @@
       "ariaLabel": "Ver detalle de {name}",
       "ratingFallback": "Sin reseñas",
       "ordersForViewer": "{count, plural, one {# pedido tuyo} other {# pedidos tuyos}}",
-      "ordersForViewerLabel": "tus pedidos"
+      "ordersForViewerLabel": "tus pedidos",
+      "moreCategories": "+{count} más",
+      "privateMarker": "Privada",
+      "ariaLabelPrivateSuffix": ", tienda privada"
     }
   },
   "cards": {

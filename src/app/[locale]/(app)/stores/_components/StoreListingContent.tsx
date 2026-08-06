@@ -13,6 +13,8 @@ export type StoreListingContentProps = {
   authoredProductTypeNames: AuthoredStoreProductTypeNameMap;
   /** Map of store slug → total viewer order count. Only populated for authenticated viewers. */
   viewerOrderCountsBySlug?: Record<string, number>;
+  /** Who is looking, so a card marks a store private only when it is that viewer's own. */
+  viewerId?: string | null;
 };
 
 /**
@@ -24,6 +26,7 @@ export default function StoreListingContent({
   stores,
   authoredProductTypeNames,
   viewerOrderCountsBySlug,
+  viewerId,
 }: StoreListingContentProps) {
   const tListing = useTranslations("storeListing");
   const tCountries = useTranslations("countries");
@@ -44,10 +47,14 @@ export default function StoreListingContent({
                 resolveStoreProductTypeName(authoredProductTypeNames[key], tProductTypes(key), locale),
               ratingCount: (count) => tListing("ratingCount", { count }),
               ratingFallback: tListing("s6.card.ratingFallback"),
+              moreCategories: (count) => tListing("s6.card.moreCategories", { count }),
+              privateMarker: tListing("s6.card.privateMarker"),
               ariaLabel: (name) => tListing("s6.card.ariaLabel", { name }),
+              ariaLabelPrivateSuffix: tListing("s6.card.ariaLabelPrivateSuffix"),
               ordersForViewerLabel: tListing("s6.card.ordersForViewerLabel"),
             }}
             viewerOrderCount={viewerOrderCountsBySlug?.[store.slug]}
+            viewerId={viewerId}
           />
         </li>
       ))}

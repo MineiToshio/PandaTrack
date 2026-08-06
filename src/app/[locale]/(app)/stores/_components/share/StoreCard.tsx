@@ -1,5 +1,5 @@
 import ViewTransitionLink from "@/components/core/ViewTransitionLink";
-import { MapPin, Minus, Store as StoreIcon, Truck, User as UserIcon } from "lucide-react";
+import { Lock, MapPin, Minus, Store as StoreIcon, Truck, User as UserIcon } from "lucide-react";
 import Chip from "@/components/core/Chip";
 import StarRating from "@/components/core/StarRating";
 import StoreAvatar from "@/components/core/StoreAvatar";
@@ -23,8 +23,19 @@ export type StoreCardLabels = {
   ratingFallback: string;
   /** Static label shown below the viewer order count (e.g. "tus pedidos" / "your orders"). */
   ordersForViewerLabel?: string;
+  /** Overflow pill for the categories that did not fit, e.g. "+3 más". */
+  moreCategories: (count: number) => string;
+  /** Short marker shown when the store is the viewer's own private one, e.g. "Privada". */
+  privateMarker: string;
   /** Aria-label template for the card link, e.g. "Ver detalle de {name}". */
   ariaLabel: (name: string) => string;
+  /**
+   * Appended to `ariaLabel` when the private marker shows. A composed suffix rather than a second
+   * full label: the card's `aria-label` overrides its own subtree for assistive tech, so the
+   * visible marker is never announced on its own, and a separate label per combination of card
+   * facts would multiply with every fact we add.
+   */
+  ariaLabelPrivateSuffix: string;
 };
 
 export type StoreCardProps = {
@@ -33,6 +44,12 @@ export type StoreCardProps = {
   labels: StoreCardLabels;
   /** Optional count of viewer orders associated with this store. */
   viewerOrderCount?: number;
+  /**
+   * Who is looking. The private marker renders only for a store this viewer created, so the card
+   * can never assert "private, only you can see it" about somebody else's store — the mistake the
+   * detail page makes today by keying that copy on `isPrivate` alone.
+   */
+  viewerId?: string | null;
   className?: string;
 };
 
@@ -51,7 +68,7 @@ const MAX_CHIP_SLOTS = 4;
  * Visual contract: see the Stores prototype at `docs/product/prd-02-collector-app/frd-04-store-domain/prototype/store-domain.html`
  * and the Velvet design system at `docs/design/` (`components.md`).
  */
-export default function StoreCard({ store, locale, labels, viewerOrderCount, className }: StoreCardProps) {
+export default function StoreCard({ store, locale, labels, viewerOrderCount, viewerId, className }: StoreCardProps) {
   const detailHref = `/${locale}${ROUTES.stores}/${store.slug}`;
   // When there are more types than the slot cap, reserve one slot for the overflow ("+N") pill
   // so it always fits within the 2-row chip area alongside the visible chips.
@@ -63,12 +80,20 @@ export default function StoreCard({ store, locale, labels, viewerOrderCount, cla
   // PROXY (intermediary) and RETAILER render a logo/monogram avatar; only PERSON uses the muted user icon.
   const TypeIcon = isPerson ? UserIcon : isProxy ? Truck : StoreIcon;
   const hasImports = store.importCountryCodes.length > 0;
+  // Only about the viewer's own store; see the `viewerId` prop. Today the listing can only ever
+  // hand this card a private store the viewer created, so this is a second lock on a door that is
+  // already locked — kept because the marker states something about the viewer, and a surface that
+  // asserts "private" about a store it merely received would be wrong the moment that changes.
+  const showsPrivateMarker = store.isPrivate && Boolean(viewerId) && store.createdByUserId === viewerId;
+  const ariaLabel = showsPrivateMarker
+    ? `${labels.ariaLabel(store.name)}${labels.ariaLabelPrivateSuffix}`
+    : labels.ariaLabel(store.name);
 
   return (
     <ViewTransitionLink
       href={detailHref}
       viewTransitionEntity="store"
-      aria-label={labels.ariaLabel(store.name)}
+      aria-label={ariaLabel}
       style={{ viewTransitionName: `store-${store.slug}` }}
       className={cn(
         "group flex h-[279px] flex-col gap-3 overflow-hidden rounded-[var(--radius-xl)] p-[18px]",
@@ -95,6 +120,22 @@ export default function StoreCard({ store, locale, labels, viewerOrderCount, cla
           <div className="flex min-w-0 items-center gap-1 [font-size:var(--text-caption)] [color:var(--text-muted)]">
             <MapPin size={12} aria-hidden="true" className="flex-shrink-0" />
             <span className="truncate">{labels.countryName(store.countryCode)}</span>
+            {/*
+              The privacy marker lives here rather than in the chip row below for three reasons: the
+              chip row is reserved for product-type chips by design, it is optional (a store with no
+              categories renders none at all, which is exactly what an intake-created store looks
+              like), and its slots are capped, so a marker there would cost a real category. This
+              band exists on every card, so the marker sits at a constant position and is scannable
+              down a column. It is `shrink-0` so the country keeps the truncation, and it is a step
+              stronger than the muted row around it so it reads as a marker rather than as metadata.
+            */}
+            {showsPrivateMarker && (
+              <span className="flex flex-shrink-0 items-center gap-1 [font-weight:var(--font-weight-medium)] [color:var(--text-secondary)]">
+                <span aria-hidden="true">·</span>
+                <Lock size={11} aria-hidden="true" />
+                {labels.privateMarker}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -111,7 +152,7 @@ export default function StoreCard({ store, locale, labels, viewerOrderCount, cla
           })}
           {hiddenCategoriesCount > 0 && (
             <Chip variant="neutral" size="sm">
-              +{hiddenCategoriesCount} más
+              {labels.moreCategories(hiddenCategoriesCount)}
             </Chip>
           )}
         </div>

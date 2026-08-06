@@ -163,7 +163,7 @@ whole card is one keyboardable link.
 **StoreCard anatomy** (component `StoreCard`, fixed-height card): `StoreAvatar` s56 — the store
 **logo** when one is set (same as the detail hero), otherwise an accent-tint monogram for
 `RETAILER`/`PROXY` and a `user` icon + muted tint for `PERSON` → store name with an inline type
-icon (`store` 12px for `RETAILER` / `truck` 12px for `PROXY` / `user` 12px muted for `PERSON`) → `map-pin` + country name → a row of `chip accent`
+icon (`store` 12px for `RETAILER` / `truck` 12px for `PROXY` / `user` 12px muted for `PERSON`) → `map-pin` + country name, followed by a `· lock 11px + "Privada"` marker in `text-secondary` at medium weight when the store is the **viewer's own private** one (added 2026-08-05) → a row of `chip accent`
 **product-type** chips (icon + label) with a `chip neutral` `"+N más"` overflow pill → an
 "Importa de" text line in `text-muted` (or a muted "no imports" fallback) → a top-bordered
 stats row (rating number bold `.num` + review count, the viewer's order count when present,
@@ -171,6 +171,21 @@ and a `StarRating` on the right). **No neutral type/presence signal chips and no
 render on the card** — only product-type chips. `StoreCommerceSignalPills` exists in the
 `share/` folder but is **not used** by `StoreCard`. **Moderation status chips are not rendered
 on cards** (S6.1 decision, FRD Current Implementation Notes); status appears only on detail.
+
+The privacy marker above is deliberately **not** a chip, and that is what keeps the S6.1 decision
+intact. It is inline text in the country band, so the chip row stays exactly what it was: product
+types and their overflow pill. Three things ruled the chip row out. It is optional (a store with
+no categories renders none, which is precisely what an image-intake store looks like, so the
+marker would vanish where it matters most), its slots are capped at four (the marker would cost a
+real category), and the `neutral` variant it would have used is already the overflow pill's, so
+two unrelated meanings would share one appearance in one row. The country band renders on every
+card, which also gives the marker a constant vertical position to scan down a column.
+
+The marker is keyed on **ownership**, not on `isPrivate` alone: it says something about the
+person looking ("this one is yours, and hidden"), so `StoreCard` takes a `viewerId` and shows it
+only when the viewer created the store. The store **detail** page does not yet make this
+distinction and renders "Privada, solo tú la ves" on `isPrivate` alone, which is wrong for an
+admin viewing somebody else's private store; that is a known defect, not the pattern to copy.
 
 Active filters surface above the grid as removable `.filter-chip` pills
 (`Recibe pedidos ×`, `Vinyl ×`, `Envía a CO ×`); free-text search is **not** counted as a

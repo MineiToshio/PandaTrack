@@ -70,7 +70,10 @@
       "ariaLabel": "View detail of {name}",
       "ratingFallback": "No reviews yet",
       "ordersForViewer": "{count, plural, one {# of your orders} other {# of your orders}}",
-      "ordersForViewerLabel": "your orders"
+      "ordersForViewerLabel": "your orders",
+      "moreCategories": "+{count} more",
+      "privateMarker": "Private",
+      "ariaLabelPrivateSuffix": ", private store"
     }
   },
   "cards": {

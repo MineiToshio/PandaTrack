@@ -488,6 +488,7 @@
     "filter": {
       "title": "Filtrar tiendas",
       "categories": "Categorías que vende",
+      "sellerType": "Tipo de vendedor",
       "presence": "Presencia",
       "country": "País de la tienda",
       "importCountry": "Importa desde",
@@ -495,6 +496,7 @@
       "receivesOrders": "Recibe pre-reservas",
       "hasStock": "Tiene stock",
       "showClosed": "Mostrar tiendas cerradas",
+      "onlyOwnPrivate": "Solo mis tiendas privadas",
       "presencePhysical": "Tienda física",
       "presenceOnline": "Tienda online",
       "countrySearchPlaceholder": "Cualquier país…",

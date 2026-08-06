@@ -488,6 +488,7 @@
     "filter": {
       "title": "Filter stores",
       "categories": "Categories sold",
+      "sellerType": "Seller type",
       "presence": "Presence",
       "country": "Store country",
       "importCountry": "Imports from",
@@ -495,6 +496,7 @@
       "receivesOrders": "Accepts pre-orders",
       "hasStock": "Has stock",
       "showClosed": "Show closed stores",
+      "onlyOwnPrivate": "Only my private stores",
       "presencePhysical": "Physical store",
       "presenceOnline": "Online store",
       "countrySearchPlaceholder": "Any country…",

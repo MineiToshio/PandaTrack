@@ -8,9 +8,11 @@ const EMPTY_FILTERS = {
   countryCodes: [],
   importCountryCodes: [],
   presenceTypes: [],
+  sellerTypes: [],
   receivesOrders: false,
   hasStock: false,
   includeClosed: false,
+  onlyOwnPrivate: false,
   page: 1,
   perPage: DEFAULT_PAGE_SIZE,
 };
@@ -62,6 +64,30 @@ describe("parseListingSearchParams", () => {
       ...EMPTY_FILTERS,
       countryCodes: ["ES"],
       presenceTypes: ["ONLINE", "PHYSICAL"],
+    });
+  });
+
+  it("parses seller-type filters, keeping every kind the caller asked for", () => {
+    expect(
+      parseListingSearchParams({
+        sellerType: ["RETAILER", "PROXY"],
+      }),
+    ).toEqual({
+      ...EMPTY_FILTERS,
+      sellerTypes: ["RETAILER", "PROXY"],
+    });
+  });
+
+  it("ignores a seller type that is not one of the three real kinds", () => {
+    // The value reaches a Prisma enum filter, so anything unrecognised is dropped here rather
+    // than passed down as a filter that matches nothing.
+    expect(
+      parseListingSearchParams({
+        sellerType: ["PERSON", "BUSINESS", "person"],
+      }),
+    ).toEqual({
+      ...EMPTY_FILTERS,
+      sellerTypes: ["PERSON"],
     });
   });
 

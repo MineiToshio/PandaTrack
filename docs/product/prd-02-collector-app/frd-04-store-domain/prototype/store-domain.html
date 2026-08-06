@@ -2086,6 +2086,10 @@
     .store-card-name { font-size: 15px; font-weight: 600; }
     .store-card-meta { color: var(--text-muted); font-size: 12px; margin-top: 2px; display: flex; align-items: center; gap: 6px; }
     .store-card-meta svg { width: 12px; height: 12px; }
+    /* Viewer's own private person store. Inline in the meta band, never a chip: the chip row is
+       product types only, is absent on a store with no categories, and has capped slots. */
+    .store-card-private { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; color: var(--text-secondary); font-weight: 500; }
+    .store-card-private svg { width: 11px; height: 11px; }
     .store-card-presence { display: flex; flex-wrap: wrap; gap: 6px; }
     .store-card-stats { display: flex; gap: 16px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
     .store-card-stats strong { color: var(--text-primary); font-weight: 600; display: block; font-size: 14px; margin-bottom: 2px; }
@@ -4059,6 +4063,24 @@
       </div>
 
       <div class="stores-grid">
+        <a href="#store-detail" class="store-card" data-screen-link="store-detail">
+          <div class="store-card-head">
+            <div class="store-avatar s56"><i data-lucide="user"></i></div>
+            <div>
+              <div class="store-card-name">Kyle Mendoza</div>
+              <div class="store-card-meta"><i data-lucide="map-pin"></i> Lima, PE <span class="store-card-private">&middot; <i data-lucide="lock"></i> Privada</span></div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <span class="chip accent"><i data-lucide="book-open"></i> Manga</span>
+          </div>
+          <div class="store-card-stats">
+            <div><strong>&mdash;</strong>Sin rese&ntilde;as</div>
+            <div><strong>35</strong>tus pedidos</div>
+            <div style="margin-left: auto;"><span class="stars"><span class="empty">&#9733;&#9733;&#9733;&#9733;&#9733;</span></span></div>
+          </div>
+        </a>
+
         <a href="#store-detail" class="store-card" data-screen-link="store-detail">
           <div class="store-card-head">
             <div class="store-avatar s56">A</div>
