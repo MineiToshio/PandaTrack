@@ -607,6 +607,7 @@ export default function StoreForm({ countries, productTypes, mode, submit }: Sto
             {showChannels && (
               <StoreFormStepChannels
                 isEditMode={isEditMode}
+                countryCode={countryCode || null}
                 contactChannelEntries={contactChannelEntries}
                 onAddContactChannel={handleAddContactChannel}
                 onUpdateContactChannel={handleUpdateContactChannel}

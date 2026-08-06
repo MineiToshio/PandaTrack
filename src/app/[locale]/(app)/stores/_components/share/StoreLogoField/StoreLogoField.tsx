@@ -4,7 +4,7 @@ import "react-easy-crop/react-easy-crop.css";
 
 import { Building2, Crop, Pencil, Upload, X } from "lucide-react";
 import Image from "next/image";
-import { type ChangeEvent, type DragEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type ChangeEvent, type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Cropper, { type Area, type Point } from "react-easy-crop";
 import Button from "@/components/core/Button/Button";
 import Label from "@/components/core/Label";
@@ -59,6 +59,13 @@ const ACCEPTED_FILE_TYPES = STORE_LOGO_ACCEPTED_MIME_TYPES.join(",");
 function formatFileSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/** True when the paste came from somewhere the user is typing, so it must be left untouched. */
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  return target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT";
 }
 const DEFAULT_CROP: Point = { x: 0, y: 0 };
 const DEFAULT_ZOOM = 1;
@@ -119,30 +126,33 @@ export default function StoreLogoField({
     inputRef.current?.click();
   };
 
-  const openEditorForFile = (
-    file: File,
-    options?: {
-      preserveViewport?: boolean;
+  const openEditorForFile = useCallback(
+    (
+      file: File,
+      options?: {
+        preserveViewport?: boolean;
+      },
+    ) => {
+      if (!STORE_LOGO_ACCEPTED_MIME_TYPES.includes(file.type as (typeof STORE_LOGO_ACCEPTED_MIME_TYPES)[number])) {
+        setEditorError("logoInvalidType");
+        return;
+      }
+
+      if (file.size > STORE_LOGO_MAX_SOURCE_SIZE_BYTES) {
+        setEditorError("logoTooLarge");
+        return;
+      }
+
+      const objectUrl = URL.createObjectURL(file);
+      setEditorError(null);
+      setEditorFile(file);
+      setEditorImageUrl(objectUrl);
+      setCrop(options?.preserveViewport ? confirmedCrop : DEFAULT_CROP);
+      setZoom(options?.preserveViewport ? confirmedZoom : DEFAULT_ZOOM);
+      setCroppedAreaPixels(null);
     },
-  ) => {
-    if (!STORE_LOGO_ACCEPTED_MIME_TYPES.includes(file.type as (typeof STORE_LOGO_ACCEPTED_MIME_TYPES)[number])) {
-      setEditorError("logoInvalidType");
-      return;
-    }
-
-    if (file.size > STORE_LOGO_MAX_SOURCE_SIZE_BYTES) {
-      setEditorError("logoTooLarge");
-      return;
-    }
-
-    const objectUrl = URL.createObjectURL(file);
-    setEditorError(null);
-    setEditorFile(file);
-    setEditorImageUrl(objectUrl);
-    setCrop(options?.preserveViewport ? confirmedCrop : DEFAULT_CROP);
-    setZoom(options?.preserveViewport ? confirmedZoom : DEFAULT_ZOOM);
-    setCroppedAreaPixels(null);
-  };
+    [confirmedCrop, confirmedZoom],
+  );
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const nextFile = event.target.files?.[0];
@@ -167,6 +177,34 @@ export default function StoreLogoField({
 
     openEditorForFile(droppedFile);
   };
+
+  // Clipboard door, bound to the document rather than to this field, mirroring the image-intake
+  // upload panel's paste handler. `isEditableTarget` keeps a paste into the name/description
+  // fields (or the country combobox) on the same step from being hijacked into the logo editor.
+  useEffect(() => {
+    if (!supportsInteraction) return;
+
+    function handlePaste(event: ClipboardEvent) {
+      if (isEditableTarget(event.target)) return;
+      const items = event.clipboardData?.items;
+      if (!items) return;
+
+      for (const item of Array.from(items)) {
+        if (item.kind !== "file") continue;
+        const file = item.getAsFile();
+        if (!file) continue;
+        if (!STORE_LOGO_ACCEPTED_MIME_TYPES.includes(file.type as (typeof STORE_LOGO_ACCEPTED_MIME_TYPES)[number])) {
+          continue;
+        }
+        event.preventDefault();
+        openEditorForFile(file);
+        return;
+      }
+    }
+
+    document.addEventListener("paste", handlePaste);
+    return () => document.removeEventListener("paste", handlePaste);
+  }, [supportsInteraction, openEditorForFile]);
 
   const handleRemove = () => {
     if (!supportsInteraction) {

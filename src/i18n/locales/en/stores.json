@@ -117,7 +117,7 @@
     "helper": "Upload a square-friendly logo for the public store profile. You can drag, crop, replace, or remove it before saving.",
     "emptyTitle": "Add a store logo",
     "emptyDescription": "Choose a PNG, JPG, JPEG, or WebP file. We will open the crop editor before anything is uploaded.",
-    "uploadCta": "Click or drop an image",
+    "uploadCta": "Click, drop, or paste an image",
     "editCta": "Edit",
     "removeCta": "Remove",
     "editorTitle": "Adjust logo framing",

@@ -2,6 +2,7 @@
 
 import { Check, Pencil, Plus, X } from "lucide-react";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react";
+import { type CountryCode, parsePhoneNumberFromString } from "libphonenumber-js";
 import Button from "@/components/core/Button/Button";
 import Input from "@/components/core/Input";
 import Select from "@/components/core/Select";
@@ -44,6 +45,8 @@ export type StoreContactChannelEditorProps = {
   onAdd: (entry: { type: StoreContactChannelType; value: string }) => void;
   onUpdate: (id: number, next: { type: StoreContactChannelType; value: string }) => void;
   onRemove: (id: number) => void;
+  /** Default region for parsing a PHONE/WHATSAPP value typed without its own country code. */
+  countryCode?: string | null;
   /** Hidden input names so the values are submitted with the form. */
   typeInputName?: string;
   valueInputName?: string;
@@ -57,43 +60,86 @@ export type StoreContactChannelEditorProps = {
   hideTrigger?: boolean;
 };
 
-function validateChannelValue(type: StoreContactChannelType, value: string): string | null {
+const WA_ME_URL_PATTERN = /^https?:\/\/(www\.)?(wa\.me|whatsapp\.com)\//;
+
+type ChannelValueResolution = { ok: true; value: string } | { ok: false; error: string };
+
+/**
+ * A collector typing a phone number types it the way they'd dial it locally, never in E.164 with
+ * a country code they'd have to look up. `parsePhoneNumberFromString`'s `defaultCountry` fills
+ * that gap from the store's own country (`FR-04-02`'s `countryCode`) without forcing the user to
+ * type it, while a number that already carries its own "+CC" prefix is still honoured verbatim
+ * (an explicit prefix always wins over the default region, per the library's own contract).
+ */
+function resolvePhoneValue(value: string, countryCode: string | null): ChannelValueResolution {
+  const phone = parsePhoneNumberFromString(value, (countryCode as CountryCode) || undefined);
+  if (!phone || !phone.isValid()) return { ok: false, error: "PHONE" };
+  return { ok: true, value: phone.number };
+}
+
+/**
+ * WhatsApp's stored value must be a `wa.me` URL (the server only accepts that host), but nobody
+ * pastes one on purpose: they type the number the contact is reachable at. An existing wa.me/
+ * whatsapp.com link is kept as-is; anything else is parsed as a phone number (same country
+ * inference as `resolvePhoneValue`) and turned into the canonical link the server expects.
+ */
+function resolveWhatsAppValue(value: string, countryCode: string | null): ChannelValueResolution {
+  if (WA_ME_URL_PATTERN.test(value)) return { ok: true, value };
+  const phone = parsePhoneNumberFromString(value, (countryCode as CountryCode) || undefined);
+  if (!phone || !phone.isValid()) return { ok: false, error: "WHATSAPP" };
+  return { ok: true, value: `https://wa.me/${phone.number.replace("+", "")}` };
+}
+
+/** Exported for direct unit testing — the actual validation/normalization risk lives here. */
+export function resolveChannelValue(
+  type: StoreContactChannelType,
+  value: string,
+  countryCode: string | null,
+): ChannelValueResolution {
   const trimmed = value.trim();
-  if (!trimmed) return "required";
+  if (!trimmed) return { ok: false, error: "required" };
 
   switch (type) {
     case "INSTAGRAM":
-      if (!/instagram\.com\//.test(trimmed)) return "INSTAGRAM";
-      return null;
+      if (!/instagram\.com\//.test(trimmed)) return { ok: false, error: "INSTAGRAM" };
+      return { ok: true, value: trimmed };
     case "WHATSAPP":
-      if (!/^https?:\/\/(www\.)?wa\.me\//.test(trimmed) && !/^\+[1-9][\d\s\-()]{6,18}$/.test(trimmed))
-        return "WHATSAPP";
-      return null;
+      return resolveWhatsAppValue(trimmed, countryCode);
     case "EMAIL":
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return "EMAIL";
-      return null;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return { ok: false, error: "EMAIL" };
+      return { ok: true, value: trimmed };
     case "PHONE":
-      if (!/^\+[1-9][\d\s\-()]{6,18}$/.test(trimmed)) return "PHONE";
-      return null;
+      return resolvePhoneValue(trimmed, countryCode);
     case "FACEBOOK":
-      if (!/(facebook\.com|fb\.com)\//.test(trimmed)) return "FACEBOOK";
-      return null;
+      if (!/(facebook\.com|fb\.com)\//.test(trimmed)) return { ok: false, error: "FACEBOOK" };
+      return { ok: true, value: trimmed };
     case "TIKTOK":
-      if (!/tiktok\.com\//.test(trimmed)) return "TIKTOK";
-      return null;
+      if (!/tiktok\.com\//.test(trimmed)) return { ok: false, error: "TIKTOK" };
+      return { ok: true, value: trimmed };
     case "WEBSITE":
-      if (!/^https?:\/\//.test(trimmed)) return "WEBSITE";
-      return null;
+      if (!/^https?:\/\//.test(trimmed)) return { ok: false, error: "WEBSITE" };
+      return { ok: true, value: trimmed };
     case "OTHER":
-      return null;
+      return { ok: true, value: trimmed };
     default:
-      return null;
+      return { ok: true, value: trimmed };
   }
 }
 
 const StoreContactChannelEditor = forwardRef<StoreContactChannelEditorHandle, StoreContactChannelEditorProps>(
   function StoreContactChannelEditor(
-    { entries, onAdd, onUpdate, onRemove, typeInputName, valueInputName, labels, onFormOpenChange, hideTrigger },
+    {
+      entries,
+      onAdd,
+      onUpdate,
+      onRemove,
+      countryCode = null,
+      typeInputName,
+      valueInputName,
+      labels,
+      onFormOpenChange,
+      hideTrigger,
+    },
     ref,
   ) {
     const [pendingType, setPendingType] = useState<StoreContactChannelType>(STORE_CONTACT_CHANNEL_TYPES[0]);
@@ -125,13 +171,12 @@ const StoreContactChannelEditor = forwardRef<StoreContactChannelEditorHandle, St
     };
 
     const handleAdd = () => {
-      const trimmed = pendingValue.trim();
-      const error = validateChannelValue(pendingType, trimmed);
-      if (error) {
-        setPendingError(error);
+      const resolved = resolveChannelValue(pendingType, pendingValue, countryCode);
+      if (!resolved.ok) {
+        setPendingError(resolved.error);
         return;
       }
-      onAdd({ type: pendingType, value: trimmed });
+      onAdd({ type: pendingType, value: resolved.value });
       setPendingValue("");
       setPendingError(null);
       setShowForm(false);
@@ -151,14 +196,13 @@ const StoreContactChannelEditor = forwardRef<StoreContactChannelEditorHandle, St
     };
 
     const handleSaveEdit = () => {
-      const trimmed = editingValue.trim();
-      if (!trimmed || editingId == null) return;
-      const error = validateChannelValue(editingType, trimmed);
-      if (error) {
-        setEditingError(error);
+      if (!editingValue.trim() || editingId == null) return;
+      const resolved = resolveChannelValue(editingType, editingValue, countryCode);
+      if (!resolved.ok) {
+        setEditingError(resolved.error);
         return;
       }
-      onUpdate(editingId, { type: editingType, value: trimmed });
+      onUpdate(editingId, { type: editingType, value: resolved.value });
       setEditingId(null);
       setEditingValue("");
       setEditingError(null);

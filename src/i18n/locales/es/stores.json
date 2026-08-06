@@ -117,7 +117,7 @@
     "helper": "Sube un logo pensado para mostrarse en cuadrado en el perfil público. Puedes arrastrarlo, recortarlo, reemplazarlo o quitarlo antes de guardar.",
     "emptyTitle": "Agregar logo de la tienda",
     "emptyDescription": "Elige un archivo PNG, JPG, JPEG o WebP. Abriremos el editor de recorte antes de subir cualquier archivo.",
-    "uploadCta": "Haz clic o suelta una imagen",
+    "uploadCta": "Haz clic, suelta o pega una imagen",
     "editCta": "Editar",
     "removeCta": "Quitar",
     "editorTitle": "Ajusta el encuadre del logo",

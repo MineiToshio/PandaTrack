@@ -21,6 +21,8 @@ import type { StoreAddressEntry, StoreContactChannelEntry, StoreFormFieldErrors 
 
 type StoreFormStepChannelsProps = {
   isEditMode: boolean;
+  /** Default region for parsing a PHONE/WHATSAPP value typed without its own country code. */
+  countryCode: string | null;
   contactChannelEntries: StoreContactChannelEntry[];
   onAddContactChannel: (entry: { type: StoreContactChannelType; value: string }) => void;
   onUpdateContactChannel: (id: number, next: { type: StoreContactChannelType; value: string }) => void;
@@ -36,6 +38,7 @@ type StoreFormStepChannelsProps = {
 
 export default function StoreFormStepChannels({
   isEditMode,
+  countryCode,
   contactChannelEntries,
   onAddContactChannel,
   onUpdateContactChannel,
@@ -118,6 +121,7 @@ export default function StoreFormStepChannels({
           <StoreContactChannelEditor
             ref={channelEditorRef}
             hideTrigger
+            countryCode={countryCode}
             entries={contactChannelEntries}
             onAdd={onAddContactChannel}
             onUpdate={onUpdateContactChannel}

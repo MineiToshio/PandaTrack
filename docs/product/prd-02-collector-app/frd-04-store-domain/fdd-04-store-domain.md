@@ -267,7 +267,7 @@ Categorías, Estado).
   5-step flow, Persona uses 4 (no Canales).
 - **Step 2 — Identidad** (`#s6-store-create-step-2-identity`): `grid-2` Nombre `Input` +
   País `Combobox`; description `Textarea`; presence multi-select; import-countries multi-select
-  `Combobox`. **Logo (RETAILER and PROXY only)** is a drop/upload zone; once set
+  `Combobox`. **Logo (RETAILER and PROXY only)** is a click/drop/paste zone (`FR-04-53`); once set
   (`#s6-store-create-step-2-logo-set`) it shows a 150×150 thumbnail + file name/size + ghost
   "Edit"/"Remove". Name blur with ≥2 chars triggers duplicate detection (§5.5). The
   name-error variant (`#s6-store-create-step-2-error`) gives the field a `--destructive`
@@ -281,6 +281,8 @@ Categorías, Estado).
 - **Step 4 — Canales** (`#s6-store-create-step-4-channels`): **staged-add** contact channels
   and addresses — the add form starts collapsed; nothing is appended until the user confirms
   (no empty rows). Per-type value validation is inline; an open add-form **blocks advancing**.
+  `PHONE`/`WHATSAPP` accept a plain local number and normalize it against the country chosen in
+  Step 2 (`FR-04-54`) rather than requiring the collector to type a country code.
 - **Step 5 — Listo** (`#s6-store-create-step-5-review`): read-only recap of every field
   (channels/addresses rendered as **real values, never counts** — FRD Notes), a terms
   checkbox, and the final `"Crear tienda"` primary CTA; the Resumen chip reads `info`
