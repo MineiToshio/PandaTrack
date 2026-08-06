@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Ban, PackageCheck, Pencil, RotateCcw, Trash2, Truck, Zap } from "lucide-react";
+import { Ban, PackageCheck, Pencil, RotateCcw, Store, Trash2, Truck, Zap } from "lucide-react";
 import Button from "@/components/core/Button/Button";
 import Eyebrow from "@/components/core/Eyebrow";
 import Tooltip from "@/components/core/Tooltip";
@@ -20,6 +20,7 @@ type OrderActionsCardProps = {
   orderId: string;
   humanReadableId: string;
   storeName: string;
+  storeSlug: string;
   status: OrderStatus;
   eligibility: OrderEligibility;
   /** Sum of the order's recorded payments, in minor units of `currencyCode`. Threaded into
@@ -43,6 +44,7 @@ export default function OrderActionsCard({
   orderId,
   humanReadableId,
   storeName,
+  storeSlug,
   status,
   eligibility,
   paidAmountMinor,
@@ -57,6 +59,11 @@ export default function OrderActionsCard({
   const [modal, setModal] = useState<"cancel" | "delete" | null>(null);
   const [isReactivating, setIsReactivating] = useState(false);
   const quickArrival = useQuickArrival({ orderId, locale, source: "actions_card" });
+
+  // Reciprocal with the store page's "Volver al pedido {orderId}" back link (FRD-04), same
+  // mechanism the store name in the hero already uses (`FR-05-23`).
+  const orderDetailPath = `/${locale}${ROUTES.orders}/${orderId}`;
+  const storeHref = `/${locale}${ROUTES.stores}/${storeSlug}?returnTo=${encodeURIComponent(orderDetailPath)}&returnLabel=${encodeURIComponent(humanReadableId)}`;
 
   const isCancelled = status === "CANCELLED";
   const isCompleted = status === "COMPLETED";
@@ -108,6 +115,19 @@ export default function OrderActionsCard({
               className="justify-start"
             >
               {t("detail.actions.edit")}
+            </Button>
+            <Button
+              as="a"
+              href={storeHref}
+              variant="ghost"
+              size="md"
+              fullWidth
+              leadingIcon={<Store size={16} aria-hidden />}
+              className="justify-start"
+              posthogEvent={POSTHOG_EVENTS.ORDER.VIEW_STORE_CLICKED}
+              posthogProps={{ source: "actions_card" }}
+            >
+              {t("detail.actions.viewStore")}
             </Button>
             {/* Demo cancelled state still shows "Crear entrega" (disabled) so the lifecycle
                 action set is consistent across cancelled / open. */}
@@ -175,6 +195,20 @@ export default function OrderActionsCard({
               className="justify-start"
             >
               {t("detail.actions.edit")}
+            </Button>
+
+            <Button
+              as="a"
+              href={storeHref}
+              variant="ghost"
+              size="md"
+              fullWidth
+              leadingIcon={<Store size={16} aria-hidden />}
+              className="justify-start"
+              posthogEvent={POSTHOG_EVENTS.ORDER.VIEW_STORE_CLICKED}
+              posthogProps={{ source: "actions_card" }}
+            >
+              {t("detail.actions.viewStore")}
             </Button>
 
             {!isCompleted && (

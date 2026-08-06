@@ -144,6 +144,7 @@ export default async function OrderDetailContent({
               orderId={order.id}
               humanReadableId={order.humanReadableId}
               storeName={order.store.name}
+              storeSlug={order.store.slug}
               status={order.status}
               eligibility={order.eligibility}
               paidAmountMinor={order.paidAmount}

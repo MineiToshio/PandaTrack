@@ -25,6 +25,7 @@ const BASE_PROPS = {
   orderId: "order-1",
   humanReadableId: "ORD-20260718-01",
   storeName: "Pop Legends",
+  storeSlug: "pop-legends-64e367",
   eligibility: { canDelete: true, canCancel: true },
   paidAmountMinor: 8000,
   currencyCode: "PEN",
@@ -75,5 +76,27 @@ describe("OrderActionsCard delivery affordances", () => {
 
     expect(screen.getByRole("link", { name: /detail.actions.edit/ })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /detail.actions.delete/ })).toBeInTheDocument();
+  });
+});
+
+describe("OrderActionsCard view store", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("links to the store, carrying returnTo/returnLabel back to this order, active or cancelled", () => {
+    render(<OrderActionsCard {...BASE_PROPS} status="OPEN" quickArrivalItems={[]} />);
+
+    const link = screen.getByRole("link", { name: /detail.actions.viewStore/ });
+    const url = new URL(link.getAttribute("href")!, "http://localhost");
+    expect(url.pathname).toBe("/es/stores/pop-legends-64e367");
+    expect(url.searchParams.get("returnTo")).toBe("/es/orders/order-1");
+    expect(url.searchParams.get("returnLabel")).toBe("ORD-20260718-01");
+  });
+
+  it("stays available on a cancelled order, unlike the disabled edit action", () => {
+    render(<OrderActionsCard {...BASE_PROPS} status="CANCELLED" quickArrivalItems={[]} />);
+
+    expect(screen.getByRole("link", { name: /detail.actions.viewStore/ })).toBeInTheDocument();
   });
 });

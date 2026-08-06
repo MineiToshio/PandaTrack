@@ -455,11 +455,13 @@ there is no optimistic delete and no undo toast. A payment that exactly clears t
 Secondary affordances live in an inline **Acciones card** at the foot of the detail (not a
 split button, not a `⋯` overflow), on both desktop and mobile.
 
-| State            | Primary                     | Rest                                                                            |
-| ---------------- | --------------------------- | ------------------------------------------------------------------------------- |
-| Active / overdue | **Crear entrega** (`truck`) | Editar (ghost) · Cancelar (ghost) · Eliminar (destructive-ghost)                |
-| Completed        | **Crear entrega**           | Editar + Eliminar; **no Cancelar** (a completed order cannot be cancelled)      |
-| Cancelled        | **Reactivar pedido**        | Eliminar (enabled); Editar + Crear entrega **disabled** with explanatory helper |
+| State            | Primary                     | Rest                                                                                                  |
+| ---------------- | --------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Active / overdue | **Crear entrega** (`truck`) | Editar (ghost) · Ver tienda (ghost) · Cancelar (ghost) · Eliminar (destructive-ghost)                 |
+| Completed        | **Crear entrega**           | Editar + Ver tienda + Eliminar; **no Cancelar** (a completed order cannot be cancelled)               |
+| Cancelled        | **Reactivar pedido**        | Ver tienda (enabled); Eliminar (enabled); Editar + Crear entrega **disabled** with explanatory helper |
+
+`Ver tienda` is never disabled by order status: it is the same store, orderable or not, so viewing it carries no lifecycle precondition. It links to the store's detail page carrying `returnTo`/`returnLabel` so that page's back link reads "Volver al pedido {orderId}" (`order_view_store_clicked`, shared with the store-name link in the hero, §2.4).
 
 `Cancelar` and `Eliminar` share one eligibility rule (`FR-05-24`/`FR-05-25`): both are
 disabled (with a `title` tooltip) when any item is linked to a non-cancelled delivery.
