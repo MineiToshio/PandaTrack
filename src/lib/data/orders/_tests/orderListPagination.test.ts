@@ -112,7 +112,7 @@ describe("getOrdersList SQL payment-state pagination", () => {
     await getOrdersList("user-1", baseFilters({ sort: "payment-asc" }));
 
     const args = findManyArgs();
-    expect(args.orderBy).toEqual([{ paymentPercent: "asc" }, { orderDate: "desc" }]);
+    expect(args.orderBy).toEqual([{ paymentPercent: "asc" }, { orderDate: "desc" }, { id: "asc" }]);
     expect(args.skip).toBe(0);
     expect(args.take).toBe(10);
   });

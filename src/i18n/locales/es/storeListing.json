@@ -55,7 +55,8 @@
     "sort": {
       "topRated": "Mejor calificadas",
       "alphabetical": "Alfabético A–Z",
-      "newest": "Más recientes"
+      "newest": "Más recientes",
+      "alphabetical-desc": "Alfabético Z–A"
     },
     "count": "{count, plural, one {# tienda} other {# tiendas}}",
     "importCountriesLabel": "Importa de ·",

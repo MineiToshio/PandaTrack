@@ -70,7 +70,8 @@
     "oldest": "Más antiguas",
     "storeAZ": "Tienda A–Z",
     "paymentAsc": "% Pago: menor",
-    "totalDesc": "Total: mayor"
+    "totalDesc": "Total: mayor",
+    "storeZA": "Tienda Z–A"
   },
   "payment": {
     "paid": "Pagado",

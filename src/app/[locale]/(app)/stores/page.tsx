@@ -126,6 +126,7 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
     hasStock: parsed.hasStock,
     includeClosed: parsed.includeClosed,
     onlyOwnPrivate: parsed.onlyOwnPrivate,
+    sort: parsed.sort,
     viewerId: session?.user?.id ?? null,
     page: parsed.page,
     pageSize: parsed.perPage,
@@ -168,6 +169,8 @@ export default async function StoresPage({ params, searchParams }: StoresPagePro
             initialHasStock={parsed.hasStock}
             initialIncludeClosed={parsed.includeClosed}
             initialOnlyOwnPrivate={parsed.onlyOwnPrivate}
+            initialSort={parsed.sort}
+            initialPerPage={parsed.perPage}
           />
 
           {/* Grid: useTransition swaps to the card skeleton on filter/sort/page changes;

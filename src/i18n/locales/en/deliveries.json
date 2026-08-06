@@ -315,7 +315,8 @@
       "oldest": "Oldest first",
       "newest": "Newest first",
       "etaAsc": "Closest ETA",
-      "storeAZ": "Store A–Z"
+      "storeAZ": "Store A–Z",
+      "storeZA": "Store Z–A"
     },
     "status": {
       "IN_TRANSIT": "In transit",

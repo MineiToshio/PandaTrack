@@ -13,6 +13,7 @@ const EMPTY_FILTERS = {
   hasStock: false,
   includeClosed: false,
   onlyOwnPrivate: false,
+  sort: "topRated" as const,
   page: 1,
   perPage: DEFAULT_PAGE_SIZE,
 };
@@ -151,5 +152,24 @@ describe("parseListingSearchParams", () => {
   it("clamps an out-of-range or invalid perPage back to the default", () => {
     expect(parseListingSearchParams({ perPage: "37" }).perPage).toBe(DEFAULT_PAGE_SIZE);
     expect(parseListingSearchParams({ perPage: "abc" }).perPage).toBe(DEFAULT_PAGE_SIZE);
+  });
+});
+
+describe("parseListingSearchParams sort", () => {
+  it("defaults to the top-rated ordering", () => {
+    expect(parseListingSearchParams({}).sort).toBe("topRated");
+  });
+
+  it("parses a known sort value", () => {
+    expect(parseListingSearchParams({ sort: "alphabetical-desc" }).sort).toBe("alphabetical-desc");
+  });
+
+  /** The control used to write `sortBy`; bookmarks carrying it must keep working. */
+  it("still accepts the legacy sortBy spelling", () => {
+    expect(parseListingSearchParams({ sortBy: "newest" }).sort).toBe("newest");
+  });
+
+  it("falls back to the default for a value that is not a real sort", () => {
+    expect(parseListingSearchParams({ sort: "by-vibes" }).sort).toBe("topRated");
   });
 });

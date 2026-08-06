@@ -315,7 +315,8 @@
       "oldest": "Más antiguas",
       "newest": "Más recientes",
       "etaAsc": "ETA más próxima",
-      "storeAZ": "Tienda A–Z"
+      "storeAZ": "Tienda A–Z",
+      "storeZA": "Tienda Z–A"
     },
     "status": {
       "IN_TRANSIT": "En camino",

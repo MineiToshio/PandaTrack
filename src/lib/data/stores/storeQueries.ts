@@ -13,6 +13,7 @@ import {
   SIMILARITY_THRESHOLD_PERCENT,
 } from "@/lib/store/duplicateMatch";
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
+import { DEFAULT_STORE_LIST_SORT, type StoreListSort } from "@/lib/stores/storeListSort";
 
 const DEFAULT_DUPLICATE_CANDIDATES_LIMIT = 5;
 export const DEFAULT_PUBLIC_STORE_PAGE_SIZE = DEFAULT_PAGE_SIZE;
@@ -132,6 +133,8 @@ export interface PublicStoreListingFilters {
    * the grid disagree by exactly the viewer's own private stores.
    */
   viewerId?: string | null;
+  /** Result ordering. Defaults to `topRated`. */
+  sort?: StoreListSort;
   page?: number;
   pageSize?: number;
 }
@@ -164,6 +167,34 @@ export function storeVisibleToViewerFilter(viewerId: string | null | undefined):
  */
 export function ownPrivateStoresFilter(viewerId: string | null | undefined): Prisma.StoreWhereInput {
   return viewerId ? { isPrivate: true, createdByUserId: viewerId } : { id: { in: [] } };
+}
+
+/**
+ * `slug` closes every ordering: `name` is not unique, so without it two stores sharing a name can
+ * swap places between two paginated queries and a row is dropped from one page and repeated on the
+ * next.
+ *
+ * `averageRating` is nullable, and Postgres defaults DESC to NULLS FIRST, which would rank every
+ * unrated store above every 5-star one. Invisible while nothing is rated, wrong the moment the
+ * first review lands, so the nulls placement is stated explicitly.
+ */
+export function resolveStoreListOrderBy(sort: StoreListSort): Prisma.StoreOrderByWithRelationInput[] {
+  switch (sort) {
+    case "alphabetical":
+      return [{ name: "asc" }, { slug: "asc" }];
+    case "alphabetical-desc":
+      return [{ name: "desc" }, { slug: "asc" }];
+    case "newest":
+      return [{ createdAt: "desc" }, { slug: "asc" }];
+    case "topRated":
+    default:
+      return [
+        { averageRating: { sort: "desc", nulls: "last" } },
+        { reviewCount: "desc" },
+        { name: "asc" },
+        { slug: "asc" },
+      ];
+  }
 }
 
 export interface PublicStoreListingPage {
@@ -445,7 +476,11 @@ export async function getPublicStoresListingPage(filters: PublicStoreListingFilt
         },
       },
     },
-    orderBy: [{ averageRating: "desc" }, { reviewCount: "desc" }, { name: "asc" }],
+    // `averageRating` is nullable and Postgres defaults DESC to NULLS FIRST, which would put every
+    // unrated store ahead of every 5-star one. Invisible while nothing is rated; wrong the moment
+    // the first review lands. Same shape the deliveries list already uses for its nullable ETA.
+    // `slug` is the terminal tiebreaker (`name` is not unique), so pages cannot drop or repeat rows.
+    orderBy: resolveStoreListOrderBy(filters.sort ?? DEFAULT_STORE_LIST_SORT),
     skip,
     take: requestedPageSize,
   });

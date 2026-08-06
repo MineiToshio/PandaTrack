@@ -235,17 +235,25 @@ export type DeliveriesListPageResult = {
   pageSize: number;
 };
 
+/** See `ID_TIEBREAKER` in `orderQueries.ts`: every key below is non-unique on its own. */
+const DELIVERY_ID_TIEBREAKER = { id: "asc" as const };
+
 function resolveDeliveryOrderBy(sort: DeliveryListSort) {
   switch (sort) {
     case "recent":
-      return { deliveryDate: "desc" as const };
+      return [{ deliveryDate: "desc" as const }, DELIVERY_ID_TIEBREAKER];
     case "eta-asc":
-      return { expectedArrivalFrom: { sort: "asc" as const, nulls: "last" as const } };
+      return [
+        { expectedArrivalFrom: { sort: "asc" as const, nulls: "last" as const } },
+        DELIVERY_ID_TIEBREAKER,
+      ];
     case "store-asc":
-      return { store: { name: "asc" as const } };
+      return [{ store: { name: "asc" as const } }, DELIVERY_ID_TIEBREAKER];
+    case "store-desc":
+      return [{ store: { name: "desc" as const } }, DELIVERY_ID_TIEBREAKER];
     case "oldest":
     default:
-      return { deliveryDate: "asc" as const };
+      return [{ deliveryDate: "asc" as const }, DELIVERY_ID_TIEBREAKER];
   }
 }
 

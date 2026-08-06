@@ -55,7 +55,8 @@
     "sort": {
       "topRated": "Top rated",
       "alphabetical": "Alphabetical A–Z",
-      "newest": "Newest"
+      "newest": "Newest",
+      "alphabetical-desc": "Alphabetical Z–A"
     },
     "count": "{count, plural, one {# store} other {# stores}}",
     "importCountriesLabel": "Imports from ·",

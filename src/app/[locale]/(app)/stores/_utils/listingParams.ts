@@ -1,5 +1,6 @@
 import type { SellerType, StorePresenceType } from "../../../../../../generated/prisma/client";
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
+import { parseStoreListSort, type StoreListSort } from "@/lib/stores/storeListSort";
 
 /** The seller kinds a listing filter may name. Anything else in the URL is discarded. */
 const SELLER_TYPE_VALUES: readonly SellerType[] = ["RETAILER", "PERSON", "PROXY"];
@@ -19,6 +20,7 @@ export function parseListingSearchParams(raw: Record<string, string | string[] |
   hasStock: boolean;
   includeClosed: boolean;
   onlyOwnPrivate: boolean;
+  sort: StoreListSort;
   page: number;
   /** Desktop page-size selector value — one of `PAGE_SIZE_OPTIONS`. */
   perPage: number;
@@ -37,6 +39,9 @@ export function parseListingSearchParams(raw: Record<string, string | string[] |
   const hasStock = raw.hasStock === "true";
   const includeClosed = raw.includeClosed === "true";
   const onlyOwnPrivate = raw.onlyOwnPrivate === "true";
+  // `sortBy` is the legacy spelling the control used to write; both are accepted so a bookmarked
+  // URL keeps working, and `sort` is what gets written from now on (matching orders and deliveries).
+  const sort = parseStoreListSort(raw.sort ?? raw.sortBy);
   const page = parsePositiveInteger(raw.page);
   const perPage = parsePageSize(raw.perPage);
   return {
@@ -50,6 +55,7 @@ export function parseListingSearchParams(raw: Record<string, string | string[] |
     hasStock,
     includeClosed,
     onlyOwnPrivate,
+    sort,
     page,
     perPage,
   };

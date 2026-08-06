@@ -708,21 +708,29 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
   return { orders, totalCount, totalPages, page, pageSize, pendingFxCount };
 }
 
+/**
+ * Terminal tiebreaker on a unique column. Without one, every key here is non-unique (two orders
+ * share a date, a store, a total), so Postgres may order tied rows differently between two
+ * paginated queries and a row can be dropped from one page and repeated on the next.
+ */
+const ID_TIEBREAKER = { id: "asc" as const };
+
 function resolveOrderBy(sort: OrderListSort) {
   switch (sort) {
     case "oldest":
-      return { orderDate: "asc" as const };
+      return [{ orderDate: "asc" as const }, ID_TIEBREAKER];
     case "store-asc":
-      return { store: { name: "asc" as const } };
+      return [{ store: { name: "asc" as const } }, ID_TIEBREAKER];
+    case "store-desc":
+      return [{ store: { name: "desc" as const } }, ID_TIEBREAKER];
     case "total-desc":
-      return { totalCost: "desc" as const };
+      return [{ totalCost: "desc" as const }, ID_TIEBREAKER];
     case "payment-asc":
-      // Sort by the persisted paid ratio; `orderDate` desc is a stable tiebreaker so pages never
-      // overlap or drop rows when many orders share the same percentage.
-      return [{ paymentPercent: "asc" as const }, { orderDate: "desc" as const }];
+      // Sort by the persisted paid ratio; `orderDate` desc breaks the common ties.
+      return [{ paymentPercent: "asc" as const }, { orderDate: "desc" as const }, ID_TIEBREAKER];
     case "recent":
     default:
-      return { orderDate: "desc" as const };
+      return [{ orderDate: "desc" as const }, ID_TIEBREAKER];
   }
 }
 

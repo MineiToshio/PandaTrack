@@ -70,7 +70,8 @@
     "oldest": "Oldest",
     "storeAZ": "Store A–Z",
     "paymentAsc": "% Paid: lowest",
-    "totalDesc": "Total: highest"
+    "totalDesc": "Total: highest",
+    "storeZA": "Store Z–A"
   },
   "payment": {
     "paid": "Paid",

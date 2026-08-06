@@ -1,4 +1,4 @@
-export const DELIVERY_LIST_SORT_VALUES = ["oldest", "recent", "eta-asc", "store-asc"] as const;
+export const DELIVERY_LIST_SORT_VALUES = ["oldest", "recent", "eta-asc", "store-asc", "store-desc"] as const;
 
 export type DeliveryListSort = (typeof DELIVERY_LIST_SORT_VALUES)[number];
 

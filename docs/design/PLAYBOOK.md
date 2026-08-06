@@ -645,9 +645,10 @@ Anti-patrón: ❌ no usar `package` para "En camino" ni `check-circle` para "Com
 
 | Opción        | Descripción                                 | Por defecto |
 | ------------- | ------------------------------------------- | ----------- |
-| Más recientes | `createdAt DESC`                            | ✓           |
-| Más antiguas  | `createdAt ASC`                             |             |
+| Más recientes | `orderDate DESC`                            | ✓           |
+| Más antiguas  | `orderDate ASC`                             |             |
 | Tienda A–Z    | `store.name ASC`                            |             |
+| Tienda Z–A    | `store.name DESC`                           |             |
 | % Pago: menor | `paymentPercent ASC` (deudas primero)       |             |
 | Total: mayor  | `totalAmount DESC` (monto más alto primero) |             |
 
