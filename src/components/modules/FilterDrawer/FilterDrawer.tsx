@@ -261,6 +261,8 @@ export default function FilterDrawer({
 
   const renderPillsSection = (section: FilterPillsSection | FilterPillsSearchSection) => {
     const selected = new Set(asArray(values[section.id]));
+    // Mirrors `togglePill`'s own rule: a `multi: false` section holds one value at a time.
+    const isSingleSelect = section.type === "pills" && section.multi === false;
     const search = section.type === "pills-search" ? (searchQueries[section.id] ?? "") : "";
     const sectionOptions: Array<{ value: string; label: string; icon?: ReactNode }> = section.options;
     const filteredOptions: Array<{ value: string; label: string; icon?: ReactNode }> =
@@ -284,13 +286,15 @@ export default function FilterDrawer({
             />
           </div>
         )}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" role={isSingleSelect ? "radiogroup" : undefined}>
           {filteredOptions.map((option) => {
             const isSelected = selected.has(option.value);
             return (
               <Pill
                 key={option.value}
-                role="checkbox"
+                // A `multi: false` section is mutually exclusive, so it has to announce as a radio
+                // group; as checkboxes, the sort options read as N independent toggles.
+                role={isSingleSelect ? "radio" : "checkbox"}
                 aria-checked={isSelected}
                 selected={isSelected}
                 icon={option.icon}
@@ -534,13 +538,14 @@ export default function FilterDrawer({
         )}
         {section.trailingChoice && (
           <div className="mt-3 flex flex-col gap-1.5">
-            <div className="flex flex-wrap gap-2">
+            {/* A trailing choice is one-of-N by construction, so it is always a radio group. */}
+            <div className="flex flex-wrap gap-2" role="radiogroup">
               {section.trailingChoice.options.map((option) => {
                 const isSelected = current.choice === option.value;
                 return (
                   <Pill
                     key={option.value}
-                    role="checkbox"
+                    role="radio"
                     aria-checked={isSelected}
                     selected={isSelected}
                     icon={option.icon}
