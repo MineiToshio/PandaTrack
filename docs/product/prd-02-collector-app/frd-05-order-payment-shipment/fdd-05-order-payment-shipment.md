@@ -249,7 +249,10 @@ detail, **order detail keeps the Historial subcard** (`FR-05-22`/`BR-05-09`): an
 **Hero anatomy** (`detail-hero.s8-card-accent`, `view-transition-name: order-{id}`):
 
 1. `detail-hero-head`: `StoreAvatar s56` + store name + `ORD-…` (with a copy button on
-   mobile) + status `Chip` (sometimes dual — see per-state table).
+   mobile) + status `Chip` (sometimes dual — see per-state table). The store name links to the
+   store's detail page (`order_view_store_clicked`), carrying `returnTo`/`returnLabel` so that
+   page's back link reads "Volver al pedido {orderId}" instead of the default "back to listing"
+   (`FR-05-23`, mirrors the mechanism `frd-04-store-domain.md` documents on the store side).
 2. `s8-eyebrow-chip`: `"Tu pedido · {currency}"` (the warm-possessive section identity).
 3. **Protagonist block** (the divergence from Deliveries): label `"Saldo pendiente"` → the
    large outstanding amount in `detail-hero-amount.num` → sub `"de {total} {currency}"`

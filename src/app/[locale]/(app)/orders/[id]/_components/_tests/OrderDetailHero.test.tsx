@@ -59,3 +59,15 @@ describe("OrderDetailHero removed-store tombstone", () => {
     expect(screen.getByText("orderTombstone.sanction")).toBeInTheDocument();
   });
 });
+
+describe("OrderDetailHero store link", () => {
+  it("links the store name to its detail page, carrying returnTo/returnLabel back to this order", () => {
+    render(<OrderDetailHero {...BASE_PROPS} order={buildOrder({ status: "APPROVED", removalReason: null })} />);
+
+    const link = screen.getByRole("link", { name: "Manga Store" });
+    const url = new URL(link.getAttribute("href")!, "http://localhost");
+    expect(url.pathname).toBe("/en/stores/manga-store");
+    expect(url.searchParams.get("returnTo")).toBe("/en/orders/o1");
+    expect(url.searchParams.get("returnLabel")).toBe("ORD-1");
+  });
+});

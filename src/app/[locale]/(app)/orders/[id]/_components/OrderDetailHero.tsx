@@ -2,10 +2,12 @@
 
 import { AlertTriangle, CircleCheck, Package, PackageCheck, Truck } from "lucide-react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import Eyebrow from "@/components/core/Eyebrow";
 import StoreAvatar from "@/components/core/StoreAvatar";
 import { useAnimatedNumber } from "@/hooks/useAnimatedNumber";
 import { cn } from "@/lib/styles";
+import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { formatAmountSymbolOnly, formatAmountWithSymbol } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
 import { resolveStoreTombstone } from "@/lib/store/storeTombstone";
@@ -88,6 +90,10 @@ export default function OrderDetailHero({
   const t = useTranslations("orders");
 
   const storeTombstone = resolveStoreTombstone(order.store);
+  // Reciprocal with the store page's "Volver al pedido {orderId}" back link (FRD-04): this order
+  // detail page IS the `returnTo` target, and the order's own code is the `returnLabel` it reads.
+  const orderDetailPath = `/${locale}${ROUTES.orders}/${order.id}`;
+  const storeHref = `/${locale}${ROUTES.stores}/${order.store.slug}?returnTo=${encodeURIComponent(orderDetailPath)}&returnLabel=${encodeURIComponent(order.humanReadableId)}`;
   const isCancelled = order.status === "CANCELLED";
   const isCompleted = order.status === "COMPLETED";
   const completedUnpaid = isCompleted && hasUnpaidBalance;
@@ -172,7 +178,16 @@ export default function OrderDetailHero({
           />
         )}
         <div className="min-w-0 flex-1">
-          <h1 className="text-text-title text-[17px] leading-tight font-semibold">{order.store.name}</h1>
+          <h1 className="text-text-title text-[17px] leading-tight font-semibold">
+            <Link
+              href={storeHref}
+              className="rounded-sm hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
+              data-ph-event={POSTHOG_EVENTS.ORDER.VIEW_STORE_CLICKED}
+              data-ph-props={JSON.stringify({ source: "detail_hero" })}
+            >
+              {order.store.name}
+            </Link>
+          </h1>
           {storeTombstone.isRemoved && <StoreTombstoneNotice tone={storeTombstone.tone} variant="full" />}
           <div className="mt-1 flex flex-wrap items-center gap-2.5">
             <OrderCodeCopyButton code={order.humanReadableId} locale={locale} />
