@@ -77,7 +77,7 @@ export async function createStoreFromIntakeAction(rawInput: unknown): Promise<Cr
 
   try {
     if (!confirmDuplicate) {
-      const duplicates = await findDuplicateCandidatesInCountry(name, countryCode);
+      const duplicates = await findDuplicateCandidatesInCountry(name, countryCode, userId);
       if (duplicates.length > 0) {
         return {
           ok: false,

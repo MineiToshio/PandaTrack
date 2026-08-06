@@ -283,7 +283,10 @@ export async function getModerationQueue(locale: string): Promise<ModerationQueu
         presences: { select: { presenceType: true } },
         productTypeAssignments: { select: { productTypeKey: true } },
         importCountries: { select: { countryCode: true } },
-        contactChannels: { select: { type: true, value: true, label: true } },
+        // Public channels only: the approve/reject decision is about the store, not about a phone
+        // number the app inferred from a private screenshot, so a moderator has no reason to read
+        // one.
+        contactChannels: { where: { isPublic: true }, select: { type: true, value: true, label: true } },
       },
     }),
     prisma.storeReport.findMany({

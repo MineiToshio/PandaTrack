@@ -27,10 +27,18 @@ export default async function EditStorePage({ params }: EditStorePageProps) {
     notFound();
   }
 
+  const isAdmin = getIsAdmin(session);
+  // Same rule the store detail page applies (`FR-04-33`, ADR 0009), and for the same reason: a
+  // private person store belongs to its creator. This route had no such check, so any signed-in
+  // user holding the slug could open the full edit form of someone else's private seller. 404
+  // rather than 403 so the store's existence is not confirmed either.
+  if (store.isPrivate && !isAdmin && store.createdByUserId !== session.user.id) {
+    notFound();
+  }
+
   const t = await getTranslations({ locale, namespace: "stores" });
 
   const viewerContext = await getStoreGovernanceViewerContext(store.id, session.user.id);
-  const isAdmin = getIsAdmin(session);
   const canDirectlyEdit = isAdmin || (store.status === "PENDING" && store.createdByUserId === session.user.id);
   const initialValues = mergeEditableStoreWithChangeRequest(store, viewerContext.openChangeRequest?.changes);
   const pageTitle = canDirectlyEdit

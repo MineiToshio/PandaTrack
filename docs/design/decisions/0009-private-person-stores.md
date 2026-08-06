@@ -65,6 +65,17 @@ Migration name sugerido: `add_isPrivate_to_store`.
 - `getPublicStoresListingPage` y cualquier query similar deben agregar `where: { OR: [{ isPrivate: false }, { isPrivate: null }] }` al filtro base. Si el viewer es el owner, las private stores propias sí aparecen en sus listings personales (futuro — no MVP).
 - Search público debe excluir private stores.
 
+### Enmienda 2026-08-05: el scope de viewer deja de ser futuro, y "cualquier query similar" resultó ser mucho más que el listing
+
+Lo que se implementó en su momento fue el filtro del listing y el 404 del detalle. El resto de superficies que devuelven tiendas nunca aplicó la regla, así que una private store quedaba **oculta para su dueño y visible para todos los demás**, que es exactamente lo contrario de lo que este ADR decidió. En concreto: `getOrderableStores` (el selector de tienda de todo el flujo de pedidos), las dos queries de match de intake, las dos de candidatos duplicados (que además devuelven `slug`, o sea la dirección de la página), y la ruta de edición, que no tenía ninguna comprobación de dueño y entregaba los canales de contacto completos a cualquier sesión.
+
+Se corrige aplicando un único predicado compartido, `storeVisibleToViewerFilter(viewerId)`, en todas ellas, y el 404 del detalle también en `/stores/[slug]/edit`. Con eso:
+
+- El filtro plano `isPrivate: false` pasa a ser `OR: [{ isPrivate: false }, { createdByUserId: viewerId }]`, de modo que **el dueño sí ve sus private stores en su listing**. Esto adelanta el punto que este ADR había dejado como futuro, no por ambición sino porque sin él la copy del propio producto ("Solo tú puedes verlo") es falsa en las dos direcciones.
+- Un match de intake no puede resolver hacia la private store de otro usuario. El catálogo compartido sigue siéndolo; una person store privada nunca formó parte de él.
+
+Nota deliberada sobre canales de contacto: un canal `isPublic: false` es una pista de matching que la app infirió (un teléfono leído de una captura), no un dato que la tienda publicó. No se muestra en el formulario de edición, no se reescribe al guardar y no aparece en la cola de moderación, porque la decisión de aprobar o rechazar es sobre la tienda, no sobre un número sacado de una conversación privada.
+
 ### Cambio de UI
 
 - Wizard "Sumar tienda" paso 1 (Tipo) muestra un `<Switch>` "Perfil privado" cuando se selecciona PERSON. Helper text: "Solo tú puedes verlo. No aparece en el directorio público ni en búsquedas."

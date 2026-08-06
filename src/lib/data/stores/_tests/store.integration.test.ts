@@ -160,10 +160,10 @@ describe("store queries", () => {
         status: "PENDING",
       });
 
-      const candidates = await findDuplicateCandidates("manga", 5);
+      const candidates = await findDuplicateCandidates("manga", null, 5);
       expect(candidates.some((c) => c.id === created.id && c.name === "Unique Manga Shop")).toBe(true);
 
-      const empty = await findDuplicateCandidates("xyznonexistent", 5);
+      const empty = await findDuplicateCandidates("xyznonexistent", null, 5);
       expect(empty.length).toBe(0);
     } finally {
       await prisma.store.deleteMany({ where: { createdByUserId: user.id } });

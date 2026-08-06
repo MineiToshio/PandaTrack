@@ -33,7 +33,7 @@ export default async function OrdersNewPage({ params }: Props) {
   await getTranslations({ locale, namespace: "orders" });
 
   const [stores, productTypeRows, user] = await Promise.all([
-    getOrderableStores(),
+    getOrderableStores(userId),
     listActiveStoreProductTypeKeysCached(),
     prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } }),
   ]);

@@ -256,7 +256,12 @@ async function writeEditableStoreFields(
     tx.storePresence.deleteMany({ where: { storeId: store.id } }),
     tx.storeProductTypeAssignment.deleteMany({ where: { storeId: store.id } }),
     tx.storeImportCountry.deleteMany({ where: { storeId: store.id } }),
-    tx.storeContactChannel.deleteMany({ where: { storeId: store.id } }),
+    // Public channels only, mirroring what `EDITABLE_STORE_SELECT` let the form see. A non-public
+    // channel is an inferred matching hint the editor never showed and never submitted, so a
+    // blanket delete here silently destroyed it: editing an intake-created store's name dropped the
+    // phone the matcher had learned, and the next intake from that seller matched nothing and made
+    // a duplicate. Rewriting only what was actually edited keeps the hint alive.
+    tx.storeContactChannel.deleteMany({ where: { storeId: store.id, isPublic: true } }),
     tx.storeAddress.deleteMany({ where: { storeId: store.id } }),
   ]);
 

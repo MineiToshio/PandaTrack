@@ -32,7 +32,12 @@ const EDITABLE_STORE_SELECT = {
   presences: { select: { presenceType: true } },
   productTypeAssignments: { select: { productTypeKey: true } },
   importCountries: { select: { countryCode: true } },
-  contactChannels: { select: { type: true, value: true, label: true } },
+  // Public channels only. A non-public channel is an inferred matching hint (a phone image intake
+  // read out of a chat, a number `recordConfirmedStoreMatch` learned), not a contact detail the
+  // store published, so it is not the edit form's to display or to rewrite. Loading it here put a
+  // private individual's number into the page payload of anyone who could open this route, and
+  // then handed it back on save as a public channel.
+  contactChannels: { where: { isPublic: true }, select: { type: true, value: true, label: true } },
   addresses: { select: { city: true, addressLine: true, reference: true } },
 } satisfies Prisma.StoreSelect;
 

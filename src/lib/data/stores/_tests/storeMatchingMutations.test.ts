@@ -35,7 +35,7 @@ describe("createStoreFromIntake", () => {
     createStoreMock.mockResolvedValue({ id: "store-1", slug: "pop-dealer" });
   });
 
-  it("creates a PERSON, private store with no product catalog, mirroring the script's default for an informal reseller", async () => {
+  it("creates a PERSON, private store with no product catalog, the only default safe to be wrong about", async () => {
     await createStoreFromIntake({
       name: "Pop Dealer",
       phone: "987654321",
@@ -71,7 +71,24 @@ describe("createStoreFromIntake", () => {
     });
 
     const input = createStoreMock.mock.calls[0]![0];
-    expect(input.contactChannels).toEqual([{ type: "PHONE", value: "51987654321", label: null }]);
+    expect(input.contactChannels).toEqual([{ type: "PHONE", value: "51987654321", label: null, isPublic: false }]);
+  });
+
+  it("stores that phone as non-public, since a number read off a screenshot was never published", async () => {
+    // The seller did not publish this number in a catalog; the app inferred it from a private
+    // conversation. Written public it would only stay hidden by the accident of `PERSON` stores not
+    // rendering their channels, and would surface the moment anything about the store changed.
+    await createStoreFromIntake({
+      name: "Pop Dealer",
+      phone: "+51 987 654 321",
+      countryCode: "PE",
+      createdByUserId: "user-1",
+      status: "PENDING",
+      approvedByUserId: null,
+    });
+
+    const [channel] = createStoreMock.mock.calls[0]![0].contactChannels ?? [];
+    expect(channel?.isPublic).toBe(false);
   });
 
   it("omits the contact channel when no phone was extracted", async () => {

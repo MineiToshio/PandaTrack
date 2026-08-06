@@ -8,6 +8,13 @@ export interface ContactChannelInput {
   type: StoreContactChannelType;
   value: string;
   label?: string | null;
+  /**
+   * Whether this channel is a contact detail the store publishes. Defaults to `true`, which is what
+   * every hand-authored channel is. Pass `false` for a value the app inferred rather than the store
+   * declaring it — a phone image intake read out of a private chat, for instance — so it can serve
+   * as a matching hint without ever being shown as the seller's published contact.
+   */
+  isPublic?: boolean;
 }
 
 export interface AddressInput {
@@ -108,6 +115,7 @@ export async function createStore(input: CreateStoreInput): Promise<{ id: string
             value: ch.value.trim(),
             label: ch.label?.trim() || null,
             isPrimary: false,
+            isPublic: ch.isPublic ?? true,
           })),
         },
       }),

@@ -26,7 +26,7 @@ export async function getDuplicateCandidates(
   const parsed = duplicateCandidatesQuerySchema.safeParse({ nameQuery, limit });
   if (!parsed.success) return [];
 
-  return findDuplicateCandidates(parsed.data.nameQuery, parsed.data.limit);
+  return findDuplicateCandidates(parsed.data.nameQuery, session.user.id, parsed.data.limit);
 }
 
 /**
@@ -47,6 +47,7 @@ export async function getDuplicateCandidatesForSubmit(
   return findDuplicateCandidatesInCountry(
     parsed.data.nameQuery,
     parsed.data.countryCode,
+    session.user.id,
     DEFAULT_LIMIT,
     SIMILARITY_THRESHOLD_PERCENT,
   );

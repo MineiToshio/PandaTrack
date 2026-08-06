@@ -35,7 +35,7 @@ export default async function OrdersEditPage({ params }: Props) {
 
   const [order, stores, productTypeRows, user] = await Promise.all([
     getOrderById(id, userId),
-    getOrderableStores(),
+    getOrderableStores(userId),
     listActiveStoreProductTypeKeysCached(),
     prisma.user.findUnique({ where: { id: userId }, select: { baseCurrencyCode: true } }),
   ]);

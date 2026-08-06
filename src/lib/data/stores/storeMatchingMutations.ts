@@ -27,15 +27,21 @@ export type CreateStoreFromIntakeInput = {
  * `createStore` write the manual store-creation form uses, so the result is indistinguishable from
  * a store created by hand: same slug generation, same `searchName`, same moderation default.
  *
- * The draft carries no seller-type signal today (`ImageIntakeDraft["store"]` has no such field), so
- * the honest default is `PERSON` with `isPrivate: true`, mirroring `buildStoreCreateInput` in
- * `scripts/local/migrate-pedidos/chat-load.ts` for the same case: an informal reseller captured from
- * a chat screenshot, not a storefront.
+ * The draft carries no seller-type signal (`ImageIntakeDraft["store"]` has only a name, a phone and
+ * candidate ids), and `sellerType` is immutable once written (`BR-04-17`), so this picks the only
+ * value that is safe to be wrong about: `PERSON` with `isPrivate: true` keeps a counterparty read
+ * out of somebody's private chat out of the shared directory. Asking the collector instead was
+ * considered and rejected: at this moment they are recording an order, not curating a catalog, and
+ * a forced choice on a permanent field would record a guess as a decision.
+ *
+ * The phone is written non-public. It is a matching hint the app inferred from a screenshot, never
+ * a number the seller published, and it must not become one if the store's type or privacy ever
+ * changes — the same rule, for the same reason, that `recordConfirmedStoreMatch` applies below.
  */
 export async function createStoreFromIntake(input: CreateStoreFromIntakeInput): Promise<{ id: string; slug: string }> {
   const digits = input.phone ? normalizePhoneDigits(input.phone) : "";
   const contactChannels: ContactChannelInput[] =
-    digits.length >= MIN_PHONE_MATCH_DIGITS ? [{ type: "PHONE", value: digits, label: null }] : [];
+    digits.length >= MIN_PHONE_MATCH_DIGITS ? [{ type: "PHONE", value: digits, label: null, isPublic: false }] : [];
 
   return createStore({
     name: input.name,

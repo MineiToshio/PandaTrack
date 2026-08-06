@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { normalizeStoreName } from "@/lib/store/duplicateMatch";
-import { PUBLIC_VISIBLE_STORE_STATUSES } from "./storeQueries";
+import { PUBLIC_VISIBLE_STORE_STATUSES, storeVisibleToViewerFilter } from "./storeQueries";
 
 /**
  * Store matching for the image-intake review screen.
@@ -72,7 +72,7 @@ const ORDERABLE_STORE_STATUS_FILTER = { in: [...PUBLIC_VISIBLE_STORE_STATUSES] }
  * store. Scoped to the same "orderable" catalog `getOrderableStores` exposes to the manual form, so
  * an intake match never surfaces a store the buyer could not otherwise pick.
  */
-async function findCandidatesByPhone(rawPhone: string | null): Promise<StoreMatchCandidate[]> {
+async function findCandidatesByPhone(viewerId: string, rawPhone: string | null): Promise<StoreMatchCandidate[]> {
   const digits = rawPhone ? normalizePhoneDigits(rawPhone) : "";
   if (digits.length < MIN_PHONE_MATCH_DIGITS) return [];
 
@@ -83,6 +83,7 @@ async function findCandidatesByPhone(rawPhone: string | null): Promise<StoreMatc
         visibility: "PUBLIC",
         status: ORDERABLE_STORE_STATUS_FILTER,
         isActive: true,
+        ...storeVisibleToViewerFilter(viewerId),
       },
     },
     select: { storeId: true, value: true, store: { select: { name: true } } },
@@ -105,7 +106,7 @@ async function findCandidatesByPhone(rawPhone: string | null): Promise<StoreMatc
  * match, since `searchName` is written as `normalizeStoreName(name)` on every create or
  * rename, so a single equality query on `searchName` covers both of the script's two steps.
  */
-async function findCandidatesByName(rawName: string | null): Promise<StoreMatchCandidate[]> {
+async function findCandidatesByName(viewerId: string, rawName: string | null): Promise<StoreMatchCandidate[]> {
   const trimmed = rawName?.trim() ?? "";
   if (!trimmed) return [];
   const searchName = normalizeStoreName(trimmed);
@@ -117,6 +118,7 @@ async function findCandidatesByName(rawName: string | null): Promise<StoreMatchC
       visibility: "PUBLIC",
       status: ORDERABLE_STORE_STATUS_FILTER,
       isActive: true,
+      ...storeVisibleToViewerFilter(viewerId),
     },
     select: { id: true, name: true },
     take: MAX_NAME_MATCH_SCAN,
@@ -174,11 +176,18 @@ async function findStoreIdsWithPriorOrders(userId: string, storeIds: string[]): 
  * phone-matched candidates first, then stores the same user has ordered from before, then
  * alphabetically. `unknown` fires when neither signal matches anything.
  *
- * `userId` never scopes which stores can match (the store catalog is shared across users); it only
- * orders an ambiguous list so a store the caller has bought from before surfaces first.
+ * `userId` scopes matching only to the extent privacy requires: the shared catalog is matchable by
+ * everyone, but another collector's private person store is not, because it is not theirs to be
+ * shown (`FR-04-33`, ADR 0009). Without that scope an intake could resolve, with full confidence,
+ * to a private individual someone else recorded from their own chat. Beyond privacy `userId` does
+ * not decide what matches, only what sorts first: a store the caller has bought from before leads
+ * an ambiguous list.
  */
 export async function findStoreMatchesForIntake(userId: string, input: StoreMatchInput): Promise<StoreMatchResult> {
-  const [byPhone, byName] = await Promise.all([findCandidatesByPhone(input.phone), findCandidatesByName(input.name)]);
+  const [byPhone, byName] = await Promise.all([
+    findCandidatesByPhone(userId, input.phone),
+    findCandidatesByName(userId, input.name),
+  ]);
 
   const merged = new Map<string, { name: string; matchedByPhone: boolean }>();
   for (const candidate of byPhone) {

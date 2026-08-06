@@ -1,5 +1,6 @@
 import type {
   Prisma,
+  SellerType,
   StoreContactChannelType,
   StorePresenceType,
   StoreStatus,
@@ -88,6 +89,13 @@ export interface PublicStoreListingItem {
   name: string;
   countryCode: string;
   status: StoreStatus;
+  /** Whether the store is a private person store (`FR-04-33`). */
+  isPrivate: boolean;
+  /**
+   * Who created it. Carried alongside `isPrivate` so a surface can say "private" only about a
+   * store belonging to the person looking, rather than about any private store it was handed.
+   */
+  createdByUserId: string;
   sellerType: "RETAILER" | "PERSON" | "PROXY";
   logoUrl: string | null;
   presenceTypes: StorePresenceType[];
@@ -106,12 +114,56 @@ export interface PublicStoreListingFilters {
   countryCodes?: string[];
   importCountryCodes?: string[];
   presenceTypes?: StorePresenceType[];
+  /** Seller kinds to keep (`RETAILER` / `PERSON` / `PROXY`). Empty or absent means every kind. */
+  sellerTypes?: SellerType[];
   receivesOrders?: boolean;
   hasStock?: boolean;
   /** When true, closed (inactive) stores are included in the listing. Defaults to false (closed stores hidden). */
   includeClosed?: boolean;
+  /**
+   * When true, narrows the listing to the private stores the viewer created, so they can audit what
+   * they have marked private. Always viewer-scoped; see `ownPrivateStoresFilter`.
+   */
+  onlyOwnPrivate?: boolean;
+  /**
+   * Who is looking. Their own private stores are included; everyone else's are not. Part of the
+   * filters rather than a second argument on purpose: the listing and its count must be built from
+   * the same object, and a viewer passed to one but not the other would make the header count and
+   * the grid disagree by exactly the viewer's own private stores.
+   */
+  viewerId?: string | null;
   page?: number;
   pageSize?: number;
+}
+
+/**
+ * The privacy half of every store read, in one place.
+ *
+ * `isPrivate` is a real access rule (`FR-04-33`, `BR-04-21`, ADR 0009): a private person store
+ * belongs to its creator and to nobody else. Every query that can surface a store to a user has to
+ * apply it, and each one that forgot became a way to read a private seller's name, slug, or phone.
+ * Callers compose this rather than writing the predicate themselves, so a new read path cannot
+ * quietly ship without it.
+ *
+ * With no viewer (an anonymous or system read) only public stores qualify, which is the
+ * conservative reading and matches the pre-existing flat `isPrivate: false`.
+ */
+export function storeVisibleToViewerFilter(viewerId: string | null | undefined): Prisma.StoreWhereInput {
+  return viewerId ? { OR: [{ isPrivate: false }, { createdByUserId: viewerId }] } : { isPrivate: false };
+}
+
+/**
+ * The "only my private stores" view: a collector auditing what they have marked private.
+ *
+ * Deliberately NOT expressed as `isPrivate: true` layered on top of the filter above. That reads
+ * the same and is not: it asks for private stores *in general*, and one wrong composition order
+ * (or one anonymous read, where the filter above collapses to `isPrivate: false`) turns it into
+ * "show me everyone's private stores". Requiring the viewer to be the creator makes the narrow
+ * reading the only reading — this set is always a subset of what `storeVisibleToViewerFilter`
+ * already allows — and with no viewer it matches nothing instead of falling open.
+ */
+export function ownPrivateStoresFilter(viewerId: string | null | undefined): Prisma.StoreWhereInput {
+  return viewerId ? { isPrivate: true, createdByUserId: viewerId } : { id: { in: [] } };
 }
 
 export interface PublicStoreListingPage {
@@ -161,6 +213,7 @@ export type UserStoreOption = {
  */
 export async function findDuplicateCandidates(
   nameQuery: string,
+  viewerId: string | null,
   limit: number = DEFAULT_DUPLICATE_CANDIDATES_LIMIT,
 ): Promise<DuplicateCandidate[]> {
   const trimmed = nameQuery.trim();
@@ -169,7 +222,14 @@ export async function findDuplicateCandidates(
   if (searchTerms.length === 0) return [];
 
   const stores = await prisma.store.findMany({
-    where: { OR: searchTerms.map((term) => ({ searchName: { contains: term } })) },
+    // This returns a `slug`, which is the address of a store's page: an unscoped answer here let a
+    // caller turn any guessed name into someone else's private store's URL.
+    where: {
+      AND: [
+        { OR: searchTerms.map((term) => ({ searchName: { contains: term } })) },
+        storeVisibleToViewerFilter(viewerId),
+      ],
+    },
     select: { id: true, name: true, slug: true, countryCode: true, logoUrl: true },
     orderBy: { name: "asc" },
     take: MAX_DUPLICATE_SCAN,
@@ -196,6 +256,7 @@ export async function findDuplicateCandidates(
 export async function findDuplicateCandidatesInCountry(
   nameQuery: string,
   countryCode: string,
+  viewerId: string | null,
   limit: number = DEFAULT_DUPLICATE_CANDIDATES_LIMIT,
   minSimilarityPercent: number = SIMILARITY_THRESHOLD_PERCENT,
 ): Promise<DuplicateCandidate[]> {
@@ -207,7 +268,10 @@ export async function findDuplicateCandidatesInCountry(
   const stores = await prisma.store.findMany({
     where: {
       countryCode,
-      OR: searchTerms.map((term) => ({ searchName: { contains: term } })),
+      AND: [
+        { OR: searchTerms.map((term) => ({ searchName: { contains: term } })) },
+        storeVisibleToViewerFilter(viewerId),
+      ],
     },
     select: { id: true, name: true, slug: true, countryCode: true, logoUrl: true },
     orderBy: { name: "asc" },
@@ -240,9 +304,12 @@ export function buildPublicStoreListingWhere(filters: PublicStoreListingFilters)
     countryCodes = [],
     importCountryCodes = [],
     presenceTypes = [],
+    sellerTypes = [],
     receivesOrders = false,
     hasStock = false,
     includeClosed = false,
+    onlyOwnPrivate = false,
+    viewerId = null,
   } = filters;
 
   const trimmedName = nameQuery?.trim();
@@ -250,11 +317,16 @@ export function buildPublicStoreListingWhere(filters: PublicStoreListingFilters)
   const hasCountryFilter = countryCodes.length > 0;
   const hasImportCountryFilter = importCountryCodes.length > 0;
   const hasPresenceFilter = presenceTypes.length > 0;
+  const hasSellerTypeFilter = sellerTypes.length > 0;
 
   return {
     visibility: "PUBLIC",
     status: { in: [...PUBLIC_VISIBLE_STORE_STATUSES] },
-    isPrivate: false,
+    // The viewer's own private stores belong in their listing: hiding them from everyone including
+    // their creator is what left a collector unable to find the stores image intake made for them.
+    // The "only mine, private" view replaces this rather than stacking on it, so the narrower
+    // predicate cannot be widened by whatever this one would otherwise have allowed.
+    ...(onlyOwnPrivate ? ownPrivateStoresFilter(viewerId) : storeVisibleToViewerFilter(viewerId)),
     // Closed stores are hidden by default; the listing exposes an opt-in "show closed" filter.
     ...(!includeClosed && { isActive: true }),
     ...(trimmedName && {
@@ -267,6 +339,11 @@ export function buildPublicStoreListingWhere(filters: PublicStoreListingFilters)
     }),
     ...(hasCountryFilter && {
       countryCode: { in: countryCodes },
+    }),
+    // Multi-value like every other family: picking two kinds widens the result, and picking none
+    // filters nothing (`FR-04-15`).
+    ...(hasSellerTypeFilter && {
+      sellerType: { in: sellerTypes },
     }),
     ...(hasPresenceFilter && {
       presences: {
@@ -292,6 +369,8 @@ function mapPublicStoreListingItem(store: {
   name: string;
   countryCode: string;
   status: StoreStatus;
+  isPrivate: boolean;
+  createdByUserId: string;
   sellerType: "RETAILER" | "PERSON" | "PROXY";
   logoUrl: string | null;
   receivesOrders: boolean | null;
@@ -308,6 +387,8 @@ function mapPublicStoreListingItem(store: {
     name: store.name,
     countryCode: store.countryCode,
     status: store.status,
+    isPrivate: store.isPrivate,
+    createdByUserId: store.createdByUserId,
     sellerType: store.sellerType,
     logoUrl: store.logoUrl,
     presenceTypes: store.presences.map((p) => p.presenceType),
@@ -345,6 +426,8 @@ export async function getPublicStoresListingPage(filters: PublicStoreListingFilt
       name: true,
       countryCode: true,
       status: true,
+      isPrivate: true,
+      createdByUserId: true,
       sellerType: true,
       logoUrl: true,
       receivesOrders: true,
@@ -723,13 +806,18 @@ export async function getViewerOrderCountsByStoreSlugs(
  * without waiting for moderation. A store with open reports stays orderable too: the derived
  * report notice is informational, not a lock. This matches the public store listing query
  * in `getPublicStoresListingPage`.
+ *
+ * "Shared" stops at private person stores. This picker is rendered to every collector, so an
+ * unscoped answer put the name of someone else's private seller — typically a real individual read
+ * out of a private chat by image intake — into a list every user of the app can scroll.
  */
-export async function getOrderableStores(): Promise<UserStoreOption[]> {
+export async function getOrderableStores(viewerId: string | null): Promise<UserStoreOption[]> {
   return prisma.store.findMany({
     where: {
       visibility: "PUBLIC",
       status: { in: [...PUBLIC_VISIBLE_STORE_STATUSES] },
       isActive: true,
+      ...storeVisibleToViewerFilter(viewerId),
     },
     select: { id: true, name: true, countryCode: true, logoUrl: true },
     orderBy: { name: "asc" },

@@ -51,14 +51,14 @@ describe("findDuplicateCandidates SQL pre-filter on searchName", () => {
       { id: "s1", name: "Pokémon Center", slug: "pokemon-center", countryCode: "JP", logoUrl: null },
     ]);
 
-    const result = await findDuplicateCandidates("pokemon", 5);
+    const result = await findDuplicateCandidates("pokemon", null, 5);
 
     // The DB read is pre-filtered on the persisted, diacritic-stripped `searchName` column, so the
     // query "pokemon" matches the stored "Pokémon Center" (whose searchName is "pokemon center")
     // without the accent-sensitivity that a raw ILIKE on `name` would have.
     expect(storeFindManyMock).toHaveBeenCalledTimes(1);
     expect(storeFindManyMock.mock.calls[0]![0].where).toEqual({
-      OR: [{ searchName: { contains: "pokemon" } }],
+      AND: [{ OR: [{ searchName: { contains: "pokemon" } }] }, { isPrivate: false }],
     });
     expect(result.map((candidate) => candidate.name)).toContain("Pokémon Center");
   });
@@ -66,15 +66,33 @@ describe("findDuplicateCandidates SQL pre-filter on searchName", () => {
   it("splits a multi-word query into distinct normalized OR terms", async () => {
     storeFindManyMock.mockResolvedValue([]);
 
-    await findDuplicateCandidates("Pokémon  Center!", 5);
+    await findDuplicateCandidates("Pokémon  Center!", null, 5);
 
     expect(storeFindManyMock.mock.calls[0]![0].where).toEqual({
-      OR: [{ searchName: { contains: "pokemon" } }, { searchName: { contains: "center" } }],
+      AND: [
+        { OR: [{ searchName: { contains: "pokemon" } }, { searchName: { contains: "center" } }] },
+        { isPrivate: false },
+      ],
+    });
+  });
+
+  it("never offers another user's private store as a duplicate candidate", async () => {
+    // This query returns a `slug`, which is the address of a store's page. Answering it without
+    // scoping turned any guessed name into a link to somebody else's private seller.
+    storeFindManyMock.mockResolvedValue([]);
+
+    await findDuplicateCandidates("Kyle", "user-1", 5);
+
+    expect(storeFindManyMock.mock.calls[0]![0].where).toEqual({
+      AND: [
+        { OR: [{ searchName: { contains: "kyle" } }] },
+        { OR: [{ isPrivate: false }, { createdByUserId: "user-1" }] },
+      ],
     });
   });
 
   it("does not hit the database when the query normalizes to nothing", async () => {
-    const result = await findDuplicateCandidates("!!! ---", 5);
+    const result = await findDuplicateCandidates("!!! ---", null, 5);
 
     expect(result).toEqual([]);
     expect(storeFindManyMock).not.toHaveBeenCalled();
@@ -83,11 +101,11 @@ describe("findDuplicateCandidates SQL pre-filter on searchName", () => {
   it("combines the country filter with the normalized searchName OR terms", async () => {
     storeFindManyMock.mockResolvedValue([]);
 
-    await findDuplicateCandidatesInCountry("Pokémon", "JP", 5);
+    await findDuplicateCandidatesInCountry("Pokémon", "JP", null, 5);
 
     expect(storeFindManyMock.mock.calls[0]![0].where).toEqual({
       countryCode: "JP",
-      OR: [{ searchName: { contains: "pokemon" } }],
+      AND: [{ OR: [{ searchName: { contains: "pokemon" } }] }, { isPrivate: false }],
     });
   });
 });

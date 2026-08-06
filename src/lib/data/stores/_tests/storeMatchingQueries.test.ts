@@ -83,6 +83,19 @@ describe("findStoreMatchesForIntake", () => {
     expect(where.store).toMatchObject({ visibility: "PUBLIC", isActive: true });
   });
 
+  it("never matches another collector's private store, by phone or by name", async () => {
+    // The catalog is shared, but a private person store is not part of it. Without this scope an
+    // intake could resolve, with full confidence, onto a private individual somebody else recorded
+    // from their own chat, and then attach an order to them.
+    await findStoreMatchesForIntake("user-1", { name: "Kyle Mendoza", phone: "987654321" });
+
+    const phoneWhere = storeContactChannelFindManyMock.mock.calls[0]![0].where;
+    expect(phoneWhere.store.OR).toEqual([{ isPrivate: false }, { createdByUserId: "user-1" }]);
+
+    const nameWhere = storeFindManyMock.mock.calls[0]![0].where;
+    expect(nameWhere.OR).toEqual([{ isPrivate: false }, { createdByUserId: "user-1" }]);
+  });
+
   it("returns certain on a single exact-normalized name match, reusing resolveStore semantics", async () => {
     storeFindManyMock.mockResolvedValue([{ id: "store-2", name: "Pop Dealer" }]);
 

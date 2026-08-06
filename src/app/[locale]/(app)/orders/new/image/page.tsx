@@ -61,7 +61,7 @@ export default async function OrdersNewImagePage({ params, searchParams }: Props
 
   const [preferences, stores, quota, productTypeRows] = await Promise.all([
     getCollectorPreferencesSnapshot(session.user.id),
-    getOrderableStores(),
+    getOrderableStores(session.user.id),
     // Read here rather than in the client boundary: the balance decides whether the attach surface
     // renders at all, so it has to be known before the first paint.
     getImageIntakeQuotaSnapshotCached(session.user.id, getIsAdmin(session)),
