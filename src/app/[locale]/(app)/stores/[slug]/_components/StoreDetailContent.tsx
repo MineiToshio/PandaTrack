@@ -87,6 +87,12 @@ type StoreDetailContentProps = {
   canDirectlyEdit: boolean;
   /** When true, the viewer is an administrator and the admin moderation panel is rendered. */
   canModerate: boolean;
+  /**
+   * Who is looking. The private banner asserts "solo tú la ves", which is only true for the
+   * store's creator; an admin may reach a private store they did not create, and telling them it
+   * is theirs alone is simply false.
+   */
+  viewerId?: string | null;
   /** Authored (non-seed) catalog names so category chips resolve admin-authored types; seeds use i18n. */
   authoredProductTypeNames: AuthoredStoreProductTypeNameMap;
   backHref?: string | null;
@@ -137,6 +143,7 @@ export default function StoreDetailContent({
   canAccessEditRoute,
   canDirectlyEdit,
   canModerate,
+  viewerId,
   authoredProductTypeNames,
   backHref,
   backOrderLabel,
@@ -179,7 +186,7 @@ export default function StoreDetailContent({
         <div className="text-foreground space-y-4">
           <BackNavLink href={backHref ?? `/${locale}${ROUTES.stores}`}>{backLabel}</BackNavLink>
 
-          {store.isPrivate && (
+          {store.isPrivate && store.createdByUserId === viewerId && (
             <AlertBanner tone="info" icon={<Lock size={14} aria-hidden="true" />}>
               {tStores("redesign.detail.privateBadge")}
             </AlertBanner>

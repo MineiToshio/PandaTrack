@@ -112,6 +112,7 @@ export default async function StoreDetailPage({ params, searchParams }: StoreDet
       canAccessEditRoute={canAccessEditRoute}
       canDirectlyEdit={canDirectlyEdit}
       canModerate={isAdmin}
+      viewerId={session?.user?.id ?? null}
       authoredProductTypeNames={buildAuthoredStoreProductTypeNameMap(authoredProductTypeNames)}
       backHref={backHref}
       backOrderLabel={backOrderLabel}
