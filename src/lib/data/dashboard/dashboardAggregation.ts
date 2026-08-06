@@ -18,6 +18,7 @@ import {
   toMonthKey,
 } from "./dashboardPeriods";
 import { isEligibleForDelivery } from "@/lib/deliveries/deliveryState";
+import { resolveOrderArrivalDueDate } from "@/lib/orders/orderDerivedState";
 import { needsFxReconciliation } from "@/lib/fx/reconciliation";
 import {
   computeOutstandingMinor,
@@ -438,9 +439,13 @@ function buildActivity(
   return { recentOrders, upcomingArrivals, overdueArrivals, placedVsArrived, punctuality };
 }
 
-/** Overdue reference date for an unfulfilled arrival: window close, or its start when there is no close. */
+/**
+ * Overdue reference date for an unfulfilled arrival: window close, or its start when there is no
+ * close. Delegates so the dashboard, the orders list chip and the "Entrega atrasada" filter cannot
+ * drift apart on what "late" means.
+ */
 function resolveArrivalDueDate(order: DashboardOrderInput): Date | null {
-  return order.expectedDeliveryTo ?? order.expectedDeliveryFrom;
+  return resolveOrderArrivalDueDate(order);
 }
 
 /**

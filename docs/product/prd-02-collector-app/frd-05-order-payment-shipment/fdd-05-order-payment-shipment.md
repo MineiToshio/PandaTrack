@@ -203,8 +203,44 @@ list**. **Desktop columns** (left→right) on the `order-row`:
 `[store-avatar s32] · Pedido / Tienda (col-store) · Productos (col-product) · Estado
 (col-status) · Total (col-total) · % Pago (col-progress) · [expand-toggle chevron]`.
 
-- **Pedido / Tienda**: store name in `font-weight 600`, then `ORD-YYYYMMDD-NN` in
-  `MonoCode` + order date as secondary text.
+- **Pedido / Tienda**: store name in `font-weight 600`, then the **order date** in `MonoCode`
+  and the **expected arrival**, joined on one line (`26 jul 2026 · llega 1–30 nov`) from
+  **1360px** up and stacked on two lines below it.
+
+**Design decision, 2026-08-05 — the row shows the expected arrival and drops the order code.**
+This supersedes the earlier version of these two bullets, which put `ORD-YYYYMMDD-NN` in the
+secondary line and gave the table no arrival column at all. Two reasons. First, `FR-05-29` always
+required the expected delivery range in the row and this design never carried it, so the list
+could be filtered by delivery date (`deliveryFrom` / `deliveryTo` / "Entrega atrasada") while
+showing nothing to check the filter against. Second, the identifier is detail-surface metadata by
+`FR-05-03` and `WO-06`; it is still searchable, still on the detail hero with its copy button,
+still in the breadcrumb, and still on the dashboard rows.
+
+It lives **inside `col-store`**, joined to the order date where the cell is wide enough and
+stacked under it where it is not. Two other shapes were tried and rejected. A **column** cost an
+eighth track that squeezed the other five hard enough to wrap the payment cell's percentage under
+its own progress bar between 1024px and 1280px, and the value is null on many orders, so it does
+not earn permanent horizontal space. **Joining unconditionally** fails at the narrow end: this
+line is `truncate`d, and `truncate` cuts from the right, so a cell too narrow silently eats the
+arrival — the value being added. The responsive split keeps the compact single line where it is
+safe and degrades to two full-width lines where it is not.
+
+**The 1360px switch is measured, not chosen.** Against the real corpus (491 orders with a window,
+median 28 characters, longest 37 — `12 feb 2026 · esperada 1 jun – 31 jul` in `es`,
+`May 27, 2026 · arrives Sep 20 – Oct 31` in `en`), forcing the single line and counting clipped
+nodes over 100 rows gives: **1152px → 14 clipped, 1230px → 2, 1280px → 0, 1360px → 0 in both
+locales, 1600px → 0**. The true boundary is near 1250px; 1360px keeps roughly 18 characters of
+headroom for longer future windows, longer month names and other locales. Below it the stacked
+form clips nothing, and the `·` separator is hidden so it never orphans at the start of a line.
+Re-measure this number if the window format or the column widths change.
+
+- **Expected arrival line**: the window via `formatArrivalWindow` (`src/lib/arrivalWindow.ts`,
+  shared with the deliveries list) — `llega 15–22 ago`, collapsing to a single date when both
+  ends fall on the same day (image intake writes both ends from one stated date, so this is
+  common). Once the window has elapsed the verb becomes `esperada …` in `--warning` (`WO-06`);
+  a `COMPLETED` / `CANCELLED` order renders no line at all rather than promising an arrival.
+  "Elapsed" is `resolveOrderArrivalDueDate` (window close, or its start when open-ended), the
+  same rule the status chip, the "Entrega atrasada" filter and the dashboard now share.
 - **% Pago** (`col-progress`): a mini progress bar (≈60×3px, left-anchored) followed by the
   percentage in `.num` with `min-width: 3.2ch`. Bar color is role-driven: `--accent` for a
   normal partial payment, `--warning` for overdue/unpaid-with-balance, `--success` at 100%.
@@ -595,8 +631,10 @@ see [interface-patterns.md → Responsive](../../../design/interface-patterns.md
 specifics:
 
 - **List → cards** (`#s7-orders-list-mobile`): the tabular rows collapse into vertical
-  `s7-order-card`s (avatar, store title, `ORD-… · {fecha}`, status chip, progress bar, meta
-  `"N productos · X% pagado · $total"`). The page action row is a sticky search +
+  `s7-order-card`s (avatar, store title, `{fecha del pedido}`, status chip, the expected-arrival
+  line stacked under it (`llega …` / `esperada …` in `--warning`, omitted on a terminal order),
+  status chip, progress bar, meta `"N productos · X% pagado · $total"`). The order code is not on the card;
+  see the 2026-08-05 decision under Desktop columns. The page action row is a sticky search +
   icon-only `FilterTriggerButton` (with count badge) + `[+ Nuevo]`; chips stay removable; a
   per-card `s7-mob-card-expand-row` chevron expands items inline; footer is `"Cargar más"`.
   Tapping the card navigates to detail.

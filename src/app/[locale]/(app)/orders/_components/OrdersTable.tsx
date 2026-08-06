@@ -7,7 +7,8 @@ import StoreAvatar from "@/components/core/StoreAvatar";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { formatAmountWithSymbol } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
-import { isOrderOverdue } from "@/lib/orders/orderDerivedState";
+import { isOrderOverdue, resolveOrderArrivalDueDate } from "@/lib/orders/orderDerivedState";
+import { formatArrivalWindow } from "@/lib/arrivalWindow";
 import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import OrderUnpaidPill from "./share/OrderUnpaidPill";
@@ -77,8 +78,16 @@ export default function OrdersTable({
 
       <ul role="rowgroup" className="flex flex-col">
         {orders.map((order) => {
-          const overdue = isOrderOverdue({ expectedDeliveryTo: order.expectedDeliveryTo, status: order.status }, today);
-          const overdueDays = overdue ? describeOverdueDays(order.expectedDeliveryTo, today) : 0;
+          const overdue = isOrderOverdue(
+            {
+              expectedDeliveryFrom: order.expectedDeliveryFrom,
+              expectedDeliveryTo: order.expectedDeliveryTo,
+              status: order.status,
+            },
+            today,
+          );
+          const overdueDays = overdue ? describeOverdueDays(resolveOrderArrivalDueDate(order), today) : 0;
+          const arrivalWindow = formatArrivalWindow(order.expectedDeliveryFrom, order.expectedDeliveryTo, locale);
           const chip = describeOrderListChip({
             status: order.status,
             paymentPercentage: order.paymentPercentage,
@@ -121,7 +130,7 @@ export default function OrdersTable({
               <ViewTransitionLink
                 href={detailHref}
                 viewTransitionEntity="order"
-                aria-label={`${order.store.name} · ${order.humanReadableId}`}
+                aria-label={`${order.store.name} · ${formatDate(order.orderDate, locale)}`}
                 className="absolute inset-0 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
               />
 
@@ -143,9 +152,40 @@ export default function OrdersTable({
                   </p>
                   {storeTombstone.isRemoved && <StoreTombstoneNotice tone={storeTombstone.tone} variant="compact" />}
                 </div>
-                <p className="truncate [font-family:var(--font-mono)] [font-size:12px] [color:var(--text-muted)] tabular-nums">
-                  {order.humanReadableId} · {formatDate(order.orderDate, locale)}
-                </p>
+                {/*
+                  One line where the cell is wide enough, stacked where it is not. Joining the two
+                  dates everywhere is what the earlier attempt got wrong: this cell truncates, and
+                  `truncate` cuts from the right, so a cell too narrow silently eats the arrival —
+                  the value being added. Stacking everywhere is safe but spends a row of vertical
+                  space on every order for a line that is often short. The switch is at the width
+                  where the longest real string stops fitting, measured rather than guessed; below
+                  it each date gets the full cell width on its own line.
+                */}
+                <div className="flex min-w-0 flex-col [@media(min-width:1360px)]:flex-row [@media(min-width:1360px)]:items-baseline [@media(min-width:1360px)]:gap-1.5">
+                  <p className="truncate [font-family:var(--font-mono)] [font-size:12px] [color:var(--text-muted)] tabular-nums">
+                    {formatDate(order.orderDate, locale)}
+                  </p>
+                  {!isCompletedOrCancelled && arrivalWindow && (
+                    <>
+                      <span
+                        aria-hidden
+                        className="hidden [color:var(--text-muted)] [@media(min-width:1360px)]:inline"
+                      >
+                        ·
+                      </span>
+                      <p
+                        className={cn(
+                          "truncate [font-size:12px] tabular-nums",
+                          overdue ? "[color:var(--warning)]" : "[color:var(--text-secondary)]",
+                        )}
+                      >
+                        {overdue
+                          ? t("table.arrivalExpected", { window: arrivalWindow })
+                          : t("table.arrivalArrives", { window: arrivalWindow })}
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* "N productos" / "1 producto" per spec §5.5 / demo `col-product` */}

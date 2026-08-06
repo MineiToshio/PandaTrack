@@ -19,7 +19,7 @@
   },
   "search": {
     "label": "Buscar pedidos",
-    "placeholder": "Código o producto (ORD-20260428-01, Evangelion OST…)"
+    "placeholder": "Producto, tienda o código (ORD-20260428-01, Evangelion OST…)"
   },
   "filters": {
     "openButton": "Filtrar",
@@ -135,7 +135,9 @@
     "headerProducts": "Productos",
     "headerStatus": "Estado",
     "headerTotal": "Total",
-    "headerProgress": "% Pago"
+    "headerProgress": "% Pago",
+    "arrivalArrives": "llega {window}",
+    "arrivalExpected": "esperada {window}"
   },
   "empty": {
     "noOrders": {

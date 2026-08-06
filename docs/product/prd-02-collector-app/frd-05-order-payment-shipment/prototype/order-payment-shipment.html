@@ -1355,6 +1355,8 @@
     .order-row .col-store { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .order-row .col-store strong { font-size: 14px; font-weight: 500; }
     .order-row .col-store small { color: var(--text-muted); font-size: 12px; font-family: 'JetBrains Mono', ui-monospace, monospace; }
+    .order-row .col-store .arrival { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+    .order-row .col-store .arrival.is-late { color: var(--warning); }
     .order-row .col-product { display: none; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 13px; }
     .order-row .col-product svg { width: 14px; height: 14px; color: var(--accent-cool); }
     @media (min-width: 1024px) { .order-row .col-product { display: flex; } }
@@ -4058,7 +4060,7 @@
         <div id="orders-list-body">
           <div class="order-row" data-expandable data-target="order-detail">
             <div class="store-avatar s32">M</div>
-            <div class="col-store"><strong>Mercado MX</strong><small>PT-002418 · 12 abr 26</small></div>
+            <div class="col-store"><strong>Mercado MX</strong><small>PT-002418 · 12 abr 26</small><span class="arrival">llega 15&#8211;22 may</span></div>
             <div class="col-product"><span class="count num">3</span> productos</div>
             <div class="col-status"><span class="chip info"><i data-lucide="package"></i> Parcialmente en camino</span></div>
             <div class="col-total num">$1.240,00</div>
@@ -4077,7 +4079,7 @@
 
           <div class="order-row" data-expandable data-target="order-detail">
             <div class="store-avatar s32">S</div>
-            <div class="col-store"><strong>Surugaya</strong><small>PT-002417 · 09 abr 26</small></div>
+            <div class="col-store"><strong>Surugaya</strong><small>PT-002417 · 09 abr 26</small><span class="arrival">llega 15&#8211;22 may</span></div>
             <div class="col-product"><span class="count num">5</span> productos</div>
             <div class="col-status"><span class="chip success"><i data-lucide="check-circle"></i> Completo</span></div>
             <div class="col-total num">¥18.400</div>
@@ -4095,7 +4097,7 @@
 
           <div class="order-row" data-expandable data-target="order-detail">
             <div class="store-avatar s32">A</div>
-            <div class="col-store"><strong>AmiAmi</strong><small>PT-002416 · 02 abr 26</small></div>
+            <div class="col-store"><strong>AmiAmi</strong><small>PT-002416 · 02 abr 26</small><span class="arrival">llega 15&#8211;22 may</span></div>
             <div class="col-product"><span class="count num">2</span> productos</div>
             <div class="col-status"><span class="chip warning"><i data-lucide="alert-circle"></i> Atrasado 3d</span></div>
             <div class="col-total num">$89,50</div>
@@ -4112,7 +4114,7 @@
 
           <div class="order-row" data-expandable data-target="order-detail">
             <div class="store-avatar s32">C</div>
-            <div class="col-store"><strong>CDJapan</strong><small>PT-002415 · 28 mar 26</small></div>
+            <div class="col-store"><strong>CDJapan</strong><small>PT-002415 · 28 mar 26</small><span class="arrival">llega 15&#8211;22 may</span></div>
             <div class="col-product"><span class="count num">2</span> productos</div>
             <div class="col-status"><span class="chip neutral"><i data-lucide="clock"></i> Abierto</span></div>
             <div class="col-total num">¥6.200</div>
@@ -4129,7 +4131,7 @@
 
           <div class="order-row" data-expandable data-target="order-detail">
             <div class="store-avatar s32">H</div>
-            <div class="col-store"><strong>HMV Japan</strong><small>PT-002414 · 25 mar 26</small></div>
+            <div class="col-store"><strong>HMV Japan</strong><small>PT-002414 · 25 mar 26</small><span class="arrival">llega 15&#8211;22 may</span></div>
             <div class="col-product"><span class="count num">1</span> producto</div>
             <div class="col-status"><span class="chip info"><i data-lucide="package"></i> En camino</span></div>
             <div class="col-total num">¥4.800</div>
@@ -4145,7 +4147,7 @@
 
           <div class="order-row" data-expandable data-target="order-detail">
             <div class="store-avatar s32">e</div>
-            <div class="col-store"><strong>eBay JP</strong><small>PT-002413 · 20 mar 26</small></div>
+            <div class="col-store"><strong>eBay JP</strong><small>PT-002413 · 20 mar 26</small><span class="arrival">llega 15&#8211;22 may</span></div>
             <div class="col-product"><span class="count num">12</span> productos</div>
             <div class="col-status"><span class="chip success"><i data-lucide="check-circle"></i> Completo</span></div>
             <div class="col-total num">$32,00</div>
@@ -4727,7 +4729,7 @@
         <!-- Row 1: OPEN / Parcialmente en camino -->
         <div class="order-row" data-expandable data-target="s7-order-detail-active" style="view-transition-name:order-pt-000123;">
           <div class="store-avatar s32">S</div>
-          <div class="col-store"><strong>Solaris Books &amp; Records</strong><small>ORD-20260428-01 · 28 abr 26</small></div>
+          <div class="col-store"><strong>Solaris Books &amp; Records</strong><small>28 abr 26</small><span class="arrival">llega 15&#8211;22 may</span></div>
           <div class="col-product"><span class="count num">7</span> productos</div>
           <div class="col-status"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span></div>
           <div class="col-total num">$1.240,00 USD</div>
@@ -4750,7 +4752,7 @@
         <!-- Row 2: OPEN / atrasado / impago -->
         <div class="order-row" data-expandable data-target="s7-order-detail-active" style="view-transition-name:order-pt-000118;">
           <div class="store-avatar s32">A</div>
-          <div class="col-store"><strong>Anime Corner Europe</strong><small>ORD-20260312-01 · 12 mar 26</small></div>
+          <div class="col-store"><strong>Anime Corner Europe</strong><small>12 mar 26</small><span class="arrival">llega 15&#8211;22 may</span></div>
           <div class="col-product"><span class="count num">2</span> productos</div>
           <div class="col-status"><span class="chip warning"><i data-lucide="alert-triangle"></i> Atrasado 8d</span></div>
           <div class="col-total num">€320,00</div>
@@ -4769,7 +4771,7 @@
         <!-- Row 3: OPEN / Parcialmente en camino / pago parcial -->
         <div class="order-row" data-expandable data-target="s7-order-detail-active" style="view-transition-name:order-pt-000115;">
           <div class="store-avatar s32">H</div>
-          <div class="col-store"><strong>HMV Japan</strong><small>ORD-20260205-01 · 5 feb 26</small></div>
+          <div class="col-store"><strong>HMV Japan</strong><small>5 feb 26</small><span class="arrival">llega 15&#8211;22 may</span></div>
           <div class="col-product"><span class="count num">6</span> productos</div>
           <div class="col-status"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span></div>
           <div class="col-total num">¥24.500</div>
@@ -4790,7 +4792,7 @@
         <!-- Row 4: OPEN / pagado 100% -->
         <div class="order-row" data-expandable data-target="s7-order-detail-active" style="view-transition-name:order-pt-000109;">
           <div class="store-avatar s32">T</div>
-          <div class="col-store"><strong>Tower Records Shibuya</strong><small>ORD-20260118-01 · 18 ene 26</small></div>
+          <div class="col-store"><strong>Tower Records Shibuya</strong><small>18 ene 26</small><span class="arrival">llega 15&#8211;22 may</span></div>
           <div class="col-product"><span class="count num">3</span> productos</div>
           <div class="col-status"><span class="chip success"><i data-lucide="check-circle"></i> Pagado</span></div>
           <div class="col-total num">$540,00 USD</div>
@@ -4810,7 +4812,7 @@
         <!-- Row 5: COMPLETED / saldo pendiente -->
         <div class="order-row" data-expandable data-target="s7-order-detail-completed-unpaid" style="view-transition-name:order-pt-000101;opacity:0.75;">
           <div class="store-avatar s32">D</div>
-          <div class="col-store"><strong>Disk Union Shinjuku</strong><small>ORD-20251103-01 · 3 nov 25</small></div>
+          <div class="col-store"><strong>Disk Union Shinjuku</strong><small>3 nov 25</small><span class="arrival">llega 15&#8211;22 may</span></div>
           <div class="col-product"><span class="count num">5</span> productos</div>
           <div class="col-status"><span class="chip success"><i data-lucide="package-check"></i> Completo</span></div>
           <div class="col-total num">¥18.400</div>
@@ -4893,9 +4895,9 @@
       <div class="orders-filter-chips"><span class="filter-chip">Solo activas <i data-lucide="x"></i></span><span class="filter-chip">Solaris Books &amp; Records <i data-lucide="x"></i></span></div>
       <div class="card" style="padding:4px;">
         <div class="orders-table-head" role="row"><div></div><div>Pedido / Tienda</div><div>Productos</div><div>Estado</div><div>Total</div><div>% Pago</div><div></div></div>
-        <div class="order-row"><div class="store-avatar s32">A</div><div class="col-store"><strong>Anime Corner Europe</strong><small>ORD-20260312-01 · 12 mar 26</small></div><div class="col-product"><span class="count num">2</span> productos</div><div class="col-status"><span class="chip warning"><i data-lucide="alert-triangle"></i> Atrasado 8d</span></div><div class="col-total num">€320,00</div><div class="col-progress"><div style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;"></div><small class="num">0%</small></div></div>
-        <div class="order-row"><div class="store-avatar s32">S</div><div class="col-store"><strong>Solaris Books &amp; Records</strong><small>ORD-20260428-01 · 28 abr 26</small></div><div class="col-product"><span class="count num">7</span> productos</div><div class="col-status"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span></div><div class="col-total num">$1.240,00</div><div class="col-progress"><div style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:60%;background:var(--accent);"></span></div><small class="num">60%</small></div></div>
-        <div class="order-row"><div class="store-avatar s32">H</div><div class="col-store"><strong>HMV Japan</strong><small>ORD-20260205-01 · 5 feb 26</small></div><div class="col-product"><span class="count num">6</span> productos</div><div class="col-status"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span></div><div class="col-total num">¥24.500</div><div class="col-progress"><div style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:33%;background:var(--warning);"></span></div><small class="num">33%</small></div></div>
+        <div class="order-row"><div class="store-avatar s32">A</div><div class="col-store"><strong>Anime Corner Europe</strong><small>12 mar 26</small><span class="arrival">llega 15&#8211;22 may</span></div><div class="col-product"><span class="count num">2</span> productos</div><div class="col-status"><span class="chip warning"><i data-lucide="alert-triangle"></i> Atrasado 8d</span></div><div class="col-total num">€320,00</div><div class="col-progress"><div style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;"></div><small class="num">0%</small></div></div>
+        <div class="order-row"><div class="store-avatar s32">S</div><div class="col-store"><strong>Solaris Books &amp; Records</strong><small>28 abr 26</small><span class="arrival">llega 15&#8211;22 may</span></div><div class="col-product"><span class="count num">7</span> productos</div><div class="col-status"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span></div><div class="col-total num">$1.240,00</div><div class="col-progress"><div style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:60%;background:var(--accent);"></span></div><small class="num">60%</small></div></div>
+        <div class="order-row"><div class="store-avatar s32">H</div><div class="col-store"><strong>HMV Japan</strong><small>5 feb 26</small><span class="arrival">llega 15&#8211;22 may</span></div><div class="col-product"><span class="count num">6</span> productos</div><div class="col-status"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span></div><div class="col-total num">¥24.500</div><div class="col-progress"><div style="width:60px;height:3px;background:color-mix(in oklch,var(--text-primary) 8%,transparent);border-radius:999px;overflow:hidden;"><span style="display:block;height:100%;width:33%;background:var(--warning);"></span></div><small class="num">33%</small></div></div>
       </div>
     </div>
   </div>
@@ -7166,7 +7168,7 @@
             <div class="store-avatar s40" aria-hidden="true">S</div>
             <div class="s7-mob-card-title-wrap">
               <div class="s7-card-title">Solaris Books &amp; Records</div>
-              <div class="s7-card-date">ORD-20260428-01 · 28 abr 2026</div>
+              <div class="s7-card-date">28 abr 2026</div>
             </div>
           </div>
           <div class="s7-card-chips">
@@ -7198,7 +7200,7 @@
             <div class="store-avatar s40" aria-hidden="true">A</div>
             <div class="s7-mob-card-title-wrap">
               <div class="s7-card-title">Anime Corner Europe</div>
-              <div class="s7-card-date">ORD-20260312-01 · 12 mar 2026</div>
+              <div class="s7-card-date">12 mar 2026</div>
             </div>
           </div>
           <div class="s7-card-chips">
@@ -7222,7 +7224,7 @@
             <div class="store-avatar s40" aria-hidden="true">H</div>
             <div class="s7-mob-card-title-wrap">
               <div class="s7-card-title">HMV Japan</div>
-              <div class="s7-card-date">ORD-20260205-01 · 5 feb 2026</div>
+              <div class="s7-card-date">5 feb 2026</div>
             </div>
           </div>
           <div class="s7-card-chips">
@@ -7245,7 +7247,7 @@
             <div class="store-avatar s40" aria-hidden="true">T</div>
             <div class="s7-mob-card-title-wrap">
               <div class="s7-card-title">Tower Records Shibuya</div>
-              <div class="s7-card-date">ORD-20260118-01 · 18 ene 2026</div>
+              <div class="s7-card-date">18 ene 2026</div>
             </div>
           </div>
           <div class="s7-card-chips">
@@ -9529,7 +9531,7 @@
         <!-- Row 1 — Activo, no necesita FX -->
         <div class="order-row" style="view-transition-name:order-pt-000123;">
           <div class="store-avatar s32">S</div>
-          <div class="col-store"><strong>Solaris Books &amp; Records</strong><small>ORD-20260428-01 · 28 abr 26</small></div>
+          <div class="col-store"><strong>Solaris Books &amp; Records</strong><small>28 abr 26</small><span class="arrival">llega 15&#8211;22 may</span></div>
           <div class="col-product"><span class="count num">7</span> productos</div>
           <div class="col-status"><span class="chip info"><i data-lucide="truck"></i> Parcialmente en camino</span></div>
           <div class="col-total num">$1.240,00 USD</div>
@@ -9541,7 +9543,7 @@
         <!-- Row 2 — Entregado JPY, FX desactualizado -->
         <div class="order-row" style="view-transition-name:order-pt-000118;">
           <div class="store-avatar s32">A</div>
-          <div class="col-store"><strong>Akiba Records</strong><small>ORD-20260312-01 · 12 mar 26</small></div>
+          <div class="col-store"><strong>Akiba Records</strong><small>12 mar 26</small><span class="arrival">llega 15&#8211;22 may</span></div>
           <div class="col-product"><span class="count num">3</span> productos</div>
           <div class="col-status"><span class="chip success"><i data-lucide="package-check"></i> Entregado</span></div>
           <div class="col-total num">¥28.000</div>
@@ -9553,7 +9555,7 @@
         <!-- Row 3 — Entregado JPY, FX desactualizado -->
         <div class="order-row" style="view-transition-name:order-pt-000114;">
           <div class="store-avatar s32">M</div>
-          <div class="col-store"><strong>Mandarake Akihabara</strong><small>ORD-20260218-01 · 18 feb 26</small></div>
+          <div class="col-store"><strong>Mandarake Akihabara</strong><small>18 feb 26</small><span class="arrival">llega 15&#8211;22 may</span></div>
           <div class="col-product"><span class="count num">5</span> productos</div>
           <div class="col-status"><span class="chip success"><i data-lucide="package-check"></i> Entregado</span></div>
           <div class="col-total num">¥45.500</div>
@@ -9565,7 +9567,7 @@
         <!-- Row 4 — Entregado USD, FX desactualizado -->
         <div class="order-row" style="view-transition-name:order-pt-000109;">
           <div class="store-avatar s32">A</div>
-          <div class="col-store"><strong>Anime Corner US</strong><small>ORD-20260118-01 · 18 ene 26</small></div>
+          <div class="col-store"><strong>Anime Corner US</strong><small>18 ene 26</small><span class="arrival">llega 15&#8211;22 may</span></div>
           <div class="col-product"><span class="count num">2</span> productos</div>
           <div class="col-status"><span class="chip success"><i data-lucide="package-check"></i> Entregado</span></div>
           <div class="col-total num">$185,00 USD</div>
@@ -10604,7 +10606,7 @@
       el.dataset.screenLink = 'order-detail';
       el.innerHTML = `
         <div class="store-avatar s32">${m.letter}</div>
-        <div class="col-store"><strong>${m.name}</strong><small>${m.code} · ${m.date}</small></div>
+        <div class="col-store"><strong>${m.name}</strong><small>${m.code} · ${m.date}</small><span class="arrival">llega 15&#8211;22 may</span></div>
         <div class="col-product"><i data-lucide="${m.icon}"></i> ${m.cat}</div>
         <div class="col-status"><span class="chip ${m.chip}"><i data-lucide="${m.chip === 'success' ? 'check-circle' : (m.chip === 'info' ? 'clock' : '')}"></i> ${m.chipText}</span></div>
         <div class="col-total num">${m.total}</div>

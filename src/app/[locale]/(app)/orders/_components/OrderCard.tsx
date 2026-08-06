@@ -7,7 +7,8 @@ import StoreAvatar from "@/components/core/StoreAvatar";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
 import { formatAmountWithSymbol } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
-import { isOrderOverdue } from "@/lib/orders/orderDerivedState";
+import { isOrderOverdue, resolveOrderArrivalDueDate } from "@/lib/orders/orderDerivedState";
+import { formatArrivalWindow } from "@/lib/arrivalWindow";
 import { ROUTES } from "@/lib/constants";
 import { cn } from "@/lib/styles";
 import OrderUnpaidPill from "./share/OrderUnpaidPill";
@@ -44,8 +45,16 @@ export default function OrderCard({
 }: OrderCardProps) {
   const t = useTranslations("orderListing");
 
-  const overdue = isOrderOverdue({ expectedDeliveryTo: order.expectedDeliveryTo, status: order.status }, today);
-  const overdueDays = overdue ? describeOverdueDays(order.expectedDeliveryTo, today) : 0;
+  const overdue = isOrderOverdue(
+    {
+      expectedDeliveryFrom: order.expectedDeliveryFrom,
+      expectedDeliveryTo: order.expectedDeliveryTo,
+      status: order.status,
+    },
+    today,
+  );
+  const overdueDays = overdue ? describeOverdueDays(resolveOrderArrivalDueDate(order), today) : 0;
+  const arrivalWindow = formatArrivalWindow(order.expectedDeliveryFrom, order.expectedDeliveryTo, locale);
   const chip = describeOrderListChip({
     status: order.status,
     paymentPercentage: order.paymentPercentage,
@@ -88,7 +97,7 @@ export default function OrderCard({
       <ViewTransitionLink
         href={detailHref}
         viewTransitionEntity="order"
-        aria-label={`${order.store.name} · ${order.humanReadableId}`}
+        aria-label={`${order.store.name} · ${formatDate(order.orderDate, locale)}`}
         className="absolute inset-0 rounded-[var(--radius-2xl)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
       />
 
@@ -109,8 +118,21 @@ export default function OrderCard({
             {storeTombstone.isRemoved && <StoreTombstoneNotice tone={storeTombstone.tone} variant="compact" />}
           </div>
           <p className="truncate [font-size:var(--text-caption)] [color:var(--text-secondary)] tabular-nums">
-            {order.humanReadableId} · {formatDate(order.orderDate, locale)}
+            {formatDate(order.orderDate, locale)}
           </p>
+          {/* Stacked under the order date, same as the desktop row. */}
+          {!isCompletedOrCancelled && arrivalWindow && (
+            <p
+              className={cn(
+                "truncate [font-size:var(--text-caption)] tabular-nums",
+                overdue ? "[color:var(--warning)]" : "[color:var(--text-secondary)]",
+              )}
+            >
+              {overdue
+                ? t("table.arrivalExpected", { window: arrivalWindow })
+                : t("table.arrivalArrives", { window: arrivalWindow })}
+            </p>
+          )}
         </div>
       </div>
 
@@ -126,6 +148,7 @@ export default function OrderCard({
         </span>
         {showUnpaid && <OrderUnpaidPill label={t("card.unpaid")} />}
       </div>
+
 
       <div className="pointer-events-none relative flex flex-col gap-1.5">
         <div

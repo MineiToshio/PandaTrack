@@ -563,6 +563,8 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
   // notIn). Otherwise apply the "still pending" constraint inherent to the toggle.
   const hasExplicitStatuses = statuses && statuses.length > 0;
   if (deliveryLateOnly) {
+    // Same rule as `resolveOrderArrivalDueDate`, expressed in SQL: the window close, or its start
+    // when there is no close.
     deliveryWhere.OR = [
       { expectedDeliveryTo: { lt: now } },
       { expectedDeliveryTo: null, expectedDeliveryFrom: { lt: now } },
