@@ -9,6 +9,7 @@ import { listExistingCountryCodes } from "@/lib/data/catalog/countryQueries";
 import { listExistingStoreProductTypeKeys } from "@/lib/data/catalog/storeProductTypeQueries";
 import { getStoreLogoObjectKey, processStoreLogoFile, StoreLogoError } from "@/lib/store/logo";
 import { uploadStoreLogoBuffer } from "@/lib/store/logoStorage";
+import { normalizeContactChannelsForCountry } from "@/lib/store/contactChannelValue";
 import { createStoreSchema, type CreateStoreInput } from "../_schemas/createStoreSchema";
 import type { StoreStatus } from "../../../../../../../generated/prisma/client";
 
@@ -27,13 +28,17 @@ export async function createStore(prev: CreateStoreResult | null, formData: Form
   const contactChannelTypes = formData.getAll("contactChannelType").filter((v): v is string => typeof v === "string");
   const contactChannelValues = formData.getAll("contactChannelValue").filter((v): v is string => typeof v === "string");
   const contactChannelLabels = formData.getAll("contactChannelLabel").filter((v): v is string => typeof v === "string");
-  const contactChannels = contactChannelTypes
-    .map((type, i) => ({
-      type,
-      value: contactChannelValues[i] ?? "",
-      label: contactChannelLabels[i] ?? undefined,
-    }))
-    .filter((ch) => ch.type.trim().length > 0);
+  const rawCountryCode = formData.get("countryCode");
+  const contactChannels = normalizeContactChannelsForCountry(
+    contactChannelTypes
+      .map((type, i) => ({
+        type,
+        value: contactChannelValues[i] ?? "",
+        label: contactChannelLabels[i] ?? undefined,
+      }))
+      .filter((ch) => ch.type.trim().length > 0),
+    typeof rawCountryCode === "string" ? rawCountryCode : null,
+  );
 
   const addressCities = formData.getAll("addressCity").filter((v): v is string => typeof v === "string");
   const addressAddressLines = formData.getAll("addressAddressLine").filter((v): v is string => typeof v === "string");

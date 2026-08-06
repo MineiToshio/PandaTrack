@@ -20,6 +20,7 @@ import {
   type EditableContactChannelInput,
 } from "@/lib/data/stores/storeGovernanceQueries";
 import { updateStoreEditableFields, upsertStoreChangeRequest } from "@/lib/data/stores/storeGovernanceMutations";
+import { normalizeContactChannelsForCountry } from "@/lib/store/contactChannelValue";
 import { editStoreSchema } from "../_schemas/editStoreSchema";
 
 export type SaveStoreEditResult = { success: false; error: string; fieldErrors?: Record<string, string[]> };
@@ -52,13 +53,17 @@ export async function saveStoreEdit(
   const contactChannelLabels = formData
     .getAll("contactChannelLabel")
     .filter((value): value is string => typeof value === "string");
-  const contactChannels: EditableContactChannelInput[] = contactChannelTypes
-    .map((type, index) => ({
-      type: type as EditableContactChannelInput["type"],
-      value: contactChannelValues[index] ?? "",
-      label: contactChannelLabels[index] ?? undefined,
-    }))
-    .filter((channel) => channel.type.trim().length > 0);
+  const rawCountryCode = formData.get("countryCode");
+  const contactChannels: EditableContactChannelInput[] = normalizeContactChannelsForCountry(
+    contactChannelTypes
+      .map((type, index) => ({
+        type: type as EditableContactChannelInput["type"],
+        value: contactChannelValues[index] ?? "",
+        label: contactChannelLabels[index] ?? undefined,
+      }))
+      .filter((channel) => channel.type.trim().length > 0),
+    typeof rawCountryCode === "string" && rawCountryCode.length > 0 ? rawCountryCode : "US",
+  );
 
   const addressCities = formData.getAll("addressCity").filter((value): value is string => typeof value === "string");
   const addressAddressLines = formData

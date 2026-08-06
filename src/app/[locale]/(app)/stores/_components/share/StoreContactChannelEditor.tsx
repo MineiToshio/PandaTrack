@@ -2,13 +2,17 @@
 
 import { Check, Pencil, Plus, X } from "lucide-react";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react";
-import { type CountryCode, parsePhoneNumberFromString } from "libphonenumber-js";
 import Button from "@/components/core/Button/Button";
 import Input from "@/components/core/Input";
 import Select from "@/components/core/Select";
 import Typography from "@/components/core/Typography";
 import { cn } from "@/lib/styles";
 import { getStoreContactChannelIcon } from "@/lib/catalog/storeContactChannelIcons";
+import {
+  type ContactChannelValueResolution,
+  resolvePhoneValue,
+  resolveWhatsAppValue,
+} from "@/lib/store/contactChannelValue";
 import { STORE_CONTACT_CHANNEL_TYPES, type StoreContactChannelType } from "./StoreContactChannelList";
 import FieldErrorMsg from "@/components/core/FieldErrorMsg";
 
@@ -60,42 +64,12 @@ export type StoreContactChannelEditorProps = {
   hideTrigger?: boolean;
 };
 
-const WA_ME_URL_PATTERN = /^https?:\/\/(www\.)?(wa\.me|whatsapp\.com)\//;
-
-type ChannelValueResolution = { ok: true; value: string } | { ok: false; error: string };
-
-/**
- * A collector typing a phone number types it the way they'd dial it locally, never in E.164 with
- * a country code they'd have to look up. `parsePhoneNumberFromString`'s `defaultCountry` fills
- * that gap from the store's own country (`FR-04-02`'s `countryCode`) without forcing the user to
- * type it, while a number that already carries its own "+CC" prefix is still honoured verbatim
- * (an explicit prefix always wins over the default region, per the library's own contract).
- */
-function resolvePhoneValue(value: string, countryCode: string | null): ChannelValueResolution {
-  const phone = parsePhoneNumberFromString(value, (countryCode as CountryCode) || undefined);
-  if (!phone || !phone.isValid()) return { ok: false, error: "PHONE" };
-  return { ok: true, value: phone.number };
-}
-
-/**
- * WhatsApp's stored value must be a `wa.me` URL (the server only accepts that host), but nobody
- * pastes one on purpose: they type the number the contact is reachable at. An existing wa.me/
- * whatsapp.com link is kept as-is; anything else is parsed as a phone number (same country
- * inference as `resolvePhoneValue`) and turned into the canonical link the server expects.
- */
-function resolveWhatsAppValue(value: string, countryCode: string | null): ChannelValueResolution {
-  if (WA_ME_URL_PATTERN.test(value)) return { ok: true, value };
-  const phone = parsePhoneNumberFromString(value, (countryCode as CountryCode) || undefined);
-  if (!phone || !phone.isValid()) return { ok: false, error: "WHATSAPP" };
-  return { ok: true, value: `https://wa.me/${phone.number.replace("+", "")}` };
-}
-
 /** Exported for direct unit testing — the actual validation/normalization risk lives here. */
 export function resolveChannelValue(
   type: StoreContactChannelType,
   value: string,
   countryCode: string | null,
-): ChannelValueResolution {
+): ContactChannelValueResolution {
   const trimmed = value.trim();
   if (!trimmed) return { ok: false, error: "required" };
 
