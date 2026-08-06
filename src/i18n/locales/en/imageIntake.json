@@ -184,7 +184,9 @@
       "row": "Payment on {date}",
       "empty": "We found no payments in the chat.",
       "amountLabel": "Payment {position}",
-      "dateLabel": "Payment date"
+      "dateLabel": "Payment date",
+      "add": "Add payment",
+      "removeLabel": "Remove payment {position}"
     },
     "totals": {
       "paid": "Paid up front",

@@ -696,7 +696,6 @@ describe("IntakeReviewScreen action bars", () => {
   });
 });
 
-
 describe("IntakeReviewScreen totals reconciliation", () => {
   it("says so when the rows do not add up to the stated total", () => {
     renderScreen(buildDraft({ totalCost: field(11000, "read") }));
@@ -802,8 +801,62 @@ describe("IntakeReviewScreen payments", () => {
     const [saved] = onSave.mock.calls[0] as [ImageIntakeDraft];
     expect(saved.payments[0].amount).toEqual({ value: 15000, source: "read" });
   });
-});
 
+  it("lets the collector add a payment row when the extraction found none", () => {
+    renderScreen(buildDraft({ payments: [] }));
+    expect(screen.getByText("payments.empty")).toBeTruthy();
+    expect(screen.queryByLabelText(/payments.amountLabel/)).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "payments.add" }));
+
+    expect(screen.queryByText("payments.empty")).toBeNull();
+    expect((screen.getByLabelText(/payments.amountLabel/) as HTMLInputElement).value).toBe("");
+  });
+
+  it("adds another row alongside an already-extracted payment, and includes both on save", () => {
+    const onSave = vi.fn();
+    render(
+      <IntakeReviewScreen
+        initialDraft={buildDraft({ payments: [{ amount: field(20000, "read"), paidAt: field("2026-07-20", "read") }] })}
+        baseCurrencyCode={BASE_CURRENCY}
+        storeOptions={STORE_OPTIONS}
+        productTypeKeys={PRODUCT_TYPE_KEYS}
+        isSaving={false}
+        onSave={onSave}
+        onManualClick={vi.fn()}
+        spentPhotoCount={2}
+        remainingPhotos={null}
+        onAddProductSheet={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "payments.add" }));
+    const amountInputs = screen.getAllByLabelText(/payments.amountLabel/);
+    const dateInputs = screen.getAllByLabelText(/payments.dateLabel/);
+    expect(amountInputs).toHaveLength(2);
+
+    fireEvent.change(amountInputs[1], { target: { value: "50" } });
+    fireEvent.change(dateInputs[1], { target: { value: "2026-07-25" } });
+    desktopSubmit().click();
+
+    const [saved] = onSave.mock.calls[0] as [ImageIntakeDraft];
+    expect(saved.payments).toHaveLength(2);
+    expect(saved.payments[0].amount).toEqual({ value: 20000, source: "read" });
+    expect(saved.payments[1]).toEqual({
+      amount: { value: 5000, source: "read" },
+      paidAt: { value: "2026-07-25", source: "read" },
+    });
+  });
+
+  it("removes a payment row, falling back to the empty state when it was the only one", () => {
+    renderScreen(buildDraft({ payments: [{ amount: field(20000, "read"), paidAt: field("2026-07-20", "read") }] }));
+
+    fireEvent.click(screen.getByRole("button", { name: /payments.removeLabel/ }));
+
+    expect(screen.queryByLabelText(/payments.amountLabel/)).toBeNull();
+    expect(screen.getByText("payments.empty")).toBeTruthy();
+  });
+});
 
 describe("IntakeReviewScreen: correcting the draft", () => {
   function renderWithSave(draft: ImageIntakeDraft, onSave = vi.fn()) {
@@ -903,7 +956,9 @@ describe("IntakeReviewScreen: correcting the draft", () => {
   });
 
   it("keeps an assumed payment field open across every keystroke, not just the first", () => {
-    renderWithSave(buildDraft({ payments: [{ amount: field(20000, "assumed"), paidAt: field("2026-07-20", "read") }] }));
+    renderWithSave(
+      buildDraft({ payments: [{ amount: field(20000, "assumed"), paidAt: field("2026-07-20", "read") }] }),
+    );
 
     fireEvent.change(screen.getByLabelText(/payments.amountLabel/), { target: { value: "1" } });
     fireEvent.change(screen.getByLabelText(/payments.amountLabel/), { target: { value: "15" } });

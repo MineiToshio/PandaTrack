@@ -184,7 +184,9 @@
       "row": "Pago del {date}",
       "empty": "No encontramos pagos en el chat.",
       "amountLabel": "Pago {position}",
-      "dateLabel": "Fecha del pago"
+      "dateLabel": "Fecha del pago",
+      "add": "Añadir pago",
+      "removeLabel": "Quitar pago {position}"
     },
     "totals": {
       "paid": "Adelanto pagado",

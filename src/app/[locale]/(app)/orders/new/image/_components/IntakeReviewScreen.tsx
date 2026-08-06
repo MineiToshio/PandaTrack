@@ -1,6 +1,6 @@
 "use client";
 
-import { ImagePlus, Info, Scale, ShoppingCart, Wallet } from "lucide-react";
+import { ImagePlus, Info, Plus, Scale, ShoppingCart, Wallet, X } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import posthog from "posthog-js";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -15,6 +15,7 @@ import { POSTHOG_EVENTS } from "@/lib/constants";
 import { formatAmount, formatCentsForInput } from "@/lib/currency";
 import { formatDomainDate } from "@/lib/domainDate";
 import { fetchTodayRate } from "@/lib/fx/exchangeRates";
+import { MAX_PAYMENTS_PER_ORDER } from "@/lib/imageIntake/constants";
 import type { ImageIntakeDraft } from "@/lib/imageIntake/draftSchema";
 import { findProductsNeedingReferenceSheet, formatReferenceHost } from "@/lib/imageIntake/referenceProductNaming";
 import { parseDecimalToMinorUnits } from "@/lib/money/parseDecimalToMinorUnits";
@@ -427,6 +428,39 @@ export default function IntakeReviewScreen({
     patchPayment(index, { paidAt: value ? { value, source: "read" } : { value: null, source: null } });
   };
 
+  /**
+   * Appends a blank payment row for the collector to fill in, for the case the extraction misses a
+   * payment entirely (a transfer confirmation on a separate screenshot, cash handed over in person).
+   * Left null/null so it renders as "missing" like any other unread field, never as a fabricated
+   * "read" value: `paymentProvenance` is frozen from `initialDraft`, so an index past its length
+   * already falls back to "missing" with no extra bookkeeping needed here.
+   */
+  const handleAddPayment = () => {
+    setDraft((current) => ({
+      ...current,
+      payments: [...current.payments, { amount: { value: null, source: null }, paidAt: { value: null, source: null } }],
+    }));
+  };
+
+  /** Undoes an accidental "add", or drops a row the collector decided not to record after all. */
+  const handleRemovePayment = (index: number) => {
+    setDraft((current) => ({
+      ...current,
+      payments: current.payments.filter((_, paymentIndex) => paymentIndex !== index),
+    }));
+    // Reindex the raw-text overrides the same way the array itself just shifted, so a later row's
+    // in-progress typed text (not yet a valid amount) stays attached to the row it belongs to.
+    setPaymentAmountInputs((current) => {
+      const next: Record<number, string> = {};
+      for (const [key, value] of Object.entries(current)) {
+        const keyIndex = Number(key);
+        if (keyIndex < index) next[keyIndex] = value;
+        else if (keyIndex > index) next[keyIndex - 1] = value;
+      }
+      return next;
+    });
+  };
+
   const handleExchangeRateChange = (value: string) => {
     setExchangeRateInput(value);
     setExchangeRateError(null);
@@ -822,7 +856,7 @@ export default function IntakeReviewScreen({
                 const dateState = paymentProvenance[index]?.paidAt ?? "missing";
                 return (
                   // Keyed by position: the date is editable, so keying on it would remount the field.
-                  <li key={index} className="grid gap-4 md:grid-cols-2">
+                  <li key={index} className="relative grid gap-4 pr-8 md:grid-cols-2 md:pr-9">
                     <ProvenanceValue
                       id={`intake-payment-amount-${index}`}
                       label={t("payments.amountLabel", { position: index + 1 })}
@@ -863,11 +897,31 @@ export default function IntakeReviewScreen({
                         />
                       )}
                     />
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePayment(index)}
+                      aria-label={t("payments.removeLabel", { position: index + 1 })}
+                      className="absolute top-0 right-0 grid size-7 shrink-0 cursor-pointer place-items-center rounded-md [color:var(--text-muted)] transition-colors hover:[color:var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:[outline-color:var(--focus-ring)]"
+                    >
+                      <X size={14} aria-hidden="true" />
+                    </button>
                   </li>
                 );
               })}
             </ul>
           )}
+
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="self-start"
+            onClick={handleAddPayment}
+            disabled={draft.payments.length >= MAX_PAYMENTS_PER_ORDER}
+          >
+            <Plus size={14} aria-hidden="true" />
+            {t("payments.add")}
+          </Button>
 
           <div className="flex items-baseline justify-between gap-[var(--space-3)] pt-3.5 text-[13px] [border-top:1px_solid_var(--border)]">
             <span className="[color:var(--text-muted)]">{t("totals.paid")}</span>
