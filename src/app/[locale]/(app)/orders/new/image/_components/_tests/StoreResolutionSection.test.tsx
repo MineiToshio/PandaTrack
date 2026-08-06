@@ -153,7 +153,11 @@ describe("StoreResolutionSection · ambiguous", () => {
 describe("StoreResolutionSection · unknown", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("offers inline creation prefilled with the extracted name, with no way to leave the screen", () => {
+  it("searches the existing catalog by default, before ever offering to create a new store", () => {
+    // The collector must be able to rule out an existing store first: the "unknown" shape used to
+    // default straight into the inline creation form, which was easier than searching but wrong
+    // more often, since the extraction misses a real match far more than it invents a store that
+    // does not exist.
     render(
       <StoreResolutionSection
         store={buildStore({ name: field("Nueva Tienda", "read") })}
@@ -162,13 +166,29 @@ describe("StoreResolutionSection · unknown", () => {
       />,
     );
 
+    expect(screen.getByRole("combobox")).toBeTruthy();
+    expect(screen.queryByText("createSubmit")).toBeNull();
+    expect(screen.getByText("switchToCreate")).toBeTruthy();
+  });
+
+  it('switches to inline creation, prefilled with the extracted name, once the collector says "not this one"', () => {
+    render(
+      <StoreResolutionSection
+        store={buildStore({ name: field("Nueva Tienda", "read") })}
+        options={OPTIONS}
+        onChange={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("switchToCreate"));
+
     expect(screen.getByDisplayValue("Nueva Tienda")).toBeTruthy();
-    expect(screen.queryByRole("link")).toBeNull();
   });
 
   it("blocks submission with an empty name and never calls the create action", () => {
     render(<StoreResolutionSection store={buildStore()} options={OPTIONS} onChange={vi.fn()} />);
 
+    fireEvent.click(screen.getByText("switchToCreate"));
     fireEvent.click(screen.getByText("createSubmit"));
 
     expect(screen.getByText("createNameRequired")).toBeTruthy();
@@ -192,6 +212,7 @@ describe("StoreResolutionSection · unknown", () => {
       />,
     );
 
+    fireEvent.click(screen.getByText("switchToCreate"));
     fireEvent.click(screen.getByText("createSubmit"));
 
     expect(await screen.findByText("Nueva Tienda")).toBeTruthy();
@@ -222,6 +243,7 @@ describe("StoreResolutionSection · unknown", () => {
       />,
     );
 
+    fireEvent.click(screen.getByText("switchToCreate"));
     fireEvent.click(screen.getByText("createSubmit"));
     expect(await screen.findByText("Nueva Tienda Store")).toBeTruthy();
 
@@ -232,10 +254,10 @@ describe("StoreResolutionSection · unknown", () => {
     );
   });
 
-  it("lets the collector switch from creating a store to searching the existing catalog instead", () => {
+  it("lets the collector switch from creating a store back to searching the existing catalog", () => {
     // Mirrors the extraction naming the wrong seller (a marketplace link mid-conversation instead
     // of who the collector was actually messaging): the true store exists, so the escape hatch out
-    // of "create" must reach the same catalog the certain/ambiguous shapes already search.
+    // of "create" must reach the same catalog search shown by default.
     const onChange = vi.fn();
     render(
       <StoreResolutionSection
@@ -245,6 +267,7 @@ describe("StoreResolutionSection · unknown", () => {
       />,
     );
 
+    fireEvent.click(screen.getByText("switchToCreate"));
     fireEvent.click(screen.getByText("switchToSearch"));
     fireEvent.click(screen.getByRole("combobox"));
     fireEvent.click(screen.getByRole("option", { name: /Pop Dealer/ }));

@@ -104,8 +104,11 @@ export default function StoreResolutionSection({
   const tErrors = useTranslations("imageIntake.errors");
 
   const [shape] = useState<Shape>(() => resolveInitialShape(store));
+  // "unknown" starts searching, not creating: the collector must be able to rule out an existing
+  // store before this screen offers to make a new one, the same order the manual order form's own
+  // store field already uses (search first, "create a new store" only as the explicit fallback).
   const [resolution, setResolution] = useState<Resolution>(() =>
-    shape === "unknown" ? { kind: "creating" } : { kind: "unresolved" },
+    shape === "unknown" ? { kind: "searching" } : { kind: "unresolved" },
   );
   const [radioValue, setRadioValue] = useState<string | null>(null);
 
