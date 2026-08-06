@@ -21,7 +21,7 @@ import FilterTriggerButton from "@/components/core/FilterTriggerButton/FilterTri
 import SearchInput from "@/components/core/SearchInput";
 import Select from "@/components/core/Select";
 import FilterDrawer, { type FilterDrawerValues, type FilterSection } from "@/components/modules/FilterDrawer";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useHasDesktopToolbar } from "@/hooks/useMediaQuery";
 import { POSTHOG_EVENTS } from "@/lib/constants";
 import { ORDER_LIST_SORT_VALUES, type OrderListPaymentState, type OrderListSort } from "@/lib/orders/orderListSort";
 import type { OrderStatus } from "../../../../../../generated/prisma/client";
@@ -111,7 +111,8 @@ export default function OrderListFilters({
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("orderListing");
-  const isMobile = useIsMobile();
+  // The toolbar carries the sort control from `lg` up; below that the drawer has to.
+  const hasDesktopToolbar = useHasDesktopToolbar();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [createSelectorOpen, setCreateSelectorOpen] = useState(false);
@@ -274,8 +275,10 @@ export default function OrderListFilters({
         },
       },
     ];
-    // Sort is exposed via the toolbar `<Select>` on desktop, so only inject it on mobile.
-    if (isMobile) {
+    // Sort lives in the toolbar `<Select>` from `lg` up; below that the toolbar is hidden, so the
+    // drawer has to carry it. Gating this on "is mobile" (<768px) instead left the 768-1023px band
+    // with no sort control at all: the toolbar was already hidden and this section was not injected.
+    if (!hasDesktopToolbar) {
       base.push({
         id: "sort",
         type: "pills",
@@ -291,7 +294,7 @@ export default function OrderListFilters({
       options: [{ value: FX_PENDING_FLAG, label: t("filters.fxPendingLabel"), helper: t("filters.fxPendingHelper") }],
     });
     return base;
-  }, [t, storeOptions, sortOptions, isMobile]);
+  }, [t, storeOptions, sortOptions, hasDesktopToolbar]);
 
   const pushUrl = useCallback(
     (overrides: Partial<OrderListActiveFilters & { page: number }>) => {
@@ -408,7 +411,7 @@ export default function OrderListFilters({
             onChange={handleSortChange}
             size="md"
             options={sortOptions}
-            className="w-auto"
+            className="w-max"
           />
           <Button
             type="button"
@@ -483,6 +486,8 @@ function sortLabelKey(value: OrderListSort): string {
       return "oldest";
     case "store-asc":
       return "storeAZ";
+    case "store-desc":
+      return "storeZA";
     case "payment-asc":
       return "paymentAsc";
     case "total-desc":

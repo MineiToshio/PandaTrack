@@ -236,6 +236,24 @@ Use shared form controls before custom markup. Keep labels, helper text, validat
 - Use `ToggleChoiceGroup` (`src/components/core/ToggleChoiceGroup.tsx`) for one-or-many `aria-pressed` toggle choices: `appearance="chip"` (wrapping row, compact) or `appearance="tile"` (responsive grid, larger targets); `mode="single" | "multiple"`.
 - **Default boolean control is `<Switch>`.** `<Checkbox>` is reserved for: multi-select with an indeterminate state, terms/conditions acceptance, and bulk-select in tables. When in doubt, choose the toggle.
 - **Never use a native `<select>`** — use `Select` (short lists, opt-in search), `Combobox` (long lists, always-visible search, inline "create new"), or `MultiTagAutocomplete` (multi-select with tags inside the input).
+- **A `Select` popup is exactly as wide as its trigger, and the control is sized by its longest
+  option.** `Select` renders an invisible zero-height sizer holding every option label, so an
+  intrinsically-sized control (`w-max` in a toolbar) takes the width of the longest option rather
+  than of whichever one happens to be selected. Options then never wrap or truncate, and because
+  the popup matches the trigger it can never overflow the viewport (the listbox is `left-0` with no
+  horizontal flip) nor be clipped by an `overflow-hidden` ancestor. Callers that set an explicit
+  width (`w-full`, `w-[4.5rem]`) are unaffected. The listbox caps at `17rem`, which clears seven
+  38px rows, so a sort menu never scrolls.
+- **A control that only exists in the `lg` toolbar needs a stand-in below `lg`, not below `md`.**
+  The list toolbars render at `lg:flex`; the filter drawer stands in for them underneath. Gating
+  that stand-in on `useIsMobile()` (<768px) instead of on the toolbar's own breakpoint left
+  768-1023px with the toolbar hidden and no replacement, so the sort control did not exist at
+  tablet widths at all. Use `useHasDesktopToolbar()` (`src/hooks/useMediaQuery.ts`), which shares
+  the 1024px constant with the `lg:` classes and defaults to `true` on the server so hydration
+  does not flip the layout.
+- **A `multi: false` pill section is a radio group.** `FilterDrawer` renders exclusive options with
+  `role="radiogroup"` + `role="radio"`; as checkboxes, six mutually-exclusive sort options announce
+  as six independent toggles.
 
 ---
 

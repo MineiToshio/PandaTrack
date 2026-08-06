@@ -87,10 +87,10 @@ const SIZE_CLASSES: Record<SelectSize, string> = {
 
 type ListboxPlacement = "down" | "up";
 
-/** Keep in sync with the listbox's `max-h-[14rem]` class below. */
-const LISTBOX_MAX_HEIGHT_PX = 224;
+/** Keep in sync with the listbox's `max-h-[17rem]` class below. */
+const LISTBOX_MAX_HEIGHT_PX = 272;
 /** Approximate rendered height of a single option row (py-2 + body line-height). */
-const OPTION_ITEM_HEIGHT_PX = 36;
+const OPTION_ITEM_HEIGHT_PX = 38;
 /** Approximate rendered height of a group heading row. */
 const GROUP_HEADING_HEIGHT_PX = 28;
 /** Listbox container padding (p-1, top + bottom). */
@@ -353,6 +353,29 @@ function ControlledSelect({
     <div ref={containerRef} className={cn("relative w-full", className)} onBlur={handleContainerBlur}>
       {name && <input type="hidden" name={name} value={value ?? ""} readOnly />}
 
+      {/*
+        Invisible width floor: every option label, stacked, contributing its intrinsic width and
+        nothing else (zero height, no paint, no hit area, hidden from assistive tech).
+
+        Without it an intrinsically-sized control (`w-max` / `w-auto` in a flex row) is only as wide
+        as the label that happens to be *selected*, so the popup — which matches the container —
+        squeezes every other option into that box. That is what made the sort dropdowns render two
+        lines per option. Sizing to the longest option instead is one of the two widths a dropdown
+        may legitimately take, and it keeps the popup exactly as wide as its trigger, so it can
+        never overflow the viewport (the listbox is `left-0` with no horizontal flip logic) nor be
+        clipped by an `overflow-hidden` ancestor.
+
+        Inert wherever the caller sets an explicit width (`w-full`, `w-[4.5rem]`, `w-[150px]`),
+        since a definite width wins over intrinsic sizing.
+      */}
+      <div aria-hidden className="pointer-events-none h-0 overflow-hidden" data-testid="select-width-sizer">
+        {flat.map((option) => (
+          <span key={`sizer-${option.value}`} className={cn("block whitespace-nowrap", SIZE_CLASSES[size])}>
+            {option.label}
+          </span>
+        ))}
+      </div>
+
       <button
         ref={triggerRef}
         id={triggerId}
@@ -452,7 +475,9 @@ function ControlledSelect({
             "rounded-[var(--radius-lg)]",
             "bg-[var(--surface-elevated)] [border:1px_solid_var(--border)]",
             "[box-shadow:var(--elevation-2)]",
-            "max-h-[14rem] overflow-y-auto p-[var(--space-1)] outline-none",
+            // 17rem clears seven 38px rows plus padding, so none of the app's sort menus scroll. A row is
+          // 38px (body line-height 22 + py-2), not the 36 the estimate below assumed.
+          "max-h-[17rem] overflow-y-auto p-[var(--space-1)] outline-none",
           )}
         >
           {flat.length === 0 && (
@@ -566,7 +591,7 @@ function OptionItem({
         option.disabled && "pointer-events-none [color:var(--text-muted)]",
       )}
     >
-      <span className="flex-1">{renderOption ? renderOption(option) : option.label}</span>
+      <span className="flex-1 whitespace-nowrap">{renderOption ? renderOption(option) : option.label}</span>
       {option.description && (
         <span className="[font-size:var(--text-caption)] [color:var(--text-muted)]">{option.description}</span>
       )}

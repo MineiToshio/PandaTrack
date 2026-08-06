@@ -10,7 +10,7 @@ import FilterTriggerButton from "@/components/core/FilterTriggerButton/FilterTri
 import SearchInput from "@/components/core/SearchInput";
 import Select from "@/components/core/Select";
 import FilterDrawer, { type FilterDrawerValues, type FilterSection } from "@/components/modules/FilterDrawer";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useHasDesktopToolbar } from "@/hooks/useMediaQuery";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { addDays, endOfMonth, startOfMonth, toIsoDateString } from "@/lib/localDate";
 import {
@@ -62,7 +62,8 @@ export default function DeliveryListFilters({ locale, storeOptions, initial }: D
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations("deliveries");
-  const isMobile = useIsMobile();
+  // The toolbar carries the sort control from `lg` up; below that the drawer has to.
+  const hasDesktopToolbar = useHasDesktopToolbar();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -180,7 +181,10 @@ export default function DeliveryListFilters({ locale, storeOptions, initial }: D
       },
     ];
     // Sort lives in the toolbar `<Select>` on desktop; inject it in the drawer on mobile only.
-    if (isMobile) {
+    // Sort lives in the toolbar `<Select>` from `lg` up; below that the toolbar is hidden, so the
+    // drawer has to carry it. Gating this on "is mobile" (<768px) instead left the 768-1023px band
+    // with no sort control at all: the toolbar was already hidden and this section was not injected.
+    if (!hasDesktopToolbar) {
       base.push({
         id: "sort",
         type: "pills",
@@ -190,7 +194,7 @@ export default function DeliveryListFilters({ locale, storeOptions, initial }: D
       });
     }
     return base;
-  }, [t, storeOptions, sortOptions, isMobile]);
+  }, [t, storeOptions, sortOptions, hasDesktopToolbar]);
 
   const pushUrl = useCallback(
     (overrides: Partial<DeliveryListActiveFilters & { page: number }>) => {
@@ -295,7 +299,7 @@ export default function DeliveryListFilters({ locale, storeOptions, initial }: D
             onChange={handleSortChange}
             size="md"
             options={sortOptions}
-            className="w-auto"
+            className="w-max"
           />
           <Button
             as="a"
@@ -369,6 +373,8 @@ function sortLabelKey(value: DeliveryListSort): string {
       return "etaAsc";
     case "store-asc":
       return "storeAZ";
+    case "store-desc":
+      return "storeZA";
     case "oldest":
     default:
       return "oldest";

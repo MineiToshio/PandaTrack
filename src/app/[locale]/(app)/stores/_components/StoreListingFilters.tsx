@@ -12,10 +12,16 @@ import SearchInput from "@/components/core/SearchInput";
 import Select from "@/components/core/Select";
 import FilterDrawer, { type FilterDrawerValues, type FilterSection } from "@/components/modules/FilterDrawer";
 import { getStoreProductTypeIcon } from "@/lib/catalog/storeProductTypeIcons";
-import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
+import { DEFAULT_PAGE_SIZE, POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { useStoreProductTypeName } from "@/app/[locale]/(app)/_components/StoreProductTypeNamesProvider";
 import CollectorCountryFlagEmoji from "./share/CollectorCountryFlagEmoji";
 import { useStoreListingNavigation } from "./StoreListingPendingContext";
+import {
+  DEFAULT_STORE_LIST_SORT,
+  STORE_LIST_SORT_VALUES,
+  parseStoreListSort,
+  type StoreListSort,
+} from "@/lib/stores/storeListSort";
 
 type StoreListingFiltersProps = {
   locale: string;
@@ -31,6 +37,9 @@ type StoreListingFiltersProps = {
   initialHasStock: boolean;
   initialIncludeClosed: boolean;
   initialOnlyOwnPrivate: boolean;
+  initialSort: StoreListSort;
+  /** Page size in effect, preserved across every navigation this toolbar triggers. */
+  initialPerPage?: number;
 };
 
 type ListingFilterValues = {
@@ -47,7 +56,13 @@ const FLAGS_HAS_STOCK = "hasStock";
 const FLAGS_INCLUDE_CLOSED = "includeClosed";
 const FLAGS_ONLY_OWN_PRIVATE = "onlyOwnPrivate";
 
-function buildSearchParams(input: { nameQuery: string; values: ListingFilterValues; page?: number; sortBy?: string }) {
+function buildSearchParams(input: {
+  nameQuery: string;
+  values: ListingFilterValues;
+  page?: number;
+  sortBy?: string;
+  perPage?: number;
+}) {
   const params = new URLSearchParams();
   if (input.nameQuery.trim()) params.set("q", input.nameQuery.trim());
   input.values.productTypeKeys.forEach((value) => params.append("productType", value));
@@ -59,7 +74,10 @@ function buildSearchParams(input: { nameQuery: string; values: ListingFilterValu
   if (input.values.flags.includes(FLAGS_HAS_STOCK)) params.set("hasStock", "true");
   if (input.values.flags.includes(FLAGS_INCLUDE_CLOSED)) params.set("includeClosed", "true");
   if (input.values.flags.includes(FLAGS_ONLY_OWN_PRIVATE)) params.set("onlyOwnPrivate", "true");
-  if (input.sortBy && input.sortBy !== "topRated") params.set("sortBy", input.sortBy);
+  if (input.sortBy && input.sortBy !== DEFAULT_STORE_LIST_SORT) params.set("sort", input.sortBy);
+  // Carried through every toolbar navigation; it used to be dropped, silently resetting a chosen
+  // page size back to the default on search, filter apply and sort.
+  if (input.perPage && input.perPage !== DEFAULT_PAGE_SIZE) params.set("perPage", String(input.perPage));
   if (input.page && input.page > 1) params.set("page", String(input.page));
   return params;
 }
@@ -83,6 +101,8 @@ export default function StoreListingFilters({
   initialHasStock,
   initialIncludeClosed,
   initialOnlyOwnPrivate,
+  initialSort,
+  initialPerPage,
 }: StoreListingFiltersProps) {
   const pathname = usePathname();
   const { navigate, isPending } = useStoreListingNavigation();
@@ -93,13 +113,11 @@ export default function StoreListingFilters({
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [nameQuery, setNameQuery] = useState(initialNameQuery);
-  const [sortBy, setSortBy] = useState<string>("topRated");
+  // Seeded from the URL, not from a constant: the control used to reset to "Mejor calificadas" on
+  // every navigation while the results stayed sorted by whatever the URL said.
+  const [sortBy, setSortBy] = useState<StoreListSort>(initialSort);
   const sortOptions = useMemo(
-    () => [
-      { value: "topRated", label: tListing("s6.sort.topRated") },
-      { value: "alphabetical", label: tListing("s6.sort.alphabetical") },
-      { value: "newest", label: tListing("s6.sort.newest") },
-    ],
+    () => STORE_LIST_SORT_VALUES.map((value) => ({ value, label: tListing(`s6.sort.${value}`) })),
     [tListing],
   );
 
@@ -238,15 +256,15 @@ export default function StoreListingFilters({
 
   const handleSearchSubmit = (query: string) => {
     const stateValues = valuesAsState(draftValues);
-    const params = buildSearchParams({ nameQuery: query, values: stateValues, sortBy });
+    const params = buildSearchParams({ nameQuery: query, values: stateValues, sortBy, perPage: initialPerPage });
     const queryString = params.toString();
     navigate(queryString ? `${pathname}?${queryString}` : pathname);
   };
 
   const handleSortChange = (value: string) => {
-    setSortBy(value);
+    setSortBy(parseStoreListSort(value));
     const stateValues = valuesAsState(draftValues);
-    const params = buildSearchParams({ nameQuery, values: stateValues, sortBy: value });
+    const params = buildSearchParams({ nameQuery, values: stateValues, sortBy: value, perPage: initialPerPage });
     const queryString = params.toString();
     navigate(queryString ? `${pathname}?${queryString}` : pathname);
   };
@@ -265,11 +283,11 @@ export default function StoreListingFilters({
       include_closed: stateValues.flags.includes(FLAGS_INCLUDE_CLOSED),
       only_own_private: stateValues.flags.includes(FLAGS_ONLY_OWN_PRIVATE),
     });
-    const params = buildSearchParams({ nameQuery, values: stateValues, sortBy });
+    const params = buildSearchParams({ nameQuery, values: stateValues, sortBy, perPage: initialPerPage });
     const queryString = params.toString();
     navigate(queryString ? `${pathname}?${queryString}` : pathname);
     setDrawerOpen(false);
-  }, [draftValues, nameQuery, sortBy, pathname, navigate]);
+  }, [draftValues, nameQuery, sortBy, pathname, navigate, initialPerPage]);
 
   const handleClear = useCallback(() => {
     setDraftValues({
@@ -284,11 +302,11 @@ export default function StoreListingFilters({
 
   const pushFiltered = useCallback(
     (values: ListingFilterValues, query: string) => {
-      const params = buildSearchParams({ nameQuery: query, values, sortBy });
+      const params = buildSearchParams({ nameQuery: query, values, sortBy, perPage: initialPerPage });
       const queryString = params.toString();
       navigate(queryString ? `${pathname}?${queryString}` : pathname);
     },
-    [pathname, navigate, sortBy],
+    [pathname, navigate, sortBy, initialPerPage],
   );
 
   const removeFilter = useCallback(
@@ -486,7 +504,7 @@ export default function StoreListingFilters({
             onChange={handleSortChange}
             size="md"
             options={sortOptions}
-            className="w-auto"
+            className="w-max"
           />
           <FilterTriggerButton
             appliedCount={drawerAppliedCount}

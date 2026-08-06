@@ -189,7 +189,12 @@ describe("IntakeReviewScreen", () => {
     expect((screen.getByLabelText(/fields.total/) as HTMLInputElement).value).toBe("480.00");
     expect((screen.getByLabelText(/payments.amountLabel/) as HTMLInputElement).value).toBe("120.00");
     expect(screen.getAllByText("PEN").length).toBeGreaterThan(0);
-    expect(container.innerHTML).not.toContain("USD");
+    // `Select` renders an invisible, aria-hidden sizer holding every option label so the control
+    // takes the width of its longest option. The currency picker's options legitimately include
+    // "USD"; what must not appear is a USD-priced amount, so the sizers are excluded here.
+    const visible = container.cloneNode(true) as HTMLElement;
+    visible.querySelectorAll('[data-testid="select-width-sizer"]').forEach((node) => node.remove());
+    expect(visible.innerHTML).not.toContain("USD");
   });
 
   it("prices amounts in an assumed currency too, with the assumed marker beside it", () => {

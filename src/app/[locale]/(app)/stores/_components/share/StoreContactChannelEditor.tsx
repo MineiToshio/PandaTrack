@@ -217,7 +217,10 @@ const StoreContactChannelEditor = forwardRef<StoreContactChannelEditorHandle, St
         )}
 
         {entries.length > 0 && (
-          <div className="overflow-hidden rounded-[var(--radius-lg)] [border:1px_solid_var(--border)]">
+          // `overflow-hidden` here was clipping the channel-type `Select`'s popup, which is
+          // absolutely positioned inside this box. The rounded corners it was there to clip are
+          // now handled by the rows themselves.
+          <div className="rounded-[var(--radius-lg)] [border:1px_solid_var(--border)] [&>*:first-child]:rounded-t-[var(--radius-lg)] [&>*:last-child]:rounded-b-[var(--radius-lg)]">
             {entries.map((entry, idx) =>
               editingId === entry.id ? (
                 <div
