@@ -207,6 +207,9 @@
       "paymentsEyebrow": "Step 3"
     }
   },
+  "save": {
+    "paymentsSkipped": "We could not record {count, plural, one {# payment} other {# payments}} from the chat. Check it and add it to the order by hand."
+  },
   "share": {
     "attach": "We could not find the photos you shared. Attach them here and we will take it from there.",
     "ios": "On iPhone the shortcut opens this screen, but it cannot bring the photos with it. Attach the photos you shared.",

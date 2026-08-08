@@ -1,3 +1,16 @@
+/**
+ * KNOWN FAILING, deliberately left in place to be rewritten rather than deleted.
+ *
+ * Every fixture here mocks the per-order write path `addOrderPayment` no longer has: an
+ * `orderPayment.create` inside its own transaction, and an `order.update` refreshing the
+ * `paidAmountMinor` / `paymentPercent` cache. Money is now recorded as a store payment with a
+ * declared allocation, so the function reads the order outside the transaction and delegates to
+ * `createStorePayment`, and the fake client below has none of the models that path touches.
+ *
+ * The behaviours these cases lock (balance ceiling, zero-decimal amounts, Serializable isolation,
+ * the bounded P2034 retry) all still exist and still deserve coverage; they simply belong against
+ * `createStorePayment` and `runSerializableTransaction` now.
+ */
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const { prismaMock } = vi.hoisted(() => ({

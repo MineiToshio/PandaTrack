@@ -19,6 +19,13 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+// The screen raises a toast when the save skips a payment. These suites render it outside the app
+// shell that owns the provider, so the hook is stubbed rather than the provider mounted: none of
+// them exercises the toast itself.
+vi.mock("@/contexts/ToastContext", () => ({
+  useToast: () => ({ addToast: vi.fn(), removeToast: vi.fn() }),
+}));
+
 vi.mock("posthog-js", () => ({ default: { capture: vi.fn() } }));
 
 vi.mock("@/lib/auth/auth-client", () => ({

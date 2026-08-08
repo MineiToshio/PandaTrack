@@ -7,6 +7,7 @@ import posthog from "posthog-js";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import AlertBanner from "@/components/modules/AlertBanner";
 import type { StoreComboboxOption } from "@/components/modules/StoreCombobox";
+import { useToast } from "@/contexts/ToastContext";
 import { POSTHOG_EVENTS, ROUTES } from "@/lib/constants";
 import { compressForIntake } from "@/lib/images/compressForIntake";
 import { precheckIntakeSubmission } from "@/lib/imageIntake/clientPrecheck";
@@ -172,6 +173,7 @@ export default function ImageIntakeScreen({
   const t = useTranslations("imageIntake");
   const locale = useLocale();
   const router = useRouter();
+  const { addToast } = useToast();
   const searchParams = useSearchParams();
   const shareSource = searchParams.get(SHARE_SOURCE_PARAM);
   const shareStashStatus = searchParams.get(SHARE_STASH_PARAM);
@@ -500,6 +502,13 @@ export default function ImageIntakeScreen({
           setError({ messageKey: saveErrorMessageKey(result.code) });
           return;
         }
+        // A payment the order domain refused (a date before the order, an amount over the balance)
+        // is skipped rather than failing the save, so the collector has to be told: otherwise the
+        // order lands looking paid for less than what the photo said, with no explanation. The
+        // toast survives the navigation below, because the provider sits above this route.
+        if (result.paymentsSkipped > 0) {
+          addToast(t("save.paymentsSkipped", { count: result.paymentsSkipped }), { variant: "warning" });
+        }
         // Not an optimistic navigation: creating an order is not a change this screen can undo
         // locally, so the user is only moved once the write is confirmed. The pending state on the
         // CTA is what carries the feedback in the meantime.
@@ -510,7 +519,7 @@ export default function ImageIntakeScreen({
         setIsSaving(false);
       }
     },
-    [locale, router],
+    [addToast, locale, router, t],
   );
 
   /**

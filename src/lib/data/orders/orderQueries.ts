@@ -3,6 +3,12 @@ import { buildNeedsFxReconciliationWhere, needsFxReconciliation } from "@/lib/fx
 import { getCollectorPreferencesSnapshot } from "@/lib/data/user-settings/userSettingsQueries";
 import { deriveHasUnpaidBalance } from "@/lib/orders/orderState";
 import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
+import {
+  mapAllocationToOrderPayment,
+  ORDER_PAYMENT_ALLOCATION_ORDER_BY,
+  ORDER_PAYMENT_ALLOCATION_SELECT,
+  type OrderPaymentRecord,
+} from "./orderPaymentAllocations";
 import type { ItemDeliveryState } from "@/lib/orders/orderState";
 import type { OrderListPaymentState, OrderListSort } from "@/lib/orders/orderListSort";
 import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from "@/lib/constants";
@@ -38,11 +44,9 @@ export type OrderListItem = {
   createdAt: Date;
 };
 
-export type OrderPayment = {
-  id: string;
-  amount: number;
-  paymentDate: Date;
-};
+/** An order's payments come from its allocations; see `orderPaymentAllocations` for the shape. */
+export type OrderPayment = OrderPaymentRecord;
+export type { OrderPaymentRecord };
 
 export type OrderDetail = OrderListItem & {
   note: string | null;
@@ -159,9 +163,9 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
         },
         orderBy: { position: "asc" },
       },
-      payments: {
-        select: { id: true, amount: true, paymentDate: true },
-        orderBy: [{ paymentDate: "desc" }, { createdAt: "desc" }],
+      paymentAllocations: {
+        select: ORDER_PAYMENT_ALLOCATION_SELECT,
+        orderBy: ORDER_PAYMENT_ALLOCATION_ORDER_BY,
       },
       history: {
         select: { id: true, eventType: true, metadata: true, createdAt: true },
@@ -172,7 +176,8 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
 
   if (!row) return null;
 
-  const { paidAmount, remainingAmount, paymentPercentage } = calculatePaymentSummary(row.totalCost, row.payments);
+  const payments = row.paymentAllocations.map(mapAllocationToOrderPayment);
+  const { paidAmount, remainingAmount, paymentPercentage } = calculatePaymentSummary(row.totalCost, payments);
 
   return {
     id: row.id,
@@ -203,7 +208,7 @@ export async function getOrderById(orderId: string, userId: string): Promise<Ord
     remainingAmount,
     paymentPercentage,
     items: row.items,
-    payments: row.payments,
+    payments,
     history: row.history,
   };
 }
@@ -260,9 +265,9 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
         },
         orderBy: { position: "asc" },
       },
-      payments: {
-        select: { id: true, amount: true, paymentDate: true },
-        orderBy: [{ paymentDate: "desc" }, { createdAt: "desc" }],
+      paymentAllocations: {
+        select: ORDER_PAYMENT_ALLOCATION_SELECT,
+        orderBy: ORDER_PAYMENT_ALLOCATION_ORDER_BY,
       },
       history: {
         select: { id: true, eventType: true, metadata: true, createdAt: true },
@@ -273,7 +278,8 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
 
   if (!row) return null;
 
-  const { paidAmount, remainingAmount, paymentPercentage } = calculatePaymentSummary(row.totalCost, row.payments);
+  const payments = row.paymentAllocations.map(mapAllocationToOrderPayment);
+  const { paidAmount, remainingAmount, paymentPercentage } = calculatePaymentSummary(row.totalCost, payments);
 
   const itemsWithState: OrderItemWithDeliveryState[] = row.items.map((item) => ({
     id: item.id,
@@ -296,7 +302,7 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
   };
 
   const flags: OrderFlags = {
-    hasPayments: row.payments.length > 0,
+    hasPayments: payments.length > 0,
     hasNonCancelledDeliveryLinks,
   };
 
@@ -330,7 +336,7 @@ export async function getOrderDetail(orderId: string, userId: string): Promise<O
     remainingAmount,
     paymentPercentage,
     items: itemsWithState,
-    payments: row.payments,
+    payments,
     history: row.history,
     eligibility,
     flags,
@@ -611,8 +617,10 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
     matchAny.push({ store: { is: { name: { contains: trimmedQuery, mode: "insensitive" } } } });
   }
 
-  // Payment-state filters map onto the persisted `paymentPercent` cache (kept in sync by the
-  // payment/total mutations), except `overdue`, which is a pure date/status predicate. Each
+  // Payment-state filters still map onto the legacy `paymentPercent` column, except `overdue`,
+  // which is a pure date/status predicate. That column is frozen under store-level payments and no
+  // longer maintained, so these branches (and the `payment-asc` sort below) read a snapshot rather
+  // than live data; they are retired together with the filter chips they serve. Each
   // selected state adds one OR branch so an order matching any of them qualifies. Merged into the
   // existing AND so it composes with the delivery-overlap conditions already in `baseFilters`.
   const paymentStateWhere = buildPaymentStateWhere(paymentStates, now);
@@ -657,8 +665,7 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
       },
       orderBy: { position: "asc" } as const,
     },
-    paidAmountMinor: true,
-    paymentPercent: true,
+    allocatedAmountMinor: true,
   } as const;
 
   const fxWhere = buildFxPendingWhere(userId, baseCurrencyCode ?? null);
@@ -698,9 +705,12 @@ export async function getOrdersList(userId: string, filters: OrdersListPageFilte
       unitPrice: item.unitPrice,
       deliveryState: deriveItemDeliveryState(item.deliveryItems, item.deliveryState),
     })),
-    paidAmount: row.paidAmountMinor,
-    paymentPercentage: row.paymentPercent,
-    hasUnpaidBalance: deriveHasUnpaidBalance(row.totalCost, row.paidAmountMinor),
+    // Read from the allocation cache: money declared against this order under store-level
+    // payments. The percentage is derived from the same number rather than read from the frozen
+    // `paymentPercent` column, so the card's amount and its progress can never disagree.
+    paidAmount: row.allocatedAmountMinor,
+    paymentPercentage: calculatePaymentSummary(row.totalCost, [{ amount: row.allocatedAmountMinor }]).paymentPercentage,
+    hasUnpaidBalance: deriveHasUnpaidBalance(row.totalCost, row.allocatedAmountMinor),
   }));
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));

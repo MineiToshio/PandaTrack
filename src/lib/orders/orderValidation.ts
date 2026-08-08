@@ -13,6 +13,7 @@ function zeroDecimalAmountRefinement(
     currencyCode?: string;
     totalCost?: number;
     items?: { unitPrice?: number | null }[];
+    initialPayment?: { amount: number } | null;
   },
   ctx: z.RefinementCtx,
 ) {
@@ -24,6 +25,13 @@ function zeroDecimalAmountRefinement(
       code: z.ZodIssueCode.custom,
       path: ["totalCost"],
       message: "TOTAL_COST_FRACTIONAL_SUBUNITS",
+    });
+  }
+  if (data.initialPayment && !isWholeMajorAmount(data.initialPayment.amount)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["initialPayment", "amount"],
+      message: "AMOUNT_FRACTIONAL_SUBUNITS",
     });
   }
   data.items?.forEach((item, index) => {
@@ -40,7 +48,8 @@ function zeroDecimalAmountRefinement(
 const MIN_TOTAL_COST = 1;
 const MAX_TOTAL_COST = 999_999_999;
 const MIN_PAYMENT_AMOUNT = 1;
-const MAX_PAYMENT_AMOUNT = 999_999_999;
+/** Shared ceiling for any money amount recorded as paid, in minor units. */
+export const MAX_PAYMENT_AMOUNT = 999_999_999;
 // Weak-currency pairs in the supported catalog produce sub-cent rates (e.g. CLP→USD ≈ 0.001,
 // KRW→USD ≈ 0.0007), and the FX providers quote 6 decimals — a 2-decimal floor would make
 // those orders impossible to reconcile.
@@ -94,6 +103,16 @@ export const orderItemRowSchema = z.object({
   position: z.number().int().min(1, { message: "POSITION_TOO_LOW" }),
 });
 
+/**
+ * Money handed over at the moment the order is created (a deposit, a first instalment). Optional:
+ * an order with nothing paid yet is the common case. It becomes a store payment declared entirely
+ * against the new order, inside the same transaction that creates it.
+ */
+const initialPaymentSchema = z.object({
+  amount: paymentAmountSchema,
+  paymentDate: z.coerce.date().refine((date) => date <= new Date(), { message: "PAYMENT_DATE_IN_FUTURE" }),
+});
+
 export const orderCreateSchema = z
   .object({
     storeId: z.string().cuid({ message: "INVALID_STORE_ID" }),
@@ -105,6 +124,7 @@ export const orderCreateSchema = z
     totalCost: totalCostSchema,
     note: z.string().max(2000).nullable().optional(),
     items: z.array(orderItemRowSchema).max(MAX_ORDER_ITEMS, { message: "TOO_MANY_ITEMS" }).optional(),
+    initialPayment: initialPaymentSchema.optional(),
   })
   .superRefine((data, ctx) => {
     if (data.expectedDeliveryFrom && data.expectedDeliveryTo) {
@@ -115,6 +135,20 @@ export const orderCreateSchema = z
           message: "DELIVERY_TO_BEFORE_FROM",
         });
       }
+    }
+    if (data.initialPayment && data.initialPayment.amount > data.totalCost) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["initialPayment", "amount"],
+        message: "INITIAL_PAYMENT_EXCEEDS_TOTAL",
+      });
+    }
+    if (data.initialPayment && data.initialPayment.paymentDate < data.orderDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["initialPayment", "paymentDate"],
+        message: "DATE_BEFORE_ORDER",
+      });
     }
     zeroDecimalAmountRefinement(data, ctx);
   });
@@ -148,12 +182,31 @@ export const orderEditSchema = z
     zeroDecimalAmountRefinement(data, ctx);
   });
 
+/**
+ * What happens to the money already declared against an order when it is cancelled. Under
+ * store-level payments the payment itself is never destroyed by a cancellation, only its
+ * declaration: `lost` leaves the declarations attached to the cancelled order (the money is gone,
+ * and the dashboard reads it as such), `credit` removes them so the money returns to the store's
+ * undeclared pool, available to cover another order.
+ *
+ * The legacy `keep` / `remove` spellings are still accepted and normalized, because they are what
+ * the current cancel dialog sends.
+ */
+export const CANCEL_PAYMENTS_CHOICES = ["lost", "credit"] as const;
+export type CancelPaymentsChoice = (typeof CANCEL_PAYMENTS_CHOICES)[number];
+
+export const cancelPaymentsChoiceSchema = z
+  .enum(["lost", "credit", "keep", "remove"])
+  .default("lost")
+  .transform((value): CancelPaymentsChoice => {
+    if (value === "keep") return "lost";
+    if (value === "remove") return "credit";
+    return value;
+  });
+
 export const orderCancelSchema = z.object({
   orderId: z.string().cuid({ message: "INVALID_ORDER_ID" }),
-  // What to do with the order's recorded payments on cancel. `keep` (default) preserves the
-  // ledger — the money is treated as sunk/lost and surfaced on the dashboard; `remove` deletes
-  // it, for money that was refunded or moved as credit to another order.
-  paymentsChoice: z.enum(["keep", "remove"]).default("keep"),
+  paymentsChoice: cancelPaymentsChoiceSchema,
 });
 
 export const orderDeleteSchema = z.object({
@@ -170,8 +223,16 @@ export const orderPaymentCreateSchema = z.object({
   paymentDate: z.coerce.date().refine((d) => d <= new Date(), { message: "PAYMENT_DATE_IN_FUTURE" }),
 });
 
+/**
+ * Deleting a payment from an order removes that order's declaration on it (the allocation), which
+ * is the id an order's payment records carry. Whether the payment itself also goes is decided by
+ * the mutation, not by the caller.
+ *
+ * Ids are not `cuid()`-shaped here: rows carried over from the per-order ledger keep a derived,
+ * prefixed id so they stay traceable to the payment they came from.
+ */
 export const orderPaymentDeleteSchema = z.object({
-  paymentId: z.string().cuid({ message: "INVALID_PAYMENT_ID" }),
+  allocationId: z.string().min(1, { message: "INVALID_ALLOCATION_ID" }).max(64),
   orderId: z.string().cuid({ message: "INVALID_ORDER_ID" }),
 });
 

@@ -13,10 +13,16 @@ export type CreateOrderItemsResult =
   { ok: true } | { ok: false; error: "INVALID_PRODUCT_TYPE"; productTypeKey: string };
 
 export type DeleteOrderItemResult =
-  { ok: true } | { ok: false; error: "ITEM_NOT_FOUND" | "ITEM_HAS_LIVE_DELIVERY"; deliveryId?: string };
+  | { ok: true }
+  | { ok: false; error: "ITEM_NOT_FOUND" | "ITEM_HAS_LIVE_DELIVERY" | "ITEM_HAS_ALLOCATION"; deliveryId?: string };
 
 export type ReplaceOrderItemsResult =
-  { ok: true } | { ok: false; error: "ITEM_HAS_LIVE_DELIVERY" | "INVALID_PRODUCT_TYPE"; detail?: string };
+  | { ok: true }
+  | {
+      ok: false;
+      error: "ITEM_HAS_LIVE_DELIVERY" | "INVALID_PRODUCT_TYPE" | "ITEM_HAS_ALLOCATION" | "ITEM_PRICE_BELOW_ALLOCATED";
+      detail?: string;
+    };
 
 /**
  * Normalizes a list of item inputs to consecutive positions starting at 1,
@@ -45,6 +51,30 @@ export async function findInvalidProductTypeKey(tx: Prisma.TransactionClient, ke
 
   const validKeySet = new Set(validTypes.map((t) => t.key));
   return uniqueKeys.find((k) => !validKeySet.has(k)) ?? null;
+}
+
+/**
+ * Money already declared against each of the given items, keyed by item id. Items with nothing
+ * declared against them are absent from the map rather than present with a zero.
+ */
+async function sumAllocationsByItemId(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  itemIds: string[],
+): Promise<Map<string, number>> {
+  if (itemIds.length === 0) return new Map();
+
+  const groups = await tx.paymentAllocation.groupBy({
+    by: ["orderItemId"],
+    where: { orderItemId: { in: itemIds }, userId },
+    _sum: { amountMinor: true },
+  });
+
+  const allocatedByItemId = new Map<string, number>();
+  for (const group of groups) {
+    if (group.orderItemId) allocatedByItemId.set(group.orderItemId, group._sum.amountMinor ?? 0);
+  }
+  return allocatedByItemId;
 }
 
 /**
@@ -114,6 +144,33 @@ export async function replaceOrderItems(
 
   const submittedIds = new Set(items.map((i) => i.id).filter((id): id is string => id != null));
   const toDeleteIds = existingItems.filter((e) => !submittedIds.has(e.id)).map((e) => e.id);
+
+  // Money declared against a specific item pins that item down: it cannot be removed, and its own
+  // price cannot drop below what has already been declared against it, or the declaration would
+  // claim more than the item is worth. Both checks run here, before the first write, so a refusal
+  // never leaves a half-applied replacement behind.
+  const allocatedByItemId = await sumAllocationsByItemId(
+    tx,
+    userId,
+    existingItems.map((item) => item.id),
+  );
+
+  const blockedDeletion = toDeleteIds.find((itemId) => (allocatedByItemId.get(itemId) ?? 0) > 0);
+  if (blockedDeletion) {
+    return { ok: false, error: "ITEM_HAS_ALLOCATION", detail: blockedDeletion };
+  }
+
+  const underfundedItem = items.find((item) => {
+    if (!item.id || !submittedIds.has(item.id)) return false;
+    const allocated = allocatedByItemId.get(item.id) ?? 0;
+    if (allocated === 0) return false;
+    // A submitted item with no unit price has no base to compare against, so nothing to violate.
+    if (item.unitPrice == null) return false;
+    return item.unitPrice * item.quantity < allocated;
+  });
+  if (underfundedItem?.id) {
+    return { ok: false, error: "ITEM_PRICE_BELOW_ALLOCATED", detail: underfundedItem.id };
+  }
 
   if (toDeleteIds.length > 0) {
     const liveLink = await tx.deliveryOrderItem.findFirst({
@@ -205,6 +262,17 @@ export async function deleteOrderItem(itemId: string, orderId: string, userId: s
 
     if (liveLink) {
       return { ok: false, error: "ITEM_HAS_LIVE_DELIVERY", deliveryId: liveLink.deliveryId };
+    }
+
+    // Deleting the item would cascade away a payment declaration that names it, silently reducing
+    // what the collector recorded as paid. The declaration has to be dropped first, deliberately.
+    const allocation = await tx.paymentAllocation.findFirst({
+      where: { orderItemId: itemId, userId },
+      select: { id: true },
+    });
+
+    if (allocation) {
+      return { ok: false, error: "ITEM_HAS_ALLOCATION" };
     }
 
     await tx.orderItem.delete({ where: { id: itemId } });

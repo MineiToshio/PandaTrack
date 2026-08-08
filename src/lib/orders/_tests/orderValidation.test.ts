@@ -209,20 +209,27 @@ describe("orderPaymentCreateSchema", () => {
 });
 
 describe("orderCancelSchema", () => {
-  it("defaults paymentsChoice to keep when omitted", () => {
+  it("defaults paymentsChoice to lost when omitted", () => {
     const result = orderCancelSchema.safeParse({ orderId: VALID_CUID });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.paymentsChoice).toBe("keep");
+      expect(result.data.paymentsChoice).toBe("lost");
     }
   });
 
-  it("accepts an explicit remove choice", () => {
-    const result = orderCancelSchema.safeParse({ orderId: VALID_CUID, paymentsChoice: "remove" });
+  it("accepts an explicit credit choice", () => {
+    const result = orderCancelSchema.safeParse({ orderId: VALID_CUID, paymentsChoice: "credit" });
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.paymentsChoice).toBe("remove");
+      expect(result.data.paymentsChoice).toBe("credit");
     }
+  });
+
+  it("normalizes the per-order vocabulary the current cancel dialog still sends", () => {
+    const kept = orderCancelSchema.safeParse({ orderId: VALID_CUID, paymentsChoice: "keep" });
+    const removed = orderCancelSchema.safeParse({ orderId: VALID_CUID, paymentsChoice: "remove" });
+    expect(kept.success && kept.data.paymentsChoice).toBe("lost");
+    expect(removed.success && removed.data.paymentsChoice).toBe("credit");
   });
 
   it("rejects an unknown paymentsChoice value", () => {
@@ -242,18 +249,28 @@ describe("orderCancelSchema", () => {
 describe("orderPaymentDeleteSchema", () => {
   const VALID_CUID = "clxxxxxxxxxxxxxxxxxxxxxx0";
 
-  it("accepts valid paymentId and orderId", () => {
-    expect(orderPaymentDeleteSchema.safeParse({ paymentId: VALID_CUID, orderId: VALID_CUID }).success).toBe(true);
+  it("accepts valid allocationId and orderId", () => {
+    expect(orderPaymentDeleteSchema.safeParse({ allocationId: VALID_CUID, orderId: VALID_CUID }).success).toBe(true);
   });
 
-  it("rejects non-cuid paymentId", () => {
+  it("accepts the derived id a payment carried over from the per-order ledger has", () => {
+    // Rows written by the store-payment backfill keep a prefixed, traceable id rather than a cuid,
+    // so a cuid-shaped rule here would make exactly those payments impossible to delete.
     const result = orderPaymentDeleteSchema.safeParse({
-      paymentId: "bad-id",
+      allocationId: `mig_alloc_${VALID_CUID}`,
+      orderId: VALID_CUID,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects an empty allocationId", () => {
+    const result = orderPaymentDeleteSchema.safeParse({
+      allocationId: "",
       orderId: VALID_CUID,
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues.map((e) => e.message)).toContain("INVALID_PAYMENT_ID");
+      expect(result.error.issues.map((e) => e.message)).toContain("INVALID_ALLOCATION_ID");
     }
   });
 });

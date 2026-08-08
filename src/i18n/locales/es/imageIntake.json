@@ -207,6 +207,9 @@
       "paymentsEyebrow": "Paso 3"
     }
   },
+  "save": {
+    "paymentsSkipped": "No pudimos registrar {count, plural, one {# pago} other {# pagos}} del chat. Revísalo y agrégalo a mano en el pedido."
+  },
   "share": {
     "attach": "No encontramos las fotos que compartiste. Adjúntalas aquí y seguimos desde ahí.",
     "ios": "En iPhone el atajo abre esta pantalla, pero no puede traer las fotos. Adjunta las fotos que compartiste.",

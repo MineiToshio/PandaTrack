@@ -1,27 +1,22 @@
-import { Prisma } from "../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { isWholeMajorAmount, isZeroDecimalCurrency } from "@/lib/currency";
 import { calculatePaymentSummary, type PaymentSummary } from "@/lib/orders/paymentSummary";
+import { listOrderPaymentRecords, recalculateOrderAllocationCache } from "./orderPaymentAllocations";
+import type { OrderPaymentRecord } from "./orderPaymentAllocations";
+import { runSerializableTransaction } from "./serializableTransaction";
+import { createStorePayment, type CreateStorePaymentError } from "./storePaymentMutations";
 
-// Adding a payment reads the current balance and then writes; under concurrent submissions a
-// plain transaction can double-count against a stale balance. Serializable isolation makes the
-// read-then-write conflict detectable; the DB aborts the loser with a serialization failure
-// (P2034), which we retry a bounded number of times before surfacing the error.
-const SERIALIZATION_FAILURE_CODE = "P2034";
-const MAX_SERIALIZATION_RETRIES = 3;
-
-function isSerializationFailure(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === SERIALIZATION_FAILURE_CODE;
-}
-
-type PaymentRecord = {
-  id: string;
-  amount: number;
-  paymentDate: Date;
-};
+/**
+ * Order-scoped view of the payment ledger.
+ *
+ * Money is recorded at the store level (`storePaymentMutations`); these two functions are the
+ * order's door into it, kept at their original names and signatures because every existing caller
+ * (the detail screen, the image intake save action, the Notion importer) speaks in "a payment on
+ * this order". Adding one here raises a store payment declared entirely against that order;
+ * deleting one removes the declaration, and the payment itself only when nothing else claimed it.
+ */
 
 type PaymentMutationSuccess = PaymentSummary & {
-  payments: PaymentRecord[];
+  payments: OrderPaymentRecord[];
 };
 
 type AddPaymentParams = {
@@ -32,7 +27,8 @@ type AddPaymentParams = {
 };
 
 type DeletePaymentParams = {
-  paymentId: string;
+  /** The allocation to remove, which is the `id` an order's payment records carry. */
+  allocationId: string;
   orderId: string;
   userId: string;
 };
@@ -41,10 +37,51 @@ type AddPaymentResult =
   | ({ ok: true; paymentId: string } & PaymentMutationSuccess)
   | {
       ok: false;
-      error: "ORDER_NOT_FOUND" | "EXCEEDS_BALANCE" | "DATE_BEFORE_ORDER" | "AMOUNT_FRACTIONAL_SUBUNITS";
+      error:
+        | "ORDER_NOT_FOUND"
+        | "EXCEEDS_BALANCE"
+        | "DATE_BEFORE_ORDER"
+        | "AMOUNT_FRACTIONAL_SUBUNITS"
+        | "AMOUNT_INVALID"
+        | "ORDER_CANCELLED";
     };
 
-type DeletePaymentResult = ({ ok: true } & PaymentMutationSuccess) | { ok: false; error: "NOT_FOUND" };
+type DeletePaymentResult =
+  ({ ok: true; deletedPayment: boolean } & PaymentMutationSuccess) | { ok: false; error: "NOT_FOUND" };
+
+/**
+ * Maps a store-payment refusal onto the codes an order-scoped caller already handles.
+ *
+ * The wrapper builds its own input, so most of these are unreachable from it; they are mapped
+ * exhaustively rather than defaulted so a new refusal code cannot slip through as a silent
+ * success-shaped surprise. `STORE_DEBT_EXCEEDED` becomes `EXCEEDS_BALANCE`: from the order's point
+ * of view the money did not fit, which is the same sentence the UI already knows how to say.
+ */
+function mapStorePaymentError(error: CreateStorePaymentError): Exclude<AddPaymentResult, { ok: true }>["error"] {
+  switch (error) {
+    case "AMOUNT_INVALID":
+      return "AMOUNT_INVALID";
+    case "AMOUNT_FRACTIONAL_SUBUNITS":
+      return "AMOUNT_FRACTIONAL_SUBUNITS";
+    case "DATE_BEFORE_ORDER":
+      return "DATE_BEFORE_ORDER";
+    case "ORDER_CANCELLED":
+      return "ORDER_CANCELLED";
+    case "STORE_DEBT_EXCEEDED":
+    case "ALLOCATION_SUM_EXCEEDS_PAYMENT":
+    case "EXCEEDS_BALANCE":
+    case "EXCEEDS_ITEM_BASE":
+      return "EXCEEDS_BALANCE";
+    case "STORE_NOT_FOUND":
+    case "CURRENCY_REQUIRED":
+    case "CURRENCY_MISMATCH":
+    case "STORE_MISMATCH":
+    case "ORDER_NOT_FOUND":
+    case "ITEM_ORDER_MISMATCH":
+    case "ALLOCATION_AMOUNT_INVALID":
+      return "ORDER_NOT_FOUND";
+  }
+}
 
 export async function addOrderPayment({
   orderId,
@@ -52,112 +89,101 @@ export async function addOrderPayment({
   amount,
   paymentDate,
 }: AddPaymentParams): Promise<AddPaymentResult> {
-  for (let attempt = 0; ; attempt++) {
-    try {
-      return await prisma.$transaction(
-        async (tx) => {
-          const order = await tx.order.findFirst({
-            where: { id: orderId, userId },
-            select: { id: true, totalCost: true, orderDate: true, currencyCode: true },
-          });
+  // Read outside the transaction only to shape the input: which store the money goes to, which
+  // currency it is in, and whether the order is a single item (in which case "for this order" and
+  // "for that item" are the same declaration, so the allocation can be that specific). Every one of
+  // these values is re-read and re-validated inside `createStorePayment`.
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, userId },
+    select: {
+      storeId: true,
+      currencyCode: true,
+      exchangeRate: true,
+      exchangeRateBaseCode: true,
+      items: { select: { id: true } },
+    },
+  });
 
-          if (!order) {
-            return { ok: false, error: "ORDER_NOT_FOUND" };
-          }
-
-          // Server-side defense: a zero-decimal currency (CLP/JPY/KRW) has no subunit, so a
-          // payment must resolve to a whole major amount. The client parser already rejects
-          // fractional input, but guard here too so a crafted request can't persist a
-          // fractional ×100 amount that would never render back correctly.
-          if (isZeroDecimalCurrency(order.currencyCode) && !isWholeMajorAmount(amount)) {
-            return { ok: false, error: "AMOUNT_FRACTIONAL_SUBUNITS" };
-          }
-
-          if (paymentDate < order.orderDate) {
-            return { ok: false, error: "DATE_BEFORE_ORDER" };
-          }
-
-          const existingPayments = await tx.orderPayment.findMany({
-            where: { orderId, userId },
-            select: { id: true, amount: true, paymentDate: true },
-            orderBy: [{ paymentDate: "desc" }, { createdAt: "desc" }],
-          });
-
-          const { remainingAmount } = calculatePaymentSummary(order.totalCost, existingPayments);
-
-          if (amount > remainingAmount) {
-            return { ok: false, error: "EXCEEDS_BALANCE" };
-          }
-
-          const payment = await tx.orderPayment.create({
-            data: { orderId, userId, amount, paymentDate },
-            select: { id: true },
-          });
-
-          const updatedPayments = await tx.orderPayment.findMany({
-            where: { orderId, userId },
-            select: { id: true, amount: true, paymentDate: true },
-            orderBy: [{ paymentDate: "desc" }, { createdAt: "desc" }],
-          });
-
-          const summary = calculatePaymentSummary(order.totalCost, updatedPayments);
-
-          // Keep the denormalized payment cache the orders list filters/sorts on in sync within
-          // the same transaction, so it can never drift from the payment rows.
-          await tx.order.update({
-            where: { id: orderId },
-            data: { paidAmountMinor: summary.paidAmount, paymentPercent: summary.paymentPercentage },
-          });
-
-          return { ok: true, paymentId: payment.id, ...summary, payments: updatedPayments };
-        },
-        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-      );
-    } catch (error) {
-      if (isSerializationFailure(error) && attempt < MAX_SERIALIZATION_RETRIES) {
-        continue;
-      }
-      throw error;
-    }
+  if (!order) {
+    return { ok: false, error: "ORDER_NOT_FOUND" };
   }
+
+  const singleItemId = order.items.length === 1 ? order.items[0].id : null;
+
+  const result = await createStorePayment({
+    userId,
+    storeId: order.storeId,
+    amount,
+    paymentDate,
+    currencyCode: order.currencyCode,
+    // A payment raised against exactly one order inherits that order's FX shape, so it can be
+    // converted to the collector's base currency without a reconciliation pass of its own.
+    exchangeRate: order.exchangeRate ? Number(order.exchangeRate) : null,
+    exchangeRateBaseCode: order.exchangeRateBaseCode,
+    allocations: [{ orderId, orderItemId: singleItemId, amountMinor: amount }],
+  });
+
+  if (!result.ok) {
+    return { ok: false, error: mapStorePaymentError(result.error) };
+  }
+
+  const snapshot = result.affectedOrders.find((candidate) => candidate.orderId === orderId);
+  if (!snapshot) {
+    // The allocation named this order, so its snapshot is always present; treated as "gone" rather
+    // than asserted, because a missing one can only mean the order disappeared under the write.
+    return { ok: false, error: "ORDER_NOT_FOUND" };
+  }
+
+  const summary = calculatePaymentSummary(snapshot.totalCost, snapshot.payments);
+  return { ok: true, paymentId: result.paymentId, ...summary, payments: snapshot.payments };
 }
 
+/**
+ * Removes one payment declaration from an order.
+ *
+ * A payment that was raised for this order alone (its only allocation, covering its whole amount)
+ * is deleted outright: the collector is undoing the payment, not just its attribution. A payment
+ * shared with other orders survives and only loses this order's slice, which leaves it partly
+ * undeclared rather than destroying money that is still explaining other orders.
+ */
 export async function deleteOrderPayment({
-  paymentId,
+  allocationId,
   orderId,
   userId,
 }: DeletePaymentParams): Promise<DeletePaymentResult> {
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    const payment = await tx.orderPayment.findFirst({
-      where: { id: paymentId, userId },
+  return runSerializableTransaction<DeletePaymentResult>(async (tx) => {
+    const allocation = await tx.paymentAllocation.findFirst({
+      where: { id: allocationId, orderId, userId },
       select: {
         id: true,
-        amount: true,
-        order: { select: { totalCost: true, currencyCode: true } },
+        amountMinor: true,
+        payment: { select: { id: true, amount: true, _count: { select: { allocations: true } } } },
       },
     });
 
-    if (!payment) {
-      return { ok: false as const, error: "NOT_FOUND" as const };
+    if (!allocation) {
+      return { ok: false, error: "NOT_FOUND" };
     }
 
-    await tx.orderPayment.delete({ where: { id: paymentId } });
+    const order = await tx.order.findFirst({ where: { id: orderId, userId }, select: { totalCost: true } });
+    if (!order) {
+      return { ok: false, error: "NOT_FOUND" };
+    }
 
-    const updatedPayments = await tx.orderPayment.findMany({
-      where: { orderId, userId },
-      select: { id: true, amount: true, paymentDate: true },
-      orderBy: [{ paymentDate: "desc" }, { createdAt: "desc" }],
-    });
+    const isSoleClaimOnPayment =
+      allocation.payment._count.allocations === 1 && allocation.amountMinor === allocation.payment.amount;
 
-    const summary = calculatePaymentSummary(payment.order.totalCost, updatedPayments);
+    if (isSoleClaimOnPayment) {
+      await tx.storePayment.delete({ where: { id: allocation.payment.id } });
+    } else {
+      await tx.paymentAllocation.delete({ where: { id: allocation.id } });
+    }
 
-    // Keep the denormalized payment cache the orders list filters/sorts on in sync within the
-    // same transaction, so it can never drift from the payment rows.
-    await tx.order.update({
-      where: { id: orderId },
-      data: { paidAmountMinor: summary.paidAmount, paymentPercent: summary.paymentPercentage },
-    });
+    await recalculateOrderAllocationCache(tx, [orderId], userId);
 
-    return { ok: true as const, ...summary, payments: updatedPayments };
+    const payments = await listOrderPaymentRecords(tx, orderId, userId);
+    const summary = calculatePaymentSummary(order.totalCost, payments);
+
+    return { ok: true, deletedPayment: isSoleClaimOnPayment, ...summary, payments };
   });
 }

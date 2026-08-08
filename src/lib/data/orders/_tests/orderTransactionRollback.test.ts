@@ -52,7 +52,10 @@ type FakeTx = {
     deleteMany: ReturnType<typeof vi.fn>;
   };
   orderHistory: { create: ReturnType<typeof vi.fn> };
-  orderPayment: { aggregate: ReturnType<typeof vi.fn> };
+  paymentAllocation: {
+    findFirst: ReturnType<typeof vi.fn>;
+    groupBy: ReturnType<typeof vi.fn>;
+  };
   deliveryOrderItem: { findFirst: ReturnType<typeof vi.fn> };
   user: { findUnique: ReturnType<typeof vi.fn> };
 };
@@ -77,7 +80,10 @@ function makeFakeTx(): FakeTx {
       deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
     orderHistory: { create: vi.fn().mockResolvedValue({}) },
-    orderPayment: { aggregate: vi.fn().mockResolvedValue({ _sum: { amount: 0 } }) },
+    paymentAllocation: {
+      findFirst: vi.fn().mockResolvedValue(null),
+      groupBy: vi.fn().mockResolvedValue([]),
+    },
     deliveryOrderItem: { findFirst: vi.fn().mockResolvedValue(null) },
     user: { findUnique: vi.fn().mockResolvedValue({ baseCurrencyCode: null }) },
   };

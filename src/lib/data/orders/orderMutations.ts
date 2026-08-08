@@ -1,15 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { DeliveryStatus, OrderItemDeliveryState, OrderStatus } from "../../../../generated/prisma/client";
 import { resolveExchangeRateBaseCode } from "@/lib/fx/reconciliation";
+import { isWholeMajorAmount, isZeroDecimalCurrency } from "@/lib/currency";
 import { generateOrderHumanReadableId } from "@/lib/orders/orderIdentifier";
-import { calculatePaymentSummary } from "@/lib/orders/paymentSummary";
 import { appendOrderHistoryEntry, OrderHistoryEventType } from "./orderHistoryMutations";
 import { createOrderItems, findInvalidProductTypeKey, replaceOrderItems } from "./orderItemMutations";
-import type { OrderCreateInput, OrderEditInput } from "@/lib/orders/orderValidation";
+import { recalculateOrderAllocationCache } from "./orderPaymentAllocations";
+import { writeStorePaymentWithAllocations } from "./storePaymentMutations";
+import type { CancelPaymentsChoice, OrderCreateInput, OrderEditInput } from "@/lib/orders/orderValidation";
 
 type CreateOrderResult =
   | { ok: true; orderId: string; humanReadableId: string }
-  | { ok: false; error: "STORE_NOT_FOUND" | "INVALID_PRODUCT_TYPE" };
+  | { ok: false; error: "STORE_NOT_FOUND" | "INVALID_PRODUCT_TYPE" | "INITIAL_PAYMENT_INVALID" };
 
 type EditOrderResult =
   | { ok: true }
@@ -22,8 +24,15 @@ type EditOrderResult =
         | "STORE_CHANGE_BLOCKED"
         | "INVALID_PRODUCT_TYPE"
         | "ITEM_HAS_LIVE_DELIVERY"
-        // Total can't be lowered below the sum of payments already recorded — collectors
-        // must delete payments first if they want to bring the total down past what's paid.
+        // Money is declared against a store, so moving an order to another store (or restating it
+        // in another currency) would strand every declaration pointing at it.
+        | "CURRENCY_CHANGE_BLOCKED"
+        // An item that money has been declared against cannot be removed, and its price cannot
+        // drop below what is already declared against it.
+        | "ITEM_HAS_ALLOCATION"
+        | "ITEM_PRICE_BELOW_ALLOCATED"
+        // Total can't be lowered below what is already declared as paid — collectors must delete
+        // payments first if they want to bring the total down past that.
         | "TOTAL_BELOW_PAID";
     };
 
@@ -45,6 +54,16 @@ class InvalidProductTypeRollback extends Error {
     super("INVALID_PRODUCT_TYPE");
     this.name = "InvalidProductTypeRollback";
   }
+}
+
+/**
+ * An advance recorded at creation time is bounded by the order it belongs to: positive, whole in
+ * its own currency, and never more than the order costs. The store-level debt ceiling that governs
+ * every other payment is not applied here, because the order being created is itself the debt.
+ */
+function isValidInitialPayment(amount: number, order: { totalCost: number; currencyCode: string }): boolean {
+  if (!Number.isInteger(amount) || amount <= 0 || amount > order.totalCost) return false;
+  return !isZeroDecimalCurrency(order.currencyCode) || isWholeMajorAmount(amount);
 }
 
 async function hasLiveDeliveryLinks(orderId: string): Promise<boolean> {
@@ -84,6 +103,12 @@ export async function createOrder(userId: string, input: OrderCreateInput): Prom
         }
       }
 
+      // The advance is validated here, with the order still unwritten, for the same reason the
+      // category check above is: a refusal raised once the order exists would commit it.
+      if (input.initialPayment && !isValidInitialPayment(input.initialPayment.amount, input)) {
+        return { ok: false, error: "INITIAL_PAYMENT_INVALID" };
+      }
+
       const now = new Date();
       const humanReadableId = await generateOrderHumanReadableId(tx, userId, now);
 
@@ -118,6 +143,30 @@ export async function createOrder(userId: string, input: OrderCreateInput): Prom
         }
       }
 
+      if (input.initialPayment) {
+        // Same transaction as the order itself: an advance the collector reported while creating
+        // the order must never end up recorded without it, or recorded against nothing.
+        const createdItems = await tx.orderItem.findMany({ where: { orderId: order.id }, select: { id: true } });
+        const singleItemId = createdItems.length === 1 ? createdItems[0].id : null;
+        await writeStorePaymentWithAllocations(tx, {
+          userId,
+          storeId: input.storeId,
+          amount: input.initialPayment.amount,
+          paymentDate: input.initialPayment.paymentDate,
+          currencyCode: input.currencyCode,
+          exchangeRate,
+          exchangeRateBaseCode: resolveExchangeRateBaseCode(exchangeRate, user?.baseCurrencyCode ?? null),
+          allocations: [
+            {
+              orderId: order.id,
+              orderItemId: singleItemId,
+              amountMinor: input.initialPayment.amount,
+              settlesTarget: false,
+            },
+          ],
+        });
+      }
+
       await appendOrderHistoryEntry({
         tx,
         orderId: order.id,
@@ -139,7 +188,7 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
   return prisma.$transaction(async (tx) => {
     const order = await tx.order.findFirst({
       where: { id: orderId, userId },
-      select: { status: true, storeId: true },
+      select: { status: true, storeId: true, currencyCode: true, allocatedAmountMinor: true },
     });
 
     if (!order) {
@@ -150,12 +199,18 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
       return { ok: false, error: "ORDER_NOT_EDITABLE" };
     }
 
+    // Declared money pins two fields in place. A payment belongs to a store and is denominated in
+    // one currency, so an order carrying declarations cannot move to another store or be restated
+    // in another currency without the declarations becoming lies. Read once, used by both guards.
+    const hasAllocations =
+      (await tx.paymentAllocation.findFirst({ where: { orderId, userId }, select: { id: true } })) !== null;
+
     if (input.storeId !== undefined && input.storeId !== order.storeId) {
       const hasDeliveries = await tx.deliveryOrderItem.findFirst({
         where: { orderItem: { orderId } },
         select: { deliveryId: true },
       });
-      if (hasDeliveries || order.status !== OrderStatus.OPEN) {
+      if (hasDeliveries || hasAllocations || order.status !== OrderStatus.OPEN) {
         return { ok: false, error: "STORE_CHANGE_BLOCKED" };
       }
       const store = await tx.store.findFirst({ where: { id: input.storeId }, select: { id: true } });
@@ -164,21 +219,16 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
       }
     }
 
-    // Total guard — server-side safety net for the client check in `OrderEditForm`. We
-    // refuse to update the total to a value below the sum of payments already recorded;
-    // doing so would produce a negative `remainingAmount` everywhere downstream (hero,
-    // sticky bar, list cards).
-    let paymentCacheUpdate: { paidAmountMinor: number; paymentPercent: number } | undefined;
-    if (input.totalCost !== undefined) {
-      const paid = await tx.orderPayment.aggregate({ where: { orderId }, _sum: { amount: true } });
-      const paidAmount = paid._sum.amount ?? 0;
-      if (input.totalCost < paidAmount) {
-        return { ok: false, error: "TOTAL_BELOW_PAID" };
-      }
-      // The paid ratio is relative to the total, so changing the total shifts paymentPercent even
-      // though the paid amount is unchanged. Refresh the denormalized cache the orders list reads.
-      const summary = calculatePaymentSummary(input.totalCost, [{ amount: paidAmount }]);
-      paymentCacheUpdate = { paidAmountMinor: summary.paidAmount, paymentPercent: summary.paymentPercentage };
+    if (input.currencyCode !== undefined && input.currencyCode !== order.currencyCode && hasAllocations) {
+      return { ok: false, error: "CURRENCY_CHANGE_BLOCKED" };
+    }
+
+    // Total guard — server-side safety net for the client check in `OrderEditForm`. We refuse to
+    // update the total to a value below what is already declared as paid against this order; doing
+    // so would produce a negative `remainingAmount` everywhere downstream (hero, sticky bar, list
+    // cards), and would leave the order over-allocated.
+    if (input.totalCost !== undefined && input.totalCost < order.allocatedAmountMinor) {
+      return { ok: false, error: "TOTAL_BELOW_PAID" };
     }
 
     // Items are replaced before the order row is touched, because this is the last step that can
@@ -190,10 +240,7 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
     if (input.items !== undefined) {
       const replaceResult = await replaceOrderItems(tx, orderId, userId, input.items);
       if (!replaceResult.ok) {
-        if (replaceResult.error === "ITEM_HAS_LIVE_DELIVERY") {
-          return { ok: false, error: "ITEM_HAS_LIVE_DELIVERY" };
-        }
-        return { ok: false, error: "INVALID_PRODUCT_TYPE" };
+        return { ok: false, error: replaceResult.error };
       }
     }
 
@@ -219,7 +266,6 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
         ...(input.currencyCode !== undefined ? { currencyCode: input.currencyCode } : {}),
         ...(rateUpdate ?? {}),
         ...(input.totalCost !== undefined ? { totalCost: input.totalCost } : {}),
-        ...(paymentCacheUpdate ?? {}),
         ...(input.note !== undefined ? { note: input.note } : {}),
       },
     });
@@ -228,11 +274,19 @@ export async function editOrder(orderId: string, userId: string, input: OrderEdi
   });
 }
 
+/**
+ * Cancels an order and decides what happens to the money declared against it.
+ *
+ * A cancellation never destroys a payment: the money left the collector's hands whatever happened
+ * to the order. What it decides is whether the declaration survives. `lost` keeps the allocations
+ * pinned to the cancelled order, which is what makes the money readable as sunk. `credit` drops
+ * them, returning the money to the store's undeclared pool so it can cover something else.
+ */
 export async function cancelOrder(
   orderId: string,
   userId: string,
   cancellationReason: string | null = null,
-  paymentsChoice: "keep" | "remove" = "keep",
+  paymentsChoice: CancelPaymentsChoice = "lost",
 ): Promise<CancelOrderResult> {
   return prisma.$transaction(async (tx) => {
     const order = await tx.order.findFirst({
@@ -256,23 +310,21 @@ export async function cancelOrder(
       return { ok: false, error: "HAS_LIVE_DELIVERY_LINKS" };
     }
 
-    // Cancellation preserves payments and history by default — the order is archived, not
-    // destroyed, and the reactivate flow relies on the payment trail still being available so
-    // the collector can see what they paid before they paused the order. Kept payments are
-    // treated as sunk/lost money on the dashboard.
+    // The order is archived, not destroyed, and the reactivate flow relies on the payment trail
+    // still being readable so the collector can see what they paid before they paused it.
     await tx.order.update({
       where: { id: orderId },
       data: { status: OrderStatus.CANCELLED, cancellationReason },
     });
 
-    // Remove branch: the collector was refunded, or moved the money as credit to another order,
-    // so the payments must not linger here (they would double-count or read as lost money). Drop
-    // the ledger and reset the denormalized payment cache the orders list reads.
-    if (paymentsChoice === "remove") {
-      await tx.orderPayment.deleteMany({ where: { orderId } });
+    // Credit branch: the collector was refunded, or the money stays with the store to cover
+    // something else. Only the declarations go; the payments themselves survive, unallocated,
+    // which is precisely what a store credit is.
+    if (paymentsChoice === "credit") {
+      await tx.paymentAllocation.deleteMany({ where: { orderId, userId } });
       await tx.order.update({
         where: { id: orderId },
-        data: { paidAmountMinor: 0, paymentPercent: 0 },
+        data: { allocatedAmountMinor: 0 },
       });
     }
 
@@ -427,6 +479,41 @@ export async function deleteOrder(orderId: string, userId: string): Promise<Dele
       return { ok: false, error: "HAS_LIVE_DELIVERY_LINKS" };
     }
 
+    // Money declared against a disappearing order. A payment raised for this order alone (its only
+    // declaration, covering its whole amount) goes with it: keeping it would leave an unexplained
+    // payment nobody can attribute. A payment shared with other orders survives and loses only its
+    // slice here, because it is still explaining those.
+    const allocations = await tx.paymentAllocation.findMany({
+      where: { orderId, userId },
+      select: {
+        id: true,
+        amountMinor: true,
+        payment: { select: { id: true, amount: true, _count: { select: { allocations: true } } } },
+      },
+    });
+
+    const paymentIdsToDelete = allocations
+      .filter(
+        (allocation) =>
+          allocation.payment._count.allocations === 1 && allocation.amountMinor === allocation.payment.amount,
+      )
+      .map((allocation) => allocation.payment.id);
+
+    if (paymentIdsToDelete.length > 0) {
+      // Defensive: a payment reaching here has exactly one declaration, on this order, so no other
+      // order's cache can move. Collected anyway so a future shape change cannot silently strand it.
+      const collateralOrderIds = (
+        await tx.paymentAllocation.findMany({
+          where: { paymentId: { in: paymentIdsToDelete }, userId, orderId: { not: orderId } },
+          select: { orderId: true },
+        })
+      ).map((allocation) => allocation.orderId);
+
+      await tx.storePayment.deleteMany({ where: { id: { in: paymentIdsToDelete }, userId } });
+      await recalculateOrderAllocationCache(tx, collateralOrderIds, userId);
+    }
+
+    await tx.paymentAllocation.deleteMany({ where: { orderId, userId } });
     await tx.orderPayment.deleteMany({ where: { orderId } });
 
     await tx.deliveryOrderItem.deleteMany({

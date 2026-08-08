@@ -25,8 +25,7 @@ type OrderRow = {
   status: OrderStatus;
   store: { id: string; name: string; slug: string };
   items: never[];
-  paidAmountMinor: number;
-  paymentPercent: number;
+  allocatedAmountMinor: number;
 };
 
 /**
@@ -48,8 +47,7 @@ function makeRow(id: string, overrides: Partial<OrderRow> = {}): OrderRow {
     status: "OPEN" as OrderStatus,
     store: { id: "store-1", name: "Store One", slug: "store-one" },
     items: [],
-    paidAmountMinor: 0,
-    paymentPercent: 0,
+    allocatedAmountMinor: 0,
     ...overrides,
   };
 }
@@ -117,10 +115,12 @@ describe("getOrdersList SQL payment-state pagination", () => {
     expect(args.take).toBe(10);
   });
 
-  it("maps paidAmount, paymentPercentage and hasUnpaidBalance straight from the persisted cache", async () => {
+  it("maps paidAmount, paymentPercentage and hasUnpaidBalance from the allocation cache", async () => {
+    // The percentage is derived from the same allocated amount the card shows rather than read
+    // from a second column, so the two can never disagree on a card.
     prismaMock.order.findMany.mockResolvedValue([
-      makeRow("o1", { totalCost: 10_000, paidAmountMinor: 3_000, paymentPercent: 30 }),
-      makeRow("o2", { totalCost: 10_000, paidAmountMinor: 10_000, paymentPercent: 100 }),
+      makeRow("o1", { totalCost: 10_000, allocatedAmountMinor: 3_000 }),
+      makeRow("o2", { totalCost: 10_000, allocatedAmountMinor: 10_000 }),
     ]);
     prismaMock.order.count.mockResolvedValue(2);
 
