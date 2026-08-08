@@ -186,6 +186,8 @@ model User {
   orders                      Order[]
   orderItems                  OrderItem[]
   orderPayments               OrderPayment[]
+  storePayments               StorePayment[]
+  paymentAllocations          PaymentAllocation[]
   orderHistory                OrderHistory[]
   preferredProductTypes       UserPreferredProductType[]
   deliveries                  Delivery[]
@@ -315,6 +317,7 @@ model Store {
   changeRequests         StoreChangeRequest[]
   orders                 Order[]
   deliveries             Delivery[]
+  storePayments          StorePayment[]
 
   @@index([countryCode])
   @@index([createdByUserId])
@@ -517,38 +520,46 @@ model StoreChangeRequest {
 }
 
 model Order {
-  id                      String         @id @default(cuid())
-  storeId                 String
-  userId                  String
-  humanReadableId         String         @unique
-  orderDate               DateTime
-  expectedDeliveryFrom    DateTime?
-  expectedDeliveryTo      DateTime?
-  currencyCode            String
-  exchangeRate            Decimal?       @db.Decimal(18, 8)
+  id                   String              @id @default(cuid())
+  storeId              String
+  userId               String
+  humanReadableId      String              @unique
+  orderDate            DateTime
+  expectedDeliveryFrom DateTime?
+  expectedDeliveryTo   DateTime?
+  currencyCode         String
+  exchangeRate         Decimal?            @db.Decimal(18, 8)
   // The base currency `exchangeRate` converts INTO, captured whenever a rate is written. Makes
   // "this order still needs FX reconciliation" fully derivable (currency differs from the user's
   // base AND no rate, or a rate stored against a different base), so no boolean flag has to be
   // kept in sync. See ADR 0024.
-  exchangeRateBaseCode    String?
-  totalCost               Int
+  exchangeRateBaseCode String?
+  totalCost            Int
   // Denormalized payment cache kept transactionally in sync by the payment/total mutations.
   // Payments stay the source of truth (single-order views recompute from them); these fields
   // exist so the orders list can filter by payment state and sort by paid ratio entirely in
   // SQL, instead of fetching every order to derive the percentage in memory. `paymentPercent`
   // is the same floor(paid/total*100) value the UI shows, so filter/sort/display never diverge.
-  paidAmountMinor         Int            @default(0)
-  paymentPercent          Int            @default(0)
-  note                    String?
-  status                  OrderStatus    @default(OPEN)
-  cancellationReason      String?
-  createdAt               DateTime       @default(now())
-  updatedAt               DateTime       @updatedAt
-  store                   Store          @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  user                    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items                   OrderItem[]
-  payments                OrderPayment[]
-  history                 OrderHistory[]
+  /// DEPRECATED under store-level payments: frozen legacy cache, no longer maintained; kept for trial reversibility
+  paidAmountMinor      Int                 @default(0)
+  /// DEPRECATED under store-level payments: frozen legacy cache, no longer maintained; kept for trial reversibility
+  paymentPercent       Int                 @default(0)
+  /// Denormalized cache of the money declared against this order under store-level payments:
+  /// the sum of `payment_allocation.amountMinor` for this order. Kept transactionally in sync by
+  /// the payment mutations, exactly as the legacy `paidAmountMinor` cache was, so the orders list
+  /// can filter and sort on declared money in SQL. Allocations remain the source of truth.
+  allocatedAmountMinor Int                 @default(0)
+  note                 String?
+  status               OrderStatus         @default(OPEN)
+  cancellationReason   String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  store                Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items                OrderItem[]
+  payments             OrderPayment[]
+  paymentAllocations   PaymentAllocation[]
+  history              OrderHistory[]
 
   @@index([storeId])
   @@index([userId])
@@ -560,21 +571,22 @@ model Order {
 }
 
 model OrderItem {
-  id             String                 @id @default(cuid())
-  orderId        String
-  userId         String
-  name           String
-  quantity       Int                    @default(1)
-  unitPrice      Int?
-  productTypeKey String?
-  position       Int
-  deliveryState  OrderItemDeliveryState @default(NONE)
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-  order          Order                  @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  productType    StoreProductType?      @relation(fields: [productTypeKey], references: [key], onDelete: Restrict)
-  deliveryItems  DeliveryOrderItem[]
+  id                 String                 @id @default(cuid())
+  orderId            String
+  userId             String
+  name               String
+  quantity           Int                    @default(1)
+  unitPrice          Int?
+  productTypeKey     String?
+  position           Int
+  deliveryState      OrderItemDeliveryState @default(NONE)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  order              Order                  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productType        StoreProductType?      @relation(fields: [productTypeKey], references: [key], onDelete: Restrict)
+  deliveryItems      DeliveryOrderItem[]
+  paymentAllocations PaymentAllocation[]
 
   @@unique([orderId, position])
   @@index([orderId])
@@ -599,6 +611,71 @@ model OrderPayment {
   @@map("order_payment")
 }
 
+/// A payment the collector made to a store. Money is tracked at the store level because that is
+/// how it actually leaves the collector's hands: one transfer often covers several orders, and
+/// which orders it covers is a separate, optional declaration (`PaymentAllocation`). The FX shape
+/// mirrors `Order` so a payment can be reconciled against the user's base currency on its own.
+/// `userId` is duplicated here (see data-layer-user-id-duplication.mdc) so payments can be listed
+/// and authorized per user without joining back through `Store`.
+model StorePayment {
+  id                   String              @id @default(cuid())
+  storeId              String
+  userId               String
+  /// Minor units of `currencyCode`: cash that left the collector's hands. Always > 0.
+  amount               Int
+  paymentDate          DateTime
+  currencyCode         String
+  exchangeRate         Decimal?            @db.Decimal(18, 8)
+  /// The base currency `exchangeRate` converts INTO. Mirrors `Order.exchangeRateBaseCode`; see ADR 0024.
+  exchangeRateBaseCode String?
+  note                 String?
+  /// Provenance of the one-to-one backfill from `order_payment` only, never read by business
+  /// logic. Null on every payment recorded through the app.
+  migratedFromOrderId  String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  store                Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  allocations          PaymentAllocation[]
+
+  @@index([storeId])
+  @@index([userId])
+  @@index([userId, paymentDate])
+  @@index([userId, storeId, currencyCode])
+  @@map("store_payment")
+}
+
+/// The collector's declaration of what a store payment was for. Always names an order, and
+/// optionally narrows to a single item of that order. Declaring is opt-in: a payment can sit
+/// unallocated, and an order can be declared settled without a known price, which is why
+/// `settlesTarget` exists alongside `amountMinor`.
+/// `userId` is duplicated here (see data-layer-user-id-duplication.mdc) so an allocation can be
+/// authorized and queried directly, without joining back to `StorePayment` or `Order`.
+model PaymentAllocation {
+  id            String       @id @default(cuid())
+  paymentId     String
+  orderId       String
+  orderItemId   String?
+  userId        String
+  /// Minor units of the parent payment's currency, always >= 0. Zero is only meaningful together
+  /// with `settlesTarget`, which declares the target covered without naming an amount.
+  amountMinor   Int          @default(0)
+  /// "Settled in full" declaration. Works without a price, so an item or order with no known cost
+  /// can still be marked covered by this payment.
+  settlesTarget Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  payment       StorePayment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItem     OrderItem?   @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([orderId])
+  @@index([orderItemId])
+  @@index([userId])
+  @@map("payment_allocation")
+}
+
 model OrderHistory {
   id        String                @id @default(cuid())
   orderId   String
@@ -614,26 +691,26 @@ model OrderHistory {
 }
 
 model Delivery {
-  id                      String              @id @default(cuid())
-  humanReadableId         String              @unique
-  storeId                 String
-  userId                  String
-  status                  DeliveryStatus      @default(IN_TRANSIT)
-  deliveryDate            DateTime
-  expectedArrivalFrom     DateTime?
-  expectedArrivalTo       DateTime?
-  receivedDate            DateTime?
-  cost                    Int
-  currencyCode            String
-  exchangeRate            Decimal?            @db.Decimal(18, 8)
+  id                   String              @id @default(cuid())
+  humanReadableId      String              @unique
+  storeId              String
+  userId               String
+  status               DeliveryStatus      @default(IN_TRANSIT)
+  deliveryDate         DateTime
+  expectedArrivalFrom  DateTime?
+  expectedArrivalTo    DateTime?
+  receivedDate         DateTime?
+  cost                 Int
+  currencyCode         String
+  exchangeRate         Decimal?            @db.Decimal(18, 8)
   /// The base currency `exchangeRate` converts INTO. Mirrors `Order.exchangeRateBaseCode`; see ADR 0024.
-  exchangeRateBaseCode    String?
-  note                    String?
-  createdAt               DateTime            @default(now())
-  updatedAt               DateTime            @updatedAt
-  store                   Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
-  user                    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orderItems              DeliveryOrderItem[]
+  exchangeRateBaseCode String?
+  note                 String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  store                Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderItems           DeliveryOrderItem[]
 
   @@index([storeId])
   @@index([userId])
