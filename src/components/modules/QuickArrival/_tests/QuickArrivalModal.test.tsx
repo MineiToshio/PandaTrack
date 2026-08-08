@@ -151,3 +151,28 @@ describe("QuickArrivalModal", () => {
     );
   });
 });
+
+describe("QuickArrivalModal products it cannot offer", () => {
+  /**
+   * The modal only lists products still eligible for a delivery. An order showing "6 productos"
+   * whose sixth already arrived opens a list of five, and with nothing said about the missing one
+   * that reads as the modal having dropped it.
+   */
+  it("states how many products already shipped or arrived", () => {
+    renderModal({ settledItemCount: 1 });
+
+    expect(screen.getByText("detail.quickArrival.settledNotListed")).toBeInTheDocument();
+  });
+
+  it("says nothing when every product is still offerable", () => {
+    renderModal({ settledItemCount: 0 });
+
+    expect(screen.queryByText("detail.quickArrival.settledNotListed")).not.toBeInTheDocument();
+  });
+
+  it("says nothing when the caller does not know the count", () => {
+    renderModal();
+
+    expect(screen.queryByText("detail.quickArrival.settledNotListed")).not.toBeInTheDocument();
+  });
+});

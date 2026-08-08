@@ -14,7 +14,13 @@ vi.mock("@/components/core/ViewTransitionLink", () => ({
   default: ({ children, ...props }: { children?: ReactNode }) => <a {...props}>{children}</a>,
 }));
 vi.mock("@/components/core/StoreAvatar", () => ({ default: () => <span /> }));
-vi.mock("../OrderListRowActions", () => ({ default: () => <div /> }));
+const rowActionsProps = vi.fn();
+vi.mock("../OrderListRowActions", () => ({
+  default: (props: Record<string, unknown>) => {
+    rowActionsProps(props);
+    return <div data-testid="row-actions" />;
+  },
+}));
 
 import OrdersTable from "../OrdersTable";
 
@@ -186,5 +192,68 @@ describe("OrdersTable layout", () => {
     expect(header.className).not.toContain("minmax(0,0.95fr)_minmax(0,0.95fr)");
     // Still rendered, just not in a column of its own.
     expect(within(container).getByText("llega 15 ago")).toBeInTheDocument();
+  });
+});
+
+describe("OrdersTable expanded products", () => {
+  /**
+   * The drawer used to render at most five products and then a plain `+ N más…` line that was not
+   * a control: it announced hidden products and offered no way to reach them, while the row's own
+   * Products column already printed the true total beside it. The mobile card had never capped, so
+   * the same order showed five items on a monitor and all of them on a phone.
+   */
+  it("renders every product of an expanded order, however many there are", () => {
+    const items: OrdersListPageItem["items"] = Array.from({ length: 8 }, (_, index) => ({
+      id: `item-${index}`,
+      name: `Producto ${index + 1}`,
+      quantity: 1,
+      productTypeKey: null,
+      unitPrice: 1000,
+      deliveryState: "NONE" as OrdersListPageItem["items"][number]["deliveryState"],
+    }));
+
+    render(
+      <OrdersTable
+        orders={[makeOrder({ items, itemCount: items.length })]}
+        locale="es"
+        today={TODAY}
+        returnTo="/es/orders"
+        baseCurrencyCode="PEN"
+        expandedIds={new Set(["o1"])}
+        onToggle={() => {}}
+      />,
+    );
+
+    for (const item of items) {
+      expect(screen.getByText(item.name)).toBeInTheDocument();
+    }
+    expect(screen.queryByText(/más…/)).not.toBeInTheDocument();
+  });
+
+  /**
+   * The expand chevron lives in the row's first grid row, so a long drawer pushes it off screen.
+   * The drawer carries its own collapse action, the way the mobile card already did.
+   */
+  it("hands the drawer a way to collapse the row it belongs to", () => {
+    const onToggle = vi.fn();
+    rowActionsProps.mockClear();
+    render(
+      <OrdersTable
+        orders={[makeOrder()]}
+        locale="es"
+        today={TODAY}
+        returnTo="/es/orders"
+        baseCurrencyCode="PEN"
+        expandedIds={new Set(["o1"])}
+        onToggle={onToggle}
+      />,
+    );
+
+    // Asserted through the prop rather than by clicking a button named "card.collapse": the expand
+    // chevron carries that same label, so a query by name would pass with or without this wiring.
+    const props = rowActionsProps.mock.calls.at(-1)?.[0] as { onCollapse?: () => void };
+    expect(typeof props.onCollapse).toBe("function");
+    props.onCollapse!();
+    expect(onToggle).toHaveBeenCalledWith("o1");
   });
 });

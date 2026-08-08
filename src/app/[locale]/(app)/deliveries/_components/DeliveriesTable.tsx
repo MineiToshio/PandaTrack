@@ -23,8 +23,6 @@ type DeliveriesTableProps = {
   onToggle: (deliveryId: string) => void;
 };
 
-const MAX_EXPANDED_ITEMS = 5;
-
 const GRID_COLS =
   "[grid-template-columns:40px_minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,1.1fr)_24px]";
 
@@ -84,8 +82,6 @@ export default function DeliveriesTable({
                 : t("list.table.arrives", { window: arrivalWindow });
           }
 
-          const visibleItems = delivery.items.slice(0, MAX_EXPANDED_ITEMS);
-          const hiddenCount = Math.max(0, delivery.items.length - MAX_EXPANDED_ITEMS);
 
           return (
             <li
@@ -188,9 +184,9 @@ export default function DeliveriesTable({
                   )}
                 >
                   <ul role="list" className="flex max-w-[720px] flex-col">
-                    {visibleItems.map((item, idx) => {
+                    {delivery.items.map((item, idx) => {
                       const ItemIcon = getStoreProductTypeIcon(item.productTypeKey ?? "");
-                      const isLast = idx === visibleItems.length - 1;
+                      const isLast = idx === delivery.items.length - 1;
                       return (
                         <li
                           key={item.id}
@@ -215,12 +211,13 @@ export default function DeliveriesTable({
                       );
                     })}
                   </ul>
-                  {hiddenCount > 0 && (
-                    <p className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
-                      {t("list.card.moreItems", { count: hiddenCount })}
-                    </p>
-                  )}
-                  <div className="pointer-events-auto relative mt-1">
+                  {/*
+                    The chevron that opened this drawer is in the row's first grid row, so a long
+                    product list leaves it far above the fold with no way back. The drawer carries
+                    its own collapse action, mirroring the mobile card, whose toggle already sits
+                    below its items.
+                  */}
+                  <div className="pointer-events-auto relative mt-1 flex flex-wrap items-center gap-x-5 gap-y-1">
                     <ViewTransitionLink
                       href={detailHref}
                       viewTransitionEntity="delivery"
@@ -229,6 +226,13 @@ export default function DeliveriesTable({
                       {t("list.card.openDetail")}
                       <ChevronRight width={12} height={12} aria-hidden />
                     </ViewTransitionLink>
+                    <button
+                      type="button"
+                      onClick={() => onToggle(delivery.id)}
+                      className="inline-flex items-center gap-1 [font-size:var(--text-caption)] [color:var(--text-secondary)] hover:underline"
+                    >
+                      {t("list.card.collapse")}
+                    </button>
                   </div>
                 </div>
               )}

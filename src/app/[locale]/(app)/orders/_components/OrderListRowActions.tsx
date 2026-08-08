@@ -18,6 +18,13 @@ export type OrderListRowActionsProps = {
   detailHref: string;
   /** `table` or `card`, sent with the funnel event so the two breakpoints stay comparable. */
   surface: "table" | "card";
+  /**
+   * Collapses the row this drawer belongs to. Supplied by the desktop table, whose expand chevron
+   * sits in the row's first grid row: with the product cap gone a long drawer pushes that chevron
+   * far above the fold, leaving no way to close it. The mobile card needs none, since its own
+   * toggle already sits below the items.
+   */
+  onCollapse?: () => void;
 };
 
 /**
@@ -43,6 +50,7 @@ export default function OrderListRowActions({
   locale,
   detailHref,
   surface,
+  onCollapse,
 }: OrderListRowActionsProps) {
   const t = useTranslations("orders");
   const tList = useTranslations("orderListing");
@@ -56,11 +64,14 @@ export default function OrderListRowActions({
   const quickArrivalItems = order.items
     .filter((item) => isItemEligibleForDelivery(item.deliveryState))
     .map((item) => ({ id: item.id, name: item.name }));
+  // Products the modal cannot offer because they already shipped or arrived. Passed so it can say
+  // so, rather than silently showing fewer products than the row's own count.
+  const settledItemCount = order.items.length - quickArrivalItems.length;
   // Same gate as the order detail (FR-08-15a): no product a delivery could take, no delivery action.
   const canCreateDelivery = order.status !== "CANCELLED" && quickArrivalItems.length > 0;
   const showDetailLink = surface === "table";
 
-  if (!canCreateDelivery && !showDetailLink) return null;
+  if (!canCreateDelivery && !showDetailLink && !onCollapse) return null;
 
   const labelArgs = { code: order.humanReadableId, store: order.store.name };
   // Shared shape for every action in the row: same height, same rhythm, differing only in colour.
@@ -117,6 +128,16 @@ export default function OrderListRowActions({
         </ViewTransitionLink>
       )}
 
+      {onCollapse && (
+        <button
+          type="button"
+          onClick={onCollapse}
+          className={cn(actionClass, "[color:var(--text-secondary)] hover:[color:var(--text-primary)]")}
+        >
+          {tList("card.collapse")}
+        </button>
+      )}
+
       {canCreateDelivery && (
         <QuickArrivalModal
           isOpen={quickArrival.isOpen}
@@ -124,6 +145,7 @@ export default function OrderListRowActions({
           orderHumanReadableId={order.humanReadableId}
           storeName={order.store.name}
           items={quickArrivalItems}
+          settledItemCount={settledItemCount}
           baseCurrencyCode={baseCurrencyCode}
           locale={locale}
           onSubmit={quickArrival.submit}

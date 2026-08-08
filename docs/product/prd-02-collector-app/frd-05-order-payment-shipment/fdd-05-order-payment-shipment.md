@@ -247,7 +247,9 @@ Re-measure this number if the window format or the column widths change.
 - **Terminal-state dimming**: `COMPLETED` rows render at `opacity: 0.75` — closed but not
   hidden; `CANCELLED` rows only appear when the user explicitly includes that status.
 
-Each `order-row` is expandable; the chevron reveals an inline product list (up to 5 items
+Each `order-row` is expandable; the chevron reveals an inline product list (every item
+
+**Design decision, 2026-08-06 — the expanded drawer lists every product.** It used to stop at five and print `"+ N más…"`, which was inert text: it named products it would not show, while the row's own Products column already printed the true total beside it and the quick-arrival modal already offered the full list. The mobile card never capped, so the same order showed five items on a monitor and all of them on a phone; this is desktop catching up to it, not a new behaviour. Real distribution here is p50 = 1 item, p90 = 6, p99 = 15, max = 32, so the cap fired on about one row in eight while the tall case it guarded against is a single order in 560. Because an uncapped drawer (~56px per row, so ~1,900px at 32 items) pushes the expand chevron far above the fold, the drawer now ends with its own collapse action, mirroring the mobile card whose toggle already sat below its items. FDD-08 never specified a cap; the deliveries list had it as undocumented drift and loses it here too.
 with item-icon + name + subtype + item-state + qty + price, then `"+ N más…"` and an
 `"Abrir detalle →"` link). Default visible sort is **newest first** (CB-01: a deliberate
 divergence from `FR-05-28`'s original oldest-first, because collectors manage recent orders

@@ -112,7 +112,6 @@
     "collapse": "Ocultar productos",
     "items": "{count, plural, one {# producto} other {# productos}}",
     "itemsSuffix": "{count, plural, one {producto} other {productos}}",
-    "moreItems": "+ {count} más…",
     "openDetail": "Abrir detalle",
     "paymentPercentage": "{pct}% pagado",
     "paymentBarLabel": "Progreso de pago",

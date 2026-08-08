@@ -349,7 +349,6 @@
       "items": "{count, plural, one {# product} other {# products}}",
       "itemsSuffix": "{count, plural, one {product} other {products}}",
       "itemQuantity": "×{quantity}",
-      "moreItems": "+ {count} more…",
       "openDetail": "Open detail",
       "expand": "View products",
       "expandCount": "{count, plural, one {View # product} other {View # products}}",

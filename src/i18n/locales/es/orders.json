@@ -527,7 +527,8 @@
         "RECEIVED_BEFORE_SHIPPED": "No pudo salir después de haber llegado.",
         "RECEIVED_DATE_IN_FUTURE": "La fecha de llegada no puede ser futura.",
         "DELIVERY_DATE_IN_FUTURE": "La fecha de salida no puede ser futura."
-      }
+      },
+      "settledNotListed": "{count, plural, one {No aparece 1 producto que ya salió o llegó.} other {No aparecen # productos que ya salieron o llegaron.}}"
     }
   }
 }

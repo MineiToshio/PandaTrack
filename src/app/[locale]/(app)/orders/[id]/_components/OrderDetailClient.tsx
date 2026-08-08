@@ -55,6 +55,8 @@ type OrderDetailClientProps = {
   locale: string;
   /** Products still eligible for a delivery; an empty list hides the quick-arrival action. */
   quickArrivalItems: QuickArrivalItem[];
+  /** Forwarded to `QuickArrivalModal`; see its own prop. */
+  settledItemCount?: number;
   /** False once no product can join a new delivery, which retires every delivery affordance. */
   canCreateDelivery: boolean;
   baseCurrencyCode: string | null;
@@ -80,6 +82,7 @@ export default function OrderDetailClient({
   overdueDays,
   locale,
   quickArrivalItems,
+  settledItemCount,
   canCreateDelivery,
   baseCurrencyCode,
   mainColumnExtras,
@@ -328,6 +331,7 @@ export default function OrderDetailClient({
           orderHumanReadableId={order.humanReadableId}
           storeName={order.storeName}
           items={quickArrivalItems}
+          settledItemCount={settledItemCount}
           baseCurrencyCode={baseCurrencyCode}
           locale={locale}
           onSubmit={quickArrival.submit}

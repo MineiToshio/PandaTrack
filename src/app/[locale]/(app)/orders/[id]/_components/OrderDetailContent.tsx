@@ -41,6 +41,8 @@ export default async function OrderDetailContent({
   const quickArrivalItems = order.items
     .filter((item) => isItemEligibleForDelivery(item.deliveryState))
     .map((item) => ({ id: item.id, name: item.name }));
+  // See `QuickArrivalModal.settledItemCount`: the modal states what it left out.
+  const settledItemCount = order.items.length - quickArrivalItems.length;
   // One condition behind every delivery affordance on this page (aside card, sticky bar, products
   // list): there has to be a product a delivery could still take.
   const canCreateDelivery = !isCancelled && quickArrivalItems.length > 0;
@@ -101,6 +103,7 @@ export default async function OrderDetailContent({
           overdueDays={overdueDays}
           locale={locale}
           quickArrivalItems={quickArrivalItems}
+              settledItemCount={settledItemCount}
           canCreateDelivery={canCreateDelivery}
           baseCurrencyCode={baseCurrencyCode}
           mainColumnExtras={
@@ -152,6 +155,7 @@ export default async function OrderDetailContent({
               hasPayments={order.flags.hasPayments}
               locale={locale}
               quickArrivalItems={quickArrivalItems}
+              settledItemCount={settledItemCount}
               baseCurrencyCode={baseCurrencyCode}
             />
           }

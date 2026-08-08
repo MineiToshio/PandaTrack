@@ -30,8 +30,6 @@ type OrdersTableProps = {
   onToggle: (orderId: string) => void;
 };
 
-const MAX_EXPANDED_ITEMS = 5;
-
 const GRID_COLS =
   "[grid-template-columns:40px_minmax(0,1.6fr)_minmax(0,0.9fr)_minmax(0,1.2fr)_minmax(0,0.9fr)_minmax(0,1.1fr)_24px]";
 
@@ -110,8 +108,6 @@ export default function OrdersTable({
                 ? "[background:var(--success)]"
                 : "[background:var(--accent)]";
 
-          const visibleItems = order.items.slice(0, MAX_EXPANDED_ITEMS);
-          const hiddenCount = Math.max(0, order.items.length - MAX_EXPANDED_ITEMS);
 
           return (
             <li
@@ -271,9 +267,9 @@ export default function OrdersTable({
                        a narrower viewport implicitly; mirroring that here avoids the orphaned
                        right edge when the row stretches to the full content rail. */}
                   <ul role="list" className="flex max-w-[720px] flex-col">
-                    {visibleItems.map((item, idx) => {
+                    {order.items.map((item, idx) => {
                       const ItemIcon = getStoreProductTypeIcon(item.productTypeKey ?? "");
-                      const isLast = idx === visibleItems.length - 1;
+                      const isLast = idx === order.items.length - 1;
                       return (
                         <li
                           key={item.id}
@@ -311,17 +307,13 @@ export default function OrdersTable({
                       );
                     })}
                   </ul>
-                  {hiddenCount > 0 && (
-                    <p className="[font-size:var(--text-caption)] [color:var(--text-muted)]">
-                      {t("card.moreItems", { count: hiddenCount })}
-                    </p>
-                  )}
                   <OrderListRowActions
                     order={order}
                     baseCurrencyCode={baseCurrencyCode}
                     locale={locale}
                     detailHref={detailHref}
                     surface="table"
+                    onCollapse={() => onToggle(order.id)}
                   />
                 </div>
               )}

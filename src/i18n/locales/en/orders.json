@@ -527,7 +527,8 @@
         "RECEIVED_BEFORE_SHIPPED": "It cannot leave after it arrived.",
         "RECEIVED_DATE_IN_FUTURE": "The arrival date cannot be in the future.",
         "DELIVERY_DATE_IN_FUTURE": "The dispatch date cannot be in the future."
-      }
+      },
+      "settledNotListed": "{count, plural, one {1 product that already shipped or arrived is not listed.} other {# products that already shipped or arrived are not listed.}}"
     }
   }
 }

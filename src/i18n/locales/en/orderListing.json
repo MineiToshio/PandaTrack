@@ -112,7 +112,6 @@
     "collapse": "Hide items",
     "items": "{count, plural, one {# item} other {# items}}",
     "itemsSuffix": "{count, plural, one {item} other {items}}",
-    "moreItems": "+ {count} more…",
     "openDetail": "Open detail",
     "paymentPercentage": "{pct}% paid",
     "paymentBarLabel": "Payment progress",

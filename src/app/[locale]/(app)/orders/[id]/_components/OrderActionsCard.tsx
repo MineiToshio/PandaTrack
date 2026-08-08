@@ -31,6 +31,8 @@ type OrderActionsCardProps = {
   locale: string;
   /** Products still eligible for a delivery; an empty list hides the quick-arrival action. */
   quickArrivalItems: QuickArrivalItem[];
+  /** Forwarded to `QuickArrivalModal`; see its own prop. */
+  settledItemCount?: number;
   baseCurrencyCode: string | null;
 };
 
@@ -52,6 +54,7 @@ export default function OrderActionsCard({
   hasPayments,
   locale,
   quickArrivalItems,
+  settledItemCount,
   baseCurrencyCode,
 }: OrderActionsCardProps) {
   const t = useTranslations("orders");
@@ -257,6 +260,7 @@ export default function OrderActionsCard({
           orderHumanReadableId={humanReadableId}
           storeName={storeName}
           items={quickArrivalItems}
+          settledItemCount={settledItemCount}
           baseCurrencyCode={baseCurrencyCode}
           locale={locale}
           onSubmit={quickArrival.submit}

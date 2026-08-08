@@ -26,6 +26,12 @@ export type QuickArrivalModalProps = {
   storeName: string;
   /** Products still eligible for a delivery (NONE or ARRIVED_AT_STORE). Never empty when open. */
   items: QuickArrivalItem[];
+  /**
+   * How many of the order's products are NOT in `items` because they already shipped or arrived.
+   * Stated in the modal: otherwise an order reading "6 productos" opens a list of 5 with nothing
+   * explaining the sixth, which reads as the modal having lost it.
+   */
+  settledItemCount?: number;
   baseCurrencyCode: string | null;
   locale: string;
   /** Optimistic Confirmation: fire-and-forget, the coordinator owns the toast and the refresh. */
@@ -67,6 +73,7 @@ export default function QuickArrivalModal({
   orderHumanReadableId,
   storeName,
   items,
+  settledItemCount = 0,
   baseCurrencyCode,
   locale,
   onSubmit,
@@ -227,6 +234,11 @@ export default function QuickArrivalModal({
               </button>
             </div>
             <p className="text-[11.5px] [color:var(--text-muted)]">{t("detail.quickArrival.itemsHelper")}</p>
+            {settledItemCount > 0 && (
+              <p className="text-[11.5px] [color:var(--text-muted)]">
+                {t("detail.quickArrival.settledNotListed", { count: settledItemCount })}
+              </p>
+            )}
             <ul className="max-h-56 space-y-1 overflow-y-auto rounded-xl p-1.5 [background:var(--surface-elevated)] [border:1px_solid_var(--border)]">
               {items.map((item) => (
                 <li key={item.id}>
